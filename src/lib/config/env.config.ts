@@ -14,7 +14,6 @@ const clientSchema = z.object({
   NEXT_PUBLIC_SENTRY_ORG: z.string().min(1).optional(),
   NEXT_PUBLIC_SENTRY_PROJECT: z.string().min(1).optional(),
   NEXT_PUBLIC_SENTRY_URL: z.string().url().optional(),
-  NEXT_PUBLIC_CRISP_WEBSITE_ID: z.string().min(1).optional(),
 });
 
 const sharedSchema = z.object({
@@ -63,7 +62,6 @@ export function getClientEnv() {
       NEXT_PUBLIC_SENTRY_ORG: process.env.NEXT_PUBLIC_SENTRY_ORG,
       NEXT_PUBLIC_SENTRY_PROJECT: process.env.NEXT_PUBLIC_SENTRY_PROJECT,
       NEXT_PUBLIC_SENTRY_URL: process.env.NEXT_PUBLIC_SENTRY_URL,
-      NEXT_PUBLIC_CRISP_WEBSITE_ID: process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID,
     };
 
     const result = clientSchema.safeParse(envObject);

@@ -10,12 +10,6 @@ process.env.NEXT_PUBLIC_MATOMO_SITE_ID = "1";
 process.env.NEXT_PUBLIC_MATOMO_URL = "https://matomo.test.example.com";
 process.env.NEXT_PUBLIC_SENTRY_DSN = "https://test@sentry.io/123";
 
-// Mock global des server actions
-jest.mock("@/actions/quoteCheck.errorDetails.actions", () => ({
-  deleteErrorDetail: jest.fn().mockResolvedValue(true),
-  updateErrorDetail: jest.fn().mockResolvedValue(true),
-}));
-
 // Mock global de Next.js cache
 jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
@@ -39,17 +33,6 @@ jest.mock("next/navigation", () => ({
 // Mock global des hooks personnalisés
 jest.mock("@/hooks", () => ({
   useIsDesktop: jest.fn(() => true),
-  useUserProfile: jest.fn(() => null),
-  useIsConseiller: jest.fn(() => null),
-  useScrollPosition: jest.fn(() => true),
-  useDeleteErrorReasons: jest.fn(() => ({ reasons: [], loading: false })),
-  useCrisp: jest.fn(() => ({
-    isLoaded: false,
-    openChat: jest.fn(),
-    sendMessage: jest.fn(),
-    promptUser: jest.fn(),
-    triggerEvent: jest.fn(),
-  })),
   useMatomo: jest.fn(() => ({
     trackEvent: jest.fn(),
     trackPageView: jest.fn(),

@@ -15,8 +15,6 @@ describe("Components exports", () => {
       "CardImage",
       "CardLinkProfile",
       "CheckboxGroup",
-      "Confetti",
-      "DropdownCheckboxList",
       "Footer",
       "Header",
       "IconBackground",
@@ -24,24 +22,12 @@ describe("Components exports", () => {
       "Link",
       "LinkSize",
       "LinkVariant",
-      "LoadingDots",
       "Matomo",
-      "Modal",
-      "ModalPosition",
-      "CommentErrorModal",
-      "DeleteErrorModal",
-      "ErrorDetailsModal",
-      "GlobalCommentModal",
-      "GlobalErrorFeedbacksModal",
       "Notice",
-      "QuoteErrorLine",
-      "QuoteErrorTable",
-      "RoundCheckboxGroup",
       "SVGLoader",
       "Tile",
       "Toast",
       "Tooltip",
-      "Upload",
     ];
 
     expectedExports.forEach((exportName) => {
@@ -62,30 +48,16 @@ describe("Components exports", () => {
       "CardImage",
       "CardLinkProfile",
       "CheckboxGroup",
-      "Confetti",
-      "DropdownCheckboxList",
       "Footer",
       "Header",
       "IconBackground",
       "Link",
-      "LoadingDots",
       "Matomo",
-      "Modal",
-      "ModalPosition",
-      "CommentErrorModal",
-      "DeleteErrorModal",
-      "ErrorDetailsModal",
-      "GlobalCommentModal",
-      "GlobalErrorFeedbacksModal",
       "Notice",
-      "QuoteErrorLine",
-      "QuoteErrorTable",
-      "RoundCheckboxGroup",
       "SVGLoader",
       "Tile",
       "Toast",
       "Tooltip",
-      "Upload",
     ];
 
     componentNames.forEach((componentName) => {
@@ -105,6 +77,5 @@ describe("Components exports", () => {
     expect(Components.IconBackgroundVariant).toBeDefined();
     expect(Components.LinkSize).toBeDefined();
     expect(Components.LinkVariant).toBeDefined();
-    expect(Components.ModalPosition).toBeDefined();
   });
 });

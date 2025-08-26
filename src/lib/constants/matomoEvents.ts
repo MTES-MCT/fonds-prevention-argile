@@ -1,8 +1,6 @@
 // Constantes de tracking Matomo
 export const MATOMO_EVENTS = {
-  BUTTON_EXPORT_FOR_MAIL: "Bouton Exporter en texte",
-
-  // TODO Mettre ici les autres événements Matomo exemples :
+  // TODO Mettre ici les événements Matomo  :
   //   LINK_HOMEPAGE: "Lien Page d'accueil",
   //   ACTION_FILE_UPLOAD: "Fichier Uploadé",
   //   ACTION_RESULT_VIEW: "Résultat Consulté",

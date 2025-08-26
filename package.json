@@ -1,6 +1,6 @@
 {
-  "name": "mon-devis-sans-oublis-frontend",
-  "version": "1.0.5",
+  "name": "fonds-prevention-argile",
+  "version": "0.0.1",
   "private": true,
   "packageManager": "pnpm@10.13.1",
   "scripts": {
