@@ -1,0 +1,45 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Testing
+/coverage
+.swc/
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Debug
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment Variables
+.env.local
+.env.*.local
+.env.docker
+
+# Misc
+.DS_Store
+*.pem
+
+# Deployment
+.vercel
+
+# Sentry Config File
+.env.sentry-build-plugin

@@ -1,0 +1,372 @@
+{
+  "accessibility": {
+    "first_paragraph": "L'interface <strong>Mon Devis Sans Oublis</strong> respecte au mieux les principes d'accessibilité de base du Web : balises HTML sémantiques, textes et icônes contrastés, hierarchie des titres des pages, accessibilité des formulaires, conception pour mobile d'abord, textes alternatifs pour les images, etc.",
+    "second_paragraph": "Cependant, le site est récent, en phase de développement, il n'a donc pas encore été audité pour tester son respect des exigences du <a href='https://accessibilite.numerique.gouv.fr/'>référentiel public d'accessibilité RGAA</a>, d'où la mention \"non conforme\" dans le pied de page.",
+    "third_paragraph": " Nous n'avons pas non plus testé le site avec des utilisateurs dans une optique d'accessibilité.",
+    "fourth_paragraph": "Le code du site, incluant le <a href='https://github.com/betagouv/mon-devis-sans-oublis-backend' rel='noopener noreferrer' target='_blank'>backend</a> et le <a href='https://github.com/betagouv/mon-devis-sans-oublis-frontend' rel='noopener noreferrer' target='_blank'>frontend</a>, est entièrement public, n'hésitez pas à nous faire des retours.",
+    "title": "Accessibilité"
+  },
+  "components": {
+    "alert": {
+      "see_less": "Voir moins",
+      "see_more": "Voir plus"
+    },
+    "error_feedbacks_modal": {
+      "back_button_label": "Détail de la correction",
+      "correction_helpful_optional": " Aidez-nous à améliorer cette correction en nous partageant votre avis :",
+      "icon_alt": "Icône de correction",
+      "icon_src": "/images/quotation_results/quotation_correction_details.webp",
+      "problem_title": "Problème identifié",
+      "solution_title": "Solution",
+      "submit_button": "Envoyer"
+    },
+    "footer": {
+      "bottom_copy_line": "Sauf mention explicite de propriété intellectuelle détenue par des tiers, les contenus de ce site sont proposés sous <a href='https://github.com/etalab/licence-ouverte/blob/master/LO.md' rel='noopener noreferrer' target='_blank'>licence etalab-2.0</a>"
+    },
+    "global_error_feedbacks_modal": {
+      "back_button_label": "Fermer",
+      "comment_title": " Pouvez-vous nous en dire plus sur ce que vous avez pensé des corrections proposées ?",
+      "contact_title": "Pouvons-nous vous recontacter pour d’éventuelles questions ?",
+      "contact_title_optional": "Champ non obligatoire",
+      "description": "Notre outil est continuellement en train d’apprendre. Vos retours sont précieux pour améliorer ses réponses et vous accompagner au mieux dans la correction de vos devis.",
+      "email_placeholder": "Votre adresse e-mail (ex : jean.dupont@mail.fr)",
+      "rating_title": "Sur une échelle de 0 à 5, notez la qualité des corrections proposées",
+      "submit_button": "Envoyer mes réponses",
+      "title": "Que pensez-vous de ces retours ?"
+    },
+    "notice": {
+      "button_close": "Masquer le message"
+    },
+    "quote_error_card": {
+      "badge_correction": "{number} correction",
+      "badge_correction_plural": "{number} corrections",
+      "button_see_detail": "Voir le détail",
+      "title_admin": "Mentions administratives",
+      "title_gestes": "Descriptif technique des gestes",
+      "title_gestes_number": "({number} geste détecté)",
+      "title_gestes_number_plural": "({number} gestes détectés)",
+      "tooltip": {
+        "admin": "Les mentions administratives sont les informations générales concernant le devis, l'entreprise, le client et le logement. Elles sont obligatoires pour l'obtention d’aides financières.",
+        "gestes": "Ici, nous vérifions la présence des critères de performance énergétique de l’équipement ou du matériel rendant l’opération éligible ou non aux aides financières.",
+        "icon": "fr-icon-information-fill"
+      },
+      "type_missing": {
+        "icon": "fr-icon-warning-line",
+        "label": "Information manquante"
+      },
+      "type_wrong": {
+        "icon": "fr-icon-edit-circle-line",
+        "label": "Information erronée"
+      }
+    },
+    "quote_status_link": {
+      "not_edit": {
+        "description": "Retrouver le résultat avec vos modifications et/ou vos suppressions",
+        "image_alt": "Image partagez le résultat avec vos corrections",
+        "image_src": "/images/quotation_results/quotation_link_share.webp",
+        "link_label": "Partager le lien",
+        "title": "Partagez le résultat avec vos corrections"
+      },
+      "upload": {
+        "image_alt": "Image vérifier un devis",
+        "image_src": "/images/documents/document-search.svg",
+        "title": "Lancez une nouvelle analyse",
+        "button_run_analysis": "Nouvelle analyse"
+      }
+    },
+    "round_checkbox_group": {
+      "insufficient": "Insuffisante",
+      "satisfactory": "Très satisfaisante"
+    },
+    "upload": {
+      "description": "Taille maximale : {maxFileSize}Mo. Formats supportés : {fileTypes}. Un seul fichier possible.",
+      "error_file_size": "Le fichier dépasse la taille maximale de {maxFileSize}Mo.",
+      "error_file_type": "Le fichier doit être au format {fileTypes}.",
+      "label": "Ajouter un fichier",
+      "none_selected_file": "Aucun fichier sélectionné",
+      "select_file": "Choisir le fichier"
+    }
+  },
+  "homepage": {
+    "about_us": {
+      "our_missions": {
+        "missions": [
+          {
+            "description": "Création d’un modèle d’analyse automatique qui compare les devis de rénovation énergétique avec les exigences des demandes d’aides.",
+            "icon": "fr-icon-map-pin-2-line",
+            "title": "Fluidifier l’instruction des aides"
+          },
+          {
+            "description": "Réduction du nombre d’allers-retours avec les instructeurs d’aides avec un pré-contrôle gratuit et instantané.",
+            "icon": "fr-icon-timer-line",
+            "title": "Réduire les délais d’instruction d’aide"
+          },
+          {
+            "description": "Conception d’une interface simple qui accompagne les usagers dans la lecture et la correction des devis.",
+            "icon": "fr-icon-heart-line",
+            "title": "Améliorer la satisfaction des usagers"
+          }
+        ],
+        "title": "Quelles sont nos missions ?"
+      },
+      "who_are_we": {
+        "description": "Mon Devis Sans Oublis est un service public gratuit qui vérifie en quelques secondes la conformité des devis aux attendus réglementaires des aides à la rénovation énergétique.<br><br>Nous sommes un service public lancé par le Ministère de la Transition Ecologique et la Direction du Numérique (DINUM) sous la forme d'une start-up d'Etat. Elle est en phase d'expérimentation avant un déploiement massif. N'hésitez pas à nous faire part de vos retours et suggestions d'améliorations.",
+        "image": "/images/ministere_transition_ecologique.webp",
+        "title": "Qui sommes-nous ?"
+      }
+    },
+    "check_quote_button": {
+      "href": "/bienvenue",
+      "icon": "fr-icon-arrow-right-line",
+      "label": "Vérifier mon devis"
+    },
+    "explanation_cards": {
+      "cards": [
+        {
+          "image": "/images/examples_energy_retrofit_actions/isolation_exterieur.webp",
+          "title": "Isolation par l'extérieur"
+        },
+        {
+          "image": "/images/examples_energy_retrofit_actions/pompe_a_chaleur.webp",
+          "title": "Pompe à chaleur"
+        },
+        {
+          "image": "/images/examples_energy_retrofit_actions/vmc.webp",
+          "title": "VMC"
+        },
+        {
+          "image": "/images/examples_energy_retrofit_actions/isolation_interieur.webp",
+          "title": "Isolation par l'intérieur"
+        },
+        {
+          "image": "/images/examples_energy_retrofit_actions/menuiserie.webp",
+          "title": "Menuiserie"
+        },
+        {
+          "image": "/images/examples_energy_retrofit_actions/eau_chaude_sanitaire.webp",
+          "title": "Eau chaude sanitaire"
+        }
+      ],
+      "correction": "Une fois corrigé, soumettez à nouveau votre devis jusqu'à ce qu'il soit conforme.",
+      "image": {
+        "alt": "Mon Devis Sans Oublis en 3 étages",
+        "src": "/images/steps_analyze_quote/three_steps.webp"
+      },
+      "image_cards": [
+        {
+          "description": "Identifiez les mentions manquantes aux attendus réglementaires des aides.",
+          "image": "/images/steps_analyze_quote/quote_control.webp",
+          "title": "Pré-contrôlez en un clic les devis de rénovation énergétique"
+        },
+        {
+          "description": "Appliquez les corrections pour un devis sans oublis, prêt pour les demandes d’aides.",
+          "image": "/images/steps_analyze_quote/change_quote.webp",
+          "title": "Recevez un pas à pas des modifications à apporter au devis"
+        },
+        {
+          "description": "Accélérez l’instruction des aides de rénovation énergétique en évitant les allers-retours avec les instructeurs grâce à des devis conformes.",
+          "image": "/images/steps_analyze_quote/get_help.webp",
+          "title": "Obtenez vos aides de rénovation plus rapidement"
+        }
+      ],
+      "number_blocks": [
+        {
+          "number": 1,
+          "title": "<strong>Déposez votre devis</strong> afin qu'il soit analysé par notre outil qui vérifie que tous les attendus réglementaires soient bien présents."
+        },
+        {
+          "number": 2,
+          "title": "<strong>Découvrez instantanément les suggestions de corrections</strong> adaptées aux demandes d'aides de rénovation énergétique."
+        },
+        {
+          "number": 3,
+          "title": "Informez les parties prenantes (par ex: artisans, particuliers) et <strong>partagez vos corrections personnalisées</strong>."
+        }
+      ],
+      "title_1": "À quoi sert Mon Devis Sans Oublis ?",
+      "title_2": "Exemple de gestes de rénovation énergétique",
+      "title_3": "Une démarche simplifiée en 3 étapes !"
+    },
+    "hero_section": {
+      "badges": [
+        {
+          "label": "Ma prime renov'"
+        },
+        {
+          "label": "Eco PTZ"
+        },
+        {
+          "label": "Aides CEE"
+        }
+      ],
+      "image": {
+        "alt": "Mon Devis Sans Oublis",
+        "src": "/images/homepage.webp"
+      },
+      "title": "Je souhaite contrôler un devis avant une demande d’aide de rénovation énergétique"
+    },
+    "section_who_are_you": {
+      "cards": [
+        {
+          "alt": "Artisan qui souhaite gagner du temps",
+          "description": "Je souhaite gagner du temps en évitant les multiples changements sur mes devis",
+          "image": "/images/who_are_you/card_artisan.webp",
+          "title": "Je suis artisan",
+          "url": "/artisan/type-renovation"
+        },
+        {
+          "alt": "Particulier qui souhaite gagner du temps",
+          "description": "Je souhaite effectuer une demande d’aide de rénovation énergétique sans encombre",
+          "image": "/images/who_are_you/card_individual.webp",
+          "title": "Je suis particulier",
+          "url": "/particulier/type-renovation"
+        },
+        {
+          "alt": "Conseiller qui souhaite accompagner ses clients",
+          "description": "Je souhaite accompagner mes clients dans leurs démarches",
+          "image": "/images/who_are_you/card_advisor.webp",
+          "title": "J'accompagne un projet de rénovation",
+          "url": "/conseiller/type-renovation"
+        }
+      ],
+      "description": "L’outil s’adresse à plusieurs usagers, dites-nous en plus sur vous et vos besoins",
+      "title": "Qui êtes-vous ?"
+    }
+  },
+  "layout": {
+    "footer": {
+      "affiliatedMinistry": "Ministère<br>de la transition<br>écologique",
+      "buttons": [
+        {
+          "href": "/mentions-legales",
+          "label": "Mentions légales / Confidentialité"
+        },
+        { "href": "/accessibilite", "label": "Accessibilité : non conforme" },
+        { "href": "/statistiques", "label": "Statistiques" }
+      ],
+      "organizationDescription": "Mon Devis Sans Oublis est un service public conçu par la <a href='https://www.ecologie.gouv.fr/direction-generale-lamenagement-du-logement-et-nature-dgaln-0' rel='noopener noreferrer' target='_blank'>Direction générale de l'aménagement, du logement et de la nature (DGALN)</a> en partenariat avec le programme <a href='https://beta.gouv.fr/' rel='noopener noreferrer' target='_blank'>beta.gouv</a> de la <a href='https://www.numerique.gouv.fr/' rel='noopener noreferrer' target='_blank'>DINUM</a>. Mon Devis Sans Oublis est en phase d'expérimentation, n'hésitez pas à nous faire part de vos retours par mail à contact@mon-devis-sans-oublis.beta.gouv.fr",
+      "organizationLink": "/",
+      "organizationName": "Mon Devis Sans Oublis"
+    },
+    "header": {
+      "affiliatedMinistry": "Ministère<br>de la transition<br>écologique",
+      "beta": "beta",
+      "organizationDescription": "Vérifiez vos devis de rénovation énergétique",
+      "organizationLink": "/",
+      "organizationName": "Mon Devis Sans Oublis"
+    },
+    "notice": {
+      "description": "Notre modèle est en cours de construction, vos retours sont précieux pour nous aider à le co-construire.",
+      "title": "Outil en cours de fiabilisation"
+    }
+  },
+  "legal_notice": {
+    "access_data": "Qui va avoir accès à ces données ?",
+    "access_data_description": "• Les membres de l’équipe de Mon Devis Sans Oublis pour une amélioration continue et le support utilisateur.",
+    "access_data_description_2": "• Les personnes avec qui vous partagez votre lien de correction. Le contenus du Devis n’est pas partagé mais uniquement les corrections à apporter, le nom de fichier ainsi que l’intitulé des gestes.",
+    "editor": "Éditeur du site",
+    "editor_address": "Tour Séquoia",
+    "editor_address_2": "1 place Carpeaux, 92800 Puteaux, France",
+    "editor_description": "Ministère de la Transition écologique (MTE)",
+    "editor_description_2": "Direction générale de l’Aménagement, du Logement et de la Nature (DGALN)",
+    "hosting_provider": "Prestataire d’hébergement",
+    "hosting_provider_description": "Notre serveur est géré par la société française <a href='https://scalingo.com/' rel='noopener noreferrer' target='_blank'>Scalingo</a> et est physiquement localisé en France. Voici la <a href='https://annuaire-entreprises.data.gouv.fr/entreprise/scalingo-808665483' rel='noopener noreferrer' target='_blank'>fiche entreprise</a> de Scalingo.",
+    "processing_quote": "Traitement des devis",
+    "processing_quote_description": "Lorsque vous soumettez un devis sur Mon Devis Sans Oublis, voici ce qui se passe :",
+    "processing_quote_description_step_1": "1. <strong>Réception et anonymisation</strong> : Le devis est reçu par notre serveur. Nous récupérons le texte associé et l’anonymisons depuis nos propres serveurs.",
+    "processing_quote_description_step_2": "2. <strong>Analyse</strong> : Ensuite, nous utilisons les services de la société française <a href='https://mistral.ai/' rel='noopener noreferrer' target='_blank'>Mistral.ai</a> pour analyser les données anonymisées, identifier les gestes de travaux et les informations contenues dans le devis.",
+    "processing_quote_description_step_3": "3. <strong>Conservation temporaire</strong> : Nous conservons votre devis et vos corrections pendant 6 mois. Cela vous permet de corriger votre devis et d'y revenir ultérieurement si nécessaire. Cela nous permet également d’améliorer notre outil et sa fiabilité.",
+    "processing_quote_description_step_4": "4. <strong>Confidentialité</strong> : Aucune donnée privée n’est partagée avec des tiers. Les données sont utilisées uniquement pour l’analyse du devis et la production de corrections.",
+    "publication_director": "Directeur de publication",
+    "publication_director_description": "Monsieur Philippe MAZENC, directeur général de la DGALN",
+    "share_corrections": "Partage des corrections",
+    "share_corrections_description": "Les corrections sont privées et non indexées par les moteurs de recherche. Vous pouvez partager le lien avec un tiers, mais cette action relève de votre responsabilité.",
+    "statistics": "Suivi et statistiques",
+    "statistics_description": "Nous utilisons le traceur libre Matomo, via l'instance hébergée par les services de l'État sur stats.beta.gouv.fr. Ce suivi ne nécessite pas de bannière de consentement RGPD (dite \"cookies\").",
+    "terms_of_use": "Conditions générales d’utilisation",
+    "terms_of_use_description": "<strong>Mon Devis Sans Oublis</strong> est un service numérique de la Direction générale de l’aménagement, du logement et de la nature (DGALN).",
+    "terms_of_use_description_2": "Mon Devis Sans Oublis est un service numérique permettant de pré-contrôler un devis de rénovation énergétique pour s’assurer qu’il contient toutes les informations nécessaires à son instruction.",
+    "title": "Mentions légales et Confidentialité"
+  },
+  "page_upload_id": {
+    "analysis_date": "Analyse du {date}",
+    "analysis_error": "Impossible de récupérer les données. Veuillez réessayer plus tard.",
+    "analysis_redirect": "Vous allez être redirigé, veuillez patienter.",
+    "analysis_redirect_title": "Redirection en cours...",
+    "analysis_in_progress": "Votre devis est en cours de traitement, cela peut prendre plusieurs secondes.",
+    "analysis_in_progress_title": "Analyse en cours",
+    "badge_correction": "{number} correction",
+    "badge_correction_plural": "{number} corrections",
+    "quotation_alert_ko_title": "Le devis n’est pas conforme aux attentes des aides énergétiques, il risque d’être retoqué.",
+    "quoteCheck_alert_ko_title": "Le dossier n’est pas conforme aux attentes des aides énergétiques, il risque d’être retoqué.",
+    "quotation_alert_ko_description": "Pas d’inquiétudes : suivez nos recommandations ci-dessous pour corriger les erreurs et relancez une analyse pour vérifier que tout est en ordre.",
+    "quotation_alert_ok": "Bravo, votre devis est complet. Il est conforme aux aides de rénovation énergétique et pourra être instruit sans demande complémentaire.",
+    "subtitle": "Pas de panique, voici les corrections à apporter ⬇️",
+    "title": "Résultat de l’analyse"
+  },
+  "pending_page": {
+    "description": "L'analyse de votre devis est en cours.",
+    "title": "Chargement"
+  },
+  "statistics": {
+    "cost_label": "prix d'analyse d'un devis",
+    "cost_tag": "en moyenne",
+    "errors_label": "erreurs détectées par devis",
+    "errors_tag": "en moyenne",
+    "processing_time_label": "temps d'analyse d'un devis",
+    "processing_time_tag": "en moyenne",
+    "quotes_label": "devis analysés",
+    "title": "Statistiques",
+    "title_processing": "Traitement des devis",
+    "title_usage": "Usages",
+    "visitors_label": "visiteurs uniques"
+  },
+  "upload": {
+    "error": {
+      "notice": {
+        "description": "Ce format n'est pas supporté, merci d'utiliser des fichiers PDF non convertis à partir d'images ou d'autres formats.",
+        "title": "Format du fichier non valide"
+      }
+    },
+    "alert": {
+      "description": "Les devis soumis restent strictement confidentiels.",
+      "more_info": "Les devis sont conservés de manière sécurisée pendant une durée de six mois afin de vous permettre l'accès aux corrections si nécessaire, après quoi ils sont automatiquement supprimés de nos systèmes."
+    },
+    "button_check_quote": "Vérifiez le devis",
+    "button_send_quote": "Envoi du devis...",
+    "link_back": {
+      "href": "/bienvenue",
+      "label": "Retour"
+    },
+    "select_aides": "Aide(s) visée(s) avec le devis",
+    "select_gestes": "Geste(s) technique(s) concerné(s) par le(s) devis",
+    "subtitle": "Votre projet",
+    "title": "Vérifier votre devis"
+  },
+  "welcome": {
+    "section_who_are_you": {
+      "cards": [
+        {
+          "description": "Je souhaite gagner du temps en évitant les multiples changements sur mes devis",
+          "href": "/artisan/type-renovation",
+          "icon": "tools-fill",
+          "title": "Je suis artisan"
+        },
+        {
+          "description": "Je souhaite effectuer une demande d’aide de rénovation énergétique sans encombre",
+          "href": "/particulier/type-renovation",
+          "icon": "home-4-fill",
+          "title": "Je suis particulier"
+        },
+        {
+          "description": "Je souhaite accompagner mes clients dans leurs démarches",
+          "href": "/conseiller/type-renovation",
+          "icon": "customer-service-fill",
+          "title": "J'accompagne un projet de rénovation"
+        }
+      ],
+      "subtitle": "Pouvez-vous nous en dire plus sur vous ?",
+      "title": "Bienvenue sur Mon Devis Sans Oublis"
+    }
+  }
+}

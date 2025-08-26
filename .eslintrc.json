@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "react/no-unescaped-entities": [
+      "error",
+      {
+        "forbid": [">", "}"]
+      }
+    ]
+  },
+  "extends": ["next/core-web-vitals", "next/typescript"]
+}
