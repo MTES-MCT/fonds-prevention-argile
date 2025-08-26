@@ -3,7 +3,6 @@ import { isClient, isServer } from "@/lib/utils/env.utils";
 
 // Schémas de validation
 const serverSchema = z.object({
-  NEXT_PRIVATE_API_AUTH_TOKEN: z.string().min(1, "API auth token is required"),
   NEXT_TELEMETRY_DISABLED: z.string().optional(),
 });
 
@@ -17,10 +16,6 @@ const clientSchema = z.object({
 });
 
 const sharedSchema = z.object({
-  NEXT_PUBLIC_API_URL: z
-    .string()
-    .min(1, "API URL is required")
-    .url("API URL must be a valid URL"),
   NEXT_PUBLIC_APP_ENV: z
     .enum(["local", "docker", "staging", "production"])
     .default("local"),
@@ -85,20 +80,9 @@ export function getSharedEnv() {
   if (!_sharedEnv) {
     // Côté client : gestion simple et directe
     if (isClient()) {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       const appEnv = process.env.NEXT_PUBLIC_APP_ENV || "local";
 
-      if (!apiUrl || !apiUrl.startsWith("http")) {
-        console.error(
-          "NEXT_PUBLIC_API_URL is missing or invalid on client side"
-        );
-        throw new Error(
-          "NEXT_PUBLIC_API_URL is required and must be a valid URL"
-        );
-      }
-
       _sharedEnv = {
-        NEXT_PUBLIC_API_URL: apiUrl,
         NEXT_PUBLIC_APP_ENV: appEnv as
           | "local"
           | "docker"

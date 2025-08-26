@@ -5,7 +5,6 @@ import { TextEncoder, TextDecoder } from "util";
 Object.assign(global, { TextDecoder, TextEncoder });
 
 // Mock des variables d'environnement
-process.env.NEXT_PUBLIC_API_URL = "https://api.test.example.com";
 process.env.NEXT_PUBLIC_MATOMO_SITE_ID = "1";
 process.env.NEXT_PUBLIC_MATOMO_URL = "https://matomo.test.example.com";
 process.env.NEXT_PUBLIC_SENTRY_DSN = "https://test@sentry.io/123";

@@ -15,9 +15,6 @@ RUN npm install
 # Copy all files
 COPY . .
 
-# Environment variables necessary for build
-ENV NEXT_PUBLIC_API_URL=http://host.docker.internal:3001
-
 # Build the Next.js app
 RUN npm run build
 
