@@ -3,8 +3,6 @@ import * as Components from "./index";
 describe("Components exports", () => {
   it("exports all components correctly", () => {
     const expectedExports = [
-      "Alert",
-      "AlertType",
       "Badge",
       "BadgeVariant",
       "BadgeSize",
@@ -13,7 +11,6 @@ describe("Components exports", () => {
       "BlockNumberSize",
       "Card",
       "CardImage",
-      "CardLinkProfile",
       "CheckboxGroup",
       "Footer",
       "Header",
@@ -26,7 +23,6 @@ describe("Components exports", () => {
       "Notice",
       "SVGLoader",
       "Tile",
-      "Toast",
       "Tooltip",
     ];
 
@@ -40,13 +36,10 @@ describe("Components exports", () => {
 
   it("exports components as non-null values", () => {
     const componentNames = [
-      "Alert",
-      "AlertType",
       "Badge",
       "BlockNumber",
       "Card",
       "CardImage",
-      "CardLinkProfile",
       "CheckboxGroup",
       "Footer",
       "Header",
@@ -56,7 +49,6 @@ describe("Components exports", () => {
       "Notice",
       "SVGLoader",
       "Tile",
-      "Toast",
       "Tooltip",
     ];
 
