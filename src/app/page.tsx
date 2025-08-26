@@ -1,9 +1,9 @@
 import { Notice } from "@/components";
 import {
-  AboutUs,
-  ExplanationCards,
+  // AboutUs,
+  // ExplanationCards,
   HeroSection,
-  WhoAreYou,
+  // WhoAreYou,
 } from "@/page-sections";
 
 export default function Home() {
@@ -19,9 +19,9 @@ export default function Home() {
       />
       <div className="[&_h2]:text-center">
         <HeroSection />
-        <ExplanationCards />
-        <AboutUs />
-        <WhoAreYou />
+        {/* <ExplanationCards /> */}
+        {/* <AboutUs /> */}
+        {/* <WhoAreYou /> */}
       </div>
     </>
   );

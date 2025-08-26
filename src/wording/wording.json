@@ -118,7 +118,7 @@
     "check_quote_button": {
       "href": "/bienvenue",
       "icon": "fr-icon-arrow-right-line",
-      "label": "Vérifier mon devis"
+      "label": "Vérifier mon éligibilité"
     },
     "explanation_cards": {
       "cards": [
@@ -188,22 +188,11 @@
       "title_3": "Une démarche simplifiée en 3 étapes !"
     },
     "hero_section": {
-      "badges": [
-        {
-          "label": "Ma prime renov'"
-        },
-        {
-          "label": "Eco PTZ"
-        },
-        {
-          "label": "Aides CEE"
-        }
-      ],
       "image": {
         "alt": "Mon Devis Sans Oublis",
-        "src": "/images/homepage.webp"
+        "src": "/images/homepage.svg"
       },
-      "title": "Je souhaite contrôler un devis avant une demande d’aide de rénovation énergétique"
+      "title": "Votre logement est concernée par le Retrait-Gonflement des Argiles ? Obtenez une aide financière."
     },
     "section_who_are_you": {
       "cards": [
