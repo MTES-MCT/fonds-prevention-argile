@@ -118,7 +118,7 @@
     "check_quote_button": {
       "href": "/bienvenue",
       "icon": "fr-icon-arrow-right-line",
-      "label": "Vérifier mon devis"
+      "label": "Vérifier mon éligibilité"
     },
     "explanation_cards": {
       "cards": [
@@ -188,22 +188,11 @@
       "title_3": "Une démarche simplifiée en 3 étapes !"
     },
     "hero_section": {
-      "badges": [
-        {
-          "label": "Ma prime renov'"
-        },
-        {
-          "label": "Eco PTZ"
-        },
-        {
-          "label": "Aides CEE"
-        }
-      ],
       "image": {
         "alt": "Mon Devis Sans Oublis",
-        "src": "/images/homepage.webp"
+        "src": "/images/homepage.svg"
       },
-      "title": "Je souhaite contrôler un devis avant une demande d’aide de rénovation énergétique"
+      "title": "Votre logement est concernée par le Retrait-Gonflement des Argiles ? Obtenez une aide financière."
     },
     "section_who_are_you": {
       "cards": [
@@ -244,20 +233,28 @@
         { "href": "/accessibilite", "label": "Accessibilité : non conforme" },
         { "href": "/statistiques", "label": "Statistiques" }
       ],
-      "organizationDescription": "Mon Devis Sans Oublis est un service public conçu par la <a href='https://www.ecologie.gouv.fr/direction-generale-lamenagement-du-logement-et-nature-dgaln-0' rel='noopener noreferrer' target='_blank'>Direction générale de l'aménagement, du logement et de la nature (DGALN)</a> en partenariat avec le programme <a href='https://beta.gouv.fr/' rel='noopener noreferrer' target='_blank'>beta.gouv</a> de la <a href='https://www.numerique.gouv.fr/' rel='noopener noreferrer' target='_blank'>DINUM</a>. Mon Devis Sans Oublis est en phase d'expérimentation, n'hésitez pas à nous faire part de vos retours par mail à contact@mon-devis-sans-oublis.beta.gouv.fr",
+      "organizationDescription": "Fonds Argile est un service public conçu par la <a href='https://www.ecologie.gouv.fr/direction-generale-lamenagement-du-logement-et-nature-dgaln-0' rel='noopener noreferrer' target='_blank'>Direction générale de l'aménagement, du logement et de la nature (DGALN)</a> en partenariat avec le programme <a href='https://beta.gouv.fr/' rel='noopener noreferrer' target='_blank'>beta.gouv</a> de la <a href='https://www.numerique.gouv.fr/' rel='noopener noreferrer' target='_blank'>DINUM</a>. Fonds Argile est en phase d'expérimentation, n'hésitez pas à nous faire part de vos retours par mail à contact@fonds-argile.beta.gouv.fr",
       "organizationLink": "/",
-      "organizationName": "Mon Devis Sans Oublis"
+      "organizationName": "Fond argile"
     },
     "header": {
       "affiliatedMinistry": "Ministère<br>de la transition<br>écologique",
       "beta": "beta",
       "organizationDescription": "Retrait Gonflement des argiles - Aides aux ménages",
       "organizationLink": "/",
-      "organizationName": "Fond argile"
-    },
-    "notice": {
-      "description": "Notre modèle est en cours de construction, vos retours sont précieux pour nous aider à le co-construire.",
-      "title": "Outil en cours de fiabilisation"
+      "organizationName": "Fond argile",
+      "buttons": [
+        {
+          "href": "/simulateur",
+          "icon": "fr-icon-arrow-right-line",
+          "label": "Vérifier mon éligibilité"
+        },
+        {
+          "href": "/connexion",
+          "icon": "fr-icon-arrow-right-line",
+          "label": "Se connecter"
+        }
+      ]
     }
   },
   "legal_notice": {

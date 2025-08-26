@@ -1,25 +1,27 @@
 import { Notice } from "@/components";
 import {
-  AboutUs,
-  ExplanationCards,
+  // AboutUs,
+  // ExplanationCards,
   HeroSection,
-  WhoAreYou,
+  // WhoAreYou,
 } from "@/page-sections";
-import wording from "@/wording";
 
 export default function Home() {
   return (
     <>
       <Notice
         className="fr-notice--info"
-        description={wording.layout.notice.description}
-        title={wording.layout.notice.title}
+        description="Dispositif ouvert uniquement dans les départements suivants : 32 • 40 • 47 • 63"
+        descriptionLinkText="En savoir plus"
+        descriptionLinkHref="/en-savoir-plus"
+        title="Phase pilote"
+        buttonClose={true}
       />
       <div className="[&_h2]:text-center">
         <HeroSection />
-        <ExplanationCards />
-        <AboutUs />
-        <WhoAreYou />
+        {/* <ExplanationCards /> */}
+        {/* <AboutUs /> */}
+        {/* <WhoAreYou /> */}
       </div>
     </>
   );
