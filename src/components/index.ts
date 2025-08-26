@@ -1,6 +1,3 @@
-// Alert
-export { default as Alert, AlertType } from "./Alert/Alert";
-export type { AlertProps } from "./Alert/Alert";
 // Badge
 export { default as Badge, BadgeVariant, BadgeSize } from "./Badge/Badge";
 export type { BadgeProps } from "./Badge/Badge";
@@ -16,9 +13,6 @@ export type { CardProps } from "./Card/Card";
 // CardImage
 export { default as CardImage } from "./CardImage/CardImage";
 export type { CardImageProps } from "./CardImage/CardImage";
-// CardLinkProfile
-export { default as CardLinkProfile } from "./CardLinkProfile/CardLinkProfile";
-export type { CardLinkProfileProps } from "./CardLinkProfile/CardLinkProfile";
 // CheckboxGroup
 export { default as CheckboxGroup } from "./CheckboxGroup/CheckboxGroup";
 export type { CheckboxGroupProps } from "./CheckboxGroup/CheckboxGroup";
@@ -48,9 +42,6 @@ export type { SVGLoaderProps } from "./SvgLoader/SvgLoader";
 // Tile
 export { default as Tile } from "./Tile/Tile";
 export type { TileProps } from "./Tile/Tile";
-// Toast
-export { default as Toast } from "./Toast/Toast";
-export type { ToastProps } from "./Toast/Toast";
 // Tooltip
 export { default as Tooltip } from "./Tooltip/Tooltip";
 export type { TooltipProps } from "./Tooltip/Tooltip";
