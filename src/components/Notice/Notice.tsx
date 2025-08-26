@@ -7,6 +7,8 @@ export interface NoticeProps {
   buttonClose?: boolean;
   className: string;
   description: string;
+  descriptionLinkText?: string;
+  descriptionLinkHref?: string;
   title?: string;
   noticeKey?: string;
 }
@@ -15,6 +17,8 @@ export default function Notice({
   buttonClose = false,
   className,
   description,
+  descriptionLinkText,
+  descriptionLinkHref,
   title,
   noticeKey,
 }: NoticeProps) {
@@ -41,6 +45,13 @@ export default function Notice({
             <span className="ml-0 md:ml-2 text-sm md:text-base">
               {description}
             </span>
+            <a
+              href={descriptionLinkHref}
+              target="_blank"
+              className="ml-0 md:ml-2 text-sm md:text-base"
+            >
+              {descriptionLinkText}
+            </a>
           </span>
           {buttonClose && (
             <button

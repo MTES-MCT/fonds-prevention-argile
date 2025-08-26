@@ -12,7 +12,10 @@ export default function Home() {
       <Notice
         className="fr-notice--info"
         description="Dispositif ouvert uniquement dans les départements suivants : 32 • 40 • 47 • 63"
+        descriptionLinkText="En savoir plus"
+        descriptionLinkHref="/en-savoir-plus"
         title="Phase pilote"
+        buttonClose={true}
       />
       <div className="[&_h2]:text-center">
         <HeroSection />
