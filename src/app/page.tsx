@@ -5,15 +5,14 @@ import {
   HeroSection,
   WhoAreYou,
 } from "@/page-sections";
-import wording from "@/wording";
 
 export default function Home() {
   return (
     <>
       <Notice
         className="fr-notice--info"
-        description={wording.layout.notice.description}
-        title={wording.layout.notice.title}
+        description="Dispositif ouvert uniquement dans les départements suivants : 32 • 40 • 47 • 63"
+        title="Phase pilote"
       />
       <div className="[&_h2]:text-center">
         <HeroSection />

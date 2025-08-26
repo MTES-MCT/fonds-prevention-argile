@@ -10,22 +10,21 @@ import "../styles/globals.css";
 initDsfr();
 
 export const metadata: Metadata = {
-  title: "Mon Devis Sans Oublis",
-  description:
-    "Plateforme publique et gratuite de pré-instruction automatique des devis de rénovation énergétique pour MaPrimeRenov' et les CEE.",
-  metadataBase: new URL("https://mon-devis-sans-oublis.beta.gouv.fr"),
+  title: "Fonds argile",
+  description: "Plateforme publique et gratuite de ?",
+  metadataBase: new URL("https://fonds-argile.beta.gouv.fr"),
   openGraph: {
-    title: "Mon Devis Sans Oublis",
+    title: "Fonds argile",
     description:
       "Plateforme publique et gratuite de pré-instruction automatique des devis de rénovation énergétique pour MaPrimeRenov' et les CEE.",
-    url: "https://mon-devis-sans-oublis.beta.gouv.fr",
-    siteName: "Mon Devis Sans Oublis",
+    url: "https://fonds-argile.beta.gouv.fr",
+    siteName: "Fonds argile",
     images: [
       {
         url: "/images/steps_analyze_quote/quote_control.webp",
         width: 1200,
         height: 630,
-        alt: "Mon Devis Sans Oublis - Plateforme de pré-instruction automatique des devis de rénovation énergétique",
+        alt: "Fonds argile - Plateforme de ??",
       },
     ],
     locale: "fr_FR",
@@ -33,9 +32,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mon Devis Sans Oublis",
-    description:
-      "Plateforme publique et gratuite de pré-instruction automatique des devis de rénovation énergétique pour MaPrimeRenov' et les CEE.",
+    title: "Fonds argile",
+    description: "Plateforme de ??",
     images: ["/images/steps_analyze_quote/quote_control.webp"],
   },
 };
@@ -86,7 +84,6 @@ export default function RootLayout({
       </head>
       <body className="flex flex-col min-h-screen">
         <Matomo />
-
         <Header {...headerData} />
         <main className="flex-1">{children}</main>
         <Footer {...footerData} />

@@ -246,18 +246,26 @@
       ],
       "organizationDescription": "Mon Devis Sans Oublis est un service public conçu par la <a href='https://www.ecologie.gouv.fr/direction-generale-lamenagement-du-logement-et-nature-dgaln-0' rel='noopener noreferrer' target='_blank'>Direction générale de l'aménagement, du logement et de la nature (DGALN)</a> en partenariat avec le programme <a href='https://beta.gouv.fr/' rel='noopener noreferrer' target='_blank'>beta.gouv</a> de la <a href='https://www.numerique.gouv.fr/' rel='noopener noreferrer' target='_blank'>DINUM</a>. Mon Devis Sans Oublis est en phase d'expérimentation, n'hésitez pas à nous faire part de vos retours par mail à contact@mon-devis-sans-oublis.beta.gouv.fr",
       "organizationLink": "/",
-      "organizationName": "Mon Devis Sans Oublis"
+      "organizationName": "Fond argile"
     },
     "header": {
       "affiliatedMinistry": "Ministère<br>de la transition<br>écologique",
       "beta": "beta",
       "organizationDescription": "Retrait Gonflement des argiles - Aides aux ménages",
       "organizationLink": "/",
-      "organizationName": "Fond argile"
-    },
-    "notice": {
-      "description": "Notre modèle est en cours de construction, vos retours sont précieux pour nous aider à le co-construire.",
-      "title": "Outil en cours de fiabilisation"
+      "organizationName": "Fond argile",
+      "buttons": [
+        {
+          "href": "/simulateur",
+          "icon": "fr-icon-arrow-right-line",
+          "label": "Vérifier mon éligibilité"
+        },
+        {
+          "href": "/connexion",
+          "icon": "fr-icon-arrow-right-line",
+          "label": "Se connecter"
+        }
+      ]
     }
   },
   "legal_notice": {
