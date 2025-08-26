@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { Badge, BadgeVariant, Link } from "@/components";
+import { Link } from "@/components";
 import wording from "@/wording";
 
 export default function HeroSection() {
