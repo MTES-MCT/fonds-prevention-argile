@@ -1,4 +1,4 @@
-interface FeatureProps {
+export interface FeatureProps {
   icon: string;
   title: string;
   description: string;
