@@ -28,7 +28,8 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-weather/icons-weather.min.css";
 import "@gouvfr/dsfr/dist/utility/icons/icons-editor/icons-editor.min.css";
 // fr-icon-indent-decrease
 import "@gouvfr/dsfr/dist/utility/icons/icons-development/icons-development.min.css";
-// fr-icon-code-s-slash-line
+// fr-icon-account-circle-fill
+import "@gouvfr/dsfr/dist/utility/icons/icons-user/icons-user.min.css";
 
 // Initialize the DSFR library if running in a browser environment
 export async function initDsfr() {

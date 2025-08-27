@@ -36,7 +36,12 @@
 
 h1,
 h2 {
-  color: var(--artwork-major-blue-ecume) !important;
+  color: var(--text-title-grey) !important; 
+}
+
+h1
+{
+  font-size: 32px !important; 
 }
 
 /* DSFR */
