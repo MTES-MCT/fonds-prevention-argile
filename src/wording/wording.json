@@ -115,8 +115,8 @@
         "title": "Qui sommes-nous ?"
       }
     },
-    "check_quote_button": {
-      "href": "/bienvenue",
+    "check_eligibility": {
+      "href": "/simulateur",
       "icon": "fr-icon-arrow-right-line",
       "label": "Vérifier mon éligibilité"
     },
@@ -190,9 +190,19 @@
     "hero_section": {
       "image": {
         "alt": "Mon Devis Sans Oublis",
-        "src": "/images/homepage.svg"
+        "src": "/images/home/service-etat.svg"
       },
-      "title": "Votre logement est concernée par le Retrait-Gonflement des Argiles ? Obtenez une aide financière."
+      "title": "Votre logement est concerné par le Retrait-Gonflement des Argiles ? Obtenez une aide financière.",
+      "subtitle": "Vérifiez votre éligibilité en quelques secondes et déposez votre demande en ligne. Recevez une réponse de l’administration en quelques jours."
+    },
+    "what_is_rga_section": {
+      "image": {
+        "alt": "Mon Devis Sans Oublis",
+        "src": "/images/home/rga-definition.svg"
+      },
+      "title": "Qu’est-ce que le Retrait-gonflement des argiles, ou RGA ?",
+      "highlight": "Ce phénomène touche près de 4 millions de maisons en France et représente le deuxième poste d’indemnisation des assurances après les inondations.",
+      "subtitle": "Le retrait-gonflement des argiles modifie le volume d'un sol argileux selon l'eau. Humide, il gonfle; sec, il se rétracte, endommageant maisons et routes. Le changement climatique aggrave ce phénomène : en 20 ans, il est devenu la deuxième cause d'indemnisation en France, représentant 36% des sinistralités."
     },
     "section_who_are_you": {
       "cards": [
@@ -240,19 +250,19 @@
     "header": {
       "affiliatedMinistry": "Ministère<br>de la transition<br>écologique",
       "beta": "beta",
-      "organizationDescription": "Retrait Gonflement des argiles - Aides aux ménages",
+      "organizationDescription": "Retrait Gonflement des Argiles - Aides aux ménages",
       "organizationLink": "/",
-      "organizationName": "Fond argile",
+      "organizationName": "Fonds Prévention Argile",
       "buttons": [
         {
-          "href": "/simulateur",
-          "icon": "fr-icon-arrow-right-line",
-          "label": "Vérifier mon éligibilité"
+          "href": "/connexion",
+          "icon": "fr-icon-account-circle-fill",
+          "label": "Se connecter"
         },
         {
-          "href": "/connexion",
-          "icon": "fr-icon-arrow-right-line",
-          "label": "Se connecter"
+          "href": "/simulateur",
+          "icon": "fr-icon-checkbox-circle-fill",
+          "label": "Vérifier mon éligibilité"
         }
       ]
     }

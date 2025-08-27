@@ -36,7 +36,12 @@
 
 h1,
 h2 {
-  color: var(--artwork-major-blue-ecume) !important;
+  color: var(--text-title-grey) !important; 
+}
+
+h1
+{
+  font-size: 32px !important; 
 }
 
 /* DSFR */
@@ -60,15 +65,6 @@ h2 {
   z-index: 98;
 }
 
-.fr-tile__title {
-  color: red;
-}
-
-.fr-tile__title a::after {
-  color: var(--background-action-high-blue-france);
-  height: 24px;
-  width: 24px;
-}
 
 /* Since corePlugins: { preflight: false }, borders are not applied by default */
 .border-blue {
