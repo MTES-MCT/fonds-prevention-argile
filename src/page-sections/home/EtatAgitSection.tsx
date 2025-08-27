@@ -11,7 +11,7 @@ export default function EtatAgitSection() {
             <h1>{wording.homepage.etat_agit_section.title}</h1>
             <p>{wording.homepage.etat_agit_section.description_1}</p>
             <p>{wording.homepage.etat_agit_section.description_2}</p>
-            <Link {...wording.homepage.check_eligibility} />
+            {/* <Link {...wording.homepage.check_eligibility} /> */}
           </div>
 
           {/* Zone tuiles */}

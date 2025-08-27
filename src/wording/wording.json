@@ -88,6 +88,10 @@
     }
   },
   "homepage": {
+    "notice": {
+      "description": "Dispositif ouvert uniquement dans les départements suivants : 03 • 04 • 24 • 32 • 36 • 47 • 54 • 63 • 81 • 82",
+      "title": "Phase pilote"
+    },
     "check_eligibility": {
       "href": "/simulateur",
       "icon": "fr-icon-arrow-right-line",
@@ -302,5 +306,20 @@
       "subtitle": "Pouvez-vous nous en dire plus sur vous ?",
       "title": "Bienvenue sur Mon Devis Sans Oublis"
     }
+  },
+  "metadata": {
+    "title": "Fonds argile",
+    "description": "Plateforme publique et gratuite de ?",
+    "url": "https://fonds-argile.beta.gouv.fr",
+    "imageUrl": "/images/home/rga-definition.svg",
+    "imageAlt": "Vérifier mon éligibilité"
+  },
+  "not_found": {
+    "description": "La page que vous cherchez est introuvable. Excusez-nous pour la gène occasionnée.",
+    "description_2": "Si vous avez tapé l'adresse web dans le navigateur, vérifiez qu'elle est correcte. La page n’est peut-être plus disponible.<br />Dans ce cas, pour continuer votre visite vous pouvez consulter notre page d’accueil, ou effectuer une recherche avec notre moteur de recherche en haut de page.<br />Sinon contactez-nous pour que l’on puisse vous rediriger vers la bonne information.",
+    "link_label": "Retour à l'accueil",
+    "title": "Page non trouvée",
+    "title_404": "Erreur 404",
+    "homepageLinkLabel": "Page d'accueil"
   }
 }

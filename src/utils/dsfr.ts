@@ -39,6 +39,8 @@ export async function initDsfr() {
     await Promise.all([
       import("@gouvfr/dsfr/dist/dsfr.module.min.js"),
       import("@gouvfr/dsfr/dist/dsfr.nomodule.min.js"),
+      import("@gouvfr/dsfr/dist/core/core.module.min.js"),
+      import("@gouvfr/dsfr/dist/component/header/header.module.min.js"),
     ]);
   }
 }

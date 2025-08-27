@@ -10,21 +10,20 @@ import "../styles/globals.css";
 initDsfr();
 
 export const metadata: Metadata = {
-  title: "Fonds argile",
-  description: "Plateforme publique et gratuite de ?",
-  metadataBase: new URL("https://fonds-argile.beta.gouv.fr"),
+  title: wording.metadata.title,
+  description: wording.metadata.description,
+  metadataBase: new URL(wording.metadata.url),
   openGraph: {
-    title: "Fonds argile",
-    description:
-      "Plateforme publique et gratuite de pré-instruction automatique des devis de rénovation énergétique pour MaPrimeRenov' et les CEE.",
-    url: "https://fonds-argile.beta.gouv.fr",
-    siteName: "Fonds argile",
+    title: wording.metadata.title,
+    description: wording.metadata.description,
+    url: wording.metadata.url,
+    siteName: wording.metadata.title,
     images: [
       {
-        url: "/images/steps_analyze_quote/quote_control.webp",
+        url: wording.metadata.imageUrl,
         width: 1200,
         height: 630,
-        alt: "Fonds argile - Plateforme de ??",
+        alt: wording.metadata.imageAlt,
       },
     ],
     locale: "fr_FR",
@@ -32,9 +31,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Fonds argile",
-    description: "Plateforme de ??",
-    images: ["/images/steps_analyze_quote/quote_control.webp"],
+    title: wording.metadata.title,
+    description: wording.metadata.description,
+    images: [wording.metadata.imageUrl],
   },
 };
 

@@ -1,6 +1,5 @@
 import Image from "next/image";
 
-import { Link } from "@/components";
 import wording from "@/wording";
 
 export default function HeroSection() {
@@ -12,7 +11,7 @@ export default function HeroSection() {
           <div className="fr-col-12 fr-col-md-6">
             <h1>{wording.homepage.hero_section.title}</h1>
             <p>{wording.homepage.hero_section.subtitle}</p>
-            <Link {...wording.homepage.check_eligibility} />
+            {/* <Link {...wording.homepage.check_eligibility} /> */}
           </div>
 
           {/* Zone image */}

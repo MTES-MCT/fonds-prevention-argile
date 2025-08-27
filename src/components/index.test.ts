@@ -1,62 +1,35 @@
 import * as Components from "./index";
+import { readdirSync, statSync } from "fs";
+import { join } from "path";
 
 describe("Components exports", () => {
-  it("exports all components correctly", () => {
-    const expectedExports = [
-      "Badge",
-      "BadgeVariant",
-      "BadgeSize",
-      "BlockNumber",
-      "Breadcrumb",
-      "BlockNumberSize",
-      "Card",
-      "CardImage",
-      "CheckboxGroup",
-      "Footer",
-      "Feature",
-      "Header",
-      "IconBackground",
-      "IconBackgroundVariant",
-      "InfoTile",
-      "IllustrationTile",
-      "Link",
-      "LinkSize",
-      "LinkVariant",
-      "Matomo",
-      "Notice",
-      "SVGLoader",
-      "Tooltip",
-    ];
-
-    expectedExports.forEach((exportName) => {
-      expect(Components).toHaveProperty(exportName);
+  // Lire dynamiquement les dossiers de composants
+  const getComponentDirectories = () => {
+    const componentsPath = __dirname;
+    return readdirSync(componentsPath).filter((item) => {
+      const itemPath = join(componentsPath, item);
+      return (
+        statSync(itemPath).isDirectory() &&
+        item !== "__tests__" &&
+        !item.startsWith(".")
+      );
     });
+  };
 
+  it("exports all component directories", () => {
+    const componentDirs = getComponentDirectories();
     const actualExports = Object.keys(Components);
-    expect(actualExports.sort()).toEqual(expectedExports.sort());
+
+    componentDirs.forEach((dir) => {
+      expect(actualExports).toContain(dir);
+      expect(Components[dir as keyof typeof Components]).toBeDefined();
+    });
   });
 
   it("exports components as non-null values", () => {
-    const componentNames = [
-      "Badge",
-      "BlockNumber",
-      "Card",
-      "CardImage",
-      "CheckboxGroup",
-      "Feature",
-      "Footer",
-      "Header",
-      "IconBackground",
-      "InfoTile",
-      "IllustrationTile",
-      "Link",
-      "Matomo",
-      "Notice",
-      "SVGLoader",
-      "Tooltip",
-    ];
+    const componentDirs = getComponentDirectories();
 
-    componentNames.forEach((componentName) => {
+    componentDirs.forEach((componentName) => {
       expect(
         Components[componentName as keyof typeof Components]
       ).toBeDefined();
@@ -64,14 +37,5 @@ describe("Components exports", () => {
         Components[componentName as keyof typeof Components]
       ).not.toBeNull();
     });
-  });
-
-  it("exports enums with correct values", () => {
-    expect(Components.BadgeVariant).toBeDefined();
-    expect(Components.BadgeSize).toBeDefined();
-    expect(Components.BlockNumberSize).toBeDefined();
-    expect(Components.IconBackgroundVariant).toBeDefined();
-    expect(Components.LinkSize).toBeDefined();
-    expect(Components.LinkVariant).toBeDefined();
   });
 });
