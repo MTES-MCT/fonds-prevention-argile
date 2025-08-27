@@ -65,15 +65,6 @@ h1
   z-index: 98;
 }
 
-.fr-tile__title {
-  color: red;
-}
-
-.fr-tile__title a::after {
-  color: var(--background-action-high-blue-france);
-  height: 24px;
-  width: 24px;
-}
 
 /* Since corePlugins: { preflight: false }, borders are not applied by default */
 .border-blue {
