@@ -1,21 +1,5 @@
 @import "tailwindcss";
 
-@keyframes confettiFall {
-  0% {
-    transform: translateY(-10%) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) rotate(720deg);
-    opacity: 0;
-  }
-}
-
-.animate-confetti-fall {
-  animation: confettiFall linear forwards;
-  will-change: transform, opacity;
-}
-
 /*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
@@ -105,74 +89,6 @@ h1
 
 .border-shadow {
   box-shadow: 0px 2px 6px 0px #00001229;
-}
-
-/* Icons missing in DSFR (https://www.systeme-de-design.gouv.fr/fondamentaux/icone) */
-/* Arrows */
-.fr-icon-arrow-right-circle-fill::after,
-.fr-icon-arrow-right-circle-fill::before {
-  mask-image: url("../../public/svg/arrows/arrow-right-circle-fill.svg");
-  -webkit-mask-image: url("../../public/svg/arrows/arrow-right-circle-fill.svg");
-}
-
-/* Buildings */
-.fr-icon-home-4-fill::after,
-.fr-icon-home-4-fill::before {
-  mask-image: url("../../public/svg/buildings/home-4-fill.svg");
-  -webkit-mask-image: url("../../public/svg/buildings/home-4-fill.svg");
-}
-
-/* Business */
-.fr-icon-customer-service-fill::after,
-.fr-icon-customer-service-fill::before {
-  mask-image: url("../../public/svg/business/customer-service-fill.svg");
-  -webkit-mask-image: url("../../public/svg/business/customer-service-fill.svg");
-}
-
-.fr-icon-shake-hands-fill::after,
-.fr-icon-shake-hands-fill::before {
-  mask-image: url("../../public/svg/business/shake-hands-fill.svg");
-  -webkit-mask-image: url("../../public/svg/business/shake-hands-fill.svg");
-}
-
-/* Communication */
-.fr-icon-chat-new-line::after,
-.fr-icon-chat-new-line::before {
-  mask-image: url("../../public/svg/communication/chat-new-line.svg");
-  -webkit-mask-image: url("../../public/svg/communication/chat-new-line.svg");
-}
-
-/* Device */
-.fr-icon-restart-line::after,
-.fr-icon-restart-line::before {
-  mask-image: url("../../public/svg/device/restart-line.svg");
-  -webkit-mask-image: url("../../public/svg/device/restart-line.svg");
-}
-
-/* Design */
-.fr-icon-compasses-2-fill::after,
-.fr-icon-compasses-2-fill::before {
-  mask-image: url("../../public/svg/design/compasses-2-fill.svg");
-  -webkit-mask-image: url("../../public/svg/design/compasses-2-fill.svg");
-}
-
-.fr-icon-edit-circle-line::after,
-.fr-icon-edit-circle-line::before {
-  mask-image: url("../../public/svg/design/edit-circle-line.svg");
-  -webkit-mask-image: url("../../public/svg/design/edit-circle-line.svg");
-}
-
-.fr-icon-tools-fill::after,
-.fr-icon-tools-fill::before {
-  mask-image: url("../../public/svg/design/tools-fill.svg");
-  -webkit-mask-image: url("../../public/svg/design/tools-fill.svg");
-}
-
-/* System */
-.fr-icon-share-box-line::after,
-.fr-icon-share-box-line::before {
-  mask-image: url("../../public/svg/system/share-box-line.svg");
-  -webkit-mask-image: url("../../public/svg/system/share-box-line.svg");
 }
 
 @media (max-width: 767px) {

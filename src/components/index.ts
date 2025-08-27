@@ -39,9 +39,6 @@ export type { NoticeProps } from "./Notice/Notice";
 // SvgLoader
 export { default as SVGLoader } from "./SvgLoader/SvgLoader";
 export type { SVGLoaderProps } from "./SvgLoader/SvgLoader";
-// Tile
-export { default as Tile } from "./Tile/Tile";
-export type { TileProps } from "./Tile/Tile";
 // Tooltip
 export { default as Tooltip } from "./Tooltip/Tooltip";
 export type { TooltipProps } from "./Tooltip/Tooltip";
@@ -49,3 +46,7 @@ export type { TooltipProps } from "./Tooltip/Tooltip";
 export { default as Breadcrumb } from "./Breadcrumb/Breadcrumb";
 // Feature
 export { default as Feature } from "./Feature/Feature";
+// InfoTile
+export { default as InfoTile } from "./InfoTile/InfoTile";
+// IllustrationTile
+export { default as IllustrationTile } from "./IllustrationTile/IllustrationTile";

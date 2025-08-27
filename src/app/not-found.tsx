@@ -38,7 +38,7 @@ export default function NotFound() {
               alt="Erreur technique"
               className="shrink-0"
               height={150}
-              src="/svg/system/technical-error.svg"
+              src="/illustrations/technical-error.svg"
               width={150}
             />
           </div>

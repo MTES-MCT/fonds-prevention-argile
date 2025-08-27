@@ -1,10 +1,9 @@
 import { Notice } from "@/components";
 import {
-  // AboutUs,
-  // ExplanationCards,
   HeroSection,
   WhatIsRGASection,
-  // WhoAreYou,
+  EtatAgitSection,
+  CommentCaMarcheSection,
 } from "@/page-sections";
 
 export default function Home() {
@@ -19,9 +18,8 @@ export default function Home() {
       <div className="[&_h2]:text-center">
         <HeroSection />
         <WhatIsRGASection />
-        {/* <ExplanationCards /> */}
-        {/* <AboutUs /> */}
-        {/* <WhoAreYou /> */}
+        <EtatAgitSection />
+        <CommentCaMarcheSection />
       </div>
     </>
   );
