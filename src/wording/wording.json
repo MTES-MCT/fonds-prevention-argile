@@ -204,6 +204,31 @@
       "highlight": "Ce phénomène touche près de 4 millions de maisons en France et représente le deuxième poste d’indemnisation des assurances après les inondations.",
       "subtitle": "Le retrait-gonflement des argiles modifie le volume d'un sol argileux selon l'eau. Humide, il gonfle; sec, il se rétracte, endommageant maisons et routes. Le changement climatique aggrave ce phénomène : en 20 ans, il est devenu la deuxième cause d'indemnisation en France, représentant 36% des sinistralités."
     },
+    "etat_agit_section": {
+      "title": "Face à cette problématique, l’État agit grâce au fond Argile",
+      "description_1": "Partout où le RGA met en danger les maisons, l’État est là pour agir. Un fonds spécial est mis en place, d’abord dans les zones les plus touchées, pour financer les études (diagnostic avec accompagnement) et, les travaux nécessaires à la sécurisation des bâtiments. ",
+      "description_2": "L’aide est destinée aux propriétaires occupants, sous certaines conditions de ressources, et des plafonds assurent une utilisation équitable et efficace des fonds publics. C’est simple : vérifiez votre éligibilité en ligne, déposez votre dossier sur démarches-simplifiées.fr, et les services de l’État (DDT) s’occupent du reste. Notre priorité : protéger les maisons, sécuriser les familles et agir avant que les problèmes ne s’aggravent.",
+      "infos_tiles": [
+        {
+          "icon": "fr-icon-government-fill",
+          "iconColor": "fr-text-label--blue-france",
+          "title": "Un service de l’État",
+          "description": "Sécurisé, gratuit et opéré par l’État. Vos données ne sont utilisées que pour l’instruction de votre dossier par des professionels agrées."
+        },
+        {
+          "icon": "fr-icon-shield-fill",
+          "iconColor": "text-green-600",
+          "title": "Pour agir avant les sinistres",
+          "description": "Bénéficiez d'un accompagnement pour diagnostiquer et réaliser des travaux avant que votre logement ne soit sinistré."
+        },
+        {
+          "icon": "fr-icon-user-heart-fill",
+          "iconColor": "fr-text-label--red-marianne",
+          "title": "Pour les propriétaires concernés",
+          "description": "Propriétaires occupants de leur résidence principale, sous conditions de ressources et d'ancienneté du logement."
+        }
+      ]
+    },
     "section_who_are_you": {
       "cards": [
         {

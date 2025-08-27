@@ -49,3 +49,5 @@ export type { TooltipProps } from "./Tooltip/Tooltip";
 export { default as Breadcrumb } from "./Breadcrumb/Breadcrumb";
 // Feature
 export { default as Feature } from "./Feature/Feature";
+// InfoTile
+export { default as InfoTile } from "./InfoTile/InfoTile";

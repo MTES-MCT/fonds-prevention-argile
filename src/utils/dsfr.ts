@@ -30,6 +30,8 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-editor/icons-editor.min.css";
 import "@gouvfr/dsfr/dist/utility/icons/icons-development/icons-development.min.css";
 // fr-icon-account-circle-fill
 import "@gouvfr/dsfr/dist/utility/icons/icons-user/icons-user.min.css";
+// fr-icon-government-fill
+import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css";
 
 // Initialize the DSFR library if running in a browser environment
 export async function initDsfr() {
