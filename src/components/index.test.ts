@@ -18,13 +18,13 @@ describe("Components exports", () => {
       "IconBackground",
       "IconBackgroundVariant",
       "InfoTile",
+      "IllustrationTile",
       "Link",
       "LinkSize",
       "LinkVariant",
       "Matomo",
       "Notice",
       "SVGLoader",
-      "Tile",
       "Tooltip",
     ];
 
@@ -48,11 +48,11 @@ describe("Components exports", () => {
       "Header",
       "IconBackground",
       "InfoTile",
+      "IllustrationTile",
       "Link",
       "Matomo",
       "Notice",
       "SVGLoader",
-      "Tile",
       "Tooltip",
     ];
 

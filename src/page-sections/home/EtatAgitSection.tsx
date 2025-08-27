@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 import { InfoTile, Link } from "@/components";
 import wording from "@/wording";
 
