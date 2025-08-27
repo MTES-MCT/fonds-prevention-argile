@@ -3,6 +3,7 @@ import {
   HeroSection,
   WhatIsRGASection,
   EtatAgitSection,
+  CommentCaMarcheSection,
 } from "@/page-sections";
 
 export default function Home() {
@@ -18,6 +19,7 @@ export default function Home() {
         <HeroSection />
         <WhatIsRGASection />
         <EtatAgitSection />
+        <CommentCaMarcheSection />
       </div>
     </>
   );

@@ -88,104 +88,10 @@
     }
   },
   "homepage": {
-    "about_us": {
-      "our_missions": {
-        "missions": [
-          {
-            "description": "Création d’un modèle d’analyse automatique qui compare les devis de rénovation énergétique avec les exigences des demandes d’aides.",
-            "icon": "fr-icon-map-pin-2-line",
-            "title": "Fluidifier l’instruction des aides"
-          },
-          {
-            "description": "Réduction du nombre d’allers-retours avec les instructeurs d’aides avec un pré-contrôle gratuit et instantané.",
-            "icon": "fr-icon-timer-line",
-            "title": "Réduire les délais d’instruction d’aide"
-          },
-          {
-            "description": "Conception d’une interface simple qui accompagne les usagers dans la lecture et la correction des devis.",
-            "icon": "fr-icon-heart-line",
-            "title": "Améliorer la satisfaction des usagers"
-          }
-        ],
-        "title": "Quelles sont nos missions ?"
-      },
-      "who_are_we": {
-        "description": "Mon Devis Sans Oublis est un service public gratuit qui vérifie en quelques secondes la conformité des devis aux attendus réglementaires des aides à la rénovation énergétique.<br><br>Nous sommes un service public lancé par le Ministère de la Transition Ecologique et la Direction du Numérique (DINUM) sous la forme d'une start-up d'Etat. Elle est en phase d'expérimentation avant un déploiement massif. N'hésitez pas à nous faire part de vos retours et suggestions d'améliorations.",
-        "image": "/images/ministere_transition_ecologique.webp",
-        "title": "Qui sommes-nous ?"
-      }
-    },
     "check_eligibility": {
       "href": "/simulateur",
       "icon": "fr-icon-arrow-right-line",
       "label": "Vérifier mon éligibilité"
-    },
-    "explanation_cards": {
-      "cards": [
-        {
-          "image": "/images/examples_energy_retrofit_actions/isolation_exterieur.webp",
-          "title": "Isolation par l'extérieur"
-        },
-        {
-          "image": "/images/examples_energy_retrofit_actions/pompe_a_chaleur.webp",
-          "title": "Pompe à chaleur"
-        },
-        {
-          "image": "/images/examples_energy_retrofit_actions/vmc.webp",
-          "title": "VMC"
-        },
-        {
-          "image": "/images/examples_energy_retrofit_actions/isolation_interieur.webp",
-          "title": "Isolation par l'intérieur"
-        },
-        {
-          "image": "/images/examples_energy_retrofit_actions/menuiserie.webp",
-          "title": "Menuiserie"
-        },
-        {
-          "image": "/images/examples_energy_retrofit_actions/eau_chaude_sanitaire.webp",
-          "title": "Eau chaude sanitaire"
-        }
-      ],
-      "correction": "Une fois corrigé, soumettez à nouveau votre devis jusqu'à ce qu'il soit conforme.",
-      "image": {
-        "alt": "Mon Devis Sans Oublis en 3 étages",
-        "src": "/images/steps_analyze_quote/three_steps.webp"
-      },
-      "image_cards": [
-        {
-          "description": "Identifiez les mentions manquantes aux attendus réglementaires des aides.",
-          "image": "/images/steps_analyze_quote/quote_control.webp",
-          "title": "Pré-contrôlez en un clic les devis de rénovation énergétique"
-        },
-        {
-          "description": "Appliquez les corrections pour un devis sans oublis, prêt pour les demandes d’aides.",
-          "image": "/images/steps_analyze_quote/change_quote.webp",
-          "title": "Recevez un pas à pas des modifications à apporter au devis"
-        },
-        {
-          "description": "Accélérez l’instruction des aides de rénovation énergétique en évitant les allers-retours avec les instructeurs grâce à des devis conformes.",
-          "image": "/images/steps_analyze_quote/get_help.webp",
-          "title": "Obtenez vos aides de rénovation plus rapidement"
-        }
-      ],
-      "number_blocks": [
-        {
-          "number": 1,
-          "title": "<strong>Déposez votre devis</strong> afin qu'il soit analysé par notre outil qui vérifie que tous les attendus réglementaires soient bien présents."
-        },
-        {
-          "number": 2,
-          "title": "<strong>Découvrez instantanément les suggestions de corrections</strong> adaptées aux demandes d'aides de rénovation énergétique."
-        },
-        {
-          "number": 3,
-          "title": "Informez les parties prenantes (par ex: artisans, particuliers) et <strong>partagez vos corrections personnalisées</strong>."
-        }
-      ],
-      "title_1": "À quoi sert Mon Devis Sans Oublis ?",
-      "title_2": "Exemple de gestes de rénovation énergétique",
-      "title_3": "Une démarche simplifiée en 3 étapes !"
     },
     "hero_section": {
       "image": {
@@ -229,32 +135,28 @@
         }
       ]
     },
-    "section_who_are_you": {
-      "cards": [
+    "comment_ca_marche_section": {
+      "title": "Comment ça marche ?",
+      "steps": [
         {
-          "alt": "Artisan qui souhaite gagner du temps",
-          "description": "Je souhaite gagner du temps en évitant les multiples changements sur mes devis",
-          "image": "/images/who_are_you/card_artisan.webp",
-          "title": "Je suis artisan",
-          "url": "/artisan/type-renovation"
+          "imageSrc": "/illustrations/national-identity-card.svg",
+          "imageAlt": "Vérifier mon éligibilité",
+          "title": "1. Éligibilité",
+          "description": "Je remplis quelques informations liées à mon logement et mes ressources"
         },
         {
-          "alt": "Particulier qui souhaite gagner du temps",
-          "description": "Je souhaite effectuer une demande d’aide de rénovation énergétique sans encombre",
-          "image": "/images/who_are_you/card_individual.webp",
-          "title": "Je suis particulier",
-          "url": "/particulier/type-renovation"
+          "imageSrc": "/illustrations/house.svg",
+          "imageAlt": "Vérifier mon éligibilité",
+          "title": "2. Diagnostic",
+          "description": "Un professionnel se déplace pour réaliser un diagnostic subventionné"
         },
         {
-          "alt": "Conseiller qui souhaite accompagner ses clients",
-          "description": "Je souhaite accompagner mes clients dans leurs démarches",
-          "image": "/images/who_are_you/card_advisor.webp",
-          "title": "J'accompagne un projet de rénovation",
-          "url": "/conseiller/type-renovation"
+          "imageSrc": "/illustrations/in-progress.svg",
+          "imageAlt": "Vérifier mon éligibilité",
+          "title": "3. Travaux",
+          "description": "Le diagnostic est validé ? Lancez les travaux et recevez les aides après réalisation"
         }
-      ],
-      "description": "L’outil s’adresse à plusieurs usagers, dites-nous en plus sur vous et vos besoins",
-      "title": "Qui êtes-vous ?"
+      ]
     }
   },
   "layout": {
