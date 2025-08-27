@@ -3,6 +3,7 @@ import {
   // AboutUs,
   // ExplanationCards,
   HeroSection,
+  WhatIsRGASection,
   // WhoAreYou,
 } from "@/page-sections";
 
@@ -17,6 +18,7 @@ export default function Home() {
       />
       <div className="[&_h2]:text-center">
         <HeroSection />
+        <WhatIsRGASection />
         {/* <ExplanationCards /> */}
         {/* <AboutUs /> */}
         {/* <WhoAreYou /> */}

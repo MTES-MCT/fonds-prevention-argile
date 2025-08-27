@@ -76,7 +76,7 @@ export default function ExplanationCards() {
               {wording.homepage.explanation_cards.correction}
             </p>
             <div className="flex items-end md:mt-auto mt-6 justify-center md:justify-start">
-              <Link {...wording.homepage.check_quote_button} />
+              <Link {...wording.homepage.check_eligibility} />
             </div>
           </div>
         </div>

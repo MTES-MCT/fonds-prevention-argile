@@ -5,9 +5,9 @@ import wording from "@/wording";
 
 export default function HeroSection() {
   return (
-    <section className="fr-container-fluid fr-py-10w bg-[var(--background-default-grey-hover)]">
+    <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container">
-        <div className="fr-grid-row items-center">
+        <div className="fr-grid-row items-center gap-6 md:gap-0">
           {/* Zone texte */}
           <div className="fr-col-12 fr-col-md-6">
             <h1>{wording.homepage.hero_section.title}</h1>
@@ -16,7 +16,7 @@ export default function HeroSection() {
           </div>
 
           {/* Zone image */}
-          <div className="fr-col-12 fr-col-md-6 flex justify-end">
+          <div className="fr-col-12 fr-col-md-6 flex justify-center md:justify-end">
             <div className="h-[250px] md:h-[376px] relative w-full max-w-[484px]">
               <Image
                 alt={wording.homepage.hero_section.image.alt}
