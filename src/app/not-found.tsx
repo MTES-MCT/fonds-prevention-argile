@@ -20,13 +20,12 @@ export default function NotFound() {
             <p className="fr-text--sm fr-mb-5w">
               {richTextParser(wording.not_found.description_2)}
             </p>
-            <ul className="fr-btns-group fr-btns-group--inline-md">
-              <li>
-                <Link className="fr-btn" href="/">
-                  {wording.not_found.homepageLinkLabel}
-                </Link>
-              </li>
-            </ul>
+            <Link
+              className="fr-btn fr-icon-arrow-right-line fr-btn--icon-right"
+              href="/"
+            >
+              {wording.not_found.homepageLinkLabel}
+            </Link>
           </div>
           <div className="fr-col-12 fr-col-md-3 fr-col-offset-md-1 fr-px-6w fr-px-md-0 fr-py-0">
             <Image

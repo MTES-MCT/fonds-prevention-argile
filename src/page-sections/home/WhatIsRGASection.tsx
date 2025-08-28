@@ -10,7 +10,7 @@ export default function WhatIsRgaSection() {
         {/* Zone Hero Qu'est-ce que le RGA */}
         <div className="fr-grid-row items-center gap-6 md:gap-0">
           {/* Zone image */}
-          <div className="fr-col-12 fr-col-md-6 flex justify-center md:justify-start">
+          <div className="fr-col-12 fr-col-md-6 flex justify-center md:justify-start md:pr-8 lg:pr-8">
             <div className="h-[250px] md:h-[376px] relative w-full max-w-[484px]">
               <Image
                 alt={wording.homepage.what_is_rga_section.image.alt}

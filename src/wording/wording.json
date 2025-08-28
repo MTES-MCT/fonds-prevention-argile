@@ -103,7 +103,8 @@
         "src": "/images/home/service-etat.svg"
       },
       "title": "Votre logement est concerné par le Retrait-Gonflement des Argiles ? Obtenez une aide financière.",
-      "subtitle": "Vérifiez votre éligibilité en quelques secondes et déposez votre demande en ligne. Recevez une réponse de l’administration en quelques jours."
+      "subtitle": "Vérifiez votre éligibilité en quelques secondes et déposez votre demande en ligne. Recevez une réponse de l’administration en quelques jours.",
+      "cta_label": "Vérifier mon éligibilité"
     },
     "what_is_rga_section": {
       "image": {
@@ -137,7 +138,8 @@
           "title": "Pour les propriétaires concernés",
           "description": "Propriétaires occupants de leur résidence principale, sous conditions de ressources et d'ancienneté du logement."
         }
-      ]
+      ],
+      "cta_label": "Vérifier mon éligibilité"
     },
     "comment_ca_marche_section": {
       "title": "Comment ça marche ?",
@@ -320,6 +322,6 @@
     "link_label": "Retour à l'accueil",
     "title": "Page non trouvée",
     "title_404": "Erreur 404",
-    "homepageLinkLabel": "Page d'accueil"
+    "homepageLinkLabel": "Retour à la page d'accueil"
   }
 }
