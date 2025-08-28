@@ -8,7 +8,7 @@ export default function FaqSection() {
         <div className="fr-grid-row fr-grid-row--gutters">
           {/* Zone gauche - 1/3 */}
           <div className="fr-col-12 fr-col-lg-4">
-            <h1>{contentHomePage.faq_section.title}</h1>
+            <h2>{contentHomePage.faq_section.title}</h2>
             <Link
               id="link-help"
               href={contentHomePage.faq_section.helpLink.url}

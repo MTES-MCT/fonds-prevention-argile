@@ -4,7 +4,7 @@ export default function QuelsSontTravauxEligiblesSection() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container">
-        <h1>{contentHomePage.quels_sont_travaux_eligibles_section.title}</h1>
+        <h2>{contentHomePage.quels_sont_travaux_eligibles_section.title}</h2>
         <div className="fr-tabs">
           <ul className="fr-tabs__list" role="tablist" aria-label="">
             {contentHomePage.quels_sont_travaux_eligibles_section.tabs.map(

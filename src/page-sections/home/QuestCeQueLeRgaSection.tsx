@@ -26,7 +26,7 @@ export default function QuestCeQueLeRgaSection() {
 
           {/* Zone texte */}
           <div className="fr-col-12 fr-col-md-6">
-            <h1>{contentHomePage.what_is_rga_section.title}</h1>
+            <h2>{contentHomePage.what_is_rga_section.title}</h2>
             <div className="fr-callout fr-callout--pink-macaron">
               <p className="fr-callout__text fr-text--sm">
                 {contentHomePage.what_is_rga_section.highlight}
