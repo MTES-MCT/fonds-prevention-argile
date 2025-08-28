@@ -6,7 +6,7 @@ export default function PourEnSavoirPlusSection() {
   return (
     <section className="fr-container-fluid fr-py-10w bg-gray-100">
       <div className="fr-container">
-        <h1>{contentHomePage.pour_en_savoir_plus_section.title}</h1>
+        <h2>{contentHomePage.pour_en_savoir_plus_section.title}</h2>
         <div className="fr-grid-row fr-grid-row--gutters">
           {contentHomePage.pour_en_savoir_plus_section.cards.map(
             (card, index) => (

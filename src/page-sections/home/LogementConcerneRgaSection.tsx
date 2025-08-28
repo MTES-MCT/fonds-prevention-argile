@@ -10,7 +10,7 @@ export default function LogementConcerneRgaSection() {
         <div className="fr-grid-row items-center gap-6 md:gap-0">
           {/* Zone texte */}
           <div className="fr-col-12 fr-col-md-6">
-            <h1>{contentHomePage.hero_section.title}</h1>
+            <h2 className="text-left">{contentHomePage.hero_section.title}</h2>
             <p>{contentHomePage.hero_section.subtitle}</p>
             <Link
               className="fr-mt-4v fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"

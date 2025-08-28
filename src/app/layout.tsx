@@ -1,13 +1,32 @@
 import type { Metadata } from "next";
-
 import { Footer, Header, Matomo } from "@/components";
-import { initDsfr } from "@/utils";
 import { marianne, spectral } from "../styles/fonts";
-import "../styles/globals.css";
 import { contentLayout } from "@/content";
+import { DsfrProvider } from "@/components/DsfrProvider/DsfrProvider";
 
-// DSFR initialization
-initDsfr();
+// Import des styles DSFR
+import "@gouvfr/dsfr/dist/dsfr.min.css";
+import "@gouvfr/dsfr/dist/utility/colors/colors.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-system/icons-system.min.css";
+
+// Import icons from the DSFR
+import "@gouvfr/dsfr/dist/utility/icons/icons-business/icons-business.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-communication/icons-communication.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-design/icons-design.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-document/icons-document.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-health/icons-health.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-map/icons-map.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-media/icons-media.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-others/icons-others.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-system/icons-system.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-weather/icons-weather.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-editor/icons-editor.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-development/icons-development.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-user/icons-user.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css";
+
+// Import des styles custom
+import "../styles/globals.css";
 
 export const metadata: Metadata = {
   title: contentLayout.metadata.title,
@@ -58,6 +77,8 @@ export default function RootLayout({
           name="viewport"
         />
         <meta content="#000091" name="theme-color" />
+
+        {/* DSFR Favicons */}
         <link
           href="/dsfr/favicon/apple-touch-icon.png"
           rel="apple-touch-icon"
@@ -79,10 +100,12 @@ export default function RootLayout({
         />
       </head>
       <body className="flex flex-col min-h-screen">
-        <Matomo />
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <DsfrProvider>
+          <Matomo />
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </DsfrProvider>
       </body>
     </html>
   );

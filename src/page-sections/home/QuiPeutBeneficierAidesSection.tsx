@@ -7,10 +7,9 @@ export default function QuiPeutBeneficierAidesSection() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container">
-        <h1>{contentHomePage.qui_peut_beneficier_aides_section.title}</h1>
+        <h2>{contentHomePage.qui_peut_beneficier_aides_section.title}</h2>
         <p>{contentHomePage.qui_peut_beneficier_aides_section.subtitle}</p>
         <div className="fr-grid-row items-center gap-6 md:gap-0">
-          <h1></h1>
           {/* Zone image */}
           <div className="fr-col-12 fr-col-md-6 flex justify-center md:justify-start md:pr-8 lg:pr-8">
             <div className="h-[250px] md:h-[376px] relative w-full max-w-[484px]">

@@ -16,11 +16,11 @@
     "test:coverage": "jest --coverage",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "clean": "rm -rf .next && pnpm dev",
-    "fresh": "rm -rf .next node_modules pnpm-lock.yaml && pnpm install && pnpm dev"
+    "clean": "rm -rf .next && pnpm start:dev",
+    "fresh": "rm -rf .next node_modules pnpm-lock.yaml && pnpm install && pnpm start:dev"
   },
   "dependencies": {
-    "@gouvfr/dsfr": "^1.13.2",
+    "@gouvfr/dsfr": "^1.14.0",
     "@sentry/nextjs": "^9.2.0",
     "@socialgouv/matomo-next": "^1.9.2",
     "next": "^15.2.3",

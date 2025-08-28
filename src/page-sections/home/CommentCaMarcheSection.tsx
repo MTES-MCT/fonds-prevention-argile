@@ -5,7 +5,7 @@ export default function CommentCaMarcheSection() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container">
-        <h1>{contentHomePage.comment_ca_marche_section.title}</h1>
+        <h2>{contentHomePage.comment_ca_marche_section.title}</h2>
         <div className="fr-grid-row fr-grid-row--gutters">
           {contentHomePage.comment_ca_marche_section.steps.map(
             (step, index) => (

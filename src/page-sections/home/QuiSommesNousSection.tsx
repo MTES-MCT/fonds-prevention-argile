@@ -27,18 +27,19 @@ export default function QuiSommesNousSection() {
                     .qui_sommes_nous_subsection.description_2
                 }
               </p>
-              <div className="mt-auto flex justify-start">
+              <div className="h-[100px] relative max-w-[300px]">
                 <Image
-                  src={
-                    contentHomePage.qui_sommes_nous_section
-                      .qui_sommes_nous_subsection.imageSrc
-                  }
                   alt={
                     contentHomePage.qui_sommes_nous_section
                       .qui_sommes_nous_subsection.imageAlt
                   }
-                  width={300}
-                  height={300}
+                  className="object-contain"
+                  fill
+                  priority
+                  src={
+                    contentHomePage.qui_sommes_nous_section
+                      .qui_sommes_nous_subsection.imageSrc
+                  }
                 />
               </div>
             </div>

@@ -9,7 +9,7 @@ export default function EtatAgitSection() {
         <div className="fr-grid-row items-center gap-6 md:gap-0">
           {/* Zone texte */}
           <div className="fr-col-12 fr-col-md-6">
-            <h1>{contentHomePage.etat_agit_section.title}</h1>
+            <h2>{contentHomePage.etat_agit_section.title}</h2>
             <p>{contentHomePage.etat_agit_section.description_1}</p>
             <p>{contentHomePage.etat_agit_section.description_2}</p>
             <Link

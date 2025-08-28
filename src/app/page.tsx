@@ -18,7 +18,7 @@ export default function Home() {
         title={contentHomePage.notice.title}
         buttonClose={true}
       />
-      <div className="[&_h2]:text-center">
+      <div>
         <LogementConcerneRgaSection />
         <QuestCeQueLeRgaSection />
         <EtatAgitSection />
