@@ -1,6 +1,7 @@
 import { Notice } from "@/components";
 import { contentHomePage } from "@/content";
 import { EtatAgitSection, CommentCaMarcheSection } from "@/page-sections";
+import FaqSection from "@/page-sections/home/FaqSection";
 import LogementConcerneRgaSection from "@/page-sections/home/LogementConcerneRgaSection";
 import PourEnSavoirPlusSection from "@/page-sections/home/PourEnSavoirPlusSection";
 import QuelsSontTravauxEligiblesSection from "@/page-sections/home/QuelsSontTravauxEligiblesSection";
@@ -24,6 +25,7 @@ export default function Home() {
         <QuiPeutBeneficierAidesSection />
         <QuelsSontTravauxEligiblesSection />
         <PourEnSavoirPlusSection />
+        <FaqSection />
       </div>
     </>
   );

@@ -162,5 +162,42 @@
         "linkUrl": "https://www.fonds-prevention-argile.gouv.fr"
       }
     ]
+  },
+  "faq_section": {
+    "title": "Questions fréquentes",
+    "helpLink": {
+      "label": "Consulter notre page d’aide",
+      "url": "https://www.fonds-prevention-argile.gouv.fr/faq"
+    },
+    "faqs": [
+      {
+        "question": "Qui est éligible pour cette aide ?",
+        "answer": "Les propriétaires occupants de leur résidence principale, sous certaines conditions de ressources et d'ancienneté du logement, peuvent bénéficier des aides."
+      },
+      {
+        "question": "Quelles sont les étapes du parcours et les délais moyens ?",
+        "answer": "Le parcours comprend trois étapes principales : vérification de l'éligibilité, réalisation d'un diagnostic par un professionnel, et exécution des travaux si le diagnostic est validé. Les délais peuvent varier en fonction de la disponibilité des professionnels et de la complexité des travaux."
+      },
+      {
+        "question": "De quels documents ai-je besoin ?",
+        "answer": "Vous aurez besoin de documents prouvant votre propriété, votre résidence principale, l'ancienneté du logement, ainsi que des justificatifs de ressources. Une liste détaillée vous sera fournie lors de la vérification de l'éligibilité."
+      },
+      {
+        "question": "Quel est le montant de l’aide, y-a-t’il des plafonds ?",
+        "answer": "L'aide financière varie en fonction des travaux nécessaires et des conditions spécifiques de chaque dossier. Des plafonds sont en place pour garantir une utilisation équitable des fonds publics."
+      },
+      {
+        "question": "Une avance est-elle possible ou dois-je avancer tous les frais ?",
+        "answer": "L'avance des frais dépend des modalités spécifiques de l'aide. Dans certains cas, une avance peut être possible, mais généralement, les propriétaires doivent avancer les frais et seront remboursés après la réalisation des travaux."
+      },
+      {
+        "question": "Quels types de travaux sont financés ?",
+        "answer": "Les travaux financés incluent la gestion des réseaux enterrés, la gestion de la végétation, et l'imperméabilisation du sol au droit des fondations, entre autres. Une liste complète des travaux éligibles est disponible dans la section dédiée."
+      },
+      {
+        "question": "Mes données sont-elles sécurisées ?",
+        "answer": "Oui, le service est sécurisé et vos données ne sont utilisées que pour l'instruction de votre dossier par des professionnels agréés."
+      }
+    ]
   }
 }
