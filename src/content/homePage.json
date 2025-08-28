@@ -128,12 +128,38 @@
       {
         "title": "Gestion de la végétation",
         "icon": "fr-icon-seedling-line",
-        "textList": []
+        "textList": [
+          {
+            "text": "Arbres et haies à distance des fondations"
+          },
+          {
+            "text": "Arbres et haies à distance des réseaux enterrés"
+          },
+          {
+            "text": "Arbres et haies adaptés au contexte géotechnique"
+          }
+        ]
       },
       {
         "title": "Imperméabilisation du sol au droit des fondations",
         "icon": "fr-icon-water-fill",
-        "textList": []
+        "textList": [
+          {
+            "text": "Création d’une pente d’évacuation des eaux de pluie à partir des murs"
+          },
+          {
+            "text": "Création d’un système de récupération des eaux de pluie"
+          },
+          {
+            "text": "Création d’un système d’évacuation des eaux de ruissellement"
+          },
+          {
+            "text": "Création d’un système d’évacuation des eaux de toiture"
+          },
+          {
+            "text": "Création d’un système d’évacuation des eaux de drainage"
+          }
+        ]
       }
     ]
   },
@@ -205,7 +231,7 @@
       "title": "Qui sommes-nous ?",
       "description_1": "Fond Argile est un service public gratuit qui vous permet d’évaluer votre situation, constituer et suivre votre dossier simplement, puis obtenir un financement du diagnostic et des travaux recommandés.",
       "description_2": "Nous sommes un service public lancé par le Ministère de la Transition Ecologique et la Direction du Numérique (DINUM) sous la forme d'une start-up d'Etat. Elle est en phase d'expérimentation avant un déploiement massif. N'hésitez pas à nous faire part de vos retours et suggestions d'améliorations. ",
-      "imageSrc": "/images/home/ministere_transition_ecologique.webp",
+      "imageSrc": "/images/home/ministere_transition_ecologique.svg",
       "imageAlt": "Logo Ministère de la Transition écologique"
     },
     "nos_missions_subsection": {

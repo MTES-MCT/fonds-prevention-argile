@@ -3,6 +3,20 @@ import { richTextParser } from "@/lib/utils";
 import Link from "next/link";
 
 const Header = () => {
+  // Définir les liens une fois pour éviter la duplication de code
+  const headerLinks = [
+    {
+      href: "/connexion",
+      className: "fr-icon-account-circle-fill fr-btn",
+      label: "Se connecter",
+    },
+    {
+      href: "/simulateur",
+      className: "fr-btn--account fr-icon-checkbox-circle-fill fr-btn",
+      label: "Vérifier mon éligibilité",
+    },
+  ];
+
   return (
     <header role="banner" className="fr-header" id="header-3">
       <div className="fr-header__body">
@@ -31,9 +45,9 @@ const Header = () => {
               <div className="fr-header__service">
                 <Link
                   href="/"
-                  title="Retour à l'accueil du site - [À MODIFIER - texte alternatif de l'image : nom de l'opérateur ou du site serviciel] - République Française"
+                  title={`Retour à l'accueil du site - ${contentLayout.header.organizationName} - République Française`}
                 >
-                  <span className="flex flex-row">
+                  <span className="flex flex-row items-center">
                     <p className="fr-header__service-title mr-4!">
                       {contentLayout.header.organizationName}
                     </p>
@@ -50,22 +64,14 @@ const Header = () => {
             <div className="fr-header__tools">
               <div className="fr-header__tools-links">
                 <ul className="fr-btns-group">
-                  <li>
-                    <Link
-                      href="/connexion"
-                      className="fr-icon-account-circle-fill fr-btn"
-                    >
-                      Se connecter
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/simulateur"
-                      className="fr-btn--account fr-icon-checkbox-circle-fill fr-btn"
-                    >
-                      Verifier mon éligibilité
-                    </Link>
-                  </li>
+                  {/* Liens pour desktop */}
+                  {headerLinks.map((link) => (
+                    <li key={`desktop-${link.href}`}>
+                      <Link href={link.href} className={link.className}>
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -87,7 +93,18 @@ const Header = () => {
           >
             Fermer
           </button>
-          <div className="fr-header__menu-links"></div>
+          <div className="fr-header__menu-links">
+            {/* Liens pour mobile - IMPORTANT: dupliquer les liens ici */}
+            <ul className="fr-btns-group">
+              {headerLinks.map((link) => (
+                <li key={`mobile-${link.href}`}>
+                  <Link href={link.href} className={link.className}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </header>
