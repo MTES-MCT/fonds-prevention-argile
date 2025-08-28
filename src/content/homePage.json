@@ -136,5 +136,31 @@
         "textList": []
       }
     ]
+  },
+  "pour_en_savoir_plus_section": {
+    "title": "Pour en savoir plus",
+    "cards": [
+      {
+        "imageUrl": "/images/home/en-savoir-plus-1.png",
+        "imageAlt": "Illustration d'une maison avec des fissures",
+        "title": "Dossier expert sur le retrait-gonflement des argiles",
+        "description": "Les terrains argileux superficiels peuvent voir leur volume varier à la suite d'une modification de leur teneur en eau, en lien avec les conditions météorologiques.",
+        "linkUrl": "https://www.fonds-prevention-argile.gouv.fr"
+      },
+      {
+        "imageUrl": "/images/home/en-savoir-plus-2.svg",
+        "imageAlt": "Illustration d'une maison avec des fissures",
+        "title": "Le phénomène de RGA sur le site internet du CEREMA",
+        "description": "Définitions, impacts sur les ouvrages et les personnes et solutions d’adaptation au changement climatique.",
+        "linkUrl": "https://www.fonds-prevention-argile.gouv.fr"
+      },
+      {
+        "imageUrl": "/images/home/en-savoir-plus-3.png",
+        "imageAlt": "Illustration d'une maison avec des fissures",
+        "title": "Site internet Infoterre du BRGM",
+        "description": "Accédez aux cartes géologiques numériques dédiées aux aléas retrait gonflement du BRGM pour découvrir l’état des sols dans la zone de votre habitation.",
+        "linkUrl": "https://www.fonds-prevention-argile.gouv.fr"
+      }
+    ]
   }
 }
