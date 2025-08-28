@@ -1,7 +1,7 @@
 "use client";
 
+import { contentComponents } from "@/content";
 import { useState } from "react";
-import wording from "@/wording";
 
 export interface NoticeProps {
   buttonClose?: boolean;
@@ -46,10 +46,10 @@ export default function Notice({
             <button
               className="fr-btn--close fr-btn"
               onClick={() => setIsCloseButtonVisible(false)}
-              title={wording.components.notice.button_close}
+              title={contentComponents.notice.button_close}
               type="button"
             >
-              {wording.components.notice.button_close}
+              {contentComponents.notice.button_close}
             </button>
           )}
         </div>

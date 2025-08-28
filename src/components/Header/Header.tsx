@@ -1,23 +1,8 @@
+import { contentLayout } from "@/content";
 import { richTextParser } from "@/utils";
 import Link from "next/link";
 
-export interface HeaderProps {
-  affiliatedMinistry: string;
-  beta?: string;
-  buttons?: { href: string; icon: string; label: string }[];
-  organizationDescription: string;
-  organizationLink: string;
-  organizationName: string;
-}
-
-const Header: React.FC<HeaderProps> = ({
-  affiliatedMinistry,
-  beta,
-  buttons,
-  organizationDescription,
-  organizationLink,
-  organizationName,
-}) => {
+const Header = () => {
   return (
     <header role="banner" className="fr-header" id="header-3">
       <div className="fr-header__body">
@@ -27,7 +12,7 @@ const Header: React.FC<HeaderProps> = ({
               <div className="fr-header__brand-top">
                 <div className="fr-header__logo">
                   <p className="fr-logo">
-                    {richTextParser(affiliatedMinistry)}
+                    {richTextParser(contentLayout.header.affiliatedMinistry)}
                   </p>
                 </div>
                 <div className="fr-header__navbar">
@@ -44,23 +29,21 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
               </div>
               <div className="fr-header__service">
-                <a
+                <Link
                   href="/"
                   title="Retour à l'accueil du site - [À MODIFIER - texte alternatif de l'image : nom de l'opérateur ou du site serviciel] - République Française"
                 >
                   <span className="flex flex-row">
                     <p className="fr-header__service-title mr-4!">
-                      {organizationName}
+                      {contentLayout.header.organizationName}
                     </p>
-                    {beta && (
-                      <p className="fr-badge fr-badge--success fr-badge--no-icon">
-                        BETA
-                      </p>
-                    )}
+                    <p className="fr-badge fr-badge--success fr-badge--no-icon">
+                      BETA
+                    </p>
                   </span>
-                </a>
+                </Link>
                 <p className="fr-header__service-tagline">
-                  {organizationDescription}
+                  {contentLayout.header.organizationDescription}
                 </p>
               </div>
             </div>

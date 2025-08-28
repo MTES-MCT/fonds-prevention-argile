@@ -20,6 +20,11 @@ describe("dsfr", () => {
   it("should initialize DSFR when window is defined", async () => {
     jest.mock("@gouvfr/dsfr/dist/dsfr.module.min.js", () => ({}));
     jest.mock("@gouvfr/dsfr/dist/dsfr.nomodule.min.js", () => ({}));
+    jest.mock("@gouvfr/dsfr/dist/core/core.module.min.js", () => ({}));
+    jest.mock(
+      "@gouvfr/dsfr/dist/component/header/header.module.min.js",
+      () => ({})
+    );
 
     const { initDsfr } = await import("../dsfr");
     await initDsfr();

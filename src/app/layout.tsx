@@ -1,29 +1,29 @@
 import type { Metadata } from "next";
 
-import { Footer, FooterProps, Header, HeaderProps, Matomo } from "@/components";
+import { Footer, Header, Matomo } from "@/components";
 import { initDsfr } from "@/utils";
-import wording from "@/wording";
 import { marianne, spectral } from "../styles/fonts";
 import "../styles/globals.css";
+import { contentLayout } from "@/content";
 
 // DSFR initialization
 initDsfr();
 
 export const metadata: Metadata = {
-  title: wording.metadata.title,
-  description: wording.metadata.description,
-  metadataBase: new URL(wording.metadata.url),
+  title: contentLayout.metadata.title,
+  description: contentLayout.metadata.description,
+  metadataBase: new URL(contentLayout.metadata.url),
   openGraph: {
-    title: wording.metadata.title,
-    description: wording.metadata.description,
-    url: wording.metadata.url,
-    siteName: wording.metadata.title,
+    title: contentLayout.metadata.title,
+    description: contentLayout.metadata.description,
+    url: contentLayout.metadata.url,
+    siteName: contentLayout.metadata.title,
     images: [
       {
-        url: wording.metadata.imageUrl,
+        url: contentLayout.metadata.imageUrl,
         width: 1200,
         height: 630,
-        alt: wording.metadata.imageAlt,
+        alt: contentLayout.metadata.imageAlt,
       },
     ],
     locale: "fr_FR",
@@ -31,9 +31,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: wording.metadata.title,
-    description: wording.metadata.description,
-    images: [wording.metadata.imageUrl],
+    title: contentLayout.metadata.title,
+    description: contentLayout.metadata.description,
+    images: [contentLayout.metadata.imageUrl],
   },
 };
 
@@ -42,9 +42,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const footerData: FooterProps = wording.layout.footer;
-  const headerData: HeaderProps = wording.layout.header;
-
   return (
     <html
       className={`${marianne.variable} ${spectral.variable}`}
@@ -83,9 +80,9 @@ export default function RootLayout({
       </head>
       <body className="flex flex-col min-h-screen">
         <Matomo />
-        <Header {...headerData} />
+        <Header />
         <main className="flex-1">{children}</main>
-        <Footer {...footerData} />
+        <Footer />
       </body>
     </html>
   );
