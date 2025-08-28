@@ -94,5 +94,47 @@
         "text": "Vous habitez en zone éligible (départements :  03 • 04 • 24 • 32 • 36 • 47 • 54 • 63 • 81 • 82)"
       }
     ]
+  },
+  "quels_sont_travaux_eligibles_section": {
+    "title": "Quels sont les travaux éligibles ?",
+    "tabs": [
+      {
+        "title": "Repérage des fuites des réseaux enterrés",
+        "icon": "fr-icon-search-line",
+        "textList": [
+          {
+            "text": "Mise en charge des réseaux d’eaux pluviales, eaux usées.. (à réaliser pendant le diagnostic)"
+          },
+          {
+            "text": "Création d’un accès au réseau si inexistant"
+          },
+          {
+            "text": "Curage du réseau bouché si nécessaire"
+          },
+          {
+            "text": "Pose de canalisation d’évacuation des eaux pluviales, en particulier de toiture, en veillant à les éloigner des fondations ou réparation"
+          },
+          {
+            "text": "Réaliser un test de perméabilité du sol de type Porchet (à réaliser pendant le diagnostic)"
+          },
+          {
+            "text": "Dispositif simple d’infiltration des eaux à la parcelle à déporter des fondations"
+          },
+          {
+            "text": "Drainage des eaux déportées et séparatif des eaux pluviales en amont des terrains en pente"
+          }
+        ]
+      },
+      {
+        "title": "Gestion de la végétation",
+        "icon": "fr-icon-seedling-line",
+        "textList": []
+      },
+      {
+        "title": "Imperméabilisation du sol au droit des fondations",
+        "icon": "fr-icon-water-fill",
+        "textList": []
+      }
+    ]
   }
 }

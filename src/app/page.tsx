@@ -2,6 +2,7 @@ import { Notice } from "@/components";
 import { contentHomePage } from "@/content";
 import { EtatAgitSection, CommentCaMarcheSection } from "@/page-sections";
 import LogementConcerneRgaSection from "@/page-sections/home/LogementConcerneRgaSection";
+import QuelsSontTravauxEligiblesSection from "@/page-sections/home/QuelsSontTravauxEligiblesSection";
 import QuestCeQueLeRgaSection from "@/page-sections/home/QuestCeQueLeRgaSection";
 import QuiPeutBeneficierAidesSection from "@/page-sections/home/QuiPeutBeneficierAidesSection";
 
@@ -20,6 +21,7 @@ export default function Home() {
         <EtatAgitSection />
         <CommentCaMarcheSection />
         <QuiPeutBeneficierAidesSection />
+        <QuelsSontTravauxEligiblesSection />
       </div>
     </>
   );
