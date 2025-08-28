@@ -1,7 +1,7 @@
-import { useIsDesktop } from "../index";
+import { useMatomo } from "../useMatomo";
 
 describe("hooks index", () => {
   it("should export all hooks", () => {
-    expect(useIsDesktop).toBeDefined();
+    expect(useMatomo).toBeDefined();
   });
 });

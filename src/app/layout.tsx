@@ -1,30 +1,29 @@
 import type { Metadata } from "next";
 
-import { Footer, FooterProps, Header, HeaderProps, Matomo } from "@/components";
+import { Footer, Header, Matomo } from "@/components";
 import { initDsfr } from "@/utils";
-import wording from "@/wording";
 import { marianne, spectral } from "../styles/fonts";
 import "../styles/globals.css";
+import { contentLayout } from "@/content";
 
 // DSFR initialization
 initDsfr();
 
 export const metadata: Metadata = {
-  title: "Fonds argile",
-  description: "Plateforme publique et gratuite de ?",
-  metadataBase: new URL("https://fonds-argile.beta.gouv.fr"),
+  title: contentLayout.metadata.title,
+  description: contentLayout.metadata.description,
+  metadataBase: new URL(contentLayout.metadata.url),
   openGraph: {
-    title: "Fonds argile",
-    description:
-      "Plateforme publique et gratuite de pré-instruction automatique des devis de rénovation énergétique pour MaPrimeRenov' et les CEE.",
-    url: "https://fonds-argile.beta.gouv.fr",
-    siteName: "Fonds argile",
+    title: contentLayout.metadata.title,
+    description: contentLayout.metadata.description,
+    url: contentLayout.metadata.url,
+    siteName: contentLayout.metadata.title,
     images: [
       {
-        url: "/images/steps_analyze_quote/quote_control.webp",
+        url: contentLayout.metadata.imageUrl,
         width: 1200,
         height: 630,
-        alt: "Fonds argile - Plateforme de ??",
+        alt: contentLayout.metadata.imageAlt,
       },
     ],
     locale: "fr_FR",
@@ -32,9 +31,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Fonds argile",
-    description: "Plateforme de ??",
-    images: ["/images/steps_analyze_quote/quote_control.webp"],
+    title: contentLayout.metadata.title,
+    description: contentLayout.metadata.description,
+    images: [contentLayout.metadata.imageUrl],
   },
 };
 
@@ -43,9 +42,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const footerData: FooterProps = wording.layout.footer;
-  const headerData: HeaderProps = wording.layout.header;
-
   return (
     <html
       className={`${marianne.variable} ${spectral.variable}`}
@@ -84,9 +80,9 @@ export default function RootLayout({
       </head>
       <body className="flex flex-col min-h-screen">
         <Matomo />
-        <Header {...headerData} />
+        <Header />
         <main className="flex-1">{children}</main>
-        <Footer {...footerData} />
+        <Footer />
       </body>
     </html>
   );

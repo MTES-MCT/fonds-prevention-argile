@@ -1,0 +1,232 @@
+{
+  "notice": {
+    "description": "Dispositif ouvert uniquement dans les départements suivants : 03 • 04 • 24 • 32 • 36 • 47 • 54 • 63 • 81 • 82",
+    "title": "Phase pilote"
+  },
+  "hero_section": {
+    "image": {
+      "alt": "Fonds Prévention Argile - Un service de l'État",
+      "src": "/images/home/service-etat.svg"
+    },
+    "title": "Votre logement est concerné par le Retrait-Gonflement des Argiles ? Obtenez une aide financière.",
+    "subtitle": "Vérifiez votre éligibilité en quelques secondes et déposez votre demande en ligne. Recevez une réponse de l’administration en quelques jours.",
+    "cta_label": "Vérifier mon éligibilité"
+  },
+  "what_is_rga_section": {
+    "image": {
+      "alt": "Fonds Prévention Argile - Un service de l'État",
+      "src": "/images/home/rga-definition.svg"
+    },
+    "title": "Qu’est-ce que le Retrait-gonflement des argiles, ou RGA ?",
+    "highlight": "Ce phénomène touche près de 4 millions de maisons en France et représente le deuxième poste d’indemnisation des assurances après les inondations.",
+    "subtitle": "Le retrait-gonflement des argiles modifie le volume d'un sol argileux selon l'eau. Humide, il gonfle; sec, il se rétracte, endommageant maisons et routes. Le changement climatique aggrave ce phénomène : en 20 ans, il est devenu la deuxième cause d'indemnisation en France, représentant 36% des sinistralités."
+  },
+  "etat_agit_section": {
+    "title": "Face à cette problématique, l’État agit grâce au fond Argile",
+    "description_1": "Partout où le RGA met en danger les maisons, l’État est là pour agir. Un fonds spécial est mis en place, d’abord dans les zones les plus touchées, pour financer les études (diagnostic avec accompagnement) et, les travaux nécessaires à la sécurisation des bâtiments. ",
+    "description_2": "L’aide est destinée aux propriétaires occupants, sous certaines conditions de ressources, et des plafonds assurent une utilisation équitable et efficace des fonds publics. C’est simple : vérifiez votre éligibilité en ligne, déposez votre dossier sur démarches-simplifiées.fr, et les services de l’État (DDT) s’occupent du reste. Notre priorité : protéger les maisons, sécuriser les familles et agir avant que les problèmes ne s’aggravent.",
+    "infos_tiles": [
+      {
+        "icon": "fr-icon-government-fill",
+        "iconColor": "fr-text-label--blue-france",
+        "title": "Un service de l’État",
+        "description": "Sécurisé, gratuit et opéré par l’État. Vos données ne sont utilisées que pour l’instruction de votre dossier par des professionels agrées."
+      },
+      {
+        "icon": "fr-icon-shield-fill",
+        "iconColor": "text-green-600",
+        "title": "Pour agir avant les sinistres",
+        "description": "Bénéficiez d'un accompagnement pour diagnostiquer et réaliser des travaux avant que votre logement ne soit sinistré."
+      },
+      {
+        "icon": "fr-icon-user-heart-fill",
+        "iconColor": "fr-text-label--red-marianne",
+        "title": "Pour les propriétaires concernés",
+        "description": "Propriétaires occupants de leur résidence principale, sous conditions de ressources et d'ancienneté du logement."
+      }
+    ],
+    "cta_label": "Vérifier mon éligibilité"
+  },
+  "comment_ca_marche_section": {
+    "title": "Comment ça marche ?",
+    "steps": [
+      {
+        "imageSrc": "/illustrations/national-identity-card.svg",
+        "imageAlt": "Vérifier mon éligibilité",
+        "title": "1. Éligibilité",
+        "description": "Je remplis quelques informations liées à mon logement et mes ressources"
+      },
+      {
+        "imageSrc": "/illustrations/house.svg",
+        "imageAlt": "Vérifier mon éligibilité",
+        "title": "2. Diagnostic",
+        "description": "Un professionnel se déplace pour réaliser un diagnostic subventionné"
+      },
+      {
+        "imageSrc": "/illustrations/in-progress.svg",
+        "imageAlt": "Vérifier mon éligibilité",
+        "title": "3. Travaux",
+        "description": "Le diagnostic est validé ? Lancez les travaux et recevez les aides après réalisation"
+      }
+    ]
+  },
+  "qui_peut_beneficier_aides_section": {
+    "image": {
+      "alt": "Fonds Prévention Argile - Un service de l'État",
+      "src": "/images/home/qui-peut-beneficier-aides.png"
+    },
+    "title": "Qui peut bénéficier de ces aides de l'État ?",
+    "subtitle": "Vous pouvez faire une demande d’aide si vous remplissez les conditions suivantes :",
+    "text_items": [
+      {
+        "text": "Vous êtes propriétaire occupant"
+      },
+      {
+        "text": "C'est votre résidence principale"
+      },
+      {
+        "text": "Votre logement a plus de 15 ans"
+      },
+      {
+        "text": "Vous respectez les plafonds de ressources"
+      },
+      {
+        "text": "Vous habitez en zone éligible (départements :  03 • 04 • 24 • 32 • 36 • 47 • 54 • 63 • 81 • 82)"
+      }
+    ]
+  },
+  "quels_sont_travaux_eligibles_section": {
+    "title": "Quels sont les travaux éligibles ?",
+    "tabs": [
+      {
+        "title": "Repérage des fuites des réseaux enterrés",
+        "icon": "fr-icon-search-line",
+        "textList": [
+          {
+            "text": "Mise en charge des réseaux d’eaux pluviales, eaux usées.. (à réaliser pendant le diagnostic)"
+          },
+          {
+            "text": "Création d’un accès au réseau si inexistant"
+          },
+          {
+            "text": "Curage du réseau bouché si nécessaire"
+          },
+          {
+            "text": "Pose de canalisation d’évacuation des eaux pluviales, en particulier de toiture, en veillant à les éloigner des fondations ou réparation"
+          },
+          {
+            "text": "Réaliser un test de perméabilité du sol de type Porchet (à réaliser pendant le diagnostic)"
+          },
+          {
+            "text": "Dispositif simple d’infiltration des eaux à la parcelle à déporter des fondations"
+          },
+          {
+            "text": "Drainage des eaux déportées et séparatif des eaux pluviales en amont des terrains en pente"
+          }
+        ]
+      },
+      {
+        "title": "Gestion de la végétation",
+        "icon": "fr-icon-seedling-line",
+        "textList": []
+      },
+      {
+        "title": "Imperméabilisation du sol au droit des fondations",
+        "icon": "fr-icon-water-fill",
+        "textList": []
+      }
+    ]
+  },
+  "pour_en_savoir_plus_section": {
+    "title": "Pour en savoir plus",
+    "cards": [
+      {
+        "imageUrl": "/images/home/en-savoir-plus-1.png",
+        "imageAlt": "Illustration d'une maison avec des fissures",
+        "title": "Dossier expert sur le retrait-gonflement des argiles",
+        "description": "Les terrains argileux superficiels peuvent voir leur volume varier à la suite d'une modification de leur teneur en eau, en lien avec les conditions météorologiques.",
+        "linkUrl": "https://www.fonds-prevention-argile.gouv.fr"
+      },
+      {
+        "imageUrl": "/images/home/en-savoir-plus-2.svg",
+        "imageAlt": "Illustration d'une maison avec des fissures",
+        "title": "Le phénomène de RGA sur le site internet du CEREMA",
+        "description": "Définitions, impacts sur les ouvrages et les personnes et solutions d’adaptation au changement climatique.",
+        "linkUrl": "https://www.fonds-prevention-argile.gouv.fr"
+      },
+      {
+        "imageUrl": "/images/home/en-savoir-plus-3.png",
+        "imageAlt": "Illustration d'une maison avec des fissures",
+        "title": "Site internet Infoterre du BRGM",
+        "description": "Accédez aux cartes géologiques numériques dédiées aux aléas retrait gonflement du BRGM pour découvrir l’état des sols dans la zone de votre habitation.",
+        "linkUrl": "https://www.fonds-prevention-argile.gouv.fr"
+      }
+    ]
+  },
+  "faq_section": {
+    "title": "Questions fréquentes",
+    "helpLink": {
+      "label": "Consulter notre page d’aide",
+      "url": "https://www.fonds-prevention-argile.gouv.fr/faq"
+    },
+    "faqs": [
+      {
+        "question": "Qui est éligible pour cette aide ?",
+        "answer": "Les propriétaires occupants de leur résidence principale, sous certaines conditions de ressources et d'ancienneté du logement, peuvent bénéficier des aides."
+      },
+      {
+        "question": "Quelles sont les étapes du parcours et les délais moyens ?",
+        "answer": "Le parcours comprend trois étapes principales : vérification de l'éligibilité, réalisation d'un diagnostic par un professionnel, et exécution des travaux si le diagnostic est validé. Les délais peuvent varier en fonction de la disponibilité des professionnels et de la complexité des travaux."
+      },
+      {
+        "question": "De quels documents ai-je besoin ?",
+        "answer": "Vous aurez besoin de documents prouvant votre propriété, votre résidence principale, l'ancienneté du logement, ainsi que des justificatifs de ressources. Une liste détaillée vous sera fournie lors de la vérification de l'éligibilité."
+      },
+      {
+        "question": "Quel est le montant de l’aide, y-a-t’il des plafonds ?",
+        "answer": "L'aide financière varie en fonction des travaux nécessaires et des conditions spécifiques de chaque dossier. Des plafonds sont en place pour garantir une utilisation équitable des fonds publics."
+      },
+      {
+        "question": "Une avance est-elle possible ou dois-je avancer tous les frais ?",
+        "answer": "L'avance des frais dépend des modalités spécifiques de l'aide. Dans certains cas, une avance peut être possible, mais généralement, les propriétaires doivent avancer les frais et seront remboursés après la réalisation des travaux."
+      },
+      {
+        "question": "Quels types de travaux sont financés ?",
+        "answer": "Les travaux financés incluent la gestion des réseaux enterrés, la gestion de la végétation, et l'imperméabilisation du sol au droit des fondations, entre autres. Une liste complète des travaux éligibles est disponible dans la section dédiée."
+      },
+      {
+        "question": "Mes données sont-elles sécurisées ?",
+        "answer": "Oui, le service est sécurisé et vos données ne sont utilisées que pour l'instruction de votre dossier par des professionnels agréés."
+      }
+    ]
+  },
+  "qui_sommes_nous_section": {
+    "qui_sommes_nous_subsection": {
+      "title": "Qui sommes-nous ?",
+      "description_1": "Fond Argile est un service public gratuit qui vous permet d’évaluer votre situation, constituer et suivre votre dossier simplement, puis obtenir un financement du diagnostic et des travaux recommandés.",
+      "description_2": "Nous sommes un service public lancé par le Ministère de la Transition Ecologique et la Direction du Numérique (DINUM) sous la forme d'une start-up d'Etat. Elle est en phase d'expérimentation avant un déploiement massif. N'hésitez pas à nous faire part de vos retours et suggestions d'améliorations. ",
+      "imageSrc": "/images/home/ministere_transition_ecologique.webp",
+      "imageAlt": "Logo Ministère de la Transition écologique"
+    },
+    "nos_missions_subsection": {
+      "title": "Quelles sont nos missions ?",
+      "missions": [
+        {
+          "title": "Fluidifier l’instructions des aides",
+          "icon": "fr-icon-map-pin-2-line",
+          "description": "Création d’un modèle d’analyse automatique qui s’assure de la conformité de votre demande avec les exigences des aides de l’État."
+        },
+        {
+          "title": "Réduire les délais d’instruction d’aide",
+          "icon": "fr-icon-timer-line",
+          "description": "Réduction du nombre d’allers-retours avec les instructeurs d’aides avec un pré-contrôle gratuit et instantané."
+        },
+        {
+          "title": "Améliorer la satisfaction des usagers",
+          "icon": "fr-icon-heart-line",
+          "description": "Conception d’une interface simple qui accompagne les usagers dans la lecture et la correction des devis."
+        }
+      ]
+    }
+  }
+}
