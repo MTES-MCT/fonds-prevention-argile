@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isClient, isServer } from "@/lib/utils/env.utils";
+import { isClient, isServer } from "@/lib/utils/env";
 
 // Schémas de validation
 const serverSchema = z.object({

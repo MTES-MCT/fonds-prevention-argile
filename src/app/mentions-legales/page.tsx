@@ -1,6 +1,6 @@
 import { Notice } from "@/components";
 import { contentLegalNoticePage } from "@/content";
-import { richTextParser } from "@/utils";
+import { richTextParser } from "@/lib/utils";
 
 export default function MentionsLegales() {
   return (
@@ -29,7 +29,6 @@ export default function MentionsLegales() {
           <p>
             {richTextParser(contentLegalNoticePage.terms_of_use_description)}
           </p>
-          <p>{contentLegalNoticePage.terms_of_use_description_2}</p>
           <h2>{contentLegalNoticePage.statistics}</h2>
           <p>{contentLegalNoticePage.statistics_description}</p>
           <h2>{contentLegalNoticePage.share_corrections}</h2>
@@ -38,7 +37,6 @@ export default function MentionsLegales() {
           <p className="fr-mb-1w">
             {contentLegalNoticePage.access_data_description}
           </p>
-          <p>{contentLegalNoticePage.access_data_description_2}</p>
         </div>
       </section>
     </>

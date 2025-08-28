@@ -1,5 +1,5 @@
 import { contentLayout } from "@/content";
-import { richTextParser } from "@/utils";
+import { richTextParser } from "@/lib/utils";
 import Link from "next/link";
 
 const Header = () => {

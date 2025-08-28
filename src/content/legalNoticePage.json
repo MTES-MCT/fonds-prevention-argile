@@ -1,7 +1,6 @@
 {
   "access_data": "Qui va avoir accès à ces données ?",
-  "access_data_description": "• Les membres de l’équipe de Fonds Prévention Argile pour une amélioration continue et le support utilisateur.",
-  "access_data_description_2": "• Les personnes avec qui vous partagez votre lien de correction. Le contenus du Devis n’est pas partagé mais uniquement les corrections à apporter, le nom de fichier ainsi que l’intitulé des gestes.",
+  "access_data_description": "Les membres de l’équipe de Fonds Prévention Argile pour une amélioration continue et le support utilisateur.",
   "editor": "Éditeur du site",
   "editor_address": "Tour Séquoia",
   "editor_address_2": "1 place Carpeaux, 92800 Puteaux, France",
@@ -17,6 +16,5 @@
   "statistics_description": "Nous utilisons le traceur libre Matomo, via l'instance hébergée par les services de l'État sur stats.beta.gouv.fr. Ce suivi ne nécessite pas de bannière de consentement RGPD (dite \"cookies\").",
   "terms_of_use": "Conditions générales d’utilisation",
   "terms_of_use_description": "<strong>Fonds Prévention Argile</strong> est un service numérique de la Direction générale de l’aménagement, du logement et de la nature (DGALN).",
-  "terms_of_use_description_2": "Mon Fonds Prévention Argile est un service numérique permettant de ...",
   "title": "Mentions légales et Confidentialité"
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { Footer, Header, Matomo } from "@/components";
-import { initDsfr } from "@/utils";
+import { initDsfr } from "@/lib/utils";
 import { marianne, spectral } from "../styles/fonts";
 import "../styles/globals.css";
 import { contentLayout } from "@/content";

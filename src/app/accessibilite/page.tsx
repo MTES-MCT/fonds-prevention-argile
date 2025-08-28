@@ -1,6 +1,6 @@
 import { Notice } from "@/components";
 import { contentAccessibilityPage } from "@/content";
-import { richTextParser } from "@/utils";
+import { richTextParser } from "@/lib/utils";
 
 export default function Accessibilite() {
   return (

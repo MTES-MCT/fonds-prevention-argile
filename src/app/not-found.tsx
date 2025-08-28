@@ -1,6 +1,6 @@
 "use client";
 import { contentNotFoundPage } from "@/content";
-import { richTextParser } from "@/utils";
+import { richTextParser } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 
