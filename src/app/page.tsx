@@ -1,11 +1,9 @@
 import { Notice } from "@/components";
 import { contentHomePage } from "@/content";
-import {
-  HeroSection,
-  WhatIsRGASection,
-  EtatAgitSection,
-  CommentCaMarcheSection,
-} from "@/page-sections";
+import { EtatAgitSection, CommentCaMarcheSection } from "@/page-sections";
+import LogementConcerneRgaSection from "@/page-sections/home/LogementConcerneRgaSection";
+import QuestCeQueLeRgaSection from "@/page-sections/home/QuestCeQueLeRgaSection";
+import QuiPeutBeneficierAidesSection from "@/page-sections/home/QuiPeutBeneficierAidesSection";
 
 export default function Home() {
   return (
@@ -17,10 +15,11 @@ export default function Home() {
         buttonClose={true}
       />
       <div className="[&_h2]:text-center">
-        <HeroSection />
-        <WhatIsRGASection />
+        <LogementConcerneRgaSection />
+        <QuestCeQueLeRgaSection />
         <EtatAgitSection />
         <CommentCaMarcheSection />
+        <QuiPeutBeneficierAidesSection />
       </div>
     </>
   );

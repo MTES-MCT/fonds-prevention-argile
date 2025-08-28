@@ -69,5 +69,30 @@
         "description": "Le diagnostic est validé ? Lancez les travaux et recevez les aides après réalisation"
       }
     ]
+  },
+  "qui_peut_beneficier_aides_section": {
+    "image": {
+      "alt": "Fonds Prévention Argile - Un service de l'État",
+      "src": "/images/home/qui-peut-beneficier-aides.png"
+    },
+    "title": "Qui peut bénéficier de ces aides de l'État ?",
+    "subtitle": "Vous pouvez faire une demande d’aide si vous remplissez les conditions suivantes :",
+    "text_items": [
+      {
+        "text": "Vous êtes propriétaire occupant"
+      },
+      {
+        "text": "C'est votre résidence principale"
+      },
+      {
+        "text": "Votre logement a plus de 15 ans"
+      },
+      {
+        "text": "Vous respectez les plafonds de ressources"
+      },
+      {
+        "text": "Vous habitez en zone éligible (départements :  03 • 04 • 24 • 32 • 36 • 47 • 54 • 63 • 81 • 82)"
+      }
+    ]
   }
 }

@@ -3,7 +3,7 @@ import Image from "next/image";
 
 import Link from "next/link";
 
-export default function HeroSection() {
+export default function LogementConcerneRgaSection() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container">
@@ -14,7 +14,7 @@ export default function HeroSection() {
             <p>{contentHomePage.hero_section.subtitle}</p>
             <Link
               className="fr-mt-4v fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
-              href="/"
+              href="/simulateur"
             >
               {contentHomePage.hero_section.cta_label}
             </Link>

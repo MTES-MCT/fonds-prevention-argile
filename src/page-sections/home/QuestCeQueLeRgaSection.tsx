@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Feature } from "@/components";
 import { contentHomePage } from "@/content";
 
-export default function WhatIsRgaSection() {
+export default function QuestCeQueLeRgaSection() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container">

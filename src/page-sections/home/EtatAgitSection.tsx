@@ -14,7 +14,7 @@ export default function EtatAgitSection() {
             <p>{contentHomePage.etat_agit_section.description_2}</p>
             <Link
               className="fr-mt-4v fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
-              href="/"
+              href="/simulateur"
             >
               {contentHomePage.etat_agit_section.cta_label}
             </Link>
