@@ -7,6 +7,7 @@ import PourEnSavoirPlusSection from "@/page-sections/home/PourEnSavoirPlusSectio
 import QuelsSontTravauxEligiblesSection from "@/page-sections/home/QuelsSontTravauxEligiblesSection";
 import QuestCeQueLeRgaSection from "@/page-sections/home/QuestCeQueLeRgaSection";
 import QuiPeutBeneficierAidesSection from "@/page-sections/home/QuiPeutBeneficierAidesSection";
+import QuiSommesNousSection from "@/page-sections/home/QuiSommesNousSection";
 
 export default function Home() {
   return (
@@ -26,6 +27,7 @@ export default function Home() {
         <QuelsSontTravauxEligiblesSection />
         <PourEnSavoirPlusSection />
         <FaqSection />
+        <QuiSommesNousSection />
       </div>
     </>
   );
