@@ -23,11 +23,6 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css"
 // Initialize the DSFR library if running in a browser environment
 export async function initDsfr() {
   if (typeof window !== "undefined") {
-    await Promise.all([
-      import("@gouvfr/dsfr/dist/dsfr.module.min.js"),
-      import("@gouvfr/dsfr/dist/dsfr.nomodule.min.js"),
-      import("@gouvfr/dsfr/dist/core/core.module.min.js"),
-      import("@gouvfr/dsfr/dist/component/header/header.module.min.js"),
-    ]);
+    await Promise.all([import("@gouvfr/dsfr/dist/dsfr.module.min.js")]);
   }
 }

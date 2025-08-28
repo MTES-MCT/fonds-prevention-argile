@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-
 import { Footer, Header, Matomo } from "@/components";
-import { initDsfr } from "@/lib/utils";
 import { marianne, spectral } from "../styles/fonts";
 import "../styles/globals.css";
 import { contentLayout } from "@/content";
+import { initDsfr } from "@/lib/utils";
 
 // DSFR initialization
 initDsfr();
@@ -58,6 +57,8 @@ export default function RootLayout({
           name="viewport"
         />
         <meta content="#000091" name="theme-color" />
+
+        {/* DSFR Favicons */}
         <link
           href="/dsfr/favicon/apple-touch-icon.png"
           rel="apple-touch-icon"
