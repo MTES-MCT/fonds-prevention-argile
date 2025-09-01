@@ -1,25 +1,19 @@
-# Use Node.js LTS version
 FROM node:22-alpine
 
-RUN npm i -g npm
+# Activer pnpm
+RUN corepack enable && corepack prepare pnpm@10.13.1 --activate
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copier uniquement les fichiers de dépendances
+COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies
-RUN npm install
+# Installer les dépendances
+RUN pnpm install --frozen-lockfile
 
-# Copy all files
+# Copier le reste de l'application (sera écrasé par les volumes en dev)
 COPY . .
 
-# Build the Next.js app
-RUN npm run build
-
-# Expose port 3000
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start"]
+CMD ["pnpm", "start:dev"]

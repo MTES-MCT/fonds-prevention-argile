@@ -7,8 +7,11 @@ services:
       - "3000:3000"
     env_file:
       - .env.docker
-    command: npm run dev
+    command: pnpm start:dev
     volumes:
       - .:/app
       - /app/node_modules
       - /app/.next
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true  # Utile pour le hot-reload sous Windows/WSL
