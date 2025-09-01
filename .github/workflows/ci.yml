@@ -44,3 +44,6 @@ jobs:
           # Variables d'environnement pour le build
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1
+          DEMARCHES_SIMPLIFIEES_API_KEY: "API_KEY_EXAMPLE"
+          DEMARCHES_SIMPLIFIEES_API_URL: https://www.demarches-simplifiees.fr/api/v2/graphql
+          DEMARCHES_SIMPLIFIEES_ID_DEMARCHE: "123456"
