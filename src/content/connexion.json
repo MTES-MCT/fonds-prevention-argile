@@ -1,0 +1,24 @@
+{
+  "title": "Connexion au Fonds Prévention Argile",
+  "franceConnect": {
+    "title": "Se connecter avec FranceConnect",
+    "connectLogin": "S'identifier avec",
+    "connectBrand": "FranceConnect",
+    "whatIs": "Qu'est-ce que FranceConnect ?",
+    "whatIsNewWindow": "Qu’est ce que FranceConnect ? - nouvelle fenêtre"
+  },
+  "or": "ou",
+  "connectWithAccount": "Se connecter avec son compte",
+  "description": "Page de connexion au Fonds Prévention Argile",
+  "mandatoryFieldsText": "Sauf mention contraire, tous les champs sont obligatoires.",
+  "login": "Identifiant",
+  "loginFormat": "Format attendu : nom@domaine.fr",
+  "password": "Mot de passe",
+  "passwordShow": "Afficher",
+  "forgotPassword": "Mot de passe oublié ?",
+  "forgotPasswordLink": "/mot-de-passe-oublie",
+  "rememberMe": "Se souvenir de moi",
+  "connect": "Se connecter",
+  "dontHaveAccount": "Vous n'avez pas de compte ?",
+  "createAccount": "Créer un compte"
+}

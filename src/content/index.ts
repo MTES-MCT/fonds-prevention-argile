@@ -6,3 +6,4 @@ export { default as contentStatisticsPage } from "./statisticsPage.json";
 export { default as contentLegalNoticePage } from "./legalNoticePage.json";
 export { default as contentNotFoundPage } from "./notFoundPage.json";
 export { default as contentSimulationPage } from "./simulationPage.json";
+export { default as contentConnexionPage } from "./connexion.json";

@@ -20,15 +20,20 @@
     "organizationDescription": "Retrait Gonflement des Argiles - Aides aux ménages",
     "organizationLink": "/",
     "organizationName": "Fonds Prévention Argile",
-    "buttons": [
+    "links": [
       {
         "href": "/connexion",
-        "icon": "fr-icon-account-circle-fill",
+        "className": "fr-icon-account-circle-fill fr-btn",
         "label": "Se connecter"
       },
       {
+        "href": "/admin",
+        "className": "fr-icon-account-circle-fill fr-btn",
+        "label": "Administration"
+      },
+      {
         "href": "/simulateur",
-        "icon": "fr-icon-checkbox-circle-fill",
+        "className": "fr-btn--account fr-icon-checkbox-circle-fill fr-btn",
         "label": "Vérifier mon éligibilité"
       }
     ]
