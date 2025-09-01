@@ -8,34 +8,33 @@ export default function QuiSommesNousSection() {
         <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--center">
           {/* Zone gauche - Qui sommes nous */}
           <div className="fr-col-12 fr-col-lg-6 fr-col--stretch">
-            <div className="bg-white shadow-md p-10 h-full flex flex-col">
-              <h4>
-                {
-                  contentHomePage.qui_sommes_nous_section
-                    .qui_sommes_nous_subsection.title
-                }
-              </h4>
-              <p className="text-sm fr-text--light leading-tight">
-                {
-                  contentHomePage.qui_sommes_nous_section
-                    .qui_sommes_nous_subsection.description_1
-                }
-              </p>
-              <p className="text-sm fr-text--light leading-tight">
-                {
-                  contentHomePage.qui_sommes_nous_section
-                    .qui_sommes_nous_subsection.description_2
-                }
-              </p>
-              <div className="h-[100px] relative max-w-[300px]">
+            <div className="fr-card fr-p-3w fr-h-100">
+              <div className="fr-card__body">
+                <h4 className="fr-h4">
+                  {
+                    contentHomePage.qui_sommes_nous_section
+                      .qui_sommes_nous_subsection.title
+                  }
+                </h4>
+                <p className="fr-text--sm fr-text--light fr-mb-2w">
+                  {
+                    contentHomePage.qui_sommes_nous_section
+                      .qui_sommes_nous_subsection.description_1
+                  }
+                </p>
+                <p className="fr-text--sm fr-text--light fr-mb-3w">
+                  {
+                    contentHomePage.qui_sommes_nous_section
+                      .qui_sommes_nous_subsection.description_2
+                  }
+                </p>
                 <Image
                   alt={
                     contentHomePage.qui_sommes_nous_section
                       .qui_sommes_nous_subsection.imageAlt
                   }
-                  className="object-contain"
-                  fill
-                  priority
+                  width={300}
+                  height={300}
                   src={
                     contentHomePage.qui_sommes_nous_section
                       .qui_sommes_nous_subsection.imageSrc
@@ -47,30 +46,32 @@ export default function QuiSommesNousSection() {
 
           {/* Zone droite - Nos missions */}
           <div className="fr-col-12 fr-col-lg-6 fr-col--stretch">
-            <div className="bg-white shadow-md p-10 h-full flex flex-col">
-              <h4>
-                {
-                  contentHomePage.qui_sommes_nous_section
-                    .nos_missions_subsection.title
-                }
-              </h4>
-              <div className="flex-grow">
-                {contentHomePage.qui_sommes_nous_section.nos_missions_subsection.missions.map(
-                  (mission, index) => (
-                    <div key={index} className="mb-4">
-                      <div className="fr-text--lg font-black	fr-mb-1v">
-                        <span
-                          className={`text-blue-900 font-extrabold text-xl mr-2 ${mission.icon}`}
-                          aria-hidden="true"
-                        ></span>
-                        {mission.title}
+            <div className="fr-card fr-p-3w fr-h-100">
+              <div className="fr-card__body">
+                <h4>
+                  {
+                    contentHomePage.qui_sommes_nous_section
+                      .nos_missions_subsection.title
+                  }
+                </h4>
+                <div className="flex-grow">
+                  {contentHomePage.qui_sommes_nous_section.nos_missions_subsection.missions.map(
+                    (mission, index) => (
+                      <div key={index} className="mb-4">
+                        <div className="fr-text--lg font-black	fr-mb-1v">
+                          <span
+                            className={`text-blue-900 font-extrabold text-xl mr-2 ${mission.icon}`}
+                            aria-hidden="true"
+                          ></span>
+                          {mission.title}
+                        </div>
+                        <p className="text-sm font-extralight leading-tight fr-mb-0">
+                          {mission.description}
+                        </p>
                       </div>
-                      <p className="text-sm font-extralight leading-tight fr-mb-0">
-                        {mission.description}
-                      </p>
-                    </div>
-                  )
-                )}
+                    )
+                  )}
+                </div>
               </div>
             </div>
           </div>

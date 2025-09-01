@@ -1,5 +1,5 @@
-import { IllustrationTile } from "@/components";
 import { contentHomePage } from "@/content";
+import Image from "next/image";
 
 export default function CommentCaMarcheSection() {
   return (
@@ -10,14 +10,27 @@ export default function CommentCaMarcheSection() {
           {contentHomePage.comment_ca_marche_section.steps.map(
             (step, index) => (
               <div key={index} className="fr-col-12 fr-col-md-6 fr-col-lg-4">
-                <IllustrationTile
-                  title={step.title}
-                  description={step.description}
-                  imageAlt={step.imageAlt}
-                  imageSrc={step.imageSrc}
-                  imageHeight={64}
-                  imageWidth={64}
-                />
+                <div
+                  className="fr-tile fr-tile--horizontal fr-enlarge-link"
+                  id="tile-33"
+                >
+                  <div className="fr-tile__body">
+                    <div className="fr-tile__content">
+                      <h3 className="fr-tile__title">{step.title}</h3>
+                      <p className="fr-tile__desc">{step.description}</p>
+                    </div>
+                  </div>
+                  <div className="fr-tile__header">
+                    <div className="fr-tile__pictogram">
+                      <Image
+                        alt={step.imageAlt}
+                        src={step.imageSrc}
+                        height={64}
+                        width={64}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             )
           )}

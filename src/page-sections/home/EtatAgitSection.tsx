@@ -1,4 +1,3 @@
-import { InfoTile } from "@/components";
 import { contentHomePage } from "@/content";
 import Link from "next/link";
 
@@ -22,16 +21,24 @@ export default function EtatAgitSection() {
 
           {/* Zone tuiles */}
           <div className="fr-col-12 fr-col-md-6 flex justify-center">
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6 p-20">
               {contentHomePage.etat_agit_section.infos_tiles.map(
                 (tile, index) => (
-                  <InfoTile
+                  <div
                     key={index}
-                    icon={tile.icon}
-                    iconColor={tile.iconColor}
-                    title={tile.title}
-                    description={tile.description}
-                  />
+                    className="fr-tile fr-tile--horizontal fr-enlarge-link"
+                    id="tile-6"
+                  >
+                    <div className="fr-tile__body">
+                      <div className="fr-tile__content">
+                        <div
+                          className={`${tile.icon} fr-icon--sm mb-2 ${tile.iconColor}`}
+                        ></div>
+                        <h3 className="fr-tile__title">{tile.title}</h3>
+                        <p className="fr-tile__desc">{tile.description}</p>
+                      </div>
+                    </div>
+                  </div>
                 )
               )}
             </div>
