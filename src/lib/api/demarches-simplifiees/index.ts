@@ -4,7 +4,6 @@ export {
 } from "./client";
 
 export type {
-  DemarcheBase,
   DemarcheDetailed,
   Dossier,
   DossiersConnection,

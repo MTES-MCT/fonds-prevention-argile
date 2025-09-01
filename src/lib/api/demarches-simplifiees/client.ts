@@ -1,6 +1,5 @@
 import { getServerEnv } from "@/lib/config/env.config";
 import type {
-  DemarcheBase,
   DemarcheDetailed,
   Dossier,
   DossiersConnection,
@@ -195,6 +194,9 @@ export class DemarchesSimplifieesClient {
   /**
    * Récupère un dossier spécifique
    */
+  /**
+   * Récupère un dossier spécifique
+   */
   async getDossier(dossierNumber: number): Promise<Dossier | null> {
     const query = `
       query GetDossier($number: Int!) {
@@ -210,9 +212,6 @@ export class DemarchesSimplifieesClient {
           motivation
           usager {
             email
-            civilite
-            nom
-            prenom
           }
           instructeurs {
             id
@@ -227,10 +226,6 @@ export class DemarchesSimplifieesClient {
             id
             label
             stringValue
-            instructeur {
-              id
-              email
-            }
           }
           messages {
             id

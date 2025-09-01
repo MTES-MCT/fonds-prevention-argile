@@ -1,4 +1,4 @@
-export interface DemarcheBase {
+interface DemarcheBase {
   id: string;
   number: number;
   title: string;
@@ -55,9 +55,6 @@ export interface Dossier {
 
 export interface Usager {
   email: string;
-  civilite?: string;
-  nom?: string;
-  prenom?: string;
 }
 
 export interface Instructeur {

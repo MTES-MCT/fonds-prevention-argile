@@ -298,7 +298,7 @@ export default async function AdminPage() {
                             </td>
                             <td>
                               <a
-                                href={`/admin/dossiers/${dossier.number}`}
+                                href={`/dashboard`}
                                 className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-btn--icon-left fr-icon-eye-line"
                                 title={`Consulter le dossier ${dossier.number}`}
                               >
