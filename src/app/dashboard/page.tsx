@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees";
-import { richTextParser } from "@/lib/utils";
+import { formatDate, formatDateTime, richTextParser } from "@/lib/utils";
 
 // Fonction pour formater les états
 function getStateLabel(state: string): string {
@@ -24,30 +24,6 @@ function getStateBadgeClass(state: string): string {
     sans_suite: "fr-badge--warning",
   };
   return `fr-badge ${stateClasses[state] || ""}`;
-}
-
-// Fonction pour formater une date avec heure
-function formatDateTime(dateString: string | null): string {
-  if (!dateString) return "—";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-// Fonction pour formater une date simple
-function formatDate(dateString: string | null): string {
-  if (!dateString) return "—";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
 }
 
 export default async function DossierDetailPage() {
