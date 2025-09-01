@@ -152,10 +152,11 @@ export interface DemarchesFilters {
 }
 
 export interface DossiersFilters {
-  state?: DossierState;
-  since?: string;
-  order?: "ASC" | "DESC";
-  archived?: boolean;
   first?: number;
   after?: string;
+  state?: string;
+  archived?: boolean;
+  order?: "ASC" | "DESC";
+  createdSince?: string; // Format ISO8601DateTime
+  updatedSince?: string; // Format ISO8601DateTime
 }

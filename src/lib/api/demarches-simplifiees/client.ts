@@ -71,36 +71,6 @@ export class DemarchesSimplifieesClient {
   }
 
   /**
-   * Récupère les informations de base d'une démarche
-   */
-  async getDemarcheBase(number: number): Promise<DemarcheBase | null> {
-    const query = `
-      query GetDemarcheBase($number: Int!) {
-        demarche(number: $number) {
-          id
-          number
-          title
-          state
-          dateCreation
-          dateDerniereModification
-          dateDepublication
-          datePublication
-        }
-      }
-    `;
-
-    try {
-      const data = await this.executeQuery<{ demarche: DemarcheBase }>(query, {
-        number,
-      });
-      return data.demarche;
-    } catch (error) {
-      console.error(`Failed to fetch demarche ${number}:`, error);
-      return null;
-    }
-  }
-
-  /**
    * Récupère les informations détaillées d'une démarche
    */
   async getDemarcheDetailed(number: number): Promise<DemarcheDetailed | null> {
@@ -140,6 +110,7 @@ export class DemarchesSimplifieesClient {
 
   /**
    * Récupère les dossiers d'une démarche avec pagination
+   * Gère les démarches en test en récupérant TOUS les dossiers
    */
   async getDemarcheDossiers(
     number: number,
@@ -153,16 +124,21 @@ export class DemarchesSimplifieesClient {
         $state: DossierState
         $archived: Boolean
         $order: Order
+        $createdSince: ISO8601DateTime
+        $updatedSince: ISO8601DateTime
       ) {
         demarche(number: $number) {
           id
           title
+          state
           dossiers(
             first: $first
             after: $after
             state: $state
             archived: $archived
             order: $order
+            createdSince: $createdSince
+            updatedSince: $updatedSince
           ) {
             pageInfo {
               hasNextPage
@@ -181,9 +157,6 @@ export class DemarchesSimplifieesClient {
               motivation
               usager {
                 email
-                civilite
-                nom
-                prenom
               }
               champs {
                 id
@@ -199,11 +172,13 @@ export class DemarchesSimplifieesClient {
     try {
       const variables = {
         number,
-        first: filters?.first ?? 20,
+        first: filters?.first ?? 100,
         after: filters?.after,
         state: filters?.state,
         archived: filters?.archived,
         order: filters?.order,
+        createdSince: filters?.createdSince,
+        updatedSince: filters?.updatedSince,
       };
 
       const data = await this.executeQuery<{
