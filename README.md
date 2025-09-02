@@ -118,7 +118,17 @@ src/
 │   ├── Header/
 │   ├── Footer/
 │   └── Matomo/          # Analytics
-├── content/             # Contenus JSON
+├── content/             # Contenus textuels (wording) de l'application
+│   ├── accessibilityPage.json  # Textes page accessibilité
+│   ├── components.json          # Textes composants réutilisables
+│   ├── connexion.json           # Textes page connexion
+│   ├── homePage.json            # Textes page d'accueil
+│   ├── layout.json              # Textes layout (header, footer)
+│   ├── legalNoticePage.json     # Textes mentions légales
+│   ├── notFoundPage.json        # Textes page 404
+│   ├── simulationPage.json      # Textes page simulateur
+│   ├── statisticsPage.json      # Textes page statistiques
+│   └── index.ts                 # Export centralisé
 ├── hooks/               # Hooks React personnalisés
 ├── lib/                 # Utilitaires et configuration
 │   ├── api/            # Clients API (Démarches Simplifiées)
@@ -129,6 +139,49 @@ src/
 ├── styles/             # Styles globaux et fonts
 └── types/              # Types TypeScript (si nécessaire)
 ```
+
+## Gestion du contenu textuel
+
+### Architecture du dossier `/content/`
+
+Le dossier `src/content/` contient tous les textes de l'application sous forme de fichiers JSON. Cette architecture permet :
+
+- **Modification facile des textes** : Les contenus peuvent être modifiés sans toucher au code React
+- **Centralisation** : Tous les textes sont regroupés au même endroit
+- **Collaboration simplifiée** : Les contributeurs non-techniques peuvent proposer des modifications via des Pull Requests sur ces fichiers JSON uniquement
+- **Maintenabilité** : Séparation claire entre la logique d'affichage et le contenu éditorial
+
+### Structure des fichiers JSON
+
+Chaque fichier JSON correspond à une page ou un groupe de composants :
+Exemple : homePage.json
+
+```json
+{
+  "hero": {
+    "title": "Fonds de prévention des risques liés au retrait-gonflement des argiles",
+    "subtitle": "Protégez votre logement contre les effets de la sécheresse",
+    "description": "Le service public qui vous accompagne..."
+  },
+  "sections": {
+    "whatIsRGA": {
+      "title": "Qu'est-ce que le RGA ?",
+      "content": "Le retrait-gonflement des argiles..."
+    }
+  }
+}
+```
+
+### Modification des contenus
+
+Pour modifier un texte de l'application :
+
+1. Identifiez le fichier JSON correspondant dans `src/content/`
+2. Modifiez le texte souhaité
+3. Créez une Pull Request avec vos modifications
+4. Les modifications seront visibles après le déploiement
+
+> **Note pour les contributeurs** : Il n'est pas nécessaire de connaître React ou TypeScript pour modifier les contenus textuels. Seuls les fichiers JSON dans le dossier `/content/` doivent être édités.
 
 ## Technologies
 
@@ -176,6 +229,32 @@ pnpm fresh
 - **Erreurs TypeScript** : Lancez `pnpm typecheck` pour identifier les problèmes
 - **Tests qui échouent** : Utilisez `pnpm test:watch` pour débugger
 
+## Sécurité et qualité du code
+
+### Husky (Git hooks)
+
+Le projet utilise **Husky** pour automatiser les vérifications avant chaque commit :
+
+- Installation automatique lors du `pnpm install`
+- Exécute les validations définies dans `.husky/pre-commit`
+- Empêche les commits si les tests ou le linting échouent
+
+### Talisman (Protection des secrets)
+
+**Talisman** protège contre la fuite accidentelle de secrets dans le code :
+
+```bash
+# Vérifier manuellement tout le repository
+pnpm talisman:check
+
+# Exécuté automatiquement avant chaque commit
+pnpm precommit
+```
+
+Configuration dans `.talismanrc` pour les exceptions et les fichiers à ignorer.
+
+> **Important** : Ne jamais contourner Talisman sans vérification. Si un fichier est bloqué, vérifiez qu'il ne contient pas de données sensibles avant de l'ajouter aux exceptions.
+
 ## Contribution
 
 1. Créez une branche pour votre fonctionnalité
@@ -183,6 +262,13 @@ pnpm fresh
 3. Formatez votre code avec `pnpm format`
 4. Créez une Pull Request avec une description claire
 
-## Licence
+**Note** : Les hooks Husky et Talisman s'exécutent automatiquement lors du commit pour garantir la qualité et la sécurité du code.
 
-[À définir]
+### Contribution aux contenus textuels
+
+Si vous souhaitez uniquement modifier des textes de l'application :
+
+1. Créez une branche pour vos modifications
+2. Éditez les fichiers JSON dans `src/content/`
+3. Créez une Pull Request en décrivant les changements apportés
+4. Aucune connaissance technique n'est requise pour ce type de contribution
