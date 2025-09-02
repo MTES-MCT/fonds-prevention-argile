@@ -1,2 +1,75 @@
-#!/bin/sh
-talisman --githook pre-commit
+#!/bin/bash
+# Détection de secrets - compatible WSL et Windows GitKraken
+
+# Variables d'environnement pour personnaliser
+TALISMAN_HOME=${TALISMAN_HOME:-"$HOME/.talisman"}
+SKIP_TALISMAN=${SKIP_TALISMAN:-false}
+
+# Si skip est activé
+if [ "$SKIP_TALISMAN" = "true" ]; then
+    echo "⚠️  Skipping secret detection (SKIP_TALISMAN=true)"
+    exit 0
+fi
+
+# Fonction pour trouver Talisman
+find_talisman() {
+    local candidates=(
+        # Chemins Windows (pour GitKraken Windows)
+        "/c/Users/$USER/.talisman/talisman.exe"
+        "/mnt/c/Users/$USER/.talisman/talisman.exe"
+        "$USERPROFILE/.talisman/talisman.exe"
+        # Chemins WSL/Linux
+        "$HOME/.talisman/talisman"
+        "$TALISMAN_HOME/talisman"
+        # Chemins système
+        "/usr/local/bin/talisman"
+        "/usr/bin/talisman"
+    )
+    
+    for path in "${candidates[@]}"; do
+        if [ -f "$path" ] && [ -x "$path" ]; then
+            echo "$path"
+            return 0
+        fi
+    done
+    
+    # Chercher dans le PATH
+    if command -v talisman >/dev/null 2>&1; then
+        echo "talisman"
+        return 0
+    fi
+    
+    return 1
+}
+
+TALISMAN=$(find_talisman)
+
+if [ -n "$TALISMAN" ]; then
+    echo "🔍 Running Talisman security scan..."
+    "$TALISMAN" --githook pre-commit
+    exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo ""
+        echo "❌ Commit blocked: secrets detected!"
+        echo "   Review the files above or use SKIP_TALISMAN=true git commit to bypass"
+    fi
+    exit $exit_code
+else
+    echo "⚠️  WARNING: Talisman not found!"
+    echo "    Secret detection is DISABLED"
+    echo "    Install from: https://github.com/thoughtworks/talisman"
+    echo ""
+    
+    # En mode interactif uniquement
+    if [ -t 0 ]; then
+        read -p "Continue without secret detection? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    else
+        # Non-interactif (GitKraken) - avertir mais continuer
+        echo "    ⚠️  Continuing without secret detection (non-interactive mode)"
+        exit 0
+    fi
+fi
