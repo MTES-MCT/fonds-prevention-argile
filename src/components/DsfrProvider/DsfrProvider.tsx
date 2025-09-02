@@ -18,7 +18,6 @@ declare global {
 
 export function DsfrProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // Fonction pour initialiser DSFR
     const initDsfr = async () => {
       // Seulement côté client
       if (typeof window === "undefined") return;
@@ -47,9 +46,8 @@ export function DsfrProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Lancer l'initialisation
     initDsfr();
-  }, []); // Seulement au premier mount
+  }, []);
 
   return <>{children}</>;
 }
