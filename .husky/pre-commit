@@ -1,5 +1,4 @@
 #!/bin/bash
-# Détection de secrets - compatible WSL et Windows GitKraken
 
 # Variables d'environnement pour personnaliser
 TALISMAN_HOME=${TALISMAN_HOME:-"$HOME/.talisman"}

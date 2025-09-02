@@ -9,7 +9,7 @@
     "start:dev": "next dev",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "validate": "pnpm typecheck && pnpm lint && pnpm test",
+    "validate": "pnpm typecheck && pnpm lint && pnpm test && pnpm precommit",
     "ci": "pnpm install --frozen-lockfile && pnpm validate",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -19,7 +19,9 @@
     "format:check": "prettier --check .",
     "clean": "rm -rf .next && pnpm start:dev",
     "fresh": "rm -rf .next node_modules pnpm-lock.yaml && pnpm install && pnpm start:dev",
-    "prepare": "husky"
+    "prepare": "husky",
+    "precommit": "talisman --githook pre-commit",
+    "talisman:check": "talisman --scan"
   },
   "dependencies": {
     "@gouvfr/dsfr": "^1.14.0",
