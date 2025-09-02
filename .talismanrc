@@ -1,0 +1,20 @@
+# Configuration Talisman pour fonds-prevention-argile
+fileignoreconfig:
+  - filename: pnpm-lock.yaml
+    checksum: 3ea23ab3f88e0fb3bb878546a2b2422180d7f2ec8f2d12823ac6d4eee4ddc72f
+  - filename: package-lock.json
+    checksum: ignore
+  - filename: .env.example
+    checksum: ignore
+  - filename: .env.local.example
+    checksum: ignore
+  - filename: .github/workflows/ci.yml
+    checksum: ignore
+
+# Seuil de détection élevé pour éviter les faux positifs
+threshold: high
+
+# Permettre les valeurs d'exemple utilisées dans la CI
+allowed_patterns:
+  - "API_KEY_EXAMPLE"
+  - "123456"

@@ -7,9 +7,28 @@ on:
     branches: [main, dev]
 
 jobs:
+  security:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect secrets with Talisman
+        run: |
+          # Télécharger et installer Talisman
+          curl -L https://github.com/thoughtworks/talisman/releases/latest/download/talisman_linux_amd64 -o talisman
+          chmod +x talisman
+
+          # Scanner le code
+          ./talisman --githook pre-commit || (echo "::error::Secrets detected in code" && exit 1)
+
   ci:
     name: Test, Lint & Build
     runs-on: ubuntu-latest
+    needs: security
 
     steps:
       - name: Checkout code
