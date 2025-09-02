@@ -27,7 +27,7 @@
         "label": "Se connecter"
       },
       {
-        "href": "/admin",
+        "href": "/administration",
         "className": "fr-icon-account-circle-fill fr-btn",
         "label": "Administration"
       },

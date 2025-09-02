@@ -26,7 +26,7 @@ function getStateBadgeClass(state: string): string {
   return `fr-badge ${stateClasses[state] || ""}`;
 }
 
-export default async function DossierDetailPage() {
+export default async function Dashboard() {
   // ID en dur pour l'instant
   // TODO : a remplacer plus tard
   const dossierId = 25953373;
@@ -56,7 +56,7 @@ export default async function DossierDetailPage() {
         <div className="fr-collapse" id="breadcrumb">
           <ol className="fr-breadcrumb__list">
             <li>
-              <a className="fr-breadcrumb__link" href="/admin">
+              <a className="fr-breadcrumb__link" href="/administration">
                 Tableau de bord
               </a>
             </li>
@@ -457,7 +457,7 @@ export default async function DossierDetailPage() {
       <div className="fr-mt-6w">
         <div className="fr-btns-group fr-btns-group--inline">
           <a
-            href="/admin"
+            href="/administration"
             className="fr-btn fr-btn--secondary fr-btn--icon-left fr-icon-arrow-left-line"
           >
             Retour à la liste

@@ -1,13 +1,17 @@
 import { Notice } from "@/components";
 import { contentHomePage } from "@/content";
-import { EtatAgitSection, CommentCaMarcheSection } from "@/page-sections";
-import FaqSection from "@/page-sections/home/FaqSection";
-import LogementConcerneRgaSection from "@/page-sections/home/LogementConcerneRgaSection";
-import PourEnSavoirPlusSection from "@/page-sections/home/PourEnSavoirPlusSection";
-import QuelsSontTravauxEligiblesSection from "@/page-sections/home/QuelsSontTravauxEligiblesSection";
-import QuestCeQueLeRgaSection from "@/page-sections/home/QuestCeQueLeRgaSection";
-import QuiPeutBeneficierAidesSection from "@/page-sections/home/QuiPeutBeneficierAidesSection";
-import QuiSommesNousSection from "@/page-sections/home/QuiSommesNousSection";
+import {
+  EtatAgitSection,
+  CommentCaMarcheSection,
+  LogementConcerneRgaSection,
+  QuestCeQueLeRgaSection,
+  SignesASurveiller,
+  QuiPeutBeneficierAidesSection,
+  QuelsSontTravauxEligiblesSection,
+  PourEnSavoirPlusSection,
+  FaqSection,
+  QuiSommesNousSection,
+} from "@/page-sections";
 
 export default function Home() {
   return (
@@ -21,6 +25,7 @@ export default function Home() {
       <div>
         <LogementConcerneRgaSection />
         <QuestCeQueLeRgaSection />
+        <SignesASurveiller />
         <EtatAgitSection />
         <CommentCaMarcheSection />
         <QuiPeutBeneficierAidesSection />

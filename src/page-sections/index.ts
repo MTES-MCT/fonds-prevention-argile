@@ -1,4 +1,10 @@
-export { default as HeroSection } from "./home/LogementConcerneRgaSection";
-export { default as WhatIsRGASection } from "./home/QuestCeQueLeRgaSection";
+export { default as LogementConcerneRgaSection } from "./home/LogementConcerneRgaSection";
+export { default as QuestCeQueLeRgaSection } from "./home/QuestCeQueLeRgaSection";
 export { default as EtatAgitSection } from "./home/EtatAgitSection";
+export { default as SignesASurveiller } from "./home/SignesASurveiller";
 export { default as CommentCaMarcheSection } from "./home/CommentCaMarcheSection";
+export { default as QuiPeutBeneficierAidesSection } from "./home/QuiPeutBeneficierAidesSection";
+export { default as QuelsSontTravauxEligiblesSection } from "./home/QuelsSontTravauxEligiblesSection";
+export { default as PourEnSavoirPlusSection } from "./home/PourEnSavoirPlusSection";
+export { default as FaqSection } from "./home/FaqSection";
+export { default as QuiSommesNousSection } from "./home/QuiSommesNousSection";

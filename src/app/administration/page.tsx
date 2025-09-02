@@ -26,7 +26,7 @@ function getStateBadgeClass(state: string): string {
   return `fr-badge ${stateClasses[state] || ""}`;
 }
 
-export default async function AdminPage() {
+export default async function Admin() {
   const env = getServerEnv();
   const demarcheId = parseInt(env.DEMARCHES_SIMPLIFIEES_ID_DEMARCHE);
 
