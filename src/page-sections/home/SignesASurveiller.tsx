@@ -5,7 +5,7 @@ export default function SignesASurveiller() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container">
-        <h1>Les signes à surveiller</h1>
+        <h1>{contentHomePage.signes_a_surveiller_section.title}</h1>
         <div className="fr-grid-row fr-grid-row--gutters">
           {contentHomePage.signes_a_surveiller_section.signes.map(
             (signe, index) => (
@@ -14,13 +14,7 @@ export default function SignesASurveiller() {
                   <div className="fr-card__body">
                     <div className="fr-card__content">
                       <h3 className="fr-card__title">
-                        <a
-                          href={signe.pageLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {signe.titre}
-                        </a>
+                        <a href={signe.pageLink}>{signe.titre}</a>
                       </h3>
                       <p className="fr-card__desc">{signe.description}</p>
                     </div>
