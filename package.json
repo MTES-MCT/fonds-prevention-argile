@@ -10,7 +10,6 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "validate": "pnpm typecheck && pnpm lint && pnpm test && pnpm precommit",
-    "ci": "pnpm install --frozen-lockfile && pnpm validate",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
