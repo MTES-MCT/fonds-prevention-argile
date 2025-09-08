@@ -13,7 +13,7 @@ export default function QuelsSontTravauxEligiblesSection() {
                   <button
                     type="button"
                     id={`tab-${index}`}
-                    className="fr-tabs__tab"
+                    className={`fr-tabs__tab ${tab.icon} fr-tabs__tab--icon-left`}
                     tabIndex={index === 0 ? 0 : -1}
                     role="tab"
                     aria-selected={index === 0 ? "true" : "false"}

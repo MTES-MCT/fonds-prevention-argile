@@ -8,6 +8,7 @@ import { DsfrProvider } from "@/components/DsfrProvider/DsfrProvider";
 import "@gouvfr/dsfr/dist/dsfr.min.css";
 import "@gouvfr/dsfr/dist/utility/colors/colors.min.css";
 import "@gouvfr/dsfr/dist/utility/icons/icons-system/icons-system.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-arrows/icons-arrows.min.css";
 
 // Import icons from the DSFR
 import "@gouvfr/dsfr/dist/utility/icons/icons-business/icons-business.min.css";

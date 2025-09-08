@@ -183,7 +183,7 @@
     "tabs": [
       {
         "title": "Repérage des fuites des réseaux enterrés",
-        "icon": "fr-icon-search-line",
+        "icon": "fr-icon-drop-line",
         "textList": [
           {
             "text": "Mise en charge des réseaux d’eaux pluviales, eaux usées.. (à réaliser pendant le diagnostic)"
@@ -225,7 +225,7 @@
       },
       {
         "title": "Imperméabilisation du sol au droit des fondations",
-        "icon": "fr-icon-water-fill",
+        "icon": "fr-icon-blur-off-line",
         "textList": [
           {
             "text": "Création d’une pente d’évacuation des eaux de pluie à partir des murs"

@@ -23,7 +23,7 @@
     "talisman:check": "talisman --scan"
   },
   "dependencies": {
-    "@gouvfr/dsfr": "^1.14.0",
+    "@gouvfr/dsfr": "^1.14.1",
     "@sentry/nextjs": "^9.2.0",
     "@socialgouv/matomo-next": "^1.9.2",
     "next": "^15.2.3",
