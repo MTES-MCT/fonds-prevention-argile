@@ -1,9 +1,11 @@
+"use client";
+
 import { contentSimulationPage } from "@/content";
 
 export default function Simulateur() {
   // Debug des variables d'environnement
-  const iframeUrl = process.env.MESAIDES_RENOV_IFRAME_URL;
-  const iframeHeight = process.env.MESAIDES_RENOV_IFRAME_HEIGHT;
+  const iframeUrl = process.env.NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL;
+  const iframeHeight = process.env.NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_HEIGHT;
 
   return (
     <section className="fr-container-fluid fr-py-10w">
@@ -17,16 +19,14 @@ export default function Simulateur() {
         </p>
 
         {/* Debug info - à retirer en production */}
-        {process.env.NODE_ENV !== "production" && (
-          <div className="bg-yellow-100 p-4 rounded mb-4 text-sm">
-            <p>
-              <strong>Debug:</strong>
-            </p>
-            <p>URL: {iframeUrl || "❌ UNDEFINED"}</p>
-            <p>Height: {iframeHeight || "❌ UNDEFINED"}</p>
-            <p>Node ENV: {process.env.NODE_ENV}</p>
-          </div>
-        )}
+        <div className="bg-yellow-100 p-4 rounded mb-4 text-sm">
+          <p>
+            <strong>Debug:</strong>
+          </p>
+          <p>URL: {iframeUrl || "❌ UNDEFINED"}</p>
+          <p>Height: {iframeHeight || "❌ UNDEFINED"}</p>
+          <p>Node ENV: {process.env.NODE_ENV}</p>
+        </div>
 
         {/* Conditional rendering de l'iframe */}
         {iframeUrl ? (
@@ -48,7 +48,7 @@ export default function Simulateur() {
             <p>
               <strong>Erreur de configuration :</strong> L'URL du simulateur
               n'est pas définie. Variable d'environnement
-              MESAIDES_RENOV_IFRAME_URL manquante.
+              NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL manquante.
             </p>
           </div>
         )}
