@@ -8,3 +8,4 @@ export { default as contentNotFoundPage } from "./notFoundPage.json";
 export { default as contentSimulationPage } from "./simulationPage.json";
 export { default as contentConnexionPage } from "./connexion.json";
 export { default as contentSignesASurveiller } from "./signesASurveiller.json";
+export { default as contentTravauxEligibles } from "./travauxEligibles.json";

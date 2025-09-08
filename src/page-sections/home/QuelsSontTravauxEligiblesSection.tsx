@@ -1,4 +1,5 @@
 import { contentHomePage } from "@/content";
+import Image from "next/image";
 
 export default function QuelsSontTravauxEligiblesSection() {
   return (
@@ -35,11 +36,37 @@ export default function QuelsSontTravauxEligiblesSection() {
                 aria-labelledby={`tab-${index}`}
                 tabIndex={0}
               >
-                <ul>
-                  {tab.textList.map((item, textIndex) => (
-                    <li key={textIndex}>{item.text}</li>
+                {/* Grille pour organiser les cartes */}
+                <div className="fr-grid-row fr-grid-row--gutters">
+                  {tab.travaux.map((item, textIndex) => (
+                    <div
+                      key={textIndex}
+                      className="fr-col-12 fr-col-md-6 fr-col-lg-4"
+                    >
+                      <div className="fr-card fr-enlarge-link fr-card--horizontal">
+                        <div className="fr-card__body">
+                          <div className="fr-card__content">
+                            <h3 className="fr-card__title">
+                              <a href={item.pageUrl}>{item.text}</a>
+                            </h3>
+                            <div className="fr-card__start"></div>
+                          </div>
+                        </div>
+                        <div className="fr-card__header">
+                          <div className="fr-card__img">
+                            <Image
+                              className="fr-responsive-img"
+                              src={item.image.src}
+                              alt={item.image.alt}
+                              width={300}
+                              height={200}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )
           )}
