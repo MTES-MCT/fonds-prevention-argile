@@ -35,7 +35,7 @@
         },
         "titre": "Fissures en escalier sur les murs extérieurs",
         "description": "Ce qu’il faut surveiller : Les fissures en escalier suivent généralement les joints de mortier entre les briques ou les parpaings, créant un motif caractéristique en marches d'escalier.",
-        "imageSrc": "/images/home/signe-a-surveiller-fissures-escalier.png",
+        "imageSrc": "/images/signes-a-surveiller/fissures-escalier.png",
         "pageLink": "/signes-a-surveiller/fissures-en-escalier"
       },
       {
@@ -45,7 +45,7 @@
         },
         "titre": "Fissures horizontales le le long des plinthes",
         "description": "Ce qu'il faut surveiller : Les fissures horizontales qui apparaissent le long des plinthes, à la jonction entre le mur et le sol, sont souvent les premiers signes visibles du retrait-gonflement des argiles.",
-        "imageSrc": "/images/home/signe-a-surveiller-fissures-horizontales.png",
+        "imageSrc": "/images/signes-a-surveiller/fissures-horizontales.png",
         "pageLink": "/signes-a-surveiller/fissures-horizontales"
       },
       {
@@ -55,7 +55,7 @@
         },
         "titre": "Portes et fenêtres qui ferment mal",
         "description": "Ce qu'il faut surveiller : Les difficultés de fermeture des portes et fenêtres peuvent révéler des mouvements de votre habitation liés au retrait-gonflement des argiles.",
-        "imageSrc": "/images/home/signe-a-surveiller-portes-fenetres.png",
+        "imageSrc": "/images/signes-a-surveiller/portes-fenetres.png",
         "pageLink": "/signes-a-surveiller/portes-et-fenetres-qui-ferment-mal"
       },
       {
@@ -65,7 +65,7 @@
         },
         "titre": "Décollement entre la cloison et le plafond",
         "description": "Ce qu'il faut surveiller : Les décollements qui apparaissent à la jonction entre les cloisons et le plafond sont des signes révélateurs du retrait-gonflement des argiles.",
-        "imageSrc": "/images/home/signe-a-surveiller-decollement-cloison.png",
+        "imageSrc": "/images/signes-a-surveiller/decollement-cloison.png",
         "pageLink": "/signes-a-surveiller/decollement-entre-la-cloison-et-le-plafond"
       },
       {
@@ -75,7 +75,7 @@
         },
         "titre": "Affaissement ou soulèvement de dallages",
         "description": "Ce qu'il faut surveiller : Les déformations du sol de votre habitation, qu'il s'agisse d'affaissements ou de soulèvements, sont des manifestations directes du retrait-gonflement des argiles sous vos fondations.",
-        "imageSrc": "/images/home/signe-a-surveiller-affaissement.png",
+        "imageSrc": "/images/signes-a-surveiller/affaissement.png",
         "pageLink": "/signes-a-surveiller/affaissement-ou-soulevement-de-dallages"
       },
       {
@@ -85,7 +85,7 @@
         },
         "titre": "Fissures dans les cloisons intérieures",
         "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
-        "imageSrc": "/images/home/signe-a-surveiller-fissures-cloison.png",
+        "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
         "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
       }
     ]
