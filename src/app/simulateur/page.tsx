@@ -21,9 +21,6 @@ export default function Simulateur() {
             height: process.env.MESAIDES_RENOV_IFRAME_HEIGHT || "800px",
             minHeight: "600px",
           }}
-          // TODO : Supprimer les logs en production
-          onError={() => console.log("Erreur de chargement iframe")}
-          onLoad={() => console.log("Iframe chargée avec succès")}
           referrerPolicy="no-referrer-when-downgrade"
           aria-label="Simulateur d'éligibilité aux aides"
         />
