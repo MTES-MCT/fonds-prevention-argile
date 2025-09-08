@@ -1,5 +1,4 @@
 import { contentHomePage } from "@/content";
-import Link from "next/link";
 
 export default function FaqSection() {
   return (

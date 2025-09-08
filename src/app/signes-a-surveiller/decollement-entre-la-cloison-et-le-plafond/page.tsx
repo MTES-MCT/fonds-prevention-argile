@@ -23,9 +23,13 @@ export default function DecollementEntreLaCloisonEtLePlafond() {
             <div className="fr-collapse" id="breadcrumb">
               <ol className="fr-breadcrumb__list">
                 <li>
-                  <a className="fr-breadcrumb__link" id="segment-0" href="/#">
+                  <Link
+                    className="fr-breadcrumb__link"
+                    id="segment-0"
+                    href="/#"
+                  >
                     Accueil
-                  </a>
+                  </Link>
                 </li>
                 <li>
                   <a
