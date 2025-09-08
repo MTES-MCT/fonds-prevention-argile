@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export default function SignesASurveiller() {
   return (
-    <section className="fr-container-fluid fr-py-10w">
+    <section className="fr-container-fluid fr-py-10w bg-gray-100">
       <div className="fr-container">
         <h1>{contentHomePage.signes_a_surveiller_section.title}</h1>
         <div className="fr-grid-row fr-grid-row--gutters">

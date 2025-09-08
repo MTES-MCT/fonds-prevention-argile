@@ -12,6 +12,7 @@ import {
   FaqSection,
   QuiSommesNousSection,
 } from "@/page-sections";
+import SavoirSiConcerneSection from "@/page-sections/home/SavoirSiConcerneSection";
 
 export default function Home() {
   return (
@@ -28,6 +29,7 @@ export default function Home() {
         <LogementConcerneRgaSection />
         <QuestCeQueLeRgaSection />
         <SignesASurveiller />
+        <SavoirSiConcerneSection />
         <EtatAgitSection />
         <CommentCaMarcheSection />
         <QuiPeutBeneficierAidesSection />

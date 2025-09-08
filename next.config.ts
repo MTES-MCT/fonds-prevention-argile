@@ -4,7 +4,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig: NextConfig = {
   transpilePackages: ["@gouvfr/dsfr"],
   images: {
-    qualities: [25, 50, 85],
+    qualities: [25, 50, 85, 95],
   },
 };
 

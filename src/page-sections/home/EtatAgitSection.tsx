@@ -10,7 +10,18 @@ export default function EtatAgitSection() {
           <div className="fr-col-12 fr-col-md-6">
             <h2>{contentHomePage.etat_agit_section.title}</h2>
             <p>{contentHomePage.etat_agit_section.description_1}</p>
-            <p>{contentHomePage.etat_agit_section.description_2}</p>
+            <div className="fr-callout">
+              <h3 className="fr-callout__title">
+                {contentHomePage.etat_agit_section.callout_title}
+              </h3>
+              <p className="fr-callout__text">
+                {contentHomePage.etat_agit_section.callout_text}
+              </p>
+            </div>
+            <h6 className="fr-mt-4v">
+              {contentHomePage.etat_agit_section.description_2_title}
+            </h6>
+            <p>{contentHomePage.etat_agit_section.description_2_text}</p>
             <Link
               className="fr-mt-4v fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
               href="/simulateur"

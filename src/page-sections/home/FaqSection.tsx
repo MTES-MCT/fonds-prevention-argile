@@ -9,14 +9,6 @@ export default function FaqSection() {
           {/* Zone gauche - 1/3 */}
           <div className="fr-col-12 fr-col-lg-4">
             <h2>{contentHomePage.faq_section.title}</h2>
-            <Link
-              id="link-help"
-              href={contentHomePage.faq_section.helpLink.url}
-              target="_self"
-              className="fr-link fr-icon-arrow-right-line fr-link--icon-right"
-            >
-              {contentHomePage.faq_section.helpLink.label}
-            </Link>
           </div>
 
           {/* Zone droite - 2/3 */}

@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { Feature } from "@/components";
 import { contentHomePage } from "@/content";
+import { richTextParser } from "@/lib/utils";
 
 export default function QuestCeQueLeRgaSection() {
   return (
@@ -33,6 +34,9 @@ export default function QuestCeQueLeRgaSection() {
               </p>
             </div>
             <p>{contentHomePage.what_is_rga_section.subtitle}</p>
+            <p>
+              {richTextParser(contentHomePage.what_is_rga_section.subtitle2)}
+            </p>
           </div>
         </div>
 

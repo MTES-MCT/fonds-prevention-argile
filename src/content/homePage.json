@@ -5,23 +5,25 @@
     "more": "En savoir plus",
     "more_link": "#qui-peut-beneficier-aides"
   },
-  "hero_section": {
+  "logement_concerne_section": {
     "image": {
       "alt": "Fonds Prévention Argile - Un service de l'État",
-      "src": "/images/home/service-etat.svg"
+      "src": "/images/home/logement-concerne.png"
     },
-    "title": "Votre logement est concerné par le Retrait-Gonflement des Argiles ? Obtenez une aide financière.",
+    "title": "Votre logement est concerné par le Retrait-Gonflement des Argiles ? Obtenez une aide financière pour vous prémunir des risques.",
     "subtitle": "Vérifiez votre éligibilité en quelques secondes et déposez votre demande en ligne. Recevez une réponse de l’administration en quelques jours.",
-    "cta_label": "Vérifier mon éligibilité"
+    "cta_label": "Vérifier mon éligibilité",
+    "cta_url": "/simulateur"
   },
   "what_is_rga_section": {
     "image": {
       "alt": "Fonds Prévention Argile - Un service de l'État",
-      "src": "/images/home/rga-definition.svg"
+      "src": "/images/home/quest-ce-que-rga.png"
     },
     "title": "Qu’est-ce que le Retrait-gonflement des argiles, ou RGA ?",
     "highlight": "Ce phénomène touche près de 4 millions de maisons en France et représente le deuxième poste d’indemnisation des assurances après les inondations.",
-    "subtitle": "Le retrait-gonflement des argiles modifie le volume d'un sol argileux selon l'eau. Humide, il gonfle; sec, il se rétracte, endommageant maisons et routes. Le changement climatique aggrave ce phénomène : en 20 ans, il est devenu la deuxième cause d'indemnisation en France, représentant 36% des sinistralités."
+    "subtitle": "Le retrait-gonflement des argiles modifie le volume d'un sol argileux selon l'eau. Humide, il gonfle; sec, il se rétracte, endommageant maisons et routes.",
+    "subtitle2": "Le changement climatique aggrave ce phénomène : en 20 ans, il est devenu la <strong>deuxième cause d'indemnisation en France</strong>, représentant <strong>36% des sinistralités</strong>."
   },
   "signes_a_surveiller_section": {
     "title": "Les signes à surveiller",
@@ -88,10 +90,23 @@
       }
     ]
   },
+  "savoir_si_concerne_section": {
+    "title": "Vous voulez savoir si vous êtes concerné ?",
+    "title2": "N'attendez pas qu'il soit trop tard.",
+    "cta_label": "Vérifier mon éligibilité",
+    "cta_url": "/simulateur",
+    "image": {
+      "alt": "Fonds Prévention Argile - Un service de l'État",
+      "src": "/images/home/savoir-si-concerne.png"
+    }
+  },
   "etat_agit_section": {
     "title": "Face à cette problématique, l’État agit grâce au fond Argile",
-    "description_1": "Partout où le RGA met en danger les maisons, l’État est là pour agir. Un fonds spécial est mis en place, d’abord dans les zones les plus touchées, pour financer les études (diagnostic avec accompagnement) et, les travaux nécessaires à la sécurisation des bâtiments. ",
-    "description_2": "L’aide est destinée aux propriétaires occupants, sous certaines conditions de ressources, et des plafonds assurent une utilisation équitable et efficace des fonds publics. C’est simple : vérifiez votre éligibilité en ligne, déposez votre dossier sur démarches-simplifiées.fr, et les services de l’État (DDT) s’occupent du reste. Notre priorité : protéger les maisons, sécuriser les familles et agir avant que les problèmes ne s’aggravent.",
+    "description_1": "Un fonds expérimental est désormais en place, en priorité dans les zones les plus touchées, pour financer les études (diagnostic avec accompagnement) et les travaux indispensables à la sécurisation des bâtiments. Cette aide vise les propriétaires occupants, sous certaines conditions de ressources, avec des plafonds garantissant une utilisation juste et efficace des fonds publics.",
+    "callout_title": "Limité à 10 département pour commencer",
+    "callout_text": "Ce dispositif est actuellement en phase de test et est limité aux départements suivants : Allier (03), Alpes-de-Haute-Provence (04), Dordogne (24), Gers (32), Indre (36), Lot-et-Garonne (47), Meurthe-et-Moselle (54), Nord (59), Puy-de-Dôme (63), Tarn (81) et Tarn-et-Garonne (82).",
+    "description_2_title": "Il est crucial d'agir rapidement",
+    "description_2_text": "Vérifiez dès maintenant votre éligibilité en ligne et déposez votre dossier dans les plus brefs délais. Notre priorité : protéger vos maisons, sécuriser vos familles et agir avant que la situation ne devienne critique.",
     "infos_tiles": [
       {
         "icon": "fr-icon-government-fill",
@@ -121,19 +136,19 @@
         "imageSrc": "/illustrations/national-identity-card.svg",
         "imageAlt": "Vérifier mon éligibilité",
         "title": "1. Éligibilité",
-        "description": "Je remplis quelques informations liées à mon logement et mes ressources"
+        "description": "Je complète quelques informations concernant mon logement ainsi que mes ressources financières"
       },
       {
         "imageSrc": "/illustrations/house.svg",
         "imageAlt": "Vérifier mon éligibilité",
         "title": "2. Diagnostic",
-        "description": "Un professionnel se déplace pour réaliser un diagnostic subventionné"
+        "description": "Un professionnel se déplace afin d’identifier le risque du bâtiment et les travaux de préventions à effectuer"
       },
       {
         "imageSrc": "/illustrations/in-progress.svg",
         "imageAlt": "Vérifier mon éligibilité",
         "title": "3. Travaux",
-        "description": "Le diagnostic est validé ? Lancez les travaux et recevez les aides après réalisation"
+        "description": "Le diagnostic est validé ?Lancez les travaux pour vous prémunir des risques au RGA et recevez les aides"
       }
     ]
   },
@@ -146,21 +161,22 @@
     "subtitle": "Vous pouvez faire une demande d’aide si vous remplissez les conditions suivantes :",
     "text_items": [
       {
-        "text": "Vous êtes propriétaire occupant"
+        "text": "Vous habitez en <strong>zone éligible</strong>"
       },
       {
-        "text": "C'est votre résidence principale"
+        "text": "Vous êtes <strong>propriétaire occupant</strong>"
       },
       {
-        "text": "Votre logement a plus de 15 ans"
+        "text": "C'est votre <strong>résidence principale</strong>"
       },
       {
-        "text": "Vous respectez les plafonds de ressources"
+        "text": "Votre <strong>logement a plus de 15 ans</strong>"
       },
       {
-        "text": "Vous habitez en zone éligible (départements :  03 • 04 • 24 • 32 • 36 • 47 • 54 • 63 • 81 • 82)"
+        "text": "Vous <strong>respectez les plafonds de ressources</strong>"
       }
-    ]
+    ],
+    "cta_label": "Vérifier mon éligibilité"
   },
   "quels_sont_travaux_eligibles_section": {
     "title": "Quels sont les travaux éligibles ?",
@@ -258,10 +274,6 @@
   },
   "faq_section": {
     "title": "Questions fréquentes",
-    "helpLink": {
-      "label": "Consulter notre page d’aide",
-      "url": "https://www.fonds-prevention-argile.gouv.fr/faq"
-    },
     "faqs": [
       {
         "question": "Qui est éligible pour cette aide ?",
