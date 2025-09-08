@@ -9,6 +9,8 @@ export interface NoticeProps {
   description: string;
   title?: string;
   noticeKey?: string;
+  more?: string;
+  more_link?: string;
 }
 
 export default function Notice({
@@ -17,6 +19,8 @@ export default function Notice({
   description,
   title,
   noticeKey,
+  more,
+  more_link,
 }: NoticeProps) {
   const [isCloseButtonVisible, setIsCloseButtonVisible] =
     useState<boolean>(true);
@@ -41,6 +45,14 @@ export default function Notice({
             <span className="ml-0 md:ml-2 text-sm md:text-base">
               {description}
             </span>
+            {more && (
+              <a
+                href={more_link ? more_link : "#"}
+                className="ml-2 underline text-sm md:text-base"
+              >
+                {more}
+              </a>
+            )}
           </span>
           {buttonClose && (
             <button

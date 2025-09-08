@@ -5,7 +5,10 @@ import Link from "next/link";
 
 export default function QuiPeutBeneficierAidesSection() {
   return (
-    <section className="fr-container-fluid fr-py-10w">
+    <section
+      id="qui-peut-beneficier-aides"
+      className="fr-container-fluid fr-py-10w"
+    >
       <div className="fr-container">
         <h2>{contentHomePage.qui_peut_beneficier_aides_section.title}</h2>
         <p>{contentHomePage.qui_peut_beneficier_aides_section.subtitle}</p>

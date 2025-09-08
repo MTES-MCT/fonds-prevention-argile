@@ -20,6 +20,8 @@ export default function Home() {
         className="fr-notice--info"
         description={contentHomePage.notice.description}
         title={contentHomePage.notice.title}
+        more={contentHomePage.notice.more}
+        more_link={contentHomePage.notice.more_link}
         buttonClose={true}
       />
       <div>
