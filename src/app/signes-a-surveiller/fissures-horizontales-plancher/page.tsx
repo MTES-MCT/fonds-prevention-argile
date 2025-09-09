@@ -8,6 +8,7 @@ export default function FissuresHorizontalesPlancher() {
   return (
     <SignesASurveillerTemplate
       title={contentSignesASurveillerFissuresHorizontalesPlancher.title}
+      pageLink="/signes-a-surveiller/fissures-horizontales-plancher"
       tag={
         contentSignesASurveillerCommon.signes_a_surveiller_section.signes.find(
           (item) =>

@@ -8,6 +8,7 @@ export default function FissuresDansLesCloisonsInterieures() {
   return (
     <SignesASurveillerTemplate
       title={contentSignesASurveillerFissuresDansLesCloisonsInterieures.title}
+      pageLink="/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
       tag={
         contentSignesASurveillerCommon.signes_a_surveiller_section.signes.find(
           (item) =>

@@ -8,6 +8,7 @@ export default function MicrofissuresHorizontalesVerticales() {
   return (
     <SignesASurveillerTemplate
       title={contentSignesASurveillerMicrofissuresVerticales.title}
+      pageLink="/signes-a-surveiller/microfissures-horizontales-verticales"
       tag={
         contentSignesASurveillerCommon.signes_a_surveiller_section.signes.find(
           (item) =>

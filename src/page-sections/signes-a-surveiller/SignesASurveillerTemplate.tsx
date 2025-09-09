@@ -6,6 +6,7 @@ import { contentSignesASurveillerCommon } from "@/content/signes-a-surveiller";
 
 interface SignesASurveillerTemplateProps {
   title: string;
+  pageLink: string;
   tag: { title: string; className: string } | undefined;
   image: { src: string; alt: string; description: string };
   ce_qu_il_faut_surveiller: string;
@@ -16,6 +17,7 @@ interface SignesASurveillerTemplateProps {
 
 export default function SignesASurveillerTemplate({
   title,
+  pageLink,
   tag = { title: "", className: "" },
   image,
   ce_qu_il_faut_surveiller,
@@ -56,7 +58,7 @@ export default function SignesASurveillerTemplate({
                     className="fr-breadcrumb__link"
                     id="segment-1"
                     aria-current="page"
-                    href="/signes-a-surveiller/fissures-en-escalier"
+                    href={pageLink}
                   >
                     {title}
                   </a>

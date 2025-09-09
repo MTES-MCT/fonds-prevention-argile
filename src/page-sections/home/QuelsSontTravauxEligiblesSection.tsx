@@ -1,4 +1,5 @@
 import { contentHomePage } from "@/content";
+import { contentTravauxEligiblesCommon } from "@/content/travaux-eligibles";
 import Image from "next/image";
 
 export default function QuelsSontTravauxEligiblesSection() {
@@ -8,7 +9,7 @@ export default function QuelsSontTravauxEligiblesSection() {
         <h2>{contentHomePage.quels_sont_travaux_eligibles_section.title}</h2>
         <div className="fr-tabs">
           <ul className="fr-tabs__list" role="tablist" aria-label="">
-            {contentHomePage.quels_sont_travaux_eligibles_section.tabs.map(
+            {contentTravauxEligiblesCommon.autres_travaux_section.travaux_tabs.map(
               (tab, index) => (
                 <li key={index} role="presentation">
                   <button
@@ -26,7 +27,7 @@ export default function QuelsSontTravauxEligiblesSection() {
               )
             )}
           </ul>
-          {contentHomePage.quels_sont_travaux_eligibles_section.tabs.map(
+          {contentTravauxEligiblesCommon.autres_travaux_section.travaux_tabs.map(
             (tab, index) => (
               <div
                 id={`tab-${index}-panel`}
@@ -47,7 +48,7 @@ export default function QuelsSontTravauxEligiblesSection() {
                         <div className="fr-card__body">
                           <div className="fr-card__content">
                             <h3 className="fr-card__title">
-                              <a href={item.pageUrl}>{item.text}</a>
+                              <a href={item.pageUrl}>{item.name}</a>
                             </h3>
                             <div className="fr-card__start"></div>
                           </div>

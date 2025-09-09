@@ -8,6 +8,7 @@ export default function FissuresVerticalesAnglesBatiment() {
   return (
     <SignesASurveillerTemplate
       title={contentSignesASurveillerFissuresVerticalesAnglesBatiment.title}
+      pageLink="/signes-a-surveiller/fissures-verticales-angles-batiment"
       tag={
         contentSignesASurveillerCommon.signes_a_surveiller_section.signes.find(
           (item) =>

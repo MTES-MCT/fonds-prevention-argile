@@ -8,6 +8,7 @@ export default function FissuresEnEscalier() {
   return (
     <SignesASurveillerTemplate
       title={contentSignesASurveillerFissuresEscalier.title}
+      pageLink="/signes-a-surveiller/fissures-en-escalier"
       tag={
         contentSignesASurveillerCommon.signes_a_surveiller_section.signes.find(
           (item) =>

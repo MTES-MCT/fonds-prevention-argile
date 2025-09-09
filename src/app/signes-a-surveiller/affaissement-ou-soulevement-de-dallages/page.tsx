@@ -8,6 +8,7 @@ export default function AffaissementOuSoulevementDeDallages() {
   return (
     <SignesASurveillerTemplate
       title={contentSignesASurveillerAffaissementOuSoulèvementDeDallages.title}
+      pageLink="/signes-a-surveiller/affaissement-ou-soulevement-de-dallages"
       tag={
         contentSignesASurveillerCommon.signes_a_surveiller_section.signes.find(
           (item) =>

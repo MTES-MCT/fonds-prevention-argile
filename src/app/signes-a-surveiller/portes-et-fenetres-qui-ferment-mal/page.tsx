@@ -8,6 +8,7 @@ export default function PortesEtFenetreQuiFermentMal() {
   return (
     <SignesASurveillerTemplate
       title={contentSignesASurveillerPortesEtFenetreQuiFermentMal.title}
+      pageLink="/signes-a-surveiller/portes-et-fenetres-qui-ferment-mal"
       tag={
         contentSignesASurveillerCommon.signes_a_surveiller_section.signes.find(
           (item) =>
