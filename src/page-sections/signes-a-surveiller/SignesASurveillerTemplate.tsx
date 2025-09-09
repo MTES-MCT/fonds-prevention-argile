@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import VousAvezUnDouteSection from "./VousAvezUnDouteSection";
-import { contentLayout, contentSignesASurveillerCommon } from "@/content";
+import { contentLayout } from "@/content";
+import { contentSignesASurveillerCommon } from "@/content/signes-a-surveiller";
 
 interface SignesASurveillerTemplateProps {
   title: string;

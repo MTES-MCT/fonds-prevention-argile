@@ -1,4 +1,5 @@
-import { contentHomePage, contentSignesASurveillerCommon } from "@/content";
+import { contentHomePage } from "@/content";
+import { contentSignesASurveillerCommon } from "@/content/signes-a-surveiller";
 import Image from "next/image";
 
 export default function SignesASurveiller() {

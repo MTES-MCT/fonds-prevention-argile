@@ -1,4 +1,4 @@
-import { contentSignesASurveillerDoute } from "@/content";
+import { contentSignesASurveillerDoute } from "@/content/signes-a-surveiller";
 import Image from "next/image";
 import Link from "next/link";
 

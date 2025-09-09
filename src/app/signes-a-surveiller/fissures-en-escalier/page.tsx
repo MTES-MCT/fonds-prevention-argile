@@ -1,7 +1,7 @@
 import {
   contentSignesASurveillerCommon,
   contentSignesASurveillerFissuresEscalier,
-} from "@/content";
+} from "@/content/signes-a-surveiller";
 import { SignesASurveillerTemplate } from "@/page-sections";
 
 export default function FissuresEnEscalier() {

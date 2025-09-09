@@ -25,7 +25,7 @@
         "titre": "Microfissures horizontales ou verticales",
         "description": "Ce qu'il faut surveiller : Les fissures horizontales qui apparaissent le long des plinthes, à la jonction entre le mur et le sol, sont souvent les premiers signes visibles du retrait-gonflement des argiles.",
         "imageSrc": "/images/signes-a-surveiller/fissures-horizontales.png",
-        "pageLink": "/signes-a-surveiller/fissures-horizontales"
+        "pageLink": "/signes-a-surveiller/microfissures-horizontales-verticales"
       },
       {
         "tag": {
@@ -65,7 +65,7 @@
         "titre": "Fissures verticales aux angles du bâtiment",
         "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
         "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
-        "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
+        "pageLink": "/signes-a-surveiller/fissures-verticales-angles-batiment"
       },
       {
         "tag": {
@@ -75,7 +75,7 @@
         "titre": "Fissures horizontales à hauteur du plancher",
         "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
         "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
-        "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
+        "pageLink": "/signes-a-surveiller/fissures-horizontales-plancher"
       },
       {
         "tag": {
