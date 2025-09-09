@@ -9,3 +9,6 @@ export { default as contentSimulationPage } from "./simulationPage.json";
 export { default as contentConnexionPage } from "./connexion.json";
 export { default as contentSignesASurveiller } from "./signesASurveiller.json";
 export { default as contentTravauxEligibles } from "./travauxEligibles.json";
+export { default as contentSignesASurveillerCommon } from "./signes-a-surveiller/signes-a-surveiller.common.json";
+export { default as contentSignesASurveillerDoute } from "./signes-a-surveiller/signes-a-surveiller.doute.section.json";
+export { default as contentSignesASurveillerFissuresEscalier } from "./signes-a-surveiller/fissures-escalier.json";

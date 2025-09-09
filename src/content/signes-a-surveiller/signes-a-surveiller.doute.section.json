@@ -1,0 +1,11 @@
+{
+  "title": "Un doute ?",
+  "title2": "Alors il n'y a pas de doute.",
+  "title3": "Protégez vous et vos proches.",
+  "image": {
+    "alt": "Fonds Prévention Argile - Un service de l'État",
+    "src": "/images/signes-a-surveiller/un-doute.png"
+  },
+  "cta_label": "Vérifier mon éligibilité",
+  "cta_link": "/simulateur"
+}

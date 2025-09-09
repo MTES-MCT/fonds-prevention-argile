@@ -29,7 +29,7 @@
     "title": "Les signes à surveiller",
     "subtitle": "Les mouvements de terrain induits par le retrait et le gonflement des argiles se traduisent par des désordres d'importance variables suivant l'intensité et la fréquence du phénomène.",
     "subtitle2": "Les signes précurseurs sont des désordres architecturaux de type microfissures, fissures isolées sur les murs intérieurs, et fissures extérieurs sur les doublages et les cloisons inférieurs dont la taille n'excède pas 1mm.",
-    "subtitle3":"A plus long terme, si aucun travaux ne sont réalisés, des désordres structurels peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons et, parfois, rupture de canalisations enterrées.",
+    "subtitle3": "A plus long terme, si aucun travaux ne sont réalisés, des désordres structurels peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons et, parfois, rupture de canalisations enterrées.",
     "signes": [
       {
         "tag": {
@@ -100,7 +100,7 @@
         "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
         "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
         "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
-      }
+      },
       {
         "tag": {
           "title": "Signes précurseurs",

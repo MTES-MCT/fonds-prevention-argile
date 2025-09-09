@@ -1,0 +1,102 @@
+{
+  "badges": {
+    "signes_precurseurs": {
+      "title": "Signes précurseurs",
+      "className": "fr-badge--yellow-tournesol"
+    },
+    "desordres_structurels": {
+      "title": "Désordres structurels",
+      "className": "fr-badge--red-pivoine"
+    }
+  },
+  "ce_qu_il_faut_surveiller_title": "👀 Ce qu’il faut surveiller",
+  "signes_alertes_title": "⚠️ Signes d'alerte",
+  "conseils_pratiques_title": "📝 Conseils pratiques",
+  "bon_a_savoir_title": "Bon à savoir",
+
+  "signes_a_surveiller_section": {
+    "title": "Autres signes à surveiller",
+    "signes": [
+      {
+        "tag": {
+          "title": "Signes précurseurs",
+          "className": "fr-badge--yellow-tournesol"
+        },
+        "titre": "Fissures en escalier sur les murs extérieurs",
+        "description": "Ce qu’il faut surveiller : Les fissures en escalier suivent généralement les joints de mortier entre les briques ou les parpaings, créant un motif caractéristique en marches d'escalier.",
+        "imageSrc": "/images/signes-a-surveiller/fissures-escalier.png",
+        "pageLink": "/signes-a-surveiller/fissures-en-escalier"
+      },
+      {
+        "tag": {
+          "title": "Signes précurseurs",
+          "className": "fr-badge--yellow-tournesol"
+        },
+        "titre": "Microfissures horizontales ou verticales",
+        "description": "Ce qu'il faut surveiller : Les fissures horizontales qui apparaissent le long des plinthes, à la jonction entre le mur et le sol, sont souvent les premiers signes visibles du retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/fissures-horizontales.png",
+        "pageLink": "/signes-a-surveiller/fissures-horizontales"
+      },
+      {
+        "tag": {
+          "title": "Désordres structurels",
+          "className": "fr-badge--pink-tuile"
+        },
+        "titre": "Portes et fenêtres qui ferment mal",
+        "description": "Ce qu'il faut surveiller : Les difficultés de fermeture des portes et fenêtres peuvent révéler des mouvements de votre habitation liés au retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/portes-fenetres.png",
+        "pageLink": "/signes-a-surveiller/portes-et-fenetres-qui-ferment-mal"
+      },
+      {
+        "tag": {
+          "title": "Désordres structurels",
+          "className": "fr-badge--pink-tuile"
+        },
+        "titre": "Décollement entre la cloison et le plafond",
+        "description": "Ce qu'il faut surveiller : Les décollements qui apparaissent à la jonction entre les cloisons et le plafonds sont des signes révélateurs du retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/decollement-cloison.png",
+        "pageLink": "/signes-a-surveiller/decollement-entre-la-cloison-et-le-plafond"
+      },
+      {
+        "tag": {
+          "title": "Désordres structurels",
+          "className": "fr-badge--pink-tuile"
+        },
+        "titre": "Affaissement ou soulèvement de dallages",
+        "description": "Ce qu'il faut surveiller : Les déformations du sol de votre habitation, qu'il s'agisse d'affaissements ou de soulèvements, sont des manifestations directes du retrait-gonflement des argiles sous vos fondations.",
+        "imageSrc": "/images/signes-a-surveiller/affaissement.png",
+        "pageLink": "/signes-a-surveiller/affaissement-ou-soulevement-de-dallages"
+      },
+      {
+        "tag": {
+          "title": "Signes précurseurs",
+          "className": "fr-badge--yellow-tournesol"
+        },
+        "titre": "Fissures verticales aux angles du bâtiment",
+        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
+        "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
+      },
+      {
+        "tag": {
+          "title": "Signes précurseurs",
+          "className": "fr-badge--yellow-tournesol"
+        },
+        "titre": "Fissures horizontales à hauteur du plancher",
+        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
+        "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
+      },
+      {
+        "tag": {
+          "title": "Signes précurseurs",
+          "className": "fr-badge--yellow-tournesol"
+        },
+        "titre": "Fissures dans les cloisons intérieures",
+        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
+        "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
+      }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "title": "Fissures en escalier sur les murs extérieurs",
+  "image": {
+    "alt": "Fonds Prévention Argile - Un service de l'État",
+    "src": "/images/signes-a-surveiller/fissures-escalier.png",
+    "description": "Exemple de fissures en escalier sur le mur extérieur d’une maison."
+  },
+  "ce_qu_il_faut_surveiller": "Les fissures en escalier suivent généralement les joints de mortier entre les briques ou les parpaings, créant un motif caractéristique en marches d'escalier. Elles apparaissent souvent aux angles des bâtiments ou autour des ouvertures (portes, fenêtres).",
+  "signes_alerte": [
+    "Fissures qui s'élargissent progressivement.",
+    "Nouvelles fissures qui apparaissent après une période de sécheresse ou de fortes pluies.",
+    "Fissures de plus de 2mm de largeur.",
+    "Décrochement visible entre les parties fissurées"
+  ],
+  "conseils_pratiques": [
+    "Photographiez régulièrement les fissures pour suivre leur évolution.",
+    "Mesurez leur largeur avec une règle graduée.",
+    "Notez les dates d'apparition ou d'évolution.",
+    "Soyez particulièrement vigilant après des périodes climatiques extrêmes."
+  ],
+  "bon_a_savoir": "Ces fissures peuvent indiquer un tassement différentiel des fondations causé par le retrait-gonflement des argiles. Une surveillance régulière vous permettra d’agir rapidement si nécéssaire."
+}

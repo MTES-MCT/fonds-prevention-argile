@@ -8,3 +8,5 @@ export { default as QuelsSontTravauxEligiblesSection } from "./home/QuelsSontTra
 export { default as PourEnSavoirPlusSection } from "./home/PourEnSavoirPlusSection";
 export { default as FaqSection } from "./home/FaqSection";
 export { default as QuiSommesNousSection } from "./home/QuiSommesNousSection";
+export { default as SignesASurveillerTemplate } from "./signes-a-surveiller/SignesASurveillerTemplate";
+export { default as VousAvezUnDouteSection } from "./signes-a-surveiller/VousAvezUnDouteSection";

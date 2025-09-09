@@ -44,5 +44,9 @@
     "url": "https://fonds-argile.beta.gouv.fr",
     "imageUrl": "/images/home/rga-definition.svg",
     "imageAlt": "Vérifier mon éligibilité"
+  },
+  "breadcrumb": {
+    "home": "Accueil",
+    "filAriane": "Voir le fil d&#39;arianne"
   }
 }
