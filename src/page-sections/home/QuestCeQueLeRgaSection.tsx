@@ -62,7 +62,7 @@ export default function QuestCeQueLeRgaSection() {
             <Feature
               icon="fr-icon-refresh-line"
               title="Cycles répétitifs"
-              description="Ces alternances humides/sèches se répètent dans le temps fragilisant sols et fondations."
+              description="Ces alternances de périodes humides/sèches se répètent dans le temps fragilisant sols et fondations."
               tileColor="bg-purple-50"
               iconColor="text-purple-500"
             />
