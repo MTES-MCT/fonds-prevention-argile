@@ -6,6 +6,9 @@ export default function SignesASurveiller() {
     <section className="fr-container-fluid fr-py-10w bg-[var(--background-alt-grey)]">
       <div className="fr-container">
         <h1>{contentHomePage.signes_a_surveiller_section.title}</h1>
+        <p>{contentHomePage.signes_a_surveiller_section.subtitle}</p>
+        <p>{contentHomePage.signes_a_surveiller_section.subtitle2}</p>
+        <p>{contentHomePage.signes_a_surveiller_section.subtitle3}</p>
         <div className="fr-grid-row fr-grid-row--gutters">
           {contentHomePage.signes_a_surveiller_section.signes.map(
             (signe, index) => (
