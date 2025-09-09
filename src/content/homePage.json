@@ -10,8 +10,8 @@
       "alt": "Fonds Prévention Argile - Un service de l'État",
       "src": "/images/home/logement-concerne.png"
     },
-    "title": "Votre logement est concerné par le Retrait-Gonflement des Argiles ? Obtenez une aide financière pour vous prémunir des risques.",
-    "subtitle": "Vérifiez votre éligibilité en quelques secondes et déposez votre demande en ligne. Recevez une réponse de l’administration en quelques jours.",
+    "title": "Vous habitez dans une zone concernée par le Retrait-Gonflement des Argiles ? Obtenez une aide financière pour vous prémunir de ce phénomène.",
+    "subtitle": "Vérifiez votre éligibilité en quelques secondes et déposez votre demande en ligne. Recevez une réponse de l’administration dans quelques jours.",
     "cta_label": "Vérifier mon éligibilité",
     "cta_url": "/simulateur"
   },
@@ -21,74 +21,15 @@
       "src": "/images/home/quest-ce-que-rga.png"
     },
     "title": "Qu’est-ce que le Retrait-gonflement des argiles, ou RGA ?",
-    "highlight": "Ce phénomène touche près de 4 millions de maisons en France et représente le deuxième poste d’indemnisation des assurances après les inondations.",
-    "subtitle": "Le retrait-gonflement des argiles modifie le volume d'un sol argileux selon l'eau. Humide, il gonfle; sec, il se rétracte, endommageant maisons et routes.",
-    "subtitle2": "Le changement climatique aggrave ce phénomène : en 20 ans, il est devenu la <strong>deuxième cause d'indemnisation en France</strong>, représentant <strong>36% des sinistralités</strong>."
+    "highlight": "Ce phénomène concerne 54% des maisons individuelles en France. Le RGA coûte, en moyenne, 1 Milliard d'€ d'indemnisation annuel sur le dispositif catastrophe naturelle.",
+    "subtitle": "Le phénomène de retrait-gonflement des argiles modifie le volume d'un sol argileux selon l'eau. Humide, il gonfle; sec, il se rétracte, endommageant maisons et routes.",
+    "subtitle2": "Le changement climatique aggrave ce phénomène : les dernières projections réalisées par la Caisse centrale de réassurance (CCR) tablent sur une <strong> augmentation de 44% à 162% de la sinistralité</strong> due au retrait-gonglement des argiles d'ici 2050."
   },
   "signes_a_surveiller_section": {
     "title": "Les signes à surveiller",
-    "signes": [
-      {
-        "tag": {
-          "title": "Impact sur l'enveloppe",
-          "className": "fr-badge--orange-terre-battue"
-        },
-        "titre": "Fissures en escalier sur les murs extérieurs",
-        "description": "Ce qu’il faut surveiller : Les fissures en escalier suivent généralement les joints de mortier entre les briques ou les parpaings, créant un motif caractéristique en marches d'escalier.",
-        "imageSrc": "/images/signes-a-surveiller/fissures-escalier.png",
-        "pageLink": "/signes-a-surveiller/fissures-en-escalier"
-      },
-      {
-        "tag": {
-          "title": "Signes précurseurs",
-          "className": "fr-badge--yellow-tournesol"
-        },
-        "titre": "Fissures horizontales le le long des plinthes",
-        "description": "Ce qu'il faut surveiller : Les fissures horizontales qui apparaissent le long des plinthes, à la jonction entre le mur et le sol, sont souvent les premiers signes visibles du retrait-gonflement des argiles.",
-        "imageSrc": "/images/signes-a-surveiller/fissures-horizontales.png",
-        "pageLink": "/signes-a-surveiller/fissures-horizontales"
-      },
-      {
-        "tag": {
-          "title": "Impact sur l'enveloppe",
-          "className": "fr-badge--orange-terre-battue"
-        },
-        "titre": "Portes et fenêtres qui ferment mal",
-        "description": "Ce qu'il faut surveiller : Les difficultés de fermeture des portes et fenêtres peuvent révéler des mouvements de votre habitation liés au retrait-gonflement des argiles.",
-        "imageSrc": "/images/signes-a-surveiller/portes-fenetres.png",
-        "pageLink": "/signes-a-surveiller/portes-et-fenetres-qui-ferment-mal"
-      },
-      {
-        "tag": {
-          "title": "Impact structurel majeur",
-          "className": "fr-badge--pink-tuile"
-        },
-        "titre": "Décollement entre la cloison et le plafond",
-        "description": "Ce qu'il faut surveiller : Les décollements qui apparaissent à la jonction entre les cloisons et le plafond sont des signes révélateurs du retrait-gonflement des argiles.",
-        "imageSrc": "/images/signes-a-surveiller/decollement-cloison.png",
-        "pageLink": "/signes-a-surveiller/decollement-entre-la-cloison-et-le-plafond"
-      },
-      {
-        "tag": {
-          "title": "Impact structurel majeur",
-          "className": "fr-badge--pink-tuile"
-        },
-        "titre": "Affaissement ou soulèvement de dallages",
-        "description": "Ce qu'il faut surveiller : Les déformations du sol de votre habitation, qu'il s'agisse d'affaissements ou de soulèvements, sont des manifestations directes du retrait-gonflement des argiles sous vos fondations.",
-        "imageSrc": "/images/signes-a-surveiller/affaissement.png",
-        "pageLink": "/signes-a-surveiller/affaissement-ou-soulevement-de-dallages"
-      },
-      {
-        "tag": {
-          "title": "Signes précurseurs",
-          "className": "fr-badge--yellow-tournesol"
-        },
-        "titre": "Fissures dans les cloisons intérieures",
-        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
-        "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
-        "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
-      }
-    ]
+    "subtitle": "Les mouvements de terrain induits par le retrait et le gonflement des argiles se traduisent par des désordres d'importance variables suivant l'intensité et la fréquence du phénomène.",
+    "subtitle2": "Les signes précurseurs sont des désordres architecturaux de type microfissures, fissures isolées sur les murs intérieurs, et fissures extérieurs sur les doublages et les cloisons inférieurs dont la taille n'excède pas 1mm.",
+    "subtitle3": "A plus long terme, si aucun travaux ne sont réalisés, des désordres structurels peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons et, parfois, rupture de canalisations enterrées."
   },
   "savoir_si_concerne_section": {
     "title": "Vous voulez savoir si vous êtes concerné ?",
@@ -101,30 +42,30 @@
     }
   },
   "etat_agit_section": {
-    "title": "Face à cette problématique, l’État agit grâce au fond Argile",
+    "title": "Face à cette problématique, l’État agit grâce au fonds Argile",
     "description_1": "Un fonds expérimental est désormais en place, en priorité dans les zones les plus touchées, pour financer les études (diagnostic avec accompagnement) et les travaux indispensables à la sécurisation des bâtiments. Cette aide vise les propriétaires occupants, sous certaines conditions de ressources, avec des plafonds garantissant une utilisation juste et efficace des fonds publics.",
-    "callout_title": "Limité à 10 département pour commencer",
-    "callout_text": "Ce dispositif est actuellement en phase de test et est limité aux départements suivants : Allier (03), Alpes-de-Haute-Provence (04), Dordogne (24), Gers (32), Indre (36), Lot-et-Garonne (47), Meurthe-et-Moselle (54), Nord (59), Puy-de-Dôme (63), Tarn (81) et Tarn-et-Garonne (82).",
+    "callout_title": "Une phase pilote dans 11 départements :",
+    "callout_text": "Ce dispositif est actuellement en phase d'expérimentation et est limité aux départements suivants : Allier (03), Alpes-de-Haute-Provence (04), Dordogne (24), Gers (32), Indre (36), Lot-et-Garonne (47), Meurthe-et-Moselle (54), Nord (59), Puy-de-Dôme (63), Tarn (81) et Tarn-et-Garonne (82).",
     "description_2_title": "Il est crucial d'agir rapidement",
-    "description_2_text": "Vérifiez dès maintenant votre éligibilité en ligne et déposez votre dossier dans les plus brefs délais. Notre priorité : protéger vos maisons, sécuriser vos familles et agir avant que la situation ne devienne critique.",
+    "description_2_text": "Vérifiez dès maintenant votre éligibilité en ligne et déposez votre dossier dans les plus brefs délais. Le coût moyen d'un sinistre lié au RGA est de 16 500€ pouvant aller jusqu'à 75 000€ et 12 à 24 mois de relogement.",
     "infos_tiles": [
       {
         "icon": "fr-icon-government-fill",
         "iconColor": "fr-text-label--blue-france",
         "title": "Un service de l’État",
-        "description": "Sécurisé, gratuit et opéré par l’État. Vos données ne sont utilisées que pour l’instruction de votre dossier par des professionels agrées."
+        "description": "Sécurisé et opéré par l’État. Vos données ne sont utilisées que pour l’instruction de votre dossier par des agents publics."
       },
       {
         "icon": "fr-icon-shield-fill",
         "iconColor": "text-green-600",
         "title": "Pour agir avant les sinistres",
-        "description": "Bénéficiez d'un accompagnement pour diagnostiquer et réaliser des travaux avant que votre logement ne soit sinistré."
+        "description": "Bénéficiez d'un accompagnement pour diagnostiquer et réaliser les travaux de prévention avant que votre logement ne soit sinistré."
       },
       {
         "icon": "fr-icon-user-heart-fill",
         "iconColor": "fr-text-label--red-marianne",
         "title": "Pour les propriétaires concernés",
-        "description": "Propriétaires occupants de leur résidence principale, sous conditions de ressources et d'ancienneté du logement."
+        "description": "Propriétaires occupants de leur résidence principale, sous conditions de ressources et de caractéristiques du logement."
       }
     ],
     "cta_label": "Vérifier mon éligibilité"
@@ -136,19 +77,19 @@
         "imageSrc": "/illustrations/national-identity-card.svg",
         "imageAlt": "Vérifier mon éligibilité",
         "title": "1. Éligibilité",
-        "description": "Je complète quelques informations concernant mon logement ainsi que mes ressources financières"
+        "description": "Je complète quelques informations concernant mon logement ainsi que mes ressources financières."
       },
       {
         "imageSrc": "/illustrations/house.svg",
         "imageAlt": "Vérifier mon éligibilité",
         "title": "2. Diagnostic",
-        "description": "Un professionnel se déplace afin d’identifier le risque du bâtiment et les travaux de préventions à effectuer"
+        "description": "Un professionnel se déplace afin d’identifier les risques pour la maison et les travaux de préventions à effectuer."
       },
       {
         "imageSrc": "/illustrations/in-progress.svg",
         "imageAlt": "Vérifier mon éligibilité",
         "title": "3. Travaux",
-        "description": "Le diagnostic est validé ?Lancez les travaux pour vous prémunir des risques au RGA et recevez les aides"
+        "description": "Le diagnostic est validé? Lancez les travaux pour vous prémunir du phénomène RGA et recevez les aides."
       }
     ]
   },
@@ -161,7 +102,19 @@
     "subtitle": "Vous pouvez faire une demande d’aide si vous remplissez les conditions suivantes :",
     "text_items": [
       {
-        "text": "Vous habitez en <strong>zone éligible</strong>"
+        "text": "Vous habitez dans <strong>une maison individuelle</strong> dans un des <strong>11 départements pilotes</strong>"
+      },
+      {
+        "text": "Vous habitez dans une zone <strong>d'exposition forte au RGA</strong>"
+      },
+      {
+        "text": "Votre <strong>maison a été construite avant 2010</strong>"
+      },
+      {
+        "text": "Votre maison<strong> n'est pas mitoyenne et a 2 niveaux max</strong>"
+      },
+      {
+        "text": "Votre maison <strong> n'a pas encore été sinistré ou très peu</strong>"
       },
       {
         "text": "Vous êtes <strong>propriétaire occupant</strong>"
@@ -170,90 +123,13 @@
         "text": "C'est votre <strong>résidence principale</strong>"
       },
       {
-        "text": "Votre <strong>logement a plus de 15 ans</strong>"
-      },
-      {
         "text": "Vous <strong>respectez les plafonds de ressources</strong>"
       }
     ],
     "cta_label": "Vérifier mon éligibilité"
   },
   "quels_sont_travaux_eligibles_section": {
-    "title": "Quels sont les travaux éligibles ?",
-    "tabs": [
-      {
-        "title": "Gestion des eaux",
-        "icon": "fr-icon-drop-line",
-        "travaux": [
-          {
-            "text": "Mise en charge des réseaux d’eaux pluviales, eaux usées...",
-            "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/mise-en-charge-reseaux-eaux.png"
-            },
-            "pageUrl": "/travaux-eligibles/mise-en-charge-reseaux-eaux"
-          },
-          {
-            "text": "Création d’un accès au réseau si inexistant",
-            "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/creation-acces-reseau.png"
-            },
-            "pageUrl": "/travaux-eligibles/mise-en-charge-reseaux-eaux"
-          },
-          {
-            "text": "Curage du réseau bouché si nécessaire",
-            "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/curage-reseau-bouche.png"
-            },
-            "pageUrl": "/travaux-eligibles/mise-en-charge-reseaux-eaux"
-          },
-          {
-            "text": "Pose de canalisation d’évacuation des eaux pluviales (toiture)",
-            "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/pose-canalisation.png"
-            },
-            "pageUrl": "/travaux-eligibles/mise-en-charge-reseaux-eaux"
-          },
-          {
-            "text": "Test de perméabilité du sol",
-            "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/test-permeabilite-sol.png"
-            },
-            "pageUrl": "/travaux-eligibles/mise-en-charge-reseaux-eaux"
-          },
-          {
-            "text": "Dispositif simple d’infiltration des eaux à la parcelle à déporter des fondations",
-            "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/dispositif-infiltration-eaux.png"
-            },
-            "pageUrl": "/travaux-eligibles/mise-en-charge-reseaux-eaux"
-          },
-          {
-            "text": "Drainage des eaux déportées et séparatif des eaux pluviales en amont des terr...",
-            "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/drainage-eaux-deportees.png"
-            },
-            "pageUrl": "/travaux-eligibles/mise-en-charge-reseaux-eaux"
-          }
-        ]
-      },
-      {
-        "title": "Gestion de la végétation",
-        "icon": "fr-icon-seedling-line",
-        "travaux": []
-      },
-      {
-        "title": "Imperméabilisation du sol au droit des fondations",
-        "icon": "fr-icon-blur-off-line",
-        "travaux": []
-      }
-    ]
+    "title": "Quels sont les travaux éligibles ?"
   },
   "pour_en_savoir_plus_section": {
     "title": "Pour en savoir plus",
@@ -317,7 +193,7 @@
   "qui_sommes_nous_section": {
     "qui_sommes_nous_subsection": {
       "title": "Qui sommes-nous ?",
-      "description_1": "Fond Argile est un service public gratuit qui vous permet d’évaluer votre situation, constituer et suivre votre dossier simplement, puis obtenir un financement du diagnostic et des travaux recommandés.",
+      "description_1": "fonds Argile est un service public gratuit qui vous permet d’évaluer votre situation, constituer et suivre votre dossier simplement, puis obtenir un financement du diagnostic et des travaux recommandés.",
       "description_2": "Nous sommes un service public lancé par le Ministère de la Transition Ecologique et la Direction du Numérique (DINUM) sous la forme d'une start-up d'Etat. Elle est en phase d'expérimentation avant un déploiement massif. N'hésitez pas à nous faire part de vos retours et suggestions d'améliorations. ",
       "imageSrc": "/images/home/ministere_transition_ecologique.svg",
       "imageAlt": "Logo Ministère de la Transition écologique"

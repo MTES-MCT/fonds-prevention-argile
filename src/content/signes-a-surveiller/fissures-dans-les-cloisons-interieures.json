@@ -1,0 +1,22 @@
+{
+  "title": "Fissures dans les cloisons intérieures",
+  "image": {
+    "alt": "Fonds Prévention Argile - Un service de l'État",
+    "src": "/images/signes-a-surveiller/sample.svg",
+    "description": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit."
+  },
+  "ce_qu_il_faut_surveiller": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+  "signes_alerte": [
+    "Lorem ipsum dolor sit amet.",
+    "Consectetur adipiscing elit.",
+    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    "Ut enim ad minim veniam."
+  ],
+  "conseils_pratiques": [
+    "Lorem ipsum dolor sit amet.",
+    "Consectetur adipiscing elit.",
+    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    "Ut enim ad minim veniam."
+  ],
+  "bon_a_savoir": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+}

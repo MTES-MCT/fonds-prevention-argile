@@ -1,0 +1,10 @@
+{
+  "title": "Vous voulez protéger votre maison ?",
+  "title2": "Lancez-vous !",
+  "image": {
+    "alt": "Fonds Prévention Argile - Un service de l'État",
+    "src": "/images/travaux-eligibles/lancez-vous.png"
+  },
+  "cta_label": "Vérifier mon éligibilité",
+  "cta_link": "/simulateur"
+}
