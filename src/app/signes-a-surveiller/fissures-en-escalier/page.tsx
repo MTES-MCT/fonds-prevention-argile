@@ -8,7 +8,12 @@ export default function FissuresEnEscalier() {
   return (
     <SignesASurveillerTemplate
       title={contentSignesASurveillerFissuresEscalier.title}
-      tag={contentSignesASurveillerCommon.badges.signes_precurseurs}
+      tag={
+        contentSignesASurveillerCommon.signes_a_surveiller_section.signes.find(
+          (item) =>
+            item.pageLink === "/signes-a-surveiller/fissures-en-escalier"
+        )?.tag
+      }
       image={contentSignesASurveillerFissuresEscalier.image}
       ce_qu_il_faut_surveiller={
         contentSignesASurveillerFissuresEscalier.ce_qu_il_faut_surveiller

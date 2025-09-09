@@ -1,14 +1,4 @@
 {
-  "badges": {
-    "signes_precurseurs": {
-      "title": "Signes précurseurs",
-      "className": "fr-badge--yellow-tournesol"
-    },
-    "desordres_structurels": {
-      "title": "Désordres structurels",
-      "className": "fr-badge--red-pivoine"
-    }
-  },
   "ce_qu_il_faut_surveiller_title": "👀 Ce qu’il faut surveiller",
   "signes_alertes_title": "⚠️ Signes d'alerte",
   "conseils_pratiques_title": "📝 Conseils pratiques",
@@ -22,7 +12,7 @@
           "title": "Signes précurseurs",
           "className": "fr-badge--yellow-tournesol"
         },
-        "titre": "Fissures en escalier sur les murs extérieurs",
+        "titre": "Fissures en escalier sur les murs extérieurs (1mm)",
         "description": "Ce qu’il faut surveiller : Les fissures en escalier suivent généralement les joints de mortier entre les briques ou les parpaings, créant un motif caractéristique en marches d'escalier.",
         "imageSrc": "/images/signes-a-surveiller/fissures-escalier.png",
         "pageLink": "/signes-a-surveiller/fissures-en-escalier"

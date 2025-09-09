@@ -5,7 +5,7 @@ import { contentLayout, contentSignesASurveillerCommon } from "@/content";
 
 interface SignesASurveillerTemplateProps {
   title: string;
-  tag: { title: string; className: string };
+  tag: { title: string; className: string } | undefined;
   image: { src: string; alt: string; description: string };
   ce_qu_il_faut_surveiller: string;
   signes_alerte: string[];
@@ -15,7 +15,7 @@ interface SignesASurveillerTemplateProps {
 
 export default function SignesASurveillerTemplate({
   title,
-  tag,
+  tag = { title: "", className: "" },
   image,
   ce_qu_il_faut_surveiller,
   signes_alerte,
@@ -66,7 +66,9 @@ export default function SignesASurveillerTemplate({
           <div className="container">
             <h1>{title}</h1>
 
-            <p className="fr-badge fr-icon-checkbox-line fr-badge--icon-left">
+            <p
+              className={`fr-badge fr-icon-checkbox-line fr-badge--icon-left ${tag.className}`}
+            >
               {tag.title}
             </p>
 

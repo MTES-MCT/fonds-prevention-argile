@@ -1,4 +1,4 @@
-import { contentHomePage } from "@/content";
+import { contentHomePage, contentSignesASurveillerCommon } from "@/content";
 import Image from "next/image";
 
 export default function SignesASurveiller() {
@@ -10,7 +10,7 @@ export default function SignesASurveiller() {
         <p>{contentHomePage.signes_a_surveiller_section.subtitle2}</p>
         <p>{contentHomePage.signes_a_surveiller_section.subtitle3}</p>
         <div className="fr-grid-row fr-grid-row--gutters">
-          {contentHomePage.signes_a_surveiller_section.signes.map(
+          {contentSignesASurveillerCommon.signes_a_surveiller_section.signes.map(
             (signe, index) => (
               <div key={index} className="fr-col-12 fr-col-md-3 fr-col-lg-3">
                 <div className="fr-card fr-enlarge-link">
