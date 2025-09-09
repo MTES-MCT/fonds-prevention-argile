@@ -1,0 +1,59 @@
+{
+  "title": "Mise en charge des réseaux d’eaux pluviales, eaux usées...",
+  "tag": {
+    "title": "Gestion des eaux"
+  },
+  "image": {
+    "alt": "Fonds Prévention Argile - Un service de l'État",
+    "src": "/images/travaux-eligibles/mise-en-charge-reseaux-eaux-detail.png",
+    "description": "Photo d’illustration pour la mise en charge des réseaux d’eaux pluviales, eaux usées."
+  },
+  "une_des_solutions": "Cette solution technique consiste à optimiser la gestion des eaux autour de votre habitation pour limiter les variations d'humidité du sol argileux et ainsi réduire les risques de retrait-gonflement.",
+  "en_quoi_consiste_solution": {
+    "ameliorations": {
+      "title": "1. Amélioration du drainage",
+      "details": [
+        "Installation ou rénovation des réseaux d'évacuation des eaux pluviales.",
+        "Mise en place de systèmes de collecte et d'évacuation renforcés.",
+        "Optimisation des pentes pour un écoulement efficace.",
+        "Installation de regards de visite pour faciliter l'entretien."
+      ]
+    },
+    "gestion_eaux": {
+      "title": "2. Gestion des eaux de surface",
+      "details": [
+        "Création de dispositifs de collecte des eaux de toiture.",
+        "Installation de caniveaux et rigoles d'évacuation.",
+        "Mise en place de systèmes de drainage périphérique."
+      ]
+    }
+  },
+  "pourquoi_solution_efficace": {
+    "subtitle": "En contrôlant mieux l'évacuation des eaux, vous :",
+    "details": [
+      "Évitez l'accumulation d'eau près des fondations.",
+      "Limitez les infiltrations qui provoquent le gonflement des argiles.",
+      "Réduisez les variations d'humidité du sol autour de votre habitation.",
+      "Prévenez l'apparition de fissures et autres désordres."
+    ]
+  },
+  "quand_mettre_en_oeuvre": {
+    "prevention": {
+      "title": "En prévention",
+      "details": [
+        "Lors de la construction ou de rénovations importantes",
+        "Si votre terrain présente des problèmes d'évacuation des eaux.",
+        "Dans les zones situées en exposition moyenne et forte au RGA."
+      ]
+    },
+    "traitement": {
+      "title": "En traitement",
+      "details": [
+        "Si vous constatez des stagnations d'eau récurrentes,",
+        "En complément d'autres solutions (drainage, étanchéité),",
+        "Après expertise recommandant cette intervention"
+      ]
+    }
+  },
+  "a_retenir": "Une bonne gestion des eaux pluviales et usées est essentielle pour maintenir un taux d'humidité stable dans le sol et prévenir les désordres liés au retrait-gonflement des argiles. Cette solution s'intègre souvent dans une approche globale de protection de votre habitat.",
+}
