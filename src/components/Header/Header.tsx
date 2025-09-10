@@ -1,8 +1,20 @@
+"use client";
+
 import { contentLayout } from "@/content";
 import { richTextParser } from "@/lib/utils";
 import Link from "next/link";
+import HeaderDropdown from "../HeaderDropDown/HeaderDropDown";
 
 const Header = () => {
+  // TODO Récupérer les infos utilisateur depuis système d'auth
+  // Par exemple avec useSession() de next-auth
+  const isAuthenticated = true; // TODO remplacer par vrai état d'authentification
+
+  const user = {
+    name: "Jean Dupont",
+    email: "jean.dupont@example.fr",
+  };
+
   return (
     <header role="banner" className="fr-header" id="header-3">
       <div className="fr-header__body">
@@ -58,6 +70,16 @@ const Header = () => {
                       </Link>
                     </li>
                   ))}
+
+                  {/* Dropdown utilisateur si connecté */}
+                  {isAuthenticated && (
+                    <li>
+                      <HeaderDropdown
+                        userName={user.name}
+                        userEmail={user.email}
+                      />
+                    </li>
+                  )}
                 </ul>
               </div>
             </div>
@@ -89,6 +111,74 @@ const Header = () => {
                   </Link>
                 </li>
               ))}
+
+              {/* Menu utilisateur pour mobile */}
+              {isAuthenticated && (
+                <>
+                  <li>
+                    <hr className="fr-mt-2w fr-mb-2w" />
+                  </li>
+                  <li>
+                    <button
+                      className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-left"
+                      disabled
+                      style={{ cursor: "default", opacity: 1 }}
+                    >
+                      <span
+                        className="fr-icon-account-circle-line"
+                        aria-hidden="true"
+                      />
+                      {user.name}
+                    </button>
+                  </li>
+                  <li>
+                    <Link
+                      href="/account"
+                      className="fr-btn fr-btn--tertiary-no-outline"
+                    >
+                      Mon compte
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/preferences"
+                      className="fr-btn fr-btn--tertiary-no-outline"
+                    >
+                      Mes préférences
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/documents"
+                      className="fr-btn fr-btn--tertiary-no-outline"
+                    >
+                      Mes documents
+                    </Link>
+                  </li>
+                  <li>
+                    <hr className="fr-mt-1w fr-mb-1w" />
+                  </li>
+                  <li>
+                    <Link
+                      href="/help"
+                      className="fr-btn fr-btn--tertiary-no-outline"
+                    >
+                      Aide
+                    </Link>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => {
+                        // Logique de déconnexion
+                        console.log("Déconnexion...");
+                      }}
+                      className="fr-btn fr-btn--tertiary-no-outline"
+                    >
+                      Se déconnecter
+                    </button>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
         </div>

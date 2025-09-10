@@ -27,11 +27,6 @@
         "label": "Se connecter"
       },
       {
-        "href": "/administration",
-        "className": "fr-icon-account-circle-fill fr-btn",
-        "label": "Administration"
-      },
-      {
         "href": "/simulateur",
         "className": "fr-btn--account fr-icon-checkbox-circle-fill fr-btn",
         "label": "Vérifier mon éligibilité"
