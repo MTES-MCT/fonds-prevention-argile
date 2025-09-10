@@ -68,3 +68,5 @@ jobs:
           DEMARCHES_SIMPLIFIEES_REST_API_URL: https://www.demarches-simplifiees.fr/api/public/v1
           DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE: "exemple-demarche"
           DEMARCHES_SIMPLIFIEES_ID_DEMARCHE: "123456"
+          ADMIN_PASSWORD: "examplepassword"
+          JWT_SECRET: "examplesecret"
