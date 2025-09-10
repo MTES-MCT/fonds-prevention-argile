@@ -6,10 +6,8 @@ const protectedRoutes = [
   "/administration",
   "/dashboard",
   "/mon-compte",
-  "/statistiques",
-  "/test", // Pages de test
-
-  "/api/private", // Route API privées si besoin
+  "/test",
+  "/api/private",
 ];
 
 // Routes qui ne doivent pas être accessibles si déjà connecté
