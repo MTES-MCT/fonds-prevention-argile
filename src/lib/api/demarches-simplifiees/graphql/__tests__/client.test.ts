@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, MockedFunction } from "vitest";
 import { DemarchesSimplifieesClient } from "../client";
 
 describe("DemarchesSimplifieesClient", () => {
   let client: DemarchesSimplifieesClient;
+  const mockFetch = global.fetch as MockedFunction<typeof fetch>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -29,10 +30,13 @@ describe("DemarchesSimplifieesClient", () => {
         },
       };
 
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          statusText: "OK",
+          headers: new Headers({ "Content-Type": "application/json" }),
+        })
+      );
 
       const result = await client.getDemarcheDetailed(12345);
 
@@ -52,10 +56,12 @@ describe("DemarchesSimplifieesClient", () => {
     });
 
     it("devrait retourner null en cas d'erreur", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-      });
+      mockFetch.mockResolvedValueOnce(
+        new Response(null, {
+          status: 500,
+          statusText: "Internal Server Error",
+        })
+      );
 
       const result = await client.getDemarcheDetailed(12345);
 
@@ -91,16 +97,19 @@ describe("DemarchesSimplifieesClient", () => {
         },
       };
 
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          statusText: "OK",
+          headers: new Headers({ "Content-Type": "application/json" }),
+        })
+      );
 
       const result = await client.getDemarcheDossiers(12345, { first: 50 });
 
       expect(fetch).toHaveBeenCalled();
-      const callArgs = (fetch as any).mock.calls[0];
-      const body = JSON.parse(callArgs[1].body);
+      const callArgs = mockFetch.mock.calls[0];
+      const body = JSON.parse(callArgs[1]?.body as string);
 
       expect(body.variables).toEqual({
         number: 12345,
@@ -121,10 +130,13 @@ describe("DemarchesSimplifieesClient", () => {
         data: null,
       };
 
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          statusText: "OK",
+          headers: new Headers({ "Content-Type": "application/json" }),
+        })
+      );
 
       await expect(client.customQuery("query { test }")).rejects.toThrow(
         "GraphQL errors: Démarche non trouvée, Accès refusé"

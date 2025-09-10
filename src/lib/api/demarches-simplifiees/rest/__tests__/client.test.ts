@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, MockedFunction } from "vitest";
 import { DemarchesSimplifieesPrefillClient } from "../client";
 
 describe("DemarchesSimplifieesPrefillClient", () => {
   let client: DemarchesSimplifieesPrefillClient;
+  const mockFetch = global.fetch as MockedFunction<typeof fetch>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -27,7 +28,6 @@ describe("DemarchesSimplifieesPrefillClient", () => {
       const data = {
         champ_123: "valeur1",
         champ_456: null,
-        champ_789: undefined,
       };
 
       const url = client.generatePrefillUrl(data);
@@ -62,10 +62,13 @@ describe("DemarchesSimplifieesPrefillClient", () => {
         dossier_number: 123,
       };
 
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          statusText: "OK",
+          headers: new Headers({ "Content-Type": "application/json" }),
+        })
+      );
 
       const data = { champ_123: "test" };
       const result = await client.createPrefillDossier(data);
@@ -83,16 +86,30 @@ describe("DemarchesSimplifieesPrefillClient", () => {
     });
 
     it("devrait gérer les erreurs API", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      // Mock une réponse d'erreur avec le bon format
+      mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
         statusText: "Bad Request",
-        text: async () => "Champ requis manquant",
-      });
+        json: vi.fn().mockRejectedValue(new Error("Not JSON")),
+        text: vi.fn().mockResolvedValue("Champ requis manquant"),
+        headers: new Headers(),
+        redirected: false,
+        type: "basic",
+        url: "",
+        clone: vi.fn(),
+        body: null,
+        bodyUsed: false,
+        arrayBuffer: vi.fn(),
+        blob: vi.fn(),
+        formData: vi.fn(),
+      } as unknown as Response);
 
       await expect(
         client.createPrefillDossier({ champ_123: "test" })
-      ).rejects.toThrow("400 Bad Request");
+      ).rejects.toThrow(
+        "Erreur lors de la création du dossier: 400 Bad Request - Champ requis manquant"
+      );
     });
   });
 });
