@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DemarchesSimplifieesPrefillClient } from "../client";
 
-// Mock fetch
-global.fetch = vi.fn();
-
 describe("DemarchesSimplifieesPrefillClient", () => {
   let client: DemarchesSimplifieesPrefillClient;
 
