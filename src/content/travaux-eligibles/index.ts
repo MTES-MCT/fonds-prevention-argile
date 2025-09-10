@@ -13,5 +13,6 @@ export { default as contentTravauxEligiblesSuppressionSystemesRacinaires } from 
 
 export { default as contentTravauxEligiblesPoseMembraneImpermeabilite } from "./pose-membrane-impermeabilite.json";
 export { default as contentTravauxEligiblesPoseTrottoirImpermeablePeripherique } from "./pose-trottoir-impermeable-peripherique.json";
-
-
+export { default as contentTravauxEligiblesInstallationEcranAntiRacine } from "./installation-ecran-anti-racine.json";
+export { default as contentTravauxEligiblesMiseEnChargeReseauxEaux } from "./mise-en-charge-reseaux-eaux.json";
+export { default as contentTravauxEligiblesReperageFuiteReseauxEaux } from "./reperage-fuite-reseaux-eaux.json";
