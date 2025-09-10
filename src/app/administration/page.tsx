@@ -53,10 +53,7 @@ export default async function Admin() {
 
   // Calcul des statistiques
   const stats = dossiers.reduce(
-    (
-      acc: { total: number; byState: { [x: string]: any }; archived: number },
-      dossier: { state: string | number; archived: any }
-    ) => {
+    (acc, dossier) => {
       acc.total++;
       acc.byState[dossier.state] = (acc.byState[dossier.state] || 0) + 1;
       if (dossier.archived) acc.archived++;
