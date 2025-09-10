@@ -69,4 +69,4 @@ jobs:
           DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE: "exemple-demarche"
           DEMARCHES_SIMPLIFIEES_ID_DEMARCHE: "123456"
           ADMIN_PASSWORD: "examplepassword"
-          JWT_SECRET: "examplesecret"
+          JWT_SECRET: "supersecretkeywithmorethan32characters"
