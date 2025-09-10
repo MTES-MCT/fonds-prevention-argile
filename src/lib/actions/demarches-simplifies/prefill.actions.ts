@@ -148,6 +148,7 @@ export async function createPrefillDossier(
 /**
  * Génère une URL de préremplissage (méthode GET)
  * Attention: limitée à ~2000 caractères
+ * Utilité à vérifier selon les cas d'usage
  */
 export async function generatePrefillUrl(
   data?: PrefillData
