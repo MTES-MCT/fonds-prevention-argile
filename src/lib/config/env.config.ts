@@ -4,11 +4,15 @@ import { isClient, isServer } from "@/lib/utils/env";
 // Schémas de validation
 const serverSchema = z.object({
   NEXT_TELEMETRY_DISABLED: z.string().optional(),
-  DEMARCHES_SIMPLIFIEES_API_KEY: z.string().min(1),
-  DEMARCHES_SIMPLIFIEES_API_URL: z
+  DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY: z.string().min(1),
+  DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL: z
     .string()
     .url()
     .default("https://www.demarches-simplifiees.fr/api/v2/graphql"),
+  DEMARCHES_SIMPLIFIEES_REST_API_URL: z
+    .string()
+    .url()
+    .default("https://www.demarches-simplifiees.fr/api/public/v1"),
   DEMARCHES_SIMPLIFIEES_ID_DEMARCHE: z.string().min(1),
 });
 

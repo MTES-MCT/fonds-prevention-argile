@@ -32,9 +32,11 @@ Configurez les variables selon votre environnement. Les principales variables in
 - `NEXT_PUBLIC_MATOMO_SITE_ID` : ID Matomo pour l'analytics
 - `NEXT_PUBLIC_MATOMO_URL` : URL de l'instance Matomo
 - `NEXT_PUBLIC_SENTRY_DSN` : DSN Sentry pour le monitoring d'erreurs
-- `DEMARCHES_SIMPLIFIEES_API_KEY` : Clé d'API pour récupérer les informations de la plateforme Démarches Simplifiées
-- `DEMARCHES_SIMPLIFIEES_API_URL` : URL de l'API de la plateforme Démarches Simplifiées
+- `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY` : Clé d'API pour récupérer les informations de la plateforme Démarches Simplifiées via GraphQL
+- `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL` : URL de l'API GRAPHQL de la plateforme Démarches Simplifiées
+- `DEMARCHES_SIMPLIFIEES_REST_API_URL` : URL de l'API Rest de la plateforme Démarches Simplifiées
 - `DEMARCHES_SIMPLIFIEES_ID_DEMARCHE` : Identifiant de la démarche liée au Fonds prévention Argile dans la plateforme Démarches Simplifiées
+- `DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE` : Nom de la démarche liée au Fonds prévention Argile dans la plateforme Démarches Simplifiées
 
 ## Développement
 

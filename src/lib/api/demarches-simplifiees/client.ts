@@ -15,12 +15,14 @@ export class DemarchesSimplifieesClient {
   constructor() {
     const env = getServerEnv();
     this.apiUrl =
-      env.DEMARCHES_SIMPLIFIEES_API_URL ||
+      env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL ||
       "https://www.demarches-simplifiees.fr/api/v2/graphql";
-    this.apiKey = env.DEMARCHES_SIMPLIFIEES_API_KEY;
+    this.apiKey = env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY;
 
     if (!this.apiKey) {
-      throw new Error("DEMARCHES_SIMPLIFIEES_API_KEY is not configured");
+      throw new Error(
+        "DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY is not configured"
+      );
     }
   }
 
