@@ -2,7 +2,7 @@
   "name": "fonds-prevention-argile",
   "version": "0.0.1",
   "private": true,
-  "packageManager": "pnpm@10.13.1",
+  "packageManager": "pnpm@10.15.1",
   "scripts": {
     "build": "next build",
     "start": "next start",
