@@ -1,27 +1,9 @@
-export {
-  getDemarchesSimplifieesClient,
-  DemarchesSimplifieesClient,
-} from "./client";
+// Export GraphQL
+export * as GraphQL from "./graphql";
 
-export type {
-  DemarcheDetailed,
-  Dossier,
-  DossiersConnection,
-  ServiceInfo,
-  ChampDescriptor,
-  Usager,
-  Instructeur,
-  Champ,
-  Annotation,
-  Message,
-  Avis,
-  Attachment,
-  PageInfo,
-  DemarcheState,
-  DossierState,
-  GraphQLError,
-  GraphQLResponse,
-  QueryVariables,
-  DemarchesFilters,
-  DossiersFilters,
-} from "./types";
+// Export REST
+export * as REST from "./rest";
+
+// Exports directs pour compatibilité
+export { getDemarchesSimplifieesClient as graphqlClient } from "./graphql/client";
+export { prefillClient as restClient } from "./rest";

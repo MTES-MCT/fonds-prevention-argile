@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees";
+import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees/graphql";
 import { formatDate, formatDateTime, richTextParser } from "@/lib/utils";
 
 // Fonction pour formater les états

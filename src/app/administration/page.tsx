@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees";
+import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees/graphql";
 import { getServerEnv } from "@/lib/config/env.config";
 
 // Fonction pour formater les états des dossiers

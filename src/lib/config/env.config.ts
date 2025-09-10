@@ -14,6 +14,7 @@ const serverSchema = z.object({
     .url()
     .default("https://www.demarches-simplifiees.fr/api/public/v1"),
   DEMARCHES_SIMPLIFIEES_ID_DEMARCHE: z.string().min(1),
+  DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE: z.string().min(1),
 });
 
 const clientSchema = z.object({
