@@ -8,10 +8,7 @@ import type {
   DemarcheStats,
 } from "@/lib/api/demarches-simplifiees/rest/types";
 
-// Type pour les retours d'actions
-export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+import type { ActionResult } from "./types";
 
 /**
  * Récupère le schéma de la démarche

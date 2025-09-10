@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
-import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees/graphql";
 import { getServerEnv } from "@/lib/config/env.config";
+import {
+  getDemarcheDetails,
+  getDossiers,
+} from "@/lib/actions/demarches-simplifies";
 
 // Fonction pour formater les états des dossiers
 function getStateLabel(state: string): string {
@@ -30,26 +33,30 @@ export default async function Admin() {
   const env = getServerEnv();
   const demarcheId = parseInt(env.DEMARCHES_SIMPLIFIEES_ID_DEMARCHE);
 
-  const client = getDemarchesSimplifieesClient();
-
-  // Récupérer la démarche et les dossiers en parallèle
-  const [demarche, dossiersConnection] = await Promise.all([
-    client.getDemarcheDetailed(demarcheId),
-    client.getDemarcheDossiers(demarcheId, {
-      first: 100,
-    }),
+  // Utiliser les server actions
+  const [demarcheResponse, dossiersResponse] = await Promise.all([
+    getDemarcheDetails(demarcheId),
+    getDossiers(demarcheId, { first: 100 }),
   ]);
 
-  if (!demarche) {
+  if (!demarcheResponse.success) {
     notFound();
   }
+
+  const demarche = demarcheResponse.data;
+  const dossiersConnection = dossiersResponse.success
+    ? dossiersResponse.data
+    : null;
 
   const dossiers = dossiersConnection?.nodes || [];
   const hasMoreDossiers = dossiersConnection?.pageInfo?.hasNextPage || false;
 
   // Calcul des statistiques
   const stats = dossiers.reduce(
-    (acc, dossier) => {
+    (
+      acc: { total: number; byState: { [x: string]: any }; archived: number },
+      dossier: { state: string | number; archived: any }
+    ) => {
       acc.total++;
       acc.byState[dossier.state] = (acc.byState[dossier.state] || 0) + 1;
       if (dossier.archived) acc.archived++;

@@ -8,17 +8,14 @@ import {
 } from "@/lib/actions/demarches-simplifies";
 
 import type {
-  CreateDossierResponse,
   DemarcheSchema,
   ChampDescriptor,
 } from "@/lib/api/demarches-simplifiees/rest/types";
-
-// Type union pour gérer les différents types de résultats
-type ResultData = CreateDossierResponse | { url: string } | null;
+import { RestTestResult } from "@/lib/types/tests/tests-result";
 
 export default function TestDsPrefillPage() {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ResultData>(null);
+  const [result, setResult] = useState<RestTestResult>(null);
   const [error, setError] = useState<string | null>(null);
   const [schema, setSchema] = useState<DemarcheSchema | null>(null);
 
