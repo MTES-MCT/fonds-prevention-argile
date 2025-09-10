@@ -80,16 +80,6 @@ const HeaderDropdown = ({
     }
   };
 
-  const getInitials = () => {
-    if (userInitials) return userInitials;
-    return userName
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   return (
     <div
       id="header-user-dropdown"
