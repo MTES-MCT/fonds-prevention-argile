@@ -2,30 +2,18 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface HeaderDropdownProps {
-  userName?: string;
-  userEmail?: string;
-  userInitials?: string;
-}
-
-const HeaderDropdown = ({
-  userName = "Utilisateur",
-  userEmail,
-  userInitials,
-}: HeaderDropdownProps) => {
+const HeaderDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const router = useRouter();
 
-  // Configuration des items du menu
+  const { user, logout, isLoading } = useAuth();
+
   const handleLogout = () => {
-    // TODO logique de déconnexion ici
-    console.log("Déconnexion...");
-    // Par exemple : signOut() de next-auth
-    router.push("/deconnexion");
+    logout();
+    setIsOpen(false);
   };
 
   // Fermer le dropdown quand on clique en dehors
@@ -80,6 +68,9 @@ const HeaderDropdown = ({
     }
   };
 
+  // Si pas d'utilisateur, ne rien afficher
+  if (!user) return null;
+
   return (
     <div
       id="header-user-dropdown"
@@ -96,9 +87,10 @@ const HeaderDropdown = ({
           id="user-dropdown-button"
           className="fr-translate__btn fr-btn fr-btn--tertiary"
           onClick={toggleDropdown}
+          disabled={isLoading}
         >
           <span className="fr-icon-account-circle-line" aria-hidden="true" />
-          <span className="fr-hidden-sm">&nbsp;{userName}</span>
+          <span className="fr-hidden-sm">&nbsp;{user.name}</span>
         </button>
 
         <div
@@ -106,38 +98,42 @@ const HeaderDropdown = ({
           id="user-dropdown-collapse"
         >
           <ul className="fr-menu__list">
-            {/* En-tête avec infos utilisateur */}
-            {userEmail && (
-              <>
-                <li
-                  className="fr-p-2w"
-                  style={{
-                    borderBottom: "1px solid var(--border-default-grey)",
-                  }}
-                >
-                  <div className="fr-text--sm">
-                    <p className="fr-text--bold fr-mb-0">{userName}</p>
-                    <p
-                      className="fr-mb-0 fr-text--regular"
-                      style={{ color: "var(--text-mention-grey)" }}
-                    >
-                      {userEmail}
-                    </p>
-                  </div>
-                </li>
-              </>
-            )}
+            {/* Badge Admin */}
+            <li className="fr-p-2w">
+              <span className="fr-badge fr-badge--info fr-badge--no-icon">
+                <span
+                  className="fr-icon-shield-line fr-icon--sm fr-mr-1v"
+                  aria-hidden="true"
+                />
+                {user.role === "admin" ? "Administrateur" : "Utilisateur"}
+              </span>
+            </li>
 
             {/* Liens du menu */}
             <li>
               <Link
-                href="/administration"
+                href="/dashboard"
                 className="fr-translate__language fr-nav__link"
-                id="user-administration"
+                id="user-menu-dashboard"
                 onClick={() => setIsOpen(false)}
               >
                 <span
-                  className="fr-icon-account-circle-fill fr-mr-1w"
+                  className="fr-icon-draft-line fr-mr-1w"
+                  aria-hidden="true"
+                />
+                Tableau de bord
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/administration"
+                className="fr-translate__language fr-nav__link"
+                id="user-menu-admin"
+                onClick={() => setIsOpen(false)}
+              >
+                <span
+                  className="fr-icon-settings-5-line fr-mr-1w"
                   aria-hidden="true"
                 />
                 Administration
@@ -146,16 +142,31 @@ const HeaderDropdown = ({
 
             <li>
               <Link
-                href="/test/ds-graphql"
+                href="/statistiques"
                 className="fr-translate__language fr-nav__link"
-                id="user-menu-documents"
+                id="user-menu-stats"
                 onClick={() => setIsOpen(false)}
               >
                 <span
-                  className="fr-icon-file-text-line fr-mr-1w"
+                  className="fr-icon-bar-chart-line fr-mr-1w"
                   aria-hidden="true"
                 />
-                Test DS (GraphQL)
+                Statistiques
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/test/ds-graphql"
+                className="fr-translate__language fr-nav__link"
+                id="user-menu-test"
+                onClick={() => setIsOpen(false)}
+              >
+                <span
+                  className="fr-icon-file-line fr-mr-1w"
+                  aria-hidden="true"
+                />
+                Test - DS - GraphQL
               </Link>
             </li>
 
@@ -163,14 +174,14 @@ const HeaderDropdown = ({
               <Link
                 href="/test/ds-prefill"
                 className="fr-translate__language fr-nav__link"
-                id="user-menu-documents"
+                id="user-menu-test"
                 onClick={() => setIsOpen(false)}
               >
                 <span
-                  className="fr-icon-file-text-line fr-mr-1w"
+                  className="fr-icon-file-line fr-mr-1w"
                   aria-hidden="true"
                 />
-                Test DS (REST)
+                Test - DS - Prefill
               </Link>
             </li>
 
@@ -178,23 +189,22 @@ const HeaderDropdown = ({
               <button
                 className="fr-translate__language fr-nav__link"
                 id="user-menu-logout"
-                onClick={() => {
-                  handleLogout();
-                  setIsOpen(false);
-                }}
+                onClick={handleLogout}
+                disabled={isLoading}
                 style={{
                   width: "100%",
                   textAlign: "left",
                   border: "none",
                   background: "none",
-                  cursor: "pointer",
+                  cursor: isLoading ? "wait" : "pointer",
+                  opacity: isLoading ? 0.5 : 1,
                 }}
               >
                 <span
                   className="fr-icon-logout-box-r-line fr-mr-1w"
                   aria-hidden="true"
                 />
-                Se déconnecter
+                {isLoading ? "Déconnexion..." : "Se déconnecter"}
               </button>
             </li>
           </ul>

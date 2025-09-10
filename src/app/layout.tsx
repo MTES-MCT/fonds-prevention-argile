@@ -28,6 +28,7 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css"
 
 // Import des styles custom
 import "../styles/globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: contentLayout.metadata.title,
@@ -102,10 +103,12 @@ export default function RootLayout({
       </head>
       <body className="flex flex-col min-h-screen">
         <DsfrProvider>
-          <Matomo />
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <AuthProvider>
+            <Matomo />
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </AuthProvider>
         </DsfrProvider>
       </body>
     </html>

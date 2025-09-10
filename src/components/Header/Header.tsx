@@ -4,16 +4,10 @@ import { contentLayout } from "@/content";
 import { richTextParser } from "@/lib/utils";
 import Link from "next/link";
 import HeaderDropdown from "../HeaderDropDown/HeaderDropDown";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
-  // TODO Récupérer les infos utilisateur depuis système d'auth
-  // Par exemple avec useSession() de next-auth
-  const isAuthenticated = true; // TODO remplacer par vrai état d'authentification
-
-  const user = {
-    name: "Jean Dupont",
-    email: "jean.dupont@example.fr",
-  };
+  const { isAuthenticated } = useAuth();
 
   return (
     <header role="banner" className="fr-header" id="header-3">
@@ -74,10 +68,7 @@ const Header = () => {
                   {/* Dropdown utilisateur si connecté */}
                   {isAuthenticated && (
                     <li>
-                      <HeaderDropdown
-                        userName={user.name}
-                        userEmail={user.email}
-                      />
+                      <HeaderDropdown />
                     </li>
                   )}
                 </ul>
@@ -102,7 +93,7 @@ const Header = () => {
             Fermer
           </button>
           <div className="fr-header__menu-links">
-            {/* Liens pour mobile - IMPORTANT: dupliquer les liens ici */}
+            {/* Liens pour mobile */}
             <ul className="fr-btns-group">
               {contentLayout.header.links.map((link) => (
                 <li key={`mobile-${link.href}`}>
@@ -119,40 +110,39 @@ const Header = () => {
                     <hr className="fr-mt-2w fr-mb-2w" />
                   </li>
                   <li>
-                    <button
+                    <Link
+                      href="/administration"
                       className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-left"
-                      disabled
-                      style={{ cursor: "default", opacity: 1 }}
                     >
                       <span
-                        className="fr-icon-account-circle-line"
+                        className="fr-icon-settings-5-line"
                         aria-hidden="true"
                       />
-                      {user.name}
-                    </button>
-                  </li>
-                  <li>
-                    <Link
-                      href="/account"
-                      className="fr-btn fr-btn--tertiary-no-outline"
-                    >
-                      Mon compte
+                      Administration
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href="/preferences"
-                      className="fr-btn fr-btn--tertiary-no-outline"
+                      href="/dashboard"
+                      className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-left"
                     >
-                      Mes préférences
+                      <span
+                        className="fr-icon-dashboard-3-line"
+                        aria-hidden="true"
+                      />
+                      Tableau de bord
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href="/documents"
-                      className="fr-btn fr-btn--tertiary-no-outline"
+                      href="/statistiques"
+                      className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-left"
                     >
-                      Mes documents
+                      <span
+                        className="fr-icon-bar-chart-line"
+                        aria-hidden="true"
+                      />
+                      Statistiques
                     </Link>
                   </li>
                   <li>
@@ -160,22 +150,12 @@ const Header = () => {
                   </li>
                   <li>
                     <Link
-                      href="/help"
-                      className="fr-btn fr-btn--tertiary-no-outline"
+                      href="/test"
+                      className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-left"
                     >
-                      Aide
+                      <span className="fr-icon-flask-line" aria-hidden="true" />
+                      Pages de test
                     </Link>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => {
-                        // Logique de déconnexion
-                        console.log("Déconnexion...");
-                      }}
-                      className="fr-btn fr-btn--tertiary-no-outline"
-                    >
-                      Se déconnecter
-                    </button>
                   </li>
                 </>
               )}
