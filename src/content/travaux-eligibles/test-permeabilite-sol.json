@@ -1,0 +1,61 @@
+{
+  "title": "Lorem ipsum",
+  "pageLink": "/travaux-eligibles/test-permeabilite-sol",
+  "tag": {
+    "title": "Gestion des eaux",
+    "className": "blue-france"
+  },
+  "image": {
+    "alt": "Fonds Prévention Argile - Un service de l'État",
+    "src": "/images/signes-a-surveiller/sample.svg",
+    "description": "Lorem ipsum"
+  },
+  "une_des_solutions": "Lopem Ipsum.",
+  "solutions": [
+    {
+      "title": "1. Lopem Ipsum",
+      "details": [
+        "Lopem Ipsum",
+        "Lopem Ipsum",
+        "Lopem Ipsum",
+        "Lopem Ipsum"
+      ]
+    },
+    {
+      "title": "2. Lopem Ipsum",
+      "details": [
+        "Lopem Ipsum",
+        "Lopem Ipsum.",
+        "Lopem Ipsum"
+      ]
+    }
+  ],
+  "pourquoi_solution_efficace": {
+    "subtitle": "Lopem Ipsums :",
+    "details": [
+      "Lopem Ipsum",
+      "Lopem Ipsum",
+      "Lopem Ipsum",
+      "Lopem Ipsum"
+    ]
+  },
+  "quand_mettre_en_oeuvre": {
+    "prevention": {
+      "title": "En prévention",
+      "details": [
+        "Lopem Ipsum",
+        "Lopem Ipsum",
+        "Lopem Ipsum."
+      ]
+    },
+    "traitement": {
+      "title": "En traitement",
+      "details": [
+        "Lopem Ipsum,",
+        "Lopem Ipsum",
+        "Lopem Ipsum"
+      ]
+    }
+  },
+  "a_retenir": "Lopem Ipsum"
+}
