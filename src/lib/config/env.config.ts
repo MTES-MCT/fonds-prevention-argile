@@ -15,6 +15,8 @@ const serverSchema = z.object({
     .default("https://www.demarches-simplifiees.fr/api/public/v1"),
   DEMARCHES_SIMPLIFIEES_ID_DEMARCHE: z.string().min(1),
   DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE: z.string().min(1),
+  ADMIN_PASSWORD: z.string().min(8),
+  JWT_SECRET: z.string().min(32),
 });
 
 const clientSchema = z.object({

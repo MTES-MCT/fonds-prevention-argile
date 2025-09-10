@@ -18,16 +18,6 @@ export default function Simulateur() {
           Fonds de prévention.
         </p>
 
-        {/* Debug info - à retirer en production */}
-        <div className="bg-yellow-100 p-4 rounded mb-4 text-sm">
-          <p>
-            <strong>Debug:</strong>
-          </p>
-          <p>URL: {iframeUrl || "❌ UNDEFINED"}</p>
-          <p>Height: {iframeHeight || "❌ UNDEFINED"}</p>
-          <p>Node ENV: {process.env.NODE_ENV}</p>
-        </div>
-
         {/* Conditional rendering de l'iframe */}
         {iframeUrl ? (
           <iframe

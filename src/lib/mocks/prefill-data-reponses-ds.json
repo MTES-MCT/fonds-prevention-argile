@@ -1,0 +1,145 @@
+{
+  "test": {
+    "description": "Données de test complètes pour un dossier RGA",
+    "data": {
+      "// Section 1 - Identification du demandeur": "",
+
+      "champ_Q2hhbXAtNTU0Mjc5NQ==": "CNI_123456789",
+      "// ^ Pièce d'identité (TitreIdentite)": "",
+
+      "champ_Q2hhbXAtNTQyMjQzNQ==": "12 rue de la République, 75001 Paris",
+      "// ^ Adresse de correspondance": "",
+
+      "champ_Q2hhbXAtNTQyMjQ0MA==": "0612345678",
+      "// ^ Numéro de téléphone": "",
+
+      "champ_Q2hhbXAtNTQyMjQ0Mg==": "jean.dupont@example.com",
+      "// ^ Adresse électronique": "",
+
+      "champ_Q2hhbXAtNTQyMjU4NQ==": 25000,
+      "// ^ Revenu fiscal de référence (Integer)": "",
+
+      "champ_Q2hhbXAtNTQyMjU4NA==": 4,
+      "// ^ Nombre de personnes composant le ménage (Integer)": "",
+
+      "// Section 2 - Représentant légal ou mandataire (optionnel)": "",
+
+      "champ_Q2hhbXAtNTU0MjgxNg==": "",
+      "// ^ Pièce d'identité du mandataire (laisser vide si pas de mandataire)": "",
+
+      "champ_Q2hhbXAtNTQyMjY4MQ==": "",
+      "// ^ Adresse de correspondance du mandataire": "",
+
+      "champ_Q2hhbXAtNTQyMjY4NA==": "",
+      "// ^ Téléphone du mandataire": "",
+
+      "champ_Q2hhbXAtNTQyMjY4Ng==": "",
+      "// ^ Email du mandataire": "",
+
+      "champ_Q2hhbXAtNTQyMjY4OQ==": "",
+      "// ^ Agissant en tant que (dropdown: 'représentant légal du demandeur' ou 'mandataire du demandeur')": "",
+
+      "// Section 3 - Identification de l'AMO": "",
+
+      "champ_Q2hhbXAtNTQxOTQyOQ==": "12345678901234",
+      "// ^ Numéro SIRET de l'AMO": "",
+
+      "champ_Q2hhbXAtNTQxOTQzMg==": "45 avenue des Experts, 75008 Paris",
+      "// ^ Adresse de l'AMO": "",
+
+      "champ_Q2hhbXAtNTQxOTQ2Mg==": "contact@amo-expert.fr",
+      "// ^ Email de l'AMO": "",
+
+      "champ_Q2hhbXAtNTQxOTQ2NA==": "0145678901",
+      "// ^ Téléphone de l'AMO": "",
+
+      "// Section 4 - Description du bien": "",
+
+      "champ_Q2hhbXAtNTU0MjUyNg==": "25 rue des Argiles, 77000 Melun",
+      "// ^ Adresse du bien": "",
+
+      "champ_Q2hhbXAtNTU0MjU2OA==": "1985-06-15",
+      "// ^ Année de construction du bien (Date)": "",
+
+      "champ_Q2hhbXAtMTU5OTAwOA==": true,
+      "// ^ Êtes-vous propriétaire occupant (YesNo)": "",
+
+      "champ_Q2hhbXAtNTUxMDk4Mw==": ["forte"],
+      "// ^ Zone d'exposition RGA (MultipleDropDown: 'forte' ou 'moyenne')": "",
+
+      "champ_Q2hhbXAtNTQxNjY5MQ==": false,
+      "// ^ Le bien est-il mitoyen (YesNo)": "",
+
+      "champ_Q2hhbXAtNTQxNjY5Mw==": ["bâtiment R+2 sans sous-sol"],
+      "// ^ Forme de la maison (MultipleDropDown)": "",
+
+      "champ_Q2hhbXAtNTQxNzM0OA==": "Pas de sous-sol",
+      "// ^ Si présence de sous-sol, préciser": "",
+
+      "champ_Q2hhbXAtNTQxNzM4OQ==": true,
+      "// ^ Sinistres précoces identifiés (YesNo)": "",
+
+      "champ_Q2hhbXAtNTQxNzM5Mg==": "Présence de microfissures sur la façade nord, ouverture inférieure à 1mm. Légère fissure horizontale au niveau du soubassement côté jardin.",
+      "// ^ Description des sinistres constatés (Textarea)": "",
+
+      "champ_Q2hhbXAtNTUxMDg0NQ==": true,
+      "// ^ Bien déjà indemnisé catastrophe naturelle (YesNo)": "",
+
+      "champ_Q2hhbXAtNTU0MjU1MA==": "2023-03-15",
+      "// ^ Date d'indemnisation": "",
+
+      "champ_Q2hhbXAtNTU0MjU1Mg==": 5000.5,
+      "// ^ Montant de l'indemnisation (Decimal)": "",
+
+      "// Section 5 - Engagements (tous les checkbox doivent être true)": "",
+
+      "champ_Q2hhbXAtMTY5MDkxNg==": true,
+      "// ^ Attestation sur l'honneur - informations exactes": "",
+
+      "champ_Q2hhbXAtMjYzNzgwNg==": true,
+      "// ^ Engagement - fournir les documents": "",
+
+      "champ_Q2hhbXAtMjg3ODY4MA==": true,
+      "// ^ Engagement - conserver documents 10 ans": "",
+
+      "champ_Q2hhbXAtNDc2MzcwOA==": true,
+      "// ^ Information - remboursement en cas d'irrégularité": "",
+
+      "champ_Q2hhbXAtNDc2MzcwOQ==": true,
+      "// ^ Information - versement sur factures acquittées": ""
+    }
+  },
+
+  "minimal": {
+    "description": "Données minimales pour test rapide",
+    "data": {
+      "champ_Q2hhbXAtNTQyMjQ0MA==": "0612345678",
+      "champ_Q2hhbXAtNTQyMjQ0Mg==": "test@example.com",
+      "champ_Q2hhbXAtNTQyMjU4NQ==": 20000,
+      "champ_Q2hhbXAtNTQxOTQyOQ==": "12345678901234",
+      "champ_Q2hhbXAtNTQxOTQzMg==": "1 rue Test, 75001 Paris",
+      "champ_Q2hhbXAtNTQxOTQ2Mg==": "amo@test.fr",
+      "champ_Q2hhbXAtNTQxOTQ2NA==": "0100000000",
+      "champ_Q2hhbXAtNTU0MjUyNg==": "1 rue du Test, 77000 Melun",
+      "champ_Q2hhbXAtNTU0MjU2OA==": "1990-01-01",
+      "champ_Q2hhbXAtMTU5OTAwOA==": true,
+      "champ_Q2hhbXAtNTUxMDk4Mw==": ["moyenne"],
+      "champ_Q2hhbXAtNTQxNjY5MQ==": false,
+      "champ_Q2hhbXAtNTQxNjY5Mw==": ["bâtiment R+2 sans sous-sol"],
+      "champ_Q2hhbXAtNTQxNzM0OA==": "Sans sous-sol",
+      "champ_Q2hhbXAtNTQxNzM4OQ==": false,
+      "champ_Q2hhbXAtNTQxNzM5Mg==": "",
+      "champ_Q2hhbXAtNTUxMDg0NQ==": false,
+      "champ_Q2hhbXAtMTY5MDkxNg==": true,
+      "champ_Q2hhbXAtMjYzNzgwNg==": true,
+      "champ_Q2hhbXAtMjg3ODY4MA==": true,
+      "champ_Q2hhbXAtNDc2MzcwOA==": true,
+      "champ_Q2hhbXAtNDc2MzcwOQ==": true
+    }
+  },
+
+  "production": {
+    "description": "Template pour données réelles de production",
+    "data": {}
+  }
+}

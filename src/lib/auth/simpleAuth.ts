@@ -1,14 +1,16 @@
 import { createHmac } from "crypto";
 import { cookies } from "next/headers";
+import * as argon2 from "argon2";
+import { getServerEnv } from "../config/env.config";
 
-const secretKey = process.env.JWT_SECRET;
-const adminPassword = process.env.ADMIN_PASSWORD;
-
-if (!secretKey || !adminPassword) {
-  throw new Error(
-    "Les variables JWT_SECRET et ADMIN_PASSWORD doivent être définies dans .env.local"
-  );
-}
+// Récupération sécurisée des secrets via getServerEnv
+const getSecrets = () => {
+  const env = getServerEnv();
+  return {
+    secretKey: env.JWT_SECRET,
+    adminPassword: env.ADMIN_PASSWORD,
+  };
+};
 
 // Types pour le payload JWT
 interface JWTPayload {
@@ -20,8 +22,13 @@ interface JWTPayload {
   iat: number;
 }
 
+// Cache pour le hash du mot de passe (évite de recalculer)
+let passwordHashCache: string | null = null;
+
 // Créer un token JWT simple sans dépendance externe
 function createToken(payload: JWTPayload): string {
+  const { secretKey } = getSecrets();
+
   const header = {
     alg: "HS256",
     typ: "JWT",
@@ -34,7 +41,7 @@ function createToken(payload: JWTPayload): string {
     "base64url"
   );
 
-  const signature = createHmac("sha256", secretKey!)
+  const signature = createHmac("sha256", secretKey)
     .update(`${encodedHeader}.${encodedPayload}`)
     .digest("base64url");
 
@@ -44,9 +51,10 @@ function createToken(payload: JWTPayload): string {
 // Vérifier et décoder un token JWT
 function verifyToken(token: string): JWTPayload | null {
   try {
+    const { secretKey } = getSecrets();
     const [encodedHeader, encodedPayload, signature] = token.split(".");
 
-    const expectedSignature = createHmac("sha256", secretKey!)
+    const expectedSignature = createHmac("sha256", secretKey)
       .update(`${encodedHeader}.${encodedPayload}`)
       .digest("base64url");
 
@@ -71,8 +79,22 @@ function verifyToken(token: string): JWTPayload | null {
 }
 
 export async function login(password: string) {
-  // Vérifier le mot de passe
-  if (!password || password !== adminPassword) {
+  const { adminPassword } = getSecrets();
+
+  // Validation basique
+  if (!password || password.length < 8) {
+    return { success: false, error: "Mot de passe incorrect" };
+  }
+
+  // Générer le hash du mot de passe admin si pas déjà fait
+  if (!passwordHashCache) {
+    passwordHashCache = await argon2.hash(adminPassword);
+  }
+
+  // Vérifier le mot de passe avec Argon2
+  const isValid = await argon2.verify(passwordHashCache, password);
+
+  if (!isValid) {
     return { success: false, error: "Mot de passe incorrect" };
   }
 

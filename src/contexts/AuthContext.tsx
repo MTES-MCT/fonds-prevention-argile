@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { success: false, error: errorMsg };
         }
       } catch (err) {
-        const errorMsg = "Erreur de connexion. Veuillez réessayer.";
+        const errorMsg = "Erreur de connexion. Veuillez réessayer." + err;
         setError(errorMsg);
         setIsLoading(false);
         return { success: false, error: errorMsg };
