@@ -1,39 +1,64 @@
 {
-  "title": "Lorem ipsum",
-  "pageLink": "/travaux-eligible/installation-ecran-anti-racine",
+  "title": "Pose d'un écran anti-racines",
+  "pageLink": "/travaux-eligibles/installation-ecran-anti-racine",
   "tag": {
-    "title": "Gestion des eaux",
+    "title": "Gestion de la végétation",
     "className": "blue-france"
   },
   "image": {
-    "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
-    "description": "Lorem ipsum"
+    "alt": "Fonds Prévention Argile - Pose d'un écran anti-racines",
+    "src": "/images/signes-a-surveiller/sample.svg",
+    "description": "Schéma montrant une barrière physique enterrée autour des fondations"
   },
-  "une_des_solutions": "Lopem Ipsum.",
+  "une_des_solutions": "Les racines des arbres et arbustes pompent l'eau du sol, asséchant les argiles en période sèche et aggravant le phénomène de retrait. Un écran anti-racines crée une barrière physique qui protège vos fondations tout en permettant de conserver votre végétation.",
   "solutions": [
     {
-      "title": "1. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+      "title": "1. Types d'écrans disponibles",
+      "details": [
+        "Géotextile renforcé (épaisseur 2-3mm, durée de vie 20-30 ans)",
+        "Film polyéthylène haute densité (0,5-1mm d'épaisseur)",
+        "Barrières chimiques (herbicides localisés, solution temporaire)",
+        "Systèmes modulaires en plastique recyclé (pour les grands arbres)"
+      ]
     },
     {
-      "title": "2. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum.", "Lopem Ipsum"]
+      "title": "2. Pose professionnelle",
+      "details": [
+        "Enterrement à 60-80cm de profondeur sur tout le pourtour",
+        "Recouvrement de 20cm en haut pour éviter le contournement",
+        "Soudure des joints pour une étanchéité parfaite",
+        "Marquage au sol pour les futurs travaux"
+      ]
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "Lopem Ipsums :",
-    "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+    "subtitle": "Une protection discrète et efficace :",
+    "details": [
+      "Bloque 95% des racines invasives",
+      "Maintient l'équilibre hydrique du sol près des fondations",
+      "Évite l'abattage des arbres tout en les contenant",
+      "Solution réversible et écologique (sauf barrières chimiques)"
+    ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum."]
+      "details": [
+        "Avant de planter des arbres ou haies près de la maison",
+        "Si des racines sont déjà visibles près des fondations",
+        "Dans le cadre d'un diagnostic RGA recommandant une protection",
+        "Lors de la construction en zone boisée"
+      ]
     },
     "traitement": {
       "title": "En traitement",
-      "details": ["Lopem Ipsum,", "Lopem Ipsum", "Lopem Ipsum"]
+      "details": [
+        "Après apparition de fissures verticales aux angles du bâtiment",
+        "Si un arbre proche a poussé de plus de 3m en 5 ans",
+        "En cas de racines visibles dans les canalisations",
+        "Lors de la rénovation des fondations"
+      ]
     }
   },
-  "a_retenir": "Lopem Ipsum"
+  "a_retenir": "Les racines peuvent exercer une pression de 15 kg/cm² sur les fondations. Cet écran (500-1 500 €) est éligible aux aides si lié à un risque RGA avéré. À combiner avec un choix de végétaux adaptés (racines superficielles)."
 }

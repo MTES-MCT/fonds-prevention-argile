@@ -1,5 +1,5 @@
 {
-  "title": "Lorem ipsum",
+  "title": "Curage du réseau bouché si nécessaire ",
   "pageLink": "/travaux-eligibles/curage-reseau-bouche",
   "tag": {
     "title": "Gestion des eaux",
@@ -10,52 +10,48 @@
     "src": "/images/signes-a-surveiller/sample.svg",
     "description": "Lorem ipsum"
   },
-  "une_des_solutions": "Lopem Ipsum.",
+  "une_des_solutions": "Un réseau d’évacuation bouché (eaux pluviales, eaux usées) provoque des inondations localisées autour des fondations, favorisant le gonflement des argiles. Le curage régulier maintient un écoulement optimal et préserve la stabilité du sol.",
   "solutions": [
     {
-      "title": "1. Lopem Ipsum",
+      "title": "1. Nettoyage mécanique ou hydrodynamique",
       "details": [
-        "Lopem Ipsum",
-        "Lopem Ipsum",
-        "Lopem Ipsum",
-        "Lopem Ipsum"
+        "Robot de curage pour les bouchons tenaces (racines, tartre).",
+        "Jet à haute pression pour désobstruer les canalisations."
       ]
     },
     {
-      "title": "2. Lopem Ipsum",
+      "title": "2. Contrôle post-curage",
       "details": [
-        "Lopem Ipsum",
-        "Lopem Ipsum.",
+        "Test d'étanchéité pour détecter d'éventuelles fissures",
+        "Pose de grilles anti-feuilles en sortie de gouttière.",
         "Lopem Ipsum"
       ]
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "Lopem Ipsums :",
+    "subtitle": "En maîtrisant mieux l'évacuation des eaux vous :",
     "details": [
-      "Lopem Ipsum",
-      "Lopem Ipsum",
-      "Lopem Ipsum",
-      "Lopem Ipsum"
-    ]
+      "Évitez les stagnations d'eau près des fondations, favorisant le phénomène du RGA.",
+      "Prolongez la durée de vie des réseaux (cela évite la corrosion et les fuites).",
+      "Prévenez l'apparition de fissures."    ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
       "details": [
-        "Lopem Ipsum",
-        "Lopem Ipsum",
-        "Lopem Ipsum."
+        "Tous les 2 à 3 ans pour les réseaux anciens",
+        "Avant l'automne, période de feuilles mortes et de fortes pluies.",
+        "Après des travaux de jardinages (risque de racines dans les canalisations)."
       ]
     },
     "traitement": {
       "title": "En traitement",
       "details": [
-        "Lopem Ipsum,",
-        "Lopem Ipsum",
-        "Lopem Ipsum"
+        "Si les eaux usées remontent (odeurs, écoulement lent).",
+        "En cas de flaques persistentes près des regards ou des descentes pluviales",
+        "Après un épisode de pluie intense ayant causé des débordements."
       ]
     }
   },
-  "a_retenir": "Lopem Ipsum"
+  "a_retenir": "Un réseau bouché peut saturer le sol en 48h et déclencher un mouvement de terrain. Éligible au fonds de prévention si réalisé après un diagnostic RGA validé par les services instructeurs."
 }

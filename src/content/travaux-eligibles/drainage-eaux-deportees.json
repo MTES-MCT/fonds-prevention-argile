@@ -1,39 +1,61 @@
 {
-  "title": "Lorem ipsum",
+  "title": "Drainage des eaux déporté et séparatif des eaux pluviales en amont des terrains en pente ",
   "pageLink": "/travaux-eligibles/drainage-eaux-deportees",
   "tag": {
-    "title": "Gestion des eaux",
+    "title": "Protection des fondations",
     "className": "blue-france"
   },
   "image": {
     "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
+    "src": "/images/signes-a-surveiller/sample.svg",
     "description": "Lorem ipsum"
   },
-  "une_des_solutions": "Lopem Ipsum.",
+  "une_des_solutions": "Sur un terrain en pente, les eaux de ruissellement s'accumulent en contrebas et saturent le sol près des fondations. Un drainage séparatif en amont intercepte ces eaux avant qu'elles n'atteignent la maison, préservant ainsi la stabilité du sol argileux et prévenant les mouvements différentiels.",
   "solutions": [
     {
       "title": "1. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+      "details": [
+        "Lopem Ipsum",
+        "Lopem Ipsum",
+        "Lopem Ipsum",
+        "Lopem Ipsum"
+      ]
     },
     {
       "title": "2. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum.", "Lopem Ipsum"]
+      "details": [
+        "Lopem Ipsum",
+        "Lopem Ipsum.",
+        "Lopem Ipsum"
+      ]
     }
   ],
   "pourquoi_solution_efficace": {
     "subtitle": "Lopem Ipsums :",
-    "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+    "details": [
+      "Lopem Ipsum",
+      "Lopem Ipsum",
+      "Lopem Ipsum",
+      "Lopem Ipsum"
+    ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum."]
+      "details": [
+        "Lopem Ipsum",
+        "Lopem Ipsum",
+        "Lopem Ipsum."
+      ]
     },
     "traitement": {
       "title": "En traitement",
-      "details": ["Lopem Ipsum,", "Lopem Ipsum", "Lopem Ipsum"]
+      "details": [
+        "Lopem Ipsum,",
+        "Lopem Ipsum",
+        "Lopem Ipsum"
+      ]
     }
   },
-  "a_retenir": "Lopem Ipsum"
+  "a_retenir": "Ce système est indispensable pour les terrains pentus en zone argileuse. Son coût (2 000 à 6 000 €) est éligible aux subventions si justifié par une étude géotechnique. À associer à un système de récupération des eaux pluviales pour une gestion complète."
 }

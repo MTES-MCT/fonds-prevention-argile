@@ -1,5 +1,5 @@
 {
-  "title": "Lorem ipsum",
+  "title": "Pose de canalisation d’evacuation des eaux pluviales, en particulier de toiture, en veillant à les éloigner des fondations",
   "pageLink": "/travaux-eligibles/pose-canalisation-evacuation-eaux-pluviales",
   "tag": {
     "title": "Gestion des eaux",
@@ -10,30 +10,47 @@
     "src": "/images/sample.png",
     "description": "Lorem ipsum"
   },
-  "une_des_solutions": "Lopem Ipsum.",
+  "une_des_solutions": "Des eaux pluviales mal évacuées s’infiltrent près des fondations, déstabilisant le sol argileux. Une canalisation dédiée (séparée des eaux usées) draine l’eau loin de la maison, réduisant les risques de gonflement et de tassement.",
   "solutions": [
     {
-      "title": "1. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+      "title": "1. Installation d’un réseau séparatif",
+      "details": [
+        "Tuyaux en PVC ou béton (diamètre 100 à 200 mm) avec pente minimale de 1%.",
+        "Raccordement à un puisard ou à un réseau communal (si disponible)."
+      ]
     },
     {
-      "title": "2. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum.", "Lopem Ipsum"]
+      "title": "2. Aménagements complémentaires",
+      "details": [
+        "Griges de collecte en périphérie de la maison (évite les ruissellements)",
+        "Regards de visite tous les 10 mètres pour faciliter l’entretien."
+      ]
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "Lopem Ipsums :",
-    "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+    "subtitle": "",
+    "details": [
+      "Éloigne l’eau des fondations, limitant l’humidité du sol.",
+      "Réduit la pression sur les argiles (moins de gonflement en période humide).",
+      "Durable : Durée de vie > 50 ans avec un entretien minimal."    ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum."]
+      "details": [
+        "Dès la construction en zone argileuse (obligatoire dans certaines communes)",
+        "Après un diagnostic RGA recommandant une meilleure évacuation.",
+        "Si le terrain est en pente vers la maison.."
+      ]
     },
     "traitement": {
       "title": "En traitement",
-      "details": ["Lopem Ipsum,", "Lopem Ipsum", "Lopem Ipsum"]
+      "details": [
+        "En cas de fissures en escalier liées à une saturation du sol.",
+        "Si inondations répétées dans le sous-sol ou le vide sanitaire.",
+        "Après un épisode de RGA avéré."
+      ]
     }
   },
-  "a_retenir": "Lopem Ipsum"
+  "a_retenir": "Une évacuation mal conçue peut aggraver le RGA en concentrant l’eau à un seul endroit. Subventionnable jusqu'à 80% si intégrée à un plan de prévention validé par les services instructeurs et un diagnostic RGA."
 }
