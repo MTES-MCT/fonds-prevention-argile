@@ -5,18 +5,17 @@
     "src": "/images/sample.png",
     "description": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit."
   },
-  "ce_qu_il_faut_surveiller": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+  "ce_qu_il_faut_surveiller": "Un dallage qui s’affaisse (creux, flaques d’eau) ou se soulève (bosses, fissures en étoile) est le signe d’un problème grave de stabilité. Ces désordres, souvent causés par un retrait-gonflement des argiles, une rupture de canalisation ou un mauvais compactage, menacent l’intégrité du bâtiment. Risque d’effondrement si le dallage supporte une structure (murs, piliers).",
   "signes_alerte": [
-    "Lorem ipsum dolor sit amet.",
-    "Consectetur adipiscing elit.",
-    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    "Ut enim ad minim veniam."
+    "Dénivelé > 2 cm sur une surface plane (mesurable avec une règle).",
+    "Fissures larges (> 3mm) ou avec décalage vertical.",
+    "Bruits de craquement sous les pas ou lors du passage de véhicules."
   ],
   "conseils_pratiques": [
-    "Lorem ipsum dolor sit amet.",
-    "Consectetur adipiscing elit.",
-    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    "Ut enim ad minim veniam."
+    "Interdisez l'accès à la zone si risque d'effondrement.",
+    "Faites expertiser par un géotechnicient pour identifier la cause.",
+    "Ne chargez pas la dalle (voitures, matériaux lourds) avant réparation.",
+    "Contactez votre assurance et déclarez le sinistre sous 5 jours."
   ],
-  "bon_a_savoir": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+  "bon_a_savoir": "Urgence absolue : un dallage instable peut s’effondrer brutalement, surtout s’il supporte des charges. Les coûts de réparation peuvent atteindre 10 000 € pour une dalle de garage. Obligation légale : en copropriété, déclarer le désordre en assemblée générale sous 15 jours."
 }
