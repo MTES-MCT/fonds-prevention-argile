@@ -1,5 +1,5 @@
 {
-  "title": "Lorem ipsum",
+  "title": "Test de permeabilité du sol de type Porchet",
   "pageLink": "/travaux-eligibles/test-permeabilite-sol",
   "tag": {
     "title": "Gestion des eaux",
@@ -10,30 +10,48 @@
     "src": "/images/sample.png",
     "description": "Lorem ipsum"
   },
-  "une_des_solutions": "Lopem Ipsum.",
+  "une_des_solutions": "Connaître la perméabilité de votre sol permet d’adapter les solutions de drainage et d’éviter les erreurs (ex. : infiltration trop rapide en sol sableux, ou trop lente en sol argileux). Le test Porchet, simple et normé, mesure la vitesse d’absorption de l’eau pour guider les aménagements.",
   "solutions": [
     {
-      "title": "1. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+      "title": "1. Méthode standardisée",
+      "details": [
+        "Création d’un puits de 20 cm de diamètre et 30 cm de profondeur.",
+        "Remplissage d’eau et mesure du temps d’infiltration (en secondes)"
+      ]
     },
     {
-      "title": "2. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum.", "Lopem Ipsum"]
+      "title": "2. Interprétation des résultats",
+      "details": [
+        "Sol perméable (> 10 mm/h) : Risque de lessivage (drainage nécessaire).",
+        "Sol imperméable (< 1 mm/h) : Risque de stagnation (infiltration à proscrire)."
+      ]
     }
   ],
   "pourquoi_solution_efficace": {
     "subtitle": "Lopem Ipsums :",
-    "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+    "details": [
+      "Personnalise les solutions (drainage, infiltration, membrane étanche).",
+      "Évite les erreurs coûteuses (ex. : pose d’un drain inutile en sol sableux).",
+      "Obligatoire pour les permis de construire en zone argileuse dans certaines régions."
+    ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum."]
+      "details": [
+        "Avant tout projet de construction ou rénovation en zone RGA.",
+        "Si vous observez des flaques persistantes après la pluie.",
+        "Pour valider l’efficacité d’un système de drainage existant."
+      ]
     },
     "traitement": {
       "title": "En traitement",
-      "details": ["Lopem Ipsum,", "Lopem Ipsum", "Lopem Ipsum"]
+      "details": [
+        "Après l’apparition de fissures pour adapter les solutions.",
+        "Si un projet de végétalisation est prévu (choix des plantes selon la perméabilité).",
+        "En cas de problème récurrent d’humidité dans le sous-sol."
+      ]
     }
   },
-  "a_retenir": "Lopem Ipsum"
+  "a_retenir": "Un sol argileux a une perméabilité 10 à 100 fois moindre qu’un sol sableux."
 }

@@ -1,6 +1,6 @@
 {
   "ce_qu_il_faut_surveiller_title": "👀 Ce qu’il faut surveiller",
-  "signes_alertes_title": "⚠️ Signes d'alerte",
+  "signes_alertes_title": "⚠️ Signes d'alertes",
   "conseils_pratiques_title": "📝 Conseils pratiques",
   "bon_a_savoir_title": "Bon à savoir",
 
@@ -22,10 +22,30 @@
           "title": "Signes précurseurs",
           "className": "fr-badge--yellow-tournesol"
         },
-        "titre": "Microfissures horizontales ou verticales",
-        "description": "Ce qu'il faut surveiller : Les fissures horizontales qui apparaissent le long des plinthes, à la jonction entre le mur et le sol, sont souvent les premiers signes visibles du retrait-gonflement des argiles.",
-        "imageSrc": "/images/signes-a-surveiller/fissures-horizontales.png",
-        "pageLink": "/signes-a-surveiller/microfissures-horizontales-verticales"
+        "titre": "Microfissures verticales aux angles du bâtiment",
+        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
+        "pageLink": "/signes-a-surveiller/fissures-verticales-angles-batiment"
+      },
+      {
+        "tag": {
+          "title": "Signes précurseurs",
+          "className": "fr-badge--yellow-tournesol"
+        },
+        "titre": "Fissures horizontales à hauteur du plancher",
+        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
+        "pageLink": "/signes-a-surveiller/fissures-horizontales-plancher"
+      },
+      {
+        "tag": {
+          "title": "Signes précurseurs",
+          "className": "fr-badge--yellow-tournesol"
+        },
+        "titre": "Fissures dans les cloisons intérieures",
+        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
+        "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
       },
       {
         "tag": {
@@ -56,37 +76,8 @@
         "description": "Ce qu'il faut surveiller : Les déformations du sol de votre habitation, qu'il s'agisse d'affaissements ou de soulèvements, sont des manifestations directes du retrait-gonflement des argiles sous vos fondations.",
         "imageSrc": "/images/signes-a-surveiller/affaissement.png",
         "pageLink": "/signes-a-surveiller/affaissement-ou-soulevement-de-dallages"
-      },
-      {
-        "tag": {
-          "title": "Signes précurseurs",
-          "className": "fr-badge--yellow-tournesol"
-        },
-        "titre": "Fissures verticales aux angles du bâtiment",
-        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
-        "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
-        "pageLink": "/signes-a-surveiller/fissures-verticales-angles-batiment"
-      },
-      {
-        "tag": {
-          "title": "Signes précurseurs",
-          "className": "fr-badge--yellow-tournesol"
-        },
-        "titre": "Fissures horizontales à hauteur du plancher",
-        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
-        "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
-        "pageLink": "/signes-a-surveiller/fissures-horizontales-plancher"
-      },
-      {
-        "tag": {
-          "title": "Signes précurseurs",
-          "className": "fr-badge--yellow-tournesol"
-        },
-        "titre": "Fissures dans les cloisons intérieures",
-        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
-        "imageSrc": "/images/signes-a-surveiller/fissures-cloison.png",
-        "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
       }
+      
     ]
   }
 }

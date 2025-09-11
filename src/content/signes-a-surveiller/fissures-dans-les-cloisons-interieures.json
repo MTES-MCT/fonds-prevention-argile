@@ -5,18 +5,17 @@
     "src": "/images/sample.png",
     "description": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit."
   },
-  "ce_qu_il_faut_surveiller": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+  "ce_qu_il_faut_surveiller": "Ces fissures sont des craquelures fines et irrégulières dans les cloisons (placo, enduits), souvent localisées aux angles de pièces ou près des ouvertures. Elles résultent généralement de mouvements légers de la structure (RGA, variations d’humidité) ou de défauts de pose. Bien que souvent bénignes, leur récidive après rebouchage doit alerter.",
   "signes_alerte": [
-    "Lorem ipsum dolor sit amet.",
-    "Consectetur adipiscing elit.",
-    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    "Ut enim ad minim veniam."
+    "Fissures qui réapparaissent après réparation.",
+    "Décollement du papier peint ou de la peinture autour des fissures.",
+    "Porte intérieures qui frottent au sol ou en haut."
   ],
   "conseils_pratiques": [
-    "Lorem ipsum dolor sit amet.",
-    "Consectetur adipiscing elit.",
-    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    "Ut enim ad minim veniam."
+    "Rebouchez avec un enduit souple et surveillez la récidive.",
+    "Contrôlez l'humidité intérieure (ventilation, déshumidificateur).",
+    "Vérifiez les fondations si associées à d'autres signes (portes qui coincent, fissures extérieures).",
+    "Evitez les charges lourdes sur les cloisons fissurées."
   ],
-  "bon_a_savoir": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+  "bon_a_savoir": "Bien que souvent sans gravité, ces fissures peuvent trahir un mouvement de structure si elles sont associées à d’autres signes. Éligibles au fonds de prévention si inférieures à 1 mm. Les cloisons en placo hydrofuge résistent mieux aux variations d’humidité."
 }

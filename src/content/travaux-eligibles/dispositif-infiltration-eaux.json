@@ -1,39 +1,64 @@
 {
-  "title": "Lorem ipsum",
+  "title": "Dispositif simple d’infiltration des eaux à la parcelle à déporter des fondations",
   "pageLink": "/travaux-eligibles/dispositif-infiltration-eaux",
   "tag": {
     "title": "Gestion des eaux",
     "className": "blue-france"
   },
   "image": {
-    "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
-    "description": "Lorem ipsum"
+    "alt": "Fonds Prévention Argile - Système d'infiltration des eaux pluviales",
+    "src": "/images/signes-a-surveiller/sample.svg",
+    "description": "Schéma d'un puits d'infiltration en coupe montrant le remplissage de graviers et le géotextile"
   },
-  "une_des_solutions": "Lopem Ipsum.",
+  "une_des_solutions": "L'infiltration contrôlée des eaux pluviales sur votre parcelle permet de maintenir une humidité stable du sol, limitant ainsi les cycles de retrait-gonflement des argiles. Contrairement à l'évacuation classique, cette solution écologique préserve l'équilibre hydrique naturel tout en protégeant vos fondations.",
   "solutions": [
     {
-      "title": "1. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+      "title": "1. Systèmes d'infiltration adaptés",
+      "details": [
+        "Puits d'infiltration en béton ou plastique (profondeur 1-2m, diamètre 60-100cm)",
+        "Tranchées drainantes remplies de graviers (30-50cm de large, pente 1%)",
+        "Bassin paysager avec plantes hydrophiles (carex, joncs)",
+        "Géotextile anti-colmatage pour maintenir la perméabilité"
+      ]
     },
     {
-      "title": "2. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum.", "Lopem Ipsum"]
+      "title": "2. Mise en œuvre professionnelle",
+      "details": [
+        "Étude préalable de la perméabilité du sol (test Porchet obligatoire)",
+        "Distance minimale de 3m des fondations pour éviter la saturation locale",
+        "Système de trop-plein vers un exutoire sécurisé",
+        "Intégration paysagère avec végétaux adaptés"
+      ]
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "Lopem Ipsums :",
-    "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+    "subtitle": "Une solution écologique et préventive :",
+    "details": [
+      "Maintient une humidité constante du sol, réduisant les variations de volume des argiles",
+      "Réduit jusqu'à 70% les risques de tassement différentiel",
+      "Évite la saturation des réseaux d'assainissement publics",
+      "Solution pérenne (durée de vie > 20 ans) avec un entretien minimal"
+    ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum."]
+      "details": [
+        "Lors de la construction en zone argileuse (recommandé par les PPR)",
+        "Si le test de perméabilité du sol montre des valeurs entre 1 et 10 mm/h",
+        "Dans le cadre d'un projet d'aménagements extérieurs (terrasse, jardin)",
+        "Avant la plantation d'arbres pour équilibrer l'humidité du sol"
+      ]
     },
     "traitement": {
       "title": "En traitement",
-      "details": ["Lopem Ipsum,", "Lopem Ipsum", "Lopem Ipsum"]
+      "details": [
+        "Après apparition de microfissures liées aux variations d'humidité",
+        "En complément d'un système de drainage existant peu efficace",
+        "Si des flaques persistantes sont observées près des fondations",
+        "Après un épisode de RGA avéré pour stabiliser le sol"
+      ]
     }
   },
-  "a_retenir": "Lopem Ipsum"
+  "a_retenir": "Ce dispositif est particulièrement efficace pour les sols modérément perméables. Son coût (1 000 à 3 000 €) est éligible aux aides de l'État si intégré à un plan de prévention RGA. À combiner avec un système de récupération d'eaux pluviales pour une gestion optimale."
 }

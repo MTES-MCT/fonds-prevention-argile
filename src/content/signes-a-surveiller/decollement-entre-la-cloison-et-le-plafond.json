@@ -5,18 +5,17 @@
     "src": "/images/sample.png",
     "description": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit."
   },
-  "ce_qu_il_faut_surveiller": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+  "ce_qu_il_faut_surveiller": "Un décrochement visible entre le haut d’une cloison et le plafond, avec ou sans fente, signale un mouvement brutal de la structure. Ce phénomène, souvent accompagné d’un effritement du plâtre ou de bruits de craquement, peut résulter d’un affaissement de plancher, d’un tassement de fondations, ou d’une rupture de poutre. Risque d’effondrement si ignoré.",
   "signes_alerte": [
-    "Lorem ipsum dolor sit amet.",
-    "Consectetur adipiscing elit.",
-    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    "Ut enim ad minim veniam."
+    "Fente > 5 mm ou augmentation rapide.",
+    "Cloison qui 'bouge' au toucher ou sous pression.",
+    "Plâtre qui s'effrite ou chute en morceaux."
   ],
   "conseils_pratiques": [
-    "Lorem ipsum dolor sit amet.",
-    "Consectetur adipiscing elit.",
-    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    "Ut enim ad minim veniam."
+    "Évacuez la pièce si risque d'effondrement (surtout pour les plafonds lourds).",
+    "Ne pas touchez aux cloisons instables : risque de chute de matériaux.",
+    "Appelez un expert en bâtiment pour évaluer la stabilité et les causes (RGA, défaut de construction...).",
+    "Prévenez votre assurance et faites constatez les dégâts par un professionnel."
   ],
-  "bon_a_savoir": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+  "bon_a_savoir": "Danger immédiat : ce désordre peut précéder un effondrement partiel du plafond ou du mur. Urgence absolue : faites sécuriser les lieux par un professionnel avant toute réparation. Les assurances habitation couvrent souvent ces sinistres, mais une déclaration sous 48h est cruciale."
 }

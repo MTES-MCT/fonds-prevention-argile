@@ -1,39 +1,64 @@
 {
-  "title": "Lorem ipsum",
-  "pageLink": "/travaux-eligibles/suppression-systemes-racinaires",
+  "title": "Suppression des systèmes racinaires trop proches de la maison",
+  "pageLink": "/travaux-eligibles/suppression-racines",
   "tag": {
-    "title": "Gestion des eaux",
+    "title": "Gestion de la végétation",
     "className": "blue-france"
   },
   "image": {
-    "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
-    "description": "Lorem ipsum"
+    "alt": "Fonds Prévention Argile - Suppression de racines près des fondations",
+    "src": "/images/travaux-eligibles/suppression-racines.svg",
+    "description": "Illustration montrant l'abattage contrôlé d'un arbre et le traitement de souche"
   },
-  "une_des_solutions": "Lopem Ipsum.",
+  "une_des_solutions": "Les arbres plantés à moins de 5 mètres des fondations (selon l'espèce) destabilisent le sol en pompant son eau et en exerçant des pressions mécaniques. Leur suppression ciblée ou leur remplacement par des végétaux adaptés réduit significativement les risques de retrait-gonflement des argiles.",
   "solutions": [
     {
-      "title": "1. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+      "title": "1. Méthodes d'élimination",
+      "details": [
+        "Abattage contrôlé avec grue pour les grands arbres",
+        "Coupe des racines principales (méthode manuelle ou mécanique)",
+        "Tronçonnage du tronc et traitement de souche (glyphosate ou sel)",
+        "Broyage des racines pour les petits arbustes"
+      ]
     },
     {
-      "title": "2. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum.", "Lopem Ipsum"]
+      "title": "2. Remplacement par des espèces adaptées",
+      "details": [
+        "Arbustes à racines superficielles (lavande, romarin, buis)",
+        "Plantes couvre-sol (pervenche, lierre, gazon)",
+        "Arbres à port compact (érable du Japon, cerisier à fleurs)",
+        "Végétation locale nécessitant peu d'eau"
+      ]
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "Lopem Ipsums :",
-    "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+    "subtitle": "Une action radicale mais nécessaire :",
+    "details": [
+      "Supprime la cause principale de l'assèchement du sol",
+      "Réduit les risques de fissuration de 60 à 80%",
+      "Prévient les dommages aux canalisations",
+      "Améliore la stabilité à long terme du bâtiment"
+    ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum."]
+      "details": [
+        "Avant d'acheter une maison avec des arbres proches des fondations",
+        "Si un diagnostic RGA identifie un risque lié à la végétation",
+        "Tous les 10 ans pour les arbres à croissance rapide",
+        "Lors de la création d'un nouveau jardin"
+      ]
     },
     "traitement": {
       "title": "En traitement",
-      "details": ["Lopem Ipsum,", "Lopem Ipsum", "Lopem Ipsum"]
+      "details": [
+        "Après apparition de fissures verticales ou en escalier",
+        "Si un arbre penche vers la maison (signe de déséquilibre)",
+        "En cas de remontées de racines dans les canalisations",
+        "Lors de la réparation de fondations endommagées"
+      ]
     }
   },
-  "a_retenir": "Lopem Ipsum"
+  "a_retenir": "Un peuplier peut pomper jusqu'à 200 litres d'eau par jour en période estivale. Cette intervention (800-3 000 €) est subventionnable si justifiée par un expert. Vérifiez toujours les règles d'urbanisme avant l'abattage."
 }

@@ -1,39 +1,64 @@
 {
-  "title": "Lorem ipsum",
+  "title": "Protéger les remblais autour de la maison par une membrane d’imperméabilisation ",
   "pageLink": "/travaux-eligibles/pose-membrane-impermeabilite",
   "tag": {
-    "title": "Gestion des eaux",
+    "title": "Imperméabilisation du sol au droit des fondations",
     "className": "blue-france"
   },
   "image": {
-    "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
-    "description": "Lorem ipsum"
+    "alt": "Fonds Prévention Argile - Pose d'une membrane étanche",
+    "src": "/images/signes-a-surveiller/sample.svg",
+    "description": "Coupe technique montrant la membrane enroulée autour des fondations avec soudures"
   },
-  "une_des_solutions": "Lopem Ipsum.",
+  "une_des_solutions": "Une membrane étanche enroulée autour des fondations isole complètement la structure des variations d'humidité du sol. En bloquant les échanges d'eau, elle réduit drastiquement les cycles de gonflement/retrait des argiles et protège durablement le bâtiment.",
   "solutions": [
     {
-      "title": "1. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+      "title": "1. Types de membranes",
+      "details": [
+        "Géomembrane en HDPE (épaisseur 1,5-2mm, durée de vie 50 ans)",
+        "Revêtement bitumineux armé (solution économique, durée 20-30 ans)",
+        "Complexe bentonitique (auto-réparant en cas de micro-fissures)",
+        "Systèmes préformés avec nœuds de drainage intégrés"
+      ]
     },
     {
-      "title": "2. Lopem Ipsum",
-      "details": ["Lopem Ipsum", "Lopem Ipsum.", "Lopem Ipsum"]
+      "title": "2. Pose professionnelle",
+      "details": [
+        "Excavation sur 50-80cm de profondeur autour des fondations",
+        "Nettoyage et préparation des surfaces (priming)",
+        "Soudure des joints à chaud ou avec bandes adhésives spéciales",
+        "Recouvrement avec géotextile de protection"
+      ]
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "Lopem Ipsums :",
-    "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum"]
+    "subtitle": "La solution ultime contre les variations d'humidité :",
+    "details": [
+      "Bloque 100% des infiltrations d'eau vers les fondations",
+      "Réduit les mouvements de sol de 60 à 80%",
+      "Compatible avec tous les types de sols argileux",
+      "Solution pérenne (garantie 20-50 ans selon les matériaux)"
+    ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
-      "details": ["Lopem Ipsum", "Lopem Ipsum", "Lopem Ipsum."]
+      "details": [
+        "Lors de la construction en zone argileuse (recommandé par les PPR)",
+        "Si un diagnostic RGA révèle un sol très sensible",
+        "Avant de rénover les fondations d'une maison ancienne",
+        "Dans le cadre d'une extension de bâtiment"
+      ]
     },
     "traitement": {
       "title": "En traitement",
-      "details": ["Lopem Ipsum,", "Lopem Ipsum", "Lopem Ipsum"]
+      "details": [
+        "Après des fissures répétées malgré d'autres solutions",
+        "Si le sol est très argileux (test Porchet < 1 mm/h)",
+        "En cas de remontées capillaires dans les murs",
+        "Lors de la réparation de fondations déjà endommagées"
+      ]
     }
   },
-  "a_retenir": "Lopem Ipsum"
+  "a_retenir": "Cette membrane doit dépasser de 30 cm au-dessus du niveau du sol pour une protection optimale. Coût élevé (3 000-8 000 €) mais éligible à 60% de subvention. Solution souvent combinée avec un drainage périphérique."
 }

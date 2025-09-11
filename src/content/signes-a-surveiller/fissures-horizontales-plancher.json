@@ -1,22 +1,20 @@
 {
-  "title": "Fissures horizontales à hauteur du plancher",
+  "title": "Microfissures horizontales à hauteur du plancher",
   "image": {
     "alt": "Fonds Prévention Argile - Un service de l'État",
     "src": "/images/sample.png",
     "description": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit."
   },
-  "ce_qu_il_faut_surveiller": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+  "ce_qu_il_faut_surveiller": "Ces fissures sont des traits horizontaux fins (< 0,2 mm), alignés avec le niveau des planchers (séparation entre étages ou dalle). Elles indiquent souvent une contrainte localisée due à des mouvements de sol (RGA) ou à des dilatations thermiques mal absorbées. Leur apparition après des chocs climatiques (gel, sécheresse) doit alerter.",
   "signes_alerte": [
-    "Lorem ipsum dolor sit amet.",
-    "Consectetur adipiscing elit.",
-    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    "Ut enim ad minim veniam."
+    "Fissures qui traversent plusieurs matériaux (brique + enduit).",
+    "Décalage visible entre le plancher et le mur.",
+    "Bruits de craquement lors des changements de température."
   ],
   "conseils_pratiques": [
-    "Lorem ipsum dolor sit amet.",
-    "Consectetur adipiscing elit.",
-    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    "Ut enim ad minim veniam."
+    "Vérifiez l'isolation thermique des planchers pour limiter les dilatations.",
+    "Contrôlez l'humidité du sol sous la dalle (drainage, remontées capillaires).",
+    "Consultez un expert si les fissures s'accompagnent d'un affaissaement localisé."
   ],
-  "bon_a_savoir": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+  "bon_a_savoir": "Ces fissures peuvent révéler un début de tassement différentiel (sol argileux) ou un défaut de construction. Éligibles au fonds de prévention si traitées avant 1 mm, avant l’apparition de désordres structurels. Une sonde d’humidité dans le sol aide à diagnostiquer la cause."
 }
