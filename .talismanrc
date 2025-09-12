@@ -10,6 +10,8 @@ fileignoreconfig:
     checksum: ignore
   - filename: .github/workflows/ci.yml
     checksum: ignore
+  - filename: public/maintenance.html
+    checksum: 91ae010cca3a5e892b0fdc9ddef793c2108c228ddb43e3d983d8676b7f35c790
   - filename: src/lib/config/franceconnect.config.ts
     checksum: 6e6566e0bbd7d174407615d4d3e6bb034138d6b2c8a5ccfe45e9251eb22cfb70
 

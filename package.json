@@ -4,8 +4,8 @@
   "private": true,
   "packageManager": "pnpm@10.18.2",
   "scripts": {
-    "build": "next build",
-    "start": "next start",
+    "build": "echo 'Mode maintenance - pas de build requis'",
+    "start": "npx serve public -l $PORT -s",
     "start:dev": "next dev",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
