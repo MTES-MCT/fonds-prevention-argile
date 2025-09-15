@@ -109,7 +109,7 @@ export async function getUserInfo(
       const [, payload] = responseText.split(".");
       return JSON.parse(Buffer.from(payload, "base64url").toString());
     } catch (error) {
-      throw new Error("Impossible de décoder le JWT UserInfo");
+      throw new Error("Impossible de décoder le JWT UserInfo : " + error);
     }
   }
 
