@@ -139,21 +139,21 @@
         "imageAlt": "Illustration d'une maison avec des fissures",
         "title": "Dossier expert sur le retrait-gonflement des argiles",
         "description": "Les terrains argileux superficiels peuvent voir leur volume varier à la suite d'une modification de leur teneur en eau, en lien avec les conditions météorologiques.",
-        "linkUrl": "https://www.fonds-prevention-argile.gouv.fr"
+        "linkUrl": "https://www.georisques.gouv.fr/consulter-les-dossiers-thematiques/retrait-gonflement-des-argiles?utm_source=fonds-prevention-argile"
       },
       {
         "imageUrl": "/images/home/en-savoir-plus-2.svg",
         "imageAlt": "Illustration d'une maison avec des fissures",
         "title": "Le phénomène de RGA sur le site internet du CEREMA",
         "description": "Définitions, impacts sur les ouvrages et les personnes et solutions d’adaptation au changement climatique.",
-        "linkUrl": "https://www.fonds-prevention-argile.gouv.fr"
+        "linkUrl": "https://www.cerema.fr/fr/actualites/phenomene-retrait-gonflement-sols-argileux-rga-definitions?utm_source=fonds-prevention-argile"
       },
       {
         "imageUrl": "/images/home/en-savoir-plus-3.png",
         "imageAlt": "Illustration d'une maison avec des fissures",
-        "title": "Site internet Infoterre du BRGM",
-        "description": "Accédez aux cartes géologiques numériques dédiées aux aléas retrait gonflement du BRGM pour découvrir l’état des sols dans la zone de votre habitation.",
-        "linkUrl": "https://www.fonds-prevention-argile.gouv.fr"
+        "title": "Construire en terrain argileux",
+        "description": "Découvrez une plaquette du ministère de la transition écologique sur le phénomène du RGA et les bonnes pratiques à adopter.",
+        "linkUrl": "https://www.ecologie.gouv.fr/sites/default/files/documents/construire_en_terrain_argileux_reglementation_et_bonnes_pratiques-v_modif%20ccmi.pdf?utm_source=fonds-prevention-argile"
       }
     ]
   },
