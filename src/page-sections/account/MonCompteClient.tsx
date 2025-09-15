@@ -10,11 +10,6 @@ export default function MonCompteClient() {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Gestion du chargement
-  if (isLoading) {
-    return <MonCompteLoading />;
-  }
-
   // Redirection si pas d'utilisateur
   useEffect(() => {
     if (!isLoading && user && user.role !== ROLES.PARTICULIER) {
@@ -32,80 +27,99 @@ export default function MonCompteClient() {
     }
   };
 
+  // Gestion du chargement
+  if (isLoading) {
+    return <MonCompteLoading />;
+  }
+
   return (
     <>
-      <div className="fr-grid-row fr-grid-row--gutters">
-        <div className="fr-alert fr-alert--success fr-mb-4w">
-          <p className="fr-alert__title">Connexion réussie</p>
-          <p>
-            Vous êtes connecté via{" "}
-            {user.authMethod === AUTH_METHODS.FRANCECONNECT
-              ? "FranceConnect"
-              : "mot de passe administrateur"}
-            .
-          </p>
-        </div>
+      <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
+        Bienvenue {user?.firstName}
+      </h1>
+
+      <div className="fr-alert fr-alert--success fr-mb-4w">
+        <p className="fr-alert__title">Connexion réussie</p>
+        <p>
+          Vous êtes connecté via{" "}
+          {user?.authMethod === AUTH_METHODS.FRANCECONNECT
+            ? "FranceConnect"
+            : "mot de passe administrateur"}
+          .
+        </p>
       </div>
 
-      <div className="fr-grid-row fr-grid-row--gutters">
-        <div className="fr-card">
-          <div className="fr-card__body">
-            <h2 className="fr-card__title">Mes informations personnelles</h2>
-            <div className="fr-card__desc">
-              <dl className="fr-my-2w">
-                {user.firstName && (
-                  <>
-                    <dt className="fr-text--bold">Prénom :</dt>
-                    <dd className="fr-mb-2w">{user.firstName}</dd>
-                  </>
-                )}
-                {user.lastName && (
-                  <>
-                    <dt className="fr-text--bold">Nom :</dt>
-                    <dd className="fr-mb-2w">{user.lastName}</dd>
-                  </>
-                )}
-                {user.email && (
-                  <>
-                    <dt className="fr-text--bold">Email :</dt>
-                    <dd className="fr-mb-2w">{user.email}</dd>
-                  </>
-                )}
+      <div className="space-x-4 fr-mb-4w">
+        <span className="fr-badge fr-badge--new">En construction</span>
+        <span className="fr-badge fr-badge--success">1. Eligibilité</span>
+      </div>
 
-                <dt className="fr-text--bold">Type de compte :</dt>
-                <dd className="fr-mb-2w">
-                  {user.role === ROLES.PARTICULIER
-                    ? "Particulier"
-                    : "Administrateur"}
-                </dd>
-
-                <dt className="fr-text--bold">Méthode de connexion :</dt>
-                <dd>
-                  {user.authMethod === AUTH_METHODS.FRANCECONNECT ? (
-                    <span className="fr-badge fr-badge--success">
-                      FranceConnect
-                    </span>
-                  ) : (
-                    <span className="fr-badge">Mot de passe</span>
-                  )}
-                </dd>
-              </dl>
+      <div className="fr-container">
+        <div className="fr-grid-row">
+          <div className="fr-col-12 fr-col-md-6">
+            <div className="fr-callout fr-icon-info-line">
+              <p className="fr-callout__title">A FAIRE</p>
+              <p className="fr-callout__text">
+                Il est essentiel de compléter et de soumettre le premier
+                formulaire pour que votre dossier soit examiné par les autorités
+                compétentes. Par la suite, vous recevrez une notification
+                concernant les étapes à suivre.
+              </p>
+              <button type="button" className="fr-btn">
+                Remplir le formulaire d’éligibilité
+              </button>
             </div>
           </div>
 
-          <div className="fr-card__footer">
-            <button
-              className="fr-btn fr-btn--tertiary fr-btn--icon-left fr-icon-logout-box-r-line"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-            >
-              {isLoggingOut ? "Déconnexion en cours..." : "Se déconnecter"}
-            </button>
-            {user.authMethod === AUTH_METHODS.FRANCECONNECT && (
-              <p className="fr-text--xs fr-mt-1w">
-                Vous serez également déconnecté de FranceConnect
-              </p>
-            )}
+          {/* Zone image */}
+          <div className="fr-col-12 fr-col-md-6 flex justify-center md:justify-end">
+            <div className="fr-card">
+              <div className="fr-card__body">
+                <h2 className="fr-card__title">
+                  Mes informations personnelles
+                </h2>
+                <div className="fr-card__desc">
+                  <dl className="fr-my-2w">
+                    {user?.firstName && (
+                      <>
+                        <dt className="fr-text--bold">Prénom :</dt>
+                        <dd className="fr-mb-2w">{user.firstName}</dd>
+                      </>
+                    )}
+                    {user?.lastName && (
+                      <>
+                        <dt className="fr-text--bold">Nom :</dt>
+                        <dd className="fr-mb-2w">{user.lastName}</dd>
+                      </>
+                    )}
+                    {user?.email && (
+                      <>
+                        <dt className="fr-text--bold">Email :</dt>
+                        <dd className="fr-mb-2w">{user.email}</dd>
+                      </>
+                    )}
+
+                    <dt className="fr-text--bold">Type de compte :</dt>
+                    <dd className="fr-mb-2w">
+                      {user?.role === ROLES.PARTICULIER
+                        ? "Particulier"
+                        : "Administrateur"}
+                    </dd>
+
+                    <dt className="fr-text--bold">Méthode de connexion :</dt>
+                    <dd>
+                      {user?.authMethod === AUTH_METHODS.FRANCECONNECT ? (
+                        <span className="fr-badge fr-badge--success">
+                          FranceConnect
+                        </span>
+                      ) : (
+                        <span className="fr-badge">Mot de passe</span>
+                      )}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
