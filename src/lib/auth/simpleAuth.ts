@@ -2,6 +2,7 @@ import { createHmac } from "crypto";
 import { cookies } from "next/headers";
 import * as argon2 from "argon2";
 import { getServerEnv } from "../config/env.config";
+import type { ExtendedJWTPayload, AuthUser } from "./auth.types";
 
 // Récupération sécurisée des secrets via getServerEnv
 const getSecrets = () => {
@@ -12,21 +13,11 @@ const getSecrets = () => {
   };
 };
 
-// Types pour le payload JWT
-interface JWTPayload {
-  user: {
-    role: string;
-    loginTime: string;
-  };
-  exp: number;
-  iat: number;
-}
-
 // Cache pour le hash du mot de passe (évite de recalculer)
 let passwordHashCache: string | null = null;
 
 // Créer un token JWT simple sans dépendance externe
-function createToken(payload: JWTPayload): string {
+export function createToken(payload: ExtendedJWTPayload): string {
   const { secretKey } = getSecrets();
 
   const header = {
@@ -49,7 +40,7 @@ function createToken(payload: JWTPayload): string {
 }
 
 // Vérifier et décoder un token JWT
-function verifyToken(token: string): JWTPayload | null {
+export function verifyToken(token: string): ExtendedJWTPayload | null {
   try {
     const { secretKey } = getSecrets();
     const [encodedHeader, encodedPayload, signature] = token.split(".");
@@ -64,7 +55,7 @@ function verifyToken(token: string): JWTPayload | null {
 
     const payload = JSON.parse(
       Buffer.from(encodedPayload, "base64url").toString()
-    ) as JWTPayload;
+    ) as ExtendedJWTPayload;
 
     // Vérifier l'expiration
     if (payload.exp && payload.exp < Date.now()) {
@@ -78,6 +69,7 @@ function verifyToken(token: string): JWTPayload | null {
   }
 }
 
+// Login classique avec mot de passe (admin)
 export async function login(password: string) {
   const { adminPassword } = getSecrets();
 
@@ -101,9 +93,10 @@ export async function login(password: string) {
   // Créer la session
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
-  const payload: JWTPayload = {
+  const payload: ExtendedJWTPayload = {
     user: {
       role: "admin",
+      authMethod: "password",
       loginTime: new Date().toISOString(),
     },
     exp: expires.getTime(),
@@ -125,16 +118,27 @@ export async function login(password: string) {
   return { success: true };
 }
 
+// Logout générique (admin ou FranceConnect)
 export async function logout() {
+  // Récupérer la session pour vérifier le type d'auth
+  const session = await getSession();
+
   // Supprimer le cookie de session
   const cookieStore = await cookies();
   cookieStore.set("session", "", {
     expires: new Date(0),
     path: "/",
   });
+
+  // Retourner le type d'auth pour savoir si on doit faire un logout FranceConnect
+  return {
+    authMethod: session?.user.authMethod || null,
+    fcIdToken: session?.user.fcIdToken || null,
+  };
 }
 
-export async function getSession() {
+// Récupérer la session courante
+export async function getSession(): Promise<ExtendedJWTPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get("session")?.value;
   if (!token) return null;
@@ -143,7 +147,37 @@ export async function getSession() {
   return payload;
 }
 
+// Vérifier si l'utilisateur est authentifié
 export async function isAuthenticated(): Promise<boolean> {
   const session = await getSession();
   return !!session;
+}
+
+// Récupérer les infos utilisateur pour le contexte React
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const session = await getSession();
+  if (!session) return null;
+
+  const { user } = session;
+
+  // Format différent selon le type d'auth
+  if (user.authMethod === "franceconnect") {
+    return {
+      role: user.role,
+      authMethod: user.authMethod,
+      name:
+        `${user.firstName} ${user.lastName}`.trim() ||
+        "Utilisateur FranceConnect",
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    };
+  }
+
+  // Admin
+  return {
+    role: user.role,
+    authMethod: user.authMethod,
+    name: "Administrateur",
+  };
 }
