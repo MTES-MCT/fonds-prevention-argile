@@ -90,7 +90,37 @@ export async function getUserInfo(
     throw new Error("Impossible de récupérer les informations utilisateur");
   }
 
-  return response.json();
+  const contentType = response.headers.get("content-type");
+
+  // Si c'est du JSON standard
+  if (contentType?.includes("application/json")) {
+    return response.json();
+  }
+
+  // Si c'est un JWT (application/jwt ou text/plain avec JWT)
+  const responseText = await response.text();
+
+  // Vérification plus robuste d'un JWT
+  const jwtRegex = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+
+  if (jwtRegex.test(responseText)) {
+    // Décoder le JWT payload (sans vérifier la signature)
+    try {
+      const [, payload] = responseText.split(".");
+      return JSON.parse(Buffer.from(payload, "base64url").toString());
+    } catch (error) {
+      throw new Error("Impossible de décoder le JWT UserInfo");
+    }
+  }
+
+  // Tenter de parser comme JSON par défaut
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    throw new Error(
+      `Format de réponse UserInfo non reconnu: ${responseText.substring(0, 50)}...`
+    );
+  }
 }
 
 /**
