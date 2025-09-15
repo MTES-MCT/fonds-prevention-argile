@@ -1,17 +1,33 @@
 import { cookies } from "next/headers";
+import { getFranceConnectConfig } from "./franceconnect.config";
 import {
-  getFranceConnectConfig,
+  COOKIE_NAMES,
+  ROLES,
+  AUTH_METHODS,
+  ERROR_CODES,
+} from "../../core/auth.constants";
+import {
+  createAuthError,
+  FC_ERROR_MESSAGES,
+  ErrorCode,
+  FC_ERROR_MAPPING,
+} from "../../core/auth.errors";
+import {
+  getCookieOptions,
+  SESSION_DURATION,
+} from "../../config/session.config";
+import { createToken } from "../../utils/jwt.utils";
+import {
   generateSecureRandomString,
-  FC_COOKIES,
-  getSecureCookieOptions,
-} from "../config/franceconnect.config";
-import { createToken } from "./simpleAuth";
+  parseJSONorJWT,
+} from "../../utils/franceconnect.utils";
+import { createSessionCookies } from "../../services/session.service";
 import type {
   FranceConnectTokenResponse,
   FranceConnectUserInfo,
   FranceConnectError,
-} from "../types/franceconnect.types";
-import type { ExtendedJWTPayload } from "./auth.types";
+} from "./franceconnect.types";
+import type { AuthUser, JWTPayload } from "../../core/auth.types";
 
 /**
  * Génère l'URL d'autorisation FranceConnect
@@ -23,8 +39,8 @@ export async function generateAuthorizationUrl(): Promise<string> {
 
   // Stocker state et nonce dans des cookies sécurisés
   const cookieStore = await cookies();
-  cookieStore.set(FC_COOKIES.STATE, state, getSecureCookieOptions());
-  cookieStore.set(FC_COOKIES.NONCE, nonce, getSecureCookieOptions());
+  cookieStore.set(COOKIE_NAMES.FC_STATE, state, getCookieOptions(300)); // 5 min
+  cookieStore.set(COOKIE_NAMES.FC_NONCE, nonce, getCookieOptions(300));
 
   // Construire l'URL avec les paramètres
   const params = new URLSearchParams({
@@ -66,7 +82,9 @@ export async function exchangeCodeForTokens(
 
   if (!response.ok) {
     const error = (await response.json()) as FranceConnectError;
-    throw new Error(error.error_description || "Échec de l'échange du code");
+    throw createAuthError.franceConnectError(
+      error.error_description || "Échec de l'échange du code"
+    );
   }
 
   return response.json();
@@ -87,40 +105,12 @@ export async function getUserInfo(
   });
 
   if (!response.ok) {
-    throw new Error("Impossible de récupérer les informations utilisateur");
-  }
-
-  const contentType = response.headers.get("content-type");
-
-  // Si c'est du JSON standard
-  if (contentType?.includes("application/json")) {
-    return response.json();
-  }
-
-  // Si c'est un JWT (application/jwt ou text/plain avec JWT)
-  const responseText = await response.text();
-
-  // Vérification plus robuste d'un JWT
-  const jwtRegex = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
-
-  if (jwtRegex.test(responseText)) {
-    // Décoder le JWT payload (sans vérifier la signature)
-    try {
-      const [, payload] = responseText.split(".");
-      return JSON.parse(Buffer.from(payload, "base64url").toString());
-    } catch (error) {
-      throw new Error("Impossible de décoder le JWT UserInfo : " + error);
-    }
-  }
-
-  // Tenter de parser comme JSON par défaut
-  try {
-    return JSON.parse(responseText);
-  } catch {
-    throw new Error(
-      `Format de réponse UserInfo non reconnu: ${responseText.substring(0, 50)}...`
+    throw createAuthError.franceConnectError(
+      "Impossible de récupérer les informations utilisateur"
     );
   }
+
+  return parseJSONorJWT<FranceConnectUserInfo>(response);
 }
 
 /**
@@ -128,10 +118,10 @@ export async function getUserInfo(
  */
 export async function verifyState(state: string): Promise<boolean> {
   const cookieStore = await cookies();
-  const storedState = cookieStore.get(FC_COOKIES.STATE)?.value;
+  const storedState = cookieStore.get(COOKIE_NAMES.FC_STATE)?.value;
 
   // Supprimer le cookie après vérification
-  cookieStore.delete(FC_COOKIES.STATE);
+  cookieStore.delete(COOKIE_NAMES.FC_STATE);
 
   return storedState === state;
 }
@@ -141,11 +131,11 @@ export async function verifyState(state: string): Promise<boolean> {
  */
 export async function getStoredNonce(): Promise<string | null> {
   const cookieStore = await cookies();
-  const nonce = cookieStore.get(FC_COOKIES.NONCE)?.value || null;
+  const nonce = cookieStore.get(COOKIE_NAMES.FC_NONCE)?.value || null;
 
   // Supprimer le cookie après récupération
   if (nonce) {
-    cookieStore.delete(FC_COOKIES.NONCE);
+    cookieStore.delete(COOKIE_NAMES.FC_NONCE);
   }
 
   return nonce;
@@ -158,53 +148,30 @@ export async function createFranceConnectSession(
   userInfo: FranceConnectUserInfo,
   idToken: string
 ): Promise<void> {
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+  // Créer l'objet utilisateur
+  const user: AuthUser = {
+    role: ROLES.PARTICULIER,
+    authMethod: AUTH_METHODS.FRANCECONNECT,
+    loginTime: new Date().toISOString(),
+    fcSub: userInfo.sub,
+    firstName: userInfo.given_name,
+    lastName: userInfo.family_name,
+    email: userInfo.email,
+    fcIdToken: idToken, // Pour la déconnexion
+  };
 
-  const payload: ExtendedJWTPayload = {
-    user: {
-      role: "particulier",
-      authMethod: "franceconnect",
-      loginTime: new Date().toISOString(),
-      fcSub: userInfo.sub,
-      firstName: userInfo.given_name,
-      lastName: userInfo.family_name,
-      email: userInfo.email,
-      fcIdToken: idToken, // Pour la déconnexion
-    },
-    exp: expires.getTime(),
+  // Créer le payload JWT
+  const payload: JWTPayload = {
+    user,
+    exp: Date.now() + SESSION_DURATION.particulier * 1000,
     iat: Date.now(),
   };
 
+  // Créer le token
   const token = createToken(payload);
 
-  // Sauvegarder la session et les cookies
-  const cookieStore = await cookies();
-
-  // Cookie principal avec le JWT
-  cookieStore.set("session", token, {
-    expires,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
-
-  // Cookies pour éviter le décodage JWT dans le middleware
-  cookieStore.set("session_role", "particulier", {
-    expires,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
-
-  cookieStore.set("session_auth", "franceconnect", {
-    expires,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
+  // Sauvegarder les cookies de session
+  await createSessionCookies(token, user);
 }
 
 /**
@@ -242,6 +209,7 @@ export async function handleFranceConnectCallback(
 
     // 3. Récupérer les infos utilisateur
     const userInfo = await getUserInfo(tokens.access_token);
+    console.log("UserInfo FranceConnect:", userInfo);
 
     // 4. Créer la session
     await createFranceConnectSession(userInfo, tokens.id_token);
@@ -254,4 +222,33 @@ export async function handleFranceConnectCallback(
       error: error instanceof Error ? error.message : "Erreur inconnue",
     };
   }
+}
+
+/**
+ * Gère les erreurs du callback FranceConnect
+ */
+export function handleFranceConnectError(
+  error: string,
+  errorDescription?: string
+): { success: boolean; error: string; code: ErrorCode } {
+  // Logger l'erreur complète pour debug
+  console.error("[FranceConnect Error]", {
+    error,
+    description: errorDescription,
+    timestamp: new Date().toISOString(),
+  });
+
+  // Mapper l'erreur FranceConnect vers notre code d'erreur
+  const errorCode = FC_ERROR_MAPPING[error] || ERROR_CODES.FRANCECONNECT_ERROR;
+
+  // Récupérer le message correspondant
+  const message =
+    FC_ERROR_MESSAGES[errorCode] ||
+    FC_ERROR_MESSAGES[ERROR_CODES.FRANCECONNECT_ERROR];
+
+  return {
+    success: false,
+    error: message,
+    code: errorCode,
+  };
 }

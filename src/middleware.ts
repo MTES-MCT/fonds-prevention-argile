@@ -1,115 +1,102 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {
+  COOKIE_NAMES,
+  PUBLIC_ROUTES,
+  DEFAULT_REDIRECTS,
+  isProtectedRoute,
+  canAccessRoute,
+  getDefaultRedirect,
+  isValidRole,
+  getCookieOptions,
+  SESSION_DURATION,
+} from "./lib/auth/edge";
 
-// Routes qui nécessitent une authentification admin
-const adminRoutes = ["/administration", "/dashboard", "/api/private", "/test"];
-
-// Routes qui nécessitent une authentification FranceConnect (particulier)
-const particulierRoutes = ["/mon-compte"];
-
-// Routes qui ne doivent pas être accessibles si déjà connecté
-const authRoutes = ["/connexion"];
-
-// Routes API FranceConnect (publiques)
-const fcApiRoutes = [
-  "/api/auth/fc/callback",
-  "/api/auth/fc/login",
-  "/oidc-callback",
-];
+import { decodeToken } from "./lib/auth/utils/jwt-decode.utils";
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Ne pas intercepter les routes API FranceConnect
-  if (fcApiRoutes.some((route) => path.startsWith(route))) {
+  if (PUBLIC_ROUTES.franceConnectApi.some((route) => path.startsWith(route))) {
     return NextResponse.next();
   }
 
-  // Vérifier si c'est une route protégée
-  const isAdminRoute = adminRoutes.some((route) => path.startsWith(route));
-  const isParticulierRoute = particulierRoutes.some((route) =>
+  // Vérifier le type de route
+  const isProtected = isProtectedRoute(path);
+  const isAuthRoute = PUBLIC_ROUTES.auth.some((route) =>
     path.startsWith(route)
   );
-  const isProtectedRoute = isAdminRoute || isParticulierRoute;
-  const isAuthRoute = authRoutes.some((route) => path.startsWith(route));
 
   // Récupérer le cookie de session
-  const session = request.cookies.get("session")?.value;
+  const session = request.cookies.get(COOKIE_NAMES.SESSION)?.value;
 
   // Si route protégée et pas de session -> rediriger vers connexion
-  if (isProtectedRoute && !session) {
-    const response = NextResponse.redirect(new URL("/connexion", request.url));
+  if (isProtected && !session) {
+    const response = NextResponse.redirect(
+      new URL(DEFAULT_REDIRECTS.login, request.url)
+    );
 
     // Sauvegarder l'URL demandée pour rediriger après connexion
-    response.cookies.set("redirectTo", path, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 5, // 5 minutes
-    });
+    response.cookies.set(
+      COOKIE_NAMES.REDIRECT_TO,
+      path,
+      getCookieOptions(SESSION_DURATION.redirectCookie)
+    );
 
     return response;
   }
 
-  // Si on a une session, vérifier les permissions par rôle
+  // Si on a une session, vérifier les permissions
   if (session) {
-    // Optimisation : récupérer le rôle depuis un cookie dédié
-    const userRole = request.cookies.get("session_role")?.value;
+    // Récupérer le rôle depuis un cookie dédié
+    let role = request.cookies.get(COOKIE_NAMES.SESSION_ROLE)?.value;
 
-    // Si pas de cookie de rôle, essayer de décoder le JWT (rétrocompatibilité)
-    let role = userRole;
-
+    // Si pas de cookie de rôle, décoder le JWT (rétrocompatibilité)
     if (!role) {
-      try {
-        const payload = JSON.parse(
-          Buffer.from(session.split(".")[1], "base64url").toString()
-        );
-        role = payload.user?.role;
-      } catch (error) {
-        // Session invalide
-        console.error("Erreur décodage JWT:", error);
+      const payload = decodeToken(session);
+      role = payload?.user?.role;
 
-        if (isProtectedRoute) {
-          const response = NextResponse.redirect(
-            new URL("/connexion", request.url)
-          );
-          response.cookies.delete("session");
-          response.cookies.delete("session_role");
-          response.cookies.delete("session_auth");
-          return response;
-        }
+      if (!role && isProtected) {
+        // Session invalide - nettoyer et rediriger
+        const response = NextResponse.redirect(
+          new URL(DEFAULT_REDIRECTS.login, request.url)
+        );
+
+        // Nettoyer tous les cookies de session
+        response.cookies.delete(COOKIE_NAMES.SESSION);
+        response.cookies.delete(COOKIE_NAMES.SESSION_ROLE);
+        response.cookies.delete(COOKIE_NAMES.SESSION_AUTH);
+
+        return response;
       }
     }
 
     // Vérifier les permissions selon le rôle
-    if (role) {
-      if (isAdminRoute && role !== "admin") {
-        // Un particulier essaie d'accéder à l'admin -> rediriger vers son espace
-        return NextResponse.redirect(new URL("/mon-compte", request.url));
-      }
-
-      if (isParticulierRoute && role !== "particulier") {
-        // Un admin essaie d'accéder à l'espace particulier -> rediriger vers admin
-        return NextResponse.redirect(new URL("/administration", request.url));
+    if (role && isValidRole(role)) {
+      // Vérifier l'accès à la route
+      if (!canAccessRoute(path, role)) {
+        // Rediriger vers l'espace approprié
+        const redirect = getDefaultRedirect(role);
+        return NextResponse.redirect(new URL(redirect, request.url));
       }
 
       // Si route d'auth et session existe -> rediriger vers le bon espace
       if (isAuthRoute) {
         // Vérifier s'il y a une URL de redirection sauvegardée
-        const redirectTo = request.cookies.get("redirectTo")?.value;
+        const redirectTo = request.cookies.get(COOKIE_NAMES.REDIRECT_TO)?.value;
 
         if (redirectTo) {
           // Supprimer le cookie redirectTo et rediriger
           const response = NextResponse.redirect(
             new URL(redirectTo, request.url)
           );
-          response.cookies.delete("redirectTo");
+          response.cookies.delete(COOKIE_NAMES.REDIRECT_TO);
           return response;
         }
 
         // Sinon redirection par défaut selon le rôle
-        const defaultRedirect =
-          role === "admin" ? "/administration" : "/mon-compte";
+        const defaultRedirect = getDefaultRedirect(role);
         return NextResponse.redirect(new URL(defaultRedirect, request.url));
       }
     }

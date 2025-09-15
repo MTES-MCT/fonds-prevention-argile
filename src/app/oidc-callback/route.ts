@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerEnv } from "@/lib/config/env.config";
 
 export async function GET(request: NextRequest) {
-  console.log("Route /oidc-callback atteinte");
-  console.log("Params:", request.nextUrl.searchParams.toString());
-
   try {
     const env = getServerEnv();
     const baseUrl = env.BASE_URL;
@@ -12,8 +9,6 @@ export async function GET(request: NextRequest) {
     // Construire l'URL avec la bonne base
     const url = new URL("/api/auth/fc/callback", baseUrl);
     url.search = request.nextUrl.search;
-
-    console.log("Redirection vers:", url.toString());
 
     return NextResponse.redirect(url);
   } catch (error) {

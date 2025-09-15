@@ -10,7 +10,8 @@ import {
   useMemo,
 } from "react";
 import { useRouter } from "next/navigation";
-import type { AuthUser } from "@/lib/auth/auth.types";
+import type { AuthUser } from "../core/auth.types";
+import { AUTH_METHODS } from "../core/auth.constants";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -78,14 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           const errorMsg = data.error || "Mot de passe incorrect";
           setError(errorMsg);
-          setIsLoading(false);
           return { success: false, error: errorMsg };
         }
       } catch (err) {
-        const errorMsg = "Erreur de connexion. Veuillez réessayer." + err;
+        const errorMsg = "Erreur de connexion. Veuillez réessayer. " + err;
         setError(errorMsg);
-        setIsLoading(false);
         return { success: false, error: errorMsg };
+      } finally {
+        setIsLoading(false);
       }
     },
     [router, checkAuth]
@@ -93,7 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Connexion FranceConnect
   const loginWithFranceConnect = useCallback(() => {
-    // Rediriger vers l'API FranceConnect
     window.location.href = "/api/auth/fc/login";
   }, []);
 
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Déterminer la route de déconnexion selon le type d'auth
       const logoutUrl =
-        user?.authMethod === "franceconnect"
+        user?.authMethod === AUTH_METHODS.FRANCECONNECT
           ? "/api/auth/fc/logout"
           : "/api/auth/logout";
 
@@ -112,13 +112,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: "POST",
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         setIsAuthenticated(false);
         setUser(null);
         setError(null);
 
-        // Pour FranceConnect, la redirection est gérée par l'API
-        if (user?.authMethod !== "franceconnect") {
+        // Pour FranceConnect, gérer la redirection spéciale
+        if (data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        } else {
           router.push("/connexion");
         }
       }
@@ -176,17 +180,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hook personnalisé pour utiliser le context
+// Hook principal
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
-}
-
-// Hook pour récupérer uniquement l'utilisateur
-export function useCurrentUser() {
-  const { user } = useAuth();
-  return user;
 }

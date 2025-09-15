@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { generateAuthorizationUrl } from "@/lib/auth/franceconnect";
+import { generateAuthorizationUrl } from "@/lib/auth/server";
+import { getServerEnv } from "@/lib/config/env.config";
 
 /**
  * GET /api/auth/fc/login
@@ -15,12 +16,12 @@ export async function GET() {
   } catch (error) {
     console.error("Erreur lors de l'initiation FranceConnect:", error);
 
+    // Récupérer la base URL depuis l'environnement
+    const baseUrl = getServerEnv().BASE_URL || "http://localhost:3000";
+
     // En cas d'erreur, rediriger vers la page de connexion avec un message
     return NextResponse.redirect(
-      new URL(
-        "/connexion?error=fc_init_failed",
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      )
+      new URL("/connexion?error=fc_init_failed", baseUrl)
     );
   }
 }

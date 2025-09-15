@@ -1,44 +1,37 @@
 import { NextResponse } from "next/server";
-import { logout } from "@/lib/auth/simpleAuth";
-import { generateLogoutUrl } from "@/lib/auth/franceconnect";
+import {
+  getCurrentUser,
+  generateLogoutUrl,
+  logout,
+  AUTH_METHODS,
+} from "@/lib/auth/server";
 
-/**
- * POST /api/auth/fc/logout
- * Déconnecte l'utilisateur de l'application ET de FranceConnect
- */
 export async function POST() {
   try {
-    const sessionInfo = await logout();
+    const user = await getCurrentUser();
 
-    // Si FranceConnect, déconnecter aussi de FC
-    if (sessionInfo.authMethod === "franceconnect" && sessionInfo.fcIdToken) {
-      // URL de déconnexion FranceConnect
-      const logoutUrl = generateLogoutUrl(sessionInfo.fcIdToken);
+    // Si c'est un utilisateur FranceConnect, faire la déconnexion FC
+    if (user?.authMethod === AUTH_METHODS.FRANCECONNECT && user.fcIdToken) {
+      const logoutUrl = generateLogoutUrl(user.fcIdToken);
 
-      // Rediriger vers FranceConnect pour déconnexion
-      return NextResponse.redirect(logoutUrl);
+      // Nettoyer la session locale
+      await logout();
+
+      // Rediriger vers FranceConnect pour déconnexion complète
+      return NextResponse.json({
+        success: true,
+        redirectUrl: logoutUrl,
+      });
     }
 
-    // Si pas FranceConnect, redirection simple vers l'accueil
-    return NextResponse.redirect(
-      new URL("/", process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000")
-    );
+    // Sinon déconnexion simple
+    await logout();
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Erreur lors de la déconnexion:", error);
-
-    // En cas d'erreur, au moins déconnecter localement et rediriger
-    await logout().catch(() => {}); // Ignorer les erreurs
-
-    return NextResponse.redirect(
-      new URL("/", process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000")
+    return NextResponse.json(
+      { success: false, error: "Erreur serveur" },
+      { status: 500 }
     );
   }
-}
-
-/**
- * GET /api/auth/fc/logout
- * Alternative en GET (certains boutons de déconnexion utilisent des liens)
- */
-export async function GET() {
-  return POST();
 }

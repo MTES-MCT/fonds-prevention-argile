@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/auth/contexts/AuthContext";
 
 const HeaderDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -90,7 +90,7 @@ const HeaderDropdown = () => {
           disabled={isLoading}
         >
           <span className="fr-icon-account-circle-line" aria-hidden="true" />
-          <span className="fr-hidden-sm">&nbsp;{user.name}</span>
+          <span className="fr-hidden-sm">&nbsp;{user.firstName}</span>
         </button>
 
         <div

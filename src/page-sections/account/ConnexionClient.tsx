@@ -2,8 +2,9 @@
 
 import { contentConnexionPage } from "@/content";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/auth/contexts/AuthContext";
 import { useSearchParams } from "next/navigation";
+import { FC_ERROR_MAPPING } from "@/lib/auth/client";
 
 export default function ConnexionClient() {
   const [password, setPassword] = useState("");
@@ -18,19 +19,19 @@ export default function ConnexionClient() {
     const errorParam = searchParams.get("error");
     if (errorParam) {
       switch (errorParam) {
-        case "fc_cancelled":
+        case FC_ERROR_MAPPING.access_denied:
           setFcError("Vous avez annulé la connexion FranceConnect.");
           break;
-        case "fc_invalid_state":
+        case FC_ERROR_MAPPING.invalid_state:
           setFcError("Erreur de sécurité. Veuillez réessayer.");
           break;
-        case "fc_token_error":
+        case FC_ERROR_MAPPING.fc_missing_params:
           setFcError("Erreur lors de l'authentification. Veuillez réessayer.");
           break;
-        case "fc_server_error":
+        case FC_ERROR_MAPPING.server_error:
           setFcError("FranceConnect est temporairement indisponible.");
           break;
-        case "fc_auth_failed":
+        case FC_ERROR_MAPPING.fc_auth_failed:
           setFcError("Échec de l'authentification FranceConnect.");
           break;
         default:

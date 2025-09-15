@@ -1,151 +1,114 @@
 "use client";
 
-import { useState } from "react";
+import { useAuth, AUTH_METHODS, ROLES } from "@/lib/auth/client";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { AuthUser } from "@/lib/auth/auth.types";
+import MonCompteLoading from "../../components/Loading/Loading";
 
-interface MonCompteClientProps {
-  user: AuthUser;
-}
-
-export default function MonCompteClient({ user }: MonCompteClientProps) {
+export default function MonCompteClient() {
+  const { user, isLoading, logout } = useAuth();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Gestion du chargement
+  if (isLoading) {
+    return <MonCompteLoading />;
+  }
+
+  // Redirection si pas d'utilisateur
+  useEffect(() => {
+    if (!isLoading && user && user.role !== ROLES.PARTICULIER) {
+      router.push("/connexion");
+    }
+  }, [isLoading, user, router]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      // Utiliser la route de déconnexion FranceConnect
-      await fetch("/api/auth/fc/logout", {
-        method: "POST",
-      });
-      // La redirection est gérée par l'API
-      window.location.href = "/";
+      await logout();
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error);
       setIsLoggingOut(false);
     }
   };
 
-  const handleCreateDossier = () => {
-    // TODO: Implémenter la création de dossier Démarches Simplifiées
-    alert(
-      "Fonctionnalité à venir : Création de dossier avec données pré-remplies"
-    );
-  };
-
   return (
-    <section className="fr-container fr-py-8w">
+    <>
       <div className="fr-grid-row fr-grid-row--gutters">
-        <div className="fr-col-12">
-          <h1>Mon compte</h1>
+        <div className="fr-alert fr-alert--success fr-mb-4w">
+          <p className="fr-alert__title">Connexion réussie</p>
+          <p>
+            Vous êtes connecté via{" "}
+            {user.authMethod === AUTH_METHODS.FRANCECONNECT
+              ? "FranceConnect"
+              : "mot de passe administrateur"}
+            .
+          </p>
+        </div>
+      </div>
 
-          {/* Alerte de connexion réussie */}
-          <div className="fr-alert fr-alert--success fr-mb-4w">
-            <p className="fr-alert__title">Connexion réussie</p>
-            <p>
-              Vous êtes connecté via FranceConnect avec votre compte{" "}
-              {user.authMethod === "franceconnect"
-                ? "FranceConnect"
-                : "administrateur"}
-              .
-            </p>
-          </div>
+      <div className="fr-grid-row fr-grid-row--gutters">
+        <div className="fr-card">
+          <div className="fr-card__body">
+            <h2 className="fr-card__title">Mes informations personnelles</h2>
+            <div className="fr-card__desc">
+              <dl className="fr-my-2w">
+                {user.firstName && (
+                  <>
+                    <dt className="fr-text--bold">Prénom :</dt>
+                    <dd className="fr-mb-2w">{user.firstName}</dd>
+                  </>
+                )}
+                {user.lastName && (
+                  <>
+                    <dt className="fr-text--bold">Nom :</dt>
+                    <dd className="fr-mb-2w">{user.lastName}</dd>
+                  </>
+                )}
+                {user.email && (
+                  <>
+                    <dt className="fr-text--bold">Email :</dt>
+                    <dd className="fr-mb-2w">{user.email}</dd>
+                  </>
+                )}
 
-          {/* Informations personnelles */}
-          <div className="fr-card fr-mb-4w">
-            <div className="fr-card__body">
-              <h2 className="fr-card__title">Mes informations personnelles</h2>
-              <div className="fr-card__desc">
-                <dl className="fr-my-2w">
-                  {user.firstName && (
-                    <>
-                      <dt className="fr-text--bold">Prénom :</dt>
-                      <dd className="fr-mb-2w">{user.firstName}</dd>
-                    </>
+                <dt className="fr-text--bold">Type de compte :</dt>
+                <dd className="fr-mb-2w">
+                  {user.role === ROLES.PARTICULIER
+                    ? "Particulier"
+                    : "Administrateur"}
+                </dd>
+
+                <dt className="fr-text--bold">Méthode de connexion :</dt>
+                <dd>
+                  {user.authMethod === AUTH_METHODS.FRANCECONNECT ? (
+                    <span className="fr-badge fr-badge--success">
+                      FranceConnect
+                    </span>
+                  ) : (
+                    <span className="fr-badge">Mot de passe</span>
                   )}
-                  {user.lastName && (
-                    <>
-                      <dt className="fr-text--bold">Nom :</dt>
-                      <dd className="fr-mb-2w">{user.lastName}</dd>
-                    </>
-                  )}
-                  {user.email && (
-                    <>
-                      <dt className="fr-text--bold">Email :</dt>
-                      <dd className="fr-mb-2w">{user.email}</dd>
-                    </>
-                  )}
-                  <dt className="fr-text--bold">Type de compte :</dt>
-                  <dd className="fr-mb-2w">
-                    {user.role === "particulier"
-                      ? "Particulier"
-                      : "Administrateur"}
-                  </dd>
-                  <dt className="fr-text--bold">Méthode de connexion :</dt>
-                  <dd>
-                    {user.authMethod === "franceconnect" ? (
-                      <span className="fr-badge fr-badge--success">
-                        FranceConnect
-                      </span>
-                    ) : (
-                      <span className="fr-badge">Mot de passe</span>
-                    )}
-                  </dd>
-                </dl>
-              </div>
+                </dd>
+              </dl>
             </div>
           </div>
 
-          {/* Actions disponibles */}
-          <div className="fr-card">
-            <div className="fr-card__body">
-              <h2 className="fr-card__title">Actions disponibles</h2>
-              <div className="fr-card__desc">
-                <p className="fr-text--sm fr-mb-3w">
-                  Gérez vos dossiers et vos informations personnelles.
-                </p>
-
-                <ul className="fr-btns-group fr-btns-group--inline">
-                  <li>
-                    <button className="fr-btn" onClick={handleCreateDossier}>
-                      Créer un dossier Démarches Simplifiées
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className="fr-btn fr-btn--secondary"
-                      onClick={() => router.push("/mes-dossiers")}
-                      disabled
-                    >
-                      Consulter mes dossiers
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Déconnexion */}
-          <div className="fr-mt-6w">
-            <hr />
-            <div className="fr-mt-4w">
-              <button
-                className="fr-btn fr-btn--tertiary fr-btn--icon-left fr-icon-logout-box-r-line"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-              >
-                {isLoggingOut ? "Déconnexion en cours..." : "Se déconnecter"}
-              </button>
-              {user.authMethod === "franceconnect" && (
-                <p className="fr-text--xs fr-mt-1w">
-                  Vous serez également déconnecté de FranceConnect
-                </p>
-              )}
-            </div>
+          <div className="fr-card__footer">
+            <button
+              className="fr-btn fr-btn--tertiary fr-btn--icon-left fr-icon-logout-box-r-line"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? "Déconnexion en cours..." : "Se déconnecter"}
+            </button>
+            {user.authMethod === AUTH_METHODS.FRANCECONNECT && (
+              <p className="fr-text--xs fr-mt-1w">
+                Vous serez également déconnecté de FranceConnect
+              </p>
+            )}
           </div>
         </div>
       </div>
-    </section>
+    </>
   );
 }

@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { handleFranceConnectCallback } from "@/lib/auth/franceconnect";
+import {
+  handleFranceConnectCallback,
+  DEFAULT_REDIRECTS,
+  getAndClearRedirectUrl,
+  handleFranceConnectError,
+} from "@/lib/auth/server";
 import { getServerEnv } from "@/lib/config/env.config";
-
-// Mapping des erreurs FranceConnect vers nos codes d'erreur
-const ERROR_MAPPING: Record<string, string> = {
-  access_denied: "fc_cancelled",
-  server_error: "fc_server_error",
-  temporarily_unavailable: "fc_server_error",
-  invalid_request: "fc_invalid_request",
-  unauthorized_client: "fc_unauthorized",
-};
 
 /**
  * GET /api/auth/fc/callback
@@ -32,10 +28,11 @@ export async function GET(request: NextRequest) {
     // Gestion des erreurs FranceConnect
     if (error) {
       const errorDescription = searchParams.get("error_description");
-      console.error(`Erreur FranceConnect: ${error}`, errorDescription);
+      const result = handleFranceConnectError(error, errorDescription || "");
 
-      const errorCode = ERROR_MAPPING[error] || "fc_error";
-      return redirectTo(`/connexion?error=${errorCode}`);
+      return redirectTo(
+        `/connexion?error=${result.code}&message=${encodeURIComponent(result.error)}`
+      );
     }
 
     // Vérification des paramètres requis
@@ -48,7 +45,11 @@ export async function GET(request: NextRequest) {
     const result = await handleFranceConnectCallback(code, state);
 
     if (result.success) {
-      return redirectTo("/mon-compte");
+      // Récupérer l'URL de redirection sauvegardée
+      const savedRedirectUrl = await getAndClearRedirectUrl();
+
+      // Rediriger vers l'URL demandée ou l'espace particulier par défaut
+      return redirectTo(savedRedirectUrl || DEFAULT_REDIRECTS.particulier);
     }
 
     // Gestion des erreurs spécifiques
@@ -57,6 +58,8 @@ export async function GET(request: NextRequest) {
       errorParam = "fc_invalid_state";
     } else if (result.error?.includes("token")) {
       errorParam = "fc_token_error";
+    } else if (result.error?.includes("annulé")) {
+      errorParam = "fc_cancelled";
     }
 
     return redirectTo(`/connexion?error=${errorParam}`);

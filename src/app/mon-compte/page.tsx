@@ -1,14 +1,25 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth/simpleAuth";
+import { getCurrentUser, ROLES } from "@/lib/auth/server";
+import { Suspense } from "react";
 import MonCompteClient from "@/page-sections/account/MonCompteClient";
+import Loading from "@/components/Loading/Loading";
 
 export default async function MonComptePage() {
+  // Vérification serveur (importante pour la sécurité)
   const user = await getCurrentUser();
 
-  // Rediriger si pas authentifié ou pas le bon rôle
-  if (!user || user.role !== "particulier") {
+  if (!user || user.role !== ROLES.PARTICULIER) {
     redirect("/connexion");
   }
 
-  return <MonCompteClient user={user} />;
+  return (
+    <section className="fr-container-fluid fr-py-10w">
+      <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-10!">
+        <h1>Mon compte</h1>
+        <Suspense fallback={<Loading />}>
+          <MonCompteClient />
+        </Suspense>
+      </div>
+    </section>
+  );
 }
