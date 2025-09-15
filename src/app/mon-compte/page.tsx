@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/simpleAuth";
-import MonCompteClient from "@/page-sections/mon-compte/MonCompteClient";
+import MonCompteClient from "@/page-sections/account/MonCompteClient";
 
 export default async function MonComptePage() {
   const user = await getCurrentUser();
