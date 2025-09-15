@@ -78,3 +78,4 @@ jobs:
           FC_SCOPES: "openid email profile"
           FC_ACR_VALUES: "eidas1"
           FC_STATE_TTL: "300"
+          BASE_URL: "http://localhost:3000"

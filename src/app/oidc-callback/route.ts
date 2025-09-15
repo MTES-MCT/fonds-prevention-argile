@@ -1,26 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerEnv } from "@/lib/config/env.config";
 
 export async function GET(request: NextRequest) {
-  console.log("✅ Route /oidc-callback atteinte");
+  console.log("Route /oidc-callback atteinte");
   console.log("Params:", request.nextUrl.searchParams.toString());
 
   try {
-    // Construire l'URL de redirection
-    const url = new URL("/api/auth/fc/callback", request.url);
+    const env = getServerEnv();
+    const baseUrl = env.BASE_URL;
+
+    // Construire l'URL avec la bonne base
+    const url = new URL("/api/auth/fc/callback", baseUrl);
     url.search = request.nextUrl.search;
 
-    console.log("🔄 Tentative de redirection vers:", url.toString());
+    console.log("Redirection vers:", url.toString());
 
-    // Utiliser NextResponse.redirect au lieu de Response.redirect
-    const response = NextResponse.redirect(url);
-    console.log("✅ Réponse de redirection créée");
-
-    return response;
+    return NextResponse.redirect(url);
   } catch (error) {
-    console.error("❌ Erreur dans /oidc-callback:", error);
-    // Redirection de secours
+    console.error("Erreur dans /oidc-callback:", error);
+    const baseUrl = getServerEnv().BASE_URL;
     return NextResponse.redirect(
-      new URL(`/connexion?error=fc_callback_error`, request.url)
+      new URL("/connexion?error=fc_callback_error", baseUrl)
     );
   }
 }

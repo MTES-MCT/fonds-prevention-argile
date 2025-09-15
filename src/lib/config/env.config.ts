@@ -40,6 +40,7 @@ const serverSchema = z.object({
   DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE: z.string().min(1),
   ADMIN_PASSWORD: z.string().min(8),
   JWT_SECRET: z.string().min(32),
+  BASE_URL: z.string().url().default("http://localhost:3000"),
 
   // Variables FranceConnect
   ...franceConnectEnvSchema.shape,
