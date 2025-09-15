@@ -1,6 +1,5 @@
-// lib/config/franceconnect.config.ts
-
 import { getServerEnv } from "./env.config";
+import crypto from "crypto";
 
 /**
  * Configuration et helpers pour FranceConnect
@@ -11,11 +10,11 @@ export function getFranceConnectUrls(baseUrl?: string) {
   const base = baseUrl || getServerEnv().FC_BASE_URL;
 
   return {
-    authorization: `${base}/api/v1/authorize`,
-    token: `${base}/api/v1/token`,
-    userinfo: `${base}/api/v1/userinfo`,
-    logout: `${base}/api/v1/logout`,
-    jwks: `${base}/api/v1/jwks`,
+    authorization: `${base}/api/v2/authorize`,
+    token: `${base}/api/v2/token`,
+    userinfo: `${base}/api/v2/userinfo`,
+    logout: `${base}/api/v2/session/end`,
+    jwks: `${base}/api/v2/jwks`,
   };
 }
 
@@ -61,11 +60,14 @@ export function generateSecureRandomString(length: number): string {
   const array = new Uint8Array(length);
 
   // Utilisation de crypto pour une génération sécurisée
-  if (typeof globalThis.crypto !== "undefined") {
+  if (
+    typeof globalThis.crypto !== "undefined" &&
+    globalThis.crypto.getRandomValues
+  ) {
+    // Navigateur ou environnement avec Web Crypto API
     globalThis.crypto.getRandomValues(array);
   } else {
-    // Fallback pour Node.js
-    const crypto = require("crypto");
+    // Node.js - utiliser crypto
     crypto.randomFillSync(array);
   }
 

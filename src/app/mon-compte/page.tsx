@@ -1,11 +1,14 @@
-export default function MonCompte() {
-  return (
-    <section className="fr-container-fluid fr-py-10w">
-      <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-10!">
-        <div className="fr-col-12 fr-col-md-8 fr-col-lg-6">
-          <h1>Mon Compte</h1>
-        </div>
-      </div>
-    </section>
-  );
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth/simpleAuth";
+import MonCompteClient from "@/page-sections/mon-compte/MonCompteClient";
+
+export default async function MonComptePage() {
+  const user = await getCurrentUser();
+
+  // Rediriger si pas authentifié ou pas le bon rôle
+  if (!user || user.role !== "particulier") {
+    redirect("/connexion");
+  }
+
+  return <MonCompteClient user={user} />;
 }

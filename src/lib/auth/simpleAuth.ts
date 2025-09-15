@@ -123,9 +123,17 @@ export async function logout() {
   // Récupérer la session pour vérifier le type d'auth
   const session = await getSession();
 
-  // Supprimer le cookie de session
+  // Supprimer tous les cookies de session
   const cookieStore = await cookies();
   cookieStore.set("session", "", {
+    expires: new Date(0),
+    path: "/",
+  });
+  cookieStore.set("session_role", "", {
+    expires: new Date(0),
+    path: "/",
+  });
+  cookieStore.set("session_auth", "", {
     expires: new Date(0),
     path: "/",
   });
@@ -153,7 +161,7 @@ export async function isAuthenticated(): Promise<boolean> {
   return !!session;
 }
 
-// Récupérer les infos utilisateur pour le contexte React
+// Récupérer les infos utilisateur pour le contexte frontend
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const session = await getSession();
   if (!session) return null;

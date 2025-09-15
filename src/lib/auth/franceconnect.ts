@@ -147,9 +147,28 @@ export async function createFranceConnectSession(
 
   const token = createToken(payload);
 
-  // Sauvegarder la session
+  // Sauvegarder la session et les cookies
   const cookieStore = await cookies();
+
+  // Cookie principal avec le JWT
   cookieStore.set("session", token, {
+    expires,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+
+  // Cookies pour éviter le décodage JWT dans le middleware
+  cookieStore.set("session_role", "particulier", {
+    expires,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+
+  cookieStore.set("session_auth", "franceconnect", {
     expires,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

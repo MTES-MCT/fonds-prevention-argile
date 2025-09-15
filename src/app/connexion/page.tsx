@@ -1,18 +1,52 @@
 "use client";
 
 import { contentConnexionPage } from "@/content";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "next/navigation";
 
 export default function Connexion() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [fcError, setFcError] = useState<string | null>(null);
 
   const { login, isLoading, error } = useAuth();
+  const searchParams = useSearchParams();
+
+  // Gérer les erreurs FranceConnect depuis l'URL
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      switch (errorParam) {
+        case "fc_cancelled":
+          setFcError("Vous avez annulé la connexion FranceConnect.");
+          break;
+        case "fc_invalid_state":
+          setFcError("Erreur de sécurité. Veuillez réessayer.");
+          break;
+        case "fc_token_error":
+          setFcError("Erreur lors de l'authentification. Veuillez réessayer.");
+          break;
+        case "fc_server_error":
+          setFcError("FranceConnect est temporairement indisponible.");
+          break;
+        case "fc_auth_failed":
+          setFcError("Échec de l'authentification FranceConnect.");
+          break;
+        default:
+          setFcError("Une erreur est survenue avec FranceConnect.");
+      }
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await login(password);
+  };
+
+  const handleFranceConnect = () => {
+    // Rediriger vers l'API FranceConnect
+    window.location.href = "/api/auth/fc/login";
   };
 
   return (
@@ -26,14 +60,30 @@ export default function Connexion() {
                   <div className="fr-col-12 fr-col-md-9 fr-col-lg-8">
                     <h1>{contentConnexionPage.title}</h1>
 
-                    {/* FranceConnect - Désactivé temporairement */}
-                    <div
-                      className="fr-mb-6v"
-                      style={{ opacity: 0.5, pointerEvents: "none" }}
-                    >
+                    {/* Alerte erreur FranceConnect */}
+                    {fcError && (
+                      <div className="fr-alert fr-alert--error fr-mb-4w">
+                        <p className="fr-alert__title">Erreur FranceConnect</p>
+                        <p>{fcError}</p>
+                        <button
+                          className="fr-btn--close fr-btn"
+                          title="Masquer le message"
+                          onClick={() => setFcError(null)}
+                        >
+                          Masquer le message
+                        </button>
+                      </div>
+                    )}
+
+                    {/* FranceConnect - ACTIVÉ */}
+                    <div className="fr-mb-6v">
                       <h2>{contentConnexionPage.franceConnect.title}</h2>
                       <div className="fr-connect-group">
-                        <button className="fr-connect" disabled>
+                        <button
+                          className="fr-connect"
+                          onClick={handleFranceConnect}
+                          type="button"
+                        >
                           <span className="fr-connect__login">
                             {contentConnexionPage.franceConnect.connectLogin}
                           </span>
@@ -42,7 +92,14 @@ export default function Connexion() {
                           </span>
                         </button>
                         <p className="fr-text--sm fr-mt-2v">
-                          <em>Disponible prochainement</em>
+                          <a
+                            href="https://franceconnect.gouv.fr/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="fr-link"
+                          >
+                            Qu'est-ce que FranceConnect ?
+                          </a>
                         </p>
                       </div>
                     </div>
@@ -67,15 +124,6 @@ export default function Connexion() {
                           <div className="fr-fieldset__element">
                             <p className="fr-text--sm">
                               Accès réservé aux administrateurs du site.
-                            </p>
-                          </div>
-
-                          {/* Alerte Beta */}
-                          <div className="fr-alert fr-alert--info fr-mb-3w">
-                            <p className="fr-alert__title">Version Beta</p>
-                            <p>
-                              Connexion simplifiée pour la phase de test.
-                              ProConnect sera disponible prochainement.
                             </p>
                           </div>
 
@@ -156,23 +204,6 @@ export default function Connexion() {
                           </div>
                         </fieldset>
                       </form>
-                    </div>
-
-                    <hr />
-
-                    {/* Section création de compte - Désactivée */}
-                    <div style={{ opacity: 0.5 }}>
-                      <h2>{contentConnexionPage.dontHaveAccount}</h2>
-                      <p className="fr-text--sm">
-                        La création de compte sera disponible avec ProConnect.
-                      </p>
-                      <ul className="fr-btns-group">
-                        <li>
-                          <button className="fr-btn fr-btn--secondary" disabled>
-                            {contentConnexionPage.createAccount}
-                          </button>
-                        </li>
-                      </ul>
                     </div>
                   </div>
                 </div>
