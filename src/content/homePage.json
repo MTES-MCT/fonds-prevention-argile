@@ -193,8 +193,8 @@
   "qui_sommes_nous_section": {
     "qui_sommes_nous_subsection": {
       "title": "Qui sommes-nous ?",
-      "description_1": "fonds Argile est un service public gratuit qui vous permet d’évaluer votre situation, constituer et suivre votre dossier simplement, puis obtenir un financement du diagnostic et des travaux recommandés.",
-      "description_2": "Nous sommes un service public lancé par le Ministère de la Transition Ecologique et la Direction du Numérique (DINUM) sous la forme d'une start-up d'Etat. Elle est en phase d'expérimentation avant un déploiement massif. N'hésitez pas à nous faire part de vos retours et suggestions d'améliorations. ",
+      "description_1": "Fonds Prévention Argile est un service numérique public qui vous permet d’évaluer votre situation, constituer et suivre votre dossier d'aide au fonds expérimental de prévention du phénomène de retrait-gonflement des argiles.",
+      "description_2": "Nous sommes un service public lancé par le Ministère de la Transition Ecologique et la Direction du Numérique (DINUM) sous la forme d'une start-up d'Etat.  N'hésitez pas à nous faire part de vos retours et suggestions d'améliorations.",
       "imageSrc": "/images/home/ministere_transition_ecologique.svg",
       "imageAlt": "Logo Ministère de la Transition écologique"
     },
@@ -202,19 +202,19 @@
       "title": "Quelles sont nos missions ?",
       "missions": [
         {
-          "title": "Fluidifier l’instructions des aides",
+          "title": "Proposer un parcours fluide",
           "icon": "fr-icon-map-pin-2-line",
-          "description": "Création d’un modèle d’analyse automatique qui s’assure de la conformité de votre demande avec les exigences des aides de l’État."
+          "description": "Création d’un parcours utilisateur fluide et efficace pour le fonds de prévention du phénomène de retrait-gonflement des argiles."
         },
         {
           "title": "Réduire les délais d’instruction d’aide",
           "icon": "fr-icon-timer-line",
-          "description": "Réduction du nombre d’allers-retours avec les instructeurs d’aides avec un pré-contrôle gratuit et instantané."
+          "description": "Conception avec un maximum de réutilisation de données disponibles par API et d'automatisations pour accélérer les process d'instruction."
         },
         {
           "title": "Améliorer la satisfaction des usagers",
           "icon": "fr-icon-heart-line",
-          "description": "Conception d’une interface simple qui accompagne les usagers dans la lecture et la correction des devis."
+          "description": "Conception d’une interface simple qui accompagne les usagers dans leur parcours d'aide et le suivi de leur dossier."
         }
       ]
     }

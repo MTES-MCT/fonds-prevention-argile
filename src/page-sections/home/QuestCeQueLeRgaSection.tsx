@@ -30,10 +30,12 @@ export default function QuestCeQueLeRgaSection() {
             <h2>{contentHomePage.what_is_rga_section.title}</h2>
             <div className="fr-callout fr-callout--pink-macaron">
               <p className="fr-callout__text fr-text--sm">
-                {contentHomePage.what_is_rga_section.highlight}
+                {richTextParser(contentHomePage.what_is_rga_section.highlight)}
               </p>
             </div>
-            <p>{contentHomePage.what_is_rga_section.subtitle}</p>
+            <p>
+              {richTextParser(contentHomePage.what_is_rga_section.subtitle)}
+            </p>
             <p>
               {richTextParser(contentHomePage.what_is_rga_section.subtitle2)}
             </p>
