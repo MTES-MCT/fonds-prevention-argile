@@ -1,4 +1,4 @@
-import { login } from "@/lib/auth/simpleAuth";
+import { authenticateAdmin } from "@/lib/auth/services/auth.service";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await login(password);
+    // Utiliser le service d'authentification
+    const result = await authenticateAdmin(password);
 
     if (!result.success) {
       return NextResponse.json(

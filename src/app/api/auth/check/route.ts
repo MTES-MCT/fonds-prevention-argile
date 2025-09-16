@@ -1,24 +1,34 @@
-import { getSession } from "@/lib/auth/simpleAuth";
 import { NextResponse } from "next/server";
+import { getCurrentUser, isAuthenticated } from "@/lib/auth/server";
 
 export async function GET() {
   try {
-    const session = await getSession();
+    const authenticated = await isAuthenticated();
 
-    if (session && session.user) {
+    if (!authenticated) {
       return NextResponse.json({
-        authenticated: true,
-        user: {
-          name: "Administrateur",
-          role: session.user.role || "admin",
-        },
+        authenticated: false,
+        user: null,
       });
     }
 
-    // Pas de session valide
+    const user = await getCurrentUser();
+
     return NextResponse.json({
-      authenticated: false,
-      user: null,
+      authenticated: true,
+      user: user
+        ? {
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            authMethod: user.authMethod,
+            name:
+              user.firstName && user.lastName
+                ? `${user.firstName} ${user.lastName}`
+                : user.email || "Administrateur",
+          }
+        : null,
     });
   } catch (error) {
     console.error("Erreur lors de la vérification de session:", error);

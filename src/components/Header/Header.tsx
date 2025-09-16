@@ -4,7 +4,7 @@ import { contentLayout } from "@/content";
 import { richTextParser } from "@/lib/utils";
 import Link from "next/link";
 import HeaderDropdown from "../HeaderDropDown/HeaderDropDown";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/auth/contexts/AuthContext";
 
 const Header = () => {
   const { isAuthenticated } = useAuth();

@@ -10,19 +10,16 @@ import {
   useMemo,
 } from "react";
 import { useRouter } from "next/navigation";
-
-interface User {
-  name: string;
-  email: string;
-  role: string;
-}
+import type { AuthUser } from "../core/auth.types";
+import { AUTH_METHODS } from "../core/auth.constants";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  user: User | null;
+  user: AuthUser | null;
   error: string | null;
   login: (password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithFranceConnect: () => void;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
@@ -32,7 +29,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -40,7 +37,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuth = useCallback(async () => {
     try {
       const response = await fetch("/api/auth/check", {
-        // Cache: évite les requêtes répétées
         cache: "no-store",
       });
 
@@ -61,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Connexion
+  // Connexion admin avec mot de passe
   const login = useCallback(
     async (password: string) => {
       setIsLoading(true);
@@ -77,45 +73,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
 
         if (data.success) {
-          // Vérifier l'auth immédiatement après login
           await checkAuth();
-
-          // Redirection
           router.push("/administration");
           return { success: true };
         } else {
           const errorMsg = data.error || "Mot de passe incorrect";
           setError(errorMsg);
-          setIsLoading(false);
           return { success: false, error: errorMsg };
         }
       } catch (err) {
-        const errorMsg = "Erreur de connexion. Veuillez réessayer." + err;
+        const errorMsg = "Erreur de connexion. Veuillez réessayer. " + err;
         setError(errorMsg);
-        setIsLoading(false);
         return { success: false, error: errorMsg };
+      } finally {
+        setIsLoading(false);
       }
     },
     [router, checkAuth]
   );
+
+  // Connexion FranceConnect
+  const loginWithFranceConnect = useCallback(() => {
+    window.location.href = "/api/auth/fc/login";
+  }, []);
 
   // Déconnexion
   const logout = useCallback(async () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/logout", {
+      // Déterminer la route de déconnexion selon le type d'auth
+      const logoutUrl =
+        user?.authMethod === AUTH_METHODS.FRANCECONNECT
+          ? "/api/auth/fc/logout"
+          : "/api/auth/logout";
+
+      const response = await fetch(logoutUrl, {
         method: "POST",
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        // Réinitialiser l'état immédiatement
         setIsAuthenticated(false);
         setUser(null);
         setError(null);
 
-        // Redirection
-        router.push("/connexion");
+        // Pour FranceConnect, gérer la redirection spéciale
+        if (data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        } else {
+          router.push("/connexion");
+        }
       }
     } catch (err) {
       console.error("Erreur lors de la déconnexion:", err);
@@ -123,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [router]);
+  }, [router, user]);
 
   // Vérifier l'auth au montage
   useEffect(() => {
@@ -133,7 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Re-vérifier l'auth quand l'onglet redevient actif
   useEffect(() => {
     const handleFocus = () => {
-      // Ne re-vérifier que si on n'est pas en train de charger
       if (!isLoading) {
         checkAuth();
       }
@@ -143,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("focus", handleFocus);
   }, [checkAuth, isLoading]);
 
-  // Mémoriser la valeur du context pour éviter les re-renders
+  // Mémoriser la valeur du context
   const contextValue = useMemo(
     () => ({
       isAuthenticated,
@@ -151,10 +159,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       error,
       login,
+      loginWithFranceConnect,
       logout,
       checkAuth,
     }),
-    [isAuthenticated, isLoading, user, error, login, logout, checkAuth]
+    [
+      isAuthenticated,
+      isLoading,
+      user,
+      error,
+      login,
+      loginWithFranceConnect,
+      logout,
+      checkAuth,
+    ]
   );
 
   return (
@@ -162,17 +180,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hook personnalisé pour utiliser le context
+// Hook principal
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
-}
-
-// Hook pour récupérer uniquement l'utilisateur
-export function useCurrentUser() {
-  const { user } = useAuth();
-  return user;
 }

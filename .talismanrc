@@ -10,6 +10,8 @@ fileignoreconfig:
     checksum: ignore
   - filename: .github/workflows/ci.yml
     checksum: ignore
+  - filename: src/lib/config/franceconnect.config.ts
+    checksum: 6e6566e0bbd7d174407615d4d3e6bb034138d6b2c8a5ccfe45e9251eb22cfb70
 
 # Seuil de détection élevé pour éviter les faux positifs
 threshold: high

@@ -1,7 +1,30 @@
 import { z } from "zod";
 import { isClient, isServer } from "@/lib/utils/env";
 
-// Schémas de validation
+// Schéma de validation des variables d'environnement FranceConnect
+const franceConnectEnvSchema = z.object({
+  // Identifiants FranceConnect
+  FC_CLIENT_ID: z.string().min(1, "FC_CLIENT_ID est requis"),
+  FC_CLIENT_SECRET: z.string().min(1, "FC_CLIENT_SECRET est requis"),
+
+  // URLs de callback
+  FC_CALLBACK_URL: z.string().url("FC_CALLBACK_URL doit être une URL valide"),
+  FC_POST_LOGOUT_URL: z
+    .string()
+    .url("FC_POST_LOGOUT_URL doit être une URL valide"),
+
+  // Environnement FranceConnect
+  FC_BASE_URL: z.string().url("FC_BASE_URL doit être une URL valide"),
+
+  // Scopes (optionnel avec valeur par défaut)
+  FC_SCOPES: z.string().default("openid given_name family_name email"),
+
+  // Sécurité
+  FC_STATE_TTL: z.string().transform(Number).default("300"),
+  FC_ACR_VALUES: z.string().default("eidas1"),
+});
+
+// Schéma de validation des variables d'environnement côté serveur
 const serverSchema = z.object({
   NEXT_TELEMETRY_DISABLED: z.string().optional(),
   DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY: z.string().min(1),
@@ -17,8 +40,13 @@ const serverSchema = z.object({
   DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE: z.string().min(1),
   ADMIN_PASSWORD: z.string().min(8),
   JWT_SECRET: z.string().min(32),
+  BASE_URL: z.string().url().default("http://localhost:3000"),
+
+  // Variables FranceConnect
+  ...franceConnectEnvSchema.shape,
 });
 
+// Schéma de validation des variables d'environnement côté client
 const clientSchema = z.object({
   NEXT_PUBLIC_MATOMO_SITE_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_MATOMO_URL: z.string().url().optional(),
@@ -28,6 +56,7 @@ const clientSchema = z.object({
   NEXT_PUBLIC_SENTRY_URL: z.string().url().optional(),
 });
 
+// Schéma de validation des variables d'environnement partagées
 const sharedSchema = z.object({
   NEXT_PUBLIC_APP_ENV: z
     .enum(["local", "docker", "staging", "production"])

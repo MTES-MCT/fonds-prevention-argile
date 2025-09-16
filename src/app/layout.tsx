@@ -28,7 +28,7 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css"
 
 // Import des styles custom
 import "../styles/globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/lib/auth/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: contentLayout.metadata.title,
