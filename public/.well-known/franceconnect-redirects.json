@@ -1,4 +1,5 @@
 [
   "http://localhost:3000/oidc-callback",
-  "https://fonds-argile-staging.osc-fr1.scalingo.io/oidc-callback"
+  "https://fonds-argile-staging.osc-fr1.scalingo.io/oidc-callback",
+  "https://staging.fonds-prevention-argile.beta.gouv.fr/oidc-callback"
 ]
