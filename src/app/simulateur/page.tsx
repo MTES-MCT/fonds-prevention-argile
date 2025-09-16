@@ -13,10 +13,6 @@ export default function Simulateur() {
         <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
           {contentSimulationPage.title}
         </h1>
-        <p className="fr-text--lg fr-mb-4w">
-          Utilisez notre simulateur pour évaluer votre éligibilité aux aides du
-          Fonds de prévention.
-        </p>
 
         {/* Conditional rendering de l'iframe */}
         {iframeUrl ? (
