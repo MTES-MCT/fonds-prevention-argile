@@ -1,4 +1,6 @@
-export default function CalloutRemplirFormulaire() {
+import Link from "next/link";
+
+export default function CalloutARemplir() {
   return (
     <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
       <p className="fr-callout__title">A FAIRE</p>
@@ -7,9 +9,14 @@ export default function CalloutRemplirFormulaire() {
         que votre dossier soit examiné par les autorités compétentes. Par la
         suite, vous recevrez une notification concernant les étapes à suivre.
       </p>
-      <button type="button" className="fr-btn">
+      <Link
+        href="#"
+        rel="noopener noreferrer"
+        target="_blank"
+        className="fr-btn fr-btn--icon-right fr-icon-arrow-right-s-line"
+      >
         Remplir le formulaire d'éligibilité
-      </button>
+      </Link>
     </div>
   );
 }

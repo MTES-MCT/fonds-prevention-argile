@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MonCompteLoading from "../../components/Loading/Loading";
 import FaqAccountSection from "./common/FaqAccountSection";
-import CalloutRemplirFormulaire from "./a_remplir/CalloutRemplirFormulaire";
 import MaListe from "./common/MaListe";
-import EtapesDetailSection from "./common/EtapesDetailSection";
+import StepDetailSection from "./common/StepDetailSection";
+import CalloutARemplir from "./a-remplir/CalloutARemplir";
+import CalloutDiagnostic from "./diagnostic/CalloutDiagnostic";
+import CalloutEnInstruction from "./en-instruction/CalloutEnInstruction";
 
 export default function MonCompteClient() {
   const { user, isLoading, isLoggingOut } = useAuth();
@@ -62,7 +64,9 @@ export default function MonCompteClient() {
 
           <div className="fr-grid-row fr-grid-row--gutters">
             <div className="fr-col-12 fr-col-md-8">
-              <CalloutRemplirFormulaire />
+              <CalloutARemplir />
+              <CalloutDiagnostic />
+              <CalloutEnInstruction />
             </div>
 
             <div className="fr-col-12 fr-col-md-4 flex justify-center md:justify-end">
@@ -73,7 +77,7 @@ export default function MonCompteClient() {
       </section>
 
       {/* Étapes détaillées */}
-      <EtapesDetailSection />
+      <StepDetailSection />
 
       {/* FAQ */}
       <FaqAccountSection />
