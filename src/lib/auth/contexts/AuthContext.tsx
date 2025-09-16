@@ -12,10 +12,12 @@ import {
 import { useRouter } from "next/navigation";
 import type { AuthUser } from "../core/auth.types";
 import { AUTH_METHODS } from "../core/auth.constants";
+import { set } from "zod/v4";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
+  isLoggingOut: boolean;
   user: AuthUser | null;
   error: string | null;
   login: (password: string) => Promise<{ success: boolean; error?: string }>;
@@ -29,6 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -100,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Déconnexion
   const logout = useCallback(async () => {
     setIsLoading(true);
+    setIsLoggingOut(true);
 
     try {
       // Déterminer la route de déconnexion selon le type d'auth
@@ -140,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Erreur lors de la déconnexion:", err);
       setError("Erreur lors de la déconnexion");
+      setIsLoggingOut(false);
     } finally {
       setIsLoading(false);
     }
@@ -167,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       isAuthenticated,
       isLoading,
+      isLoggingOut,
       user,
       error,
       login,
@@ -177,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [
       isAuthenticated,
       isLoading,
+      isLoggingOut,
       user,
       error,
       login,
