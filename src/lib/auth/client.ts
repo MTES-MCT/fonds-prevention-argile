@@ -23,3 +23,5 @@ export {
   isTokenExpired,
   getRoleFromToken,
 } from "./utils/jwt-decode.utils";
+
+export { useLogoutMessage, useIsAdmin } from "./hooks";

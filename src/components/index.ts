@@ -4,4 +4,6 @@ export { default as Matomo } from "./Matomo/Matomo";
 export { default as Notice } from "./Notice/Notice";
 export type { NoticeProps } from "./Notice/Notice";
 export { default as Feature } from "./Feature/Feature";
-export { default as HeaderDropdown } from "./HeaderDropDown/HeaderDropDown";
+export { default as Alert } from "./Alert/Alert";
+
+export * from "./Header/index";

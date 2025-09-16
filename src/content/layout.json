@@ -22,11 +22,6 @@
     "organizationName": "Fonds Prévention Argile",
     "links": [
       {
-        "href": "/connexion",
-        "className": "fr-icon-account-circle-fill fr-btn",
-        "label": "Se connecter"
-      },
-      {
         "href": "/simulateur",
         "className": "fr-btn--account fr-icon-checkbox-circle-fill fr-btn",
         "label": "Vérifier mon éligibilité"

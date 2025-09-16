@@ -6,43 +6,56 @@ import { useRouter } from "next/navigation";
 import MonCompteLoading from "../../components/Loading/Loading";
 
 export default function MonCompteClient() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading, isLoggingOut } = useAuth();
   const router = useRouter();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Redirection si pas d'utilisateur
+  // Redirection si pas d'utilisateur ou mauvais rôle
   useEffect(() => {
-    if (!isLoading && user && user.role !== ROLES.PARTICULIER) {
+    // Si on est en train de charger, rediriger ou se déconnecter, on ne fait rien
+    if (isLoading || isRedirecting || isLoggingOut) return;
+
+    // Si pas d'utilisateur ou mauvais rôle
+    if (!user || user.role !== ROLES.PARTICULIER) {
+      setIsRedirecting(true);
       router.push("/connexion");
     }
-  }, [isLoading, user, router]);
+  }, [isLoading, user, router, isRedirecting, isLoggingOut]);
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
-      setIsLoggingOut(false);
-    }
-  };
+  // Afficher un message de déconnexion
+  if (isLoggingOut) {
+    return (
+      <div className="fr-container fr-py-8w">
+        <div className="fr-alert fr-alert--info">
+          <p className="fr-alert__title">Déconnexion en cours...</p>
+          <p>Vous allez être redirigé.</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Gestion du chargement
+  // Gestion du chargement initial
   if (isLoading) {
     return <MonCompteLoading />;
   }
 
+  // Si redirection en cours (pas d'user ou mauvais rôle) - ne rien afficher
+  if (isRedirecting || !user) {
+    return null;
+  }
+
+  // Contenu normal de la page
   return (
     <>
       <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
-        Bienvenue {user?.firstName}
+        Bienvenue {user.firstName}
       </h1>
 
       <div className="fr-alert fr-alert--success fr-mb-4w">
         <p className="fr-alert__title">Connexion réussie</p>
         <p>
           Vous êtes connecté via{" "}
-          {user?.authMethod === AUTH_METHODS.FRANCECONNECT
+          {user.authMethod === AUTH_METHODS.FRANCECONNECT
             ? "FranceConnect"
             : "mot de passe administrateur"}
           .
@@ -66,12 +79,11 @@ export default function MonCompteClient() {
                 concernant les étapes à suivre.
               </p>
               <button type="button" className="fr-btn">
-                Remplir le formulaire d’éligibilité
+                Remplir le formulaire d'éligibilité
               </button>
             </div>
           </div>
 
-          {/* Zone image */}
           <div className="fr-col-12 fr-col-md-6 flex justify-center md:justify-end">
             <div className="fr-card">
               <div className="fr-card__body">
@@ -80,19 +92,19 @@ export default function MonCompteClient() {
                 </h2>
                 <div className="fr-card__desc">
                   <dl className="fr-my-2w">
-                    {user?.firstName && (
+                    {user.firstName && (
                       <>
                         <dt className="fr-text--bold">Prénom :</dt>
                         <dd className="fr-mb-2w">{user.firstName}</dd>
                       </>
                     )}
-                    {user?.lastName && (
+                    {user.lastName && (
                       <>
                         <dt className="fr-text--bold">Nom :</dt>
                         <dd className="fr-mb-2w">{user.lastName}</dd>
                       </>
                     )}
-                    {user?.email && (
+                    {user.email && (
                       <>
                         <dt className="fr-text--bold">Email :</dt>
                         <dd className="fr-mb-2w">{user.email}</dd>
@@ -101,14 +113,14 @@ export default function MonCompteClient() {
 
                     <dt className="fr-text--bold">Type de compte :</dt>
                     <dd className="fr-mb-2w">
-                      {user?.role === ROLES.PARTICULIER
+                      {user.role === ROLES.PARTICULIER
                         ? "Particulier"
                         : "Administrateur"}
                     </dd>
 
                     <dt className="fr-text--bold">Méthode de connexion :</dt>
                     <dd>
-                      {user?.authMethod === AUTH_METHODS.FRANCECONNECT ? (
+                      {user.authMethod === AUTH_METHODS.FRANCECONNECT ? (
                         <span className="fr-badge fr-badge--success">
                           FranceConnect
                         </span>

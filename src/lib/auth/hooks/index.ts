@@ -1,15 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { ROLES } from "../core/auth.constants";
-
-/**
- * Hook pour récupérer uniquement l'utilisateur courant
- */
-export function useCurrentUser() {
-  const { user, isLoading } = useAuth();
-  return { user, isLoading };
-}
 
 /**
  * Hook pour vérifier si l'utilisateur est admin
@@ -41,4 +34,24 @@ export function useHasRole(role: string) {
 export function useIsFranceConnect() {
   const { user } = useAuth();
   return user?.authMethod === "franceconnect";
+}
+
+/**
+ * Hook pour gérer le message de déconnexion
+ */
+export function useLogoutMessage() {
+  const [showLogoutMessage, setShowLogoutMessage] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem("logout_success") === "true") {
+      setShowLogoutMessage(true);
+      localStorage.removeItem("logout_success");
+    }
+  }, []);
+
+  const clearLogoutMessage = () => {
+    setShowLogoutMessage(false);
+  };
+
+  return { showLogoutMessage, clearLogoutMessage };
 }

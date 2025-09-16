@@ -5,7 +5,6 @@ import MonCompteClient from "@/page-sections/account/MonCompteClient";
 import Loading from "@/components/Loading/Loading";
 
 export default async function MonComptePage() {
-  // Vérification serveur (importante pour la sécurité)
   const user = await getCurrentUser();
 
   if (!user || user.role !== ROLES.PARTICULIER) {
