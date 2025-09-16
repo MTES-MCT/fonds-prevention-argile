@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } else {
           // Fallback
-          router.push("/?logout=success");
+          router.push("/");
         }
       }
     } catch (err) {

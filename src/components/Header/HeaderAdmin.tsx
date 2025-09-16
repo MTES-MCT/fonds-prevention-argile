@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/contexts/AuthContext";
 
-const HeaderDropdown = () => {
+const HeaderAdmin = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -214,4 +214,4 @@ const HeaderDropdown = () => {
   );
 };
 
-export default HeaderDropdown;
+export default HeaderAdmin;

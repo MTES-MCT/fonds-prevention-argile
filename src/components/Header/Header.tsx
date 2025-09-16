@@ -3,10 +3,10 @@
 import { contentLayout } from "@/content";
 import { richTextParser } from "@/lib/utils";
 import Link from "next/link";
-import HeaderDropdown from "../HeaderDropDown/HeaderDropDown";
 import { useAuth } from "@/lib/auth/contexts/AuthContext";
 import { useIsAdmin } from "@/lib/auth/client";
-import HeaderUser from "../HeaderUser/HeaderUser";
+import HeaderAdmin from "./HeaderAdmin";
+import HeaderUser from "./HeaderUser";
 
 const Header = () => {
   const { isAuthenticated } = useAuth();
@@ -71,7 +71,6 @@ const Header = () => {
                       </Link>
                     </li>
                   )}
-
                   {/* Liste des liens */}
                   {contentLayout.header.links.map((link) => (
                     <li key={`desktop-${link.href}`}>
@@ -80,10 +79,9 @@ const Header = () => {
                       </Link>
                     </li>
                   ))}
-
-                  {/* Dropdown utilisateur  ou bouton user si connecté */}
+                  {/* Header en fonction de l'utilisateur connecté */}
                   {isAuthenticated && (
-                    <li>{isAdmin ? <HeaderDropdown /> : <HeaderUser />}</li>
+                    <li>{isAdmin ? <HeaderAdmin /> : <HeaderUser />}</li>
                   )}
                 </ul>
               </div>
@@ -130,9 +128,9 @@ const Header = () => {
                 </li>
               ))}
 
-              {/* Dropdown ou nom utilisateur si connecté */}
+              {/* Header en fonction de l'utilisateur connecté */}
               {isAuthenticated && (
-                <li>{isAdmin ? <HeaderDropdown /> : <HeaderUser />}</li>
+                <li>{isAdmin ? <HeaderAdmin /> : <HeaderUser />}</li>
               )}
             </ul>
           </div>

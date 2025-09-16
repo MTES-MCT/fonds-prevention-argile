@@ -1,18 +1,8 @@
-// lib/auth/hooks/index.ts
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
 import { ROLES } from "../core/auth.constants";
-
-/**
- * Hook pour récupérer uniquement l'utilisateur courant
- */
-export function useCurrentUser() {
-  const { user, isLoading } = useAuth();
-  return { user, isLoading };
-}
 
 /**
  * Hook pour vérifier si l'utilisateur est admin
@@ -53,7 +43,6 @@ export function useLogoutMessage() {
   const [showLogoutMessage, setShowLogoutMessage] = useState(false);
 
   useEffect(() => {
-    // Vérifier si on a le flag de déconnexion
     if (localStorage.getItem("logout_success") === "true") {
       setShowLogoutMessage(true);
       localStorage.removeItem("logout_success");
