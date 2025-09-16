@@ -2,6 +2,7 @@
   "title": "Connexion au Fonds Prévention Argile",
   "franceConnect": {
     "title": "Se connecter avec FranceConnect",
+    "description": "FranceConnect est la solution proposée par l’État pour sécuriser et simplifier la connexion aux services en ligne.",
     "connectLogin": "S'identifier avec",
     "connectBrand": "FranceConnect",
     "whatIs": "Qu'est-ce que FranceConnect ?",

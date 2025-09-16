@@ -12,12 +12,16 @@ export default async function MonComptePage() {
   }
 
   return (
-    <section className="fr-container-fluid fr-py-10w">
-      <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-10!">
-        <Suspense fallback={<Loading />}>
-          <MonCompteClient />
-        </Suspense>
-      </div>
-    </section>
+    <Suspense
+      fallback={
+        <section className="fr-container-fluid fr-py-10w">
+          <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-10!">
+            <Loading />
+          </div>
+        </section>
+      }
+    >
+      <MonCompteClient />
+    </Suspense>
   );
 }

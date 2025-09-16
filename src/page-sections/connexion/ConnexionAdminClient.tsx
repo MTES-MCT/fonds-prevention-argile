@@ -1,53 +1,18 @@
 "use client";
 
 import { contentConnexionPage } from "@/content";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/lib/auth/contexts/AuthContext";
-import { useSearchParams } from "next/navigation";
-import { FC_ERROR_MAPPING } from "@/lib/auth/client";
 
-export default function ConnexionClient() {
+export default function ConnexionAdminClient() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [fcError, setFcError] = useState<string | null>(null);
 
   const { login, isLoading, error } = useAuth();
-  const searchParams = useSearchParams();
-
-  // Gérer les erreurs FranceConnect depuis l'URL
-  useEffect(() => {
-    const errorParam = searchParams.get("error");
-    if (errorParam) {
-      switch (errorParam) {
-        case FC_ERROR_MAPPING.access_denied:
-          setFcError("Vous avez annulé la connexion FranceConnect.");
-          break;
-        case FC_ERROR_MAPPING.invalid_state:
-          setFcError("Erreur de sécurité. Veuillez réessayer.");
-          break;
-        case FC_ERROR_MAPPING.fc_missing_params:
-          setFcError("Erreur lors de l'authentification. Veuillez réessayer.");
-          break;
-        case FC_ERROR_MAPPING.server_error:
-          setFcError("FranceConnect est temporairement indisponible.");
-          break;
-        case FC_ERROR_MAPPING.fc_auth_failed:
-          setFcError("Échec de l'authentification FranceConnect.");
-          break;
-        default:
-          setFcError("Une erreur est survenue avec FranceConnect.");
-      }
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await login(password);
-  };
-
-  const handleFranceConnect = () => {
-    // Rediriger vers l'API FranceConnect
-    window.location.href = "/api/auth/fc/login";
   };
 
   return (
@@ -60,52 +25,6 @@ export default function ConnexionClient() {
                 <div className="fr-grid-row fr-grid-row-gutters fr-grid-row--center">
                   <div className="fr-col-12 fr-col-md-9 fr-col-lg-8">
                     <h1>{contentConnexionPage.title}</h1>
-
-                    {/* Alerte erreur FranceConnect */}
-                    {fcError && (
-                      <div className="fr-alert fr-alert--error fr-mb-4w">
-                        <p className="fr-alert__title">Erreur FranceConnect</p>
-                        <p>{fcError}</p>
-                        <button
-                          className="fr-btn--close fr-btn"
-                          title="Masquer le message"
-                          onClick={() => setFcError(null)}
-                        >
-                          Masquer le message
-                        </button>
-                      </div>
-                    )}
-
-                    {/* FranceConnect - ACTIVÉ */}
-                    <div className="fr-mb-6v">
-                      <h2>{contentConnexionPage.franceConnect.title}</h2>
-                      <div className="fr-connect-group">
-                        <button
-                          className="fr-connect"
-                          onClick={handleFranceConnect}
-                          type="button"
-                        >
-                          <span className="fr-connect__login">
-                            {contentConnexionPage.franceConnect.connectLogin}
-                          </span>
-                          <span className="fr-connect__brand">
-                            {contentConnexionPage.franceConnect.connectBrand}
-                          </span>
-                        </button>
-                        <p className="fr-text--sm fr-mt-2v">
-                          <a
-                            href="https://franceconnect.gouv.fr/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="fr-link"
-                          >
-                            Qu'est-ce que FranceConnect ?
-                          </a>
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="fr-hr-or">{contentConnexionPage.or}</p>
 
                     {/* Formulaire de connexion admin */}
                     <div>

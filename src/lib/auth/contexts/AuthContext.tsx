@@ -12,7 +12,6 @@ import {
 import { useRouter } from "next/navigation";
 import type { AuthUser } from "../core/auth.types";
 import { AUTH_METHODS } from "../core/auth.constants";
-import { set } from "zod/v4";
 
 interface AuthContextType {
   isAuthenticated: boolean;
