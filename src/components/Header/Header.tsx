@@ -5,9 +5,12 @@ import { richTextParser } from "@/lib/utils";
 import Link from "next/link";
 import HeaderDropdown from "../HeaderDropDown/HeaderDropDown";
 import { useAuth } from "@/lib/auth/contexts/AuthContext";
+import { useIsAdmin } from "@/lib/auth/client";
+import HeaderUser from "../HeaderUser/HeaderUser";
 
 const Header = () => {
   const { isAuthenticated } = useAuth();
+  const isAdmin = useIsAdmin();
 
   return (
     <header role="banner" className="fr-header" id="header-3">
@@ -55,8 +58,21 @@ const Header = () => {
             </div>
             <div className="fr-header__tools">
               <div className="fr-header__tools-links">
+                {/* Liens pour desktop */}
                 <ul className="fr-btns-group">
-                  {/* Liens pour desktop */}
+                  {/* Se connecter si non authentifié */}
+                  {!isAuthenticated && (
+                    <li>
+                      <Link
+                        href="/connexion"
+                        className="fr-icon-account-circle-fill fr-btn"
+                      >
+                        Se connecter
+                      </Link>
+                    </li>
+                  )}
+
+                  {/* Liste des liens */}
                   {contentLayout.header.links.map((link) => (
                     <li key={`desktop-${link.href}`}>
                       <Link href={link.href} className={link.className}>
@@ -65,11 +81,9 @@ const Header = () => {
                     </li>
                   ))}
 
-                  {/* Dropdown utilisateur si connecté */}
+                  {/* Dropdown utilisateur  ou bouton user si connecté */}
                   {isAuthenticated && (
-                    <li>
-                      <HeaderDropdown />
-                    </li>
+                    <li>{isAdmin ? <HeaderDropdown /> : <HeaderUser />}</li>
                   )}
                 </ul>
               </div>
@@ -95,6 +109,19 @@ const Header = () => {
           <div className="fr-header__menu-links">
             {/* Liens pour mobile */}
             <ul className="fr-btns-group">
+              {/* Se connecter si non authentifié */}
+              {!isAuthenticated && (
+                <li>
+                  <Link
+                    href="/connexion"
+                    className="fr-icon-account-circle-fill fr-btn"
+                  >
+                    Se connecter
+                  </Link>
+                </li>
+              )}
+
+              {/* Liste des liens */}
               {contentLayout.header.links.map((link) => (
                 <li key={`mobile-${link.href}`}>
                   <Link href={link.href} className={link.className}>
@@ -103,61 +130,9 @@ const Header = () => {
                 </li>
               ))}
 
-              {/* Menu utilisateur pour mobile */}
+              {/* Dropdown ou nom utilisateur si connecté */}
               {isAuthenticated && (
-                <>
-                  <li>
-                    <hr className="fr-mt-2w fr-mb-2w" />
-                  </li>
-                  <li>
-                    <Link
-                      href="/administration"
-                      className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-left"
-                    >
-                      <span
-                        className="fr-icon-settings-5-line"
-                        aria-hidden="true"
-                      />
-                      Administration
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard"
-                      className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-left"
-                    >
-                      <span
-                        className="fr-icon-dashboard-3-line"
-                        aria-hidden="true"
-                      />
-                      Tableau de bord
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/statistiques"
-                      className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-left"
-                    >
-                      <span
-                        className="fr-icon-bar-chart-line"
-                        aria-hidden="true"
-                      />
-                      Statistiques
-                    </Link>
-                  </li>
-                  <li>
-                    <hr className="fr-mt-1w fr-mb-1w" />
-                  </li>
-                  <li>
-                    <Link
-                      href="/test"
-                      className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-left"
-                    >
-                      <span className="fr-icon-flask-line" aria-hidden="true" />
-                      Pages de test
-                    </Link>
-                  </li>
-                </>
+                <li>{isAdmin ? <HeaderDropdown /> : <HeaderUser />}</li>
               )}
             </ul>
           </div>

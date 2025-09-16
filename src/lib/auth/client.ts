@@ -24,4 +24,4 @@ export {
   getRoleFromToken,
 } from "./utils/jwt-decode.utils";
 
-export { useLogoutMessage } from "./hooks";
+export { useLogoutMessage, useIsAdmin } from "./hooks";
