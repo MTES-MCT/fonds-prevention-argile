@@ -29,10 +29,10 @@
     ]
   },
   "metadata": {
-    "title": "Fonds argile",
-    "description": "Plateforme publique et gratuite de ?",
-    "url": "https://fonds-argile.beta.gouv.fr",
-    "imageUrl": "/images/home/rga-definition.svg",
+    "title": "Fonds prévention argile",
+    "description": "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
+    "url": "https://fonds-preventions-argile.beta.gouv.fr",
+    "imageUrl": "/images/home/logement-concerne.png",
     "imageAlt": "Vérifier mon éligibilité"
   },
   "breadcrumb": {
