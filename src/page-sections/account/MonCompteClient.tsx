@@ -1,14 +1,13 @@
 "use client";
 
 import { useAuth, AUTH_METHODS, ROLES } from "@/lib/auth/client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import MonCompteLoading from "../../components/Loading/Loading";
 
 export default function MonCompteClient() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Redirection si pas d'utilisateur
   useEffect(() => {
@@ -16,16 +15,6 @@ export default function MonCompteClient() {
       router.push("/connexion");
     }
   }, [isLoading, user, router]);
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
-      setIsLoggingOut(false);
-    }
-  };
 
   // Gestion du chargement
   if (isLoading) {

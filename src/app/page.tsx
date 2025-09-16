@@ -1,5 +1,8 @@
-import { Notice } from "@/components";
+"use client";
+
+import { Notice, Alert } from "@/components";
 import { contentHomePage } from "@/content";
+import { useLogoutMessage } from "@/lib/auth/client";
 import {
   EtatAgitSection,
   CommentCaMarcheSection,
@@ -15,6 +18,8 @@ import {
 import SavoirSiConcerneSection from "@/page-sections/home/SavoirSiConcerneSection";
 
 export default function Home() {
+  const { showLogoutMessage, clearLogoutMessage } = useLogoutMessage();
+
   return (
     <>
       <Notice
@@ -25,7 +30,20 @@ export default function Home() {
         more_link={contentHomePage.notice.more_link}
         buttonClose={true}
       />
+
+      {/* Message de déconnexion */}
       <div>
+        {showLogoutMessage && (
+          <div className="fr-container fr-mt-4w">
+            <Alert
+              type="success"
+              title="Déconnexion réussie"
+              description="Vous avez été déconnecté avec succès."
+              onClose={clearLogoutMessage}
+            />
+          </div>
+        )}
+
         <LogementConcerneRgaSection />
         <QuestCeQueLeRgaSection />
         <SignesASurveiller />

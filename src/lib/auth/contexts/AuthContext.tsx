@@ -119,11 +119,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setError(null);
 
-        // Pour FranceConnect, gérer la redirection spéciale
+        // Stocker le flag de déconnexion dans localStorage
+        localStorage.setItem("logout_success", "true");
+
+        // Utiliser l'URL de redirection fournie par l'API
         if (data.redirectUrl) {
-          window.location.href = data.redirectUrl;
+          // Pour FranceConnect ou déconnexion standard
+          if (data.redirectUrl.startsWith("http")) {
+            // URL externe (FranceConnect)
+            window.location.href = data.redirectUrl;
+          } else {
+            // URL interne
+            router.push(data.redirectUrl);
+          }
         } else {
-          router.push("/connexion");
+          // Fallback
+          router.push("/?logout=success");
         }
       }
     } catch (err) {

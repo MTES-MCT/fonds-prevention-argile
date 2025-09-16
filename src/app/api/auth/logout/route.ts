@@ -4,7 +4,6 @@ import { logout } from "@/lib/auth/server";
 export async function POST() {
   try {
     const logoutInfo = await logout();
-
     return NextResponse.json({
       success: true,
       authMethod: logoutInfo.authMethod,

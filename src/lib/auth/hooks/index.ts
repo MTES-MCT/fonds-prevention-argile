@@ -1,5 +1,8 @@
+// lib/auth/hooks/index.ts
 "use client";
 
+import { useEffect, useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
 import { ROLES } from "../core/auth.constants";
 
@@ -41,4 +44,25 @@ export function useHasRole(role: string) {
 export function useIsFranceConnect() {
   const { user } = useAuth();
   return user?.authMethod === "franceconnect";
+}
+
+/**
+ * Hook pour gérer le message de déconnexion
+ */
+export function useLogoutMessage() {
+  const [showLogoutMessage, setShowLogoutMessage] = useState(false);
+
+  useEffect(() => {
+    // Vérifier si on a le flag de déconnexion
+    if (localStorage.getItem("logout_success") === "true") {
+      setShowLogoutMessage(true);
+      localStorage.removeItem("logout_success");
+    }
+  }, []);
+
+  const clearLogoutMessage = () => {
+    setShowLogoutMessage(false);
+  };
+
+  return { showLogoutMessage, clearLogoutMessage };
 }
