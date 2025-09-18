@@ -30,9 +30,14 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment Variables
+.env
 .env.local
 .env.*.local
 .env.docker
+.env.production.local
+.env.development
+.env.test
+.env.production
 
 # Misc
 .DS_Store

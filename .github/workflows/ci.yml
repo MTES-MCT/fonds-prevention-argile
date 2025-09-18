@@ -79,3 +79,8 @@ jobs:
           FC_ACR_VALUES: "eidas1"
           FC_STATE_TTL: "300"
           BASE_URL: "http://localhost:3000"
+          DB_HOST: "localhost"
+          DB_PORT: "5432"
+          DB_USER: "fonds_argile_user"
+          DB_PASSWORD: "fonds_argile_password"
+          DB_NAME: "fonds_argile"
