@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { db } from "../client";
 import { users } from "../schema";
 import { sql } from "drizzle-orm";
