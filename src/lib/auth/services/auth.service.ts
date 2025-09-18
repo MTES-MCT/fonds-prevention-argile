@@ -103,6 +103,15 @@ export async function createAdminSession(adminId: string): Promise<void> {
     maxAge: SESSION_DURATION.admin,
     path: "/",
   });
+
+  // Ajouter le cookie role pour le middleware
+  cookieStore.set(COOKIE_NAMES.SESSION_ROLE, ROLES.ADMIN, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: SESSION_DURATION.admin,
+    path: "/",
+  });
 }
 
 /**
