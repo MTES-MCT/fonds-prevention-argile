@@ -5,11 +5,9 @@ import { richTextParser } from "@/lib/utils";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/contexts/AuthContext";
 import { useIsAdmin } from "@/lib/auth/client";
-import HeaderAdmin from "./HeaderAdmin";
-import HeaderUser from "./HeaderUser";
 
 const Header = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const isAdmin = useIsAdmin();
 
   return (
@@ -58,30 +56,57 @@ const Header = () => {
             </div>
             <div className="fr-header__tools">
               <div className="fr-header__tools-links">
-                {/* Liens pour desktop */}
                 <ul className="fr-btns-group">
-                  {/* Se connecter si non authentifié */}
-                  {!isAuthenticated && (
-                    <li>
-                      <Link
-                        href="/connexion"
-                        className="fr-icon-account-circle-fill fr-btn"
-                      >
-                        Se connecter
-                      </Link>
-                    </li>
-                  )}
-                  {/* Liste des liens */}
-                  {contentLayout.header.links.map((link) => (
-                    <li key={`desktop-${link.href}`}>
-                      <Link href={link.href} className={link.className}>
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                  {/* Header en fonction de l'utilisateur connecté */}
-                  {isAuthenticated && (
-                    <li>{isAdmin ? <HeaderAdmin /> : <HeaderUser />}</li>
+                  {!isAuthenticated ? (
+                    <>
+                      <li>
+                        <Link
+                          href="/connexion"
+                          className="fr-icon-account-circle-fill fr-btn"
+                        >
+                          Se connecter
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          href="/simulateur"
+                          className="fr-btn--account fr-icon-checkbox-circle-fill fr-btn"
+                        >
+                          Vérifier mon éligibilité
+                        </Link>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      {isAdmin ? (
+                        <li>
+                          <Link
+                            href="/administration"
+                            className="fr-icon-settings-5-line fr-btn"
+                          >
+                            Administration
+                          </Link>
+                        </li>
+                      ) : (
+                        <li>
+                          <Link
+                            href="/mon-compte"
+                            className="fr-icon-folder-2-fill fr-btn"
+                          >
+                            Mon dossier
+                          </Link>
+                        </li>
+                      )}
+                      <li>
+                        <button
+                          onClick={logout}
+                          className="fr-btn--account fr-icon-logout-box-r-line fr-btn"
+                          type="button"
+                        >
+                          Se déconnecter
+                        </button>
+                      </li>
+                    </>
                   )}
                 </ul>
               </div>
@@ -105,32 +130,57 @@ const Header = () => {
             Fermer
           </button>
           <div className="fr-header__menu-links">
-            {/* Liens pour mobile */}
             <ul className="fr-btns-group">
-              {/* Se connecter si non authentifié */}
-              {!isAuthenticated && (
-                <li>
-                  <Link
-                    href="/connexion"
-                    className="fr-icon-account-circle-fill fr-btn"
-                  >
-                    Se connecter
-                  </Link>
-                </li>
-              )}
-
-              {/* Liste des liens */}
-              {contentLayout.header.links.map((link) => (
-                <li key={`mobile-${link.href}`}>
-                  <Link href={link.href} className={link.className}>
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-
-              {/* Header en fonction de l'utilisateur connecté */}
-              {isAuthenticated && (
-                <li>{isAdmin ? <HeaderAdmin /> : <HeaderUser />}</li>
+              {!isAuthenticated ? (
+                <>
+                  <li>
+                    <Link
+                      href="/connexion"
+                      className="fr-icon-account-circle-fill fr-btn"
+                    >
+                      Se connecter
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/simulateur"
+                      className="fr-btn--account fr-icon-checkbox-circle-fill fr-btn"
+                    >
+                      Vérifier mon éligibilité
+                    </Link>
+                  </li>
+                </>
+              ) : (
+                <>
+                  {isAdmin ? (
+                    <li>
+                      <Link
+                        href="/administration"
+                        className="fr-icon-settings-5-line fr-btn"
+                      >
+                        Administration
+                      </Link>
+                    </li>
+                  ) : (
+                    <li>
+                      <Link
+                        href="/mon-compte"
+                        className="fr-icon-folder-2-fill fr-btn"
+                      >
+                        Mon dossier
+                      </Link>
+                    </li>
+                  )}
+                  <li>
+                    <button
+                      onClick={logout}
+                      className="fr-btn--account fr-icon-logout-box-r-line fr-btn"
+                      type="button"
+                    >
+                      Se déconnecter
+                    </button>
+                  </li>
+                </>
               )}
             </ul>
           </div>

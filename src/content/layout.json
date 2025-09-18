@@ -19,14 +19,7 @@
     "beta": "beta",
     "organizationDescription": "Retrait Gonflement des Argiles - Aides aux ménages",
     "organizationLink": "/",
-    "organizationName": "Fonds Prévention Argile",
-    "links": [
-      {
-        "href": "/simulateur",
-        "className": "fr-btn--account fr-icon-checkbox-circle-fill fr-btn",
-        "label": "Vérifier mon éligibilité"
-      }
-    ]
+    "organizationName": "Fonds Prévention Argile"
   },
   "metadata": {
     "title": "Fonds prévention argile",

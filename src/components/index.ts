@@ -6,4 +6,4 @@ export type { NoticeProps } from "./Notice/Notice";
 export { default as Feature } from "./Feature/Feature";
 export { default as Alert } from "./Alert/Alert";
 
-export * from "./Header/index";
+export * from "./Header/Header";
