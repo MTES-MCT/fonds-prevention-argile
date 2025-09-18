@@ -11,6 +11,7 @@ import type { ParcoursPrevention } from "@/lib/database/schema/parcours-preventi
 import type { DossierDemarchesSimplifiees } from "@/lib/database/schema/dossiers-demarches-simplifiees";
 import type { ActionResult } from "./demarches-simplifies/types";
 import { getSession } from "../auth/services/auth.service";
+import { parcoursRepo } from "../database/repositories";
 
 /**
  * Initialise le parcours pour l'utilisateur connecté
@@ -53,6 +54,21 @@ export async function initierParcours(): Promise<
       error: error instanceof Error ? error.message : "Erreur inconnue",
     };
   }
+}
+
+export async function reinitialiserParcours() {
+  const session = await getSession();
+  if (!session?.userId) {
+    return { success: false, error: "Non connecté" };
+  }
+
+  const data = await getParcoursComplet(session.userId);
+  if (!data) {
+    return { success: false, error: "Pas de parcours" };
+  }
+
+  await parcoursRepo.resetParcours(data.parcours.id);
+  return { success: true, data: { message: "Parcours réinitialisé" } };
 }
 
 /**

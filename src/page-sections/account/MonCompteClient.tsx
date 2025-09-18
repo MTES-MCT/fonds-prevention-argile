@@ -11,6 +11,9 @@ import CalloutARemplir from "./eligibilite/CalloutEligibiliteAFaire";
 import CalloutDiagnostic from "./diagnostic/CalloutDiagnostic";
 import CalloutEnInstruction from "./en-instruction/CalloutEnInstruction";
 
+// Panneau de test latéral (seulement en dev)
+import DevTestSidebar from "./test/DevTestSidebar";
+
 export default function MonCompteClient() {
   const { user, isLoading, isLoggingOut } = useAuth();
   const router = useRouter();
@@ -81,6 +84,9 @@ export default function MonCompteClient() {
 
       {/* FAQ */}
       <FaqAccountSection />
+
+      {/* Panneau de test latéral (dev uniquement) */}
+      <DevTestSidebar />
     </>
   );
 }
