@@ -15,6 +15,7 @@ import {
   FaqSection,
   QuiSommesNousSection,
 } from "@/page-sections";
+import MontantDesAidesSection from "@/page-sections/home/MontantDesAidesSection";
 import SavoirSiConcerneSection from "@/page-sections/home/SavoirSiConcerneSection";
 
 export default function Home() {
@@ -51,6 +52,7 @@ export default function Home() {
         <EtatAgitSection />
         <CommentCaMarcheSection />
         <QuiPeutBeneficierAidesSection />
+        <MontantDesAidesSection />
         <QuelsSontTravauxEligiblesSection />
         <PourEnSavoirPlusSection />
         <FaqSection />

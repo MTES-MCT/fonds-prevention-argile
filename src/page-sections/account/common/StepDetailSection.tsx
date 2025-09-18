@@ -1,3 +1,4 @@
+import { contentAccountPage } from "@/content";
 import StepDetailAccountCard from "./StepDetailAccountCard";
 
 export default function StepDetailSection() {
@@ -5,7 +6,7 @@ export default function StepDetailSection() {
     <section className="fr-container-fluid fr-py-10w bg-[var(--background-alt-blue-france)]">
       <div className="fr-container">
         {/* Zone texte */}
-        <h2 className="text-left">Les étapes de votre parcours en détail</h2>
+        <h2 className="text-left">{contentAccountPage.steps_section.title}</h2>
 
         {/* Zone cartes étapes détaillées */}
         <div className="fr-grid-row fr-grid-row--gutters">

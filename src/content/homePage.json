@@ -218,5 +218,57 @@
         }
       ]
     }
+  },
+  "montant_des_aides_section": {
+    "title": "Quels sont les montants des aides ?",
+    "description": {
+      "text": "Les montants des aides dépendent du niveau de revenu de votre ménage. Plus d’informations sur ",
+      "linkText": "service-public.fr.",
+      "linkUrl": "https://www.service-public.fr/particuliers/vosdroits/F593"
+    },
+    "highlight": {
+      "title": "Plafonds de dépenses",
+      "text": "Les plafonds de dépenses éligibles pour l’Assistance à Maîtrise d’Ouvrage (étude et travaux) sont <strong>limités à 2 000€ hors taxes.</strong> La réalisation des travaux est limitée à <strong>15 000 € hors taxes.</strong>"
+    },
+    "table": {
+      "title": "Taux de subvention de l’État",
+      "headers": [
+        {
+          "text": "Très modeste",
+          "badge": "TMO",
+          "badgeColor": "fr-badge--blue-ecume"
+        },
+        {
+          "text": "Modeste",
+          "badge": "MO",
+          "badgeColor": "fr-badge--yellow-moutarde"
+        },
+        {
+          "text": "Intermédiaire",
+          "badge": "INT",
+          "badgeColor": "fr-badge--pink-macaron"
+        }
+      ],
+      "rows": [
+        {
+          "type": "Assistance à Maîtrise d’Ouvrage (étude)",
+          "tres_modeste": "90% du montant",
+          "modeste": "85% du montant",
+          "intermediaire": "70% du montant"
+        },
+        {
+          "type": "Assistance à Maîtrise d’Ouvrage (travaux)",
+          "tres_modeste": "90% du montant",
+          "modeste": "85% du montant",
+          "intermediaire": "70% du montant"
+        },
+        {
+          "type": "Tous travaux",
+          "tres_modeste": "80% du montant",
+          "modeste": "70% du montant",
+          "intermediaire": "50% du montant"
+        }
+      ]
+    }
   }
 }

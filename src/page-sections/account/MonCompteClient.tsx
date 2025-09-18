@@ -7,7 +7,7 @@ import MonCompteLoading from "../../components/Loading/Loading";
 import FaqAccountSection from "./common/FaqAccountSection";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
-import CalloutARemplir from "./a-remplir/CalloutARemplir";
+import CalloutARemplir from "./eligibilite/CalloutEligibiliteAFaire";
 import CalloutDiagnostic from "./diagnostic/CalloutDiagnostic";
 import CalloutEnInstruction from "./en-instruction/CalloutEnInstruction";
 
