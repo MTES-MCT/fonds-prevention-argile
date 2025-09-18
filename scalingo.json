@@ -1,0 +1,12 @@
+{
+  "name": "fonds-argile",
+  "stack": "scalingo-22",
+  "healthcheck": {
+    "path": "/api/health",
+    "initial_delay": 30,
+    "timeout": 10,
+    "interval": 60,
+    "healthy_threshold": 2,
+    "unhealthy_threshold": 3
+  }
+}
