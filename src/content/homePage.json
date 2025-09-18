@@ -22,13 +22,13 @@
     },
     "title": "Qu’est-ce que le Retrait-gonflement des argiles, ou RGA ?",
     "highlight": "Ce phénomène concerne <strong>54% des maisons individuelles</strong> en France. Le RGA coûte, en moyenne, <strong>1 Milliard d'€ d'indemnisation annuel</strong> sur le dispositif catastrophe naturelle.",
-    "subtitle": "Le phénomène de retrait-gonflement des argiles se manifeste par des changements du volume d'un sol argileux selon son humidité. Sec, il se rétracte ; humide, il gonfle, endommageant maisons et routes.",
+    "subtitle": "Le phénomène de retrait-gonflement des argiles se manifeste par des changements du volume d'un sol argileux selon son humidité. Sec, il se rétracte ; humide, il gonfle, endommageant notamment les maisons individuelles.",
     "subtitle2": "Le changement climatique aggrave ce phénomène : les dernières projections réalisées par la Caisse centrale de réassurance (CCR) tablent sur une <strong> augmentation de 44% à 162% de la sinistralité</strong> due au retrait-gonglement des argiles d'ici 2050."
   },
   "signes_a_surveiller_section": {
     "title": "Les signes à surveiller",
     "subtitle": "Les mouvements de terrain induits par le retrait et le gonflement des argiles se traduisent par des désordres d'importance variables suivant l'intensité et la fréquence du phénomène.",
-    "subtitle2": "Les signes précurseurs sont des désordres architecturaux de type microfissures, fissures isolées sur les murs intérieurs, et fissures extérieurs sur les doublages et les cloisons inférieurs dont la taille n'excède pas 1mm.",
+    "subtitle2": "Les signes précurseurs sont des désordres architecturaux de type microfissures, fissures isolées sur les murs intérieurs, et fissures extérieurs sur les doublages et les cloisons inférieurs dont la taille n'excède pas 1mm. Ces fissures, quand elles sont la conséquence du RGA, généralement, s'ouvrent et se ferment selon des cycles saisonniers : c'est le moment idéal pour intervenir et prévenir des désordres plus importants.",
     "subtitle3": "A plus long terme, si aucun travaux ne sont réalisés, des désordres structuraux peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons et, parfois, rupture de canalisations enterrées."
   },
   "savoir_si_concerne_section": {
@@ -43,7 +43,7 @@
   },
   "etat_agit_section": {
     "title": "Face à cette problématique, l’État agit grâce au fonds Argile",
-    "description_1": "Un fonds expérimental est désormais en place, en priorité dans les zones les plus touchées, pour financer les études (diagnostic avec accompagnement) et les travaux indispensables à la sécurisation des bâtiments. Cette aide vise les propriétaires occupants, sous certaines conditions de ressources, avec des plafonds garantissant une utilisation juste et efficace des fonds publics.",
+    "description_1": "Pour protéger durablement les habitations face au phénomène RGA, l’Etat engage une expérimentation de prévention, pour accompagner les ménages, réaliser le diagnostic de vulnérabilité et faire réaliser les travaux de prévention adaptés à chaque maison.",
     "callout_title": "Une phase pilote dans 11 départements :",
     "callout_text": "Ce dispositif est actuellement en phase d'expérimentation et est limité aux départements suivants : Allier (03), Alpes-de-Haute-Provence (04), Dordogne (24), Gers (32), Indre (36), Lot-et-Garonne (47), Meurthe-et-Moselle (54), Nord (59), Puy-de-Dôme (63), Tarn (81) et Tarn-et-Garonne (82).",
     "description_2_title": "Il est crucial d'agir rapidement",
@@ -83,7 +83,7 @@
         "imageSrc": "/illustrations/house.svg",
         "imageAlt": "Vérifier mon éligibilité",
         "title": "2. Diagnostic",
-        "description": "Un professionnel se déplace afin d’identifier les risques pour la maison et les travaux de préventions à effectuer."
+        "description": "Un professionnel se déplace chez vous afin de réaliser les constats et analyses sur la maison et son environnement pour recommander les travaux de préventions à effectuer."
       },
       {
         "imageSrc": "/illustrations/in-progress.svg",
@@ -108,7 +108,7 @@
         "text": "Vous habitez dans une zone <strong>d'exposition forte au RGA</strong>"
       },
       {
-        "text": "Votre <strong>maison a été construite avant 2010</strong>"
+        "text": "Votre <strong>maison est achevée depuis plus de 15 ans</strong>"
       },
       {
         "text": "Votre maison<strong> n'est pas mitoyenne et a 2 niveaux max</strong>"
