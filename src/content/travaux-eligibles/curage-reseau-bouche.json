@@ -1,5 +1,6 @@
 {
-  "title": "Curage du réseau bouché si nécessaire ",
+  "title": "Curage du réseau bouché si nécessaire",
+  "type": "curage-reseau-bouche",
   "pageLink": "/travaux-eligibles/curage-reseau-bouche",
   "tag": {
     "title": "Gestion des eaux",

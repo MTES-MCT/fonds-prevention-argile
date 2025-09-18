@@ -1,5 +1,6 @@
 {
-  "title": "Test de permeabilité du sol de type Porchet",
+  "title": "Réalisation d'un test de perméabilité du sol",
+  "type": "test-permeabilite-sol",
   "pageLink": "/travaux-eligibles/test-permeabilite-sol",
   "tag": {
     "title": "Gestion des eaux",
