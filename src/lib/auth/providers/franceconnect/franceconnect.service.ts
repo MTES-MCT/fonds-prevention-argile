@@ -21,13 +21,13 @@ import {
   generateSecureRandomString,
   parseJSONorJWT,
 } from "../../utils/franceconnect.utils";
-import { createSessionCookies } from "../../services/session.service";
 import type {
   FranceConnectTokenResponse,
   FranceConnectUserInfo,
   FranceConnectError,
 } from "./franceconnect.types";
-import type { AuthUser, JWTPayload } from "../../core/auth.types";
+import type { JWTPayload } from "../../core/auth.types";
+import { userRepo } from "@/lib/database/repositories";
 
 /**
  * Génère l'URL d'autorisation FranceConnect
@@ -145,33 +145,39 @@ export async function getStoredNonce(): Promise<string | null> {
  * Crée une session FranceConnect
  */
 export async function createFranceConnectSession(
-  userInfo: FranceConnectUserInfo,
-  idToken: string
+  userId: string,
+  fcIdToken?: string
 ): Promise<void> {
-  // Créer l'objet utilisateur
-  const user: AuthUser = {
+  const payload: JWTPayload = {
+    userId,
     role: ROLES.PARTICULIER,
     authMethod: AUTH_METHODS.FRANCECONNECT,
-    loginTime: new Date().toISOString(),
-    fcSub: userInfo.sub,
-    firstName: userInfo.given_name,
-    lastName: userInfo.family_name,
-    email: userInfo.email,
-    fcIdToken: idToken, // Pour la déconnexion
-  };
-
-  // Créer le payload JWT
-  const payload: JWTPayload = {
-    user,
+    fcIdToken, // Pour le logout FC
     exp: Date.now() + SESSION_DURATION.particulier * 1000,
     iat: Date.now(),
   };
 
-  // Créer le token
   const token = createToken(payload);
 
-  // Sauvegarder les cookies de session
-  await createSessionCookies(token, user);
+  // Créer les cookies de session
+  const cookieStore = await cookies();
+
+  cookieStore.set(COOKIE_NAMES.SESSION, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: SESSION_DURATION.particulier,
+    path: "/",
+  });
+
+  // cookie pour le rôle (pour middleware)
+  cookieStore.set(COOKIE_NAMES.SESSION_ROLE, ROLES.PARTICULIER, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: SESSION_DURATION.particulier,
+    path: "/",
+  });
 }
 
 /**
@@ -211,8 +217,12 @@ export async function handleFranceConnectCallback(
     const userInfo = await getUserInfo(tokens.access_token);
     console.log("UserInfo FranceConnect:", userInfo);
 
-    // 4. Créer la session
-    await createFranceConnectSession(userInfo, tokens.id_token);
+    // 4. Créer ou récupérer l'utilisateur en base
+    const user = await userRepo.upsertFromFranceConnect(userInfo);
+    console.log("User créé/récupéré:", user.id);
+
+    // 5. Créer la session avec l'userId
+    await createFranceConnectSession(user.id, tokens.id_token);
 
     return { success: true };
   } catch (error) {

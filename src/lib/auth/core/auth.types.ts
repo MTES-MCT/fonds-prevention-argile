@@ -6,23 +6,23 @@ export type AuthMethod = (typeof AUTH_METHODS)[keyof typeof AUTH_METHODS];
 
 // Utilisateur authentifié
 export interface AuthUser {
-  role: UserRole;
-  authMethod: AuthMethod;
-  loginTime: string;
-
-  // Infos optionnelles
+  id: string;
+  role: string;
+  authMethod: string;
   firstName?: string;
   lastName?: string;
   email?: string;
-  fcSub?: string; // ID FranceConnect
-  fcIdToken?: string; // Pour la déconnexion FC
+  loginTime: string;
 }
 
 // Payload JWT
 export interface JWTPayload {
-  user: AuthUser;
-  exp: number; // Expiration timestamp
-  iat: number; // Issued at timestamp
+  userId: string; // UUID de l'utilisateur en base
+  role: string;
+  authMethod: string;
+  fcIdToken?: string;
+  exp: number;
+  iat: number;
 }
 
 // Cookies de session

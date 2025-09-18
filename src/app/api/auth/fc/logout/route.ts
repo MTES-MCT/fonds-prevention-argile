@@ -1,21 +1,14 @@
 import { NextResponse } from "next/server";
-import {
-  getCurrentUser,
-  generateLogoutUrl,
-  logout,
-  AUTH_METHODS,
-} from "@/lib/auth/server";
+import { generateLogoutUrl, logout, AUTH_METHODS } from "@/lib/auth/server";
 
 export async function POST() {
   try {
-    const user = await getCurrentUser();
+    // Récupérer les infos de session avant de nettoyer
+    const { authMethod, fcIdToken } = await logout();
 
-    // Si c'est un utilisateur FranceConnect, faire la déconnexion FC
-    if (user?.authMethod === AUTH_METHODS.FRANCECONNECT && user.fcIdToken) {
-      const logoutUrl = generateLogoutUrl(user.fcIdToken);
-
-      // Nettoyer la session locale
-      await logout();
+    // Si c'est un utilisateur FranceConnect, préparer la déconnexion FC
+    if (authMethod === AUTH_METHODS.FRANCECONNECT && fcIdToken) {
+      const logoutUrl = generateLogoutUrl(fcIdToken);
 
       // Rediriger vers FranceConnect pour déconnexion complète
       return NextResponse.json({
@@ -24,8 +17,7 @@ export async function POST() {
       });
     }
 
-    // Sinon déconnexion simple
-    await logout();
+    // Sinon déconnexion simple (déjà faite par le premier logout())
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Erreur lors de la déconnexion:", error);

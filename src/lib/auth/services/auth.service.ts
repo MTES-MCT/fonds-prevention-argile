@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import * as argon2 from "argon2";
 import { COOKIE_NAMES, ROLES, AUTH_METHODS } from "../core/auth.constants";
 import { createToken, verifyToken } from "../utils/jwt.utils";
-import { createSessionCookies, clearSessionCookies } from "./session.service";
+import { clearSessionCookies } from "./session.service";
 import { SESSION_DURATION } from "../config/session.config";
 import { getServerEnv } from "@/lib/config/env.config";
 import type { AuthUser, JWTPayload } from "../core/auth.types";
@@ -11,33 +11,31 @@ import type { AuthUser, JWTPayload } from "../core/auth.types";
 let passwordHashCache: string | null = null;
 
 /**
- * Récupère l'utilisateur courant depuis la session
+ * Récupère l'utilisateur courant avec ses infos complètes
+ * Fait une requête DB si nécessaire pour les infos d'affichage
  */
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const session = await getSession();
   if (!session) return null;
 
-  const { user } = session;
-
-  // Format différent selon le type d'auth
-  if (user.authMethod === AUTH_METHODS.FRANCECONNECT) {
+  // Pour un admin, pas besoin de DB
+  if (session.authMethod === AUTH_METHODS.PASSWORD) {
     return {
-      role: user.role,
-      authMethod: user.authMethod,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      loginTime: user.loginTime,
+      id: session.userId,
+      role: session.role,
+      authMethod: session.authMethod,
+      firstName: "Administrateur",
+      loginTime: new Date().toISOString(),
     };
   }
 
-  // Admin
+  // Pour un utilisateur FC, on peut récupérer les infos si besoin
+  // (mais en général, on n'en a pas besoin dans le MVP)
   return {
-    role: user.role,
-    authMethod: user.authMethod,
-    firstName: "Administrateur",
-    email: user.email,
-    loginTime: user.loginTime,
+    id: session.userId,
+    role: session.role,
+    authMethod: session.authMethod,
+    loginTime: new Date().toISOString(),
   };
 }
 
@@ -61,12 +59,11 @@ export async function authenticateAdmin(
   const env = getServerEnv();
   const adminPassword = env.ADMIN_PASSWORD;
 
-  // Validation basique
   if (!password || password.length < 8) {
     return { success: false, error: "Mot de passe incorrect" };
   }
 
-  // Générer le hash du mot de passe admin si pas déjà fait
+  // Générer le hash du mot de passe admin
   if (!passwordHashCache) {
     passwordHashCache = await argon2.hash(adminPassword);
   }
@@ -78,31 +75,34 @@ export async function authenticateAdmin(
     return { success: false, error: "Mot de passe incorrect" };
   }
 
-  // Créer la session admin
-  await createAdminSession();
+  // Créer la session admin avec un ID fixe pour l'admin
+  await createAdminSession("admin-123");
 
   return { success: true };
 }
 
 /**
- * Crée une session pour un admin (après authentification réussie)
+ * Crée une session pour un admin
  */
-export async function createAdminSession(): Promise<void> {
-  const user: AuthUser = {
+export async function createAdminSession(adminId: string): Promise<void> {
+  const payload: JWTPayload = {
+    userId: adminId,
     role: ROLES.ADMIN,
     authMethod: AUTH_METHODS.PASSWORD,
-    loginTime: new Date().toISOString(),
-    firstName: "Administrateur",
-  };
-
-  const payload: JWTPayload = {
-    user,
     exp: Date.now() + SESSION_DURATION.admin * 1000,
     iat: Date.now(),
   };
 
   const token = createToken(payload);
-  await createSessionCookies(token, user);
+
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE_NAMES.SESSION, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: SESSION_DURATION.admin,
+    path: "/",
+  });
 }
 
 /**
@@ -112,16 +112,12 @@ export async function logout(): Promise<{
   authMethod: string | null;
   fcIdToken?: string | null;
 }> {
-  // Récupérer la session pour vérifier le type d'auth
   const session = await getSession();
-
-  // Nettoyer les cookies
   await clearSessionCookies();
 
-  // Retourner le type d'auth pour savoir si on doit faire un logout FranceConnect
   return {
-    authMethod: session?.user.authMethod || null,
-    fcIdToken: session?.user.fcIdToken || null,
+    authMethod: session?.authMethod || null,
+    fcIdToken: session?.fcIdToken || null,
   };
 }
 
@@ -138,7 +134,7 @@ export async function isAuthenticated(): Promise<boolean> {
  */
 export async function hasRole(role: string): Promise<boolean> {
   const session = await getSession();
-  return session?.user?.role === role;
+  return session?.role === role;
 }
 
 /**

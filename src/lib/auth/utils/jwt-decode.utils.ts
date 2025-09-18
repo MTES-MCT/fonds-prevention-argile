@@ -26,5 +26,5 @@ export function isTokenExpired(token: string): boolean {
 }
 
 export function getRoleFromToken(token: string): string | null {
-  return decodeToken(token)?.user?.role || null;
+  return decodeToken(token)?.role || null;
 }

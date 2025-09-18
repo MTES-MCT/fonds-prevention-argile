@@ -1,33 +1,36 @@
 import { cookies } from "next/headers";
-import { COOKIE_NAMES } from "../core/auth.constants";
+import { COOKIE_NAMES, ROLES } from "../core/auth.constants";
 import { SESSION_DURATION, getCookieOptions } from "../config/session.config";
-import type { AuthUser, UserRole } from "../core/auth.types";
+import type { UserRole } from "../core/auth.types";
 
-/**
- * Crée les cookies de session
- */
 export async function createSessionCookies(
   token: string,
-  user: AuthUser
+  role: string
 ): Promise<void> {
   const cookieStore = await cookies();
-  const maxAge = SESSION_DURATION[user.role];
 
-  // Cookie principal avec le JWT
-  cookieStore.set(COOKIE_NAMES.SESSION, token, getCookieOptions(maxAge));
+  // Déterminer la durée selon le rôle
+  const maxAge =
+    role === ROLES.ADMIN
+      ? SESSION_DURATION.admin
+      : SESSION_DURATION.particulier;
 
-  // Cookies d'optimisation (évite de décoder le JWT dans le middleware)
-  cookieStore.set(
-    COOKIE_NAMES.SESSION_ROLE,
-    user.role,
-    getCookieOptions(maxAge)
-  );
+  cookieStore.set(COOKIE_NAMES.SESSION, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge,
+    path: "/",
+  });
 
-  cookieStore.set(
-    COOKIE_NAMES.SESSION_AUTH,
-    user.authMethod,
-    getCookieOptions(maxAge)
-  );
+  // Cookie pour le rôle (pour le middleware)
+  cookieStore.set(COOKIE_NAMES.SESSION_ROLE, role, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge,
+    path: "/",
+  });
 }
 
 /**

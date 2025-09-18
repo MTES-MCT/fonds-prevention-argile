@@ -55,7 +55,7 @@ export async function middleware(request: NextRequest) {
     // Si pas de cookie de rôle, décoder le JWT (rétrocompatibilité)
     if (!role) {
       const payload = decodeToken(session);
-      role = payload?.user?.role;
+      role = payload?.role;
 
       if (!role && isProtected) {
         // Session invalide - nettoyer et rediriger
