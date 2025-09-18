@@ -2,7 +2,6 @@ import { db } from "../client";
 import { users } from "../schema/users";
 import { parcoursPrevention } from "../schema/parcours-prevention";
 import { dossiersDemarchesSimplifiees } from "../schema/dossiers-demarches-simplifiees";
-import { eq } from "drizzle-orm";
 import type { Step, Status, DSStatus } from "../types/parcours.types";
 
 async function seedDev() {

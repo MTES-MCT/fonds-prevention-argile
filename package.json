@@ -5,7 +5,6 @@
   "packageManager": "pnpm@10.15.1",
   "scripts": {
     "build": "next build",
-    "postbuild": "pnpm db:migrate",
     "start": "next start",
     "start:dev": "next dev",
     "lint": "next lint",

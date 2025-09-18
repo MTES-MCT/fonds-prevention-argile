@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, unique } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { users } from "./users";
 import { stepEnum, statusEnum } from "../types/parcours.types";
