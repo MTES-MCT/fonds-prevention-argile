@@ -8,5 +8,8 @@
     "interval": 60,
     "healthy_threshold": 2,
     "unhealthy_threshold": 3
+  },
+  "scripts": {
+    "postdeploy": "npx drizzle-kit push"
   }
 }
