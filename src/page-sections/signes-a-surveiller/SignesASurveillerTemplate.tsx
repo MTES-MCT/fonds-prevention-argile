@@ -136,7 +136,7 @@ export default function SignesASurveillerTemplate({
       </section>
 
       {/* Vous avez un doute ? */}
-      <VousAvezUnDouteSection />
+      {tag.eligible && <VousAvezUnDouteSection />}
 
       {/* Voir les autres signes à surveiller */}
       <section className="fr-container-fluid fr-py-10w">

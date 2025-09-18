@@ -1,6 +1,7 @@
 {
   "title": "Suppression des systèmes racinaires trop proches de la maison",
-  "pageLink": "/travaux-eligibles/suppression-racines",
+  "type": "suppression-systemes-racinaires",
+  "pageLink": "/travaux-eligibles/suppression-systemes-racinaires",
   "tag": {
     "title": "Gestion de la végétation",
     "className": "blue-france"

@@ -1,5 +1,6 @@
 {
-  "title": "Repérage des fuites des réseaux enterrés",
+  "title": "Repérage des fuites des réseaux d'eau",
+  "type": "reperage-fuite-reseaux-eaux",
   "pageLink": "/travaux-eligibles/reperage-fuite-reseaux-eaux",
   "tag": {
     "title": "Gestion des eaux",
@@ -10,7 +11,7 @@
     "src": "/images/sample.png",
     "description": "Lorem ipsum"
   },
-  "une_des_solutions": "Les fuites des réseaux enterrés (canalisations, réseaux d’arrosage) humidifient anormalement le sol, aggravant le gonflement des argiles et accélérant les mouvements de terrain. Leur détection précoce permet d’éviter des tassements différentiels et des fissures sur les murs.",
+  "une_des_solutions": "Les fuites des réseaux d'eau (canalisations, réseaux d’arrosage) humidifient anormalement le sol, aggravant le gonflement des argiles et accélérant les mouvements de terrain. Leur détection précoce permet d’éviter des tassements différentiels et des fissures sur les murs.",
   "solutions": [
     {
       "title": "1. Diagnostic",
