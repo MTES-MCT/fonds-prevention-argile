@@ -11,7 +11,7 @@
     "src": "/images/sample.png",
     "description": "Lorem ipsum"
   },
-  "une_des_solutions": "Connaître la perméabilité de votre sol permet d’adapter les solutions de drainage et d’éviter les erreurs (ex. : infiltration trop rapide en sol sableux, ou trop lente en sol argileux). Le test Porchet, simple et normé, mesure la vitesse d’absorption de l’eau pour guider les aménagements.",
+  "une_des_solutions": "Connaître la perméabilité de votre sol permet d’adapter les solutions de drainage et d’éviter les erreurs (ex. : infiltration trop rapide en sol sableux, ou trop lente en sol argileux). Le test Porchet, simple et normé, mesure la vitesse d’absorption de l’eau pour guider les aménagements. Il est un prérequis indispensable pour recommander des travaux de prévention à mettre en oeuvre.",
   "solutions": [
     {
       "title": "1. Méthode standardisée",
