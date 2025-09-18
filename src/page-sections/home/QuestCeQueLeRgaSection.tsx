@@ -48,14 +48,14 @@ export default function QuestCeQueLeRgaSection() {
             <Feature
               icon="fr-icon-heavy-showers-fill"
               title="Période humide"
-              description="Les sols argileux gonflent en absorbant l'eau, exerçant une pression sur les fondations."
+              description="Les sols argileux gonflent en absorbant l'eau, soulevant les fondations."
             />
           </div>
           <div className="fr-col-12 fr-col-sm-6 fr-col-md-3">
             <Feature
               icon="fr-icon-sun-fill"
               title="Période sèche"
-              description="Les sols se rétractent en perdant leur humidité, créant des mouvements de terrain."
+              description="Les sols se rétractent en perdant leur humidité, entraînant un affaissement des fondations."
               tileColor="bg-orange-50"
               iconColor="text-orange-500"
             />
@@ -63,7 +63,7 @@ export default function QuestCeQueLeRgaSection() {
           <div className="fr-col-12 fr-col-sm-6 fr-col-md-3">
             <Feature
               icon="fr-icon-refresh-line"
-              title="Cycles répétitifs"
+              title="Effets répétitifs"
               description="Ces alternances de périodes humides/sèches se répètent dans le temps fragilisant sols et fondations."
               tileColor="bg-purple-50"
               iconColor="text-purple-500"

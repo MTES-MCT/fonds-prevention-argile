@@ -49,7 +49,7 @@
       },
       {
         "tag": {
-          "title": "Désordres structurels",
+          "title": "Désordres structuraux",
           "className": "fr-badge--pink-tuile"
         },
         "titre": "Portes et fenêtres qui ferment mal",
@@ -59,7 +59,7 @@
       },
       {
         "tag": {
-          "title": "Désordres structurels",
+          "title": "Désordres structuraux",
           "className": "fr-badge--pink-tuile"
         },
         "titre": "Décollement entre la cloison et le plafond",
@@ -69,7 +69,7 @@
       },
       {
         "tag": {
-          "title": "Désordres structurels",
+          "title": "Désordres structuraux",
           "className": "fr-badge--pink-tuile"
         },
         "titre": "Affaissement ou soulèvement de dallages",
