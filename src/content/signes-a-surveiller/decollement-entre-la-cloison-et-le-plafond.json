@@ -1,9 +1,9 @@
 {
   "title": "Décollement entre la cloison et le plafond",
   "image": {
-    "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
-    "description": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit."
+    "alt": "Décollement entre la cloison et le plafond",
+    "src": "/images/signes-a-surveiller/decollement-plafond.png",
+    "description": "Décollement entre la cloison et le plafond dû au phénomène de retrait-gonflement des argiles."
   },
   "ce_qu_il_faut_surveiller": "Un décrochement visible entre le haut d’une cloison et le plafond, avec ou sans fente, signale un mouvement brutal de la structure. Ce phénomène, souvent accompagné d’un effritement du plâtre ou de bruits de craquement, peut résulter d’un affaissement de plancher, d’un tassement de fondations, ou d’une rupture de poutre. Risque d’effondrement si ignoré.",
   "signes_alerte": [

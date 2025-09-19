@@ -1,9 +1,9 @@
 {
   "title": "Affaissement ou soulèvement de dallages",
   "image": {
-    "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
-    "description": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit."
+    "alt": "Affaissement ou soulèvement de dallages",
+    "src": "/images/signes-a-surveiller/affaissement.png",
+    "description": "Affaissement du dallage suite au phénomène de retrait-gonflement des argiles."
   },
   "ce_qu_il_faut_surveiller": "Un dallage qui s’affaisse (creux, flaques d’eau) ou se soulève (bosses, fissures en étoile) est le signe d’un problème grave de stabilité. Ces désordres, souvent causés par un retrait-gonflement des argiles, une rupture de canalisation ou un mauvais compactage, menacent l’intégrité du bâtiment. Risque d’effondrement si le dallage supporte une structure (murs, piliers).",
   "signes_alerte": [
