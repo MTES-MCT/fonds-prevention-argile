@@ -1,9 +1,9 @@
 {
   "title": "Fissures dans les cloisons intérieures",
   "image": {
-    "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
-    "description": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit."
+    "alt": "Fissures dans les cloisons intérieures causées du retrait-gonflement des argiles",
+    "src": "/images/signes-a-surveiller/fissure-cloison-interieur.png",
+    "description": "Fissures dans les cloisons intérieures causées par le retrait-gonflement des argiles"
   },
   "ce_qu_il_faut_surveiller": "Ces fissures sont des craquelures fines et irrégulières dans les cloisons (placo, enduits), souvent localisées aux angles de pièces ou près des ouvertures. Elles résultent généralement de mouvements légers de la structure (RGA, variations d’humidité) ou de défauts de pose. Bien que souvent bénignes, leur récidive après rebouchage doit alerter.",
   "signes_alerte": [
