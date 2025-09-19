@@ -1,5 +1,5 @@
 {
-  "title": "Pose de canalisation d’evacuation des eaux pluviales, en particulier de toiture, en veillant à les éloigner des fondations",
+  "title": "Pose ou réparation des canalisations d’evacuation des eaux pluviales, en particulier de toiture, en veillant à les éloigner des fondations",
   "pageLink": "/travaux-eligibles/pose-canalisation-evacuation-eaux-pluviales",
   "tag": {
     "title": "Gestion des eaux",
@@ -10,7 +10,7 @@
     "src": "/images/sample.png",
     "description": "Lorem ipsum"
   },
-  "une_des_solutions": "Des eaux pluviales mal évacuées s’infiltrent près des fondations, déstabilisant le sol argileux. Une canalisation dédiée (séparée des eaux usées) draine l’eau loin de la maison, réduisant les risques de gonflement et de tassement.",
+  "une_des_solutions": "Des eaux pluviales mal évacuées s’infiltrent près des fondations, déstabilisant le sol argileux et peuvent entraîner des dommages sur une maison individuelle construite sur des sols argileux très plastiques. Une canalisation dédiée (séparée des eaux usées) draine l’eau loin de la maison, réduisant les risques de gonflement et de tassement. Dans le cadre du retrait-gonflement des argiles, il est essentiel de stabiliser la teneur en eau du sol sous l'habitation.",
   "solutions": [
     {
       "title": "1. Installation d’un réseau séparatif",
@@ -28,29 +28,28 @@
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "",
+    "subtitle": "En s'assurant d'avoir une bonne collecte et évacuation des eaux pluviales vous :",
     "details": [
-      "Éloigne l’eau des fondations, limitant l’humidité du sol.",
-      "Réduit la pression sur les argiles (moins de gonflement en période humide).",
-      "Durable : Durée de vie > 50 ans avec un entretien minimal."    ]
+      "Éloignez l’eau des fondations, stabilisant l’humidité du sol sous l'habitation.",
+      "Réduisez la pression sur les argiles (moins de gonflement en période humide).",
+      "Evitez un gonflement localisé et différentiel sous vos fondations."    ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
       "details": [
         "Dès la construction en zone argileuse (obligatoire dans certaines communes)",
-        "Après un diagnostic RGA recommandant une meilleure évacuation.",
-        "Si le terrain est en pente vers la maison.."
+        "Après un diagnostic RGA recommandant une meilleure évacuation."
       ]
     },
     "traitement": {
-      "title": "En traitement",
+      "title": "Points de vigilence",
       "details": [
-        "En cas de fissures en escalier liées à une saturation du sol.",
-        "Si inondations répétées dans le sous-sol ou le vide sanitaire.",
-        "Après un épisode de RGA avéré."
+        "Un essai de perméabilité du sol de type porchet est indispensable avant tous travaux en lien avec l'infiltration des eaux pluviales.",
+        "Le raccordement au réseau collectif nécessite l'accord préalable du gestionnaire de réseau."
+        "En l'absence de réseau collectif proche du bâti, il convient de respecter une distance minimale suffisante entre la maison et le point de rejet."
       ]
     }
   },
-  "a_retenir": "Une évacuation mal conçue peut aggraver le RGA en concentrant l’eau à un seul endroit. Subventionnable jusqu'à 80% si intégrée à un plan de prévention validé par les services instructeurs et un diagnostic RGA."
+  "a_retenir": "Une évacuation mal conçue peut aggraver le phénomène de RGA en concentrant l’eau à un seul endroit. Avant toute mise en oeuvre de travaux en lien avec l'infiltration des eaux pluviales à la parcelle, il est indispensable de faire réaliser par un professionnel, un essai de la perméabilité du sol de type Porchet. Subventionnable jusqu'à 80% si intégrée à un plan de prévention validé par les services instructeurs."
 }

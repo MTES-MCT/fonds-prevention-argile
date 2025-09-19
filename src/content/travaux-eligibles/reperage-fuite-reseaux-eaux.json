@@ -15,10 +15,10 @@
     {
       "title": "1. Diagnostic",
       "details": [
-        "Utilisation d'un corrélateur accoustique pour localiser les fuites sans creuser",
-        "Inspection par caméra dans les canalisations pour repérer les micro-fuites.",
-        "Mise en charge des réseaux d'eaux pluviales, eaux usées.",
-        "Création d'un accès au réseau si inexistant et nécessaire."
+        "Mise en charge des réseaux d'eaux pluviales, eaux usées, eaux de vanne et drainage.",
+        "Test fumigène pour les réseaux suspendus sous les vides sanitaires.",
+        "Création d'un accès au(x) réseau(x) si inexistant et nécessaire.", 
+        "Curage du/des réseau(x) bouché(s) si nécessaire."
       ]
     },
     {
@@ -33,26 +33,26 @@
     "subtitle": "En supprimant les fuites de vos réseaux vous :",
     "details": [
       "Évitez les variations brutales d'humidité.",
-      "Prévenez les tassements grâce à un sol uniformément humide"
+      "Prévenez les tassements différentiels grâce à un sol uniformément humide."
     ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
       "details": [
-        "Avant l'achat d'une maison en zone argileuse (diagnostic obligatoire depuis 2010)",
-        "Tous les 5 ans pour les réseaux vieillissants.",
-        "Après un épisode de gel (risque accru de fissures dans les tuyaux)."
+        "Avant l'achat d'une maison en zone argileuse",
+        "Régulièrement pour les réseaux vieillissants",
+        "Après un épisode de gel (risque accru de fissures dans les tuyaux)"
       ]
     },
     "traitement": {
       "title": "En traitement",
       "details": [
-        "Si augmentation inexpliquée de la consommation d'eau (compteur).",
-        "En cas de flaques persistantes dans le jardin ou près des fondations.",
+        "Si augmentation inexpliquée de la consommation d'eau (compteur)",
+        "En cas de flaques persistantes dans le jardin ou près des fondations",
         "Après l'apparition de microfissures sur les murs"
       ]
     }
   },
-  "a_retenir": "Une fuite non détectée peut doubler le risque de RGA en saturant localement le sol. Subventionnable jusqu'à 80% par le fonds de prévention si votre maison est éligible. Pensez à fermer le compteur d’eau la nuit pour repérer une fuite (relevés avant/après)."
+  "a_retenir": "Une fuite non détectée augmente le risque lié au phénomène du retrait-gonflement des argiles en saturant localement le sol. La recherche de fuites est importante et subventionnable jusqu'à 80% par le fonds de prévention si votre maison est éligible."
 }

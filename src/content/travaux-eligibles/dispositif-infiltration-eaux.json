@@ -10,7 +10,7 @@
     "src": "/images/signes-a-surveiller/sample.svg",
     "description": "Schéma d'un puits d'infiltration en coupe montrant le remplissage de graviers et le géotextile"
   },
-  "une_des_solutions": "L'infiltration contrôlée des eaux pluviales sur votre parcelle permet de maintenir une humidité stable du sol, limitant ainsi les cycles de retrait-gonflement des argiles. Contrairement à l'évacuation classique, cette solution écologique préserve l'équilibre hydrique naturel tout en protégeant vos fondations.",
+  "une_des_solutions": "L'infiltration contrôlée des eaux pluviales sur votre parcelle permet de maintenir une humidité stabe du sol, limitant ainsi les cycles de retrait-gonflement des argiles.",
   "solutions": [
     {
       "title": "1. Systèmes d'infiltration adaptés",
@@ -25,40 +25,35 @@
       "title": "2. Mise en œuvre professionnelle",
       "details": [
         "Étude préalable de la perméabilité du sol (test Porchet obligatoire)",
-        "Distance minimale de 3m des fondations pour éviter la saturation locale",
-        "Système de trop-plein vers un exutoire sécurisé",
-        "Intégration paysagère avec végétaux adaptés"
+        "Distance minimale des fondations pour éviter la saturation locale"
       ]
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "Une solution écologique et préventive :",
+    "subtitle": "Gérer proprement l'infiltration des eaux à la parcelle loin des fondations :",
     "details": [
-      "Maintient une humidité constante du sol, réduisant les variations de volume des argiles",
-      "Réduit jusqu'à 70% les risques de tassement différentiel",
-      "Évite la saturation des réseaux d'assainissement publics",
-      "Solution pérenne (durée de vie > 20 ans) avec un entretien minimal"
+      "Évite d'avoir des pièges à eaux anthropiques.",
+      "Évite d'avoir une stagnation des eaux l'hiver et une fissuration l'été.",
+      "Réduit les risques de tassement différentiel sous les fondations.",
+      "Réduit les risques de plastification du sol et de son enfoncement au droit des fondations.",
     ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
       "details": [
-        "Lors de la construction en zone argileuse (recommandé par les PPR)",
-        "Si le test de perméabilité du sol montre des valeurs entre 1 et 10 mm/h",
-        "Dans le cadre d'un projet d'aménagements extérieurs (terrasse, jardin)",
-        "Avant la plantation d'arbres pour équilibrer l'humidité du sol"
+        "Lors de la construction en zone argileuse (recommandé par les PPR).",
+        "Si le test de perméabilité du sol n'a pas de contre-indication.",
+        "Lorsque les réseaux d'évacuation ne sont pas accessibles."
       ]
     },
     "traitement": {
-      "title": "En traitement",
+      "title": "Points de vigilence",
       "details": [
-        "Après apparition de microfissures liées aux variations d'humidité",
-        "En complément d'un système de drainage existant peu efficace",
-        "Si des flaques persistantes sont observées près des fondations",
-        "Après un épisode de RGA avéré pour stabiliser le sol"
+        "Un essai de perméabilité du sol de type porchet est indispensable avant tous travaux en lien avec l'infiltration des eaux pluviales.", 
+        "L'infiltration doit se faire à distance des fondation dans des dispositifs dédiés"
       ]
     }
   },
-  "a_retenir": "Ce dispositif est particulièrement efficace pour les sols modérément perméables. Son coût (1 000 à 3 000 €) est éligible aux aides de l'État si intégré à un plan de prévention RGA. À combiner avec un système de récupération d'eaux pluviales pour une gestion optimale."
+  "a_retenir": "Ce dispositif est particulièrement efficace pour les sols modérément perméables. Son coût est éligible aux aides de l'État jusqu'à 80% si intégré à un plan de prévention RGA."
 }

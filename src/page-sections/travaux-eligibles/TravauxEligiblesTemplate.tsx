@@ -148,14 +148,20 @@ export default function TravauxEligiblesTemplate({
                   )
                 )}
               </ul>
-              <h4>{quand_mettre_en_oeuvre.traitement.title}</h4>
-              <ul>
-                {quand_mettre_en_oeuvre.traitement.details.map(
-                  (detail, index) => (
-                    <li key={index}>{detail}</li>
-                  )
-                )}
-              </ul>
+              {quand_mettre_en_oeuvre.traitement.details && quand_mettre_en_oeuvre.traitement.details.length > 0 &&
+              (
+                <>
+                  <h4>{quand_mettre_en_oeuvre.traitement.title}</h4>
+                  <ul>
+                    {quand_mettre_en_oeuvre.traitement.details.map(
+                      (detail, index) => (
+                        <li key={index}>{detail}</li>
+                      )
+                    )}
+                  </ul>
+                </>
+              )}
+              
             </div>
 
             {/* A retenir */}
