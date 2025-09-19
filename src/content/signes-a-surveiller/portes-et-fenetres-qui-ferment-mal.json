@@ -1,9 +1,9 @@
 {
   "title": "Portes et fenêtres qui ferment mal",
   "image": {
-    "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
-    "description": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit."
+    "alt": "Portes et fenêtres qui ferment mal",
+    "src": "/images/signes-a-surveiller/portes-fenetres.png",
+    "description": "Porte âbimée et qui ferme mal à cause du phénomène de retrait-gonflement des argiles"
   },
   "ce_qu_il_faut_surveiller": "Quand une porte ou une fenêtre coince soudainement, se bloque ou présente un désalignement visible (espace inégal, cadre déformé), c’est souvent le signe d’un mouvement structurel avancé. Ce phénomène, lié à un tassement différentiel du sol (RGA, affaissement) ou à une rupture de liaison, ne doit jamais être ignoré : il précède souvent des fissures majeures ou des désordres irréversibles.",
   "signes_alerte": [

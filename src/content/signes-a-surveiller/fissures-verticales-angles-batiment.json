@@ -1,9 +1,9 @@
 {
   "title": "Microfissures verticales aux angles du bâtiment",
   "image": {
-    "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
-    "description": "Lorem ipsum dolor sit amet. Consectetur adipiscing elit."
+    "alt": "Microfissures verticales aux angles du bâtiment dues au RGA",
+    "src": "/images/signes-a-surveiller/fissures-verticale.png",
+    "description": "Microfissures verticales aux angles du bâtiment dues au RGA"
   },
   "ce_qu_il_faut_surveiller": "Ces microfissures sont des fines cassures verticales (< 0,2 mm), localisées aux angles des murs (extérieurs ou intérieurs), souvent près des ouvertures ou des jonctions entre matériaux. Elles apparaissent généralement après des chocs thermiques ou des variations d’humidité du sol, et peuvent annoncer un début de mouvement structurel lié au RGA ou à un tassement localisé.",
   "signes_alerte": [
