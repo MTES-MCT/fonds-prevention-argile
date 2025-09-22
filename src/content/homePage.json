@@ -18,7 +18,8 @@
   "what_is_rga_section": {
     "image": {
       "alt": "Fonds Prévention Argile - Un service de l'État",
-      "src": "/images/home/quest-ce-que-rga.png"
+      "src": "/images/home/quest-ce-que-rga.png",
+      "caption": "Exemple de fissures en escalier sur le mur extérieur d’une maison. Les travaux n’ont pas été réalisés dans les temps, le logement n’est plus éligible au Fonds de Prévention."
     },
     "title": "Qu’est-ce que le Retrait-gonflement des argiles, ou RGA ?",
     "highlight": "Ce phénomène concerne <strong>54% des maisons individuelles</strong> en France. Le RGA coûte, en moyenne, <strong>1 Milliard d'€ d'indemnisation annuel</strong> sur le dispositif catastrophe naturelle.",

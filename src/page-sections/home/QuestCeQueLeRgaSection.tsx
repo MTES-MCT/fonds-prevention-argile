@@ -12,17 +12,26 @@ export default function QuestCeQueLeRgaSection() {
         <div className="fr-grid-row items-center gap-6 md:gap-0">
           {/* Zone image */}
           <div className="fr-col-12 fr-col-md-6 flex justify-center md:justify-start md:pr-8 lg:pr-8">
-            <div className="h-[250px] md:h-[376px] relative w-full max-w-[484px]">
-              <Image
-                alt={contentHomePage.what_is_rga_section.image.alt}
-                className="object-contain"
-                fill
-                priority
-                quality={85}
-                sizes="(max-width: 768px) 272px, (max-width: 1024px) 484px, 100vw"
-                src={contentHomePage.what_is_rga_section.image.src}
-              />
-            </div>
+            <figure
+              role="group"
+              className="fr-content-media"
+              aria-label="Description / Source"
+            >
+              <div className="fr-content-media__img">
+                <Image
+                  alt={contentHomePage.what_is_rga_section.image.alt}
+                  className="object-contain"
+                  priority
+                  quality={85}
+                  width={500}
+                  height={320}
+                  src={contentHomePage.what_is_rga_section.image.src}
+                />
+              </div>
+              <figcaption className="fr-content-media__caption">
+                {contentHomePage.what_is_rga_section.image.caption}
+              </figcaption>
+            </figure>
           </div>
 
           {/* Zone texte */}

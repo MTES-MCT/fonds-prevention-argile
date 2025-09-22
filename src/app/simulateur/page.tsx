@@ -8,8 +8,36 @@ export default function Simulateur() {
   const iframeHeight = process.env.NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_HEIGHT;
 
   return (
-    <section className="fr-container-fluid fr-py-10w">
-      <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-10!">
+    <section className="fr-container-fluid fr-py-4w">
+      <div className="fr-container">
+        <nav
+          role="navigation"
+          className="fr-breadcrumb"
+          aria-label="vous êtes ici :"
+        >
+          <button
+            className="fr-breadcrumb__button"
+            aria-expanded="false"
+            aria-controls="breadcrumb"
+          >
+            Voir le fil d'Ariane
+          </button>
+          <div className="fr-collapse" id="breadcrumb">
+            <ol className="fr-breadcrumb__list">
+              <li>
+                <a className="fr-breadcrumb__link" href="/">
+                  {contentSimulationPage.breadcrumb.home}
+                </a>
+              </li>
+              <li>
+                <a className="fr-breadcrumb__link" aria-current="page">
+                  {contentSimulationPage.breadcrumb.simulation}
+                </a>
+              </li>
+            </ol>
+          </div>
+        </nav>
+
         <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
           {contentSimulationPage.title}
         </h1>
