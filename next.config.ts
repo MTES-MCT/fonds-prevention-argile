@@ -6,3 +6,5 @@ const nextConfig: NextConfig = {
     qualities: [25, 50, 85, 95],
   },
 };
+
+export default nextConfig;
