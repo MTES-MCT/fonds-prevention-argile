@@ -10,6 +10,7 @@
       {
         "tag": {
           "title": "Signes précurseurs",
+          "eligible": true,
           "className": "fr-badge--yellow-tournesol"
         },
         "titre": "Fissures en escalier sur les murs extérieurs (1mm)",
@@ -20,6 +21,7 @@
       {
         "tag": {
           "title": "Signes précurseurs",
+          "eligible": true,
           "className": "fr-badge--yellow-tournesol"
         },
         "titre": "Microfissures verticales aux angles du bâtiment",
@@ -30,6 +32,7 @@
       {
         "tag": {
           "title": "Signes précurseurs",
+          "eligible": true,
           "className": "fr-badge--yellow-tournesol"
         },
         "titre": "Fissures horizontales à hauteur du plancher",
@@ -40,6 +43,7 @@
       {
         "tag": {
           "title": "Signes précurseurs",
+          "eligible": true,
           "className": "fr-badge--yellow-tournesol"
         },
         "titre": "Fissures dans les cloisons intérieures",
@@ -50,6 +54,7 @@
       {
         "tag": {
           "title": "Désordres structuraux",
+          "eligible": false,
           "className": "fr-badge--pink-tuile"
         },
         "titre": "Portes et fenêtres qui ferment mal",
@@ -60,6 +65,7 @@
       {
         "tag": {
           "title": "Désordres structuraux",
+          "eligible": false,
           "className": "fr-badge--pink-tuile"
         },
         "titre": "Décollement entre la cloison et le plafond",
@@ -70,6 +76,7 @@
       {
         "tag": {
           "title": "Désordres structuraux",
+          "eligible": false,
           "className": "fr-badge--pink-tuile"
         },
         "titre": "Affaissement ou soulèvement de dallages",
