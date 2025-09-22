@@ -1,5 +1,5 @@
 {
-  "title": "Pose d'un trottoir impermeable periphérique d’au moins 1m de large",
+  "title": "Pose d'un trottoir imperméable périphérique d’au moins 1m de large",
   "type": "pose-trottoir-impermeable-peripherique",
   "pageLink": "/travaux-eligibles/pose-trottoir-impermeable-peripherique",
   "tag": {
@@ -8,56 +8,49 @@
   },
   "image": {
     "alt": "Fonds Prévention Argile - Trottoir périphérique étanche",
-    "src": "/images/signes-a-surveiller/sample.svg",
+    "src": "/images/sample.png",
     "description": "Vue en coupe d'un trottoir en béton avec pente vers l'extérieur"
   },
-  "une_des_solutions": "Un trottoir étanche d'au moins 1 mètre de large autour de la maison crée une barrière physique contre les infiltrations d'eau. Cette solution simple et esthétique limite les variations d'humidité du sol et protège efficacement les fondations contre le retrait-gonflement des argiles.",
+  "une_des_solutions": "Un trottoir étanche d'au moins 1 mètre de large autour de la maison crée une barrière physique contre les infiltrations et l'évaporation d'eau . Cette solution limite les variations d'humidité du sol et protège les fondations contre les mouvements différentiels.",
   "solutions": [
     {
-      "title": "1. Matériaux recommandés",
+      "title": "Mise en oeuvre technique",
       "details": [
-        "Béton armé (épaisseur 10-15cm, avec joints de dilatation)",
-        "Dalles sur lit de gravier compacté (permet un léger drainage)",
-        "Revêtement drainant (enrobé poreux pour les sols très imperméables)",
-        "Pierres reconstituées avec jointoiement étanche"
+        "Largeur minimale de 1 mètre et la plus large possible.",
+        "Pente de 2% minimum vers l'extérieur pour évacuer l'eau loin des fondations.",
+        "Parfaite étanchéité entre le trottoir en béton et le mur de la maison par un cordon de mastic colle, à renouveler si nécessaire.",
+        "Installation sur tout le contour de la maison nécessaire sinon cela risque de favoriser les désordres."
       ]
     },
     {
-      "title": "2. Mise en œuvre technique",
-      "details": [
-        "Largeur minimale de 1 mètre (1,5m recommandé)",
-        "Pente de 2% vers l'extérieur pour évacuer l'eau",
-        "Jointoiement étanche (résine ou mortier hydrofuge)",
-        "Intégration d'un système de récupération d'eaux pluviales"
-      ]
+      "title": "",
+      "details": []
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "Une protection simple et durable :",
+    "subtitle": "La pose d'un trottoir imperméable périphérique permet de :",
     "details": [
-      "Empêche l'eau de stagner près des fondations",
-      "Réduit l'érosion du sol autour de la maison",
-      "Solution esthétique s'intégrant au paysage",
-      "Durée de vie > 30 ans avec un entretien minimal"
+      "Protéger la périphérie immédiate de la maison de l'évaporation et éloigner les eaux de ruissellement du pied des façade.",
+      "Éloigner les eaux de ruissellement de la construction pour protéger les fondations des variations de teneur en eau des argiles.",
+      "Stabiliser la teneur en eau du sol sous l'habitation."
     ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
       "details": [
-        "Dès la construction en zone argileuse",
-        "Si le terrain est en légère pente vers la maison",
-        "Pour remplacer un revêtement perméable (gravier, gazon)",
-        "Dans le cadre d'une rénovation des abords"
+        "Sur un terrain plat (moins de 3% de pente).",
+        "Si une stagnation d'humidité est présente au pied des fondations.",
+        "Lorsqu'un diagnostic RGA le préconnise."
       ]
     },
     "traitement": {
       "title": "En traitement",
       "details": [
-        "Après apparition de microfissures liées à l'humidité",
-        "Si des flaques persistent près des murs après la pluie",
-        "En complément d'un système de drainage existant",
-        "Lors de la réparation de désordres mineurs"
+        "Une étude particulière de la nature du sol au-dessous et au-dessus du trottoir est nécessaire pour définir le dispositif.",
+        "En limite de propriété, une demande d'autorisation auprès de ses voisins est nécessaire.",
+        "L'impossibilité de disposer l'étanchéité sur tout le contour de la construction est de nature à favoriser les désordres et il est alors préférable d'abandonner cette solution.",
+        "En cas de réalisation d’une étanchéité autour de la construction, afin d’éviter un assèchement du sol dommageable sous la construction par évaporation par le vide sanitaire, il conviendra de veiller à ce que celui-ci soit normalement ventilé."
       ]
     }
   },

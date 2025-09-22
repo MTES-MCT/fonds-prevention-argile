@@ -1,12 +1,9 @@
 {
-  "une_des_solutions_title": "🏚️ Une des solutions pour protéger votre maison",
-  "en_quoi_consiste_solution_title": "ℹ️ En quoi consiste cette solution ?",
-  "pourquoi_solution_efficace_title": "💪 Pourquoi cette solution est-elle efficace ?",
-
+  "une_des_solutions_title": "🏚️ Pourquoi proposer cette solution de prévention ? ",
+  "en_quoi_consiste_solution_title": "ℹ️ En quoi consistent les travaux ?",
+  "pourquoi_solution_efficace_title": "💪 Quel est l'objectif de cette solution ?",
   "quand_mettre_en_oeuvre_title": "📆 Quand mettre en oeuvre cette solution ?",
-
   "a_retenir_title": "À retenir",
-
   "autres_travaux_section": {
     "title": "Les autres travaux éligibles",
     "travaux_tabs": [
@@ -24,16 +21,7 @@
             "pageUrl": "/travaux-eligibles/reperage-fuite-reseaux-eaux"
           },
           {
-            "name": "Curage du réseau bouché si nécessaire",
-            "type": "curage-reseau-bouche",
-            "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/curage-reseau-bouche.png"
-            },
-            "pageUrl": "/travaux-eligibles/curage-reseau-bouche"
-          },
-          {
-            "name": "Pose de canalisation d’évacuation des eaux pluviales",
+            "name": "Pose ou réparation des canalisations d’évacuation des eaux pluviales",
             "type": "pose-canalisation-evacuation-eaux-pluviales",
             "image": {
               "alt": "Fonds Prévention Argile - Un service de l'État",

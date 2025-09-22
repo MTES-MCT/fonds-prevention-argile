@@ -11,7 +11,7 @@
     "src": "/images/sample.png",
     "description": "Lorem ipsum"
   },
-  "une_des_solutions": "Connaître la perméabilité de votre sol permet d’adapter les solutions de drainage et d’éviter les erreurs (ex. : infiltration trop rapide en sol sableux, ou trop lente en sol argileux). Le test Porchet, simple et normé, mesure la vitesse d’absorption de l’eau pour guider les aménagements. Il est un prérequis indispensable pour recommander des travaux de prévention à mettre en oeuvre.",
+  "une_des_solutions": "Connaître la perméabilité de votre sol permet d’adapter les solutions de drainage et d’éviter les erreurs (ex. : infiltration trop rapide en sol sableux, ou trop lente en sol argileux). Le test Porchet, simple et normé, mesure la vitesse d’absorption de l’eau pour guider les aménagements. Il est indispensable avant tous travaux en lien avec l'infiltration des eaux.",
   "solutions": [
     {
       "title": "1. Méthode standardisée",
@@ -29,30 +29,24 @@
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "",
+    "subtitle": "Le test de perméabilité du sol de type Porchet est essentiel pour adapter les solutions de prévention et notamment de gestion des eaux :",
     "details": [
       "Personnalise les solutions (drainage, infiltration, membrane étanche).",
-      "Évite les erreurs coûteuses (ex. : pose d’un drain inutile en sol sableux).",
-      "Obligatoire pour les permis de construire en zone argileuse dans certaines régions."
+      "Évite les erreurs coûteuses (ex. : pose d’un drain inutile en sol sableux)."
     ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
-      "title": "En prévention",
+      "title": "Lors de la phase d'etude :",
       "details": [
         "Avant tout projet de construction ou rénovation en zone RGA.",
-        "Si vous observez des flaques persistantes après la pluie.",
-        "Pour valider l’efficacité d’un système de drainage existant."
+        "Avant tous travaux en lien avec l'infiltration des eaux à la parcelle"
       ]
     },
     "traitement": {
-      "title": "En traitement",
-      "details": [
-        "Après l’apparition de fissures pour adapter les solutions.",
-        "Si un projet de végétalisation est prévu (choix des plantes selon la perméabilité).",
-        "En cas de problème récurrent d’humidité dans le sous-sol."
-      ]
+      "title": "",
+      "details": []
     }
   },
-  "a_retenir": "Un sol argileux a une perméabilité 10 à 100 fois moindre qu’un sol sableux."
+  "a_retenir": "Un sol argileux a une perméabilité 10 à 100 fois moindre qu’un sol sableux. Vérifier la perméabilité du sol est essentiel pour éviter une mauvaise préconisation et d'aggraver le phénomène du retrait-gonflement des argiles. Ce test est subventionnable par le fonds de prévention."
 }

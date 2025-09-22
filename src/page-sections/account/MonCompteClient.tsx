@@ -45,6 +45,7 @@ export default function MonCompteClient() {
 
       return () => clearTimeout(redirectTimer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, isLoadingRGA, user, hasRGAData, router, isLoggingOut]);
 
   // Afficher un message de déconnexion

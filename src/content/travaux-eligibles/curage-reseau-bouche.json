@@ -8,7 +8,7 @@
   },
   "image": {
     "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/signes-a-surveiller/sample.svg",
+    "src": "/images/sample.png",
     "description": "Lorem ipsum"
   },
   "une_des_solutions": "Un réseau d’évacuation bouché (eaux pluviales, eaux usées) provoque des inondations localisées autour des fondations, favorisant le gonflement des argiles. Le curage régulier maintient un écoulement optimal et préserve la stabilité du sol.",
@@ -33,7 +33,8 @@
     "details": [
       "Évitez les stagnations d'eau près des fondations, favorisant le phénomène du RGA.",
       "Prolongez la durée de vie des réseaux (cela évite la corrosion et les fuites).",
-      "Prévenez l'apparition de fissures."    ]
+      "Prévenez l'apparition de fissures."
+    ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {

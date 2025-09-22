@@ -8,18 +8,18 @@
   },
   "image": {
     "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/signes-a-surveiller/sample.svg",
+    "src": "/images/sample.png",
     "description": "Schéma illustrant un système de drainage séparatif en amont d'un terrain en pente pour évacuer les eaux pluviales loin des fondations."
   },
-  "une_des_solutions": "Sur un terrain en pente, les eaux de ruissellement s'accumulent en contrebas et saturent le sol près des fondations. Un drainage séparatif en amont intercepte ces eaux avant qu'elles n'atteignent la maison, préservant ainsi la stabilité du sol argileux et prévenant les mouvements différentiels. Ce système limite les risques de retrait-gonflement des argiles (RGA) en maintenant un niveau d'humidité constant autour des fondations.",
+  "une_des_solutions": "Sur un terrain en pente, les eaux de ruissellement s'accumulent en contrebas et saturent le sol près des fondations. Un drainage séparatif en amont intercepte ces eaux avant qu'elles n'atteignent la maison, stabilisant la teneur en eau du sol sous l'habitation dans son environnement proche.",
 
   "solutions": [
     {
       "title": "1. Principe du drainage déporté et séparatif",
       "details": [
         "Séparer les eaux pluviales des eaux usées pour éviter la saturation du sol près des fondations.",
-        "Installer un réseau de drains (tuyaux perforés) en amont de la pente pour capter les eaux de ruissellement avant qu'elles n'atteignent la maison.",
-        "Diriger ces eaux vers un exutoire sécurisé (réseau pluvial, bassin de rétention, ou puisard).",
+        "Installer un réseau de drains en amont de la pente pour capter les eaux de ruissellement avant qu'elles n'atteignent la maison.",
+        "Diriger ces eaux vers un exutoire sécurisé (réseau pluvial, bassin de rétention, ou puisard) à distance des fondations.",
         "Utiliser des matériaux géotextiles pour éviter le colmatage des drains par les particules fines du sol."
       ]
     },
@@ -50,15 +50,15 @@
       "details": [
         "Lors de la construction d'une nouvelle habitation sur un terrain en pente en zone argileuse.",
         "Avant l'apparition des premiers signes de RGA (fissures, portes qui coincent, etc.), surtout si le terrain est connu pour être sensible à l'humidité.",
-        "Dans le cadre d'une rénovation globale du système d'assainissement ou de gestion des eaux pluviales."
+        "Si votre terrain est en pente et que des pièges à eau sont présents à côté des fondations."
       ]
     },
     "traitement": {
-      "title": "En traitement",
+      "title": "Points de vigilence",
       "details": [
-        "Après la réalisation d'une étude géotechnique confirmant un risque de RGA lié à une mauvaise gestion des eaux pluviales.",
-        "Lorsqu'un diagnostic montre que les fondations sont déjà affectées par des mouvements différentiels dus à l'humidité.",
-        "En complément d'autres travaux de consolidation des fondations pour éviter une récidive des désordres."
+        "Un essai de perméabilité du sol de type porchet est indispensable avant tous travaux en lien avec l'infiltration des eaux pluviales.",
+        "Le réseau de drainage des eaux superficielles et de ruissellement est impérativement séparatif des eaux pluviales.",
+        "Pour assurer la durabilité et l'efficacité de ces dispositifs de gestion des eaux, leur bon entretien régulier est indispensable."
       ]
     }
   },
