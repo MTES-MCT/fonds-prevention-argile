@@ -1,29 +1,67 @@
-import { Step, Status, DSStatus } from "./parcours.types";
-import { STEP_ORDER, DS_TO_INTERNAL_STATUS } from "./parcours.constants";
+import { Step, Status, ParcoursState, STEP_ORDER } from "./parcours.types";
 
 /**
- * Récupère l'étape suivante dans le parcours
+ * Vérifie si on peut soumettre (TODO -> EN_INSTRUCTION)
+ */
+export function canSubmit(state: ParcoursState): boolean {
+  return state.status === Status.TODO;
+}
+
+/**
+ * Vérifie si on peut valider (EN_INSTRUCTION -> VALIDE)
+ */
+export function canValidate(state: ParcoursState): boolean {
+  return state.status === Status.EN_INSTRUCTION;
+}
+
+/**
+ * Vérifie si on peut passer à l'étape suivante
+ */
+export function canProgress(state: ParcoursState): boolean {
+  return state.status === Status.VALIDE && !isLastStep(state.step);
+}
+
+/**
+ * Obtient l'étape suivante
  */
 export function getNextStep(currentStep: Step): Step | null {
-  const currentIndex = STEP_ORDER.indexOf(currentStep);
-
-  if (currentIndex === -1 || currentIndex === STEP_ORDER.length - 1) {
+  const index = STEP_ORDER.indexOf(currentStep);
+  if (index === -1 || index === STEP_ORDER.length - 1) {
     return null;
   }
+  return STEP_ORDER[index + 1];
+}
 
-  return STEP_ORDER[currentIndex + 1];
+/**
+ * Vérifie si c'est la dernière étape
+ */
+export function isLastStep(step: Step): boolean {
+  return step === Step.FACTURES;
 }
 
 /**
  * Vérifie si le parcours est terminé
  */
-export function isParcoursComplete(currentStep: Step): boolean {
-  return currentStep === STEP_ORDER[STEP_ORDER.length - 1];
+export function isParcoursComplete(state: ParcoursState): boolean {
+  return state.step === Step.FACTURES && state.status === Status.VALIDE;
 }
 
 /**
- * Convertit un statut Démarches Simplifiées vers un statut interne
+ * Obtient l'action recommandée pour l'utilisateur
  */
-export function mapDSStatusToInternalStatus(dsStatus: DSStatus): Status {
-  return DS_TO_INTERNAL_STATUS[dsStatus];
+export function getNextAction(state: ParcoursState): string {
+  if (isParcoursComplete(state)) {
+    return "Parcours terminé !";
+  }
+
+  switch (state.status) {
+    case Status.TODO:
+      return `Créer votre dossier pour l'étape ${state.step}`;
+    case Status.EN_INSTRUCTION:
+      return "En attente de validation";
+    case Status.VALIDE:
+      return "Passer à l'étape suivante";
+    default:
+      return "Action inconnue";
+  }
 }

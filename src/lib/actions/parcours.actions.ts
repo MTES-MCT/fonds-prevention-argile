@@ -1,373 +1,324 @@
 "use server";
 
+import { Step, Status, ParcoursState } from "@/lib/parcours/parcours.types";
+import {
+  canSubmit,
+  canValidate,
+  canProgress,
+  getNextStep,
+  isParcoursComplete,
+  getNextAction,
+} from "@/lib/parcours/parcours.helpers";
 import {
   getOrCreateParcours,
   getParcoursComplet,
   createDossierDS,
-  progressParcours,
 } from "@/lib/database/services";
-import { DSStatus, Status, Step } from "@/lib/parcours/parcours.types";
-import type { ParcoursPrevention } from "@/lib/database/schema/parcours-prevention";
-import type { DossierDemarchesSimplifiees } from "@/lib/database/schema/dossiers-demarches-simplifiees";
+import { getSession } from "@/lib/auth/services/auth.service";
+import { parcoursRepo } from "@/lib/database/repositories";
 import type { ActionResult } from "./demarches-simplifies/types";
-import { getSession } from "../auth/services/auth.service";
-import { parcoursRepo } from "../database/repositories";
-import { getNextStep } from "../parcours/parcours.helpers";
 
 /**
- * Initialise le parcours pour l'utilisateur connecté
+ * Initialise ou récupère le parcours
  */
 export async function initierParcours(): Promise<
   ActionResult<{
     parcoursId: string;
-    currentStep: Step;
-    message: string;
+    state: ParcoursState;
   }>
 > {
   try {
-    // Vérifier l'authentification
     const session = await getSession();
     if (!session?.userId) {
       return {
         success: false,
-        error: "Vous devez être connecté pour démarrer un parcours",
+        error: "Non connecté",
       };
     }
 
-    // Créer ou récupérer le parcours
     const parcours = await getOrCreateParcours(session.userId);
 
     return {
       success: true,
       data: {
         parcoursId: parcours.id,
-        currentStep: parcours.currentStep,
-        message:
-          parcours.createdAt === parcours.updatedAt
-            ? "Parcours créé avec succès"
-            : "Parcours existant récupéré",
+        state: {
+          step: parcours.currentStep,
+          status: parcours.currentStatus,
+        },
       },
     };
   } catch (error) {
-    console.error("Erreur lors de l'initialisation du parcours:", error);
+    console.error("Erreur initierParcours:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Erreur inconnue",
-    };
-  }
-}
-
-export async function reinitialiserParcours() {
-  const session = await getSession();
-  if (!session?.userId) {
-    return { success: false, error: "Non connecté" };
-  }
-
-  const data = await getParcoursComplet(session.userId);
-  if (!data) {
-    return { success: false, error: "Pas de parcours" };
-  }
-
-  await parcoursRepo.resetParcours(data.parcours.id);
-  return { success: true, data: { message: "Parcours réinitialisé" } };
-}
-
-/**
- * Récupère l'état complet du parcours de l'utilisateur
- */
-export async function obtenirMonParcours(): Promise<
-  ActionResult<{
-    parcours: ParcoursPrevention;
-    dossiers: DossierDemarchesSimplifiees[];
-    progression: number;
-    isComplete: boolean;
-    prochainEtape: Step | null;
-  }>
-> {
-  try {
-    // Vérifier l'authentification
-    const session = await getSession();
-    if (!session?.userId) {
-      return {
-        success: false,
-        error: "Vous devez être connecté pour accéder à votre parcours",
-      };
-    }
-
-    // Récupérer le parcours complet
-    const data = await getParcoursComplet(session.userId);
-
-    if (!data) {
-      return {
-        success: false,
-        error:
-          "Aucun parcours trouvé. Veuillez d'abord initialiser votre parcours.",
-      };
-    }
-
-    // Déterminer la prochaine étape
-    const prochainEtape =
-      data.parcours.currentStatus === Status.VALIDE
-        ? getNextStep(data.parcours.currentStep)
-        : data.parcours.currentStep;
-
-    return {
-      success: true,
-      data: {
-        ...data,
-        prochainEtape,
-      },
-    };
-  } catch (error) {
-    console.error("Erreur lors de la récupération du parcours:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Erreur inconnue",
+      error: "Erreur lors de l'initialisation",
     };
   }
 }
 
 /**
- * Enregistre un dossier DS après préremplissage
- * Appelé après que l'utilisateur ait créé son dossier sur Démarches Simplifiées
+ * Soumet un dossier (passe de TODO à EN_INSTRUCTION)
  */
-export async function enregistrerDossierDS(
-  step: Step,
+export async function soumettreEtape(
   dsNumber: string,
   dsDemarcheId: string,
   dsUrl?: string
-): Promise<
-  ActionResult<{
-    dossierId: string;
-    message: string;
-  }>
-> {
+): Promise<ActionResult<{ state: ParcoursState }>> {
   try {
-    // Vérifier l'authentification
     const session = await getSession();
     if (!session?.userId) {
+      return { success: false, error: "Non connecté" };
+    }
+
+    const data = await getParcoursComplet(session.userId);
+    if (!data) {
+      return { success: false, error: "Parcours non trouvé" };
+    }
+
+    const currentState: ParcoursState = {
+      step: data.parcours.currentStep,
+      status: data.parcours.currentStatus,
+    };
+
+    // Vérifier qu'on peut soumettre
+    if (!canSubmit(currentState)) {
       return {
         success: false,
-        error: "Vous devez être connecté pour enregistrer un dossier",
+        error: "Cette étape ne peut pas être soumise",
       };
     }
 
-    // Validation basique
-    if (!dsNumber || !dsDemarcheId) {
-      return {
-        success: false,
-        error: "Le numéro de dossier et l'identifiant de démarche sont requis",
-      };
-    }
-
-    // Créer le dossier
-    const dossier = await createDossierDS(session.userId, step, {
+    // Créer le dossier DS
+    await createDossierDS(session.userId, currentState.step, {
       dsNumber,
       dsDemarcheId,
       dsUrl,
     });
 
-    if (!dossier) {
-      return {
-        success: false,
-        error: "Impossible de créer le dossier",
-      };
-    }
+    // Passer en instruction
+    await parcoursRepo.updateStatus(data.parcours.id, Status.EN_INSTRUCTION);
 
     return {
       success: true,
       data: {
-        dossierId: dossier.id,
-        message: `Dossier ${dsNumber} enregistré pour l'étape ${step}`,
+        state: {
+          step: currentState.step,
+          status: Status.EN_INSTRUCTION,
+        },
       },
     };
   } catch (error) {
-    console.error("Erreur lors de l'enregistrement du dossier:", error);
+    console.error("Erreur soumettreEtape:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Erreur inconnue",
+      error: "Erreur lors de la soumission",
     };
   }
 }
 
 /**
- * Fait progresser le parcours vers l'étape suivante
- * Appelé quand une étape est validée
+ * Valide l'étape (passe de EN_INSTRUCTION à VALIDE)
+ * Généralement appelé par webhook ou admin
  */
-export async function avancerParcours(): Promise<
+export async function validerEtape(): Promise<
+  ActionResult<{ state: ParcoursState }>
+> {
+  try {
+    const session = await getSession();
+    if (!session?.userId) {
+      return { success: false, error: "Non connecté" };
+    }
+
+    const data = await getParcoursComplet(session.userId);
+    if (!data) {
+      return { success: false, error: "Parcours non trouvé" };
+    }
+
+    const currentState: ParcoursState = {
+      step: data.parcours.currentStep,
+      status: data.parcours.currentStatus,
+    };
+
+    if (!canValidate(currentState)) {
+      return {
+        success: false,
+        error: "Cette étape ne peut pas être validée",
+      };
+    }
+
+    await parcoursRepo.updateStatus(data.parcours.id, Status.VALIDE);
+
+    return {
+      success: true,
+      data: {
+        state: {
+          step: currentState.step,
+          status: Status.VALIDE,
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Erreur validerEtape:", error);
+    return {
+      success: false,
+      error: "Erreur lors de la validation",
+    };
+  }
+}
+
+/**
+ * Passe à l'étape suivante (VALIDE -> étape suivante en TODO)
+ */
+export async function progresserEtape(): Promise<
   ActionResult<{
-    success: boolean;
-    message: string;
-    nextStep?: Step;
-    completed?: boolean;
+    state: ParcoursState;
+    complete: boolean;
   }>
 > {
   try {
-    // Vérifier l'authentification
     const session = await getSession();
     if (!session?.userId) {
+      return { success: false, error: "Non connecté" };
+    }
+
+    const data = await getParcoursComplet(session.userId);
+    if (!data) {
+      return { success: false, error: "Parcours non trouvé" };
+    }
+
+    const currentState: ParcoursState = {
+      step: data.parcours.currentStep,
+      status: data.parcours.currentStatus,
+    };
+
+    if (!canProgress(currentState)) {
+      if (isParcoursComplete(currentState)) {
+        return {
+          success: true,
+          data: {
+            state: currentState,
+            complete: true,
+          },
+        };
+      }
       return {
         success: false,
-        error: "Vous devez être connecté pour progresser dans le parcours",
+        error: "Impossible de progresser depuis cet état",
       };
     }
 
-    // Progresser
-    const result = await progressParcours(session.userId);
-
-    if (!result.success) {
+    const nextStep = getNextStep(currentState.step);
+    if (!nextStep) {
       return {
         success: false,
-        error: result.message,
+        error: "Pas d'étape suivante",
       };
     }
+
+    // Passer à l'étape suivante en TODO
+    await parcoursRepo.updateStep(data.parcours.id, nextStep, Status.TODO);
 
     return {
       success: true,
       data: {
-        success: result.success,
-        message: result.message,
-        nextStep: result.nextStep,
-        completed: result.completed,
+        state: {
+          step: nextStep,
+          status: Status.TODO,
+        },
+        complete: false,
       },
     };
   } catch (error) {
-    console.error("Erreur lors de la progression du parcours:", error);
+    console.error("Erreur progresserEtape:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Erreur inconnue",
+      error: "Erreur lors de la progression",
     };
   }
 }
 
 /**
- * Vérifie l'état d'une étape spécifique
+ * Récupère l'état actuel du parcours avec infos utiles
  */
-export async function verifierEtape(step: Step): Promise<
+export async function getParcoursStatus(): Promise<
   ActionResult<{
-    hasDocument: boolean;
-    documentStatus: string | null;
-    documentNumber: string | null;
+    state: ParcoursState;
+    nextAction: string;
+    complete: boolean;
+    canSubmit: boolean;
+    canValidate: boolean;
     canProgress: boolean;
   }>
 > {
   try {
-    // Vérifier l'authentification
     const session = await getSession();
     if (!session?.userId) {
-      return {
-        success: false,
-        error: "Vous devez être connecté",
-      };
+      return { success: false, error: "Non connecté" };
     }
 
-    // Récupérer le parcours
     const data = await getParcoursComplet(session.userId);
     if (!data) {
-      return {
-        success: false,
-        error: "Parcours non trouvé",
-      };
+      return { success: false, error: "Parcours non trouvé" };
     }
 
-    // Chercher le dossier pour cette étape
-    const dossier = data.dossiers.find((d) => d.step === step);
+    const state: ParcoursState = {
+      step: data.parcours.currentStep,
+      status: data.parcours.currentStatus,
+    };
 
     return {
       success: true,
       data: {
-        hasDocument: !!dossier,
-        documentStatus: dossier?.dsStatus || null,
-        documentNumber: dossier?.dsNumber || null,
-        canProgress: dossier?.dsStatus === DSStatus.ACCEPTE,
+        state,
+        nextAction: getNextAction(state),
+        complete: isParcoursComplete(state),
+        canSubmit: canSubmit(state),
+        canValidate: canValidate(state),
+        canProgress: canProgress(state),
       },
     };
   } catch (error) {
-    console.error("Erreur lors de la vérification de l'étape:", error);
+    console.error("Erreur getParcoursStatus:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Erreur inconnue",
+      error: "Erreur lors de la récupération du statut",
     };
   }
 }
 
 /**
- * Récupère un résumé du parcours pour le tableau de bord
+ * Réinitialise le parcours (pour les tests/debug)
  */
-export async function obtenirResumeParcours(): Promise<
-  ActionResult<{
-    exists: boolean;
-    currentStep: Step | null;
-    currentStatus: string | null;
-    progression: number;
-    nextAction: string;
-    documentsCount: number;
-    documentsAccepted: number;
-  }>
+export async function resetParcours(): Promise<
+  ActionResult<{ message: string }>
 > {
   try {
-    // Vérifier l'authentification
     const session = await getSession();
     if (!session?.userId) {
-      return {
-        success: false,
-        error: "Vous devez être connecté",
-      };
+      return { success: false, error: "Non connecté" };
     }
 
-    // Récupérer le parcours
     const data = await getParcoursComplet(session.userId);
-
-    // Si pas de parcours
     if (!data) {
-      return {
-        success: true,
-        data: {
-          exists: false,
-          currentStep: null,
-          currentStatus: null,
-          progression: 0,
-          nextAction: "Démarrer votre parcours",
-          documentsCount: 0,
-          documentsAccepted: 0,
-        },
-      };
+      return { success: false, error: "Parcours non trouvé" };
     }
 
-    // Calculer les statistiques
-    const documentsAccepted = data.dossiers.filter(
-      (d) => d.dsStatus === DSStatus.ACCEPTE
-    ).length;
-
-    // Déterminer la prochaine action
-    let nextAction = "Continuer votre parcours";
-    if (data.isComplete) {
-      nextAction = "Parcours terminé !";
-    } else if (data.parcours.currentStatus === Status.TODO) {
-      nextAction = `Compléter l'étape ${data.parcours.currentStep}`;
-    } else if (data.parcours.currentStatus === Status.EN_INSTRUCTION) {
-      nextAction = "En attente de validation";
-    } else if (data.parcours.currentStatus === Status.VALIDE) {
-      nextAction = "Passer à l'étape suivante";
-    }
+    await parcoursRepo.updateStep(
+      data.parcours.id,
+      Step.ELIGIBILITE,
+      Status.TODO
+    );
 
     return {
       success: true,
-      data: {
-        exists: true,
-        currentStep: data.parcours.currentStep,
-        currentStatus: data.parcours.currentStatus,
-        progression: data.progression,
-        nextAction,
-        documentsCount: data.dossiers.length,
-        documentsAccepted,
-      },
+      data: { message: "Parcours réinitialisé" },
     };
   } catch (error) {
-    console.error("Erreur lors de la récupération du résumé:", error);
+    console.error("Erreur resetParcours:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Erreur inconnue",
+      error: "Erreur lors de la réinitialisation",
     };
   }
 }

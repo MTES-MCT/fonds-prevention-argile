@@ -14,7 +14,7 @@ export const parcoursPrevention = pgTable("parcours_prevention", {
     .references(() => users.id, { onDelete: "cascade" }),
 
   currentStep: stepPgEnum("current_step").notNull().default(Step.ELIGIBILITE),
-  currentStatus: statusPgEnum("current_status").notNull().default(Status.TODO),
+currentStatus: statusPgEnum("current_status").notNull().default(Status.TODO),
 
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" })

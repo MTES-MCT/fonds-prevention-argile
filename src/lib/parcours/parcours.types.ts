@@ -22,6 +22,20 @@ export enum Status {
   VALIDE = "VALIDE",
 }
 
+// Pour tracker où on en est dans le parcours
+export interface ParcoursState {
+  step: Step;
+  status: Status;
+}
+
+// Ordre des étapes
+export const STEP_ORDER = [
+  Step.ELIGIBILITE,
+  Step.DIAGNOSTIC,
+  Step.DEVIS,
+  Step.FACTURES,
+] as const;
+
 /**
  * Statuts Démarches Simplifiées
  */
