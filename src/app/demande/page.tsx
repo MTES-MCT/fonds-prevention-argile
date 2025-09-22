@@ -5,10 +5,13 @@ import { parseRGAParams } from "@/lib/form-rga/parser";
 import { useRGAContext } from "@/lib/form-rga/session";
 import { useConvertSearchParams } from "@/hooks/useConvertSearchParams";
 
-export default function DemandePage({ searchParams }: PageProps<"/demande">) {
-  const { saveRGA, hasData } = useRGAContext();
+interface DemandePageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
 
-  // Convertir Promise → URLSearchParams
+export default function DemandePage({ searchParams }: DemandePageProps) {
+  // Context RGA et hook pour convertir searchParams
+  const { saveRGA, hasData } = useRGAContext();
   const urlSearchParams = useConvertSearchParams(searchParams);
 
   // Parser les données RGA
