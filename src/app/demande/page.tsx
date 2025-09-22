@@ -19,7 +19,7 @@ type ProcessingState =
   | "no-data"
   | "session-error";
 
-const REDIRECT_DELAY_MS = 2000; // Délai avant redirection automatique
+const REDIRECT_DELAY_MS = 1000; // Délai avant redirection automatique
 
 export default function DemandePage({ searchParams }: DemandePageProps) {
   const router = useRouter();

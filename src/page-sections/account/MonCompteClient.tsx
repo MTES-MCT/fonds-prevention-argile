@@ -15,17 +15,37 @@ import { useRGAContext } from "@/lib/form-rga/session/useRGAContext";
 // Panneau de test latéral (seulement en dev)
 // import DevTestSidebar from "./test/DevTestSidebar";
 
+const REDIRECT_DELAY_MS = 3000; // Délai avant redirection automatique si pas de données RGA
+
 export default function MonCompteClient() {
   const { user, isLoading, isLoggingOut } = useAuth();
-  const { data: rgaData, hasData, isLoading: isLoadingRGA } = useRGAContext();
+  const {
+    data: rgaData,
+    hasData: hasRGAData,
+    isLoading: isLoadingRGA,
+  } = useRGAContext();
   const router = useRouter();
-  const [isRedirecting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [showNoDataMessage, setShowNoDataMessage] = useState(false);
 
-  // Redirection si pas d'utilisateur ou mauvais rôle
+  // Redirection si pas de données RGA
   useEffect(() => {
-    // Si on est en train de charger, rediriger ou se déconnecter, on ne fait rien
-    if (isLoading || isLoadingRGA || isRedirecting || isLoggingOut) return;
-  }, [isLoading, isLoadingRGA, user, router, isRedirecting, isLoggingOut]);
+    // Si on est en train de charger ou se déconnecter, on ne fait rien
+    if (isLoading || isLoadingRGA || isLoggingOut || isRedirecting) return;
+
+    // Si utilisateur connecté mais pas de données RGA
+    if (user && !hasRGAData) {
+      setShowNoDataMessage(true);
+      setIsRedirecting(true);
+
+      // Redirection après un délai pour laisser le temps de lire le message
+      const redirectTimer = setTimeout(() => {
+        router.push("/simulateur");
+      }, REDIRECT_DELAY_MS);
+
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [isLoading, isLoadingRGA, user, hasRGAData, router, isLoggingOut]);
 
   // Afficher un message de déconnexion
   if (isLoggingOut) {
@@ -44,7 +64,33 @@ export default function MonCompteClient() {
     return <MonCompteLoading />;
   }
 
-  // Si redirection en cours (pas d'user ou mauvais rôle) - ne rien afficher
+  // Message si pas de données RGA
+  if (showNoDataMessage) {
+    return (
+      <div className="fr-container fr-py-8w">
+        <div className="fr-alert fr-alert--warning">
+          <h3 className="fr-alert__title">Simulation requise</h3>
+          <p>
+            Vous devez d'abord remplir le simulateur d'éligibilité avant
+            d'accéder à votre compte.
+          </p>
+          <p className="fr-text--sm fr-mt-2w">
+            Redirection automatique vers le simulateur dans quelques secondes...
+          </p>
+        </div>
+        <div className="fr-btns-group fr-mt-3w">
+          <button
+            className="fr-btn fr-btn--primary"
+            onClick={() => router.push("/simulateur")}
+          >
+            Aller au simulateur maintenant
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Si redirection en cours ou pas d'user - ne rien afficher
   if (isRedirecting || !user) {
     return null;
   }
@@ -56,7 +102,7 @@ export default function MonCompteClient() {
         <div className="fr-container">
           <h1>Bonjour {user.firstName}</h1>
 
-          {hasData && (
+          {hasRGAData && (
             <>
               <span className="fr-badge fr-badge--new fr-mb-4w">
                 DONNES RGA RECUES
