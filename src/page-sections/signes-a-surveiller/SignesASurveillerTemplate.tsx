@@ -7,7 +7,7 @@ import { contentSignesASurveillerCommon } from "@/content/signes-a-surveiller";
 interface SignesASurveillerTemplateProps {
   title: string;
   pageLink: string;
-  tag: { title: string; className: string } | undefined;
+  tag: { title: string; className: string; eligible: boolean } | undefined;
   image: { src: string; alt: string; description: string };
   ce_qu_il_faut_surveiller: string;
   signes_alerte: string[];
@@ -18,7 +18,7 @@ interface SignesASurveillerTemplateProps {
 export default function SignesASurveillerTemplate({
   title,
   pageLink,
-  tag = { title: "", className: "" },
+  tag = { title: "", className: "", eligible: false },
   image,
   ce_qu_il_faut_surveiller,
   signes_alerte,
@@ -136,7 +136,7 @@ export default function SignesASurveillerTemplate({
       </section>
 
       {/* Vous avez un doute ? */}
-      <VousAvezUnDouteSection />
+      {tag.eligible && <VousAvezUnDouteSection />}
 
       {/* Voir les autres signes à surveiller */}
       <section className="fr-container-fluid fr-py-10w">

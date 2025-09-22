@@ -1,4 +1,5 @@
 import { pgEnum } from "drizzle-orm/pg-core";
+import { DossierDemarchesSimplifiees, ParcoursPrevention } from "../schema";
 
 // Enums pour les étapes et statuts
 export const stepEnum = pgEnum("step", [
@@ -47,4 +48,42 @@ export function mapDSStatusToInternalStatus(dsStatus: DSStatus): Status {
     classe_sans_suite: "EN_INSTRUCTION",
   };
   return mapping[dsStatus];
+}
+
+// Types pour les résultats d'actions
+export interface SessionInfo {
+  session?: {
+    userId: string;
+    role: string;
+    expiresAt: string;
+  };
+}
+
+// Type complet du parcours avec dossierst
+export interface ParcoursData {
+  parcours: ParcoursPrevention;
+  dossiers: DossierDemarchesSimplifiees[];
+  progression: number;
+  isComplete: boolean;
+  prochainEtape: Step | null;
+}
+
+// Type générique pour les résultats d'actions
+export interface ResultParcours {
+  success: boolean;
+  error?: string;
+  data?: {
+    parcoursId?: string;
+    currentStep?: Step;
+    message?: string;
+    dossierId?: string;
+    nextStep?: Step;
+    completed?: boolean;
+    exists?: boolean;
+    currentStatus?: string | null;
+    progression?: number;
+    nextAction?: string;
+    documentsCount?: number;
+    documentsAccepted?: number;
+  };
 }

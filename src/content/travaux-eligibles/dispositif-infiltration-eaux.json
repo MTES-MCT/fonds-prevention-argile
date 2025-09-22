@@ -1,5 +1,6 @@
 {
-  "title": "Dispositif simple d’infiltration des eaux à la parcelle à déporter des fondations",
+  "title": "Création d'un dispositif simple d’infiltration des eaux à la parcelle",
+  "type": "dispositif-infiltration-eaux",
   "pageLink": "/travaux-eligibles/dispositif-infiltration-eaux",
   "tag": {
     "title": "Gestion des eaux",
