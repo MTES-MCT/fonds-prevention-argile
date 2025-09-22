@@ -1,35 +1,24 @@
 "use client";
 
 import { redirect } from "next/navigation";
-import { use } from "react";
 import { parseRGAParams } from "@/lib/form-rga/parser";
+import { useRGAContext } from "@/lib/form-rga/session";
+import { useConvertSearchParams } from "@/hooks/useConvertSearchParams";
 
-interface DemandePageProps {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}
+export default function DemandePage({ searchParams }: PageProps<"/demande">) {
+  const { saveRGA, hasData } = useRGAContext();
 
-export default function DemandePage({ searchParams }: DemandePageProps) {
-  // Unwrap les searchParams avec React.use()
-  const resolvedSearchParams = use(searchParams);
+  // Convertir Promise → URLSearchParams
+  const urlSearchParams = useConvertSearchParams(searchParams);
 
-  // Convertir les searchParams en URLSearchParams
-  const urlSearchParams = new URLSearchParams();
-
-  Object.entries(resolvedSearchParams).forEach(([key, value]) => {
-    if (Array.isArray(value)) {
-      value.forEach((v) => urlSearchParams.append(key, v));
-    } else if (value !== undefined) {
-      urlSearchParams.append(key, value);
-    }
-  });
-
-  // Parser les données RGA - FORMAT TYPÉ DIRECTEMENT !
+  // Parser les données RGA
   const rgaData = parseRGAParams(urlSearchParams);
 
   // Debug: afficher les paramètres en console
   console.log("=== PARAMÈTRES RGA REÇUS ===");
   console.log("Paramètres bruts:", Object.fromEntries(urlSearchParams));
-  console.log("Données typées:", rgaData);
+  console.log("Données parsées (RGAFormData):", rgaData);
+  console.log("Données déjà en session:", hasData);
   console.log("============================");
 
   // Si pas de paramètres RGA, rediriger vers l'accueil
@@ -37,6 +26,20 @@ export default function DemandePage({ searchParams }: DemandePageProps) {
     console.warn("Aucun paramètre RGA trouvé, redirection vers accueil");
     redirect("/");
   }
+
+  // Sauvegarder et continuer
+  const handleSaveAndContinue = () => {
+    const success = saveRGA(rgaData);
+    if (success) {
+      console.log("Données sauvées en session avec structure RGAFormData");
+      // TODO: Rediriger vers la page de connexion FranceConnect
+      console.log("TODO: Redirection vers /connexion");
+      // Pour le moment, redirection vers la page de test
+      window.location.href = "/demande/test";
+    } else {
+      console.error("Erreur lors de la sauvegarde en session");
+    }
+  };
 
   return (
     <div className="fr-container fr-my-4w">
@@ -47,9 +50,9 @@ export default function DemandePage({ searchParams }: DemandePageProps) {
           <div className="fr-alert fr-alert--info fr-mb-4w">
             <h2 className="fr-alert__title">Données reçues du simulateur</h2>
             <p>
-              Vos données ont été récupérées depuis le simulateur RGA. Vous
-              allez être redirigé vers la page de connexion pour poursuivre
-              votre demande.
+              Vos données ont été récupérées depuis le simulateur RGA. Elles
+              vont être sauvegardées en session puis vous serez redirigé vers la
+              page de connexion.
             </p>
           </div>
 
@@ -77,6 +80,12 @@ export default function DemandePage({ searchParams }: DemandePageProps) {
                   <strong>Type logement :</strong> {rgaData.logement.type}
                 </li>
               )}
+              {rgaData.rga?.assure !== undefined && (
+                <li>
+                  <strong>Assuré RGA :</strong>{" "}
+                  {rgaData.rga.assure ? "Oui" : "Non"}
+                </li>
+              )}
             </ul>
           </div>
 
@@ -84,7 +93,7 @@ export default function DemandePage({ searchParams }: DemandePageProps) {
           <details className="fr-mb-4w">
             <summary>Détails techniques (debug)</summary>
             <div className="fr-mt-2w">
-              <h3>Données typées :</h3>
+              <h3>Structure RGAFormData parsée :</h3>
               <pre className="fr-text--xs">
                 {JSON.stringify(rgaData, null, 2)}
               </pre>
@@ -94,16 +103,9 @@ export default function DemandePage({ searchParams }: DemandePageProps) {
           <div className="fr-btns-group">
             <button
               className="fr-btn fr-btn--primary"
-              onClick={() => {
-                // TODO: Sauvegarder en session
-                // TODO: Rediriger vers la page de connexion
-                console.log(
-                  "TODO: Mise en session et redirection vers connexion"
-                );
-                console.log("Données à sauver:", rgaData);
-              }}
+              onClick={handleSaveAndContinue}
             >
-              Continuer vers la connexion
+              Sauvegarder en session et continuer
             </button>
           </div>
         </div>

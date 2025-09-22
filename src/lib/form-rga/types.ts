@@ -2,33 +2,33 @@ export interface RGAFormData {
   // Logement
   logement: {
     adresse: string;
-    codeRegion: string;
-    codeDepartement: string;
+    code_region: string;
+    code_departement: string;
     epci: string;
     commune: string;
-    communeNom: string;
+    commune_nom: string;
     coordonnees: string;
-    clefBan: string;
-    communeDenormandie: "oui" | "non";
-    anneeConstruction: string;
+    clef_ban: string;
+    commune_denormandie: "oui" | "non";
+    annee_de_construction: string;
     rnb: string;
     niveaux: number;
-    zoneExposition: "faible" | "moyen" | "fort";
+    zone_dexposition: "faible" | "moyen" | "fort";
     type: "maison" | "appartement";
     mitoyen: "oui" | "non";
-    proprietaireOccupant: "oui" | "non";
+    proprietaire_occupant: "oui" | "non";
   };
 
   // Taxe foncière
   taxeFonciere: {
-    communeEligible: "oui" | "non";
+    commune_eligible: "oui" | "non";
   };
 
   // RGA
   rga: {
     assure: "oui" | "non";
-    indemniseRGA: "oui" | "non";
-    peuEndommage: "oui" | "non";
+    indemnise_rga: "oui" | "non";
+    peu_endommage: "oui" | "non";
   };
 
   // Ménage
@@ -39,7 +39,8 @@ export interface RGAFormData {
 
   // Propriétaire
   vous: {
-    proprietaireStatut: "proprietaire" | "locataire" | "autre";
+    proprietaire_condition?: "oui" | "non";
+    proprietaire_occupant_rga?: "oui" | "non";
   };
 }
 

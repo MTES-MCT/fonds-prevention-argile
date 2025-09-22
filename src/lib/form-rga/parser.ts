@@ -38,21 +38,20 @@ function cleanAndConvertValue(value: string): string | number | boolean {
 }
 
 /**
- * Type pour le résultat du parser
- */
-export type ParsedRGAData = {
-  logement?: Partial<RGAFormData["logement"]>;
-  taxeFonciere?: Partial<RGAFormData["taxeFonciere"]>;
-  rga?: Partial<RGAFormData["rga"]>;
-  menage?: Partial<RGAFormData["menage"]>;
-  vous?: Partial<RGAFormData["vous"]>;
-};
-
-/**
  * Parse et structure les paramètres RGA depuis l'URL
+ * Retourne un objet Partial<RGAFormData>
  */
-export function parseRGAParams(searchParams: URLSearchParams): ParsedRGAData {
-  const result: ParsedRGAData = {};
+export function parseRGAParams(
+  searchParams: URLSearchParams
+): Partial<RGAFormData> {
+  // Créer un objet temporaire avec des objets partiels pour chaque section
+  const tempResult: {
+    logement?: Record<string, unknown>;
+    taxeFonciere?: Record<string, unknown>;
+    rga?: Record<string, unknown>;
+    menage?: Record<string, unknown>;
+    vous?: Record<string, unknown>;
+  } = {};
 
   for (const [key, value] of searchParams.entries()) {
     const cleanedKey = cleanKey(key);
@@ -63,42 +62,41 @@ export function parseRGAParams(searchParams: URLSearchParams): ParsedRGAData {
 
     if (keyParts.length >= 2) {
       const section = keyParts[0];
-      const property = keyParts.slice(1).join(".");
+      // Rejoindre avec des underscores pour éviter les points dans les propriétés
+      const property = keyParts.slice(1).join("_");
 
       // Router vers les bonnes sections
       switch (section) {
         case "logement":
-          if (!result.logement) result.logement = {};
-          (result.logement as Record<string, unknown>)[property] = cleanedValue;
+          if (!tempResult.logement) tempResult.logement = {};
+          tempResult.logement[property] = cleanedValue;
           break;
 
-        case "taxefonciere":
-          if (!result.taxeFonciere) result.taxeFonciere = {};
-          (result.taxeFonciere as Record<string, unknown>)[property] =
-            cleanedValue;
+        case "taxe_fonciere":
+          if (!tempResult.taxeFonciere) tempResult.taxeFonciere = {};
+          tempResult.taxeFonciere[property] = cleanedValue;
           break;
 
         case "rga":
-          if (!result.rga) result.rga = {};
-          (result.rga as Record<string, unknown>)[property] = cleanedValue;
+          if (!tempResult.rga) tempResult.rga = {};
+          tempResult.rga[property] = cleanedValue;
           break;
 
         case "menage":
-          if (!result.menage) result.menage = {};
-          (result.menage as Record<string, unknown>)[property] = cleanedValue;
+          if (!tempResult.menage) tempResult.menage = {};
+          tempResult.menage[property] = cleanedValue;
           break;
 
         case "vous":
-          if (!result.vous) result.vous = {};
-          (result.vous as Record<string, unknown>)[property] = cleanedValue;
+          if (!tempResult.vous) tempResult.vous = {};
+          tempResult.vous[property] = cleanedValue;
           break;
 
         default:
-          // Section inconnue, on l'ignore ou on log
           console.warn(`Section RGA inconnue: ${section}`);
       }
     }
   }
 
-  return result;
+  return tempResult as Partial<RGAFormData>;
 }

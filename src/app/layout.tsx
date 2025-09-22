@@ -29,6 +29,7 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css"
 // Import des styles custom
 import "../styles/globals.css";
 import { AuthProvider } from "@/lib/auth/contexts/AuthContext";
+import { RGAProvider } from "@/lib/form-rga/session";
 
 export const metadata: Metadata = {
   title: contentLayout.metadata.title,
@@ -106,7 +107,9 @@ export default function RootLayout({
           <AuthProvider>
             <Matomo />
             <Header />
-            <main className="flex-1">{children}</main>
+            <RGAProvider>
+              <main className="flex-1">{children}</main>
+            </RGAProvider>
             <Footer />
           </AuthProvider>
         </DsfrProvider>
