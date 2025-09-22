@@ -1,7 +1,11 @@
 import { pgTable, uuid, timestamp, varchar } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
-import { stepEnum, dsStatusEnum } from "../types/parcours.types";
+import {  DSStatus } from "@/lib/parcours/parcours.types";
+import {
+  stepPgEnum,
+  dsStatusPgEnum,
+} from "@/lib/database/enums/parcours.enums";
 
 // Table des dossiers Démarches Simplifiées
 export const dossiersDemarchesSimplifiees = pgTable(
@@ -12,14 +16,16 @@ export const dossiersDemarchesSimplifiees = pgTable(
       .notNull()
       .references(() => parcoursPrevention.id, { onDelete: "cascade" }),
 
-    step: stepEnum("step").notNull(),
+    step: stepPgEnum("step").notNull(),
 
     // Références DS uniquement
     dsNumber: varchar("ds_number", { length: 50 }).unique(), // Unique directement
     dsId: varchar("ds_id", { length: 50 }),
     dsDemarcheId: varchar("ds_demarche_id", { length: 50 }).notNull(),
 
-    dsStatus: dsStatusEnum("ds_status").notNull().default("en_construction"),
+    dsStatus: dsStatusPgEnum("ds_status")
+      .notNull()
+      .default(DSStatus.EN_CONSTRUCTION),
 
     submittedAt: timestamp("submitted_at", { mode: "date" }),
     processedAt: timestamp("processed_at", { mode: "date" }),

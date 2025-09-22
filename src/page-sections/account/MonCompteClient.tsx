@@ -11,9 +11,7 @@ import CalloutARemplir from "./eligibilite/CalloutEligibiliteAFaire";
 import CalloutDiagnostic from "./diagnostic/CalloutDiagnostic";
 import CalloutEnInstruction from "./en-instruction/CalloutEnInstruction";
 import { useRGAContext } from "@/lib/form-rga/session/useRGAContext";
-
-// Panneau de test latéral (seulement en dev)
-// import DevTestSidebar from "./test/DevTestSidebar";
+import DevTestSidebar from "./debug/DevTestSidebar";
 
 const REDIRECT_DELAY_MS = 3000; // Délai avant redirection automatique si pas de données RGA
 
@@ -143,7 +141,7 @@ export default function MonCompteClient() {
       <FaqAccountSection />
 
       {/* Panneau de test latéral (dev uniquement) */}
-      {/* <DevTestSidebar /> */}
+      <DevTestSidebar />
     </>
   );
 }

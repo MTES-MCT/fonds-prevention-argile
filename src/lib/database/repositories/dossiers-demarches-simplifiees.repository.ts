@@ -10,8 +10,8 @@ import type {
   DossierDemarchesSimplifiees,
   NewDossierDemarchesSimplifiees,
 } from "../schema/dossiers-demarches-simplifiees";
-import type { Step, DSStatus } from "../types/parcours.types";
-import { mapDSStatusToInternalStatus } from "../types/parcours.types";
+import { Step, DSStatus } from "@/lib/parcours/parcours.types";
+import { mapDSStatusToInternalStatus } from "@/lib/parcours/parcours.helpers";
 
 export class DossierDemarchesSimplifieeesRepository extends BaseRepository<DossierDemarchesSimplifiees> {
   /**
@@ -196,7 +196,7 @@ export class DossierDemarchesSimplifieeesRepository extends BaseRepository<Dossi
     };
 
     // Si le dossier passe à "accepte", on met à jour processedAt
-    if (dsStatus === "accepte") {
+    if (dsStatus === DSStatus.ACCEPTE) {
       updateData.processedAt = new Date();
     }
 
@@ -235,7 +235,7 @@ export class DossierDemarchesSimplifieeesRepository extends BaseRepository<Dossi
       dsNumber,
       dsUrl,
       submittedAt: new Date(),
-      dsStatus: "en_construction",
+      dsStatus: DSStatus.EN_CONSTRUCTION,
     });
   }
 
@@ -313,95 +313,6 @@ export class DossierDemarchesSimplifieeesRepository extends BaseRepository<Dossi
     });
 
     return counts;
-  }
-
-  /**
-   * Récupère les statistiques des dossiers
-   * TODO : Définir & optimiser les statistiques nécessaires
-   */
-  async getStatistics(): Promise<{
-    total: number;
-    byStatus: Record<DSStatus, number>;
-    byStep: Record<Step, number>;
-    submitted: number;
-    pending: number;
-    processed: number;
-    averageProcessingDays: number | null;
-  }> {
-    const [
-      total,
-      enConstructionCount,
-      enInstructionCount,
-      accepteCount,
-      refuseCount,
-      classeSansSuiteCount,
-      eligibiliteCount,
-      diagnosticCount,
-      devisCount,
-      facturesCount,
-    ] = await Promise.all([
-      this.count(),
-      this.count(eq(dossiersDemarchesSimplifiees.dsStatus, "en_construction")),
-      this.count(eq(dossiersDemarchesSimplifiees.dsStatus, "en_instruction")),
-      this.count(eq(dossiersDemarchesSimplifiees.dsStatus, "accepte")),
-      this.count(eq(dossiersDemarchesSimplifiees.dsStatus, "refuse")),
-      this.count(
-        eq(dossiersDemarchesSimplifiees.dsStatus, "classe_sans_suite")
-      ),
-      this.count(eq(dossiersDemarchesSimplifiees.step, "ELIGIBILITE")),
-      this.count(eq(dossiersDemarchesSimplifiees.step, "DIAGNOSTIC")),
-      this.count(eq(dossiersDemarchesSimplifiees.step, "DEVIS")),
-      this.count(eq(dossiersDemarchesSimplifiees.step, "FACTURES")),
-    ]);
-
-    // Comptage des dossiers soumis, en attente et traités
-    const [submitted, pending, processed] = await Promise.all([
-      this.count(sql`${dossiersDemarchesSimplifiees.submittedAt} IS NOT NULL`),
-      this.count(
-        sql`${dossiersDemarchesSimplifiees.dsStatus} IN ('en_construction', 'en_instruction')`
-      ),
-      this.count(
-        sql`${dossiersDemarchesSimplifiees.dsStatus} IN ('accepte', 'refuse', 'classe_sans_suite')`
-      ),
-    ]);
-
-    // Calcul de la durée moyenne de traitement
-    const avgResult = await db
-      .select({
-        avgDays: sql<number>`
-          AVG(
-            EXTRACT(EPOCH FROM (${dossiersDemarchesSimplifiees.processedAt} - ${dossiersDemarchesSimplifiees.submittedAt})) / 86400
-          )::integer
-        `,
-      })
-      .from(dossiersDemarchesSimplifiees)
-      .where(
-        and(
-          sql`${dossiersDemarchesSimplifiees.submittedAt} IS NOT NULL`,
-          sql`${dossiersDemarchesSimplifiees.processedAt} IS NOT NULL`
-        )
-      );
-
-    return {
-      total,
-      byStatus: {
-        en_construction: enConstructionCount,
-        en_instruction: enInstructionCount,
-        accepte: accepteCount,
-        refuse: refuseCount,
-        classe_sans_suite: classeSansSuiteCount,
-      },
-      byStep: {
-        ELIGIBILITE: eligibiliteCount,
-        DIAGNOSTIC: diagnosticCount,
-        DEVIS: devisCount,
-        FACTURES: facturesCount,
-      },
-      submitted,
-      pending,
-      processed,
-      averageProcessingDays: avgResult[0]?.avgDays ?? null,
-    };
   }
 
   /**

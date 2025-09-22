@@ -10,8 +10,8 @@ import type {
   ParcoursPrevention,
   NewParcoursPrevention,
 } from "../schema/parcours-prevention";
-import type { Step, Status } from "../types/parcours.types";
-import { getNextStep, isStepAccessible } from "../utils/parcours.utils";
+import { Step, Status } from "@/lib/parcours/parcours.types";
+import { getNextStep } from "@/lib/parcours/parcours.helpers";
 
 export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevention> {
   /**
@@ -176,7 +176,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   async updateStep(
     id: string,
     step: Step,
-    status: Status = "TODO"
+    status: Status = Status.TODO
   ): Promise<ParcoursPrevention | null> {
     return await this.update(id, {
       currentStep: step,
@@ -241,7 +241,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
     return await db
       .select()
       .from(parcoursPrevention)
-      .where(eq(parcoursPrevention.currentStatus, "EN_INSTRUCTION"))
+      .where(eq(parcoursPrevention.currentStatus, Status.EN_INSTRUCTION))
       .orderBy(desc(parcoursPrevention.updatedAt));
   }
 
@@ -264,7 +264,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
     if (!parcours) return false;
 
     // Un parcours peut progresser si l'étape courante est validée
-    return parcours.currentStatus === "VALIDE";
+    return parcours.currentStatus === Status.VALIDE;
   }
 
   /**
@@ -281,96 +281,13 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
     // Si on est déjà à la dernière étape ou pas d'étape suivante
     if (!nextStep) {
       // Marquer comme complété si on valide la dernière étape
-      if (parcours.currentStatus === "VALIDE" && !parcours.completedAt) {
+      if (parcours.currentStatus === Status.VALIDE && !parcours.completedAt) {
         return await this.markAsCompleted(id);
       }
       return parcours;
     }
 
-    return await this.updateStep(id, nextStep, "TODO");
-  }
-
-  /**
-   * Vérifie si une étape est accessible pour un parcours
-   */
-  async isStepAccessibleForParcours(
-    id: string,
-    targetStep: Step
-  ): Promise<boolean> {
-    const parcours = await this.findById(id);
-    if (!parcours) return false;
-
-    return isStepAccessible(
-      targetStep,
-      parcours.currentStep,
-      parcours.currentStatus
-    );
-  }
-
-  /**
-   * Récupère les statistiques des parcours
-   */
-  async getStatistics(): Promise<{
-    total: number;
-    byStep: Record<Step, number>;
-    byStatus: Record<Status, number>;
-    completed: number;
-    inProgress: number;
-    averageCompletionDays: number | null;
-  }> {
-    const [
-      total,
-      eligibiliteCount,
-      diagnosticCount,
-      devisCount,
-      facturesCount,
-      todoCount,
-      enInstructionCount,
-      valideCount,
-      completed,
-      inProgress,
-    ] = await Promise.all([
-      this.count(),
-      this.count(eq(parcoursPrevention.currentStep, "ELIGIBILITE")),
-      this.count(eq(parcoursPrevention.currentStep, "DIAGNOSTIC")),
-      this.count(eq(parcoursPrevention.currentStep, "DEVIS")),
-      this.count(eq(parcoursPrevention.currentStep, "FACTURES")),
-      this.count(eq(parcoursPrevention.currentStatus, "TODO")),
-      this.count(eq(parcoursPrevention.currentStatus, "EN_INSTRUCTION")),
-      this.count(eq(parcoursPrevention.currentStatus, "VALIDE")),
-      this.count(sql`${parcoursPrevention.completedAt} IS NOT NULL`),
-      this.count(eq(parcoursPrevention.currentStatus, "EN_INSTRUCTION")),
-    ]);
-
-    // Calcul de la durée moyenne de complétion
-    const avgResult = await db
-      .select({
-        avgDays: sql<number>`
-          AVG(
-            EXTRACT(EPOCH FROM (${parcoursPrevention.completedAt} - ${parcoursPrevention.createdAt})) / 86400
-          )::integer
-        `,
-      })
-      .from(parcoursPrevention)
-      .where(sql`${parcoursPrevention.completedAt} IS NOT NULL`);
-
-    return {
-      total,
-      byStep: {
-        ELIGIBILITE: eligibiliteCount,
-        DIAGNOSTIC: diagnosticCount,
-        DEVIS: devisCount,
-        FACTURES: facturesCount,
-      },
-      byStatus: {
-        TODO: todoCount,
-        EN_INSTRUCTION: enInstructionCount,
-        VALIDE: valideCount,
-      },
-      completed,
-      inProgress,
-      averageCompletionDays: avgResult[0]?.avgDays ?? null,
-    };
+    return await this.updateStep(id, nextStep, Status.TODO);
   }
 
   /**
@@ -385,8 +302,8 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
 
     return await this.create({
       userId,
-      currentStep: "ELIGIBILITE",
-      currentStatus: "TODO",
+      currentStep: Step.ELIGIBILITE,
+      currentStatus: Status.TODO,
     });
   }
 
@@ -395,8 +312,8 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
    */
   async resetParcours(id: string): Promise<ParcoursPrevention | null> {
     return await this.update(id, {
-      currentStep: "ELIGIBILITE",
-      currentStatus: "TODO",
+      currentStep: Step.ELIGIBILITE,
+      currentStatus: Status.TODO,
       completedAt: null,
     });
   }

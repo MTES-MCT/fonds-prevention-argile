@@ -6,12 +6,13 @@ import {
   createDossierDS,
   progressParcours,
 } from "@/lib/database/services";
-import type { Step } from "@/lib/database/types/parcours.types";
+import { DSStatus, Status, Step } from "@/lib/parcours/parcours.types";
 import type { ParcoursPrevention } from "@/lib/database/schema/parcours-prevention";
 import type { DossierDemarchesSimplifiees } from "@/lib/database/schema/dossiers-demarches-simplifiees";
 import type { ActionResult } from "./demarches-simplifies/types";
 import { getSession } from "../auth/services/auth.service";
 import { parcoursRepo } from "../database/repositories";
+import { getNextStep } from "../parcours/parcours.helpers";
 
 /**
  * Initialise le parcours pour l'utilisateur connecté
@@ -105,9 +106,8 @@ export async function obtenirMonParcours(): Promise<
     }
 
     // Déterminer la prochaine étape
-    const { getNextStep } = await import("@/lib/database/utils/parcours.utils");
     const prochainEtape =
-      data.parcours.currentStatus === "VALIDE"
+      data.parcours.currentStatus === Status.VALIDE
         ? getNextStep(data.parcours.currentStep)
         : data.parcours.currentStep;
 
@@ -279,7 +279,7 @@ export async function verifierEtape(step: Step): Promise<
         hasDocument: !!dossier,
         documentStatus: dossier?.dsStatus || null,
         documentNumber: dossier?.dsNumber || null,
-        canProgress: dossier?.dsStatus === "accepte",
+        canProgress: dossier?.dsStatus === DSStatus.ACCEPTE,
       },
     };
   } catch (error) {
@@ -336,18 +336,18 @@ export async function obtenirResumeParcours(): Promise<
 
     // Calculer les statistiques
     const documentsAccepted = data.dossiers.filter(
-      (d) => d.dsStatus === "accepte"
+      (d) => d.dsStatus === DSStatus.ACCEPTE
     ).length;
 
     // Déterminer la prochaine action
     let nextAction = "Continuer votre parcours";
     if (data.isComplete) {
       nextAction = "Parcours terminé !";
-    } else if (data.parcours.currentStatus === "TODO") {
+    } else if (data.parcours.currentStatus === Status.TODO) {
       nextAction = `Compléter l'étape ${data.parcours.currentStep}`;
-    } else if (data.parcours.currentStatus === "EN_INSTRUCTION") {
+    } else if (data.parcours.currentStatus === Status.EN_INSTRUCTION) {
       nextAction = "En attente de validation";
-    } else if (data.parcours.currentStatus === "VALIDE") {
+    } else if (data.parcours.currentStatus === Status.VALIDE) {
       nextAction = "Passer à l'étape suivante";
     }
 

@@ -5,7 +5,6 @@ import {
   getDemarcheDetails,
   getDossiers,
   getDossierByNumber,
-  getDemarcheStatistics,
   getPrefilledDossiers,
 } from "@/lib/actions/demarches-simplifies";
 import {
@@ -90,30 +89,6 @@ export default function TestDsGraphqlPage() {
       }
     } catch {
       setError("Erreur inattendue lors de la récupération du dossier");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGetStatistics = async () => {
-    if (!demarcheNumber) {
-      setError("Veuillez entrer un numéro de démarche");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const response = await getDemarcheStatistics(parseInt(demarcheNumber));
-      if (response.success) {
-        setResult(response.data);
-      } else {
-        setError(response.error);
-      }
-    } catch {
-      setError("Erreur inattendue lors de la récupération des statistiques");
     } finally {
       setLoading(false);
     }
@@ -225,29 +200,6 @@ export default function TestDsGraphqlPage() {
                     disabled={loading}
                   >
                     Lister dossiers
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Statistiques */}
-          <div className="fr-col-12 fr-col-md-6 fr-col-lg-3">
-            <div className="fr-card">
-              <div className="fr-card__body">
-                <div className="fr-card__content">
-                  <h3 className="fr-card__title">Statistiques</h3>
-                  <p className="fr-card__desc">
-                    Calcule les statistiques de la démarche
-                  </p>
-                </div>
-                <div className="fr-card__footer">
-                  <button
-                    className="fr-btn fr-btn--secondary fr-btn--sm"
-                    onClick={handleGetStatistics}
-                    disabled={loading}
-                  >
-                    Voir statistiques
                   </button>
                 </div>
               </div>

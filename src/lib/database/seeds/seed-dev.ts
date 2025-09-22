@@ -2,14 +2,17 @@ import { db } from "../client";
 import { users } from "../schema/users";
 import { parcoursPrevention } from "../schema/parcours-prevention";
 import { dossiersDemarchesSimplifiees } from "../schema/dossiers-demarches-simplifiees";
-import type { Step, Status, DSStatus } from "../types/parcours.types";
+import { Step, Status, DSStatus } from "@/lib/parcours/parcours.types";
+import { STEP_ORDER } from "@/lib/parcours/parcours.constants";
 
 async function seedDev() {
   console.log("Seeding database with fake data...");
 
   // Vérification environnement
   if (process.env.NODE_ENV === "production" && !process.env.FORCE_SEED) {
-    console.error("Cannot seed in production! Use FORCE_SEED=true to override");
+    console.error(
+      "Cannot seed in production! Use FORCE_SEED=true to override"
+    );
     process.exit(1);
   }
 
@@ -27,32 +30,32 @@ async function seedDev() {
       {
         fcId: "fc-test-user-1",
         name: "Marie Dubois",
-        step: "ELIGIBILITE" as Step,
-        status: "VALIDE" as Status,
+        step: Step.ELIGIBILITE,
+        status: Status.VALIDE,
       },
       {
         fcId: "fc-test-user-2",
         name: "Jean Martin",
-        step: "DIAGNOSTIC" as Step,
-        status: "EN_INSTRUCTION" as Status,
+        step: Step.DIAGNOSTIC,
+        status: Status.EN_INSTRUCTION,
       },
       {
         fcId: "fc-test-user-3",
         name: "Sophie Bernard",
-        step: "DEVIS" as Step,
-        status: "TODO" as Status,
+        step: Step.DEVIS,
+        status: Status.TODO,
       },
       {
         fcId: "fc-test-user-4",
         name: "Pierre Durand",
-        step: "FACTURES" as Step,
-        status: "EN_INSTRUCTION" as Status,
+        step: Step.FACTURES,
+        status: Status.EN_INSTRUCTION,
       },
       {
         fcId: "fc-test-user-5",
         name: "Lucie Moreau",
-        step: "FACTURES" as Step,
-        status: "VALIDE" as Status, // Parcours complet
+        step: Step.FACTURES,
+        status: Status.VALIDE, // Parcours complet
       },
     ];
 
@@ -111,12 +114,13 @@ async function seedDev() {
             dsDemarcheId: getDemarcheIdForStep(step),
             dsStatus: dsStatus,
             dsUrl: `https://demarches-simplifiees.fr/dossiers/${Math.floor(Math.random() * 1000000)}`,
-            submittedAt: dsStatus !== "en_construction" ? new Date() : null,
-            processedAt: dsStatus === "accepte" ? new Date() : null,
+            submittedAt:
+              dsStatus !== DSStatus.EN_CONSTRUCTION ? new Date() : null,
+            processedAt: dsStatus === DSStatus.ACCEPTE ? new Date() : null,
           })
           .onConflictDoNothing(); // Ignorer si existe déjà
 
-        console.log(`  - Dossier ${step}: ${dsStatus}`);
+        console.log(`Dossier ${step}: ${dsStatus}`);
       }
     }
 
@@ -135,52 +139,66 @@ async function seedDev() {
   }
 }
 
-// Helper: Quelles étapes créer selon l'avancement
+/**
+ * Détermine quelles étapes créer selon l'avancement actuel
+ */
 function getStepsToCreate(currentStep: Step): Step[] {
-  const steps: Step[] = ["ELIGIBILITE", "DIAGNOSTIC", "DEVIS", "FACTURES"];
-  const currentIndex = steps.indexOf(currentStep);
-  return steps.slice(0, currentIndex + 1);
+  const currentIndex = STEP_ORDER.indexOf(currentStep);
+  return STEP_ORDER.slice(0, currentIndex + 1) as Step[];
 }
 
-// Helper: Statut DS selon l'étape
+/**
+ * Détermine le statut DS approprié pour une étape
+ */
 function getDSStatusForStep(
   step: Step,
   currentStep: Step,
   currentStatus: Status
 ): DSStatus {
-  const steps: Step[] = ["ELIGIBILITE", "DIAGNOSTIC", "DEVIS", "FACTURES"];
-  const stepIndex = steps.indexOf(step);
-  const currentIndex = steps.indexOf(currentStep);
+  const stepIndex = STEP_ORDER.indexOf(step);
+  const currentIndex = STEP_ORDER.indexOf(currentStep);
 
   if (stepIndex < currentIndex) {
-    return "accepte"; // Étapes passées sont validées
+    // Étapes passées sont validées
+    return DSStatus.ACCEPTE;
   } else if (stepIndex === currentIndex) {
-    // Étape actuelle
+    // Étape actuelle - mapper le statut interne vers DS
     switch (currentStatus) {
-      case "VALIDE":
-        return "accepte";
-      case "EN_INSTRUCTION":
-        return "en_instruction";
+      case Status.VALIDE:
+        return DSStatus.ACCEPTE;
+      case Status.EN_INSTRUCTION:
+        return DSStatus.EN_INSTRUCTION;
+      case Status.TODO:
+        return DSStatus.EN_CONSTRUCTION;
       default:
-        return "en_construction";
+        return DSStatus.EN_CONSTRUCTION;
     }
   }
-  return "en_construction"; // Ne devrait pas arriver
+
+  // Ne devrait pas arriver
+  return DSStatus.EN_CONSTRUCTION;
 }
 
-// Helper: ID de démarche par étape (simulé)
+/**
+ * Retourne l'ID de démarche simulé pour chaque étape
+ */
 function getDemarcheIdForStep(step: Step): string {
-  const ids: Record<Step, string> = {
-    ELIGIBILITE: "12345",
-    DIAGNOSTIC: "12346",
-    DEVIS: "12347",
-    FACTURES: "12348",
+  const demarcheIds: Record<Step, string> = {
+    [Step.ELIGIBILITE]: "12345",
+    [Step.DIAGNOSTIC]: "12346",
+    [Step.DEVIS]: "12347",
+    [Step.FACTURES]: "12348",
   };
-  return ids[step];
+  return demarcheIds[step];
 }
 
-// Lancer le seed
-seedDev().catch((error) => {
-  console.error("Seed error:", error);
-  process.exit(1);
-});
+// Script d'exécution directe
+if (require.main === module) {
+  seedDev().catch((error) => {
+    console.error("Seed error:", error);
+    process.exit(1);
+  });
+}
+
+// Export pour utilisation programmatique
+export { seedDev };

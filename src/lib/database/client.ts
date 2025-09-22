@@ -2,18 +2,52 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
-const MAX_CONNECTIONS = 10; // Nombre maximum de connexions
-const IDLE_TIMEOUT = 30; // Timeout en secondes
-const CONNECTION_TIMEOUT = 10; // Timeout de connexion en secondes
+const MAX_CONNECTIONS = 10;
+const IDLE_TIMEOUT = 30;
+const CONNECTION_TIMEOUT = 10;
 
-// Configuration de la connexion
-const connectionString =
-  process.env.SCALINGO_POSTGRESQL_URL ||
-  `postgres://${process.env.DB_USER || "fonds_argile_user"}:${
-    process.env.DB_PASSWORD || "fonds_argile_password"
-  }@${process.env.DB_HOST || "localhost"}:${process.env.DB_PORT || "5432"}/${
-    process.env.DB_NAME || "fonds_argile"
-  }`;
+// Construction de l'URL de connexion - même logique que drizzle.config.ts
+function getConnectionString(): string {
+  // Priorité 1 : Scalingo (production)
+  if (process.env.SCALINGO_POSTGRESQL_URL) {
+    return process.env.SCALINGO_POSTGRESQL_URL;
+  }
+
+  // Priorité 2 : DATABASE_URL si définie
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+
+  // Priorité 3 : Construction depuis les variables individuelles
+  // Validation des variables requises
+  const requiredEnvVars = [
+    "DB_HOST",
+    "DB_PORT",
+    "DB_USER",
+    "DB_PASSWORD",
+    "DB_NAME",
+  ];
+
+  const missing = requiredEnvVars.filter((varName) => !process.env[varName]);
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Configuration de base de données incomplète. Variables manquantes: ${missing.join(", ")}`
+    );
+  }
+
+  // Construction de l'URL depuis les variables d'environnement
+  const host = process.env.DB_HOST;
+  const port = process.env.DB_PORT;
+  const user = process.env.DB_USER;
+  const password = process.env.DB_PASSWORD;
+  const database = process.env.DB_NAME;
+
+  return `postgres://${user}:${password}@${host}:${port}/${database}`;
+}
+
+// Obtenir la chaîne de connexion
+const connectionString = getConnectionString();
 
 // Client postgres
 const client = postgres(connectionString, {
