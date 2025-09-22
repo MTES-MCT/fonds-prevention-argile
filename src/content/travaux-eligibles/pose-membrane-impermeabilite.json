@@ -10,55 +10,49 @@
     "src": "/images/signes-a-surveiller/sample.svg",
     "description": "Coupe technique montrant la membrane enroulée autour des fondations avec soudures"
   },
-  "une_des_solutions": "Une membrane étanche enroulée autour des fondations isole complètement la structure des variations d'humidité du sol. En bloquant les échanges d'eau, elle réduit drastiquement les cycles de gonflement/retrait des argiles et protège durablement le bâtiment.",
+  "une_des_solutions": "La géomembrane est une membrane souple, imputrescible et constituée d'un produit d'étanchéité. Cette barrière physique permet de maîtriser et de stabiliser la teneur en eau des sols argileux sous les fondations en limitant les échange d'eau dus à l'évaporation estibale et d'éloigner les eaux de ruissellement du pied des fondations.",
   "solutions": [
     {
-      "title": "1. Types de membranes",
+      "title": "Comment installer une géomembrane",
       "details": [
-        "Géomembrane en HDPE (épaisseur 1,5-2mm, durée de vie 50 ans)",
-        "Revêtement bitumineux armé (solution économique, durée 20-30 ans)",
-        "Complexe bentonitique (auto-réparant en cas de micro-fissures)",
-        "Systèmes préformés avec nœuds de drainage intégrés"
+        "La géomembrane est posée en position plane, sur toute la périmétrie de la maison et déroulé sur un lit de sable avec une pense de 5%.",
+        "Elle doi être raccordée aux façades par un système de couvre-joint, et être protégée par deux couches de géotextile ou une protection plastique alvéolaire.",
+        "La légère pente donnée au dispositif permet d'éloigner les eaux du bâtiment qui doivent être reprises par un réseau d'évacuation étanche.",
+        "Il est recommandé que le relevé de la géomembrane soit au-dessus des terres avec des dispositions per- mettant d’éloigner les eaux de ruissellement prove- nant de la façade en cas de pluie.",
+        "En bout de l’imperméabilisation (à 1,5 m de distance de la maison), une retombée de 20 cm est recom- mandée."
       ]
     },
     {
-      "title": "2. Pose professionnelle",
-      "details": [
-        "Excavation sur 50-80cm de profondeur autour des fondations",
-        "Nettoyage et préparation des surfaces (priming)",
-        "Soudure des joints à chaud ou avec bandes adhésives spéciales",
-        "Recouvrement avec géotextile de protection"
-      ]
+      "title": "",
+      "details": []
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "La solution ultime contre les variations d'humidité :",
+    "subtitle": "La pose d'une géomembrane périphérique permet de :",
     "details": [
-      "Bloque 100% des infiltrations d'eau vers les fondations",
-      "Réduit les mouvements de sol de 60 à 80%",
-      "Compatible avec tous les types de sols argileux",
-      "Solution pérenne (garantie 20-50 ans selon les matériaux)"
+      "Protéger la périphérie immédiate de la maison de l'évaporation et éloigner les eaux de ruissellement du pied des façade.",
+      "Éloigner les eaux de ruissellement de la construction pour protéger les fondations des variations de teneur en eau des argiles.",
+      "Stabiliser la teneur en eau du sol sous l'habitation."
+      
     ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
       "details": [
-        "Lors de la construction en zone argileuse (recommandé par les PPR)",
-        "Si un diagnostic RGA révèle un sol très sensible",
-        "Avant de rénover les fondations d'une maison ancienne",
-        "Dans le cadre d'une extension de bâtiment"
+        "Sur un terrain plat (moins de 3% de pente).",
+        "Si une stagnation d'humidité est présente au pied des fondations.",
+        "Lorsqu'un diagnostic RGA le préconnise."
       ]
     },
     "traitement": {
-      "title": "En traitement",
+      "title": "Point de vigilences",
       "details": [
-        "Après des fissures répétées malgré d'autres solutions",
-        "Si le sol est très argileux (test Porchet < 1 mm/h)",
-        "En cas de remontées capillaires dans les murs",
-        "Lors de la réparation de fondations déjà endommagées"
+        "Une étude particulière de la nature du sol au-dessous et au-dessus de la membrane est nécessaire pour définir le dispositif.",
+        "L'impossibilité de disposer l'étanchéité sur tout le contour de la construction est de nature à favoriser les désordres et il est alors préférable d'abandonner cette solution.",
+        "En cas de réalisation d’une étanchéité autour de la construction, afin d’éviter un assèchement du sol dommageable sous la construction par évaporation par le vide sanitaire, il conviendra de veiller à ce que celui-ci soit normalement ventilé."
       ]
     }
   },
-  "a_retenir": "Cette membrane doit dépasser de 30 cm au-dessus du niveau du sol pour une protection optimale. Coût élevé (3 000-8 000 €) mais éligible à 60% de subvention. Solution souvent combinée avec un drainage périphérique."
+  "a_retenir": "Cette membrane doit être la plus large possible et étanche avec les façades afin d'éloigner les eaux de ruissellement. Ce dispositif est éligible jusqu'à 80% de subvention."
 }
