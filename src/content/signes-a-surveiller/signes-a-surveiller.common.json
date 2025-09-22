@@ -26,7 +26,7 @@
         },
         "titre": "Microfissures verticales aux angles du bâtiment",
         "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
-        "imageSrc": "/images/signes-a-surveiller/fissures-verticale.png",
+        "imageSrc": "/images/signes-a-surveiller/fissure-verticale.png",
         "pageLink": "/signes-a-surveiller/fissures-verticales-angles-batiment"
       },
       {
@@ -84,7 +84,6 @@
         "imageSrc": "/images/signes-a-surveiller/affaissement.png",
         "pageLink": "/signes-a-surveiller/affaissement-ou-soulevement-de-dallages"
       }
-      
     ]
   }
 }
