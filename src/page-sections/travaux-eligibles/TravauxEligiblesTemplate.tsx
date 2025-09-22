@@ -111,14 +111,16 @@ export default function TravauxEligiblesTemplate({
                 {contentTravauxEligiblesCommon.en_quoi_consiste_solution_title}
               </h1>
               {solutions.map((solution, index) => (
-                <div key={index}>
-                  <h4 key={index}>{solution.title}</h4>
-                  <ul>
-                    {solution.details.map((detail, detailIndex) => (
-                      <li key={detailIndex}>{detail}</li>
-                    ))}
-                  </ul>
-                </div>
+                {solution.details && solution.details.length > 0 &&
+                  <div key={index}>
+                    <h4 key={index}>{solution.title}</h4>
+                    <ul>
+                      {solution.details.map((detail, detailIndex) => (
+                        <li key={detailIndex}>{detail}</li>
+                      ))}
+                    </ul>
+                  </div>
+                }
               ))}
             </div>
 

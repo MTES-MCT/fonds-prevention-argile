@@ -10,53 +10,46 @@
     "src": "/images/travaux-eligibles/suppression-racines.svg",
     "description": "Illustration montrant l'abattage contrôlé d'un arbre et le traitement de souche"
   },
-  "une_des_solutions": "Les arbres plantés à moins de 5 mètres des fondations (selon l'espèce) destabilisent le sol en pompant son eau et en exerçant des pressions mécaniques. Leur suppression ciblée ou leur remplacement par des végétaux adaptés réduit significativement les risques de retrait-gonflement des argiles.",
+  "une_des_solutions": "Les arbres plantés trop proche des fondations destabilisent le sol en pompant son eau. Leur suppression ciblée permet de stabiliser la teneur en eau du sol sous l'habitation.",
   "solutions": [
     {
-      "title": "1. Méthodes d'élimination",
+      "title": "1. Suppression",
       "details": [
-        "Abattage contrôlé avec grue pour les grands arbres",
-        "Coupe des racines principales (méthode manuelle ou mécanique)",
-        "Tronçonnage du tronc et traitement de souche (glyphosate ou sel)",
-        "Broyage des racines pour les petits arbustes"
+        "Abattage contrôlé des arbres trop proche de la maison.",
+        "Suppression des arbustres au pied des fondations.",
+        "Tronçonnage du tronc et traitement de souche.", 
+        "Dessouchage d'un arbre isolé"
       ]
     },
     {
-      "title": "2. Remplacement par des espèces adaptées",
-      "details": [
-        "Arbustes à racines superficielles (lavande, romarin, buis)",
-        "Plantes couvre-sol (pervenche, lierre, gazon)",
-        "Arbres à port compact (érable du Japon, cerisier à fleurs)",
-        "Végétation locale nécessitant peu d'eau"
-      ]
+      "title": "",
+      "details": []
     }
   ],
   "pourquoi_solution_efficace": {
     "subtitle": "Une action radicale mais nécessaire :",
     "details": [
-      "Supprime la cause principale de l'assèchement du sol",
-      "Réduit les risques de fissuration de 60 à 80%",
-      "Prévient les dommages aux canalisations",
-      "Améliore la stabilité à long terme du bâtiment"
+      "La présence de végétation trop proche de la maison est le second facteur causant des sinistres, après les hydratations accidentelles.",
+      "La zone d'influence géotechnique de la succion de la végétation est allongé en aval à 1,5 fois la hauteur de l'arbre à maturité.",
+      "Prévient les dommages aux canalisations."
     ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
       "details": [
-        "Avant d'acheter une maison avec des arbres proches des fondations",
-        "Si un diagnostic RGA identifie un risque lié à la végétation",
-        "Tous les 10 ans pour les arbres à croissance rapide",
-        "Lors de la création d'un nouveau jardin"
+        "Les chênes, peupliers, saules et cèdres paraissent les plus préjudiciables pour les constructions trop proches. ",
+        "Un arbre à moins de 1,5 fois sa hauteur à maturité comporte des risques liés à ses racines.",
+        "En cas de remontées de racines dans les canalisations",
       ]
     },
     "traitement": {
-      "title": "En traitement",
+      "title": "Points de vigilence",
       "details": [
-        "Après apparition de fissures verticales ou en escalier",
-        "Si un arbre penche vers la maison (signe de déséquilibre)",
-        "En cas de remontées de racines dans les canalisations",
-        "Lors de la réparation de fondations endommagées"
+        "Le dessouchage peut ne pas être adaptés à toutes les configurations (zone boisée, arbre des voisins).",
+        "L'entretien de la végétation est à réitérer régulièrement, plusieurs fois par an si nécessaire.",
+        "Couper les racines peut entraîner un risque d'altération de la végétation et de stabilité des arbres.",
+        "Cette solution est à effectuer par un professionnel pour éviter tout sinistre collatéral."
       ]
     }
   },

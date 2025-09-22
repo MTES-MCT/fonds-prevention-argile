@@ -1,12 +1,12 @@
 {
-  "title": "Pose d'un écran anti-racines",
+  "title": "Installation d'un écran anti-racines",
   "pageLink": "/travaux-eligibles/installation-ecran-anti-racine",
   "tag": {
     "title": "Gestion de la végétation",
     "className": "blue-france"
   },
   "image": {
-    "alt": "Fonds Prévention Argile - Pose d'un écran anti-racines",
+    "alt": "Fonds Prévention Argile - Installation d'un écran anti-racines",
     "src": "/images/signes-a-surveiller/sample.svg",
     "description": "Schéma montrant une barrière physique enterrée autour des fondations"
   },
@@ -15,48 +15,44 @@
     {
       "title": "1. Types d'écrans disponibles",
       "details": [
-        "Géotextile renforcé (épaisseur 2-3mm, durée de vie 20-30 ans)",
-        "Film polyéthylène haute densité (0,5-1mm d'épaisseur)",
-        "Barrières chimiques (herbicides localisés, solution temporaire)",
-        "Systèmes modulaires en plastique recyclé (pour les grands arbres)"
+        "Film polyester étange ou géàmembrane descendus à 2,5m de profondeur avec remblaiement de la fouille par les déblais extraits.",
+        "Remplissage de la fouille par de gros béton.",
+        "Écran en palplanches métalliques pouvant être descendues jusqu'à 4 ou 5m de profondeur. (Solution onéreuse à réserver aux cas extrêmes)."
       ]
     },
     {
       "title": "2. Pose professionnelle",
       "details": [
-        "Enterrement à 60-80cm de profondeur sur tout le pourtour",
-        "Recouvrement de 20cm en haut pour éviter le contournement",
-        "Soudure des joints pour une étanchéité parfaite",
-        "Marquage au sol pour les futurs travaux"
+        "Le choix du type d'écran anti-racines dépend de plusieurs paramètres : aggressivité de la végétation, accès pour les engins de chantier, pente et nature du terrain et la limite de propriété.",
+        "La technique retenue dépend aussi de la distance entre l'écran et la maison et de la profondeur de succion des racine.",
+        "La profondeur de l'écran anti-racines doit être dimensionnée en fonction des paramètres influençant la profondeur de succion des racines."
       ]
     }
   ],
   "pourquoi_solution_efficace": {
     "subtitle": "Une protection discrète et efficace :",
     "details": [
-      "Bloque 95% des racines invasives",
-      "Maintient l'équilibre hydrique du sol près des fondations",
-      "Évite l'abattage des arbres tout en les contenant",
-      "Solution réversible et écologique (sauf barrières chimiques)"
+      "Evite la succion des racines et stabilise la teneur en eau du sol sous l'habitation.",
+      "Maintient l'équilibre hydrique du sol près des fondations.",
+      "Évite l'abattage des arbres tout en les contenant."
     ]
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
       "details": [
-        "Avant de planter des arbres ou haies près de la maison",
+        "Lorsque des arbres d'une propriété voisine peuvent causer des désordres sur la construction.",
         "Si des racines sont déjà visibles près des fondations",
-        "Dans le cadre d'un diagnostic RGA recommandant une protection",
-        "Lors de la construction en zone boisée"
+        "Si des arbres sont à moins de 1,5 fois leur hauteur de la maison."
       ]
     },
     "traitement": {
-      "title": "En traitement",
+      "title": "Points de vigilence",
       "details": [
-        "Après apparition de fissures verticales aux angles du bâtiment",
-        "Si un arbre proche a poussé de plus de 3m en 5 ans",
-        "En cas de racines visibles dans les canalisations",
-        "Lors de la rénovation des fondations"
+        "Il est recommandé de faire appel à un professionnel pour déterminer la longueur, la profondeur et le positionnement de l'écran anti-racine.",
+        "Un soin particulier doit être porté sur les matériaux utilisés afin de garantir l'étanchéité et la résistance.",
+        "L'entretien régulier de la végétation est essentiel pour assurer la pérennité et l'efficacité du dispositif.",
+        "Il faut éviter de planter des arbres ou des haies proche des maisons en zone d'exposition au RGA."
       ]
     }
   },
