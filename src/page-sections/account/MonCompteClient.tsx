@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth, ROLES } from "@/lib/auth/client";
+import { useAuth } from "@/lib/auth/client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MonCompteLoading from "../../components/Loading/Loading";
@@ -10,26 +10,22 @@ import StepDetailSection from "./common/StepDetailSection";
 import CalloutARemplir from "./eligibilite/CalloutEligibiliteAFaire";
 import CalloutDiagnostic from "./diagnostic/CalloutDiagnostic";
 import CalloutEnInstruction from "./en-instruction/CalloutEnInstruction";
+import { useRGAContext } from "@/lib/form-rga/session/useRGAContext";
 
 // Panneau de test latéral (seulement en dev)
 // import DevTestSidebar from "./test/DevTestSidebar";
 
 export default function MonCompteClient() {
   const { user, isLoading, isLoggingOut } = useAuth();
+  const { data: rgaData, hasData, isLoading: isLoadingRGA } = useRGAContext();
   const router = useRouter();
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isRedirecting] = useState(false);
 
   // Redirection si pas d'utilisateur ou mauvais rôle
   useEffect(() => {
     // Si on est en train de charger, rediriger ou se déconnecter, on ne fait rien
-    if (isLoading || isRedirecting || isLoggingOut) return;
-
-    // Si pas d'utilisateur ou mauvais rôle
-    if (!user || user.role !== ROLES.PARTICULIER) {
-      setIsRedirecting(true);
-      router.push("/connexion");
-    }
-  }, [isLoading, user, router, isRedirecting, isLoggingOut]);
+    if (isLoading || isLoadingRGA || isRedirecting || isLoggingOut) return;
+  }, [isLoading, isLoadingRGA, user, router, isRedirecting, isLoggingOut]);
 
   // Afficher un message de déconnexion
   if (isLoggingOut) {
@@ -44,7 +40,7 @@ export default function MonCompteClient() {
   }
 
   // Gestion du chargement initial
-  if (isLoading) {
+  if (isLoading || isLoadingRGA) {
     return <MonCompteLoading />;
   }
 
@@ -59,6 +55,20 @@ export default function MonCompteClient() {
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
           <h1>Bonjour {user.firstName}</h1>
+
+          {hasData && (
+            <>
+              <span className="fr-badge fr-badge--new fr-mb-4w">
+                DONNES RGA RECUES
+              </span>
+              <details className="fr-mb-4w">
+                <summary>Données RGA parsées</summary>
+                <pre className="fr-text--xs">
+                  {JSON.stringify(rgaData, null, 2)}
+                </pre>
+              </details>
+            </>
+          )}
 
           {/* TODO : Gestion état du badge / compte */}
           <span className="fr-badge fr-badge--new fr-mb-4w">

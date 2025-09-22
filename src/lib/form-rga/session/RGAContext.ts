@@ -21,7 +21,7 @@ export interface RGAContextType {
   reloadFromStorage: () => void;
 
   // Validation
-  validateData: () => string[];
+  validateRGAData: (data: Partial<RGAFormData>) => string[];
 }
 
 // Contexte

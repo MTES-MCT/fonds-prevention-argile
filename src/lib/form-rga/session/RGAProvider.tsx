@@ -31,35 +31,40 @@ export function RGAProvider({ children }: RGAProviderProps) {
   const hasData = data !== null && Object.keys(data).length > 0;
 
   // État dérivé : validation
-  const validateData = useCallback((): string[] => {
-    if (!data) return ["Aucune donnée RGA"];
+  const validateRGAData = useCallback(
+    (data: Partial<RGAFormData>): string[] => {
+      if (!data) return ["Aucune donnée RGA"];
 
-    const errors: string[] = [];
+      const errors: string[] = [];
 
-    if (!data.logement?.adresse) {
-      errors.push("Adresse du logement manquante");
-    }
+      if (!data.logement?.adresse) {
+        errors.push("Adresse du logement manquante");
+      }
 
-    if (!data.menage?.revenu || data.menage.revenu <= 0) {
-      errors.push("Revenu du ménage invalide");
-    }
+      if (!data.menage?.revenu || data.menage.revenu <= 0) {
+        errors.push("Revenu du ménage invalide");
+      }
 
-    if (!data.menage?.personnes || data.menage.personnes <= 0) {
-      errors.push("Nombre de personnes invalide");
-    }
+      if (!data.menage?.personnes || data.menage.personnes <= 0) {
+        errors.push("Nombre de personnes invalide");
+      }
 
-    if (!data.logement?.type) {
-      errors.push("Type de logement manquant");
-    }
+      if (!data.logement?.type) {
+        errors.push("Type de logement manquant");
+      }
 
-    return errors;
-  }, [data]);
+      return errors;
+    },
+    []
+  );
 
-  const errors = validateData();
+  const errors = validateRGAData(data || {});
   const isValid = errors.length === 0;
 
   // Actions
   const saveRGA = useCallback((newData: Partial<RGAFormData>): boolean => {
+    // Clear automatique avant save pour une nouvelle demande
+    clearRGAFromStorage();
     const success = saveRGAToStorage(newData);
     if (success) {
       setData(newData);
@@ -103,7 +108,7 @@ export function RGAProvider({ children }: RGAProviderProps) {
     reloadFromStorage,
 
     // Validation
-    validateData,
+    validateRGAData,
   };
 
   return (

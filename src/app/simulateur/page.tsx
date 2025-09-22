@@ -1,6 +1,7 @@
 "use client";
 
 import { contentSimulationPage } from "@/content";
+import Link from "next/link";
 
 export default function Simulateur() {
   // Debug des variables d'environnement
@@ -25,9 +26,9 @@ export default function Simulateur() {
           <div className="fr-collapse" id="breadcrumb">
             <ol className="fr-breadcrumb__list">
               <li>
-                <a className="fr-breadcrumb__link" href="/">
+                <Link className="fr-breadcrumb__link" href="/">
                   {contentSimulationPage.breadcrumb.home}
-                </a>
+                </Link>
               </li>
               <li>
                 <a className="fr-breadcrumb__link" aria-current="page">
