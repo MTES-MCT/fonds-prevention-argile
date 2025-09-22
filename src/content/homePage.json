@@ -29,8 +29,11 @@
   "signes_a_surveiller_section": {
     "title": "Les signes à surveiller",
     "subtitle": "Les mouvements de terrain induits par le retrait et le gonflement des argiles se traduisent par des désordres d'importance variables suivant l'intensité et la fréquence du phénomène.",
-    "subtitle2": "Les signes précurseurs sont des désordres architecturaux de type microfissures, fissures isolées sur les murs intérieurs, et fissures extérieurs sur les doublages et les cloisons inférieurs dont la taille n'excède pas 1mm. Ces fissures, quand elles sont la conséquence du RGA, généralement, s'ouvrent et se ferment selon des cycles saisonniers : c'est le moment idéal pour intervenir et prévenir des désordres plus importants.",
-    "subtitle3": "A plus long terme, si aucun travaux ne sont réalisés, des désordres structuraux peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons et, parfois, rupture de canalisations enterrées."
+    "subtitle2": "Les signes précurseurs sont des désordres architecturaux de type microfissures, fissures isolées sur les murs intérieurs, et fissures extérieurs sur les doublages et les cloisons inférieurs dont la taille n'excède pas 1mm. Ces fissures, quand elles sont la conséquence du RGA, généralement, s'ouvrent et se ferment selon des cycles saisonniers : c'est le moment idéal pour intervenir et prévenir des désordres plus importants."
+  },
+  "desordres_structuraux_section": {
+    "title": "Risques de dégradation avancée sans action de votre part",
+    "subtitle": "A plus long terme, si aucun travaux ne sont réalisés, des désordres structuraux peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons et, parfois, rupture de canalisations enterrées."
   },
   "savoir_si_concerne_section": {
     "title": "Vous voulez savoir si vous êtes concerné ?",
