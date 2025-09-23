@@ -3,153 +3,105 @@ import type { PrefillData } from "@/lib/api/demarches-simplifiees/rest/types";
 
 /**
  * Mappe les données RGA vers le format de préremplissage DS
- *
- * Note: Les IDs des champs (champ_xxx) doivent correspondre
- * exactement aux IDs dans Démarches Simplifiées
+ * IDs mis à jour selon le schéma DS réel
  */
 export function mapRGAToDSFormat(rgaData: Partial<RGAFormData>): PrefillData {
   const prefillData: PrefillData = {};
 
-  // === SECTION LOGEMENT ===
-  if (rgaData.logement) {
-    const { logement } = rgaData;
+  // === SECTION 1: IDENTIFICATION DU DEMANDEUR ===
 
-    // Adresse complète
-    if (logement.adresse) {
-      prefillData["champ_Q2hhbXAtMzY4NjYwOQ"] = logement.adresse;
-    }
+  // Note: Adresse de correspondance, téléphone et email du demandeur
+  // ne sont pas dans RGA - ils devront être saisis manuellement dans DS
 
-    // Code postal et ville (à extraire de l'adresse ou utiliser commune_nom)
-    if (logement.commune_nom) {
-      prefillData["champ_Q2hhbXAtMzY4NjYxMA"] = logement.commune_nom;
-    }
+  // Nombre de personnes composant le ménage
+  if (rgaData.menage?.personnes) {
+    prefillData["champ_Q2hhbXAtNTQyMjU4NA"] = rgaData.menage.personnes;
+  }
 
-    // Type de logement
-    if (logement.type) {
-      prefillData["champ_Q2hhbXAtMzY4NjYxMQ"] =
-        logement.type === "maison" ? "Maison individuelle" : "Appartement";
-    }
+  // Revenu fiscal de référence
+  if (rgaData.menage?.revenu) {
+    prefillData["champ_Q2hhbXAtNTQyMjU4NQ"] = rgaData.menage.revenu;
+  }
 
-    // Année de construction
-    if (logement.annee_de_construction) {
-      prefillData["champ_Q2hhbXAtMzY4NjYxMg"] = parseInt(
-        logement.annee_de_construction
-      );
-    }
+  // === SECTION 4: DESCRIPTION DE LA MAISON ===
 
-    // Nombre de niveaux
-    if (logement.niveaux) {
-      prefillData["champ_Q2hhbXAtMzY4NjYxMw"] = logement.niveaux;
-    }
+  // Adresse de la maison concernée par le dossier d'aide
+  if (rgaData.logement?.adresse) {
+    prefillData["champ_Q2hhbXAtNTU0MjUyNg"] = rgaData.logement.adresse;
+  }
 
-    // Zone d'exposition
-    if (logement.zone_dexposition) {
-      const zoneMapping: Record<string, string> = {
-        faible: "Zone d'exposition faible",
-        moyen: "Zone d'exposition moyenne",
-        fort: "Zone d'exposition forte",
-      };
-      prefillData["champ_Q2hhbXAtMzY4NjYxNA"] =
-        zoneMapping[logement.zone_dexposition];
-    }
+  // Année de construction de la maison (format Date attendu)
+  if (rgaData.logement?.annee_de_construction) {
+    // Convertir l'année en date (1er janvier de l'année)
+    prefillData["champ_Q2hhbXAtNTU0MjU2OA"] =
+      `${rgaData.logement.annee_de_construction}-01-01`;
+  }
 
-    // Propriétaire occupant
-    if (logement.proprietaire_occupant !== undefined) {
-      prefillData["champ_Q2hhbXAtMzY4NjYxNQ"] =
-        logement.proprietaire_occupant === "oui" ? "true" : "false";
-    }
+  // Êtes-vous bien propriétaire occupant de cette maison ?
+  if (rgaData.logement?.proprietaire_occupant !== undefined) {
+    prefillData["champ_Q2hhbXAtMTU5OTAwOA"] =
+      rgaData.logement.proprietaire_occupant === "oui" ? "true" : "false";
+  }
 
-    // Logement mitoyen
-    if (logement.mitoyen !== undefined) {
-      prefillData["champ_Q2hhbXAtMzY4NjYxNg"] =
-        logement.mitoyen === "oui" ? "true" : "false";
-    }
-
-    // Référence cadastrale RNB
-    if (logement.rnb) {
-      prefillData["champ_Q2hhbXAtMzY4NjYxNw"] = logement.rnb;
-    }
-
-    // Coordonnées GPS
-    if (logement.coordonnees) {
-      prefillData["champ_Q2hhbXAtMzY4NjYxOA"] = logement.coordonnees;
+  // Localisation en zone d'exposition au RGA (MultipleDropDown)
+  if (rgaData.logement?.zone_dexposition) {
+    const zoneMapping: Record<string, string> = {
+      faible: "faible",
+      moyen: "moyenne",
+      fort: "forte",
+    };
+    const mappedZone = zoneMapping[rgaData.logement.zone_dexposition];
+    if (mappedZone) {
+      // Pour un MultipleDropDown, DS attend généralement une chaîne ou les valeurs séparées par des virgules 
+      prefillData["champ_Q2hhbXAtNTUxMDk4Mw"] = mappedZone;
     }
   }
 
-  // === SECTION MÉNAGE ===
-  if (rgaData.menage) {
-    const { menage } = rgaData;
-
-    // Nombre de personnes dans le foyer
-    if (menage.personnes) {
-      prefillData["champ_Q2hhbXAtMzY4NjYxOQ"] = menage.personnes;
-    }
-
-    // Revenu fiscal de référence
-    if (menage.revenu) {
-      prefillData["champ_Q2hhbXAtMzY4NjYyMA"] = menage.revenu;
-    }
+  // La maison est-elle mitoyenne ?
+  if (rgaData.logement?.mitoyen !== undefined) {
+    prefillData["champ_Q2hhbXAtNTQxNjY5MQ"] =
+      rgaData.logement.mitoyen === "oui" ? "true" : "false";
   }
 
-  // === SECTION RGA (Assurance) ===
-  if (rgaData.rga) {
-    const { rga } = rgaData;
-
-    // Assuré contre le RGA
-    if (rga.assure !== undefined) {
-      prefillData["champ_Q2hhbXAtMzY4NjYyMQ"] =
-        rga.assure === "oui" ? "true" : "false";
-    }
-
-    // Déjà indemnisé pour RGA
-    if (rga.indemnise_rga !== undefined) {
-      prefillData["champ_Q2hhbXAtMzY4NjYyMg"] =
-        rga.indemnise_rga === "oui" ? "true" : "false";
-    }
-
-    // Logement peu endommagé
-    if (rga.peu_endommage !== undefined) {
-      prefillData["champ_Q2hhbXAtMzY4NjYyMw"] =
-        rga.peu_endommage === "oui" ? "true" : "false";
-    }
+  // Nombre de niveaux de la maison
+  if (rgaData.logement?.niveaux) {
+    prefillData["champ_Q2hhbXAtNTQxNzM0OA"] = rgaData.logement.niveaux;
   }
 
-  // === SECTION PROPRIÉTAIRE ===
-  if (rgaData.vous) {
-    const { vous } = rgaData;
-
-    // Conditions de propriété remplies
-    if (vous.proprietaire_condition !== undefined) {
-      prefillData["champ_Q2hhbXAtMzY4NjYyNA"] =
-        vous.proprietaire_condition === "oui" ? "true" : "false";
-    }
-
-    // Propriétaire occupant RGA
-    if (vous.proprietaire_occupant_rga !== undefined) {
-      prefillData["champ_Q2hhbXAtMzY4NjYyNQ"] =
-        vous.proprietaire_occupant_rga === "oui" ? "true" : "false";
-    }
+  // Votre maison est-elle bien assurée
+  if (rgaData.rga?.assure !== undefined) {
+    prefillData["champ_Q2hhbXAtNTYwODAzOA"] =
+      rgaData.rga.assure === "oui" ? "true" : "false";
   }
 
-  // === SECTION TAXE FONCIÈRE ===
-  if (rgaData.taxeFonciere) {
-    const { taxeFonciere } = rgaData;
-
-    // Commune éligible
-    if (taxeFonciere.commune_eligible !== undefined) {
-      prefillData["champ_Q2hhbXAtMzY4NjYyNg"] =
-        taxeFonciere.commune_eligible === "oui" ? "true" : "false";
-    }
+  // Des sinistres au stade précoce ont-ils été identifiés ?
+  if (rgaData.rga?.peu_endommage !== undefined) {
+    // Inverser la logique : peu_endommage = "oui" => sinistres = "true"
+    prefillData["champ_Q2hhbXAtNTQxNzM4OQ"] =
+      rgaData.rga.peu_endommage === "oui" ? "true" : "false";
   }
 
-  // === MÉTADONNÉES ===
-  // Date de soumission du simulateur
-  prefillData["champ_Q2hhbXAtMzY4NjYyNw"] = new Date()
-    .toISOString()
-    .split("T")[0];
+  // Votre maison a-t-elle déjà été indemnisée au titre de la garantie catastrophe naturelle ?
+  if (rgaData.rga?.indemnise_rga !== undefined) {
+    prefillData["champ_Q2hhbXAtNTUxMDg0NQ"] =
+      rgaData.rga.indemnise_rga === "oui" ? "true" : "false";
+  }
 
-  // Source de la demande
-  prefillData["champ_Q2hhbXAtMzY4NjYyOA"] = "Simulateur RGA";
+  // === DONNÉES SUPPLÉMENTAIRES NON MAPPÉES ===
+  // Données RGA n'ont pas de correspondance directe dans le formulaire DS :
+  // - logement.code_region
+  // - logement.code_departement
+  // - logement.epci
+  // - logement.commune
+  // - logement.commune_nom
+  // - logement.coordonnees
+  // - logement.clef_ban
+  // - logement.commune_denormandie
+  // - logement.rnb
+  // - logement.type (maison/appartement - DS suppose toujours une maison...)
+  // - taxeFonciere.commune_eligible
+  // - vous.proprietaire_condition
+  // - vous.proprietaire_occupant_rga
 
   return prefillData;
 }
@@ -163,7 +115,7 @@ export function validateRGADataForDS(rgaData: Partial<RGAFormData>): {
 } {
   const errors: string[] = [];
 
-  // Vérifications requises pour DS
+  // Vérifications des champs requis qui peuvent être préremplis
   if (!rgaData.logement?.adresse) {
     errors.push("L'adresse du logement est requise");
   }
@@ -176,12 +128,28 @@ export function validateRGADataForDS(rgaData: Partial<RGAFormData>): {
     errors.push("Le nombre de personnes dans le foyer est requis");
   }
 
-  if (!rgaData.logement?.type) {
-    errors.push("Le type de logement est requis");
+  if (!rgaData.logement?.annee_de_construction) {
+    errors.push("L'année de construction est requise");
   }
 
   if (!rgaData.logement?.zone_dexposition) {
     errors.push("La zone d'exposition est requise");
+  }
+
+  if (!rgaData.logement?.proprietaire_occupant === undefined) {
+    errors.push("Le statut de propriétaire occupant est requis");
+  }
+
+  if (!rgaData.logement?.mitoyen === undefined) {
+    errors.push("L'information de mitoyenneté est requise");
+  }
+
+  if (!rgaData.logement?.niveaux) {
+    errors.push("Le nombre de niveaux est requis");
+  }
+
+  if (!rgaData.rga?.assure === undefined) {
+    errors.push("Le statut d'assurance est requis");
   }
 
   return {
@@ -200,14 +168,18 @@ export function getRGADataSummary(rgaData: Partial<RGAFormData>): string {
     summary.push(`Adresse: ${rgaData.logement.adresse}`);
   }
 
-  if (rgaData.logement?.type) {
-    summary.push(`Type: ${rgaData.logement.type}`);
+  if (rgaData.logement?.zone_dexposition) {
+    summary.push(`Zone: ${rgaData.logement.zone_dexposition}`);
   }
 
   if (rgaData.menage?.personnes && rgaData.menage?.revenu) {
     summary.push(
       `Foyer: ${rgaData.menage.personnes} personne(s), ${rgaData.menage.revenu}€ de revenu`
     );
+  }
+
+  if (rgaData.rga?.assure) {
+    summary.push(`Assuré: ${rgaData.rga.assure}`);
   }
 
   return summary.join(" | ");

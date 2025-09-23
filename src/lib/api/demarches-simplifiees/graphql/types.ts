@@ -13,7 +13,14 @@ export interface DemarcheDetailed extends DemarcheBase {
   description?: string;
   service?: ServiceInfo;
   champDescriptors?: ChampDescriptor[];
+  activeRevision?: Revision;
   dossiers?: DossiersConnection;
+}
+
+export interface Revision {
+  id: string;
+  datePublication?: string;
+  champDescriptors: ChampDescriptor[];
 }
 
 export interface ServiceInfo {
@@ -24,12 +31,14 @@ export interface ServiceInfo {
 }
 
 export interface ChampDescriptor {
+  __typename?: string;
   id: string;
-  type: string;
+  type?: string;
   label: string;
   description?: string;
   required: boolean;
   options?: string[];
+  champDescriptors?: ChampDescriptor[];
 }
 
 export interface Dossier {

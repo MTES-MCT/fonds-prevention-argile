@@ -194,6 +194,64 @@ export class DemarchesSimplifieesClient {
   }
 
   /**
+   * Récupère le schéma d'une démarche avec les descripteurs de champs
+   * Fonctionne même pour les démarches en test
+   */
+  async getDemarcheSchema(number: number): Promise<DemarcheDetailed | null> {
+    const query = `
+    query GetDemarcheSchema($number: Int!) {
+      demarche(number: $number) {
+        id
+        number
+        title
+        state
+        description
+        dateCreation
+        datePublication
+        dateDerniereModification
+        activeRevision {
+          id
+          datePublication
+          champDescriptors {
+            __typename
+            id
+            label
+            description
+            required
+            ... on DropDownListChampDescriptor {
+              options
+            }
+            ... on MultipleDropDownListChampDescriptor {
+              options
+            }
+            ... on RepetitionChampDescriptor {
+              champDescriptors {
+                __typename
+                id
+                label
+                description
+                required
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+    try {
+      const data = await this.executeQuery<{ demarche: DemarcheDetailed }>(
+        query,
+        { number }
+      );
+      return data.demarche;
+    } catch (error) {
+      console.error(`Failed to fetch schema for demarche ${number}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * Récupère un dossier spécifique
    */
   /**

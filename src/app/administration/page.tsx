@@ -4,6 +4,7 @@ import {
   getDemarcheDetails,
   getDossiers,
 } from "@/lib/actions/demarches-simplifies";
+import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees/graphql";
 
 // Fonction pour formater les états des dossiers
 function getStateLabel(state: string): string {
@@ -32,6 +33,10 @@ function getStateBadgeClass(state: string): string {
 export default async function Admin() {
   const env = getServerEnv();
   const demarcheId = parseInt(env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE);
+
+  // Utiliser GraphQL pour récupérer le schéma
+  const client = getDemarchesSimplifieesClient();
+  const schema = await client.getDemarcheSchema(demarcheId);
 
   // Utiliser les server actions
   const [demarcheResponse, dossiersResponse] = await Promise.all([
@@ -129,6 +134,53 @@ export default async function Admin() {
           </div>
         </div>
       </div>
+
+      {/* Tableau des champs du schéma */}
+      <h2 className="fr-h3 fr-mb-3w">Champs de la démarche</h2>
+
+      {schema?.activeRevision?.champDescriptors ? (
+        <>
+          <pre>
+            {JSON.stringify(schema.activeRevision.champDescriptors, null, 2)}
+          </pre>
+          <div className="fr-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Label</th>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Requis</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {schema.activeRevision.champDescriptors.map((champ) => (
+                  <tr key={champ.id}>
+                    <td>{champ.label}</td>
+                    <td>
+                      <code
+                        style={{
+                          fontSize: "0.85em",
+                          background: "#f0f0f0",
+                          padding: "2px 4px",
+                        }}
+                      >
+                        {champ.id}
+                      </code>
+                    </td>
+                    <td>{champ.__typename?.replace("ChampDescriptor", "")}</td>
+                    <td>{champ.required ? "OUI" : "Non"}</td>
+                    <td>{champ.description || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : (
+        <p>Aucun schéma trouvé</p>
+      )}
 
       {/* Informations de la démarche */}
       <div className="fr-accordions-group fr-mb-6w">
