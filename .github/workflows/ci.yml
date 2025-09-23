@@ -66,8 +66,14 @@ jobs:
           DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY: "API_KEY_EXAMPLE"
           DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL: https://www.demarches-simplifiees.fr/api/v2/graphql
           DEMARCHES_SIMPLIFIEES_REST_API_URL: https://www.demarches-simplifiees.fr/api/public/v1
-          DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE: "exemple-demarche"
-          DEMARCHES_SIMPLIFIEES_ID_DEMARCHE: "123456"
+          DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE: "126061"
+          DEMARCHES_SIMPLIFIEES_NOM_ELIGIBILITE: "xxxxx-xxx-xxx-xxx"
+          DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC: "126062"
+          DEMARCHES_SIMPLIFIEES_NOM_DIAGNOSTIC: "xxxxx-xxx-xxx-xxx"
+          DEMARCHES_SIMPLIFIEES_ID_DEVIS: "126063"
+          DEMARCHES_SIMPLIFIEES_NOM_DEVIS: "xxxxx-xxx-xxx-xxx"
+          DEMARCHES_SIMPLIFIEES_ID_FACTURES: "126064"
+          DEMARCHES_SIMPLIFIEES_NOM_FACTURES: "xxxxx-xxx-xxx-xxx"
           ADMIN_PASSWORD: "examplepassword"
           JWT_SECRET: "supersecretkeywithmorethan32characters"
           FC_CLIENT_ID: "exampleclientid"
