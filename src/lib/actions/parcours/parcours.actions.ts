@@ -2,12 +2,12 @@
 
 import { Step, Status, ParcoursState } from "@/lib/parcours/parcours.types";
 import {
-  canSubmit,
-  canValidate,
-  canProgress,
   getNextStep,
   isParcoursComplete,
   getNextAction,
+  canCreateDossier,
+  canValidateDossier,
+  canPassToNextStep,
 } from "@/lib/parcours/parcours.helpers";
 import {
   getOrCreateParcours,
@@ -16,11 +16,11 @@ import {
 } from "@/lib/database/services";
 import { getSession } from "@/lib/auth/services/auth.service";
 import { parcoursRepo } from "@/lib/database/repositories";
-import type { ActionResult } from "./demarches-simplifies/types";
+import type { ActionResult } from "../types";
 import {
   DossierDemarchesSimplifiees,
   ParcoursPrevention,
-} from "../database/schema";
+} from "../../database/schema";
 
 /**
  * Initialise ou récupère le parcours
@@ -62,9 +62,9 @@ export async function initierParcours(): Promise<
 }
 
 /**
- * Soumet un dossier (passe de TODO à EN_INSTRUCTION)
+ * Crée un dossier Demarches Simplifiées et passe l'étape en EN_INSTRUCTION
  */
-export async function soumettreEtape(
+export async function creerDossier(
   dsNumber: string,
   dsDemarcheId: string,
   dsUrl?: string
@@ -85,11 +85,11 @@ export async function soumettreEtape(
       status: data.parcours.currentStatus,
     };
 
-    // Vérifier qu'on peut soumettre
-    if (!canSubmit(currentState)) {
+    // Vérifier qu'on peut créer un dossier
+    if (!canCreateDossier(currentState)) {
       return {
         success: false,
-        error: "Cette étape ne peut pas être soumise",
+        error: "Ce dossier ne peut pas être créé",
       };
     }
 
@@ -122,10 +122,10 @@ export async function soumettreEtape(
 }
 
 /**
- * Valide l'étape (passe de EN_INSTRUCTION à VALIDE)
- * Généralement appelé par webhook ou admin
+ * Valide le dossier (passe de EN_INSTRUCTION à VALIDE)
+ * Généralement appelé par webhook ou synchronisation périodique
  */
-export async function validerEtape(): Promise<
+export async function validerDossier(): Promise<
   ActionResult<{ state: ParcoursState }>
 > {
   try {
@@ -144,10 +144,10 @@ export async function validerEtape(): Promise<
       status: data.parcours.currentStatus,
     };
 
-    if (!canValidate(currentState)) {
+    if (!canValidateDossier(currentState)) {
       return {
         success: false,
-        error: "Cette étape ne peut pas être validée",
+        error: "Ce dossier ne peut pas être validé",
       };
     }
 
@@ -174,7 +174,7 @@ export async function validerEtape(): Promise<
 /**
  * Passe à l'étape suivante (VALIDE -> étape suivante en TODO)
  */
-export async function progresserEtape(): Promise<
+export async function passerEtapeSuivante(): Promise<
   ActionResult<{
     state: ParcoursState;
     complete: boolean;
@@ -196,7 +196,7 @@ export async function progresserEtape(): Promise<
       status: data.parcours.currentStatus,
     };
 
-    if (!canProgress(currentState)) {
+    if (!canPassToNextStep(currentState)) {
       if (isParcoursComplete(currentState)) {
         return {
           success: true,
@@ -250,9 +250,9 @@ export async function getParcoursStatus(): Promise<
     state: ParcoursState;
     nextAction: string;
     complete: boolean;
-    canSubmit: boolean;
-    canValidate: boolean;
-    canProgress: boolean;
+    canCreateDossier: boolean;
+    canValidateDossier: boolean;
+    canPassToNextStep: boolean;
   }>
 > {
   try {
@@ -277,9 +277,9 @@ export async function getParcoursStatus(): Promise<
         state,
         nextAction: getNextAction(state),
         complete: isParcoursComplete(state),
-        canSubmit: canSubmit(state),
-        canValidate: canValidate(state),
-        canProgress: canProgress(state),
+        canCreateDossier: canCreateDossier(state),
+        canValidateDossier: canValidateDossier(state),
+        canPassToNextStep: canPassToNextStep(state),
       },
     };
   } catch (error) {
@@ -360,7 +360,9 @@ export async function obtenirMonParcours(): Promise<
         parcours: data.parcours,
         dossiers: data.dossiers || [],
         isComplete: isParcoursComplete(state),
-        prochainEtape: canProgress(state) ? getNextStep(state.step) : null,
+        prochainEtape: canPassToNextStep(state)
+          ? getNextStep(state.step)
+          : null,
       },
     };
   } catch (error) {

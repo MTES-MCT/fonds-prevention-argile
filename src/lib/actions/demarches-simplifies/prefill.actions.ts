@@ -7,7 +7,7 @@ import type {
   DemarcheSchema,
   DemarcheStats,
 } from "@/lib/api/demarches-simplifiees/rest/types";
-import type { ActionResult } from "./types";
+import type { ActionResult } from "../types";
 
 // Import des données de mock
 import mockDataRGA from "@/lib/mocks/prefill-data-reponses-ds.json";

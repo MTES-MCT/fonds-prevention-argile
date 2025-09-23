@@ -7,8 +7,7 @@ import type {
   Dossier,
   DossiersFilters,
 } from "@/lib/api/demarches-simplifiees/graphql/types";
-
-import type { ActionResult } from "./types";
+import { ActionResult } from "@/lib/actions";
 
 /**
  * Récupère les détails d'une démarche

@@ -7,23 +7,23 @@ import {
 } from "./parcours.types";
 
 /**
- * Vérifie si on peut soumettre (TODO -> EN_INSTRUCTION)
+ * Vérifie si on peut créer un dossier (TODO -> EN_INSTRUCTION)
  */
-export function canSubmit(state: ParcoursState): boolean {
+export function canCreateDossier(state: ParcoursState): boolean {
   return state.status === Status.TODO;
 }
 
 /**
- * Vérifie si on peut valider (EN_INSTRUCTION -> VALIDE)
+ * Vérifie si on peut valider un dossier (EN_INSTRUCTION -> VALIDE)
  */
-export function canValidate(state: ParcoursState): boolean {
+export function canValidateDossier(state: ParcoursState): boolean {
   return state.status === Status.EN_INSTRUCTION;
 }
 
 /**
  * Vérifie si on peut passer à l'étape suivante
  */
-export function canProgress(state: ParcoursState): boolean {
+export function canPassToNextStep(state: ParcoursState): boolean {
   return state.status === Status.VALIDE && !isLastStep(state.step);
 }
 

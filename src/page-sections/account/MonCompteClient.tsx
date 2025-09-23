@@ -21,7 +21,7 @@ export default function MonCompteClient() {
     isLoading: isLoadingRGA,
   } = useRGAContext();
   const router = useRouter();
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isRedirecting] = useState(false);
   const [showNoDataMessage, setShowNoDataMessage] = useState(false);
 
   // Redirection si pas de données RGA

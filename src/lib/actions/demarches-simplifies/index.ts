@@ -1,6 +1,3 @@
-// Export des types partagés
-export type { ActionResult, ActionData } from "./types";
-
 // Actions de préremplissage (REST)
 export {
   getDemarcheSchema,

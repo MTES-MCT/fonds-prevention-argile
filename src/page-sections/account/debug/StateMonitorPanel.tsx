@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   obtenirMonParcours,
   reinitialiserParcours,
-} from "@/lib/actions/parcours.actions";
+} from "@/lib/actions/parcours/parcours.actions";
 import {
   Step,
   Status,
