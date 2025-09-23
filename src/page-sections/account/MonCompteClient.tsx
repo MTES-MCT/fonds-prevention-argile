@@ -13,8 +13,6 @@ import CalloutEnInstruction from "./en-instruction/CalloutEnInstruction";
 import { useRGAContext } from "@/lib/form-rga/session/useRGAContext";
 import DevTestSidebar from "./debug/DevTestSidebar";
 
-const REDIRECT_DELAY_MS = 3000; // Délai avant redirection automatique si pas de données RGA
-
 export default function MonCompteClient() {
   const { user, isLoading, isLoggingOut } = useAuth();
   const {
@@ -34,14 +32,6 @@ export default function MonCompteClient() {
     // Si utilisateur connecté mais pas de données RGA
     if (user && !hasRGAData) {
       setShowNoDataMessage(true);
-      setIsRedirecting(true);
-
-      // Redirection après un délai pour laisser le temps de lire le message
-      const redirectTimer = setTimeout(() => {
-        router.push("/simulateur");
-      }, REDIRECT_DELAY_MS);
-
-      return () => clearTimeout(redirectTimer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, isLoadingRGA, user, hasRGAData, router, isLoggingOut]);
@@ -72,9 +62,6 @@ export default function MonCompteClient() {
           <p>
             Vous devez d'abord remplir le simulateur d'éligibilité avant
             d'accéder à votre compte.
-          </p>
-          <p className="fr-text--sm fr-mt-2w">
-            Redirection automatique vers le simulateur dans quelques secondes...
           </p>
         </div>
         <div className="fr-btns-group fr-mt-3w">
