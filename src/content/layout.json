@@ -9,9 +9,9 @@
       { "href": "/accessibilite", "label": "Accessibilité : non conforme" },
       { "href": "/statistiques", "label": "Statistiques" }
     ],
-    "organizationDescription": "Fonds Prévention Argile est une plateforme numérique conçue par la <a href='https://www.ecologie.gouv.fr/direction-generale-lamenagement-du-logement-et-nature-dgaln-0' rel='noopener noreferrer' target='_blank'>Direction générale de l'aménagement, du logement et de la nature (DGALN)</a> en partenariat avec le programme <a href='https://beta.gouv.fr/' rel='noopener noreferrer' target='_blank'>beta.gouv</a> de la <a href='https://www.numerique.gouv.fr/' rel='noopener noreferrer' target='_blank'>DINUM</a>. Fonds Argile est en phase d'expérimentation, n'hésitez pas à nous faire part de vos retours par mail à contact@fonds-prevention-argile.beta.gouv.fr",
+    "organizationDescription": "Fonds Prévention Argile est une plateforme numérique conçue par la <a href='https://www.ecologie.gouv.fr/direction-generale-lamenagement-du-logement-et-nature-dgaln-0' rel='noopener noreferrer' target='_blank'>Direction générale de l'aménagement, du logement et de la nature (DGALN)</a> en partenariat avec le programme <a href='https://beta.gouv.fr/' rel='noopener noreferrer' target='_blank'>beta.gouv</a> de la <a href='https://www.numerique.gouv.fr/' rel='noopener noreferrer' target='_blank'>DINUM</a>. Le Fonds Prévention Argile est en phase d'expérimentation, n'hésitez pas à nous faire part de vos retours par mail à contact@fonds-prevention-argile.beta.gouv.fr",
     "organizationLink": "/",
-    "organizationName": "fonds argile",
+    "organizationName": "fonds prévention argile",
     "bottom_copy_line": "Sauf mention explicite de propriété intellectuelle détenue par des tiers, les contenus de ce site sont proposés sous <a href='https://github.com/etalab/licence-ouverte/blob/master/LO.md' rel='noopener noreferrer' target='_blank'>licence etalab-2.0</a>"
   },
   "header": {
