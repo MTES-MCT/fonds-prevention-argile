@@ -36,8 +36,17 @@ const serverSchema = z.object({
     .string()
     .url()
     .default("https://www.demarches-simplifiees.fr/api/public/v1"),
-  DEMARCHES_SIMPLIFIEES_ID_DEMARCHE: z.string().min(1),
-  DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE: z.string().min(1),
+
+  // Configuration des 4 démarches dans DS
+  DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE: z.string().min(1),
+  DEMARCHES_SIMPLIFIEES_NOM_ELIGIBILITE: z.string().min(1),
+  DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC: z.string().min(1),
+  DEMARCHES_SIMPLIFIEES_NOM_DIAGNOSTIC: z.string().min(1),
+  DEMARCHES_SIMPLIFIEES_ID_DEVIS: z.string().min(1),
+  DEMARCHES_SIMPLIFIEES_NOM_DEVIS: z.string().min(1),
+  DEMARCHES_SIMPLIFIEES_ID_FACTURES: z.string().min(1),
+  DEMARCHES_SIMPLIFIEES_NOM_FACTURES: z.string().min(1),
+
   ADMIN_PASSWORD: z.string().min(8),
   JWT_SECRET: z.string().min(32),
   BASE_URL: z.string().url().default("http://localhost:3000"),

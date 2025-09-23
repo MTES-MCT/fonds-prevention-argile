@@ -1,4 +1,5 @@
 import { getServerEnv } from "@/lib/config/env.config";
+import { Step } from "@/lib/parcours/parcours.types";
 import type {
   PrefillData,
   CreateDossierResponse,
@@ -6,11 +7,12 @@ import type {
   DemarcheStats,
 } from "./types";
 
+export type DemarcheType = "ELIGIBILITE" | "DIAGNOSTIC" | "DEVIS" | "FACTURES";
+
 export class DemarchesSimplifieesPrefillClient {
   private baseUrl: string;
   private publicUrl: string;
-  private idDemarche: string;
-  private nomDemarche: string;
+  private demarcheConfigs: Record<DemarcheType, { id: string; nom: string }>;
 
   constructor() {
     const env = getServerEnv();
@@ -18,28 +20,88 @@ export class DemarchesSimplifieesPrefillClient {
     this.baseUrl = env.DEMARCHES_SIMPLIFIEES_REST_API_URL;
     // URL publique pour les endpoints non-API (schema, preremplir, etc.)
     this.publicUrl = this.baseUrl.replace("/api/public/v1", "");
-    this.idDemarche = env.DEMARCHES_SIMPLIFIEES_ID_DEMARCHE;
-    this.nomDemarche = env.DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE;
+
+    // Configuration des 4 démarches
+    this.demarcheConfigs = {
+      ELIGIBILITE: {
+        id: env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE,
+        nom: env.DEMARCHES_SIMPLIFIEES_NOM_ELIGIBILITE,
+      },
+      DIAGNOSTIC: {
+        id: env.DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC,
+        nom: env.DEMARCHES_SIMPLIFIEES_NOM_DIAGNOSTIC,
+      },
+      DEVIS: {
+        id: env.DEMARCHES_SIMPLIFIEES_ID_DEVIS,
+        nom: env.DEMARCHES_SIMPLIFIEES_NOM_DEVIS,
+      },
+      FACTURES: {
+        id: env.DEMARCHES_SIMPLIFIEES_ID_FACTURES,
+        nom: env.DEMARCHES_SIMPLIFIEES_NOM_FACTURES,
+      },
+    };
   }
 
   /**
-   * Récupère le schéma de la démarche
+   * Convertit une étape du parcours en type de démarche
+   */
+  private stepToDemarcheType(step: Step): DemarcheType {
+    switch (step) {
+      case Step.ELIGIBILITE:
+        return "ELIGIBILITE";
+      case Step.DIAGNOSTIC:
+        return "DIAGNOSTIC";
+      case Step.DEVIS:
+        return "DEVIS";
+      case Step.FACTURES:
+        return "FACTURES";
+      default:
+        throw new Error(`Étape non supportée: ${step}`);
+    }
+  }
+
+  /**
+   * Récupère la configuration d'une démarche
+   */
+  private getConfig(demarcheType: DemarcheType | Step) {
+    // Si c'est un Step, on le convertit
+    const type =
+      typeof demarcheType === "string" && demarcheType in this.demarcheConfigs
+        ? (demarcheType as DemarcheType)
+        : this.stepToDemarcheType(demarcheType as Step);
+
+    const config = this.demarcheConfigs[type];
+
+    if (!config) {
+      throw new Error(`Configuration manquante pour la démarche: ${type}`);
+    }
+
+    if (!config.id || !config.nom) {
+      throw new Error(`Configuration incomplète pour la démarche: ${type}`);
+    }
+
+    return config;
+  }
+
+  /**
+   * Récupère le schéma d'une démarche
    * Endpoint: /preremplir/{nom-demarche}/schema
    */
-  async getSchema(): Promise<DemarcheSchema> {
-    const url = `${this.publicUrl}/preremplir/${this.nomDemarche}/schema`;
+  async getSchema(demarcheType: DemarcheType | Step): Promise<DemarcheSchema> {
+    const config = this.getConfig(demarcheType);
+    const url = `${this.publicUrl}/preremplir/${config.nom}/schema`;
 
     const response = await fetch(url, {
       method: "GET",
       headers: {
         Accept: "application/json",
       },
-      cache: "no-store", // Désactive le cache pour avoir toujours la dernière version
+      cache: "no-store",
     });
 
     if (!response.ok) {
       throw new Error(
-        `Erreur lors de la récupération du schéma: ${response.status} ${response.statusText}`
+        `Erreur lors de la récupération du schéma pour ${demarcheType}: ${response.status} ${response.statusText}`
       );
     }
 
@@ -51,9 +113,13 @@ export class DemarchesSimplifieesPrefillClient {
    * Endpoint: /api/public/v1/demarches/{id}/dossiers
    */
   async createPrefillDossier(
-    data: PrefillData
+    data: PrefillData,
+    demarcheType: DemarcheType | Step
   ): Promise<CreateDossierResponse> {
-    const url = `${this.baseUrl}/demarches/${this.idDemarche}/dossiers`;
+    const config = this.getConfig(demarcheType);
+    const url = `${this.baseUrl}/demarches/${config.id}/dossiers`;
+
+    console.log(`📤 Création dossier ${demarcheType} (ID: ${config.id})`);
 
     const response = await fetch(url, {
       method: "POST",
@@ -74,7 +140,9 @@ export class DemarchesSimplifieesPrefillClient {
           errorMessage += ` - ${errorText}`;
         }
       }
-      throw new Error(`Erreur lors de la création du dossier: ${errorMessage}`);
+      throw new Error(
+        `Erreur création dossier ${demarcheType}: ${errorMessage}`
+      );
     }
 
     return response.json();
@@ -84,8 +152,12 @@ export class DemarchesSimplifieesPrefillClient {
    * Génère l'URL de préremplissage en GET
    * Limite: environ 2000 caractères selon les navigateurs
    */
-  generatePrefillUrl(data: PrefillData): string {
-    const baseUrl = `${this.publicUrl}/commencer/${this.nomDemarche}`;
+  generatePrefillUrl(
+    data: PrefillData,
+    demarcheType: DemarcheType | Step
+  ): string {
+    const config = this.getConfig(demarcheType);
+    const baseUrl = `${this.publicUrl}/commencer/${config.nom}`;
     const params = new URLSearchParams();
 
     Object.entries(data).forEach(([key, value]) => {
@@ -96,10 +168,9 @@ export class DemarchesSimplifieesPrefillClient {
 
     const url = `${baseUrl}?${params.toString()}`;
 
-    // Avertissement si l'URL est trop longue
     if (url.length > 2000) {
       console.warn(
-        `URL de préremplissage très longue (${url.length} caractères). Considérez l'utilisation de la méthode POST.`
+        `URL de préremplissage très longue pour ${demarcheType} (${url.length} caractères)`
       );
     }
 
@@ -107,11 +178,12 @@ export class DemarchesSimplifieesPrefillClient {
   }
 
   /**
-   * Récupère les statistiques de la démarche
+   * Récupère les statistiques d'une démarche
    * Endpoint: /api/public/v1/demarches/{id}/stats
    */
-  async getStats(): Promise<DemarcheStats> {
-    const url = `${this.baseUrl}/demarches/${this.idDemarche}/stats`;
+  async getStats(demarcheType: DemarcheType | Step): Promise<DemarcheStats> {
+    const config = this.getConfig(demarcheType);
+    const url = `${this.baseUrl}/demarches/${config.id}/stats`;
 
     const response = await fetch(url, {
       method: "GET",
@@ -123,7 +195,7 @@ export class DemarchesSimplifieesPrefillClient {
 
     if (!response.ok) {
       throw new Error(
-        `Erreur lors de la récupération des statistiques: ${response.status} ${response.statusText}`
+        `Erreur récupération stats ${demarcheType}: ${response.status} ${response.statusText}`
       );
     }
 
@@ -171,6 +243,15 @@ export class DemarchesSimplifieesPrefillClient {
     }
 
     return errors;
+  }
+
+  /**
+   * Récupère l'ID de démarche pour une étape
+   * Utile pour créer le dossier dans le parcours
+   */
+  getDemarcheId(demarcheType: DemarcheType | Step): string {
+    const config = this.getConfig(demarcheType);
+    return config.id;
   }
 }
 

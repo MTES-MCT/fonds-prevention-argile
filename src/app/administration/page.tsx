@@ -31,7 +31,7 @@ function getStateBadgeClass(state: string): string {
 
 export default async function Admin() {
   const env = getServerEnv();
-  const demarcheId = parseInt(env.DEMARCHES_SIMPLIFIEES_ID_DEMARCHE);
+  const demarcheId = parseInt(env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE);
 
   // Utiliser les server actions
   const [demarcheResponse, dossiersResponse] = await Promise.all([

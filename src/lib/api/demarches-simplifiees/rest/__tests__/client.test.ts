@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, MockedFunction } from "vitest";
 import { DemarchesSimplifieesPrefillClient } from "../client";
+import { Step } from "@/lib/parcours/parcours.types";
+import { DemarcheSchema } from "../types";
 
 describe("DemarchesSimplifieesPrefillClient", () => {
   let client: DemarchesSimplifieesPrefillClient;
@@ -11,17 +13,30 @@ describe("DemarchesSimplifieesPrefillClient", () => {
   });
 
   describe("generatePrefillUrl", () => {
-    it("devrait générer une URL avec les bons paramètres", () => {
+    it("devrait générer une URL avec les bons paramètres pour ELIGIBILITE", () => {
       const data = {
         champ_123: "valeur1",
         champ_456: "valeur2",
       };
 
-      const url = client.generatePrefillUrl(data);
+      const url = client.generatePrefillUrl(data, Step.ELIGIBILITE);
 
-      expect(url).toContain("https://api.test.fr/commencer/test-demarche");
+      expect(url).toContain("https://api.test.fr/commencer/");
+      expect(url).toContain("test-nom-eligibilite"); // Selon votre mock env
       expect(url).toContain("champ_123=valeur1");
       expect(url).toContain("champ_456=valeur2");
+    });
+
+    it("devrait générer une URL différente pour DIAGNOSTIC", () => {
+      const data = {
+        champ_123: "valeur1",
+      };
+
+      const url = client.generatePrefillUrl(data, Step.DIAGNOSTIC);
+
+      expect(url).toContain("https://api.test.fr/commencer/");
+      expect(url).toContain("test-nom-diagnostic"); // Selon votre mock env
+      expect(url).toContain("champ_123=valeur1");
     });
 
     it("devrait ignorer les valeurs null/undefined", () => {
@@ -30,11 +45,23 @@ describe("DemarchesSimplifieesPrefillClient", () => {
         champ_456: null,
       };
 
-      const url = client.generatePrefillUrl(data);
+      const url = client.generatePrefillUrl(data, Step.ELIGIBILITE);
 
       expect(url).toContain("champ_123=valeur1");
       expect(url).not.toContain("champ_456");
       expect(url).not.toContain("champ_789");
+    });
+
+    it("devrait accepter un DemarcheType string", () => {
+      const data = {
+        champ_123: "valeur1",
+      };
+
+      const url = client.generatePrefillUrl(data, "DEVIS");
+
+      expect(url).toContain("https://api.test.fr/commencer/");
+      expect(url).toContain("test-nom-devis");
+      expect(url).toContain("champ_123=valeur1");
     });
   });
 
@@ -52,10 +79,30 @@ describe("DemarchesSimplifieesPrefillClient", () => {
       );
       expect(errors).not.toContain("champ_123");
     });
+
+    it("devrait valider avec un schéma", () => {
+      const schema = {
+        id: "123",
+        revision: {
+          champDescriptors: [
+            { id: "champ_123", label: "Test", required: true },
+            { id: "champ_456", label: "Test2", required: false },
+          ],
+        },
+      } as DemarcheSchema;
+
+      const data = {
+        champ_456: "value",
+      };
+
+      const errors = client.validatePrefillData(data, schema);
+
+      expect(errors).toContain("Champ requis manquant: Test");
+    });
   });
 
   describe("createPrefillDossier", () => {
-    it("devrait appeler l'API avec les bonnes données", async () => {
+    it("devrait appeler l'API avec les bonnes données pour ELIGIBILITE", async () => {
       const mockResponse = {
         dossier_url: "https://test.fr/dossier/123",
         dossier_id: "abc123",
@@ -71,10 +118,40 @@ describe("DemarchesSimplifieesPrefillClient", () => {
       );
 
       const data = { champ_123: "test" };
-      const result = await client.createPrefillDossier(data);
+      const result = await client.createPrefillDossier(data, Step.ELIGIBILITE);
 
       expect(fetch).toHaveBeenCalledWith(
-        "https://api.test.fr/api/public/v1/demarches/12345/dossiers",
+        "https://api.test.fr/api/public/v1/demarches/test-id-eligibilite/dossiers",
+        expect.objectContaining({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        })
+      );
+
+      expect(result).toEqual(mockResponse);
+    });
+
+    it("devrait utiliser l'ID correct pour DIAGNOSTIC", async () => {
+      const mockResponse = {
+        dossier_url: "https://test.fr/dossier/456",
+        dossier_id: "def456",
+        dossier_number: 456,
+      };
+
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          statusText: "OK",
+          headers: new Headers({ "Content-Type": "application/json" }),
+        })
+      );
+
+      const data = { champ_789: "diagnostic" };
+      const result = await client.createPrefillDossier(data, Step.DIAGNOSTIC);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api.test.fr/api/public/v1/demarches/test-id-diagnostic/dossiers",
         expect.objectContaining({
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -86,7 +163,6 @@ describe("DemarchesSimplifieesPrefillClient", () => {
     });
 
     it("devrait gérer les erreurs API", async () => {
-      // Mock une réponse d'erreur avec le bon format
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
@@ -106,10 +182,52 @@ describe("DemarchesSimplifieesPrefillClient", () => {
       } as unknown as Response);
 
       await expect(
-        client.createPrefillDossier({ champ_123: "test" })
+        client.createPrefillDossier({ champ_123: "test" }, Step.ELIGIBILITE)
       ).rejects.toThrow(
-        "Erreur lors de la création du dossier: 400 Bad Request - Champ requis manquant"
+        "Erreur création dossier ELIGIBILITE: 400 Bad Request - Champ requis manquant"
       );
+    });
+  });
+
+  describe("getDemarcheId", () => {
+    it("devrait retourner l'ID pour une étape", () => {
+      const id = client.getDemarcheId(Step.ELIGIBILITE);
+      expect(id).toBe("test-id-eligibilite");
+    });
+
+    it("devrait retourner l'ID pour un type de démarche", () => {
+      const id = client.getDemarcheId("FACTURES");
+      expect(id).toBe("test-id-factures");
+    });
+  });
+
+  describe("getSchema", () => {
+    it("devrait récupérer le schéma pour une démarche", async () => {
+      const mockSchema = {
+        id: "123",
+        title: "Test",
+        revision: { champDescriptors: [] },
+      };
+
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockSchema), {
+          status: 200,
+          headers: new Headers({ "Content-Type": "application/json" }),
+        })
+      );
+
+      const result = await client.getSchema(Step.DEVIS);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api.test.fr/preremplir/test-nom-devis/schema",
+        expect.objectContaining({
+          method: "GET",
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        })
+      );
+
+      expect(result).toEqual(mockSchema);
     });
   });
 });

@@ -6,6 +6,7 @@ import type {
   CreateDossierResponse,
 } from "@/lib/api/demarches-simplifiees/rest/types";
 import type { ActionResult } from "../types";
+import { Step } from "@/lib/parcours/parcours.types";
 
 /**
  * Crée un dossier prérempli dans Démarches Simplifiées
@@ -16,7 +17,8 @@ import type { ActionResult } from "../types";
  * @param data - Les données transformées depuis RGA vers le format DS
  */
 export async function createPrefillDossier(
-  data: PrefillData
+  data: PrefillData,
+  step: Step
 ): Promise<ActionResult<CreateDossierResponse>> {
   try {
     // Validation des données
@@ -29,7 +31,7 @@ export async function createPrefillDossier(
     }
 
     // Création du dossier
-    const result = await prefillClient.createPrefillDossier(data);
+    const result = await prefillClient.createPrefillDossier(data, step);
 
     console.log("Dossier DS créé:", {
       numero: result.dossier_number,

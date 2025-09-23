@@ -11,6 +11,7 @@ import type { RGAFormData } from "@/lib/form-rga/types";
 import { createPrefillDossier } from "../demarches-simplifies";
 import { getParcoursComplet } from "@/lib/database/services";
 import { Step } from "@/lib/parcours/parcours.types";
+import { prefillClient } from "@/lib/api/demarches-simplifiees/rest";
 
 interface EligibiliteResult {
   dossierUrl: string;
@@ -57,7 +58,7 @@ export async function envoyerDossierEligibiliteAvecDonnees(
     );
 
     // 4. Créer le dossier prérempli dans DS
-    const dsResult = await createPrefillDossier(prefillData);
+    const dsResult = await createPrefillDossier(prefillData, Step.ELIGIBILITE);
 
     if (!dsResult.success || !dsResult.data) {
       return {
@@ -69,11 +70,9 @@ export async function envoyerDossierEligibiliteAvecDonnees(
     }
 
     // 5. Enregistrer le dossier dans le parcours
-    const demarche = process.env.NEXT_PUBLIC_DS_DEMARCHE_ID || "";
-
     const parcoursResult = await creerDossier(
       dsResult.data.dossier_number.toString(),
-      demarche,
+      prefillClient.getDemarcheId(Step.ELIGIBILITE),
       dsResult.data.dossier_url
     );
 

@@ -4,7 +4,6 @@ export { createPrefillDossier, validatePrefillData } from "./prefill.actions";
 // Actions de test (uniquement pour /test/ds-prefill)
 export {
   getDemarcheSchema,
-  getDemarcheStats,
   createTestDossier,
   generateTestPrefillUrl as generatePrefillUrl, // alias pour compatibilité
   testValidatePrefillData,
