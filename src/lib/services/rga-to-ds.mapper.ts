@@ -1,91 +1,58 @@
+// services/rga-to-ds.mapper.ts
+
 import type { RGAFormData } from "@/lib/form-rga/types";
 import type { PrefillData } from "@/lib/api/demarches-simplifiees/rest/types";
+import {
+  getMappableFields,
+  getValueByPath,
+  type DSField,
+} from "@/lib/constants/dsFields.constants";
 
 /**
  * Mappe les données RGA vers le format de préremplissage DS
- * IDs mis à jour selon le schéma DS réel
+ * Utilise les constantes centralisées pour le mapping
+ */
+/**
+ * Mappe les données RGA vers le format de préremplissage DS
+ * Utilise les constantes centralisées pour le mapping
  */
 export function mapRGAToDSFormat(rgaData: Partial<RGAFormData>): PrefillData {
   const prefillData: PrefillData = {};
 
-  // === SECTION 1: IDENTIFICATION DU DEMANDEUR ===
+  // Récupérer uniquement les champs qui ont un mapping RGA
+  const mappableFields = getMappableFields();
 
-  // Note: Adresse de correspondance, téléphone et email du demandeur
-  // ne sont pas dans RGA - ils devront être saisis manuellement dans DS
+  // Pour chaque champ mappable, extraire la valeur depuis RGA et l'ajouter au prefill
+  mappableFields.forEach((field: DSField) => {
+    if (!field.rgaPath) return;
 
-  // Nombre de personnes composant le ménage
-  if (rgaData.menage?.personnes) {
-    prefillData["champ_Q2hhbXAtNTQyMjU4NA"] = rgaData.menage.personnes;
-  }
+    // Récupérer la valeur depuis l'objet RGA en utilisant le chemin
+    const value = getValueByPath(
+      rgaData as Record<string, unknown>,
+      field.rgaPath
+    );
 
-  // Revenu fiscal de référence
-  if (rgaData.menage?.revenu) {
-    prefillData["champ_Q2hhbXAtNTQyMjU4NQ"] = rgaData.menage.revenu;
-  }
+    // Si la valeur existe
+    if (value !== undefined && value !== null && value !== "") {
+      // Appliquer la transformation si elle existe
+      const transformedValue = field.transformer
+        ? field.transformer(value)
+        : value;
 
-  // === SECTION 4: DESCRIPTION DE LA MAISON ===
-
-  // Adresse de la maison concernée par le dossier d'aide
-  if (rgaData.logement?.adresse) {
-    prefillData["champ_Q2hhbXAtNTU0MjUyNg"] = rgaData.logement.adresse;
-  }
-
-  // Année de construction de la maison (format Date attendu)
-  if (rgaData.logement?.annee_de_construction) {
-    // Convertir l'année en date (1er janvier de l'année)
-    prefillData["champ_Q2hhbXAtNTU0MjU2OA"] =
-      `${rgaData.logement.annee_de_construction}-01-01`;
-  }
-
-  // Êtes-vous bien propriétaire occupant de cette maison ?
-  if (rgaData.logement?.proprietaire_occupant !== undefined) {
-    prefillData["champ_Q2hhbXAtMTU5OTAwOA"] =
-      rgaData.logement.proprietaire_occupant === "oui" ? "true" : "false";
-  }
-
-  // Localisation en zone d'exposition au RGA (MultipleDropDown)
-  if (rgaData.logement?.zone_dexposition) {
-    const zoneMapping: Record<string, string> = {
-      faible: "faible",
-      moyen: "moyenne",
-      fort: "forte",
-    };
-    const mappedZone = zoneMapping[rgaData.logement.zone_dexposition];
-    if (mappedZone) {
-      // Pour un MultipleDropDown, DS attend généralement une chaîne ou les valeurs séparées par des virgules 
-      prefillData["champ_Q2hhbXAtNTUxMDk4Mw"] = mappedZone;
+      // S'assurer que la valeur transformée est du bon type
+      if (
+        typeof transformedValue === "string" ||
+        typeof transformedValue === "number" ||
+        typeof transformedValue === "boolean"
+      ) {
+        // Ajouter au prefill avec le préfixe "champ_"
+        prefillData[`champ_${field.id}`] = transformedValue;
+      } else if (transformedValue !== null) {
+        // Si ce n'est pas un type valide, essayer de convertir en string
+        prefillData[`champ_${field.id}`] = String(transformedValue);
+      }
     }
-  }
-
-  // La maison est-elle mitoyenne ?
-  if (rgaData.logement?.mitoyen !== undefined) {
-    prefillData["champ_Q2hhbXAtNTQxNjY5MQ"] =
-      rgaData.logement.mitoyen === "oui" ? "true" : "false";
-  }
-
-  // Nombre de niveaux de la maison
-  if (rgaData.logement?.niveaux) {
-    prefillData["champ_Q2hhbXAtNTQxNzM0OA"] = rgaData.logement.niveaux;
-  }
-
-  // Votre maison est-elle bien assurée
-  if (rgaData.rga?.assure !== undefined) {
-    prefillData["champ_Q2hhbXAtNTYwODAzOA"] =
-      rgaData.rga.assure === "oui" ? "true" : "false";
-  }
-
-  // Des sinistres au stade précoce ont-ils été identifiés ?
-  if (rgaData.rga?.peu_endommage !== undefined) {
-    // Inverser la logique : peu_endommage = "oui" => sinistres = "true"
-    prefillData["champ_Q2hhbXAtNTQxNzM4OQ"] =
-      rgaData.rga.peu_endommage === "oui" ? "true" : "false";
-  }
-
-  // Votre maison a-t-elle déjà été indemnisée au titre de la garantie catastrophe naturelle ?
-  if (rgaData.rga?.indemnise_rga !== undefined) {
-    prefillData["champ_Q2hhbXAtNTUxMDg0NQ"] =
-      rgaData.rga.indemnise_rga === "oui" ? "true" : "false";
-  }
+  });
 
   // === DONNÉES SUPPLÉMENTAIRES NON MAPPÉES ===
   // Données RGA n'ont pas de correspondance directe dans le formulaire DS :
@@ -112,49 +79,61 @@ export function mapRGAToDSFormat(rgaData: Partial<RGAFormData>): PrefillData {
 export function validateRGADataForDS(rgaData: Partial<RGAFormData>): {
   isValid: boolean;
   errors: string[];
+  warnings: string[];
 } {
   const errors: string[] = [];
+  const warnings: string[] = [];
 
-  // Vérifications des champs requis qui peuvent être préremplis
-  if (!rgaData.logement?.adresse) {
-    errors.push("L'adresse du logement est requise");
-  }
+  // Définir les champs requis (ceux qui doivent absolument être remplis)
+  const requiredFieldPaths: Array<{ path: string; label: string }> = [
+    { path: "logement.adresse", label: "L'adresse du logement" },
+    { path: "menage.revenu", label: "Le revenu fiscal de référence" },
+    { path: "menage.personnes", label: "Le nombre de personnes dans le foyer" },
+    {
+      path: "logement.annee_de_construction",
+      label: "L'année de construction",
+    },
+    { path: "logement.zone_dexposition", label: "La zone d'exposition" },
+    {
+      path: "logement.proprietaire_occupant",
+      label: "Le statut de propriétaire occupant",
+    },
+    { path: "logement.mitoyen", label: "L'information de mitoyenneté" },
+    { path: "logement.niveaux", label: "Le nombre de niveaux" },
+    { path: "rga.assure", label: "Le statut d'assurance" },
+  ];
 
-  if (!rgaData.menage?.revenu) {
-    errors.push("Le revenu fiscal de référence est requis");
-  }
+  // Vérifier les champs requis
+  requiredFieldPaths.forEach(({ path, label }) => {
+    const value = getValueByPath(rgaData as Record<string, unknown>, path);
+    if (value === undefined || value === null || value === "") {
+      errors.push(`${label} est requis`);
+    }
+  });
 
-  if (!rgaData.menage?.personnes) {
-    errors.push("Le nombre de personnes dans le foyer est requis");
-  }
+  // Ajouter des warnings pour les champs optionnels mais recommandés
+  const optionalFieldPaths: Array<{ path: string; label: string }> = [
+    {
+      path: "rga.peu_endommage",
+      label: "Information sur les sinistres précoces",
+    },
+    {
+      path: "rga.indemnise_rga",
+      label: "Information sur l'indemnisation précédente",
+    },
+  ];
 
-  if (!rgaData.logement?.annee_de_construction) {
-    errors.push("L'année de construction est requise");
-  }
-
-  if (!rgaData.logement?.zone_dexposition) {
-    errors.push("La zone d'exposition est requise");
-  }
-
-  if (!rgaData.logement?.proprietaire_occupant === undefined) {
-    errors.push("Le statut de propriétaire occupant est requis");
-  }
-
-  if (!rgaData.logement?.mitoyen === undefined) {
-    errors.push("L'information de mitoyenneté est requise");
-  }
-
-  if (!rgaData.logement?.niveaux) {
-    errors.push("Le nombre de niveaux est requis");
-  }
-
-  if (!rgaData.rga?.assure === undefined) {
-    errors.push("Le statut d'assurance est requis");
-  }
+  optionalFieldPaths.forEach(({ path, label }) => {
+    const value = getValueByPath(rgaData as Record<string, unknown>, path);
+    if (value === undefined || value === null || value === "") {
+      warnings.push(`${label} non renseigné (recommandé)`);
+    }
+  });
 
   return {
     isValid: errors.length === 0,
     errors,
+    warnings,
   };
 }
 
@@ -165,22 +144,85 @@ export function getRGADataSummary(rgaData: Partial<RGAFormData>): string {
   const summary: string[] = [];
 
   if (rgaData.logement?.adresse) {
-    summary.push(`Adresse: ${rgaData.logement.adresse}`);
+    summary.push(`📍 ${rgaData.logement.adresse}`);
   }
 
   if (rgaData.logement?.zone_dexposition) {
-    summary.push(`Zone: ${rgaData.logement.zone_dexposition}`);
+    const zoneLabel =
+      {
+        faible: "Zone faible",
+        moyen: "Zone moyenne",
+        fort: "Zone forte",
+      }[rgaData.logement.zone_dexposition] || rgaData.logement.zone_dexposition;
+    summary.push(`⚠️ ${zoneLabel}`);
   }
 
   if (rgaData.menage?.personnes && rgaData.menage?.revenu) {
     summary.push(
-      `Foyer: ${rgaData.menage.personnes} personne(s), ${rgaData.menage.revenu}€ de revenu`
+      `👥 ${rgaData.menage.personnes} pers. | 💰 ${new Intl.NumberFormat(
+        "fr-FR",
+        {
+          style: "currency",
+          currency: "EUR",
+          maximumFractionDigits: 0,
+        }
+      ).format(rgaData.menage.revenu)}`
     );
   }
 
-  if (rgaData.rga?.assure) {
-    summary.push(`Assuré: ${rgaData.rga.assure}`);
+  if (rgaData.logement?.annee_de_construction) {
+    summary.push(`🏠 Construite en ${rgaData.logement.annee_de_construction}`);
+  }
+
+  if (rgaData.rga?.assure !== undefined) {
+    summary.push(
+      rgaData.rga.assure === "oui" ? "✅ Assurée" : "❌ Non assurée"
+    );
   }
 
   return summary.join(" | ");
+}
+
+/**
+ * Récupère les statistiques de complétion du mapping
+ */
+export function getMappingStats(rgaData: Partial<RGAFormData>): {
+  total: number;
+  filled: number;
+  percentage: number;
+  bySection: Record<string, { total: number; filled: number }>;
+} {
+  const mappableFields = getMappableFields();
+  let filled = 0;
+  const bySection: Record<string, { total: number; filled: number }> = {};
+
+  mappableFields.forEach((field) => {
+    if (!field.rgaPath) return;
+
+    // Initialiser la section si nécessaire
+    if (!bySection[field.section]) {
+      bySection[field.section] = { total: 0, filled: 0 };
+    }
+    bySection[field.section].total++;
+
+    // Vérifier si la valeur existe
+    const value = getValueByPath(
+      rgaData as Record<string, unknown>,
+      field.rgaPath
+    );
+    if (value !== undefined && value !== null && value !== "") {
+      filled++;
+      bySection[field.section].filled++;
+    }
+  });
+
+  return {
+    total: mappableFields.length,
+    filled,
+    percentage:
+      mappableFields.length > 0
+        ? Math.round((filled / mappableFields.length) * 100)
+        : 0,
+    bySection,
+  };
 }
