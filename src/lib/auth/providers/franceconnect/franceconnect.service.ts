@@ -28,6 +28,7 @@ import type {
 } from "./franceconnect.types";
 import type { JWTPayload } from "../../core/auth.types";
 import { userRepo } from "@/lib/database/repositories";
+import { getOrCreateParcours } from "@/lib/database/services";
 
 /**
  * Génère l'URL d'autorisation FranceConnect
@@ -221,7 +222,11 @@ export async function handleFranceConnectCallback(
     const user = await userRepo.upsertFromFranceConnect(userInfo);
     console.log("User créé/récupéré:", user.id);
 
-    // 5. Créer la session avec l'userId
+    // 5. Initialiser le parcours si première connexion
+    const parcours = await getOrCreateParcours(user.id);
+    console.log("Parcours initialisé:", parcours.id);
+
+    // 6. Créer la session avec l'userId
     await createFranceConnectSession(user.id, tokens.id_token);
 
     return { success: true };
