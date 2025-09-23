@@ -122,22 +122,26 @@ export default function CalloutEligibiliteTodo() {
             Simplifiées pour compléter votre dossier.
           </p>
         </div>
-        <div className="fr-btns-group fr-btns-group--inline-sm">
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="fr-btn fr-btn--icon-right fr-icon-check-line"
-          >
-            Confirmer et envoyer
-          </button>
-          <button
-            onClick={handleCancel}
-            disabled={isLoading}
-            className="fr-btn fr-btn--secondary"
-          >
-            Annuler
-          </button>
-        </div>
+        <ul className="fr-btns-group fr-btns-group--inline fr-btns-group--icon-right">
+          <li>
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="fr-btn fr-btn--icon-right fr-icon-check-line"
+            >
+              Confirmer et envoyer
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={handleCancel}
+              disabled={isLoading}
+              className="fr-btn fr-btn--secondary"
+            >
+              Annuler
+            </button>
+          </li>
+        </ul>
       </div>
     );
   }
