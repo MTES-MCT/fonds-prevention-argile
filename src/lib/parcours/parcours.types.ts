@@ -53,7 +53,6 @@ export enum DSStatus {
 export interface ParcoursComplet {
   parcours: ParcoursPrevention;
   dossiers: DossierDemarchesSimplifiees[];
-  progression: number;
   isComplete: boolean;
   prochainEtape: Step | null;
 }

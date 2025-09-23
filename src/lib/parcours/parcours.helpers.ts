@@ -1,4 +1,10 @@
-import { Step, Status, ParcoursState, STEP_ORDER } from "./parcours.types";
+import {
+  Step,
+  Status,
+  ParcoursState,
+  STEP_ORDER,
+  DSStatus,
+} from "./parcours.types";
 
 /**
  * Vérifie si on peut soumettre (TODO -> EN_INSTRUCTION)
@@ -63,5 +69,24 @@ export function getNextAction(state: ParcoursState): string {
       return "Passer à l'étape suivante";
     default:
       return "Action inconnue";
+  }
+}
+
+/**
+ * Convertit un statut DS vers notre statut interne
+ */
+export function mapDSStatusToInternalStatus(dsStatus: DSStatus): Status {
+  switch (dsStatus) {
+    case DSStatus.EN_CONSTRUCTION:
+      return Status.TODO;
+    case DSStatus.EN_INSTRUCTION:
+      return Status.EN_INSTRUCTION;
+    case DSStatus.ACCEPTE:
+      return Status.VALIDE;
+    case DSStatus.REFUSE:
+    case DSStatus.CLASSE_SANS_SUITE:
+      return Status.TODO;
+    default:
+      return Status.TODO;
   }
 }

@@ -17,6 +17,10 @@ import {
 import { getSession } from "@/lib/auth/services/auth.service";
 import { parcoursRepo } from "@/lib/database/repositories";
 import type { ActionResult } from "./demarches-simplifies/types";
+import {
+  DossierDemarchesSimplifiees,
+  ParcoursPrevention,
+} from "../database/schema";
 
 /**
  * Initialise ou récupère le parcours
@@ -321,4 +325,58 @@ export async function resetParcours(): Promise<
       error: "Erreur lors de la réinitialisation",
     };
   }
+}
+
+/**
+ * Récupère le parcours complet avec dossiers
+ */
+export async function obtenirMonParcours(): Promise<
+  ActionResult<{
+    parcours: ParcoursPrevention;
+    dossiers: DossierDemarchesSimplifiees[];
+    isComplete: boolean;
+    prochainEtape: Step | null;
+  }>
+> {
+  try {
+    const session = await getSession();
+    if (!session?.userId) {
+      return { success: false, error: "Non connecté" };
+    }
+
+    const data = await getParcoursComplet(session.userId);
+    if (!data) {
+      return { success: false, error: "Parcours non trouvé" };
+    }
+
+    const state: ParcoursState = {
+      step: data.parcours.currentStep,
+      status: data.parcours.currentStatus,
+    };
+
+    return {
+      success: true,
+      data: {
+        parcours: data.parcours,
+        dossiers: data.dossiers || [],
+        isComplete: isParcoursComplete(state),
+        prochainEtape: canProgress(state) ? getNextStep(state.step) : null,
+      },
+    };
+  } catch (error) {
+    console.error("Erreur obtenirMonParcours:", error);
+    return {
+      success: false,
+      error: "Erreur lors de la récupération",
+    };
+  }
+}
+
+/**
+ * Réinitialise le parcours (alias pour resetParcours)
+ */
+export async function reinitialiserParcours(): Promise<
+  ActionResult<{ message: string }>
+> {
+  return resetParcours();
 }

@@ -215,24 +215,6 @@ export default function StateMonitorPanel() {
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <span className="text-gray-600">Progression:</span>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${parcours.progression || 0}%`,
-                      backgroundColor: "#00a95f",
-                    }}
-                  />
-                </div>
-                <span className="text-xs font-medium">
-                  {parcours.progression || 0}%
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-sm">
               <span className="text-gray-600">Dossiers DS:</span>
               <span>{parcours.dossiers?.length || 0}</span>
             </div>
