@@ -7,9 +7,9 @@ import MonCompteLoading from "../../components/Loading/Loading";
 import FaqAccountSection from "./common/FaqAccountSection";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
-import CalloutARemplir from "./eligibilite/CalloutEligibiliteAFaire";
-import CalloutDiagnostic from "./diagnostic/CalloutDiagnostic";
-import CalloutEnInstruction from "./en-instruction/CalloutEnInstruction";
+import CalloutARemplir from "./steps/eligibilite/CalloutEligibiliteTodo";
+import CalloutDiagnostic from "./steps/diagnostic/CalloutDiagnostic";
+import CalloutEnInstruction from "./steps/en-instruction/CalloutEnInstruction";
 import { useRGAContext } from "@/lib/form-rga/session/useRGAContext";
 import DevTestSidebar from "./debug/DevTestSidebar";
 

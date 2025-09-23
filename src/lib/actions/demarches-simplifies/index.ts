@@ -1,14 +1,16 @@
-// Actions de préremplissage (REST)
+// Actions de production (utilisées dans le parcours)
+export { createPrefillDossier, validatePrefillData } from "./prefill.actions";
+
+// Actions de test (uniquement pour /test/ds-prefill)
 export {
   getDemarcheSchema,
   getDemarcheStats,
   createTestDossier,
-  createPrefillDossier,
-  generatePrefillUrl,
-  validatePrefillData,
-} from "./prefill.actions";
+  generateTestPrefillUrl as generatePrefillUrl, // alias pour compatibilité
+  testValidatePrefillData,
+} from "./test.actions";
 
-// Actions de gestion des démarches (GraphQL)
+// Actions GraphQL (si encore utilisées)
 export {
   getDemarcheDetails,
   getDossiers,
