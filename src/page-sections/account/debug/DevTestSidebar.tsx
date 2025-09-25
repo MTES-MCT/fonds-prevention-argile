@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import StateMonitorPanel from "./StateMonitorPanel";
 import MockDSPanel from "./MockDsPanel";
+import { isDevelopment, isStaging } from "@/lib/config/env.config";
 
 export default function DevTestSidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,8 +19,8 @@ export default function DevTestSidebar() {
     }
   }, [isOpen]);
 
-  // Ne pas afficher en production
-  if (process.env.NODE_ENV !== "development") {
+  // Ne pas afficher si pas en dev ou staging
+  if (!isDevelopment() && !isStaging()) {
     return null;
   }
 
