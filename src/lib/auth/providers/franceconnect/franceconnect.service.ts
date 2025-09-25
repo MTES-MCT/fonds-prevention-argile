@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+
 import { getFranceConnectConfig } from "./franceconnect.config";
 import {
   COOKIE_NAMES,
@@ -16,7 +17,7 @@ import {
   getCookieOptions,
   SESSION_DURATION,
 } from "../../config/session.config";
-import { createToken } from "../../utils/jwt.utils";
+import { createToken, decodeToken } from "../../utils/jwt.utils";
 import {
   generateSecureRandomString,
   parseJSONorJWT,
@@ -128,6 +129,27 @@ export async function verifyState(state: string): Promise<boolean> {
 }
 
 /**
+ * Vérifie le nonce dans l'id_token FranceConnect
+ */
+export async function verifyNonce(idToken: string): Promise<boolean> {
+  const decoded = decodeToken(idToken);
+
+  if (!decoded?.nonce) {
+    console.error("Pas de nonce dans l'id_token");
+    return false;
+  }
+
+  const storedNonce = await getStoredNonce();
+
+  if (!storedNonce) {
+    console.error("Pas de nonce stocké");
+    return false;
+  }
+
+  return decoded.nonce === storedNonce;
+}
+
+/**
  * Récupère le nonce stocké
  */
 export async function getStoredNonce(): Promise<string | null> {
@@ -205,26 +227,40 @@ export function generateLogoutUrl(idToken: string, state?: string): string {
 export async function handleFranceConnectCallback(
   code: string,
   state: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; shouldLogout?: boolean }> {
   try {
     // 1. Vérifier le state
     const isValidState = await verifyState(state);
     if (!isValidState) {
-      return { success: false, error: "État de sécurité invalide" };
+      return {
+        success: false,
+        error: "État de sécurité invalide",
+        shouldLogout: true,
+      };
     }
 
     // 2. Échanger le code contre les tokens
     const tokens = await exchangeCodeForTokens(code);
 
-    // 3. Récupérer les infos utilisateur
+    // 3. Vérifier le nonce dans l'id_token
+    const isValidNonce = await verifyNonce(tokens.id_token);
+    if (!isValidNonce) {
+      return {
+        success: false,
+        error: "Vérification de sécurité échouée (nonce)",
+        shouldLogout: true,
+      };
+    }
+
+    // 4. Récupérer les infos utilisateur
     const userInfo = await getUserInfo(tokens.access_token);
     console.log("UserInfo FranceConnect:", userInfo);
 
-    // 4. Créer ou récupérer l'utilisateur en base
+    // 5. Créer ou récupérer l'utilisateur en base
     const user = await userRepo.upsertFromFranceConnect(userInfo);
     console.log("User créé/récupéré:", user.id);
 
-    // 5. Initialiser le parcours si première connexion
+    // 6. Initialiser le parcours si première connexion
     const parcours = await getOrCreateParcours(user.id);
     console.log("Parcours initialisé:", parcours.id);
 

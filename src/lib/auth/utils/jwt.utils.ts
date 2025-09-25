@@ -53,3 +53,20 @@ export function verifyToken(token: string): JWTPayload | null {
     return null;
   }
 }
+
+/**
+ * Décode un token JWT sans vérifier la signature
+ * Utile pour lire les claims d'un token externe (ex: FranceConnect)
+ */
+export function decodeToken<T = Record<string, unknown>>(
+  token: string
+): T | null {
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return null;
+
+    return JSON.parse(Buffer.from(payload, "base64url").toString()) as T;
+  } catch {
+    return null;
+  }
+}

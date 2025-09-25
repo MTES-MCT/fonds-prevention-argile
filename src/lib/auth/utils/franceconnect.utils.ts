@@ -2,9 +2,19 @@ import crypto from "crypto";
 
 /**
  * Génère une chaîne aléatoire sécurisée (pour state et nonce)
+ * Valide pour OAuth2 et OpenID Connect (et FranceConnect)
  */
 export function generateSecureRandomString(length: number = 32): string {
-  return crypto.randomBytes(length).toString("base64url");
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  const randomValues = crypto.randomBytes(length);
+
+  for (let i = 0; i < length; i++) {
+    result += chars[randomValues[i] % chars.length];
+  }
+
+  return result;
 }
 
 /**

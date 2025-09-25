@@ -24,24 +24,26 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get("code");
     const state = searchParams.get("state");
     const error = searchParams.get("error");
+    const errorDescription = searchParams.get("error_description");
 
     // Gestion des erreurs FranceConnect
     if (error) {
-      const errorDescription = searchParams.get("error_description");
       const result = handleFranceConnectError(error, errorDescription || "");
 
+      // Redirection vers accueil en cas d'erreur (comme demandé par FC)
       return redirectTo(
-        `/connexion?error=${result.code}&message=${encodeURIComponent(result.error)}`
+        `/?error=${result.code}&message=${encodeURIComponent(result.error)}`
       );
     }
 
     // Vérification des paramètres requis
     if (!code || !state) {
       console.error("Paramètres manquants", { code: !!code, state: !!state });
-      return redirectTo("/connexion?error=fc_missing_params");
+      // Redirection vers accueil pour sécurité
+      return redirectTo("/?error=fc_missing_params");
     }
 
-    // Traitement du callback
+    // Traitement du callback avec vérifications de sécurité
     const result = await handleFranceConnectCallback(code, state);
 
     if (result.success) {
@@ -52,19 +54,37 @@ export async function GET(request: NextRequest) {
       return redirectTo(savedRedirectUrl || DEFAULT_REDIRECTS.particulier);
     }
 
-    // Gestion des erreurs spécifiques
-    let errorParam = "fc_auth_failed";
-    if (result.error?.includes("État de sécurité invalide")) {
-      errorParam = "fc_invalid_state";
-    } else if (result.error?.includes("token")) {
-      errorParam = "fc_token_error";
-    } else if (result.error?.includes("annulé")) {
-      errorParam = "fc_cancelled";
+    // Gestion des échecs de sécurité (state/nonce invalides)
+    if (result.shouldLogout) {
+      console.error("Échec de sécurité FranceConnect:", result.error);
+
+      // TODO gérer la remontée d'erreur côté front si besoin
+      return redirectTo("/");
     }
 
-    return redirectTo(`/connexion?error=${errorParam}`);
+    // Gestion des autres erreurs (non sécurité)
+    let errorParam = "fc_auth_failed";
+    let errorMessage = "";
+
+    if (result.error?.includes("token")) {
+      errorParam = "fc_token_error";
+      errorMessage = "Erreur lors de l'échange de token";
+    } else if (result.error?.includes("utilisateur")) {
+      errorParam = "fc_userinfo_error";
+      errorMessage = "Impossible de récupérer les informations utilisateur";
+    } else if (result.error?.includes("annulé")) {
+      errorParam = "fc_cancelled";
+      errorMessage = "Connexion annulée";
+    }
+
+    // Pour les erreurs non-sécurité, on peut rediriger vers connexion
+    return redirectTo(
+      `/connexion?error=${errorParam}${errorMessage ? `&message=${encodeURIComponent(errorMessage)}` : ""}`
+    );
   } catch (error) {
-    console.error("Erreur inattendue dans le callback:", error);
-    return redirectTo("/connexion?error=fc_server_error");
+    console.error("Erreur inattendue dans le callback FranceConnect:", error);
+
+    // En cas d'erreur serveur, redirection vers accueil par sécurité
+    return redirectTo("/?error=fc_server_error");
   }
 }
