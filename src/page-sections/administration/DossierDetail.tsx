@@ -51,11 +51,13 @@ export default function DossierDetail({
         const result = await getDossierByNumber(dossierNumber);
         if (result.success && result.data) {
           setDossier(result.data);
-        } else {
+        } else if (!result.success) {
           setError(result.error || "Erreur lors de la récupération du dossier");
+        } else {
+          setError("Dossier non trouvé");
         }
       } catch (err) {
-        setError("Erreur inattendue");
+        setError("Erreur inattendue " + (err as Error).message);
       } finally {
         setLoading(false);
       }

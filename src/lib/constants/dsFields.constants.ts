@@ -164,7 +164,7 @@ export const DS_FIELDS: Record<string, DSField> = {
     section: DSSection.MAISON,
     type: DSFieldType.ADDRESS,
     rgaPath: "logement.adresse",
-    transformer: (value: unknown) => {
+    transformer: () => {
       // Format JSON stringifié complet (a tester)
       return JSON.stringify({
         label: "32 Rue des Clefs Moreaux 36250 Saint-Maur",
