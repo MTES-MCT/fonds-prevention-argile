@@ -23,10 +23,6 @@ export async function GET() {
             email: user.email,
             role: user.role,
             authMethod: user.authMethod,
-            name:
-              user.firstName && user.lastName
-                ? `${user.firstName} ${user.lastName}`
-                : user.email || "Administrateur",
           }
         : null,
     });
