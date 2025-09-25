@@ -52,6 +52,9 @@ export default function Cgu() {
         <p>{contentCguPage.fonctionnalites_avec_compte_creation_description}</p>
         <h4>{contentCguPage.fonctionnalites_avec_compte_dossier}</h4>
         <p>
+          {contentCguPage.fonctionnalites_avec_compte_dossier_experimentation}
+        </p>
+        <p>
           {richTextParser(
             contentCguPage.fonctionnalites_avec_compte_dossier_ds
           )}
@@ -73,9 +76,6 @@ export default function Cgu() {
             <p key={index}>{par}</p>
           )
         )}
-
-        <h2>{contentCguPage.deploiement}</h2>
-        <p>{contentCguPage.deploiement_description}</p>
 
         <h2>{contentCguPage.traitement_donnee}</h2>
         <p>{richTextParser(contentCguPage.traitement_donnee_description)}</p>
