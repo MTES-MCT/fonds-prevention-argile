@@ -1,20 +1,21 @@
 {
-  "access_data": "Qui va avoir accès à ces données ?",
-  "access_data_description": "Les membres de l’équipe de Fonds Prévention Argile pour une amélioration continue et le support utilisateur.",
-  "editor": "Éditeur du site",
+  "title": "Mentions légales Fonds de Prévention Argile 25/09/2025",
+
+  "editor": "Éditeur de la plateforme",
   "editor_address": "Tour Séquoia",
   "editor_address_2": "1 place Carpeaux, 92800 Puteaux, France",
+  "editor_telephone": "01 40 81 21 22",
   "editor_description": "Ministère de la Transition écologique (MTE)",
-  "editor_description_2": "Direction générale de l’Aménagement, du Logement et de la Nature (DGALN)",
-  "hosting_provider": "Prestataire d’hébergement",
-  "hosting_provider_description": "Notre serveur est géré par la société française <a href='https://scalingo.com/' rel='noopener noreferrer' target='_blank'>Scalingo</a> et est physiquement localisé en France. Voici la <a href='https://annuaire-entreprises.data.gouv.fr/entreprise/scalingo-808665483' rel='noopener noreferrer' target='_blank'>fiche entreprise</a> de Scalingo.",
+  "editor_description_2": "Direction générale de l’Aménagement, du Logement et de la Nature (DGALN), située :",
+
   "publication_director": "Directeur de publication",
-  "publication_director_description": "Monsieur Philippe MAZENC, directeur général de la DGALN",
-  "share_corrections": "Partage des corrections",
-  "share_corrections_description": "Les corrections sont privées et non indexées par les moteurs de recherche. Vous pouvez partager le lien avec un tiers, mais cette action relève de votre responsabilité.",
-  "statistics": "Suivi et statistiques",
-  "statistics_description": "Nous utilisons le traceur libre Matomo, via l'instance hébergée par les services de l'État sur stats.beta.gouv.fr. Ce suivi ne nécessite pas de bannière de consentement RGPD (dite \"cookies\").",
-  "terms_of_use": "Conditions générales d’utilisation",
-  "terms_of_use_description": "<strong>Fonds Prévention Argile</strong> est un service numérique de la Direction générale de l’aménagement, du logement et de la nature (DGALN).",
-  "title": "Mentions légales et Confidentialité"
+  "publication_director_description": "Le directeur de la publication est Monsieur Philippe MAZENC, directeur général de la DGALN",
+
+  "hosting_provider": "Hébergement de la plateforme",
+  "hosting_provider_description": "Notre serveur est géré par la société française <a href='https://scalingo.com/' rel='noopener noreferrer' target='_blank'>Scalingo SAS</a> et est physiquement localisé en France. Voici la <a href='https://annuaire-entreprises.data.gouv.fr/entreprise/scalingo-808665483' rel='noopener noreferrer' target='_blank'>fiche entreprise</a> de Scalingo. Scalingo est située :",
+  "hosting_provider_address": "13 rue Jacques Peirotes, 67000 Strasbourg, France",
+  "hosting_provider_email": "support@scalingo.com",
+
+  "nous_contacter": "Nous contacter", 
+  "nous_contacter_description": "L'équipe peut être contacté via : contact@fonds-prevention-argile.beta.gouv.fr"
 }

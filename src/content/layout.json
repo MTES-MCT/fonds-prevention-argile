@@ -4,7 +4,15 @@
     "buttons": [
       {
         "href": "/mentions-legales",
-        "label": "Mentions légales / Confidentialité"
+        "label": "Mentions légales"
+      },
+      {
+        "href": "/politique-confidentialite",
+        "label": "Politique de confidentialité"
+      },
+      {
+        "href": "/cgu",
+        "label": "CGU"
       },
       { "href": "/accessibilite", "label": "Accessibilité : non conforme" },
       { "href": "/statistiques", "label": "Statistiques" }
