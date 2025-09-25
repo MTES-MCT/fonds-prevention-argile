@@ -34,4 +34,5 @@ export const dsStatusPgEnum = pgEnum("ds_status", [
   DSStatus.ACCEPTE,
   DSStatus.REFUSE,
   DSStatus.CLASSE_SANS_SUITE,
+  DSStatus.NON_ACCESSIBLE, // Statut ajouté pour "Non accessible"
 ]);

@@ -38,6 +38,7 @@ export const DS_STATUS_LABELS: Record<DSStatus, string> = {
   [DSStatus.ACCEPTE]: "Accepté",
   [DSStatus.REFUSE]: "Refusé",
   [DSStatus.CLASSE_SANS_SUITE]: "Classé sans suite",
+  [DSStatus.NON_ACCESSIBLE]: "Non accessible", // Label pour "Non accessible" statut custom
 } as const;
 
 /**
@@ -49,4 +50,5 @@ export const DS_TO_INTERNAL_STATUS: Record<DSStatus, Status> = {
   [DSStatus.ACCEPTE]: Status.VALIDE,
   [DSStatus.REFUSE]: Status.EN_INSTRUCTION,
   [DSStatus.CLASSE_SANS_SUITE]: Status.EN_INSTRUCTION,
+  [DSStatus.NON_ACCESSIBLE]: Status.TODO, // Mapping pour "Non accessible"
 } as const;

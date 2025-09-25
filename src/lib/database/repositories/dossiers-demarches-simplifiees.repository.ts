@@ -306,6 +306,7 @@ export class DossierDemarchesSimplifieeesRepository extends BaseRepository<Dossi
       accepte: 0,
       refuse: 0,
       classe_sans_suite: 0,
+      non_accessible: 0,
     };
 
     dossiers.forEach((dossier) => {

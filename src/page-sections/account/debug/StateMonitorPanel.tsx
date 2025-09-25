@@ -90,6 +90,7 @@ export default function StateMonitorPanel() {
       [DSStatus.ACCEPTE]: "#00a95f",
       [DSStatus.REFUSE]: "#ce0500",
       [DSStatus.CLASSE_SANS_SUITE]: "#999999",
+      [DSStatus.NON_ACCESSIBLE]: "#999999",
     };
     return colors[dsStatus as DSStatus] || "#666666";
   };
