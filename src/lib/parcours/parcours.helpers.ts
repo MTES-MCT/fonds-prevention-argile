@@ -73,12 +73,30 @@ export function getNextAction(state: ParcoursState): string {
 }
 
 /**
+ * Vérifie si un statut DS correspond à une validation
+ */
+export function isDSStatusValidated(dsStatus: DSStatus): boolean {
+  return dsStatus === DSStatus.ACCEPTE;
+}
+
+/**
+ * Vérifie si un statut DS est terminal (ne changera plus)
+ */
+export function isDSStatusFinal(dsStatus: DSStatus): boolean {
+  return [
+    DSStatus.ACCEPTE,
+    DSStatus.REFUSE,
+    DSStatus.CLASSE_SANS_SUITE,
+  ].includes(dsStatus);
+}
+
+/**
  * Convertit un statut DS vers notre statut interne
  */
 export function mapDSStatusToInternalStatus(dsStatus: DSStatus): Status {
   switch (dsStatus) {
     case DSStatus.EN_CONSTRUCTION:
-      return Status.TODO;
+      return Status.EN_INSTRUCTION;
     case DSStatus.EN_INSTRUCTION:
       return Status.EN_INSTRUCTION;
     case DSStatus.ACCEPTE:

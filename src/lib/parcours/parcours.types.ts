@@ -45,6 +45,8 @@ export enum DSStatus {
   ACCEPTE = "accepte",
   REFUSE = "refuse",
   CLASSE_SANS_SUITE = "classe_sans_suite",
+
+  NON_ACCESSIBLE = "non_accessible", // État custom pour dossier non trouvé
 }
 
 /**

@@ -13,6 +13,8 @@ import CalloutEnInstruction from "./steps/en-instruction/CalloutEnInstruction";
 import { useRGAContext } from "@/lib/form-rga/session/useRGAContext";
 import DevTestSidebar from "./debug/DevTestSidebar";
 import { getParcoursStatus } from "@/lib/actions/parcours/parcours.actions";
+import { useDossierSync } from "@/hooks";
+import { DSStatus, Step } from "@/lib/parcours/parcours.types";
 
 export default function MonCompteClient() {
   const { user, isLoading, isLoggingOut } = useAuth();
@@ -22,6 +24,23 @@ export default function MonCompteClient() {
   const [showNoDataMessage, setShowNoDataMessage] = useState(false);
   const [hasParcours, setHasParcours] = useState(false);
   const [isCheckingParcours, setIsCheckingParcours] = useState(true);
+  const [currentStep, setCurrentStep] = useState<Step>(Step.ELIGIBILITE);
+
+  // Hook de synchronisation DS
+  const {
+    isSyncing,
+    syncNow,
+    lastSync,
+    lastStatus,
+    error: syncError,
+  } = useDossierSync({
+    autoSync: false, // TODO voir si auto-sync à activer seulement si parcours existe ?
+    interval: 60000, // 1 minute
+    step: currentStep,
+    onStatusChange: (oldStatus, newStatus) => {
+      console.log(`Statut DS changé: ${oldStatus} → ${newStatus}`);
+    },
+  });
 
   // Vérifier si l'utilisateur a un parcours en cours
   useEffect(() => {
@@ -29,21 +48,24 @@ export default function MonCompteClient() {
       if (user) {
         try {
           const result = await getParcoursStatus();
-          console.log("result :>> ", result);
+          console.log("getParcoursStatus :>> ", result);
 
-          // On considère qu'il y a un parcours si on a un état connu
           if (result.success && result.data?.state) {
             setHasParcours(true);
+            setCurrentStep(result.data.state.step);
           }
         } catch (error) {
           console.error("Erreur lors de la vérification du parcours:", error);
         }
       }
-      setIsCheckingParcours(false);
+      // Ne mettre à false que si on a fini de charger l'user
+      if (!isLoading) {
+        setIsCheckingParcours(false);
+      }
     };
 
     checkParcours();
-  }, [user]);
+  }, [user, isLoading]);
 
   // Redirection si pas de données RGA ET pas de parcours
   useEffect(() => {
@@ -117,12 +139,24 @@ export default function MonCompteClient() {
     return null;
   }
 
-  // Contenu normal de la page
   return (
     <>
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
           <h1>Bonjour {user.firstName}</h1>
+
+          {/* Bouton de sync manuelle */}
+          {hasParcours && (
+            <div className="fr-mb-4w">
+              <button
+                className="fr-btn fr-btn--secondary fr-btn--sm fr-mt-2w"
+                onClick={syncNow}
+                disabled={isSyncing}
+              >
+                {isSyncing ? "Synchronisation..." : "Rafraîchir le statut"}
+              </button>
+            </div>
+          )}
 
           {/* Afficher un badge si parcours en cours mais pas de données RGA */}
           {hasParcours && !hasRGAData && (
@@ -135,6 +169,57 @@ export default function MonCompteClient() {
           <span className="fr-badge fr-badge--new fr-mb-4w">
             En construction
           </span>
+
+          {/* Badge de statut DS synchronisé */}
+          {hasParcours && (
+            <span className="fr-badge fr-badge--info fr-mb-4w fr-ml-1w">
+              {lastStatus === DSStatus.NON_ACCESSIBLE
+                ? "⚠️ Non accessible"
+                : lastStatus === DSStatus.ACCEPTE
+                  ? "✓ Accepté"
+                  : lastStatus === DSStatus.EN_INSTRUCTION
+                    ? "⏳ En instruction"
+                    : lastStatus === DSStatus.EN_CONSTRUCTION
+                      ? "📝 En construction"
+                      : lastStatus === DSStatus.REFUSE
+                        ? "✗ Refusé"
+                        : lastStatus === DSStatus.CLASSE_SANS_SUITE
+                          ? "⚠ Classé sans suite"
+                          : "🔄 En attente"}
+            </span>
+          )}
+
+          {/* Indicateur de synchronisation */}
+          {hasParcours && (
+            <div className="fr-mb-2w">
+              {isSyncing && (
+                <span className="fr-text--sm">
+                  Synchronisation avec Démarches Simplifiées...
+                </span>
+              )}
+              {/* Message spécifique pour les brouillons */}
+              {!isSyncing && lastSync && (
+                <p className="fr-text--sm fr-text--mention-grey">
+                  Votre dossier est inaccessible. S'il est en brouillon,
+                  finalisez-le sur Démarches Simplifiées pour activer le suivi.
+                </p>
+              )}
+              {syncError && (
+                <div className="fr-alert fr-alert--error fr-alert--sm">
+                  <p>
+                    {syncError.includes("brouillon")
+                      ? "Votre dossier est en brouillon. Finalisez-le sur Démarches Simplifiées."
+                      : syncError}
+                  </p>
+                </div>
+              )}
+              {lastSync && !isSyncing && (
+                <span className="fr-text--sm fr-text--mention-grey">
+                  Dernière synchronisation : {lastSync.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="fr-grid-row fr-grid-row--gutters">
             <div className="fr-col-12 fr-col-md-8">
