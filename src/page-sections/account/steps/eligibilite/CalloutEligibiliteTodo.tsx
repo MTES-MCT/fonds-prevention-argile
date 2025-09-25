@@ -71,27 +71,8 @@ export default function CalloutEligibiliteTodo() {
     setError(null);
   };
 
-  // Si pas de données RGA, afficher un message différent
-  if (!rgaData || Object.keys(rgaData).length === 0) {
-    return (
-      <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
-        <p className="fr-callout__title">Simulation requise</p>
-        <p className="fr-callout__text">
-          Vous devez d'abord compléter le simulateur pour déterminer votre
-          éligibilité avant de pouvoir soumettre votre dossier.
-        </p>
-        <button
-          onClick={() => router.push("/simulateur")}
-          className="fr-btn fr-btn--icon-right fr-icon-arrow-right-s-line"
-        >
-          Accéder au simulateur
-        </button>
-      </div>
-    );
-  }
-
   // Affichage de la confirmation
-  if (showConfirmation && !isLoading) {
+  if (rgaData && showConfirmation && !isLoading) {
     return (
       <div className="fr-callout fr-callout--yellow-moutarde fr-icon-warning-line">
         <p className="fr-callout__title">Confirmation</p>

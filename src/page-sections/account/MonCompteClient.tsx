@@ -15,6 +15,9 @@ import DevTestSidebar from "./debug/DevTestSidebar";
 import { getParcoursStatus } from "@/lib/actions/parcours/parcours.actions";
 import { useDossierSync } from "@/hooks";
 import { DSStatus, Step } from "@/lib/parcours/parcours.types";
+import CalloutEligibiliteSimulateurARemplir from "./steps/eligibilite/CalloutEligibiliteSimulateurARemplir";
+import CalloutEligibiliteTodo from "./steps/eligibilite/CalloutEligibiliteTodo";
+import CalloutEligibiliteEnConstruction from "./steps/eligibilite/CalloutEligibiliteEnConstruction";
 
 export default function MonCompteClient() {
   const { user, isLoading, isLoggingOut } = useAuth();
@@ -115,26 +118,14 @@ export default function MonCompteClient() {
     return <MonCompteLoading />;
   }
 
-  // Message si pas de données RGA ET pas de parcours
-  if (showNoDataMessage) {
+  // Message redirigeant si pas de données RGA ET pas de parcours ou si on force l'affichage
+  if (showNoDataMessage || (!hasRGAData && !hasParcours)) {
     return (
-      <div className="fr-container fr-py-8w">
-        <div className="fr-alert fr-alert--warning">
-          <h3 className="fr-alert__title">Simulation requise</h3>
-          <p>
-            Vous devez d'abord remplir le simulateur d'éligibilité pour démarrer
-            votre parcours.
-          </p>
+      <section className="fr-container-fluid fr-py-10w">
+        <div className="fr-container">
+          <CalloutEligibiliteSimulateurARemplir />
         </div>
-        <div className="fr-btns-group fr-mt-3w">
-          <button
-            className="fr-btn fr-btn--primary"
-            onClick={() => router.push("/simulateur")}
-          >
-            Aller au simulateur maintenant
-          </button>
-        </div>
-      </div>
+      </section>
     );
   }
 
@@ -164,37 +155,26 @@ export default function MonCompteClient() {
             </div>
           )}
 
-          {/* Afficher un badge si parcours en cours mais pas de données RGA */}
-          {hasParcours && !hasRGAData && (
-            <span className="fr-badge fr-badge--info fr-mb-4w">
-              Parcours en cours
-            </span>
-          )}
-
-          {/* TODO : Gestion état du badge / compte */}
-          <span className="fr-badge fr-badge--new fr-mb-4w">
-            En construction
-          </span>
-
           {/* Badge de statut DS synchronisé */}
           {hasParcours && (
             <span className="fr-badge fr-badge--info fr-mb-4w fr-ml-1w">
               {lastStatus === DSStatus.NON_ACCESSIBLE
-                ? "⚠️ Non accessible"
+                ? "Non accessible"
                 : lastStatus === DSStatus.ACCEPTE
-                  ? "✓ Accepté"
+                  ? "Accepté"
                   : lastStatus === DSStatus.EN_INSTRUCTION
-                    ? "⏳ En instruction"
+                    ? "En instruction"
                     : lastStatus === DSStatus.EN_CONSTRUCTION
-                      ? "📝 En construction"
+                      ? "En construction"
                       : lastStatus === DSStatus.REFUSE
-                        ? "✗ Refusé"
+                        ? "Refusé"
                         : lastStatus === DSStatus.CLASSE_SANS_SUITE
-                          ? "⚠ Classé sans suite"
-                          : "🔄 En attente"}
+                          ? "Classé sans suite"
+                          : "Aucun dossier"}
             </span>
           )}
 
+          {/* Pour debug */}
           {/* Indicateur de synchronisation */}
           {hasParcours && (
             <div className="fr-mb-2w">
@@ -203,16 +183,7 @@ export default function MonCompteClient() {
                   Synchronisation avec Démarches Simplifiées...
                 </span>
               )}
-
-              {syncError && (
-                <div className="fr-alert fr-alert--error fr-alert--sm">
-                  <p>
-                    {syncError.includes("brouillon")
-                      ? "Votre dossier est en brouillon. Finalisez-le sur Démarches Simplifiées."
-                      : syncError}
-                  </p>
-                </div>
-              )}
+              <p>Statut {JSON.stringify(lastStatus)}</p>
               {lastSync && !isSyncing && (
                 <span className="fr-text--sm fr-text--mention-grey">
                   Dernière synchronisation : {lastSync.toLocaleTimeString()}
@@ -223,9 +194,21 @@ export default function MonCompteClient() {
 
           <div className="fr-grid-row fr-grid-row--gutters">
             <div className="fr-col-12 fr-col-md-8">
-              <CalloutARemplir />
+              {/* Cas ou on a les données RGA en session et on doit envoyer a Démarches Simplifiées */}
+              {hasRGAData && hasParcours && <CalloutARemplir />}
+
+              {/* Cas ou on a déja envoyé dans DS mais pas encore terminé  */}
+              {hasParcours && lastStatus === DSStatus.EN_CONSTRUCTION && (
+                <CalloutEligibiliteEnConstruction />
+              )}
+
+              {/* Cas ou c'est en instruction dans DS  */}
+              {hasParcours && lastStatus === DSStatus.EN_INSTRUCTION && (
+                <CalloutEnInstruction />
+              )}
+              {/* <CalloutARemplir />
               <CalloutDiagnostic />
-              <CalloutEnInstruction />
+              <CalloutEnInstruction /> */}
             </div>
 
             <div className="fr-col-12 fr-col-md-4 flex justify-center md:justify-end">
