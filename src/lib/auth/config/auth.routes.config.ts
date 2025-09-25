@@ -1,6 +1,6 @@
 // Routes protégées par rôle
 export const PROTECTED_ROUTES = {
-  admin: ["/administration", "/dashboard", "/api/private", "/test"],
+  admin: ["/administration", "/api/private", "/test"],
   particulier: ["/mon-compte", "/mes-dossiers", "/mes-demandes"],
 } as const;
 
@@ -13,7 +13,14 @@ export const PUBLIC_ROUTES = {
     "/api/auth/fc/logout",
     "/oidc-callback",
   ],
-  static: ["/", "/mentions-legales", "/cgu", "/politique-confidentialite", "/accessibilite", "/donnees-personnelles"],
+  static: [
+    "/",
+    "/mentions-legales",
+    "/cgu",
+    "/politique-confidentialite",
+    "/accessibilite",
+    "/donnees-personnelles",
+  ],
 } as const;
 
 // Redirections par défaut
