@@ -148,6 +148,16 @@ export const DS_FIELDS: Record<string, DSField> = {
   },
 
   // === SECTION 4: DESCRIPTION DE LA MAISON ===
+  // Nouveau champ d'adresse en format texte créé par Martin en attendant le format structuré / automatique géré coté Démarches Simplifiées
+  "Q2hhbXAtNTYzNjA2NA==": {
+    id: "Q2hhbXAtNTYzNjA2NA==",
+    label: "Adresse (texte) de la maison concernée par le dossier d'aide",
+    section: DSSection.MAISON,
+    type: DSFieldType.TEXT,
+    rgaPath: "logement.adresse",
+    transformer: (value: unknown) => (typeof value === "string" ? value : ""),
+  },
+  // Champ d'adresse structuré (non utilisé actuellement car non géré par DS)
   "Q2hhbXAtNTU0MjUyNg==": {
     id: "Q2hhbXAtNTU0MjUyNg==",
     label: "Adresse de la maison",
@@ -155,9 +165,7 @@ export const DS_FIELDS: Record<string, DSField> = {
     type: DSFieldType.ADDRESS,
     rgaPath: "logement.adresse",
     transformer: (value: unknown) => {
-      // TEST EN DUR - essayez chaque format un par un
-
-      // Format 1: JSON stringifié complet
+      // Format JSON stringifié complet (a tester)
       return JSON.stringify({
         label: "32 Rue des Clefs Moreaux 36250 Saint-Maur",
         type: "housenumber",
@@ -170,12 +178,6 @@ export const DS_FIELDS: Record<string, DSField> = {
         department_code: "36",
         region_code: "24",
       });
-
-      // Format 2: Juste le label
-      // return "32 Rue des Clefs Moreaux 36250 Saint-Maur";
-
-      // Format 3: Format avec virgule
-      // return "32 Rue des Clefs Moreaux, 36250 Saint-Maur";
     },
   },
   "Q2hhbXAtNTU0MjU2OA==": {
