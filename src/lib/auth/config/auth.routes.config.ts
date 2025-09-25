@@ -13,7 +13,7 @@ export const PUBLIC_ROUTES = {
     "/api/auth/fc/logout",
     "/oidc-callback",
   ],
-  static: ["/", "/mentions-legales", "/accessibilite", "/donnees-personnelles"],
+  static: ["/", "/mentions-legales", "/cgu", "/politique-confidentialite", "/accessibilite", "/donnees-personnelles"],
 } as const;
 
 // Redirections par défaut
