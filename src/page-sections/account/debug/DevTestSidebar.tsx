@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import StateMonitorPanel from "./StateMonitorPanel";
+import MockDSPanel from "./MockDsPanel";
 
 export default function DevTestSidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"parcours" | "database" | "state">(
-    "state"
-  );
+  const [activeTab, setActiveTab] = useState<"mockds" | "state">("mockds");
 
   // Fermer avec Escape
   useEffect(() => {
@@ -73,6 +72,25 @@ export default function DevTestSidebar() {
 
           {/* Tabs */}
           <div className="flex gap-2">
+            {/* Tab pour le mock de DS */}
+            <button
+              onClick={() => setActiveTab("mockds")}
+              className={`
+    px-4 py-2 rounded-lg transition-all
+    ${
+      activeTab === "mockds"
+        ? "bg-blue-600 text-white! font-medium"
+        : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+    }
+  `}
+              style={
+                activeTab === "mockds" ? { backgroundColor: "#000091" } : {}
+              }
+            >
+              Mock DS
+            </button>
+
+            {/* Tab pour le mock de l'Etat */}
             <button
               onClick={() => setActiveTab("state")}
               className={`
@@ -89,47 +107,13 @@ export default function DevTestSidebar() {
             >
               État actuel
             </button>
-            <button
-              onClick={() => setActiveTab("parcours")}
-              className={`
-                px-4 py-2 rounded-lg transition-all
-                ${
-                  activeTab === "parcours"
-                    ? "bg-blue-600 text-white! font-medium"
-                    : "bg-gray-200 hover:bg-gray-300 text-gray-700"
-                }
-              `}
-              style={
-                activeTab === "parcours" ? { backgroundColor: "#000091" } : {}
-              }
-            >
-              Parcours
-            </button>
-            <button
-              onClick={() => setActiveTab("database")}
-              className={`
-                px-4 py-2 rounded-lg transition-all
-                ${
-                  activeTab === "database"
-                    ? "bg-blue-600 text-white! font-medium"
-                    : "bg-gray-200 hover:bg-gray-300 text-gray-700"
-                }
-              `}
-              style={
-                activeTab === "database" ? { backgroundColor: "#000091" } : {}
-              }
-            >
-              Base de données
-            </button>
           </div>
         </div>
 
         {/* Contenu scrollable */}
         <div className="h-[calc(100vh-140px)] overflow-y-auto p-4 bg-gray-50">
+          {activeTab === "mockds" && <MockDSPanel />}
           {activeTab === "state" && <StateMonitorPanel />}
-          {/* {activeTab === "parcours" && <ParcoursTestPanel />}
-          {activeTab === "database" && <DatabaseTestPanel />}
-           */}
         </div>
 
         {/* Footer avec infos */}

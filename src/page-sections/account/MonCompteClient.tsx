@@ -148,9 +148,6 @@ export default function MonCompteClient() {
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
           <h1>Bonjour {user.firstName}</h1>
-          <p>
-            User {JSON.stringify(user)} {/* TODO: Retirer ce JSON */}
-          </p>
 
           {/* Bouton de sync manuelle */}
           {hasParcours && (
@@ -160,7 +157,9 @@ export default function MonCompteClient() {
                 onClick={syncNow}
                 disabled={isSyncing}
               >
-                {isSyncing ? "Synchronisation..." : "Rafraîchir le statut"}
+                {isSyncing
+                  ? "Synchronisation..."
+                  : "Rafraîchir le statut Démarches Simplifiées"}
               </button>
             </div>
           )}
@@ -204,13 +203,7 @@ export default function MonCompteClient() {
                   Synchronisation avec Démarches Simplifiées...
                 </span>
               )}
-              {/* Message spécifique pour les brouillons */}
-              {!isSyncing && lastSync && (
-                <p className="fr-text--sm fr-text--mention-grey">
-                  Votre dossier est inaccessible. S'il est en brouillon,
-                  finalisez-le sur Démarches Simplifiées pour activer le suivi.
-                </p>
-              )}
+
               {syncError && (
                 <div className="fr-alert fr-alert--error fr-alert--sm">
                   <p>
