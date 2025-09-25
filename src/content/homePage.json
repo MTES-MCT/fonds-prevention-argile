@@ -27,10 +27,25 @@
     "subtitle2": "Le changement climatique aggrave ce phénomène : les dernières projections réalisées par la Caisse centrale de réassurance (CCR) tablent sur une <strong> augmentation de 44% à 162% de la sinistralité</strong> due au retrait-gonglement des argiles d'ici 2050."
   },
   "signes_a_surveiller_section": {
-    "title": "Les signes à surveiller",
-    "subtitle": "Les mouvements de terrain induits par le retrait et le gonflement des argiles se traduisent par des désordres d'importance variables suivant l'intensité et la fréquence du phénomène.",
-    "subtitle2": "Les signes précurseurs sont des désordres architecturaux de type microfissures, fissures isolées sur les murs intérieurs, et fissures extérieurs sur les doublages et les cloisons inférieurs dont la taille n'excède pas 1mm. Ces fissures, quand elles sont la conséquence du RGA, généralement, s'ouvrent et se ferment selon des cycles saisonniers : c'est le moment idéal pour intervenir et prévenir des désordres plus importants.",
-    "subtitle3": "A plus long terme, si aucun travaux ne sont réalisés, des désordres structuraux peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons et, parfois, rupture de canalisations enterrées."
+    "pris_en_charge": {
+      "title": "Les signes précurseurs à surveiller",
+      "subtitle": "Les mouvements de terrain induits par le retrait et le gonflement des argiles se traduisent par des désordres d'importance variables suivant l'intensité et la fréquence du phénomène.",
+      "subtitle2": "Les signes précurseurs sont des désordres architecturaux de type microfissures, fissures isolées sur les murs intérieurs, et fissures extérieurs sur les doublages et les cloisons inférieurs dont la taille n'excède pas 1mm.",
+      "callout": {
+        "title": "Signes pris en charge par le Fonds de Prévention Argile",
+        "text": "Ces signes sont pris en charge par le Fonds Prévention Argile. Agissez avant qu’il ne soit trop tard",
+        "cta_label": "Vérifier mon éligibilité",
+        "cta_url": "/simulateur"
+      }
+    },
+    "non_pris_en_charge": {
+      "title": "Risques de dégradation avancée sans action de votre part",
+      "subtitle": "À plus long terme, si aucun travaux ne sont réalisés, des désordres structuraux peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons et, parfois, rupture de canalisations enterrées.",
+      "callout": {
+        "title": "Signes non pris en charge par le Fonds de Prévention Argile",
+        "text": "Si votre logement présente ces signes de dégradation avancée, il est trop tard pour faire appel au Fonds de Prévention. Il est urgent de vous rapprocher de votre assurance."
+      }
+    }
   },
   "savoir_si_concerne_section": {
     "title": "Vous voulez savoir si vous êtes concerné ?",

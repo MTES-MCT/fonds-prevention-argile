@@ -8,6 +8,7 @@
     "title": "Autres signes à surveiller",
     "signes": [
       {
+        "priseEnCharge": true,
         "tag": {
           "title": "Signes précurseurs",
           "eligible": true,
@@ -19,6 +20,7 @@
         "pageLink": "/signes-a-surveiller/fissures-en-escalier"
       },
       {
+        "priseEnCharge": true,
         "tag": {
           "title": "Signes précurseurs",
           "eligible": true,
@@ -30,6 +32,7 @@
         "pageLink": "/signes-a-surveiller/fissures-verticales-angles-batiment"
       },
       {
+        "priseEnCharge": true,
         "tag": {
           "title": "Signes précurseurs",
           "eligible": true,
@@ -41,6 +44,7 @@
         "pageLink": "/signes-a-surveiller/fissures-horizontales-plancher"
       },
       {
+        "priseEnCharge": true,
         "tag": {
           "title": "Signes précurseurs",
           "eligible": true,
@@ -52,6 +56,7 @@
         "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
       },
       {
+        "priseEnCharge": false,
         "tag": {
           "title": "Désordres structuraux",
           "eligible": false,
@@ -63,6 +68,7 @@
         "pageLink": "/signes-a-surveiller/portes-et-fenetres-qui-ferment-mal"
       },
       {
+        "priseEnCharge": false,
         "tag": {
           "title": "Désordres structuraux",
           "eligible": false,
@@ -74,6 +80,7 @@
         "pageLink": "/signes-a-surveiller/decollement-entre-la-cloison-et-le-plafond"
       },
       {
+        "priseEnCharge": false,
         "tag": {
           "title": "Désordres structuraux",
           "eligible": false,
