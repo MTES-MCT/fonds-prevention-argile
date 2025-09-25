@@ -4,15 +4,15 @@
   "responsable": "I - Qui est responsable de traitement de la plateforme Fonds Prévention Argile ?", 
   "responsable_descriptions": [
     "Fonds Prévention Argile est un téléservice mis en place par la Direction générale de l’aménagement, du logement et de la nature (DGALN), en sa qualité de responsable de traitement au sens du RGPD.",
-    "Il s'agit d’un service numérique d’information du grand public sur le phénomène du retrait et du gonflement de l’argile et de ses effets sur les bâtiments. Il permet également de mettre en relation les propriétaires, locataires et occupants réguliers d’un logement avec les services de l’Etat afin d’obtenir une aide au titre du « fonds prévention argile »."
+    "Il s'agit d’un service numérique d’information du grand public sur le phénomène du retrait-gonflement des argiles et de ses effets sur les bâtiments individuels. Il permet également aux propriétaires occupant leur logement à titre de résidence principale de suivre l’état d’avancement de l’instruction, par les services de l’État, de leurs dossiers déposés en vue d’obtenir une aide du « Fonds Préventions Argile »."
 
   ],
 
   "pourquoi": "II - Pourquoi traitons-nous ces données ?", 
   "pourquoi_header": "Fonds Prévention Argile traite des données à caractère personnel pour les raisons suivantes :", 
   "pourquoi_descriptions": [
-    "Permettre la création de comptes sur la plateforme pour les agents publics dans le cadre de l’exercice de leurs missions et les particuliers qui déposent un dossier pour instruction ;",
-    "Permettre aux propriétaires, locataires et occupants réguliers de téléverser les pièces et éléments nécessaires à l’instruction et au suivi d’un dossier déposé au titre du « fonds de prévention argile » ;",
+    "Permettre la création de comptes sur la plateforme par les particuliers ;",
+    "Permettre aux propriétaires occupant de leur logement à titre de résidence principale de téléverser les pièces et éléments nécessaires à l’instruction et au suivi d’un dossier déposé au titre du « fonds de prévention argile » ;",
     "Réaliser des campagnes d’information, assurer la gestion support et suivre l’activité des utilisateurs."
 
   ],
@@ -20,7 +20,7 @@
   "donnees": "III - Quelles sont les données que nous traitons ?", 
   "donnees_header": "Fonds Prévention Argile traite les catégories de données à caractère personnel suivantes : ",
   "donnees_descriptions": [
-    "<strong>Données de compte :</strong> nom, prénom, adresse mail, téléphone (avec une connexion avec le fournisseur d’identité FranceConnect) ;",
+    "<strong>Données de compte :</strong> nom, prénom, adresse mail (avec une connexion avec le fournisseur d’identité FranceConnect) ;",
     "<strong>Données relatives à l’éligibilité du logement :</strong> adresse du logement, date de construction du logement, caractéristiques du logement, tranche du revenu fiscal de référence ;",
     "<strong>Données relatives à l’instruction d’une demande d’aide au titre du « fonds prévention argile » :</strong> nom, prénom, adresse mail, téléphone, caractéristiques du logement, avis d’imposition foncier et sur le revenu ;"
 
