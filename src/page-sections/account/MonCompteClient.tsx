@@ -45,7 +45,6 @@ export default function MonCompteClient() {
       if (user) {
         try {
           const result = await getParcoursStatus();
-          console.log("getParcoursStatus :>> ", result);
 
           if (result.success && result.data?.state) {
             setHasParcours(true);
@@ -69,6 +68,7 @@ export default function MonCompteClient() {
     if (hasParcours && !hasRGAData && !isLoading && !isCheckingParcours) {
       syncNow();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasParcours, hasRGAData, isLoading, isCheckingParcours]);
 
   // Redirection si pas de données RGA ET pas de parcours
