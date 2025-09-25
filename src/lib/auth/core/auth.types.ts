@@ -19,6 +19,7 @@ export interface AuthUser {
 export interface JWTPayload {
   userId: string; // UUID de l'utilisateur en base
   role: string;
+  firstName?: string;
   authMethod: string;
   fcIdToken?: string;
   exp: number;

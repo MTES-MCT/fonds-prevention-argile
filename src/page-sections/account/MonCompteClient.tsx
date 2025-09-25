@@ -34,12 +34,9 @@ export default function MonCompteClient() {
     lastStatus,
     error: syncError,
   } = useDossierSync({
-    autoSync: false, // TODO voir si auto-sync à activer seulement si parcours existe ?
-    interval: 60000, // 1 minute
+    autoSync: false,
+    interval: 300000, // 5 minutes
     step: currentStep,
-    onStatusChange: (oldStatus, newStatus) => {
-      console.log(`Statut DS changé: ${oldStatus} → ${newStatus}`);
-    },
   });
 
   // Vérifier si l'utilisateur a un parcours en cours
@@ -66,6 +63,13 @@ export default function MonCompteClient() {
 
     checkParcours();
   }, [user, isLoading]);
+
+  // Sync DS initiale si parcours existe et pas de données RGA
+  useEffect(() => {
+    if (hasParcours && !hasRGAData && !isLoading && !isCheckingParcours) {
+      syncNow();
+    }
+  }, [hasParcours, hasRGAData, isLoading, isCheckingParcours]);
 
   // Redirection si pas de données RGA ET pas de parcours
   useEffect(() => {
@@ -144,6 +148,9 @@ export default function MonCompteClient() {
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
           <h1>Bonjour {user.firstName}</h1>
+          <p>
+            User {JSON.stringify(user)} {/* TODO: Retirer ce JSON */}
+          </p>
 
           {/* Bouton de sync manuelle */}
           {hasParcours && (

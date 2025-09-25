@@ -147,11 +147,13 @@ export async function getStoredNonce(): Promise<string | null> {
  */
 export async function createFranceConnectSession(
   userId: string,
-  fcIdToken?: string
+  fcIdToken?: string,
+  firstName?: string
 ): Promise<void> {
   const payload: JWTPayload = {
     userId,
     role: ROLES.PARTICULIER,
+    firstName,
     authMethod: AUTH_METHODS.FRANCECONNECT,
     fcIdToken, // Pour le logout FC
     exp: Date.now() + SESSION_DURATION.particulier * 1000,
@@ -227,7 +229,11 @@ export async function handleFranceConnectCallback(
     console.log("Parcours initialisé:", parcours.id);
 
     // 6. Créer la session avec l'userId
-    await createFranceConnectSession(user.id, tokens.id_token);
+    await createFranceConnectSession(
+      user.id,
+      tokens.id_token,
+      userInfo.given_name
+    );
 
     return { success: true };
   } catch (error) {

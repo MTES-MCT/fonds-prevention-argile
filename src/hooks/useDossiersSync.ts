@@ -38,7 +38,7 @@ export function useDossierSync(
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
-  const intervalRef = useRef<NodeJS.Timeout | null>(null); // ✅ Correction ici
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fonction de synchronisation
   const syncNow = useCallback(async () => {

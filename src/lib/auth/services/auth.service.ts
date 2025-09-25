@@ -36,6 +36,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     role: session.role,
     authMethod: session.authMethod,
     loginTime: new Date().toISOString(),
+    firstName: session.firstName,
   };
 }
 

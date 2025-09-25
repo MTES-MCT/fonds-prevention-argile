@@ -12,6 +12,8 @@ import { RGAFormData } from "@/lib/form-rga";
 import { getMappingStats } from "@/lib/services/rga-to-ds.mapper";
 import { getServerEnv } from "@/lib/config/env.config";
 import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees/graphql";
+import { getSession } from "@/lib/auth/services/auth.service";
+import { syncDossierEligibiliteStatus } from "@/lib/database/services/dossier-ds-sync.service";
 
 /**
  * Crée un dossier prérempli dans Démarches Simplifiées
@@ -88,6 +90,18 @@ export async function createPrefillDossier(
       numero: result.dossier_number,
       url: result.dossier_url,
     });
+
+    // Synchroniser immédiatement le statut après création
+    try {
+      const session = await getSession();
+      if (session?.userId) {
+        console.log("Synchronisation du statut DS après création...");
+        await syncDossierEligibiliteStatus(session.userId, step);
+      }
+    } catch (syncError) {
+      // Ne pas bloquer si la sync échoue
+      console.error("Erreur lors de la sync post-création:", syncError);
+    }
 
     return {
       success: true,
