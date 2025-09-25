@@ -2,12 +2,15 @@
 
 import { contentConnexionPage } from "@/content";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FC_ERROR_MAPPING } from "@/lib/auth/client";
+import { useRGAContext } from "@/lib/form-rga/session";
 
 export default function ConnexionFranceConnectClient() {
+  const { hasData: hasRGAData } = useRGAContext();
   const [fcError, setFcError] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Gérer les erreurs FranceConnect depuis l'URL
   useEffect(() => {
@@ -39,6 +42,32 @@ export default function ConnexionFranceConnectClient() {
     // Rediriger vers l'API FranceConnect
     window.location.href = "/api/auth/fc/login";
   };
+
+  if (!hasRGAData) {
+    return (
+      <div className="fr-container fr-py-8w">
+        <div className="fr-alert fr-alert--info">
+          <h3 className="fr-alert__title">
+            Vous devez d'abord remplir le simulateur d'éligibilité pour vous
+            connecter.
+          </h3>
+          <p>
+            Pour garantir votre sécurité, veuillez remplir le simulateur
+            d'éligibilité avant de créer votre compte. Cela ne vous prendra que
+            quelques secondes.
+          </p>
+        </div>
+        <div className="fr-btns-group fr-mt-3w">
+          <button
+            className="fr-btn fr-btn--primary"
+            onClick={() => router.push("/simulateur")}
+          >
+            Remplir le simulateur d'éligibilité
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section className="fr-container-fluid fr-py-10w">
