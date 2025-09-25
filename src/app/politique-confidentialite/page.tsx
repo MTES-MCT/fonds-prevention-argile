@@ -1,108 +1,143 @@
-import { contentLegalNoticePage } from "@/content";
+import { contentConfidentialitePage } from "@/content";
 import { richTextParser } from "@/lib/utils";
+import Link from "next/link";
 
 export default function PolitiqueConfidentialite() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-10!">
         <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
-          {confidentialitePage.title}
+          {contentConfidentialitePage.title}
         </h1>
-        
-        <h2>{confidentialitePage.responsable}</h2>
-        {confidentialitePage.responsable_descriptions.map((par, index) => (
-          <p>{par}</p>
-        ))}
 
-        <h2>{confidentialitePage.pourquoi}</h2>
-        <p>{confidentialitePage.pourquoi_header}</p>
-        {confidentialitePage.pourquoi_descriptions.map((par, index) => (
-          <p>{par}</p>
-        ))}
+        <h2>{contentConfidentialitePage.responsable}</h2>
+        {contentConfidentialitePage.responsable_descriptions.map(
+          (par: string, index: number) => (
+            <p key={index}>{par}</p>
+          )
+        )}
 
-        <h2>{confidentialitePage.donnees}</h2>
-        <p>{confidentialitePage.donnees_header}</p>
-        {confidentialitePage.donnees_descriptions.map((par, index) => (
-          <p>{richTextParser(par)}</p>
-        ))}
+        <h2>{contentConfidentialitePage.pourquoi}</h2>
+        <p>{contentConfidentialitePage.pourquoi_header}</p>
+        {contentConfidentialitePage.pourquoi_descriptions.map(
+          (par: string, index: number) => (
+            <p key={index}>{par}</p>
+          )
+        )}
 
-        <h2>{confidentialitePage.autorisation}</h2>
-        {confidentialitePage.autorisation_descriptions.map((par, index) => (
-          <p>{richTextParser(par)}</p>
-        ))}
+        <h2>{contentConfidentialitePage.donnees}</h2>
+        <p>{contentConfidentialitePage.donnees_header}</p>
+        {contentConfidentialitePage.donnees_descriptions.map(
+          (par: string, index: number) => (
+            <p key={index}>{richTextParser(par)}</p>
+          )
+        )}
 
-        <h2>{confidentialitePage.duree}</h2>
+        <h2>{contentConfidentialitePage.autorisation}</h2>
+        {contentConfidentialitePage.autorisation_descriptions.map(
+          (par: string, index: number) => (
+            <p key={index}>{richTextParser(par)}</p>
+          )
+        )}
+
+        <h2>{contentConfidentialitePage.duree}</h2>
         <table id="table-5">
           <thead>
             <tr>
-              <th>{confidentialitePage.duree_categorie}</th>
-              <th>{confidentialitePage.duree_temps}
+              <th>{contentConfidentialitePage.duree_categorie}</th>
+              <th>{contentConfidentialitePage.duree_temps}</th>
             </tr>
           </thead>
           <tbody>
-            {confidentialitePage.duree_descriptions.map(
-              (row, rowIndex) => (
+            {contentConfidentialitePage.duree_descriptions.map(
+              (row: { categorie: string; duree: string }, rowIndex: number) => (
                 <tr key={rowIndex} id={`table-5-row-key-${rowIndex}`}>
-                  <td> {row.categorie} </td>
-                  <td> {row.duree} </td>
+                  <td>{row.categorie}</td>
+                  <td>{row.duree}</td>
                 </tr>
               )
             )}
           </tbody>
         </table>
 
-        <h2>{confidentialitePage.droits}</h2>
-        <p>{confidentialitePage.droits_header}</p>
+        <h2>{contentConfidentialitePage.droits}</h2>
+        <p>{contentConfidentialitePage.droits_header}</p>
         <ul className="">
-          {confidentialitePage.droits_descriptions.map((droit, index) => (
-            <li key={index} className="">
-              {droit}
-            </li>
-          ))}
+          {contentConfidentialitePage.droits_descriptions.map(
+            (droit: string, index: number) => (
+              <li key={index} className="">
+                {droit}
+              </li>
+            )
+          )}
         </ul>
-        {confidentialitePage.droits_paragraphes.map((par, index) => (
-          <p>{richTextParser(par)}</p>
-        ))}
+        {contentConfidentialitePage.droits_paragraphes.map(
+          (par: string, index: number) => (
+            <p key={index}>{richTextParser(par)}</p>
+          )
+        )}
 
-
-        <h2>{confidentialitePage.acces}</h2>
-        <p>{confidentialitePage.acces_header}<p>
+        <h2>{contentConfidentialitePage.acces}</h2>
+        <p>{contentConfidentialitePage.access_header}</p>
         <ul className="">
-          {confidentialitePage.acces_valeurs.map((acces, index) => (
-            <li key={index} className="">
-              {acces}
-            </li>
-          ))}
+          {contentConfidentialitePage.access_valeurs.map(
+            (acces: string, index: number) => (
+              <li key={index} className="">
+                {acces}
+              </li>
+            )
+          )}
         </ul>
 
-        <h2>{confidentialitePage.sous_traitant}</h2>
-        <p>{confidentialitePage.sous_traitant_header}</p>
-        <table id="table-5">
+        <h2>{contentConfidentialitePage.sous_traitant}</h2>
+        <p>{contentConfidentialitePage.sous_traitant_header}</p>
+        <table id="table-6">
           <thead>
             <tr>
-              {confidentialitePage.sous_traitant_heading.map((header, Index) => (
-                <th>{header}</th>
-              ))}
+              {contentConfidentialitePage.sous_traitant_heading.map(
+                (header: string, index: number) => (
+                  <th key={index}>{header}</th>
+                )
+              )}
             </tr>
           </thead>
           <tbody>
-            {confidentialitePage.sous_traitant_valeurs.map(
-              (row, rowIndex) => (
-                <tr key={rowIndex} id={`table-5-row-key-${rowIndex}`}>
-                  <td> {row.title} </td>
-                  <td> {row.traitement} </td>
-                  <td> {row.pays} </td>
-                  <td> {richTextParser(row.lien)} </td>
+            {contentConfidentialitePage.sous_traitant_valeurs.map(
+              (
+                row: {
+                  title: string;
+                  traitement: string;
+                  pays: string;
+                  lien: string;
+                },
+                rowIndex: number
+              ) => (
+                <tr key={rowIndex} id={`table-6-row-key-${rowIndex}`}>
+                  <td>{row.title}</td>
+                  <td>{row.traitement}</td>
+                  <td>{row.pays}</td>
+                  <td>
+                    <Link
+                      href={row.lien}
+                      className="text-blue-600 underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {richTextParser(row.lien)}
+                    </Link>
+                  </td>
                 </tr>
               )
             )}
           </tbody>
-        </table> 
+        </table>
 
-        <h2>{confidentialitePage.cookies}</h2>
-        {confidentialitePage.cookies_descriptions.map((par, index) => (
-          <p>{par}</p>
-        ))}
+        <h2>{contentConfidentialitePage.cookies}</h2>
+        {contentConfidentialitePage.cookies_descriptions.map(
+          (par: string, index: number) => (
+            <p key={index}>{par}</p>
+          )
+        )}
       </div>
     </section>
   );

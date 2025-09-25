@@ -3,7 +3,7 @@
 
   "header": "Les présentes conditions d’utilisation (CGU) sont mises en œuvre conformément à l’article L. 112-9 du Code des relations entre le public et l’administration. Elles s’imposent de plein droit aux Visiteurs et aux Utilisateurs.",
 
-  "presentation": "1 - Présentation", 
+  "presentation": "1 - Présentation",
   "presentation_paragraphes": [
     "La plateforme Fonds Prévention Argile (ci-après dénommé « le Service ») est un téléservice expérimental mis en œuvre par a Direction Générale de l’Aménagement, du Logement et de la Nature (DGALN) en lien avec la Direction interministérielle du numérique (DINUM).",
     "Le Service est destiné à accompagner au mieux les propriétaires, locataires et occupants réguliers d’un logement concernés par le retrait et le gonflement de l’argile. Il permet d’être mis en relation avec les services de l’Etat compétents afin de bénéficier des aides du « fonds prévention argile ».",
@@ -14,8 +14,6 @@
     "De vérifier si son logement est éligible à une aide financière au titre du « fonds prévention argile » pour remédier en tout ou partie aux désordres liés au retrait et au gonflement de l’argile ;",
     "De déposer un dossier de demande d’aide afin d’être accompagné par les services de l’Etat dans la mise en œuvre des travaux nécessaires pour lutter contre le phénomène du retrait et gonflement de l’argile."
   ],
-
-
 
   "definition": "2 – Définitions",
   "definition_paragraphes": [
@@ -33,13 +31,13 @@
     "Prendre connaissance d’informations pédagogiques sur le phénomène du retrait et du gonflement de l’argile ;",
     "Vérifier l’éligibilité de son logement à une aide financière pour compenser les effets du retrait et du gonflement de l’argile ;"
   ],
-  "fonctionnalites_avec_compte": "3.2 Fonctionnalités avec création de compte", 
+  "fonctionnalites_avec_compte": "3.2 Fonctionnalités avec création de compte",
   "fonctionnalites_avec_compte_p1": "En plus des fonctionnalités Visiteur, chaque Utilisateur du Service dispose des fonctionnalités suivantes :",
   "fonctionnalites_avec_compte_creation": "Création d’un compte",
   "fonctionnalites_avec_compte_creation_description": "Tout Utilisateur peut se connecter et créer un compte sur le Service au moyen du fournisseur d’identité FranceConnect.",
-  "fonctionnalites_avec_compte_dossier": "Dépôt d’un dossier et accompagnement par un service de l’Etat", 
+  "fonctionnalites_avec_compte_dossier": "Dépôt d’un dossier et accompagnement par un service de l’Etat",
   "fonctionnalites_avec_compte_dossier_ds": "Le dépôt d’un dossier est réalisé au moyen du portail démarches-simplifiées mis en place par la Direction Interministérielle du Numérique (DINUM) rattachée aux services du Premier ministre : <a href='https://www.demarches-simplifiees.fr/'>Démarches Simplifiées</a>",
-  "fonctionnalites_avec_compte_dossier_fonctionnalite": "Depuis son espace personnel sur le Service, l’Utilisateur peut : ", 
+  "fonctionnalites_avec_compte_dossier_fonctionnalite": "Depuis son espace personnel sur le Service, l’Utilisateur peut : ",
   "fonctionnalites_avec_compte_dossier_fonctionnalite_liste": [
     "Vérifier l’éligibilité de son logement au « fonds prévention argile » mis en place par l’Etat ;",
     "Réaliser un diagnostic du logement concerné par un bureau d’étude et communiquer les résultats au service de l’Etat chargé d’instruire le dossier ;",
@@ -50,14 +48,13 @@
     "L’instruction et la validation des différentes étapes du dossier est assurée par les services de l’État territorialement compétents dans le département où se situe le bien. Il s’agit le plus souvent des Directions Départementales des Territoires / et de la Mer (DDT ou DDTM).",
     "L’Utilisateur peut dialoguer avec le service de l’Etat au moyen d’un outil de messagerie électronique intégré au Service.",
     "Le dépôt d’un dossier sur le Service ne vaut pas délivrance d’une aide au titre du « fonds prévention argile ». Seules les décisions administratives prises à l’issue de l’instruction du dossier par les services de l’Etat compétents sont susceptibles d’accorder ou refuser le versement d’un aide au titre du « fonds prévention argile »."
-
   ],
 
-  "deploiement": "4 – Déploiement du Service", 
-  "deploiement_description": "Le Service est en cours de déploiement sur le territoire français. La liste des départements dans lequel le service est disponible est la suivante : 03, 04, 24, 32, 36, 47, 54, 59, 63, 81, 82.", 
+  "deploiement": "4 – Déploiement du Service",
+  "deploiement_description": "Le Service est en cours de déploiement sur le territoire français. La liste des départements dans lequel le service est disponible est la suivante : 03, 04, 24, 32, 36, 47, 54, 59, 63, 81, 82.",
 
-  "traitement_donnee": "5 - Traitement des données personnelles", 
-  "traitement_donnee_description": "Le Service ne collecte que les données strictement nécessaires à sa mise en œuvre. Les données collectées incluent également des données à caractère personnel.  Pour plus d’informations sur le traitement des données à caractère personnel le Visiteur est invité à se référer à la <a href='/politique-confidentialite'>politique de confidentialité</a>. ", 
+  "traitement_donnee": "5 - Traitement des données personnelles",
+  "traitement_donnee_description": "Le Service ne collecte que les données strictement nécessaires à sa mise en œuvre. Les données collectées incluent également des données à caractère personnel.  Pour plus d’informations sur le traitement des données à caractère personnel le Visiteur est invité à se référer à la <a href='/politique-confidentialite'>politique de confidentialité</a>. ",
 
   "engagements": "6 - Engagements et responsabilité ",
   "engagements_descriptions": [
@@ -66,22 +63,21 @@
       "descriptions": [
         "Le Visiteur s’engage à respecter les présentes CGU et leurs éventuelles modifications ainsi que la législation en vigueur.",
         "En cas de violation d'une ou de plusieurs dispositions des CGU ou de tout autre document incorporé aux présentes par référence, l’Editeur se réserve le droit de prendre toutes mesures utiles et, en particulier, d’engager des poursuites devant les juridictions compétentes."
-
       ]
     },
     {
-      "title": "Utilisateur", 
+      "title": "Utilisateur",
       "descriptions": [
         "L’Utilisateur s’engage à respecter les présentes CGU ainsi que leurs éventuelles modifications ou de tout autre document incorporé aux présentes par référence. Il respecte également la législation en vigueur.",
         "Le titulaire d’un compte est responsable de la conservation de ses identifiant et mot de passe. Il s'interdit donc de les divulguer à quiconque.",
         "Les informations communiquées dans le Service relèvent de la responsabilité de l’Utilisateur. L’Utilisateur s’engage en particulier à ne communiquer que des informations concernant le logement dont il est locataire, propriétaire ou occupant régulier. L’Utilisateur ne dépose que les seuls documents et informations demandées par le Service qui sont strictement nécessaires à l’instruction de son dossier. Il s'abstient en particulier de mentionner des informations 'sensibles' au sens du RGPD (ex : opinions politiques, philosophiques, religieuses ou des données de santé) et plus globalement tout propos contraire à la loi (ex : injure, obscénité, diffamation…).",
         "Il est rappelé que toute personne procédant à une fausse déclaration pour elle-même ou pour autrui s’expose, notamment, aux sanctions prévues à l’article 441-1 du code pénal, prévoyant des peines pouvant aller jusqu’à trois ans d’emprisonnement et 45 000 euros d’amendes.",
-        "L’Editeur se réserve, le cas échéant, le droit de prendre toutes mesures utiles et, en particulier, d’engager des poursuites devant les juridictions compétentes."
+        "L’Editeur se réserve, le cas échéant, le droit de prendre toutes mesures utiles et, en particulier, d’engager des poursuites devant les juridictions compétentes.",
         "L'Utilisateur déclare être pleinement informé et conscient que le Service ne délivre aucune autorisation ou décision administrative créatrice de droits pour les Utisateurs. Il s'agit d’une plateforme qui permet d’être mis en relation avec les services de l’Etat seuls compétents pour délivrer ou refuser le versement d’une aide au titre du « fonds prévention argile »."
       ]
     },
     {
-      "title": "L'Editeur", 
+      "title": "L'Editeur",
       "descriptions": [
         "Le Service est développé conformément à l’état de l’art. Toutefois, il n’est pas garanti qu’il soit exempt d’anomalies ou d'erreurs. Le Service est donc mis à disposition sans garantie sur sa disponibilité et ses performances.",
         "L’Editeur ne peut être tenu responsable des pertes et/ou préjudices, de quelque nature qu’ils soient, qui pourraient être causés à la suite d’un dysfonctionnement ou une indisponibilité du Service. De telles situations n'ouvriront droit à aucune compensation ou indemnité d’aucune nature dont financière.",
@@ -92,15 +88,12 @@
     }
   ],
 
-  "evolutions": "7 – Modification et évolution du Service ", 
+  "evolutions": "7 – Modification et évolution du Service ",
   "evolutions_descriptions": [
     "Les termes des présentes CGU peuvent être modifiés ou complétés à tout moment, sans préavis, en fonction des modifications apportées au Service, de l’évolution de la législation ou pour tout autre motif jugé nécessaire.",
     "Ces modifications et mises à jour s’imposent de plein droit au Visiteur et Utilisateur qui doivent, en conséquence, se référer régulièrement à cette rubrique pour vérifier les conditions générales en vigueur."
-  ], 
+  ],
 
-  "contact": "8 - Nous contacter ", 
+  "contact": "8 - Nous contacter ",
   "contact_description": "Pour toute question, contactez-nous : contact@fonds-preventions-argile.beta.gouv.fr"
-
-
-
 }
