@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { parseRGAParams } from "@/lib/form-rga/parser";
 import { useRGAContext } from "@/lib/form-rga/session";
+import RGATestFiller from "./components/debug/RGATestFiller";
 
 interface RGAMessage {
   type: string;
@@ -248,6 +249,9 @@ export default function Simulateur() {
           <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
             {contentSimulationPage.title}
           </h1>
+
+          {/* Composant de test/debug - affiché uniquement en dev/staging */}
+          <RGATestFiller />
 
           {/* Conditional rendering de l'iframe */}
           {iframeUrl ? (
