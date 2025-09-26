@@ -3,6 +3,7 @@ import { getCurrentUser, ROLES } from "@/lib/auth/server";
 import { Suspense } from "react";
 import MonCompteClient from "@/page-sections/account/MonCompteClient";
 import Loading from "@/components/Loading/Loading";
+import { ParcoursProvider } from "@/lib/parcours/context/ParcoursProvider";
 
 export default async function MonComptePage() {
   const user = await getCurrentUser();
@@ -21,7 +22,9 @@ export default async function MonComptePage() {
         </section>
       }
     >
-      <MonCompteClient />
+      <ParcoursProvider autoSync={false}>
+        <MonCompteClient />
+      </ParcoursProvider>
     </Suspense>
   );
 }

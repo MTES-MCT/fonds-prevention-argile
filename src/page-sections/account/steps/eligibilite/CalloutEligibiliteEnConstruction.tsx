@@ -1,29 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { Step, DSStatus } from "@/lib/parcours/parcours.types";
-import { useDossierDS } from "@/hooks";
+import { Step } from "@/lib/parcours/parcours.types";
+import { useParcours } from "@/lib/parcours/hooks/useParcours";
 
 export default function CalloutEligibiliteEnConstruction() {
-  const { dsUrl, isLoading, error } = useDossierDS({
-    step: Step.ELIGIBILITE,
-    status: DSStatus.EN_CONSTRUCTION,
-  });
+  const { getDossierUrl } = useParcours();
 
-  // Si on charge encore les données
-  if (isLoading) {
-    return (
-      <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
-        <p className="fr-callout__title">À FAIRE</p>
-        <p className="fr-callout__text">
-          Chargement de votre dossier en cours...
-        </p>
-      </div>
-    );
-  }
+  // Récupérer directement l'URL depuis le context
+  const dsUrl = getDossierUrl(Step.ELIGIBILITE);
 
-  // Si erreur ou pas d'URL
-  if (error || !dsUrl) {
+  // Si pas d'URL disponible
+  if (!dsUrl) {
     return (
       <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
         <p className="fr-callout__title">À FAIRE</p>

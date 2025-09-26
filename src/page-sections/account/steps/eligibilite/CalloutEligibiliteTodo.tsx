@@ -4,20 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRGAContext } from "@/lib/form-rga/session";
 import { envoyerDossierEligibiliteAvecDonnees } from "@/lib/actions/parcours/eligibilite.actions";
+import { useParcours } from "@/lib/parcours/hooks/useParcours";
+import { RGAFormData } from "@/lib/form-rga";
 
 export default function CalloutEligibiliteTodo() {
   const router = useRouter();
   const { data: rgaData, clearRGA } = useRGAContext();
+  const { refresh } = useParcours(); // Pour rafraîchir après envoi
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleSubmit = async () => {
-    // Réinitialiser l'erreur
     setError(null);
 
-    // Vérifier qu'on a des données RGA
     if (!rgaData || Object.keys(rgaData).length === 0) {
       setError(
         "Aucune donnée de simulation trouvée. Veuillez d'abord compléter le simulateur."
@@ -25,7 +26,6 @@ export default function CalloutEligibiliteTodo() {
       return;
     }
 
-    // Demander confirmation si pas déjà fait
     if (!showConfirmation) {
       setShowConfirmation(true);
       return;
@@ -34,17 +34,19 @@ export default function CalloutEligibiliteTodo() {
     setIsLoading(true);
 
     try {
-      // Envoyer les données vers DS avec les données RGA passées en paramètre
       const result = await envoyerDossierEligibiliteAvecDonnees(rgaData);
 
       if (result.success && result.data) {
-        // Nettoyer les données RGA du storage local
+        // Nettoyer les données RGA
         clearRGA();
 
-        // Redirection vers le formulaire DS prérempli
+        // Rafraîchir le parcours dans le context
+        await refresh();
+
+        // Ouvrir le formulaire DS
         window.open(result.data.dossierUrl, "_blank", "noopener,noreferrer");
 
-        // Redirection interne vers le tableau de bord après un délai
+        // Redirection après délai
         setTimeout(() => {
           router.push("/mon-compte");
         }, 2000);
@@ -55,7 +57,6 @@ export default function CalloutEligibiliteTodo() {
         setShowConfirmation(false);
       } else {
         setError("Une erreur inattendue s'est produite. Veuillez réessayer.");
-        setShowConfirmation(false);
       }
     } catch (err) {
       console.error("Erreur lors de l'envoi:", err);
@@ -71,7 +72,7 @@ export default function CalloutEligibiliteTodo() {
     setError(null);
   };
 
-  // Affichage de la confirmation
+  // Affichage de confirmation
   if (rgaData && showConfirmation && !isLoading) {
     return (
       <div className="fr-callout fr-callout--yellow-moutarde fr-icon-warning-line">
@@ -81,23 +82,7 @@ export default function CalloutEligibiliteTodo() {
             Vous êtes sur le point d'envoyer votre dossier d'éligibilité avec
             les informations suivantes :
           </p>
-          <ul className="fr-text--sm fr-mb-2w">
-            {rgaData.logement?.adresse && (
-              <li>Adresse : {rgaData.logement.adresse}</li>
-            )}
-            {rgaData.logement?.type && (
-              <li>Type de logement : {rgaData.logement.type}</li>
-            )}
-            {rgaData.menage?.personnes && (
-              <li>Nombre de personnes : {rgaData.menage.personnes}</li>
-            )}
-            {rgaData.menage?.revenu && (
-              <li>Revenu fiscal : {rgaData.menage.revenu}€</li>
-            )}
-            {rgaData.logement?.zone_dexposition && (
-              <li>Zone d'exposition : {rgaData.logement.zone_dexposition}</li>
-            )}
-          </ul>
+          <RGADataSummary data={rgaData} />
           <p className="fr-text--sm">
             Après validation, vous serez redirigé vers le formulaire Démarches
             Simplifiées pour compléter votre dossier.
@@ -169,5 +154,22 @@ export default function CalloutEligibiliteTodo() {
         </button>
       </div>
     </>
+  );
+}
+
+// Composant pour afficher le résumé des données RGA
+function RGADataSummary({ data }: { data: Partial<RGAFormData> }) {
+  return (
+    <ul className="fr-text--sm fr-mb-2w">
+      {data.logement?.adresse && <li>Adresse : {data.logement.adresse}</li>}
+      {data.logement?.type && <li>Type de logement : {data.logement.type}</li>}
+      {data.menage?.personnes && (
+        <li>Nombre de personnes : {data.menage.personnes}</li>
+      )}
+      {data.menage?.revenu && <li>Revenu fiscal : {data.menage.revenu}€</li>}
+      {data.logement?.zone_dexposition && (
+        <li>Zone d'exposition : {data.logement.zone_dexposition}</li>
+      )}
+    </ul>
   );
 }

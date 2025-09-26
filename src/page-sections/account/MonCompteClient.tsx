@@ -1,105 +1,38 @@
 "use client";
 
 import { useAuth } from "@/lib/auth/client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import MonCompteLoading from "../../components/Loading/Loading";
 import FaqAccountSection from "./common/FaqAccountSection";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
-import CalloutARemplir from "./steps/eligibilite/CalloutEligibiliteTodo";
-import CalloutDiagnostic from "./steps/diagnostic/CalloutDiagnostic";
-import CalloutEnInstruction from "./steps/en-instruction/CalloutEnInstruction";
 import { useRGAContext } from "@/lib/form-rga/session/useRGAContext";
 import DevTestSidebar from "./debug/DevTestSidebar";
-import { getParcoursStatus } from "@/lib/actions/parcours/parcours.actions";
-import { useDossierSync } from "@/hooks";
 import { DSStatus, Step } from "@/lib/parcours/parcours.types";
+
+// Import des Callouts
 import CalloutEligibiliteSimulateurARemplir from "./steps/eligibilite/CalloutEligibiliteSimulateurARemplir";
 import CalloutEligibiliteTodo from "./steps/eligibilite/CalloutEligibiliteTodo";
 import CalloutEligibiliteEnConstruction from "./steps/eligibilite/CalloutEligibiliteEnConstruction";
+import CalloutEnInstruction from "./steps/en-instruction/CalloutEnInstruction";
+import { useParcours } from "@/lib/parcours/hooks/useParcours";
 
 export default function MonCompteClient() {
-  const { user, isLoading, isLoggingOut } = useAuth();
+  const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
   const { hasData: hasRGAData, isLoading: isLoadingRGA } = useRGAContext();
-  const router = useRouter();
-  const [isRedirecting] = useState(false);
-  const [showNoDataMessage, setShowNoDataMessage] = useState(false);
-  const [hasParcours, setHasParcours] = useState(false);
-  const [isCheckingParcours, setIsCheckingParcours] = useState(true);
-  const [currentStep, setCurrentStep] = useState<Step>(Step.ELIGIBILITE);
 
-  // Hook de synchronisation DS
+  // Utilisation du hook parcours simplifié
   const {
-    isSyncing,
-    syncNow,
-    lastSync,
-    lastStatus,
-    error: syncError,
-  } = useDossierSync({
-    autoSync: false,
-    interval: 300000, // 5 minutes
-    step: currentStep,
-  });
-
-  // Vérifier si l'utilisateur a un parcours en cours
-  useEffect(() => {
-    const checkParcours = async () => {
-      if (user) {
-        try {
-          const result = await getParcoursStatus();
-
-          if (result.success && result.data?.state) {
-            setHasParcours(true);
-            setCurrentStep(result.data.state.step);
-          }
-        } catch (error) {
-          console.error("Erreur lors de la vérification du parcours:", error);
-        }
-      }
-      // Ne mettre à false que si on a fini de charger l'user
-      if (!isLoading) {
-        setIsCheckingParcours(false);
-      }
-    };
-
-    checkParcours();
-  }, [user, isLoading]);
-
-  // Sync DS initiale si parcours existe et pas de données RGA
-  useEffect(() => {
-    if (hasParcours && !hasRGAData && !isLoading && !isCheckingParcours) {
-      syncNow();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasParcours, hasRGAData, isLoading, isCheckingParcours]);
-
-  // Redirection si pas de données RGA ET pas de parcours
-  useEffect(() => {
-    if (
-      isLoading ||
-      isLoadingRGA ||
-      isLoggingOut ||
-      isRedirecting ||
-      isCheckingParcours
-    )
-      return;
-
-    // Si utilisateur connecté mais ni données RGA ni parcours existant
-    if (user && !hasRGAData && !hasParcours) {
-      setShowNoDataMessage(true);
-    }
-  }, [
-    isLoading,
-    isLoadingRGA,
-    isCheckingParcours,
-    user,
-    hasRGAData,
     hasParcours,
-    router,
-    isLoggingOut,
-    isRedirecting,
-  ]);
+    currentStep,
+    lastDSStatus,
+    isLoading: isLoadingParcours,
+    isSyncing,
+    error,
+    syncNow,
+  } = useParcours();
+
+  // État de chargement global
+  const isLoading = isAuthLoading || isLoadingRGA || isLoadingParcours;
 
   // Afficher un message de déconnexion
   if (isLoggingOut) {
@@ -114,12 +47,19 @@ export default function MonCompteClient() {
   }
 
   // Gestion du chargement initial
-  if (isLoading || isLoadingRGA || isCheckingParcours) {
+  if (isLoading) {
     return <MonCompteLoading />;
   }
 
-  // Message redirigeant si pas de données RGA ET pas de parcours ou si on force l'affichage
-  if (showNoDataMessage || (!hasRGAData && !hasParcours)) {
+  // Si pas d'user (ne devrait pas arriver car page protégée)
+  if (!user) {
+    return null;
+  }
+
+  // Cas où l'utilisateur n'a ni parcours ni données RGA
+  const showSimulateurCallout = !hasRGAData && !hasParcours;
+
+  if (showSimulateurCallout) {
     return (
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
@@ -129,23 +69,18 @@ export default function MonCompteClient() {
     );
   }
 
-  // Si redirection en cours ou pas d'user - ne rien afficher
-  if (isRedirecting || !user) {
-    return null;
-  }
-
   return (
     <>
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
           <h1>Bonjour {user.firstName}</h1>
 
-          {/* Bouton de sync manuelle */}
+          {/* Bouton de sync manuelle (seulement si parcours existe) */}
           {hasParcours && (
             <div className="fr-mb-4w">
               <button
                 className="fr-btn fr-btn--secondary fr-btn--sm fr-mt-2w"
-                onClick={syncNow}
+                onClick={() => syncNow()}
                 disabled={isSyncing}
               >
                 {isSyncing
@@ -155,60 +90,29 @@ export default function MonCompteClient() {
             </div>
           )}
 
-          {/* Badge de statut DS synchronisé */}
-          {hasParcours && (
+          {/* Badge de statut DS */}
+          {hasParcours && lastDSStatus && (
             <span className="fr-badge fr-badge--info fr-mb-4w fr-ml-1w">
-              {lastStatus === DSStatus.NON_ACCESSIBLE
-                ? "Non accessible"
-                : lastStatus === DSStatus.ACCEPTE
-                  ? "Accepté"
-                  : lastStatus === DSStatus.EN_INSTRUCTION
-                    ? "En instruction"
-                    : lastStatus === DSStatus.EN_CONSTRUCTION
-                      ? "En construction"
-                      : lastStatus === DSStatus.REFUSE
-                        ? "Refusé"
-                        : lastStatus === DSStatus.CLASSE_SANS_SUITE
-                          ? "Classé sans suite"
-                          : "Aucun dossier"}
+              {getStatusLabel(lastDSStatus)}
             </span>
           )}
 
-          {/* Pour debug */}
-          {/* Indicateur de synchronisation */}
-          {hasParcours && (
-            <div className="fr-mb-2w">
-              {isSyncing && (
-                <span className="fr-text--sm">
-                  Synchronisation avec Démarches Simplifiées...
-                </span>
-              )}
-              <p>Statut {JSON.stringify(lastStatus)}</p>
-              {lastSync && !isSyncing && (
-                <span className="fr-text--sm fr-text--mention-grey">
-                  Dernière synchronisation : {lastSync.toLocaleTimeString()}
-                </span>
-              )}
+          {/* Affichage d'erreur si nécessaire */}
+          {error && (
+            <div className="fr-alert fr-alert--error fr-mb-2w">
+              <p>{error}</p>
             </div>
           )}
 
           <div className="fr-grid-row fr-grid-row--gutters">
             <div className="fr-col-12 fr-col-md-8">
-              {/* Cas ou on a les données RGA en session et on doit envoyer a Démarches Simplifiées */}
-              {hasRGAData && hasParcours && <CalloutARemplir />}
-
-              {/* Cas ou on a déja envoyé dans DS mais pas encore terminé  */}
-              {hasParcours && lastStatus === DSStatus.EN_CONSTRUCTION && (
-                <CalloutEligibiliteEnConstruction />
-              )}
-
-              {/* Cas ou c'est en instruction dans DS  */}
-              {hasParcours && lastStatus === DSStatus.EN_INSTRUCTION && (
-                <CalloutEnInstruction />
-              )}
-              {/* <CalloutARemplir />
-              <CalloutDiagnostic />
-              <CalloutEnInstruction /> */}
+              {/* Affichage conditionnel des Callouts */}
+              <CalloutManager
+                hasRGAData={hasRGAData}
+                hasParcours={hasParcours}
+                dsStatus={lastDSStatus}
+                currentStep={currentStep}
+              />
             </div>
 
             <div className="fr-col-12 fr-col-md-4 flex justify-center md:justify-end">
@@ -218,14 +122,62 @@ export default function MonCompteClient() {
         </div>
       </section>
 
-      {/* Étapes détaillées */}
+      {/* Sections communes */}
       <StepDetailSection />
-
-      {/* FAQ */}
       <FaqAccountSection />
-
-      {/* Panneau de test latéral (dev uniquement) */}
       <DevTestSidebar />
     </>
   );
+}
+
+// Composant pour gérer l'affichage conditionnel des Callouts
+function CalloutManager({
+  hasRGAData,
+  hasParcours,
+  dsStatus,
+}: {
+  hasRGAData: boolean;
+  hasParcours: boolean;
+  dsStatus: DSStatus | null;
+  currentStep: Step | null;
+}) {
+  // Cas où on a les données RGA et un parcours (à envoyer à DS)
+  if (hasRGAData && hasParcours && !dsStatus) {
+    return <CalloutEligibiliteTodo />;
+  }
+
+  // Cas où c'est en construction dans DS
+  if (hasParcours && dsStatus === DSStatus.EN_CONSTRUCTION) {
+    return <CalloutEligibiliteEnConstruction />;
+  }
+
+  // Cas où c'est en instruction
+  if (hasParcours && dsStatus === DSStatus.EN_INSTRUCTION) {
+    return <CalloutEnInstruction />;
+  }
+
+  // Autres cas selon l'étape...
+  // Tu peux ajouter d'autres conditions ici
+
+  return null;
+}
+
+// Helper pour les labels de statut
+function getStatusLabel(status: DSStatus): string {
+  switch (status) {
+    case DSStatus.NON_ACCESSIBLE:
+      return "Non accessible";
+    case DSStatus.ACCEPTE:
+      return "Accepté";
+    case DSStatus.EN_INSTRUCTION:
+      return "En instruction";
+    case DSStatus.EN_CONSTRUCTION:
+      return "En construction";
+    case DSStatus.REFUSE:
+      return "Refusé";
+    case DSStatus.CLASSE_SANS_SUITE:
+      return "Classé sans suite";
+    default:
+      return "Aucun dossier";
+  }
 }

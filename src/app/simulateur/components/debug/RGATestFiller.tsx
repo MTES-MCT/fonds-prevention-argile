@@ -95,74 +95,64 @@ export default function RGATestFiller(): JSX.Element | null {
 
   return (
     <div className="fr-container fr-mt-2w">
-      <div className="fr-alert fr-alert--warning fr-mb-3w">
-        <div className="fr-alert__body">
-          <h3 className="fr-h6 fr-mb-1w">Mode DEBUG</h3>
+      <div className="fr-callout fr-callout--pink-tuile">
+        <h3 className="fr-callout__title">Mode DEBUG</h3>
+        <p className="fr-callout__text">
+          Remplir automatiquement le formulaire avec des données de test
+          (Saint-Maur, maison 1994, 7 personnes, 50k€ revenus)
+        </p>
+        <button
+          className="fr-btn"
+          onClick={handleFillTestData}
+          disabled={isLoading || isRedirecting}
+          type="button"
+        >
+          {isLoading ? (
+            <>
+              <span
+                className="fr-loader fr-loader--sm"
+                aria-hidden="true"
+              ></span>
+              <span className="fr-ml-1w">Chargement...</span>
+            </>
+          ) : isRedirecting ? (
+            "Redirection..."
+          ) : (
+            "Remplir avec des données de test"
+          )}
+        </button>
 
-          <div className="fr-grid-row fr-grid-row--middle fr-grid-row--gutters">
-            <div className="fr-col-12 fr-col-md-8">
-              <p className="fr-text--sm fr-mb-0">
-                Remplir automatiquement le formulaire avec des données de test
-                (Saint-Maur, maison 1994, 7 personnes, 50k€ revenus)
-              </p>
-            </div>
-
-            <div className="fr-col-12 fr-col-md-4 fr-text--right">
-              <button
-                className="fr-btn"
-                onClick={handleFillTestData}
-                disabled={isLoading || isRedirecting}
-                type="button"
+        {/* Message de succès */}
+        {isSuccess && (
+          <div className="fr-alert fr-alert--success fr-mt-2w fr-alert--sm">
+            <p className="fr-text--sm fr-mb-0">
+              <strong>Simulation remplie en dur pour tests</strong> - Données
+              sauvegardées en session
+              {isRedirecting && " - Redirection vers la connexion..."}
+            </p>
+            {validationErrors.length > 0 && (
+              <p
+                className="fr-text--xs fr-mt-1w fr-mb-0"
+                style={{ color: "#ce0600" }}
               >
-                {isLoading ? (
-                  <>
-                    <span
-                      className="fr-loader fr-loader--sm"
-                      aria-hidden="true"
-                    ></span>
-                    <span className="fr-ml-1w">Chargement...</span>
-                  </>
-                ) : isRedirecting ? (
-                  "Redirection..."
-                ) : (
-                  "Remplir avec des données de test"
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Message de succès */}
-          {isSuccess && (
-            <div className="fr-alert fr-alert--success fr-mt-2w fr-alert--sm">
-              <p className="fr-text--sm fr-mb-0">
-                <strong>Simulation remplie en dur pour tests</strong> - Données
-                sauvegardées en session
-                {isRedirecting && " - Redirection vers la connexion..."}
+                Attention : quelques erreurs de validation (données partielles
+                sauvegardées)
               </p>
-              {validationErrors.length > 0 && (
-                <p
-                  className="fr-text--xs fr-mt-1w fr-mb-0"
-                  style={{ color: "#ce0600" }}
-                >
-                  Attention : quelques erreurs de validation (données partielles
-                  sauvegardées)
-                </p>
-              )}
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
-          {/* Affichage des erreurs de validation si présentes et pas de succès */}
-          {!isSuccess && validationErrors.length > 0 && (
-            <div className="fr-alert fr-alert--error fr-mt-2w fr-alert--sm">
-              <p className="fr-text--sm fr-mb-1w">Erreurs de validation :</p>
-              <ul className="fr-text--xs fr-mb-0">
-                {validationErrors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
+        {/* Affichage des erreurs de validation si présentes et pas de succès */}
+        {!isSuccess && validationErrors.length > 0 && (
+          <div className="fr-alert fr-alert--error fr-mt-2w fr-alert--sm">
+            <p className="fr-text--sm fr-mb-1w">Erreurs de validation :</p>
+            <ul className="fr-text--xs fr-mb-0">
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
