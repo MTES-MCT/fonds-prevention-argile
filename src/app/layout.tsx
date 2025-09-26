@@ -30,6 +30,7 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css"
 import "../styles/globals.css";
 import { AuthProvider } from "@/lib/auth/contexts/AuthContext";
 import { RGAProvider } from "@/lib/form-rga/session";
+import { PostLogoutRedirect } from "@/components/PostLogoutRedirect/PostLogoutRedirect";
 
 export const metadata: Metadata = {
   title: contentLayout.metadata.title,
@@ -103,6 +104,7 @@ export default function RootLayout({
         />
       </head>
       <body className="flex flex-col min-h-screen">
+        <PostLogoutRedirect />
         <DsfrProvider>
           <AuthProvider>
             <Matomo />

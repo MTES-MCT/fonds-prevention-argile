@@ -99,7 +99,7 @@ const Header = () => {
                       )}
                       <li>
                         <button
-                          onClick={logout}
+                          onClick={() => logout()}
                           className="fr-btn--account fr-icon-logout-box-r-line fr-btn"
                           type="button"
                         >
@@ -173,7 +173,7 @@ const Header = () => {
                   )}
                   <li>
                     <button
-                      onClick={logout}
+                      onClick={() => logout()}
                       className="fr-btn--account fr-icon-logout-box-r-line fr-btn"
                       type="button"
                     >

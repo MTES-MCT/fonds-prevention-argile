@@ -21,7 +21,7 @@ interface AuthContextType {
   error: string | null;
   login: (password: string) => Promise<{ success: boolean; error?: string }>;
   loginWithFranceConnect: () => void;
-  logout: () => Promise<void>;
+  logout: (redirectTo?: string) => Promise<void>;
   checkAuth: () => Promise<void>;
 }
 
@@ -100,54 +100,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Déconnexion
-  const logout = useCallback(async () => {
-    setIsLoading(true);
-    setIsLoggingOut(true);
+  const logout = useCallback(
+    async (redirectTo?: string) => {
+      setIsLoading(true);
+      setIsLoggingOut(true);
 
-    try {
-      // Déterminer la route de déconnexion selon le type d'auth
-      const logoutUrl =
-        user?.authMethod === AUTH_METHODS.FRANCECONNECT
-          ? "/api/auth/fc/logout"
-          : "/api/auth/logout";
-
-      const response = await fetch(logoutUrl, {
-        method: "POST",
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setIsAuthenticated(false);
-        setUser(null);
-        setError(null);
-
-        // Stocker le flag de déconnexion dans localStorage
-        localStorage.setItem("logout_success", "true");
-
-        // Utiliser l'URL de redirection fournie par l'API
-        if (data.redirectUrl) {
-          // Pour FranceConnect ou déconnexion standard
-          if (data.redirectUrl.startsWith("http")) {
-            // URL externe (FranceConnect)
-            window.location.href = data.redirectUrl;
-          } else {
-            // URL interne
-            router.push(data.redirectUrl);
-          }
-        } else {
-          // Fallback
-          router.push("/");
-        }
+      // Stocker l'URL de redirection après déconnexion
+      if (redirectTo) {
+        sessionStorage.setItem("post_logout_redirect", redirectTo);
       }
-    } catch (err) {
-      console.error("Erreur lors de la déconnexion:", err);
-      setError("Erreur lors de la déconnexion");
-      setIsLoggingOut(false);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [router, user]);
+
+      try {
+        // Déterminer la route de déconnexion selon le type d'auth
+        const logoutUrl =
+          user?.authMethod === AUTH_METHODS.FRANCECONNECT
+            ? "/api/auth/fc/logout"
+            : "/api/auth/logout";
+
+        const response = await fetch(logoutUrl, {
+          method: "POST",
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setIsAuthenticated(false);
+          setUser(null);
+          setError(null);
+
+          // Stocker le flag de déconnexion dans localStorage
+          localStorage.setItem("logout_success", "true");
+
+          // Utiliser l'URL de redirection fournie par l'API
+          if (data.redirectUrl) {
+            // Pour FranceConnect ou déconnexion standard
+            if (data.redirectUrl.startsWith("http")) {
+              // URL externe (FranceConnect)
+              window.location.href = data.redirectUrl;
+            } else {
+              // URL interne
+              router.push(data.redirectUrl);
+            }
+          } else {
+            // Fallback
+            router.push("/");
+          }
+        }
+      } catch (err) {
+        console.error("Erreur lors de la déconnexion:", err);
+        setError("Erreur lors de la déconnexion");
+        setIsLoggingOut(false);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [router, user]
+  );
 
   // Vérifier l'auth au montage
   useEffect(() => {

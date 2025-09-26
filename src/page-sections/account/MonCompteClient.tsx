@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/lib/auth/client";
+import { AUTH_METHODS, useAuth } from "@/lib/auth/client";
 import MonCompteLoading from "../../components/Loading/Loading";
 import FaqAccountSection from "./common/FaqAccountSection";
 import MaListe from "./common/MaListe";
@@ -15,6 +15,7 @@ import CalloutEligibiliteTodo from "./steps/eligibilite/CalloutEligibiliteTodo";
 import CalloutEligibiliteEnConstruction from "./steps/eligibilite/CalloutEligibiliteEnConstruction";
 import CalloutEnInstruction from "./steps/en-instruction/CalloutEnInstruction";
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
+import SimulationNeeded from "./common/SimulationNeeded";
 
 export default function MonCompteClient() {
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
@@ -23,6 +24,7 @@ export default function MonCompteClient() {
   // Utilisation du hook parcours simplifié
   const {
     hasParcours,
+    hasDossiers,
     currentStep,
     lastDSStatus,
     isLoading: isLoadingParcours,
@@ -33,6 +35,12 @@ export default function MonCompteClient() {
 
   // État de chargement global
   const isLoading = isAuthLoading || isLoadingRGA || isLoadingParcours;
+
+  // Si France Connect mais pas de données
+  const isFranceConnectWithoutData =
+    user?.authMethod === AUTH_METHODS.FRANCECONNECT &&
+    !hasRGAData &&
+    !hasDossiers;
 
   // Afficher un message de déconnexion
   if (isLoggingOut) {
@@ -54,6 +62,17 @@ export default function MonCompteClient() {
   // Si pas d'user (ne devrait pas arriver car page protégée)
   if (!user) {
     return null;
+  }
+
+  // Cas où l'utilisateur est FranceConnect sans données RGA ni parcours
+  if (isFranceConnectWithoutData) {
+    return (
+      <section className="fr-container-fluid fr-py-10w">
+        <div className="fr-container">
+          <SimulationNeeded />
+        </div>
+      </section>
+    );
   }
 
   // Cas où l'utilisateur n'a ni parcours ni données RGA

@@ -19,6 +19,8 @@ export function useParcours() {
 
     // État DS
     lastDSStatus: context.lastDSStatus,
+    hasDossiers: context.dossiers && context.dossiers.length > 0,
+    dossiers: context.dossiers,
 
     // Loading
     isLoading: context.isLoading,
