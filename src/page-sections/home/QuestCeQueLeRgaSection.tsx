@@ -53,14 +53,14 @@ export default function QuestCeQueLeRgaSection() {
 
         {/* Zone Icônes & Infos */}
         <div className="fr-grid-row fr-grid-row--gutters fr-mt-8w">
-          <div className="fr-col-12 fr-col-sm-6 fr-col-md-3">
+          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
             <Feature
               icon="fr-icon-heavy-showers-fill"
               title="Période humide"
               description="Les sols argileux gonflent en absorbant l'eau, soulevant les fondations."
             />
           </div>
-          <div className="fr-col-12 fr-col-sm-6 fr-col-md-3">
+          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
             <Feature
               icon="fr-icon-sun-fill"
               title="Période sèche"
@@ -69,7 +69,7 @@ export default function QuestCeQueLeRgaSection() {
               iconColor="text-orange-500"
             />
           </div>
-          <div className="fr-col-12 fr-col-sm-6 fr-col-md-3">
+          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
             <Feature
               icon="fr-icon-refresh-line"
               title="Effets répétitifs"
@@ -78,7 +78,16 @@ export default function QuestCeQueLeRgaSection() {
               iconColor="text-purple-500"
             />
           </div>
-          <div className="fr-col-12 fr-col-sm-6 fr-col-md-3">
+          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
+            <Feature
+              icon="fr-icon-flood-line"
+              title="Causes multiples"
+              description="Fuite des réseaux enterrés fuyards, défaut de drainage, Racines des arbres trop proches de la maison, absence de géomembrane, pièges à eaux."
+              tileColor="bg-brown-50"
+              iconColor="text-brown-500"
+            />
+          </div>
+          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
             <Feature
               icon="fr-icon-home-4-fill"
               title="Conséquences"
