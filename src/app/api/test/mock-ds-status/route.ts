@@ -1,3 +1,4 @@
+import { isProduction } from "@/lib/config/env.config";
 import { DSStatus } from "@/lib/parcours/parcours.types";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -5,8 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 let globalMockStatus = DSStatus.EN_CONSTRUCTION;
 
 export async function POST(request: NextRequest) {
-  if (process.env.NODE_ENV !== "development") {
-    return NextResponse.json({ error: "Dev only" }, { status: 403 });
+  if (isProduction()) {
+    return NextResponse.json({ error: "Dev or staging only" }, { status: 403 });
   }
 
   const { status } = await request.json();
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  if (process.env.NODE_ENV !== "development") {
+  if (isProduction()) {
     return NextResponse.json({ error: "Dev only" }, { status: 403 });
   }
   return NextResponse.json({ status: globalMockStatus });
