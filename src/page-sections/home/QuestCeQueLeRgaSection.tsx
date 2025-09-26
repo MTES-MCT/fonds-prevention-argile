@@ -80,11 +80,11 @@ export default function QuestCeQueLeRgaSection() {
           </div>
           <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
             <Feature
-              icon="fr-icon-refresh-line"
+              icon="fr-icon-flood-line"
               title="Causes multiples"
               description="Fuite des réseaux enterrés fuyards, défaut de drainage, Racines des arbres trop proches de la maison, absence de géomembrane, pièges à eaux."
-              tileColor="bg-purple-50"
-              iconColor="text-purple-500"
+              tileColor="bg-brown-50"
+              iconColor="text-brown-500"
             />
           </div>
           <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
