@@ -76,6 +76,13 @@ export async function syncDossierEligibiliteStatus(
 
     try {
       dossierDS = await client.getDossier(parseInt(dossier.dsNumber));
+
+      // TODO : journaliser la réponse pour le debug
+      console.log(`API DS - Dossier ${dossier.dsNumber}:`, {
+        state: dossierDS?.state,
+        datePassageEnInstruction: dossierDS?.datePassageEnInstruction,
+        dateTraitement: dossierDS?.dateTraitement,
+      });
     } catch (error: unknown) {
       // Si le dossier n'existe pas sur DS (brouillon ou supprimé)
       if (
@@ -115,10 +122,19 @@ export async function syncDossierEligibiliteStatus(
     const newStatus = mapGraphQLStatusToDSStatus(dossierDS.state);
     const oldStatus = dossier.dsStatus;
 
+    // Journaliser les statuts pour le debug
+    console.log(`Mapping statut - Dossier ${dossier.dsNumber}:`, {
+      stateFromAPI: dossierDS.state,
+      mappedStatus: newStatus,
+      statusInDB: oldStatus,
+      comparison: newStatus === oldStatus,
+    });
+
     // 5. Vérifier si le statut a changé
     if (newStatus === oldStatus) {
       console.log(
-        `Pas de changement de statut pour le dossier ${dossier.dsNumber}`
+        `Pas de changement de statut pour le dossier ${dossier.dsNumber}`,
+        `(API: ${dossierDS.state} -> Mapped: ${newStatus} === DB: ${oldStatus})`
       );
       return {
         updated: false,

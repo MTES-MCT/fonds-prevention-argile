@@ -33,6 +33,7 @@ export async function syncUserDossierStatus(
 
     const syncResult = await syncDossierEligibiliteStatus(session.userId, step);
 
+    
     // Si le dossier n'existe pas
     if (
       syncResult.error?.includes("non trouvé") ||
