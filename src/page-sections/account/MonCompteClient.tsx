@@ -139,7 +139,7 @@ export default function MonCompteClient() {
             <div className="fr-col-12 fr-col-md-8">
               {/* Affichage conditionnel des Callouts */}
               <CalloutManager
-                hasRGAData={hasRGAData}
+                hasDossiers={hasDossiers}
                 hasParcours={hasParcours}
                 dsStatus={lastDSStatus}
                 currentStep={currentStep}
@@ -163,17 +163,17 @@ export default function MonCompteClient() {
 
 // Composant pour gérer l'affichage conditionnel des Callouts
 function CalloutManager({
-  hasRGAData,
+  hasDossiers,
   hasParcours,
   dsStatus,
 }: {
-  hasRGAData: boolean;
+  hasDossiers: boolean;
   hasParcours: boolean;
   dsStatus: DSStatus | null;
   currentStep: Step | null;
 }) {
-  // Cas où on a les données RGA et un parcours (à envoyer à DS)
-  if (hasRGAData && hasParcours && !dsStatus) {
+  // Cas où on a un dossiers mais pas de statut DS (brouillon potentiellement)
+  if (hasDossiers && !dsStatus) {
     return <CalloutEligibiliteTodo />;
   }
 
