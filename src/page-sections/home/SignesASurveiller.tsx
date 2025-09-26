@@ -95,7 +95,7 @@ export default function SignesASurveiller() {
               .subtitle
           }
         </p>
-        <div className="fr-callout fr-icon-checkbox-circle-fill fr-callout--beige-gris-galet fr-mb-4w">
+        <div className="fr-callout fr-icon-warning-fill fr-callout--orange-terre-battue fr-mb-4w">
           <h3 className="fr-callout__title">
             {
               contentHomePage.signes_a_surveiller_section.non_pris_en_charge
