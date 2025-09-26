@@ -48,8 +48,8 @@
     }
   },
   "savoir_si_concerne_section": {
-    "title": "Vous voulez savoir si vous êtes concerné ?",
-    "title2": "N'attendez pas qu'il soit trop tard.",
+    "title": "Le Fonds de PRévention Argile traite des causes, pas des conséquences.",
+    "title2": "Agissez avant qu'il ne soit trop tard.",
     "cta_label": "Vérifier mon éligibilité",
     "cta_url": "/simulateur",
     "image": {
