@@ -74,7 +74,7 @@ export default function TravauxEligiblesTemplate({
           <div className="container">
             <h1>{title}</h1>
 
-            <p className="fr-badge fr-icon-checkbox-line fr-badge--icon-left">
+            <p className={`fr-badge ${tag.icon} fr-badge--icon-left`}>
               {tag.title}
             </p>
 
