@@ -82,7 +82,6 @@ export function ParcoursProvider({
   // Fonction de synchronisation stabilisée
   const syncNow = useCallback(
     async (step?: Step) => {
-      // Utiliser la ref pour éviter les appels concurrents
       if (isSyncingRef.current) return;
 
       isSyncingRef.current = true;
@@ -96,7 +95,11 @@ export function ParcoursProvider({
         if (result.success && result.data) {
           setLastSync(new Date());
 
-          if (result.data.newStatus) {
+          // Ne pas mettre à jour si NON_ACCESSIBLE
+          if (
+            result.data.newStatus &&
+            result.data.newStatus !== DSStatus.NON_ACCESSIBLE
+          ) {
             setLastDSStatus(result.data.newStatus as DSStatus);
           }
 
@@ -108,6 +111,7 @@ export function ParcoursProvider({
             }
           }
         } else {
+          // Gestion d'erreur quand result.success est false
           const errorMessage =
             !result.success && result.error
               ? result.error
