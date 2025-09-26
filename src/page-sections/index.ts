@@ -10,3 +10,5 @@ export { default as FaqSection } from "./home/FaqSection";
 export { default as QuiSommesNousSection } from "./home/QuiSommesNousSection";
 export { default as SignesASurveillerTemplate } from "./signes-a-surveiller/SignesASurveillerTemplate";
 export { default as VousAvezUnDouteSection } from "./signes-a-surveiller/VousAvezUnDouteSection";
+export { default as CalloutEligible } from "./signes-a-surveiller/CalloutEligible";
+export { default as CalloutNonEligible } from "./signes-a-surveiller/CalloutNonEligible";

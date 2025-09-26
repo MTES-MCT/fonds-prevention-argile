@@ -4,6 +4,7 @@
   "pageLink": "/travaux-eligibles/dispositif-infiltration-eaux",
   "tag": {
     "title": "Gestion des eaux",
+    "icon": "fr-icon-drop-line",
     "className": "blue-france"
   },
   "image": {
