@@ -172,7 +172,12 @@ function CalloutManager({
   dsStatus: DSStatus | null;
   currentStep: Step | null;
 }) {
-  // Cas où on a un dossiers mais pas de statut DS (brouillon potentiellement)
+  // Cas où on a un parcours mais pas encore de dossier DS ou statut NON_ACCESSIBLE
+  if (hasParcours && (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE)) {
+    return <CalloutEligibiliteTodo />;
+  }
+
+  // Cas où on a un dossier mais pas de statut DS (ne devrait pas arriver ou brouillon ?)
   if (hasDossiers && !dsStatus) {
     return <CalloutEligibiliteTodo />;
   }
