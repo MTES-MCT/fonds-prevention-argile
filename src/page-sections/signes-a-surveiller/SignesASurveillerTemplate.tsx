@@ -178,7 +178,7 @@ export default function SignesASurveillerTemplate({
                         <ul className="fr-badges-group">
                           <li>
                             <p
-                              className={`fr-badge fr-icon-checkbox-line fr-badge--icon-left ${signe.tag.className}`}
+                              className={`fr-badge ${signe.tag.eligible ? 'fr-icon-checkbox-line' : 'fr-icon-warning-line'} fr-badge--icon-left ${signe.tag.className}`}
                             >
                               {signe.tag.title}
                             </p>
