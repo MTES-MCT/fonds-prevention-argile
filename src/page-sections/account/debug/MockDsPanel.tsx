@@ -1,61 +1,133 @@
 import { useState } from "react";
 import { syncUserDossierStatus } from "@/lib/actions/demarches-simplifies/sync.actions";
+import { DSStatus, Step } from "@/lib/parcours/parcours.types";
+
+// Types pour les résultats de synchronisation
+interface SyncData {
+  updated: boolean;
+  oldStatus?: string;
+  newStatus?: string;
+  shouldRefresh: boolean;
+  isBrouillon?: boolean;
+}
 
 interface SyncResult {
   success: boolean;
-  data?: {
-    updated: boolean;
-    oldStatus?: string;
-    newStatus?: string;
-    shouldRefresh: boolean;
-    isBrouillon?: boolean;
-  };
+  data?: SyncData;
   error?: string;
 }
 
+// Types pour les options de statut
+interface StatusOption {
+  value: DSStatus;
+  label: string;
+  badgeType: "new" | "info" | "success" | "error" | "warning";
+  description: string;
+}
+
+const statusOptions: StatusOption[] = [
+  {
+    value: DSStatus.EN_CONSTRUCTION,
+    label: "En construction",
+    badgeType: "new",
+    description: "Le dossier est en cours de remplissage",
+  },
+  {
+    value: DSStatus.EN_INSTRUCTION,
+    label: "En instruction",
+    badgeType: "info",
+    description: "Le dossier est en cours d'instruction par l'administration",
+  },
+  {
+    value: DSStatus.ACCEPTE,
+    label: "Accepté",
+    badgeType: "success",
+    description: "Le dossier a été accepté",
+  },
+  {
+    value: DSStatus.REFUSE,
+    label: "Refusé",
+    badgeType: "error",
+    description: "Le dossier a été refusé",
+  },
+  {
+    value: DSStatus.CLASSE_SANS_SUITE,
+    label: "Classé sans suite",
+    badgeType: "warning",
+    description: "Le dossier a été classé sans suite",
+  },
+];
+
 export default function MockDSPanel() {
-  const [selectedStatus, setSelectedStatus] = useState("en_construction");
+  const [selectedStatus, setSelectedStatus] = useState<DSStatus>(
+    DSStatus.EN_CONSTRUCTION
+  );
+  const [selectedStep, setSelectedStep] = useState<Step>(Step.ELIGIBILITE);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isApplyingMock, setIsApplyingMock] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
+  const [mockApplied, setMockApplied] = useState(false);
+
   const mockEnabled = process.env.NEXT_PUBLIC_USE_DS_MOCK === "true";
-
-  const statusOptions = [
-    { value: "en_construction", label: "📝 En construction", color: "#3a3a3a" },
-    { value: "en_instruction", label: "⏳ En instruction", color: "#6a6af4" },
-    { value: "accepte", label: "✅ Accepté", color: "#18753c" },
-    { value: "refuse", label: "❌ Refusé", color: "#ce0500" },
-    { value: "sans_suite", label: "⚠️ Classé sans suite", color: "#666666" },
-  ];
-
   const currentOption = statusOptions.find(
     (opt) => opt.value === selectedStatus
   );
 
   const handleSetMockStatus = async () => {
+    setIsApplyingMock(true);
+    setMockApplied(false);
+    setSyncResult(null);
+
     try {
       const response = await fetch("/api/test/mock-ds-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: selectedStatus }),
+        body: JSON.stringify({
+          status: selectedStatus,
+          step: selectedStep,
+        }),
       });
 
-      if (response.ok) {
-        console.log(`✅ Mock DS: Statut défini sur "${selectedStatus}"`);
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
       }
+
+      setMockApplied(true);
+      console.log(
+        `✅ Mock DS: Statut défini sur "${selectedStatus}" pour l'étape ${selectedStep}`
+      );
     } catch (error) {
-      console.error("Erreur:", error);
+      console.error("Erreur lors de l'application du mock:", error);
+      setSyncResult({
+        success: false,
+        error: "Impossible d'appliquer le mock. Vérifiez la configuration.",
+      });
+    } finally {
+      setIsApplyingMock(false);
     }
   };
 
   const handleSync = async () => {
     setIsSyncing(true);
     setSyncResult(null);
+    setMockApplied(false);
 
     try {
-      const result = await syncUserDossierStatus();
+      // Sync avec l'étape sélectionnée
+      const result = await syncUserDossierStatus(selectedStep);
       setSyncResult(result);
+
+      // Si la sync a réussi et qu'il faut rafraîchir
+      if (result.success && result.data?.shouldRefresh) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
     } catch (error) {
-      setSyncResult({ success: false, error: String(error) });
+      setSyncResult({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -63,115 +135,234 @@ export default function MockDSPanel() {
 
   if (!mockEnabled) {
     return (
-      <div className="fr-alert fr-alert--warning">
-        <p className="fr-alert__title">Mock DS désactivé</p>
-        <p className="fr-text--sm">
-          Définir NEXT_PUBLIC_USE_DS_MOCK=true dans .env.local pour activer
-        </p>
+      <div className="fr-card">
+        <div className="fr-card__body">
+          <div className="fr-card__content">
+            <h3 className="fr-h6 fr-mb-2w">
+              <span
+                className="fr-icon-test-tube-line fr-mr-1w"
+                aria-hidden="true"
+              ></span>
+              Mock Démarches Simplifiées
+            </h3>
+
+            <div className="fr-alert fr-alert--warning fr-alert--sm">
+              <h4 className="fr-alert__title">Mock DS désactivé</h4>
+              <p>
+                Pour activer le mode mock, définissez{" "}
+                <code>NEXT_PUBLIC_USE_DS_MOCK=true</code> dans votre fichier{" "}
+                <code>.env.local</code>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="fr-card fr-p-3w">
-        <h3 className="fr-h6 fr-mb-2w">🎭 Mock Démarches Simplifiées</h3>
+    <div className="fr-card">
+      <div className="fr-card__body">
+        <div className="fr-card__content">
+          <h3 className="fr-h6 fr-mb-3w">
+            <span
+              className="fr-icon-test-tube-line fr-mr-1w"
+              aria-hidden="true"
+            ></span>
+            Simulation Démarches Simplifiées
+          </h3>
 
-        <div className="fr-alert fr-alert--info fr-alert--sm fr-mb-3w">
-          <p className="fr-text--sm">
-            Simulez différents statuts DS pour tester le comportement de
-            synchronisation
-          </p>
-        </div>
-
-        {/* Statut actuel */}
-        <div className="fr-mb-3w">
-          <p className="fr-text--sm fr-text--bold fr-mb-1w">
-            Statut mocké actuel :
-          </p>
-          <div
-            className="fr-badge fr-badge--sm"
-            style={{ backgroundColor: currentOption?.color, color: "white" }}
-          >
-            {currentOption?.label}
+          <div className="fr-notice fr-notice--info fr-mb-3w">
+            <div className="fr-container--fluid">
+              <div className="fr-notice__body">
+                <p className="fr-text--sm">
+                  Simulez différents statuts pour tester le comportement de
+                  synchronisation avec Démarches Simplifiées.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Sélecteur de statut */}
-        <div className="fr-select-group fr-mb-3w">
-          <label className="fr-label" htmlFor="mock-status">
-            Nouveau statut à simuler :
-          </label>
-          <select
-            id="mock-status"
-            className="fr-select"
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-          >
-            {statusOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* Sélection de l'étape */}
+          <div className="fr-select-group fr-mb-2w">
+            <label className="fr-label" htmlFor="mock-step-select">
+              Étape du parcours concernée
+              <span className="fr-hint-text">
+                Sélectionnez l'étape pour laquelle simuler le statut
+              </span>
+            </label>
+            <select
+              className="fr-select"
+              id="mock-step-select"
+              value={selectedStep}
+              onChange={(e) => {
+                setSelectedStep(e.target.value as Step);
+                setMockApplied(false);
+                setSyncResult(null);
+              }}
+            >
+              <option value={Step.ELIGIBILITE}>Éligibilité</option>
+              <option value={Step.DIAGNOSTIC}>Diagnostic</option>
+              <option value={Step.DEVIS}>Devis</option>
+              <option value={Step.FACTURES}>Factures</option>
+            </select>
+          </div>
 
-        {/* Boutons d'action */}
-        <div className="fr-btns-group fr-btns-group--sm">
-          <button
-            onClick={handleSetMockStatus}
-            className="fr-btn fr-btn--secondary fr-btn--sm"
-          >
-            Appliquer le mock
-          </button>
+          {/* Sélection du statut */}
+          <div className="fr-select-group fr-mb-2w">
+            <label className="fr-label" htmlFor="mock-status-select">
+              Statut DS à simuler
+              <span className="fr-hint-text">
+                Ce statut sera retourné lors de la prochaine synchronisation
+              </span>
+            </label>
+            <select
+              className="fr-select"
+              id="mock-status-select"
+              value={selectedStatus}
+              onChange={(e) => {
+                setSelectedStatus(e.target.value as DSStatus);
+                setMockApplied(false);
+                setSyncResult(null);
+              }}
+            >
+              {statusOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="fr-btn fr-btn--primary fr-btn--sm"
-          >
-            {isSyncing ? "Synchronisation..." : "Tester la sync"}
-          </button>
+          {/* Affichage du statut sélectionné */}
+          {currentOption && (
+            <div className="fr-callout fr-mb-3w">
+              <h4 className="fr-callout__title fr-text--sm">
+                Configuration du mock :
+              </h4>
+              <div className="fr-mb-1w">
+                <strong className="fr-text--xs">Étape :</strong>{" "}
+                <span className="fr-badge fr-badge--sm fr-badge--blue-ecume">
+                  {selectedStep}
+                </span>
+              </div>
+              <div className="fr-mb-1w">
+                <strong className="fr-text--xs">Statut :</strong>{" "}
+                <span
+                  className={`fr-badge fr-badge--sm fr-badge--${currentOption.badgeType}`}
+                >
+                  {currentOption.label}
+                </span>
+              </div>
+              <p className="fr-text--xs fr-mb-0">{currentOption.description}</p>
+            </div>
+          )}
+
+          {/* Boutons d'action */}
+          <div className="fr-btns-group fr-btns-group--inline">
+            <button
+              onClick={handleSetMockStatus}
+              disabled={isApplyingMock}
+              className="fr-btn fr-btn--secondary fr-btn--icon-left"
+            >
+              <span className="fr-icon-refresh-line" aria-hidden="true"></span>
+              {isApplyingMock ? "Application..." : "Appliquer le mock"}
+            </button>
+
+            <button
+              onClick={handleSync}
+              disabled={isSyncing || !mockApplied}
+              className="fr-btn fr-btn--icon-left"
+              title={!mockApplied ? "Appliquez d'abord un mock" : ""}
+            >
+              <span className="fr-icon-download-line" aria-hidden="true"></span>
+              {isSyncing ? "Synchronisation..." : "Tester la synchronisation"}
+            </button>
+          </div>
+
+          {/* Message de confirmation du mock */}
+          {mockApplied && !syncResult && (
+            <div className="fr-alert fr-alert--success fr-alert--sm fr-mt-3w">
+              <p className="fr-alert__title">Mock appliqué avec succès</p>
+              <p>
+                Le statut "{currentOption?.label}" sera retourné pour l'étape{" "}
+                {selectedStep}
+                lors de la prochaine synchronisation.
+              </p>
+            </div>
+          )}
+
+          {/* Résultat de la synchronisation */}
+          {syncResult && (
+            <div
+              className={`fr-alert fr-alert--${syncResult.success ? "success" : "error"} fr-mt-3w`}
+            >
+              <h4 className="fr-alert__title">
+                {syncResult.success
+                  ? "Synchronisation réussie"
+                  : "Erreur de synchronisation"}
+              </h4>
+
+              {syncResult.data && (
+                <div className="fr-mt-2w">
+                  <dl className="fr-text--sm">
+                    {syncResult.data.oldStatus && (
+                      <>
+                        <dt className="fr-text--bold fr-text--xs">
+                          Ancien statut :
+                        </dt>
+                        <dd className="fr-mb-1w">
+                          <span className="fr-badge fr-badge--sm">
+                            {syncResult.data.oldStatus}
+                          </span>
+                        </dd>
+                      </>
+                    )}
+                    {syncResult.data.newStatus && (
+                      <>
+                        <dt className="fr-text--bold fr-text--xs">
+                          Nouveau statut :
+                        </dt>
+                        <dd className="fr-mb-1w">
+                          <span className="fr-badge fr-badge--sm fr-badge--success">
+                            {syncResult.data.newStatus}
+                          </span>
+                        </dd>
+                      </>
+                    )}
+                    <dt className="fr-text--bold fr-text--xs">
+                      Mise à jour effectuée :
+                    </dt>
+                    <dd className="fr-mb-1w">
+                      {syncResult.data.updated
+                        ? "Oui"
+                        : "Non (statut identique)"}
+                    </dd>
+                    {syncResult.data.shouldRefresh && (
+                      <>
+                        <dt className="fr-text--bold fr-text--xs">
+                          Rafraîchissement :
+                        </dt>
+                        <dd>
+                          <span
+                            className="fr-icon-refresh-line fr-icon--sm"
+                            aria-hidden="true"
+                          ></span>
+                          La page va se recharger...
+                        </dd>
+                      </>
+                    )}
+                  </dl>
+                </div>
+              )}
+
+              {syncResult.error && (
+                <p className="fr-text--sm fr-mt-2w">{syncResult.error}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Résultat de la sync */}
-      {syncResult && (
-        <div
-          className={`fr-alert fr-alert--${syncResult.success ? "success" : "error"} fr-alert--sm`}
-        >
-          <p className="fr-alert__title fr-text--sm">
-            {syncResult.success
-              ? "✅ Synchronisation réussie"
-              : "❌ Erreur de synchronisation"}
-          </p>
-          {syncResult.data && (
-            <ul className="fr-text--xs fr-mt-1w">
-              {syncResult.data.oldStatus && (
-                <li>
-                  Ancien statut : <strong>{syncResult.data.oldStatus}</strong>
-                </li>
-              )}
-              {syncResult.data.newStatus && (
-                <li>
-                  Nouveau statut : <strong>{syncResult.data.newStatus}</strong>
-                </li>
-              )}
-              <li>
-                Mise à jour :{" "}
-                <strong>{syncResult.data.updated ? "Oui" : "Non"}</strong>
-              </li>
-              <li>
-                Rafraîchissement :{" "}
-                <strong>{syncResult.data.shouldRefresh ? "Oui" : "Non"}</strong>
-              </li>
-            </ul>
-          )}
-          {syncResult.error && (
-            <p className="fr-text--xs fr-mt-1w">{syncResult.error}</p>
-          )}
-        </div>
-      )}
     </div>
   );
 }

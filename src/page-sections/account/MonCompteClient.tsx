@@ -13,9 +13,11 @@ import { DSStatus, Step } from "@/lib/parcours/parcours.types";
 import CalloutEligibiliteSimulateurARemplir from "./steps/eligibilite/CalloutEligibiliteSimulateurARemplir";
 import CalloutEligibiliteTodo from "./steps/eligibilite/CalloutEligibiliteTodo";
 import CalloutEligibiliteEnConstruction from "./steps/eligibilite/CalloutEligibiliteEnConstruction";
-import CalloutEnInstruction from "./steps/en-instruction/CalloutEnInstruction";
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
 import SimulationNeeded from "./common/SimulationNeeded";
+import { STEP_LABELS } from "@/lib/parcours/parcours.constants";
+import CalloutEligibiliteAccepte from "./steps/eligibilite/CalloutEligibiliteAccepte";
+import CalloutEligibiliteEnInstruction from "./steps/eligibilite/CalloutEligibiliteEnInstruction";
 
 export default function MonCompteClient() {
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
@@ -109,19 +111,29 @@ export default function MonCompteClient() {
             </div>
           )}
 
-          {/* Badge de statut DS */}
-          {hasParcours && lastDSStatus && (
-            <span className="fr-badge fr-badge--info fr-mb-4w fr-ml-1w">
-              {getStatusLabel(lastDSStatus)}
-            </span>
-          )}
+          <div className="fr-mb-4w">
+            {/* Badge de statut d'étape */}
+            {hasParcours && (
+              <p className="fr-badge fr-badge--new fr-mr-2w">
+                {getStatusLabel(lastDSStatus ?? undefined)}
+              </p>
+            )}
+
+            {/* Badge d'étape */}
+            {hasParcours && currentStep && (
+              <p className="fr-badge fr-badge--info">
+                {STEP_LABELS[currentStep]}{" "}
+              </p>
+            )}
+          </div>
 
           {/* Affichage d'erreur si nécessaire */}
-          {error && (
+          {/* TODO : Voir comment gérer le cas d'erreur ? */}
+          {/* {error && (
             <div className="fr-alert fr-alert--error fr-mb-2w">
               <p>{error}</p>
             </div>
-          )}
+          )} */}
 
           <div className="fr-grid-row fr-grid-row--gutters">
             <div className="fr-col-12 fr-col-md-8">
@@ -172,17 +184,21 @@ function CalloutManager({
 
   // Cas où c'est en instruction
   if (hasParcours && dsStatus === DSStatus.EN_INSTRUCTION) {
-    return <CalloutEnInstruction />;
+    return <CalloutEligibiliteEnInstruction />;
   }
 
-  // Autres cas selon l'étape...
-  // Tu peux ajouter d'autres conditions ici
+  // Cas où c'est accepté
+  if (hasParcours && dsStatus === DSStatus.ACCEPTE) {
+    return <CalloutEligibiliteAccepte />;
+  }
+
+  // TODO : Gérer les autres statuts (refusé, classé sans suite, non accessible)
 
   return null;
 }
 
 // Helper pour les labels de statut
-function getStatusLabel(status: DSStatus): string {
+function getStatusLabel(status?: DSStatus): string {
   switch (status) {
     case DSStatus.NON_ACCESSIBLE:
       return "Non accessible";
@@ -197,6 +213,6 @@ function getStatusLabel(status: DSStatus): string {
     case DSStatus.CLASSE_SANS_SUITE:
       return "Classé sans suite";
     default:
-      return "Aucun dossier";
+      return "A faire";
   }
 }

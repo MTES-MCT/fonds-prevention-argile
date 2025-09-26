@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import StateMonitorPanel from "./StateMonitorPanel";
+import UserStatePanel from "./UserStatePanel";
 import MockDSPanel from "./MockDsPanel";
 import { isDevelopment, isStaging } from "@/lib/config/env.config";
 
 export default function DevTestSidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"mockds" | "state">("mockds");
 
   // Fermer avec Escape
   useEffect(() => {
@@ -29,102 +28,119 @@ export default function DevTestSidebar() {
       {/* Bouton flottant pour ouvrir le panneau */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed right-4 bottom-4 z-40 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-110"
+        className="fixed right-4 bottom-4 z-40 fr-btn fr-btn--secondary fr-btn--icon-left shadow-lg"
         title="Ouvrir les outils de développement"
-        style={{ backgroundColor: "#000091" }}
       >
-        <span className="text-white">Outils de développement</span>
+        <span
+          className="fr-icon-settings-5-line fr-mr-1w"
+          aria-hidden="true"
+        ></span>
+        Outils de développement
       </button>
-
-      {/* Pas d'overlay, juste le panneau */}
 
       {/* Panneau latéral */}
       <div
         className={`
-        fixed top-0 right-0 h-full bg-white border-l-4 shadow-2xl z-[9999] transition-transform duration-300 ease-in-out overflow-hidden
-        ${isOpen ? "translate-x-0" : "translate-x-full"}
-        w-full sm:w-96 md:w-[480px] lg:w-[600px]
-      `}
-        style={{ borderLeftColor: "#000091" }}
+          fixed top-0 right-0 h-full bg-white shadow-2xl z-[9999] 
+          transition-transform duration-300 ease-in-out
+          ${isOpen ? "translate-x-0" : "translate-x-full"}
+          w-full sm:w-96 md:w-[480px] lg:w-[600px]
+        `}
+        style={{
+          borderLeft: "4px solid var(--border-action-high-blue-france)",
+        }}
       >
         {/* Header du panneau */}
-        <div className="bg-gray-100 text-gray-900 p-4 border-b">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              🛠️ Outils de développement
-            </h2>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-              title="Fermer"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+        <div className="fr-container--fluid">
+          <div
+            className="fr-grid-row fr-grid-row--gutters fr-grid-row--middle fr-p-3w"
+            style={{ backgroundColor: "var(--background-alt-grey)" }}
+          >
+            <div className="fr-col">
+              <h2 className="fr-h4 fr-mb-0">
+                <span
+                  className="fr-icon-bug-line fr-mr-1w"
+                  aria-hidden="true"
+                ></span>
+                Outils de développement
+              </h2>
+            </div>
+            <div className="fr-col-auto">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="fr-btn--close fr-btn"
+                title="Fermer"
+                aria-label="Fermer les outils de développement"
               >
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex gap-2">
-            {/* Tab pour le mock de DS */}
-            <button
-              onClick={() => setActiveTab("mockds")}
-              className={`
-    px-4 py-2 rounded-lg transition-all
-    ${
-      activeTab === "mockds"
-        ? "bg-blue-600 text-white! font-medium"
-        : "bg-gray-200 hover:bg-gray-300 text-gray-700"
-    }
-  `}
-              style={
-                activeTab === "mockds" ? { backgroundColor: "#000091" } : {}
-              }
-            >
-              Mock DS
-            </button>
-
-            {/* Tab pour le mock de l'Etat */}
-            <button
-              onClick={() => setActiveTab("state")}
-              className={`
-                px-4 py-2 rounded-lg transition-all
-                ${
-                  activeTab === "state"
-                    ? "bg-blue-600 text-white! font-medium"
-                    : "bg-gray-200 hover:bg-gray-300 text-gray-700"
-                }
-              `}
-              style={
-                activeTab === "state" ? { backgroundColor: "#000091" } : {}
-              }
-            >
-              État actuel
-            </button>
+                Fermer
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Contenu scrollable */}
-        <div className="h-[calc(100vh-140px)] overflow-y-auto p-4 bg-gray-50">
-          {activeTab === "mockds" && <MockDSPanel />}
-          {activeTab === "state" && <StateMonitorPanel />}
+        <div
+          className="overflow-y-auto fr-p-3w"
+          style={{
+            height: "calc(100vh - 140px)",
+            backgroundColor: "var(--background-default-grey)",
+          }}
+        >
+          {/* Section 1: Visualisation de l'état utilisateur */}
+          <div className="fr-mb-4w">
+            <UserStatePanel />
+          </div>
+
+          {/* Section 2: Mock Démarches Simplifiées */}
+          <div className="fr-mb-3w">
+            <MockDSPanel />
+          </div>
         </div>
 
         {/* Footer avec infos */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gray-100 border-t px-4 py-2">
-          <p className="text-xs text-gray-600 flex items-center gap-2">
-            <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            Mode développement • Environnement : {process.env.NODE_ENV}
-          </p>
+        <div
+          className="fr-container--fluid fr-p-2w"
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: "var(--background-alt-grey)",
+            borderTop: "1px solid var(--border-default-grey)",
+          }}
+        >
+          <div className="fr-grid-row fr-grid-row--middle">
+            <div className="fr-col">
+              <p className="fr-text--xs fr-mb-0 fr-text--regular">
+                <span
+                  className="fr-mr-1v"
+                  style={{
+                    display: "inline-block",
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    backgroundColor: "var(--text-default-success)",
+                    animation: "pulse 2s infinite",
+                  }}
+                ></span>
+                Mode développement • {process.env.NODE_ENV}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+      `}</style>
     </>
   );
 }

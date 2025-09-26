@@ -1,5 +1,8 @@
 import { contentAccountPage } from "@/content";
-import StepDetailAccountCard from "./StepDetailAccountCard";
+import StepDetailEligibilite from "../steps/eligibilite/StepDetailEligibilite";
+import StepDetailDiagnostic from "../steps/diagnostic/StepDetailDiagnostic";
+import StepDetailFactures from "../steps/factures/StepDetailFactures";
+import StepDetailDevis from "../steps/devis/StepDetailDevis";
 
 export default function StepDetailSection() {
   return (
@@ -11,16 +14,16 @@ export default function StepDetailSection() {
         {/* Zone cartes étapes détaillées */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-3">
-            <StepDetailAccountCard />
+            <StepDetailEligibilite />
           </div>
           <div className="fr-col-12 fr-col-md-3">
-            <StepDetailAccountCard />
+            <StepDetailDiagnostic />
           </div>
           <div className="fr-col-12 fr-col-md-3">
-            <StepDetailAccountCard />
+            <StepDetailDevis />
           </div>
           <div className="fr-col-12 fr-col-md-3">
-            <StepDetailAccountCard />
+            <StepDetailFactures />
           </div>
         </div>
       </div>
