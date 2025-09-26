@@ -1,5 +1,5 @@
 {
-  "title": "Pose ou réparation des canalisations d’evacuation des eaux pluviales, en particulier de toiture, en veillant à les éloigner des fondations",
+  "title": "Pose ou réparation des canalisations d’évacuation des eaux pluviales, en particulier de toiture, en veillant à les éloigner des fondations",
   "type": "pose-canalisation-evacuation-eaux-pluviales",
   "pageLink": "/travaux-eligibles/pose-canalisation-evacuation-eaux-pluviales",
   "tag": {
@@ -8,9 +8,9 @@
     "className": "blue-france"
   },
   "image": {
-    "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
-    "description": "Lorem ipsum"
+    "alt": "Fonds Prévention Argile - Pose de canalisation d'évacuation des eaux pluviales.",
+    "src": "/images/travaux-eligibles/canalisation-pluie.png",
+    "description": "Pose de canalisation d'évacuation des eaux pluviales."
   },
   "une_des_solutions": "Des eaux pluviales mal évacuées s’infiltrent près des fondations, déstabilisant le sol argileux et peuvent entraîner des dommages sur une maison individuelle construite sur des sols argileux très plastiques. Une canalisation dédiée (séparée des eaux usées) draine l’eau loin de la maison, réduisant les risques de gonflement et de tassement. Dans le cadre du retrait-gonflement des argiles, il est essentiel de stabiliser la teneur en eau du sol sous l'habitation.",
   "solutions": [
