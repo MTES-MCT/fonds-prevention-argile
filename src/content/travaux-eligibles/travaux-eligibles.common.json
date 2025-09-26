@@ -15,7 +15,7 @@
             "name": "Repérage des fuites des réseaux d'eau",
             "type": "reperage-fuite-reseaux-eaux",
             "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
+              "alt": "Fonds Prévention Argile - Repérage des fuites des réseaux d'eau",
               "src": "/images/travaux-eligibles/creation-acces-reseau.png"
             },
             "pageUrl": "/travaux-eligibles/reperage-fuite-reseaux-eaux"
@@ -24,7 +24,7 @@
             "name": "Pose ou réparation des canalisations d’évacuation des eaux pluviales",
             "type": "pose-canalisation-evacuation-eaux-pluviales",
             "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
+              "alt": "Pose ou réparation des canalisations d’évacuation des eaux pluviales",
               "src": "/images/travaux-eligibles/pose-canalisation.png"
             },
             "pageUrl": "/travaux-eligibles/pose-canalisation-evacuation-eaux-pluviales"
@@ -33,7 +33,7 @@
             "name": "Réalisation d'un test de perméabilité du sol",
             "type": "test-permeabilite-sol",
             "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
+              "alt": "Réalisation d'un test de perméabilité du sol",
               "src": "/images/travaux-eligibles/test-permeabilite-sol.png"
             },
             "pageUrl": "/travaux-eligibles/test-permeabilite-sol"
@@ -42,7 +42,7 @@
             "name": "Création d'un dispositif simple d’infiltration des eaux à la parcelle ...",
             "type": "dispositif-infiltration-eaux",
             "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
+              "alt": "dispositif simple d’infiltration des eaux à la parcellet",
               "src": "/images/travaux-eligibles/dispositif-infiltration-eaux.png"
             },
             "pageUrl": "/travaux-eligibles/dispositif-infiltration-eaux"
@@ -51,7 +51,7 @@
             "name": "Création d'un drainage des eaux déportées et séparatif des eaux pluviales en amont des terr...",
             "type": "drainage-eaux-deportees",
             "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
+              "alt": "drainage des eaux déportées et séparatif des eaux pluviales",
               "src": "/images/travaux-eligibles/drainage-eaux-deportees.png"
             },
             "pageUrl": "/travaux-eligibles/drainage-eaux-deportees"
@@ -66,8 +66,8 @@
             "name": "Installation d'un écran anti-racine",
             "type": "installation-ecran-anti-racine",
             "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/creation-acces-reseau.png"
+              "alt": "Installation d'un écran anti-racine",
+              "src": "/images/travaux-eligibles/anti-racine.png"
             },
             "pageUrl": "/travaux-eligibles/installation-ecran-anti-racine"
           },
@@ -75,8 +75,8 @@
             "name": "Suppression des systèmes racinaires trop proche de la maison",
             "type": "suppression-systemes-racinaires",
             "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/creation-acces-reseau.png"
+              "alt": "Suppression des systèmes racinaires trop proche de la maison",
+              "src": "/images/travaux-eligibles/abattage.png"
             },
             "pageUrl": "/travaux-eligibles/suppression-systemes-racinaires"
           }
@@ -90,8 +90,8 @@
             "name": "Pose d'une membrane d'imperméabilité autour de la maison",
             "type": "pose-membrane-impermeabilite",
             "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/creation-acces-reseau.png"
+              "alt": "Pose d'une membrane d'imperméabilité autour de la maison",
+              "src": "/images/travaux-eligibles/geomembrane.png"
             },
             "pageUrl": "/travaux-eligibles/pose-membrane-impermeabilite"
           },
@@ -99,8 +99,8 @@
             "name": "Pose d'un trottoir imperméable périphérique",
             "type": "pose-trottoir-impermeable-peripherique",
             "image": {
-              "alt": "Fonds Prévention Argile - Un service de l'État",
-              "src": "/images/travaux-eligibles/creation-acces-reseau.png"
+              "alt": "Pose d'un trottoir imperméable périphérique",
+              "src": "/images/travaux-eligibles/trottoir.png"
             },
             "pageUrl": "/travaux-eligibles/pose-trottoir-impermeable-peripherique"
           }
