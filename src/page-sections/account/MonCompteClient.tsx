@@ -30,9 +30,7 @@ export default function MonCompteClient() {
     currentStep,
     lastDSStatus,
     isLoading: isLoadingParcours,
-    isSyncing,
-    error,
-    syncNow,
+    dossiers,
   } = useParcours();
 
   // État de chargement global
@@ -67,24 +65,12 @@ export default function MonCompteClient() {
   }
 
   // Cas où l'utilisateur est FranceConnect sans données RGA ni parcours
-  if (isFranceConnectWithoutData) {
+  // ou n'a ni parcours ni données RGA
+  if (isFranceConnectWithoutData || (!hasRGAData && !hasParcours)) {
     return (
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
           <SimulationNeeded />
-        </div>
-      </section>
-    );
-  }
-
-  // Cas où l'utilisateur n'a ni parcours ni données RGA
-  const showSimulateurCallout = !hasRGAData && !hasParcours;
-
-  if (showSimulateurCallout) {
-    return (
-      <section className="fr-container-fluid fr-py-10w">
-        <div className="fr-container">
-          <CalloutEligibiliteSimulateurARemplir />
         </div>
       </section>
     );
@@ -95,7 +81,20 @@ export default function MonCompteClient() {
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
           <h1>Bonjour {user.firstName}</h1>
-
+          <pre>{JSON.stringify(dossiers, null, 2)}</pre>
+          <p>
+            Debug
+            {hasDossiers
+              ? "Vous avez des dossiers en cours."
+              : "Vous n'avez pas de dossiers en cours."}
+            {hasParcours
+              ? " Vous avez un parcours en cours."
+              : " Vous n'avez pas de parcours en cours."}
+            {lastDSStatus
+              ? ` Le statut de votre dossier est : ${getStatusLabel(lastDSStatus)}.`
+              : " Vous n'avez pas de statut de dossier."}
+          </p>
+          ;
           <div className="fr-mb-4w">
             {/* Badge de statut d'étape */}
             {hasParcours && (
@@ -111,7 +110,6 @@ export default function MonCompteClient() {
               </p>
             )}
           </div>
-
           {/* Affichage d'erreur si nécessaire */}
           {/* TODO : Voir comment gérer le cas d'erreur ? */}
           {/* {error && (
@@ -119,7 +117,6 @@ export default function MonCompteClient() {
               <p>{error}</p>
             </div>
           )} */}
-
           <div className="fr-grid-row fr-grid-row--gutters">
             <div className="fr-col-12 fr-col-md-8">
               {/* Affichage conditionnel des Callouts */}
@@ -203,6 +200,6 @@ function getStatusLabel(status?: DSStatus): string {
     case DSStatus.CLASSE_SANS_SUITE:
       return "Classé sans suite";
     default:
-      return "En construction";
+      return "A faire";
   }
 }

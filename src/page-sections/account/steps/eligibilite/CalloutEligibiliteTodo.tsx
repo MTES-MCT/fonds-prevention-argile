@@ -92,17 +92,19 @@ export default function CalloutEligibiliteTodo() {
       )}
 
       <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
-        <p className="fr-callout__title">À FAIRE</p>
+        <p className="fr-callout__title">
+          Vous avez votre AMO ? Remplissez votre formulaire d’éligibilité
+        </p>
         <p className="fr-callout__text">
-          Il est essentiel de compléter et de soumettre le premier formulaire
-          pour que votre dossier soit examiné par les autorités compétentes. Par
-          la suite, vous recevrez une notification concernant les étapes à
-          suivre.
+          Après avoir choisi votre AMO (Assistant à Maîtrise d’Ouvrage,
+          obligatoire), complétez le formulaire d’éligibilité et soumettez-le
+          pour examen. Vous recevrez une notification lorsque l’instructeur aura
+          pris sa décision.
         </p>
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="fr-btn fr-btn--icon-right fr-icon-arrow-right-s-line"
+          className="fr-btn fr-btn--icon-right fr-icon-external-link-line"
         >
           Remplir le formulaire d'éligibilité
         </button>
