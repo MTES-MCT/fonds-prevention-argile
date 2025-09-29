@@ -1,24 +1,6 @@
 {
   "ma_liste": {
-    "title": "Ma liste",
-    "steps": [
-      {
-        "title": "Remplir le formulaire d’éligibilité et avoir une réponse",
-        "url": "/TODO"
-      },
-      {
-        "title": "Démarrer le diagnostic",
-        "url": "/TODO"
-      },
-      {
-        "title": "Soumettre les devis",
-        "url": "/TODO"
-      },
-      {
-        "title": "Transmettre les factures",
-        "url": "/TODO"
-      }
-    ]
+    "title": "Ma liste"
   },
   "faq_section": {
     "title": "Questions fréquentes",
