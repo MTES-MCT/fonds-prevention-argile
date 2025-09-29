@@ -14,7 +14,7 @@ import CalloutEligibiliteSimulateurARemplir from "./steps/eligibilite/CalloutEli
 import CalloutEligibiliteTodo from "./steps/eligibilite/CalloutEligibiliteTodo";
 import CalloutEligibiliteEnConstruction from "./steps/eligibilite/CalloutEligibiliteEnConstruction";
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
-import SimulationNeeded from "./common/SimulationNeeded";
+import SimulationNeeded from "./common/SimulationNeededAlert";
 import { STEP_LABELS } from "@/lib/parcours/parcours.constants";
 import CalloutEligibiliteAccepte from "./steps/eligibilite/CalloutEligibiliteAccepte";
 import CalloutEligibiliteEnInstruction from "./steps/eligibilite/CalloutEligibiliteEnInstruction";
@@ -95,21 +95,6 @@ export default function MonCompteClient() {
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
           <h1>Bonjour {user.firstName}</h1>
-
-          {/* Bouton de sync manuelle (seulement si parcours existe) */}
-          {hasParcours && (
-            <div className="fr-mb-4w">
-              <button
-                className="fr-btn fr-btn--secondary fr-btn--sm fr-mt-2w"
-                onClick={() => syncNow()}
-                disabled={isSyncing}
-              >
-                {isSyncing
-                  ? "Synchronisation..."
-                  : "Rafraîchir le statut Démarches Simplifiées"}
-              </button>
-            </div>
-          )}
 
           <div className="fr-mb-4w">
             {/* Badge de statut d'étape */}
@@ -218,6 +203,6 @@ function getStatusLabel(status?: DSStatus): string {
     case DSStatus.CLASSE_SANS_SUITE:
       return "Classé sans suite";
     default:
-      return "A faire";
+      return "En construction";
   }
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth/client";
 
-export default function SimulationNeeded() {
+export default function SimulationNeededAlert() {
   const { logout } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -13,18 +13,18 @@ export default function SimulationNeeded() {
   };
 
   return (
-    <div className="fr-callout fr-callout--yellow-moutarde fr-icon-warning-line">
-      <h3 className="fr-callout__title">Simulation requise</h3>
-      <p className="fr-callout__text">
+    <div className="fr-alert fr-alert--warning">
+      <h3 className="fr-alert__title">Simulation requise</h3>
+      <p>
         Pour continuer votre demande, vous devez d'abord remplir le simulateur
         d'éligibilité. Les iframes ne sont pas autorisées après une connexion
         FranceConnect.
       </p>
-      <p className="fr-callout__text fr-text--sm">
+      <p className="fr-text--sm fr-mt-2w">
         Vous allez être déconnecté puis redirigé vers le simulateur.
       </p>
       <button
-        className="fr-btn fr-btn--icon-right fr-icon-arrow-right-s-line"
+        className="fr-btn fr-btn--icon-right fr-mt-2w fr-icon-arrow-right-s-line"
         onClick={handleLogoutAndRedirect}
         disabled={isLoading}
       >

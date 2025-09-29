@@ -48,7 +48,6 @@ export const DS_FIELDS: Record<string, DSField> = {
     label: "Adresse de correspondance",
     section: DSSection.DEMANDEUR,
     type: DSFieldType.ADDRESS,
-    rgaPath: "logement.adresse",
   },
   "Q2hhbXAtNTQyMjQ0MA==": {
     id: "Q2hhbXAtNTQyMjQ0MA==",
@@ -157,29 +156,29 @@ export const DS_FIELDS: Record<string, DSField> = {
     rgaPath: "logement.adresse",
     transformer: (value: unknown) => (typeof value === "string" ? value : ""),
   },
-  // Champ d'adresse structuré (non utilisé actuellement car non géré par DS)
-  "Q2hhbXAtNTU0MjUyNg==": {
-    id: "Q2hhbXAtNTU0MjUyNg==",
-    label: "Adresse de la maison",
-    section: DSSection.MAISON,
-    type: DSFieldType.ADDRESS,
-    rgaPath: "logement.adresse",
-    transformer: () => {
-      // Format JSON stringifié complet (a tester)
-      return JSON.stringify({
-        label: "32 Rue des Clefs Moreaux 36250 Saint-Maur",
-        type: "housenumber",
-        street_address: "32 Rue des Clefs Moreaux",
-        street_number: "32",
-        street_name: "Rue des Clefs Moreaux",
-        postal_code: "36250",
-        city_name: "Saint-Maur",
-        city_code: "36202",
-        department_code: "36",
-        region_code: "24",
-      });
-    },
-  },
+  // // Champ d'adresse structuré (non utilisé actuellement car non géré par DS)
+  // "Q2hhbXAtNTU0MjUyNg==": {
+  //   id: "Q2hhbXAtNTU0MjUyNg==",
+  //   label: "Adresse de la maison",
+  //   section: DSSection.MAISON,
+  //   type: DSFieldType.ADDRESS,
+  //   rgaPath: "logement.adresse",
+  //   transformer: () => {
+  //     // Format JSON stringifié complet (a tester)
+  //     return JSON.stringify({
+  //       label: "32 Rue des Clefs Moreaux 36250 Saint-Maur",
+  //       type: "housenumber",
+  //       street_address: "32 Rue des Clefs Moreaux",
+  //       street_number: "32",
+  //       street_name: "Rue des Clefs Moreaux",
+  //       postal_code: "36250",
+  //       city_name: "Saint-Maur",
+  //       city_code: "36202",
+  //       department_code: "36",
+  //       region_code: "24",
+  //     });
+  //   },
+  // },
   "Q2hhbXAtNTU0MjU2OA==": {
     id: "Q2hhbXAtNTU0MjU2OA==",
     label: "Année de construction",

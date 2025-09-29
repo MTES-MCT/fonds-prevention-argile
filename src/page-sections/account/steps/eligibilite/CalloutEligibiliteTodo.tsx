@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useRGAContext } from "@/lib/form-rga/session";
 import { envoyerDossierEligibiliteAvecDonnees } from "@/lib/actions/parcours/eligibilite.actions";
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
-import { RGAFormData } from "@/lib/form-rga";
 
 export default function CalloutEligibiliteTodo() {
   const router = useRouter();
@@ -67,51 +66,6 @@ export default function CalloutEligibiliteTodo() {
     }
   };
 
-  const handleCancel = () => {
-    setShowConfirmation(false);
-    setError(null);
-  };
-
-  // Affichage de confirmation
-  if (rgaData && showConfirmation && !isLoading) {
-    return (
-      <div className="fr-callout fr-callout--yellow-moutarde fr-icon-warning-line">
-        <p className="fr-callout__title">Confirmation</p>
-        <div className="fr-callout__text">
-          <p className="fr-mb-2w">
-            Vous êtes sur le point d'envoyer votre dossier d'éligibilité avec
-            les informations suivantes :
-          </p>
-          <RGADataSummary data={rgaData} />
-          <p className="fr-text--sm">
-            Après validation, vous serez redirigé vers le formulaire Démarches
-            Simplifiées pour compléter votre dossier.
-          </p>
-        </div>
-        <ul className="fr-btns-group fr-btns-group--inline fr-btns-group--icon-right">
-          <li>
-            <button
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="fr-btn fr-btn--icon-right fr-icon-check-line"
-            >
-              Confirmer et envoyer
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={handleCancel}
-              disabled={isLoading}
-              className="fr-btn fr-btn--secondary"
-            >
-              Annuler
-            </button>
-          </li>
-        </ul>
-      </div>
-    );
-  }
-
   // Affichage pendant le chargement
   if (isLoading) {
     return (
@@ -154,22 +108,5 @@ export default function CalloutEligibiliteTodo() {
         </button>
       </div>
     </>
-  );
-}
-
-// Composant pour afficher le résumé des données RGA
-function RGADataSummary({ data }: { data: Partial<RGAFormData> }) {
-  return (
-    <ul className="fr-text--sm fr-mb-2w">
-      {data.logement?.adresse && <li>Adresse : {data.logement.adresse}</li>}
-      {data.logement?.type && <li>Type de logement : {data.logement.type}</li>}
-      {data.menage?.personnes && (
-        <li>Nombre de personnes : {data.menage.personnes}</li>
-      )}
-      {data.menage?.revenu && <li>Revenu fiscal : {data.menage.revenu}€</li>}
-      {data.logement?.zone_dexposition && (
-        <li>Zone d'exposition : {data.logement.zone_dexposition}</li>
-      )}
-    </ul>
   );
 }
