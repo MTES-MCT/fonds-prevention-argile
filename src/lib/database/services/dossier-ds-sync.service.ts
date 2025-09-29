@@ -148,9 +148,23 @@ export async function syncDossierEligibiliteStatus(
       `Changement de statut détecté pour le dossier ${dossier.dsNumber}: ${oldStatus} -> ${newStatus}`
     );
 
+    // 5.5. Mettre à jour l'URL si le dossier n'est plus en construction
+    let updatedUrl = dossier.dsUrl;
+
+    // Si le dossier passe en instruction ou est traité, on change l'URL
+    if (newStatus !== DSStatus.EN_CONSTRUCTION && dossier.dsNumber) {
+      // L'URL change pour pointer vers le dossier directement (sans prefill_token)
+      updatedUrl = `https://www.demarches-simplifiees.fr/dossiers/${dossier.dsNumber}`;
+
+      console.log(
+        `Mise à jour URL pour dossier ${dossier.dsNumber}: ${dossier.dsUrl} -> ${updatedUrl}`
+      );
+    }
+
     // 6. Mettre à jour le dossier en base
     const updatedDossier = await dossierDsRepo.update(dossier.id, {
       dsStatus: newStatus,
+      dsUrl: updatedUrl, // Si l'URL a changé
       lastSyncAt: new Date(),
       // Mettre à jour processedAt si le dossier est accepté
       processedAt: newStatus === DSStatus.ACCEPTE ? new Date() : undefined,
