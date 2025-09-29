@@ -13,25 +13,32 @@ export default function SimulationNeededAlert() {
   };
 
   return (
-    <div className="fr-alert fr-alert--warning">
-      <h3 className="fr-alert__title">Simulation requise</h3>
-      <p>
-        Pour continuer votre demande, vous devez d'abord remplir le simulateur
-        d'éligibilité. Les iframes ne sont pas autorisées après une connexion
-        FranceConnect.
-      </p>
-      <p className="fr-text--sm fr-mt-2w">
-        Vous allez être déconnecté puis redirigé vers le simulateur.
-      </p>
-      <button
-        className="fr-btn fr-btn--icon-right fr-mt-2w fr-icon-arrow-right-s-line"
-        onClick={handleLogoutAndRedirect}
-        disabled={isLoading}
-      >
-        {isLoading
-          ? "Déconnexion..."
-          : "Se déconnecter puis remplir le simulateur"}
-      </button>
+    <div className="fr-container fr-background-alt--grey fr-px-md-0">
+      <div className="fr-grid-row fr-grid-row-gutters fr-grid-row--center fr-p-20v">
+        <div className="fr-col-12 fr-col-md-8 fr-col-lg-6 fr-mt-2w">
+          <div className="fr-alert fr-alert--error">
+            <h3 className="fr-alert__title">Éligibilité requise</h3>
+            <p>
+              Pour continuer votre demande, vous devez d'abord remplir le
+              simulateur d'éligibilité.
+            </p>
+          </div>
+
+          <div className="container fr-mt-4w">
+            <p>
+              Pour des questions de sécurité, vous allez être déconnecté de
+              votre compte avant d'être redirigé vers le simulateur.
+            </p>
+            <button
+              className="fr-btn fr-btn--icon-right fr-mt-2w fr-icon-arrow-right-s-line"
+              onClick={handleLogoutAndRedirect}
+              disabled={isLoading}
+            >
+              {isLoading ? "Déconnexion..." : "Remplir le simulateur"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
