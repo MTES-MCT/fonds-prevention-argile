@@ -16,7 +16,7 @@
             "type": "reperage-fuite-reseaux-eaux",
             "image": {
               "alt": "Fonds Prévention Argile - Repérage des fuites des réseaux d'eau",
-              "src": "/images/travaux-eligibles/creation-acces-reseau.png"
+              "src": "/images/travaux-eligibles/reperage-fuites.png"
             },
             "pageUrl": "/travaux-eligibles/reperage-fuite-reseaux-eaux"
           },
@@ -43,7 +43,7 @@
             "type": "dispositif-infiltration-eaux",
             "image": {
               "alt": "dispositif simple d’infiltration des eaux à la parcellet",
-              "src": "/images/travaux-eligibles/dispositif-infiltration-eaux.png"
+              "src": "/images/travaux-eligibles/infiltration.png"
             },
             "pageUrl": "/travaux-eligibles/dispositif-infiltration-eaux"
           },
