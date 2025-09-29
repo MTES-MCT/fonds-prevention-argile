@@ -3,14 +3,23 @@
 export default function CalloutEligibiliteEnInstruction() {
   return (
     <div className="fr-callout fr-callout--blue-cumulus fr-icon-time-line">
-      <p className="fr-callout__title">EN COURS D'INSTRUCTION</p>
+      <p className="fr-callout__title">Votre dossier est en instruction</p>
       <p className="fr-callout__text">
-        Votre dossier est actuellement en cours d'examen par nos équipes. Vous
-        recevrez une notification dès qu'une décision sera prise.
+        Un instructeur examine votre formulaire d’éligibilité. Vous serez
+        informé ici et par e-mail dès que la décision sera prise.
       </p>
-      <p className="fr-text--sm fr-mt-2w">
-        Délai moyen de traitement : 5 à 10 jours ouvrés
-      </p>
+      <ul className="fr-btns-group fr-btns-group--inline">
+        <li>
+          <button type="button" className="fr-btn fr-btn--secondary">
+            libellé du bouton 2
+          </button>
+        </li>
+        <li>
+          <button type="button" className="fr-btn fr-btn--secondary">
+            libellé du bouton 3
+          </button>
+        </li>
+      </ul>
     </div>
   );
 }
