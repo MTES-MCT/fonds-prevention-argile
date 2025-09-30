@@ -17,6 +17,7 @@ import SimulationNeeded from "./common/SimulationNeededAlert";
 import { STEP_LABELS } from "@/lib/parcours/parcours.constants";
 import CalloutEligibiliteAccepte from "./steps/eligibilite/CalloutEligibiliteAccepte";
 import CalloutEligibiliteEnInstruction from "./steps/eligibilite/CalloutEligibiliteEnInstruction";
+import CalloutDiagnosticTodo from "./steps/diagnostic/CalloutDiagnosticTodo";
 
 export default function MonCompteClient() {
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
@@ -29,7 +30,6 @@ export default function MonCompteClient() {
     currentStep,
     lastDSStatus,
     isLoading: isLoadingParcours,
-    dossiers,
   } = useParcours();
 
   // État de chargement global
@@ -133,40 +133,86 @@ function CalloutManager({
   hasDossiers,
   hasParcours,
   dsStatus,
+  currentStep,
 }: {
   hasDossiers: boolean;
   hasParcours: boolean;
   dsStatus: DSStatus | null;
   currentStep: Step | null;
 }) {
-  // Cas où on a un parcours mais pas encore de dossier DS ou statut NON_ACCESSIBLE
-  if (hasParcours && (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE)) {
+  // Si pas de parcours, rien à afficher
+  if (!hasParcours || !currentStep) {
+    return null;
+  }
+
+  // Gestion selon l'étape courante
+  switch (currentStep) {
+    case Step.ELIGIBILITE:
+      return renderEligibiliteCallout(dsStatus);
+
+    case Step.DIAGNOSTIC:
+      return renderDiagnosticCallout(dsStatus);
+
+    case Step.DEVIS:
+      return renderDevisCallout(dsStatus);
+
+    case Step.FACTURES:
+      return renderFacturesCallout(dsStatus);
+
+    default:
+      return null;
+  }
+}
+
+// Helpers pour chaque étape
+function renderEligibiliteCallout(dsStatus: DSStatus | null) {
+  if (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE) {
     return <CalloutEligibiliteTodo />;
   }
 
-  // Cas où on a un dossier mais pas de statut DS (ne devrait pas arriver ou brouillon ?)
-  if (hasDossiers && !dsStatus) {
-    return <CalloutEligibiliteTodo />;
-  }
-
-  // Cas où c'est en construction dans DS
-  if (hasParcours && dsStatus === DSStatus.EN_CONSTRUCTION) {
+  if (dsStatus === DSStatus.EN_CONSTRUCTION) {
     return <CalloutEligibiliteEnConstruction />;
   }
 
-  // Cas où c'est en instruction
-  if (hasParcours && dsStatus === DSStatus.EN_INSTRUCTION) {
+  if (dsStatus === DSStatus.EN_INSTRUCTION) {
     return <CalloutEligibiliteEnInstruction />;
   }
 
-  // Cas où c'est accepté
-  if (hasParcours && dsStatus === DSStatus.ACCEPTE) {
+  if (dsStatus === DSStatus.ACCEPTE) {
     return <CalloutEligibiliteAccepte />;
   }
 
-  // TODO : Gérer les autres statuts (refusé, classé sans suite, non accessible)
+  return null;
+}
+
+function renderDiagnosticCallout(dsStatus: DSStatus | null) {
+  if (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE) {
+    return <CalloutDiagnosticTodo />;
+  }
+
+  if (dsStatus === DSStatus.EN_CONSTRUCTION) {
+    return <CalloutDiagnosticTodo />;
+  }
+
+  if (dsStatus === DSStatus.EN_INSTRUCTION) {
+    // return <CalloutDiagnosticEnInstruction />;
+  }
+
+  if (dsStatus === DSStatus.ACCEPTE) {
+    // return <CalloutDiagnosticAccepte />;
+  }
 
   return null;
+}
+
+function renderDevisCallout(dsStatus: DSStatus | null) {
+  // TODO: Créer les callouts pour le devis
+  return <div>Callout Devis (à créer)</div>;
+}
+
+function renderFacturesCallout(dsStatus: DSStatus | null) {
+  // TODO: Créer les callouts pour les factures
+  return <div>Callout Factures (à créer)</div>;
 }
 
 // Helper pour les labels de statut

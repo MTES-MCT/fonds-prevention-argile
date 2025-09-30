@@ -1,6 +1,7 @@
-import { Step, Status } from "@/lib/parcours/parcours.types";
+import { Step, Status, DSStatus } from "@/lib/parcours/parcours.types";
 import { getNextStep } from "@/lib/parcours/parcours.helpers";
 import { userRepo, parcoursRepo, dossierDsRepo } from "../repositories";
+import { prefillClient } from "@/lib/api/demarches-simplifiees/rest";
 
 /**
  * Initialise ou récupère le parcours d'un utilisateur
@@ -47,6 +48,7 @@ export async function getParcoursComplet(userId: string) {
 
 /**
  * Fait progresser le parcours vers l'étape suivante si possible
+ * Crée automatiquement un dossier vide pour la nouvelle étape
  */
 export async function progressParcours(userId: string) {
   const parcours = await parcoursRepo.findByUserId(userId);
@@ -74,6 +76,23 @@ export async function progressParcours(userId: string) {
       completed: true,
     };
   }
+
+  // Récupérer l'ID de démarche pour la nouvelle étape
+  // TODO : a mettre dans un helper
+  const dsDemarcheId = prefillClient.getDemarcheId(nextStep);
+
+  // Créer un dossier vide pour la nouvelle étape
+  await dossierDsRepo.create({
+    parcoursId: parcours.id,
+    step: nextStep,
+    dsNumber: null,
+    dsId: null,
+    dsDemarcheId,
+    dsStatus: DSStatus.EN_CONSTRUCTION,
+    dsUrl: null,
+    submittedAt: null,
+    processedAt: null,
+  });
 
   // Passer à l'étape suivante
   await parcoursRepo.updateStep(parcours.id, nextStep, Status.TODO);
