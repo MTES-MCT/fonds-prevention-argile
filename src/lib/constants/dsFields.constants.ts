@@ -159,7 +159,20 @@ export const DS_FIELDS: Record<string, DSField> = {
     section: DSSection.MAISON,
     type: DSFieldType.TEXT,
     rgaPath: "logement.adresse",
-    transformer: (value: unknown) => (typeof value === "string" ? value : ""),
+    transformer: (value: unknown) => {
+      if (typeof value !== "string") return "";
+
+      // Extraire uniquement le numéro et nom de rue (avant le code postal)
+      // Format attendu: "19B Rue des Clefs Moreaux 36250 Saint-Maur"
+      // On garde: "19B Rue des Clefs Moreaux"
+      const match = value.match(/^(.+?)\s+\d{5}/);
+      const rueSeule = match ? match[1].trim() : value;
+
+      console.log("[DS Adresse Transformer] Adresse complète:", value);
+      console.log("[DS Adresse Transformer] Rue seule:", rueSeule);
+
+      return rueSeule;
+    },
   },
 
   // Champ Code Commune (ajouté par Martin pour faciliter la saisie de l'adresse)
