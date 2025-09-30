@@ -35,6 +35,7 @@ export async function createPrefillDossier(
       const demarcheId = parseInt(env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE);
       const client = getDemarchesSimplifieesClient();
       const schema = await client.getDemarcheSchema(demarcheId);
+      
       console.log("schema de la démarche :>> ", JSON.stringify(schema));
       const addressField = schema?.activeRevision?.champDescriptors.find((c) =>
         c.label.toLowerCase().includes("adresse")

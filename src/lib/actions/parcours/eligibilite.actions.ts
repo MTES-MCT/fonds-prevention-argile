@@ -12,6 +12,7 @@ import { createPrefillDossier } from "../demarches-simplifies";
 import { getParcoursComplet } from "@/lib/database/services";
 import { Step } from "@/lib/parcours/parcours.types";
 import { prefillClient } from "@/lib/api/demarches-simplifiees/rest";
+import { getDemarcheUrl } from "@/lib/parcours/demarches.helpers";
 
 interface EligibiliteResult {
   dossierUrl: string;
@@ -77,7 +78,7 @@ export async function envoyerDossierEligibiliteAvecDonnees(
     const parcoursResult = await creerDossier(
       dsResult.data.dossier_number.toString(),
       prefillClient.getDemarcheId(Step.ELIGIBILITE),
-      dsResult.data.dossier_url
+      getDemarcheUrl(dsResult.data.dossier_number.toString())
     );
 
     if (!parcoursResult.success) {

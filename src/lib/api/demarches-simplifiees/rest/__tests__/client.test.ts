@@ -12,59 +12,6 @@ describe("DemarchesSimplifieesPrefillClient", () => {
     client = new DemarchesSimplifieesPrefillClient();
   });
 
-  describe("generatePrefillUrl", () => {
-    it("devrait générer une URL avec les bons paramètres pour ELIGIBILITE", () => {
-      const data = {
-        champ_123: "valeur1",
-        champ_456: "valeur2",
-      };
-
-      const url = client.generatePrefillUrl(data, Step.ELIGIBILITE);
-
-      expect(url).toContain("https://api.test.fr/commencer/");
-      expect(url).toContain("test-nom-eligibilite"); // Selon votre mock env
-      expect(url).toContain("champ_123=valeur1");
-      expect(url).toContain("champ_456=valeur2");
-    });
-
-    it("devrait générer une URL différente pour DIAGNOSTIC", () => {
-      const data = {
-        champ_123: "valeur1",
-      };
-
-      const url = client.generatePrefillUrl(data, Step.DIAGNOSTIC);
-
-      expect(url).toContain("https://api.test.fr/commencer/");
-      expect(url).toContain("test-nom-diagnostic"); // Selon votre mock env
-      expect(url).toContain("champ_123=valeur1");
-    });
-
-    it("devrait ignorer les valeurs null/undefined", () => {
-      const data = {
-        champ_123: "valeur1",
-        champ_456: null,
-      };
-
-      const url = client.generatePrefillUrl(data, Step.ELIGIBILITE);
-
-      expect(url).toContain("champ_123=valeur1");
-      expect(url).not.toContain("champ_456");
-      expect(url).not.toContain("champ_789");
-    });
-
-    it("devrait accepter un DemarcheType string", () => {
-      const data = {
-        champ_123: "valeur1",
-      };
-
-      const url = client.generatePrefillUrl(data, "DEVIS");
-
-      expect(url).toContain("https://api.test.fr/commencer/");
-      expect(url).toContain("test-nom-devis");
-      expect(url).toContain("champ_123=valeur1");
-    });
-  });
-
   describe("validatePrefillData", () => {
     it("devrait détecter les clés invalides", () => {
       const data = {

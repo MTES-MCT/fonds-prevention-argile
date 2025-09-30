@@ -6,6 +6,7 @@ import type {
   DemarcheSchema,
   DemarcheStats,
 } from "./types";
+import { getDemarcheUrl } from "@/lib/parcours/demarches.helpers";
 
 export type DemarcheType = "ELIGIBILITE" | "DIAGNOSTIC" | "DEVIS" | "FACTURES";
 
@@ -131,50 +132,27 @@ export class DemarchesSimplifieesPrefillClient {
 
     if (!response.ok) {
       let errorMessage = `${response.status} ${response.statusText}`;
-      try {
-        const errorData = await response.json();
-        errorMessage += ` - ${JSON.stringify(errorData)}`;
-      } catch {
-        const errorText = await response.text();
-        if (errorText) {
+
+      // Lire le texte une seule fois
+      const errorText = await response.text();
+
+      if (errorText) {
+        // Essayer de parser en JSON si possible
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage += ` - ${JSON.stringify(errorData)}`;
+        } catch {
+          // Si ce n'est pas du JSON, utiliser le texte brut
           errorMessage += ` - ${errorText}`;
         }
       }
+
       throw new Error(
         `Erreur création dossier ${demarcheType}: ${errorMessage}`
       );
     }
 
     return response.json();
-  }
-
-  /**
-   * Génère l'URL de préremplissage en GET
-   * Limite: environ 2000 caractères selon les navigateurs
-   */
-  generatePrefillUrl(
-    data: PrefillData,
-    demarcheType: DemarcheType | Step
-  ): string {
-    const config = this.getConfig(demarcheType);
-    const baseUrl = `${this.publicUrl}/commencer/${config.nom}`;
-    const params = new URLSearchParams();
-
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        params.append(key, String(value));
-      }
-    });
-
-    const url = `${baseUrl}?${params.toString()}`;
-
-    if (url.length > 2000) {
-      console.warn(
-        `URL de préremplissage très longue pour ${demarcheType} (${url.length} caractères)`
-      );
-    }
-
-    return url;
   }
 
   /**

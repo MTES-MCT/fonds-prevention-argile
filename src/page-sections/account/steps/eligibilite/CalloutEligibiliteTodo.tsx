@@ -43,7 +43,7 @@ export default function CalloutEligibiliteTodo() {
         // Redirection après délai
         setTimeout(() => {
           router.push("/mon-compte");
-        }, 2000);
+        }, 5000);
       } else if (!result.success) {
         setError(
           result.error || "Une erreur est survenue lors de l'envoi du dossier"

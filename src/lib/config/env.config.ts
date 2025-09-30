@@ -28,6 +28,7 @@ const franceConnectEnvSchema = z.object({
 const serverSchema = z.object({
   NEXT_TELEMETRY_DISABLED: z.string().optional(),
   DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY: z.string().min(1),
+  DEMARCHES_SIMPLIFIEES_BASE_URL: z.string().min(1),
   DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL: z
     .string()
     .url()
