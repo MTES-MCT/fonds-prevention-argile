@@ -10,10 +10,7 @@ export default function CommentCaMarcheSection() {
           {contentHomePage.comment_ca_marche_section.steps.map(
             (step, index) => (
               <div key={index} className="fr-col-12 fr-col-md-6 fr-col-lg-3">
-                <div
-                  className="fr-tile fr-tile--horizontal fr-enlarge-link"
-                  id="tile-33"
-                >
+                <div className="fr-tile fr-enlarge-link" id="tile-0">
                   <div className="fr-tile__body">
                     <div className="fr-tile__content">
                       <h3 className="fr-tile__title">{step.title}</h3>

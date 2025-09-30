@@ -15,7 +15,6 @@ export default async function SimulateurPage() {
     );
   }
 
-              Si vous rencontrez des difficultés avec le simulateur, vous pouvez
   // Sinon, afficher le simulateur
   return <SimulateurClient />;
 }
