@@ -13,12 +13,6 @@ export default function MaListe() {
   const facturesUrl = getDossierUrl(Step.FACTURES);
 
   // Déterminer quels liens sont actifs selon l'étape courante
-  const isEligibiliteActive =
-    currentStep === Step.ELIGIBILITE ||
-    currentStep === Step.DIAGNOSTIC ||
-    currentStep === Step.DEVIS ||
-    currentStep === Step.FACTURES;
-
   const isDiagnosticActive =
     currentStep === Step.DIAGNOSTIC ||
     currentStep === Step.DEVIS ||

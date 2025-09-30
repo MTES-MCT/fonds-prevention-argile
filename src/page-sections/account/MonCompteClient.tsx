@@ -10,7 +10,6 @@ import DevTestSidebar from "./debug/DevTestSidebar";
 import { DSStatus, Step } from "@/lib/parcours/parcours.types";
 
 // Import des Callouts
-import CalloutEligibiliteSimulateurARemplir from "./steps/eligibilite/CalloutEligibiliteSimulateurARemplir";
 import CalloutEligibiliteTodo from "./steps/eligibilite/CalloutEligibiliteTodo";
 import CalloutEligibiliteEnConstruction from "./steps/eligibilite/CalloutEligibiliteEnConstruction";
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
