@@ -7,5 +7,4 @@ export { default as contentSignesASurveillerFissuresDansLesCloisonsInterieures }
 export { default as contentSignesASurveillerFissuresEscalier } from "./fissures-escalier.json";
 export { default as contentSignesASurveillerFissuresHorizontalesPlancher } from "./fissures-horizontales-plancher.json";
 export { default as contentSignesASurveillerFissuresVerticalesAnglesBatiment } from "./fissures-verticales-angles-batiment.json";
-export { default as contentSignesASurveillerMicrofissuresVerticales } from "./microfissures-horizontales-verticales.json";
 export { default as contentSignesASurveillerPortesEtFenetreQuiFermentMal } from "./portes-et-fenetres-qui-ferment-mal.json";

@@ -9,8 +9,8 @@
   },
   "image": {
     "alt": "Fonds Prévention Argile - Trottoir périphérique étanche",
-    "src": "/images/sample.png",
-    "description": "Vue en coupe d'un trottoir en béton avec pente vers l'extérieur"
+    "src": "/images/travaux-eligibles/trottoir.png",
+    "description": "Illustration d'un trottoir en béton avec pente vers l'extérieur"
   },
   "une_des_solutions": "Un trottoir étanche d'au moins 1 mètre de large autour de la maison crée une barrière physique contre les infiltrations et l'évaporation d'eau . Cette solution limite les variations d'humidité du sol et protège les fondations contre les mouvements différentiels.",
   "solutions": [
@@ -46,7 +46,7 @@
       ]
     },
     "traitement": {
-      "title": "En traitement",
+      "title": "Points de vigilence",
       "details": [
         "Une étude particulière de la nature du sol au-dessous et au-dessus du trottoir est nécessaire pour définir le dispositif.",
         "En limite de propriété, une demande d'autorisation auprès de ses voisins est nécessaire.",

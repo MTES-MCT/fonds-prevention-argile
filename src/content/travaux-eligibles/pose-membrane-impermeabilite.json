@@ -9,8 +9,8 @@
   },
   "image": {
     "alt": "Fonds Prévention Argile - Pose d'une membrane étanche",
-    "src": "/images/sample.png",
-    "description": "Coupe technique montrant la membrane enroulée autour des fondations avec soudures"
+    "src": "/images/travaux-eligibles/geomembrane.png",
+    "description": "Pose d'une membrane étanche - Crédit photo Franck Béchade, France Argile"
   },
   "une_des_solutions": "La géomembrane est une membrane souple, imputrescible et constituée d'un produit d'étanchéité. Cette barrière physique permet de maîtriser et de stabiliser la teneur en eau des sols argileux sous les fondations en limitant les échange d'eau dus à l'évaporation estibale et d'éloigner les eaux de ruissellement du pied des fondations.",
   "solutions": [
@@ -47,7 +47,7 @@
       ]
     },
     "traitement": {
-      "title": "Point de vigilences",
+      "title": "Points de vigilence",
       "details": [
         "Une étude particulière de la nature du sol au-dessous et au-dessus de la membrane est nécessaire pour définir le dispositif.",
         "L'impossibilité de disposer l'étanchéité sur tout le contour de la construction est de nature à favoriser les désordres et il est alors préférable d'abandonner cette solution.",

@@ -8,9 +8,9 @@
     "className": "blue-france"
   },
   "image": {
-    "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/sample.png",
-    "description": "Lorem ipsum"
+    "alt": "Fonds Prévention Argile - Test de perméabilité du sol de type Porchet",
+    "src": "/images/travaux-eligibles/porchet.png",
+    "description": "Test de perméabilité du sol de type Porchet"
   },
   "une_des_solutions": "Connaître la perméabilité de votre sol permet d’adapter les solutions de drainage et d’éviter les erreurs (ex. : infiltration trop rapide en sol sableux, ou trop lente en sol argileux). Le test Porchet, simple et normé, mesure la vitesse d’absorption de l’eau pour guider les aménagements. Il est indispensable avant tous travaux en lien avec l'infiltration des eaux.",
   "solutions": [

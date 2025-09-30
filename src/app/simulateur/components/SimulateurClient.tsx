@@ -260,8 +260,9 @@ export default function SimulateurClient() {
             <h3 className="fr-callout__title">Besoin d'aide ?</h3>
             <p className="fr-callout__text">
               Si vous rencontrez des difficultés avec le simulateur, vous pouvez
-              nous contacter via le formulaire de contact ou consulter notre
-              FAQ.
+              nous contacter par mail à
+              contact@fonds-prevention-argile.beta.gouv.fr ou via le tchat en
+              bas à droite.
             </p>
           </div>
         </div>
