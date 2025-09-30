@@ -80,20 +80,6 @@ export default function MonCompteClient() {
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
           <h1>Bonjour {user.firstName}</h1>
-          <pre>{JSON.stringify(dossiers, null, 2)}</pre>
-          <p>
-            Debug
-            {hasDossiers
-              ? "Vous avez des dossiers en cours."
-              : "Vous n'avez pas de dossiers en cours."}
-            {hasParcours
-              ? " Vous avez un parcours en cours."
-              : " Vous n'avez pas de parcours en cours."}
-            {lastDSStatus
-              ? ` Le statut de votre dossier est : ${getStatusLabel(lastDSStatus)}.`
-              : " Vous n'avez pas de statut de dossier."}
-          </p>
-          ;
           <div className="fr-mb-4w">
             {/* Badge de statut d'étape */}
             {hasParcours && (

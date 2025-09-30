@@ -13,20 +13,15 @@ export default function CalloutEligibiliteTodo() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleSubmit = async () => {
     setError(null);
 
+    // Vérifier la présence des données RGA
     if (!rgaData || Object.keys(rgaData).length === 0) {
       setError(
         "Aucune donnée de simulation trouvée. Veuillez d'abord compléter le simulateur."
       );
-      return;
-    }
-
-    if (!showConfirmation) {
-      setShowConfirmation(true);
       return;
     }
 
@@ -53,14 +48,12 @@ export default function CalloutEligibiliteTodo() {
         setError(
           result.error || "Une erreur est survenue lors de l'envoi du dossier"
         );
-        setShowConfirmation(false);
       } else {
         setError("Une erreur inattendue s'est produite. Veuillez réessayer.");
       }
     } catch (err) {
       console.error("Erreur lors de l'envoi:", err);
       setError("Une erreur inattendue s'est produite. Veuillez réessayer.");
-      setShowConfirmation(false);
     } finally {
       setIsLoading(false);
     }

@@ -92,13 +92,6 @@ export function ParcoursProvider({
         const targetStep = step || parcours?.currentStep || Step.ELIGIBILITE;
         const result = await syncUserDossierStatus(targetStep);
 
-        // TODO : Supprimer les logs
-        console.log("Sync result:", {
-          success: result.success,
-          data: result.success ? result.data : null,
-          error: !result.success ? result.error : null,
-        });
-
         if (result.success && result.data) {
           setLastSync(new Date());
 
