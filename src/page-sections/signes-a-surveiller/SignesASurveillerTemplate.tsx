@@ -1,8 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import VousAvezUnDouteSection from "./VousAvezUnDouteSection";
+import CalloutEligible from "./CalloutEligible";
 import { contentLayout } from "@/content";
 import { contentSignesASurveillerCommon } from "@/content/signes-a-surveiller";
+import CalloutNonEligible from "./CalloutNonElligible";
 
 interface SignesASurveillerTemplateProps {
   title: string;
@@ -70,7 +72,7 @@ export default function SignesASurveillerTemplate({
             <h1>{title}</h1>
 
             <p
-              className={`fr-badge fr-icon-checkbox-line fr-badge--icon-left ${tag.className}`}
+              className={`fr-badge ${tag.eligible ? "fr-icon-checkbox-line" : "fr-icon-warning-line"} fr-badge--icon-left ${tag.className}`}
             >
               {tag.title}
             </p>
@@ -95,6 +97,8 @@ export default function SignesASurveillerTemplate({
                 {image.description}
               </figcaption>
             </figure>
+
+            {tag.eligible ? <CalloutEligible /> : <CalloutNonEligible />}
 
             {/* Ce qu'il faut surveiller */}
             <div className="fr-my-6w">
@@ -174,7 +178,7 @@ export default function SignesASurveillerTemplate({
                         <ul className="fr-badges-group">
                           <li>
                             <p
-                              className={`fr-badge fr-icon-checkbox-line fr-badge--icon-left ${signe.tag.className}`}
+                              className={`fr-badge ${signe.tag.eligible ? "fr-icon-checkbox-line" : "fr-icon-warning-line"} fr-badge--icon-left ${signe.tag.className}`}
                             >
                               {signe.tag.title}
                             </p>

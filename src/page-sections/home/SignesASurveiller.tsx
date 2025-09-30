@@ -1,7 +1,8 @@
 import { contentHomePage } from "@/content";
 import { contentSignesASurveillerCommon } from "@/content/signes-a-surveiller";
 import Image from "next/image";
-import Link from "next/link";
+import CalloutEligible from "../signes-a-surveiller/CalloutEligible";
+import CalloutNonEligible from "../signes-a-surveiller/CalloutNonElligible";
 
 export default function SignesASurveiller() {
   return (
@@ -17,33 +18,7 @@ export default function SignesASurveiller() {
         <p>
           {contentHomePage.signes_a_surveiller_section.pris_en_charge.subtitle2}
         </p>
-        <div className="fr-callout fr-icon-checkbox-circle-fill fr-callout--green-emeraude fr-mb-4w">
-          <h3 className="fr-callout__title">
-            {
-              contentHomePage.signes_a_surveiller_section.pris_en_charge.callout
-                .title
-            }
-          </h3>
-          <p className="fr-callout__text">
-            {
-              contentHomePage.signes_a_surveiller_section.pris_en_charge.callout
-                .text
-            }
-          </p>
-          <Link
-            href={
-              contentHomePage.signes_a_surveiller_section.pris_en_charge.callout
-                .cta_url
-            }
-            rel="noopener noreferrer"
-            className="fr-btn fr-btn--icon-right fr-icon-arrow-right-s-line"
-          >
-            {
-              contentHomePage.signes_a_surveiller_section.pris_en_charge.callout
-                .cta_label
-            }
-          </Link>
-        </div>
+        <CalloutEligible />
         <div className="fr-grid-row fr-grid-row--gutters">
           {contentSignesASurveillerCommon.signes_a_surveiller_section.signes
             .filter((signe) => signe.priseEnCharge)
@@ -95,20 +70,7 @@ export default function SignesASurveiller() {
               .subtitle
           }
         </p>
-        <div className="fr-callout fr-icon-checkbox-circle-fill fr-callout--beige-gris-galet fr-mb-4w">
-          <h3 className="fr-callout__title">
-            {
-              contentHomePage.signes_a_surveiller_section.non_pris_en_charge
-                .callout.title
-            }
-          </h3>
-          <p className="fr-callout__text">
-            {
-              contentHomePage.signes_a_surveiller_section.non_pris_en_charge
-                .callout.text
-            }
-          </p>
-        </div>
+        <CalloutNonEligible />
         <div className="fr-grid-row fr-grid-row--gutters">
           {contentSignesASurveillerCommon.signes_a_surveiller_section.signes
             .filter((signe) => !signe.priseEnCharge)
@@ -136,7 +98,7 @@ export default function SignesASurveiller() {
                     <ul className="fr-badges-group">
                       <li>
                         <p
-                          className={`fr-badge fr-icon-checkbox-line fr-badge--icon-left ${signe.tag.className}`}
+                          className={`fr-badge fr-icon-warning-line fr-badge--icon-left ${signe.tag.className}`}
                         >
                           {signe.tag.title}
                         </p>

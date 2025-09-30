@@ -9,7 +9,7 @@ export default function CommentCaMarcheSection() {
         <div className="fr-grid-row fr-grid-row--gutters">
           {contentHomePage.comment_ca_marche_section.steps.map(
             (step, index) => (
-              <div key={index} className="fr-col-12 fr-col-md-6 fr-col-lg-4">
+              <div key={index} className="fr-col-12 fr-col-md-6 fr-col-lg-3">
                 <div
                   className="fr-tile fr-tile--horizontal fr-enlarge-link"
                   id="tile-33"

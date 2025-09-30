@@ -16,7 +16,7 @@ export default function MontantDesAidesSection() {
             {contentHomePage.montant_des_aides_section.description.linkText}
           </a>
         </p>
-        <div className="fr-callout">
+        <div className="fr-callout fr-col-md-8">
           <h3 className="fr-callout__title">
             {contentHomePage.montant_des_aides_section.highlight.title}
           </h3>
@@ -26,7 +26,7 @@ export default function MontantDesAidesSection() {
             )}
           </p>
         </div>
-        <div className="fr-table fr-table--bordered" id="table-5-component">
+        <div className="fr-table fr-table--bordered fr-col-md-10" id="table-5-component">
           <div className="fr-table__wrapper">
             <div className="fr-table__container">
               <div className="fr-table__content">
