@@ -1,9 +1,8 @@
 import { contentHomePage } from "@/content";
 import { contentSignesASurveillerCommon } from "@/content/signes-a-surveiller";
-import CalloutEligible from "./CalloutEligible";
-import CalloutNonEligible from "./CalloutNonEligible";
 import Image from "next/image";
-import Link from "next/link";
+import CalloutEligible from "../signes-a-surveiller/CalloutEligible";
+import CalloutNonEligible from "../signes-a-surveiller/CalloutNonElligible";
 
 export default function SignesASurveiller() {
   return (

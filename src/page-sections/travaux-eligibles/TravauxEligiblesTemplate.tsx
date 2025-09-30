@@ -7,7 +7,7 @@ import { contentTravauxEligiblesCommon } from "@/content/travaux-eligibles";
 interface TravauxEligiblesTemplateProps {
   title: string;
   pageLink: string;
-  tag: { title: string; className: string } | undefined;
+  tag: { title: string; className: string; icon: string } | undefined;
   image: { src: string; alt: string; description: string };
   une_des_solutions: string;
   solutions: { title: string; details: string[] }[];
@@ -22,7 +22,7 @@ interface TravauxEligiblesTemplateProps {
 export default function TravauxEligiblesTemplate({
   title,
   pageLink,
-  tag = { title: "", className: "" },
+  tag = { title: "", className: "", icon: "" },
   image,
   une_des_solutions,
   solutions,
