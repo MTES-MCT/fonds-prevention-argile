@@ -8,6 +8,8 @@ import type {
   DossiersFilters,
 } from "@/lib/api/demarches-simplifiees/graphql/types";
 import { ActionResult } from "@/lib/actions";
+import { ROLES } from "@/lib/auth";
+import { getSession } from "@/lib/auth/services/auth.service";
 
 /**
  * Récupère les détails d'une démarche
@@ -15,6 +17,16 @@ import { ActionResult } from "@/lib/actions";
 export async function getDemarcheDetails(
   demarcheNumber: number
 ): Promise<ActionResult<DemarcheDetailed>> {
+  // Vérification du rôle admin
+  const session = await getSession();
+
+  if (!session?.userId || session.role !== ROLES.ADMIN) {
+    return {
+      success: false,
+      error: "Accès non autorisé",
+    };
+  }
+
   try {
     const client = getDemarchesSimplifieesClient();
     const demarche = await client.getDemarcheDetailed(demarcheNumber);
@@ -46,6 +58,16 @@ export async function getDossiers(
   demarcheNumber: number,
   filters?: DossiersFilters
 ): Promise<ActionResult<DossiersConnection>> {
+  // Vérification du rôle admin
+  const session = await getSession();
+
+  if (!session?.userId || session.role !== ROLES.ADMIN) {
+    return {
+      success: false,
+      error: "Accès non autorisé",
+    };
+  }
+
   try {
     const client = getDemarchesSimplifieesClient();
     const dossiers = await client.getDemarcheDossiers(demarcheNumber, filters);
@@ -76,6 +98,16 @@ export async function getDossiers(
 export async function getDossierByNumber(
   dossierNumber: number
 ): Promise<ActionResult<Dossier>> {
+  // Vérification du rôle admin
+  const session = await getSession();
+
+  if (!session?.userId || session.role !== ROLES.ADMIN) {
+    return {
+      success: false,
+      error: "Accès non autorisé",
+    };
+  }
+
   try {
     const client = getDemarchesSimplifieesClient();
     const dossier = await client.getDossier(dossierNumber);
@@ -98,74 +130,4 @@ export async function getDossierByNumber(
       error: error instanceof Error ? error.message : "Erreur inconnue",
     };
   }
-}
-
-/**
- * Récupère les statistiques d'une démarche
- * Calcule le nombre de dossiers par état
- */
-export async function getDemarcheStatistics(demarcheNumber: number): Promise<
-  ActionResult<{
-    total: number;
-    byState: Record<string, number>;
-    archived: number;
-  }>
-> {
-  try {
-    const client = getDemarchesSimplifieesClient();
-    const dossiersConnection = await client.getDemarcheDossiers(
-      demarcheNumber,
-      {
-        first: 100, // Limite pour les stats de base
-      }
-    );
-
-    if (!dossiersConnection) {
-      return {
-        success: false,
-        error: "Impossible de récupérer les statistiques",
-      };
-    }
-
-    const dossiers = dossiersConnection.nodes || [];
-
-    const stats = dossiers.reduce(
-      (acc, dossier) => {
-        acc.total++;
-        acc.byState[dossier.state] = (acc.byState[dossier.state] || 0) + 1;
-        if (dossier.archived) acc.archived++;
-        return acc;
-      },
-      {
-        total: 0,
-        byState: {} as Record<string, number>,
-        archived: 0,
-      }
-    );
-
-    return {
-      success: true,
-      data: stats,
-    };
-  } catch (error) {
-    console.error("Erreur lors du calcul des statistiques:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Erreur inconnue",
-    };
-  }
-}
-
-/**
- * Récupère les dossiers récemment créés via préremplissage
- * (ceux qui sont encore en construction)
- */
-export async function getPrefilledDossiers(
-  demarcheNumber: number
-): Promise<ActionResult<DossiersConnection>> {
-  return getDossiers(demarcheNumber, {
-    state: "en_construction",
-    first: 50,
-    order: "DESC",
-  });
 }

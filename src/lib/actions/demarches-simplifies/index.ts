@@ -6,6 +6,4 @@ export {
   getDemarcheDetails,
   getDossiers,
   getDossierByNumber,
-  getDemarcheStatistics,
-  getPrefilledDossiers,
 } from "./demarches.actions";

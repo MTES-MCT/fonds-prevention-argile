@@ -43,9 +43,10 @@ export { createToken, verifyToken } from "./utils/jwt.utils";
 export {
   isValidRole,
   isValidAuthMethod,
-  isValidEmail,
   validateSessionCookies,
 } from "./utils/validation.utils";
+
+export { isValidEmail } from "@/lib/utils";
 
 // FranceConnect utils
 export {

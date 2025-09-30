@@ -7,4 +7,7 @@ export * from "./parcours";
 // Actions Démarches Simplifiées
 export * from "./demarches-simplifies";
 
+// Actions notifications par email
+export * from "./email-notifications";
+
 export * from "./types";

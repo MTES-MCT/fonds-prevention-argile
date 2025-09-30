@@ -1,3 +1,4 @@
 export { default as richTextParser } from "./richTextParser";
 export { formatDateTime, formatDate } from "./date";
 export * from "./object";
+export * from "./email";

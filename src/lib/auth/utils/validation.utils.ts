@@ -22,14 +22,6 @@ export function isValidAuthMethod(value: unknown): value is AuthMethod {
 }
 
 /**
- * Valide un email (basique)
- */
-export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-/**
  * Valide les cookies de session
  */
 export function validateSessionCookies(cookies: {

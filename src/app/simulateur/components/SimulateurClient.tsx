@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { parseRGAParams } from "@/lib/form-rga/parser";
 import { useRGAContext } from "@/lib/form-rga/session";
 import RGATestFiller from "./debug/RGATestFiller";
+import EarlyAccessForm from "./EarlyAccessForm";
 
 interface RGAMessage {
   type: string;
@@ -14,8 +15,6 @@ interface RGAMessage {
 }
 
 type ProcessingState = "idle" | "processing" | "success" | "error";
-
-const REDIRECT_DELAY_MS = 1000;
 
 export default function SimulateurClient() {
   const router = useRouter();
@@ -25,6 +24,7 @@ export default function SimulateurClient() {
   const [processingState, setProcessingState] =
     useState<ProcessingState>("idle");
   const [processingErrors, setProcessingErrors] = useState<string[]>([]);
+  const [showEarlyAccess, setShowEarlyAccess] = useState(false);
 
   const iframeUrl = process.env.NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL;
   const iframeHeight = process.env.NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_HEIGHT;
@@ -69,9 +69,8 @@ export default function SimulateurClient() {
         setProcessingState("success");
         isProcessingRef.current = true;
 
-        setTimeout(() => {
-          router.push("/connexion");
-        }, REDIRECT_DELAY_MS);
+        // Afficher le formulaire Early Access
+        setShowEarlyAccess(true);
       } catch (error) {
         console.error("Erreur lors du traitement des données RGA:", error);
         setProcessingErrors(["Une erreur inattendue s'est produite"]);
@@ -140,14 +139,13 @@ export default function SimulateurClient() {
               <div>
                 <h2 className="fr-h3">Données enregistrées</h2>
                 <p>Vos données ont été enregistrées avec succès.</p>
-                <p className="fr-text--sm fr-mt-1w">
-                  Redirection automatique vers la connexion...
-                </p>
                 <button
                   className="fr-btn fr-btn--primary fr-mt-2w"
-                  onClick={() => router.push("/connexion")}
+                  onClick={() => {
+                    setProcessingState("idle");
+                  }}
                 >
-                  Continuer maintenant
+                  Continuer
                 </button>
               </div>
             )}
@@ -183,6 +181,12 @@ export default function SimulateurClient() {
     );
   };
 
+  // Si on doit afficher le formulaire Early Access
+  if (showEarlyAccess) {
+    return <EarlyAccessForm />;
+  }
+
+  // Affichage normal du simulateur
   return (
     <>
       {renderProcessingOverlay()}

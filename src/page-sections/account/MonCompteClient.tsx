@@ -130,7 +130,6 @@ export default function MonCompteClient() {
 
 // Composant pour gérer l'affichage conditionnel des Callouts
 function CalloutManager({
-  hasDossiers,
   hasParcours,
   dsStatus,
   currentStep,

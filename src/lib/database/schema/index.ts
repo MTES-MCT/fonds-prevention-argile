@@ -9,3 +9,4 @@ export {
 export * from "./users";
 export * from "./parcours-prevention";
 export * from "./dossiers-demarches-simplifiees";
+export * from "./email-notifications";
