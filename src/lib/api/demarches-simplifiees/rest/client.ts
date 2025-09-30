@@ -6,7 +6,6 @@ import type {
   DemarcheSchema,
   DemarcheStats,
 } from "./types";
-import { getDemarcheUrl } from "@/lib/parcours/demarches.helpers";
 
 export type DemarcheType = "ELIGIBILITE" | "DIAGNOSTIC" | "DEVIS" | "FACTURES";
 
