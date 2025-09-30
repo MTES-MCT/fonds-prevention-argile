@@ -18,8 +18,10 @@ export default function EmailNotificationsList() {
 
       if (result.success && result.data) {
         setEmails(result.data.emails);
-      } else {
+      } else if (!result.success) {
         setError(result.error || "Erreur lors du chargement des emails");
+      } else {
+        setError("Aucun email trouvé");
       }
 
       setIsLoading(false);
