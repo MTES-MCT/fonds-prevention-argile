@@ -7,11 +7,14 @@ interface DemarcheSchemaProps {
   champDescriptors?: ChampDescriptor[];
 }
 
+type GroupBy = "none" | "type" | "required";
+
 export default function DemarcheSchema({
   champDescriptors,
 }: DemarcheSchemaProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [groupBy, setGroupBy] = useState<GroupBy>("none");
 
   if (!champDescriptors || champDescriptors.length === 0) {
     return (
@@ -29,6 +32,29 @@ export default function DemarcheSchema({
       champ.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
       champ.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Grouper les champs
+  const groupedChamps: Record<string, ChampDescriptor[]> = {};
+
+  if (groupBy === "none") {
+    groupedChamps["Tous les champs"] = filteredChamps;
+  } else if (groupBy === "type") {
+    filteredChamps.forEach((champ) => {
+      const type = champ.__typename?.replace("ChampDescriptor", "") || "Autre";
+      if (!groupedChamps[type]) {
+        groupedChamps[type] = [];
+      }
+      groupedChamps[type].push(champ);
+    });
+  } else if (groupBy === "required") {
+    filteredChamps.forEach((champ) => {
+      const group = champ.required ? "Champs requis" : "Champs optionnels";
+      if (!groupedChamps[group]) {
+        groupedChamps[group] = [];
+      }
+      groupedChamps[group].push(champ);
+    });
+  }
 
   return (
     <div className="fr-accordions-group fr-mb-4w">
@@ -63,40 +89,86 @@ export default function DemarcheSchema({
               />
             </div>
 
-            {/* Tableau des champs */}
-            <div className="fr-table">
-              <div className="fr-table__wrapper">
-                <div className="fr-table__container">
-                  <div className="fr-table__content">
-                    <table>
-                      <caption className="fr-sr-only">
-                        Liste des champs de la démarche
-                      </caption>
-                      <thead>
-                        <tr>
-                          <th scope="col">Label</th>
-                          <th scope="col">ID technique</th>
-                          <th scope="col">Type</th>
-                          <th scope="col">Statut</th>
-                          <th scope="col">Description</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredChamps.map((champ) => (
-                          <tr key={champ.id}>
-                            <td className="fr-text--bold">{champ.label}</td>
-                            <td>
+            {/* Options de groupement */}
+            <div className="fr-mb-3w">
+              <fieldset className="fr-fieldset">
+                <legend className="fr-fieldset__legend fr-text--regular">
+                  Grouper par
+                </legend>
+                <div className="fr-fieldset__content">
+                  <div className="fr-radio-group fr-radio-group--inline">
+                    <input
+                      type="radio"
+                      id="group-none"
+                      name="groupBy"
+                      value="none"
+                      checked={groupBy === "none"}
+                      onChange={() => setGroupBy("none")}
+                    />
+                    <label className="fr-label" htmlFor="group-none">
+                      Aucun
+                    </label>
+                  </div>
+                  <div className="fr-radio-group fr-radio-group--inline">
+                    <input
+                      type="radio"
+                      id="group-type"
+                      name="groupBy"
+                      value="type"
+                      checked={groupBy === "type"}
+                      onChange={() => setGroupBy("type")}
+                    />
+                    <label className="fr-label" htmlFor="group-type">
+                      Type
+                    </label>
+                  </div>
+                  <div className="fr-radio-group fr-radio-group--inline">
+                    <input
+                      type="radio"
+                      id="group-required"
+                      name="groupBy"
+                      value="required"
+                      checked={groupBy === "required"}
+                      onChange={() => setGroupBy("required")}
+                    />
+                    <label className="fr-label" htmlFor="group-required">
+                      Statut
+                    </label>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            {/* Liste des champs en cards */}
+            {Object.entries(groupedChamps).map(([groupName, champs]) => (
+              <div key={groupName} className="fr-mb-4w">
+                {groupBy !== "none" && (
+                  <h4 className="fr-h6 fr-mb-2w">
+                    {groupName} ({champs.length})
+                  </h4>
+                )}
+
+                <div className="fr-grid-row fr-grid-row--gutters">
+                  {champs.map((champ) => (
+                    <div key={champ.id} className="fr-col-12 fr-col-md-6">
+                      <div className="fr-card fr-card--no-border fr-card--shadow">
+                        <div className="fr-card__body">
+                          <div className="fr-card__content">
+                            <h5 className="fr-card__title fr-mb-1w">
+                              {champ.label}
+                            </h5>
+
+                            <div className="fr-mb-2w">
                               <code className="fr-text--xs">{champ.id}</code>
-                            </td>
-                            <td>
-                              <span className="fr-badge fr-badge--sm fr-badge--purple-glycine">
+                            </div>
+
+                            <div className="fr-mb-2w">
+                              <span className="fr-badge fr-badge--sm fr-badge--purple-glycine fr-mr-1w">
                                 {champ.__typename?.replace(
                                   "ChampDescriptor",
                                   ""
                                 )}
                               </span>
-                            </td>
-                            <td>
                               {champ.required ? (
                                 <span className="fr-badge fr-badge--sm fr-badge--error">
                                   Requis
@@ -106,18 +178,21 @@ export default function DemarcheSchema({
                                   Optionnel
                                 </span>
                               )}
-                            </td>
-                            <td className="fr-text--sm">
-                              {champ.description || "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                            </div>
+
+                            {champ.description && (
+                              <p className="fr-text--sm fr-mb-0">
+                                {champ.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            ))}
 
             {filteredChamps.length === 0 && searchTerm && (
               <div className="fr-alert fr-alert--info fr-mt-2w">
