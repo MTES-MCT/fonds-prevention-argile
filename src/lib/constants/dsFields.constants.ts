@@ -7,7 +7,11 @@ export interface DSField {
   section: DSSection;
   type: DSFieldType;
   rgaPath?: string; // Chemin dans l'objet RGAFormData
-  transformer?: (value: unknown) => string | number | boolean; // Fonction de transformation
+  transformer?: (
+    value: unknown,
+    rgaData?: Record<string, unknown>
+  ) => string | number | boolean | (string | number)[];
+  // Fonction de transformation
 }
 
 /**
@@ -25,6 +29,7 @@ export enum DSFieldType {
   DROPDOWN = "drop_down_list",
   MULTIPLE_DROPDOWN = "multiple_drop_down_list",
   ADDRESS = "address",
+  COMMUNE = "communes",
 }
 
 /**
@@ -155,6 +160,31 @@ export const DS_FIELDS: Record<string, DSField> = {
     type: DSFieldType.TEXT,
     rgaPath: "logement.adresse",
     transformer: (value: unknown) => (typeof value === "string" ? value : ""),
+  },
+
+  // Champ Code Commune (ajouté par Martin pour faciliter la saisie de l'adresse)
+  "Q2hhbXAtNTY0ODQ3NA==": {
+    id: "Q2hhbXAtNTY0ODQ3NA==",
+    label: "Commune",
+    section: DSSection.MAISON,
+    type: DSFieldType.COMMUNE,
+    rgaPath: "logement.commune",
+    transformer: (value: unknown, fullData?: Record<string, unknown>) => {
+      const codeInsee = typeof value === "string" ? value : "";
+      const logement = fullData?.logement as { adresse?: string } | undefined;
+
+      // Extraire le code postal depuis l'adresse complète
+      const adresse = logement?.adresse;
+      const codePostalMatch =
+        typeof adresse === "string" ? adresse.match(/\b(\d{5})\b/) : null;
+      const codePostal = codePostalMatch ? codePostalMatch[1] : "";
+
+      // Format tableau: [codePostal, codeInsee]
+      const result = [codePostal, codeInsee];
+
+      console.log("[DS Commune Transformer] Format tableau:", result);
+      return result;
+    },
   },
   // // Champ d'adresse structuré (non utilisé actuellement car non géré par DS)
   // "Q2hhbXAtNTU0MjUyNg==": {

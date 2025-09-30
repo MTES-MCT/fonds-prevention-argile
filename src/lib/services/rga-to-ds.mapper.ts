@@ -36,14 +36,15 @@ export function mapRGAToDSFormat(rgaData: Partial<RGAFormData>): PrefillData {
     if (value !== undefined && value !== null && value !== "") {
       // Appliquer la transformation si elle existe
       const transformedValue = field.transformer
-        ? field.transformer(value)
+        ? field.transformer(value, rgaData as Record<string, unknown>)
         : value;
 
       // S'assurer que la valeur transformée est du bon type
       if (
         typeof transformedValue === "string" ||
         typeof transformedValue === "number" ||
-        typeof transformedValue === "boolean"
+        typeof transformedValue === "boolean" ||
+        Array.isArray(transformedValue)
       ) {
         // Ajouter au prefill avec le préfixe "champ_"
         prefillData[`champ_${field.id}`] = transformedValue;
