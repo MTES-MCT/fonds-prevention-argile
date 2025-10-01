@@ -43,12 +43,12 @@
       "subtitle": "À plus long terme, si aucun travaux ne sont réalisés, des désordres structuraux peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons et, parfois, rupture de canalisations enterrées.",
       "callout": {
         "title": "Signes non pris en charge par le Fonds de Prévention Argile",
-        "text": "Si votre logement présente ces signes de dégradation avancée, il est trop tard pour faire appel au Fonds de Prévention. Il est urgent de vous rapprocher de votre assurance."
+        "text": "Si votre logement présente ces signes de dégradation avancée, il est trop tard pour faire appel au Fonds de Prévention."
       }
     }
   },
   "savoir_si_concerne_section": {
-    "title": "Le Fonds de PRévention Argile traite des causes, pas des conséquences.",
+    "title": "Le Fonds de PRévention Argile traite des causes, pas des conséquences. ",
     "title2": "Agissez avant qu'il ne soit trop tard.",
     "cta_label": "Vérifier mon éligibilité",
     "cta_url": "/simulateur",
