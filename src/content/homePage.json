@@ -32,8 +32,8 @@
       "subtitle": "Les mouvements de terrain induits par le retrait et le gonflement des argiles se traduisent par des désordres d'importance variables suivant l'intensité et la fréquence du phénomène.",
       "subtitle2": "Les signes précurseurs sont des désordres architecturaux de type microfissures, fissures isolées sur les murs intérieurs, et fissures extérieurs sur les doublages et les cloisons inférieurs dont la taille n'excède pas 1mm.",
       "callout": {
-        "title": "Signes pris en charge par le Fonds de Prévention Argile",
-        "text": "Ces signes sont pris en charge par le Fonds Prévention Argile. Agissez avant qu’il ne soit trop tard",
+        "title": "Signes précurseurs ne faisant pas obstacle au bénéfice de l'aide",
+        "text": "Le fonds de prévention vise à éviter l’apparition de désordres sur des maisons en bon état, mais peut exceptionnellement financer des travaux préventifs sur des constructions présentant des désordres très limités.",
         "cta_label": "Vérifier mon éligibilité",
         "cta_url": "/simulateur"
       }
@@ -43,12 +43,12 @@
       "subtitle": "À plus long terme, si aucun travaux ne sont réalisés, des désordres structuraux peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons et, parfois, rupture de canalisations enterrées.",
       "callout": {
         "title": "Signes non pris en charge par le Fonds de Prévention Argile",
-        "text": "Si votre logement présente ces signes de dégradation avancée, il est trop tard pour faire appel au Fonds de Prévention. Il est urgent de vous rapprocher de votre assurance."
+        "text": "Si votre logement présente ces signes de dégradation avancée, il est trop tard pour faire appel au Fonds de Prévention."
       }
     }
   },
   "savoir_si_concerne_section": {
-    "title": "Le Fonds de PRévention Argile traite des causes, pas des conséquences.",
+    "title": "Le Fonds de PRévention Argile traite des causes, pas des conséquences. ",
     "title2": "Agissez avant qu'il ne soit trop tard.",
     "cta_label": "Vérifier mon éligibilité",
     "cta_url": "/simulateur",
@@ -93,25 +93,25 @@
         "imageSrc": "/illustrations/national-identity-card.svg",
         "imageAlt": "Vérifier mon éligibilité",
         "title": "1. Éligibilité",
-        "description": "Je complète quelques informations concernant mon logement ainsi que mes ressources financières."
+        "description": "Le simulateur et un AMO vous accompagne pour vérifier votre éligibilité avec quelques questions sur votre logement, votre assurance et vos ressources financières."
       },
       {
         "imageSrc": "/illustrations/house.svg",
         "imageAlt": "Effectuer un diagnostic",
         "title": "2. Diagnostic",
-        "description": "Un professionnel se déplace chez vous afin de réaliser les constats et analyses sur la maison et son environnement pour recommander les travaux de préventions à effectuer."
+        "description": "Un exoert se déplace chez vous afin de réaliser les constats et analyses sur la maison et son environnement pour recommander les travaux de préventions à effectuer."
       },
       {
         "imageSrc": "/illustrations/in-progress.svg",
         "imageAlt": "Lancer les travaux",
         "title": "3. Travaux",
-        "description": "Le diagnostic et les devis sont validés ? Lancez les travaux pour vous prémunir du phénomène RGA."
+        "description": "Le diagnostic et les devis sont validés par le service instructeur? Lancez les travaux avec les entreprises sélectionnées pour vous prémunir du phénomène RGA."
       },
       {
         "imageSrc": "/illustrations/money.svg",
         "imageAlt": "Recevoir mes aides",
         "title": "4. Paiement",
-        "description": "Vous recevrez vos aides une fois les travaux terminés et contrôlés. Votre maison est plus protéger face au phénomène du RGA."
+        "description": "Les travaux sont terminés et contrôlés, recevez votre aide financière. Votre maison est plus protégée face au phénomène du RGA."
       }
     ]
   },

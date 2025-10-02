@@ -52,7 +52,7 @@ export default function QuestCeQueLeRgaSection() {
         </div>
 
         {/* Zone Icônes & Infos */}
-        <div className="fr-grid-row fr-grid-row--gutters fr-mt-8w">
+        <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--center space-x-10 fr-mt-8w">
           <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
             <Feature
               icon="fr-icon-heavy-showers-fill"
@@ -83,7 +83,7 @@ export default function QuestCeQueLeRgaSection() {
               icon="fr-icon-flood-line"
               title="Causes multiples"
               description="Fuite des réseaux enterrés fuyards, défaut de drainage, Racines des arbres trop proches de la maison, absence de géomembrane, pièges à eaux."
-              tileColor="bg-brown-50"
+              tileColor="fr-background-alt--brown-opera"
               iconColor="text-brown-500"
             />
           </div>
