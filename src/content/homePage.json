@@ -93,25 +93,25 @@
         "imageSrc": "/illustrations/national-identity-card.svg",
         "imageAlt": "Vérifier mon éligibilité",
         "title": "1. Éligibilité",
-        "description": "Je complète quelques informations concernant mon logement ainsi que mes ressources financières."
+        "description": "Le simulateur et un AMO vous accompagne pour vérifier votre éligibilité avec quelques questions sur votre logement, votre assurance et vos ressources financières."
       },
       {
         "imageSrc": "/illustrations/house.svg",
         "imageAlt": "Effectuer un diagnostic",
         "title": "2. Diagnostic",
-        "description": "Un professionnel se déplace chez vous afin de réaliser les constats et analyses sur la maison et son environnement pour recommander les travaux de préventions à effectuer."
+        "description": "Un exoert se déplace chez vous afin de réaliser les constats et analyses sur la maison et son environnement pour recommander les travaux de préventions à effectuer."
       },
       {
         "imageSrc": "/illustrations/in-progress.svg",
         "imageAlt": "Lancer les travaux",
         "title": "3. Travaux",
-        "description": "Le diagnostic et les devis sont validés ? Lancez les travaux pour vous prémunir du phénomène RGA."
+        "description": "Le diagnostic et les devis sont validés par le service instructeur? Lancez les travaux avec les entreprises sélectionnées pour vous prémunir du phénomène RGA."
       },
       {
         "imageSrc": "/illustrations/money.svg",
         "imageAlt": "Recevoir mes aides",
         "title": "4. Paiement",
-        "description": "Vous recevrez vos aides une fois les travaux terminés et contrôlés. Votre maison est plus protéger face au phénomène du RGA."
+        "description": "Les travaux sont terminés et contrôlés, recevez votre aide financière. Votre maison est plus protégée face au phénomène du RGA."
       }
     ]
   },
