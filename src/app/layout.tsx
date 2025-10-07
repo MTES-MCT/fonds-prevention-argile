@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Footer, Header, Matomo } from "@/components";
-import { marianne, spectral } from "../styles/fonts";
 import { contentLayout } from "@/content";
 import { DsfrProvider } from "@/components/DsfrProvider/DsfrProvider";
 
@@ -66,11 +65,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      className={`${marianne.variable} ${spectral.variable}`}
-      data-fr-scheme="system"
-      lang="fr"
-    >
+    <html data-fr-scheme="system" lang="fr">
       <head>
         <meta
           content="telephone=no,date=no,address=no,email=no,url=no"
