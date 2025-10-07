@@ -14,8 +14,7 @@ export default function Feature({
   tileColor = "bg-blue-50",
 }: FeatureProps) {
   return (
-    <div className="flex flex-col items-start gap-4">
-      {/* Tuile avec icône */}
+    <div className="flex flex-col items-center gap-4">
       <div
         className={`${tileColor} rounded-lg w-16 h-16 flex items-center justify-center`}
       >

@@ -52,15 +52,15 @@ export default function QuestCeQueLeRgaSection() {
         </div>
 
         {/* Zone Icônes & Infos */}
-        <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--center space-x-10 fr-mt-8w">
-          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
+        <div className="fr-grid-row fr-grid-row--gutters w-full fr-grid-row--center space-x-4 fr-mt-8w">
+          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2 fr-mb-4w text-center">
             <Feature
               icon="fr-icon-heavy-showers-fill"
               title="Période humide"
               description="Les sols argileux gonflent en absorbant l'eau, soulevant les fondations."
             />
           </div>
-          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
+          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2 fr-mb-4w text-center">
             <Feature
               icon="fr-icon-sun-fill"
               title="Période sèche"
@@ -69,7 +69,7 @@ export default function QuestCeQueLeRgaSection() {
               iconColor="text-orange-500"
             />
           </div>
-          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
+          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2 fr-mb-4w text-center">
             <Feature
               icon="fr-icon-refresh-line"
               title="Effets répétitifs"
@@ -78,7 +78,7 @@ export default function QuestCeQueLeRgaSection() {
               iconColor="text-purple-500"
             />
           </div>
-          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
+          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2 fr-mb-4w text-center">
             <Feature
               icon="fr-icon-flood-line"
               title="Causes multiples"
@@ -87,7 +87,7 @@ export default function QuestCeQueLeRgaSection() {
               iconColor="text-brown-500"
             />
           </div>
-          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2">
+          <div className="fr-col-12 fr-col-sm-6 fr-col-md-2 fr-mb-4w text-center">
             <Feature
               icon="fr-icon-home-4-fill"
               title="Conséquences"

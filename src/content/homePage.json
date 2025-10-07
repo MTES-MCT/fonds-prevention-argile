@@ -8,7 +8,7 @@
   "logement_concerne_section": {
     "image": {
       "alt": "Fonds Prévention Argile - Un service de l'État",
-      "src": "/images/home/logement-concerne.png"
+      "src": "/images/home/logement-concerne.webp"
     },
     "title": "Bénéficiez d'un accompagnement technique et financier pour vous prémunir du phénomène de retrait-gonflement des argiles.",
     "subtitle": "Vérifiez votre éligibilité en quelques secondes, soyez accompagné et déposez votre demande en ligne. Recevez une réponse de l’administration dans quelques jours.",
@@ -246,7 +246,7 @@
     "description": {
       "text": "Les montants des aides dépendent du niveau de revenu de votre ménage. Plus d’informations sur ",
       "linkText": "service-public.fr.",
-      "linkUrl": "https://www.service-public.fr/particuliers/vosdroits/F593"
+      "linkUrl": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1328"
     },
     "highlight": {
       "title": "Plafonds de dépenses",

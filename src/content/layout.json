@@ -33,11 +33,11 @@
     "title": "Fonds prévention argile",
     "description": "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
     "url": "https://fonds-preventions-argile.beta.gouv.fr",
-    "imageUrl": "/images/home/logement-concerne.png",
+    "imageUrl": "/images/home/logement-concerne.webp",
     "imageAlt": "Vérifier mon éligibilité"
   },
   "breadcrumb": {
     "home": "Accueil",
-    "filAriane": "Voir le fil d&#39;arianne"
+    "filAriane": "Voir le fil d'arianne"
   }
 }

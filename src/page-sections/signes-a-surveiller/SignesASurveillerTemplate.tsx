@@ -29,7 +29,7 @@ export default function SignesASurveillerTemplate({
 }: SignesASurveillerTemplateProps) {
   return (
     <>
-      <section className="fr-container-fluid fr-py-10w">
+      <section className="fr-container-fluid fr-py-4w">
         <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-10!">
           <nav
             role="navigation"
