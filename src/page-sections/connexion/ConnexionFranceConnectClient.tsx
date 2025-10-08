@@ -4,10 +4,12 @@ import { contentConnexionPage } from "@/content";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FC_ERROR_MAPPING } from "@/lib/auth/client";
+import { useRGAContext } from "@/lib/form-rga/session";
 
 export default function ConnexionFranceConnectClient() {
   const [fcError, setFcError] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const { data: rgaData } = useRGAContext();
 
   // Gérer les erreurs FranceConnect depuis l'URL
   useEffect(() => {
@@ -36,6 +38,17 @@ export default function ConnexionFranceConnectClient() {
   }, [searchParams]);
 
   const handleFranceConnect = () => {
+    // Récupérer le code INSEE depuis les données RGA
+    const codeInsee = rgaData?.logement?.commune;
+
+    // Stocker le code INSEE en cookie si disponible
+    if (codeInsee) {
+      document.cookie = `fc_code_insee=${codeInsee}; path=/; max-age=300; SameSite=Lax`;
+      console.log("Code INSEE stocké en cookie:", codeInsee);
+    } else {
+      console.warn("Aucun code INSEE trouvé dans les données RGA");
+    }
+
     // Rediriger vers l'API FranceConnect
     window.location.href = "/api/auth/fc/login";
   };

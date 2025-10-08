@@ -126,7 +126,8 @@ export class UserRepository extends BaseRepository<User> {
    * Crée ou met à jour un utilisateur depuis FranceConnect
    */
   async upsertFromFranceConnect(
-    userInfo: FranceConnectUserInfo
+    userInfo: FranceConnectUserInfo,
+    codeInsee?: string // 🆕 Nouveau paramètre optionnel
   ): Promise<User> {
     const fcId = userInfo.sub;
 
@@ -134,8 +135,20 @@ export class UserRepository extends BaseRepository<User> {
     const existingUser = await this.findByFcId(fcId);
 
     if (existingUser) {
-      // Mise à jour de la date de dernière connexion
-      const updated = await this.updateLastLogin(existingUser.id);
+      //  Mise à jour : lastLogin + codeInsee si fourni et pas déjà présent
+      const updates: Partial<NewUser> = {
+        lastLogin: new Date(),
+      };
+
+      // Mettre à jour le code INSEE seulement s'il est fourni et que l'user n'en a pas encore
+      if (codeInsee && !existingUser.codeInsee) {
+        updates.codeInsee = codeInsee;
+        console.log(
+          `Mise à jour du code INSEE pour l'utilisateur ${existingUser.id}: ${codeInsee}`
+        );
+      }
+
+      const updated = await this.update(existingUser.id, updates);
 
       if (!updated) {
         throw new Error("Failed to update user last login");
@@ -144,8 +157,12 @@ export class UserRepository extends BaseRepository<User> {
       return updated;
     } else {
       // Création d'un nouvel utilisateur
+      console.log(
+        `Création d'un nouvel utilisateur avec code INSEE: ${codeInsee || "non fourni"}`
+      );
       return await this.create({
         fcId,
+        codeInsee,
         lastLogin: new Date(),
       });
     }

@@ -226,7 +226,8 @@ export function generateLogoutUrl(idToken: string, state?: string): string {
  */
 export async function handleFranceConnectCallback(
   code: string,
-  state: string
+  state: string,
+  codeInsee?: string
 ): Promise<{ success: boolean; error?: string; shouldLogout?: boolean }> {
   try {
     // 1. Vérifier le state
@@ -256,15 +257,19 @@ export async function handleFranceConnectCallback(
     const userInfo = await getUserInfo(tokens.access_token);
     console.log("UserInfo FranceConnect:", userInfo);
 
-    // 5. Créer ou récupérer l'utilisateur en base
-    const user = await userRepo.upsertFromFranceConnect(userInfo);
-    console.log("User créé/récupéré:", user.id);
+    // 5. Créer ou récupérer l'utilisateur en base AVEC le code INSEE
+    const user = await userRepo.upsertFromFranceConnect(userInfo, codeInsee);
+    console.log(
+      "User créé/récupéré:",
+      user.id,
+      codeInsee ? `avec code INSEE: ${codeInsee}` : ""
+    );
 
     // 6. Initialiser le parcours si première connexion
     const parcours = await getOrCreateParcours(user.id);
     console.log("Parcours initialisé:", parcours.id);
 
-    // 6. Créer la session avec l'userId
+    // 7. Créer la session avec l'userId
     await createFranceConnectSession(
       user.id,
       tokens.id_token,
