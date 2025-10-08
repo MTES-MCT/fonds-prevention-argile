@@ -1,7 +1,10 @@
+import { config } from "dotenv";
 import { defineConfig } from "drizzle-kit";
 
 // Validation des variables d'environnement
 if (!process.env.SCALINGO_POSTGRESQL_URL) {
+  config();
+
   const requiredEnvVars = [
     "DB_HOST",
     "DB_PORT",

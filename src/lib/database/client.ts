@@ -1,6 +1,12 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
+import { config } from "dotenv";
+
+// Charge le .env uniquement en local
+if (!process.env.SCALINGO_POSTGRESQL_URL && !process.env.NEXT_RUNTIME) {
+  config();
+}
 
 const MAX_CONNECTIONS = 10;
 const IDLE_TIMEOUT = 30;
