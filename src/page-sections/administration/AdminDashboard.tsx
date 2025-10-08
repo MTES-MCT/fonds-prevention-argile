@@ -9,6 +9,7 @@ import DemarcheInfo from "./DemarcheInfo";
 import DemarcheSchema from "./DemarcheSchema";
 import DossiersList from "./DossiersList";
 import EmailNotificationsList from "./EmailNotificationsList";
+import { AmoSeedUpload } from "./AmoSeedUpload";
 
 interface AdminDashboardProps {
   demarche: DemarcheDetailed;
@@ -16,7 +17,7 @@ interface AdminDashboardProps {
   schema: DemarcheDetailed | null;
 }
 
-type TabId = "early-access" | "demarche-info" | "dossiers";
+type TabId = "early-access" | "demarche-info" | "dossiers" | "amo";
 
 export default function AdminDashboard({
   demarche,
@@ -40,6 +41,11 @@ export default function AdminDashboard({
       id: "dossiers" as TabId,
       label: "Dossiers",
       icon: "fr-icon-file-text-line",
+    },
+    {
+      id: "amo" as TabId,
+      label: "Entreprises AMO",
+      icon: "fr-icon-building-line",
     },
   ];
 
@@ -112,6 +118,17 @@ export default function AdminDashboard({
             dossiersConnection={dossiersConnection}
             demarcheId={demarche.number}
           />
+        </div>
+
+        {/* Panel Entreprises AMO */}
+        <div
+          id="panel-amo"
+          className={`fr-tabs__panel ${activeTab === "amo" ? "fr-tabs__panel--selected" : ""}`}
+          role="tabpanel"
+          aria-labelledby="tab-amo"
+          tabIndex={0}
+        >
+          <AmoSeedUpload />
         </div>
       </div>
     </div>

@@ -51,3 +51,7 @@ yarn-error.log*
 
 # Local folder
 .local*
+
+# Ignorer tous les fichiers Excel SAUF le template
+*.xlsx
+!public/templates/amo-exemple.xlsx
