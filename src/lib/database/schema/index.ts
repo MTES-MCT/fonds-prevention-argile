@@ -10,3 +10,5 @@ export * from "./users";
 export * from "./parcours-prevention";
 export * from "./dossiers-demarches-simplifiees";
 export * from "./email-notifications";
+export * from "./entreprises-amo";
+export * from "./entreprises-amo-communes";
