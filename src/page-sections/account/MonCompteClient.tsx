@@ -18,11 +18,19 @@ import { STEP_LABELS } from "@/lib/parcours/parcours.constants";
 import CalloutEligibiliteAccepte from "./steps/eligibilite/CalloutEligibiliteAccepte";
 import CalloutEligibiliteEnInstruction from "./steps/eligibilite/CalloutEligibiliteEnInstruction";
 import CalloutDiagnosticTodo from "./steps/diagnostic/CalloutDiagnosticTodo";
-import CalloutAmoTodo from "./steps/amo/CalloutAmoTodo";
+import { StatutValidationAmo } from "@/lib/parcours/amo/amo.types";
+import {
+  CalloutAmoEnAttente,
+  CalloutAmoLogementNonEligible,
+  CalloutAmoTodo,
+} from "./steps/amo";
+import { useState } from "react";
+import { PourEnSavoirPlusSectionContent } from "../home/PourEnSavoirPlusSection";
 
 export default function MonCompteClient() {
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
   const { hasData: hasRGAData, isLoading: isLoadingRGA } = useRGAContext();
+  const [showAmoSuccessAlert, setShowAmoSuccessAlert] = useState(false);
 
   // Utilisation du hook parcours simplifié
   const {
@@ -30,7 +38,8 @@ export default function MonCompteClient() {
     hasDossiers,
     currentStep,
     lastDSStatus,
-    currentStatus: parcoursStatus,
+    statutAmo,
+    refresh,
     isLoading: isLoadingParcours,
   } = useParcours();
 
@@ -110,7 +119,18 @@ export default function MonCompteClient() {
               <p>{error}</p>
             </div>
           )} */}
-          <div className="fr-grid-row fr-grid-row--gutters">
+
+          {/* Alerte de succès AMO */}
+          {showAmoSuccessAlert && (
+            <div className="fr-alert fr-alert--success fr-mb-2w">
+              <p className="fr-alert__title">Demande envoyée</p>
+              <p>
+                Votre demande de confirmation a été envoyée à l'AMO sélectionné.
+              </p>
+            </div>
+          )}
+
+          <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
             <div className="fr-col-12 fr-col-md-8">
               {/* Affichage conditionnel des Callouts */}
               <CalloutManager
@@ -118,7 +138,9 @@ export default function MonCompteClient() {
                 hasParcours={hasParcours}
                 dsStatus={lastDSStatus}
                 currentStep={currentStep}
-                parcoursStatus={parcoursStatus}
+                statutAmo={statutAmo}
+                onAmoSuccess={() => setShowAmoSuccessAlert(true)}
+                refresh={refresh}
               />
             </div>
 
@@ -127,6 +149,11 @@ export default function MonCompteClient() {
             </div>
           </div>
         </div>
+
+        {/* Section "Pour en savoir plus" si logement non éligible */}
+        {statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && (
+          <PourEnSavoirPlusSectionContent />
+        )}
       </section>
 
       {/* Sections communes */}
@@ -141,14 +168,18 @@ export default function MonCompteClient() {
 function CalloutManager({
   hasParcours,
   dsStatus,
-  parcoursStatus,
+  statutAmo,
   currentStep,
+  onAmoSuccess,
+  refresh,
 }: {
   hasDossiers: boolean;
   hasParcours: boolean;
   dsStatus: DSStatus | null;
-  parcoursStatus: Status | null;
+  statutAmo: StatutValidationAmo | null;
   currentStep: Step | null;
+  onAmoSuccess: () => void;
+  refresh: () => Promise<void>;
 }) {
   // Si pas de parcours, rien à afficher
   if (!hasParcours || !currentStep) {
@@ -158,7 +189,7 @@ function CalloutManager({
   // Gestion selon l'étape courante
   switch (currentStep) {
     case Step.CHOIX_AMO:
-      return renderChoixAmoCallout(parcoursStatus);
+      return renderChoixAmoCallout(statutAmo, onAmoSuccess, refresh);
 
     case Step.ELIGIBILITE:
       return renderEligibiliteCallout(dsStatus);
@@ -179,14 +210,32 @@ function CalloutManager({
 
 // Helpers pour chaque étape
 
-function renderChoixAmoCallout(parcoursStatus: Status | null) {
-  // Toujours afficher le callout TODO pour le choix AMO
+function renderChoixAmoCallout(
+  statutAmo: StatutValidationAmo | null,
+  onAmoSuccess: () => void,
+  refresh: () => Promise<void>
+) {
+  if (statutAmo === null) {
+    return <CalloutAmoTodo onSuccess={onAmoSuccess} refresh={refresh} />;
+  }
 
-  return (
-    <div id="choix-amo" className="fr-mb-6w">
-      <CalloutAmoTodo />
-    </div>
-  );
+  if (statutAmo === StatutValidationAmo.EN_ATTENTE) {
+    return <CalloutAmoEnAttente />;
+  }
+
+  if (statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
+    return <CalloutAmoLogementNonEligible />;
+  }
+
+  if (statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE) {
+    return (
+      <CalloutAmoTodo
+        accompagnementRefuse
+        onSuccess={onAmoSuccess}
+        refresh={refresh}
+      />
+    );
+  }
 }
 
 function renderEligibiliteCallout(dsStatus: DSStatus | null) {

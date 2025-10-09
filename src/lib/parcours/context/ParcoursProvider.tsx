@@ -6,11 +6,13 @@ import {
   syncUserDossierStatus,
   syncAllUserDossiers,
 } from "@/lib/actions/demarches-simplifies/sync.actions";
+import { getValidationAmo } from "@/lib/actions/parcours/amo/amo.actions";
 import {
   ParcoursPrevention,
   DossierDemarchesSimplifiees,
 } from "@/lib/database/schema";
 import { Step, DSStatus } from "@/lib/parcours/parcours.types";
+import { StatutValidationAmo } from "@/lib/parcours/amo/amo.types";
 import { useRouter } from "next/navigation";
 import { ParcoursContext } from "./ParcoursContext";
 
@@ -33,6 +35,9 @@ export function ParcoursProvider({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // État AMO
+  const [statutAmo, setStatutAmo] = useState<StatutValidationAmo | null>(null);
+
   // État de synchronisation
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
@@ -44,7 +49,7 @@ export function ParcoursProvider({
 
   // Refs
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isSyncingRef = useRef(false); // Pour éviter les appels concurrents
+  const isSyncingRef = useRef(false);
 
   // Fonction de chargement du parcours
   const fetchParcours = useCallback(async () => {
@@ -63,6 +68,18 @@ export function ParcoursProvider({
         );
         if (currentDossier) {
           setLastDSStatus(currentDossier.dsStatus);
+        }
+
+        // Récupérer le statut AMO si on est à l'étape CHOIX_AMO
+        if (result.data.parcours.currentStep === Step.CHOIX_AMO) {
+          const validationResult = await getValidationAmo();
+          if (validationResult.success && validationResult.data) {
+            setStatutAmo(validationResult.data.statut);
+          } else {
+            setStatutAmo(null);
+          }
+        } else {
+          setStatutAmo(null);
         }
       } else {
         const errorMessage =
@@ -95,7 +112,6 @@ export function ParcoursProvider({
         if (result.success && result.data) {
           setLastSync(new Date());
 
-          // Ne pas mettre à jour si NON_ACCESSIBLE
           if (
             result.data.newStatus &&
             result.data.newStatus !== DSStatus.NON_ACCESSIBLE
@@ -111,7 +127,6 @@ export function ParcoursProvider({
             }
           }
         } else {
-          // Gestion d'erreur quand result.success est false
           const errorMessage =
             !result.success && result.error
               ? result.error
@@ -163,30 +178,28 @@ export function ParcoursProvider({
     }
   }, [fetchParcours, router]);
 
-  // Chargement initial (une seule fois au montage)
+  // Chargement initial
   useEffect(() => {
     fetchParcours();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Pas de dépendance pour éviter les re-fetch
+  }, []);
 
-  // Sync unique au chargement (après le fetch initial)
+  // Sync unique au chargement
   useEffect(() => {
-    // Sync seulement si on a un parcours et qu'on n'est plus en chargement
     if (parcours && !isLoading) {
       const timer = setTimeout(() => {
         syncNow();
-      }, 2000); // Petit délai pour laisser le temps au fetch de se stabiliser
+      }, 2000);
 
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parcours?.id]); // Dépendance sur l'id pour ne déclencher qu'une fois par parcours
 
-  // Auto-sync avec intervalle (seulement si activé)
+  // Auto-sync avec intervalle
   useEffect(() => {
     if (!autoSync || !parcours) return;
 
-    // Setup de l'intervalle uniquement, pas de sync immédiate
     intervalRef.current = setInterval(() => {
       syncNow();
     }, syncInterval);
@@ -195,7 +208,8 @@ export function ParcoursProvider({
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
-    }; // eslint-disable-next-line react-hooks/exhaustive-deps
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSync]);
 
   // Helpers
@@ -226,6 +240,9 @@ export function ParcoursProvider({
     // État actuel
     currentStep: parcours?.currentStep ?? null,
     currentStatus: parcours?.currentStatus ?? null,
+
+    // État AMO
+    statutAmo,
 
     // Sync DS
     lastDSStatus,

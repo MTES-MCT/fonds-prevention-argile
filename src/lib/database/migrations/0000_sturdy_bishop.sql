@@ -1,6 +1,6 @@
 CREATE TYPE "public"."ds_status" AS ENUM('en_construction', 'en_instruction', 'accepte', 'refuse', 'classe_sans_suite', 'non_accessible');--> statement-breakpoint
 CREATE TYPE "public"."status" AS ENUM('TODO', 'EN_INSTRUCTION', 'VALIDE');--> statement-breakpoint
-CREATE TYPE "public"."statut_validation_amo" AS ENUM('en_attente', 'valide', 'refuse');--> statement-breakpoint
+CREATE TYPE "public"."statut_validation_amo" AS ENUM('en_attente', 'logement_eligible', 'logement_non_eligible', 'accompagnement_refuse');--> statement-breakpoint
 CREATE TYPE "public"."step" AS ENUM('CHOIX_AMO', 'ELIGIBILITE', 'DIAGNOSTIC', 'DEVIS', 'FACTURES');--> statement-breakpoint
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,

@@ -17,6 +17,9 @@ export function useParcours() {
     currentStatus: context.currentStatus,
     hasParcours: context.hasParcours,
 
+    // Etat AMO
+    statutAmo: context.statutAmo,
+
     // État DS
     lastDSStatus: context.lastDSStatus,
     hasDossiers: context.dossiers && context.dossiers.length > 0,
