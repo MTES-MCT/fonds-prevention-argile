@@ -302,7 +302,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
 
     return await this.create({
       userId,
-      currentStep: Step.ELIGIBILITE,
+      currentStep: Step.CHOIX_AMO,
       currentStatus: Status.TODO,
     });
   }

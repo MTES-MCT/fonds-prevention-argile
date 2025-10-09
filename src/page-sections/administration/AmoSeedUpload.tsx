@@ -1,12 +1,20 @@
 "use client";
 
 import { seedAmoFromExcel } from "@/lib/parcours/amo/actions/seed-amo.actions";
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
+import type { AmoDisponible } from "@/lib/parcours/amo/amo.types";
+import { getAllAmos } from "@/lib/actions/parcours/amo/amo.actions";
+
+interface AmoWithCommunes extends AmoDisponible {
+  communes?: { codeInsee: string }[];
+}
 
 export function AmoSeedUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [clearExisting, setClearExisting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [amos, setAmos] = useState<AmoWithCommunes[]>([]);
+  const [isLoadingAmos, setIsLoadingAmos] = useState(true);
 
   const [state, formAction, isPending] = useActionState(
     async (_prevState: unknown, formData: FormData) => {
@@ -14,6 +22,31 @@ export function AmoSeedUpload() {
     },
     null
   );
+
+  // Charger les AMO au montage du composant et après un import réussi
+  useEffect(() => {
+    loadAmos();
+  }, []);
+
+  useEffect(() => {
+    if (state?.success) {
+      loadAmos();
+    }
+  }, [state]);
+
+  const loadAmos = async () => {
+    setIsLoadingAmos(true);
+    try {
+      const result = await getAllAmos();
+      if (result.success && result.data) {
+        setAmos(result.data);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des AMO:", error);
+    } finally {
+      setIsLoadingAmos(false);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -43,7 +76,6 @@ export function AmoSeedUpload() {
     ) {
       setFile(droppedFile);
 
-      // Créer un DataTransfer pour mettre à jour l'input file
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(droppedFile);
       const fileInput = document.getElementById(
@@ -69,7 +101,7 @@ export function AmoSeedUpload() {
         <a
           href="/templates/amo-example.xlsx"
           download="amo-exemple.xlsx"
-          className="fr-btn fr-btn--secondary fr-btn--sm fr-icon-download-line fr-btn--icon-left"
+          className="fr-btn fr-btn--secondary fr-btn--sm fr-btn--icon-left"
         >
           Télécharger le fichier exemple
         </a>
@@ -132,7 +164,7 @@ export function AmoSeedUpload() {
           <label className="fr-label" htmlFor="clear-existing">
             Supprimer toutes les données AMO existantes avant l'import
             <span className="fr-hint-text">
-              ⚠️ Attention : cette action est irréversible
+              Attention : cette action est irréversible
             </span>
           </label>
         </div>
@@ -140,7 +172,7 @@ export function AmoSeedUpload() {
         {/* Bouton de soumission */}
         <button
           type="submit"
-          className="fr-btn fr-icon-upload-line fr-btn--icon-left"
+          className="fr-btn fr-btn--icon-left"
           disabled={!file || isPending}
         >
           {isPending ? "Import en cours..." : "Importer les données"}
@@ -153,7 +185,7 @@ export function AmoSeedUpload() {
           className={`fr-alert ${state.success ? "fr-alert--success" : "fr-alert--error"} fr-mt-4w`}
         >
           <h3 className="fr-alert__title">
-            {state.success ? "✅ Import réussi" : "❌ Erreur lors de l'import"}
+            {state.success ? "Import réussi" : "Erreur lors de l'import"}
           </h3>
           <p>{state.message}</p>
 
@@ -169,7 +201,7 @@ export function AmoSeedUpload() {
 
           {state.errors && state.errors.length > 0 && (
             <div className="fr-mt-2w">
-              <p className="fr-text--bold">⚠️ Erreurs rencontrées :</p>
+              <p className="fr-text--bold">Erreurs rencontrées :</p>
               <ul className="fr-text--sm">
                 {state.errors.slice(0, 10).map((error, index) => (
                   <li key={index}>{error}</li>
@@ -182,6 +214,68 @@ export function AmoSeedUpload() {
           )}
         </div>
       )}
+
+      {/* Table des AMO */}
+      <div className="fr-mt-6w">
+        <h3 className="fr-h4 fr-mb-2w">Liste des AMO enregistrées</h3>
+
+        {isLoadingAmos ? (
+          <div className="fr-py-4w text-center">
+            <p>Chargement des AMO...</p>
+          </div>
+        ) : amos.length === 0 ? (
+          <div className="fr-callout fr-callout--info">
+            <p className="fr-callout__text">
+              Aucune AMO enregistrée pour le moment. Importez un fichier Excel
+              pour commencer.
+            </p>
+          </div>
+        ) : (
+          <div className="fr-table fr-table--lg fr-table--bordered fr-table--multiline">
+            <div className="fr-table__wrapper">
+              <div className="fr-table__container">
+                <div className="fr-table__content">
+                  <table>
+                    <caption className="sr-only">
+                      Liste des entreprises AMO
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Nom</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Téléphone</th>
+                        <th scope="col">Adresse</th>
+                        <th scope="col">Codes INSEE couverts</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {amos.map((amo) => (
+                        <tr key={amo.id}>
+                          <td>{amo.nom}</td>
+                          <td>{amo.email || "-"}</td>
+                          <td>{amo.telephone || "-"}</td>
+                          <td>{amo.adresse || "-"}</td>
+                          <td>
+                            {amo.communes && amo.communes.length > 0
+                              ? amo.communes.map((c) => c.codeInsee).join(", ")
+                              : "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {amos.length > 0 && (
+          <p className="fr-text--sm fr-mt-2w text-gray-600">
+            Total : {amos.length} AMO enregistrée{amos.length > 1 ? "s" : ""}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

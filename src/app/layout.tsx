@@ -27,6 +27,8 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css"
 
 // Import des styles custom
 import "../styles/globals.css";
+import "../styles/loading.css";
+
 import { AuthProvider } from "@/lib/auth/contexts/AuthContext";
 import { RGAProvider } from "@/lib/form-rga/session";
 import { PostLogoutRedirect } from "@/components/PostLogoutRedirect/PostLogoutRedirect";

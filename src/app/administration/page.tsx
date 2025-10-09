@@ -8,6 +8,8 @@ import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees/g
 import AdminDashboard from "@/page-sections/administration/AdminDashboard";
 
 export default async function AdminPage() {
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
   const env = getServerEnv();
   const demarcheId = parseInt(env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE);
 

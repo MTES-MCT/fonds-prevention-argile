@@ -1,4 +1,4 @@
-import Loading from "@/components/Loading/Loading";
+import Loading from "@/app/loading";
 import ConnexionAdminClient from "@/page-sections/connexion/ConnexionAdminClient";
 import { Suspense } from "react";
 

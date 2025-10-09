@@ -89,7 +89,7 @@ export function ParcoursProvider({
       setError(null);
 
       try {
-        const targetStep = step || parcours?.currentStep || Step.ELIGIBILITE;
+        const targetStep = step || parcours?.currentStep || Step.CHOIX_AMO;
         const result = await syncUserDossierStatus(targetStep);
 
         if (result.success && result.data) {

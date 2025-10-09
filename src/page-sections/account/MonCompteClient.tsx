@@ -1,7 +1,7 @@
 "use client";
 
 import { AUTH_METHODS, useAuth } from "@/lib/auth/client";
-import MonCompteLoading from "../../components/Loading/Loading";
+import MonCompteLoading from "../../app/loading";
 import FaqAccountSection from "./common/FaqAccountSection";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
@@ -146,6 +146,9 @@ function CalloutManager({
 
   // Gestion selon l'étape courante
   switch (currentStep) {
+    case Step.CHOIX_AMO:
+      return <p>Choix de l'AMO</p>;
+
     case Step.ELIGIBILITE:
       return renderEligibiliteCallout(dsStatus);
 

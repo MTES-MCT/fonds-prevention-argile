@@ -17,6 +17,7 @@ import {
   StatutValidationAmo,
   ValidationAmoComplete,
 } from "@/lib/parcours/amo/amo.types";
+import { ROLES } from "@/lib/auth";
 
 /**
  * Récupère la liste des AMO disponibles pour le code INSEE de l'utilisateur
@@ -66,6 +67,79 @@ export async function getAmosDisponibles(): Promise<
     };
   } catch (error) {
     console.error("Erreur getAmosDisponibles:", error);
+    return {
+      success: false,
+      error: "Erreur lors de la récupération des AMO",
+    };
+  }
+}
+
+/**
+ * Récupère la liste de tous les AMO avec leurs codes INSEE
+ */
+export async function getAllAmos(): Promise<
+  ActionResult<
+    Array<
+      AmoDisponible & {
+        communes: { codeInsee: string }[];
+      }
+    >
+  >
+> {
+  try {
+    const session = await getSession();
+
+    if (!session || session.role !== ROLES.ADMIN) {
+      throw new Error("Accès refusé");
+    }
+
+    // Récupérer les AMO avec leurs communes
+    const allAmosWithCommunes = await db
+      .select({
+        id: entreprisesAmo.id,
+        nom: entreprisesAmo.nom,
+        email: entreprisesAmo.email,
+        telephone: entreprisesAmo.telephone,
+        adresse: entreprisesAmo.adresse,
+        codeInsee: entreprisesAmoCommunes.codeInsee,
+      })
+      .from(entreprisesAmo)
+      .leftJoin(
+        entreprisesAmoCommunes,
+        eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
+      )
+      .orderBy(entreprisesAmo.nom);
+
+    // Grouper les codes INSEE par AMO
+    const amosMap = new Map<
+      string,
+      AmoDisponible & { communes: { codeInsee: string }[] }
+    >();
+
+    for (const row of allAmosWithCommunes) {
+      if (!amosMap.has(row.id)) {
+        amosMap.set(row.id, {
+          id: row.id,
+          nom: row.nom,
+          email: row.email,
+          telephone: row.telephone,
+          adresse: row.adresse,
+          communes: [],
+        });
+      }
+
+      const amo = amosMap.get(row.id);
+      if (amo && row.codeInsee) {
+        amo.communes.push({ codeInsee: row.codeInsee });
+      }
+    }
+
+    return {
+      success: true,
+      data: Array.from(amosMap.values()),
+    };
+  } catch (error) {
+    console.error("Erreur getAllAmos:", error);
     return {
       success: false,
       error: "Erreur lors de la récupération des AMO",
