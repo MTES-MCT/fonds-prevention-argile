@@ -3,6 +3,7 @@ export {
   stepPgEnum,
   statusPgEnum,
   dsStatusPgEnum,
+  statutValidationAmoPgEnum,
 } from "../enums/parcours.enums";
 
 // Puis exporter les tables
