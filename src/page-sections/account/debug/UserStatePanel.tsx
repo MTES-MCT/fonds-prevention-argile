@@ -37,6 +37,7 @@ interface DossierInfo {
 
 // Configuration des labels d'étapes
 const STEP_LABELS: Record<Step, string> = {
+  [Step.CHOIX_AMO]: "Choix de l'AMO",
   [Step.ELIGIBILITE]: "Vérification éligibilité",
   [Step.DIAGNOSTIC]: "Diagnostic technique",
   [Step.DEVIS]: "Devis travaux",

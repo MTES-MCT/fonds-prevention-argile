@@ -41,6 +41,7 @@ export const dsStatusPgEnum = pgEnum("ds_status", [
 
 export const statutValidationAmoPgEnum = pgEnum("statut_validation_amo", [
   StatutValidationAmo.EN_ATTENTE,
-  StatutValidationAmo.VALIDE,
-  StatutValidationAmo.REFUSE,
+  StatutValidationAmo.LOGEMENT_ELIGIBLE,
+  StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
+  StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
 ]);
