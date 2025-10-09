@@ -292,42 +292,6 @@ export async function getParcoursStatus(): Promise<
 }
 
 /**
- * Réinitialise le parcours (pour les tests/debug)
- */
-export async function resetParcours(): Promise<
-  ActionResult<{ message: string }>
-> {
-  try {
-    const session = await getSession();
-    if (!session?.userId) {
-      return { success: false, error: "Non connecté" };
-    }
-
-    const data = await getParcoursComplet(session.userId);
-    if (!data) {
-      return { success: false, error: "Parcours non trouvé" };
-    }
-
-    await parcoursRepo.updateStep(
-      data.parcours.id,
-      Step.ELIGIBILITE,
-      Status.TODO
-    );
-
-    return {
-      success: true,
-      data: { message: "Parcours réinitialisé" },
-    };
-  } catch (error) {
-    console.error("Erreur resetParcours:", error);
-    return {
-      success: false,
-      error: "Erreur lors de la réinitialisation",
-    };
-  }
-}
-
-/**
  * Récupère le parcours complet avec dossiers
  */
 export async function obtenirMonParcours(): Promise<
@@ -372,13 +336,4 @@ export async function obtenirMonParcours(): Promise<
       error: "Erreur lors de la récupération",
     };
   }
-}
-
-/**
- * Réinitialise le parcours (alias pour resetParcours)
- */
-export async function reinitialiserParcours(): Promise<
-  ActionResult<{ message: string }>
-> {
-  return resetParcours();
 }

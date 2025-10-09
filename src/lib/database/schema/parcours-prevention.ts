@@ -13,7 +13,7 @@ export const parcoursPrevention = pgTable("parcours_prevention", {
     .unique() // Contrainte directement sur la colonne
     .references(() => users.id, { onDelete: "cascade" }),
 
-  currentStep: stepPgEnum("current_step").notNull().default(Step.ELIGIBILITE),
+  currentStep: stepPgEnum("current_step").notNull().default(Step.CHOIX_AMO),
   currentStatus: statusPgEnum("current_status").notNull().default(Status.TODO),
 
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),

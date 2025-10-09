@@ -1,4 +1,9 @@
-import { Step, Status, DSStatus } from "@/lib/parcours/parcours.types";
+import {
+  Step,
+  Status,
+  DSStatus,
+  STEP_ORDER,
+} from "@/lib/parcours/parcours.types";
 import { getNextStep } from "@/lib/parcours/parcours.helpers";
 import { userRepo, parcoursRepo, dossierDsRepo } from "../repositories";
 import { prefillClient } from "@/lib/api/demarches-simplifiees/rest";
@@ -29,7 +34,7 @@ export async function getParcoursComplet(userId: string) {
   const stepsCompleted = dossiers.filter(
     (d) => d.dsStatus === "accepte"
   ).length;
-  const progression = Math.round((stepsCompleted / 4) * 100);
+  const progression = Math.round((stepsCompleted / STEP_ORDER.length) * 100);
 
   // Déterminer la prochaine étape
   const prochainEtape =
@@ -77,22 +82,24 @@ export async function progressParcours(userId: string) {
     };
   }
 
-  // Récupérer l'ID de démarche pour la nouvelle étape
-  // TODO : a mettre dans un helper
-  const dsDemarcheId = prefillClient.getDemarcheId(nextStep);
+  // NE PAS créer de dossier DS pour l'étape CHOIX_AMO
+  if (nextStep !== Step.CHOIX_AMO) {
+    // Récupérer l'ID de démarche pour la nouvelle étape
+    const dsDemarcheId = prefillClient.getDemarcheId(nextStep);
 
-  // Créer un dossier vide pour la nouvelle étape
-  await dossierDsRepo.create({
-    parcoursId: parcours.id,
-    step: nextStep,
-    dsNumber: null,
-    dsId: null,
-    dsDemarcheId,
-    dsStatus: DSStatus.EN_CONSTRUCTION,
-    dsUrl: null,
-    submittedAt: null,
-    processedAt: null,
-  });
+    // Créer un dossier vide pour la nouvelle étape
+    await dossierDsRepo.create({
+      parcoursId: parcours.id,
+      step: nextStep,
+      dsNumber: null,
+      dsId: null,
+      dsDemarcheId,
+      dsStatus: DSStatus.EN_CONSTRUCTION,
+      dsUrl: null,
+      submittedAt: null,
+      processedAt: null,
+    });
+  }
 
   // Passer à l'étape suivante
   await parcoursRepo.updateStep(parcours.id, nextStep, Status.TODO);

@@ -306,17 +306,6 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       currentStatus: Status.TODO,
     });
   }
-
-  /**
-   * Réinitialise un parcours à l'étape initiale
-   */
-  async resetParcours(id: string): Promise<ParcoursPrevention | null> {
-    return await this.update(id, {
-      currentStep: Step.ELIGIBILITE,
-      currentStatus: Status.TODO,
-      completedAt: null,
-    });
-  }
 }
 
 // Export d'une instance singleton
