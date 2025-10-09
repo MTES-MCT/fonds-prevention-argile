@@ -7,7 +7,7 @@ import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
 import { useRGAContext } from "@/lib/form-rga/session/useRGAContext";
 import DevTestSidebar from "./debug/DevTestSidebar";
-import { DSStatus, Step } from "@/lib/parcours/parcours.types";
+import { DSStatus, Status, Step } from "@/lib/parcours/parcours.types";
 
 // Import des Callouts
 import CalloutEligibiliteTodo from "./steps/eligibilite/CalloutEligibiliteTodo";
@@ -18,6 +18,7 @@ import { STEP_LABELS } from "@/lib/parcours/parcours.constants";
 import CalloutEligibiliteAccepte from "./steps/eligibilite/CalloutEligibiliteAccepte";
 import CalloutEligibiliteEnInstruction from "./steps/eligibilite/CalloutEligibiliteEnInstruction";
 import CalloutDiagnosticTodo from "./steps/diagnostic/CalloutDiagnosticTodo";
+import CalloutAmoTodo from "./steps/amo/CalloutAmoTodo";
 
 export default function MonCompteClient() {
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
@@ -29,6 +30,7 @@ export default function MonCompteClient() {
     hasDossiers,
     currentStep,
     lastDSStatus,
+    currentStatus: parcoursStatus,
     isLoading: isLoadingParcours,
   } = useParcours();
 
@@ -36,10 +38,12 @@ export default function MonCompteClient() {
   const isLoading = isAuthLoading || isLoadingRGA || isLoadingParcours;
 
   // Si France Connect mais pas de données
+  // Exception: l'étape CHOIX_AMO ne nécessite pas de dossier DS
   const isFranceConnectWithoutData =
     user?.authMethod === AUTH_METHODS.FRANCECONNECT &&
     !hasRGAData &&
-    !hasDossiers;
+    !hasDossiers &&
+    currentStep !== Step.CHOIX_AMO;
 
   // Afficher un message de déconnexion
   if (isLoggingOut) {
@@ -65,7 +69,11 @@ export default function MonCompteClient() {
 
   // Cas où l'utilisateur est FranceConnect sans données RGA ni parcours
   // ou n'a ni parcours ni données RGA
-  if (isFranceConnectWithoutData || (!hasRGAData && !hasParcours)) {
+  // Exception: l'étape CHOIX_AMO ne nécessite pas de dossier
+  if (
+    isFranceConnectWithoutData ||
+    (!hasRGAData && !hasParcours && currentStep !== Step.CHOIX_AMO)
+  ) {
     return (
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
@@ -110,10 +118,11 @@ export default function MonCompteClient() {
                 hasParcours={hasParcours}
                 dsStatus={lastDSStatus}
                 currentStep={currentStep}
+                parcoursStatus={parcoursStatus}
               />
             </div>
 
-            <div className="fr-col-12 fr-col-md-4 flex justify-center md:justify-end">
+            <div className="fr-col-12 fr-col-md-4 flex justify-center md:justify-start self-start">
               <MaListe />
             </div>
           </div>
@@ -132,11 +141,13 @@ export default function MonCompteClient() {
 function CalloutManager({
   hasParcours,
   dsStatus,
+  parcoursStatus,
   currentStep,
 }: {
   hasDossiers: boolean;
   hasParcours: boolean;
   dsStatus: DSStatus | null;
+  parcoursStatus: Status | null;
   currentStep: Step | null;
 }) {
   // Si pas de parcours, rien à afficher
@@ -147,7 +158,7 @@ function CalloutManager({
   // Gestion selon l'étape courante
   switch (currentStep) {
     case Step.CHOIX_AMO:
-      return <p>Choix de l'AMO</p>;
+      return renderChoixAmoCallout(parcoursStatus);
 
     case Step.ELIGIBILITE:
       return renderEligibiliteCallout(dsStatus);
@@ -167,6 +178,17 @@ function CalloutManager({
 }
 
 // Helpers pour chaque étape
+
+function renderChoixAmoCallout(parcoursStatus: Status | null) {
+  // Toujours afficher le callout TODO pour le choix AMO
+
+  return (
+    <div id="choix-amo" className="fr-mb-6w">
+      <CalloutAmoTodo />
+    </div>
+  );
+}
+
 function renderEligibiliteCallout(dsStatus: DSStatus | null) {
   if (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE) {
     return <CalloutEligibiliteTodo />;

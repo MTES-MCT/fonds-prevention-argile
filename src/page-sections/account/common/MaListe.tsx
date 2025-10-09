@@ -1,6 +1,6 @@
 import { contentAccountPage } from "@/content";
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
-import { Step } from "@/lib/parcours/parcours.types";
+import { Step, STEP_ORDER } from "@/lib/parcours/parcours.types";
 import Link from "next/link";
 
 export default function MaListe() {
@@ -24,14 +24,8 @@ export default function MaListe() {
   const isFacturesActive = currentStep === Step.FACTURES;
 
   const getStepStatus = (step: Step) => {
-    const stepOrder = [
-      Step.ELIGIBILITE,
-      Step.DIAGNOSTIC,
-      Step.DEVIS,
-      Step.FACTURES,
-    ];
-    const currentIndex = stepOrder.indexOf(currentStep || Step.ELIGIBILITE);
-    const stepIndex = stepOrder.indexOf(step);
+    const currentIndex = STEP_ORDER.indexOf(currentStep || Step.CHOIX_AMO);
+    const stepIndex = STEP_ORDER.indexOf(step);
 
     return {
       isCompleted: stepIndex < currentIndex,
@@ -53,6 +47,37 @@ export default function MaListe() {
         <h2 className="fr-card__title">{contentAccountPage.ma_liste.title}</h2>
         <div className="fr-card__desc">
           <ol type="1" className="fr-list space-y-2">
+            <li key="choix-amo">
+              {(() => {
+                const status = getStepStatus(Step.CHOIX_AMO);
+
+                if (!status.isActive) {
+                  return (
+                    <a aria-disabled="true" role="link" className="fr-link">
+                      Choisir un AMO dans la liste
+                    </a>
+                  );
+                }
+
+                if (status.isCompleted) {
+                  return (
+                    <span className="fr-link" style={status.style}>
+                      Choisir un AMO dans la liste{" "}
+                      <span
+                        className="fr-icon-check-line"
+                        aria-hidden="true"
+                      ></span>
+                    </span>
+                  );
+                }
+
+                return (
+                  <Link className="fr-link" href="#choix-amo">
+                    Choisir un AMO dans la liste
+                  </Link>
+                );
+              })()}
+            </li>
             <li key="eligibilite">
               {(() => {
                 const status = getStepStatus(Step.ELIGIBILITE);
