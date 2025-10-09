@@ -1,5 +1,6 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 import { Step, Status, DSStatus } from "@/lib/parcours/parcours.types";
+import { StatutValidationAmo } from "@/lib/parcours/amo/amo.types";
 
 /**
  * PgEnums pour la base de données PostgreSQL
@@ -10,6 +11,7 @@ import { Step, Status, DSStatus } from "@/lib/parcours/parcours.types";
  * Enum PostgreSQL pour les étapes
  */
 export const stepPgEnum = pgEnum("step", [
+  Step.CHOIX_AMO,
   Step.ELIGIBILITE,
   Step.DIAGNOSTIC,
   Step.DEVIS,
@@ -35,4 +37,10 @@ export const dsStatusPgEnum = pgEnum("ds_status", [
   DSStatus.REFUSE,
   DSStatus.CLASSE_SANS_SUITE,
   DSStatus.NON_ACCESSIBLE, // Statut ajouté pour "Non accessible"
+]);
+
+export const statutValidationAmoPgEnum = pgEnum("statut_validation_amo", [
+  StatutValidationAmo.EN_ATTENTE,
+  StatutValidationAmo.VALIDE,
+  StatutValidationAmo.REFUSE,
 ]);

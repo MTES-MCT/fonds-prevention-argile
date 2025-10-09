@@ -7,6 +7,7 @@ import {
  * Étapes du parcours de prévention RGA
  */
 export enum Step {
+  CHOIX_AMO = "CHOIX_AMO",
   ELIGIBILITE = "ELIGIBILITE",
   DIAGNOSTIC = "DIAGNOSTIC",
   DEVIS = "DEVIS",
@@ -30,6 +31,7 @@ export interface ParcoursState {
 
 // Ordre des étapes
 export const STEP_ORDER = [
+  Step.CHOIX_AMO,
   Step.ELIGIBILITE,
   Step.DIAGNOSTIC,
   Step.DEVIS,
