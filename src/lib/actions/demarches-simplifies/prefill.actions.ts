@@ -29,45 +29,6 @@ export async function createPrefillDossier(
   rgaDataOriginal?: Partial<RGAFormData> // Paramètre optionnel pour debug
 ): Promise<ActionResult<CreateDossierResponse>> {
   try {
-    // Si on a les données RGA originales, logger la comparaison
-    if (rgaDataOriginal) {
-      const env = getServerEnv();
-      const demarcheId = parseInt(env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE);
-      const client = getDemarchesSimplifieesClient();
-      const schema = await client.getDemarcheSchema(demarcheId);
-      
-      console.log("schema de la démarche :>> ", JSON.stringify(schema));
-      const addressField = schema?.activeRevision?.champDescriptors.find((c) =>
-        c.label.toLowerCase().includes("adresse")
-      );
-      console.log("Format attendu pour l'adresse:", addressField);
-
-      console.log("📊 Analyse du mapping RGA → DS:");
-      const stats = getMappingStats(rgaDataOriginal);
-      console.log(`  - Champs mappables totaux: ${stats.total}`);
-      console.log(
-        `  - Champs effectivement mappés: ${stats.filled} (${stats.percentage}%)`
-      );
-      console.log(`  - Par section:`, stats.bySection);
-
-      // Logger les données RGA qui auraient dû être mappées
-      console.log("🔍 Données RGA source:");
-      console.log(JSON.stringify(rgaDataOriginal, null, 2));
-    }
-
-    // Logging des champs mappés
-    console.log("📤 Envoi vers DS - Étape:", step);
-    console.log("📝 Nombre de champs préremplis:", Object.keys(data).length);
-
-    // Afficher chaque champ avec sa valeur
-    console.log("📋 Détail des champs mappés:");
-    Object.entries(data).forEach(([key, value]) => {
-      const fieldId = key.replace("champ_", "");
-      const fieldInfo = DS_FIELDS[fieldId];
-      const label = fieldInfo?.label || "Champ inconnu";
-      console.log(`  - ${label} (${key}): ${JSON.stringify(value)}`);
-    });
-
     // Validation des données
     const errors = prefillClient.validatePrefillData(data);
 
@@ -80,23 +41,10 @@ export async function createPrefillDossier(
     // Création du dossier
     const result = await prefillClient.createPrefillDossier(data, step);
 
-    console.log("✅ Dossier DS créé avec succès:", {
-      numero: result.dossier_number,
-      url: result.dossier_url,
-      champsEnvoyes: Object.keys(data).length,
-      detailChamps: Object.keys(data),
-    });
-
-    console.log("Dossier DS créé:", {
-      numero: result.dossier_number,
-      url: result.dossier_url,
-    });
-
     // Synchroniser immédiatement le statut après création
     try {
       const session = await getSession();
       if (session?.userId) {
-        console.log("Synchronisation du statut DS après création...");
         await syncDossierEligibiliteStatus(session.userId, step);
       }
     } catch (syncError) {

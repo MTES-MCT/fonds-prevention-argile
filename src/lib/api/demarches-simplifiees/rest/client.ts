@@ -119,8 +119,6 @@ export class DemarchesSimplifieesPrefillClient {
     const config = this.getConfig(demarcheType);
     const url = `${this.baseUrl}/demarches/${config.id}/dossiers`;
 
-    console.log(`📤 Création dossier ${demarcheType} (ID: ${config.id})`);
-
     const response = await fetch(url, {
       method: "POST",
       headers: {

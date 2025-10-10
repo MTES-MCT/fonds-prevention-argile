@@ -168,9 +168,6 @@ export const DS_FIELDS: Record<string, DSField> = {
       const match = value.match(/^(.+?)\s+\d{5}/);
       const rueSeule = match ? match[1].trim() : value;
 
-      console.log("[DS Adresse Transformer] Adresse complète:", value);
-      console.log("[DS Adresse Transformer] Rue seule:", rueSeule);
-
       return rueSeule;
     },
   },
@@ -195,7 +192,6 @@ export const DS_FIELDS: Record<string, DSField> = {
       // Format tableau: [codePostal, codeInsee]
       const result = [codePostal, codeInsee];
 
-      console.log("[DS Commune Transformer] Format tableau:", result);
       return result;
     },
   },

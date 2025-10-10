@@ -89,11 +89,6 @@ export async function envoyerDossierEligibiliteAvecDonnees(
       // On continue quand même, le dossier DS est créé
     }
 
-    console.log("Dossier créé avec succès:", {
-      numero: dsResult.data.dossier_number,
-      url: dsResult.data.dossier_url,
-    });
-
     return {
       success: true,
       data: {

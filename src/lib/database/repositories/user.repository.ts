@@ -143,9 +143,6 @@ export class UserRepository extends BaseRepository<User> {
       // Mettre à jour le code INSEE seulement s'il est fourni et que l'user n'en a pas encore
       if (codeInsee && !existingUser.codeInsee) {
         updates.codeInsee = codeInsee;
-        console.log(
-          `Mise à jour du code INSEE pour l'utilisateur ${existingUser.id}: ${codeInsee}`
-        );
       }
 
       const updated = await this.update(existingUser.id, updates);
@@ -157,9 +154,6 @@ export class UserRepository extends BaseRepository<User> {
       return updated;
     } else {
       // Création d'un nouvel utilisateur
-      console.log(
-        `Création d'un nouvel utilisateur avec code INSEE: ${codeInsee || "non fourni"}`
-      );
       return await this.create({
         fcId,
         codeInsee,

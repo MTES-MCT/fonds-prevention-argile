@@ -76,13 +76,6 @@ export async function syncDossierEligibiliteStatus(
 
     try {
       dossierDS = await client.getDossier(parseInt(dossier.dsNumber));
-
-      // TODO : journaliser la réponse pour le debug
-      console.log(`API DS - Dossier ${dossier.dsNumber}:`, {
-        state: dossierDS?.state,
-        datePassageEnInstruction: dossierDS?.datePassageEnInstruction,
-        dateTraitement: dossierDS?.dateTraitement,
-      });
     } catch (error: unknown) {
       // Si le dossier n'existe pas sur DS (brouillon ou supprimé)
       if (
@@ -90,10 +83,6 @@ export async function syncDossierEligibiliteStatus(
         (error.message?.includes("not found") ||
           error.message?.includes("Dossier not found"))
       ) {
-        console.log(
-          `Dossier ${dossier.dsNumber} non accessible via l'API (probablement en brouillon)`
-        );
-
         // On garde le statut EN_CONSTRUCTION en base, pas de changement
         await dossierDsRepo.update(dossier.id, {
           lastSyncAt: new Date(),
@@ -122,20 +111,8 @@ export async function syncDossierEligibiliteStatus(
     const newStatus = mapGraphQLStatusToDSStatus(dossierDS.state);
     const oldStatus = dossier.dsStatus;
 
-    // Journaliser les statuts pour le debug
-    console.log(`Mapping statut - Dossier ${dossier.dsNumber}:`, {
-      stateFromAPI: dossierDS.state,
-      mappedStatus: newStatus,
-      statusInDB: oldStatus,
-      comparison: newStatus === oldStatus,
-    });
-
     // 5. Vérifier si le statut a changé
     if (newStatus === oldStatus) {
-      console.log(
-        `Pas de changement de statut pour le dossier ${dossier.dsNumber}`,
-        `(API: ${dossierDS.state} -> Mapped: ${newStatus} === DB: ${oldStatus})`
-      );
       return {
         updated: false,
         dossier,
@@ -144,10 +121,6 @@ export async function syncDossierEligibiliteStatus(
       };
     }
 
-    console.log(
-      `Changement de statut détecté pour le dossier ${dossier.dsNumber}: ${oldStatus} -> ${newStatus}`
-    );
-
     // 5.5. Mettre à jour l'URL si le dossier n'est plus en construction
     let updatedUrl = dossier.dsUrl;
 
@@ -155,10 +128,6 @@ export async function syncDossierEligibiliteStatus(
     if (newStatus !== DSStatus.EN_CONSTRUCTION && dossier.dsNumber) {
       // L'URL change pour pointer vers le dossier directement (sans prefill_token)
       updatedUrl = `https://www.demarches-simplifiees.fr/dossiers/${dossier.dsNumber}`;
-
-      console.log(
-        `Mise à jour URL pour dossier ${dossier.dsNumber}: ${dossier.dsUrl} -> ${updatedUrl}`
-      );
     }
 
     // 6. Mettre à jour le dossier en base
@@ -180,12 +149,6 @@ export async function syncDossierEligibiliteStatus(
           currentStatus: internalStatus,
           updatedAt: new Date(),
         });
-
-        // Si l'étape est validée, on pourrait progresser automatiquement
-        // mais on laisse ça à l'action pour décider
-        if (internalStatus === Status.VALIDE) {
-          console.log(`Étape ${step} validée, prêt pour progression`);
-        }
       }
     }
 
