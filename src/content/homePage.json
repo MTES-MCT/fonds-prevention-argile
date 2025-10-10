@@ -41,8 +41,8 @@
     },
     "non_pris_en_charge": {
       "title": "Risques de dégradation avancée sans action de votre part",
-      "subtitle": "Attention, le RGA peut provoquer de gros dégâts coûteux et très problématiques pour votre maison.",
-      "subtitle2": "Des désordres structuraux peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons, rupture de canalisations enterrées et fissures traversantes sur vos murs.",
+      "subtitle": "Attention, le RGA peut provoquer de gros dégâts coûteux et très problématiques pour votre maison. Le fonds de prévention est là pour vous aider à vous en prémunir tant que votre maison est encore saine afin d'éviter au maximum les sinistres liés aux retrait-gonflement des argiles.",
+      "subtitle2": "Si rien n'est fait, des désordres structuraux peuvent apparaître rapidement : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons, rupture de canalisations enterrées et fissures traversantes sur vos murs.",
       "callout": {
         "title": "Signes non pris en charge par le Fonds de Prévention Argile",
         "text": "Si votre logement présente déjà des signes de dégradation, il est trop tard pour faire appel au Fonds de Prévention."
@@ -60,8 +60,8 @@
     }
   },
   "etat_agit_section": {
-    "title": "Face à cette problématique, l’État agit grâce au fonds de prévention Argile",
-    "description_1": "Pour protéger durablement les habitations face au phénomène RGA, l’Etat engage une expérimentation de prévention, pour accompagner les ménages, réaliser le diagnostic de vulnérabilité et faire réaliser les travaux de prévention adaptés à chaque maison.",
+    "title": "Face à cette problématique, l’État expérimente avec le fonds de prévention Argile",
+    "description_1": "Pour protéger durablement les habitations face au phénomène RGA, l’Etat engage une expérimentation de prévention, pour accompagner les ménages, réaliser le diagnostic de vulnérabilité et faire réaliser les travaux de prévention avant les premiers sinistres.",
     "callout_title": "Une phase pilote dans 11 départements :",
     "callout_text": "Ce dispositif est actuellement en phase d'expérimentation et est limité aux départements suivants : Allier (03), Alpes-de-Haute-Provence (04), Dordogne (24), Gers (32), Indre (36), Lot-et-Garonne (47), Meurthe-et-Moselle (54), Nord (59), Puy-de-Dôme (63), Tarn (81) et Tarn-et-Garonne (82).",
     "description_2_title": "Il est crucial d'agir rapidement",
