@@ -37,7 +37,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.18.1
+          version: 10.18.2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -91,3 +91,5 @@ jobs:
           DB_USER: "fonds_argile_user"
           DB_PASSWORD: "fonds_argile_password"
           DB_NAME: "fonds_argile"
+          BREVO_API_KEY: "BREVO_API_KEY_EXAMPLE"
+          EMAIL_FROM: "noreply@fonds-argile.local"

@@ -262,7 +262,7 @@ export async function handleFranceConnectCallback(
     const user = await userRepo.upsertFromFranceConnect(userInfo, codeInsee);
 
     // 6. Initialiser le parcours si première connexion
-    const parcours = await getOrCreateParcours(user.id);
+    await getOrCreateParcours(user.id);
 
     // 7. Créer la session avec l'userId
     await createFranceConnectSession(

@@ -7,11 +7,7 @@ import type {
 } from "@/lib/api/demarches-simplifiees/rest/types";
 import type { ActionResult } from "../types";
 import { Step } from "@/lib/parcours/parcours.types";
-import { DS_FIELDS } from "@/lib/constants/dsFields.constants";
 import { RGAFormData } from "@/lib/form-rga";
-import { getMappingStats } from "@/lib/services/rga-to-ds.mapper";
-import { getServerEnv } from "@/lib/config/env.config";
-import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees/graphql";
 import { getSession } from "@/lib/auth/services/auth.service";
 import { syncDossierEligibiliteStatus } from "@/lib/database/services/dossier-ds-sync.service";
 
@@ -25,8 +21,7 @@ import { syncDossierEligibiliteStatus } from "@/lib/database/services/dossier-ds
  */
 export async function createPrefillDossier(
   data: PrefillData,
-  step: Step,
-  rgaDataOriginal?: Partial<RGAFormData> // Paramètre optionnel pour debug
+  step: Step
 ): Promise<ActionResult<CreateDossierResponse>> {
   try {
     // Validation des données

@@ -1,8 +1,6 @@
-// /src/lib/database/services/dossier-ds-sync.service.ts
-
 import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees/graphql";
 import { dossierDsRepo, parcoursRepo } from "@/lib/database/repositories";
-import { DSStatus, Step, Status } from "@/lib/parcours/parcours.types";
+import { DSStatus, Step } from "@/lib/parcours/parcours.types";
 import { mapDSStatusToInternalStatus } from "@/lib/parcours/parcours.helpers";
 import type { DossierState } from "@/lib/api/demarches-simplifiees/graphql/types";
 import type { DossierDemarchesSimplifiees } from "@/lib/database/schema";

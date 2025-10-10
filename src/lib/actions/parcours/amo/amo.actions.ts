@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, and, like, or, sql } from "drizzle-orm";
+import { eq, and, like, or } from "drizzle-orm";
 import { db } from "@/lib/database/client";
 import {
   amoValidationTokens,
@@ -22,6 +22,7 @@ import {
 import { ROLES } from "@/lib/auth";
 import { progressParcours } from "@/lib/database/services";
 import { getCodeDepartementFromCodeInsee } from "@/lib/parcours/amo/amo.utils";
+import { sendValidationAmoEmail } from "../../email/send-email.actions";
 
 const NB_JOURS_VALIDITE_TOKEN = 30; // Nombre de jours avant expiration du token
 
@@ -191,7 +192,7 @@ export async function getAllAmos(): Promise<
  * Ajoute les données personnelles temporaires (supprimées après validation)
  * Génère un token de validation sécurisé
  * Passe le parcours en EN_INSTRUCTION (en attente de validation AMO)
- * TODO Envoi un mail à l'AMO
+ * Envoi un mail à l'AMO
  */
 export async function choisirAmo(params: {
   entrepriseAmoId: string;
@@ -321,6 +322,38 @@ export async function choisirAmo(params: {
       token,
       expiresAt,
     });
+
+    // Récupérer les infos de l'AMO pour l'email
+    const [amo] = await db
+      .select({
+        nom: entreprisesAmo.nom,
+        emails: entreprisesAmo.emails,
+      })
+      .from(entreprisesAmo)
+      .where(eq(entreprisesAmo.id, entrepriseAmoId))
+      .limit(1);
+
+    if (!amo) {
+      return { success: false, error: "AMO non trouvée" };
+    }
+
+    // Envoyer l'email de validation à l'AMO
+    const emailsList = amo.emails.split(";").map((e) => e.trim());
+
+    const emailResult = await sendValidationAmoEmail({
+      amoEmail: emailsList,
+      amoNom: amo.nom,
+      demandeurNom: userNom,
+      demandeurPrenom: userPrenom,
+      demandeurCodeInsee: user.codeInsee,
+      adresseLogement,
+      token,
+    });
+
+    if (!emailResult.success) {
+      console.error("Erreur envoi email AMO:", emailResult.error);
+      // On continue quand même, l'email n'est pas bloquant
+    }
 
     // Passer le parcours en EN_INSTRUCTION (en attente de validation AMO)
     await parcoursRepo.updateStatus(parcours.id, Status.EN_INSTRUCTION);
