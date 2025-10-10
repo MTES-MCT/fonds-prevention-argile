@@ -71,23 +71,28 @@ export default async function ValidationAmoPage({
               <h3 className="fr-alert__title">Validation déjà effectuée</h3>
               <p>
                 Vous avez déjà répondu à cette demande le{" "}
-                {result.data.usedAt
-                  ? new Date(result.data.usedAt).toLocaleDateString("fr-FR", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "date inconnue"}
-                .
+                <strong>
+                  {result.data.usedAt
+                    ? new Date(result.data.usedAt).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "date inconnue"}
+                </strong>{" "}
+                et le demandeur a été notifié. .
               </p>
               <p className="fr-mt-2w">
                 <strong>Votre choix :</strong> {choixMessage}
               </p>
               <p className="fr-mt-2w">
-                Le demandeur a été notifié de votre décision. Vous pouvez fermer
-                cette page.
+                Si vous constatez un problème, n'hésitez pas à nous contacter à{" "}
+                <a href="mailto:contact@fonds-prevention-argile.beta.gouv.fr">
+                  contact@fonds-prevention-argile.beta.gouv.fr
+                </a>
+                .
               </p>
             </div>
           </div>
