@@ -52,8 +52,8 @@ export default function Home() {
         <QuiPeutBeneficierAidesSection />
         <MontantDesAidesSection />
         <CommentCaMarcheSection />
-        <QuelsSontTravauxEligiblesSection />
         <SavoirSiConcerneSection />
+        <QuelsSontTravauxEligiblesSection />
         <PourEnSavoirPlusSection />
         <FaqSection />
         <QuiSommesNousSection />

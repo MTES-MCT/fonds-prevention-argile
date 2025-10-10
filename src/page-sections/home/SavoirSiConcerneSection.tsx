@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function SavoirSiConcerneSection() {
   return (
-    <section className="fr-container-fluid fr-py-10w">
+    <section className="fr-container-fluid fr-py-10w bg-[var(--background-alt-blue-france)">
       <div className="fr-container">
         <div className="fr-grid-row items-center gap-6 md:gap-0">
           {/* Zone texte */}
