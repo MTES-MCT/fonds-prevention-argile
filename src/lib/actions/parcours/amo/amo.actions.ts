@@ -305,6 +305,12 @@ export async function validerLogementEligible(
       return { success: false, error: "Validation non trouvée" };
     }
 
+    // Marquer le token comme utilisé
+    await db
+      .update(amoValidationTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
+
     // Passer à l'étape ELIGIBILITE en TODO
     await parcoursRepo.updateStep(
       validation.parcoursId,
@@ -355,6 +361,12 @@ export async function refuserLogementNonEligible(
       return { success: false, error: "Validation non trouvée" };
     }
 
+    // Marquer le token comme utilisé
+    await db
+      .update(amoValidationTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
+
     // Repasser le parcours en TODO pour permettre à l'utilisateur de choisir une autre AMO
     // ou de corriger sa situation
     await parcoursRepo.updateStatus(validation.parcoursId, Status.TODO);
@@ -400,6 +412,12 @@ export async function refuserAccompagnement(
     if (!validation) {
       return { success: false, error: "Validation non trouvée" };
     }
+
+    // Marquer le token comme utilisé
+    await db
+      .update(amoValidationTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
 
     // Repasser le parcours en TODO pour permettre à l'utilisateur de choisir une autre AMO
     await parcoursRepo.updateStatus(validation.parcoursId, Status.TODO);
@@ -572,20 +590,21 @@ export async function getAmoRefusee(): Promise<
 
 /**
  * Récupérer les données de validation associées à un token
- * Vérifie que le token existe, n'est pas expiré et n'a pas été utilisé
+ * Vérifie que le token existe et n'est pas expiré
+ * Retourne aussi si le token a déjà été utilisé
  */
 export async function getValidationDataByToken(token: string): Promise<
   ActionResult<{
     validationId: string;
     entrepriseAmo: AmoDisponible;
     demandeur: {
-      // firstName: string;
-      // lastName: string;
-      // email: string;
       codeInsee: string;
     };
     statut: StatutValidationAmo;
     choisieAt: Date;
+    usedAt: Date | null;
+    isExpired: boolean;
+    isUsed: boolean;
   }>
 > {
   try {
@@ -603,9 +622,7 @@ export async function getValidationDataByToken(token: string): Promise<
         entrepriseAmoEmail: entreprisesAmo.email,
         entrepriseAmoTelephone: entreprisesAmo.telephone,
         entrepriseAmoAdresse: entreprisesAmo.adresse,
-        // userFirstName: users.firstName, // TODO ? voir avec Martin si on stocke le prénom dans users ou dans parcours_prevention
-        // userLastName: users.lastName, // TODO ? voir avec Martin si on stocke
-        // userEmail: users.email, // TODO ? voir avec Martin si on stocke
+        // TODO: ajouter les infos du demandeur
         userCodeInsee: users.codeInsee,
         parcoursId: parcoursPrevention.id,
       })
@@ -636,16 +653,11 @@ export async function getValidationDataByToken(token: string): Promise<
       };
     }
 
-    // Vérifier si le token a déjà été utilisé
-    if (tokenData.usedAt) {
-      return {
-        success: false,
-        error: "Ce token a déjà été utilisé",
-      };
-    }
+    const isExpired = tokenData.expiresAt < new Date();
+    const isUsed = !!tokenData.usedAt;
 
     // Vérifier si le token est expiré
-    if (tokenData.expiresAt < new Date()) {
+    if (isExpired) {
       return {
         success: false,
         error: "Ce token a expiré",
@@ -664,13 +676,13 @@ export async function getValidationDataByToken(token: string): Promise<
           adresse: tokenData.entrepriseAmoAdresse,
         },
         demandeur: {
-          // firstName: tokenData.userFirstName,
-          // lastName: tokenData.userLastName,
-          // email: tokenData.userEmail,
           codeInsee: tokenData.userCodeInsee || "",
         },
         statut: tokenData.statut,
         choisieAt: tokenData.choisieAt,
+        usedAt: tokenData.usedAt,
+        isExpired,
+        isUsed,
       },
     };
   } catch (error) {

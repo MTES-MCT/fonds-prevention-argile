@@ -1,5 +1,6 @@
 import { getValidationDataByToken } from "@/lib/actions/parcours/amo/amo.actions";
 import ValidationAmoForm from "./components/ValidationAmoForm";
+import { StatutValidationAmo } from "@/lib/parcours/amo/amo.types";
 
 interface ValidationAmoPageProps {
   params: {
@@ -13,7 +14,7 @@ export default async function ValidationAmoPage({
   // Récupérer et vérifier le token côté serveur
   const result = await getValidationDataByToken(params.token);
 
-  // Si le token est invalide, expiré ou déjà utilisé
+  // Si le token est invalide ou expiré
   if (!result.success) {
     return (
       <section className="fr-container fr-py-10w">
@@ -26,7 +27,6 @@ export default async function ValidationAmoPage({
                 Ce lien de validation n'est plus valide. Les raisons possibles :
               </p>
               <ul>
-                <li>Le lien a déjà été utilisé</li>
                 <li>Le lien a expiré (validité de 7 jours)</li>
                 <li>Le lien est incorrect</li>
               </ul>
@@ -41,7 +41,59 @@ export default async function ValidationAmoPage({
     );
   }
 
-  // Si le token est valide, afficher le formulaire de validation
+  // Si le token a déjà été utilisé
+  if (result.data.isUsed) {
+    let choixMessage = "";
+
+    switch (result.data.statut) {
+      case StatutValidationAmo.LOGEMENT_ELIGIBLE:
+        choixMessage =
+          "Vous avez confirmé l'accompagnement et attesté de l'éligibilité du demandeur.";
+        break;
+      case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
+        choixMessage = "Vous avez indiqué que le demandeur n'est pas éligible.";
+        break;
+      case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
+        choixMessage = "Vous avez refusé d'accompagner ce demandeur.";
+        break;
+      default:
+        choixMessage = "Vous avez déjà répondu à cette demande.";
+    }
+
+    return (
+      <section className="fr-container fr-py-10w">
+        <div className="fr-grid-row fr-grid-row--center">
+          <div className="fr-col-12 fr-col-md-8">
+            <div className="fr-alert fr-alert--info">
+              <h3 className="fr-alert__title">Validation déjà effectuée</h3>
+              <p>
+                Vous avez déjà répondu à cette demande le{" "}
+                {result.data.usedAt
+                  ? new Date(result.data.usedAt).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "date inconnue"}
+                .
+              </p>
+              <p className="fr-mt-2w">
+                <strong>Votre choix :</strong> {choixMessage}
+              </p>
+              <p className="fr-mt-2w">
+                Le demandeur a été notifié de votre décision. Vous pouvez fermer
+                cette page.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Si le token est valide et pas encore utilisé, afficher le formulaire
   return (
     <section className="fr-container fr-py-10w">
       <div className="fr-grid-row fr-grid-row--center">

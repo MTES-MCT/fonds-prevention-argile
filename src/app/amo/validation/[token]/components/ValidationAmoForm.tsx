@@ -25,6 +25,7 @@ export default function ValidationAmoForm({
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Gestion de la soumission du formulaire
   const handleSubmit = async () => {
     if (!choix) {
       setError("Veuillez sélectionner une option");
@@ -69,12 +70,41 @@ export default function ValidationAmoForm({
   };
 
   if (success) {
-    return (
-      <div className="fr-alert fr-alert--success">
-        <p className="fr-alert__title">Votre choix a bien été pris en compte</p>
-        <p>Le demandeur a été notifié de votre décision.</p>
-      </div>
-    );
+    switch (choix) {
+      case StatutValidationAmo.LOGEMENT_ELIGIBLE:
+        return (
+          <div className="fr-alert fr-alert--success">
+            <p className="fr-alert__title">
+              Vous avez validé l'éligibilité du logement
+            </p>
+            <p className="fr-alert__description">
+              Le demandeur a été notifié de votre décision.
+            </p>
+          </div>
+        );
+      case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
+        return (
+          <div className="fr-alert fr-alert--success">
+            <p className="fr-alert__title">
+              Vous avez indiqué que le logement n'est pas éligible
+            </p>
+            <p className="fr-alert__description">
+              Le demandeur a été notifié de votre décision.
+            </p>
+          </div>
+        );
+      case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
+        return (
+          <div className="fr-alert fr-alert--success">
+            <p className="fr-alert__title">
+              Vous avez refusé d'accompagner ce demandeur
+            </p>
+            <p className="fr-alert__description">
+              Le demandeur a été notifié de votre décision.
+            </p>
+          </div>
+        );
+    }
   }
 
   return (
