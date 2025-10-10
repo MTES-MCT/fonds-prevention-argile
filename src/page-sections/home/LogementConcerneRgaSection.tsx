@@ -20,12 +20,14 @@ export default function LogementConcerneRgaSection() {
             >
               {contentHomePage.logement_concerne_section.cta_label}
             </Link>
-            <a
-              href="#qui-peut-beneficier-aides"
-              className="ml-2 underline text-sm md:text-base"
-            >
-              {contentHomePage.logement_concerne_section.voir_critere_label}
-            </a>
+            <div>
+              <a
+                href="#qui-peut-beneficier-aides"
+                className="fr-mt-4v underline text-sm md:text-base block"
+              >
+                {contentHomePage.logement_concerne_section.voir_critere_label}
+              </a>
+            </div>
           </div>
 
           {/* Zone image */}
