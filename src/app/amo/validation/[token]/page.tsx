@@ -3,16 +3,19 @@ import ValidationAmoForm from "./components/ValidationAmoForm";
 import { StatutValidationAmo } from "@/lib/parcours/amo/amo.types";
 
 interface ValidationAmoPageProps {
-  params: {
+  params: Promise<{
     token: string;
-  };
+  }>;
 }
 
 export default async function ValidationAmoPage({
   params,
 }: ValidationAmoPageProps) {
+  // Await params pour Next.js 15
+  const { token } = await params;
+
   // Récupérer et vérifier le token côté serveur
-  const result = await getValidationDataByToken(params.token);
+  const result = await getValidationDataByToken(token);
 
   // Si le token est invalide ou expiré
   if (!result.success) {
@@ -125,7 +128,7 @@ export default async function ValidationAmoPage({
 
             <ValidationAmoForm
               validationId={result.data.validationId}
-              token={params.token}
+              token={token}
             />
           </div>
         </div>

@@ -16,7 +16,6 @@ interface ValidationAmoFormProps {
 
 export default function ValidationAmoForm({
   validationId,
-  token,
 }: ValidationAmoFormProps) {
   const [choix, setChoix] = useState<StatutValidationAmo | undefined>(
     undefined

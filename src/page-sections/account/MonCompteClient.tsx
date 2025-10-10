@@ -7,7 +7,7 @@ import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
 import { useRGAContext } from "@/lib/form-rga/session/useRGAContext";
 import DevTestSidebar from "./debug/DevTestSidebar";
-import { DSStatus, Status, Step } from "@/lib/parcours/parcours.types";
+import { DSStatus, Step } from "@/lib/parcours/parcours.types";
 
 // Import des Callouts
 import CalloutEligibiliteTodo from "./steps/eligibilite/CalloutEligibiliteTodo";
@@ -280,12 +280,22 @@ function renderDiagnosticCallout(dsStatus: DSStatus | null) {
 
 function renderDevisCallout(dsStatus: DSStatus | null) {
   // TODO: Créer les callouts pour le devis
-  return <div>Callout Devis (à créer)</div>;
+  return (
+    <div>
+      Callout Devis (à créer)
+      <pre>{JSON.stringify(dsStatus, null, 2)}</pre>
+    </div>
+  );
 }
 
 function renderFacturesCallout(dsStatus: DSStatus | null) {
   // TODO: Créer les callouts pour les factures
-  return <div>Callout Factures (à créer)</div>;
+  return (
+    <div>
+      Callout factures (à créer)
+      <pre>{JSON.stringify(dsStatus, null, 2)}</pre>
+    </div>
+  );
 }
 
 // Helper pour les labels de statut
