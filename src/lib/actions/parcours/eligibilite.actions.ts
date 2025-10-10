@@ -59,11 +59,7 @@ export async function envoyerDossierEligibiliteAvecDonnees(
     );
 
     // 4. Créer le dossier prérempli dans DS
-    const dsResult = await createPrefillDossier(
-      prefillData,
-      Step.ELIGIBILITE,
-      rgaData
-    );
+    const dsResult = await createPrefillDossier(prefillData, Step.ELIGIBILITE);
 
     if (!dsResult.success || !dsResult.data) {
       return {
