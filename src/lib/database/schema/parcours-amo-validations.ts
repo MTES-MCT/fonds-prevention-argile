@@ -27,6 +27,11 @@ export const parcoursAmoValidations = pgTable("parcours_amo_validations", {
   // Commentaire/justification de l'AMO
   commentaire: text("commentaire"),
 
+  // Données personnelles temporaires (supprimées après validation)
+  userPrenom: text("user_prenom"),
+  userNom: text("user_nom"),
+  adresseLogement: text("adresse_logement"),
+
   // Timestamps
   choisieAt: timestamp("choisie_at", { mode: "date" }).notNull().defaultNow(),
   valideeAt: timestamp("validee_at", { mode: "date" }),
