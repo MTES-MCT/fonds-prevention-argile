@@ -1,20 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-
-// Type pour l'objet DSFR global
-interface DsfrGlobal {
-  verbose: boolean;
-  mode: string;
-  start?: () => void;
-  [key: string]: unknown; // Pour les autres propriétés du DSFR
-}
-
-declare global {
-  interface Window {
-    dsfr?: DsfrGlobal;
-  }
-}
+import type { DsfrGlobal } from "@/types/global";
 
 export function DsfrProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -24,10 +11,11 @@ export function DsfrProvider({ children }: { children: React.ReactNode }) {
 
       try {
         // Configuration du DSFR
-        window.dsfr = {
-          verbose: false,
-          mode: "react",
-        };
+        const dsfrFunction = (() => {}) as unknown as DsfrGlobal;
+        dsfrFunction.verbose = false;
+        dsfrFunction.mode = "react";
+
+        window.dsfr = dsfrFunction;
 
         // Import du module DSFR
         // @ts-expect-error - Le module DSFR n'a pas de déclarations TypeScript
