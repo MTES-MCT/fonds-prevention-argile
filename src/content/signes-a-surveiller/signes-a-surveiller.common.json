@@ -6,6 +6,44 @@
 
   "signes_a_surveiller_section": {
     "title": "Autres conséquences possibles",
+    "signes_precurseur": [
+      {
+        "priseEnCharge": true,
+        "tag": {
+          "title": "Signes précurseurs",
+          "eligible": true,
+          "className": "fr-badge--yellow-tournesol"
+        },
+        "titre": "Microfissures verticales aux angles du bâtiment",
+        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/fissure-verticale.png",
+        "pageLink": "/signes-a-surveiller/fissures-verticales-angles-batiment"
+      },
+      {
+        "priseEnCharge": true,
+        "tag": {
+          "title": "Signes précurseurs",
+          "eligible": true,
+          "className": "fr-badge--yellow-tournesol"
+        },
+        "titre": "Fissures horizontales à hauteur du plancher",
+        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/fissure-horizontale-plancher.png",
+        "pageLink": "/signes-a-surveiller/fissures-horizontales-plancher"
+      },
+      {
+        "priseEnCharge": true,
+        "tag": {
+          "title": "Signes précurseurs",
+          "eligible": true,
+          "className": "fr-badge--yellow-tournesol"
+        },
+        "titre": "Fissures dans les cloisons intérieures",
+        "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
+        "imageSrc": "/images/signes-a-surveiller/fissure-cloison-interieur.png",
+        "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
+      }
+    ],
     "signes": [
       {
         "priseEnCharge": false,
@@ -19,42 +57,6 @@
         "imageSrc": "/images/signes-a-surveiller/fissures-escalier2.png",
         "pageLink": "/signes-a-surveiller/fissures-en-escalier"
       },
-      // {
-      //   "priseEnCharge": true,
-      //   "tag": {
-      //     "title": "Signes précurseurs",
-      //     "eligible": true,
-      //     "className": "fr-badge--yellow-tournesol"
-      //   },
-      //   "titre": "Microfissures verticales aux angles du bâtiment",
-      //   "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
-      //   "imageSrc": "/images/signes-a-surveiller/fissure-verticale.png",
-      //   "pageLink": "/signes-a-surveiller/fissures-verticales-angles-batiment"
-      // },
-      // {
-      //   "priseEnCharge": true,
-      //   "tag": {
-      //     "title": "Signes précurseurs",
-      //     "eligible": true,
-      //     "className": "fr-badge--yellow-tournesol"
-      //   },
-      //   "titre": "Fissures horizontales à hauteur du plancher",
-      //   "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
-      //   "imageSrc": "/images/signes-a-surveiller/fissure-horizontale-plancher.png",
-      //   "pageLink": "/signes-a-surveiller/fissures-horizontales-plancher"
-      // },
-      // {
-      //   "priseEnCharge": true,
-      //   "tag": {
-      //     "title": "Signes précurseurs",
-      //     "eligible": true,
-      //     "className": "fr-badge--yellow-tournesol"
-      //   },
-      //   "titre": "Fissures dans les cloisons intérieures",
-      //   "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
-      //   "imageSrc": "/images/signes-a-surveiller/fissure-cloison-interieur.png",
-      //   "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
-      // },
       {
         "priseEnCharge": false,
         "tag": {
