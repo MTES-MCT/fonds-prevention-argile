@@ -4,6 +4,7 @@ import { seedAmoFromExcel } from "@/lib/parcours/amo/actions/seed-amo.actions";
 import { useActionState, useState, useEffect } from "react";
 import type { AmoDisponible } from "@/lib/parcours/amo/amo.types";
 import { getAllAmos } from "@/lib/actions/parcours/amo/amo.actions";
+import Link from "next/link";
 
 interface AmoWithCommunes extends AmoDisponible {
   communes?: { codeInsee: string }[];
@@ -98,13 +99,13 @@ export function AmoSeedUpload() {
           Téléchargez le fichier exemple pour voir le format attendu. Vous
           pourrez le remplir sur votre ordinateur puis l'uploader ici.
         </p>
-        <a
-          href="/templates/amo-example.xlsx"
+        <Link
+          href="/templates/amo-exemple.xlsx"
           download="amo-exemple.xlsx"
           className="fr-btn fr-btn--secondary fr-btn--sm fr-btn--icon-left"
         >
           Télécharger le fichier exemple
-        </a>
+        </Link>
       </div>
 
       {/* Formulaire d'upload */}
@@ -242,20 +243,34 @@ export function AmoSeedUpload() {
                     <thead>
                       <tr>
                         <th scope="col">Nom</th>
-                        <th scope="col">Email</th>
+                        <th scope="col">SIRET</th>
+                        <th scope="col">Départements</th>
+                        <th scope="col">Emails</th>
                         <th scope="col">Téléphone</th>
                         <th scope="col">Adresse</th>
-                        <th scope="col">Codes INSEE couverts</th>
+                        <th scope="col">Codes INSEE spécifiques</th>
                       </tr>
                     </thead>
                     <tbody>
                       {amos.map((amo) => (
                         <tr key={amo.id}>
                           <td>{amo.nom}</td>
-                          <td>{amo.email || "-"}</td>
+                          <td className="fr-text--sm">{amo.siret || "-"}</td>
+                          <td className="fr-text--sm">
+                            {amo.departements || "-"}
+                          </td>
+                          <td className="fr-text--sm">
+                            {amo.emails
+                              ? amo.emails
+                                  .split(";")
+                                  .map((email, idx) => (
+                                    <div key={idx}>{email}</div>
+                                  ))
+                              : "-"}
+                          </td>
                           <td>{amo.telephone || "-"}</td>
-                          <td>{amo.adresse || "-"}</td>
-                          <td>
+                          <td className="fr-text--sm">{amo.adresse || "-"}</td>
+                          <td className="fr-text--sm">
                             {amo.communes && amo.communes.length > 0
                               ? amo.communes.map((c) => c.codeInsee).join(", ")
                               : "-"}

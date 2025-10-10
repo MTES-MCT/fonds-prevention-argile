@@ -205,9 +205,9 @@ export default function CalloutAmoTodo({
                         <span className="fr-text--bold fr-mb-1v">
                           {amo.nom}
                         </span>
-                        {amo.email && (
+                        {amo.emails && (
                           <span className="fr-text--sm fr-text--light block">
-                            {amo.email}
+                            {amo.emails.split(";").join(", ")}
                           </span>
                         )}
                         {amo.telephone && (
@@ -285,8 +285,10 @@ export default function CalloutAmoTodo({
                         <div className="fr-card__content">
                           <h6 className="fr-card__title">{selectedAmo.nom}</h6>
                           <div className="fr-card__desc">
-                            {selectedAmo.email && (
-                              <div>{selectedAmo.email}</div>
+                            {selectedAmo.emails && (
+                              <div>
+                                {selectedAmo.emails.split(";").join(", ")}
+                              </div>
                             )}
                             {selectedAmo.telephone && (
                               <div>{selectedAmo.telephone}</div>

@@ -8,7 +8,9 @@ import { ROLES } from "@/lib/auth";
 
 interface AmoRow {
   nom: string;
-  email: string;
+  siret: string;
+  departements: string;
+  emails: string;
   telephone: string;
   adresse: string;
   codes_insee: string;
@@ -82,10 +84,11 @@ export async function seedAmoFromExcel(
     // 4. Valider la structure
     const requiredColumns = [
       "nom",
-      "email",
+      "siret",
+      "departements",
+      "emails",
       "telephone",
       "adresse",
-      "codes_insee",
     ];
     const firstRow = data[0];
     const missingColumns = requiredColumns.filter((col) => !(col in firstRow));
@@ -116,22 +119,51 @@ export async function seedAmoFromExcel(
           continue;
         }
 
-        if (!row.email?.trim() || !row.email.includes("@")) {
-          errors.push(`${row.nom} : email invalide`);
+        // Validation SIRET
+        // TODO: Vérifier via API Entreprise
+        const siret = String(row.siret || "").trim();
+        if (!siret || !/^\d{14}$/.test(siret)) {
+          errors.push(`${row.nom} : SIRET invalide (doit être 14 chiffres)`);
           continue;
         }
 
-        if (!row.codes_insee?.trim()) {
-          errors.push(`${row.nom} : codes INSEE manquants`);
+        // Validation emails
+        if (!row.emails?.trim()) {
+          errors.push(`${row.nom} : emails manquants`);
           continue;
         }
+
+        const emailsList = row.emails
+          .split(";")
+          .map((e) => e.trim())
+          .filter((e) => e.includes("@"));
+
+        if (emailsList.length === 0) {
+          errors.push(`${row.nom} : aucun email valide trouvé`);
+          continue;
+        }
+
+        // Validation départements
+        if (!row.departements?.trim()) {
+          errors.push(`${row.nom} : départements manquants`);
+          continue;
+        }
+
+        // Nettoyer les départements - garder le format "Seine-et-Marne 77" ou "Gers 32"
+        const departementsFormatted = row.departements
+          .split(",")
+          .map((dep) => dep.trim())
+          .filter((dep) => dep.length > 0)
+          .join(", ");
 
         // Insérer l'entreprise
         const [entreprise] = await db
           .insert(entreprisesAmo)
           .values({
             nom: row.nom.trim(),
-            email: row.email.trim().toLowerCase(),
+            siret,
+            departements: departementsFormatted,
+            emails: emailsList.join(";"),
             telephone: formatTelephone(row.telephone),
             adresse: String(row.adresse || "").trim(),
           })
@@ -139,24 +171,23 @@ export async function seedAmoFromExcel(
 
         entreprisesCreated++;
 
-        // Parser et insérer les codes INSEE
-        const codesInsee = row.codes_insee
-          .split(",")
-          .map((code) => code.trim())
-          .filter((code) => code.length === 5);
+        // Parser et insérer les codes INSEE (optionnel)
+        if (row.codes_insee?.trim()) {
+          const codesInsee = row.codes_insee
+            .split(",")
+            .map((code) => code.trim())
+            .filter((code) => /^\d{5}$/.test(code)); // Codes INSEE valides (5 chiffres)
 
-        if (codesInsee.length === 0) {
-          errors.push(`${row.nom} : aucun code INSEE valide trouvé`);
-          continue;
+          if (codesInsee.length > 0) {
+            const communesData = codesInsee.map((codeInsee) => ({
+              entrepriseAmoId: entreprise.id,
+              codeInsee,
+            }));
+
+            await db.insert(entreprisesAmoCommunes).values(communesData);
+            communesCreated += codesInsee.length;
+          }
         }
-
-        const communesData = codesInsee.map((codeInsee) => ({
-          entrepriseAmoId: entreprise.id,
-          codeInsee,
-        }));
-
-        await db.insert(entreprisesAmoCommunes).values(communesData);
-        communesCreated += codesInsee.length;
       } catch (error) {
         console.error(`Erreur pour ${row.nom}:`, error);
         errors.push(
@@ -185,17 +216,17 @@ export async function seedAmoFromExcel(
           : "Erreur inconnue lors de l'import",
     };
   }
+}
 
-  // Helper pour formater les téléphones français
-  function formatTelephone(value: string | number): string {
-    const tel = String(value || "").trim();
+// Helper pour formater les téléphones français
+function formatTelephone(value: string | number): string {
+  const tel = String(value || "").trim();
 
-    // Si c'est un nombre et qu'il a 9 chiffres, ajouter le 0 devant
-    if (/^\d{9}$/.test(tel)) {
-      return `0${tel}`;
-    }
-
-    // Sinon retourner tel quel
-    return tel;
+  // Si c'est un nombre et qu'il a 9 chiffres, ajouter le 0 devant
+  if (/^\d{9}$/.test(tel)) {
+    return `0${tel}`;
   }
+
+  // Sinon retourner tel quel
+  return tel;
 }

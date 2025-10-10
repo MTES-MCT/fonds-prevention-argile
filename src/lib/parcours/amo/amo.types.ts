@@ -14,7 +14,9 @@ export enum StatutValidationAmo {
 export interface AmoDisponible {
   id: string;
   nom: string;
-  email: string;
+  siret: string;
+  departements: string; // Format: "Seine-et-Marne 77, Essonne 91"
+  emails: string; // Format: "email1@test.fr;email2@test.fr"
   telephone: string;
   adresse: string;
 }
@@ -32,7 +34,9 @@ export interface ValidationAmoComplete {
   entrepriseAmo: {
     id: string;
     nom: string;
-    email: string;
+    siret: string;
+    departements: string;
+    emails: string;
     telephone: string;
     adresse: string;
   };

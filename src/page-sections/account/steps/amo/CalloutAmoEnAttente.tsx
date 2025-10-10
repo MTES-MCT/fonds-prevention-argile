@@ -61,9 +61,9 @@ export default function CalloutAmoEnAttente() {
               <div className="fr-card__content">
                 <div className="fr-card__desc">
                   <p className="fr-text--bold fr-mb-1v">{amoChoisie.nom}</p>
-                  {amoChoisie.email && (
+                  {amoChoisie.emails && (
                     <p className="fr-text--sm fr-mb-1v">
-                      Email : {amoChoisie.email}
+                      Emails : {amoChoisie.emails.split(";").join(", ")}
                     </p>
                   )}
                   {amoChoisie.telephone && (

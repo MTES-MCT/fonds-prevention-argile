@@ -7,7 +7,7 @@ export const entreprisesAmo = pgTable("entreprises_amo", {
   id: uuid("id").primaryKey().defaultRandom(),
   nom: varchar("nom", { length: 255 }).notNull(),
   siret: varchar("siret", { length: 14 }).notNull(),
-  departements: text("departements").notNull(), // Format: "Seine-et-Marne (77), Essonne (91)"
+  departements: text("departements").notNull(), // Format: "Seine-et-Marne 77, Essonne 91"
   emails: text("emails").notNull(), // Format: "email1@test.fr;email2@test.fr"
   telephone: varchar("telephone", { length: 20 }).notNull(),
   adresse: varchar("adresse", { length: 500 }).notNull(),

@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, and } from "drizzle-orm";
+import { eq, and, like, or, sql } from "drizzle-orm";
 import { db } from "@/lib/database/client";
 import {
   amoValidationTokens,
@@ -21,11 +21,15 @@ import {
 } from "@/lib/parcours/amo/amo.types";
 import { ROLES } from "@/lib/auth";
 import { progressParcours } from "@/lib/database/services";
+import { getCodeDepartementFromCodeInsee } from "@/lib/parcours/amo/amo.utils";
 
 const NB_JOURS_VALIDITE_TOKEN = 30; // Nombre de jours avant expiration du token
 
 /**
  * Récupère la liste des AMO disponibles pour le code INSEE de l'utilisateur
+ * Recherche par :
+ * 1. Code INSEE exact dans entreprises_amo_communes (prioritaire)
+ * 2. Code département extrait du code INSEE dans le champ departements
  */
 export async function getAmosDisponibles(): Promise<
   ActionResult<AmoDisponible[]>
@@ -50,12 +54,17 @@ export async function getAmosDisponibles(): Promise<
       };
     }
 
-    // Récupérer les AMO qui couvrent ce code INSEE
-    const amosDisponibles = await db
+    // Extraire le code département
+    const codeDepartement = getCodeDepartementFromCodeInsee(user.codeInsee);
+
+    // 1. Récupérer les AMO qui ont le code INSEE spécifique
+    const amosParCodeInsee = await db
       .selectDistinct({
         id: entreprisesAmo.id,
         nom: entreprisesAmo.nom,
-        email: entreprisesAmo.email,
+        siret: entreprisesAmo.siret,
+        departements: entreprisesAmo.departements,
+        emails: entreprisesAmo.emails,
         telephone: entreprisesAmo.telephone,
         adresse: entreprisesAmo.adresse,
       })
@@ -65,6 +74,32 @@ export async function getAmosDisponibles(): Promise<
         eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
       )
       .where(eq(entreprisesAmoCommunes.codeInsee, user.codeInsee));
+
+    // 2. Récupérer les AMO qui couvrent le département entier
+    // Format recherché : "Seine-et-Marne 77" ou "Gers 32"
+    const amosParDepartement = await db
+      .select({
+        id: entreprisesAmo.id,
+        nom: entreprisesAmo.nom,
+        siret: entreprisesAmo.siret,
+        departements: entreprisesAmo.departements,
+        emails: entreprisesAmo.emails,
+        telephone: entreprisesAmo.telephone,
+        adresse: entreprisesAmo.adresse,
+      })
+      .from(entreprisesAmo)
+      .where(like(entreprisesAmo.departements, `%${codeDepartement}%`));
+
+    // Fusionner et dédupliquer les résultats par ID
+    const amosMap = new Map<string, AmoDisponible>();
+
+    for (const amo of [...amosParCodeInsee, ...amosParDepartement]) {
+      if (!amosMap.has(amo.id)) {
+        amosMap.set(amo.id, amo);
+      }
+    }
+
+    const amosDisponibles = Array.from(amosMap.values());
 
     return {
       success: true,
@@ -83,13 +118,7 @@ export async function getAmosDisponibles(): Promise<
  * Récupère la liste de tous les AMO avec leurs codes INSEE
  */
 export async function getAllAmos(): Promise<
-  ActionResult<
-    Array<
-      AmoDisponible & {
-        communes: { codeInsee: string }[];
-      }
-    >
-  >
+  ActionResult<Array<AmoDisponible & { communes: { codeInsee: string }[] }>>
 > {
   try {
     const session = await getSession();
@@ -103,7 +132,9 @@ export async function getAllAmos(): Promise<
       .select({
         id: entreprisesAmo.id,
         nom: entreprisesAmo.nom,
-        email: entreprisesAmo.email,
+        siret: entreprisesAmo.siret,
+        departements: entreprisesAmo.departements,
+        emails: entreprisesAmo.emails,
         telephone: entreprisesAmo.telephone,
         adresse: entreprisesAmo.adresse,
         codeInsee: entreprisesAmoCommunes.codeInsee,
@@ -126,7 +157,9 @@ export async function getAllAmos(): Promise<
         amosMap.set(row.id, {
           id: row.id,
           nom: row.nom,
-          email: row.email,
+          siret: row.siret,
+          departements: row.departements,
+          emails: row.emails,
           telephone: row.telephone,
           adresse: row.adresse,
           communes: [],
@@ -210,17 +243,27 @@ export async function choisirAmo(params: {
       return { success: false, error: "Code INSEE manquant" };
     }
 
+    // Extraire le code département
+    const codeDepartement = getCodeDepartementFromCodeInsee(user.codeInsee);
+
+    // Vérifier que l'AMO couvre soit le code INSEE spécifique, soit le département
     const amoValide = await db
-      .select({ id: entreprisesAmo.id })
+      .select({
+        id: entreprisesAmo.id,
+        departements: entreprisesAmo.departements,
+      })
       .from(entreprisesAmo)
-      .innerJoin(
+      .leftJoin(
         entreprisesAmoCommunes,
         eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
       )
       .where(
         and(
           eq(entreprisesAmo.id, entrepriseAmoId),
-          eq(entreprisesAmoCommunes.codeInsee, user.codeInsee)
+          or(
+            eq(entreprisesAmoCommunes.codeInsee, user.codeInsee),
+            like(entreprisesAmo.departements, `%${codeDepartement}%`)
+          )
         )
       )
       .limit(1);
@@ -228,7 +271,7 @@ export async function choisirAmo(params: {
     if (amoValide.length === 0) {
       return {
         success: false,
-        error: "Cette AMO ne couvre pas votre commune",
+        error: "Cette AMO ne couvre pas votre commune ou département",
       };
     }
 
@@ -386,11 +429,6 @@ export async function refuserLogementNonEligible(
   commentaire: string
 ): Promise<ActionResult<{ message: string }>> {
   try {
-    const session = await getSession();
-    if (!session?.userId) {
-      return { success: false, error: "Non connecté" };
-    }
-
     // Mettre à jour la validation
     const [validation] = await db
       .update(parcoursAmoValidations)
@@ -445,11 +483,6 @@ export async function refuserAccompagnement(
   commentaire: string
 ): Promise<ActionResult<{ message: string }>> {
   try {
-    const session = await getSession();
-    if (!session?.userId) {
-      return { success: false, error: "Non connecté" };
-    }
-
     // Mettre à jour la validation
     const [validation] = await db
       .update(parcoursAmoValidations)
@@ -523,7 +556,9 @@ export async function getValidationAmo(): Promise<
         entrepriseAmo: {
           id: entreprisesAmo.id,
           nom: entreprisesAmo.nom,
-          email: entreprisesAmo.email,
+          siret: entreprisesAmo.siret,
+          departements: entreprisesAmo.departements,
+          emails: entreprisesAmo.emails,
           telephone: entreprisesAmo.telephone,
           adresse: entreprisesAmo.adresse,
         },
@@ -571,7 +606,9 @@ export async function getAmoChoisie(): Promise<
       .select({
         id: entreprisesAmo.id,
         nom: entreprisesAmo.nom,
-        email: entreprisesAmo.email,
+        siret: entreprisesAmo.siret,
+        departements: entreprisesAmo.departements,
+        emails: entreprisesAmo.emails,
         telephone: entreprisesAmo.telephone,
         adresse: entreprisesAmo.adresse,
       })
@@ -681,7 +718,9 @@ export async function getValidationDataByToken(token: string): Promise<
         choisieAt: parcoursAmoValidations.choisieAt,
         entrepriseAmoId: entreprisesAmo.id,
         entrepriseAmoNom: entreprisesAmo.nom,
-        entrepriseAmoEmail: entreprisesAmo.email,
+        entrepriseAmoSiret: entreprisesAmo.siret,
+        entrepriseAmoDepartements: entreprisesAmo.departements,
+        entrepriseAmoEmails: entreprisesAmo.emails,
         entrepriseAmoTelephone: entreprisesAmo.telephone,
         entrepriseAmoAdresse: entreprisesAmo.adresse,
         userCodeInsee: users.codeInsee,
@@ -735,7 +774,9 @@ export async function getValidationDataByToken(token: string): Promise<
         entrepriseAmo: {
           id: tokenData.entrepriseAmoId,
           nom: tokenData.entrepriseAmoNom,
-          email: tokenData.entrepriseAmoEmail,
+          siret: tokenData.entrepriseAmoSiret,
+          departements: tokenData.entrepriseAmoDepartements,
+          emails: tokenData.entrepriseAmoEmails,
           telephone: tokenData.entrepriseAmoTelephone,
           adresse: tokenData.entrepriseAmoAdresse,
         },
