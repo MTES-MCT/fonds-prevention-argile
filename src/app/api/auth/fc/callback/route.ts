@@ -33,9 +33,7 @@ export async function GET(request: NextRequest) {
     // Récupération du code INSEE stocké en cookie
     const codeInsee = request.cookies.get("fc_code_insee")?.value;
 
-    if (codeInsee) {
-      console.log("Code INSEE récupéré depuis le cookie:", codeInsee);
-    } else {
+    if (!codeInsee) {
       console.warn("Aucun code INSEE trouvé dans les cookies");
     }
 

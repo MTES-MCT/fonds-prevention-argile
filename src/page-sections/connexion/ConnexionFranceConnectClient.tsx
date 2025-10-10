@@ -44,7 +44,6 @@ export default function ConnexionFranceConnectClient() {
     // Stocker le code INSEE en cookie si disponible
     if (codeInsee) {
       document.cookie = `fc_code_insee=${codeInsee}; path=/; max-age=300; SameSite=Lax`;
-      console.log("Code INSEE stocké en cookie:", codeInsee);
     } else {
       console.warn("Aucun code INSEE trouvé dans les données RGA");
     }

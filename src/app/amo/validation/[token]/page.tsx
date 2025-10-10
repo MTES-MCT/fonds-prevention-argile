@@ -125,10 +125,14 @@ export default async function ValidationAmoPage({
               Informations du demandeur
             </h3>
             <p className="fr-mb-1w">
-              Identité : <strong>{result.data.demandeur.codeInsee}</strong>
+              Identité :{" "}
+              <strong>
+                {result.data.demandeur.prenom} {result.data.demandeur.nom}
+              </strong>
             </p>
             <p className="fr-mb-4w">
-              Adresse : <strong>{result.data.demandeur.codeInsee}</strong>
+              Adresse :{" "}
+              <strong> {result.data.demandeur.adresseLogement}</strong>
             </p>
 
             <ValidationAmoForm

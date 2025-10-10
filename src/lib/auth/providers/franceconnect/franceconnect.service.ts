@@ -170,12 +170,14 @@ export async function getStoredNonce(): Promise<string | null> {
 export async function createFranceConnectSession(
   userId: string,
   fcIdToken?: string,
-  firstName?: string
+  firstName?: string,
+  lastName?: string
 ): Promise<void> {
   const payload: JWTPayload = {
     userId,
     role: ROLES.PARTICULIER,
     firstName,
+    lastName,
     authMethod: AUTH_METHODS.FRANCECONNECT,
     fcIdToken, // Pour le logout FC
     exp: Date.now() + SESSION_DURATION.particulier * 1000,
@@ -255,25 +257,19 @@ export async function handleFranceConnectCallback(
 
     // 4. Récupérer les infos utilisateur
     const userInfo = await getUserInfo(tokens.access_token);
-    console.log("UserInfo FranceConnect:", userInfo);
 
     // 5. Créer ou récupérer l'utilisateur en base AVEC le code INSEE
     const user = await userRepo.upsertFromFranceConnect(userInfo, codeInsee);
-    console.log(
-      "User créé/récupéré:",
-      user.id,
-      codeInsee ? `avec code INSEE: ${codeInsee}` : ""
-    );
 
     // 6. Initialiser le parcours si première connexion
     const parcours = await getOrCreateParcours(user.id);
-    console.log("Parcours initialisé:", parcours.id);
 
     // 7. Créer la session avec l'userId
     await createFranceConnectSession(
       user.id,
       tokens.id_token,
-      userInfo.given_name
+      userInfo.given_name,
+      userInfo.family_name
     );
 
     return { success: true };

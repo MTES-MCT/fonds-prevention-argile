@@ -7,6 +7,8 @@ import {
 } from "@/lib/actions/parcours/amo/amo.actions";
 import { useEffect, useState } from "react";
 import type { AmoDisponible } from "@/lib/parcours/amo/amo.types";
+import { useAuth } from "@/lib/auth/client";
+import { useRGAContext } from "@/lib/form-rga/session/useRGAContext";
 
 interface CalloutAmoTodoProps {
   accompagnementRefuse?: boolean;
@@ -19,6 +21,9 @@ export default function CalloutAmoTodo({
   onSuccess,
   refresh,
 }: CalloutAmoTodoProps) {
+  const { user } = useAuth();
+  const { data: rgaData } = useRGAContext();
+
   const [amoList, setAmoList] = useState<AmoDisponible[]>([]);
   const [selectedAmoId, setSelectedAmoId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +82,25 @@ export default function CalloutAmoTodo({
       return;
     }
 
-    const result = await choisirAmo(selectedAmoId);
+    // Validation des données personnelles
+    if (!user?.firstName || !user?.lastName) {
+      setError("Informations utilisateur manquantes (prénom/nom)");
+      return;
+    }
+
+    if (!rgaData?.logement?.adresse) {
+      setError("Adresse du logement manquante");
+      return;
+    }
+
+    // Appel de l'action avec les données personnelles
+    const result = await choisirAmo({
+      entrepriseAmoId: selectedAmoId,
+      userPrenom: user.firstName,
+      userNom: user.lastName,
+      adresseLogement: rgaData.logement.adresse,
+    });
+
     if (result.success) {
       // Fermer la modale avec l'API DSFR
       const modal = document.getElementById("modal-confirm-amo");
@@ -96,7 +119,6 @@ export default function CalloutAmoTodo({
       }
 
       setError(null);
-      console.log("AMO confirmé, avancer à l'étape suivante");
     } else {
       setError(result.error || "Erreur lors de la confirmation");
     }
@@ -135,12 +157,12 @@ export default function CalloutAmoTodo({
         ) : (
           <>
             <p className="fr-callout__title">
-              L’AMO "{amoRefusee.nom}" a refusé la demande d’accompagnement
+              L'AMO "{amoRefusee.nom}" a refusé la demande d'accompagnement
             </p>
             <p className="fr-callout__text fr-mb-4w">
-              En réponse à votre demande, l’AMO a décliné votre requête
-              d’accompagnement. L’avez-vous prévenu avant de le sélectionner ?Si
-              c’est le cas, vous pouvez soumettre une nouvelle demande à un
+              En réponse à votre demande, l'AMO a décliné votre requête
+              d'accompagnement. L'avez-vous prévenu avant de le sélectionner ?Si
+              c'est le cas, vous pouvez soumettre une nouvelle demande à un
               autre AMO. Assurez-vous de le contacter au préalable pour
               confirmer votre collaboration.
             </p>

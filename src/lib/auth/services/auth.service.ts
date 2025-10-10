@@ -29,14 +29,14 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     };
   }
 
-  // Pour un utilisateur FC, on peut récupérer les infos si besoin
-  // (mais en général, on n'en a pas besoin dans le MVP)
+  // Pour un utilisateur FC récupérer les infos en base
   return {
     id: session.userId,
     role: session.role,
     authMethod: session.authMethod,
     loginTime: new Date().toISOString(),
     firstName: session.firstName,
+    lastName: session.lastName,
   };
 }
 

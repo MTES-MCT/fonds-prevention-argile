@@ -155,13 +155,31 @@ export async function getAllAmos(): Promise<
 /**
  * Choisir une AMO pour le parcours (étape CHOIX_AMO)
  * Crée ou met à jour une entrée dans parcoursAmoValidations
+ * Ajoute les données personnelles temporaires (supprimées après validation)
  * Génère un token de validation sécurisé
  * Passe le parcours en EN_INSTRUCTION (en attente de validation AMO)
+ * TODO Envoi un mail à l'AMO
  */
-export async function choisirAmo(
-  entrepriseAmoId: string
-): Promise<ActionResult<{ message: string; token: string }>> {
+export async function choisirAmo(params: {
+  entrepriseAmoId: string;
+  userPrenom: string;
+  userNom: string;
+  adresseLogement: string;
+}): Promise<ActionResult<{ message: string; token: string }>> {
   try {
+    const { entrepriseAmoId, userPrenom, userNom, adresseLogement } = params;
+
+    // Validation des données personnelles
+    if (!userPrenom?.trim()) {
+      return { success: false, error: "Le prénom est requis" };
+    }
+    if (!userNom?.trim()) {
+      return { success: false, error: "Le nom est requis" };
+    }
+    if (!adresseLogement?.trim()) {
+      return { success: false, error: "L'adresse du logement est requise" };
+    }
+
     const session = await getSession();
     if (!session?.userId) {
       return { success: false, error: "Non connecté" };
@@ -221,6 +239,9 @@ export async function choisirAmo(
         parcoursId: parcours.id,
         entrepriseAmoId,
         statut: StatutValidationAmo.EN_ATTENTE,
+        userPrenom: userPrenom.trim(),
+        userNom: userNom.trim(),
+        adresseLogement: adresseLogement.trim(),
       })
       .onConflictDoUpdate({
         target: parcoursAmoValidations.parcoursId,
@@ -230,6 +251,9 @@ export async function choisirAmo(
           choisieAt: new Date(),
           valideeAt: null,
           commentaire: null,
+          userPrenom: userPrenom.trim(),
+          userNom: userNom.trim(),
+          adresseLogement: adresseLogement.trim(),
         },
       })
       .returning();
@@ -319,6 +343,13 @@ export async function validerLogementEligible(
       .set({ usedAt: new Date() })
       .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
 
+    // Supprimer les données personnelles (RGPD)
+    const deleteResult = await deleteUserInfoInAmoValidation(validationId);
+    if (!deleteResult.success) {
+      console.error("Erreur suppression données perso:", deleteResult.error);
+      // On continue quand même, ce n'est pas bloquant
+    }
+
     // Passer le parcours en VALIDE pour permettre la progression
     await parcoursRepo.updateStatus(validation.parcoursId, Status.VALIDE);
 
@@ -381,6 +412,13 @@ export async function refuserLogementNonEligible(
       .set({ usedAt: new Date() })
       .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
 
+    // Supprimer les données personnelles (RGPD)
+    const deleteResult = await deleteUserInfoInAmoValidation(validationId);
+    if (!deleteResult.success) {
+      console.error("Erreur suppression données perso:", deleteResult.error);
+      // On continue quand même, ce n'est pas bloquant
+    }
+
     // Repasser le parcours en TODO pour permettre à l'utilisateur de choisir une autre AMO
     // ou de corriger sa situation
     await parcoursRepo.updateStatus(validation.parcoursId, Status.TODO);
@@ -432,6 +470,13 @@ export async function refuserAccompagnement(
       .update(amoValidationTokens)
       .set({ usedAt: new Date() })
       .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
+
+    // Supprimer les données personnelles (RGPD)
+    const deleteResult = await deleteUserInfoInAmoValidation(validationId);
+    if (!deleteResult.success) {
+      console.error("Erreur suppression données perso:", deleteResult.error);
+      // On continue quand même, ce n'est pas bloquant
+    }
 
     // Repasser le parcours en TODO pour permettre à l'utilisateur de choisir une autre AMO
     await parcoursRepo.updateStatus(validation.parcoursId, Status.TODO);
@@ -613,6 +658,9 @@ export async function getValidationDataByToken(token: string): Promise<
     entrepriseAmo: AmoDisponible;
     demandeur: {
       codeInsee: string;
+      nom: string;
+      prenom: string;
+      adresseLogement: string;
     };
     statut: StatutValidationAmo;
     choisieAt: Date;
@@ -636,8 +684,10 @@ export async function getValidationDataByToken(token: string): Promise<
         entrepriseAmoEmail: entreprisesAmo.email,
         entrepriseAmoTelephone: entreprisesAmo.telephone,
         entrepriseAmoAdresse: entreprisesAmo.adresse,
-        // TODO: ajouter les infos du demandeur
         userCodeInsee: users.codeInsee,
+        userNom: parcoursAmoValidations.userNom,
+        userPrenom: parcoursAmoValidations.userPrenom,
+        adresseLogement: parcoursAmoValidations.adresseLogement,
         parcoursId: parcoursPrevention.id,
       })
       .from(amoValidationTokens)
@@ -691,6 +741,9 @@ export async function getValidationDataByToken(token: string): Promise<
         },
         demandeur: {
           codeInsee: tokenData.userCodeInsee || "",
+          nom: tokenData.userNom || "",
+          prenom: tokenData.userPrenom || "",
+          adresseLogement: tokenData.adresseLogement || "",
         },
         statut: tokenData.statut,
         choisieAt: tokenData.choisieAt,
@@ -704,6 +757,54 @@ export async function getValidationDataByToken(token: string): Promise<
     return {
       success: false,
       error: "Erreur lors de la récupération des données",
+    };
+  }
+}
+
+/**
+ * Supprime les informations personnelles d'une validation AMO
+ * @param parcoursAmoValidationId
+ * @returns
+ */
+export async function deleteUserInfoInAmoValidation(
+  parcoursAmoValidationId: string
+): Promise<ActionResult<{ message: string }>> {
+  try {
+    // Vérifier que la validation existe
+    const [validation] = await db
+      .select({ id: parcoursAmoValidations.id })
+      .from(parcoursAmoValidations)
+      .where(eq(parcoursAmoValidations.id, parcoursAmoValidationId))
+      .limit(1);
+
+    if (!validation) {
+      return {
+        success: false,
+        error: "Validation AMO non trouvée",
+      };
+    }
+
+    // Supprimer les données personnelles
+    await db
+      .update(parcoursAmoValidations)
+      .set({
+        userPrenom: null,
+        userNom: null,
+        adresseLogement: null,
+      })
+      .where(eq(parcoursAmoValidations.id, parcoursAmoValidationId));
+
+    return {
+      success: true,
+      data: {
+        message: "Données personnelles supprimées avec succès",
+      },
+    };
+  } catch (error) {
+    console.error("Erreur deleteUserInfoInAmoValidation:", error);
+    return {
+      success: false,
+      error: "Erreur lors de la suppression des données personnelles",
     };
   }
 }
