@@ -5,20 +5,8 @@
   "bon_a_savoir_title": "Bon à savoir",
 
   "signes_a_surveiller_section": {
-    "title": "Autres signes à surveiller",
-    "signes": [
-      {
-        "priseEnCharge": true,
-        "tag": {
-          "title": "Signes précurseurs",
-          "eligible": true,
-          "className": "fr-badge--yellow-tournesol"
-        },
-        "titre": "Fissures en escalier sur les murs extérieurs (1mm)",
-        "description": "Ce qu’il faut surveiller : Les fissures en escalier suivent généralement les joints de mortier entre les briques ou les parpaings, créant un motif caractéristique en marches d'escalier.",
-        "imageSrc": "/images/signes-a-surveiller/fissures-escalier.png",
-        "pageLink": "/signes-a-surveiller/fissures-en-escalier"
-      },
+    "title": "Autres conséquences possibles",
+    "signes_precurseur": [
       {
         "priseEnCharge": true,
         "tag": {
@@ -54,6 +42,20 @@
         "description": "Ce qu'il faut surveiller : Les fissures verticales qui apparaissent sur les murs intérieurs de votre habitation sont des signes révélateurs du retrait-gonflement des argiles.",
         "imageSrc": "/images/signes-a-surveiller/fissure-cloison-interieur.png",
         "pageLink": "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
+      }
+    ],
+    "signes": [
+      {
+        "priseEnCharge": false,
+        "tag": {
+          "title": "Désordres structuraux",
+          "eligible": false,
+          "className": "fr-badge--pink-tuile"
+        },
+        "titre": "Fissures en escalier sur les murs",
+        "description": "Ce qu’il faut surveiller : Les fissures en escalier suivent généralement les joints de mortier entre les briques ou les parpaings, créant un motif caractéristique en marches d'escalier.",
+        "imageSrc": "/images/signes-a-surveiller/fissures-escalier2.png",
+        "pageLink": "/signes-a-surveiller/fissures-en-escalier"
       },
       {
         "priseEnCharge": false,

@@ -48,11 +48,11 @@ export default function Home() {
         <LogementConcerneRgaSection />
         <QuestCeQueLeRgaSection />
         <SignesASurveiller />
-        <SavoirSiConcerneSection />
         <EtatAgitSection />
-        <CommentCaMarcheSection />
         <QuiPeutBeneficierAidesSection />
         <MontantDesAidesSection />
+        <CommentCaMarcheSection />
+        <SavoirSiConcerneSection />
         <QuelsSontTravauxEligiblesSection />
         <PourEnSavoirPlusSection />
         <FaqSection />
