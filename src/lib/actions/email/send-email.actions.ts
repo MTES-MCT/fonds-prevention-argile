@@ -1,6 +1,6 @@
 "use server";
 
-import { brevoService } from "@/lib/email/brevo.service";
+import { emailService } from "@/lib/email/email.service";
 import { renderEmailTemplate } from "@/lib/email/render-template";
 import { ValidationAmoTemplate } from "@/lib/email/templates/validation-amo.template";
 import type { ActionResult } from "@/lib/actions/types";
@@ -19,15 +19,7 @@ export async function sendValidationAmoEmail(params: {
   token: string;
 }): Promise<ActionResult<{ messageId?: string }>> {
   try {
-    const {
-      amoEmail,
-      amoNom,
-      demandeurNom,
-      demandeurPrenom,
-      demandeurCodeInsee,
-      adresseLogement,
-      token,
-    } = params;
+    const { amoEmail, demandeurNom, demandeurPrenom, token } = params;
 
     // Générer le lien de validation
     const baseUrl = getServerEnv().BASE_URL;
@@ -36,17 +28,12 @@ export async function sendValidationAmoEmail(params: {
     // Render le template React en HTML
     const html = await renderEmailTemplate(
       ValidationAmoTemplate({
-        amoNom,
-        demandeurNom,
-        demandeurPrenom,
-        demandeurCodeInsee,
-        adresseLogement,
         lienValidation,
       })
     );
 
     // Envoyer l'email via Brevo
-    const result = await brevoService.sendEmail({
+    const result = await emailService.sendEmail({
       to: amoEmail,
       subject: `Nouvelle demande d'accompagnement - ${demandeurPrenom} ${demandeurNom}`,
       html,

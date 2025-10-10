@@ -1,17 +1,17 @@
 FROM node:22-alpine
 
-# Activer pnpm
-RUN corepack enable && corepack prepare pnpm@10.13.1 --activate
+# Installer pnpm globalement avec npm
+RUN npm install -g pnpm@10.18.2
 
 WORKDIR /app
 
-# Copier uniquement les fichiers de dépendances
+# Copier les fichiers de dépendances
 COPY package.json pnpm-lock.yaml ./
 
 # Installer les dépendances
 RUN pnpm install --frozen-lockfile
 
-# Copier le reste de l'application (sera écrasé par les volumes en dev)
+# Copier le reste
 COPY . .
 
 EXPOSE 3000

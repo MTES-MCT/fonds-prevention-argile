@@ -1,4 +1,3 @@
-// src/lib/email/templates/EmailLayout.tsx
 import type { ReactNode } from "react";
 
 interface EmailLayoutProps {
@@ -126,9 +125,8 @@ export function EmailLayout({ children, preheader }: EmailLayoutProps) {
                         lineHeight: "1.5",
                       }}
                     >
-                      Cet email vous a été envoyé par le{" "}
-                      <strong>Fonds Prévention Argile</strong>, un service du
-                      Ministère de la Transition Écologique.
+                      Ceci est un message automatique, merci de ne pas y
+                      répondre.
                     </p>
                     <p
                       style={{
@@ -139,10 +137,10 @@ export function EmailLayout({ children, preheader }: EmailLayoutProps) {
                     >
                       Pour toute question :{" "}
                       <a
-                        href="mailto:contact@fonds-argile.gouv.fr"
+                        href="mailto:contact@fonds-prevention-argile.beta.gouv.fr"
                         style={{ color: "#000091", textDecoration: "none" }}
                       >
-                        contact@fonds-argile.gouv.fr
+                        contact@fonds-prevention-argile.beta.gouv.fr
                       </a>
                     </p>
                   </td>

@@ -49,7 +49,7 @@ const serverSchema = z.object({
   DEMARCHES_SIMPLIFIEES_NOM_FACTURES: z.string().min(1),
 
   // Clé API Brevo pour l'envoi d'emails + configuration de l'expéditeur
-  BREVO_API_KEY: z.string().min(1, "BREVO_API_KEY est requis"),
+  BREVO_API_KEY: z.string(),
   EMAIL_FROM: z.string().email("EMAIL_FROM doit être une adresse email valide"),
 
   ADMIN_PASSWORD: z.string().min(8),

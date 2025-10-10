@@ -7,7 +7,6 @@ import type {
 } from "@/lib/api/demarches-simplifiees/rest/types";
 import type { ActionResult } from "../types";
 import { Step } from "@/lib/parcours/parcours.types";
-import { RGAFormData } from "@/lib/form-rga";
 import { getSession } from "@/lib/auth/services/auth.service";
 import { syncDossierEligibiliteStatus } from "@/lib/database/services/dossier-ds-sync.service";
 

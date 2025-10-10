@@ -1,18 +1,26 @@
-import { getServerEnv } from "../config/env.config";
+import { isLocal } from "../config/env.config";
 
 export const emailConfig = {
-  apiKey: getServerEnv().BREVO_API_KEY || "",
+  apiKey: process.env.BREVO_API_KEY || "",
   from: {
     email:
-      getServerEnv().EMAIL_FROM || "noreply@fonds-prevention-argile.gouv.fr",
+      process.env.EMAIL_FROM || "noreply@fonds-prevention-argile.beta.gouv.fr",
     name: "Fonds Prévention Argile",
   },
   replyTo: {
     email: "contact@fonds-prevention-argile.beta.gouv.fr",
     name: "Support Fonds Prévention Argile",
   },
+  smtp: {
+    host: process.env.SMTP_HOST || "localhost",
+    port: Number(process.env.SMTP_PORT) || 1025,
+  },
 };
 
 export function isEmailEnabled(): boolean {
-  return !!getServerEnv().BREVO_API_KEY;
+  return !!process.env.BREVO_API_KEY;
+}
+
+export function isLocalDevelopment(): boolean {
+  return isLocal() || !process.env.BREVO_API_KEY;
 }
