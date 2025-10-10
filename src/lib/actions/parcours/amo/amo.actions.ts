@@ -3,9 +3,11 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "@/lib/database/client";
 import {
+  amoValidationTokens,
   entreprisesAmo,
   entreprisesAmoCommunes,
   parcoursAmoValidations,
+  parcoursPrevention,
   users,
 } from "@/lib/database/schema";
 import { getSession } from "@/lib/auth/services/auth.service";
@@ -18,6 +20,8 @@ import {
   ValidationAmoComplete,
 } from "@/lib/parcours/amo/amo.types";
 import { ROLES } from "@/lib/auth";
+
+const NB_JOURS_VALIDITE_TOKEN = 30; // Nombre de jours avant expiration du token
 
 /**
  * Récupère la liste des AMO disponibles pour le code INSEE de l'utilisateur
@@ -150,11 +154,12 @@ export async function getAllAmos(): Promise<
 /**
  * Choisir une AMO pour le parcours (étape CHOIX_AMO)
  * Crée ou met à jour une entrée dans parcoursAmoValidations
+ * Génère un token de validation sécurisé
  * Passe le parcours en EN_INSTRUCTION (en attente de validation AMO)
  */
 export async function choisirAmo(
   entrepriseAmoId: string
-): Promise<ActionResult<{ message: string }>> {
+): Promise<ActionResult<{ message: string; token: string }>> {
   try {
     const session = await getSession();
     if (!session?.userId) {
@@ -209,7 +214,7 @@ export async function choisirAmo(
     }
 
     // Créer ou mettre à jour la validation AMO
-    await db
+    const [validation] = await db
       .insert(parcoursAmoValidations)
       .values({
         parcoursId: parcours.id,
@@ -225,14 +230,39 @@ export async function choisirAmo(
           valideeAt: null,
           commentaire: null,
         },
-      });
+      })
+      .returning();
+
+    if (!validation) {
+      return {
+        success: false,
+        error: "Erreur lors de la création de la validation",
+      };
+    }
+
+    // Générer un token unique
+    const token = crypto.randomUUID();
+
+    // Calculer la date d'expiration
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + NB_JOURS_VALIDITE_TOKEN);
+
+    // Créer le token de validation
+    await db.insert(amoValidationTokens).values({
+      parcoursAmoValidationId: validation.id,
+      token,
+      expiresAt,
+    });
 
     // Passer le parcours en EN_INSTRUCTION (en attente de validation AMO)
     await parcoursRepo.updateStatus(parcours.id, Status.EN_INSTRUCTION);
 
     return {
       success: true,
-      data: { message: "AMO sélectionnée avec succès" },
+      data: {
+        message: "AMO sélectionnée avec succès",
+        token,
+      },
     };
   } catch (error) {
     console.error("Erreur choisirAmo:", error);
@@ -536,6 +566,118 @@ export async function getAmoRefusee(): Promise<
     return {
       success: false,
       error: "Erreur lors de la récupération de l'AMO refusée",
+    };
+  }
+}
+
+/**
+ * Récupérer les données de validation associées à un token
+ * Vérifie que le token existe, n'est pas expiré et n'a pas été utilisé
+ */
+export async function getValidationDataByToken(token: string): Promise<
+  ActionResult<{
+    validationId: string;
+    entrepriseAmo: AmoDisponible;
+    demandeur: {
+      // firstName: string;
+      // lastName: string;
+      // email: string;
+      codeInsee: string;
+    };
+    statut: StatutValidationAmo;
+    choisieAt: Date;
+  }>
+> {
+  try {
+    // Récupérer le token avec toutes les données associées
+    const [tokenData] = await db
+      .select({
+        tokenId: amoValidationTokens.id,
+        expiresAt: amoValidationTokens.expiresAt,
+        usedAt: amoValidationTokens.usedAt,
+        validationId: parcoursAmoValidations.id,
+        statut: parcoursAmoValidations.statut,
+        choisieAt: parcoursAmoValidations.choisieAt,
+        entrepriseAmoId: entreprisesAmo.id,
+        entrepriseAmoNom: entreprisesAmo.nom,
+        entrepriseAmoEmail: entreprisesAmo.email,
+        entrepriseAmoTelephone: entreprisesAmo.telephone,
+        entrepriseAmoAdresse: entreprisesAmo.adresse,
+        // userFirstName: users.firstName, // TODO ? voir avec Martin si on stocke le prénom dans users ou dans parcours_prevention
+        // userLastName: users.lastName, // TODO ? voir avec Martin si on stocke
+        // userEmail: users.email, // TODO ? voir avec Martin si on stocke
+        userCodeInsee: users.codeInsee,
+        parcoursId: parcoursPrevention.id,
+      })
+      .from(amoValidationTokens)
+      .innerJoin(
+        parcoursAmoValidations,
+        eq(
+          amoValidationTokens.parcoursAmoValidationId,
+          parcoursAmoValidations.id
+        )
+      )
+      .innerJoin(
+        entreprisesAmo,
+        eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id)
+      )
+      .innerJoin(
+        parcoursPrevention,
+        eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id)
+      )
+      .innerJoin(users, eq(parcoursPrevention.userId, users.id))
+      .where(eq(amoValidationTokens.token, token))
+      .limit(1);
+
+    if (!tokenData) {
+      return {
+        success: false,
+        error: "Token invalide ou introuvable",
+      };
+    }
+
+    // Vérifier si le token a déjà été utilisé
+    if (tokenData.usedAt) {
+      return {
+        success: false,
+        error: "Ce token a déjà été utilisé",
+      };
+    }
+
+    // Vérifier si le token est expiré
+    if (tokenData.expiresAt < new Date()) {
+      return {
+        success: false,
+        error: "Ce token a expiré",
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        validationId: tokenData.validationId,
+        entrepriseAmo: {
+          id: tokenData.entrepriseAmoId,
+          nom: tokenData.entrepriseAmoNom,
+          email: tokenData.entrepriseAmoEmail,
+          telephone: tokenData.entrepriseAmoTelephone,
+          adresse: tokenData.entrepriseAmoAdresse,
+        },
+        demandeur: {
+          // firstName: tokenData.userFirstName,
+          // lastName: tokenData.userLastName,
+          // email: tokenData.userEmail,
+          codeInsee: tokenData.userCodeInsee || "",
+        },
+        statut: tokenData.statut,
+        choisieAt: tokenData.choisieAt,
+      },
+    };
+  } catch (error) {
+    console.error("Erreur getValidationDataByToken:", error);
+    return {
+      success: false,
+      error: "Erreur lors de la récupération des données",
     };
   }
 }

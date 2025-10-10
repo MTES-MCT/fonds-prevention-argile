@@ -14,3 +14,4 @@ export * from "./email-notifications";
 export * from "./entreprises-amo";
 export * from "./entreprises-amo-communes";
 export * from "./parcours-amo-validations";
+export * from "./amo-validation-tokens";

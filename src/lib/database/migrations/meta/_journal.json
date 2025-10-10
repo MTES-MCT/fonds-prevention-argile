@@ -15,6 +15,13 @@
       "when": 1759998651872,
       "tag": "0001_fast_sugar_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1760085762682,
+      "tag": "0002_special_lily_hollister",
+      "breakpoints": true
     }
   ]
 }
