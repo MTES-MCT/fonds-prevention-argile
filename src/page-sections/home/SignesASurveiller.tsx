@@ -66,14 +66,14 @@ export default function SignesASurveiller() {
         </h2>
         <p>
           {
-            {richTextParser(contentHomePage.signes_a_surveiller_section.non_pris_en_charge
-              .subtitle)}
+            contentHomePage.signes_a_surveiller_section.non_pris_en_charge
+              .subtitle
           }
         </p>
         <p>
           {
-            {richTextParser(contentHomePage.signes_a_surveiller_section.non_pris_en_charge
-              .subtitle2)}
+            contentHomePage.signes_a_surveiller_section.non_pris_en_charge
+              .subtitle2
           }
         </p>
         <CalloutNonEligible />
