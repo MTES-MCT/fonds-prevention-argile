@@ -20,6 +20,7 @@ import {
   ValidationAmoComplete,
 } from "@/lib/parcours/amo/amo.types";
 import { ROLES } from "@/lib/auth";
+import { progressParcours } from "@/lib/database/services";
 
 const NB_JOURS_VALIDITE_TOKEN = 30; // Nombre de jours avant expiration du token
 
@@ -275,35 +276,42 @@ export async function choisirAmo(
 
 /**
  * Valider que le logement est éligible (action réalisée par l'AMO)
- * Passe le parcours à l'étape ELIGIBILITE en TODO
+ * Fait progresser le parcours vers l'étape ELIGIBILITE avec création du dossier DS
  */
 export async function validerLogementEligible(
   validationId: string,
   commentaire?: string
 ): Promise<ActionResult<{ message: string }>> {
   try {
-    const session = await getSession();
-    if (!session?.userId) {
-      return { success: false, error: "Non connecté" };
+    // Récupérer la validation pour avoir le parcoursId
+    const [validation] = await db
+      .select({
+        id: parcoursAmoValidations.id,
+        parcoursId: parcoursAmoValidations.parcoursId,
+      })
+      .from(parcoursAmoValidations)
+      .where(eq(parcoursAmoValidations.id, validationId))
+      .limit(1);
+
+    if (!validation) {
+      return { success: false, error: "Validation non trouvée" };
     }
 
-    // TODO: Vérifier que l'utilisateur est bien un admin AMO
-    // Pour l'instant, on suppose que seuls les admins peuvent appeler cette action
+    // Récupérer le userId depuis le parcours
+    const parcours = await parcoursRepo.findById(validation.parcoursId);
+    if (!parcours) {
+      return { success: false, error: "Parcours non trouvé" };
+    }
 
-    // Mettre à jour la validation
-    const [validation] = await db
+    // Mettre à jour la validation AMO
+    await db
       .update(parcoursAmoValidations)
       .set({
         statut: StatutValidationAmo.LOGEMENT_ELIGIBLE,
         commentaire: commentaire || null,
         valideeAt: new Date(),
       })
-      .where(eq(parcoursAmoValidations.id, validationId))
-      .returning();
-
-    if (!validation) {
-      return { success: false, error: "Validation non trouvée" };
-    }
+      .where(eq(parcoursAmoValidations.id, validationId));
 
     // Marquer le token comme utilisé
     await db
@@ -311,12 +319,18 @@ export async function validerLogementEligible(
       .set({ usedAt: new Date() })
       .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
 
-    // Passer à l'étape ELIGIBILITE en TODO
-    await parcoursRepo.updateStep(
-      validation.parcoursId,
-      Step.ELIGIBILITE,
-      Status.TODO
-    );
+    // Passer le parcours en VALIDE pour permettre la progression
+    await parcoursRepo.updateStatus(validation.parcoursId, Status.VALIDE);
+
+    // Faire progresser vers l'étape ELIGIBILITE avec création du dossier DS
+    const progressResult = await progressParcours(parcours.userId);
+
+    if (!progressResult.success) {
+      return {
+        success: false,
+        error: "Erreur lors de la progression vers l'éligibilité",
+      };
+    }
 
     return {
       success: true,

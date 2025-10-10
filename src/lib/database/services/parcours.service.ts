@@ -94,7 +94,7 @@ export async function progressParcours(userId: string) {
       dsNumber: null,
       dsId: null,
       dsDemarcheId,
-      dsStatus: DSStatus.EN_CONSTRUCTION,
+      dsStatus: DSStatus.NON_ACCESSIBLE,
       dsUrl: null,
       submittedAt: null,
       processedAt: null,
