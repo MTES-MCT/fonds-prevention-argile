@@ -13,7 +13,8 @@
     "title": "Bénéficiez d'un accompagnement technique et financier pour vous prémunir du phénomène de retrait-gonflement des argiles.",
     "subtitle": "Vérifiez votre éligibilité en quelques secondes, soyez accompagné et déposez votre demande en ligne. Recevez une réponse de l’administration dans quelques jours.",
     "cta_label": "Vérifier mon éligibilité",
-    "cta_url": "/simulateur"
+    "cta_url": "/simulateur",
+    "voir_critere_label": "Voir les critères d'éligibilité"
   },
   "what_is_rga_section": {
     "image": {
