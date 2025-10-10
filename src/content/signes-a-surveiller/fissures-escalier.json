@@ -1,11 +1,11 @@
 {
-  "title": "Fissures en escalier sur les murs extérieurs",
+  "title": "Fissures en escalier sur les murs",
   "image": {
     "alt": "Fonds Prévention Argile - Un service de l'État",
-    "src": "/images/signes-a-surveiller/fissures-escalier.png",
-    "description": "Exemple de fissures en escalier sur le mur extérieur d’une maison - Crédit photo Franck Béchade, France Argile"
+    "src": "/images/signes-a-surveiller/fissures-escalier2.png",
+    "description": "Exemple de fissures en escalier sur le mur extérieur d’une maison - Crédit photo L. Ighil Ameur © Cerema 2022"
   },
-  "ce_qu_il_faut_surveiller": "Les fissures en escalier sont des fissures qui suivent le tracé des joints de maçonnerie, souvent en forme de marches d'escalier. Elles apparaissent généralement sur les murs en briques ou en parpaings. Ces fissures sont souvent liées à des mouvements différentiels du sol, notamment dans les zones sensibles au retrait-gonflement des argiles.",
+  "ce_qu_il_faut_surveiller": "Les fissures en escalier sont des fissures qui suivent le tracé des joints de maçonnerie, souvent en forme de marches d'escalier. Ces fissures sont souvent liées à des mouvements différentiels du sol, notamment dans les zones sensibles au retrait-gonflement des argiles. Elles peuvent être traversantes et avoir une forte influence sur la sécurité du bâtiment.",
   "signes_alerte": [
     "Fissures qui s'élargissent progressivement.",
     "Nouvelles fissures qui apparaissent après une période de sécheresse ou de fortes pluies.",
@@ -18,5 +18,5 @@
     "Notez les dates d'apparition ou d'évolution.",
     "Soyez particulièrement vigilant après des périodes climatiques extrêmes (sécheresse, pluies intenses)."
   ],
-  "bon_a_savoir": "Prévenir le RGA est plus simple et moins coûteux que de réparer ! Agissez dès la première alerte en vérifiant le drainage autour de votre maison, en limitant les arbres près des fondations et en surveillant l'humidité du sol."
+  "bon_a_savoir": "Le phénomène de RGA est de plus en plus présent, le prévenir est moins coûteux que de réparer ! Agissez avant la première alerte en vérifiant le drainage autour de votre maison, en limitant les arbres près des fondations et en surveillant l'humidité du sol."
 }

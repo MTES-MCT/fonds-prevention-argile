@@ -40,15 +40,16 @@
     },
     "non_pris_en_charge": {
       "title": "Risques de dégradation avancée sans action de votre part",
-      "subtitle": "À plus long terme, si aucun travaux ne sont réalisés, des désordres structuraux peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons et, parfois, rupture de canalisations enterrées.",
+      "subtitle": "Attention, le RGA peut provoquer de gros dégâts coûteux et très problématiques pour votre maison.",
+      "subtitle2": "Des désordres structuraux peuvent apparaître : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons, rupture de canalisations enterrées et fissures traversantes sur vos murs.",
       "callout": {
         "title": "Signes non pris en charge par le Fonds de Prévention Argile",
-        "text": "Si votre logement présente ces signes de dégradation avancée, il est trop tard pour faire appel au Fonds de Prévention."
+        "text": "Si votre logement présente déjà des signes de dégradation, il est trop tard pour faire appel au Fonds de Prévention."
       }
     }
   },
   "savoir_si_concerne_section": {
-    "title": "Le Fonds de PRévention Argile traite des causes, pas des conséquences. ",
+    "title": "Le Fonds de Prévention Argile traite des causes, pas des conséquences. ",
     "title2": "Agissez avant qu'il ne soit trop tard.",
     "cta_label": "Vérifier mon éligibilité",
     "cta_url": "/simulateur",

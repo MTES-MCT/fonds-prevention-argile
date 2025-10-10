@@ -8,10 +8,10 @@ export default function SignesASurveiller() {
   return (
     <section className="fr-container-fluid fr-py-10w bg-[var(--background-alt-grey)]">
       {/* Signes pris en charge */}
-      <div className="fr-container fr-mb-4w">
-        <h1>
+      {/*<div className="fr-container fr-mb-4w">
+        <h2>
           {contentHomePage.signes_a_surveiller_section.pris_en_charge.title}
-        </h1>
+        </h2>
         <p>
           {contentHomePage.signes_a_surveiller_section.pris_en_charge.subtitle}
         </p>
@@ -57,17 +57,23 @@ export default function SignesASurveiller() {
               </div>
             ))}
         </div>
-      </div>
+      </div>*/}
 
       {/*  Signes non pris en charge */}
       <div className="fr-container fr-mt-8w">
-        <h1>
+        <h2>
           {contentHomePage.signes_a_surveiller_section.non_pris_en_charge.title}
-        </h1>
+        </h2>
         <p>
           {
-            contentHomePage.signes_a_surveiller_section.non_pris_en_charge
-              .subtitle
+            {richTextParser(contentHomePage.signes_a_surveiller_section.non_pris_en_charge
+              .subtitle)}
+          }
+        </p>
+        <p>
+          {
+            {richTextParser(contentHomePage.signes_a_surveiller_section.non_pris_en_charge
+              .subtitle2)}
           }
         </p>
         <CalloutNonEligible />
