@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1759998031610,
-      "tag": "0000_sturdy_bishop",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1759998651872,
-      "tag": "0001_fast_sugar_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1760085762682,
-      "tag": "0002_special_lily_hollister",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1760100973436,
-      "tag": "0003_silly_lila_cheney",
+      "when": 1760104843327,
+      "tag": "0000_complete_maggott",
       "breakpoints": true
     }
   ]

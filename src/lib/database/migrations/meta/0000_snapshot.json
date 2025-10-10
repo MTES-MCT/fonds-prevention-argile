@@ -1,5 +1,5 @@
 {
-  "id": "7512eeb6-1fd4-44e5-8972-1d9a525c0b6d",
+  "id": "c4dbbfa4-abf1-4ed6-9311-836139c3af41",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -88,7 +88,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'ELIGIBILITE'"
+          "default": "'CHOIX_AMO'"
         },
         "current_status": {
           "name": "current_status",
@@ -332,9 +332,21 @@
           "primaryKey": false,
           "notNull": true
         },
-        "email": {
-          "name": "email",
-          "type": "varchar(255)",
+        "siret": {
+          "name": "siret",
+          "type": "varchar(14)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "departements": {
+          "name": "departements",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "emails": {
+          "name": "emails",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -377,13 +389,6 @@
       "name": "entreprises_amo_communes",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
         "entreprise_amo_id": {
           "name": "entreprise_amo_id",
           "type": "uuid",
@@ -395,39 +400,9 @@
           "type": "varchar(5)",
           "primaryKey": false,
           "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
-      "indexes": {
-        "code_insee_idx": {
-          "name": "code_insee_idx",
-          "columns": [
-            {
-              "expression": "code_insee",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "entreprises_amo_communes_entreprise_amo_id_entreprises_amo_id_fk": {
           "name": "entreprises_amo_communes_entreprise_amo_id_entreprises_amo_id_fk",
@@ -443,7 +418,15 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "entreprises_amo_communes_entreprise_amo_id_code_insee_pk": {
+          "name": "entreprises_amo_communes_entreprise_amo_id_code_insee_pk",
+          "columns": [
+            "entreprise_amo_id",
+            "code_insee"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -482,6 +465,24 @@
         },
         "commentaire": {
           "name": "commentaire",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_prenom": {
+          "name": "user_prenom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_nom": {
+          "name": "user_nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adresse_logement": {
+          "name": "adresse_logement",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -556,6 +557,110 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.amo_validation_tokens": {
+      "name": "amo_validation_tokens",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "parcours_amo_validation_id": {
+          "name": "parcours_amo_validation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "used_at": {
+          "name": "used_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "amo_validation_token_idx": {
+          "name": "amo_validation_token_idx",
+          "columns": [
+            {
+              "expression": "token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "amo_validation_validation_id_idx": {
+          "name": "amo_validation_validation_id_idx",
+          "columns": [
+            {
+              "expression": "parcours_amo_validation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "amo_validation_tokens_parcours_amo_validation_id_parcours_amo_validations_id_fk": {
+          "name": "amo_validation_tokens_parcours_amo_validation_id_parcours_amo_validations_id_fk",
+          "tableFrom": "amo_validation_tokens",
+          "tableTo": "parcours_amo_validations",
+          "columnsFrom": [
+            "parcours_amo_validation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "amo_validation_tokens_token_unique": {
+          "name": "amo_validation_tokens_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -585,8 +690,9 @@
       "schema": "public",
       "values": [
         "en_attente",
-        "valide",
-        "refuse"
+        "logement_eligible",
+        "logement_non_eligible",
+        "accompagnement_refuse"
       ]
     },
     "public.step": {

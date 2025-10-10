@@ -1,25 +1,19 @@
-import { pgTable, uuid, timestamp, varchar, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, primaryKey } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { entreprisesAmo } from "./entreprises-amo";
 
-// Table de liaison entre entreprises AMO et codes INSEE
+// Table de liaison optionnelle entre AMO et communes
+// Utilisée uniquement si l'AMO ne couvre pas tout le département
 export const entreprisesAmoCommunes = pgTable(
   "entreprises_amo_communes",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
     entrepriseAmoId: uuid("entreprise_amo_id")
       .notNull()
       .references(() => entreprisesAmo.id, { onDelete: "cascade" }),
     codeInsee: varchar("code_insee", { length: 5 }).notNull(),
-    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { mode: "date" })
-      .notNull()
-      .defaultNow()
-      .$onUpdate(() => new Date()),
   },
   (table) => ({
-    // Index pour optimiser les recherches par code INSEE
-    codeInseeIdx: index("code_insee_idx").on(table.codeInsee),
+    pk: primaryKey({ columns: [table.entrepriseAmoId, table.codeInsee] }),
   })
 );
 

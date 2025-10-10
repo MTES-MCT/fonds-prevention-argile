@@ -1,1 +1,0 @@
-ALTER TABLE "parcours_prevention" ALTER COLUMN "current_step" SET DEFAULT 'CHOIX_AMO';

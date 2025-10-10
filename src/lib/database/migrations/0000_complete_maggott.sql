@@ -15,7 +15,7 @@ CREATE TABLE "users" (
 CREATE TABLE "parcours_prevention" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
-	"current_step" "step" DEFAULT 'ELIGIBILITE' NOT NULL,
+	"current_step" "step" DEFAULT 'CHOIX_AMO' NOT NULL,
 	"current_status" "status" DEFAULT 'TODO' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
@@ -51,7 +51,9 @@ CREATE TABLE "email_notifications" (
 CREATE TABLE "entreprises_amo" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"nom" varchar(255) NOT NULL,
-	"email" varchar(255) NOT NULL,
+	"siret" varchar(14) NOT NULL,
+	"departements" text NOT NULL,
+	"emails" text NOT NULL,
 	"telephone" varchar(20) NOT NULL,
 	"adresse" varchar(500) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -59,11 +61,9 @@ CREATE TABLE "entreprises_amo" (
 );
 --> statement-breakpoint
 CREATE TABLE "entreprises_amo_communes" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"entreprise_amo_id" uuid NOT NULL,
 	"code_insee" varchar(5) NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	CONSTRAINT "entreprises_amo_communes_entreprise_amo_id_code_insee_pk" PRIMARY KEY("entreprise_amo_id","code_insee")
 );
 --> statement-breakpoint
 CREATE TABLE "parcours_amo_validations" (
@@ -72,6 +72,9 @@ CREATE TABLE "parcours_amo_validations" (
 	"entreprise_amo_id" uuid NOT NULL,
 	"statut" "statut_validation_amo" DEFAULT 'en_attente' NOT NULL,
 	"commentaire" text,
+	"user_prenom" text,
+	"user_nom" text,
+	"adresse_logement" text,
 	"choisie_at" timestamp DEFAULT now() NOT NULL,
 	"validee_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -79,9 +82,21 @@ CREATE TABLE "parcours_amo_validations" (
 	CONSTRAINT "parcours_amo_validations_parcours_id_unique" UNIQUE("parcours_id")
 );
 --> statement-breakpoint
+CREATE TABLE "amo_validation_tokens" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"parcours_amo_validation_id" uuid NOT NULL,
+	"token" varchar(255) NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"used_at" timestamp,
+	CONSTRAINT "amo_validation_tokens_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
 ALTER TABLE "parcours_prevention" ADD CONSTRAINT "parcours_prevention_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dossiers_demarches_simplifiees" ADD CONSTRAINT "dossiers_demarches_simplifiees_parcours_id_parcours_prevention_id_fk" FOREIGN KEY ("parcours_id") REFERENCES "public"."parcours_prevention"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "entreprises_amo_communes" ADD CONSTRAINT "entreprises_amo_communes_entreprise_amo_id_entreprises_amo_id_fk" FOREIGN KEY ("entreprise_amo_id") REFERENCES "public"."entreprises_amo"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "parcours_amo_validations" ADD CONSTRAINT "parcours_amo_validations_parcours_id_parcours_prevention_id_fk" FOREIGN KEY ("parcours_id") REFERENCES "public"."parcours_prevention"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "parcours_amo_validations" ADD CONSTRAINT "parcours_amo_validations_entreprise_amo_id_entreprises_amo_id_fk" FOREIGN KEY ("entreprise_amo_id") REFERENCES "public"."entreprises_amo"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "code_insee_idx" ON "entreprises_amo_communes" USING btree ("code_insee");
+ALTER TABLE "amo_validation_tokens" ADD CONSTRAINT "amo_validation_tokens_parcours_amo_validation_id_parcours_amo_validations_id_fk" FOREIGN KEY ("parcours_amo_validation_id") REFERENCES "public"."parcours_amo_validations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "amo_validation_token_idx" ON "amo_validation_tokens" USING btree ("token");--> statement-breakpoint
+CREATE INDEX "amo_validation_validation_id_idx" ON "amo_validation_tokens" USING btree ("parcours_amo_validation_id");

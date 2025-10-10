@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, varchar, text } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { entreprisesAmoCommunes } from "./entreprises-amo-communes";
 
@@ -6,7 +6,9 @@ import { entreprisesAmoCommunes } from "./entreprises-amo-communes";
 export const entreprisesAmo = pgTable("entreprises_amo", {
   id: uuid("id").primaryKey().defaultRandom(),
   nom: varchar("nom", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }).notNull(),
+  siret: varchar("siret", { length: 14 }).notNull(),
+  departements: text("departements").notNull(), // Format: "Seine-et-Marne (77), Essonne (91)"
+  emails: text("emails").notNull(), // Format: "email1@test.fr;email2@test.fr"
   telephone: varchar("telephone", { length: 20 }).notNull(),
   adresse: varchar("adresse", { length: 500 }).notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
@@ -16,7 +18,7 @@ export const entreprisesAmo = pgTable("entreprises_amo", {
     .$onUpdate(() => new Date()),
 });
 
-// Relations : une entreprise AMO couvre plusieurs communes
+// Relations : une entreprise AMO peut couvrir plusieurs communes spécifiques (optionnel)
 export const entreprisesAmoRelations = relations(
   entreprisesAmo,
   ({ many }) => ({
