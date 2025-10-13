@@ -23,20 +23,10 @@
         "Diriger ces eaux vers un exutoire sécurisé (réseau pluvial, bassin de rétention, ou puisard) à distance des fondations.",
         "Utiliser des matériaux géotextiles pour éviter le colmatage des drains par les particules fines du sol."
       ]
-    },
-    {
-      "title": "2. Mise en œuvre technique",
-      "details": [
-        "Réaliser une étude topographique et géotechnique pour déterminer les zones de captation et le tracé des drains.",
-        "Creuser des tranchées en légère pente (1 à 2 %) pour faciliter l'écoulement gravitaire des eaux.",
-        "Poser des drains enveloppés dans un géotextile et les relier à un collecteur principal.",
-        "Recouvrir les drains de graviers pour assurer une bonne filtration et éviter l'affaissement du sol."
-      ]
     }
   ],
 
   "pourquoi_solution_efficace": {
-    "subtitle": "Avantages clés de cette solution :",
     "details": [
       "Réduction significative de l'humidité autour des fondations, limitant les risques de gonflement des argiles.",
       "Prévention des infiltrations d'eau dans les sous-sols et les caves, protégeant ainsi la structure du bâtiment.",
@@ -55,14 +45,14 @@
       ]
     },
     "traitement": {
-      "title": "Points de vigilence",
+      "title": "Points de vigilance",
       "details": [
         "Un essai de perméabilité du sol de type porchet est indispensable avant tous travaux en lien avec l'infiltration des eaux pluviales.",
-        "Le réseau de drainage des eaux superficielles et de ruissellement est impérativement séparatif des eaux pluviales.",
+        "Le réseau de drainage des eaux superficielles et de ruissellement est impérativement séparatif des eaux pluviales et déporté des fondations de la maison.",
         "Pour assurer la durabilité et l'efficacité de ces dispositifs de gestion des eaux, leur bon entretien régulier est indispensable."
       ]
     }
   },
 
-  "a_retenir": "Ce système est indispensable pour les terrains pentus en zone argileuse. Cette solution est éligible aux subventions du Fonds de Prévention Argile jusqu'à 80% si justifiée par une étude géotechnique et validée par les services instructeurs. Pour une gestion optimale, associez-le à un système de récupération des eaux pluviales (citerne, noue, etc.)."
+  "a_retenir": "Ce système est indispensable pour les terrains pentus en zone argileuse. Cette solution est éligible aux subventions du fonds de prévention jusqu'à 80%. Pour une gestion optimale, il peut être associé à un système de récupération des eaux pluviales (citerne, noue, etc.)."
 }

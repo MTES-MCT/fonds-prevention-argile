@@ -1,5 +1,5 @@
 {
-  "title": "Repérage des fuites des réseaux d'eau",
+  "title": "Repérage des fuites des réseaux d'eau enterrés",
   "type": "reperage-fuite-reseaux-eaux",
   "pageLink": "/travaux-eligibles/reperage-fuite-reseaux-eaux",
   "tag": {
@@ -12,31 +12,22 @@
     "src": "/images/travaux-eligibles/reperage-fuites.png",
     "description": "Repérage des fuites des réseaux d'eau - Crédit photo Franck Béchade, France Argile"
   },
-  "une_des_solutions": "Les fuites des réseaux d'eau (canalisations, réseaux d’arrosage) humidifient anormalement le sol, aggravant le gonflement des argiles et accélérant les mouvements de terrain. Leur détection précoce permet d’éviter des tassements différentiels et des fissures sur les murs.",
+  "une_des_solutions": "Que ce soient les eaux pluviales, les eaux usées, les eaux vannes et de drainage, transitant par des canalisations enterrées depuis la maison vers leur exutoire externe, il convient de s’assurer de leur bon fonctionnement et que leur intégrité soit préservée dans le temps.",
+  "une_des_solitions2": "Les fuites de ces réseaux d'eau humidifient anormalement le sol, aggravant le gonflement des argiles et accélérant les mouvements de terrain. Leur détection précoce permet d’éviter les variations brutales d’humidité des sols argileux et de limiter les désordres liés à l’humidité (apparition de fissures par exemple).",
   "solutions": [
     {
-      "title": "1. Diagnostic",
+      "title": "Diagnostic",
       "details": [
         "Mise en charge des réseaux d'eaux pluviales, eaux usées, eaux de vanne et drainage.",
-        "Test fumigène pour les réseaux suspendus sous les vides sanitaires.",
+        "Ou test fumigène pour les réseaux suspendus sous les vides sanitaires.",
         "Création d'un accès au(x) réseau(x) si inexistant et nécessaire.",
         "Curage du/des réseau(x) bouché(s) si nécessaire."
       ]
     },
-    {
-      "title": "2. Réparation ciblée",
-      "details": [
-        "Colmatage par manchon étanche ou remplacement du tronçon défectueux.",
-        "Test de pression post-réparation pour valider l'étanchéité."
-      ]
-    }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "En supprimant les fuites de vos réseaux vous :",
-    "details": [
-      "Évitez les variations brutales d'humidité.",
-      "Prévenez les tassements différentiels grâce à un sol uniformément humide."
-    ]
+    "subtitle": "Le repérage précoce de fuites sur vos canalisations enterrées permettra d’intervenir rapidement pour solliciter l’avis d’un professionnel et effectuer les réparations nécessaires.",
+    "details": []
   },
   "quand_mettre_en_oeuvre": {
     "prevention": {
@@ -44,7 +35,7 @@
       "details": [
         "Avant l'achat d'une maison en zone argileuse",
         "Régulièrement pour les réseaux vieillissants",
-        "Après un épisode de gel (risque accru de fissures dans les tuyaux)"
+        "Après un épisode intense de gel (risque accru de déformations dans les canalisations enterrées)"
       ]
     },
     "traitement": {
@@ -56,5 +47,6 @@
       ]
     }
   },
-  "a_retenir": "Une fuite non détectée augmente le risque lié au phénomène du retrait-gonflement des argiles en saturant localement le sol. La recherche de fuites est importante et subventionnable jusqu'à 80% par le fonds de prévention si votre maison est éligible."
+  "a_retenir": "Une fuite non détectée augmente le risque d’apparitions de désordres sur votre maison, lié au phénomène du retrait-gonflement des argiles, en saturant localement le sol. La recherche de fuites est importante et subventionnable jusqu'à 80% par le fonds de prévention si votre maison est éligible.",
+  "a_retenir2": "Pour assurer la durabilité et l’efficacité des dispositifs de gestion des eaux (réseaux, regards de visite) leur bon entretien régulier par le propriétaire et les gestionnaires de réseaux est indispensable."
 }

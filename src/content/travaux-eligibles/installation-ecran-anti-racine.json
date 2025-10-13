@@ -12,31 +12,22 @@
     "src": "/images/travaux-eligibles/anti-racine.png",
     "description": "Illustration montrant une barrière physique enterrée autour des fondations - Crédit photo Franck Béchade, France Argile"
   },
-  "une_des_solutions": "Les racines des arbres et arbustes pompent l'eau du sol, asséchant les argiles en période sèche et aggravant le phénomène de retrait. Un écran anti-racines crée une barrière physique qui protège vos fondations tout en permettant de conserver votre végétation.",
+  "une_des_solutions": "Les racines des arbres et arbustes pompent l'eau du sol,et peuvent être responsables d’importantes variations de la teneur en eau du sol au droit des fondations de la maison, pouvant entraîner l’apparition de désordres sur la maison.. Un écran anti-racines crée une barrière physique qui protège vos fondations de l’action racinaire tout en permettant de conserver votre végétation.",
   "solutions": [
     {
-      "title": "1. Types d'écrans disponibles",
+      "title": "Types d'écrans disponibles",
       "details": [
         "Film polyester étanche ou géomembrane descendus à 2,5m de profondeur avec remblaiement de la fouille par les déblais extraits.",
         "Remplissage de la fouille par de gros béton.",
         "Écran en palplanches métalliques pouvant être descendues jusqu'à 4 ou 5m de profondeur. (Solution onéreuse à réserver aux cas extrêmes)."
       ]
-    },
-    {
-      "title": "2. Pose professionnelle",
-      "details": [
-        "Le choix du type d'écran anti-racines dépend de plusieurs paramètres : aggressivité de la végétation, accès pour les engins de chantier, pente et nature du terrain et la limite de propriété.",
-        "La technique retenue dépend aussi de la distance entre l'écran et la maison et de la profondeur de succion des racine.",
-        "La profondeur de l'écran anti-racines doit être dimensionnée en fonction des paramètres influençant la profondeur de succion des racines."
-      ]
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "Une protection discrète et efficace :",
+    "subtitle": "Une protection discrète et efficace pour :",
     "details": [
-      "Evite la succion des racines et stabilise la teneur en eau du sol sous l'habitation.",
-      "Maintient l'équilibre hydrique du sol près des fondations.",
-      "Évite l'abattage des arbres tout en les contenant."
+      "Eviter la succion des racines et stabiliser la teneur en eau du sol sous l'habitation et dans son environnement proche.",
+      "Éviter l'abattage des arbres tout en contenant leur développement."
     ]
   },
   "quand_mettre_en_oeuvre": {
@@ -45,18 +36,18 @@
       "details": [
         "Lorsque des arbres d'une propriété voisine peuvent causer des désordres sur la construction.",
         "Si des racines sont déjà visibles près des fondations",
-        "Si des arbres sont à moins de 1,5 fois leur hauteur de la maison."
+        "Si des arbres sont situés trop proches de la maison (1m minimum)."
       ]
     },
     "traitement": {
-      "title": "Points de vigilence",
+      "title": "Points de vigilance",
       "details": [
-        "Il est recommandé de faire appel à un professionnel pour déterminer la longueur, la profondeur et le positionnement de l'écran anti-racine.",
+        "Il est obligatoire de faire appel à un professionnel pour déterminer la longueur, la profondeur et le positionnement de l'écran anti-racines.",
         "Un soin particulier doit être porté sur les matériaux utilisés afin de garantir l'étanchéité et la résistance.",
         "L'entretien régulier de la végétation est essentiel pour assurer la pérennité et l'efficacité du dispositif.",
-        "Il faut éviter de planter des arbres ou des haies proche des maisons en zone d'exposition au RGA."
+        "Il faut éviter de planter des arbres ou des haies trop proches de la maison."
       ]
     }
   },
-  "a_retenir": "Les racines peuvent exercer une pression de 15 kg/cm² sur les fondations. Cet écran anti-racines est éligible aux aides si lié à un risque RGA avéré. À combiner avec un choix de végétaux adaptés (racines superficielles)."
+  "a_retenir": "En pompant l’eau du sol pour leur développement, les racines des arbres contribuent à déstabiliser la teneur en eau d’un sol argileux et peuvent créer des désordres sur la maison. La pose d’un écran anti-racines est subventionnable par le fonds de prévention jusqu’à 80%."
 }

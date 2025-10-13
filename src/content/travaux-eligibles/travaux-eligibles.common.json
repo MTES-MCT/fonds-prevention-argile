@@ -12,7 +12,7 @@
         "icon": "fr-icon-drop-line",
         "travaux": [
           {
-            "name": "Repérage des fuites des réseaux d'eau",
+            "name": "Repérage des fuites des réseaux d'eau enterrés",
             "type": "reperage-fuite-reseaux-eaux",
             "image": {
               "alt": "Fonds Prévention Argile - Repérage des fuites des réseaux d'eau",

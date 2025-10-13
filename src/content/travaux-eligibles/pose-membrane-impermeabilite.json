@@ -12,16 +12,16 @@
     "src": "/images/travaux-eligibles/geomembrane.png",
     "description": "Pose d'une membrane étanche - Crédit photo Franck Béchade, France Argile"
   },
-  "une_des_solutions": "La géomembrane est une membrane souple, imputrescible et constituée d'un produit d'étanchéité. Cette barrière physique permet de maîtriser et de stabiliser la teneur en eau des sols argileux sous les fondations en limitant les échange d'eau dus à l'évaporation estibale et d'éloigner les eaux de ruissellement du pied des fondations.",
+  "une_des_solutions": "La géomembrane est une membrane souple, imputrescible et constituée d'un produit d'étanchéité. Cette barrière physique permet de maîtriser et de stabiliser la teneur en eau des sols argileux sous les fondations en limitant les échanges d'eau dus à l'évaporation estivale et d'éloigner les eaux de ruissellement du pied des fondations.",
   "solutions": [
     {
       "title": "Comment installer une géomembrane",
       "details": [
-        "La géomembrane est posée en position plane, sur toute la périmétrie de la maison et déroulé sur un lit de sable avec une pense de 5%.",
-        "Elle doi être raccordée aux façades par un système de couvre-joint, et être protégée par deux couches de géotextile ou une protection plastique alvéolaire.",
+        "La géomembrane est posée en position plane, sur toute la périmétrie de la maison et déroulé sur un lit de sable avec une pente de 5%.",
+        "Elle doit être raccordée aux façades par un système de couvre-joint, et être protégée par deux couches de géotextile ou une protection plastique alvéolaire.",
         "La légère pente donnée au dispositif permet d'éloigner les eaux du bâtiment qui doivent être reprises par un réseau d'évacuation étanche.",
-        "Il est recommandé que le relevé de la géomembrane soit au-dessus des terres avec des dispositions per- mettant d’éloigner les eaux de ruissellement prove- nant de la façade en cas de pluie.",
-        "En bout de l’imperméabilisation (à 1,5 m de distance de la maison), une retombée de 20 cm est recom- mandée."
+        "Il est recommandé que le relevé de la géomembrane soit au-dessus des terres avec des dispositions permettant d’éloigner les eaux de ruissellement provenant de la façade en cas de pluie.",
+        "En bout de l’imperméabilisation (à 1,5 m de distance de la maison), une retombée de 20 cm est recommandée."
       ]
     },
     {
@@ -32,7 +32,7 @@
   "pourquoi_solution_efficace": {
     "subtitle": "La pose d'une géomembrane périphérique permet de :",
     "details": [
-      "Protéger la périphérie immédiate de la maison de l'évaporation et éloigner les eaux de ruissellement du pied des façade.",
+      "Protéger la périphérie immédiate de la maison de l'évaporation et éloigner les eaux de ruissellement du pied des façades.",
       "Éloigner les eaux de ruissellement de la construction pour protéger les fondations des variations de teneur en eau des argiles.",
       "Stabiliser la teneur en eau du sol sous l'habitation."
     ]
@@ -42,12 +42,11 @@
       "title": "En prévention",
       "details": [
         "Sur un terrain plat (moins de 3% de pente).",
-        "Si une stagnation d'humidité est présente au pied des fondations.",
-        "Lorsqu'un diagnostic RGA le préconnise."
+        "Si une stagnation d'humidité est présente au pied des fondations."
       ]
     },
     "traitement": {
-      "title": "Points de vigilence",
+      "title": "Points de vigilance",
       "details": [
         "Une étude particulière de la nature du sol au-dessous et au-dessus de la membrane est nécessaire pour définir le dispositif.",
         "L'impossibilité de disposer l'étanchéité sur tout le contour de la construction est de nature à favoriser les désordres et il est alors préférable d'abandonner cette solution.",
@@ -55,5 +54,5 @@
       ]
     }
   },
-  "a_retenir": "Cette membrane doit être la plus large possible et étanche avec les façades afin d'éloigner les eaux de ruissellement. Ce dispositif est éligible jusqu'à 80% de subvention."
+  "a_retenir": "Cette géomembrane doit être la plus large possible et étanche avec les façades afin d'éloigner les eaux de ruissellement. Ce dispositif est subventionnable par le fonds de prévention jusqu’à 80%."
 }
