@@ -13,6 +13,7 @@
     "description": "Illustration montrant une barrière physique enterrée autour des fondations - Crédit photo Franck Béchade, France Argile"
   },
   "une_des_solutions": "Les racines des arbres et arbustes pompent l'eau du sol,et peuvent être responsables d’importantes variations de la teneur en eau du sol au droit des fondations de la maison, pouvant entraîner l’apparition de désordres sur la maison.. Un écran anti-racines crée une barrière physique qui protège vos fondations de l’action racinaire tout en permettant de conserver votre végétation.",
+  "une_des_solutions2": "",
   "solutions": [
     {
       "title": "Types d'écrans disponibles",
@@ -47,7 +48,9 @@
         "L'entretien régulier de la végétation est essentiel pour assurer la pérennité et l'efficacité du dispositif.",
         "Il faut éviter de planter des arbres ou des haies trop proches de la maison."
       ]
-    }
+    },
+    "generalite": ""
   },
-  "a_retenir": "En pompant l’eau du sol pour leur développement, les racines des arbres contribuent à déstabiliser la teneur en eau d’un sol argileux et peuvent créer des désordres sur la maison. La pose d’un écran anti-racines est subventionnable par le fonds de prévention jusqu’à 80%."
+  "a_retenir": "En pompant l’eau du sol pour leur développement, les racines des arbres contribuent à déstabiliser la teneur en eau d’un sol argileux et peuvent créer des désordres sur la maison. La pose d’un écran anti-racines est subventionnable par le fonds de prévention jusqu’à 80%.",
+  "a_retenir2": ""
 }

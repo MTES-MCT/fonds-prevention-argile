@@ -13,7 +13,7 @@
     "description": "Drainage des eaux pluviales déportées - Crédit photo Franck Béchade, France Argile"
   },
   "une_des_solutions": "Sur un terrain en pente, les eaux de ruissellement s'accumulent en contrebas et saturent le sol près des fondations. Un drainage séparatif en amont intercepte ces eaux avant qu'elles n'atteignent la maison, stabilisant la teneur en eau du sol sous l'habitation dans son environnement proche.",
-
+  "une_des_solutions2": "",
   "solutions": [
     {
       "title": "1. Principe du drainage déporté et séparatif",
@@ -27,6 +27,7 @@
   ],
 
   "pourquoi_solution_efficace": {
+    "subtitle": "",
     "details": [
       "Réduction significative de l'humidité autour des fondations, limitant les risques de gonflement des argiles.",
       "Prévention des infiltrations d'eau dans les sous-sols et les caves, protégeant ainsi la structure du bâtiment.",
@@ -51,8 +52,10 @@
         "Le réseau de drainage des eaux superficielles et de ruissellement est impérativement séparatif des eaux pluviales et déporté des fondations de la maison.",
         "Pour assurer la durabilité et l'efficacité de ces dispositifs de gestion des eaux, leur bon entretien régulier est indispensable."
       ]
-    }
+    }, 
+    "generalite":""
   },
 
-  "a_retenir": "Ce système est indispensable pour les terrains pentus en zone argileuse. Cette solution est éligible aux subventions du fonds de prévention jusqu'à 80%. Pour une gestion optimale, il peut être associé à un système de récupération des eaux pluviales (citerne, noue, etc.)."
+  "a_retenir": "Ce système est indispensable pour les terrains pentus en zone argileuse. Cette solution est éligible aux subventions du fonds de prévention jusqu'à 80%. Pour une gestion optimale, il peut être associé à un système de récupération des eaux pluviales (citerne, noue, etc.).",
+  "a_retenir2": ""
 }

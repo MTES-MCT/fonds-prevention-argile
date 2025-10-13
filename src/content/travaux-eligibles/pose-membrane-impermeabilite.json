@@ -13,6 +13,7 @@
     "description": "Pose d'une membrane étanche - Crédit photo Franck Béchade, France Argile"
   },
   "une_des_solutions": "La géomembrane est une membrane souple, imputrescible et constituée d'un produit d'étanchéité. Cette barrière physique permet de maîtriser et de stabiliser la teneur en eau des sols argileux sous les fondations en limitant les échanges d'eau dus à l'évaporation estivale et d'éloigner les eaux de ruissellement du pied des fondations.",
+  "une_des_solutions2": "",
   "solutions": [
     {
       "title": "Comment installer une géomembrane",
@@ -52,7 +53,9 @@
         "L'impossibilité de disposer l'étanchéité sur tout le contour de la construction est de nature à favoriser les désordres et il est alors préférable d'abandonner cette solution.",
         "En cas de réalisation d’une étanchéité autour de la construction, afin d’éviter un assèchement du sol dommageable sous la construction par évaporation par le vide sanitaire, il conviendra de veiller à ce que celui-ci soit normalement ventilé."
       ]
-    }
+    },
+    "generalite": ""
   },
-  "a_retenir": "Cette géomembrane doit être la plus large possible et étanche avec les façades afin d'éloigner les eaux de ruissellement. Ce dispositif est subventionnable par le fonds de prévention jusqu’à 80%."
+  "a_retenir": "Cette géomembrane doit être la plus large possible et étanche avec les façades afin d'éloigner les eaux de ruissellement. Ce dispositif est subventionnable par le fonds de prévention jusqu’à 80%.",
+  "a_retenir2": ""
 }
