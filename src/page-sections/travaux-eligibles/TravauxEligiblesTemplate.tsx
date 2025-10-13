@@ -10,13 +10,16 @@ interface TravauxEligiblesTemplateProps {
   tag: { title: string; className: string; icon?: string } | undefined;
   image: { src: string; alt: string; description: string };
   une_des_solutions: string;
+  une_des_solutions2: string;
   solutions: { title: string; details: string[] }[];
   pourquoi_solution_efficace: { subtitle: string; details: string[] };
   quand_mettre_en_oeuvre: {
     prevention: { title: string; details: string[] };
     traitement: { title: string; details: string[] };
+    generalite: string;
   };
   a_retenir: string;
+  a_retenir2: string;
 }
 
 export default function TravauxEligiblesTemplate({
@@ -25,10 +28,12 @@ export default function TravauxEligiblesTemplate({
   tag = { title: "", className: "", icon: "" },
   image,
   une_des_solutions,
+  une_des_solutions2,
   solutions,
   pourquoi_solution_efficace = { subtitle: "", details: [] },
   quand_mettre_en_oeuvre,
   a_retenir,
+  a_retenir2,
 }: TravauxEligiblesTemplateProps) {
   return (
     <>
