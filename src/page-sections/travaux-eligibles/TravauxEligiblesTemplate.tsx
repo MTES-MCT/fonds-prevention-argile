@@ -108,7 +108,7 @@ export default function TravauxEligiblesTemplate({
             <div className="fr-my-6w">
               <h1>{contentTravauxEligiblesCommon.une_des_solutions_title}</h1>
               <p>{une_des_solutions}</p>
-              <p>{une_des_solutions2}</p>
+              {une_des_solutions2 && <p>{une_des_solutions2}</p>}
             </div>
 
             {/* En quoi consiste cette solution ? */}
@@ -146,7 +146,8 @@ export default function TravauxEligiblesTemplate({
               <h1>
                 {contentTravauxEligiblesCommon.quand_mettre_en_oeuvre_title}
               </h1>
-              <p>{quand_mettre_en_oeuvre.generalite}</p>
+
+              {quand_mettre_en_oeuvre.generalite && <p>{quand_mettre_en_oeuvre.generalite}</p>}
               <h4>{quand_mettre_en_oeuvre.prevention.title}</h4>
               <ul>
                 {quand_mettre_en_oeuvre.prevention.details.map(
@@ -172,7 +173,7 @@ export default function TravauxEligiblesTemplate({
                 {contentTravauxEligiblesCommon.a_retenir_title}
               </h3>
               <p className="fr-callout__text">{a_retenir}</p>
-              <p className="fr-callout__text">{a_retenir2}</p>
+              {a_retenir2 && <p className="fr-callout__text">{a_retenir2}</p>}
             </div>
           </div>
         </div>
