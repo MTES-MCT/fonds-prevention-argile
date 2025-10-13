@@ -88,7 +88,7 @@ export function validateRGADataForDS(rgaData: Partial<RGAFormData>): {
   // Définir les champs requis (ceux qui doivent absolument être remplis)
   const requiredFieldPaths: Array<{ path: string; label: string }> = [
     { path: "logement.adresse", label: "L'adresse du logement" },
-    { path: "menage.revenu", label: "Le revenu fiscal de référence" },
+    { path: "menage.revenu_rga", label: "Le revenu fiscal de référence" },
     { path: "menage.personnes", label: "Le nombre de personnes dans le foyer" },
     {
       path: "logement.annee_de_construction",
@@ -158,7 +158,7 @@ export function getRGADataSummary(rgaData: Partial<RGAFormData>): string {
     summary.push(`⚠️ ${zoneLabel}`);
   }
 
-  if (rgaData.menage?.personnes && rgaData.menage?.revenu) {
+  if (rgaData.menage?.personnes && rgaData.menage?.revenu_rga) {
     summary.push(
       `👥 ${rgaData.menage.personnes} pers. | 💰 ${new Intl.NumberFormat(
         "fr-FR",
@@ -167,7 +167,7 @@ export function getRGADataSummary(rgaData: Partial<RGAFormData>): string {
           currency: "EUR",
           maximumFractionDigits: 0,
         }
-      ).format(rgaData.menage.revenu)}`
+      ).format(rgaData.menage.revenu_rga)}`
     );
   }
 

@@ -84,7 +84,7 @@ export const DS_FIELDS: Record<string, DSField> = {
     label: "Revenu fiscal de référence",
     section: DSSection.DEMANDEUR,
     type: DSFieldType.NUMBER,
-    rgaPath: "menage.revenu",
+    rgaPath: "menage.revenu_rga",
   },
   "Q2hhbXAtNTU0Mjc5NA==": {
     id: "Q2hhbXAtNTU0Mjc5NA==",
