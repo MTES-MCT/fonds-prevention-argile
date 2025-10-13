@@ -12,8 +12,9 @@
     "src": "/images/travaux-eligibles/infiltration.png",
     "description": "Dispositif simple d'infiltration des eaux pluviales"
   },
-  "une_des_solutions": "L'infiltration contrôlée des eaux pluviales sur votre parcelle et déportée des fondations de votre maison, permet de maintenir une humidité stabe du sol, limitant ainsi les cycles de retrait-gonflement des argiles.",
-  "une_des_solutions2":"",
+  "une_des_solutions": [
+    "L'infiltration contrôlée des eaux pluviales sur votre parcelle et déportée des fondations de votre maison, permet de maintenir une humidité stabe du sol, limitant ainsi les cycles de retrait-gonflement des argiles."
+  ],
   "solutions": [
     {
       "title": "Exemples de dispositifs d'infiltration adaptés",
@@ -53,6 +54,7 @@
     },
     "generalite":""
   },
-  "a_retenir": " L’infiltration des eaux pluviales dans le sol peut être compatible avec un sol argileux si la perméabilité locale du sol, à la parcelle, est bien déterminée et si le dispositif d’infiltration est suffisamment éloigné des fondations de la maison. Cette solution est subventionnable par le fonds de prévention jusqu’à 80%.",
-  "a_retenir2": ""
+  "a_retenir": [
+    "L’infiltration des eaux pluviales dans le sol peut être compatible avec un sol argileux si la perméabilité locale du sol, à la parcelle, est bien déterminée et si le dispositif d’infiltration est suffisamment éloigné des fondations de la maison. Cette solution est subventionnable par le fonds de prévention jusqu’à 80%."
+  ]
 }

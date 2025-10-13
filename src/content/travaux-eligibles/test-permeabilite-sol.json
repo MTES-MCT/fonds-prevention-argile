@@ -12,8 +12,9 @@
     "src": "/images/travaux-eligibles/porchet.png",
     "description": "Test de perméabilité du sol de type Porchet"
   },
-  "une_des_solutions": "Connaître la perméabilité de votre sol argileux permet d’adapter les solutions de prévention à mettre en oeuvre (drainage déporté des fondations, infiltration déportée des fondations, ...). Le test Porchet, simple et normé, mesure la vitesse d’absorption de l’eau dans le sol. Il est indispensable avant tous travaux en lien avec l'infiltration des eaux.",
-  "une_des_solutions2": "",
+  "une_des_solutions": [
+    "Connaître la perméabilité de votre sol argileux permet d’adapter les solutions de prévention à mettre en oeuvre (drainage déporté des fondations, infiltration déportée des fondations, ...). Le test Porchet, simple et normé, mesure la vitesse d’absorption de l’eau dans le sol. Il est indispensable avant tous travaux en lien avec l'infiltration des eaux."
+  ],
   "solutions": [
     {
       "title": "1. Méthode standardisée",
@@ -51,6 +52,7 @@
     },
     "generalite": "Si la réalisation d’un test de perméabilité est recommandé par le diagnostic de vulnérabilité de votre maison, réalisé par l’expert RGA, cette solution est subventionnable par le fonds de prévention et doit être réalisée au démarrage de la phase travaux."
   },
-  "a_retenir": "Un sol argileux a une perméabilité 10 à 100 fois moindre qu’un sol sableux. Vérifier la perméabilité du sol est essentiel pour éviter une mauvaise préconisation et d'aggraver le phénomène du retrait-gonflement des argiles. Ce test est subventionnable par le fonds de prévention jusqu'à 80%.",
-  "a_retenir2": ""
+  "a_retenir": [
+    "Un sol argileux a une perméabilité 10 à 100 fois moindre qu’un sol sableux. Vérifier la perméabilité du sol est essentiel pour éviter une mauvaise préconisation et d'aggraver le phénomène du retrait-gonflement des argiles. Ce test est subventionnable par le fonds de prévention jusqu'à 80%."
+  ]
 }

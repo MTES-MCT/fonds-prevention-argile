@@ -12,8 +12,10 @@
     "src": "/images/travaux-eligibles/canalisation-pluie.png",
     "description": "Pose de canalisation d'évacuation des eaux pluviales."
   },
-  "une_des_solutions": "Des eaux pluviales mal évacuées s’infiltrent près des fondations, déstabilisant la teneur en eau du sol argileux sous la maison et dans son environnement proche. Ces infiltrations peuvent entraîner l’apparition de désordres sur une maison individuelle.",
-  "une_des_solutions2": "Les eaux pluviales doivent être évacuées loin des fondations de la maison par la pose ou la réparation de canalisations, séparées du réseau de collecte des eaux usées et du réseau de drainage déporté des fondations.",
+  "une_des_solutions": [
+    "Des eaux pluviales mal évacuées s’infiltrent près des fondations, déstabilisant la teneur en eau du sol argileux sous la maison et dans son environnement proche. Ces infiltrations peuvent entraîner l’apparition de désordres sur une maison individuelle.",
+    "Les eaux pluviales doivent être évacuées loin des fondations de la maison par la pose ou la réparation de canalisations, séparées du réseau de collecte des eaux usées et du réseau de drainage déporté des fondations."
+  ],
   "solutions": [
     {
       "title": "Installation d’un réseau séparatif",
@@ -49,6 +51,8 @@
     },
     "generalite": ""
   },
-  "a_retenir": "Une évacuation des eaux pluviales mal conçue peut aggraver le phénomène de RGA en concentrant l’eau à un seul endroit. La pose ou la réparation des canalisations d’évacuation des eaux pluviales en veillant à les éloigner des fondations est subventionnable jusqu’à 80% par le fonds de prévention.",
-  "a_retenir2": "Avant toute mise en oeuvre de travaux en lien avec l'infiltration des eaux pluviales à la parcelle, il est indispensable de faire réaliser par un professionnel, un essai de la perméabilité du sol de type Porchet, également subventionnable jusqu'à 80% par le fonds de prévention. "
+  "a_retenir": [
+    "Une évacuation des eaux pluviales mal conçue peut aggraver le phénomène de RGA en concentrant l’eau à un seul endroit. La pose ou la réparation des canalisations d’évacuation des eaux pluviales en veillant à les éloigner des fondations est subventionnable jusqu’à 80% par le fonds de prévention.",
+    "Avant toute mise en oeuvre de travaux en lien avec l'infiltration des eaux pluviales à la parcelle, il est indispensable de faire réaliser par un professionnel, un essai de la perméabilité du sol de type Porchet, également subventionnable jusqu'à 80% par le fonds de prévention. "
+  ]
 }

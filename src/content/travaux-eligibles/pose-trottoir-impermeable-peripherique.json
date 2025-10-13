@@ -12,8 +12,9 @@
     "src": "/images/travaux-eligibles/trottoir.png",
     "description": "Illustration d'un trottoir en béton avec pente vers l'extérieur"
   },
-  "une_des_solutions": "Un trottoir étanche d'au moins 1 mètre de large autour de la maison crée une barrière physique contre les infiltrations et l'évaporation d'eau. Cette solution limite les variations d'humidité du sol et protège les fondations contre les mouvements différentiels.",
-  "une_des_solutions2": "",
+  "une_des_solutions": [
+    "Un trottoir étanche d'au moins 1 mètre de large autour de la maison crée une barrière physique contre les infiltrations et l'évaporation d'eau. Cette solution limite les variations d'humidité du sol et protège les fondations contre les mouvements différentiels."
+  ],
   "solutions": [
     {
       "title": "Mise en oeuvre technique",
@@ -55,6 +56,7 @@
     },
     "generalite": ""
   },
-  "a_retenir": "Ce trottoir doit être combiné avec un système d'évacuation des eaux (gouttières, regards). Cette solution est subventionnable au fonds de prévention jusqu’à 80%.",
-  "a_retenir2": ""
+  "a_retenir": [
+    "Ce trottoir doit être combiné avec un système d'évacuation des eaux (gouttières, regards). Cette solution est subventionnable au fonds de prévention jusqu’à 80%.",
+  ]
 }

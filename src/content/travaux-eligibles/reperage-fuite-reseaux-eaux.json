@@ -12,8 +12,10 @@
     "src": "/images/travaux-eligibles/reperage-fuites.png",
     "description": "Repérage des fuites des réseaux d'eau - Crédit photo Franck Béchade, France Argile"
   },
-  "une_des_solutions": "Que ce soient les eaux pluviales, les eaux usées, les eaux vannes et de drainage, transitant par des canalisations enterrées depuis la maison vers leur exutoire externe, il convient de s’assurer de leur bon fonctionnement et que leur intégrité soit préservée dans le temps.",
-  "une_des_solitions2": "Les fuites de ces réseaux d'eau humidifient anormalement le sol, aggravant le gonflement des argiles et accélérant les mouvements de terrain. Leur détection précoce permet d’éviter les variations brutales d’humidité des sols argileux et de limiter les désordres liés à l’humidité (apparition de fissures par exemple).",
+  "une_des_solutions": [
+    "Que ce soient les eaux pluviales, les eaux usées, les eaux vannes et de drainage, transitant par des canalisations enterrées depuis la maison vers leur exutoire externe, il convient de s’assurer de leur bon fonctionnement et que leur intégrité soit préservée dans le temps.",
+    "Les fuites de ces réseaux d'eau humidifient anormalement le sol, aggravant le gonflement des argiles et accélérant les mouvements de terrain. Leur détection précoce permet d’éviter les variations brutales d’humidité des sols argileux et de limiter les désordres liés à l’humidité (apparition de fissures par exemple)."
+  ],
   "solutions": [
     {
       "title": "Diagnostic",
@@ -48,6 +50,8 @@
     },
     "generalite": ""
   },
-  "a_retenir": "Une fuite non détectée augmente le risque d’apparitions de désordres sur votre maison, lié au phénomène du retrait-gonflement des argiles, en saturant localement le sol. La recherche de fuites est importante et subventionnable jusqu'à 80% par le fonds de prévention si votre maison est éligible.",
-  "a_retenir2": "Pour assurer la durabilité et l’efficacité des dispositifs de gestion des eaux (réseaux, regards de visite) leur bon entretien régulier par le propriétaire et les gestionnaires de réseaux est indispensable."
+  "a_retenir": [
+    "Une fuite non détectée augmente le risque d’apparitions de désordres sur votre maison, lié au phénomène du retrait-gonflement des argiles, en saturant localement le sol. La recherche de fuites est importante et subventionnable jusqu'à 80% par le fonds de prévention si votre maison est éligible.",
+    "Pour assurer la durabilité et l’efficacité des dispositifs de gestion des eaux (réseaux, regards de visite) leur bon entretien régulier par le propriétaire et les gestionnaires de réseaux est indispensable."
+  ]
 }
