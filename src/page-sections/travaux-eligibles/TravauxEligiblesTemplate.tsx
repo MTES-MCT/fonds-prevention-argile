@@ -104,7 +104,7 @@ export default function TravauxEligiblesTemplate({
             <div className="fr-my-6w">
               <h1>{contentTravauxEligiblesCommon.une_des_solutions_title}</h1>
               {une_des_solutions.map((une_solution, index) => (
-                <p>{une_solution}</p>
+                <p key={index}>{une_solution}</p>
               ))}
               
             </div>
@@ -171,7 +171,7 @@ export default function TravauxEligiblesTemplate({
                 {contentTravauxEligiblesCommon.a_retenir_title}
               </h3>
               {a_retenir.map((retenir, index) => (
-                <p className="fr-callout__text">{retenir}</p>
+                <p key={index} className="fr-callout__text">{retenir}</p>
               ))}
             </div>
           </div>
