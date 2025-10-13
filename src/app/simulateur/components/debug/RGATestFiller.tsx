@@ -34,7 +34,7 @@ const TEST_RGA_DATA: Partial<RGAFormData> = {
   rga: {
     assure: "oui",
     indemnise_rga: "non",
-    peu_endommage: "oui",
+    peu_endommage: "saine",
   },
 
   menage: {
