@@ -3,7 +3,6 @@ import Link from "next/link";
 import { contentLayout } from "@/content";
 import LancezVousSection from "./LancezVousSection";
 import { contentTravauxEligiblesCommon } from "@/content/travaux-eligibles";
-import { richTextParser } from "@/lib/utils";
 
 interface TravauxEligiblesTemplateProps {
   title: string;
