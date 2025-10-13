@@ -170,7 +170,7 @@ export default function TravauxEligiblesTemplate({
               <h3 className="fr-callout__title">
                 {contentTravauxEligiblesCommon.a_retenir_title}
               </h3>
-              {a_retenir.map((retenir, index) =>
+              {a_retenir.map((retenir, index) => (
                 <p className="fr-callout__text">{retenir}</p>
               ))}
             </div>
