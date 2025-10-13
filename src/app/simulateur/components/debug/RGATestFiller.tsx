@@ -38,7 +38,7 @@ const TEST_RGA_DATA: Partial<RGAFormData> = {
   },
 
   menage: {
-    revenu: 50576,
+    revenu_rga: 50576,
     personnes: 7,
   },
 

@@ -33,7 +33,7 @@ export interface RGAFormData {
 
   // Ménage
   menage: {
-    revenu: number;
+    revenu_rga: number;
     personnes: number;
   };
 

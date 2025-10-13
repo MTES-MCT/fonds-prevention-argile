@@ -295,6 +295,7 @@ export const DS_FIELDS: Record<string, DSField> = {
     id: "Q2hhbXAtNTY3MDU4OA==",
     label: "Désordres architecturaux identifiés",
     type: DSFieldType.CHECKBOX,
+    section: DSSection.MAISON,
     rgaPath: "rga.peu_endommage",
     transformer: (value: unknown) => {
       // Oui si endommagée, sinon non
