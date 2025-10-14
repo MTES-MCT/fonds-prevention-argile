@@ -13,8 +13,22 @@ export default function DemarcheSchema({
   champDescriptors,
 }: DemarcheSchemaProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isJsonExpanded, setIsJsonExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [groupBy, setGroupBy] = useState<GroupBy>("none");
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const handleCopyJson = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        JSON.stringify(champDescriptors, null, 2)
+      );
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error("Erreur lors de la copie:", err);
+    }
+  };
 
   if (!champDescriptors || champDescriptors.length === 0) {
     return (
@@ -214,6 +228,47 @@ export default function DemarcheSchema({
                 </span>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Accordéon JSON */}
+      <section className="fr-accordion">
+        <h3 className="fr-accordion__title">
+          <button
+            className="fr-accordion__btn"
+            aria-expanded={isJsonExpanded}
+            aria-controls="schema-json-content"
+            onClick={() => setIsJsonExpanded(!isJsonExpanded)}
+          >
+            Schéma au format JSON
+          </button>
+        </h3>
+        <div
+          className={`fr-collapse ${isJsonExpanded ? "fr-collapse--expanded" : ""}`}
+          id="schema-json-content"
+        >
+          <div className="fr-py-3w">
+            <div className="fr-mb-2w">
+              <button
+                className="fr-btn fr-btn--secondary fr-btn--sm"
+                onClick={handleCopyJson}
+                type="button"
+              >
+                {copySuccess ? "Copié !" : "Copier le JSON"}
+              </button>
+            </div>
+            <pre
+              className="fr-p-2w"
+              style={{
+                backgroundColor: "#f6f6f6",
+                borderRadius: "0.25rem",
+                overflow: "auto",
+                maxHeight: "500px",
+              }}
+            >
+              <code>{JSON.stringify(champDescriptors, null, 2)}</code>
+            </pre>
           </div>
         </div>
       </section>
