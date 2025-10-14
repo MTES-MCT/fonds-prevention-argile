@@ -302,7 +302,7 @@ function renderFacturesCallout(dsStatus: DSStatus | null) {
 function getStatusLabel(status?: DSStatus): string {
   switch (status) {
     case DSStatus.NON_ACCESSIBLE:
-      return "Non accessible";
+      return "À faire";
     case DSStatus.ACCEPTE:
       return "Accepté";
     case DSStatus.EN_INSTRUCTION:
