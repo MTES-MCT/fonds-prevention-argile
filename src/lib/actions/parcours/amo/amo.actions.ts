@@ -187,7 +187,7 @@ export async function getAllAmos(): Promise<
 }
 
 /**
- * Choisir une AMO pour le parcours (étape CHOIX_AMO)
+ * Choisir un AMO pour le parcours (étape CHOIX_AMO)
  * Crée ou met à jour une entrée dans parcoursAmoValidations
  * Ajoute les données personnelles temporaires (supprimées après validation)
  * Génère un token de validation sécurisé

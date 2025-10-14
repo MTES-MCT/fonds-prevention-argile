@@ -28,7 +28,7 @@ export default function StepDetailDevis() {
           }
           style={!isActive ? { color: "var(--text-disabled-grey)" } : undefined}
         >
-          3. Devis et accord
+          4. Devis et accord
         </h5>
 
         {/* Description avec couleur conditionnelle */}
@@ -36,7 +36,7 @@ export default function StepDetailDevis() {
           className={!isActive ? "fr-text--disabled" : undefined}
           style={!isActive ? { color: "var(--text-mention-grey)" } : undefined}
         >
-          Soumettre les devis pour accord avant travaux
+          Soumettez les devis des travaux pour vérifier l'accord de subvention.
         </p>
 
         {/* Bouton ou lien selon l'état */}

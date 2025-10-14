@@ -36,7 +36,7 @@ export default function StepDetailAmo() {
           className={!isActive ? "fr-text--disabled" : undefined}
           style={!isActive ? { color: "var(--text-mention-grey)" } : undefined}
         >
-          Choisissez votre AMO parmi les choix dans le tableau ci-dessus
+          Choisissez votre AMO parmi les choix dans le tableau ci-dessus.
         </p>
 
         {/* Lien selon l'état */}

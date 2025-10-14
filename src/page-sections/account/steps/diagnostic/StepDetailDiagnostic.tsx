@@ -28,7 +28,7 @@ export default function StepDetailDiagnostic() {
           }
           style={!isActive ? { color: "var(--text-disabled-grey)" } : undefined}
         >
-          2. Diagnostic
+          3. Diagnostic
         </h5>
 
         {/* Description avec couleur conditionnelle */}
@@ -36,7 +36,7 @@ export default function StepDetailDiagnostic() {
           className={!isActive ? "fr-text--disabled" : undefined}
           style={!isActive ? { color: "var(--text-mention-grey)" } : undefined}
         >
-          Démarrer le diagnostic et communiquer les résultats
+          Démarrez le diagnostic, communiquez les résultats et soyez subventionné pour la phase étude.
         </p>
 
         {/* Bouton ou lien selon l'état */}

@@ -87,7 +87,7 @@ export default function StepDetailEligibilite() {
               : undefined
           }
         >
-          1. Éligibilité
+          2. Éligibilité
         </h5>
 
         {/* Description avec couleur conditionnelle */}
@@ -101,7 +101,7 @@ export default function StepDetailEligibilite() {
               : undefined
           }
         >
-          Ce formulaire permet de valider votre éligibilité
+          Validez votre éligibilité pour lancer la phase étude.
         </p>
 
         {/* Bouton ou lien selon l'état */}
