@@ -1,5 +1,6 @@
 "use client";
 
+import { a } from "vitest/dist/chunks/suite.d.FvehnV49.js";
 import { useParcoursContext } from "../context/ParcoursContext";
 import { Step } from "../parcours.types";
 
@@ -19,6 +20,7 @@ export function useParcours() {
 
     // Etat AMO
     statutAmo: context.statutAmo,
+    validationAmoComplete: context.validationAmoComplete,
 
     // État DS
     lastDSStatus: context.lastDSStatus,

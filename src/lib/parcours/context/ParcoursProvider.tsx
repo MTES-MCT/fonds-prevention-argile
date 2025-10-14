@@ -12,7 +12,10 @@ import {
   DossierDemarchesSimplifiees,
 } from "@/lib/database/schema";
 import { Step, DSStatus } from "@/lib/parcours/parcours.types";
-import { StatutValidationAmo } from "@/lib/parcours/amo/amo.types";
+import {
+  StatutValidationAmo,
+  ValidationAmoComplete,
+} from "@/lib/parcours/amo/amo.types";
 import { useRouter } from "next/navigation";
 import { ParcoursContext } from "./ParcoursContext";
 
@@ -37,6 +40,8 @@ export function ParcoursProvider({
 
   // État AMO
   const [statutAmo, setStatutAmo] = useState<StatutValidationAmo | null>(null);
+  const [validationAmoComplete, setValidationAmoComplete] =
+    useState<ValidationAmoComplete | null>(null);
 
   // État de synchronisation
   const [isSyncing, setIsSyncing] = useState(false);
@@ -70,16 +75,14 @@ export function ParcoursProvider({
           setLastDSStatus(currentDossier.dsStatus);
         }
 
-        // Récupérer le statut AMO si on est à l'étape CHOIX_AMO
-        if (result.data.parcours.currentStep === Step.CHOIX_AMO) {
-          const validationResult = await getValidationAmo();
-          if (validationResult.success && validationResult.data) {
-            setStatutAmo(validationResult.data.statut);
-          } else {
-            setStatutAmo(null);
-          }
+        // Récupérer le statut AMO
+        const validationResult = await getValidationAmo();
+        if (validationResult.success && validationResult.data) {
+          setStatutAmo(validationResult.data.statut);
+          setValidationAmoComplete(validationResult.data);
         } else {
           setStatutAmo(null);
+          setValidationAmoComplete(null);
         }
       } else {
         const errorMessage =
@@ -243,6 +246,7 @@ export function ParcoursProvider({
 
     // État AMO
     statutAmo,
+    validationAmoComplete,
 
     // Sync DS
     lastDSStatus,

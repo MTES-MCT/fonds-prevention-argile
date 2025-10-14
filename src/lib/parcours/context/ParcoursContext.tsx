@@ -6,7 +6,7 @@ import {
   DossierDemarchesSimplifiees,
 } from "@/lib/database/schema";
 import { Step, Status, DSStatus } from "@/lib/parcours/parcours.types";
-import { StatutValidationAmo } from "../amo/amo.types";
+import { StatutValidationAmo, ValidationAmoComplete } from "../amo/amo.types";
 
 interface ParcoursContextType {
   // Données principales
@@ -19,6 +19,7 @@ interface ParcoursContextType {
 
   // Etat AMO
   statutAmo: StatutValidationAmo | null;
+  validationAmoComplete: ValidationAmoComplete | null;
 
   // État de synchronisation DS
   lastDSStatus: DSStatus | null;
