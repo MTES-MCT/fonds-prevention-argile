@@ -21,9 +21,9 @@ export default function CalloutEligibiliteEnInstruction() {
     dossierEligilibilite?.submittedAt?.toISOString() || null;
 
   // Date estimée de décision 5 jours après la soumission
-  const dossierEstimatedDecisionDate = dossierSubmittedDate
-    ? addDays(new Date(dossierSubmittedDate), 5).toISOString()
-    : null;
+  // const dossierEstimatedDecisionDate = dossierSubmittedDate
+  //   ? addDays(new Date(dossierSubmittedDate), 5).toISOString()
+  //   : null;
 
   return (
     <div className="fr-callout fr-callout--blue-cumulus fr-icon-time-line">
@@ -36,14 +36,6 @@ export default function CalloutEligibiliteEnInstruction() {
             {" "}
             Votre dossier a été déposé le{" "}
             <strong>{formatDate(dossierSubmittedDate)}</strong>.
-            {dossierEstimatedDecisionDate && (
-              <>
-                {" "}
-                Selon nos délais moyens constatés, vous devriez recevoir un avis
-                d'ici le{" "}
-                <strong>{formatDate(dossierEstimatedDecisionDate)}</strong>.
-              </>
-            )}
           </>
         )}
       </p>

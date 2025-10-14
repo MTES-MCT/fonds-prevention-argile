@@ -5,11 +5,11 @@ export const emailConfig = {
   from: {
     email:
       process.env.EMAIL_FROM || "noreply@fonds-prevention-argile.beta.gouv.fr",
-    name: "Fonds Prévention Argile",
+    name: "Fonds prévention argile",
   },
   replyTo: {
     email: "contact@fonds-prevention-argile.beta.gouv.fr",
-    name: "Support Fonds Prévention Argile",
+    name: "Support Fonds prévention argile",
   },
   smtp: {
     host: process.env.SMTP_HOST || "localhost",

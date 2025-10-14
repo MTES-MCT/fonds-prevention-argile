@@ -64,7 +64,7 @@ export default function MaListe() {
                     <span className="fr-link" style={status.style}>
                       Choisir un AMO dans la liste{" "}
                       <span
-                        className="fr-icon-check-line"
+                        className="fr-icon-checkbox-circle-fill text-green-800"
                         aria-hidden="true"
                       ></span>
                     </span>
@@ -95,7 +95,7 @@ export default function MaListe() {
                     <span className="fr-link" style={status.style}>
                       Remplir le formulaire d'éligibilité et avoir une réponse{" "}
                       <span
-                        className="fr-icon-check-line"
+                        className="fr-icon-checkbox-circle-fill text-green-800"
                         aria-hidden="true"
                       ></span>
                     </span>

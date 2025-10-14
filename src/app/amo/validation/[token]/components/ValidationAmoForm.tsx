@@ -44,7 +44,7 @@ export default function ValidationAmoForm({
         case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
           result = await refuserLogementNonEligible(
             validationId,
-            "Le logement n'est pas éligible selon les critères du Fonds Prévention Argile"
+            "Le logement n'est pas éligible selon les critères du Fonds prévention argile"
           );
           break;
         case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:

@@ -7,7 +7,7 @@
   },
   "logement_concerne_section": {
     "image": {
-      "alt": "Fonds Prévention Argile - Un service de l'État",
+      "alt": "Fonds prévention argile - Un service de l'État",
       "src": "/images/home/logement-concerne.webp"
     },
     "title": "Bénéficiez d'un accompagnement technique et financier pour vous prémunir du phénomène de retrait-gonflement des argiles.",
@@ -18,7 +18,7 @@
   },
   "what_is_rga_section": {
     "image": {
-      "alt": "Fonds Prévention Argile - Un service de l'État",
+      "alt": "Fonds prévention argile - Un service de l'État",
       "src": "/images/home/quest-ce-que-rga.png",
       "caption": "Exemple de fissures en escalier sur le mur extérieur d’une maison. Les travaux n’ont pas été réalisés dans les temps, le logement n’est plus éligible au Fonds de Prévention."
     },
@@ -55,7 +55,7 @@
     "cta_label": "Vérifier mon éligibilité",
     "cta_url": "/simulateur",
     "image": {
-      "alt": "Fonds Prévention Argile - Un service de l'État",
+      "alt": "Fonds prévention argile - Un service de l'État",
       "src": "/images/home/savoir-si-concerne.png"
     }
   },
@@ -101,7 +101,7 @@
         "imageSrc": "/illustrations/house.svg",
         "imageAlt": "Effectuer un diagnostic",
         "title": "2. Diagnostic",
-        "description": "Un exoert se déplace chez vous afin de réaliser les constats et analyses sur la maison et son environnement pour recommander les travaux de préventions à effectuer."
+        "description": "Un expert se déplace chez vous afin de réaliser les constats et analyses sur la maison et son environnement pour recommander les travaux de préventions à effectuer."
       },
       {
         "imageSrc": "/illustrations/in-progress.svg",
@@ -119,7 +119,7 @@
   },
   "qui_peut_beneficier_aides_section": {
     "image": {
-      "alt": "Fonds Prévention Argile - Un service de l'État",
+      "alt": "Fonds prévention argile - Un service de l'État",
       "src": "/images/home/qui-peut-beneficier-aides.png"
     },
     "title": "Qui peut bénéficier de ces aides de l'État ?",
@@ -217,7 +217,7 @@
   "qui_sommes_nous_section": {
     "qui_sommes_nous_subsection": {
       "title": "Qui sommes-nous ?",
-      "description_1": "Fonds Prévention Argile est un service numérique public qui vous permet d’évaluer votre situation, constituer et suivre votre dossier d'aide au fonds expérimental de prévention du phénomène de retrait-gonflement des argiles.",
+      "description_1": "Fonds prévention argile est un service numérique public qui vous permet d’évaluer votre situation, constituer et suivre votre dossier d'aide au fonds expérimental de prévention du phénomène de retrait-gonflement des argiles.",
       "description_2": "Nous sommes un service public lancé par le Ministère de la Transition Ecologique et la Direction du Numérique (DINUM) sous la forme d'une start-up d'Etat.  N'hésitez pas à nous faire part de vos retours et suggestions d'améliorations.",
       "imageSrc": "/images/home/ministere_transition_ecologique.svg",
       "imageAlt": "Logo Ministère de la Transition écologique"

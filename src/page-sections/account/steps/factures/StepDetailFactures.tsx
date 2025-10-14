@@ -28,7 +28,7 @@ export default function StepDetailFactures() {
           }
           style={!isActive ? { color: "var(--text-disabled-grey)" } : undefined}
         >
-          4. Travaux et paiement
+          5. Travaux et paiement
         </h5>
 
         {/* Description avec couleur conditionnelle */}
@@ -36,7 +36,7 @@ export default function StepDetailFactures() {
           className={!isActive ? "fr-text--disabled" : undefined}
           style={!isActive ? { color: "var(--text-mention-grey)" } : undefined}
         >
-          Transmettre les factures pour être remboursé
+          Transmettez les factures pour recevoir votre aide financière.
         </p>
 
         {/* Bouton ou lien selon l'état */}

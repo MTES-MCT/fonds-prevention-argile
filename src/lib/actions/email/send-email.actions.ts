@@ -7,7 +7,7 @@ import type { ActionResult } from "@/lib/actions/types";
 import { getServerEnv } from "@/lib/config/env.config";
 
 /**
- * Envoie un email de validation à une AMO
+ * Envoie un email de validation à un AMO
  */
 export async function sendValidationAmoEmail(params: {
   amoEmail: string | string[]; // Peut envoyer à plusieurs emails

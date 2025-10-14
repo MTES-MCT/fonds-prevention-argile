@@ -15,7 +15,7 @@ export default function CalloutEligibiliteEnConstruction() {
     return (
       <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
         <p className="fr-callout__title">
-          Vous avez votre AMO ? Remplissez votre formulaire d’éligibilité
+          Vous avez vu votre AMO et vous avez vérifié votre éligibilité ? Remplissez votre formulaire d’éligibilité
         </p>
         <p className="fr-callout__text">
           Après avoir choisi votre AMO (Assistant à Maîtrise d’Ouvrage,
@@ -34,7 +34,7 @@ export default function CalloutEligibiliteEnConstruction() {
   return (
     <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
       <p className="fr-callout__title">
-        Vous avez votre AMO ? Remplissez votre formulaire d’éligibilité
+        Vous avez vu votre AMO et vous avez vérifié votre éligibilité ? Remplissez votre formulaire d’éligibilité
       </p>
       <p className="fr-callout__text">
         Après avoir choisi votre AMO (Assistant à Maîtrise d’Ouvrage,

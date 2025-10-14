@@ -13,7 +13,7 @@ export default function StepDetailAmo() {
         {/* Badge conditionnel */}
         {isTodo ? (
           <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
-            A Faire
+            À Faire
           </span>
         ) : (
           <span className="fr-badge fr-text--sm fr-mb-4w">À venir</span>
@@ -36,7 +36,7 @@ export default function StepDetailAmo() {
           className={!isActive ? "fr-text--disabled" : undefined}
           style={!isActive ? { color: "var(--text-mention-grey)" } : undefined}
         >
-          Choisissez votre AMO parmi les choix dans le tableau ci-dessus
+          Choisissez votre AMO parmi les choix dans le tableau ci-dessus.
         </p>
 
         {/* Lien selon l'état */}

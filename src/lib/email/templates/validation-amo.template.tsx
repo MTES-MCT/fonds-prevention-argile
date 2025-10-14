@@ -15,7 +15,7 @@ export function ValidationAmoTemplate({
 
       <EmailComponents.Paragraph>
         Un particulier nous a indiqué être accompagné par vos services dans le
-        cadre du dispositif d’aide Fonds Prévention Argile
+        cadre du dispositif d’aide Fonds prévention argile
         (http://fonds-prevention-argile.beta.gouv.fr).
       </EmailComponents.Paragraph>
 
