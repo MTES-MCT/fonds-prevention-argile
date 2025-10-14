@@ -253,9 +253,9 @@ export const DS_FIELDS: Record<string, DSField> = {
     rgaPath: "logement.zone_dexposition",
     transformer: (value: unknown) => {
       const zoneMapping: Record<string, string> = {
-        faible: "faible",
-        moyen: "moyenne",
-        fort: "forte",
+        faible: "Faible",
+        moyen: "Moyenne",
+        fort: "Forte",
       };
       return typeof value === "string" && value in zoneMapping
         ? zoneMapping[value]
