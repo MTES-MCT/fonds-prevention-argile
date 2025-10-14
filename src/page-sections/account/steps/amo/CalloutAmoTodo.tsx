@@ -161,8 +161,7 @@ export default function CalloutAmoTodo({
             </p>
             <p className="fr-callout__text fr-mb-4w">
               En réponse à votre demande, l'AMO a décliné votre requête
-              d'accompagnement. L'avez-vous prévenu avant de le sélectionner ?Si
-              c'est le cas, vous pouvez soumettre une nouvelle demande à un
+              d'accompagnement. Vous pouvez soumettre une nouvelle demande à un
               autre AMO. Assurez-vous de le contacter au préalable pour
               confirmer votre collaboration.
             </p>
