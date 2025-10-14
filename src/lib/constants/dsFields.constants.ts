@@ -84,7 +84,7 @@ export const DS_FIELDS: Record<string, DSField> = {
     label: "Revenu fiscal de référence",
     section: DSSection.DEMANDEUR,
     type: DSFieldType.NUMBER,
-    rgaPath: "menage.revenu",
+    rgaPath: "menage.revenu_rga",
   },
   "Q2hhbXAtNTU0Mjc5NA==": {
     id: "Q2hhbXAtNTU0Mjc5NA==",
@@ -249,7 +249,7 @@ export const DS_FIELDS: Record<string, DSField> = {
     id: "Q2hhbXAtNTUxMDk4Mw==",
     label: "Zone d'exposition RGA",
     section: DSSection.MAISON,
-    type: DSFieldType.MULTIPLE_DROPDOWN,
+    type: DSFieldType.DROPDOWN,
     rgaPath: "logement.zone_dexposition",
     transformer: (value: unknown) => {
       const zoneMapping: Record<string, string> = {
@@ -291,13 +291,27 @@ export const DS_FIELDS: Record<string, DSField> = {
     section: DSSection.MAISON,
     type: DSFieldType.FILE,
   },
-  "Q2hhbXAtNTQxNzM4OQ==": {
-    id: "Q2hhbXAtNTQxNzM4OQ==",
-    label: "Sinistres précoces identifiés",
+  "Q2hhbXAtNTY3MDU4OA==": {
+    id: "Q2hhbXAtNTY3MDU4OA==",
+    label: "Désordres architecturaux identifiés",
+    type: DSFieldType.CHECKBOX,
+    section: DSSection.MAISON,
+    rgaPath: "rga.peu_endommage",
+    transformer: (value: unknown) => {
+      // Oui si endommagée, sinon non
+      return String(value === "endommagee" ? "oui" : "non");
+    },
+  },
+  "Q2hhbXAtNTY3MDUwNg==": {
+    id: "Q2hhbXAtNTY3MDUwNg==",
+    label: "Micro-fissures d'1mm max identitées",
     section: DSSection.MAISON,
     type: DSFieldType.CHECKBOX,
     rgaPath: "rga.peu_endommage",
-    transformer: (value: unknown) => String(value === true || value === "oui"),
+    transformer: (value: unknown) => {
+      // Oui si peu endommagée, sinon non
+      return String(value === "peu-endommagee" ? "oui" : "non");
+    },
   },
   "Q2hhbXAtNTQxNzM5Mg==": {
     id: "Q2hhbXAtNTQxNzM5Mg==",

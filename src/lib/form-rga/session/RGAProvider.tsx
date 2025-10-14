@@ -41,7 +41,7 @@ export function RGAProvider({ children }: RGAProviderProps) {
         errors.push("Adresse du logement manquante");
       }
 
-      if (!data.menage?.revenu || data.menage.revenu <= 0) {
+      if (!data.menage?.revenu_rga || data.menage.revenu_rga <= 0) {
         errors.push("Revenu du ménage invalide");
       }
 

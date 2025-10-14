@@ -14,7 +14,7 @@ export function validateRGAData(data: Partial<RGAFormData>): {
     errors.push("Adresse du logement manquante");
   }
 
-  if (!data.menage?.revenu) {
+  if (!data.menage?.revenu_rga) {
     errors.push("Revenu du ménage manquant");
   }
 
