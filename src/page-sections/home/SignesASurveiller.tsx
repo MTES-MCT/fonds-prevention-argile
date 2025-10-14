@@ -1,7 +1,7 @@
 import { contentHomePage } from "@/content";
 import { contentSignesASurveillerCommon } from "@/content/signes-a-surveiller";
 import Image from "next/image";
-import CalloutEligible from "../signes-a-surveiller/CalloutEligible";
+// import CalloutEligible from "../signes-a-surveiller/CalloutEligible";
 import CalloutNonEligible from "../signes-a-surveiller/CalloutNonElligible";
 
 export default function SignesASurveiller() {

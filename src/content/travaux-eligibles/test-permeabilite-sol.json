@@ -12,17 +12,19 @@
     "src": "/images/travaux-eligibles/porchet.png",
     "description": "Test de perméabilité du sol de type Porchet"
   },
-  "une_des_solutions": "Connaître la perméabilité de votre sol permet d’adapter les solutions de drainage et d’éviter les erreurs (ex. : infiltration trop rapide en sol sableux, ou trop lente en sol argileux). Le test Porchet, simple et normé, mesure la vitesse d’absorption de l’eau pour guider les aménagements. Il est indispensable avant tous travaux en lien avec l'infiltration des eaux.",
+  "une_des_solutions": [
+    "Connaître la perméabilité de votre sol argileux permet d’adapter les solutions de prévention à mettre en oeuvre (drainage déporté des fondations, infiltration déportée des fondations, ...). Le test Porchet, simple et normé, mesure la vitesse d’absorption de l’eau dans le sol. Il est indispensable avant tous travaux en lien avec l'infiltration des eaux."
+  ],
   "solutions": [
     {
       "title": "1. Méthode standardisée",
       "details": [
-        "Création d’un puits de 20 cm de diamètre et 30 cm de profondeur.",
+        "Création d’une fosse d'au moins 20 cm de diamètre et 30 cm de profondeur.",
         "Remplissage d’eau et mesure du temps d’infiltration (en secondes)"
       ]
     },
     {
-      "title": "2. Interprétation des résultats",
+      "title": "2. Interprétation des résultats (règle générale, à confirmer par un hydrogéologue ou géotechnicien) :",
       "details": [
         "Sol perméable (> 10 mm/h) : Risque de lessivage (drainage nécessaire).",
         "Sol imperméable (< 1 mm/h) : Risque de stagnation (infiltration à proscrire)."
@@ -30,10 +32,10 @@
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "Le test de perméabilité du sol de type Porchet est essentiel pour adapter les solutions de prévention et notamment de gestion des eaux :",
+    "subtitle": "Le test de perméabilité du sol de type Porchet est essentiel pour adapter les solutions de prévention à mettre en oeuvre :",
     "details": [
       "Personnalise les solutions (drainage, infiltration, membrane étanche).",
-      "Évite les erreurs coûteuses (ex. : pose d’un drain inutile en sol sableux)."
+      "Évite les erreurs coûteuses."
     ]
   },
   "quand_mettre_en_oeuvre": {
@@ -47,7 +49,10 @@
     "traitement": {
       "title": "",
       "details": []
-    }
+    },
+    "generalite": "Si la réalisation d’un test de perméabilité est recommandé par le diagnostic de vulnérabilité de votre maison, réalisé par l’expert RGA, cette solution est subventionnable par le fonds de prévention et doit être réalisée au démarrage de la phase travaux."
   },
-  "a_retenir": "Un sol argileux a une perméabilité 10 à 100 fois moindre qu’un sol sableux. Vérifier la perméabilité du sol est essentiel pour éviter une mauvaise préconisation et d'aggraver le phénomène du retrait-gonflement des argiles. Ce test est subventionnable par le fonds de prévention."
+  "a_retenir": [
+    "Un sol argileux a une perméabilité 10 à 100 fois moindre qu’un sol sableux. Vérifier la perméabilité du sol est essentiel pour éviter une mauvaise préconisation et d'aggraver le phénomène du retrait-gonflement des argiles. Ce test est subventionnable par le fonds de prévention jusqu'à 80%."
+  ]
 }

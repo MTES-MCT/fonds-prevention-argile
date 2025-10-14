@@ -12,7 +12,9 @@
     "src": "/images/travaux-eligibles/trottoir.png",
     "description": "Illustration d'un trottoir en béton avec pente vers l'extérieur"
   },
-  "une_des_solutions": "Un trottoir étanche d'au moins 1 mètre de large autour de la maison crée une barrière physique contre les infiltrations et l'évaporation d'eau . Cette solution limite les variations d'humidité du sol et protège les fondations contre les mouvements différentiels.",
+  "une_des_solutions": [
+    "Un trottoir étanche d'au moins 1 mètre de large autour de la maison crée une barrière physique contre les infiltrations et l'évaporation d'eau. Cette solution limite les variations d'humidité du sol et protège les fondations contre les mouvements différentiels."
+  ],
   "solutions": [
     {
       "title": "Mise en oeuvre technique",
@@ -41,19 +43,20 @@
       "title": "En prévention",
       "details": [
         "Sur un terrain plat (moins de 3% de pente).",
-        "Si une stagnation d'humidité est présente au pied des fondations.",
-        "Lorsqu'un diagnostic RGA le préconnise."
+        "Si une stagnation d'humidité est présente au pied des fondations."
       ]
     },
     "traitement": {
-      "title": "Points de vigilence",
+      "title": "Points de vigilance",
       "details": [
         "Une étude particulière de la nature du sol au-dessous et au-dessus du trottoir est nécessaire pour définir le dispositif.",
-        "En limite de propriété, une demande d'autorisation auprès de ses voisins est nécessaire.",
         "L'impossibilité de disposer l'étanchéité sur tout le contour de la construction est de nature à favoriser les désordres et il est alors préférable d'abandonner cette solution.",
         "En cas de réalisation d’une étanchéité autour de la construction, afin d’éviter un assèchement du sol dommageable sous la construction par évaporation par le vide sanitaire, il conviendra de veiller à ce que celui-ci soit normalement ventilé."
       ]
-    }
+    },
+    "generalite": ""
   },
-  "a_retenir": "Ce trottoir doit être combiné avec un système d'évacuation des eaux (gouttières, regards). Coût modéré et éligible aux aides jusqu'à 80%. Solution souvent obligatoire dans les PPR (Plans de Prévention des Risques)."
+  "a_retenir": [
+    "Ce trottoir doit être combiné avec un système d'évacuation des eaux (gouttières, regards). Cette solution est subventionnable au fonds de prévention jusqu’à 80%."
+  ]
 }

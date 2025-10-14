@@ -9,14 +9,15 @@ interface TravauxEligiblesTemplateProps {
   pageLink: string;
   tag: { title: string; className: string; icon?: string } | undefined;
   image: { src: string; alt: string; description: string };
-  une_des_solutions: string;
+  une_des_solutions: string[];
   solutions: { title: string; details: string[] }[];
   pourquoi_solution_efficace: { subtitle: string; details: string[] };
   quand_mettre_en_oeuvre: {
     prevention: { title: string; details: string[] };
     traitement: { title: string; details: string[] };
+    generalite: string;
   };
-  a_retenir: string;
+  a_retenir: string[];
 }
 
 export default function TravauxEligiblesTemplate({
@@ -102,7 +103,10 @@ export default function TravauxEligiblesTemplate({
             {/* Une des solutions pour protéger votre maison */}
             <div className="fr-my-6w">
               <h1>{contentTravauxEligiblesCommon.une_des_solutions_title}</h1>
-              <p>{une_des_solutions}</p>
+              {une_des_solutions.map((une_solution, index) => (
+                <p key={index}>{une_solution}</p>
+              ))}
+              
             </div>
 
             {/* En quoi consiste cette solution ? */}
@@ -140,6 +144,8 @@ export default function TravauxEligiblesTemplate({
               <h1>
                 {contentTravauxEligiblesCommon.quand_mettre_en_oeuvre_title}
               </h1>
+
+              {quand_mettre_en_oeuvre.generalite && <p>{quand_mettre_en_oeuvre.generalite}</p>}
               <h4>{quand_mettre_en_oeuvre.prevention.title}</h4>
               <ul>
                 {quand_mettre_en_oeuvre.prevention.details.map(
@@ -156,6 +162,7 @@ export default function TravauxEligiblesTemplate({
                   )
                 )}
               </ul>
+
             </div>
 
             {/* A retenir */}
@@ -163,7 +170,9 @@ export default function TravauxEligiblesTemplate({
               <h3 className="fr-callout__title">
                 {contentTravauxEligiblesCommon.a_retenir_title}
               </h3>
-              <p className="fr-callout__text">{a_retenir}</p>
+              {a_retenir.map((retenir, index) => (
+                <p key={index} className="fr-callout__text">{retenir}</p>
+              ))}
             </div>
           </div>
         </div>

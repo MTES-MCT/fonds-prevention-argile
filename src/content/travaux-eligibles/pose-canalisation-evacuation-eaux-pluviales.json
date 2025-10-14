@@ -1,5 +1,5 @@
 {
-  "title": "Pose ou réparation des canalisations d’évacuation des eaux pluviales, en particulier de toiture, en veillant à les éloigner des fondations",
+  "title": "Pose ou réparation des canalisations d’évacuation des eaux pluviales, en particulier de toiture, en veillant à les éloigner des fondations de la maison",
   "type": "pose-canalisation-evacuation-eaux-pluviales",
   "pageLink": "/travaux-eligibles/pose-canalisation-evacuation-eaux-pluviales",
   "tag": {
@@ -12,27 +12,23 @@
     "src": "/images/travaux-eligibles/canalisation-pluie.png",
     "description": "Pose de canalisation d'évacuation des eaux pluviales."
   },
-  "une_des_solutions": "Des eaux pluviales mal évacuées s’infiltrent près des fondations, déstabilisant le sol argileux et peuvent entraîner des dommages sur une maison individuelle construite sur des sols argileux très plastiques. Une canalisation dédiée (séparée des eaux usées) draine l’eau loin de la maison, réduisant les risques de gonflement et de tassement. Dans le cadre du retrait-gonflement des argiles, il est essentiel de stabiliser la teneur en eau du sol sous l'habitation.",
+  "une_des_solutions": [
+    "Des eaux pluviales mal évacuées s’infiltrent près des fondations, déstabilisant la teneur en eau du sol argileux sous la maison et dans son environnement proche. Ces infiltrations peuvent entraîner l’apparition de désordres sur une maison individuelle.",
+    "Les eaux pluviales doivent être évacuées loin des fondations de la maison par la pose ou la réparation de canalisations, séparées du réseau de collecte des eaux usées et du réseau de drainage déporté des fondations."
+  ],
   "solutions": [
     {
-      "title": "1. Installation d’un réseau séparatif",
+      "title": "Installation d’un réseau séparatif",
       "details": [
-        "Tuyaux en PVC ou béton (diamètre 100 à 200 mm) avec pente minimale de 1%.",
-        "Raccordement à un puisard ou à un réseau communal (si disponible)."
-      ]
-    },
-    {
-      "title": "2. Aménagements complémentaires",
-      "details": [
-        "Griges de collecte en périphérie de la maison (évite les ruissellements)",
-        "Regards de visite tous les 10 mètres pour faciliter l’entretien."
+        "Tuyaux en PVC ou béton (diamètre de 100 à 200 mm en général) avec pente minimale de 1%.",
+        "Raccordement à un réseau communal ou départemental (se renseigner auprès du gestionnaire de réseaux)."
       ]
     }
   ],
   "pourquoi_solution_efficace": {
-    "subtitle": "En s'assurant d'avoir une bonne collecte et évacuation des eaux pluviales vous :",
+    "subtitle": "En s'assurant d’évacuer correctement les eaux pluviales vous :",
     "details": [
-      "Éloignez l’eau des fondations, stabilisant l’humidité du sol sous l'habitation.",
+      "Éloignez les eaux pluviales des fondations, stabilisant l’humidité du sol sous l'habitation.",
       "Réduisez la pression sur les argiles (moins de gonflement en période humide).",
       "Evitez un gonflement localisé et différentiel sous vos fondations."
     ]
@@ -42,17 +38,21 @@
       "title": "En prévention",
       "details": [
         "Dès la construction en zone argileuse (obligatoire dans certaines communes)",
-        "Après un diagnostic RGA recommandant une meilleure évacuation."
+        "Après un diagnostic RGA réalisé par un professionel recommandant une meilleure évacuation."
       ]
     },
     "traitement": {
-      "title": "Points de vigilence",
+      "title": "Points de vigilance",
       "details": [
         "Un essai de perméabilité du sol de type porchet est indispensable avant tous travaux en lien avec l'infiltration des eaux pluviales.",
         "Le raccordement au réseau collectif nécessite l'accord préalable du gestionnaire de réseau.",
         "En l'absence de réseau collectif proche du bâti, il convient de respecter une distance minimale suffisante entre la maison et le point de rejet."
       ]
-    }
+    },
+    "generalite": ""
   },
-  "a_retenir": "Une évacuation mal conçue peut aggraver le phénomène de RGA en concentrant l’eau à un seul endroit. Avant toute mise en oeuvre de travaux en lien avec l'infiltration des eaux pluviales à la parcelle, il est indispensable de faire réaliser par un professionnel, un essai de la perméabilité du sol de type Porchet. Subventionnable jusqu'à 80% si intégrée à un plan de prévention validé par les services instructeurs."
+  "a_retenir": [
+    "Une évacuation des eaux pluviales mal conçue peut aggraver le phénomène de RGA en concentrant l’eau à un seul endroit. La pose ou la réparation des canalisations d’évacuation des eaux pluviales en veillant à les éloigner des fondations est subventionnable jusqu’à 80% par le fonds de prévention.",
+    "Avant toute mise en oeuvre de travaux en lien avec l'infiltration des eaux pluviales à la parcelle, il est indispensable de faire réaliser par un professionnel, un essai de la perméabilité du sol de type Porchet, également subventionnable jusqu'à 80% par le fonds de prévention. "
+  ]
 }

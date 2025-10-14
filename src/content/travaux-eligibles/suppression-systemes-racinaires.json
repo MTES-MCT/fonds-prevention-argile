@@ -12,27 +12,22 @@
     "src": "/images/travaux-eligibles/abattage.png",
     "description": "Illustration montrant l'abattage contrôlé d'un arbre et le traitement de souche - Crédit photo Franck Béchade, France Argile"
   },
-  "une_des_solutions": "Les arbres plantés trop proche des fondations destabilisent le sol en pompant son eau. Leur suppression ciblée permet de stabiliser la teneur en eau du sol sous l'habitation.",
+  "une_des_solutions": [
+    "Les arbres plantés trop proche des fondations déstabilisent le sol en pompant son eau. Leur suppression ciblée permet de stabiliser la teneur en eau du sol sous l'habitation."
+  ],
   "solutions": [
     {
-      "title": "1. Suppression",
+      "title": "Suppression des systèmes racinaires",
       "details": [
-        "Abattage contrôlé des arbres trop proche de la maison.",
-        "Suppression des arbustres au pied des fondations.",
-        "Tronçonnage du tronc et traitement de souche.",
-        "Dessouchage d'un arbre isolé"
+        "Identification des systèmes racinaires trop proches de la maison.",
+        "Couper et arracher ces systèmes racinaires."
       ]
-    },
-    {
-      "title": "",
-      "details": []
     }
   ],
   "pourquoi_solution_efficace": {
     "subtitle": "Une action radicale mais nécessaire :",
     "details": [
       "La présence de végétation trop proche de la maison est le second facteur causant des sinistres, après les hydratations accidentelles.",
-      "La zone d'influence géotechnique de la succion de la végétation est allongé en aval à 1,5 fois la hauteur de l'arbre à maturité.",
       "Prévient les dommages aux canalisations."
     ]
   },
@@ -40,20 +35,21 @@
     "prevention": {
       "title": "En prévention",
       "details": [
-        "Les chênes, peupliers, saules et cèdres paraissent les plus préjudiciables pour les constructions trop proches. ",
-        "Un arbre à moins de 1,5 fois sa hauteur à maturité comporte des risques liés à ses racines.",
+        "Les chênes, peupliers, saules et cèdres paraissent les plus préjudiciables pour les constructions se trouvant dans la zone d'action de leurs racines. ",
         "En cas de remontées de racines dans les canalisations"
       ]
     },
     "traitement": {
-      "title": "Points de vigilence",
+      "title": "Points de vigilance",
       "details": [
-        "Le dessouchage peut ne pas être adaptés à toutes les configurations (zone boisée, arbre des voisins).",
         "L'entretien de la végétation est à réitérer régulièrement, plusieurs fois par an si nécessaire.",
         "Couper les racines peut entraîner un risque d'altération de la végétation et de stabilité des arbres.",
         "Cette solution est à effectuer par un professionnel pour éviter tout sinistre collatéral."
       ]
-    }
+    },
+    "generalite": ""
   },
-  "a_retenir": "Un peuplier peut pomper jusqu'à 200 litres d'eau par jour en période estivale. Cette intervention est subventionnable jusqu'à 80% si justifiée par un expert. Vérifiez toujours les règles d'urbanisme avant l'abattage."
+  "a_retenir": [
+    "Un peuplier peut pomper jusqu'à 200 litres d'eau par jour en période estivale. Supprimer les systèmes racinaires trop proches de la maison est subventionnable par le fonds de prévention jusqu'à 80%."
+  ]
 }
