@@ -13,7 +13,7 @@ export default function StepDetailAmo() {
         {/* Badge conditionnel */}
         {isTodo ? (
           <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
-            A Faire
+            À Faire
           </span>
         ) : (
           <span className="fr-badge fr-text--sm fr-mb-4w">À venir</span>
