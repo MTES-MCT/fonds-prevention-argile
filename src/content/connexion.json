@@ -1,5 +1,5 @@
 {
-  "title": "Connexion au Fonds Prévention Argile",
+  "title": "Connexion au Fonds prévention argile",
   "franceConnect": {
     "title": "Se connecter avec FranceConnect",
     "description": "FranceConnect est la solution proposée par l’État pour sécuriser et simplifier la connexion aux services en ligne.",
@@ -10,7 +10,7 @@
   },
   "or": "ou",
   "connectWithAccount": "Se connecter avec son compte",
-  "description": "Page de connexion au Fonds Prévention Argile",
+  "description": "Page de connexion au Fonds prévention argile",
   "mandatoryFieldsText": "Sauf mention contraire, tous les champs sont obligatoires.",
   "login": "Identifiant",
   "loginFormat": "Format attendu : nom@domaine.fr",

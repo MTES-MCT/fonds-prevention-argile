@@ -149,7 +149,7 @@ export default function CalloutAmoTodo({
             <p className="fr-callout__title">Choisissez votre AMO</p>
             <p className="fr-callout__text fr-mb-4w">
               Le recours à un AMO (Assistant à Maîtrise d'ouvrage) est
-              obligatoire pour bénéficier du Fonds Prévention Argile. Contactez
+              obligatoire pour bénéficier du Fonds prévention argile. Contactez
               puis confirmez la structure choisie dans les propositions
               ci-dessous afin de passer à l'étape suivante.
             </p>

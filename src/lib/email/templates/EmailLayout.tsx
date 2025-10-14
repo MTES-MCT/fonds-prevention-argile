@@ -17,7 +17,7 @@ export function EmailLayout({ children, preheader }: EmailLayoutProps) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-        <title>Fonds Prévention Argile</title>
+        <title>Fonds prévention argile</title>
       </head>
       <body
         style={{
@@ -90,7 +90,7 @@ export function EmailLayout({ children, preheader }: EmailLayoutProps) {
                         color: "#000091",
                       }}
                     >
-                      Fonds Prévention Argile
+                      Fonds prévention argile
                     </h1>
                   </td>
                 </tr>

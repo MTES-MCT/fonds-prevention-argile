@@ -5,20 +5,20 @@
 
   "presentation": "1 - Présentation",
   "presentation_paragraphes": [
-    "La plateforme Fonds Prévention Argile (ci-après dénommé « le Service ») est un téléservice expérimental mis en œuvre par a Direction Générale de l’Aménagement, du Logement et de la Nature (DGALN) en lien avec la Direction interministérielle du numérique (DINUM).",
-    "Le Service est destiné à accompagner au mieux les propriétaires occupant de leur logement à titre de résidence principale concernés par le retrait-gonflement des argiles. Il permet d’être mis en relation avec les services de l’Etat compétents afin de bénéficier des aides du « fonds prévention argile ».",
+    "La plateforme Fonds prévention argile (ci-après dénommé « le Service ») est un téléservice expérimental mis en œuvre par a Direction Générale de l’Aménagement, du Logement et de la Nature (DGALN) en lien avec la Direction interministérielle du numérique (DINUM).",
+    "Le Service est destiné à accompagner au mieux les propriétaires occupant de leur logement à titre de résidence principale concernés par le retrait-gonflement des argiles. Il permet d’être mis en relation avec les services de l’Etat compétents afin de bénéficier des aides du « Fonds prévention argile ».",
     "Le Service est une plateforme numérique permettant : "
   ],
   "presentation_fonctionnalites": [
     "D’informer le grand public sur les signes précurseurs lié au retrait-gonflement des argiles ;",
-    "De vérifier si son logement est éligible à une aide financière au titre du « fonds prévention argile » ;",
-    "De déposer un dossier de demande d’aide au titre du « fonds prévention argile » et en suivre d’instruction par les services de l’Etat."
+    "De vérifier si son logement est éligible à une aide financière au titre du « Fonds prévention argile » ;",
+    "De déposer un dossier de demande d’aide au titre du « Fonds prévention argile » et en suivre d’instruction par les services de l’Etat."
 
   ],
 
   "definition": "2 – Définitions",
   "definition_paragraphes": [
-    "« L’Editeur » du portail Fonds Prévention Argile est la Direction Générale de l’Aménagement, du Logement et de la Nature.",
+    "« L’Editeur » du portail Fonds prévention argile est la Direction Générale de l’Aménagement, du Logement et de la Nature.",
     "Le « Service » correspond aux fonctionnalités offertes par la plateforme Fonds Préventions Argile pour répondre à ses finalités.",
     "« L’Utilisateur » est tout personne qui utilise les fonctionnalités du Service avec un compte.",
     "Le « Visiteur » est toute personne qui consulte ou utilise le Service."
@@ -30,7 +30,7 @@
   "fonctionnalites_sans_compte_p2": "Le Visiteur peut :",
   "fonctionnalites_sans_compte_fonctionnalites": [
     "Prendre connaissance d’informations pédagogiques sur le phénomène du retrait-gonflement des argiles ;",
-    "Vérifier l’éligibilité de son logement à une aide financière du « fonds prévention argile »."
+    "Vérifier l’éligibilité de son logement à une aide financière du « Fonds prévention argile »."
   ],
   "fonctionnalites_avec_compte": "3.2 Fonctionnalités avec création de compte",
   "fonctionnalites_avec_compte_p1": "En plus des fonctionnalités Visiteur, chaque Utilisateur du Service dispose des fonctionnalités suivantes :",
@@ -42,13 +42,13 @@
   "fonctionnalites_avec_compte_dossier_ds": "Le dépôt d’un dossier est réalisé au moyen du portail démarches-simplifiées mis en place par la Direction Interministérielle du Numérique (DINUM) rattachée aux services du Premier ministre : <a href='https://www.demarches-simplifiees.fr/'>Démarches Simplifiées</a>",
   "fonctionnalites_avec_compte_dossier_fonctionnalite": "Depuis son espace personnel sur le Service, l’Utilisateur peut : ",
   "fonctionnalites_avec_compte_dossier_fonctionnalite_liste": [
-    "Déposer une demande d’aide au titre du « fonds prévention argile » ;",
+    "Déposer une demande d’aide au titre du « Fonds prévention argile » ;",
     "Téléverser les pièces nécessaires à l’instruction de sa demande d’aide ;",
     "Suivre l’état d’avancement de l’instruction de sa demande par les services de l’Etat compétents."
   ],
   "fonctionnalites_avec_compte_dossier_paragraphes": [
     "L’instruction et la validation des différentes étapes du dossier de demande d’aide est assurée par les services des Directions Départementales des Territoires / et de la Mer (DDT ou DDTM) territorialement compétents dans le département où se situe le bien.",
-    "Le dépôt d’un dossier sur le Service ne vaut pas délivrance d’une aide au titre du « fonds prévention argile ». Seules les décisions administratives prises à l’issue de l’instruction du dossier par les services de l’Etat compétents sont susceptibles d’accorder ou refuser le versement d’un aide au titre du « fonds prévention argile »."
+    "Le dépôt d’un dossier sur le Service ne vaut pas délivrance d’une aide au titre du « Fonds prévention argile ». Seules les décisions administratives prises à l’issue de l’instruction du dossier par les services de l’Etat compétents sont susceptibles d’accorder ou refuser le versement d’un aide au titre du « Fonds prévention argile »."
   ],
 
   "traitement_donnee": "4 - Traitement des données personnelles", 
@@ -71,7 +71,7 @@
         "Les informations communiquées dans le Service relèvent de la responsabilité de l’Utilisateur. L’Utilisateur s’engage en particulier à ne communiquer que des informations concernant le logement dont il est propriétaire occupant à titre de résidence principale. L’Utilisateur ne dépose que les seuls documents et informations demandées par le Service qui sont strictement nécessaires à l’instruction de son dossier. Il s'abstient en particulier de mentionner des informations 'sensibles' au sens du RGPD (ex : opinions politiques, philosophiques, religieuses ou des données de santé) et plus globalement tout propos contraire à la loi (ex : injure, obscénité, diffamation…).",
         "Il est rappelé que toute personne procédant à une fausse déclaration pour elle-même ou pour autrui s’expose, notamment, aux sanctions prévues à l’article 441-1 du code pénal, prévoyant des peines pouvant aller jusqu’à trois ans d’emprisonnement et 45 000 euros d’amendes.",
         "L’Editeur se réserve, le cas échéant, le droit de prendre toutes mesures utiles et, en particulier, d’engager des poursuites devant les juridictions compétentes.",
-        "L'Utilisateur déclare être pleinement informé et conscient que le Service ne délivre aucune autorisation ou décision administrative créatrice de droits pour les Utisateurs. Il s'agit d’une plateforme qui permet d’être mis en relation avec les services de l’Etat seuls compétents pour délivrer ou refuser le versement d’une aide au titre du « fonds prévention argile »."
+        "L'Utilisateur déclare être pleinement informé et conscient que le Service ne délivre aucune autorisation ou décision administrative créatrice de droits pour les Utisateurs. Il s'agit d’une plateforme qui permet d’être mis en relation avec les services de l’Etat seuls compétents pour délivrer ou refuser le versement d’une aide au titre du « Fonds prévention argile »."
       ]
     },
     {
@@ -79,7 +79,7 @@
       "descriptions": [
         "Le Service est développé conformément à l’état de l’art. Toutefois, il n’est pas garanti qu’il soit exempt d’anomalies ou d'erreurs. Le Service est donc mis à disposition sans garantie sur sa disponibilité et ses performances.",
         "L’Editeur ne peut être tenu responsable des pertes et/ou préjudices, de quelque nature qu’ils soient, qui pourraient être causés à la suite d’un dysfonctionnement ou une indisponibilité du Service. De telles situations n'ouvriront droit à aucune compensation ou indemnité d’aucune nature dont financière.",
-        "Le Service ne délivre aucune autorisation ou décision administrative créatrice de droits pour les Utilisateurs. Il s'agit d'une plateforme qui permet d’être mis en relation avec un service de l’Etat qui est la seule autorité pour accorder ou refuser les aides au titre du « fonds prévention argile ».",
+        "Le Service ne délivre aucune autorisation ou décision administrative créatrice de droits pour les Utilisateurs. Il s'agit d'une plateforme qui permet d’être mis en relation avec un service de l’Etat qui est la seule autorité pour accorder ou refuser les aides au titre du « Fonds prévention argile ».",
         "L'Editeur s'autorise à suspendre ou révoquer n'importe quel compte et toutes les actions réalisées par ce biais, s'il estime que l'usage réalisé du service porte préjudice à son image ou ne correspond pas aux exigences de sécurité.",
         "L’Editeur se réserve la liberté de faire évoluer, de modifier ou de suspendre, sans préavis, le Service pour des raisons de maintenance ou pour tout autre motif jugé nécessaire."
       ]

@@ -1,4 +1,4 @@
-# Fonds Prévention Argile
+# Fonds prévention argile
 
 Application web pour le Fonds de Prévention des Risques liés au Retrait-Gonflement des Argiles (RGA).
 
@@ -35,8 +35,8 @@ Configurez les variables selon votre environnement. Les principales variables in
 - `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY` : Clé d'API pour récupérer les informations de la plateforme Démarches Simplifiées via GraphQL
 - `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL` : URL de l'API GRAPHQL de la plateforme Démarches Simplifiées
 - `DEMARCHES_SIMPLIFIEES_REST_API_URL` : URL de l'API Rest de la plateforme Démarches Simplifiées
-- `DEMARCHES_SIMPLIFIEES_ID_DEMARCHE` : Identifiant de la démarche liée au Fonds prévention Argile dans la plateforme Démarches Simplifiées
-- `DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE` : Nom de la démarche liée au Fonds prévention Argile dans la plateforme Démarches Simplifiées
+- `DEMARCHES_SIMPLIFIEES_ID_DEMARCHE` : Identifiant de la démarche liée au Fonds prévention argile dans la plateforme Démarches Simplifiées
+- `DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE` : Nom de la démarche liée au Fonds prévention argile dans la plateforme Démarches Simplifiées
 
 ## Développement
 

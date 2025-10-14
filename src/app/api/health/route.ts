@@ -8,7 +8,7 @@ export async function GET() {
   const health = {
     status: "OK" as "OK" | "DEGRADED" | "ERROR",
     timestamp,
-    service: "Fonds Prévention Argile API",
+    service: "Fonds prévention argile API",
     version: "1.0.0", // TODO récupérer dynamiquement
     environment: process.env.NEXT_PUBLIC_APP_ENV || "unknown",
     checks: {
