@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { parseRGAParams } from "@/lib/form-rga/parser";
 import { useRGAContext } from "@/lib/form-rga/session";
 import RGATestFiller from "./debug/RGATestFiller";
-import EarlyAccessForm from "./EarlyAccessForm";
 
 interface RGAMessage {
   type: string;
@@ -24,7 +23,6 @@ export default function SimulateurClient() {
   const [processingState, setProcessingState] =
     useState<ProcessingState>("idle");
   const [processingErrors, setProcessingErrors] = useState<string[]>([]);
-  const [showEarlyAccess, setShowEarlyAccess] = useState(false);
 
   const iframeUrl = process.env.NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL;
   const iframeHeight = process.env.NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_HEIGHT;
@@ -69,8 +67,7 @@ export default function SimulateurClient() {
         setProcessingState("success");
         isProcessingRef.current = true;
 
-        // Afficher le formulaire Early Access
-        setShowEarlyAccess(true);
+
       } catch (error) {
         console.error("Erreur lors du traitement des données RGA:", error);
         setProcessingErrors(["Une erreur inattendue s'est produite"]);
@@ -181,10 +178,6 @@ export default function SimulateurClient() {
     );
   };
 
-  // Si on doit afficher le formulaire Early Access
-  if (showEarlyAccess) {
-    return <EarlyAccessForm />;
-  }
 
   // Affichage normal du simulateur
   return (
