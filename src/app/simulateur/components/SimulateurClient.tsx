@@ -15,6 +15,8 @@ interface RGAMessage {
 
 type ProcessingState = "idle" | "processing" | "success" | "error";
 
+const REDIRECT_DELAY_MS = 1000;
+
 export default function SimulateurClient() {
   const router = useRouter();
   const { saveRGA, validateRGAData } = useRGAContext();
@@ -67,7 +69,9 @@ export default function SimulateurClient() {
         setProcessingState("success");
         isProcessingRef.current = true;
 
-
+        setTimeout(() => {
+          router.push("/connexion");
+        }, REDIRECT_DELAY_MS);
       } catch (error) {
         console.error("Erreur lors du traitement des données RGA:", error);
         setProcessingErrors(["Une erreur inattendue s'est produite"]);
@@ -126,6 +130,9 @@ export default function SimulateurClient() {
               <div>
                 <h2 className="fr-h3">Traitement en cours...</h2>
                 <p>Veuillez patienter pendant que nous traitons vos données.</p>
+                <p className="fr-text--sm fr-mt-1w">
+                  Redirection automatique vers la connexion...
+                </p>
                 <div className="fr-mt-2w" style={{ textAlign: "center" }}>
                   <span className="fr-loader" aria-label="Chargement"></span>
                 </div>
@@ -138,9 +145,7 @@ export default function SimulateurClient() {
                 <p>Vos données ont été enregistrées avec succès.</p>
                 <button
                   className="fr-btn fr-btn--primary fr-mt-2w"
-                  onClick={() => {
-                    setProcessingState("idle");
-                  }}
+                  onClick={() => router.push("/connexion")}
                 >
                   Continuer
                 </button>
@@ -177,7 +182,6 @@ export default function SimulateurClient() {
       </div>
     );
   };
-
 
   // Affichage normal du simulateur
   return (
