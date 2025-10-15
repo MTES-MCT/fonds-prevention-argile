@@ -44,8 +44,8 @@ export class DemarchesSimplifieesClient {
           query,
           variables,
         }),
-        // Cache pendant 1 seconde par défaut
-        next: { revalidate: 1 },
+        // Pas de cache
+        cache: "no-store",
       });
 
       if (!response.ok) {

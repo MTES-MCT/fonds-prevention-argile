@@ -1,26 +1,12 @@
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
-import {
-  DSStatus,
-  isStepBefore,
-  Status,
-  Step,
-} from "@/lib/parcours/parcours.types";
-import { formatDate } from "@/lib/utils";
+import { DSStatus, isStepBefore, Step } from "@/lib/parcours/parcours.types";
 import Link from "next/link";
 
 export default function StepDetailEligibilite() {
-  const { currentStep, lastDSStatus, currentStatus, getDossierUrl, dossiers } =
-    useParcours();
+  const { currentStep, lastDSStatus, getDossierUrl } = useParcours();
+
+  // URL du dossier d'éligibilité
   const dsUrl = getDossierUrl(Step.ELIGIBILITE);
-
-  // Récupérer le dossier d'éligibilité
-  const dossierEligibilite = dossiers?.find((d) => d.step === Step.ELIGIBILITE);
-
-  // Date de soumission du dossier
-  const dossierSubmittedDate = dossierEligibilite?.submittedAt;
-
-  // Statut du dossier
-  const dsStatus = dossierEligibilite?.dsStatus;
 
   // Vérifier si l'étape est active (on est à l'étape éligibilité)
   const isStepActive = currentStep === Step.ELIGIBILITE;
@@ -47,21 +33,30 @@ export default function StepDetailEligibilite() {
           </p>
         )}
 
-        {isStepActive && lastDSStatus === DSStatus.NON_ACCESSIBLE && (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
-            A faire
-          </span>
-        )}
+        {isStepActive &&
+          (lastDSStatus === DSStatus.NON_ACCESSIBLE ||
+            lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
+            <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
+              A faire
+            </span>
+          )}
 
-        {isStepActive && lastDSStatus === DSStatus.EN_CONSTRUCTION && (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
-            A faire
-          </span>
-        )}
-
-        {isStepActive && currentStatus === Status.EN_INSTRUCTION && (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
+        {isStepActive && lastDSStatus === DSStatus.EN_INSTRUCTION && (
+          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-4w">
             En instruction
+          </span>
+        )}
+
+        {((isStepActive && lastDSStatus === DSStatus.ACCEPTE) ||
+          isStepAfterCurrent) && (
+          <span className="fr-badge fr-text--sm fr-badge--success fr-mb-4w">
+            Eligibilité confirmée
+          </span>
+        )}
+
+        {isStepActive && lastDSStatus === DSStatus.REFUSE && (
+          <span className="fr-badge fr-text--sm fr-badge--error fr-mb-4w">
+            Eligibilité refusée
           </span>
         )}
 
@@ -100,39 +95,121 @@ export default function StepDetailEligibilite() {
         {/* Contenu si étape active */}
         {isStepActive && (
           <>
-            {/* Bouton ou lien selon l'état */}
-            <Link
-              href={dsUrl || "#"}
-              rel="noopener noreferrer"
-              target="_blank"
-              className="fr-btn fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line"
-            >
-              Remplir le formulaire
-            </Link>
+            {/* Contenu si en brouillon ou en construction */}
+            {(lastDSStatus === DSStatus.NON_ACCESSIBLE ||
+              lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
+              <>
+                <p>
+                  Remplissez le formulaire pour connaître votre éligibilité{" "}
+                </p>
 
-            {/* Lien vers le dossier d'éligibilité */}
-            <Link
-              href={dsUrl || "#"}
-              rel="noopener noreferrer"
-              target="_blank"
-              className="fr-btn fr-btn--secondary fr-text--sm fr-btn--icon-right fr-icon-external-link-fill"
-            >
-              Voir mes réponses
-            </Link>
+                {dsUrl ? (
+                  <Link
+                    href={dsUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="fr-btn fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line"
+                  >
+                    Reprendre le formulaire
+                  </Link>
+                ) : (
+                  <></>
+                )}
+              </>
+            )}
 
-            {/* Bouton de remplissage du formulaire */}
-            <button
-              type="button"
-              disabled
-              className="fr-btn fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line"
-            >
-              Remplir le formulaire
-            </button>
+            {/* Contenu si en instruction */}
+            {lastDSStatus === DSStatus.EN_INSTRUCTION && (
+              <>
+                <p>
+                  L’instructeur analyse vos réponses afin de vous donner son
+                  avis.
+                </p>
+
+                {dsUrl ? (
+                  <Link
+                    href={dsUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="fr-btn fr-btn--secondary fr-text--sm  fr-btn--icon-right fr-icon-arrow-right-s-line"
+                  >
+                    Voir mes réponses
+                  </Link>
+                ) : (
+                  <></>
+                )}
+              </>
+            )}
+
+            {/* Contenu si accepté ou si étape suivante */}
+            {lastDSStatus === DSStatus.ACCEPTE && (
+              <>
+                <p>
+                  L’instructeur analyse vos réponses afin de vous donner son
+                  avis.
+                </p>
+
+                {dsUrl ? (
+                  <Link
+                    href={dsUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="fr-btn fr-btn--secondary fr-text--sm  fr-btn--icon-right fr-icon-arrow-right-s-line"
+                  >
+                    Voir mes réponses
+                  </Link>
+                ) : (
+                  <></>
+                )}
+              </>
+            )}
+
+            {/* Contenu si refusé */}
+            {lastDSStatus === DSStatus.REFUSE && (
+              <>
+                <p>
+                  L’instructeur a analysé vos réponses et a émis un avis
+                  défavorable.
+                </p>
+
+                {dsUrl ? (
+                  <Link
+                    href={dsUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="fr-btn fr-btn--secondary fr-text--sm  fr-btn--icon-right fr-icon-arrow-right-s-line"
+                  >
+                    Voir ma demande
+                  </Link>
+                ) : (
+                  <></>
+                )}
+              </>
+            )}
           </>
         )}
 
         {/* Contenu si étape suivante */}
-        {isStepAfterCurrent && <>Après</>}
+        {isStepAfterCurrent && (
+          <>
+            <p>
+              L’instructeur analyse vos réponses afin de vous donner son avis.
+            </p>
+
+            {dsUrl ? (
+              <Link
+                href={dsUrl}
+                rel="noopener noreferrer"
+                target="_blank"
+                className="fr-btn fr-btn--secondary fr-text--sm  fr-btn--icon-right fr-icon-arrow-right-s-line"
+              >
+                Voir mes réponses
+              </Link>
+            ) : (
+              <></>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

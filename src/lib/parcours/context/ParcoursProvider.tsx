@@ -124,10 +124,7 @@ export function ParcoursProvider({
 
           if (result.data.updated) {
             await fetchParcours();
-
-            if (result.data.shouldRefresh) {
-              router.refresh();
-            }
+            router.refresh();
           }
         } else {
           const errorMessage =
@@ -189,15 +186,16 @@ export function ParcoursProvider({
 
   // Sync unique au chargement
   useEffect(() => {
-    if (parcours && !isLoading) {
+    if (parcours) {
       const timer = setTimeout(() => {
         syncNow();
       }, 2000);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parcours?.id]); // Dépendance sur l'id pour ne déclencher qu'une fois par parcours
+  }, [parcours?.id, syncNow]); // Dépendance sur l'id pour ne déclencher qu'une fois par parcours
 
   // Auto-sync avec intervalle
   useEffect(() => {

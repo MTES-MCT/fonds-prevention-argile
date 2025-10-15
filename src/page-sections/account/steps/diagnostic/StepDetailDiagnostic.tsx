@@ -1,11 +1,16 @@
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
-import { isStepBefore, Step } from "@/lib/parcours/parcours.types";
+import { DSStatus, isStepBefore, Step } from "@/lib/parcours/parcours.types";
 import Link from "next/link";
 
 export default function StepDetailDiagnostic() {
-  const { currentStep, getDossierUrl } = useParcours();
+  const { currentStep, getDossierUrl, lastDSStatus } = useParcours();
+
+  // URL du dossier de diagnostic
   const dsUrl = getDossierUrl(Step.DIAGNOSTIC);
-  const isActive = currentStep === Step.DIAGNOSTIC;
+
+  // Vérifier si l'étape est active (on est à l'étape diagnostic)
+  const isStepActive = currentStep === Step.DIAGNOSTIC;
+
   const isStepBeforeCurrent = currentStep
     ? isStepBefore(currentStep, Step.DIAGNOSTIC)
     : false;
@@ -16,21 +21,30 @@ export default function StepDetailDiagnostic() {
         {/* Badge conditionnel */}
         {isStepBeforeCurrent && (
           <p
-            className="fr-badge fr-mb-2w fr-icon-arrow-right-s-line-double fr-text--disabled fr-badge--icon-left"
+            className="fr-badge fr-mb-2w fr-icon-arrow-right-s-line-double fr-text--disabled-grey fr-badge--icon-left"
             style={{ color: "var(--text-disabled-grey)" }}
           >
             A Venir
           </p>
         )}
 
+        {isStepActive &&
+          (lastDSStatus === DSStatus.NON_ACCESSIBLE ||
+            lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
+            <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
+              A faire
+            </span>
+          )}
         {/* Titre avec couleur conditionnelle */}
         <h5
           className={
-            isActive
+            isStepActive
               ? "text-left fr-text-label--blue-france"
               : "text-left fr-text--disabled"
           }
-          style={!isActive ? { color: "var(--text-disabled-grey)" } : undefined}
+          style={
+            isStepActive ? undefined : { color: "var(--text-disabled-grey)" }
+          }
         >
           3. Diagnostic
         </h5>
@@ -50,6 +64,21 @@ export default function StepDetailDiagnostic() {
                 />
               </p>
             </div>
+          </>
+        )}
+
+        {/* Contenu si étape active */}
+        {isStepActive && (
+          <>
+            <p>Démarrer le diagnostic et communiquer les résultats</p>
+            <Link
+              href={dsUrl ?? "#"}
+              rel="noopener noreferrer"
+              target="_blank"
+              className="fr-btn text-white fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line"
+            >
+              Transmettre mon diagnostic
+            </Link>
           </>
         )}
       </div>

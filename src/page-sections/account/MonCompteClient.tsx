@@ -23,8 +23,9 @@ import {
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
 } from "./steps/amo";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PourEnSavoirPlusSectionContent } from "../home/PourEnSavoirPlusSection";
+import CalloutEligibiliteRefuse from "./steps/eligibilite/CalloutEligibiliteRefuse";
 
 export default function MonCompteClient() {
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
@@ -251,6 +252,10 @@ function renderEligibiliteCallout(dsStatus: DSStatus | null) {
 
   if (dsStatus === DSStatus.ACCEPTE) {
     return <CalloutEligibiliteAccepte />;
+  }
+
+  if (dsStatus === DSStatus.REFUSE) {
+    return <CalloutEligibiliteRefuse />;
   }
 
   return null;
