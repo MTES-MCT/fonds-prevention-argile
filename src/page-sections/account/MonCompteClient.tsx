@@ -6,7 +6,6 @@ import FaqAccountSection from "./common/FaqAccountSection";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
 import { useRGAContext } from "@/lib/form-rga/session/useRGAContext";
-import DevTestSidebar from "./debug/DevTestSidebar";
 import { DSStatus, Step } from "@/lib/parcours/parcours.types";
 
 // Import des Callouts
@@ -159,7 +158,6 @@ export default function MonCompteClient() {
       {/* Sections communes */}
       <StepDetailSection />
       <FaqAccountSection />
-      <DevTestSidebar />
     </>
   );
 }

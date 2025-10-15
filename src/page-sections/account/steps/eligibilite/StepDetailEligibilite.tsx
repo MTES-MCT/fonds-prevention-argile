@@ -1,10 +1,10 @@
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
-import { DSStatus, Step } from "@/lib/parcours/parcours.types";
+import { DSStatus, Status, Step } from "@/lib/parcours/parcours.types";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 
 export default function StepDetailEligibilite() {
-  const { currentStep, getDossierUrl, dossiers } = useParcours();
+  const { currentStep, lastDSStatus, currentStatus, getDossierUrl, dossiers } = useParcours();
   const dsUrl = getDossierUrl(Step.ELIGIBILITE);
 
   // Récupérer le dossier d'éligibilité
@@ -22,62 +22,34 @@ export default function StepDetailEligibilite() {
   // Vérifier si on est après l'étape éligibilité
   const isAfterEligibilite = currentStep && currentStep > Step.ELIGIBILITE;
 
-  // Déterminer l'état d'affichage
-  const getDisplayState = () => {
-    // Si on est après l'étape éligibilité ou si le statut est accepté
-    if (isAfterEligibilite || dsStatus === DSStatus.ACCEPTE) {
-      return "confirmed";
-    }
-
-    // Si on est à l'étape éligibilité
-    if (isActive) {
-      if (dsStatus === DSStatus.EN_INSTRUCTION) {
-        return "instruction";
-      }
-      if (dsStatus === DSStatus.EN_CONSTRUCTION) {
-        return "construction";
-      }
-    }
-
-    // Par défaut, non accessible
-    return "notAccessible";
-  };
-
-  const displayState = getDisplayState();
-
   return (
     <div className="fr-card">
       <div className="fr-card__body fr-py-4w">
         {/* Badge conditionnel */}
-        {displayState === "construction" && (
+        {currentStatus === Status.TODO && lastDSStatus === DSStatus.NON_ACCESSIBLE && (
           <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
-            En construction
+            A faire
           </span>
         )}
 
-        {displayState === "instruction" && (
-          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-4w">
-            En instruction le{" "}
-            {formatDate(dossierSubmittedDate?.toISOString() || "")}
+        {currentStatus === Status.TODO && lastDSStatus === DSStatus.EN_CONSTRUCTION && (
+          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
+            A faire ?
           </span>
         )}
 
-        {displayState === "confirmed" && (
-          <span className="fr-badge fr-text--sm fr-badge--success fr-mb-4w">
-            Éligibilité confirmée
+        {currentStatus === Status.EN_INSTRUCTION && (
+          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
+            En instruction
           </span>
-        )}
-
-        {displayState === "notAccessible" && (
-          <span className="fr-badge fr-text--sm fr-mb-4w">À venir</span>
         )}
 
         {/* Titre avec couleur conditionnelle */}
         <h5
           className={
-            displayState === "construction"
+            currentStatus === Status.EN_INSTRUCTION
               ? "text-left fr-text-label--blue-france"
-              : displayState === "notAccessible"
+              : dsStatus === Status.
                 ? "text-left fr-text--disabled"
                 : "text-left"
           }
