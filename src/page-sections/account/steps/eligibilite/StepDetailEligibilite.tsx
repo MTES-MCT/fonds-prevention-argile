@@ -36,26 +36,26 @@ export default function StepDetailEligibilite() {
         {isStepActive &&
           (lastDSStatus === DSStatus.NON_ACCESSIBLE ||
             lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
-            <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
+            <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">
               A faire
             </span>
           )}
 
         {isStepActive && lastDSStatus === DSStatus.EN_INSTRUCTION && (
-          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-4w">
+          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">
             En instruction
           </span>
         )}
 
         {((isStepActive && lastDSStatus === DSStatus.ACCEPTE) ||
           isStepAfterCurrent) && (
-          <span className="fr-badge fr-text--sm fr-badge--success fr-mb-4w">
+          <span className="fr-badge fr-text--sm fr-badge--success fr-mb-2w">
             Eligibilité confirmée
           </span>
         )}
 
         {isStepActive && lastDSStatus === DSStatus.REFUSE && (
-          <span className="fr-badge fr-text--sm fr-badge--error fr-mb-4w">
+          <span className="fr-badge fr-text--sm fr-badge--error fr-mb-2w">
             Eligibilité refusée
           </span>
         )}

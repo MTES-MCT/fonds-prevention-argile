@@ -10,16 +10,7 @@ export const STEP_ORDER: readonly Step[] = [
   Step.FACTURES,
 ] as const;
 
-/**
- * Labels français des étapes
- */
-export const STEP_LABELS: Record<Step, string> = {
-  [Step.CHOIX_AMO]: "Choix de l'AMO",
-  [Step.ELIGIBILITE]: "Éligibilité",
-  [Step.DIAGNOSTIC]: "Diagnostic",
-  [Step.DEVIS]: "Devis",
-  [Step.FACTURES]: "Factures",
-} as const;
+
 
 /**
  * Labels français des statuts

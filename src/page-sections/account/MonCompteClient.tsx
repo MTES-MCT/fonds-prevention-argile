@@ -13,7 +13,6 @@ import CalloutEligibiliteTodo from "./steps/eligibilite/CalloutEligibiliteTodo";
 import CalloutEligibiliteEnConstruction from "./steps/eligibilite/CalloutEligibiliteEnConstruction";
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
 import SimulationNeeded from "./common/SimulationNeededAlert";
-import { STEP_LABELS } from "@/lib/parcours/parcours.constants";
 import CalloutEligibiliteAccepte from "./steps/eligibilite/CalloutEligibiliteAccepte";
 import CalloutEligibiliteEnInstruction from "./steps/eligibilite/CalloutEligibiliteEnInstruction";
 import CalloutDiagnosticTodo from "./steps/diagnostic/CalloutDiagnosticTodo";
@@ -23,7 +22,7 @@ import {
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
 } from "./steps/amo";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PourEnSavoirPlusSectionContent } from "../home/PourEnSavoirPlusSection";
 import CalloutEligibiliteRefuse from "./steps/eligibilite/CalloutEligibiliteRefuse";
 
@@ -97,28 +96,25 @@ export default function MonCompteClient() {
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
           <h1>Bonjour {user.firstName}</h1>
-          <div className="fr-mb-4w">
-            {/* Badge de statut d'étape */}
-            {hasParcours && (
-              <p className="fr-badge fr-badge--new fr-mr-2w">
-                {getStatusLabel(lastDSStatus ?? undefined)}
-              </p>
-            )}
 
-            {/* Badge d'étape */}
-            {hasParcours && currentStep && (
-              <p className="fr-badge fr-badge--info">
-                {STEP_LABELS[currentStep]}{" "}
-              </p>
-            )}
-          </div>
-          {/* Affichage d'erreur si nécessaire */}
-          {/* TODO : Voir comment gérer le cas d'erreur ? */}
-          {/* {error && (
-            <div className="fr-alert fr-alert--error fr-mb-2w">
-              <p>{error}</p>
-            </div>
-          )} */}
+          {/* Badges de statut */}
+          <ul className="fr-badges-group fr-mb-4w">
+            <li>
+              {/* Badge de statut d'étape */}
+              {hasParcours && (
+                <p className="fr-badge fr-badge--new fr-mr-2w">
+                  {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo) ||
+                    "À faire"}
+                </p>
+              )}
+            </li>
+            <li>
+              {/* Badge d'étape */}
+              {hasParcours && currentStep && (
+                <p className="fr-badge">{STEP_LABELS[currentStep]} </p>
+              )}
+            </li>
+          </ul>
 
           {/* Alerte de succès AMO */}
           {showAmoSuccessAlert && (
@@ -208,7 +204,6 @@ function CalloutManager({
 }
 
 // Helpers pour chaque étape
-
 function renderChoixAmoCallout(
   statutAmo: StatutValidationAmo | null,
   onAmoSuccess: () => void,
@@ -301,9 +296,34 @@ function renderFacturesCallout(dsStatus: DSStatus | null) {
   );
 }
 
-// Helper pour les labels de statut
-function getStatusLabel(status?: DSStatus): string {
-  switch (status) {
+// Helper pour obtenir le label du badge de statut
+function getStatusBadgeLabel(
+  currentStep: Step | null,
+  lastDSStatus: DSStatus | null,
+  statutAmo: StatutValidationAmo | null
+): string | null {
+  // Si on est à l'étape CHOIX_AMO, afficher le statut AMO
+  if (currentStep === Step.CHOIX_AMO) {
+    if (!statutAmo) return "En construction";
+
+    switch (statutAmo) {
+      case StatutValidationAmo.EN_ATTENTE:
+        return "Attente de l'AMO";
+      case StatutValidationAmo.LOGEMENT_ELIGIBLE:
+        return "Validé";
+      case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
+        return "Non éligible";
+      case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
+        return "Refusé";
+      default:
+        return null;
+    }
+  }
+
+  // Sinon, afficher le statut DS
+  if (!lastDSStatus) return null;
+
+  switch (lastDSStatus) {
     case DSStatus.NON_ACCESSIBLE:
       return "À faire";
     case DSStatus.ACCEPTE:
@@ -317,6 +337,17 @@ function getStatusLabel(status?: DSStatus): string {
     case DSStatus.CLASSE_SANS_SUITE:
       return "Classé sans suite";
     default:
-      return "A faire";
+      return "À faire";
   }
 }
+
+/**
+ * Labels français des étapes
+ */
+const STEP_LABELS: Record<Step, string> = {
+  [Step.CHOIX_AMO]: "1. Choix de l'AMO",
+  [Step.ELIGIBILITE]: "2. Éligibilité",
+  [Step.DIAGNOSTIC]: "3. Diagnostic",
+  [Step.DEVIS]: "4. Devis",
+  [Step.FACTURES]: "5. Factures",
+} as const;
