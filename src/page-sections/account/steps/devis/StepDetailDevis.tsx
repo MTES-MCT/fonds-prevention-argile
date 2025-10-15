@@ -1,22 +1,26 @@
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
-import { Step } from "@/lib/parcours/parcours.types";
+import { isStepBefore, Step } from "@/lib/parcours/parcours.types";
 import Link from "next/link";
 
 export default function StepDetailDevis() {
   const { currentStep, getDossierUrl } = useParcours();
   const dsUrl = getDossierUrl(Step.DEVIS);
   const isActive = currentStep === Step.DEVIS;
+  const isStepBeforeCurrent = currentStep
+    ? isStepBefore(currentStep, Step.DEVIS)
+    : false;
 
   return (
     <div className="fr-card">
       <div className="fr-card__body fr-py-4w">
         {/* Badge conditionnel */}
-        {isActive ? (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
-            En construction
-          </span>
-        ) : (
-          <span className="fr-badge fr-text--sm fr-mb-4w">À venir</span>
+        {isStepBeforeCurrent && (
+          <p
+            className="fr-badge fr-mb-2w fr-icon-arrow-right-s-line-double fr-text--disabled fr-badge--icon-left"
+            style={{ color: "var(--text-disabled-grey)" }}
+          >
+            A Venir
+          </p>
         )}
 
         {/* Titre avec couleur conditionnelle */}
@@ -31,26 +35,22 @@ export default function StepDetailDevis() {
           4. Devis et accord
         </h5>
 
-        {/* Description avec couleur conditionnelle */}
-        <p
-          className={!isActive ? "fr-text--disabled" : undefined}
-          style={!isActive ? { color: "var(--text-mention-grey)" } : undefined}
-        >
-          Soumettez les devis des travaux pour vérifier l'accord de subvention.
-        </p>
-
-        {/* Bouton ou lien selon l'état */}
-        {isActive ? (
-          <Link
-            href={dsUrl || "#"}
-            rel="noopener noreferrer"
-            target="_blank"
-            className="fr-btn fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line"
-          >
-            Remplir le formulaire
-          </Link>
-        ) : (
-          <></>
+        {/* Texte si etape précédente */}
+        {isStepBeforeCurrent && (
+          <>
+            <p style={{ color: "var(--text-disabled-grey)" }}>
+              Soumettre les devis pour accord avant travaux.
+            </p>
+            <div style={{ color: "var(--text-disabled-grey)" }}>
+              <p className="fr-text--xs">
+                Préparez les pièces nécessaires{" "}
+                <span
+                  className="fr-icon-arrow-right-line fr-icon--sm"
+                  aria-hidden="true"
+                />
+              </p>
+            </div>
+          </>
         )}
       </div>
     </div>

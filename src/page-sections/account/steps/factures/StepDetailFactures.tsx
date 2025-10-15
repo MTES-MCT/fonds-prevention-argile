@@ -1,22 +1,26 @@
 import { useParcours } from "@/lib/parcours/hooks/useParcours";
-import { Step } from "@/lib/parcours/parcours.types";
+import { isStepBefore, Step } from "@/lib/parcours/parcours.types";
 import Link from "next/link";
 
 export default function StepDetailFactures() {
   const { currentStep, getDossierUrl } = useParcours();
   const dsUrl = getDossierUrl(Step.FACTURES);
   const isActive = currentStep === Step.FACTURES;
+  const isStepBeforeCurrent = currentStep
+    ? isStepBefore(currentStep, Step.FACTURES)
+    : false;
 
   return (
     <div className="fr-card">
       <div className="fr-card__body fr-py-4w">
         {/* Badge conditionnel */}
-        {isActive ? (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
-            En construction
-          </span>
-        ) : (
-          <span className="fr-badge fr-text--sm fr-mb-4w">À venir</span>
+        {isStepBeforeCurrent && (
+          <p
+            className="fr-badge fr-mb-2w fr-icon-arrow-right-s-line-double fr-badge--icon-left"
+            style={{ color: "var(--text-disabled-grey)" }}
+          >
+            A Venir
+          </p>
         )}
 
         {/* Titre avec couleur conditionnelle */}
@@ -31,13 +35,23 @@ export default function StepDetailFactures() {
           5. Travaux et paiement
         </h5>
 
-        {/* Description avec couleur conditionnelle */}
-        <p
-          className={!isActive ? "fr-text--disabled" : undefined}
-          style={!isActive ? { color: "var(--text-mention-grey)" } : undefined}
-        >
-          Transmettez les factures pour recevoir votre aide financière.
-        </p>
+        {/* Texte si etape précédente */}
+        {isStepBeforeCurrent && (
+          <>
+            <p style={{ color: "var(--text-disabled-grey)" }}>
+              Transmettre les factures pour être remboursé.
+            </p>
+            <div style={{ color: "var(--text-disabled-grey)" }}>
+              <p className="fr-text--xs">
+                Préparez les pièces nécessaires{" "}
+                <span
+                  className="fr-icon-arrow-right-line fr-icon--sm"
+                  aria-hidden="true"
+                />
+              </p>
+            </div>
+          </>
+        )}
 
         {/* Bouton ou lien selon l'état */}
         {isActive ? (

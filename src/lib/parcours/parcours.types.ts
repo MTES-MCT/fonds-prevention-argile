@@ -39,6 +39,23 @@ export const STEP_ORDER = [
 ] as const;
 
 /**
+ * Vérifie si stepA est avant stepB dans le parcours
+ */
+export const isStepBefore = (stepA: Step, stepB: Step): boolean => {
+  return STEP_ORDER.indexOf(stepA) < STEP_ORDER.indexOf(stepB);
+};
+
+/**
+ * Vérifie si stepA est après stepB dans le parcours
+ * @param stepA
+ * @param stepB
+ * @returns
+ */
+export const isStepAfter = (stepA: Step, stepB: Step): boolean => {
+  return STEP_ORDER.indexOf(stepA) > STEP_ORDER.indexOf(stepB);
+};
+
+/**
  * Statuts Démarches Simplifiées
  */
 export enum DSStatus {

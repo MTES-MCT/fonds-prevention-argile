@@ -18,33 +18,33 @@ export default function StepDetailAmo() {
       <div className="fr-card__body fr-py-4w">
         {/* Badge conditionnel */}
         {!statutAmo && (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
+          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">
             A faire
           </span>
         )}
 
         {statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE && (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
+          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">
             A faire
           </span>
         )}
 
         {statutAmo === StatutValidationAmo.EN_ATTENTE && (
-          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-4w">
+          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">
             En attente
           </span>
         )}
 
         {statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE &&
           validationAmoComplete?.choisieAt && (
-            <span className="fr-badge fr-text--sm fr-badge--success fr-mb-4w">
+            <span className="fr-badge fr-text--sm fr-badge--success fr-mb-2w">
               Validé le{" "}
               {validationAmoComplete?.choisieAt.toLocaleDateString("fr-FR")}
             </span>
           )}
 
         {statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && (
-          <span className="fr-badge fr-text--sm fr-badge--error fr-mb-4w">
+          <span className="fr-badge fr-text--sm fr-badge--error fr-mb-2w">
             Non éligible
           </span>
         )}
