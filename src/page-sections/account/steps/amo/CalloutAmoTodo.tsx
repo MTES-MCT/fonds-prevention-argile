@@ -172,8 +172,7 @@ export default function CalloutAmoTodo({
           <div className="fr-alert fr-alert--info fr-mt-4w">
             <p className="fr-alert__title">Aucune AMO disponible</p>
             <p>
-              Aucune AMO n'est disponible pour votre commune. Veuillez contacter
-              le support.
+              Aucun AMO n'est disponible pour le moment dans votre commune. Veuillez contacter le support - contact@fonds-preventions-argile.beta.gouv.fr
             </p>
           </div>
         ) : (
