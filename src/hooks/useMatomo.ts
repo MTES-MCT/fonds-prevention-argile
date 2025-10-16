@@ -10,7 +10,7 @@ interface UseMatomo {
 }
 
 export function useMatomo(): UseMatomo {
-  const isEnabled = isProduction() || isStaging();
+  const isEnabled = isProduction();
 
   const trackEvent = (eventName: MatomoEvent, additionalData?: string) => {
     if (!isEnabled) {

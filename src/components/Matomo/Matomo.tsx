@@ -49,8 +49,8 @@ const MatomoContent = () => {
     push(["trackPageView"]);
   }, [pathname, searchParamsString]);
 
-  // Matomo activé sur production & staging uniquement
-  if (!isProduction() && !isStaging()) {
+  // Matomo activé sur production uniquement
+  if (!isProduction()) {
     return null;
   }
 
