@@ -386,6 +386,17 @@ export const DS_FIELDS: Record<string, DSField> = {
 };
 
 /**
+ * IDs des champs DS utilisés dans le projet (par démarche)
+ */
+export const DS_FIELD_IDS = {
+  ELIGIBILITE: {
+    SIRET_AMO: "Q2hhbXAtNTQxOTQyOQ==",
+    // Autres champs si besoin
+  },
+  // Autres démarches si vous en avez
+} as const;
+
+/**
  * Récupère les champs par section
  */
 export function getFieldsBySection(section: DSSection): DSField[] {

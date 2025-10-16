@@ -13,6 +13,8 @@ import { getParcoursComplet } from "@/lib/database/services";
 import { Step } from "@/lib/parcours/parcours.types";
 import { prefillClient } from "@/lib/api/demarches-simplifiees/rest";
 import { getDemarcheUrl } from "@/lib/parcours/demarches.helpers";
+import { getAmoChoisie } from "./amo/amo.actions";
+import { DS_FIELD_IDS } from "@/lib/constants/dsFields.constants";
 
 interface EligibiliteResult {
   dossierUrl: string;
@@ -49,8 +51,32 @@ export async function envoyerDossierEligibiliteAvecDonnees(
       };
     }
 
-    // 3. Transformer les données au format DS
+    // 3. Récupérer l'AMO choisie par l'utilisateur
+    const amoResult = await getAmoChoisie();
+
+    if (!amoResult.success) {
+      return {
+        success: false,
+        error: "Erreur lors de la récupération de votre AMO",
+      };
+    }
+
+    if (!amoResult.data) {
+      return {
+        success: false,
+        error:
+          "Vous devez choisir un AMO avant de remplir le formulaire d'éligibilité",
+      };
+    }
+
+    const amoChoisie = amoResult.data;
+
+    // 4. Transformer les données au format DS
     const prefillData = mapRGAToDSFormat(rgaData);
+
+    // 5. Ajouter le SIRET de l'AMO aux données
+    prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.SIRET_AMO}`] =
+      amoChoisie.siret;
 
     console.log(
       "Envoi vers DS avec",
@@ -58,7 +84,7 @@ export async function envoyerDossierEligibiliteAvecDonnees(
       "champs"
     );
 
-    // 4. Créer le dossier prérempli dans DS
+    // 6. Créer le dossier prérempli dans DS
     const dsResult = await createPrefillDossier(prefillData, Step.ELIGIBILITE);
 
     if (!dsResult.success || !dsResult.data) {
@@ -70,7 +96,7 @@ export async function envoyerDossierEligibiliteAvecDonnees(
       };
     }
 
-    // 5. Enregistrer le dossier dans le parcours
+    // 7. Enregistrer le dossier dans le parcours
     const parcoursResult = await creerDossier(
       dsResult.data.dossier_number.toString(),
       prefillClient.getDemarcheId(Step.ELIGIBILITE),
