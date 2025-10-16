@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export function PostLogoutRedirect() {
+export default function PostLogoutRedirect() {
   const router = useRouter();
 
   useEffect(() => {

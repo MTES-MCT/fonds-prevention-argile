@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
-import { Footer, Header, Matomo } from "@/components";
+import {
+  Crisp,
+  DsfrProvider,
+  Footer,
+  Header,
+  Matomo,
+  PostLogoutRedirect,
+} from "@/components";
 import { contentLayout } from "@/content";
-import { DsfrProvider } from "@/components/DsfrProvider/DsfrProvider";
 
 // Import des styles DSFR
 import "@gouvfr/dsfr/dist/dsfr.min.css";
@@ -31,7 +37,6 @@ import "../styles/loading.css";
 
 import { AuthProvider } from "@/lib/auth/contexts/AuthContext";
 import { RGAProvider } from "@/lib/form-rga/session";
-import { PostLogoutRedirect } from "@/components/PostLogoutRedirect/PostLogoutRedirect";
 
 export const metadata: Metadata = {
   title: contentLayout.metadata.title,
@@ -105,6 +110,7 @@ export default function RootLayout({
         <DsfrProvider>
           <AuthProvider>
             <Matomo />
+            <Crisp />
             <Header />
             <RGAProvider>
               <main className="flex-1">{children}</main>

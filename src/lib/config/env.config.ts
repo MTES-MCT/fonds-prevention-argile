@@ -64,6 +64,7 @@ const serverSchema = z.object({
 const clientSchema = z.object({
   NEXT_PUBLIC_MATOMO_SITE_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_MATOMO_URL: z.string().url().optional(),
+  NEXT_PUBLIC_CRISP_WEBSITE_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
   NEXT_PUBLIC_SENTRY_ORG: z.string().min(1).optional(),
   NEXT_PUBLIC_SENTRY_PROJECT: z.string().min(1).optional(),
@@ -109,6 +110,7 @@ export function getClientEnv() {
     const envObject = {
       NEXT_PUBLIC_MATOMO_SITE_ID: process.env.NEXT_PUBLIC_MATOMO_SITE_ID,
       NEXT_PUBLIC_MATOMO_URL: process.env.NEXT_PUBLIC_MATOMO_URL,
+      NEXT_PUBLIC_CRISP_WEBSITE_ID: process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID,
       NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
       NEXT_PUBLIC_SENTRY_ORG: process.env.NEXT_PUBLIC_SENTRY_ORG,
       NEXT_PUBLIC_SENTRY_PROJECT: process.env.NEXT_PUBLIC_SENTRY_PROJECT,
