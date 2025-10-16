@@ -31,10 +31,10 @@ export default function DsfrProvider({
         // Démarrer DSFR
         if (window.dsfr?.start) {
           window.dsfr.start();
-          console.log("DSFR initialized successfully");
+          console.log("[DSFR] Initialisé avec succès !");
         }
       } catch (error) {
-        console.error("DSFR initialization failed:", error);
+        console.error("[DSFR] Échec de l'initialisation :", error);
       }
     };
 

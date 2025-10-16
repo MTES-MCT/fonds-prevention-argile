@@ -194,9 +194,6 @@ if (isServer()) {
     console.error("Environment validation failed:", error);
     process.exit(1);
   }
-} else {
-  // Côté client : validation différée lors du premier appel
-  console.log("Client side: environment validation will be done on first use");
 }
 
 // Helpers pour vérifier l'environnement

@@ -20,28 +20,17 @@ const MatomoContent = () => {
     // Ne pas initialiser Matomo en dehors de la production
     if (!isProduction()) return;
 
-    console.log("[Matomo] Environment:", {
-      isProduction: isProduction(),
-      hasUrl: !!clientEnv.NEXT_PUBLIC_MATOMO_URL,
-      hasSiteId: !!clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID,
-    });
-
     if (
       clientEnv.NEXT_PUBLIC_MATOMO_URL &&
       clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID &&
       !initialised
     ) {
-      console.log("[Matomo] Initializing...", {
-        url: clientEnv.NEXT_PUBLIC_MATOMO_URL,
-        siteId: clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID,
-      });
-
       init({
         siteId: clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID,
         url: clientEnv.NEXT_PUBLIC_MATOMO_URL,
       });
 
-      console.log("[Matomo] Initialized successfully");
+      console.log("[Matomo] Initialisé avec succès !");
       setInitialised(true);
     }
   }, [initialised]);

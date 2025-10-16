@@ -13,18 +13,13 @@ export default function Crisp() {
       const clientEnv = getClientEnv();
       const websiteId = clientEnv.NEXT_PUBLIC_CRISP_WEBSITE_ID;
 
-      console.log("[Crisp] Environment:", {
-        isProduction: isProduction(),
-        hasWebsiteId: !!websiteId,
-      });
-
       if (typeof window === "undefined") {
-        console.log("[Crisp] Window undefined");
+        console.log("[Crisp] Erreur : Window undefined");
         return;
       }
 
       if (!websiteId || websiteId.trim() === "") {
-        console.log(
+        console.error(
           "[Crisp] NEXT_PUBLIC_CRISP_WEBSITE_ID non configuré - Crisp désactivé"
         );
         return;
@@ -38,10 +33,6 @@ export default function Crisp() {
         return;
       }
 
-      console.log("[Crisp] Initializing...", {
-        websiteId: websiteId,
-      });
-
       // Initialisation de Crisp
       windowWithCrisp.$crisp = [] as unknown as WindowWithCrisp["$crisp"];
       windowWithCrisp.CRISP_WEBSITE_ID = websiteId;
@@ -51,7 +42,7 @@ export default function Crisp() {
       script.async = true;
 
       script.onload = () => {
-        console.log("[Crisp] Script chargé avec succès !");
+        console.log("[Crisp] Initialisé avec succès !");
       };
 
       script.onerror = (error) => {
