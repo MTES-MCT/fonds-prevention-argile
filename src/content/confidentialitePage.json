@@ -29,7 +29,7 @@
   "autorisation": "IV - Qu’est-ce qui nous autorise à traiter ces données ?", 
   "autorisation_descriptions": [
     "Fonds prévention argile traite des données à caractère personnel sur la base de l’exécution d’une mission d’intérêt public ou relevant de l’exercice de l’autorité publique dont est investi le responsable de traitement au sens de l’article 6-1 e) du RPGD.",
-    "Cette mission d’intérêt public résulte en particulier de <a href='https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000045275722'>l’article 7 du décret n° 2008-680 du 9 juillet 2008</a> portant organisation de l’administration centrale des ministères chargés de la transition écologique, de la cohésion des territoires et de la mer."
+    "Cette mission d’intérêt public résulte en particulier de <a href='https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000045275722'>l’article 7 du décret n° 2008-680 du 9 juillet 2008</a> portant organisation de l’administration centrale des ministères chargés de la transition écologique, de la cohésion des territoires et de la mer. Mais également du décret n° 2025-920 du 6 septembre 2025 relatif à la mise en place, à titre expérimental, d'une aide pour la prévention des désordres dans les constructions liés au phénomène de retrait gonflement des sols argileux et <a href='https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052201370'>l’arrêté du 6 septembre 2025</a> pris pour l'application du décret n° 2025-920 du 6 septembre 2025 précisant les critères d'éligibilité des bâtiments et des propriétaires à l'aide mise en place, à titre expérimental, pour la prévention des désordres dans les constructions liés au phénomène de retrait gonflement des sols argileux."
   ],
 
   "duree": "V - Pendant combien de temps conservons-nous ces données ?", 
@@ -71,7 +71,8 @@
   "access_header": "Les accès aux données sont strictement encadrés et juridiquement justifiés. Les personnes suivantes vont avoir accès aux données :", 
   "access_valeurs": [
     "Les membres habilités de l’équipe qui administrent la plateforme Fonds prévention argile (développeurs notamment) ;",
-    "Les instructeurs de services déconcentrés de l’Etat pour les seuls dossiers affectés à leurs départements."
+    "Les instructeurs de services déconcentrés de l’Etat pour les seuls dossiers affectés à leurs départements.", 
+    "Les prestataires d’accompagnement des particuliers avec lesquels les services déconcentrés de l’État ont conclu un contrat au titre du Code de la commande publique, et uniquement pour les dossiers qui leur sont affectés."
   ],
 
   "sous_traitant": "VIII - Qui nous aide à traiter les données ?", 
