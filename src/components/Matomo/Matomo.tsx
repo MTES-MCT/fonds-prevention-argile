@@ -9,20 +9,39 @@ import { useMatomo } from "@/hooks/useMatomo";
 const MatomoContent = () => {
   const [initialised, setInitialised] = useState<boolean>(false);
   const { enableHeatmaps } = useMatomo();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const searchParamsString = searchParams.toString();
 
+  // Initialisation de Matomo quand les variables d'environnement sont disponibles
   useEffect(() => {
     const clientEnv = getClientEnv();
+
+    // Ne pas initialiser Matomo en dehors de la production
+    if (!isProduction()) return;
+
+    console.log("[Matomo] Environment:", {
+      isProduction: isProduction(),
+      hasUrl: !!clientEnv.NEXT_PUBLIC_MATOMO_URL,
+      hasSiteId: !!clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID,
+    });
 
     if (
       clientEnv.NEXT_PUBLIC_MATOMO_URL &&
       clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID &&
       !initialised
     ) {
+      console.log("[Matomo] Initializing...", {
+        url: clientEnv.NEXT_PUBLIC_MATOMO_URL,
+        siteId: clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID,
+      });
+
       init({
         siteId: clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID,
         url: clientEnv.NEXT_PUBLIC_MATOMO_URL,
       });
 
+      console.log("[Matomo] Initialized successfully");
       setInitialised(true);
     }
   }, [initialised]);
@@ -34,11 +53,9 @@ const MatomoContent = () => {
     }
   }, [initialised, enableHeatmaps]);
 
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const searchParamsString = searchParams.toString();
-
+  // Suivi des changements de page
   useEffect(() => {
+    if (!isProduction()) return;
     if (!pathname) return;
 
     const url = decodeURIComponent(
@@ -49,10 +66,7 @@ const MatomoContent = () => {
     push(["trackPageView"]);
   }, [pathname, searchParamsString]);
 
-  // Matomo activé sur production uniquement
-  if (!isProduction()) {
-    return null;
-  }
+  if (!isProduction()) return null;
 
   return null;
 };
