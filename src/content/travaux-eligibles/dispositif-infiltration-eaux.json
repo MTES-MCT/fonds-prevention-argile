@@ -42,7 +42,8 @@
         "Lors de la construction en zone argileuse, si possible.",
         "Si le test de perméabilité du sol est favorable à l'infiltration.",
         "En complément du raccordement aux réseaux d’assainissement",
-        "Ou lorsque les réseaux d'évacuation des eaux ne sont pas accessibles."
+        "Ou lorsque les réseaux d'évacuation des eaux ne sont pas accessibles.",
+        "Le dispositif d’infiltrations des eaux à la parcelle est complémentaire à la mise en œuvre d’évacuations des EP ou d’un drainage."
       ]
     },
     "traitement": {

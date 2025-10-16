@@ -57,7 +57,7 @@ export default function QuestCeQueLeRgaSection() {
             <Feature
               icon="fr-icon-heavy-showers-fill"
               title="Période humide"
-              description="Les sols argileux gonflent en absorbant l'eau, soulevant les fondations."
+              description="Les sols argileux gonflent en absorbant l'eau."
             />
           </div>
           <div className="fr-col-12 fr-col-sm-6 fr-col-md-2 fr-mb-4w text-center">

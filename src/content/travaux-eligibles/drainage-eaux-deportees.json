@@ -20,10 +20,10 @@
     {
       "title": "1. Principe du drainage déporté et séparatif",
       "details": [
-        "Séparer les eaux pluviales des eaux usées pour éviter la saturation du sol près des fondations.",
-        "Installer un réseau de drains en amont de la pente pour capter les eaux de ruissellement avant qu'elles n'atteignent la maison.",
+        "Installer un réseau de drains en amont de la pente et à une distance suffisante des constructions voisines.",
         "Diriger ces eaux vers un exutoire sécurisé (réseau pluvial, bassin de rétention, ou puisard) à distance des fondations.",
-        "Utiliser des matériaux géotextiles pour éviter le colmatage des drains par les particules fines du sol."
+        "Utiliser des matériaux géotextiles pour éviter le colmatage des drains par les particules fines du sol.",
+        "Le drainage doit être isolé des réseaux collectifs EP par un clapet anti-refoulement si le PLU autorise ce raccordement"
       ]
     }
   ],
@@ -52,7 +52,8 @@
       "details": [
         "Un essai de perméabilité du sol de type porchet est indispensable avant tous travaux en lien avec l'infiltration des eaux pluviales.",
         "Le réseau de drainage des eaux superficielles et de ruissellement est impérativement séparatif des eaux pluviales et déporté des fondations de la maison.",
-        "Pour assurer la durabilité et l'efficacité de ces dispositifs de gestion des eaux, leur bon entretien régulier est indispensable."
+        "Pour assurer la durabilité et l'efficacité de ces dispositifs de gestion des eaux, leur bon entretien régulier est indispensable.", 
+        "Les drains agricoles sont à proscrire absolument."
       ]
     }, 
     "generalite":""
