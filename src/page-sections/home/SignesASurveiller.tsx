@@ -6,7 +6,7 @@ import CalloutNonEligible from "../signes-a-surveiller/CalloutNonElligible";
 
 export default function SignesASurveiller() {
   return (
-    <section className="fr-container-fluid fr-py-10w bg-[var(--background-alt-grey)]">
+    <section className="fr-container-fluid fr-py-10w">
       {/* Signes pris en charge */}
       {/*<div className="fr-container fr-mb-4w">
         <h2>
