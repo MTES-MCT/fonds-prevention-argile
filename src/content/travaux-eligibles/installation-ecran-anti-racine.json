@@ -38,7 +38,7 @@
       "details": [
         "Lorsque des arbres d'une propriété voisine peuvent causer des désordres sur la construction.",
         "Si des racines sont déjà visibles près des fondations",
-        "Si des arbres sont situés trop proches de la maison (1m minimum)."
+        "Si des arbres sont situés proches de la maison."
       ]
     },
     "traitement": {
@@ -47,7 +47,8 @@
         "Il est obligatoire de faire appel à un professionnel pour déterminer la longueur, la profondeur et le positionnement de l'écran anti-racines.",
         "Un soin particulier doit être porté sur les matériaux utilisés afin de garantir l'étanchéité et la résistance.",
         "L'entretien régulier de la végétation est essentiel pour assurer la pérennité et l'efficacité du dispositif.",
-        "Il faut éviter de planter des arbres ou des haies trop proches de la maison."
+        "Il faut éviter de planter des arbres ou des haies trop proches de la maison.", 
+        "Certains PLU ou autres dispositions réglementaires peuvent interdire l’abattage d’arbres voire la replantation d’un autre arbre en cas d’abattage."
       ]
     },
     "generalite": ""

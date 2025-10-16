@@ -13,7 +13,7 @@
     "description": "Pose d'une membrane étanche - Crédit photo Franck Béchade, France Argile"
   },
   "une_des_solutions": [
-    "La géomembrane est une membrane souple, imputrescible et constituée d'un produit d'étanchéité. Cette barrière physique permet de maîtriser et de stabiliser la teneur en eau des sols argileux sous les fondations en limitant les échanges d'eau dus à l'évaporation estivale et d'éloigner les eaux de ruissellement du pied des fondations."
+    "La géomembrane est une membrane souple, imputrescible et constituée d'un produit d'étanchéité. Cette barrière physique permet de maîtriser et de stabiliser la teneur en eau des sols argileux sous les fondations en limitant l’évaporation en période sèche et la surhumidification en période pluvieuse."
   ],
   "solutions": [
     {
@@ -44,7 +44,6 @@
       "title": "En prévention",
       "details": [
         "Sur un terrain plat (moins de 3% de pente).",
-        "Si une stagnation d'humidité est présente au pied des fondations."
       ]
     },
     "traitement": {
@@ -52,7 +51,8 @@
       "details": [
         "Une étude particulière de la nature du sol au-dessous et au-dessus de la membrane est nécessaire pour définir le dispositif.",
         "L'impossibilité de disposer l'étanchéité sur tout le contour de la construction est de nature à favoriser les désordres et il est alors préférable d'abandonner cette solution.",
-        "En cas de réalisation d’une étanchéité autour de la construction, afin d’éviter un assèchement du sol dommageable sous la construction par évaporation par le vide sanitaire, il conviendra de veiller à ce que celui-ci soit normalement ventilé."
+        "En cas de réalisation d’une étanchéité autour de la construction, afin d’éviter un assèchement du sol dommageable sous la construction par évaporation par le vide sanitaire, il conviendra de veiller à ce que celui-ci soit normalement ventilé.",
+        "La faisabilité de la solution reste à étudier même si le vide sanitaire est « normalement ventilé », puisque le sol à l’intérieur de ce dernier va s’assécher de toute façon."
       ]
     },
     "generalite": ""
