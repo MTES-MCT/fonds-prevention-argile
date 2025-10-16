@@ -77,7 +77,7 @@ export default function SignesASurveiller() {
           }
         </p>
         <CalloutNonEligible />
-        <div className="fr-grid-row fr-grid-row--gutters">
+        {/*<div className="fr-grid-row fr-grid-row--gutters">
           {contentSignesASurveillerCommon.signes_a_surveiller_section.signes
             .filter((signe) => !signe.priseEnCharge)
             .map((signe, index) => (
@@ -114,7 +114,7 @@ export default function SignesASurveiller() {
                 </div>
               </div>
             ))}
-        </div>
+        </div>*/}
       </div>
     </section>
   );
