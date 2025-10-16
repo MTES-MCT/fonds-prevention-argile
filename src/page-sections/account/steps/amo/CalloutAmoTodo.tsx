@@ -146,15 +146,11 @@ export default function CalloutAmoTodo({
       {amoList.length === 0 && (
         <div className="fr-callout fr-callout--blue-ecume fr-icon-info-line">
           <p className="fr-callout__title">
-            AMO pas encore disponible, nous allons revenir vers vous
+            Aucun AMO n'est disponible pour le moment dans votre commune.
           </p>
           <p className="fr-callout__text">
-            Pour bénéficier du Fonds Prévention Argile, il est impératif de
-            faire appel à un AMO (Assistant à Maîtrise d’Ouvrage). Nous sommes
-            actuellement en train de finaliser des contrats avec des AMO de
-            votre région, ce qui vous permettra bientôt de faire votre choix.
-            Nous vous contacterons par e-mail dès que vous pourrez sélectionner
-            un AMO.
+            Veuillez contacter le support -
+            contact@fonds-preventions-argile.beta.gouv.fr
           </p>
         </div>
       )}
