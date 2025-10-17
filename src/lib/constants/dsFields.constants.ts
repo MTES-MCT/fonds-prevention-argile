@@ -79,13 +79,15 @@ export const DS_FIELDS: Record<string, DSField> = {
     type: DSFieldType.NUMBER,
     rgaPath: "menage.personnes",
   },
-  "Q2hhbXAtNTQyMjU4NQ==": {
-    id: "Q2hhbXAtNTQyMjU4NQ==",
-    label: "Revenu fiscal de référence",
-    section: DSSection.DEMANDEUR,
-    type: DSFieldType.NUMBER,
-    rgaPath: "menage.revenu_rga",
-  },
+
+  // Désactivé pour le moment vu avec martin / guillaume le 17/10/2025
+  // "Q2hhbXAtNTQyMjU4NQ==": {
+  //   id: "Q2hhbXAtNTQyMjU4NQ==",
+  //   label: "Revenu fiscal de référence",
+  //   section: DSSection.DEMANDEUR,
+  //   type: DSFieldType.NUMBER,
+  //   rgaPath: "menage.revenu_rga",
+  // },
   "Q2hhbXAtNTU0Mjc5NA==": {
     id: "Q2hhbXAtNTU0Mjc5NA==",
     label: "Dernier avis d'imposition",
