@@ -7,7 +7,6 @@ import {
   Matomo,
   PostLogoutRedirect,
 } from "@/components";
-import { contentLayout } from "@/content";
 
 // Import des styles DSFR
 import "@gouvfr/dsfr/dist/dsfr.min.css";
@@ -39,20 +38,22 @@ import { AuthProvider } from "@/lib/auth/contexts/AuthContext";
 import { RGAProvider } from "@/lib/form-rga/session";
 
 export const metadata: Metadata = {
-  title: contentLayout.metadata.title,
-  description: contentLayout.metadata.description,
-  metadataBase: new URL(contentLayout.metadata.url),
+  title: "Fonds prévention argile",
+  description:
+    "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
+  metadataBase: new URL("https://fonds-preventions-argile.beta.gouv.fr"),
   openGraph: {
-    title: contentLayout.metadata.title,
-    description: contentLayout.metadata.description,
-    url: contentLayout.metadata.url,
-    siteName: contentLayout.metadata.title,
+    title: "Fonds prévention argile",
+    description:
+      "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
+    url: "https://fonds-preventions-argile.beta.gouv.fr",
+    siteName: "Fonds prévention argile",
     images: [
       {
-        url: contentLayout.metadata.imageUrl,
+        url: "/images/home/logement-concerne.webp",
         width: 1200,
         height: 630,
-        alt: contentLayout.metadata.imageAlt,
+        alt: "Vérifier mon éligibilité",
       },
     ],
     locale: "fr_FR",
@@ -60,9 +61,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: contentLayout.metadata.title,
-    description: contentLayout.metadata.description,
-    images: [contentLayout.metadata.imageUrl],
+    title: "Fonds prévention argile",
+    description:
+      "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
+    images: ["/images/home/logement-concerne.webp"],
   },
 };
 

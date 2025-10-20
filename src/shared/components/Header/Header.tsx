@@ -1,7 +1,5 @@
 "use client";
 
-import { contentLayout } from "@/content";
-import { richTextParser } from "@/lib/utils";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/contexts/AuthContext";
 import { useIsAdmin } from "@/lib/auth/client";
@@ -19,7 +17,11 @@ const Header = () => {
               <div className="fr-header__brand-top">
                 <div className="fr-header__logo">
                   <p className="fr-logo">
-                    {richTextParser(contentLayout.header.affiliatedMinistry)}
+                    Ministère
+                    <br />
+                    de la transition
+                    <br />
+                    écologique
                   </p>
                 </div>
                 <div className="fr-header__navbar">
@@ -38,11 +40,11 @@ const Header = () => {
               <div className="fr-header__service">
                 <Link
                   href="/"
-                  title={`Retour à l'accueil du site - ${contentLayout.header.organizationName} - République Française`}
+                  title={`Retour à l'accueil du site - Fonds prévention argile - République Française`}
                 >
                   <span className="flex flex-row items-center">
                     <p className="fr-header__service-title mr-4!">
-                      {contentLayout.header.organizationName}
+                      Fonds prévention argile
                     </p>
                     <p className="fr-badge fr-badge--success fr-badge--no-icon">
                       BETA
@@ -50,7 +52,7 @@ const Header = () => {
                   </span>
                 </Link>
                 <p className="fr-header__service-tagline">
-                  {contentLayout.header.organizationDescription}
+                  Retrait Gonflement des Argiles - Aides aux ménages
                 </p>
               </div>
             </div>

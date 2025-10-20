@@ -1,7 +1,4 @@
-import {
-  contentSignesASurveillerCommon,
-  contentSignesASurveillerAffaissementOuSoulèvementDeDallages,
-} from "@/content/signes-a-surveiller";
+import { contentSignesASurveillerCommon } from "@/content";
 import { SignesASurveillerTemplate } from "@/page-sections";
 
 export default function AffaissementOuSoulevementDeDallages() {

@@ -34,7 +34,15 @@ export default function EtatAgitSection() {
           <div className="fr-col-12 fr-col-md-6 flex justify-center">
             <div className="flex flex-col gap-6 p-4 md:p-20">
               {contentHomePage.etat_agit_section.infos_tiles.map(
-                (tile, index) => (
+                (
+                  tile: {
+                    icon: string;
+                    iconColor: string;
+                    title: string;
+                    description: string;
+                  },
+                  index: number
+                ) => (
                   <div
                     key={index}
                     className="fr-tile fr-tile--horizontal fr-enlarge-link"

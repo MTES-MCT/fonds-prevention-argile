@@ -1,17 +1,17 @@
-import { contentAccessibilityPage } from "@/content";
-import { richTextParser } from "@/lib/utils";
+import content from "./content/content.json";
+import { richTextParser } from "@/shared/utils";
 
 export default function Accessibilite() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container">
         <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
-          {contentAccessibilityPage.title}
+          {content.title}
         </h1>
-        <p>{richTextParser(contentAccessibilityPage.first_paragraph)}</p>
-        <p>{richTextParser(contentAccessibilityPage.second_paragraph)}</p>
-        <p>{contentAccessibilityPage.third_paragraph}</p>
-        <p>{richTextParser(contentAccessibilityPage.fourth_paragraph)}</p>
+        <p>{richTextParser(content.first_paragraph)}</p>
+        <p>{richTextParser(content.second_paragraph)}</p>
+        <p>{content.third_paragraph}</p>
+        <p>{richTextParser(content.fourth_paragraph)}</p>
       </div>
     </section>
   );

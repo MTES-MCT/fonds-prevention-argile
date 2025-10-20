@@ -46,7 +46,7 @@ export default function TravauxEligiblesTemplate({
               aria-expanded="false"
               aria-controls="breadcrumb"
             >
-              {contentLayout.breadcrumb.filAriane}
+              Voir le fil d'ariane
             </button>
             <div className="fr-collapse" id="breadcrumb">
               <ol className="fr-breadcrumb__list">
@@ -56,7 +56,7 @@ export default function TravauxEligiblesTemplate({
                     id="segment-0"
                     href="/#"
                   >
-                    {contentLayout.breadcrumb.home}
+                    Accueil
                   </Link>
                 </li>
                 <li>
@@ -106,7 +106,6 @@ export default function TravauxEligiblesTemplate({
               {une_des_solutions.map((une_solution, index) => (
                 <p key={index}>{une_solution}</p>
               ))}
-              
             </div>
 
             {/* En quoi consiste cette solution ? */}
@@ -145,7 +144,9 @@ export default function TravauxEligiblesTemplate({
                 {contentTravauxEligiblesCommon.quand_mettre_en_oeuvre_title}
               </h1>
 
-              {quand_mettre_en_oeuvre.generalite && <p>{quand_mettre_en_oeuvre.generalite}</p>}
+              {quand_mettre_en_oeuvre.generalite && (
+                <p>{quand_mettre_en_oeuvre.generalite}</p>
+              )}
               <h4>{quand_mettre_en_oeuvre.prevention.title}</h4>
               <ul>
                 {quand_mettre_en_oeuvre.prevention.details.map(
@@ -162,7 +163,6 @@ export default function TravauxEligiblesTemplate({
                   )
                 )}
               </ul>
-
             </div>
 
             {/* A retenir */}
@@ -171,7 +171,9 @@ export default function TravauxEligiblesTemplate({
                 {contentTravauxEligiblesCommon.a_retenir_title}
               </h3>
               {a_retenir.map((retenir, index) => (
-                <p key={index} className="fr-callout__text">{retenir}</p>
+                <p key={index} className="fr-callout__text">
+                  {retenir}
+                </p>
               ))}
             </div>
           </div>

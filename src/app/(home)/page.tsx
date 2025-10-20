@@ -1,7 +1,7 @@
 "use client";
 
+import content from "./content/content.json";
 import { Notice, Alert } from "@/components";
-import { contentHomePage } from "@/content";
 import { useLogoutMessage } from "@/lib/auth/client";
 import {
   EtatAgitSection,
@@ -25,10 +25,10 @@ export default function Home() {
     <>
       <Notice
         className="fr-notice--info"
-        description={contentHomePage.notice.description}
-        title={contentHomePage.notice.title}
-        more={contentHomePage.notice.more}
-        more_link={contentHomePage.notice.more_link}
+        description={content.notice.description}
+        title={content.notice.title}
+        more={content.notice.more}
+        more_link={content.notice.more_link}
         buttonClose={true}
       />
 

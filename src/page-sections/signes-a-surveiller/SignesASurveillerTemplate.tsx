@@ -42,7 +42,7 @@ export default function SignesASurveillerTemplate({
               aria-expanded="false"
               aria-controls="breadcrumb"
             >
-              {contentLayout.breadcrumb.filAriane}
+              Voir le fil d'ariane
             </button>
             <div className="fr-collapse" id="breadcrumb">
               <ol className="fr-breadcrumb__list">
@@ -52,7 +52,7 @@ export default function SignesASurveillerTemplate({
                     id="segment-0"
                     href="/#"
                   >
-                    {contentLayout.breadcrumb.home}
+                    Accueil
                   </Link>
                 </li>
                 <li>

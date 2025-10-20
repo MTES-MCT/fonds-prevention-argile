@@ -1,6 +1,5 @@
 "use client";
 
-import { contentComponents } from "@/content";
 import { useState } from "react";
 
 export interface NoticeProps {
@@ -58,10 +57,10 @@ export default function Notice({
             <button
               className="fr-btn--close fr-btn"
               onClick={() => setIsCloseButtonVisible(false)}
-              title={contentComponents.notice.button_close}
+              title="Masquer le message"
               type="button"
             >
-              {contentComponents.notice.button_close}
+              Masquer le message
             </button>
           )}
         </div>
