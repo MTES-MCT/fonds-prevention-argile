@@ -1,6 +1,6 @@
 import Loading from "@/app/loading";
-import ConnexionAdminClient from "@/page-sections/connexion/ConnexionAdminClient";
 import { Suspense } from "react";
+import ConnexionAdminClient from "../components/ConnexionAdminClient";
 
 export default function ConnexionPage() {
   return (

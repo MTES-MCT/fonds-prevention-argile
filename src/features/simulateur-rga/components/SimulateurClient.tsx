@@ -1,12 +1,11 @@
 "use client";
 
-import { contentSimulationPage } from "@/content";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { parseRGAParams } from "@/lib/form-rga/parser";
-import { useRGAContext } from "@/lib/form-rga/session";
 import RGATestFiller from "./debug/RGATestFiller";
+import { useRGAContext } from "../context";
+import { parseRGAParams } from "../services/parser.service";
 
 interface RGAMessage {
   type: string;
@@ -206,12 +205,12 @@ export default function SimulateurClient() {
               <ol className="fr-breadcrumb__list">
                 <li>
                   <Link className="fr-breadcrumb__link" href="/">
-                    {contentSimulationPage.breadcrumb.home}
+                    Accueil
                   </Link>
                 </li>
                 <li>
                   <a className="fr-breadcrumb__link" aria-current="page">
-                    {contentSimulationPage.breadcrumb.simulation}
+                    Vérifier mon éligibilité
                   </a>
                 </li>
               </ol>
@@ -219,7 +218,7 @@ export default function SimulateurClient() {
           </nav>
 
           <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
-            {contentSimulationPage.title}
+            Simulateur d'éligibilité au Fonds prévention argile
           </h1>
 
           <RGATestFiller />

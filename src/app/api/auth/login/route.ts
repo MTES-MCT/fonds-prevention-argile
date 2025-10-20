@@ -1,4 +1,4 @@
-import { authenticateAdmin } from "@/lib/auth/services/auth.service";
+import { authenticateAdmin } from "@/features/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {

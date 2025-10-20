@@ -254,9 +254,6 @@ export class DemarchesSimplifieesClient {
   /**
    * Récupère un dossier spécifique
    */
-  /**
-   * Récupère un dossier spécifique
-   */
   async getDossier(dossierNumber: number): Promise<Dossier | null> {
     const query = `
       query GetDossier($number: Int!) {
@@ -309,6 +306,14 @@ export class DemarchesSimplifieesClient {
   }
 
   /**
+   * Récupère le statut d'un dossier par son numéro
+   */
+  async getDossierStatus(dossierNumber: number): Promise<string | null> {
+    const dossier = await this.getDossier(dossierNumber);
+    return dossier?.state || null;
+  }
+
+  /**
    * Méthode générique pour exécuter des requêtes GraphQL personnalisées
    */
   async customQuery<T = unknown>(
@@ -320,11 +325,4 @@ export class DemarchesSimplifieesClient {
 }
 
 // Export d'une instance singleton
-let clientInstance: DemarchesSimplifieesClient | null = null;
-
-export function getDemarchesSimplifieesClient(): DemarchesSimplifieesClient {
-  if (!clientInstance) {
-    clientInstance = new DemarchesSimplifieesClient();
-  }
-  return clientInstance;
-}
+export const graphqlClient = new DemarchesSimplifieesClient();

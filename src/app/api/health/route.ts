@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/database/client";
 import { sql } from "drizzle-orm";
+import { db } from "@/shared/database";
 
 export async function GET() {
   const timestamp = new Date().toISOString();

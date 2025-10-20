@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
 import {
-  handleFranceConnectCallback,
   DEFAULT_REDIRECTS,
   getAndClearRedirectUrl,
+  handleFranceConnectCallback,
   handleFranceConnectError,
-} from "@/lib/auth/server";
-import { getServerEnv } from "@/lib/config/env.config";
+} from "@/features/auth";
+import { getServerEnv } from "@/shared/config/env.config";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/auth/fc/callback

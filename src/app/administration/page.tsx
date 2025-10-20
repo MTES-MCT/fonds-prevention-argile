@@ -1,22 +1,19 @@
+import { getServerEnv } from "@/shared/config/env.config";
 import { notFound } from "next/navigation";
-import { getServerEnv } from "@/lib/config/env.config";
+import { graphqlClient } from "@/features/parcours/dossiers-ds/adapters";
 import {
   getDemarcheDetails,
   getDossiers,
-} from "@/lib/actions/demarches-simplifies";
-import { getDemarchesSimplifieesClient } from "@/lib/api/demarches-simplifiees/graphql";
-import AdminDashboard from "@/page-sections/administration/AdminDashboard";
+} from "@/features/parcours/dossiers-ds/actions";
+import AdminDashboard from "./components/AdminDashboard";
 
 export default async function AdminPage() {
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-
   const env = getServerEnv();
   const demarcheId = parseInt(env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE);
 
   // Récupération des données en parallèle
-  const client = getDemarchesSimplifieesClient();
   const [schema, demarcheResponse, dossiersResponse] = await Promise.all([
-    client.getDemarcheSchema(demarcheId),
+    graphqlClient.getDemarcheSchema(demarcheId),
     getDemarcheDetails(demarcheId),
     getDossiers(demarcheId, { first: 20 }),
   ]);

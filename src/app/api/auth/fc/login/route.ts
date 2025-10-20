@@ -1,6 +1,6 @@
+import { generateAuthorizationUrl } from "@/features/auth";
+import { getServerEnv } from "@/shared/config/env.config";
 import { NextResponse } from "next/server";
-import { generateAuthorizationUrl } from "@/lib/auth/server";
-import { getServerEnv } from "@/lib/config/env.config";
 
 /**
  * GET /api/auth/fc/login

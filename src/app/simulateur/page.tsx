@@ -1,9 +1,8 @@
-import { getCurrentUser } from "@/lib/auth/server";
-import { AUTH_METHODS } from "@/lib/auth/core/auth.constants";
 import ForbiddenSimulator from "./components/ForbiddenSimulator";
-import SimulateurClient from "./components/SimulateurClient";
 import content from "../(home)/content/content.json";
-import { Notice } from "@/components";
+import { AUTH_METHODS, getCurrentUser } from "@/features/auth";
+import { Notice } from "@/shared/components";
+import { SimulateurClient } from "@/features/simulateur-rga";
 
 export default async function SimulateurPage() {
   const user = await getCurrentUser();

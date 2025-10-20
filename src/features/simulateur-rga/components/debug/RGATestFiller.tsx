@@ -1,10 +1,10 @@
 "use client";
 
 import { JSX, useState } from "react";
-import { useRGAContext } from "@/lib/form-rga/session";
-import { RGAFormData } from "@/lib/form-rga/types";
-import { isProduction } from "@/lib/config/env.config";
 import { useRouter } from "next/navigation";
+import { RGAFormData } from "../../domain/entities";
+import { useRGAContext } from "../../context";
+import { isProduction } from "@/shared/config/env.config";
 
 // Données de test adaptées au type RGAFormData avec structure imbriquée
 const TEST_RGA_DATA: Partial<RGAFormData> = {
