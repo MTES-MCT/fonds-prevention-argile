@@ -31,7 +31,7 @@ export async function creerDossier(
 
     const currentState: ParcoursState = {
       step: data.parcours.currentStep,
-      status: data.parcours.currentStatus,
+      status: data.parcours.status,
     };
 
     // Vérifier permissions

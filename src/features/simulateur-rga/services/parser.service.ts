@@ -1,4 +1,4 @@
-import type { PartialRGAFormData } from "../domain/entities/rgaFormData";
+import { PartialRGAFormData } from "../domain/entities";
 
 /**
  * Nettoie une clé de paramètre URL

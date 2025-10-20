@@ -15,7 +15,7 @@ import {
   StatutValidationAmo,
 } from "../domain/value-objects";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
-import { ValidationAmoComplete } from "../domain/entities";
+import { ValidationAmoComplete, ValidationAmoData } from "../domain/entities";
 import { Status, Step } from "../../core";
 
 /**
@@ -315,7 +315,7 @@ export async function rejectAccompagnement(
  */
 export async function getValidationByToken(
   token: string
-): Promise<ActionResult<ValidationAmoComplete>> {
+): Promise<ActionResult<ValidationAmoData>> {
   // Récupérer le token avec toutes les données associées
   const [tokenData] = await db
     .select({
@@ -372,7 +372,7 @@ export async function getValidationByToken(
   return {
     success: true,
     data: {
-      id: tokenData.validationId,
+      validationId: tokenData.validationId,
       entrepriseAmo: amo,
       demandeur: {
         codeInsee: tokenData.userCodeInsee || "",

@@ -1,2 +1,2 @@
-export * from "./authUser";
-export * from "./jwtPayload";
+export * from "./AuthUser";
+export * from "./JWTPayload";

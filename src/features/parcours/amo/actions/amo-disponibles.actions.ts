@@ -3,11 +3,15 @@
 import { getSession } from "@/features/auth/server";
 import { ROLES } from "@/features/auth/domain/value-objects/constants";
 import type { ActionResult } from "@/shared/types";
-import type { AmoDisponible } from "../types/amo.types";
+import { Amo } from "../domain/entities";
 import {
-  getAmosForCodeInsee,
-  getAllAmosWithCommunes,
-} from "../services/amo-query.service";
+  db,
+  entreprisesAmo,
+  entreprisesAmoCommunes,
+  users,
+} from "@/shared/database";
+import { eq, like } from "drizzle-orm";
+import { getCodeDepartementFromCodeInsee } from "../utils/amo.utils";
 
 /**
  * Récupère la liste des AMO disponibles pour le code INSEE de l'utilisateur
@@ -15,9 +19,7 @@ import {
  * 1. Code INSEE exact dans entreprises_amo_communes (prioritaire)
  * 2. Code département extrait du code INSEE dans le champ departements
  */
-export async function getAmosDisponibles(): Promise<
-  ActionResult<AmoDisponible[]>
-> {
+export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
   try {
     const session = await getSession();
     if (!session?.userId) {
@@ -75,7 +77,7 @@ export async function getAmosDisponibles(): Promise<
       .where(like(entreprisesAmo.departements, `%${codeDepartement}%`));
 
     // Fusionner et dédupliquer les résultats par ID
-    const amosMap = new Map<string, AmoDisponible>();
+    const amosMap = new Map<string, Amo>();
 
     for (const amo of [...amosParCodeInsee, ...amosParDepartement]) {
       if (!amosMap.has(amo.id)) {
@@ -102,7 +104,7 @@ export async function getAmosDisponibles(): Promise<
  * Récupère la liste de tous les AMO avec leurs codes INSEE
  */
 export async function getAllAmos(): Promise<
-  ActionResult<Array<AmoDisponible & { communes: { codeInsee: string }[] }>>
+  ActionResult<Array<Amo & { communes: { codeInsee: string }[] }>>
 > {
   try {
     const session = await getSession();
@@ -133,7 +135,7 @@ export async function getAllAmos(): Promise<
     // Grouper les codes INSEE par AMO
     const amosMap = new Map<
       string,
-      AmoDisponible & { communes: { codeInsee: string }[] }
+      Amo & { communes: { codeInsee: string }[] }
     >();
 
     for (const row of allAmosWithCommunes) {

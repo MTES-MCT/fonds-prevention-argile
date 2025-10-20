@@ -1,5 +1,5 @@
 import type { StatutValidationAmo } from "../value-objects/statutValidation";
-import type { Amo } from "./amo";
+import { Amo } from "./Amo";
 
 /**
  * Validation AMO (base)

@@ -2,10 +2,9 @@ import { graphqlClient } from "../adapters/graphql/client";
 import { getDossierByStep, updateDossierStatus } from "./dossier-ds.service";
 import type { Step } from "../../core/domain/value-objects/step";
 import {
+  DS_TO_INTERNAL_STATUS,
   DSStatus,
-  mapDSStatusToInternalStatus,
 } from "../domain/value-objects/ds-status";
-import { Status } from "../../core/domain/value-objects/status";
 import { parcoursRepo } from "@/shared/database/repositories";
 import type { ActionResult } from "@/shared/types";
 
@@ -56,7 +55,7 @@ export async function syncDossierStatus(
       await updateDossierStatus(localDossier.id, newStatus);
 
       // Mettre à jour le statut du parcours si nécessaire
-      const internalStatus = mapDSStatusToInternalStatus(newStatus);
+      const internalStatus = DS_TO_INTERNAL_STATUS[newStatus];
       await parcoursRepo.updateStatus(parcoursId, internalStatus);
 
       return {

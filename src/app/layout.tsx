@@ -1,12 +1,4 @@
 import type { Metadata } from "next";
-import {
-  Crisp,
-  DsfrProvider,
-  Footer,
-  Header,
-  Matomo,
-  PostLogoutRedirect,
-} from "@/components";
 
 // Import des styles DSFR
 import "@gouvfr/dsfr/dist/dsfr.min.css";
@@ -33,9 +25,16 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css"
 // Import des styles custom
 import "../styles/globals.css";
 import "../styles/loading.css";
-
-import { AuthProvider } from "@/lib/auth/contexts/AuthContext";
-import { RGAProvider } from "@/lib/form-rga/session";
+import {
+  Crisp,
+  DsfrProvider,
+  Footer,
+  Header,
+  Matomo,
+  PostLogoutRedirect,
+} from "@/shared/components";
+import { AuthProvider } from "@/features/auth/client";
+import { RGAProvider } from "@/features/simulateur-rga";
 
 export const metadata: Metadata = {
   title: "Fonds prévention argile",

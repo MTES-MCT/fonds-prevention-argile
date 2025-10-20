@@ -1,5 +1,5 @@
-import type { PartialRGAFormData } from "../domain/entities/rgaFormData";
 import { mergeDeep } from "@/shared/utils/object.utils";
+import { PartialRGAFormData } from "../domain/entities";
 
 const RGA_SESSION_KEY = "fonds-argile-rga-data";
 const MAX_AGE = 24 * 60 * 60 * 1000; // 24 heures

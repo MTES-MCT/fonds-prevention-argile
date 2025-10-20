@@ -1,5 +1,4 @@
-import { UserRole } from "../domain/types";
-import { AuthMethod } from "../domain/types/authMethod";
+import { AuthMethod, UserRole } from "../domain/types";
 import { AUTH_METHODS, ROLES } from "../domain/value-objects";
 
 /**

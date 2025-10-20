@@ -3,7 +3,6 @@
 import { getSession } from "@/features/auth/server";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { ActionResult } from "@/shared/types/action-result.types";
-import { Status, Step } from "../../core/domain/types/parcours-query.types";
 import { db } from "@/shared/database/client";
 import {
   amoValidationTokens,
@@ -20,6 +19,7 @@ import {
 } from "../domain/value-objects";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { Amo } from "../domain/entities";
+import { Status, Step } from "../../core";
 
 /**
  * Choisir un AMO pour le parcours (étape CHOIX_AMO)

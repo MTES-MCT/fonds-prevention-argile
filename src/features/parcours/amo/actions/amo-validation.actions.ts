@@ -7,7 +7,7 @@ import {
   rejectAccompagnement,
   getValidationByToken,
 } from "../services/amo-validation.service";
-import { ValidationAmoComplete } from "../domain/entities";
+import { ValidationAmoComplete, ValidationAmoData } from "../domain/entities";
 
 /**
  * Valider que le logement est éligible (AMO)
@@ -71,7 +71,7 @@ export async function refuserAccompagnement(
  */
 export async function getValidationDataByToken(
   token: string
-): Promise<ActionResult<ValidationAmoComplete>> {
+): Promise<ActionResult<ValidationAmoData>> {
   try {
     const result = await getValidationByToken(token);
     return result;

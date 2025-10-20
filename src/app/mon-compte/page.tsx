@@ -1,7 +1,7 @@
+import { getCurrentUser, ROLES } from "@/features/auth";
+import MonCompteClient from "@/features/parcours/core/components/MonCompteClient";
+import { ParcoursProvider } from "@/features/parcours/core/context/ParcoursProvider";
 import { redirect } from "next/navigation";
-import { getCurrentUser, ROLES } from "@/lib/auth/server";
-import MonCompteClient from "@/page-sections/account/MonCompteClient";
-import { ParcoursProvider } from "@/lib/parcours/context/ParcoursProvider";
 
 export default async function MonComptePage() {
   await new Promise((resolve) => setTimeout(resolve, 3000));
