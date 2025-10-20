@@ -1,23 +1,22 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { obtenirMonParcours } from "@/lib/actions/parcours/parcours.actions";
-import {
-  syncUserDossierStatus,
-  syncAllUserDossiers,
-} from "@/lib/actions/demarches-simplifies/sync.actions";
-import { getValidationAmo } from "@/lib/actions/parcours/amo/amo.actions";
-import {
+import { useRouter } from "next/navigation";
+import type {
   ParcoursPrevention,
   DossierDemarchesSimplifiees,
-} from "@/lib/database/schema";
-import { Step, DSStatus } from "@/lib/parcours/parcours.types";
-import {
-  StatutValidationAmo,
-  ValidationAmoComplete,
-} from "@/lib/parcours/amo/amo.types";
-import { useRouter } from "next/navigation";
+} from "@/shared/database/schema";
 import { ParcoursContext } from "./ParcoursContext";
+import type { StatutValidationAmo } from "../../amo/domain/value-objects";
+import type { ValidationAmoComplete } from "../../amo/domain/entities";
+import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status";
+import type { Step } from "../domain";
+import { obtenirMonParcours } from "../actions";
+import { getValidationAmo } from "../../amo/actions";
+import {
+  syncAllUserDossiers,
+  syncUserDossierStatus,
+} from "../../dossiers-ds/actions/dossier-sync.actions";
 
 interface ParcoursProviderProps {
   children: React.ReactNode;
@@ -68,11 +67,13 @@ export function ParcoursProvider({
         setIsComplete(result.data.isComplete);
         setProchainEtape(result.data.prochainEtape);
 
+        // ✅ Correction : utiliser .step
         const currentDossier = result.data.dossiers.find(
           (d) => d.step === result.data.parcours.currentStep
         );
         if (currentDossier) {
-          setLastDSStatus(currentDossier.dsStatus);
+          // ✅ Correction : utiliser .dsStatus
+          setLastDSStatus(currentDossier.dsStatus as DSStatus);
         }
 
         // Récupérer le statut AMO
@@ -109,16 +110,15 @@ export function ParcoursProvider({
       setError(null);
 
       try {
-        const targetStep = step || parcours?.currentStep || Step.CHOIX_AMO;
+        const targetStep = step || parcours?.currentStep;
+        if (!targetStep) return;
+
         const result = await syncUserDossierStatus(targetStep);
 
         if (result.success && result.data) {
           setLastSync(new Date());
 
-          if (
-            result.data.newStatus &&
-            result.data.newStatus !== DSStatus.NON_ACCESSIBLE
-          ) {
+          if (result.data.newStatus) {
             setLastDSStatus(result.data.newStatus as DSStatus);
           }
 
@@ -195,7 +195,7 @@ export function ParcoursProvider({
         clearTimeout(timer);
       };
     }
-  }, [parcours?.id, syncNow]); // Dépendance sur l'id pour ne déclencher qu'une fois par parcours
+  }, [parcours?.id, syncNow]);
 
   // Auto-sync avec intervalle
   useEffect(() => {
@@ -223,7 +223,7 @@ export function ParcoursProvider({
 
   const getDSStatusByStep = useCallback(
     (step: Step): DSStatus | undefined => {
-      return getDossierByStep(step)?.dsStatus;
+      return getDossierByStep(step)?.dsStatus as DSStatus | undefined;
     },
     [getDossierByStep]
   );

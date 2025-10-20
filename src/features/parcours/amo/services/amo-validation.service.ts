@@ -11,7 +11,7 @@ import { progressParcours } from "@/shared/database/services";
 
 import { checkAmoCoversCodeInsee, getAmoById } from "./amo-query.service";
 import { ActionResult } from "@/shared/types/action-result.types";
-import { Status, Step } from "../../core/domain/entities/parcours.types";
+import { Status, Step } from "../../core/domain/types/parcours-query.types";
 import {
   AMO_VALIDATION_TOKEN_VALIDITY_DAYS,
   StatutValidationAmo,

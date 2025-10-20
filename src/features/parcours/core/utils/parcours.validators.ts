@@ -1,4 +1,9 @@
-import { Step, Status, DSStatus } from "./parcours.types";
+import { Step } from "../domain/value-objects/step";
+import { Status } from "../domain/value-objects/status";
+
+/**
+ * Type guards et parsers pour les types du parcours
+ */
 
 /**
  * Vérifie si une valeur est une étape valide
@@ -15,16 +20,6 @@ export function isValidStep(value: unknown): value is Step {
 export function isValidStatus(value: unknown): value is Status {
   return (
     typeof value === "string" && Object.values(Status).includes(value as Status)
-  );
-}
-
-/**
- * Vérifie si une valeur est un statut DS valide
- */
-export function isValidDSStatus(value: unknown): value is DSStatus {
-  return (
-    typeof value === "string" &&
-    Object.values(DSStatus).includes(value as DSStatus)
   );
 }
 
@@ -46,17 +41,6 @@ export function parseStep(value: string): Step {
 export function parseStatus(value: string): Status {
   if (!isValidStatus(value)) {
     throw new Error(`Invalid status: ${value}`);
-  }
-  return value;
-}
-
-/**
- * Parse une string en DSStatus avec validation
- * @throws {Error} Si la valeur n'est pas valide
- */
-export function parseDSStatus(value: string): DSStatus {
-  if (!isValidDSStatus(value)) {
-    throw new Error(`Invalid DS status: ${value}`);
   }
   return value;
 }

@@ -1,4 +1,4 @@
-import { getServerEnv } from "../config/env.config";
+import { getServerEnv } from "@/shared/config/env.config";
 
 // Helper pour générer l'URL de la démarche dans Démarches Simplifiées
 export function getDemarcheUrl(dsNumber: string): string {

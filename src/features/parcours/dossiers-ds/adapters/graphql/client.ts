@@ -1,4 +1,4 @@
-import { getServerEnv } from "@/lib/config/env.config";
+import { getServerEnv } from "@/shared/config/env.config";
 import type {
   DemarcheDetailed,
   Dossier,
@@ -323,15 +323,6 @@ export class DemarchesSimplifieesClient {
 let clientInstance: DemarchesSimplifieesClient | null = null;
 
 export function getDemarchesSimplifieesClient(): DemarchesSimplifieesClient {
-  // // Utiliser le mock si NEXT_PUBLIC_USE_DS_MOCK=true
-  // if (process.env.NEXT_PUBLIC_USE_DS_MOCK === "true") {
-  //   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  //   const { mockClient } = require("./client.mock");
-  //   return mockClient;
-  // }
-
-  // Disable mock in server environment
-
   if (!clientInstance) {
     clientInstance = new DemarchesSimplifieesClient();
   }

@@ -1,52 +1,11 @@
-/**
- * Type pour un champ DS
- */
-export interface DSField {
-  id: string;
-  label: string;
-  section: DSSection;
-  type: DSFieldType;
-  rgaPath?: string; // Chemin dans l'objet RGAFormData
-  transformer?: (
-    value: unknown,
-    rgaData?: Record<string, unknown>
-  ) => string | number | boolean | (string | number)[];
-  // Fonction de transformation
-}
+import type { DSField } from "../types/ds-field.types";
+import { DSFieldType } from "./ds-field-type.enum";
+import { DSSection } from "./ds-section.enum";
 
 /**
- * Types de champs DS
+ * Mapping complet des champs DS pour l'éligibilité
  */
-export enum DSFieldType {
-  TEXT = "text",
-  EMAIL = "email",
-  PHONE = "phone",
-  NUMBER = "integer_number",
-  DATE = "date",
-  CHECKBOX = "checkbox",
-  FILE = "piece_justificative",
-  TEXTAREA = "textarea",
-  DROPDOWN = "drop_down_list",
-  MULTIPLE_DROPDOWN = "multiple_drop_down_list",
-  ADDRESS = "address",
-  COMMUNE = "communes",
-}
-
-/**
- * Sections du formulaire DS
- */
-export enum DSSection {
-  DEMANDEUR = "Identification du demandeur",
-  REPRESENTANT = "Représentant légal",
-  AMO = "AMO",
-  MAISON = "Description de la maison",
-  ENGAGEMENTS = "Engagements",
-}
-
-/**
- * Mapping complet des champs DS
- */
-export const DS_FIELDS: Record<string, DSField> = {
+export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
   // === SECTION 1: IDENTIFICATION DU DEMANDEUR ===
   "Q2hhbXAtNTQyMjQzNQ==": {
     id: "Q2hhbXAtNTQyMjQzNQ==",
@@ -79,15 +38,6 @@ export const DS_FIELDS: Record<string, DSField> = {
     type: DSFieldType.NUMBER,
     rgaPath: "menage.personnes",
   },
-
-  // Désactivé pour le moment vu avec martin / guillaume le 17/10/2025
-  // "Q2hhbXAtNTQyMjU4NQ==": {
-  //   id: "Q2hhbXAtNTQyMjU4NQ==",
-  //   label: "Revenu fiscal de référence",
-  //   section: DSSection.DEMANDEUR,
-  //   type: DSFieldType.NUMBER,
-  //   rgaPath: "menage.revenu_rga",
-  // },
   "Q2hhbXAtNTU0Mjc5NA==": {
     id: "Q2hhbXAtNTU0Mjc5NA==",
     label: "Dernier avis d'imposition",
@@ -154,7 +104,6 @@ export const DS_FIELDS: Record<string, DSField> = {
   },
 
   // === SECTION 4: DESCRIPTION DE LA MAISON ===
-  // Nouveau champ d'adresse en format texte créé par Martin en attendant le format structuré / automatique géré coté Démarches Simplifiées
   "Q2hhbXAtNTYzNjA2NA==": {
     id: "Q2hhbXAtNTYzNjA2NA==",
     label: "Adresse (texte) de la maison concernée par le dossier d'aide",
@@ -163,18 +112,11 @@ export const DS_FIELDS: Record<string, DSField> = {
     rgaPath: "logement.adresse",
     transformer: (value: unknown) => {
       if (typeof value !== "string") return "";
-
-      // Extraire uniquement le numéro et nom de rue (avant le code postal)
-      // Format attendu: "19B Rue des Clefs Moreaux 36250 Saint-Maur"
-      // On garde: "19B Rue des Clefs Moreaux"
       const match = value.match(/^(.+?)\s+\d{5}/);
       const rueSeule = match ? match[1].trim() : value;
-
       return rueSeule;
     },
   },
-
-  // Champ Code Commune (ajouté par Martin pour faciliter la saisie de l'adresse)
   "Q2hhbXAtNTY0ODQ3NA==": {
     id: "Q2hhbXAtNTY0ODQ3NA==",
     label: "Commune",
@@ -184,42 +126,14 @@ export const DS_FIELDS: Record<string, DSField> = {
     transformer: (value: unknown, fullData?: Record<string, unknown>) => {
       const codeInsee = typeof value === "string" ? value : "";
       const logement = fullData?.logement as { adresse?: string } | undefined;
-
-      // Extraire le code postal depuis l'adresse complète
       const adresse = logement?.adresse;
       const codePostalMatch =
         typeof adresse === "string" ? adresse.match(/\b(\d{5})\b/) : null;
       const codePostal = codePostalMatch ? codePostalMatch[1] : "";
-
-      // Format tableau: [codePostal, codeInsee]
       const result = [codePostal, codeInsee];
-
       return result;
     },
   },
-  // // Champ d'adresse structuré (non utilisé actuellement car non géré par DS)
-  // "Q2hhbXAtNTU0MjUyNg==": {
-  //   id: "Q2hhbXAtNTU0MjUyNg==",
-  //   label: "Adresse de la maison",
-  //   section: DSSection.MAISON,
-  //   type: DSFieldType.ADDRESS,
-  //   rgaPath: "logement.adresse",
-  //   transformer: () => {
-  //     // Format JSON stringifié complet (a tester)
-  //     return JSON.stringify({
-  //       label: "32 Rue des Clefs Moreaux 36250 Saint-Maur",
-  //       type: "housenumber",
-  //       street_address: "32 Rue des Clefs Moreaux",
-  //       street_number: "32",
-  //       street_name: "Rue des Clefs Moreaux",
-  //       postal_code: "36250",
-  //       city_name: "Saint-Maur",
-  //       city_code: "36202",
-  //       department_code: "36",
-  //       region_code: "24",
-  //     });
-  //   },
-  // },
   "Q2hhbXAtNTU0MjU2OA==": {
     id: "Q2hhbXAtNTU0MjU2OA==",
     label: "Année de construction",
@@ -300,7 +214,6 @@ export const DS_FIELDS: Record<string, DSField> = {
     section: DSSection.MAISON,
     rgaPath: "rga.peu_endommage",
     transformer: (value: unknown) => {
-      // Oui si endommagée, sinon non
       return String(value === "endommagee" ? "oui" : "non");
     },
   },
@@ -311,7 +224,6 @@ export const DS_FIELDS: Record<string, DSField> = {
     type: DSFieldType.CHECKBOX,
     rgaPath: "rga.peu_endommage",
     transformer: (value: unknown) => {
-      // Oui si peu endommagée, sinon non
       return String(value === "peu-endommagee" ? "oui" : "non");
     },
   },
@@ -388,72 +300,6 @@ export const DS_FIELDS: Record<string, DSField> = {
 };
 
 /**
- * IDs des champs DS utilisés dans le projet (par démarche)
+ * Alias pour compatibilité (si utilisé ailleurs dans le code)
  */
-export const DS_FIELD_IDS = {
-  ELIGIBILITE: {
-    SIRET_AMO: "Q2hhbXAtNTQxOTQyOQ==",
-    // Autres champs si besoin
-  },
-  // Autres démarches si vous en avez
-} as const;
-
-/**
- * Récupère les champs par section
- */
-export function getFieldsBySection(section: DSSection): DSField[] {
-  return Object.values(DS_FIELDS).filter((field) => field.section === section);
-}
-
-/**
- * Récupère les IDs des champs par section
- */
-export function getFieldIdsBySection(section: DSSection): string[] {
-  return getFieldsBySection(section).map((field) => field.id);
-}
-
-/**
- * Récupère un mapping simple ID -> Label
- */
-export function getFieldLabelsMap(): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(DS_FIELDS).map(([id, field]) => [id, field.label])
-  );
-}
-
-/**
- * Récupère les sections avec leurs champs
- */
-export function getSectionsWithFields(): Record<string, string[]> {
-  const sections: Record<string, string[]> = {};
-
-  Object.values(DSSection).forEach((section) => {
-    sections[section] = getFieldIdsBySection(section);
-  });
-
-  return sections;
-}
-
-/**
- * Récupère uniquement les champs mappables depuis RGA
- */
-export function getMappableFields(): DSField[] {
-  return Object.values(DS_FIELDS).filter(
-    (field) => field.rgaPath !== undefined
-  );
-}
-
-/**
- * Helper pour obtenir la valeur d'un chemin dans un objet
- * Ex: getValueByPath({a: {b: 1}}, "a.b") => 1
- */
-export function getValueByPath(
-  obj: Record<string, unknown>,
-  path: string
-): unknown {
-  return path.split(".").reduce((current: unknown, key: string) => {
-    return current && typeof current === "object"
-      ? (current as Record<string, unknown>)[key]
-      : undefined;
-  }, obj);
-}
+export const DS_FIELDS = DS_FIELDS_ELIGIBILITE;

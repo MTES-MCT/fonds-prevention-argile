@@ -1,11 +1,11 @@
-import { getServerEnv } from "@/lib/config/env.config";
-import { Step } from "@/lib/parcours/parcours.types";
+import { getServerEnv } from "@/shared/config/env.config";
 import type {
   PrefillData,
   CreateDossierResponse,
   DemarcheSchema,
   DemarcheStats,
 } from "./types";
+import { Step } from "@/features/parcours/core";
 
 export type DemarcheType = "ELIGIBILITE" | "DIAGNOSTIC" | "DEVIS" | "FACTURES";
 

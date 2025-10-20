@@ -1,0 +1,43 @@
+/**
+ * Statuts internes de validation du parcours
+ */
+export enum Status {
+  TODO = "TODO",
+  EN_INSTRUCTION = "EN_INSTRUCTION",
+  VALIDE = "VALIDE",
+}
+
+/**
+ * Labels français des statuts (pour affichage)
+ */
+export const STATUS_LABELS: Record<Status, string> = {
+  [Status.TODO]: "À faire",
+  [Status.EN_INSTRUCTION]: "En instruction",
+  [Status.VALIDE]: "Validé",
+} as const;
+
+/**
+ * Type dérivé des statuts
+ */
+export type StatusType = `${Status}`;
+
+/**
+ * Vérifie si le statut permet de progresser
+ */
+export function canProgress(status: Status): boolean {
+  return status === Status.VALIDE;
+}
+
+/**
+ * Vérifie si le statut est en attente
+ */
+export function isPending(status: Status): boolean {
+  return status === Status.EN_INSTRUCTION;
+}
+
+/**
+ * Vérifie si le statut est à faire
+ */
+export function isTodo(status: Status): boolean {
+  return status === Status.TODO;
+}

@@ -1,8 +1,7 @@
 "use client";
 
-import { a } from "vitest/dist/chunks/suite.d.FvehnV49.js";
-import { useParcoursContext } from "../context/ParcoursContext";
-import { Step } from "../parcours.types";
+import { useParcoursContext } from "./ParcoursContext";
+import { Step } from "../domain";
 
 /**
  * Hook simplifié pour utiliser le parcours

@@ -3,7 +3,7 @@
 import { getSession } from "@/features/auth/server";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { ActionResult } from "@/shared/types/action-result.types";
-import { Status, Step } from "../../core/domain/entities/parcours.types";
+import { Status, Step } from "../../core/domain/types/parcours-query.types";
 import { db } from "@/shared/database/client";
 import {
   amoValidationTokens,

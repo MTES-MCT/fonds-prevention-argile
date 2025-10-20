@@ -1,12 +1,14 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import {
+import type {
   ParcoursPrevention,
   DossierDemarchesSimplifiees,
-} from "@/lib/database/schema";
-import { Step, Status, DSStatus } from "@/lib/parcours/parcours.types";
-import { StatutValidationAmo, ValidationAmoComplete } from "../amo/amo.types";
+} from "@/shared/database/schema";
+import type { Status, Step } from "../domain";
+import type { StatutValidationAmo } from "../../amo/domain/value-objects";
+import type { ValidationAmoComplete } from "../../amo/domain/entities";
+import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status";
 
 interface ParcoursContextType {
   // Données principales
@@ -17,7 +19,7 @@ interface ParcoursContextType {
   currentStep: Step | null;
   currentStatus: Status | null;
 
-  // Etat AMO
+  // État AMO
   statutAmo: StatutValidationAmo | null;
   validationAmoComplete: ValidationAmoComplete | null;
 
