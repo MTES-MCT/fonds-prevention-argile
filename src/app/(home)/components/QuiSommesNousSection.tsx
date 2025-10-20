@@ -1,4 +1,4 @@
-import { contentHomePage } from "@/content";
+import content from "../content/content.json";
 import Image from "next/image";
 
 export default function QuiSommesNousSection() {
@@ -12,32 +12,32 @@ export default function QuiSommesNousSection() {
               <div className="fr-card__body">
                 <h4 className="fr-h4">
                   {
-                    contentHomePage.qui_sommes_nous_section
-                      .qui_sommes_nous_subsection.title
+                    content.qui_sommes_nous_section.qui_sommes_nous_subsection
+                      .title
                   }
                 </h4>
                 <p className="fr-text--sm fr-text--light fr-mb-2w">
                   {
-                    contentHomePage.qui_sommes_nous_section
-                      .qui_sommes_nous_subsection.description_1
+                    content.qui_sommes_nous_section.qui_sommes_nous_subsection
+                      .description_1
                   }
                 </p>
                 <p className="fr-text--sm fr-text--light fr-mb-3w">
                   {
-                    contentHomePage.qui_sommes_nous_section
-                      .qui_sommes_nous_subsection.description_2
+                    content.qui_sommes_nous_section.qui_sommes_nous_subsection
+                      .description_2
                   }
                 </p>
                 <Image
                   alt={
-                    contentHomePage.qui_sommes_nous_section
-                      .qui_sommes_nous_subsection.imageAlt
+                    content.qui_sommes_nous_section.qui_sommes_nous_subsection
+                      .imageAlt
                   }
                   width={300}
                   height={300}
                   src={
-                    contentHomePage.qui_sommes_nous_section
-                      .qui_sommes_nous_subsection.imageSrc
+                    content.qui_sommes_nous_section.qui_sommes_nous_subsection
+                      .imageSrc
                   }
                 />
               </div>
@@ -50,12 +50,12 @@ export default function QuiSommesNousSection() {
               <div className="fr-card__body">
                 <h4>
                   {
-                    contentHomePage.qui_sommes_nous_section
-                      .nos_missions_subsection.title
+                    content.qui_sommes_nous_section.nos_missions_subsection
+                      .title
                   }
                 </h4>
                 <div className="flex-grow">
-                  {contentHomePage.qui_sommes_nous_section.nos_missions_subsection.missions.map(
+                  {content.qui_sommes_nous_section.nos_missions_subsection.missions.map(
                     (mission, index) => (
                       <div key={index} className="mb-4">
                         <div className="fr-text--lg font-black	fr-mb-1v">

@@ -1,4 +1,4 @@
-import { contentHomePage } from "@/content";
+import content from "../content/content.json";
 
 export default function FaqSection() {
   return (
@@ -7,13 +7,13 @@ export default function FaqSection() {
         <div className="fr-grid-row fr-grid-row--gutters">
           {/* Zone gauche - 1/3 */}
           <div className="fr-col-12 fr-col-lg-4">
-            <h2>{contentHomePage.faq_section.title}</h2>
+            <h2>{content.faq_section.title}</h2>
           </div>
 
           {/* Zone droite - 2/3 */}
           <div className="fr-col-12 fr-col-lg-8">
             <div data-fr-group="true" className="fr-accordions-group">
-              {contentHomePage.faq_section.faqs.map((faq, index) => (
+              {content.faq_section.faqs.map((faq, index) => (
                 <section key={`faq-${index}`} className="fr-accordion">
                   <h3 className="fr-accordion__title">
                     <button

@@ -1,8 +1,8 @@
 import Image from "next/image";
 
-import { Feature } from "@/components";
-import { contentHomePage } from "@/content";
-import { richTextParser } from "@/lib/utils";
+import content from "../content/content.json";
+import { richTextParser } from "@/shared/utils";
+import { Feature } from "@/shared/components";
 
 export default function QuestCeQueLeRgaSection() {
   return (
@@ -19,35 +19,31 @@ export default function QuestCeQueLeRgaSection() {
             >
               <div className="fr-content-media__img">
                 <Image
-                  alt={contentHomePage.what_is_rga_section.image.alt}
+                  alt={content.what_is_rga_section.image.alt}
                   className="object-contain"
                   priority
                   quality={85}
                   width={500}
                   height={320}
-                  src={contentHomePage.what_is_rga_section.image.src}
+                  src={content.what_is_rga_section.image.src}
                 />
               </div>
               <figcaption className="fr-content-media__caption">
-                {contentHomePage.what_is_rga_section.image.caption}
+                {content.what_is_rga_section.image.caption}
               </figcaption>
             </figure>
           </div>
 
           {/* Zone texte */}
           <div className="fr-col-12 fr-col-md-6">
-            <h2>{contentHomePage.what_is_rga_section.title}</h2>
+            <h2>{content.what_is_rga_section.title}</h2>
             <div className="fr-callout fr-callout--pink-macaron">
               <p className="fr-callout__text fr-text--sm">
-                {richTextParser(contentHomePage.what_is_rga_section.highlight)}
+                {richTextParser(content.what_is_rga_section.highlight)}
               </p>
             </div>
-            <p>
-              {richTextParser(contentHomePage.what_is_rga_section.subtitle)}
-            </p>
-            <p>
-              {richTextParser(contentHomePage.what_is_rga_section.subtitle2)}
-            </p>
+            <p>{richTextParser(content.what_is_rga_section.subtitle)}</p>
+            <p>{richTextParser(content.what_is_rga_section.subtitle2)}</p>
           </div>
         </div>
 

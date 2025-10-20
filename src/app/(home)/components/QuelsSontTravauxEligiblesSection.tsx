@@ -1,12 +1,12 @@
-import { contentHomePage } from "@/content";
-import { contentTravauxEligiblesCommon } from "@/content/travaux-eligibles";
+import content from "../content/content.json";
+import contentTravauxEligiblesCommon from "../../travaux-eligibles/content/common.json";
 import Image from "next/image";
 
 export default function QuelsSontTravauxEligiblesSection() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container">
-        <h2>{contentHomePage.quels_sont_travaux_eligibles_section.title}</h2>
+        <h2>{content.quels_sont_travaux_eligibles_section.title}</h2>
         <div className="fr-tabs">
           <ul className="fr-tabs__list" role="tablist" aria-label="">
             {contentTravauxEligiblesCommon.autres_travaux_section.travaux_tabs.map(

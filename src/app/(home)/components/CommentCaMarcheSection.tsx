@@ -1,13 +1,13 @@
-import { contentHomePage } from "@/content";
+import content from "../content/content.json";
 import Image from "next/image";
 
 export default function CommentCaMarcheSection() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container">
-        <h2>{contentHomePage.comment_ca_marche_section.title}</h2>
+        <h2>{content.comment_ca_marche_section.title}</h2>
         <div className="fr-grid-row fr-grid-row--gutters">
-          {contentHomePage.comment_ca_marche_section.steps.map(
+          {content.comment_ca_marche_section.steps.map(
             (
               step: {
                 title: string;

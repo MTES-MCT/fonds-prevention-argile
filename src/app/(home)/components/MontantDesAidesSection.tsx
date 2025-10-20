@@ -1,88 +1,89 @@
-import { contentHomePage } from "@/content";
-import { richTextParser } from "@/lib/utils";
+import { richTextParser } from "@/shared/utils";
+import content from "../content/content.json";
 
 export default function MontantDesAidesSection() {
   return (
     <section className="fr-container-fluid fr-py-10w bg-[var(--background-alt-blue-france)]">
       <div className="fr-container">
-        <h2>{contentHomePage.montant_des_aides_section.title}</h2>
+        <h2>{content.montant_des_aides_section.title}</h2>
         <p>
-          {contentHomePage.montant_des_aides_section.description.text}
+          {content.montant_des_aides_section.description.text}
           <a
-            href={contentHomePage.montant_des_aides_section.description.linkUrl}
+            href={content.montant_des_aides_section.description.linkUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
-            {contentHomePage.montant_des_aides_section.description.linkText}
+            {content.montant_des_aides_section.description.linkText}
           </a>
         </p>
         <div className="fr-callout fr-col-md-8">
           <h3 className="fr-callout__title">
-            {contentHomePage.montant_des_aides_section.highlight.title}
+            {content.montant_des_aides_section.highlight.title}
           </h3>
           <p className="fr-callout__text">
-            {richTextParser(
-              contentHomePage.montant_des_aides_section.highlight.text
-            )}
+            {richTextParser(content.montant_des_aides_section.highlight.text)}
           </p>
         </div>
-        <div className="fr-table fr-table--bordered fr-col-md-10" id="table-5-component">
+        <div
+          className="fr-table fr-table--bordered fr-col-md-10"
+          id="table-5-component"
+        >
           <div className="fr-table__wrapper">
             <div className="fr-table__container">
               <div className="fr-table__content">
                 <table id="table-5">
                   <caption>
-                    {contentHomePage.montant_des_aides_section.table.title}
+                    {content.montant_des_aides_section.table.title}
                   </caption>
                   <thead>
                     <tr>
                       <th></th>
                       <th>
                         {
-                          contentHomePage.montant_des_aides_section.table
-                            .headers[0].text
+                          content.montant_des_aides_section.table.headers[0]
+                            .text
                         }
                         <p
-                          className={`fr-badge fr-ml-2w ${contentHomePage.montant_des_aides_section.table.headers[0].badgeColor}`}
+                          className={`fr-badge fr-ml-2w ${content.montant_des_aides_section.table.headers[0].badgeColor}`}
                         >
                           {
-                            contentHomePage.montant_des_aides_section.table
-                              .headers[0].badge
+                            content.montant_des_aides_section.table.headers[0]
+                              .badge
                           }
                         </p>
                       </th>
                       <th>
                         {
-                          contentHomePage.montant_des_aides_section.table
-                            .headers[1].text
+                          content.montant_des_aides_section.table.headers[1]
+                            .text
                         }
                         <p
-                          className={`fr-badge fr-ml-2w ${contentHomePage.montant_des_aides_section.table.headers[1].badgeColor}`}
+                          className={`fr-badge fr-ml-2w ${content.montant_des_aides_section.table.headers[1].badgeColor}`}
                         >
                           {
-                            contentHomePage.montant_des_aides_section.table
-                              .headers[1].badge
+                            content.montant_des_aides_section.table.headers[1]
+                              .badge
                           }
                         </p>
                       </th>
                       <th>
                         {
-                          contentHomePage.montant_des_aides_section.table
-                            .headers[2].text
+                          content.montant_des_aides_section.table.headers[2]
+                            .text
                         }
                         <p
-                          className={`fr-badge fr-ml-2w ${contentHomePage.montant_des_aides_section.table.headers[2].badgeColor}`}
+                          className={`fr-badge fr-ml-2w ${content.montant_des_aides_section.table.headers[2].badgeColor}`}
                         >
                           {
-                            contentHomePage.montant_des_aides_section.table
-                              .headers[2].badge
+                            content.montant_des_aides_section.table.headers[2]
+                              .badge
                           }
                         </p>
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {contentHomePage.montant_des_aides_section.table.rows.map(
+                    {content.montant_des_aides_section.table.rows.map(
                       (row, rowIndex) => (
                         <tr key={rowIndex} id={`table-5-row-key-${rowIndex}`}>
                           <td> {row.type} </td>

@@ -1,4 +1,4 @@
-import { contentHomePage } from "@/content";
+import content from "../content/content.json";
 import Link from "next/link";
 
 export default function EtatAgitSection() {
@@ -8,32 +8,32 @@ export default function EtatAgitSection() {
         <div className="fr-grid-row items-center gap-6 md:gap-0">
           {/* Zone texte */}
           <div className="fr-col-12 fr-col-md-6">
-            <h2>{contentHomePage.etat_agit_section.title}</h2>
-            <p>{contentHomePage.etat_agit_section.description_1}</p>
+            <h2>{content.etat_agit_section.title}</h2>
+            <p>{content.etat_agit_section.description_1}</p>
             <div className="fr-callout">
               <h3 className="fr-callout__title">
-                {contentHomePage.etat_agit_section.callout_title}
+                {content.etat_agit_section.callout_title}
               </h3>
               <p className="fr-callout__text">
-                {contentHomePage.etat_agit_section.callout_text}
+                {content.etat_agit_section.callout_text}
               </p>
             </div>
             <h6 className="fr-mt-4v">
-              {contentHomePage.etat_agit_section.description_2_title}
+              {content.etat_agit_section.description_2_title}
             </h6>
-            <p>{contentHomePage.etat_agit_section.description_2_text}</p>
+            <p>{content.etat_agit_section.description_2_text}</p>
             <Link
               className="fr-mt-4v fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
               href="/simulateur"
             >
-              {contentHomePage.etat_agit_section.cta_label}
+              {content.etat_agit_section.cta_label}
             </Link>
           </div>
 
           {/* Zone tuiles */}
           <div className="fr-col-12 fr-col-md-6 flex justify-center">
             <div className="flex flex-col gap-6 p-4 md:p-20">
-              {contentHomePage.etat_agit_section.infos_tiles.map(
+              {content.etat_agit_section.infos_tiles.map(
                 (
                   tile: {
                     icon: string;
