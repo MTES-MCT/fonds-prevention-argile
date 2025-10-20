@@ -1,6 +1,6 @@
-import { contentTravauxEligiblesLancezVousSection } from "@/content/travaux-eligibles";
 import Image from "next/image";
 import Link from "next/link";
+import contentLancezVous from "../content/lancez-vous-section.json";
 
 export default function LancezVousSection() {
   return (
@@ -9,18 +9,14 @@ export default function LancezVousSection() {
         <div className="fr-grid-row items-center gap-6 md:gap-0">
           {/* Zone texte */}
           <div className="fr-col-12 fr-col-md-6">
-            <h2 className="text-left">
-              {contentTravauxEligiblesLancezVousSection.title}
-            </h2>
-            <h2 className="text-left">
-              {contentTravauxEligiblesLancezVousSection.title2}
-            </h2>
+            <h2 className="text-left">{contentLancezVous.title}</h2>
+            <h2 className="text-left">{contentLancezVous.title2}</h2>
 
             <Link
               className="fr-mt-4v fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
-              href={contentTravauxEligiblesLancezVousSection.cta_link}
+              href={contentLancezVous.cta_link}
             >
-              {contentTravauxEligiblesLancezVousSection.cta_label}
+              {contentLancezVous.cta_label}
             </Link>
           </div>
 
@@ -28,13 +24,13 @@ export default function LancezVousSection() {
           <div className="fr-col-12 fr-col-md-6 flex justify-center md:justify-end">
             <div className="h-[250px] md:h-[376px] relative w-full max-w-[484px]">
               <Image
-                alt={contentTravauxEligiblesLancezVousSection.image.alt}
+                alt={contentLancezVous.image.alt}
                 className="object-contain"
                 fill
                 priority
                 quality={85}
                 sizes="(max-width: 768px) 272px, (max-width: 1024px) 484px, 100vw"
-                src={contentTravauxEligiblesLancezVousSection.image.src}
+                src={contentLancezVous.image.src}
               />
             </div>
           </div>

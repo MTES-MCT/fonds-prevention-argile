@@ -1,5 +1,5 @@
 import { contentTravauxEligiblesTestPermeabiliteSol } from "@/content/travaux-eligibles";
-import TravauxEligiblesTemplate from "@/page-sections/travaux-eligibles/TravauxEligiblesTemplate";
+import TravauxEligiblesTemplate from "@/app/travaux-eligibles/components/TravauxEligiblesTemplate";
 
 export default function TestPermeabiliteSol() {
   return (

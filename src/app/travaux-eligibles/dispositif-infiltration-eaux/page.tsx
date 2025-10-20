@@ -1,5 +1,5 @@
 import content from "./content/content.json";
-import TravauxEligiblesTemplate from "@/page-sections/travaux-eligibles/TravauxEligiblesTemplate";
+import TravauxEligiblesTemplate from "@/app/travaux-eligibles/components/TravauxEligiblesTemplate";
 
 export default function DispositifInfiltrationEaux() {
   return (

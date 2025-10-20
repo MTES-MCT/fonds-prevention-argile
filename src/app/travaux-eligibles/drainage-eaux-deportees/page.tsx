@@ -1,5 +1,5 @@
-import { contentTravauxEligiblesDrainageEauxDeportees } from "@/content/travaux-eligibles";
-import TravauxEligiblesTemplate from "@/page-sections/travaux-eligibles/TravauxEligiblesTemplate";
+import content from "./content";
+import TravauxEligiblesTemplate from "@/app/travaux-eligibles/components/TravauxEligiblesTemplate";
 
 export default function DrainageEauxDeportees() {
   return (

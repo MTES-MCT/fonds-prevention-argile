@@ -1,8 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { contentLayout } from "@/content";
 import LancezVousSection from "./LancezVousSection";
-import { contentTravauxEligiblesCommon } from "@/content/travaux-eligibles";
+import contentCommon from "../content/common.json";
 
 interface TravauxEligiblesTemplateProps {
   title: string;
@@ -102,7 +101,7 @@ export default function TravauxEligiblesTemplate({
 
             {/* Une des solutions pour protéger votre maison */}
             <div className="fr-my-6w">
-              <h1>{contentTravauxEligiblesCommon.une_des_solutions_title}</h1>
+              <h1>{contentCommon.une_des_solutions_title}</h1>
               {une_des_solutions.map((une_solution, index) => (
                 <p key={index}>{une_solution}</p>
               ))}
@@ -110,9 +109,7 @@ export default function TravauxEligiblesTemplate({
 
             {/* En quoi consiste cette solution ? */}
             <div className="fr-my-6w">
-              <h1>
-                {contentTravauxEligiblesCommon.en_quoi_consiste_solution_title}
-              </h1>
+              <h1>{contentCommon.en_quoi_consiste_solution_title}</h1>
               {solutions.map((solution, index) => (
                 <div key={index}>
                   <h4 key={index}>{solution.title}</h4>
@@ -127,9 +124,7 @@ export default function TravauxEligiblesTemplate({
 
             {/* Pourquoi cette solution est efficace */}
             <div className="fr-my-6w">
-              <h1>
-                {contentTravauxEligiblesCommon.pourquoi_solution_efficace_title}
-              </h1>
+              <h1>{contentCommon.pourquoi_solution_efficace_title}</h1>
               <p>{pourquoi_solution_efficace.subtitle}</p>
               <ul>
                 {pourquoi_solution_efficace.details.map((detail, index) => (
@@ -140,9 +135,7 @@ export default function TravauxEligiblesTemplate({
 
             {/* Quand mettre en oeuvre la solution */}
             <div className="fr-my-6w">
-              <h1>
-                {contentTravauxEligiblesCommon.quand_mettre_en_oeuvre_title}
-              </h1>
+              <h1>{contentCommon.quand_mettre_en_oeuvre_title}</h1>
 
               {quand_mettre_en_oeuvre.generalite && (
                 <p>{quand_mettre_en_oeuvre.generalite}</p>
@@ -168,7 +161,7 @@ export default function TravauxEligiblesTemplate({
             {/* A retenir */}
             <div className="fr-callout fr-icon-info-line">
               <h3 className="fr-callout__title">
-                {contentTravauxEligiblesCommon.a_retenir_title}
+                {contentCommon.a_retenir_title}
               </h3>
               {a_retenir.map((retenir, index) => (
                 <p key={index} className="fr-callout__text">
@@ -186,10 +179,10 @@ export default function TravauxEligiblesTemplate({
       {/* Autres travaux */}
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
-          <h2>{contentTravauxEligiblesCommon.autres_travaux_section.title}</h2>
+          <h2>{contentCommon.autres_travaux_section.title}</h2>
           <div className="fr-tabs">
             <ul className="fr-tabs__list" role="tablist" aria-label="">
-              {contentTravauxEligiblesCommon.autres_travaux_section.travaux_tabs.map(
+              {contentCommon.autres_travaux_section.travaux_tabs.map(
                 (tab, index) => (
                   <li key={index} role="presentation">
                     <button
@@ -207,7 +200,7 @@ export default function TravauxEligiblesTemplate({
                 )
               )}
             </ul>
-            {contentTravauxEligiblesCommon.autres_travaux_section.travaux_tabs.map(
+            {contentCommon.autres_travaux_section.travaux_tabs.map(
               (tab, index) => (
                 <div
                   id={`tab-${index}-panel`}
