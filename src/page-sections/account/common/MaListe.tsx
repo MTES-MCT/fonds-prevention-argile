@@ -44,7 +44,7 @@ export default function MaListe() {
   return (
     <div className="fr-card">
       <div className="fr-card__body">
-        <h2 className="fr-card__title">{contentAccountPage.ma_liste.title}</h2>
+        <h2 className="fr-card__title">Ma liste</h2>
         <div className="fr-card__desc">
           <ol type="1" className="fr-list space-y-2">
             <li key="choix-amo">
