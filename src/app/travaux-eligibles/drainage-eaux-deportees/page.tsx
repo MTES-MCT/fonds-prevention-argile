@@ -1,24 +1,18 @@
-import content from "./content";
+import content from "./content/content.json";
 import TravauxEligiblesTemplate from "@/app/travaux-eligibles/components/TravauxEligiblesTemplate";
 
 export default function DrainageEauxDeportees() {
   return (
     <TravauxEligiblesTemplate
-      title={contentTravauxEligiblesDrainageEauxDeportees.title}
-      pageLink={contentTravauxEligiblesDrainageEauxDeportees.pageLink}
-      tag={contentTravauxEligiblesDrainageEauxDeportees.tag}
-      image={contentTravauxEligiblesDrainageEauxDeportees.image}
-      une_des_solutions={
-        contentTravauxEligiblesDrainageEauxDeportees.une_des_solutions
-      }
-      solutions={contentTravauxEligiblesDrainageEauxDeportees.solutions}
-      pourquoi_solution_efficace={
-        contentTravauxEligiblesDrainageEauxDeportees.pourquoi_solution_efficace
-      }
-      quand_mettre_en_oeuvre={
-        contentTravauxEligiblesDrainageEauxDeportees.quand_mettre_en_oeuvre
-      }
-      a_retenir={contentTravauxEligiblesDrainageEauxDeportees.a_retenir}
+      title={content.title}
+      pageLink={content.pageLink}
+      tag={content.tag}
+      image={content.image}
+      une_des_solutions={content.une_des_solutions}
+      solutions={content.solutions}
+      pourquoi_solution_efficace={content.pourquoi_solution_efficace}
+      quand_mettre_en_oeuvre={content.quand_mettre_en_oeuvre}
+      a_retenir={content.a_retenir}
     />
   );
 }

@@ -1,24 +1,18 @@
-import { contentTravauxEligiblesReperageFuiteReseauxEaux } from "@/content/travaux-eligibles";
+import content from "./content/content.json";
 import TravauxEligiblesTemplate from "@/app/travaux-eligibles/components/TravauxEligiblesTemplate";
 
 export default function ReperageFuiteReseauxEaux() {
   return (
     <TravauxEligiblesTemplate
-      title={contentTravauxEligiblesReperageFuiteReseauxEaux.title}
-      pageLink={contentTravauxEligiblesReperageFuiteReseauxEaux.pageLink}
-      tag={contentTravauxEligiblesReperageFuiteReseauxEaux.tag}
-      image={contentTravauxEligiblesReperageFuiteReseauxEaux.image}
-      une_des_solutions={
-        contentTravauxEligiblesReperageFuiteReseauxEaux.une_des_solutions
-      }
-      solutions={contentTravauxEligiblesReperageFuiteReseauxEaux.solutions}
-      pourquoi_solution_efficace={
-        contentTravauxEligiblesReperageFuiteReseauxEaux.pourquoi_solution_efficace
-      }
-      quand_mettre_en_oeuvre={
-        contentTravauxEligiblesReperageFuiteReseauxEaux.quand_mettre_en_oeuvre
-      }
-      a_retenir={contentTravauxEligiblesReperageFuiteReseauxEaux.a_retenir}
+      title={content.title}
+      pageLink={content.pageLink}
+      tag={content.tag}
+      image={content.image}
+      une_des_solutions={content.une_des_solutions}
+      solutions={content.solutions}
+      pourquoi_solution_efficace={content.pourquoi_solution_efficace}
+      quand_mettre_en_oeuvre={content.quand_mettre_en_oeuvre}
+      a_retenir={content.a_retenir}
     />
   );
 }
