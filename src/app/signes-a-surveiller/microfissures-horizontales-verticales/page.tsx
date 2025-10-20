@@ -1,7 +1,5 @@
-import {
-  contentSignesASurveillerCommon,
-  contentSignesASurveillerFissuresVerticalesAnglesBatiment,
-} from "@/content/signes-a-surveiller";
+import content from "./content/content.json";
+import commonContent from "../content/common.json";
 import { SignesASurveillerTemplate } from "@/page-sections";
 
 export default function MicrofissuresHorizontalesVerticales() {

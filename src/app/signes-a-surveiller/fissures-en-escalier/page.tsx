@@ -1,29 +1,23 @@
-import {
-  contentSignesASurveillerCommon,
-  contentSignesASurveillerFissuresEscalier,
-} from "@/content/signes-a-surveiller";
+import content from "./content/content.json";
+import commonContent from "../content/common.json";
 import { SignesASurveillerTemplate } from "@/page-sections";
 
 export default function FissuresEnEscalier() {
   return (
     <SignesASurveillerTemplate
-      title={contentSignesASurveillerFissuresEscalier.title}
+      title={content.title}
       pageLink="/signes-a-surveiller/fissures-en-escalier"
       tag={
-        contentSignesASurveillerCommon.signes_a_surveiller_section.signes.find(
+        commonContent.signes_a_surveiller_section.signes.find(
           (item) =>
             item.pageLink === "/signes-a-surveiller/fissures-en-escalier"
         )?.tag
       }
-      image={contentSignesASurveillerFissuresEscalier.image}
-      ce_qu_il_faut_surveiller={
-        contentSignesASurveillerFissuresEscalier.ce_qu_il_faut_surveiller
-      }
-      signes_alerte={contentSignesASurveillerFissuresEscalier.signes_alerte}
-      conseils_pratiques={
-        contentSignesASurveillerFissuresEscalier.conseils_pratiques
-      }
-      bon_a_savoir={contentSignesASurveillerFissuresEscalier.bon_a_savoir}
+      image={content.image}
+      ce_qu_il_faut_surveiller={content.ce_qu_il_faut_surveiller}
+      signes_alerte={content.signes_alerte}
+      conseils_pratiques={content.conseils_pratiques}
+      bon_a_savoir={content.bon_a_savoir}
     />
   );
 }

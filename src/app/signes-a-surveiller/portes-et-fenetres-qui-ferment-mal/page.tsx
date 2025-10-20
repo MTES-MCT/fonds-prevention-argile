@@ -1,34 +1,24 @@
-import {
-  contentSignesASurveillerCommon,
-  contentSignesASurveillerPortesEtFenetreQuiFermentMal,
-} from "@/content/signes-a-surveiller";
+import content from "./content/content.json";
+import commonContent from "../content/common.json";
 import { SignesASurveillerTemplate } from "@/page-sections";
 
 export default function PortesEtFenetreQuiFermentMal() {
   return (
     <SignesASurveillerTemplate
-      title={contentSignesASurveillerPortesEtFenetreQuiFermentMal.title}
+      title={content.title}
       pageLink="/signes-a-surveiller/portes-et-fenetres-qui-ferment-mal"
       tag={
-        contentSignesASurveillerCommon.signes_a_surveiller_section.signes.find(
+        commonContent.signes_a_surveiller_section.signes.find(
           (item) =>
             item.pageLink ===
             "/signes-a-surveiller/portes-et-fenetres-qui-ferment-mal"
         )?.tag
       }
-      image={contentSignesASurveillerPortesEtFenetreQuiFermentMal.image}
-      ce_qu_il_faut_surveiller={
-        contentSignesASurveillerPortesEtFenetreQuiFermentMal.ce_qu_il_faut_surveiller
-      }
-      signes_alerte={
-        contentSignesASurveillerPortesEtFenetreQuiFermentMal.signes_alerte
-      }
-      conseils_pratiques={
-        contentSignesASurveillerPortesEtFenetreQuiFermentMal.conseils_pratiques
-      }
-      bon_a_savoir={
-        contentSignesASurveillerPortesEtFenetreQuiFermentMal.bon_a_savoir
-      }
+      image={content.image}
+      ce_qu_il_faut_surveiller={content.ce_qu_il_faut_surveiller}
+      signes_alerte={content.signes_alerte}
+      conseils_pratiques={content.conseils_pratiques}
+      bon_a_savoir={content.bon_a_savoir}
     />
   );
 }
