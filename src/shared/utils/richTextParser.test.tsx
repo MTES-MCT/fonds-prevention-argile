@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 
-import richTextParser from "./richTextParser";
+import richTextParser from "./richTextParser.utils";
 
 describe("richTextParser", () => {
   it("renders plain text without any formatting", () => {

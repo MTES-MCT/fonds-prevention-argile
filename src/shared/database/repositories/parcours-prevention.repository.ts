@@ -116,60 +116,6 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   /**
-   * Vérifie si un utilisateur a déjà un parcours
-   */
-  async existsForUser(userId: string): Promise<boolean> {
-    const result = await db
-      .select({ id: parcoursPrevention.id })
-      .from(parcoursPrevention)
-      .where(eq(parcoursPrevention.userId, userId))
-      .limit(1);
-
-    return result.length > 0;
-  }
-
-  /**
-   * Trouve les parcours par étape courante
-   */
-  async findByCurrentStep(step: Step): Promise<ParcoursPrevention[]> {
-    return await db
-      .select()
-      .from(parcoursPrevention)
-      .where(eq(parcoursPrevention.currentStep, step))
-      .orderBy(desc(parcoursPrevention.updatedAt));
-  }
-
-  /**
-   * Trouve les parcours par statut
-   */
-  async findByStatus(status: Status): Promise<ParcoursPrevention[]> {
-    return await db
-      .select()
-      .from(parcoursPrevention)
-      .where(eq(parcoursPrevention.currentStatus, status))
-      .orderBy(desc(parcoursPrevention.updatedAt));
-  }
-
-  /**
-   * Trouve les parcours par étape et statut
-   */
-  async findByStepAndStatus(
-    step: Step,
-    status: Status
-  ): Promise<ParcoursPrevention[]> {
-    return await db
-      .select()
-      .from(parcoursPrevention)
-      .where(
-        and(
-          eq(parcoursPrevention.currentStep, step),
-          eq(parcoursPrevention.currentStatus, status)
-        )
-      )
-      .orderBy(desc(parcoursPrevention.updatedAt));
-  }
-
-  /**
    * Met à jour l'étape courante d'un parcours
    */
   async updateStep(

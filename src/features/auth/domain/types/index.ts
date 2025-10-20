@@ -1,2 +1,2 @@
-export * from "./UserRole";
-export * from "./SessionCookies";
+export * from "./userRole";
+export * from "./sessionCookies";

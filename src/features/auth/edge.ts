@@ -10,9 +10,6 @@ export * from "./domain/value-objects/constants";
 export * from "./domain/value-objects/configs/routes.config";
 export * from "./domain/value-objects/configs/session.config";
 
-// Services compatibles Edge Runtime (pas de crypto Node.js)
-export * from "./services/authorization.service";
-
 // JWT decode uniquement (sans crypto Node.js)
 export {
   decodeToken,
@@ -26,3 +23,18 @@ export {
   isValidAuthMethod,
   validateSessionCookies,
 } from "./utils/validation.utils";
+
+// Services de routes (compatible Edge Runtime)
+export {
+  isAdminRoute,
+  isParticulierRoute,
+  isProtectedRoute,
+  canAccessRoute,
+} from "./services/routes.service";
+
+// Services de redirections (compatible Edge Runtime)
+export {
+  getDefaultRedirect,
+  getUnauthorizedRedirect,
+  getPostLoginRedirect,
+} from "./services/redirects.service";

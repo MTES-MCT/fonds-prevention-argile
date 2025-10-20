@@ -1,4 +1,4 @@
-import { isLocal } from "../config/env.config";
+import { isLocal } from "@/shared/config/env.config";
 
 export const emailConfig = {
   apiKey: process.env.BREVO_API_KEY || "",

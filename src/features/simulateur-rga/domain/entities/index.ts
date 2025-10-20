@@ -1,1 +1,1 @@
-export * from "./RGAFormData";
+export * from "./rgaFormData";

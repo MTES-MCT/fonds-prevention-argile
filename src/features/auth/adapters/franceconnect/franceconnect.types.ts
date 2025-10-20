@@ -23,4 +23,6 @@ export interface FranceConnectUserInfo {
 export interface FranceConnectError {
   error: string;
   error_description?: string;
+  error_uri?: string;
+  state?: string;
 }

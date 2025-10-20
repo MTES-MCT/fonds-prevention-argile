@@ -1,13 +1,14 @@
 "use server";
 
-import { db } from "@/lib/database/client";
-import { emailNotifications } from "@/lib/database/schema/email-notifications";
+import { ActionResult } from "@/shared/types";
 import { eq } from "drizzle-orm";
-import type { ActionResult } from "../types";
-import type { EmailNotification } from "@/lib/database/schema/email-notifications";
-import { isValidEmail } from "@/lib/utils";
-import { ROLES } from "@/lib/auth";
-import { getSession } from "@/lib/auth/services/auth.service";
+import { isValidEmail } from "../utils/email.utils";
+import { db } from "@/shared/database/client";
+import {
+  EmailNotification,
+  emailNotifications,
+} from "@/shared/database/schema";
+import { getSession, ROLES } from "@/features/auth";
 
 /**
  * Enregistre un email dans la table des notifications

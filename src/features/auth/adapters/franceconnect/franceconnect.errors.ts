@@ -1,5 +1,5 @@
-import { AuthError, ERROR_CODES } from "../../domain/errors/AuthError";
-import type { ErrorCode } from "../../domain/errors/AuthError";
+import { AuthError, ERROR_CODES } from "../../domain/errors/authErrors";
+import type { ErrorCode } from "../../domain/errors/authErrors";
 
 /**
  * Messages d'erreur FranceConnect

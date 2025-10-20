@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+
+// Tous les imports depuis edge.ts
 import {
   COOKIE_NAMES,
   PUBLIC_ROUTES,
   DEFAULT_REDIRECTS,
+  SESSION_DURATION,
+  getCookieOptions,
+  decodeToken,
+  isValidRole,
   isProtectedRoute,
   canAccessRoute,
   getDefaultRedirect,
-  isValidRole,
-  getCookieOptions,
-  SESSION_DURATION,
-} from "./lib/auth/edge";
-
-import { decodeToken } from "./lib/auth/utils/jwt-decode.utils";
+} from "@/features/auth/edge";
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;

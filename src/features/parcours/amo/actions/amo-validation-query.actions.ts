@@ -9,7 +9,7 @@ import {
   entreprisesAmo,
 } from "@/shared/database/schema";
 import { ValidationAmoComplete } from "../domain/entities";
-import { ActionResult } from "@/shared";
+import { ActionResult } from "@/shared/types";
 
 /**
  * Récupère la validation AMO complète pour le parcours de l'utilisateur

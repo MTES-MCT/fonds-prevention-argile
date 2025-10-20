@@ -1,10 +1,10 @@
 "use server";
 
-import { emailService } from "@/lib/email/email.service";
-import { renderEmailTemplate } from "@/lib/email/render-template";
-import { ValidationAmoTemplate } from "@/lib/email/templates/validation-amo.template";
-import type { ActionResult } from "@/lib/actions/types";
-import { getServerEnv } from "@/lib/config/env.config";
+import { getServerEnv } from "@/shared/config/env.config";
+import { ActionResult } from "@/shared/types";
+import { renderEmailTemplate } from "../utils/render-template.utils";
+import { ValidationAmoTemplate } from "../templates/validation-amo.template";
+import { emailService } from "../services/email.service";
 
 /**
  * Envoie un email de validation à un AMO

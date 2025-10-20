@@ -8,6 +8,7 @@ import {
   canPassToNextStep,
   isParcoursComplete,
 } from "./parcours-permissions.service";
+import { getParcoursComplet } from "./parcours-state.service";
 
 /**
  * Service de gestion de la progression du parcours
@@ -28,7 +29,7 @@ export async function validateCurrentStep(
 
   const currentState: ParcoursState = {
     step: data.parcours.currentStep,
-    status: data.parcours.currentStatus,
+    status: data.parcours.status,
   };
 
   if (!canValidateDossier(currentState)) {
@@ -69,7 +70,7 @@ export async function moveToNextStep(userId: string): Promise<
 
   const currentState: ParcoursState = {
     step: data.parcours.currentStep,
-    status: data.parcours.currentStatus,
+    status: data.parcours.status,
   };
 
   // Si déjà complet

@@ -1,1 +1,1 @@
-export * from "./AuthError";
+export * from "./authErrors";

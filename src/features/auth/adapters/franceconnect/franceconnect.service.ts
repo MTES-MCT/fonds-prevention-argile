@@ -17,16 +17,16 @@ import {
   ROLES,
   SESSION_DURATION,
 } from "../../domain/value-objects";
-import { ERROR_CODES } from "../../domain/errors/AuthError";
-import type { ErrorCode } from "../../domain/errors/AuthError";
+import { ERROR_CODES } from "../../domain/errors/authErrors";
+import type { ErrorCode } from "../../domain/errors/authErrors";
 import { JWTPayload } from "../../domain/entities";
-import { getOrCreateParcours } from "@/shared/database/services";
 import { userRepo } from "@/shared/database/repositories";
 import {
   FC_ERROR_MAPPING,
   FC_ERROR_MESSAGES,
   createFCError,
 } from "./franceconnect.errors";
+import { getOrCreateParcours } from "@/features/parcours/core/services";
 
 /**
  * Génère l'URL d'autorisation FranceConnect

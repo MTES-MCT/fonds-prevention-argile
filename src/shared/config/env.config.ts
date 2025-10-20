@@ -1,5 +1,54 @@
 import { z } from "zod";
-import { isClient } from "../utils/env";
+
+/**
+ * Configuration et validation des variables d'environnement
+ */
+
+// ==========================================
+// Helpers d'environnement (runtime)
+// ==========================================
+
+export const isClient = (): boolean => {
+  return typeof window !== "undefined";
+};
+
+export const isServer = (): boolean => {
+  return typeof window === "undefined";
+};
+
+export const isDev = (): boolean => {
+  return process.env.NODE_ENV === "development";
+};
+
+export const isProd = (): boolean => {
+  return process.env.NODE_ENV === "production";
+};
+
+export const isTest = (): boolean => {
+  return process.env.NODE_ENV === "test";
+};
+
+/**
+ * Helper pour exécuter du code uniquement côté client
+ */
+export const runOnClient = (callback: () => void): void => {
+  if (isClient()) {
+    callback();
+  }
+};
+
+/**
+ * Helper pour exécuter du code uniquement côté serveur
+ */
+export const runOnServer = (callback: () => void): void => {
+  if (isServer()) {
+    callback();
+  }
+};
+
+// ==========================================
+// Schémas de validation Zod
+// ==========================================
 
 // Schéma de validation des variables d'environnement FranceConnect
 const franceConnectEnvSchema = z.object({
@@ -77,6 +126,10 @@ const sharedSchema = z.object({
     .enum(["local", "docker", "staging", "production"])
     .default("local"),
 });
+
+// ==========================================
+// Getters avec lazy loading
+// ==========================================
 
 // Variables côté serveur (lazy loading)
 let _serverEnv: z.infer<typeof serverSchema> | null = null;
@@ -165,26 +218,21 @@ export function getSharedEnv() {
   return _sharedEnv;
 }
 
-// Export des constantes pour compatibilité
-export const ENV_SERVER = new Proxy({} as z.infer<typeof serverSchema>, {
-  get(_, prop) {
-    return getServerEnv()[prop as keyof z.infer<typeof serverSchema>];
-  },
-});
+// ==========================================
+// Helpers d'environnement applicatif
+// ==========================================
 
-export const ENV_CLIENT = new Proxy({} as z.infer<typeof clientSchema>, {
-  get(_, prop) {
-    return getClientEnv()[prop as keyof z.infer<typeof clientSchema>];
-  },
-});
+export const isLocal = () => getSharedEnv().NEXT_PUBLIC_APP_ENV === "local";
+export const isStaging = () => getSharedEnv().NEXT_PUBLIC_APP_ENV === "staging";
+export const isProduction = () =>
+  getSharedEnv().NEXT_PUBLIC_APP_ENV === "production";
+export const isDevelopment = () =>
+  ["local", "docker"].includes(getSharedEnv().NEXT_PUBLIC_APP_ENV);
 
-export const ENV_SHARED = new Proxy({} as z.infer<typeof sharedSchema>, {
-  get(_, prop) {
-    return getSharedEnv()[prop as keyof z.infer<typeof sharedSchema>];
-  },
-});
+// ==========================================
+// Validation au démarrage (serveur uniquement)
+// ==========================================
 
-// Validation au démarrage (côté serveur uniquement)
 if (isServer()) {
   try {
     getSharedEnv();
@@ -195,11 +243,3 @@ if (isServer()) {
     process.exit(1);
   }
 }
-
-// Helpers pour vérifier l'environnement
-export const isLocal = () => getSharedEnv().NEXT_PUBLIC_APP_ENV === "local";
-export const isStaging = () => getSharedEnv().NEXT_PUBLIC_APP_ENV === "staging";
-export const isProduction = () =>
-  getSharedEnv().NEXT_PUBLIC_APP_ENV === "production";
-export const isDevelopment = () =>
-  ["local", "docker"].includes(getSharedEnv().NEXT_PUBLIC_APP_ENV);

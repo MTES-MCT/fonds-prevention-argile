@@ -80,19 +80,6 @@ export class UserRepository extends BaseRepository<User> {
   }
 
   /**
-   * Vérifie si un utilisateur existe par FranceConnect ID
-   */
-  async existsByFcId(fcId: string): Promise<boolean> {
-    const result = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.fcId, fcId))
-      .limit(1);
-
-    return result.length > 0;
-  }
-
-  /**
    * Compte le nombre d'utilisateurs
    */
   async count(where?: SQL): Promise<number> {
@@ -185,37 +172,6 @@ export class UserRepository extends BaseRepository<User> {
       .returning();
 
     return result[0] || null;
-  }
-
-  /**
-   * Récupère les utilisateurs avec pagination
-   */
-  async findWithPagination(
-    params: PaginationParams = {}
-  ): Promise<PaginationResult<User>> {
-    const { page = 1, limit = 10 } = params;
-    const offset = (page - 1) * limit;
-
-    // Récupération des données
-    const data = await db
-      .select()
-      .from(users)
-      .limit(limit)
-      .offset(offset)
-      .orderBy(desc(users.createdAt));
-
-    // Comptage total
-    const total = await this.count();
-
-    return {
-      data,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
   }
 }
 

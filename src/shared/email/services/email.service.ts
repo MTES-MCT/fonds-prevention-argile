@@ -1,7 +1,11 @@
 import { TransactionalEmailsApi, SendSmtpEmail } from "@getbrevo/brevo";
 import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
-import { emailConfig, isEmailEnabled, isLocalDevelopment } from "./config";
+import {
+  emailConfig,
+  isEmailEnabled,
+  isLocalDevelopment,
+} from "../config/email.config";
 
 interface SendEmailParams {
   to: string | string[];
