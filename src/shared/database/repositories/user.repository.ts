@@ -1,11 +1,7 @@
 import { eq, sql, SQL, desc } from "drizzle-orm";
 import { db } from "../client";
 import { users } from "../schema/users";
-import {
-  BaseRepository,
-  PaginationParams,
-  PaginationResult,
-} from "./base.repository";
+import { BaseRepository } from "./base.repository";
 import type { User, NewUser } from "../schema/users";
 import { FranceConnectUserInfo } from "@/features/auth";
 

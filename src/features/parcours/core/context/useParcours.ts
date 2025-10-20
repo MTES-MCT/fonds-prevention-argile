@@ -38,11 +38,11 @@ export function useParcours() {
     // Helpers courants
     getDossierUrl: (step: Step) => {
       const dossier = context.getDossierByStep(step);
-      return dossier?.dsUrl || null;
+      return dossier?.demarcheUrl || null;
     },
     getCurrentDossierUrl: () => {
       const dossier = context.getCurrentDossier();
-      return dossier?.dsUrl || null;
+      return dossier?.demarcheUrl || null;
     },
   };
 }

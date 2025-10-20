@@ -1,4 +1,4 @@
-import { eq, sql, SQL, desc, and } from "drizzle-orm";
+import { eq, sql, SQL, desc } from "drizzle-orm";
 import { db } from "../client";
 import { dossiersDemarchesSimplifiees } from "../schema/dossiers-demarches-simplifiees";
 import { BaseRepository } from "./base.repository";

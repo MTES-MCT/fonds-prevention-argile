@@ -8,6 +8,7 @@ import {
   getParcoursStateWithPermissions,
   getFullParcours,
 } from "../services/parcours-state.service";
+import { DossierDS } from "../../dossiers-ds";
 
 /**
  * Récupère l'état actuel du parcours avec permissions
@@ -49,7 +50,7 @@ export async function getParcoursStatus(): Promise<
 export async function obtenirMonParcours(): Promise<
   ActionResult<{
     parcours: Parcours;
-    dossiers: any[]; // TODO: Typer avec DossierDS de dossiers-ds/
+    dossiers: DossierDS[];
     isComplete: boolean;
     prochainEtape: Step | null;
   }>

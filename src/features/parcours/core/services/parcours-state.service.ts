@@ -1,4 +1,5 @@
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import { dossierDsRepo } from "@/shared/database";
 import type { Parcours, ParcoursState } from "../domain/entities/parcours";
 import type { ParcoursComplet } from "../domain/types/parcours-query.types";
 import { getNextStep } from "../domain/value-objects/step";
@@ -6,7 +7,8 @@ import {
   getParcoursPermissions,
   isParcoursComplete,
 } from "./parcours-permissions.service";
-import { dossierDsRepo } from "@/shared/database";
+import type { DossierDS } from "../../dossiers-ds/domain/entities/dossier-ds";
+import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status";
 
 /**
  * Service de gestion de l'état du parcours
@@ -41,20 +43,18 @@ export async function getParcoursComplet(
     return null;
   }
 
-  const dossiers = await dossierDsRepo.findByParcoursId(parcours.id);
+  const dossiersDb = await dossierDsRepo.findByParcoursId(parcours.id);
 
-  // Mapper vers le type DossierDS de la feature
-  const mappedDossiers = dossiers.map((d) => ({
+  // Mapper les dossiers DB vers le type entité métier DossierDS
+  const dossiers: DossierDS[] = dossiersDb.map((d) => ({
     id: d.id,
     parcoursId: d.parcoursId,
-    step: d.step,
-    dsNumber: d.dsNumber,
-    dsDemarcheId: d.dsDemarcheId,
-    dsStatus: d.dsStatus,
-    dsUrl: d.dsUrl,
-    submittedAt: d.submittedAt,
-    processedAt: d.processedAt,
-    lastSyncAt: d.lastSyncAt,
+    demarcheId: d.dsDemarcheId,
+    demarcheNom: "", // Pas dans la DB, pourrait être récupéré depuis une config
+    demarcheEtape: d.step,
+    demarcheUrl: d.dsUrl || undefined,
+    numeroDs: d.dsNumber ? parseInt(d.dsNumber) : null,
+    etatDs: d.dsStatus as DSStatus,
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
   }));
@@ -81,7 +81,7 @@ export async function getParcoursComplet(
       createdAt: parcours.createdAt,
       updatedAt: parcours.updatedAt,
     },
-    dossiers: mappedDossiers,
+    dossiers,
     isComplete,
     prochainEtape,
   };

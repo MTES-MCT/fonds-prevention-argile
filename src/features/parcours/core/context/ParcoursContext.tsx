@@ -1,19 +1,17 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type {
-  ParcoursPrevention,
-  DossierDemarchesSimplifiees,
-} from "@/shared/database/schema";
-import type { Status, Step } from "../domain";
+
+import type { Parcours, Status, Step } from "../domain";
 import type { StatutValidationAmo } from "../../amo/domain/value-objects";
 import type { ValidationAmoComplete } from "../../amo/domain/entities";
 import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status";
+import { DossierDS } from "../../dossiers-ds";
 
 interface ParcoursContextType {
   // Données principales
-  parcours: ParcoursPrevention | null;
-  dossiers: DossierDemarchesSimplifiees[];
+  parcours: Parcours | null;
+  dossiers: DossierDS[];
 
   // État actuel simplifié
   currentStep: Step | null;
@@ -43,9 +41,9 @@ interface ParcoursContextType {
   syncAll: () => Promise<void>;
 
   // Helpers
-  getDossierByStep: (step: Step) => DossierDemarchesSimplifiees | undefined;
+  getDossierByStep: (step: Step) => DossierDS | undefined;
   getDSStatusByStep: (step: Step) => DSStatus | undefined;
-  getCurrentDossier: () => DossierDemarchesSimplifiees | undefined;
+  getCurrentDossier: () => DossierDS | undefined;
 }
 
 const ParcoursContext = createContext<ParcoursContextType | undefined>(

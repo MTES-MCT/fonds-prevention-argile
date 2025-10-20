@@ -8,6 +8,7 @@ import type { ParcoursState } from "../domain/entities/parcours";
 import { Status } from "../domain/value-objects/status";
 import { canCreateDossier } from "../services/parcours-permissions.service";
 import { getParcoursComplet } from "../services";
+import { createDossierForCurrentStep } from "../../dossiers-ds/services";
 
 /**
  * Crée un dossier Démarches Simplifiées pour l'étape courante
@@ -43,11 +44,16 @@ export async function creerDossier(
     }
 
     // Créer le dossier DS
-    await createDossierDS(session.userId, currentState.step, {
-      dsNumber,
-      dsDemarcheId,
-      dsUrl,
-    });
+    await createDossierForCurrentStep(
+      session.userId,
+      data.parcours.id,
+      currentState.step,
+      {
+        dsNumber,
+        dsDemarcheId,
+        dsUrl,
+      }
+    );
 
     // Passer en instruction
     await parcoursRepo.updateStatus(data.parcours.id, Status.EN_INSTRUCTION);

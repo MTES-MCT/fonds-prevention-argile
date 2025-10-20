@@ -7,7 +7,7 @@ import {
   rejectAccompagnement,
   getValidationByToken,
 } from "../services/amo-validation.service";
-import { ValidationAmoComplete, ValidationAmoData } from "../domain/entities";
+import { ValidationAmoData } from "../domain/entities";
 
 /**
  * Valider que le logement est éligible (AMO)

@@ -15,8 +15,9 @@ import {
   StatutValidationAmo,
 } from "../domain/value-objects";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
-import { ValidationAmoComplete, ValidationAmoData } from "../domain/entities";
+import { ValidationAmoData } from "../domain/entities";
 import { Status, Step } from "../../core";
+import { moveToNextStep } from "../../core/services";
 
 /**
  * Service de gestion des validations AMO
@@ -217,7 +218,7 @@ export async function approveValidation(
   await parcoursRepo.updateStatus(validation.parcoursId, Status.VALIDE);
 
   // Faire progresser vers l'étape ELIGIBILITE
-  const progressResult = await progressParcours(parcours.userId);
+  const progressResult = await moveToNextStep(parcours.userId);
 
   if (!progressResult.success) {
     return {

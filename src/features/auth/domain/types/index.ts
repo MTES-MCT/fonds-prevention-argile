@@ -1,3 +1,3 @@
-export * from "./UserRole";
-export * from "./SessionCookies";
-export * from "./AuthMethod";
+export * from "./userRole";
+export * from "./sessionCookies";
+export * from "./authMethod";

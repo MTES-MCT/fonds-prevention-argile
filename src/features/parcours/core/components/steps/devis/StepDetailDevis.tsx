@@ -3,7 +3,6 @@ import { isStepBefore, Step } from "../../../domain";
 
 export default function StepDetailDevis() {
   const { currentStep, getDossierUrl } = useParcours();
-  const dsUrl = getDossierUrl(Step.DEVIS);
   const isActive = currentStep === Step.DEVIS;
   const isStepBeforeCurrent = currentStep
     ? isStepBefore(currentStep, Step.DEVIS)

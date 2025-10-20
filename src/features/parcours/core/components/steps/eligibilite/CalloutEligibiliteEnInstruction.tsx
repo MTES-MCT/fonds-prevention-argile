@@ -10,14 +10,14 @@ export default function CalloutEligibiliteEnInstruction() {
 
   // Récupérer le dossier d'éligibilité
   const dossierEligilibilite = dossiers?.find(
-    (d) => d.step === Step.ELIGIBILITE
+    (d) => d.demarcheEtape === Step.ELIGIBILITE
   );
 
   const dossierUrl = getDossierUrl(Step.ELIGIBILITE);
 
   // Date de soumission du dossier
   const dossierSubmittedDate =
-    dossierEligilibilite?.submittedAt?.toISOString() || null;
+    dossierEligilibilite?.createdAt?.toISOString() || null;
 
   // Date estimée de décision 5 jours après la soumission
   // const dossierEstimatedDecisionDate = dossierSubmittedDate

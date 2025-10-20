@@ -10,6 +10,7 @@ export interface DossierDS {
   demarcheId: string;
   demarcheNom: string;
   demarcheEtape: Step;
+  demarcheUrl?: string;
   numeroDs: number | null;
   etatDs: DSStatus;
   createdAt: Date;

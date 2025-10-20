@@ -2,21 +2,18 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import type {
-  ParcoursPrevention,
-  DossierDemarchesSimplifiees,
-} from "@/shared/database/schema";
 import { ParcoursContext } from "./ParcoursContext";
 import type { StatutValidationAmo } from "../../amo/domain/value-objects";
 import type { ValidationAmoComplete } from "../../amo/domain/entities";
 import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status";
-import type { Step } from "../domain";
+import type { Parcours, Step } from "../domain";
 import { obtenirMonParcours } from "../actions";
 import { getValidationAmo } from "../../amo/actions";
 import {
   syncAllUserDossiers,
   syncUserDossierStatus,
 } from "../../dossiers-ds/actions/dossier-sync.actions";
+import { DossierDS } from "../../dossiers-ds";
 
 interface ParcoursProviderProps {
   children: React.ReactNode;
@@ -32,8 +29,8 @@ export function ParcoursProvider({
   const router = useRouter();
 
   // État principal
-  const [parcours, setParcours] = useState<ParcoursPrevention | null>(null);
-  const [dossiers, setDossiers] = useState<DossierDemarchesSimplifiees[]>([]);
+  const [parcours, setParcours] = useState<Parcours | null>(null);
+  const [dossiers, setDossiers] = useState<DossierDS[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,13 +64,11 @@ export function ParcoursProvider({
         setIsComplete(result.data.isComplete);
         setProchainEtape(result.data.prochainEtape);
 
-        // ✅ Correction : utiliser .step
         const currentDossier = result.data.dossiers.find(
-          (d) => d.step === result.data.parcours.currentStep
+          (d) => d.demarcheEtape === result.data.parcours.currentStep
         );
         if (currentDossier) {
-          // ✅ Correction : utiliser .dsStatus
-          setLastDSStatus(currentDossier.dsStatus as DSStatus);
+          setLastDSStatus(currentDossier.etatDs as DSStatus);
         }
 
         // Récupérer le statut AMO
@@ -216,14 +211,14 @@ export function ParcoursProvider({
   // Helpers
   const getDossierByStep = useCallback(
     (step: Step) => {
-      return dossiers.find((d) => d.step === step);
+      return dossiers.find((d) => d.demarcheEtape === step);
     },
     [dossiers]
   );
 
   const getDSStatusByStep = useCallback(
     (step: Step): DSStatus | undefined => {
-      return getDossierByStep(step)?.dsStatus as DSStatus | undefined;
+      return getDossierByStep(step)?.etatDs as DSStatus | undefined;
     },
     [getDossierByStep]
   );
@@ -240,7 +235,7 @@ export function ParcoursProvider({
 
     // État actuel
     currentStep: parcours?.currentStep ?? null,
-    currentStatus: parcours?.currentStatus ?? null,
+    currentStatus: parcours?.status ?? null,
 
     // État AMO
     statutAmo,
