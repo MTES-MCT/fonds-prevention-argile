@@ -1,8 +1,8 @@
 "use client";
 
-import { WindowWithCrisp } from "@/types";
+import { isProduction } from "@/shared/config/env.config";
+import { WindowWithCrisp } from "@/shared/types";
 import { useEffect, useState } from "react";
-import { isProduction } from "@/lib/config/env.config";
 
 export const useCrisp = () => {
   const [isLoaded, setIsLoaded] = useState(false);

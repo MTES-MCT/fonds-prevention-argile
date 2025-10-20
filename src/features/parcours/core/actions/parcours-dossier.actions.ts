@@ -7,6 +7,7 @@ import type { ActionResult } from "@/shared/types";
 import type { ParcoursState } from "../domain/entities/parcours";
 import { Status } from "../domain/value-objects/status";
 import { canCreateDossier } from "../services/parcours-permissions.service";
+import { getParcoursComplet } from "../services";
 
 /**
  * Crée un dossier Démarches Simplifiées pour l'étape courante

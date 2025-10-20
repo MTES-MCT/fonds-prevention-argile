@@ -12,6 +12,7 @@ import {
 import { DSStatus } from "../domain/value-objects/ds-status";
 import type { Step } from "../../core/domain/value-objects/step";
 import type { ActionResult } from "@/shared/types";
+import { getParcoursComplet } from "../../core/services";
 
 /**
  * Actions de synchronisation des statuts DS

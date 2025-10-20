@@ -1,5 +1,4 @@
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
-import { dossierDemarchesSimplifieeesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 import type { Parcours, ParcoursState } from "../domain/entities/parcours";
 import type { ParcoursComplet } from "../domain/types/parcours-query.types";
 import { getNextStep } from "../domain/value-objects/step";
@@ -7,6 +6,7 @@ import {
   getParcoursPermissions,
   isParcoursComplete,
 } from "./parcours-permissions.service";
+import { dossierDsRepo } from "@/shared/database";
 
 /**
  * Service de gestion de l'état du parcours
@@ -41,8 +41,7 @@ export async function getParcoursComplet(
     return null;
   }
 
-  const dossiers =
-    await dossierDemarchesSimplifieeesRepository.findByParcoursId(parcours.id);
+  const dossiers = await dossierDsRepo.findByParcoursId(parcours.id);
 
   // Mapper vers le type DossierDS de la feature
   const mappedDossiers = dossiers.map((d) => ({

@@ -1,6 +1,6 @@
+import { isProduction } from "@/shared/config/env.config";
+import { MatomoEvent } from "@/shared/constants";
 import { push } from "@socialgouv/matomo-next";
-import { isProduction, isStaging } from "@/lib/config/env.config";
-import { type MatomoEvent } from "@/lib/constants/matomoEvents";
 
 interface UseMatomo {
   trackEvent: (eventName: MatomoEvent, additionalData?: string) => void;

@@ -2,8 +2,8 @@ import { pgTable, uuid, timestamp, text } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { entreprisesAmo } from "./entreprises-amo";
-import { StatutValidationAmo } from "@/lib/parcours/amo/amo.types";
 import { statutValidationAmoPgEnum } from "../enums/enums";
+import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 
 export const parcoursAmoValidations = pgTable("parcours_amo_validations", {
   id: uuid("id").primaryKey().defaultRandom(),

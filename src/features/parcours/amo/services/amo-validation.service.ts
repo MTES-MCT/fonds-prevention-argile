@@ -7,17 +7,16 @@ import {
   users,
 } from "@/shared/database/schema";
 import { parcoursRepo } from "@/shared/database/repositories";
-import { progressParcours } from "@/shared/database/services";
 
 import { checkAmoCoversCodeInsee, getAmoById } from "./amo-query.service";
 import { ActionResult } from "@/shared/types/action-result.types";
-import { Status, Step } from "../../core/domain/types/parcours-query.types";
 import {
   AMO_VALIDATION_TOKEN_VALIDITY_DAYS,
   StatutValidationAmo,
 } from "../domain/value-objects";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { ValidationAmoComplete } from "../domain/entities";
+import { Status, Step } from "../../core";
 
 /**
  * Service de gestion des validations AMO

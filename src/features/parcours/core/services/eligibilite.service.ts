@@ -1,6 +1,7 @@
 import type { ActionResult } from "@/shared/types";
 import { Step } from "../domain/value-objects/step";
 import { RGAFormData } from "@/features/simulateur-rga";
+import { getParcoursComplet } from "./parcours-state.service";
 // TODO: Importer depuis dossiers-ds/ quand ce sera prêt
 // import { createDossierEligibiliteDS } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
 

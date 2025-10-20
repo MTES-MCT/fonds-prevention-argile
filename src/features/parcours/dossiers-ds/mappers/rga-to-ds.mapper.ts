@@ -1,17 +1,13 @@
-// services/rga-to-ds.mapper.ts
-
-import type { RGAFormData } from "@/lib/form-rga/types";
-import type { PrefillData } from "@/lib/api/demarches-simplifiees/rest/types";
-import {
-  getMappableFields,
-  getValueByPath,
-  type DSField,
-} from "@/lib/constants/dsFields.constants";
-
 /**
  * Mappe les données RGA vers le format de préremplissage DS
  * Utilise les constantes centralisées pour le mapping
  */
+
+import { RGAFormData } from "@/features/simulateur-rga";
+import { PrefillData } from "../adapters/rest";
+import { getMappableFields, getValueByPath } from "../utils";
+import { DSField } from "../domain";
+
 /**
  * Mappe les données RGA vers le format de préremplissage DS
  * Utilise les constantes centralisées pour le mapping

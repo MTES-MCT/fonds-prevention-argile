@@ -1,11 +1,8 @@
 import { pgTable, uuid, timestamp, varchar } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
-import {  DSStatus } from "@/lib/parcours/parcours.types";
-import {
-  stepPgEnum,
-  dsStatusPgEnum,
-} from "@/lib/database/enums/parcours.enums";
+import { dsStatusPgEnum, stepPgEnum } from "../enums/enums";
+import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 
 // Table des dossiers Démarches Simplifiées
 export const dossiersDemarchesSimplifiees = pgTable(

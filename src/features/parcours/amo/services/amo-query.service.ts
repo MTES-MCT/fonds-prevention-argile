@@ -9,6 +9,7 @@ import {
 } from "@/shared/database/schema";
 import { getCodeDepartementFromCodeInsee } from "../utils/amo.utils";
 import { Amo } from "../domain/entities";
+import { StatutValidationAmo } from "../domain/value-objects";
 
 /**
  * Service de requêtes lecture seule pour les AMO

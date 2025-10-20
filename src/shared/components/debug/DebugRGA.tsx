@@ -1,6 +1,6 @@
 "use client";
 
-import { RGAFormData } from "@/lib/form-rga/types";
+import { RGAFormData } from "@/features/simulateur-rga";
 
 interface DebugRGAProps {
   urlSearchParams: URLSearchParams;

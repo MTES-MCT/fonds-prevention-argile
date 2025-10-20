@@ -1,8 +1,8 @@
 "use client";
 
+import { useAuth } from "@/features/auth/client";
+import { useIsAdmin } from "@/features/auth/hooks";
 import Link from "next/link";
-import { useAuth } from "@/lib/auth/contexts/AuthContext";
-import { useIsAdmin } from "@/lib/auth/client";
 
 const Header = () => {
   const { isAuthenticated, logout } = useAuth();

@@ -3,8 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { init, push } from "@socialgouv/matomo-next";
-import { getClientEnv, isProduction, isStaging } from "@/lib/config/env.config";
-import { useMatomo } from "@/hooks/useMatomo";
+import { useMatomo } from "./useMatomo";
+import { getClientEnv, isProduction } from "@/shared/config/env.config";
 
 const MatomoContent = () => {
   const [initialised, setInitialised] = useState<boolean>(false);

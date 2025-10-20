@@ -1,7 +1,7 @@
 "use client";
 
+import { DsfrGlobal } from "@/shared/types";
 import { useEffect } from "react";
-import type { DsfrGlobal } from "@/types/global";
 
 export default function DsfrProvider({
   children,

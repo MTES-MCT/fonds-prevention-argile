@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, MockedFunction } from "vitest";
 import { DemarchesSimplifieesPrefillClient } from "../client";
-import { Step } from "@/lib/parcours/parcours.types";
 import { DemarcheSchema } from "../types";
+import { Step } from "@/features/parcours/core";
 
 describe("DemarchesSimplifieesPrefillClient", () => {
   let client: DemarchesSimplifieesPrefillClient;

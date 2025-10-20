@@ -1,9 +1,9 @@
 import { pgTable, uuid, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { users } from "./users";
-import { Step, Status } from "@/lib/parcours/parcours.types";
-import { stepPgEnum, statusPgEnum } from "@/lib/database/enums/parcours.enums";
 import { dossiersDemarchesSimplifiees } from "./dossiers-demarches-simplifiees";
+import { statusPgEnum, stepPgEnum } from "../enums/enums";
+import { Status, Step } from "@/features/parcours/core";
 
 // Table des parcours de prévention
 export const parcoursPrevention = pgTable("parcours_prevention", {
