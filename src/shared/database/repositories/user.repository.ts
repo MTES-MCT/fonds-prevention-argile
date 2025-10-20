@@ -7,7 +7,6 @@ import {
   PaginationResult,
 } from "./base.repository";
 import type { User, NewUser } from "../schema/users";
-import type { FranceConnectUserInfo } from "@/lib/types/franceconnect.types";
 
 export class UserRepository extends BaseRepository<User> {
   /**

@@ -1,5 +1,4 @@
 import { parcoursRepo } from "@/shared/database/repositories";
-import { getParcoursComplet } from "@/shared/database/services";
 import type { ActionResult } from "@/shared/types";
 import type { ParcoursState } from "../domain/entities/parcours";
 import { Status } from "../domain/value-objects/status";

@@ -5,7 +5,6 @@ import type { ActionResult } from "@/shared/types";
 import type { Step } from "../../core/domain/value-objects/step";
 import { createPrefillDossier as createPrefillService } from "../services/ds-prefill.service";
 import { syncDossierStatus } from "../services/ds-sync.service";
-import { getParcoursComplet } from "@/shared/database/services";
 
 /**
  * Actions de création de dossiers prefill

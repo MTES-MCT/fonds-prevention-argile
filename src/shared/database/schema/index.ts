@@ -4,7 +4,7 @@ export {
   statusPgEnum,
   dsStatusPgEnum,
   statutValidationAmoPgEnum,
-} from "../enums/parcours.enums";
+} from "../enums/enums";
 
 // Puis exporter les tables
 export * from "./users";

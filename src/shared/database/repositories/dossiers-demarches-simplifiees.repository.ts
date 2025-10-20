@@ -10,8 +10,8 @@ import type {
   DossierDemarchesSimplifiees,
   NewDossierDemarchesSimplifiees,
 } from "../schema/dossiers-demarches-simplifiees";
-import { Step, DSStatus } from "@/lib/parcours/parcours.types";
-import { mapDSStatusToInternalStatus } from "@/lib/parcours/parcours.helpers";
+import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
+import { Step } from "@/features/parcours/core";
 
 export class DossierDemarchesSimplifieeesRepository extends BaseRepository<DossierDemarchesSimplifiees> {
   /**

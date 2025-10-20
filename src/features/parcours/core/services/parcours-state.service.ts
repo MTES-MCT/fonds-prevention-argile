@@ -1,9 +1,7 @@
-import {
-  getOrCreateParcours,
-  getParcoursComplet,
-} from "@/shared/database/services";
-import type { ParcoursState, Parcours } from "../domain/entities/parcours";
-import type { Step } from "../domain/value-objects/step";
+import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import { dossierDemarchesSimplifieeesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
+import type { Parcours, ParcoursState } from "../domain/entities/parcours";
+import type { ParcoursComplet } from "../domain/types/parcours-query.types";
 import { getNextStep } from "../domain/value-objects/step";
 import {
   getParcoursPermissions,
@@ -13,6 +11,82 @@ import {
 /**
  * Service de gestion de l'état du parcours
  */
+
+/**
+ * Crée ou récupère le parcours d'un utilisateur
+ */
+export async function getOrCreateParcours(userId: string): Promise<Parcours> {
+  const parcours =
+    await parcoursPreventionRepository.findOrCreateForUser(userId);
+
+  return {
+    id: parcours.id,
+    userId: parcours.userId,
+    currentStep: parcours.currentStep,
+    status: parcours.currentStatus,
+    createdAt: parcours.createdAt,
+    updatedAt: parcours.updatedAt,
+  };
+}
+
+/**
+ * Récupère le parcours complet avec dossiers et progression
+ */
+export async function getParcoursComplet(
+  userId: string
+): Promise<ParcoursComplet | null> {
+  const parcours = await parcoursPreventionRepository.findByUserId(userId);
+
+  if (!parcours) {
+    return null;
+  }
+
+  const dossiers =
+    await dossierDemarchesSimplifieeesRepository.findByParcoursId(parcours.id);
+
+  // Mapper vers le type DossierDS de la feature
+  const mappedDossiers = dossiers.map((d) => ({
+    id: d.id,
+    parcoursId: d.parcoursId,
+    step: d.step,
+    dsNumber: d.dsNumber,
+    dsDemarcheId: d.dsDemarcheId,
+    dsStatus: d.dsStatus,
+    dsUrl: d.dsUrl,
+    submittedAt: d.submittedAt,
+    processedAt: d.processedAt,
+    lastSyncAt: d.lastSyncAt,
+    createdAt: d.createdAt,
+    updatedAt: d.updatedAt,
+  }));
+
+  // Déterminer si le parcours est complet
+  const isComplete = parcours.completedAt !== null;
+
+  // Calculer la prochaine étape
+  const currentState: ParcoursState = {
+    step: parcours.currentStep,
+    status: parcours.currentStatus,
+  };
+
+  const prochainEtape = isParcoursComplete(currentState)
+    ? null
+    : getNextStep(parcours.currentStep);
+
+  return {
+    parcours: {
+      id: parcours.id,
+      userId: parcours.userId,
+      currentStep: parcours.currentStep,
+      status: parcours.currentStatus,
+      createdAt: parcours.createdAt,
+      updatedAt: parcours.updatedAt,
+    },
+    dossiers: mappedDossiers,
+    isComplete,
+    prochainEtape,
+  };
+}
 
 /**
  * Initialise ou récupère le parcours d'un utilisateur
@@ -27,7 +101,7 @@ export async function initOrGetParcours(userId: string): Promise<{
     parcoursId: parcours.id,
     state: {
       step: parcours.currentStep,
-      status: parcours.currentStatus,
+      status: parcours.status,
     },
   };
 }
@@ -51,7 +125,7 @@ export async function getParcoursStateWithPermissions(userId: string): Promise<{
 
   const state: ParcoursState = {
     step: data.parcours.currentStep,
-    status: data.parcours.currentStatus,
+    status: data.parcours.status,
   };
 
   const permissions = getParcoursPermissions(state);
@@ -69,27 +143,14 @@ export async function getParcoursStateWithPermissions(userId: string): Promise<{
 /**
  * Récupère le parcours complet avec dossiers
  */
-export async function getFullParcours(userId: string): Promise<{
-  parcours: Parcours;
-  dossiers: any[]; // Type à affiner avec DossierDS de dossiers-ds/
-  isComplete: boolean;
-  prochainEtape: Step | null;
-}> {
+export async function getFullParcours(
+  userId: string
+): Promise<ParcoursComplet> {
   const data = await getParcoursComplet(userId);
 
   if (!data) {
     throw new Error("Parcours non trouvé");
   }
 
-  const state: ParcoursState = {
-    step: data.parcours.currentStep,
-    status: data.parcours.currentStatus,
-  };
-
-  return {
-    parcours: data.parcours as Parcours,
-    dossiers: data.dossiers || [],
-    isComplete: isParcoursComplete(state),
-    prochainEtape: getNextStep(state.step),
-  };
+  return data;
 }

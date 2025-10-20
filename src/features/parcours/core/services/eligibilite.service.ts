@@ -1,4 +1,3 @@
-import { getParcoursComplet } from "@/shared/database/services";
 import type { ActionResult } from "@/shared/types";
 import { Step } from "../domain/value-objects/step";
 import { RGAFormData } from "@/features/simulateur-rga";

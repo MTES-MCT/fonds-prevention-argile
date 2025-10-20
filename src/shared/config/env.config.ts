@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isClient, isServer } from "@/lib/utils/env";
+import { isClient } from "../utils/env";
 
 // Schéma de validation des variables d'environnement FranceConnect
 const franceConnectEnvSchema = z.object({

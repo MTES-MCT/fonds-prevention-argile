@@ -1,7 +1,6 @@
 "use server";
 
 import { getSession } from "@/features/auth/server";
-import { getParcoursComplet } from "@/shared/database/services";
 import {
   syncDossierStatus,
   syncAllDossiers,

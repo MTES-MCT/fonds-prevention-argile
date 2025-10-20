@@ -10,8 +10,7 @@ import type {
   ParcoursPrevention,
   NewParcoursPrevention,
 } from "../schema/parcours-prevention";
-import { Step, Status } from "@/lib/parcours/parcours.types";
-import { getNextStep } from "@/lib/parcours/parcours.helpers";
+import { getNextStep, Status, Step } from "@/features/parcours/core";
 
 export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevention> {
   /**

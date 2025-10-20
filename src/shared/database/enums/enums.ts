@@ -1,6 +1,7 @@
+import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import { Status, Step } from "@/features/parcours/core";
+import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 import { pgEnum } from "drizzle-orm/pg-core";
-import { Step, Status, DSStatus } from "@/lib/parcours/parcours.types";
-import { StatutValidationAmo } from "@/lib/parcours/amo/amo.types";
 
 /**
  * PgEnums pour la base de données PostgreSQL
@@ -39,6 +40,9 @@ export const dsStatusPgEnum = pgEnum("ds_status", [
   DSStatus.NON_ACCESSIBLE, // Statut ajouté pour "Non accessible"
 ]);
 
+/**
+ * Enum PostgreSQL pour les statuts de validation AMO
+ */
 export const statutValidationAmoPgEnum = pgEnum("statut_validation_amo", [
   StatutValidationAmo.EN_ATTENTE,
   StatutValidationAmo.LOGEMENT_ELIGIBLE,
