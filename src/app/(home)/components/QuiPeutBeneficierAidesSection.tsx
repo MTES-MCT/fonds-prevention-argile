@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import content from "../content/content.json";
+import { richTextParser } from "@/shared/utils";
 
 export default function QuiPeutBeneficierAidesSection() {
   return (

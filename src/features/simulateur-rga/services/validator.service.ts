@@ -1,4 +1,4 @@
-import type { PartialRGAFormData } from "../domain/entities/rgaFormData";
+import { PartialRGAFormData } from "../domain/entities";
 
 /**
  * Valide les données RGA essentielles

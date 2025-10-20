@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { getClientEnv, isProduction } from "@/lib/config/env.config";
-import { WindowWithCrisp } from "@/types";
+import { WindowWithCrisp } from "@/shared/types";
+import { getClientEnv, isProduction } from "@/shared/config/env.config";
 
 export default function Crisp() {
   useEffect(() => {

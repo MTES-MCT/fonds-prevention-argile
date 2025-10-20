@@ -1,22 +1,20 @@
 "use client";
 
+import { useLogoutMessage } from "@/features/auth/hooks";
 import content from "./content/content.json";
-import { Notice, Alert } from "@/components";
-import { useLogoutMessage } from "@/lib/auth/client";
-import {
-  EtatAgitSection,
-  CommentCaMarcheSection,
-  LogementConcerneRgaSection,
-  QuestCeQueLeRgaSection,
-  SignesASurveiller,
-  QuiPeutBeneficierAidesSection,
-  QuelsSontTravauxEligiblesSection,
-  PourEnSavoirPlusSection,
-  FaqSection,
-  QuiSommesNousSection,
-} from "@/page-sections";
-import MontantDesAidesSection from "@/page-sections/home/MontantDesAidesSection";
-import SavoirSiConcerneSection from "@/page-sections/home/SavoirSiConcerneSection";
+import { Alert, Notice } from "@/shared/components";
+import LogementConcerneRgaSection from "./components/LogementConcerneRgaSection";
+import QuestCeQueLeRgaSection from "./components/QuestCeQueLeRgaSection";
+import SignesASurveiller from "./components/SignesASurveiller";
+import EtatAgitSection from "./components/EtatAgitSection";
+import QuiPeutBeneficierAidesSection from "./components/QuiPeutBeneficierAidesSection";
+import MontantDesAidesSection from "./components/MontantDesAidesSection";
+import CommentCaMarcheSection from "./components/CommentCaMarcheSection";
+import SavoirSiConcerneSection from "./components/SavoirSiConcerneSection";
+import QuelsSontTravauxEligiblesSection from "./components/QuelsSontTravauxEligiblesSection";
+import PourEnSavoirPlusSection from "./components/PourEnSavoirPlusSection";
+import FaqSection from "./components/FaqSection";
+import QuiSommesNousSection from "./components/QuiSommesNousSection";
 
 export default function Home() {
   const { showLogoutMessage, clearLogoutMessage } = useLogoutMessage();

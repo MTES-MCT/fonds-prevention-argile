@@ -1,6 +1,6 @@
-import { getValidationDataByToken } from "@/lib/actions/parcours/amo/amo.actions";
+import { getValidationDataByToken } from "@/features/parcours/amo/actions";
 import ValidationAmoForm from "./components/ValidationAmoForm";
-import { StatutValidationAmo } from "@/lib/parcours/amo/amo.types";
+import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 
 interface ValidationAmoPageProps {
   params: Promise<{
