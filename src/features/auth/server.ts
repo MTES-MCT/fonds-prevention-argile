@@ -10,10 +10,8 @@ export * from "./domain/value-objects";
 export * from "./domain/errors";
 
 // Services
-export * from "./services/auth.service";
-export * from "./services/session.service";
-export * from "./services/authorization.service";
-
+export * from "./services";
+ 
 // Adapters FranceConnect
 export * from "./adapters/franceconnect/franceconnect.service";
 export * from "./adapters/franceconnect/franceconnect.config";
@@ -22,5 +20,5 @@ export * from "./adapters/franceconnect/franceconnect.errors";
 
 // Utils (tous)
 export * from "./utils/jwt.utils";
-export * from "./utils/jwt-decode.utils";
+export { decodeToken as decodeTokenFromJwtDecode } from "./utils/jwt-decode.utils";
 export * from "./utils/validation.utils";
