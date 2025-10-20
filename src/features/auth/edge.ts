@@ -1,25 +1,26 @@
 /**
  * Exports pour Edge Runtime (middleware)
- * Ne contient AUCUN import de modules Node.js
+ * Ne contient AUCUN import de modules Node.js (crypto, fs, etc.)
  */
 
 // Types et constantes (pas de dépendances Node.js)
-export * from "./core/auth.types";
-export * from "./core/auth.constants";
-export * from "./config/auth.routes.config";
-export * from "./config/session.config";
+export * from "./domain/types";
+export * from "./domain/entities";
+export * from "./domain/value-objects/constants";
+export * from "./domain/value-objects/configs/routes.config";
+export * from "./domain/value-objects/configs/session.config";
 
-// Services compatibles Edge Runtime
-export * from "./services/roles.service";
+// Services compatibles Edge Runtime (pas de crypto Node.js)
+export * from "./services/authorization.service";
 
-// JWT decode uniquement (sans crypto)
+// JWT decode uniquement (sans crypto Node.js)
 export {
   decodeToken,
   isTokenExpired,
   getRoleFromToken,
 } from "./utils/jwt-decode.utils";
 
-// Helpers de validation (sans crypto)
+// Helpers de validation (sans crypto Node.js)
 export {
   isValidRole,
   isValidAuthMethod,

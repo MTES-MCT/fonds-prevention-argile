@@ -2,7 +2,7 @@
  * Décodage JWT simple - Sans crypto, compatible partout
  */
 
-import type { JWTPayload } from "../core/auth.types";
+import { JWTPayload } from "../domain/entities";
 
 /**
  * Décode un token JWT sans vérifier la signature

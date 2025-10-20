@@ -10,8 +10,8 @@ import {
   useMemo,
 } from "react";
 import { useRouter } from "next/navigation";
-import type { AuthUser } from "../core/auth.types";
-import { AUTH_METHODS } from "../core/auth.constants";
+import { AuthUser } from "../domain/entities";
+import { AUTH_METHODS } from "../domain/value-objects";
 
 interface AuthContextType {
   isAuthenticated: boolean;

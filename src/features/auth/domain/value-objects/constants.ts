@@ -20,9 +20,8 @@ export const COOKIE_NAMES = {
   FC_NONCE: "fc_nonce",
 } as const;
 
-// Codes d'erreur (incluant FranceConnect)
-export const ERROR_CODES = {
-  // Erreurs générales
+// Codes d'erreur auth génériques
+export const AUTH_ERROR_CODES = {
   UNAUTHORIZED: "UNAUTHORIZED",
   SESSION_EXPIRED: "SESSION_EXPIRED",
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
@@ -32,15 +31,4 @@ export const ERROR_CODES = {
   LOGOUT_ERROR: "LOGOUT_ERROR",
   INVALID_SESSION: "INVALID_SESSION",
   INVALID_TOKEN: "INVALID_TOKEN",
-
-  // Erreurs FranceConnect spécifiques
-  FRANCECONNECT_ERROR: "FRANCECONNECT_ERROR",
-  FC_CANCELLED: "fc_cancelled",
-  FC_SERVER_ERROR: "fc_server_error",
-  FC_INVALID_STATE: "fc_invalid_state",
-  FC_TOKEN_ERROR: "fc_token_error",
-  FC_AUTH_FAILED: "fc_auth_failed",
-  FC_MISSING_PARAMS: "fc_missing_params",
-  FC_INVALID_REQUEST: "fc_invalid_request",
-  FC_UNAUTHORIZED: "fc_unauthorized",
 } as const;

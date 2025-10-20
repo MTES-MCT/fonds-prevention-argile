@@ -3,7 +3,7 @@
  */
 
 import crypto from "crypto";
-import type { JWTPayload } from "../core/auth.types";
+import { JWTPayload } from "../domain/entities";
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-this-secret";
 

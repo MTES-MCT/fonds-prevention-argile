@@ -1,3 +1,4 @@
+// Représentation de la réponse du token FranceConnect
 export interface FranceConnectTokenResponse {
   access_token: string;
   token_type: string;
@@ -6,6 +7,7 @@ export interface FranceConnectTokenResponse {
   scope: string;
 }
 
+// Représentation des informations utilisateur fournies par FranceConnect
 export interface FranceConnectUserInfo {
   sub: string; // Identifiant unique FranceConnect
   given_name?: string; // Prénom
@@ -17,6 +19,7 @@ export interface FranceConnectUserInfo {
   birthcountry?: string; // Pays de naissance (optionnel)
 }
 
+// Représentation des erreurs possibles de FranceConnect
 export interface FranceConnectError {
   error: string;
   error_description?: string;

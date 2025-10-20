@@ -3,25 +3,28 @@
  */
 
 // Types et constantes
-export * from "./core/auth.types";
-export * from "./core/auth.constants";
+export * from "./domain/types";
+export * from "./domain/value-objects/constants";
+
+// Entities
+export * from "./domain/entities";
 
 // Context et hooks
 export { AuthProvider, useAuth } from "./contexts/AuthContext";
+export * from "./hooks";
 
-// Config (sans imports serveur)
-export {
-  DEFAULT_REDIRECTS,
-  PROTECTED_ROUTES,
-} from "./config/auth.routes.config";
+// Config routes (pour navigation)
+export * from "./domain/value-objects/configs/routes.config";
 
-// Mapping des erreurs FranceConnect
-export { FC_ERROR_MAPPING } from "./core/auth.errors";
-
+// JWT decode utils (client-safe)
 export {
   decodeToken,
   isTokenExpired,
   getRoleFromToken,
 } from "./utils/jwt-decode.utils";
 
-export { useLogoutMessage, useIsAdmin } from "./hooks";
+// Erreurs FC (pour affichage messages)
+export {
+  FC_ERROR_MESSAGES,
+  FC_ERROR_MAPPING,
+} from "./adapters/franceconnect/franceconnect.errors";

@@ -1,5 +1,6 @@
-import { ROLES, AUTH_METHODS } from "../core/auth.constants";
-import type { UserRole, AuthMethod } from "../core/auth.types";
+import { UserRole } from "../domain/types";
+import { AuthMethod } from "../domain/types/AuthMethod";
+import { AUTH_METHODS, ROLES } from "../domain/value-objects";
 
 /**
  * Vérifie si une valeur est un rôle valide

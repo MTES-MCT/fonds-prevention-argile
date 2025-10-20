@@ -1,8 +1,8 @@
 /**
- * Configuration FranceConnect - Version MVP
+ * Configuration FranceConnect
  */
 
-import { getServerEnv } from "@/lib/config/env.config";
+import { getServerEnv } from "@/shared/config/env.config";
 
 // Helper pour construire les URLs FranceConnect
 export function getFranceConnectUrls(baseUrl?: string) {
