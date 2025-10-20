@@ -1,8 +1,48 @@
 import { cookies } from "next/headers";
-import { COOKIE_NAMES, ROLES } from "../core/auth.constants";
-import { SESSION_DURATION, getCookieOptions } from "../config/session.config";
-import type { UserRole } from "../core/auth.types";
+import { verifyToken } from "../utils/jwt.utils";
+import { COOKIE_NAMES, ROLES } from "../domain/value-objects/constants";
+import {
+  getCookieOptions,
+  SESSION_DURATION,
+} from "../domain/value-objects/configs/session.config";
+import type { JWTPayload } from "../domain/entities";
+import type { UserRole } from "../domain/types";
 
+/**
+ * Service de gestion des sessions
+ */
+
+/**
+ * Récupère la session courante
+ */
+export async function getSession(): Promise<JWTPayload | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAMES.SESSION)?.value;
+
+  if (!token) return null;
+
+  return verifyToken(token);
+}
+
+/**
+ * Vérifie si l'utilisateur est authentifié
+ */
+export async function isAuthenticated(): Promise<boolean> {
+  const session = await getSession();
+  return !!session;
+}
+
+/**
+ * Vérifie si l'utilisateur a un rôle spécifique
+ */
+export async function hasRole(role: string): Promise<boolean> {
+  const session = await getSession();
+  return session?.role === role;
+}
+
+/**
+ * Crée les cookies de session
+ */
 export async function createSessionCookies(
   token: string,
   role: string
@@ -15,22 +55,10 @@ export async function createSessionCookies(
       ? SESSION_DURATION.admin
       : SESSION_DURATION.particulier;
 
-  cookieStore.set(COOKIE_NAMES.SESSION, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge,
-    path: "/",
-  });
+  const cookieOptions = getCookieOptions(maxAge); // ✅ Utiliser le helper
 
-  // Cookie pour le rôle (pour le middleware)
-  cookieStore.set(COOKIE_NAMES.SESSION_ROLE, role, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge,
-    path: "/",
-  });
+  cookieStore.set(COOKIE_NAMES.SESSION, token, cookieOptions);
+  cookieStore.set(COOKIE_NAMES.SESSION_ROLE, role, cookieOptions);
 }
 
 /**
@@ -77,4 +105,20 @@ export async function getAndClearRedirectUrl(): Promise<string | null> {
   }
 
   return redirectTo;
+}
+
+/**
+ * Déconnexion avec info sur le type d'auth
+ */
+export async function logout(): Promise<{
+  authMethod: string | null;
+  fcIdToken?: string | null;
+}> {
+  const session = await getSession();
+  await clearSessionCookies();
+
+  return {
+    authMethod: session?.authMethod || null,
+    fcIdToken: session?.fcIdToken || null,
+  };
 }

@@ -1,6 +1,9 @@
-import { DEFAULT_REDIRECTS, PROTECTED_ROUTES } from "../config";
-import { ROLES } from "../core/auth.constants";
-import type { UserRole } from "../core/auth.types";
+import { PROTECTED_ROUTES, ROLES } from "../domain/value-objects";
+import type { UserRole } from "../domain/types";
+
+/**
+ * Service de protection des routes
+ */
 
 /**
  * Vérifie si une route nécessite une authentification admin
@@ -33,23 +36,4 @@ export function canAccessRoute(path: string, role?: UserRole): boolean {
   if (isParticulierRoute(path)) return role === ROLES.PARTICULIER;
 
   return true; // Routes publiques
-}
-
-/**
- * Obtient la redirection par défaut pour un rôle
- */
-export function getDefaultRedirect(role: UserRole): string {
-  return role === ROLES.ADMIN
-    ? DEFAULT_REDIRECTS.admin
-    : DEFAULT_REDIRECTS.particulier;
-}
-
-/**
- * Obtient la redirection en cas d'accès non autorisé
- */
-export function getUnauthorizedRedirect(role?: UserRole): string {
-  if (!role) return DEFAULT_REDIRECTS.login;
-
-  // Rediriger vers l'espace approprié selon le rôle
-  return getDefaultRedirect(role);
 }

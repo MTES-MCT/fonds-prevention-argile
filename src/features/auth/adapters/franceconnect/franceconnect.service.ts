@@ -155,24 +155,11 @@ export async function createFranceConnectSession(
   };
 
   const token = createToken(payload);
-
   const cookieStore = await cookies();
+  const cookieOptions = getCookieOptions(SESSION_DURATION.particulier);
 
-  cookieStore.set(COOKIE_NAMES.SESSION, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: SESSION_DURATION.particulier,
-    path: "/",
-  });
-
-  cookieStore.set(COOKIE_NAMES.SESSION_ROLE, ROLES.PARTICULIER, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: SESSION_DURATION.particulier,
-    path: "/",
-  });
+  cookieStore.set(COOKIE_NAMES.SESSION, token, cookieOptions);
+  cookieStore.set(COOKIE_NAMES.SESSION_ROLE, ROLES.PARTICULIER, cookieOptions);
 }
 
 /**

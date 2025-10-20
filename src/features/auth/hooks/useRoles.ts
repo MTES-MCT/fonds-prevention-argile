@@ -1,6 +1,5 @@
 "use client";
-import { useAuth } from "../client";
-import { ROLES } from "../services/auth.constants";
+import { ROLES, useAuth } from "../client";
 
 /**
  * Hook pour vérifier si l'utilisateur est admin
