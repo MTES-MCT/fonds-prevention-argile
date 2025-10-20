@@ -1,4 +1,15 @@
 import { describe, it, expect, vi, beforeEach, MockedFunction } from "vitest";
+
+// Mock getServerEnv AVANT l'import du client
+vi.mock("@/shared/config/env.config", () => ({
+  getServerEnv: vi.fn(() => ({
+    DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL: "https://api.test.fr/api/v2/graphql",
+    DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY: "test-api-key",
+  })),
+  isClient: vi.fn(() => false),
+  isServer: vi.fn(() => true),
+}));
+
 import { DemarchesSimplifieesClient } from "../client";
 
 describe("DemarchesSimplifieesClient", () => {

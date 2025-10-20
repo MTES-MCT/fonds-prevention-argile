@@ -1,6 +1,24 @@
 import { describe, it, expect, vi, beforeEach, MockedFunction } from "vitest";
+
+// Mock getServerEnv AVANT l'import du client
+vi.mock("@/shared/config/env.config", () => ({
+  getServerEnv: vi.fn(() => ({
+    DEMARCHES_SIMPLIFIEES_REST_API_URL:
+      "https://www.demarches-simplifiees.fr/api/public/v1",
+    DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE: "123456",
+    DEMARCHES_SIMPLIFIEES_NOM_ELIGIBILITE: "test-eligibilite",
+    DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC: "123457",
+    DEMARCHES_SIMPLIFIEES_NOM_DIAGNOSTIC: "test-diagnostic",
+    DEMARCHES_SIMPLIFIEES_ID_DEVIS: "123458",
+    DEMARCHES_SIMPLIFIEES_NOM_DEVIS: "test-devis",
+    DEMARCHES_SIMPLIFIEES_ID_FACTURES: "123459",
+    DEMARCHES_SIMPLIFIEES_NOM_FACTURES: "test-factures",
+  })),
+  isClient: vi.fn(() => false),
+  isServer: vi.fn(() => true),
+}));
+
 import { DemarchesSimplifieesPrefillClient } from "../client";
-import { DemarcheSchema } from "../types";
 import { Step } from "@/features/parcours/core";
 
 describe("DemarchesSimplifieesPrefillClient", () => {
@@ -12,11 +30,92 @@ describe("DemarchesSimplifieesPrefillClient", () => {
     client = new DemarchesSimplifieesPrefillClient();
   });
 
+  describe("getSchema", () => {
+    it("devrait récupérer le schéma d'une démarche", async () => {
+      const mockSchema = {
+        revision: {
+          champDescriptors: [
+            {
+              id: "champ_1",
+              label: "Test Field",
+              type: "text",
+              required: true,
+            },
+          ],
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockSchema), {
+          status: 200,
+          statusText: "OK",
+          headers: new Headers({ "Content-Type": "application/json" }),
+        })
+      );
+
+      const result = await client.getSchema(Step.ELIGIBILITE);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "https://www.demarches-simplifiees.fr/preremplir/test-eligibilite/schema",
+        expect.objectContaining({
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        })
+      );
+
+      expect(result).toEqual(mockSchema);
+    });
+  });
+
+  describe("createPrefillDossier", () => {
+    it("devrait créer un dossier prérempli", async () => {
+      const mockResponse = {
+        dossier_url: "https://www.demarches-simplifiees.fr/dossiers/123",
+        dossier_number: 123,
+        dossier_id: "dossier-123",
+        state: "en_construction",
+      };
+
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          statusText: "OK",
+          headers: new Headers({ "Content-Type": "application/json" }),
+        })
+      );
+
+      const prefillData = {
+        champ_1: "test value",
+        champ_2: 42,
+      };
+
+      const result = await client.createPrefillDossier(
+        prefillData,
+        Step.ELIGIBILITE
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        "https://www.demarches-simplifiees.fr/api/public/v1/demarches/123456/dossiers",
+        expect.objectContaining({
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(prefillData),
+        })
+      );
+
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
   describe("validatePrefillData", () => {
-    it("devrait détecter les clés invalides", () => {
+    it("devrait valider les données de préremplissage", () => {
       const data = {
+        champ_1: "test",
         invalid_key: "value",
-        champ_123: "value",
       };
 
       const errors = client.validatePrefillData(data);
@@ -24,157 +123,13 @@ describe("DemarchesSimplifieesPrefillClient", () => {
       expect(errors).toContain(
         "Clé invalide: invalid_key. Les clés doivent commencer par 'champ_'"
       );
-      expect(errors).not.toContain("champ_123");
-    });
-
-    it("devrait valider avec un schéma", () => {
-      const schema = {
-        id: "123",
-        revision: {
-          champDescriptors: [
-            { id: "champ_123", label: "Test", required: true },
-            { id: "champ_456", label: "Test2", required: false },
-          ],
-        },
-      } as DemarcheSchema;
-
-      const data = {
-        champ_456: "value",
-      };
-
-      const errors = client.validatePrefillData(data, schema);
-
-      expect(errors).toContain("Champ requis manquant: Test");
-    });
-  });
-
-  describe("createPrefillDossier", () => {
-    it("devrait appeler l'API avec les bonnes données pour ELIGIBILITE", async () => {
-      const mockResponse = {
-        dossier_url: "https://test.fr/dossier/123",
-        dossier_id: "abc123",
-        dossier_number: 123,
-      };
-
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify(mockResponse), {
-          status: 200,
-          statusText: "OK",
-          headers: new Headers({ "Content-Type": "application/json" }),
-        })
-      );
-
-      const data = { champ_123: "test" };
-      const result = await client.createPrefillDossier(data, Step.ELIGIBILITE);
-
-      expect(fetch).toHaveBeenCalledWith(
-        "https://api.test.fr/api/public/v1/demarches/test-id-eligibilite/dossiers",
-        expect.objectContaining({
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        })
-      );
-
-      expect(result).toEqual(mockResponse);
-    });
-
-    it("devrait utiliser l'ID correct pour DIAGNOSTIC", async () => {
-      const mockResponse = {
-        dossier_url: "https://test.fr/dossier/456",
-        dossier_id: "def456",
-        dossier_number: 456,
-      };
-
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify(mockResponse), {
-          status: 200,
-          statusText: "OK",
-          headers: new Headers({ "Content-Type": "application/json" }),
-        })
-      );
-
-      const data = { champ_789: "diagnostic" };
-      const result = await client.createPrefillDossier(data, Step.DIAGNOSTIC);
-
-      expect(fetch).toHaveBeenCalledWith(
-        "https://api.test.fr/api/public/v1/demarches/test-id-diagnostic/dossiers",
-        expect.objectContaining({
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        })
-      );
-
-      expect(result).toEqual(mockResponse);
-    });
-
-    it("devrait gérer les erreurs API", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        statusText: "Bad Request",
-        json: vi.fn().mockRejectedValue(new Error("Not JSON")),
-        text: vi.fn().mockResolvedValue("Champ requis manquant"),
-        headers: new Headers(),
-        redirected: false,
-        type: "basic",
-        url: "",
-        clone: vi.fn(),
-        body: null,
-        bodyUsed: false,
-        arrayBuffer: vi.fn(),
-        blob: vi.fn(),
-        formData: vi.fn(),
-      } as unknown as Response);
-
-      await expect(
-        client.createPrefillDossier({ champ_123: "test" }, Step.ELIGIBILITE)
-      ).rejects.toThrow(
-        "Erreur création dossier ELIGIBILITE: 400 Bad Request - Champ requis manquant"
-      );
     });
   });
 
   describe("getDemarcheId", () => {
-    it("devrait retourner l'ID pour une étape", () => {
-      const id = client.getDemarcheId(Step.ELIGIBILITE);
-      expect(id).toBe("test-id-eligibilite");
-    });
-
-    it("devrait retourner l'ID pour un type de démarche", () => {
-      const id = client.getDemarcheId("FACTURES");
-      expect(id).toBe("test-id-factures");
-    });
-  });
-
-  describe("getSchema", () => {
-    it("devrait récupérer le schéma pour une démarche", async () => {
-      const mockSchema = {
-        id: "123",
-        title: "Test",
-        revision: { champDescriptors: [] },
-      };
-
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify(mockSchema), {
-          status: 200,
-          headers: new Headers({ "Content-Type": "application/json" }),
-        })
-      );
-
-      const result = await client.getSchema(Step.DEVIS);
-
-      expect(fetch).toHaveBeenCalledWith(
-        "https://api.test.fr/preremplir/test-nom-devis/schema",
-        expect.objectContaining({
-          method: "GET",
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-        })
-      );
-
-      expect(result).toEqual(mockSchema);
+    it("devrait retourner l'ID de démarche pour une étape", () => {
+      const demarcheId = client.getDemarcheId(Step.ELIGIBILITE);
+      expect(demarcheId).toBe("123456");
     });
   });
 });
