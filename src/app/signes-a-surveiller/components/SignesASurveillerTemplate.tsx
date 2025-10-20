@@ -2,8 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import VousAvezUnDouteSection from "./VousAvezUnDouteSection";
 import CalloutEligible from "./CalloutEligible";
-import { contentLayout } from "@/content";
-import { contentSignesASurveillerCommon } from "@/content/signes-a-surveiller";
+import commonContent from "../content/common.json";
 import CalloutNonEligible from "./CalloutNonElligible";
 
 interface SignesASurveillerTemplateProps {
@@ -102,15 +101,13 @@ export default function SignesASurveillerTemplate({
 
             {/* Ce qu'il faut surveiller */}
             <div className="fr-my-6w">
-              <h1>
-                {contentSignesASurveillerCommon.ce_qu_il_faut_surveiller_title}
-              </h1>
+              <h1>{commonContent.ce_qu_il_faut_surveiller_title}</h1>
               <p>{ce_qu_il_faut_surveiller}</p>
             </div>
 
             {/* Signes d'alerte */}
             <div className="fr-my-6w">
-              <h1>{contentSignesASurveillerCommon.signes_alertes_title}</h1>
+              <h1>{commonContent.signes_alertes_title}</h1>
               <ul>
                 {signes_alerte.map((detail, index) => (
                   <li key={index}>{detail}</li>
@@ -120,7 +117,7 @@ export default function SignesASurveillerTemplate({
 
             {/* Conseils pratiques */}
             <div className="fr-my-6w">
-              <h1>{contentSignesASurveillerCommon.conseils_pratiques_title}</h1>
+              <h1>{commonContent.conseils_pratiques_title}</h1>
               <ul>
                 {conseils_pratiques.map((detail, index) => (
                   <li key={index}>{detail}</li>
@@ -131,7 +128,7 @@ export default function SignesASurveillerTemplate({
             {/* Bon à savoir */}
             <div className="fr-callout fr-icon-info-line">
               <h3 className="fr-callout__title">
-                {contentSignesASurveillerCommon.bon_a_savoir_title}
+                {commonContent.bon_a_savoir_title}
               </h3>
               <p className="fr-callout__text">{bon_a_savoir}</p>
             </div>
@@ -145,11 +142,9 @@ export default function SignesASurveillerTemplate({
       {/* Voir les autres signes à surveiller */}
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
-          <h1>
-            {contentSignesASurveillerCommon.signes_a_surveiller_section.title}
-          </h1>
+          <h1>{commonContent.signes_a_surveiller_section.title}</h1>
           <div className="fr-grid-row fr-grid-row--gutters">
-            {contentSignesASurveillerCommon.signes_a_surveiller_section.signes.map(
+            {commonContent.signes_a_surveiller_section.signes.map(
               (signe, index) =>
                 signe.titre === title ? null : (
                   <div

@@ -1,6 +1,6 @@
 import content from "./content/content.json";
 import commonContent from "../content/common.json";
-import { SignesASurveillerTemplate } from "@/page-sections";
+import SignesASurveillerTemplate from "../components/SignesASurveillerTemplate";
 
 export default function FissuresHorizontalesPlancher() {
   return (
