@@ -1,3 +1,7 @@
+/**
+ * Entité représentant les données du simulateur RGA
+ * Reçues depuis l'iframe MesAidesRénov
+ */
 export interface RGAFormData {
   // Logement
   logement: {
@@ -43,5 +47,7 @@ export interface RGAFormData {
     proprietaire_occupant_rga?: "oui" | "non";
   };
 }
-
-export type RGAFormDataParsed = Partial<RGAFormData>;
+/**
+ * Type pour les données RGA partielles
+ */
+export type PartialRGAFormData = Partial<RGAFormData>;
