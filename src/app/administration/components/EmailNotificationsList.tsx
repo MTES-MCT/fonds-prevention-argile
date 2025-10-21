@@ -1,7 +1,7 @@
 "use client";
 
 import { EmailNotification } from "@/shared/database";
-import { listerEmails } from "@/shared/email";
+import { listerEmails } from "@/shared/email/actions";
 import { useEffect, useState } from "react";
 
 export default function EmailNotificationsList() {

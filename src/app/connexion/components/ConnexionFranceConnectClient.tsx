@@ -4,7 +4,7 @@ import content from "../content/content.json";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRGAContext } from "@/features/simulateur-rga";
-import { FC_ERROR_MAPPING } from "@/features/auth";
+import { FC_ERROR_MAPPING } from "@/features/auth/client";
 
 export default function ConnexionFranceConnectClient() {
   const [fcError, setFcError] = useState<string | null>(null);
