@@ -50,16 +50,10 @@ Ce document contient les checklists de tests manuels à effectuer avant chaque d
 
 - [ ] Naviguer vers `/administration`
 - [ ] ✅ **Succès attendu :** Page accessible
-- [ ] Naviguer vers `/test` (si activé)
-- [ ] ✅ **Succès attendu :** Page accessible
-- [ ] Naviguer vers `/api/private` (ou autre route API admin)
-- [ ] ✅ **Succès attendu :** Accès autorisé (pas de 401/403)
 
 **Prérequis :** Ne PAS être connecté
 
 - [ ] Essayer d'accéder directement à `/administration`
-- [ ] ✅ **Redirection attendue :** Vers `/connexion` ou `/connexion/admin`
-- [ ] Essayer d'accéder à `/test`
 - [ ] ✅ **Redirection attendue :** Vers `/connexion`
 
 ### 🚫 Blocage des routes Particulier pour Admin
