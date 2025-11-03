@@ -31,8 +31,8 @@ export interface RGAFormData {
   // RGA
   rga: {
     assure: "oui" | "non";
-    indemnise_rga: "oui" | "non";
-    sinistres: "saine" | "peu-endommagee" | "endommagee";
+    indemnise_indemnise_rga: "oui" | "non";
+    sinistres: "saine" | "très peu endommagée" | "endommagée";
   };
 
   // Ménage

@@ -34,14 +34,14 @@ describe("parseRGAParams", () => {
     it("devrait parser les données de la section rga", () => {
       const params = new URLSearchParams({
         "rga.assure": "oui",
-        "rga.indemnise_rga": "non",
+        "rga.indemnise_indemnise_rga": "non",
       });
 
       const result = parseRGAParams(params);
 
       expect(result.rga).toBeDefined();
       expect(result.rga?.assure).toBe(true);
-      expect(result.rga?.indemnise_rga).toBe(false);
+      expect(result.rga?.indemnise_indemnise_rga).toBe(false);
     });
 
     it("devrait parser les données de la section taxe_fonciere", () => {

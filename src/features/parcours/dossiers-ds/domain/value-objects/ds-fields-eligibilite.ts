@@ -214,7 +214,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     section: DSSection.MAISON,
     rgaPath: "rga.sinistres",
     transformer: (value: unknown) => {
-      return String(value === "endommagee" ? "oui" : "non");
+      return String(value === "endommagée" ? "oui" : "non");
     },
   },
   "Q2hhbXAtNTY3MDUwNg==": {
@@ -224,7 +224,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     type: DSFieldType.CHECKBOX,
     rgaPath: "rga.sinistres",
     transformer: (value: unknown) => {
-      return String(value === "peu-endommagee" ? "oui" : "non");
+      return String(value === "très peu endommagée" ? "oui" : "non");
     },
   },
   "Q2hhbXAtNTQxNzM5Mg==": {
@@ -244,7 +244,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     label: "Déjà indemnisé catastrophe naturelle",
     section: DSSection.MAISON,
     type: DSFieldType.CHECKBOX,
-    rgaPath: "rga.indemnise_rga",
+    rgaPath: "rga.indemnise_indemnise_rga",
     transformer: (value: unknown) => String(value === true || value === "oui"),
   },
   "Q2hhbXAtNTU0MjU1MA==": {
