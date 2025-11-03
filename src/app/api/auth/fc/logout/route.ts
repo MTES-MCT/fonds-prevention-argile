@@ -1,7 +1,10 @@
+import {
+  AUTH_METHODS,
+  clearSessionCookies,
+  generateLogoutUrl,
+  getSession,
+} from "@/features/auth";
 import { NextResponse } from "next/server";
-import { generateLogoutUrl, clearSessionCookies } from "@/lib/auth/server";
-import { AUTH_METHODS } from "@/lib/auth/core/auth.constants";
-import { getSession } from "@/lib/auth/services/auth.service";
 
 export async function POST() {
   try {

@@ -1,34 +1,24 @@
-import {
-  contentSignesASurveillerCommon,
-  contentSignesASurveillerFissuresDansLesCloisonsInterieures,
-} from "@/content/signes-a-surveiller";
-import { SignesASurveillerTemplate } from "@/page-sections";
+import content from "./content/content.json";
+import commonContent from "../content/common.json";
+import SignesASurveillerTemplate from "../components/SignesASurveillerTemplate";
 
 export default function FissuresDansLesCloisonsInterieures() {
   return (
     <SignesASurveillerTemplate
-      title={contentSignesASurveillerFissuresDansLesCloisonsInterieures.title}
+      title={content.title}
       pageLink="/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
       tag={
-        contentSignesASurveillerCommon.signes_a_surveiller_section.signes.find(
+        commonContent.signes_a_surveiller_section.signes.find(
           (item) =>
             item.pageLink ===
             "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
         )?.tag
       }
-      image={contentSignesASurveillerFissuresDansLesCloisonsInterieures.image}
-      ce_qu_il_faut_surveiller={
-        contentSignesASurveillerFissuresDansLesCloisonsInterieures.ce_qu_il_faut_surveiller
-      }
-      signes_alerte={
-        contentSignesASurveillerFissuresDansLesCloisonsInterieures.signes_alerte
-      }
-      conseils_pratiques={
-        contentSignesASurveillerFissuresDansLesCloisonsInterieures.conseils_pratiques
-      }
-      bon_a_savoir={
-        contentSignesASurveillerFissuresDansLesCloisonsInterieures.bon_a_savoir
-      }
+      image={content.image}
+      ce_qu_il_faut_surveiller={content.ce_qu_il_faut_surveiller}
+      signes_alerte={content.signes_alerte}
+      conseils_pratiques={content.conseils_pratiques}
+      bon_a_savoir={content.bon_a_savoir}
     />
   );
 }

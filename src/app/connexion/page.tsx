@@ -1,6 +1,6 @@
 import Loading from "@/app/loading";
-import ConnexionFranceConnectClient from "@/page-sections/connexion/ConnexionFranceConnectClient";
 import { Suspense } from "react";
+import ConnexionFranceConnectClient from "./components/ConnexionFranceConnectClient";
 
 export default function ConnexionPage() {
   return (

@@ -1,9 +1,8 @@
-import { getCurrentUser } from "@/lib/auth/server";
-import { AUTH_METHODS } from "@/lib/auth/core/auth.constants";
 import ForbiddenSimulator from "./components/ForbiddenSimulator";
-import SimulateurClient from "./components/SimulateurClient";
-import { contentHomePage } from "@/content";
-import { Notice } from "@/components";
+import content from "../(home)/content/content.json";
+import { AUTH_METHODS, getCurrentUser } from "@/features/auth";
+import { Notice } from "@/shared/components";
+import { SimulateurClient } from "@/features/simulateur-rga";
 
 export default async function SimulateurPage() {
   const user = await getCurrentUser();
@@ -22,10 +21,10 @@ export default async function SimulateurPage() {
     <>
       <Notice
         className="fr-notice--info"
-        description={contentHomePage.notice.description}
-        title={contentHomePage.notice.title}
-        more={contentHomePage.notice.more}
-        more_link={contentHomePage.notice.more_link}
+        description={content.notice.description}
+        title={content.notice.title}
+        more={content.notice.more}
+        more_link={content.notice.more_link}
         buttonClose={true}
       />
       <div>

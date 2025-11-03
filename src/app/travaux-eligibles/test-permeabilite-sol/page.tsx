@@ -1,24 +1,18 @@
-import { contentTravauxEligiblesTestPermeabiliteSol } from "@/content/travaux-eligibles";
-import TravauxEligiblesTemplate from "@/page-sections/travaux-eligibles/TravauxEligiblesTemplate";
+import content from "./content/content.json";
+import TravauxEligiblesTemplate from "@/app/travaux-eligibles/components/TravauxEligiblesTemplate";
 
 export default function TestPermeabiliteSol() {
   return (
     <TravauxEligiblesTemplate
-      title={contentTravauxEligiblesTestPermeabiliteSol.title}
-      pageLink={contentTravauxEligiblesTestPermeabiliteSol.pageLink}
-      tag={contentTravauxEligiblesTestPermeabiliteSol.tag}
-      image={contentTravauxEligiblesTestPermeabiliteSol.image}
-      une_des_solutions={
-        contentTravauxEligiblesTestPermeabiliteSol.une_des_solutions
-      }
-      solutions={contentTravauxEligiblesTestPermeabiliteSol.solutions}
-      pourquoi_solution_efficace={
-        contentTravauxEligiblesTestPermeabiliteSol.pourquoi_solution_efficace
-      }
-      quand_mettre_en_oeuvre={
-        contentTravauxEligiblesTestPermeabiliteSol.quand_mettre_en_oeuvre
-      }
-      a_retenir={contentTravauxEligiblesTestPermeabiliteSol.a_retenir}
+      title={content.title}
+      pageLink={content.pageLink}
+      tag={content.tag}
+      image={content.image}
+      une_des_solutions={content.une_des_solutions}
+      solutions={content.solutions}
+      pourquoi_solution_efficace={content.pourquoi_solution_efficace}
+      quand_mettre_en_oeuvre={content.quand_mettre_en_oeuvre}
+      a_retenir={content.a_retenir}
     />
   );
 }

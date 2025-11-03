@@ -23,8 +23,8 @@ if (!process.env.SCALINGO_POSTGRESQL_URL) {
 }
 
 export default defineConfig({
-  schema: "./src/lib/database/schema/index.ts",
-  out: "./src/lib/database/migrations",
+  schema: "./src/shared/database/schema/index.ts",
+  out: "./src/shared/database/migrations",
   dialect: "postgresql",
   dbCredentials: process.env.SCALINGO_POSTGRESQL_URL
     ? // En production/staging Scalingo

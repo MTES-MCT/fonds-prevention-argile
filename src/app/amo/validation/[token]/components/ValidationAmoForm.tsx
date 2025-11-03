@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import {
-  validerLogementEligible,
-  refuserLogementNonEligible,
-  refuserAccompagnement,
-} from "@/lib/actions/parcours/amo/amo.actions";
-import { StatutValidationAmo } from "@/lib/parcours/amo/amo.types";
+
 import Image from "next/image";
+import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import {
+  refuserAccompagnement,
+  refuserLogementNonEligible,
+  validerLogementEligible,
+} from "@/features/parcours/amo/actions";
 
 interface ValidationAmoFormProps {
   validationId: string;

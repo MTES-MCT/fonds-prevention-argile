@@ -1,0 +1,108 @@
+{
+  "title": "Politique de confidentialité – Fonds prévention argile 23/09/2025",
+
+  "responsable": "I - Qui est responsable de traitement de la plateforme Fonds prévention argile ?",
+  "responsable_descriptions": [
+    "Fonds prévention argile est un téléservice mis en place par la Direction générale de l’aménagement, du logement et de la nature (DGALN), en sa qualité de responsable de traitement au sens du RGPD.",
+    "Il s'agit d’un service numérique d’information du grand public sur le phénomène du retrait-gonflement des argiles et de ses effets sur les bâtiments individuels. Il permet également aux propriétaires occupant leur logement à titre de résidence principale de suivre l’état d’avancement de l’instruction, par les services de l’État, de leurs dossiers déposés en vue d’obtenir une aide du « Fonds Préventions Argile »."
+  ],
+
+  "pourquoi": "II - Pourquoi traitons-nous ces données ?",
+  "pourquoi_header": "Fonds prévention argile traite des données à caractère personnel pour les raisons suivantes :",
+  "pourquoi_descriptions": [
+    "Permettre la création de comptes sur la plateforme par les particuliers ;",
+    "Permettre aux propriétaires occupant de leur logement à titre de résidence principale de téléverser les pièces et éléments nécessaires à l’instruction et au suivi d’un dossier déposé au titre du « fonds de prévention argile » ;",
+    "Réaliser des campagnes d’information, assurer la gestion support et suivre l’activité des utilisateurs."
+  ],
+
+  "donnees": "III - Quelles sont les données que nous traitons ?",
+  "donnees_header": "Fonds prévention argile traite les catégories de données à caractère personnel suivantes : ",
+  "donnees_descriptions": [
+    "<strong>Données de compte :</strong> nom, prénom, adresse mail (avec une connexion avec le fournisseur d’identité FranceConnect) ;",
+    "<strong>Données relatives à l’éligibilité du logement :</strong> adresse du logement, date de construction du logement, caractéristiques du logement, tranche du revenu fiscal de référence ;",
+    "<strong>Données relatives à l’instruction d’une demande d’aide au titre du « Fonds prévention argile » :</strong> nom, prénom, adresse mail, téléphone, caractéristiques du logement, avis d’imposition foncier et sur le revenu ;"
+  ],
+
+  "autorisation": "IV - Qu’est-ce qui nous autorise à traiter ces données ?",
+  "autorisation_descriptions": [
+    "Fonds prévention argile traite des données à caractère personnel sur la base de l’exécution d’une mission d’intérêt public ou relevant de l’exercice de l’autorité publique dont est investi le responsable de traitement au sens de l’article 6-1 e) du RPGD.",
+    "Cette mission d’intérêt public résulte en particulier de <a href='https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000045275722'>l’article 7 du décret n° 2008-680 du 9 juillet 2008</a> portant organisation de l’administration centrale des ministères chargés de la transition écologique, de la cohésion des territoires et de la mer. Mais également du décret n° 2025-920 du 6 septembre 2025 relatif à la mise en place, à titre expérimental, d'une aide pour la prévention des désordres dans les constructions liés au phénomène de retrait gonflement des sols argileux et <a href='https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052201370'>l’arrêté du 6 septembre 2025</a> pris pour l'application du décret n° 2025-920 du 6 septembre 2025 précisant les critères d'éligibilité des bâtiments et des propriétaires à l'aide mise en place, à titre expérimental, pour la prévention des désordres dans les constructions liés au phénomène de retrait gonflement des sols argileux."
+  ],
+
+  "duree": "V - Pendant combien de temps conservons-nous ces données ?",
+  "duree_categorie": "Catégories de données",
+  "duree_temps": "Durée de la conservation",
+  "duree_descriptions": [
+    {
+      "categorie": "Données de compte",
+      "duree": "Les données sont conservées pendant 1 an  à partir de la dernière connexion de l’utilisateur "
+    },
+    {
+      "categorie": "Données relatives à l’éligibilité du logement",
+      "duree": "5 ans à  compter du dépôt du dossier"
+    },
+    {
+      "categorie": "Données relatives à l’instruction d’une demande d’aide et à son versement",
+      "duree": "5 ans à compter du dépôt du refus du dossier ou du versement de la dernière aide au particulier"
+    }
+  ],
+
+  "droits": "VI - Quels sont vos droits ?",
+  "droits_header": "Vous disposez :",
+  "droits_descriptions": [
+    "D’un droit d’information et d’un droit d’accès à vos données ;",
+    "D’un droit de rectification ;",
+    "D’un droit d’opposition ;",
+    "D’un droit à la limitation du traitement."
+  ],
+  "droits_paragraphes": [
+    "Pour exercer vos droits, contactez-nous à par mail à contact@fonds-prevention-argile.beta.gouv.fr",
+    "Le délégué à la protection des données du ministère en charge de l'énergie peut également être contacté à l’adresse suivante : dpd.daj.sg@developpement-durable.gouv.fr",
+    "Puisque ce sont des droits personnels, nous ne traiterons votre demande que si nous sommes en mesure de vous identifier. Dans le cas où nous ne parvenons pas à vous identifier, nous pouvons être amenés à vous demander une preuve de votre identité.",
+    "Pour vous aider dans votre démarche, vous trouverez un modèle de courrier élaboré par la CNIL ici : https://www.cnil.fr/fr/modele/courrier/exercer-son-droit-dacces",
+    "Nous nous engageons à vous répondre dans un délai raisonnable qui ne saurait dépasser 1 mois à compter de la réception de votre demande."
+  ],
+
+  "acces": "VII - Qui va avoir accès à ces données ?",
+  "access_header": "Les accès aux données sont strictement encadrés et juridiquement justifiés. Les personnes suivantes vont avoir accès aux données :",
+  "access_valeurs": [
+    "Les membres habilités de l’équipe qui administrent la plateforme Fonds prévention argile (développeurs notamment) ;",
+    "Les instructeurs de services déconcentrés de l’Etat pour les seuls dossiers affectés à leurs départements.",
+    "Les prestataires d’accompagnement des particuliers avec lesquels les services déconcentrés de l’État ont conclu un contrat au titre du Code de la commande publique, et uniquement pour les dossiers qui leur sont affectés."
+  ],
+
+  "sous_traitant": "VIII - Qui nous aide à traiter les données ?",
+  "sous_traitant_header": "Certaines des données sont envoyées à d’autres acteurs, appelés « sous-traitants de données », pour qu’ils nous aident à les manipuler. Nous nous assurons qu’ils respectent strictement le RGPD et qu’ils apportent des garanties suffisantes en matière de sécurité.",
+  "sous_traitant_heading": [
+    "Sous-traitant",
+    "Traitement réalisé",
+    "Pays destinataire",
+    "Garanties"
+  ],
+  "sous_traitant_valeurs": [
+    {
+      "title": "« Démarches Simplifiées » de la Direction Interministérielle du Numérique",
+      "traitement": "Dématérialisation du formulaire d’instruction",
+      "pays": "France",
+      "lien": "https://doc.demarches-simplifiees.fr/cgu#_toc108111745 "
+    },
+    {
+      "title": "Scalingo",
+      "traitement": "Hébergement des données",
+      "pays": "France",
+      "lien": "https://scalingo.com/fr/contrat-gestion-traitements-donnees-personnelles"
+    },
+    {
+      "title": "OVH",
+      "traitement": "Hébergement des données",
+      "pays": "France",
+      "lien": "https://www.ovh.com/fr/support/documents_legaux/Annexe%20Traitement%20de%20donn%C3%A9es%20%C3%A0%20caract%C3%A8re%20personnel.pdf "
+    }
+  ],
+
+  "cookies": "IX - Cookies",
+  "cookies_descriptions": [
+    "Fonds prévention argile utilise des témoins de connexion et traceurs strictement nécessaires au bon fonctionnement du service.",
+    "La solution Matomo, configurée en mode exempté, est utilisée mais ne nécessite pas le recueil de votre consentement conformément aux recommandations de la CNIL."
+  ]
+}
