@@ -54,7 +54,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "xlsx": "^0.18.5",
-    "zod": "^3.25.20"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.15",
