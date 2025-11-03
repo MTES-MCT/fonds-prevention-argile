@@ -1,4 +1,4 @@
-import { count, eq, isNotNull, isNull } from "drizzle-orm";
+import { count, isNotNull, isNull, eq } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import {
   users,
@@ -6,12 +6,28 @@ import {
   dossiersDemarchesSimplifiees,
 } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import { getMatomoStatistiques } from "./matomo.service";
 import type { Statistiques } from "../domain/statistiques.types";
 
 /**
- * Récupère toutes les statistiques globales
+ * Récupère toutes les statistiques globales (DB + Matomo)
  */
 export async function getStatistiques(): Promise<Statistiques> {
+  const [dbStats, matomoStats] = await Promise.all([
+    getStatistiquesDB(),
+    getMatomoStatistiques(),
+  ]);
+
+  return {
+    ...dbStats,
+    ...matomoStats,
+  };
+}
+
+/**
+ * Récupère les statistiques de la base de données
+ */
+async function getStatistiquesDB() {
   const [
     nombreComptesCreés,
     nombreDemandesAMO,

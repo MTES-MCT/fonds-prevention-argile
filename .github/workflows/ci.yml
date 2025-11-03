@@ -93,3 +93,6 @@ jobs:
           DB_NAME: "fonds_argile"
           BREVO_API_KEY: "BREVO_API_KEY_EXAMPLE"
           EMAIL_FROM: "noreply@fonds-argile.local"
+          MATOMO_API_TOKEN: "MATOMO_API_TOKEN_EXAMPLE"
+          NEXT_PUBLIC_MATOMO_SITE_ID: "111"
+          NEXT_PUBLIC_MATOMO_URL: "https://stats.beta.gouv.fr"
