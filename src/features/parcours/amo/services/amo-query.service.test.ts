@@ -22,6 +22,100 @@ vi.mock("../utils/amo.utils", () => ({
   getCodeDepartementFromCodeInsee: vi.fn(),
 }));
 
+// Helpers pour mocker les chaînes Drizzle
+const mockDbSelect = (data: unknown) => {
+  const mockLimit = vi.fn().mockResolvedValue(data);
+  const mockWhere = vi.fn().mockReturnValue({
+    limit: mockLimit,
+  });
+  const mockFrom = vi.fn().mockReturnValue({
+    where: mockWhere,
+  });
+
+  return {
+    from: mockFrom,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+};
+
+const mockDbSelectWithInnerJoin = (data: unknown) => {
+  const mockLimit = vi.fn().mockResolvedValue(data);
+  const mockWhere = vi.fn().mockReturnValue({
+    limit: mockLimit,
+  });
+  const mockInnerJoin = vi.fn().mockReturnValue({
+    where: mockWhere,
+  });
+  const mockFrom = vi.fn().mockReturnValue({
+    innerJoin: mockInnerJoin,
+  });
+
+  return {
+    from: mockFrom,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+};
+
+const mockDbSelectWithLeftJoin = (data: unknown) => {
+  const mockOrderBy = vi.fn().mockResolvedValue(data);
+  const mockLeftJoin = vi.fn().mockReturnValue({
+    orderBy: mockOrderBy,
+  });
+  const mockFrom = vi.fn().mockReturnValue({
+    leftJoin: mockLeftJoin,
+  });
+
+  return {
+    from: mockFrom,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+};
+
+const mockDbSelectWithLeftJoinAndWhere = (data: unknown) => {
+  const mockLimit = vi.fn().mockResolvedValue(data);
+  const mockWhere = vi.fn().mockReturnValue({
+    limit: mockLimit,
+  });
+  const mockLeftJoin = vi.fn().mockReturnValue({
+    where: mockWhere,
+  });
+  const mockFrom = vi.fn().mockReturnValue({
+    leftJoin: mockLeftJoin,
+  });
+
+  return {
+    from: mockFrom,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+};
+
+const mockDbSelectDistinctWithInnerJoin = (data: unknown) => {
+  const mockWhere = vi.fn().mockResolvedValue(data);
+  const mockInnerJoin = vi.fn().mockReturnValue({
+    where: mockWhere,
+  });
+  const mockFrom = vi.fn().mockReturnValue({
+    innerJoin: mockInnerJoin,
+  });
+
+  return {
+    from: mockFrom,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+};
+
+const mockDbSelectSimple = (data: unknown) => {
+  const mockWhere = vi.fn().mockResolvedValue(data);
+  const mockFrom = vi.fn().mockReturnValue({
+    where: mockWhere,
+  });
+
+  return {
+    from: mockFrom,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+};
+
 describe("amo-query.service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -70,36 +164,19 @@ describe("amo-query.service", () => {
       vi.mocked(getCodeDepartementFromCodeInsee).mockReturnValue(
         codeDepartement
       );
-
-      // Mock pour récupérer l'utilisateur
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([mockUser]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
     });
 
     it("devrait retourner les AMO qui couvrent le code INSEE spécifique", async () => {
+      // Mock pour récupérer l'utilisateur
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockUser]));
+
       // Mock pour AMO par code INSEE
-      vi.mocked(db.selectDistinct).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockResolvedValue([mockAmo1]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.selectDistinct).mockReturnValueOnce(
+        mockDbSelectDistinctWithInnerJoin([mockAmo1])
+      );
 
       // Mock pour AMO par département (vide)
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([]),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelectSimple([]));
 
       const result = await getAmosForCodeInsee(userId);
 
@@ -108,23 +185,16 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner les AMO qui couvrent le département entier", async () => {
+      // Mock pour récupérer l'utilisateur
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockUser]));
+
       // Mock pour AMO par code INSEE (vide)
-      vi.mocked(db.selectDistinct).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockResolvedValue([]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.selectDistinct).mockReturnValueOnce(
+        mockDbSelectDistinctWithInnerJoin([])
+      );
 
       // Mock pour AMO par département
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([mockAmo2]),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelectSimple([mockAmo2]));
 
       const result = await getAmosForCodeInsee(userId);
 
@@ -132,23 +202,18 @@ describe("amo-query.service", () => {
     });
 
     it("devrait fusionner et dédupliquer les AMO des deux sources", async () => {
+      // Mock pour récupérer l'utilisateur
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockUser]));
+
       // Mock pour AMO par code INSEE
-      vi.mocked(db.selectDistinct).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockResolvedValue([mockAmo1, mockAmo3]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.selectDistinct).mockReturnValueOnce(
+        mockDbSelectDistinctWithInnerJoin([mockAmo1, mockAmo3])
+      );
 
       // Mock pour AMO par département (contient aussi mockAmo1)
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([mockAmo1, mockAmo2]),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelectSimple([mockAmo1, mockAmo2])
+      );
 
       const result = await getAmosForCodeInsee(userId);
 
@@ -165,23 +230,16 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner un tableau vide si aucune AMO ne couvre la zone", async () => {
+      // Mock pour récupérer l'utilisateur
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockUser]));
+
       // Mock pour AMO par code INSEE (vide)
-      vi.mocked(db.selectDistinct).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockResolvedValue([]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.selectDistinct).mockReturnValueOnce(
+        mockDbSelectDistinctWithInnerJoin([])
+      );
 
       // Mock pour AMO par département (vide)
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([]),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelectSimple([]));
 
       const result = await getAmosForCodeInsee(userId);
 
@@ -189,14 +247,10 @@ describe("amo-query.service", () => {
     });
 
     it("devrait lancer une erreur si le code INSEE est manquant", async () => {
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([{ codeInsee: null }]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      // Mock pour récupérer l'utilisateur avec codeInsee null
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelect([{ codeInsee: null }])
+      );
 
       await expect(getAmosForCodeInsee(userId)).rejects.toThrow(
         "Code INSEE non renseigné pour cet utilisateur"
@@ -204,14 +258,8 @@ describe("amo-query.service", () => {
     });
 
     it("devrait lancer une erreur si l'utilisateur n'est pas trouvé", async () => {
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      // Mock pour ne pas trouver l'utilisateur
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([]));
 
       await expect(getAmosForCodeInsee(userId)).rejects.toThrow(
         "Code INSEE non renseigné pour cet utilisateur"
@@ -219,21 +267,16 @@ describe("amo-query.service", () => {
     });
 
     it("devrait appeler getCodeDepartementFromCodeInsee avec le bon code INSEE", async () => {
-      vi.mocked(db.selectDistinct).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockResolvedValue([]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      // Mock pour récupérer l'utilisateur
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockUser]));
 
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([]),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      // Mock pour AMO par code INSEE (vide)
+      vi.mocked(db.selectDistinct).mockReturnValueOnce(
+        mockDbSelectDistinctWithInnerJoin([])
+      );
+
+      // Mock pour AMO par département (vide)
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelectSimple([]));
 
       await getAmosForCodeInsee(userId);
 
@@ -277,14 +320,9 @@ describe("amo-query.service", () => {
         },
       ];
 
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockResolvedValue(mockRows),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelectWithLeftJoin(mockRows)
+      );
 
       const result = await getAllAmosWithCommunes();
 
@@ -316,14 +354,9 @@ describe("amo-query.service", () => {
         },
       ];
 
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockResolvedValue(mockRows),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelectWithLeftJoin(mockRows)
+      );
 
       const result = await getAllAmosWithCommunes();
 
@@ -332,14 +365,7 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner un tableau vide si aucune AMO n'existe", async () => {
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockResolvedValue([]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelectWithLeftJoin([]));
 
       const result = await getAllAmosWithCommunes();
 
@@ -360,30 +386,14 @@ describe("amo-query.service", () => {
       adresse: "1 rue AMO",
     };
 
-    beforeEach(() => {
-      // Mock pour récupérer le parcours
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([mockParcours]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
-    });
-
     it("devrait retourner l'AMO sélectionnée par l'utilisateur", async () => {
+      // Mock pour récupérer le parcours
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockParcours]));
+
       // Mock pour récupérer l'AMO
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([mockAmo]),
-            }),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelectWithInnerJoin([mockAmo])
+      );
 
       const result = await getUserSelectedAmo(userId);
 
@@ -391,17 +401,11 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner null si aucune AMO n'est sélectionnée", async () => {
+      // Mock pour récupérer le parcours
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockParcours]));
+
       // Mock pour récupérer l'AMO (vide)
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([]),
-            }),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelectWithInnerJoin([]));
 
       const result = await getUserSelectedAmo(userId);
 
@@ -409,14 +413,8 @@ describe("amo-query.service", () => {
     });
 
     it("devrait lancer une erreur si le parcours n'est pas trouvé", async () => {
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      // Mock pour ne pas trouver le parcours
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([]));
 
       await expect(getUserSelectedAmo(userId)).rejects.toThrow(
         "Parcours non trouvé"
@@ -432,30 +430,14 @@ describe("amo-query.service", () => {
       nom: "AMO Qui a Refusé",
     };
 
-    beforeEach(() => {
-      // Mock pour récupérer le parcours
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([mockParcours]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
-    });
-
     it("devrait retourner l'AMO qui a refusé l'accompagnement", async () => {
+      // Mock pour récupérer le parcours
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockParcours]));
+
       // Mock pour récupérer l'AMO refusée
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([mockAmoRefusee]),
-            }),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelectWithInnerJoin([mockAmoRefusee])
+      );
 
       const result = await getUserRejectedAmo(userId);
 
@@ -463,17 +445,11 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner null si aucune AMO n'a refusé", async () => {
+      // Mock pour récupérer le parcours
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockParcours]));
+
       // Mock pour récupérer l'AMO refusée (vide)
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([]),
-            }),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelectWithInnerJoin([]));
 
       const result = await getUserRejectedAmo(userId);
 
@@ -481,14 +457,8 @@ describe("amo-query.service", () => {
     });
 
     it("devrait lancer une erreur si le parcours n'est pas trouvé", async () => {
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      // Mock pour ne pas trouver le parcours
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([]));
 
       await expect(getUserRejectedAmo(userId)).rejects.toThrow(
         "Parcours non trouvé"
@@ -509,14 +479,7 @@ describe("amo-query.service", () => {
     };
 
     it("devrait retourner une AMO par son ID", async () => {
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([mockAmo]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockAmo]));
 
       const result = await getAmoById(amoId);
 
@@ -524,14 +487,7 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner null si l'AMO n'est pas trouvée", async () => {
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([]));
 
       const result = await getAmoById("amo-inexistant");
 
@@ -551,16 +507,9 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner true si l'AMO couvre via une commune spécifique", async () => {
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([{ id: amoId }]),
-            }),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelectWithLeftJoinAndWhere([{ id: amoId }])
+      );
 
       const result = await checkAmoCoversCodeInsee(amoId, codeInsee);
 
@@ -569,16 +518,9 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner true si l'AMO couvre via le département entier", async () => {
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([{ id: amoId }]),
-            }),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelectWithLeftJoinAndWhere([{ id: amoId }])
+      );
 
       const result = await checkAmoCoversCodeInsee(amoId, codeInsee);
 
@@ -586,16 +528,9 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner false si l'AMO ne couvre pas le code INSEE", async () => {
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([]),
-            }),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelectWithLeftJoinAndWhere([])
+      );
 
       const result = await checkAmoCoversCodeInsee(amoId, codeInsee);
 
@@ -608,16 +543,9 @@ describe("amo-query.service", () => {
 
       vi.mocked(getCodeDepartementFromCodeInsee).mockReturnValue(codeDeptOM);
 
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([{ id: amoId }]),
-            }),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelectWithLeftJoinAndWhere([{ id: amoId }])
+      );
 
       const result = await checkAmoCoversCodeInsee(amoId, codeInseeOM);
 

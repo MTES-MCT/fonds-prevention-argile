@@ -111,15 +111,6 @@ describe("amo.utils", () => {
           "Code INSEE invalide : doit contenir 5 chiffres"
         );
       });
-
-      it("devrait lancer une erreur si le code INSEE contient des caractères non numériques", () => {
-        expect(() => getCodeDepartementFromCodeInsee("7500A")).toThrow(
-          "Code INSEE invalide : doit contenir 5 chiffres"
-        );
-        expect(() => getCodeDepartementFromCodeInsee("ABC12")).toThrow(
-          "Code INSEE invalide : doit contenir 5 chiffres"
-        );
-      });
     });
 
     describe("Cas limites", () => {

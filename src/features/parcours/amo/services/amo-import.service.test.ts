@@ -35,14 +35,17 @@ describe("amo-import.service", () => {
 
   describe("importAmosFromExcel", () => {
     const createMockFile = (name: string, content: ArrayBuffer): File => {
-      return new File([content], name, {
+      return {
+        name,
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
+        arrayBuffer: async () => content,
+      } as File;
     };
 
     const createMockFormData = (file: File): FormData => {
       const formData = new FormData();
       formData.append("file", file);
+      formData.get = vi.fn().mockReturnValue(file);
       return formData;
     };
 

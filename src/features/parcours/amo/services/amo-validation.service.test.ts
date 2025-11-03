@@ -66,9 +66,12 @@ describe("amo-validation.service", () => {
 
     const mockParcours = {
       id: "parcours-789",
+      createdAt: new Date("2025-01-01T00:00:00Z"),
+      updatedAt: new Date("2025-01-01T00:00:00Z"),
       userId,
       currentStep: Step.CHOIX_AMO,
-      status: Status.TODO,
+      currentStatus: Status.TODO,
+      completedAt: null,
     };
 
     const mockUser = {
@@ -80,7 +83,7 @@ describe("amo-validation.service", () => {
       nom: "AMO Test",
       emails: "contact@amo-test.fr",
       siret: "12345678901234",
-      departements: ["75"],
+      departements: "75",
       telephone: "0123456789",
       adresse: "1 rue AMO, 75001 Paris",
     };
@@ -126,18 +129,20 @@ describe("amo-validation.service", () => {
 
       vi.mocked(sendValidationAmoEmail).mockResolvedValue({
         success: true,
-        data: { message: "Email envoyé" },
+        data: { messageId: "message-123" },
       });
 
-      vi.mocked(parcoursRepo.updateStatus).mockResolvedValue(undefined);
+      vi.mocked(parcoursRepo.updateStatus).mockResolvedValue(mockParcours);
     });
 
     it("devrait réussir avec des données valides", async () => {
       const result = await selectAmoForUser(userId, validParams);
 
       expect(result.success).toBe(true);
-      expect(result.data?.message).toBe("AMO sélectionnée avec succès");
-      expect(result.data?.token).toBe("mock-uuid-token");
+      if (result.success) {
+        expect(result.data.message).toBe("AMO sélectionnée avec succès");
+        expect(result.data.token).toBe("mock-uuid-token");
+      }
       expect(parcoursRepo.updateStatus).toHaveBeenCalledWith(
         mockParcours.id,
         Status.EN_INSTRUCTION
@@ -151,7 +156,9 @@ describe("amo-validation.service", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Le prénom est requis");
+      if (!result.success) {
+        expect(result.error).toBe("Le prénom est requis");
+      }
     });
 
     it("devrait échouer si le prénom est absent", async () => {
@@ -161,7 +168,9 @@ describe("amo-validation.service", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Le prénom est requis");
+      if (!result.success) {
+        expect(result.error).toBe("Le prénom est requis");
+      }
     });
 
     it("devrait échouer si le nom est vide", async () => {
@@ -171,7 +180,9 @@ describe("amo-validation.service", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Le nom est requis");
+      if (!result.success) {
+        expect(result.error).toBe("Le nom est requis");
+      }
     });
 
     it("devrait échouer si le nom est absent", async () => {
@@ -181,7 +192,9 @@ describe("amo-validation.service", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Le nom est requis");
+      if (!result.success) {
+        expect(result.error).toBe("Le nom est requis");
+      }
     });
 
     it("devrait échouer si l'adresse du logement est vide", async () => {
@@ -191,7 +204,9 @@ describe("amo-validation.service", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("L'adresse du logement est requise");
+      if (!result.success) {
+        expect(result.error).toBe("L'adresse du logement est requise");
+      }
     });
 
     it("devrait échouer si l'adresse du logement est absente", async () => {
@@ -201,7 +216,9 @@ describe("amo-validation.service", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("L'adresse du logement est requise");
+      if (!result.success) {
+        expect(result.error).toBe("L'adresse du logement est requise");
+      }
     });
 
     it("devrait échouer si le parcours n'est pas trouvé", async () => {
@@ -210,7 +227,9 @@ describe("amo-validation.service", () => {
       const result = await selectAmoForUser(userId, validParams);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Parcours non trouvé");
+      if (!result.success) {
+        expect(result.error).toBe("Parcours non trouvé");
+      }
     });
 
     it("devrait échouer si l'utilisateur n'est pas à l'étape CHOIX_AMO", async () => {
@@ -222,7 +241,11 @@ describe("amo-validation.service", () => {
       const result = await selectAmoForUser(userId, validParams);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Vous n'êtes pas à l'étape de choix de l'AMO");
+      if (!result.success) {
+        expect(result.error).toBe(
+          "Vous n'êtes pas à l'étape de choix de l'AMO"
+        );
+      }
     });
 
     it("devrait échouer si le code INSEE est manquant", async () => {
@@ -238,7 +261,9 @@ describe("amo-validation.service", () => {
       const result = await selectAmoForUser(userId, validParams);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Code INSEE manquant");
+      if (!result.success) {
+        expect(result.error).toBe("Code INSEE manquant");
+      }
     });
 
     it("devrait échouer si l'AMO ne couvre pas le code INSEE", async () => {
@@ -247,9 +272,11 @@ describe("amo-validation.service", () => {
       const result = await selectAmoForUser(userId, validParams);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe(
-        "Cette AMO ne couvre pas votre commune ou département"
-      );
+      if (!result.success) {
+        expect(result.error).toBe(
+          "Cette AMO ne couvre pas votre commune ou département"
+        );
+      }
     });
 
     it("devrait échouer si l'AMO n'est pas trouvée", async () => {
@@ -258,7 +285,9 @@ describe("amo-validation.service", () => {
       const result = await selectAmoForUser(userId, validParams);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("AMO non trouvée");
+      if (!result.success) {
+        expect(result.error).toBe("AMO non trouvée");
+      }
     });
 
     it("devrait créer un token avec la bonne date d'expiration", async () => {
@@ -361,7 +390,7 @@ describe("amo-validation.service", () => {
       nom: "AMO Test",
       emails: "contact@amo-test.fr",
       siret: "12345678901234",
-      departements: ["75"],
+      departements: "75",
       telephone: "0123456789",
       adresse: "1 rue AMO",
     };
@@ -386,21 +415,23 @@ describe("amo-validation.service", () => {
       const result = await getValidationByToken(validToken);
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual({
-        validationId: mockTokenData.validationId,
-        entrepriseAmo: mockAmo,
-        demandeur: {
-          codeInsee: mockTokenData.userCodeInsee,
-          nom: mockTokenData.userNom,
-          prenom: mockTokenData.userPrenom,
-          adresseLogement: mockTokenData.adresseLogement,
-        },
-        statut: mockTokenData.statut,
-        choisieAt: mockTokenData.choisieAt,
-        usedAt: null,
-        isExpired: false,
-        isUsed: false,
-      });
+      if (result.success) {
+        expect(result.data).toEqual({
+          validationId: mockTokenData.validationId,
+          entrepriseAmo: mockAmo,
+          demandeur: {
+            codeInsee: mockTokenData.userCodeInsee,
+            nom: mockTokenData.userNom,
+            prenom: mockTokenData.userPrenom,
+            adresseLogement: mockTokenData.adresseLogement,
+          },
+          statut: mockTokenData.statut,
+          choisieAt: mockTokenData.choisieAt,
+          usedAt: null,
+          isExpired: false,
+          isUsed: false,
+        });
+      }
     });
 
     it("devrait échouer si le token est introuvable", async () => {
@@ -417,7 +448,9 @@ describe("amo-validation.service", () => {
       const result = await getValidationByToken("invalid-token");
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Token invalide ou introuvable");
+      if (!result.success) {
+        expect(result.error).toBe("Token invalide ou introuvable");
+      }
     });
 
     it("devrait échouer si le token est expiré", async () => {
@@ -439,7 +472,9 @@ describe("amo-validation.service", () => {
       const result = await getValidationByToken(validToken);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Ce token a expiré");
+      if (!result.success) {
+        expect(result.error).toBe("Ce token a expiré");
+      }
     });
 
     it("devrait détecter correctement un token utilisé", async () => {
@@ -461,8 +496,10 @@ describe("amo-validation.service", () => {
       const result = await getValidationByToken(validToken);
 
       expect(result.success).toBe(true);
-      expect(result.data?.isUsed).toBe(true);
-      expect(result.data?.usedAt).toEqual(usedTokenData.usedAt);
+      if (result.success) {
+        expect(result.data.isUsed).toBe(true);
+        expect(result.data.usedAt).toEqual(usedTokenData.usedAt);
+      }
     });
 
     it("devrait échouer si l'AMO n'est pas trouvée", async () => {
@@ -471,7 +508,9 @@ describe("amo-validation.service", () => {
       const result = await getValidationByToken(validToken);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("AMO non trouvée");
+      if (!result.success) {
+        expect(result.error).toBe("AMO non trouvée");
+      }
     });
 
     it("devrait gérer les données personnelles manquantes", async () => {
@@ -496,12 +535,14 @@ describe("amo-validation.service", () => {
       const result = await getValidationByToken(validToken);
 
       expect(result.success).toBe(true);
-      expect(result.data?.demandeur).toEqual({
-        codeInsee: "",
-        nom: "",
-        prenom: "",
-        adresseLogement: "",
-      });
+      if (result.success) {
+        expect(result.data.demandeur).toEqual({
+          codeInsee: "",
+          nom: "",
+          prenom: "",
+          adresseLogement: "",
+        });
+      }
     });
   });
 
@@ -517,9 +558,12 @@ describe("amo-validation.service", () => {
 
     const mockParcours = {
       id: parcoursId,
+      createdAt: new Date("2025-01-01T00:00:00Z"),
+      updatedAt: new Date("2025-01-01T00:00:00Z"),
       userId,
       currentStep: Step.CHOIX_AMO,
-      status: Status.EN_INSTRUCTION,
+      currentStatus: Status.EN_INSTRUCTION,
+      completedAt: null,
     };
 
     beforeEach(() => {
@@ -541,11 +585,17 @@ describe("amo-validation.service", () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
-      vi.mocked(parcoursRepo.updateStatus).mockResolvedValue(undefined);
+      vi.mocked(parcoursRepo.updateStatus).mockResolvedValue(mockParcours);
 
       vi.mocked(moveToNextStep).mockResolvedValue({
         success: true,
-        data: { message: "Progression réussie" },
+        data: {
+          state: {
+            step: Step.ELIGIBILITE,
+            status: Status.TODO,
+          },
+          complete: false,
+        },
       });
     });
 
@@ -553,7 +603,9 @@ describe("amo-validation.service", () => {
       const result = await approveValidation(validationId);
 
       expect(result.success).toBe(true);
-      expect(result.data?.message).toBe("Logement validé comme éligible");
+      if (result.success) {
+        expect(result.data.message).toBe("Logement validé comme éligible");
+      }
     });
 
     it("devrait mettre à jour le statut à logement_eligible", async () => {
@@ -622,7 +674,9 @@ describe("amo-validation.service", () => {
       const result = await approveValidation(validationId);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Validation non trouvée");
+      if (!result.success) {
+        expect(result.error).toBe("Validation non trouvée");
+      }
     });
 
     it("devrait échouer si le parcours n'est pas trouvé", async () => {
@@ -631,7 +685,9 @@ describe("amo-validation.service", () => {
       const result = await approveValidation(validationId);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Parcours non trouvé");
+      if (!result.success) {
+        expect(result.error).toBe("Parcours non trouvé");
+      }
     });
 
     it("devrait échouer si la progression vers l'étape suivante échoue", async () => {
@@ -643,9 +699,11 @@ describe("amo-validation.service", () => {
       const result = await approveValidation(validationId);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe(
-        "Erreur lors de la progression vers l'éligibilité"
-      );
+      if (!result.success) {
+        expect(result.error).toBe(
+          "Erreur lors de la progression vers l'éligibilité"
+        );
+      }
     });
   });
 
@@ -659,6 +717,16 @@ describe("amo-validation.service", () => {
       statut: "logement_non_eligible" as StatutValidationAmo,
     };
 
+    const mockParcours = {
+      id: "parcours-789",
+      createdAt: new Date("2025-01-01T00:00:00Z"),
+      updatedAt: new Date("2025-01-01T00:00:00Z"),
+      userId: "user-123",
+      currentStep: Step.CHOIX_AMO,
+      currentStatus: Status.EN_INSTRUCTION,
+      completedAt: null,
+    };
+
     beforeEach(() => {
       vi.mocked(db.update).mockReturnValue({
         set: vi.fn().mockReturnValue({
@@ -669,14 +737,16 @@ describe("amo-validation.service", () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
-      vi.mocked(parcoursRepo.updateStatus).mockResolvedValue(undefined);
+      vi.mocked(parcoursRepo.updateStatus).mockResolvedValue(mockParcours);
     });
 
     it("devrait refuser l'éligibilité avec succès", async () => {
       const result = await rejectEligibility(validationId, commentaire);
 
       expect(result.success).toBe(true);
-      expect(result.data?.message).toBe("Logement refusé : non éligible");
+      if (result.success) {
+        expect(result.data.message).toBe("Logement refusé : non éligible");
+      }
     });
 
     it("devrait mettre à jour le statut à logement_non_eligible", async () => {
@@ -725,7 +795,9 @@ describe("amo-validation.service", () => {
       const result = await rejectEligibility(validationId, commentaire);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Validation non trouvée");
+      if (!result.success) {
+        expect(result.error).toBe("Validation non trouvée");
+      }
     });
   });
 
@@ -739,6 +811,16 @@ describe("amo-validation.service", () => {
       statut: "accompagnement_refuse" as StatutValidationAmo,
     };
 
+    const mockParcours = {
+      id: "parcours-789",
+      createdAt: new Date("2025-01-01T00:00:00Z"),
+      updatedAt: new Date("2025-01-01T00:00:00Z"),
+      userId: "user-123",
+      currentStep: Step.CHOIX_AMO,
+      currentStatus: Status.EN_INSTRUCTION,
+      completedAt: null,
+    };
+
     beforeEach(() => {
       vi.mocked(db.update).mockReturnValue({
         set: vi.fn().mockReturnValue({
@@ -749,14 +831,16 @@ describe("amo-validation.service", () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
-      vi.mocked(parcoursRepo.updateStatus).mockResolvedValue(undefined);
+      vi.mocked(parcoursRepo.updateStatus).mockResolvedValue(mockParcours);
     });
 
     it("devrait refuser l'accompagnement avec succès", async () => {
       const result = await rejectAccompagnement(validationId, commentaire);
 
       expect(result.success).toBe(true);
-      expect(result.data?.message).toBe("Accompagnement refusé");
+      if (result.success) {
+        expect(result.data.message).toBe("Accompagnement refusé");
+      }
     });
 
     it("devrait mettre à jour le statut à accompagnement_refuse", async () => {
@@ -805,7 +889,9 @@ describe("amo-validation.service", () => {
       const result = await rejectAccompagnement(validationId, commentaire);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Validation non trouvée");
+      if (!result.success) {
+        expect(result.error).toBe("Validation non trouvée");
+      }
     });
   });
 });
