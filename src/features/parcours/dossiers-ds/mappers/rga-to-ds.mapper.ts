@@ -84,8 +84,6 @@ export function validateRGADataForDS(rgaData: Partial<RGAFormData>): {
   // Définir les champs requis (ceux qui doivent absolument être remplis)
   const requiredFieldPaths: Array<{ path: string; label: string }> = [
     { path: "logement.adresse", label: "L'adresse du logement" },
-    { path: "menage.revenu_rga", label: "Le revenu fiscal de référence" },
-    { path: "menage.personnes", label: "Le nombre de personnes dans le foyer" },
     {
       path: "logement.annee_de_construction",
       label: "L'année de construction",
@@ -97,7 +95,13 @@ export function validateRGADataForDS(rgaData: Partial<RGAFormData>): {
     },
     { path: "logement.mitoyen", label: "L'information de mitoyenneté" },
     { path: "logement.niveaux", label: "Le nombre de niveaux" },
+
     { path: "rga.assure", label: "Le statut d'assurance" },
+    { path: "rga.sinistres", label: "L'état de la maison" },
+    { path: "rga.indemnise_indemnise_rga", label: "L'indemnisation RGA" },
+
+    { path: "menage.revenu_rga", label: "Le revenu fiscal de référence" },
+    { path: "menage.personnes", label: "Le nombre de personnes dans le foyer" },
   ];
 
   // Vérifier les champs requis
@@ -108,17 +112,8 @@ export function validateRGADataForDS(rgaData: Partial<RGAFormData>): {
     }
   });
 
-  // Ajouter des warnings pour les champs optionnels mais recommandés
-  const optionalFieldPaths: Array<{ path: string; label: string }> = [
-    {
-      path: "rga.etat_maison",
-      label: "Information sur les sinistres précoces",
-    },
-    {
-      path: "rga.indemnise_rga",
-      label: "Information sur l'indemnisation précédente",
-    },
-  ];
+  // TODO : Ajouter des warnings pour les champs optionnels mais recommandés
+  const optionalFieldPaths: Array<{ path: string; label: string }> = [];
 
   optionalFieldPaths.forEach(({ path, label }) => {
     const value = getValueByPath(rgaData as Record<string, unknown>, path);
@@ -131,95 +126,5 @@ export function validateRGADataForDS(rgaData: Partial<RGAFormData>): {
     isValid: errors.length === 0,
     errors,
     warnings,
-  };
-}
-
-/**
- * Récupère un résumé des données pour affichage
- */
-export function getRGADataSummary(rgaData: Partial<RGAFormData>): string {
-  const summary: string[] = [];
-
-  if (rgaData.logement?.adresse) {
-    summary.push(`📍 ${rgaData.logement.adresse}`);
-  }
-
-  if (rgaData.logement?.zone_dexposition) {
-    const zoneLabel =
-      {
-        faible: "Zone faible",
-        moyen: "Zone moyenne",
-        fort: "Zone forte",
-      }[rgaData.logement.zone_dexposition] || rgaData.logement.zone_dexposition;
-    summary.push(`⚠️ ${zoneLabel}`);
-  }
-
-  if (rgaData.menage?.personnes && rgaData.menage?.revenu_rga) {
-    summary.push(
-      `👥 ${rgaData.menage.personnes} pers. | 💰 ${new Intl.NumberFormat(
-        "fr-FR",
-        {
-          style: "currency",
-          currency: "EUR",
-          maximumFractionDigits: 0,
-        }
-      ).format(rgaData.menage.revenu_rga)}`
-    );
-  }
-
-  if (rgaData.logement?.annee_de_construction) {
-    summary.push(`🏠 Construite en ${rgaData.logement.annee_de_construction}`);
-  }
-
-  if (rgaData.rga?.assure !== undefined) {
-    summary.push(
-      rgaData.rga.assure === "oui" ? "✅ Assurée" : "❌ Non assurée"
-    );
-  }
-
-  return summary.join(" | ");
-}
-
-/**
- * Récupère les statistiques de complétion du mapping
- */
-export function getMappingStats(rgaData: Partial<RGAFormData>): {
-  total: number;
-  filled: number;
-  percentage: number;
-  bySection: Record<string, { total: number; filled: number }>;
-} {
-  const mappableFields = getMappableFields();
-  let filled = 0;
-  const bySection: Record<string, { total: number; filled: number }> = {};
-
-  mappableFields.forEach((field) => {
-    if (!field.rgaPath) return;
-
-    // Initialiser la section si nécessaire
-    if (!bySection[field.section]) {
-      bySection[field.section] = { total: 0, filled: 0 };
-    }
-    bySection[field.section].total++;
-
-    // Vérifier si la valeur existe
-    const value = getValueByPath(
-      rgaData as Record<string, unknown>,
-      field.rgaPath
-    );
-    if (value !== undefined && value !== null && value !== "") {
-      filled++;
-      bySection[field.section].filled++;
-    }
-  });
-
-  return {
-    total: mappableFields.length,
-    filled,
-    percentage:
-      mappableFields.length > 0
-        ? Math.round((filled / mappableFields.length) * 100)
-        : 0,
-    bySection,
   };
 }
