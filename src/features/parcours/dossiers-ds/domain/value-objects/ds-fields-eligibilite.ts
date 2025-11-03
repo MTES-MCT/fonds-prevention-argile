@@ -212,7 +212,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     label: "Désordres architecturaux identifiés",
     type: DSFieldType.CHECKBOX,
     section: DSSection.MAISON,
-    rgaPath: "rga.peu_endommage",
+    rgaPath: "rga.etat_maison",
     transformer: (value: unknown) => {
       return String(value === "endommagee" ? "oui" : "non");
     },
@@ -222,7 +222,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     label: "Micro-fissures d'1mm max identitées",
     section: DSSection.MAISON,
     type: DSFieldType.CHECKBOX,
-    rgaPath: "rga.peu_endommage",
+    rgaPath: "rga.etat_maison",
     transformer: (value: unknown) => {
       return String(value === "peu-endommagee" ? "oui" : "non");
     },

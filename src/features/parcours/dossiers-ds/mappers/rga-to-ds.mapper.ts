@@ -111,7 +111,7 @@ export function validateRGADataForDS(rgaData: Partial<RGAFormData>): {
   // Ajouter des warnings pour les champs optionnels mais recommandés
   const optionalFieldPaths: Array<{ path: string; label: string }> = [
     {
-      path: "rga.peu_endommage",
+      path: "rga.etat_maison",
       label: "Information sur les sinistres précoces",
     },
     {

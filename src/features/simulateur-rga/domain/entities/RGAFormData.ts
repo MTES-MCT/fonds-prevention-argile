@@ -32,7 +32,7 @@ export interface RGAFormData {
   rga: {
     assure: "oui" | "non";
     indemnise_rga: "oui" | "non";
-    peu_endommage: "saine" | "peu-endommagee" | "endommagee";
+    etat_maison: "saine" | "peu-endommagee" | "endommagee";
   };
 
   // Ménage
