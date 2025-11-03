@@ -1,5 +1,4 @@
 import { getServerEnv } from "@/shared/config/env.config";
-import { notFound } from "next/navigation";
 import { graphqlClient } from "@/features/parcours/dossiers-ds/adapters";
 import {
   getDemarcheDetails,

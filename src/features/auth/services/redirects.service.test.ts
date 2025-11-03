@@ -18,7 +18,8 @@ describe("redirects.service", () => {
 
     it("devrait gérer un rôle inconnu", () => {
       // Le service retourne /mon-compte par défaut si le rôle n'est pas admin
-      expect(getDefaultRedirect("unknown_role" as any)).toBe("/mon-compte");
+      // @ts-expect-error - Test avec une valeur invalide intentionnellement
+      expect(getDefaultRedirect("unknown_role")).toBe("/mon-compte");
     });
   });
 
@@ -38,9 +39,8 @@ describe("redirects.service", () => {
 
     it("devrait gérer un rôle inconnu", () => {
       // Si un rôle est fourni, même inconnu, on redirige vers la page par défaut
-      expect(getUnauthorizedRedirect("unknown_role" as any)).toBe(
-        "/mon-compte"
-      );
+      // @ts-expect-error - Test avec une valeur invalide intentionnellement
+      expect(getUnauthorizedRedirect("unknown_role")).toBe("/mon-compte");
     });
   });
 
@@ -109,14 +109,14 @@ describe("redirects.service", () => {
 
       it("devrait gérer un rôle inconnu sans intendedPath", () => {
         // Rôle inconnu → redirection par défaut vers /mon-compte
-        expect(getPostLoginRedirect("unknown_role" as any)).toBe("/mon-compte");
+        // @ts-expect-error - Test avec une valeur invalide intentionnellement
+        expect(getPostLoginRedirect("unknown_role")).toBe("/mon-compte");
       });
 
       it("devrait gérer un rôle inconnu avec intendedPath", () => {
         // Même avec un rôle inconnu, si intendedPath est fourni, on l'utilise
-        expect(getPostLoginRedirect("unknown_role" as any, "/test")).toBe(
-          "/test"
-        );
+        // @ts-expect-error - Test avec une valeur invalide intentionnellement
+        expect(getPostLoginRedirect("unknown_role", "/test")).toBe("/test");
       });
     });
   });

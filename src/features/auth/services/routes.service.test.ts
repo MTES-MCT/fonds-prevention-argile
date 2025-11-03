@@ -187,12 +187,10 @@ describe("routes.service", () => {
       });
 
       it("devrait gérer un rôle invalide", () => {
-        expect(canAccessRoute("/administration", "invalid_role" as any)).toBe(
-          false
-        );
-        expect(canAccessRoute("/mon-compte", "invalid_role" as any)).toBe(
-          false
-        );
+        // @ts-expect-error - Test avec une valeur invalide intentionnellement
+        expect(canAccessRoute("/administration", "invalid_role")).toBe(false);
+        // @ts-expect-error - Test avec une valeur invalide intentionnellement
+        expect(canAccessRoute("/mon-compte", "invalid_role")).toBe(false);
       });
     });
   });
