@@ -6,7 +6,7 @@ async function runMigrations() {
 
   try {
     await migrate(db, {
-      migrationsFolder: "./src/lib/database/migrations",
+      migrationsFolder: "./src/shared/database/migrations",
     });
     console.log("Migrations completed successfully !");
     process.exit(0);
