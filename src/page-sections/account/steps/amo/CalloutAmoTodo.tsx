@@ -150,7 +150,7 @@ export default function CalloutAmoTodo({
           </p>
           <p className="fr-callout__text">
             Veuillez contacter le support -
-            contact@fonds-preventions-argile.beta.gouv.fr
+            contact@fonds-prevention-argile.beta.gouv.fr
           </p>
         </div>
       )}
