@@ -6,6 +6,9 @@ import {
 } from "@/features/parcours/dossiers-ds/actions";
 import AdminDashboard from "./components/AdminDashboard";
 
+// Forcer le rendu dynamique pour toujours avoir les données à jour
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage() {
   const env = getServerEnv();
   const demarcheId = parseInt(env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE);
