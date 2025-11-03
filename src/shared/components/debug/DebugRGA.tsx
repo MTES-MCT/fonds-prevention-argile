@@ -1,10 +1,10 @@
 "use client";
 
-import { RGAFormData } from "@/features/simulateur-rga";
+import { PartialRGAFormData } from "@/features/simulateur-rga";
 
 interface DebugRGAProps {
   urlSearchParams: URLSearchParams;
-  rgaData: Partial<RGAFormData>;
+  rgaData: PartialRGAFormData;
   hasSessionData?: boolean;
 }
 

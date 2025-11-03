@@ -32,7 +32,7 @@ export interface RGAFormData {
   rga: {
     assure: "oui" | "non";
     indemnise_rga: "oui" | "non";
-    etat_maison: "saine" | "peu-endommagee" | "endommagee";
+    sinistres: "saine" | "peu-endommagee" | "endommagee";
   };
 
   // Ménage
@@ -47,7 +47,14 @@ export interface RGAFormData {
     proprietaire_occupant_rga?: "oui" | "non";
   };
 }
+
 /**
- * Type pour les données RGA partielles
+ * Type pour les données RGA partielles (récursif)
  */
-export type PartialRGAFormData = Partial<RGAFormData>;
+export type PartialRGAFormData = {
+  logement?: Partial<RGAFormData["logement"]>;
+  taxeFonciere?: Partial<RGAFormData["taxeFonciere"]>;
+  rga?: Partial<RGAFormData["rga"]>;
+  menage?: Partial<RGAFormData["menage"]>;
+  vous?: Partial<RGAFormData["vous"]>;
+};

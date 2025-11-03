@@ -6,7 +6,7 @@ import {
   createEligibiliteDossier,
   canCreateEligibiliteDossier,
 } from "../services/eligibilite.service";
-import { RGAFormData } from "@/features/simulateur-rga";
+import { PartialRGAFormData } from "@/features/simulateur-rga";
 
 interface EligibiliteResult {
   dossierUrl: string;
@@ -19,7 +19,7 @@ interface EligibiliteResult {
  * Crée un dossier d'éligibilité avec les données RGA
  */
 export async function envoyerDossierEligibiliteAvecDonnees(
-  rgaData: Partial<RGAFormData>
+  rgaData: PartialRGAFormData
 ): Promise<ActionResult<EligibiliteResult>> {
   try {
     const session = await getSession();

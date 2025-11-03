@@ -40,8 +40,25 @@ export default function SimulateurClient() {
       setProcessingErrors([]);
 
       try {
+        // LOG 1: Afficher les searchParams bruts
+        console.group(" >> Données reçues de l'iframe");
+        console.log(">> SearchParams string:", searchParamsString);
+
         const urlSearchParams = new URLSearchParams(searchParamsString);
+
+        // 🔍 LOG : Afficher tous les paramètres clé/valeur
+        console.log("\n >> Tous les paramètres:");
+        const allParams: Record<string, string> = {};
+        for (const [key, value] of urlSearchParams.entries()) {
+          allParams[key] = value;
+          console.log(`  ${key} = ${value}`);
+        }
+
+        // 🔍 LOG : Afficher l'objet parsé
         const rgaData = parseRGAParams(urlSearchParams);
+        console.log("\n >> Données après parsing:");
+        console.log(JSON.stringify(rgaData, null, 2));
+        console.groupEnd();
 
         if (Object.keys(rgaData).length === 0) {
           setProcessingErrors([

@@ -1,6 +1,6 @@
 import type { ActionResult } from "@/shared/types";
 import { Step } from "../domain/value-objects/step";
-import { RGAFormData } from "@/features/simulateur-rga";
+import { PartialRGAFormData } from "@/features/simulateur-rga";
 import { getParcoursComplet } from "./parcours-state.service";
 import {
   mapRGAToDSFormat,
@@ -28,7 +28,7 @@ interface EligibiliteResult {
  */
 export async function createEligibiliteDossier(
   userId: string,
-  rgaData: Partial<RGAFormData>
+  rgaData: PartialRGAFormData
 ): Promise<ActionResult<EligibiliteResult>> {
   try {
     // 1. Valider les données RGA

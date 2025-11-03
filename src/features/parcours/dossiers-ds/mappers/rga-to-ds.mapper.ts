@@ -3,7 +3,7 @@
  * Utilise les constantes centralisées pour le mapping
  */
 
-import { RGAFormData } from "@/features/simulateur-rga";
+import { PartialRGAFormData } from "@/features/simulateur-rga";
 import { PrefillData } from "../adapters/rest";
 import { getMappableFields, getValueByPath } from "../utils";
 import { DSField } from "../domain";
@@ -12,7 +12,7 @@ import { DSField } from "../domain";
  * Mappe les données RGA vers le format de préremplissage DS
  * Utilise les constantes centralisées pour le mapping
  */
-export function mapRGAToDSFormat(rgaData: Partial<RGAFormData>): PrefillData {
+export function mapRGAToDSFormat(rgaData: PartialRGAFormData): PrefillData {
   const prefillData: PrefillData = {};
 
   // Récupérer uniquement les champs qui ont un mapping RGA
@@ -73,7 +73,7 @@ export function mapRGAToDSFormat(rgaData: Partial<RGAFormData>): PrefillData {
 /**
  * Valide que toutes les données requises sont présentes
  */
-export function validateRGADataForDS(rgaData: Partial<RGAFormData>): {
+export function validateRGADataForDS(rgaData: PartialRGAFormData): {
   isValid: boolean;
   errors: string[];
   warnings: string[];
