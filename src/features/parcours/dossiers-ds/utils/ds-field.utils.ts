@@ -1,6 +1,6 @@
 import type { DSField } from "../domain/types/ds-field.types";
 import { DSSection } from "../domain/value-objects/ds-section.enum";
-import { DS_FIELDS } from "../domain/value-objects/ds-fields-eligibilite";
+import { DS_FIELDS_ELIGIBILITE } from "../domain/value-objects/ds-fields-eligibilite";
 
 /**
  * Utilitaires pour manipuler les champs DS
@@ -10,7 +10,9 @@ import { DS_FIELDS } from "../domain/value-objects/ds-fields-eligibilite";
  * Récupère les champs par section
  */
 export function getFieldsBySection(section: DSSection): DSField[] {
-  return Object.values(DS_FIELDS).filter((field) => field.section === section);
+  return Object.values(DS_FIELDS_ELIGIBILITE).filter(
+    (field) => field.section === section
+  );
 }
 
 /**
@@ -25,7 +27,10 @@ export function getFieldIdsBySection(section: DSSection): string[] {
  */
 export function getFieldLabelsMap(): Record<string, string> {
   return Object.fromEntries(
-    Object.entries(DS_FIELDS).map(([id, field]) => [id, field.label])
+    Object.entries(DS_FIELDS_ELIGIBILITE).map(([id, field]) => [
+      id,
+      field.label,
+    ])
   );
 }
 
@@ -46,7 +51,7 @@ export function getSectionsWithFields(): Record<string, string[]> {
  * Récupère uniquement les champs mappables depuis RGA
  */
 export function getMappableFields(): DSField[] {
-  return Object.values(DS_FIELDS).filter(
+  return Object.values(DS_FIELDS_ELIGIBILITE).filter(
     (field) => field.rgaPath !== undefined
   );
 }

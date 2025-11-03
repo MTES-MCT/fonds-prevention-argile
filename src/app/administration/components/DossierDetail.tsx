@@ -5,7 +5,10 @@ import {
   Champ,
   Dossier,
 } from "@/features/parcours/dossiers-ds/adapters/graphql";
-import { DS_FIELDS, DSSection } from "@/features/parcours/dossiers-ds/domain";
+import {
+  DS_FIELDS_ELIGIBILITE,
+  DSSection,
+} from "@/features/parcours/dossiers-ds/domain";
 import {
   getFieldLabelsMap,
   getSectionsWithFields,
@@ -141,7 +144,7 @@ export default function DossierDetail({
 
             // Déterminer si cette section contient des champs mappables
             const hasMappableFields = fieldIds.some(
-              (fieldId) => DS_FIELDS[fieldId]?.rgaPath
+              (fieldId) => DS_FIELDS_ELIGIBILITE[fieldId]?.rgaPath
             );
 
             return (
@@ -165,7 +168,7 @@ export default function DossierDetail({
                     <table className="fr-table fr-table--sm">
                       <tbody>
                         {sectionChamps.map((champ) => {
-                          const field = DS_FIELDS[champ.id];
+                          const field = DS_FIELDS_ELIGIBILITE[champ.id];
                           const hasRgaMapping = field?.rgaPath !== undefined;
 
                           return (
@@ -198,7 +201,9 @@ export default function DossierDetail({
           {/* Afficher les champs non renseignés qui auraient pu être mappés */}
           {dossier.champs &&
             (() => {
-              const missingMappableFields = Object.values(DS_FIELDS).filter(
+              const missingMappableFields = Object.values(
+                DS_FIELDS_ELIGIBILITE
+              ).filter(
                 (field) =>
                   field.rgaPath &&
                   !dossier.champs?.some((champ) => champ.id === field.id)

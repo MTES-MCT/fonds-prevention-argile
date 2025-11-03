@@ -298,8 +298,3 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     type: DSFieldType.CHECKBOX,
   },
 };
-
-/**
- * Alias pour compatibilité (si utilisé ailleurs dans le code)
- */
-export const DS_FIELDS = DS_FIELDS_ELIGIBILITE;
