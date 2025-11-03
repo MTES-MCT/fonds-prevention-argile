@@ -10,6 +10,7 @@ import {
   DemarcheDetailed,
   DossiersConnection,
 } from "@/features/parcours/dossiers-ds/adapters/graphql";
+import StatistiquesPanel from "./StatistiquesPanel";
 
 interface AdminDashboardProps {
   demarche: DemarcheDetailed;
@@ -17,16 +18,26 @@ interface AdminDashboardProps {
   schema: DemarcheDetailed | null;
 }
 
-type TabId = "early-access" | "demarche-info" | "dossiers" | "amo";
+type TabId =
+  | "statistiques"
+  | "early-access"
+  | "demarche-info"
+  | "dossiers"
+  | "amo";
 
 export default function AdminDashboard({
   demarche,
   dossiersConnection,
   schema,
 }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("early-access");
+  const [activeTab, setActiveTab] = useState<TabId>("statistiques");
 
   const tabs = [
+    {
+      id: "statistiques" as TabId,
+      label: "Statistiques",
+      icon: "fr-icon-bar-chart-box-line",
+    },
     {
       id: "early-access" as TabId,
       label: "Accès anticipés",
@@ -76,6 +87,17 @@ export default function AdminDashboard({
             </li>
           ))}
         </ul>
+
+        {/* Panel Statistiques */}
+        <div
+          id="panel-statistiques"
+          className={`fr-tabs__panel ${activeTab === "statistiques" ? "fr-tabs__panel--selected" : ""}`}
+          role="tabpanel"
+          aria-labelledby="tab-statistiques"
+          tabIndex={0}
+        >
+          <StatistiquesPanel />
+        </div>
 
         {/* Panel Accès anticipés */}
         <div
