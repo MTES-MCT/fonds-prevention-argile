@@ -99,6 +99,8 @@ const serverSchema = z.object({
 
   // Clés API Matomo pour le tracking
   MATOMO_API_TOKEN: z.string().min(1),
+  MATOMO_MES_AIDES_RENO_SITE_ID: z.string().min(1),
+  MATOMO_MES_AIDES_RENO_FUNNEL_ID: z.string().min(1),
   MATOMO_MES_AIDES_RENO_API_TOKEN: z.string().min(1),
 
   // Clé API Brevo pour l'envoi d'emails + configuration de l'expéditeur
