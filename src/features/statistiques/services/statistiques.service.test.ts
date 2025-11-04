@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { getStatistiques } from "./statistiques.service";
 import { db } from "@/shared/database/client";
 import * as matomoService from "./matomo.service";
+import * as matomoFunnelService from "./matomo-funnel.service";
 
 // Mock du client DB
 vi.mock("@/shared/database/client", () => ({
@@ -13,6 +14,11 @@ vi.mock("@/shared/database/client", () => ({
 // Mock du service Matomo
 vi.mock("./matomo.service", () => ({
   getMatomoStatistiques: vi.fn(),
+}));
+
+// Mock du service Matomo Funnel
+vi.mock("./matomo-funnel.service", () => ({
+  getFunnelSimulateurRGA: vi.fn(),
 }));
 
 // Helper pour mocker les chaînes Drizzle simples (select -> from)
@@ -50,10 +56,37 @@ describe("StatistiquesService", () => {
         { date: "2025-01-02", visites: 60 },
       ],
     });
+
+    // Mock par défaut pour le Funnel
+    vi.mocked(matomoFunnelService.getFunnelSimulateurRGA).mockResolvedValue({
+      etapes: [
+        {
+          nom: "Étape 1",
+          position: 1,
+          visiteurs: 100,
+          conversions: 80,
+          tauxConversion: 80,
+          abandons: 20,
+          tauxAbandon: 20,
+        },
+        {
+          nom: "Étape 2",
+          position: 2,
+          visiteurs: 80,
+          conversions: 60,
+          tauxConversion: 75,
+          abandons: 20,
+          tauxAbandon: 25,
+        },
+      ],
+      visiteursInitiaux: 100,
+      conversionsFinales: 60,
+      tauxConversionGlobal: 60,
+    });
   });
 
   describe("getStatistiques", () => {
-    it("devrait retourner toutes les statistiques DB + Matomo avec des valeurs correctes", async () => {
+    it("devrait retourner toutes les statistiques DB + Matomo + Funnel avec des valeurs correctes", async () => {
       // Arrange - Mock des 6 requêtes DB dans l'ordre
       vi.mocked(db.select)
         // 1. getNombreComptesCreés (sans where)
@@ -87,6 +120,32 @@ describe("StatistiquesService", () => {
           { date: "2025-01-01", visites: 50 },
           { date: "2025-01-02", visites: 60 },
         ],
+        // Stats Funnel
+        funnelSimulateurRGA: {
+          etapes: [
+            {
+              nom: "Étape 1",
+              position: 1,
+              visiteurs: 100,
+              conversions: 80,
+              tauxConversion: 80,
+              abandons: 20,
+              tauxAbandon: 20,
+            },
+            {
+              nom: "Étape 2",
+              position: 2,
+              visiteurs: 80,
+              conversions: 60,
+              tauxConversion: 75,
+              abandons: 20,
+              tauxAbandon: 25,
+            },
+          ],
+          visiteursInitiaux: 100,
+          conversionsFinales: 60,
+          tauxConversionGlobal: 60,
+        },
       });
     });
 
@@ -106,6 +165,14 @@ describe("StatistiquesService", () => {
         visitesParJour: [],
       });
 
+      // Mock Funnel vide
+      vi.mocked(matomoFunnelService.getFunnelSimulateurRGA).mockResolvedValue({
+        etapes: [],
+        visiteursInitiaux: 0,
+        conversionsFinales: 0,
+        tauxConversionGlobal: 0,
+      });
+
       // Act
       const stats = await getStatistiques();
 
@@ -119,6 +186,12 @@ describe("StatistiquesService", () => {
         nombreDossiersDSEnvoyés: 0,
         nombreVisitesTotales: 0,
         visitesParJour: [],
+        funnelSimulateurRGA: {
+          etapes: [],
+          visiteursInitiaux: 0,
+          conversionsFinales: 0,
+          tauxConversionGlobal: 0,
+        },
       });
     });
 
@@ -149,10 +222,36 @@ describe("StatistiquesService", () => {
           { date: "2025-01-01", visites: 50 },
           { date: "2025-01-02", visites: 60 },
         ],
+        // Stats Funnel du mock par défaut
+        funnelSimulateurRGA: {
+          etapes: [
+            {
+              nom: "Étape 1",
+              position: 1,
+              visiteurs: 100,
+              conversions: 80,
+              tauxConversion: 80,
+              abandons: 20,
+              tauxAbandon: 20,
+            },
+            {
+              nom: "Étape 2",
+              position: 2,
+              visiteurs: 80,
+              conversions: 60,
+              tauxConversion: 75,
+              abandons: 20,
+              tauxAbandon: 25,
+            },
+          ],
+          visiteursInitiaux: 100,
+          conversionsFinales: 60,
+          tauxConversionGlobal: 60,
+        },
       });
     });
 
-    it("devrait appeler db.select 6 fois et getMatomoStatistiques 1 fois", async () => {
+    it("devrait appeler db.select 6 fois, getMatomoStatistiques 1 fois et getFunnelSimulateurRGA 1 fois", async () => {
       // Arrange
       vi.mocked(db.select)
         .mockReturnValueOnce(mockDbSelect([{ count: 10 }]))
@@ -168,6 +267,9 @@ describe("StatistiquesService", () => {
       // Assert
       expect(db.select).toHaveBeenCalledTimes(6);
       expect(matomoService.getMatomoStatistiques).toHaveBeenCalledTimes(1);
+      expect(matomoFunnelService.getFunnelSimulateurRGA).toHaveBeenCalledTimes(
+        1
+      );
     });
 
     it("devrait gérer une erreur Matomo et continuer avec les stats DB", async () => {
@@ -192,6 +294,7 @@ describe("StatistiquesService", () => {
       // Assert - Les stats DB doivent être présentes même si Matomo échoue
       expect(stats.nombreComptesCreés).toBe(150);
       expect(stats.nombreVisitesTotales).toBe(0);
+      expect(stats.funnelSimulateurRGA).toBeDefined();
     });
   });
 });

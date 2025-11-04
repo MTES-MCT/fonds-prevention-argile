@@ -97,8 +97,11 @@ const serverSchema = z.object({
   DEMARCHES_SIMPLIFIEES_ID_FACTURES: z.string().min(1),
   DEMARCHES_SIMPLIFIEES_NOM_FACTURES: z.string().min(1),
 
-  // Clé API Matomo pour le tracking
+  // Clés API Matomo pour le tracking
   MATOMO_API_TOKEN: z.string().min(1),
+  MATOMO_MES_AIDES_RENO_SITE_ID: z.string().min(1),
+  MATOMO_MES_AIDES_RENO_FUNNEL_ID: z.string().min(1),
+  MATOMO_MES_AIDES_RENO_API_TOKEN: z.string().min(1),
 
   // Clé API Brevo pour l'envoi d'emails + configuration de l'expéditeur
   BREVO_API_KEY: z.string(),

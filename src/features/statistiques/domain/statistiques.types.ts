@@ -1,3 +1,5 @@
+import { FunnelStatistiques } from "./matomo-funnels.types";
+
 /**
  * Statistiques globales de l'application
  */
@@ -43,6 +45,13 @@ export interface Statistiques {
    * Nombre de visites par jour (30 derniers jours)
    */
   visitesParJour: VisiteParJour[];
+
+  // === STATISTIQUES FUNNEL (Mes Aides Réno) ===
+
+  /**
+   * Statistiques du funnel "Complétude du simulateur RGA"
+   */
+  funnelSimulateurRGA: FunnelStatistiques;
 }
 
 /**
