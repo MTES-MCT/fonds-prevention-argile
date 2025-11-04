@@ -1,0 +1,32 @@
+# Tests
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__/
+__mocks__/
+coverage/
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Development
+.vscode/
+.idea/
+.git/
+.github/
+.husky/
+
+# Cache et temporaires
+.turbo/
+.next/cache/
+.eslintcache
+*.log
+
+# Configuration de développement
+vitest.config.ts
+.prettierrc
+.prettierignore
+tsconfig.tsbuildinfo
