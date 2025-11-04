@@ -22,8 +22,10 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "**/*.d.ts",
     ".next/types/**/*.ts",
-    "src/features/parcours/core/domain/types"
+    "src/features/parcours/core/domain/types",
+    "src/shared/types/**/*.d.ts"
   ],
   "exclude": ["node_modules"]
 }

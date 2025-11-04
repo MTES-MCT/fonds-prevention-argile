@@ -36,6 +36,7 @@
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",
     "@gouvfr/dsfr": "^1.14.2",
+    "@gouvfr/dsfr-chart": "^2.0.4",
     "@react-email/components": "^0.5.7",
     "@react-email/render": "^1.4.0",
     "@sentry/nextjs": "^9.46.0",
