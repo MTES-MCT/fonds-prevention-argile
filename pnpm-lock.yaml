@@ -14,6 +14,9 @@ importers:
       '@gouvfr/dsfr':
         specifier: ^1.14.2
         version: 1.14.2
+      '@gouvfr/dsfr-chart':
+        specifier: ^2.0.4
+        version: 2.0.4
       '@react-email/components':
         specifier: ^0.5.7
         version: 0.5.7(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -898,6 +901,9 @@ packages:
 
   '@getbrevo/brevo@3.0.1':
     resolution: {integrity: sha512-BS5hlgb9qPHhXqjV+VbEOciygnsEVZV8BgoX+JYpD+I+R9u3U05y/euqdmk8nATfcEUCUlQq+aWdWOWTF4cEjQ==}
+
+  '@gouvfr/dsfr-chart@2.0.4':
+    resolution: {integrity: sha512-/JoW6R7ystExxvuLvHacR0ZWcL1PpDkUyG/niF8jgqRaksWgb31EpJGQjmgaHR29nrANdyvoRb1DEQAL00XZ1A==}
 
   '@gouvfr/dsfr@1.14.2':
     resolution: {integrity: sha512-EJ/ZZMLmSN4KISuuXp0X0lGf+gKVqYATyqgcM5IPhMQAkJ8s5pjzvthjv+Hu6zYk4jwf2NRVt+jQz7JRpw1yiA==}
@@ -5567,6 +5573,8 @@ snapshots:
     transitivePeerDependencies:
       - debug
       - supports-color
+
+  '@gouvfr/dsfr-chart@2.0.4': {}
 
   '@gouvfr/dsfr@1.14.2': {}
 

@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getStatistiquesAction } from "@/features/statistiques";
 import type { Statistiques } from "@/features/statistiques";
+import { useDsfrChart } from "@/shared/hooks/useDsfrChart";
 
 export default function StatistiquesPanel() {
   const [stats, setStats] = useState<Statistiques | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Charger le composant LineChart
+  const chartLoaded = useDsfrChart("LineChart");
+
+  // Charger les statistiques au montage du composant
   useEffect(() => {
     async function loadStats() {
       setLoading(true);
@@ -27,6 +32,44 @@ export default function StatistiquesPanel() {
 
     loadStats();
   }, []);
+
+  // Masquer les tooltips du graphique après son chargement
+  useEffect(() => {
+    if (chartLoaded) {
+      setTimeout(() => {
+        const lineChart = document.querySelector("line-chart");
+        if (lineChart?.shadowRoot) {
+          const style = document.createElement("style");
+          style.textContent = `.tooltip { display: none !important; }`;
+          lineChart.shadowRoot.appendChild(style);
+        }
+      }, 200);
+    }
+  }, [chartLoaded]);
+
+  // Mémoriser les données triées
+  const visitesTriees = useMemo(() => {
+    if (!stats) return [];
+    return [...stats.visitesParJour].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+  }, [stats]);
+
+  // Mémoriser les données formatées pour le graphique
+  const chartData = useMemo(() => {
+    const datesFormatees = visitesTriees.map((visite) =>
+      new Date(visite.date).toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+      })
+    );
+    const visitesValues = visitesTriees.map((visite) => visite.visites);
+
+    return {
+      xData: `[[${datesFormatees.map((d) => `"${d}"`).join(", ")}]]`,
+      yData: `[[${visitesValues.join(", ")}]]`,
+    };
+  }, [visitesTriees]);
 
   if (loading) {
     return (
@@ -83,24 +126,6 @@ export default function StatistiquesPanel() {
     },
   ];
 
-  const statistiquesVisites = [
-    {
-      title: "Total du nb de visites (30j)",
-      value: stats.nombreVisitesTotales,
-      icon: "fr-icon-eye-line",
-    },
-    {
-      title: "Funnel simulateur (à implémenter)",
-      value: 0, // À implémenter
-      icon: "fr-icon-france-line",
-    },
-  ];
-
-  // Trier les visites par date (plus récente en premier)
-  const visitesTriees = [...stats.visitesParJour].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-
   return (
     <div>
       <h2 className="fr-h3 fr-mb-3w">Statistiques globales</h2>
@@ -133,66 +158,21 @@ export default function StatistiquesPanel() {
       </div>
 
       <h2 className="fr-h3 fr-mt-3w fr-mb-3w">Statistiques des visites</h2>
-      {/* Tuiles des statistiques de visites */}
-      <div className="fr-grid-row fr-grid-row--gutters">
-        {statistiquesVisites.map((stat) => (
-          <div key={stat.title} className="fr-col-12 fr-col-md-6 fr-col-lg-4">
-            <div className="fr-tile fr-tile--sm">
-              <div className="fr-tile__body">
-                <div className="fr-tile__content">
-                  <h3 className="fr-tile__title">{stat.title}</h3>
-                  <p className="fr-tile__detail fr-text--lg fr-text--bold">
-                    {stat.value.toLocaleString("fr-FR")}
-                  </p>
-                </div>
-              </div>
-              <div className="fr-tile__header">
-                <div className="fr-tile__pictogram">
-                  <span
-                    className={`${stat.icon} fr-text--xl`}
-                    aria-hidden="true"
-                    style={{ fontSize: "3rem" }}
-                  ></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Tableau des visites par jour */}
-      {visitesTriees.length > 0 && (
+      {/* Graphique des visites */}
+      {chartLoaded && visitesTriees.length > 0 && (
         <div className="fr-mt-6w">
-          <h3 className="fr-h4 fr-mb-2w">Détail des visites par jour</h3>
-          <div className="fr-table fr-table--bordered">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Date</th>
-                  <th scope="col" className="fr-text--right">
-                    Nombre de visites
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {visitesTriees.map((visite) => (
-                  <tr key={visite.date}>
-                    <td>
-                      {new Date(visite.date).toLocaleDateString("fr-FR", {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td className="fr-text--right fr-text--bold">
-                      {visite?.visites?.toLocaleString("fr-FR")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <h3 className="fr-h4 fr-mb-2w">
+            Évolution des visites depuis l'ouverture (16/10/2025)
+          </h3>
+          <line-chart
+            key="visites-chart"
+            x={chartData.xData}
+            y={chartData.yData}
+            selected-palette="default"
+            unit-tooltip="visites"
+            name='["Visites du site depuis le début (16/10/2025)"]'
+          />
         </div>
       )}
     </div>
