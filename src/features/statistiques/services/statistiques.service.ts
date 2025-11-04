@@ -7,20 +7,23 @@ import {
 } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 import { getMatomoStatistiques } from "./matomo.service";
+import { getFunnelSimulateurRGA } from "./matomo-funnel.service";
 import type { Statistiques } from "../domain/statistiques.types";
 
 /**
- * Récupère toutes les statistiques globales (DB + Matomo)
+ * Récupère toutes les statistiques globales (DB + Matomo + Funnel)
  */
 export async function getStatistiques(): Promise<Statistiques> {
-  const [dbStats, matomoStats] = await Promise.all([
+  const [dbStats, matomoStats, funnelStats] = await Promise.all([
     getStatistiquesDB(),
     getMatomoStatistiques(),
+    getFunnelSimulateurRGA(),
   ]);
 
   return {
     ...dbStats,
     ...matomoStats,
+    funnelSimulateurRGA: funnelStats,
   };
 }
 

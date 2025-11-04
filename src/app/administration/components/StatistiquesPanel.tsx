@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { getStatistiquesAction } from "@/features/statistiques";
 import type { Statistiques } from "@/features/statistiques";
 import { useDsfrChart } from "@/shared/hooks/useDsfrChart";
+import StatistiquesFunnel from "./StatistiquesFunnel";
 
 export default function StatistiquesPanel() {
   const [stats, setStats] = useState<Statistiques | null>(null);
@@ -95,6 +96,11 @@ export default function StatistiquesPanel() {
 
   const statistiquesGlobales = [
     {
+      title: "Nombre de visites",
+      value: stats.nombreVisitesTotales,
+      icon: "fr-icon-eye-line",
+    },
+    {
       title: "Comptes créés",
       value: stats.nombreComptesCreés,
       icon: "fr-icon-user-line",
@@ -157,7 +163,7 @@ export default function StatistiquesPanel() {
         ))}
       </div>
 
-      <h2 className="fr-h3 fr-mt-3w fr-mb-3w">Statistiques des visites</h2>
+      <h2 className="fr-h3 fr-mt-6w fr-mb-3w">Statistiques des visites</h2>
 
       {/* Graphique des visites */}
       {chartLoaded && visitesTriees.length > 0 && (
@@ -175,6 +181,13 @@ export default function StatistiquesPanel() {
           />
         </div>
       )}
+
+      {/* Statistiques du funnel Mes Aides Réno */}
+      <h3 className="fr-h3 fr-mt-6w fr-mb-3w">
+        Funnel : Complétude du simulateur RGA (Mes Aides Réno) sur les 7
+        derniers jours
+      </h3>
+      <StatistiquesFunnel funnel={stats.funnelSimulateurRGA} />
     </div>
   );
 }
