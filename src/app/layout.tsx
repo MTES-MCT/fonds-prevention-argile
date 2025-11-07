@@ -25,16 +25,8 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css"
 // Import des styles custom
 import "../styles/globals.css";
 import "../styles/loading.css";
-import {
-  Crisp,
-  DsfrProvider,
-  Footer,
-  Header,
-  Matomo,
-  PostLogoutRedirect,
-} from "@/shared/components";
-import { AuthProvider } from "@/features/auth/client";
-import { RGAProvider } from "@/features/simulateur-rga";
+import { DsfrProvider } from "@/shared/components";
+import { ConditionalLayout } from "@/shared/components/ConditionalLayout/ConditionalLayout";
 
 export const metadata: Metadata = {
   title: "Fonds prévention argile",
@@ -107,17 +99,8 @@ export default function RootLayout({
         />
       </head>
       <body className="flex flex-col min-h-screen">
-        <PostLogoutRedirect />
         <DsfrProvider>
-          <AuthProvider>
-            <Matomo />
-            <Crisp />
-            <Header />
-            <RGAProvider>
-              <main className="flex-1">{children}</main>
-            </RGAProvider>
-            <Footer />
-          </AuthProvider>
+          <ConditionalLayout>{children}</ConditionalLayout>
         </DsfrProvider>
       </body>
     </html>

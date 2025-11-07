@@ -16,7 +16,13 @@ type ProcessingState = "idle" | "processing" | "success" | "error";
 
 const REDIRECT_DELAY_MS = 1000;
 
-export default function SimulateurClient() {
+interface SimulateurClientProps {
+  embedMode?: boolean;
+}
+
+export default function SimulateurClient({
+  embedMode = false,
+}: SimulateurClientProps) {
   const router = useRouter();
   const { saveRGA, validateRGAData } = useRGAContext();
   const isProcessingRef = useRef(false);
@@ -40,25 +46,14 @@ export default function SimulateurClient() {
       setProcessingErrors([]);
 
       try {
-        // LOG 1: Afficher les searchParams bruts
-        console.group(" >> Données reçues de l'iframe");
-        console.log(">> SearchParams string:", searchParamsString);
-
         const urlSearchParams = new URLSearchParams(searchParamsString);
 
-        // 🔍 LOG : Afficher tous les paramètres clé/valeur
-        console.log("\n >> Tous les paramètres:");
         const allParams: Record<string, string> = {};
         for (const [key, value] of urlSearchParams.entries()) {
           allParams[key] = value;
-          console.log(`  ${key} = ${value}`);
         }
 
-        // 🔍 LOG : Afficher l'objet parsé
         const rgaData = parseRGAParams(urlSearchParams);
-        console.log("\n >> Données après parsing:");
-        console.log(JSON.stringify(rgaData, null, 2));
-        console.groupEnd();
 
         if (Object.keys(rgaData).length === 0) {
           setProcessingErrors([
@@ -86,7 +81,16 @@ export default function SimulateurClient() {
         isProcessingRef.current = true;
 
         setTimeout(() => {
-          router.push("/connexion");
+          // En mode embed : ouvrir dans un nouvel onglet
+          // En mode normal : redirection classique
+          if (embedMode) {
+            window.open("/connexion", "_blank");
+            // Réinitialiser l'état après ouverture
+            setProcessingState("idle");
+            isProcessingRef.current = false;
+          } else {
+            router.push("/connexion");
+          }
         }, REDIRECT_DELAY_MS);
       } catch (error) {
         console.error("Erreur lors du traitement des données RGA:", error);
@@ -107,7 +111,7 @@ export default function SimulateurClient() {
     return () => {
       window.removeEventListener("message", handleIframeMessage);
     };
-  }, [IFRAME_ALLOWED_ORIGINS, router, saveRGA, validateRGAData]);
+  }, [IFRAME_ALLOWED_ORIGINS, router, saveRGA, validateRGAData, embedMode]);
 
   const renderProcessingOverlay = () => {
     if (processingState === "idle") return null;
@@ -147,7 +151,9 @@ export default function SimulateurClient() {
                 <h2 className="fr-h3">Traitement en cours...</h2>
                 <p>Veuillez patienter pendant que nous traitons vos données.</p>
                 <p className="fr-text--sm fr-mt-1w">
-                  Redirection automatique vers la connexion...
+                  {embedMode
+                    ? "Ouverture de la page de connexion dans un nouvel onglet..."
+                    : "Redirection automatique vers la connexion..."}
                 </p>
                 <div className="fr-mt-2w" style={{ textAlign: "center" }}>
                   <span className="fr-loader" aria-label="Chargement"></span>
@@ -159,12 +165,18 @@ export default function SimulateurClient() {
               <div>
                 <h2 className="fr-h3">Données enregistrées</h2>
                 <p>Vos données ont été enregistrées avec succès.</p>
-                <button
-                  className="fr-btn fr-btn--primary fr-mt-2w"
-                  onClick={() => router.push("/connexion")}
-                >
-                  Continuer
-                </button>
+                {embedMode ? (
+                  <p className="fr-text--sm fr-mt-2w">
+                    La page de connexion s'est ouverte dans un nouvel onglet.
+                  </p>
+                ) : (
+                  <button
+                    className="fr-btn fr-btn--primary fr-mt-2w"
+                    onClick={() => router.push("/connexion")}
+                  >
+                    Continuer
+                  </button>
+                )}
               </div>
             )}
 
@@ -199,7 +211,51 @@ export default function SimulateurClient() {
     );
   };
 
-  // Affichage normal du simulateur
+  // En mode embed : layout simplifié
+  if (embedMode) {
+    return (
+      <>
+        {renderProcessingOverlay()}
+
+        <div className="flex flex-col h-full">
+          {iframeUrl ? (
+            <iframe
+              src={iframeUrl}
+              title="Simulateur Mesaides Rénov'"
+              className="w-full border-0 flex-1"
+              style={{
+                minHeight: "600px",
+              }}
+              referrerPolicy="no-referrer-when-downgrade"
+              aria-label="Simulateur d'éligibilité aux aides"
+            />
+          ) : (
+            <div className="fr-alert fr-alert--error fr-m-4w">
+              <p>
+                <strong>Erreur de configuration :</strong> L'URL du simulateur
+                n'est pas définie. Variable d'environnement
+                NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL manquante.
+              </p>
+            </div>
+          )}
+
+          <div className="fr-container fr-py-2w">
+            <div className="fr-callout">
+              <h3 className="fr-callout__title">Besoin d'aide ?</h3>
+              <p className="fr-callout__text">
+                Si vous rencontrez des difficultés avec le simulateur, vous
+                pouvez nous contacter par mail à
+                contact@fonds-prevention-argile.beta.gouv.fr ou via le tchat en
+                bas à droite.
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Mode normal : affichage complet avec breadcrumb, titre, etc.
   return (
     <>
       {renderProcessingOverlay()}
