@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Documentation - Intégration iframe | Fonds prévention argile",
@@ -47,14 +48,14 @@ export default function DocumentationIntegrationPage() {
         <div className="fr-collapse" id="breadcrumb-integration">
           <ol className="fr-breadcrumb__list">
             <li>
-              <a className="fr-breadcrumb__link" href="/">
+              <Link className="fr-breadcrumb__link" href="/">
                 Accueil
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="fr-breadcrumb__link" href="#">
+              <Link className="fr-breadcrumb__link" href="#">
                 Partenaires
-              </a>
+              </Link>
             </li>
             <li>
               <a className="fr-breadcrumb__link" aria-current="page">
@@ -281,9 +282,9 @@ export default function DocumentationIntegrationPage() {
 
       {/* Retour à l'accueil */}
       <div className="fr-mt-8w fr-mb-6w">
-        <a className="fr-btn fr-btn--secondary" href="/">
+        <Link className="fr-btn fr-btn--secondary" href="/">
           ← Retour à l'accueil
-        </a>
+        </Link>
       </div>
     </div>
   );
