@@ -1,8 +1,8 @@
 import { mergeDeep } from "@/shared/utils/object.utils";
 import { PartialRGAFormData } from "../domain/entities";
 
-const RGA_SESSION_KEY = "fonds-argile-rga-data";
-const MAX_AGE = 24 * 60 * 60 * 1000; // 24 heures
+const RGA_STORAGE_KEY = "fonds-argile-rga-data";
+const MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 jours
 
 interface StoredRGAData {
   data: PartialRGAFormData;
@@ -24,7 +24,7 @@ export const storageAdapter = {
         timestamp: Date.now(),
         version: "1.0", // Todo : gérer les versions si besoin
       };
-      sessionStorage.setItem(RGA_SESSION_KEY, JSON.stringify(payload));
+      localStorage.setItem(RGA_STORAGE_KEY, JSON.stringify(payload));
       return true;
     } catch (error) {
       console.error("Erreur sauvegarde RGA:", error);
@@ -37,7 +37,7 @@ export const storageAdapter = {
    */
   get(): PartialRGAFormData | null {
     try {
-      const stored = sessionStorage.getItem(RGA_SESSION_KEY);
+      const stored = localStorage.getItem(RGA_STORAGE_KEY);
       if (!stored) return null;
 
       const parsed: StoredRGAData = JSON.parse(stored);
@@ -68,7 +68,7 @@ export const storageAdapter = {
    */
   clear(): void {
     try {
-      sessionStorage.removeItem(RGA_SESSION_KEY);
+      localStorage.removeItem(RGA_STORAGE_KEY);
     } catch (error) {
       console.error("Erreur nettoyage RGA:", error);
     }
@@ -79,7 +79,7 @@ export const storageAdapter = {
    */
   exists(): boolean {
     try {
-      return sessionStorage.getItem(RGA_SESSION_KEY) !== null;
+      return localStorage.getItem(RGA_STORAGE_KEY) !== null;
     } catch (error) {
       console.error("Erreur vérification RGA:", error);
       return false;
