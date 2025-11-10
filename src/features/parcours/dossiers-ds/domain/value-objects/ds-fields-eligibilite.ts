@@ -124,7 +124,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     type: DSFieldType.COMMUNE,
     rgaPath: "logement.commune",
     transformer: (value: unknown, fullData?: Record<string, unknown>) => {
-      const codeInsee = typeof value === "string" ? value : "";
+      const codeInsee = String(value || "");
       const logement = fullData?.logement as { adresse?: string } | undefined;
       const adresse = logement?.adresse;
       const codePostalMatch =

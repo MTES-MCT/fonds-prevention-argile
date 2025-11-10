@@ -11,6 +11,15 @@ import { getAmoChoisie } from "../../amo/actions";
 import { prefillClient } from "../../dossiers-ds/adapters";
 import { createDossierForCurrentStep } from "../../dossiers-ds/services";
 import { parcoursRepo } from "@/shared/database";
+import { cleanupRGADataAfterDS } from "@/features/simulateur-rga/services/cleanup.service";
+
+const DEBUG_ELIGIBILITE = process.env.DEBUG_ELIGIBILITE === "true";
+
+function debugLog(...args: unknown[]) {
+  if (DEBUG_ELIGIBILITE) {
+    console.log(...args);
+  }
+}
 
 /**
  * Service de gestion de l'éligibilité
@@ -31,8 +40,21 @@ export async function createEligibiliteDossier(
   rgaData: PartialRGAFormData
 ): Promise<ActionResult<EligibiliteResult>> {
   try {
+    debugLog("=== DÉBUT CRÉATION DOSSIER ÉLIGIBILITÉ ===");
+    debugLog("User ID:", userId);
+    debugLog("Données RGA reçues:", JSON.stringify(rgaData, null, 2));
+
     // 1. Valider les données RGA
     const validation = validateRGADataForDS(rgaData);
+
+    debugLog("Validation des données RGA:");
+    debugLog("  Valide:", validation.isValid);
+    if (validation.errors.length > 0) {
+      console.error("  Erreurs:", validation.errors);
+    }
+    if (validation.warnings.length > 0) {
+      console.warn("  Warnings:", validation.warnings);
+    }
 
     if (!validation.isValid) {
       return {
@@ -44,11 +66,23 @@ export async function createEligibiliteDossier(
     // 2. Récupérer le parcours
     const parcoursData = await getParcoursComplet(userId);
     if (!parcoursData) {
+      console.error("Parcours non trouvé pour l'utilisateur");
       return { success: false, error: "Parcours non trouvé" };
     }
 
+    debugLog("Parcours trouvé:", {
+      id: parcoursData.parcours.id,
+      currentStep: parcoursData.parcours.currentStep,
+      status: parcoursData.parcours.status,
+    });
+
     // Vérifier qu'on est bien à l'étape ELIGIBILITE
     if (parcoursData.parcours.currentStep !== Step.ELIGIBILITE) {
+      console.error(
+        "Étape incorrecte:",
+        parcoursData.parcours.currentStep,
+        "!== ELIGIBILITE"
+      );
       return {
         success: false,
         error: "Vous n'êtes pas à l'étape d'éligibilité",
@@ -60,6 +94,7 @@ export async function createEligibiliteDossier(
       parcoursData.parcours.status !== Status.TODO &&
       parcoursData.parcours.status !== Status.EN_INSTRUCTION
     ) {
+      console.error("Statut incorrect:", parcoursData.parcours.status);
       return {
         success: false,
         error: "Un dossier existe déjà pour cette étape",
@@ -67,8 +102,10 @@ export async function createEligibiliteDossier(
     }
 
     // 3. Récupérer l'AMO choisie
+    debugLog("Récupération de l'AMO choisie...");
     const amoResult = await getAmoChoisie();
     if (!amoResult.success || !amoResult.data) {
+      console.error("Aucune AMO sélectionnée");
       return {
         success: false,
         error: "Aucune AMO sélectionnée. Veuillez d'abord choisir une AMO.",
@@ -76,14 +113,19 @@ export async function createEligibiliteDossier(
     }
 
     const amo = amoResult.data;
+    debugLog("AMO choisie:", {
+      nom: amo.nom,
+      siret: amo.siret,
+      email: amo.emails.split(";")[0].trim(),
+    });
 
     // 4. Mapper RGA → DS avec ajout des infos AMO
+    debugLog("Mapping RGA → DS...");
     const prefillData = mapRGAToDSFormat(rgaData);
 
     // Ajouter les informations de l'AMO au prefill
-    // (à adapter selon les champs disponibles dans votre formulaire DS)
-    prefillData.champ_amo_nom = amo.nom;
-    prefillData.champ_amo_siret = amo.siret;
+    prefillData[`champ_Q2hhbXAtNTQxOTQyOQ==`] = amo.siret;
+    prefillData[`champ_Q2hhbXAtNTQxOTQzMg==`] = amo.adresse;
     prefillData.champ_amo_email = amo.emails.split(";")[0].trim();
     if (amo.telephone) {
       prefillData.champ_amo_telephone = amo.telephone;
@@ -92,13 +134,31 @@ export async function createEligibiliteDossier(
       prefillData.champ_amo_adresse = amo.adresse;
     }
 
+    // Logger tous les champs mappés
+    debugLog("Données mappées pour DS (prefill):");
+    debugLog("  Nombre de champs:", Object.keys(prefillData).length);
+    debugLog("  Champs mappés:");
+    Object.entries(prefillData).forEach(([key, value]) => {
+      const valueStr =
+        typeof value === "object" ? JSON.stringify(value) : String(value);
+      debugLog(`    - ${key}: ${valueStr}`);
+    });
+
     // 5. Créer le dossier DS via l'API
+    debugLog("Envoi à Démarches Simplifiées...");
     const createResponse = await prefillClient.createPrefillDossier(
       prefillData,
       Step.ELIGIBILITE
     );
 
+    debugLog("Réponse de DS:", {
+      dossier_url: createResponse.dossier_url,
+      dossier_number: createResponse.dossier_number,
+      dossier_id: createResponse.dossier_id,
+    });
+
     if (!createResponse.dossier_url || !createResponse.dossier_number) {
+      console.error("Réponse DS invalide:", createResponse);
       return {
         success: false,
         error: "Réponse invalide de Démarches Simplifiées",
@@ -107,8 +167,10 @@ export async function createEligibiliteDossier(
 
     // 6. Récupérer l'ID de la démarche
     const demarcheId = prefillClient.getDemarcheId(Step.ELIGIBILITE);
+    debugLog("Démarche ID:", demarcheId);
 
     // 7. Enregistrer dans le parcours
+    debugLog("Enregistrement du dossier en base...");
     const dossierResult = await createDossierForCurrentStep(
       userId,
       parcoursData.parcours.id,
@@ -121,14 +183,32 @@ export async function createEligibiliteDossier(
     );
 
     if (!dossierResult.success) {
+      console.error("Erreur enregistrement dossier:", dossierResult.error);
       return {
         success: false,
         error: "Erreur lors de l'enregistrement du dossier",
       };
     }
 
+    debugLog("Dossier enregistré:", dossierResult.data.dossierId);
+
     // 8. Mettre à jour le statut du parcours à TODO
+    debugLog("Mise à jour du statut du parcours...");
     await parcoursRepo.updateStatus(parcoursData.parcours.id, Status.TODO);
+    debugLog("Statut mis à jour: TODO");
+
+    // 9. Supprimer les données RGA (RGPD)
+    debugLog("Suppression des données RGA après envoi à DS...");
+    const cleanupResult = await cleanupRGADataAfterDS(parcoursData.parcours.id);
+
+    if (!cleanupResult.success) {
+      // On ne bloque pas le processus si le cleanup échoue, on log juste
+      console.warn("Échec du cleanup des données RGA:", cleanupResult.error);
+    } else {
+      debugLog("Données RGA supprimées avec succès");
+    }
+
+    debugLog("=== DOSSIER ÉLIGIBILITÉ CRÉÉ AVEC SUCCÈS ===");
 
     return {
       success: true,
