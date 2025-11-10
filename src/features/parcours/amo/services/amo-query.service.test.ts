@@ -126,8 +126,37 @@ describe("amo-query.service", () => {
     const codeInsee = "75001";
     const codeDepartement = "75";
 
-    const mockUser = {
-      codeInsee,
+    const mockParcoursWithRGA = {
+      id: "parcours-789",
+      rgaSimulationData: {
+        logement: {
+          commune: codeInsee,
+          adresse: "123 rue test",
+          code_region: "11",
+          code_departement: "75",
+          epci: "200054781",
+          commune_nom: "Paris 1er",
+          coordonnees: "48.8566,2.3522",
+          clef_ban: "test_ban",
+          commune_denormandie: false,
+          annee_de_construction: "1990",
+          rnb: "RNB_TEST",
+          niveaux: 2,
+          zone_dexposition: "moyen",
+          type: "maison",
+          mitoyen: true,
+          proprietaire_occupant: true,
+        },
+        taxeFonciere: { commune_eligible: true },
+        rga: {
+          assure: true,
+          indemnise_indemnise_rga: false,
+          sinistres: "saine",
+        },
+        menage: { revenu_rga: 35000, personnes: 4 },
+        vous: { proprietaire_condition: true, proprietaire_occupant_rga: true },
+        simulatedAt: new Date().toISOString(),
+      },
     };
 
     const mockAmo1 = {
@@ -167,8 +196,10 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner les AMO qui couvrent le code INSEE spécifique", async () => {
-      // Mock pour récupérer l'utilisateur
-      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockUser]));
+      // Mock pour récupérer le parcours avec RGA
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelect([mockParcoursWithRGA])
+      );
 
       // Mock pour AMO par code INSEE
       vi.mocked(db.selectDistinct).mockReturnValueOnce(
@@ -185,8 +216,10 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner les AMO qui couvrent le département entier", async () => {
-      // Mock pour récupérer l'utilisateur
-      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockUser]));
+      // Mock pour récupérer le parcours avec RGA
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelect([mockParcoursWithRGA])
+      );
 
       // Mock pour AMO par code INSEE (vide)
       vi.mocked(db.selectDistinct).mockReturnValueOnce(
@@ -202,8 +235,10 @@ describe("amo-query.service", () => {
     });
 
     it("devrait fusionner et dédupliquer les AMO des deux sources", async () => {
-      // Mock pour récupérer l'utilisateur
-      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockUser]));
+      // Mock pour récupérer le parcours avec RGA
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelect([mockParcoursWithRGA])
+      );
 
       // Mock pour AMO par code INSEE
       vi.mocked(db.selectDistinct).mockReturnValueOnce(
@@ -230,8 +265,10 @@ describe("amo-query.service", () => {
     });
 
     it("devrait retourner un tableau vide si aucune AMO ne couvre la zone", async () => {
-      // Mock pour récupérer l'utilisateur
-      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockUser]));
+      // Mock pour récupérer le parcours avec RGA
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelect([mockParcoursWithRGA])
+      );
 
       // Mock pour AMO par code INSEE (vide)
       vi.mocked(db.selectDistinct).mockReturnValueOnce(
@@ -247,28 +284,28 @@ describe("amo-query.service", () => {
     });
 
     it("devrait lancer une erreur si le code INSEE est manquant", async () => {
-      // Mock pour récupérer l'utilisateur avec codeInsee null
       vi.mocked(db.select).mockReturnValueOnce(
-        mockDbSelect([{ codeInsee: null }])
+        mockDbSelect([{ id: "parcours-789", rgaSimulationData: null }])
       );
 
       await expect(getAmosForCodeInsee(userId)).rejects.toThrow(
-        "Code INSEE non renseigné pour cet utilisateur"
+        "Simulation RGA non complétée (code INSEE manquant)"
       );
     });
 
-    it("devrait lancer une erreur si l'utilisateur n'est pas trouvé", async () => {
-      // Mock pour ne pas trouver l'utilisateur
+    it("devrait lancer une erreur si le parcours n'est pas trouvé", async () => {
       vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([]));
 
       await expect(getAmosForCodeInsee(userId)).rejects.toThrow(
-        "Code INSEE non renseigné pour cet utilisateur"
+        "Simulation RGA non complétée (code INSEE manquant)"
       );
     });
 
     it("devrait appeler getCodeDepartementFromCodeInsee avec le bon code INSEE", async () => {
-      // Mock pour récupérer l'utilisateur
-      vi.mocked(db.select).mockReturnValueOnce(mockDbSelect([mockUser]));
+      // Mock pour récupérer le parcours avec RGA
+      vi.mocked(db.select).mockReturnValueOnce(
+        mockDbSelect([mockParcoursWithRGA])
+      );
 
       // Mock pour AMO par code INSEE (vide)
       vi.mocked(db.selectDistinct).mockReturnValueOnce(

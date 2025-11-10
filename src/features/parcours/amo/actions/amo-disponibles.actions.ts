@@ -4,14 +4,10 @@ import { getSession } from "@/features/auth/server";
 import { ROLES } from "@/features/auth/domain/value-objects/constants";
 import type { ActionResult } from "@/shared/types";
 import { Amo } from "../domain/entities";
-import {
-  db,
-  entreprisesAmo,
-  entreprisesAmoCommunes,
-  users,
-} from "@/shared/database";
+import { db, entreprisesAmo, entreprisesAmoCommunes } from "@/shared/database";
 import { eq, like } from "drizzle-orm";
 import { getCodeDepartementFromCodeInsee } from "../utils/amo.utils";
+import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 
 /**
  * Récupère la liste des AMO disponibles pour le code INSEE de l'utilisateur
@@ -26,22 +22,21 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
       return { success: false, error: "Non connecté" };
     }
 
-    // Récupérer le code INSEE de l'utilisateur
-    const [user] = await db
-      .select({ codeInsee: users.codeInsee })
-      .from(users)
-      .where(eq(users.id, session.userId))
-      .limit(1);
+    const parcours = await parcoursPreventionRepository.findByUserId(
+      session.userId
+    );
 
-    if (!user?.codeInsee) {
+    if (!parcours?.rgaSimulationData?.logement?.commune) {
       return {
         success: false,
-        error: "Code INSEE non renseigné pour cet utilisateur",
+        error: "Simulation RGA non complétée (code INSEE manquant)",
       };
     }
 
+    const codeInsee = parcours.rgaSimulationData.logement.commune;
+
     // Extraire le code département
-    const codeDepartement = getCodeDepartementFromCodeInsee(user.codeInsee);
+    const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
 
     // 1. Récupérer les AMO qui ont le code INSEE spécifique
     const amosParCodeInsee = await db
@@ -59,7 +54,7 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
         entreprisesAmoCommunes,
         eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
       )
-      .where(eq(entreprisesAmoCommunes.codeInsee, user.codeInsee));
+      .where(eq(entreprisesAmoCommunes.codeInsee, codeInsee));
 
     // 2. Récupérer les AMO qui couvrent le département entier
     // Format recherché : "Seine-et-Marne 77" ou "Gers 32"

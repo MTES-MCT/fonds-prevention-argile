@@ -9,7 +9,6 @@ import {
   entreprisesAmo,
   entreprisesAmoCommunes,
   parcoursAmoValidations,
-  users,
 } from "@/shared/database/schema";
 import { and, eq, like, or } from "drizzle-orm";
 import { getCodeDepartementFromCodeInsee } from "../utils/amo.utils";
@@ -68,19 +67,17 @@ export async function choisirAmo(params: {
       };
     }
 
-    // Vérifier que l'AMO existe et couvre bien le code INSEE de l'utilisateur
-    const [user] = await db
-      .select({ codeInsee: users.codeInsee })
-      .from(users)
-      .where(eq(users.id, session.userId))
-      .limit(1);
-
-    if (!user?.codeInsee) {
-      return { success: false, error: "Code INSEE manquant" };
+    if (!parcours?.rgaSimulationData?.logement?.commune) {
+      return {
+        success: false,
+        error: "Simulation RGA non complétée (code INSEE manquant)",
+      };
     }
 
+    const codeInsee = parcours.rgaSimulationData.logement.commune;
+
     // Extraire le code département
-    const codeDepartement = getCodeDepartementFromCodeInsee(user.codeInsee);
+    const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
 
     // Vérifier que l'AMO couvre soit le code INSEE spécifique, soit le département
     const amoValide = await db
@@ -97,7 +94,7 @@ export async function choisirAmo(params: {
         and(
           eq(entreprisesAmo.id, entrepriseAmoId),
           or(
-            eq(entreprisesAmoCommunes.codeInsee, user.codeInsee),
+            eq(entreprisesAmoCommunes.codeInsee, codeInsee),
             like(entreprisesAmo.departements, `%${codeDepartement}%`)
           )
         )
@@ -180,7 +177,7 @@ export async function choisirAmo(params: {
       amoNom: amo.nom,
       demandeurNom: userNom,
       demandeurPrenom: userPrenom,
-      demandeurCodeInsee: user.codeInsee,
+      demandeurCodeInsee: codeInsee,
       adresseLogement,
       token,
     });
