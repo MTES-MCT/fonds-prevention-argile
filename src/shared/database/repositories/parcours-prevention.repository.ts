@@ -11,6 +11,8 @@ import type {
   NewParcoursPrevention,
 } from "../schema/parcours-prevention";
 import { getNextStep, Status, Step } from "@/features/parcours/core";
+import { RGADeletionReason } from "@/features/simulateur-rga/domain/types";
+import { RGA_RETENTION_DAYS } from "@/features/simulateur-rga/domain/value-objects/rga-retention.config";
 
 export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevention> {
   /**
@@ -250,6 +252,83 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       currentStep: Step.CHOIX_AMO,
       currentStatus: Status.TODO,
     });
+  }
+
+  /**
+   * Sauvegarde les données RGA du simulateur dans le parcours
+   */
+  async updateRGAData(
+    parcoursId: string,
+    rgaData: RGASimulationData
+  ): Promise<ParcoursPrevention | null> {
+    return await this.update(parcoursId, {
+      rgaSimulationData: rgaData,
+      rgaSimulationCompletedAt: new Date(),
+    });
+  }
+
+  /**
+   * Récupère tous les parcours ayant des données RGA (pour dashboard admin)
+   */
+  async findParcoursWithRGAData(): Promise<ParcoursPrevention[]> {
+    return await db
+      .select()
+      .from(parcoursPrevention)
+      .where(sql`${parcoursPrevention.rgaSimulationData} IS NOT NULL`)
+      .orderBy(desc(parcoursPrevention.rgaSimulationCompletedAt));
+  }
+
+  /**
+   * Compte le nombre de parcours avec données RGA
+   */
+  async countWithRGAData(): Promise<number> {
+    return await this.count(
+      sql`${parcoursPrevention.rgaSimulationData} IS NOT NULL`
+    );
+  }
+
+  /**
+   * Supprime les données RGA d'un parcours (soft delete)
+   */
+  async deleteRGAData(
+    parcoursId: string,
+    reason: RGADeletionReason
+  ): Promise<ParcoursPrevention | null> {
+    return await this.update(parcoursId, {
+      rgaSimulationData: null,
+      rgaDataDeletedAt: new Date(),
+      rgaDataDeletionReason: reason,
+    });
+  }
+
+  /**
+   * Trouve les parcours avec données RGA expirées (> X jours sans dossier DS)
+   */
+  async findExpiredRGAData(
+    expirationDays: number = RGA_RETENTION_DAYS
+  ): Promise<ParcoursPrevention[]> {
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() - expirationDays);
+
+    return await db
+      .select()
+      .from(parcoursPrevention)
+      .where(
+        sql`${parcoursPrevention.rgaSimulationData} IS NOT NULL 
+            AND ${parcoursPrevention.rgaSimulationCompletedAt} < ${expirationDate}
+            AND ${parcoursPrevention.rgaDataDeletedAt} IS NULL`
+      );
+  }
+
+  /**
+   * Vérifie si un parcours a des données RGA
+   */
+  async hasRGAData(parcoursId: string): Promise<boolean> {
+    const parcours = await this.findById(parcoursId);
+    return (
+      parcours?.rgaSimulationData !== null &&
+      parcours?.rgaSimulationData !== undefined
+    );
   }
 }
 

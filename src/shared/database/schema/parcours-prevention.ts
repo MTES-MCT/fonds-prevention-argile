@@ -1,9 +1,10 @@
-import { pgTable, uuid, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, jsonb, text } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { users } from "./users";
 import { dossiersDemarchesSimplifiees } from "./dossiers-demarches-simplifiees";
 import { statusPgEnum, stepPgEnum } from "../enums/enums";
 import { Status, Step } from "@/features/parcours/core";
+import { RGASimulationData } from "@/features/simulateur-rga/domain/types/rga-simulation.types";
 
 // Table des parcours de prévention
 export const parcoursPrevention = pgTable("parcours_prevention", {
@@ -22,6 +23,14 @@ export const parcoursPrevention = pgTable("parcours_prevention", {
     .defaultNow()
     .$onUpdate(() => new Date()),
   completedAt: timestamp("completed_at", { mode: "date" }),
+
+  // Champs pour stocker les données RGA
+  rgaSimulationData: jsonb("rga_simulation_data").$type<RGASimulationData>(),
+  rgaSimulationCompletedAt: timestamp("rga_simulation_completed_at", {
+    mode: "date",
+  }),
+  rgaDataDeletedAt: timestamp("rga_data_deleted_at", { mode: "date" }),
+  rgaDataDeletionReason: text("rga_data_deletion_reason"),
 });
 
 // Relations : un parcours appartient à un utilisateur et a plusieurs dossiers DS
