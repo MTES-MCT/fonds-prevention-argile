@@ -13,6 +13,7 @@ import { createDossierForCurrentStep } from "../../dossiers-ds/services";
 import { parcoursRepo } from "@/shared/database";
 import { cleanupRGADataAfterDS } from "@/features/simulateur-rga/services/cleanup.service";
 
+// Activer les logs de debug si la variable d'environnement est définie
 const DEBUG_ELIGIBILITE = process.env.DEBUG_ELIGIBILITE === "true";
 
 function debugLog(...args: unknown[]) {
