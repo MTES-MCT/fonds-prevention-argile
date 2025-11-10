@@ -43,7 +43,7 @@ export class EmailService {
         ignoreTLS: true,
       });
 
-      console.log("📧 Email service (local SMTP/Mailhog):", {
+      console.log("Email service (local SMTP/Mailhog):", {
         host: emailConfig.smtp.host,
         port: emailConfig.smtp.port,
         webUI: "http://localhost:8025",

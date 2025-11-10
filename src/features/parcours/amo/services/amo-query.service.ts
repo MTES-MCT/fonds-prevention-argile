@@ -6,7 +6,7 @@ import {
   parcoursAmoValidations,
   parcoursPrevention,
 } from "@/shared/database/schema";
-import { getCodeDepartementFromCodeInsee } from "../utils/amo.utils";
+import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
 import { Amo } from "../domain/entities";
 import { StatutValidationAmo } from "../domain/value-objects";
 
@@ -27,7 +27,9 @@ export async function getAmosForCodeInsee(userId: string): Promise<Amo[]> {
     .where(eq(parcoursPrevention.userId, userId))
     .limit(1);
 
-  const codeInsee = parcours?.rgaSimulationData?.logement?.commune;
+  const codeInsee = normalizeCodeInsee(
+    parcours?.rgaSimulationData?.logement?.commune
+  );
 
   if (!codeInsee) {
     throw new Error("Simulation RGA non complétée (code INSEE manquant)");

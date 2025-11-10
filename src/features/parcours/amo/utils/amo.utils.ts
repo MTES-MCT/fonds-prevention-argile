@@ -11,7 +11,9 @@
  * getCodeDepartementFromCodeInsee("75001") // "75"
  * getCodeDepartementFromCodeInsee("97411") // "974" (Réunion)
  */
-export function getCodeDepartementFromCodeInsee(codeInsee: string): string {
+export function getCodeDepartementFromCodeInsee(
+  codeInsee: string | null | undefined
+): string {
   if (!codeInsee || codeInsee.length !== 5) {
     throw new Error("Code INSEE invalide : doit contenir 5 chiffres");
   }
@@ -41,4 +43,42 @@ export function validateEmailsList(emails: string): string[] {
     .split(";")
     .map((e) => e.trim())
     .filter((e) => e.includes("@") && e.includes("."));
+}
+
+/**
+ * Normalise un code INSEE en string de 5 chiffres
+ * Gère les cas où le code INSEE est stocké en number et perd les zéros initiaux
+ *
+ * @param commune Code INSEE (string ou number)
+ * @returns Code INSEE normalisé en string de 5 chiffres, ou null si invalide
+ *
+ * @example
+ * normalizeCodeInsee(36202) // "36202"
+ * normalizeCodeInsee(1234) // "01234"
+ * normalizeCodeInsee("75001") // "75001"
+ * normalizeCodeInsee(null) // null
+ */
+export function normalizeCodeInsee(
+  commune: string | number | null | undefined
+): string | null {
+  if (commune === null || commune === undefined) {
+    return null;
+  }
+
+  // Convertir en string et trimmer
+  const communeStr = String(commune).trim();
+
+  // Si vide après trim, retourner null
+  if (communeStr === "") {
+    return null;
+  }
+
+  const codeInseeStr = communeStr.padStart(5, "0");
+
+  // Validation : doit être exactement 5 chiffres
+  if (!/^\d{5}$/.test(codeInseeStr)) {
+    return null;
+  }
+
+  return codeInseeStr;
 }

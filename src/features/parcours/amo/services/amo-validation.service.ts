@@ -17,6 +17,7 @@ import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.action
 import { ValidationAmoData } from "../domain/entities";
 import { Status, Step } from "../../core";
 import { moveToNextStep } from "../../core/services";
+import { normalizeCodeInsee } from "../utils/amo.utils";
 
 /**
  * Service de gestion des validations AMO
@@ -69,7 +70,16 @@ export async function selectAmoForUser(
     };
   }
 
-  const codeInsee = parcours.rgaSimulationData.logement.commune;
+  const codeInsee = normalizeCodeInsee(
+    parcours.rgaSimulationData?.logement?.commune
+  );
+
+  if (!codeInsee) {
+    return {
+      success: false,
+      error: "Simulation RGA non complétée (code INSEE invalide)",
+    };
+  }
 
   // Vérifier que l'AMO couvre le code INSEE
   const amoCovers = await checkAmoCoversCodeInsee(entrepriseAmoId, codeInsee);
@@ -141,7 +151,7 @@ export async function selectAmoForUser(
     amoNom: amo.nom,
     demandeurNom: userNom,
     demandeurPrenom: userPrenom,
-    demandeurCodeInsee: codeInsee,
+    demandeurCodeInsee: codeInsee ?? "",
     adresseLogement,
     token,
   });
@@ -340,7 +350,8 @@ export async function getValidationByToken(
     .where(eq(amoValidationTokens.token, token))
     .limit(1);
 
-  const userCodeInsee = tokenData?.rgaSimulationData?.logement?.commune || "";
+  const userCodeInsee =
+    normalizeCodeInsee(tokenData?.rgaSimulationData?.logement?.commune) || "";
 
   if (!tokenData) {
     return {

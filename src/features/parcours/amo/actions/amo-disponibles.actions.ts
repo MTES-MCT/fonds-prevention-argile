@@ -6,7 +6,10 @@ import type { ActionResult } from "@/shared/types";
 import { Amo } from "../domain/entities";
 import { db, entreprisesAmo, entreprisesAmoCommunes } from "@/shared/database";
 import { eq, like } from "drizzle-orm";
-import { getCodeDepartementFromCodeInsee } from "../utils/amo.utils";
+import {
+  getCodeDepartementFromCodeInsee,
+  normalizeCodeInsee,
+} from "../utils/amo.utils";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 
 /**
@@ -33,7 +36,17 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
       };
     }
 
-    const codeInsee = parcours.rgaSimulationData.logement.commune;
+    // Extraire le code département
+    const codeInsee = normalizeCodeInsee(
+      parcours.rgaSimulationData.logement.commune
+    );
+
+    if (!codeInsee) {
+      return {
+        success: false,
+        error: "Simulation RGA non complétée (code INSEE invalide)",
+      };
+    }
 
     // Extraire le code département
     const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);

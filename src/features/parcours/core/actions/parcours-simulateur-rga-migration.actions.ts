@@ -37,7 +37,7 @@ export async function migrateSimulationDataToDatabase(
 
     // 3. Vérifier que les données ne sont pas déjà migrées
     if (parcours.rgaSimulationData) {
-      console.log("Données RGA déjà présentes en BDD, migration ignorée");
+      console.warn("Données RGA déjà présentes en BDD, migration ignorée");
       return {
         success: true,
         data: undefined,
@@ -52,8 +52,6 @@ export async function migrateSimulationDataToDatabase(
       parcours.id,
       rgaSimulationData
     );
-
-    console.log(`[Migration RGA] Données migrées pour parcours ${parcours.id}`);
 
     return {
       success: true,

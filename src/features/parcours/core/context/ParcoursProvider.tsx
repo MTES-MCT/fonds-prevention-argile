@@ -229,13 +229,11 @@ export function ParcoursProvider({
       }
 
       if (tempRgaData && !parcours.rgaSimulationData) {
-        console.log("[Migration RGA] Début migration localStorage → BDD");
         const result = await migrateSimulationDataToDatabase(
           tempRgaData as RGAFormData
         );
 
         if (result.success) {
-          console.log("[Migration RGA] Migration réussie");
           clearTempRgaData();
           await fetchParcours();
         } else {

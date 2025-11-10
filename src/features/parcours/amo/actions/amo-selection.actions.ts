@@ -11,7 +11,10 @@ import {
   parcoursAmoValidations,
 } from "@/shared/database/schema";
 import { and, eq, like, or } from "drizzle-orm";
-import { getCodeDepartementFromCodeInsee } from "../utils/amo.utils";
+import {
+  getCodeDepartementFromCodeInsee,
+  normalizeCodeInsee,
+} from "../utils/amo.utils";
 import {
   AMO_VALIDATION_TOKEN_VALIDITY_DAYS,
   StatutValidationAmo,
@@ -74,7 +77,16 @@ export async function choisirAmo(params: {
       };
     }
 
-    const codeInsee = parcours.rgaSimulationData.logement.commune;
+    const codeInsee = normalizeCodeInsee(
+      parcours?.rgaSimulationData?.logement?.commune
+    );
+
+    if (!codeInsee) {
+      return {
+        success: false,
+        error: "Simulation RGA non complétée (code INSEE invalide)",
+      };
+    }
 
     // Extraire le code département
     const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
