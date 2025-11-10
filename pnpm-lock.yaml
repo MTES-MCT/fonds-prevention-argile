@@ -18,8 +18,8 @@ importers:
         specifier: ^2.0.4
         version: 2.0.4
       '@react-email/components':
-        specifier: ^0.5.7
-        version: 0.5.7(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        specifier: ^1.0.0
+        version: 1.0.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@react-email/render':
         specifier: ^1.4.0
         version: 1.4.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -89,7 +89,7 @@ importers:
         version: 19.2.2(@types/react@19.2.2)
       '@vitejs/plugin-react':
         specifier: ^5.1.0
-        version: 5.1.0(vite@7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6))
+        version: 5.1.0(vite@7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))
       '@vitest/ui':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -128,7 +128,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@22.18.1)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)
+        version: 3.2.4(@types/node@22.18.1)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)
 
 packages:
 
@@ -1351,8 +1351,8 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.8
 
-  '@react-email/body@0.1.0':
-    resolution: {integrity: sha512-o1bcSAmDYNNHECbkeyceCVPGmVsYvT+O3sSO/Ct7apKUu3JphTi31hu+0Nwqr/pgV5QFqdoT5vdS3SW5DJFHgQ==}
+  '@react-email/body@0.2.0':
+    resolution: {integrity: sha512-9GCWmVmKUAoRfloboCd+RKm6X17xn7eGL7HnpAZUnjBXBilWCxsKnLMTC/ixSHDKS/A/057M1Tx6ZUXd89sVBw==}
     peerDependencies:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
 
@@ -1362,9 +1362,9 @@ packages:
     peerDependencies:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
 
-  '@react-email/code-block@0.1.0':
-    resolution: {integrity: sha512-jSpHFsgqnQXxDIssE4gvmdtFncaFQz5D6e22BnVjcCPk/udK+0A9jRwGFEG8JD2si9ZXBmU4WsuqQEczuZn4ww==}
-    engines: {node: '>=18.0.0'}
+  '@react-email/code-block@0.2.0':
+    resolution: {integrity: sha512-eIrPW9PIFgDopQU0e/OPpwCW2QWQDtNZDSsiN4sJO8KdMnWWnXJicnRfzrit5rHwFo+Y98i+w/Y5ScnBAFr1dQ==}
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
 
@@ -1380,9 +1380,9 @@ packages:
     peerDependencies:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
 
-  '@react-email/components@0.5.7':
-    resolution: {integrity: sha512-ECyVoyDcev2FSQ7C0buXaIJ0+6MRDXNUbCOZwBRrlLdCCRjap2b4+MHrYSTXFzo5kqfjjRoyo/2PbJXFQni67g==}
-    engines: {node: '>=18.0.0'}
+  '@react-email/components@1.0.0':
+    resolution: {integrity: sha512-PVqzptGFPR2wZGtlSejSMTrmAdxGUB0b2HH5+2HUUtaUFy3N1v5wblb9s+Ar8TqSL9c05KOH3sITbnmZYCVgSQ==}
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
 
@@ -1433,9 +1433,9 @@ packages:
     peerDependencies:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
 
-  '@react-email/markdown@0.0.16':
-    resolution: {integrity: sha512-KSUHmoBMYhvc6iGwlIDkm0DRGbGQ824iNjLMCJsBVUoKHGQYs7F/N3b1tnS1YzRUX+GwHIexSsHuIUEi1m+8OQ==}
-    engines: {node: '>=18.0.0'}
+  '@react-email/markdown@0.0.17':
+    resolution: {integrity: sha512-6op3AfsBC9BJKkhG+eoMFRFWlr0/f3FYbtQrK+VhGzJocEAY0WINIFN+W8xzXr//3IL0K/aKtnH3FtpIuescQQ==}
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
 
@@ -1452,6 +1452,13 @@ packages:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
       react-dom: ^18.0 || ^19.0 || ^19.0.0-rc
 
+  '@react-email/render@2.0.0':
+    resolution: {integrity: sha512-rdjNj6iVzv8kRKDPFas+47nnoe6B40+nwukuXwY4FCwM7XBg6tmYr+chQryCuavUj2J65MMf6fztk1bxOUiSVA==}
+    engines: {node: '>=22.0.0'}
+    peerDependencies:
+      react: ^18.0 || ^19.0 || ^19.0.0-rc
+      react-dom: ^18.0 || ^19.0 || ^19.0.0-rc
+
   '@react-email/row@0.0.12':
     resolution: {integrity: sha512-HkCdnEjvK3o+n0y0tZKXYhIXUNPDx+2vq1dJTmqappVHXS5tXS6W5JOPZr5j+eoZ8gY3PShI2LWj5rWF7ZEtIQ==}
     engines: {node: '>=18.0.0'}
@@ -1464,11 +1471,43 @@ packages:
     peerDependencies:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
 
-  '@react-email/tailwind@1.2.2':
-    resolution: {integrity: sha512-heO9Khaqxm6Ulm6p7HQ9h01oiiLRrZuuEQuYds/O7Iyp3c58sMVHZGIxiRXO/kSs857NZQycpjewEVKF3jhNTw==}
-    engines: {node: '>=18.0.0'}
+  '@react-email/tailwind@2.0.0':
+    resolution: {integrity: sha512-CV2rBO+bUzhJkra/H9bw1M9BwvBiNyT3RmC5DSfRXp/a0TYMtPjRo9IRnKeyNl40D/qPxH3bKNg6O7cTOVVsog==}
+    engines: {node: '>=22.0.0'}
     peerDependencies:
+      '@react-email/body': 0.2.0
+      '@react-email/button': 0.2.0
+      '@react-email/code-block': 0.2.0
+      '@react-email/code-inline': 0.0.5
+      '@react-email/container': 0.0.15
+      '@react-email/heading': 0.0.15
+      '@react-email/hr': 0.0.11
+      '@react-email/img': 0.0.11
+      '@react-email/link': 0.0.12
+      '@react-email/preview': 0.0.13
+      '@react-email/text': 0.1.5
       react: ^18.0 || ^19.0 || ^19.0.0-rc
+    peerDependenciesMeta:
+      '@react-email/body':
+        optional: true
+      '@react-email/button':
+        optional: true
+      '@react-email/code-block':
+        optional: true
+      '@react-email/code-inline':
+        optional: true
+      '@react-email/container':
+        optional: true
+      '@react-email/heading':
+        optional: true
+      '@react-email/hr':
+        optional: true
+      '@react-email/img':
+        optional: true
+      '@react-email/link':
+        optional: true
+      '@react-email/preview':
+        optional: true
 
   '@react-email/text@0.1.5':
     resolution: {integrity: sha512-o5PNHFSE085VMXayxH+SJ1LSOtGsTv+RpNKnTiJDrJUwoBu77G3PlKOsZZQHCNyD28WsQpl9v2WcJLbQudqwPg==}
@@ -4335,6 +4374,9 @@ packages:
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
 
+  tailwindcss@4.1.12:
+    resolution: {integrity: sha512-DzFtxOi+7NsFf7DBtI3BJsynR+0Yp6etH+nRPTbpWnS2pZBaSksv/JGctNwSWzbFjp0vxSqknaUylseZqMDGrA==}
+
   tailwindcss@4.1.16:
     resolution: {integrity: sha512-pONL5awpaQX4LN5eiv7moSiSPd/DLDzKVRJz8Q9PgzmAdd1R4307GQS2ZpfiN7ZmekdQrfhZZiSE5jkLR4WNaA==}
 
@@ -4358,8 +4400,8 @@ packages:
       uglify-js:
         optional: true
 
-  terser@5.44.0:
-    resolution: {integrity: sha512-nIVck8DK+GM/0Frwd+nIhZ84pR/BX7rmXMfYwyg+Sri5oGVE99/E3KvXqpC2xHFxyqXyGHTKBSioxxplrO4I4w==}
+  terser@5.44.1:
+    resolution: {integrity: sha512-t/R3R/n0MSwnnazuPpPNVO60LX0SKL45pyl9YlvxIdkH0Of7D5qM2EVe+yASRIlY5pZ73nclYJfNANGWPwFDZw==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -6018,7 +6060,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@react-email/body@0.1.0(react@19.2.0)':
+  '@react-email/body@0.2.0(react@19.2.0)':
     dependencies:
       react: 19.2.0
 
@@ -6026,7 +6068,7 @@ snapshots:
     dependencies:
       react: 19.2.0
 
-  '@react-email/code-block@0.1.0(react@19.2.0)':
+  '@react-email/code-block@0.2.0(react@19.2.0)':
     dependencies:
       prismjs: 1.30.0
       react: 19.2.0
@@ -6039,11 +6081,11 @@ snapshots:
     dependencies:
       react: 19.2.0
 
-  '@react-email/components@0.5.7(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@react-email/components@1.0.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
-      '@react-email/body': 0.1.0(react@19.2.0)
+      '@react-email/body': 0.2.0(react@19.2.0)
       '@react-email/button': 0.2.0(react@19.2.0)
-      '@react-email/code-block': 0.1.0(react@19.2.0)
+      '@react-email/code-block': 0.2.0(react@19.2.0)
       '@react-email/code-inline': 0.0.5(react@19.2.0)
       '@react-email/column': 0.0.13(react@19.2.0)
       '@react-email/container': 0.0.15(react@19.2.0)
@@ -6054,12 +6096,12 @@ snapshots:
       '@react-email/html': 0.0.11(react@19.2.0)
       '@react-email/img': 0.0.11(react@19.2.0)
       '@react-email/link': 0.0.12(react@19.2.0)
-      '@react-email/markdown': 0.0.16(react@19.2.0)
+      '@react-email/markdown': 0.0.17(react@19.2.0)
       '@react-email/preview': 0.0.13(react@19.2.0)
-      '@react-email/render': 1.4.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@react-email/render': 2.0.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@react-email/row': 0.0.12(react@19.2.0)
       '@react-email/section': 0.0.16(react@19.2.0)
-      '@react-email/tailwind': 1.2.2(react@19.2.0)
+      '@react-email/tailwind': 2.0.0(@react-email/body@0.2.0(react@19.2.0))(@react-email/button@0.2.0(react@19.2.0))(@react-email/code-block@0.2.0(react@19.2.0))(@react-email/code-inline@0.0.5(react@19.2.0))(@react-email/container@0.0.15(react@19.2.0))(@react-email/heading@0.0.15(react@19.2.0))(@react-email/hr@0.0.11(react@19.2.0))(@react-email/img@0.0.11(react@19.2.0))(@react-email/link@0.0.12(react@19.2.0))(@react-email/preview@0.0.13(react@19.2.0))(@react-email/text@0.1.5(react@19.2.0))(react@19.2.0)
       '@react-email/text': 0.1.5(react@19.2.0)
       react: 19.2.0
     transitivePeerDependencies:
@@ -6097,7 +6139,7 @@ snapshots:
     dependencies:
       react: 19.2.0
 
-  '@react-email/markdown@0.0.16(react@19.2.0)':
+  '@react-email/markdown@0.0.17(react@19.2.0)':
     dependencies:
       marked: 15.0.12
       react: 19.2.0
@@ -6114,6 +6156,13 @@ snapshots:
       react-dom: 19.2.0(react@19.2.0)
       react-promise-suspense: 0.3.4
 
+  '@react-email/render@2.0.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      html-to-text: 9.0.5
+      prettier: 3.6.2
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+
   '@react-email/row@0.0.12(react@19.2.0)':
     dependencies:
       react: 19.2.0
@@ -6122,9 +6171,22 @@ snapshots:
     dependencies:
       react: 19.2.0
 
-  '@react-email/tailwind@1.2.2(react@19.2.0)':
+  '@react-email/tailwind@2.0.0(@react-email/body@0.2.0(react@19.2.0))(@react-email/button@0.2.0(react@19.2.0))(@react-email/code-block@0.2.0(react@19.2.0))(@react-email/code-inline@0.0.5(react@19.2.0))(@react-email/container@0.0.15(react@19.2.0))(@react-email/heading@0.0.15(react@19.2.0))(@react-email/hr@0.0.11(react@19.2.0))(@react-email/img@0.0.11(react@19.2.0))(@react-email/link@0.0.12(react@19.2.0))(@react-email/preview@0.0.13(react@19.2.0))(@react-email/text@0.1.5(react@19.2.0))(react@19.2.0)':
     dependencies:
+      '@react-email/text': 0.1.5(react@19.2.0)
       react: 19.2.0
+      tailwindcss: 4.1.12
+    optionalDependencies:
+      '@react-email/body': 0.2.0(react@19.2.0)
+      '@react-email/button': 0.2.0(react@19.2.0)
+      '@react-email/code-block': 0.2.0(react@19.2.0)
+      '@react-email/code-inline': 0.0.5(react@19.2.0)
+      '@react-email/container': 0.0.15(react@19.2.0)
+      '@react-email/heading': 0.0.15(react@19.2.0)
+      '@react-email/hr': 0.0.11(react@19.2.0)
+      '@react-email/img': 0.0.11(react@19.2.0)
+      '@react-email/link': 0.0.12(react@19.2.0)
+      '@react-email/preview': 0.0.13(react@19.2.0)
 
   '@react-email/text@0.1.5(react@19.2.0)':
     dependencies:
@@ -7079,7 +7141,7 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
 
-  '@vitejs/plugin-react@5.1.0(vite@7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6))':
+  '@vitejs/plugin-react@5.1.0(vite@7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))':
     dependencies:
       '@babel/core': 7.28.5
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.5)
@@ -7087,7 +7149,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.43
       '@types/babel__core': 7.20.5
       react-refresh: 0.18.0
-      vite: 7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)
+      vite: 7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -7099,13 +7161,13 @@ snapshots:
       chai: 5.3.3
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.2.4(vite@7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6))':
+  '@vitest/mocker@3.2.4(vite@7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))':
     dependencies:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
       magic-string: 0.30.19
     optionalDependencies:
-      vite: 7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)
+      vite: 7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -7136,7 +7198,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@22.18.1)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)
+      vitest: 3.2.4(@types/node@22.18.1)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -9408,6 +9470,8 @@ snapshots:
 
   symbol-tree@3.2.4: {}
 
+  tailwindcss@4.1.12: {}
+
   tailwindcss@4.1.16: {}
 
   tapable@2.3.0: {}
@@ -9418,12 +9482,12 @@ snapshots:
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       serialize-javascript: 6.0.2
-      terser: 5.44.0
+      terser: 5.44.1
       webpack: 5.101.3(esbuild@0.25.12)
     optionalDependencies:
       esbuild: 0.25.12
 
-  terser@5.44.0:
+  terser@5.44.1:
     dependencies:
       '@jridgewell/source-map': 0.3.11
       acorn: 8.15.0
@@ -9604,13 +9668,13 @@ snapshots:
 
   v8-compile-cache-lib@3.0.1: {}
 
-  vite-node@3.2.4(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6):
+  vite-node@3.2.4(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6):
     dependencies:
       cac: 6.7.14
       debug: 4.4.1
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)
+      vite: 7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -9625,7 +9689,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite@7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6):
+  vite@7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -9638,14 +9702,14 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.6.1
       lightningcss: 1.30.2
-      terser: 5.44.0
+      terser: 5.44.1
       tsx: 4.20.6
 
-  vitest@3.2.4(@types/node@22.18.1)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6):
+  vitest@3.2.4(@types/node@22.18.1)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6):
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(vite@7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6))
+      '@vitest/mocker': 3.2.4(vite@7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4
@@ -9663,8 +9727,8 @@ snapshots:
       tinyglobby: 0.2.15
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)
-      vite-node: 3.2.4(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)
+      vite: 7.1.11(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)
+      vite-node: 3.2.4(@types/node@22.18.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.18.1
