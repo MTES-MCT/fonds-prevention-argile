@@ -38,16 +38,6 @@ export default function ConnexionFranceConnectClient() {
   }, [searchParams]);
 
   const handleFranceConnect = () => {
-    // Récupérer le code INSEE depuis les données RGA
-    const codeInsee = rgaData?.logement?.commune;
-
-    // Stocker le code INSEE en cookie si disponible
-    if (codeInsee) {
-      document.cookie = `fc_code_insee=${codeInsee}; path=/; max-age=300; SameSite=Lax`;
-    } else {
-      console.warn("Aucun code INSEE trouvé dans les données RGA");
-    }
-
     // Rediriger vers l'API FranceConnect
     window.location.href = "/api/auth/fc/login";
   };

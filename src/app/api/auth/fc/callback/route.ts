@@ -17,10 +17,7 @@ export async function GET(request: NextRequest) {
 
   // Helper pour créer une URL de redirection
   const redirectTo = (path: string) => {
-    const response = NextResponse.redirect(new URL(path, baseUrl));
-    // Nettoyer le cookie code_insee après usage
-    response.cookies.delete("fc_code_insee");
-    return response;
+    return NextResponse.redirect(new URL(path, baseUrl));
   };
 
   try {
@@ -29,13 +26,6 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get("state");
     const error = searchParams.get("error");
     const errorDescription = searchParams.get("error_description");
-
-    // Récupération du code INSEE stocké en cookie
-    const codeInsee = request.cookies.get("fc_code_insee")?.value;
-
-    if (!codeInsee) {
-      console.warn("Aucun code INSEE trouvé dans les cookies");
-    }
 
     // Gestion des erreurs FranceConnect
     if (error) {
@@ -55,7 +45,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Traitement du callback
-    const result = await handleFranceConnectCallback(code, state, codeInsee);
+    const result = await handleFranceConnectCallback(code, state);
 
     if (result.success) {
       // Récupérer l'URL de redirection sauvegardée
