@@ -24,10 +24,12 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     // Mode embed : sans Header/Footer/Crisp/AuthProvider
     return (
       <>
-        <Matomo />
-        <ParcoursProvider>
-          <main className="flex-1 h-full">{children}</main>
-        </ParcoursProvider>
+        <AuthProvider>
+          <Matomo />
+          <ParcoursProvider>
+            <main className="flex-1 h-full">{children}</main>
+          </ParcoursProvider>
+        </AuthProvider>
       </>
     );
   }
