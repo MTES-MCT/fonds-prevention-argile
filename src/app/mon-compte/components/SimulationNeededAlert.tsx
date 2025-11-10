@@ -17,7 +17,7 @@ export default function SimulationNeededAlert() {
       <div className="fr-grid-row fr-grid-row-gutters fr-grid-row--center fr-p-20v">
         <div className="fr-col-12 fr-col-md-8 fr-col-lg-6 fr-mt-2w">
           <div className="fr-alert fr-alert--error">
-            <h3 className="fr-alert__title">Éligibilité requise</h3>
+            <h3 className="fr-alert__title">Votre session a expiré.</h3>
             <p>
               Pour continuer votre demande, vous devez d'abord remplir le
               simulateur d'éligibilité.
