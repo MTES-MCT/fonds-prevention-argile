@@ -72,6 +72,10 @@ describe("amo-validation.service", () => {
       currentStep: Step.CHOIX_AMO,
       currentStatus: Status.TODO,
       completedAt: null,
+      rgaSimulationData: null,
+      rgaSimulationCompletedAt: null,
+      rgaDataDeletedAt: null,
+      rgaDataDeletionReason: null,
     };
 
     const mockUser = {
@@ -564,6 +568,10 @@ describe("amo-validation.service", () => {
       currentStep: Step.CHOIX_AMO,
       currentStatus: Status.EN_INSTRUCTION,
       completedAt: null,
+      rgaSimulationData: null,
+      rgaSimulationCompletedAt: null,
+      rgaDataDeletedAt: null,
+      rgaDataDeletionReason: null,
     };
 
     beforeEach(() => {
@@ -725,6 +733,10 @@ describe("amo-validation.service", () => {
       currentStep: Step.CHOIX_AMO,
       currentStatus: Status.EN_INSTRUCTION,
       completedAt: null,
+      rgaSimulationData: null,
+      rgaSimulationCompletedAt: null,
+      rgaDataDeletedAt: null,
+      rgaDataDeletionReason: null,
     };
 
     beforeEach(() => {
@@ -819,6 +831,10 @@ describe("amo-validation.service", () => {
       currentStep: Step.CHOIX_AMO,
       currentStatus: Status.EN_INSTRUCTION,
       completedAt: null,
+      rgaSimulationData: null,
+      rgaSimulationCompletedAt: null,
+      rgaDataDeletedAt: null,
+      rgaDataDeletionReason: null,
     };
 
     beforeEach(() => {

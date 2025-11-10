@@ -11,7 +11,10 @@ import type {
   NewParcoursPrevention,
 } from "../schema/parcours-prevention";
 import { getNextStep, Status, Step } from "@/features/parcours/core";
-import { RGADeletionReason } from "@/features/simulateur-rga/domain/types";
+import {
+  RGADeletionReason,
+  RGASimulationData,
+} from "@/features/simulateur-rga/domain/types";
 import { RGA_RETENTION_DAYS } from "@/features/simulateur-rga/domain/value-objects/rga-retention.config";
 
 export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevention> {
