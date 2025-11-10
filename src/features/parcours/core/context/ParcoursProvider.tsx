@@ -209,16 +209,80 @@ export function ParcoursProvider({
     setTempRgaData(null);
   }, []);
 
-  // Chargement initial : parcours + localStorage
+  // Chargement initial : parcours + localStorage/sessionStorage
   useEffect(() => {
     // Charger le parcours
     fetchParcours();
 
-    // Charger les données RGA depuis localStorage
+    // Charger les données RGA depuis localStorage OU sessionStorage (fallback)
     const stored = storageAdapter.get();
-    setTempRgaData(stored);
+    if (stored) {
+      setTempRgaData(stored);
+
+      // Log pour debug
+      if (storageAdapter.hasSessionStorageData()) {
+        console.log(
+          "[RGA] Données chargées depuis sessionStorage (ancien système)"
+        );
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Migration sessionStorage → BDD (ancien système)
+  useEffect(() => {
+    async function migrateSessionStorage() {
+      // Nécessite authentification + parcours
+      if (!isAuthenticated || !parcours) {
+        return;
+      }
+
+      // Vérifier si des données existent dans sessionStorage
+      if (!storageAdapter.hasSessionStorageData()) {
+        return;
+      }
+
+      // Vérifier si déjà des données en BDD
+      if (parcours.rgaSimulationData) {
+        console.log(
+          "[Migration sessionStorage] Données déjà en BDD, nettoyage sessionStorage"
+        );
+        storageAdapter.clearSessionStorage();
+        return;
+      }
+
+      // Récupérer les données sessionStorage
+      const sessionData = storageAdapter.getFromSessionStorage();
+
+      if (!sessionData) {
+        return;
+      }
+
+      try {
+        console.log("[Migration sessionStorage] Migration en cours...");
+
+        const result = await migrateSimulationDataToDatabase(
+          sessionData as RGAFormData
+        );
+
+        if (result.success) {
+          console.log("[Migration sessionStorage] ✅ Migration réussie");
+
+          // Nettoyer sessionStorage après migration réussie
+          storageAdapter.clearSessionStorage();
+
+          // Rafraîchir le parcours
+          await fetchParcours();
+        } else {
+          console.error("[Migration sessionStorage] - Échec:", result.error);
+        }
+      } catch (error) {
+        console.error("[Migration sessionStorage] - Erreur:", error);
+      }
+    }
+
+    migrateSessionStorage();
+  }, [isAuthenticated, parcours, fetchParcours]);
 
   // Migration auto localStorage → BDD après FranceConnect
   useEffect(() => {
