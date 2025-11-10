@@ -10,7 +10,7 @@ import {
   getCodeDepartementFromCodeInsee,
   normalizeCodeInsee,
 } from "../utils/amo.utils";
-import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import { parcoursRepo } from "@/shared/database/repositories";
 
 /**
  * Récupère la liste des AMO disponibles pour le code INSEE de l'utilisateur
@@ -25,9 +25,7 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
       return { success: false, error: "Non connecté" };
     }
 
-    const parcours = await parcoursPreventionRepository.findByUserId(
-      session.userId
-    );
+    const parcours = await parcoursRepo.findByUserId(session.userId);
 
     if (!parcours?.rgaSimulationData?.logement?.commune) {
       return {
