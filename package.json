@@ -39,7 +39,7 @@
     "@gouvfr/dsfr-chart": "^2.0.4",
     "@react-email/components": "^0.5.7",
     "@react-email/render": "^1.4.0",
-    "@sentry/nextjs": "^9.46.0",
+    "@sentry/nextjs": "^10.23.0",
     "@socialgouv/matomo-next": "^1.10.0",
     "argon2": "^0.44.0",
     "dotenv": "^17.2.3",
