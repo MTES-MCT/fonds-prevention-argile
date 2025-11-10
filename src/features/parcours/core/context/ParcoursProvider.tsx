@@ -18,6 +18,7 @@ import { PartialRGAFormData, RGAFormData } from "@/features/simulateur-rga";
 import { storageAdapter } from "@/features/simulateur-rga/adapters/storage.adapter";
 import { migrateSimulationDataToDatabase } from "../actions/parcours-simulateur-rga-migration.actions";
 import { mapDBToRGAFormData } from "@/features/simulateur-rga/mappers";
+import { useAuth } from "@/features/auth/client";
 
 interface ParcoursProviderProps {
   children: React.ReactNode;
@@ -60,9 +61,16 @@ export function ParcoursProvider({
   // Refs
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isSyncingRef = useRef(false);
+  const { isAuthenticated } = useAuth();
 
   // Fonction de chargement du parcours
   const fetchParcours = useCallback(async () => {
+    // Si non authentifié, skip (mode embed RGA uniquement)
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setError(null);
       const result = await obtenirMonParcours();
@@ -102,7 +110,7 @@ export function ParcoursProvider({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // Fonction de synchronisation stabilisée
   const syncNow = useCallback(
@@ -215,11 +223,13 @@ export function ParcoursProvider({
   // Migration auto localStorage → BDD après FranceConnect
   useEffect(() => {
     async function migrate() {
-      // Vérifier que tempRgaData est complet (cast safe si vient du simulateur)
-      if (tempRgaData && parcours && !parcours.rgaSimulationData) {
-        console.log("[Migration RGA] Début migration localStorage → BDD");
+      // Nécessite authentification + parcours
+      if (!isAuthenticated || !parcours) {
+        return;
+      }
 
-        // Cast en RGAFormData (données complètes du simulateur)
+      if (tempRgaData && !parcours.rgaSimulationData) {
+        console.log("[Migration RGA] Début migration localStorage → BDD");
         const result = await migrateSimulationDataToDatabase(
           tempRgaData as RGAFormData
         );
@@ -234,11 +244,12 @@ export function ParcoursProvider({
       }
     }
     migrate();
-  }, [tempRgaData, parcours, fetchParcours, clearTempRgaData]);
+  }, [isAuthenticated, tempRgaData, parcours, fetchParcours, clearTempRgaData]);
 
   // Sync unique au chargement
   useEffect(() => {
-    if (parcours) {
+    // Sync uniquement si authentifié et parcours existant
+    if (isAuthenticated && parcours) {
       const timer = setTimeout(() => {
         syncNow();
       }, 2000);
@@ -247,11 +258,12 @@ export function ParcoursProvider({
         clearTimeout(timer);
       };
     }
-  }, [parcours?.id, syncNow]);
+  }, [isAuthenticated, parcours?.id, syncNow]);
 
   // Auto-sync avec intervalle
   useEffect(() => {
-    if (!autoSync || !parcours) return;
+    // Auto-sync uniquement si authentifié
+    if (!autoSync || !isAuthenticated || !parcours) return;
 
     intervalRef.current = setInterval(() => {
       syncNow();
@@ -263,7 +275,7 @@ export function ParcoursProvider({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoSync]);
+  }, [autoSync, isAuthenticated]);
 
   // Helpers
   const getDossierByStep = useCallback(

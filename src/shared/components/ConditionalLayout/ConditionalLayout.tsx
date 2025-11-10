@@ -10,6 +10,7 @@ import {
   Matomo,
   PostLogoutRedirect,
 } from "@/shared/components";
+import { ParcoursProvider } from "@/features/parcours/core/context/ParcoursProvider";
 
 interface ConditionalLayoutProps {
   children: ReactNode;
@@ -24,7 +25,9 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     return (
       <>
         <Matomo />
-        <main className="flex-1 h-full">{children}</main>
+        <ParcoursProvider>
+          <main className="flex-1 h-full">{children}</main>
+        </ParcoursProvider>
       </>
     );
   }
@@ -37,7 +40,9 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
         <Matomo />
         <Crisp />
         <Header />
-        <main className="flex-1">{children}</main>
+        <ParcoursProvider>
+          <main className="flex-1">{children}</main>
+        </ParcoursProvider>
         <Footer />
       </AuthProvider>
     </>
