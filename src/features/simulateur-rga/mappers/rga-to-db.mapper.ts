@@ -1,4 +1,4 @@
-import type { RGAFormData } from "../domain/entities";
+import type { PartialRGAFormData, RGAFormData } from "../domain/entities";
 import type { RGASimulationData } from "../domain/types";
 
 /**
@@ -51,6 +51,59 @@ export function mapRGAFormDataToDBSchema(
     },
 
     simulatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Convertit les données RGA depuis le format BDD vers le format iframe
+ * (Inverse de mapRGAFormDataToDBSchema)
+ */
+export function mapDBToRGAFormData(
+  dbData: RGASimulationData
+): PartialRGAFormData {
+  return {
+    logement: {
+      adresse: dbData.logement.adresse,
+      code_region: dbData.logement.code_region,
+      code_departement: dbData.logement.code_departement,
+      epci: dbData.logement.epci,
+      commune: dbData.logement.commune,
+      commune_nom: dbData.logement.commune_nom,
+      coordonnees: dbData.logement.coordonnees,
+      clef_ban: dbData.logement.clef_ban,
+      commune_denormandie: dbData.logement.commune_denormandie ? "oui" : "non",
+      annee_de_construction: dbData.logement.annee_de_construction,
+      rnb: dbData.logement.rnb,
+      niveaux: dbData.logement.niveaux,
+      zone_dexposition: dbData.logement.zone_dexposition,
+      type: dbData.logement.type,
+      mitoyen: dbData.logement.mitoyen ? "oui" : "non",
+      proprietaire_occupant: dbData.logement.proprietaire_occupant
+        ? "oui"
+        : "non",
+    },
+    taxeFonciere: {
+      commune_eligible: dbData.taxeFonciere.commune_eligible ? "oui" : "non",
+    },
+    rga: {
+      assure: dbData.rga.assure ? "oui" : "non",
+      indemnise_indemnise_rga: dbData.rga.indemnise_indemnise_rga
+        ? "oui"
+        : "non",
+      sinistres: dbData.rga.sinistres,
+    },
+    menage: {
+      revenu_rga: dbData.menage.revenu_rga,
+      personnes: dbData.menage.personnes,
+    },
+    vous: {
+      proprietaire_condition: dbData.vous.proprietaire_condition
+        ? "oui"
+        : undefined,
+      proprietaire_occupant_rga: dbData.vous.proprietaire_occupant_rga
+        ? "oui"
+        : undefined,
+    },
   };
 }
 

@@ -14,6 +14,10 @@ import {
   syncUserDossierStatus,
 } from "../../dossiers-ds/actions/dossier-sync.actions";
 import { DossierDS } from "../../dossiers-ds";
+import { PartialRGAFormData, RGAFormData } from "@/features/simulateur-rga";
+import { storageAdapter } from "@/features/simulateur-rga/adapters/storage.adapter";
+import { migrateSimulationDataToDatabase } from "../actions/parcours-simulateur-rga-migration.actions";
+import { mapDBToRGAFormData } from "@/features/simulateur-rga/mappers";
 
 interface ParcoursProviderProps {
   children: React.ReactNode;
@@ -47,6 +51,11 @@ export function ParcoursProvider({
   // Données calculées
   const [isComplete, setIsComplete] = useState(false);
   const [prochainEtape, setProchainEtape] = useState<Step | null>(null);
+
+  // Simulateur RGA
+  const [tempRgaData, setTempRgaData] = useState<PartialRGAFormData | null>(
+    null
+  );
 
   // Refs
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -173,11 +182,59 @@ export function ParcoursProvider({
     }
   }, [fetchParcours, router]);
 
-  // Chargement initial
+  // Actions RGA
+  const saveTempRgaData = useCallback((data: PartialRGAFormData): boolean => {
+    try {
+      const success = storageAdapter.save(data);
+      if (success) {
+        setTempRgaData(data);
+      }
+      return success;
+    } catch (error) {
+      console.error("[RGA] Erreur sauvegarde:", error);
+      return false;
+    }
+  }, []);
+
+  const clearTempRgaData = useCallback(() => {
+    storageAdapter.clear();
+    setTempRgaData(null);
+  }, []);
+
+  // Chargement initial : parcours + localStorage
   useEffect(() => {
+    // Charger le parcours
     fetchParcours();
+
+    // Charger les données RGA depuis localStorage
+    const stored = storageAdapter.get();
+    setTempRgaData(stored);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Migration auto localStorage → BDD après FranceConnect
+  useEffect(() => {
+    async function migrate() {
+      // Vérifier que tempRgaData est complet (cast safe si vient du simulateur)
+      if (tempRgaData && parcours && !parcours.rgaSimulationData) {
+        console.log("[Migration RGA] Début migration localStorage → BDD");
+
+        // Cast en RGAFormData (données complètes du simulateur)
+        const result = await migrateSimulationDataToDatabase(
+          tempRgaData as RGAFormData
+        );
+
+        if (result.success) {
+          console.log("[Migration RGA] Migration réussie");
+          clearTempRgaData();
+          await fetchParcours();
+        } else {
+          console.error("[Migration RGA] Échec migration:", result.error);
+        }
+      }
+    }
+    migrate();
+  }, [tempRgaData, parcours, fetchParcours, clearTempRgaData]);
 
   // Sync unique au chargement
   useEffect(() => {
@@ -228,6 +285,11 @@ export function ParcoursProvider({
     return getDossierByStep(parcours.currentStep);
   }, [parcours, getDossierByStep]);
 
+  // Getter RGA : converti en format uniforme
+  const rgaData = parcours?.rgaSimulationData
+    ? mapDBToRGAFormData(parcours.rgaSimulationData)
+    : tempRgaData;
+
   const value = {
     // Données
     parcours,
@@ -254,6 +316,12 @@ export function ParcoursProvider({
     isComplete,
     prochainEtape,
     hasParcours: !!parcours,
+
+    // RGA
+    tempRgaData,
+    rgaData,
+    saveTempRgaData,
+    clearTempRgaData,
 
     // Actions
     refresh: fetchParcours,

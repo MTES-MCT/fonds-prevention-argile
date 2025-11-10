@@ -3,7 +3,7 @@
 import { JSX, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PartialRGAFormData } from "../../domain/entities";
-import { useRGAContext } from "../../context";
+import { useSimulateurRga } from "../../hooks";
 import { isProduction } from "@/shared/config/env.config";
 
 // Données de test adaptées au type RGAFormData avec structure imbriquée
@@ -50,7 +50,7 @@ const TEST_RGA_DATA: PartialRGAFormData = {
 
 export default function RGATestFiller(): JSX.Element | null {
   const router = useRouter();
-  const { saveRGA, validateRGAData } = useRGAContext();
+  const { saveRGA, validateRGAData } = useSimulateurRga();
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);

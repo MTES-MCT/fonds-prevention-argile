@@ -7,7 +7,7 @@ import {
   getAmoRefusee,
   getAmosDisponibles,
 } from "@/features/parcours/amo/actions";
-import { useRGAContext } from "@/features/simulateur-rga";
+import { useSimulateurRga } from "@/features/simulateur-rga";
 import { useEffect, useState } from "react";
 
 interface CalloutAmoTodoProps {
@@ -22,7 +22,7 @@ export default function CalloutAmoTodo({
   refresh,
 }: CalloutAmoTodoProps) {
   const { user } = useAuth();
-  const { data: rgaData } = useRGAContext();
+  const { data: rgaData } = useSimulateurRga();
 
   const [amoList, setAmoList] = useState<Amo[]>([]);
   const [selectedAmoId, setSelectedAmoId] = useState<string | null>(null);

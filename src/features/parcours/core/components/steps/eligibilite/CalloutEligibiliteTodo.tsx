@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useRGAContext } from "@/features/simulateur-rga";
 import { useParcours } from "../../../context/useParcours";
 import { envoyerDossierEligibiliteAvecDonnees } from "../../../actions";
+import { useSimulateurRga } from "@/features/simulateur-rga";
 
 export default function CalloutEligibiliteTodo() {
   const router = useRouter();
-  const { data: rgaData, clearRGA } = useRGAContext();
+  const { data: rgaData, clearRGA } = useSimulateurRga();
   const { refresh } = useParcours(); // Pour rafraîchir après envoi
 
   const [isLoading, setIsLoading] = useState(false);

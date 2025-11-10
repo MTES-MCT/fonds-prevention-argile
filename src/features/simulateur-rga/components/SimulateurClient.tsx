@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import RGATestFiller from "./debug/RGATestFiller";
-import { useRGAContext } from "../context";
+import { useSimulateurRga } from "../hooks";
 import { parseRGAParams } from "../services/parser.service";
 
 interface RGAMessage {
@@ -24,7 +24,7 @@ export default function SimulateurClient({
   embedMode = false,
 }: SimulateurClientProps) {
   const router = useRouter();
-  const { saveRGA, validateRGAData } = useRGAContext();
+  const { saveRGA, validateRGAData } = useSimulateurRga();
   const isProcessingRef = useRef(false);
 
   const [processingState, setProcessingState] =

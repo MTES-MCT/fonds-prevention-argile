@@ -28,6 +28,10 @@ export async function getOrCreateParcours(userId: string): Promise<Parcours> {
     status: parcours.currentStatus,
     createdAt: parcours.createdAt,
     updatedAt: parcours.updatedAt,
+    rgaSimulationData: parcours.rgaSimulationData,
+    rgaSimulationCompletedAt: parcours.rgaSimulationCompletedAt,
+    rgaDataDeletedAt: parcours.rgaDataDeletedAt,
+    rgaDataDeletionReason: parcours.rgaDataDeletionReason,
   };
 }
 
@@ -80,6 +84,10 @@ export async function getParcoursComplet(
       status: parcours.currentStatus,
       createdAt: parcours.createdAt,
       updatedAt: parcours.updatedAt,
+      rgaSimulationData: parcours.rgaSimulationData,
+      rgaSimulationCompletedAt: parcours.rgaSimulationCompletedAt,
+      rgaDataDeletedAt: parcours.rgaDataDeletedAt,
+      rgaDataDeletionReason: parcours.rgaDataDeletionReason,
     },
     dossiers,
     isComplete,

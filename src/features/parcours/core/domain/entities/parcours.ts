@@ -1,5 +1,6 @@
 import type { Step } from "../value-objects/step";
 import type { Status } from "../value-objects/status";
+import { RGASimulationData } from "@/features/simulateur-rga/domain/types";
 
 /**
  * Entité Parcours de prévention
@@ -9,6 +10,12 @@ export interface Parcours {
   userId: string;
   currentStep: Step;
   status: Status;
+
+  rgaSimulationData: RGASimulationData | null;
+  rgaSimulationCompletedAt: Date | null;
+  rgaDataDeletedAt: Date | null;
+  rgaDataDeletionReason: string | null;
+
   createdAt: Date;
   updatedAt: Date;
 }

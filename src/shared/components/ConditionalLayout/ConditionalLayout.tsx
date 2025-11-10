@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { AuthProvider } from "@/features/auth/client";
-import { RGAProvider } from "@/features/simulateur-rga";
 import {
   Crisp,
   Footer,
@@ -25,9 +24,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     return (
       <>
         <Matomo />
-        <RGAProvider>
-          <main className="flex-1 h-full">{children}</main>
-        </RGAProvider>
+        <main className="flex-1 h-full">{children}</main>
       </>
     );
   }
@@ -40,9 +37,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
         <Matomo />
         <Crisp />
         <Header />
-        <RGAProvider>
-          <main className="flex-1">{children}</main>
-        </RGAProvider>
+        <main className="flex-1">{children}</main>
         <Footer />
       </AuthProvider>
     </>

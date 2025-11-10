@@ -3,7 +3,6 @@
 import { AUTH_METHODS, useAuth } from "@/features/auth/client";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
-import { useRGAContext } from "@/features/simulateur-rga";
 import { useState } from "react";
 import { useParcours } from "../context/useParcours";
 import { Step } from "../domain";
@@ -24,10 +23,11 @@ import {
 } from "./steps";
 import Loading from "@/app/loading";
 import SimulationNeededAlert from "@/app/mon-compte/components/SimulationNeededAlert";
+import { useSimulateurRga } from "@/features/simulateur-rga";
 
 export default function MonCompteClient() {
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
-  const { hasData: hasRGAData, isLoading: isLoadingRGA } = useRGAContext();
+  const { hasData: hasRGAData, isLoading: isLoadingRGA } = useSimulateurRga();
   const [showAmoSuccessAlert, setShowAmoSuccessAlert] = useState(false);
 
   // Utilisation du hook parcours simplifié
