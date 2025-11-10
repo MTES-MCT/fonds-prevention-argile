@@ -72,10 +72,38 @@ describe("amo-validation.service", () => {
       currentStep: Step.CHOIX_AMO,
       currentStatus: Status.TODO,
       completedAt: null,
-    };
-
-    const mockUser = {
-      codeInsee: "75001",
+      rgaSimulationData: {
+        logement: {
+          commune: "75001",
+          adresse: "123 rue test",
+          code_region: "11",
+          code_departement: "75",
+          epci: "200054781",
+          commune_nom: "Paris 1er",
+          coordonnees: "48.8566,2.3522",
+          clef_ban: "test_ban",
+          commune_denormandie: false,
+          annee_de_construction: "1990",
+          rnb: "RNB_TEST",
+          niveaux: 2,
+          zone_dexposition: "moyen" as const,
+          type: "maison" as const,
+          mitoyen: true,
+          proprietaire_occupant: true,
+        },
+        taxeFonciere: { commune_eligible: true },
+        rga: {
+          assure: true,
+          indemnise_indemnise_rga: false,
+          sinistres: "saine" as const,
+        },
+        menage: { revenu_rga: 35000, personnes: 4 },
+        vous: { proprietaire_condition: true, proprietaire_occupant_rga: true },
+        simulatedAt: new Date().toISOString(),
+      },
+      rgaSimulationCompletedAt: new Date(),
+      rgaDataDeletedAt: null,
+      rgaDataDeletionReason: null,
     };
 
     const mockAmo = {
@@ -91,15 +119,6 @@ describe("amo-validation.service", () => {
     beforeEach(() => {
       // Setup des mocks par défaut pour un cas de succès
       vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(mockParcours);
-
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([mockUser]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
 
       vi.mocked(checkAmoCoversCodeInsee).mockResolvedValue(true);
 
@@ -249,20 +268,18 @@ describe("amo-validation.service", () => {
     });
 
     it("devrait échouer si le code INSEE est manquant", async () => {
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([{ codeInsee: null }]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue({
+        ...mockParcours,
+        rgaSimulationData: null,
+      });
 
       const result = await selectAmoForUser(userId, validParams);
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("Code INSEE manquant");
+        expect(result.error).toBe(
+          "Simulation RGA non complétée (code INSEE manquant)"
+        );
       }
     });
 
@@ -314,7 +331,7 @@ describe("amo-validation.service", () => {
         amoNom: mockAmo.nom,
         demandeurNom: validParams.userNom,
         demandeurPrenom: validParams.userPrenom,
-        demandeurCodeInsee: mockUser.codeInsee,
+        demandeurCodeInsee: "75001",
         adresseLogement: validParams.adresseLogement,
         token: "mock-uuid-token",
       });
@@ -382,7 +399,11 @@ describe("amo-validation.service", () => {
       userPrenom: "Jean",
       adresseLogement: "123 rue de la Paix",
       parcoursId: "parcours-789",
-      userCodeInsee: "75001",
+      rgaSimulationData: {
+        logement: {
+          commune: "75001",
+        },
+      },
     };
 
     const mockAmo = {
@@ -420,7 +441,7 @@ describe("amo-validation.service", () => {
           validationId: mockTokenData.validationId,
           entrepriseAmo: mockAmo,
           demandeur: {
-            codeInsee: mockTokenData.userCodeInsee,
+            codeInsee: "75001",
             nom: mockTokenData.userNom,
             prenom: mockTokenData.userPrenom,
             adresseLogement: mockTokenData.adresseLogement,
@@ -519,7 +540,7 @@ describe("amo-validation.service", () => {
         userNom: null,
         userPrenom: null,
         adresseLogement: null,
-        userCodeInsee: null,
+        rgaSimulationData: null,
       };
 
       vi.mocked(db.select).mockReturnValue({
@@ -564,6 +585,10 @@ describe("amo-validation.service", () => {
       currentStep: Step.CHOIX_AMO,
       currentStatus: Status.EN_INSTRUCTION,
       completedAt: null,
+      rgaSimulationData: null,
+      rgaSimulationCompletedAt: null,
+      rgaDataDeletedAt: null,
+      rgaDataDeletionReason: null,
     };
 
     beforeEach(() => {
@@ -725,6 +750,10 @@ describe("amo-validation.service", () => {
       currentStep: Step.CHOIX_AMO,
       currentStatus: Status.EN_INSTRUCTION,
       completedAt: null,
+      rgaSimulationData: null,
+      rgaSimulationCompletedAt: null,
+      rgaDataDeletedAt: null,
+      rgaDataDeletionReason: null,
     };
 
     beforeEach(() => {
@@ -819,6 +848,10 @@ describe("amo-validation.service", () => {
       currentStep: Step.CHOIX_AMO,
       currentStatus: Status.EN_INSTRUCTION,
       completedAt: null,
+      rgaSimulationData: null,
+      rgaSimulationCompletedAt: null,
+      rgaDataDeletedAt: null,
+      rgaDataDeletionReason: null,
     };
 
     beforeEach(() => {

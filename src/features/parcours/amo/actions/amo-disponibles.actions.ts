@@ -4,14 +4,13 @@ import { getSession } from "@/features/auth/server";
 import { ROLES } from "@/features/auth/domain/value-objects/constants";
 import type { ActionResult } from "@/shared/types";
 import { Amo } from "../domain/entities";
-import {
-  db,
-  entreprisesAmo,
-  entreprisesAmoCommunes,
-  users,
-} from "@/shared/database";
+import { db, entreprisesAmo, entreprisesAmoCommunes } from "@/shared/database";
 import { eq, like } from "drizzle-orm";
-import { getCodeDepartementFromCodeInsee } from "../utils/amo.utils";
+import {
+  getCodeDepartementFromCodeInsee,
+  normalizeCodeInsee,
+} from "../utils/amo.utils";
+import { parcoursRepo } from "@/shared/database/repositories";
 
 /**
  * Récupère la liste des AMO disponibles pour le code INSEE de l'utilisateur
@@ -26,22 +25,29 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
       return { success: false, error: "Non connecté" };
     }
 
-    // Récupérer le code INSEE de l'utilisateur
-    const [user] = await db
-      .select({ codeInsee: users.codeInsee })
-      .from(users)
-      .where(eq(users.id, session.userId))
-      .limit(1);
+    const parcours = await parcoursRepo.findByUserId(session.userId);
 
-    if (!user?.codeInsee) {
+    if (!parcours?.rgaSimulationData?.logement?.commune) {
       return {
         success: false,
-        error: "Code INSEE non renseigné pour cet utilisateur",
+        error: "Simulation RGA non complétée (code INSEE manquant)",
       };
     }
 
     // Extraire le code département
-    const codeDepartement = getCodeDepartementFromCodeInsee(user.codeInsee);
+    const codeInsee = normalizeCodeInsee(
+      parcours.rgaSimulationData.logement.commune
+    );
+
+    if (!codeInsee) {
+      return {
+        success: false,
+        error: "Simulation RGA non complétée (code INSEE invalide)",
+      };
+    }
+
+    // Extraire le code département
+    const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
 
     // 1. Récupérer les AMO qui ont le code INSEE spécifique
     const amosParCodeInsee = await db
@@ -59,7 +65,7 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
         entreprisesAmoCommunes,
         eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
       )
-      .where(eq(entreprisesAmoCommunes.codeInsee, user.codeInsee));
+      .where(eq(entreprisesAmoCommunes.codeInsee, codeInsee));
 
     // 2. Récupérer les AMO qui couvrent le département entier
     // Format recherché : "Seine-et-Marne 77" ou "Gers 32"

@@ -32,8 +32,11 @@ interface SendEmailResult {
 export class EmailService {
   private brevoApi?: TransactionalEmailsApi;
   private smtpTransporter?: Transporter;
+  private initialized = false;
 
-  constructor() {
+  private initialize() {
+    if (this.initialized) return;
+
     if (isLocalDevelopment()) {
       // Configuration SMTP pour Mailhog (local)
       this.smtpTransporter = nodemailer.createTransport({
@@ -43,11 +46,14 @@ export class EmailService {
         ignoreTLS: true,
       });
 
-      console.log("📧 Email service (local SMTP/Mailhog):", {
-        host: emailConfig.smtp.host,
-        port: emailConfig.smtp.port,
-        webUI: "http://localhost:8025",
-      });
+      // Log seulement si variable d'environnement activée
+      if (process.env.DEBUG_EMAIL_SERVICE === "true") {
+        console.log("Email service (local SMTP/Mailhog):", {
+          host: emailConfig.smtp.host,
+          port: emailConfig.smtp.port,
+          webUI: "http://localhost:8025",
+        });
+      }
     } else {
       // Configuration Brevo pour staging/production
       if (!emailConfig.apiKey) {
@@ -57,12 +63,16 @@ export class EmailService {
       this.brevoApi = new TransactionalEmailsApi();
       this.brevoApi.setApiKey(0, emailConfig.apiKey);
     }
+
+    this.initialized = true;
   }
 
   /**
    * Envoie un email via SMTP (local) ou Brevo (prod)
    */
   async sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
+    this.initialize();
+
     if (isLocalDevelopment()) {
       return this.sendViaSMTP(params);
     } else {
@@ -192,5 +202,5 @@ export class EmailService {
   }
 }
 
-// Instance singleton
+// Instance singleton (création différée)
 export const emailService = new EmailService();

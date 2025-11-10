@@ -9,10 +9,12 @@ import {
   entreprisesAmo,
   entreprisesAmoCommunes,
   parcoursAmoValidations,
-  users,
 } from "@/shared/database/schema";
 import { and, eq, like, or } from "drizzle-orm";
-import { getCodeDepartementFromCodeInsee } from "../utils/amo.utils";
+import {
+  getCodeDepartementFromCodeInsee,
+  normalizeCodeInsee,
+} from "../utils/amo.utils";
 import {
   AMO_VALIDATION_TOKEN_VALIDITY_DAYS,
   StatutValidationAmo,
@@ -68,19 +70,26 @@ export async function choisirAmo(params: {
       };
     }
 
-    // Vérifier que l'AMO existe et couvre bien le code INSEE de l'utilisateur
-    const [user] = await db
-      .select({ codeInsee: users.codeInsee })
-      .from(users)
-      .where(eq(users.id, session.userId))
-      .limit(1);
+    if (!parcours?.rgaSimulationData?.logement?.commune) {
+      return {
+        success: false,
+        error: "Simulation RGA non complétée (code INSEE manquant)",
+      };
+    }
 
-    if (!user?.codeInsee) {
-      return { success: false, error: "Code INSEE manquant" };
+    const codeInsee = normalizeCodeInsee(
+      parcours?.rgaSimulationData?.logement?.commune
+    );
+
+    if (!codeInsee) {
+      return {
+        success: false,
+        error: "Simulation RGA non complétée (code INSEE invalide)",
+      };
     }
 
     // Extraire le code département
-    const codeDepartement = getCodeDepartementFromCodeInsee(user.codeInsee);
+    const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
 
     // Vérifier que l'AMO couvre soit le code INSEE spécifique, soit le département
     const amoValide = await db
@@ -97,7 +106,7 @@ export async function choisirAmo(params: {
         and(
           eq(entreprisesAmo.id, entrepriseAmoId),
           or(
-            eq(entreprisesAmoCommunes.codeInsee, user.codeInsee),
+            eq(entreprisesAmoCommunes.codeInsee, codeInsee),
             like(entreprisesAmo.departements, `%${codeDepartement}%`)
           )
         )
@@ -180,7 +189,7 @@ export async function choisirAmo(params: {
       amoNom: amo.nom,
       demandeurNom: userNom,
       demandeurPrenom: userPrenom,
-      demandeurCodeInsee: user.codeInsee,
+      demandeurCodeInsee: codeInsee,
       adresseLogement,
       token,
     });

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   getCodeDepartementFromCodeInsee,
   isValidSiret,
+  normalizeCodeInsee,
   validateEmailsList,
 } from "./amo.utils";
 
@@ -90,11 +91,9 @@ describe("amo.utils", () => {
       });
 
       it("devrait lancer une erreur si le code INSEE est null/undefined", () => {
-        // @ts-expect-error - Test avec une valeur invalide intentionnellement
         expect(() => getCodeDepartementFromCodeInsee(null)).toThrow(
           "Code INSEE invalide : doit contenir 5 chiffres"
         );
-        // @ts-expect-error - Test avec une valeur invalide intentionnellement
         expect(() => getCodeDepartementFromCodeInsee(undefined)).toThrow(
           "Code INSEE invalide : doit contenir 5 chiffres"
         );
@@ -372,6 +371,30 @@ describe("amo.utils", () => {
         const result = validateEmailsList("user.name@sub.domain.example.com");
         expect(result).toEqual(["user.name@sub.domain.example.com"]);
       });
+    });
+  });
+
+  describe("normalizeCodeInsee", () => {
+    it("devrait normaliser un number en string de 5 chiffres", () => {
+      expect(normalizeCodeInsee(36202)).toBe("36202");
+    });
+
+    it("devrait padder les codes INSEE courts", () => {
+      expect(normalizeCodeInsee(1234)).toBe("01234");
+      expect(normalizeCodeInsee(123)).toBe("00123");
+    });
+
+    it("devrait gérer les strings", () => {
+      expect(normalizeCodeInsee("75001")).toBe("75001");
+      expect(normalizeCodeInsee("1234")).toBe("01234");
+    });
+
+    it("devrait retourner null pour les valeurs invalides", () => {
+      expect(normalizeCodeInsee(null)).toBeNull();
+      expect(normalizeCodeInsee(undefined)).toBeNull();
+      expect(normalizeCodeInsee("")).toBeNull();
+      expect(normalizeCodeInsee("abc")).toBeNull();
+      expect(normalizeCodeInsee(123456)).toBeNull();
     });
   });
 });

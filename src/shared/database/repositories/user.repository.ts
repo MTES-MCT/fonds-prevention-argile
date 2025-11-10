@@ -109,8 +109,7 @@ export class UserRepository extends BaseRepository<User> {
    * Crée ou met à jour un utilisateur depuis FranceConnect
    */
   async upsertFromFranceConnect(
-    userInfo: FranceConnectUserInfo,
-    codeInsee?: string // 🆕 Nouveau paramètre optionnel
+    userInfo: FranceConnectUserInfo
   ): Promise<User> {
     const fcId = userInfo.sub;
 
@@ -123,11 +122,6 @@ export class UserRepository extends BaseRepository<User> {
         lastLogin: new Date(),
       };
 
-      // Mettre à jour le code INSEE seulement s'il est fourni et que l'user n'en a pas encore
-      if (codeInsee && !existingUser.codeInsee) {
-        updates.codeInsee = codeInsee;
-      }
-
       const updated = await this.update(existingUser.id, updates);
 
       if (!updated) {
@@ -139,7 +133,6 @@ export class UserRepository extends BaseRepository<User> {
       // Création d'un nouvel utilisateur
       return await this.create({
         fcId,
-        codeInsee,
         lastLogin: new Date(),
       });
     }

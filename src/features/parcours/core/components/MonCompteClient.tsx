@@ -3,7 +3,6 @@
 import { AUTH_METHODS, useAuth } from "@/features/auth/client";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
-import { useRGAContext } from "@/features/simulateur-rga";
 import { useState } from "react";
 import { useParcours } from "../context/useParcours";
 import { Step } from "../domain";
@@ -24,10 +23,11 @@ import {
 } from "./steps";
 import Loading from "@/app/loading";
 import SimulationNeededAlert from "@/app/mon-compte/components/SimulationNeededAlert";
+import { useSimulateurRga } from "@/features/simulateur-rga";
 
 export default function MonCompteClient() {
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
-  const { hasData: hasRGAData, isLoading: isLoadingRGA } = useRGAContext();
+  const { hasData: hasRGAData, isLoading: isLoadingRGA } = useSimulateurRga();
   const [showAmoSuccessAlert, setShowAmoSuccessAlert] = useState(false);
 
   // Utilisation du hook parcours simplifié
@@ -43,14 +43,6 @@ export default function MonCompteClient() {
 
   // État de chargement global
   const isLoading = isAuthLoading || isLoadingRGA || isLoadingParcours;
-
-  // Si France Connect mais pas de données
-  // Exception: l'étape CHOIX_AMO ne nécessite pas de dossier DS
-  const isFranceConnectWithoutData =
-    user?.authMethod === AUTH_METHODS.FRANCECONNECT &&
-    !hasRGAData &&
-    !hasDossiers &&
-    currentStep !== Step.CHOIX_AMO;
 
   // Afficher un message de déconnexion
   if (isLoggingOut) {
@@ -74,13 +66,22 @@ export default function MonCompteClient() {
     return null;
   }
 
-  // Cas où l'utilisateur est FranceConnect sans données RGA ni parcours
-  // ou n'a ni parcours ni données RGA
-  // Exception: l'étape CHOIX_AMO ne nécessite pas de dossier
-  if (
-    isFranceConnectWithoutData ||
-    (!hasRGAData && !hasParcours && currentStep !== Step.CHOIX_AMO)
-  ) {
+  // Si France Connect mais pas de données
+  const isFranceConnectWithoutData =
+    user.authMethod === AUTH_METHODS.FRANCECONNECT &&
+    !hasRGAData &&
+    !hasDossiers &&
+    currentStep !== Step.CHOIX_AMO;
+
+  // Conditions de simulation nécessaire
+
+  const needsSimulation =
+    !hasRGAData && // Pas de données RGA (ni BDD, ni localStorage, ni sessionStorage)
+    !hasParcours && // Pas de parcours créé
+    currentStep !== Step.CHOIX_AMO; // Exception pour CHOIX_AMO
+
+  // Cas où simulation nécessaire (France Connect sans données ou pas de RGA ni parcours)
+  if (isFranceConnectWithoutData || needsSimulation) {
     return (
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">

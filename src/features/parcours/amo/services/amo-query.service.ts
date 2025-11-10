@@ -5,9 +5,8 @@ import {
   entreprisesAmoCommunes,
   parcoursAmoValidations,
   parcoursPrevention,
-  users,
 } from "@/shared/database/schema";
-import { getCodeDepartementFromCodeInsee } from "../utils/amo.utils";
+import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
 import { Amo } from "../domain/entities";
 import { StatutValidationAmo } from "../domain/value-objects";
 
@@ -19,19 +18,25 @@ import { StatutValidationAmo } from "../domain/value-objects";
  * Récupère les AMO disponibles pour un code INSEE
  */
 export async function getAmosForCodeInsee(userId: string): Promise<Amo[]> {
-  // Récupérer le code INSEE de l'utilisateur
-  const [user] = await db
-    .select({ codeInsee: users.codeInsee })
-    .from(users)
-    .where(eq(users.id, userId))
+  // Récupérer le code INSEE depuis le parcours
+  const [parcours] = await db
+    .select({
+      rgaSimulationData: parcoursPrevention.rgaSimulationData,
+    })
+    .from(parcoursPrevention)
+    .where(eq(parcoursPrevention.userId, userId))
     .limit(1);
 
-  if (!user?.codeInsee) {
-    throw new Error("Code INSEE non renseigné pour cet utilisateur");
+  const codeInsee = normalizeCodeInsee(
+    parcours?.rgaSimulationData?.logement?.commune
+  );
+
+  if (!codeInsee) {
+    throw new Error("Simulation RGA non complétée (code INSEE manquant)");
   }
 
   // Extraire le code département
-  const codeDepartement = getCodeDepartementFromCodeInsee(user.codeInsee);
+  const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
 
   // 1. AMO avec le code INSEE spécifique
   const amosParCodeInsee = await db
@@ -49,7 +54,7 @@ export async function getAmosForCodeInsee(userId: string): Promise<Amo[]> {
       entreprisesAmoCommunes,
       eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
     )
-    .where(eq(entreprisesAmoCommunes.codeInsee, user.codeInsee));
+    .where(eq(entreprisesAmoCommunes.codeInsee, codeInsee));
 
   // 2. AMO qui couvrent le département entier
   const amosParDepartement = await db

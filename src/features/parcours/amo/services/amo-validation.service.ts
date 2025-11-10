@@ -4,7 +4,6 @@ import {
   amoValidationTokens,
   parcoursAmoValidations,
   parcoursPrevention,
-  users,
 } from "@/shared/database/schema";
 import { parcoursRepo } from "@/shared/database/repositories";
 
@@ -18,6 +17,7 @@ import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.action
 import { ValidationAmoData } from "../domain/entities";
 import { Status, Step } from "../../core";
 import { moveToNextStep } from "../../core/services";
+import { normalizeCodeInsee } from "../utils/amo.utils";
 
 /**
  * Service de gestion des validations AMO
@@ -62,22 +62,27 @@ export async function selectAmoForUser(
     };
   }
 
-  // Récupérer le code INSEE de l'utilisateur
-  const [user] = await db
-    .select({ codeInsee: users.codeInsee })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
+  // Vérifier que le parcours a les données RGA
+  if (!parcours.rgaSimulationData?.logement?.commune) {
+    return {
+      success: false,
+      error: "Simulation RGA non complétée (code INSEE manquant)",
+    };
+  }
 
-  if (!user?.codeInsee) {
-    return { success: false, error: "Code INSEE manquant" };
+  const codeInsee = normalizeCodeInsee(
+    parcours.rgaSimulationData?.logement?.commune
+  );
+
+  if (!codeInsee) {
+    return {
+      success: false,
+      error: "Simulation RGA non complétée (code INSEE invalide)",
+    };
   }
 
   // Vérifier que l'AMO couvre le code INSEE
-  const amoCovers = await checkAmoCoversCodeInsee(
-    entrepriseAmoId,
-    user.codeInsee
-  );
+  const amoCovers = await checkAmoCoversCodeInsee(entrepriseAmoId, codeInsee);
   if (!amoCovers) {
     return {
       success: false,
@@ -146,7 +151,7 @@ export async function selectAmoForUser(
     amoNom: amo.nom,
     demandeurNom: userNom,
     demandeurPrenom: userPrenom,
-    demandeurCodeInsee: user.codeInsee,
+    demandeurCodeInsee: codeInsee ?? "",
     adresseLogement,
     token,
   });
@@ -331,7 +336,7 @@ export async function getValidationByToken(
       userPrenom: parcoursAmoValidations.userPrenom,
       adresseLogement: parcoursAmoValidations.adresseLogement,
       parcoursId: parcoursPrevention.id,
-      userCodeInsee: users.codeInsee,
+      rgaSimulationData: parcoursPrevention.rgaSimulationData,
     })
     .from(amoValidationTokens)
     .innerJoin(
@@ -342,9 +347,11 @@ export async function getValidationByToken(
       parcoursPrevention,
       eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id)
     )
-    .innerJoin(users, eq(parcoursPrevention.userId, users.id))
     .where(eq(amoValidationTokens.token, token))
     .limit(1);
+
+  const userCodeInsee =
+    normalizeCodeInsee(tokenData?.rgaSimulationData?.logement?.commune) || "";
 
   if (!tokenData) {
     return {
@@ -376,7 +383,7 @@ export async function getValidationByToken(
       validationId: tokenData.validationId,
       entrepriseAmo: amo,
       demandeur: {
-        codeInsee: tokenData.userCodeInsee || "",
+        codeInsee: userCodeInsee,
         nom: tokenData.userNom || "",
         prenom: tokenData.userPrenom || "",
         adresseLogement: tokenData.adresseLogement || "",

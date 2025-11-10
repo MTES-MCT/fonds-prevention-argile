@@ -14,6 +14,11 @@ import {
   syncUserDossierStatus,
 } from "../../dossiers-ds/actions/dossier-sync.actions";
 import { DossierDS } from "../../dossiers-ds";
+import { PartialRGAFormData, RGAFormData } from "@/features/simulateur-rga";
+import { storageAdapter } from "@/features/simulateur-rga/adapters/storage.adapter";
+import { migrateSimulationDataToDatabase } from "../actions/parcours-simulateur-rga-migration.actions";
+import { mapDBToRGAFormData } from "@/features/simulateur-rga/mappers";
+import { useAuth } from "@/features/auth/client";
 
 interface ParcoursProviderProps {
   children: React.ReactNode;
@@ -48,12 +53,24 @@ export function ParcoursProvider({
   const [isComplete, setIsComplete] = useState(false);
   const [prochainEtape, setProchainEtape] = useState<Step | null>(null);
 
+  // Simulateur RGA
+  const [tempRgaData, setTempRgaData] = useState<PartialRGAFormData | null>(
+    null
+  );
+
   // Refs
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isSyncingRef = useRef(false);
+  const { isAuthenticated } = useAuth();
 
   // Fonction de chargement du parcours
   const fetchParcours = useCallback(async () => {
+    // Si non authentifié, skip (mode embed RGA uniquement)
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setError(null);
       const result = await obtenirMonParcours();
@@ -93,7 +110,7 @@ export function ParcoursProvider({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // Fonction de synchronisation stabilisée
   const syncNow = useCallback(
@@ -173,15 +190,128 @@ export function ParcoursProvider({
     }
   }, [fetchParcours, router]);
 
-  // Chargement initial
+  // Actions RGA
+  const saveTempRgaData = useCallback((data: PartialRGAFormData): boolean => {
+    try {
+      const success = storageAdapter.save(data);
+      if (success) {
+        setTempRgaData(data);
+      }
+      return success;
+    } catch (error) {
+      console.error("[RGA] Erreur sauvegarde:", error);
+      return false;
+    }
+  }, []);
+
+  const clearTempRgaData = useCallback(() => {
+    storageAdapter.clear();
+    setTempRgaData(null);
+  }, []);
+
+  // Chargement initial : parcours + localStorage/sessionStorage
   useEffect(() => {
+    // Charger le parcours
     fetchParcours();
+
+    // Charger les données RGA depuis localStorage OU sessionStorage (fallback)
+    const stored = storageAdapter.get();
+    if (stored) {
+      setTempRgaData(stored);
+
+      // Log pour debug
+      if (storageAdapter.hasSessionStorageData()) {
+        console.log(
+          "[RGA] Données chargées depuis sessionStorage (ancien système)"
+        );
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Migration sessionStorage → BDD (ancien système)
+  useEffect(() => {
+    async function migrateSessionStorage() {
+      // Nécessite authentification + parcours
+      if (!isAuthenticated || !parcours) {
+        return;
+      }
+
+      // Vérifier si des données existent dans sessionStorage
+      if (!storageAdapter.hasSessionStorageData()) {
+        return;
+      }
+
+      // Vérifier si déjà des données en BDD
+      if (parcours.rgaSimulationData) {
+        console.log(
+          "[Migration sessionStorage] Données déjà en BDD, nettoyage sessionStorage"
+        );
+        storageAdapter.clearSessionStorage();
+        return;
+      }
+
+      // Récupérer les données sessionStorage
+      const sessionData = storageAdapter.getFromSessionStorage();
+
+      if (!sessionData) {
+        return;
+      }
+
+      try {
+        console.log("[Migration sessionStorage] Migration en cours...");
+
+        const result = await migrateSimulationDataToDatabase(
+          sessionData as RGAFormData
+        );
+
+        if (result.success) {
+          console.log("[Migration sessionStorage] ✅ Migration réussie");
+
+          // Nettoyer sessionStorage après migration réussie
+          storageAdapter.clearSessionStorage();
+
+          // Rafraîchir le parcours
+          await fetchParcours();
+        } else {
+          console.error("[Migration sessionStorage] - Échec:", result.error);
+        }
+      } catch (error) {
+        console.error("[Migration sessionStorage] - Erreur:", error);
+      }
+    }
+
+    migrateSessionStorage();
+  }, [isAuthenticated, parcours, fetchParcours]);
+
+  // Migration auto localStorage → BDD après FranceConnect
+  useEffect(() => {
+    async function migrate() {
+      // Nécessite authentification + parcours
+      if (!isAuthenticated || !parcours) {
+        return;
+      }
+
+      if (tempRgaData && !parcours.rgaSimulationData) {
+        const result = await migrateSimulationDataToDatabase(
+          tempRgaData as RGAFormData
+        );
+
+        if (result.success) {
+          clearTempRgaData();
+          await fetchParcours();
+        } else {
+          console.error("[Migration RGA] Échec migration:", result.error);
+        }
+      }
+    }
+    migrate();
+  }, [isAuthenticated, tempRgaData, parcours, fetchParcours, clearTempRgaData]);
+
   // Sync unique au chargement
   useEffect(() => {
-    if (parcours) {
+    // Sync uniquement si authentifié et parcours existant
+    if (isAuthenticated && parcours) {
       const timer = setTimeout(() => {
         syncNow();
       }, 2000);
@@ -190,11 +320,12 @@ export function ParcoursProvider({
         clearTimeout(timer);
       };
     }
-  }, [parcours?.id, syncNow]);
+  }, [isAuthenticated, parcours?.id, syncNow]);
 
   // Auto-sync avec intervalle
   useEffect(() => {
-    if (!autoSync || !parcours) return;
+    // Auto-sync uniquement si authentifié
+    if (!autoSync || !isAuthenticated || !parcours) return;
 
     intervalRef.current = setInterval(() => {
       syncNow();
@@ -206,7 +337,7 @@ export function ParcoursProvider({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoSync]);
+  }, [autoSync, isAuthenticated]);
 
   // Helpers
   const getDossierByStep = useCallback(
@@ -227,6 +358,11 @@ export function ParcoursProvider({
     if (!parcours) return undefined;
     return getDossierByStep(parcours.currentStep);
   }, [parcours, getDossierByStep]);
+
+  // Getter RGA : converti en format uniforme
+  const rgaData = parcours?.rgaSimulationData
+    ? mapDBToRGAFormData(parcours.rgaSimulationData)
+    : tempRgaData;
 
   const value = {
     // Données
@@ -254,6 +390,12 @@ export function ParcoursProvider({
     isComplete,
     prochainEtape,
     hasParcours: !!parcours,
+
+    // RGA
+    tempRgaData,
+    rgaData,
+    saveTempRgaData,
+    clearTempRgaData,
 
     // Actions
     refresh: fetchParcours,

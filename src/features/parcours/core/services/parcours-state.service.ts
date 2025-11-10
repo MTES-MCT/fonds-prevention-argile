@@ -1,4 +1,4 @@
-import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import { parcoursRepo } from "@/shared/database/repositories";
 import { dossierDsRepo } from "@/shared/database";
 import type { Parcours, ParcoursState } from "../domain/entities/parcours";
 import type { ParcoursComplet } from "../domain/types/parcours-query.types";
@@ -18,8 +18,7 @@ import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status"
  * Crée ou récupère le parcours d'un utilisateur
  */
 export async function getOrCreateParcours(userId: string): Promise<Parcours> {
-  const parcours =
-    await parcoursPreventionRepository.findOrCreateForUser(userId);
+  const parcours = await parcoursRepo.findOrCreateForUser(userId);
 
   return {
     id: parcours.id,
@@ -28,6 +27,10 @@ export async function getOrCreateParcours(userId: string): Promise<Parcours> {
     status: parcours.currentStatus,
     createdAt: parcours.createdAt,
     updatedAt: parcours.updatedAt,
+    rgaSimulationData: parcours.rgaSimulationData,
+    rgaSimulationCompletedAt: parcours.rgaSimulationCompletedAt,
+    rgaDataDeletedAt: parcours.rgaDataDeletedAt,
+    rgaDataDeletionReason: parcours.rgaDataDeletionReason,
   };
 }
 
@@ -37,7 +40,7 @@ export async function getOrCreateParcours(userId: string): Promise<Parcours> {
 export async function getParcoursComplet(
   userId: string
 ): Promise<ParcoursComplet | null> {
-  const parcours = await parcoursPreventionRepository.findByUserId(userId);
+  const parcours = await parcoursRepo.findByUserId(userId);
 
   if (!parcours) {
     return null;
@@ -80,6 +83,10 @@ export async function getParcoursComplet(
       status: parcours.currentStatus,
       createdAt: parcours.createdAt,
       updatedAt: parcours.updatedAt,
+      rgaSimulationData: parcours.rgaSimulationData,
+      rgaSimulationCompletedAt: parcours.rgaSimulationCompletedAt,
+      rgaDataDeletedAt: parcours.rgaDataDeletedAt,
+      rgaDataDeletionReason: parcours.rgaDataDeletionReason,
     },
     dossiers,
     isComplete,

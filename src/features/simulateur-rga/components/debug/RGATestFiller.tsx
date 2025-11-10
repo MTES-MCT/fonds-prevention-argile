@@ -3,7 +3,7 @@
 import { JSX, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PartialRGAFormData } from "../../domain/entities";
-import { useRGAContext } from "../../context";
+import { useSimulateurRga } from "../../hooks";
 import { isProduction } from "@/shared/config/env.config";
 
 // Données de test adaptées au type RGAFormData avec structure imbriquée
@@ -26,35 +26,37 @@ const TEST_RGA_DATA: PartialRGAFormData = {
     mitoyen: "non",
     proprietaire_occupant: "oui",
   },
-
   taxeFonciere: {
     commune_eligible: "non",
   },
-
   rga: {
     assure: "oui",
     indemnise_indemnise_rga: "non",
     sinistres: "saine",
   },
-
   menage: {
     revenu_rga: 50576,
     personnes: 7,
   },
-
   vous: {
     proprietaire_condition: "oui",
     proprietaire_occupant_rga: "oui",
   },
 };
 
+const RGA_SESSION_KEY = "fonds-argile-rga-data";
+
 export default function RGATestFiller(): JSX.Element | null {
   const router = useRouter();
-  const { saveRGA, validateRGAData } = useRGAContext();
+  const { saveRGA, validateRGAData } = useSimulateurRga();
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // État pour le bouton sessionStorage
+  const [isSessionSuccess, setIsSessionSuccess] = useState(false);
+  const [isSessionLoading, setIsSessionLoading] = useState(false);
 
   // Ne pas afficher en production
   if (isProduction()) {
@@ -93,6 +95,37 @@ export default function RGATestFiller(): JSX.Element | null {
     }
   };
 
+  const handleFillSessionStorage = () => {
+    setIsSessionLoading(true);
+
+    try {
+      // Créer la structure StoredRGAData
+      const payload = {
+        data: TEST_RGA_DATA,
+        timestamp: Date.now(),
+        version: "1.0",
+      };
+
+      // Sauvegarder dans sessionStorage (ancien système)
+      sessionStorage.setItem(RGA_SESSION_KEY, JSON.stringify(payload));
+
+      console.log(
+        "[DEBUG] Données de test enregistrées dans sessionStorage (ancien système)"
+      );
+
+      setIsSessionSuccess(true);
+
+      // Réinitialiser le message après 3 secondes
+      setTimeout(() => {
+        setIsSessionSuccess(false);
+      }, 3000);
+    } catch (error) {
+      console.error("Erreur lors du remplissage sessionStorage:", error);
+    } finally {
+      setIsSessionLoading(false);
+    }
+  };
+
   return (
     <div className="fr-container fr-mt-2w">
       <div className="fr-callout fr-callout--pink-tuile">
@@ -101,33 +134,56 @@ export default function RGATestFiller(): JSX.Element | null {
           Remplir automatiquement le formulaire avec des données de test
           (Saint-Maur, maison 1994, 7 personnes, 50k€ revenus)
         </p>
-        <button
-          className="fr-btn"
-          onClick={handleFillTestData}
-          disabled={isLoading || isRedirecting}
-          type="button"
-        >
-          {isLoading ? (
-            <>
-              <span
-                className="fr-loader fr-loader--sm"
-                aria-hidden="true"
-              ></span>
-              <span className="fr-ml-1w">Chargement...</span>
-            </>
-          ) : isRedirecting ? (
-            "Redirection..."
-          ) : (
-            "Remplir avec des données de test"
-          )}
-        </button>
 
-        {/* Message de succès */}
+        <div className="fr-btns-group fr-btns-group--inline">
+          {/* Bouton localStorage (nouveau système) */}
+          <button
+            className="fr-btn"
+            onClick={handleFillTestData}
+            disabled={isLoading || isRedirecting}
+            type="button"
+          >
+            {isLoading ? (
+              <>
+                <span
+                  className="fr-loader fr-loader--sm"
+                  aria-hidden="true"
+                ></span>
+                <span className="fr-ml-1w">Chargement...</span>
+              </>
+            ) : isRedirecting ? (
+              "Redirection..."
+            ) : (
+              "Nouveau système (localStorage)"
+            )}
+          </button>
+
+          {/* Bouton sessionStorage (ancien système) */}
+          <button
+            className="fr-btn fr-btn--secondary"
+            onClick={handleFillSessionStorage}
+            disabled={isSessionLoading}
+            type="button"
+          >
+            {isSessionLoading ? (
+              <>
+                <span
+                  className="fr-loader fr-loader--sm"
+                  aria-hidden="true"
+                ></span>
+                <span className="fr-ml-1w">Chargement...</span>
+              </>
+            ) : (
+              "Ancien système (sessionStorage)"
+            )}
+          </button>
+        </div>
+
+        {/* Message de succès localStorage */}
         {isSuccess && (
           <div className="fr-alert fr-alert--success fr-mt-2w fr-alert--sm">
             <p className="fr-text--sm fr-mb-0">
-              <strong>Simulation remplie en dur pour tests</strong> - Données
-              sauvegardées en session
+              <strong>✅ localStorage</strong> - Données sauvegardées
               {isRedirecting && " - Redirection vers la connexion..."}
             </p>
             {validationErrors.length > 0 && (
@@ -142,7 +198,21 @@ export default function RGATestFiller(): JSX.Element | null {
           </div>
         )}
 
-        {/* Affichage des erreurs de validation si présentes et pas de succès */}
+        {/* Message de succès sessionStorage */}
+        {isSessionSuccess && (
+          <div className="fr-alert fr-alert--info fr-mt-2w fr-alert--sm">
+            <p className="fr-text--sm fr-mb-0">
+              <strong>✅ sessionStorage (ancien système)</strong> - Données de
+              test enregistrées
+            </p>
+            <p className="fr-text--xs fr-mt-1w fr-mb-0">
+              💡 Connectez-vous maintenant pour tester la migration automatique
+              vers la BDD
+            </p>
+          </div>
+        )}
+
+        {/* Affichage des erreurs de validation */}
         {!isSuccess && validationErrors.length > 0 && (
           <div className="fr-alert fr-alert--error fr-mt-2w fr-alert--sm">
             <p className="fr-text--sm fr-mb-1w">Erreurs de validation :</p>
@@ -153,6 +223,37 @@ export default function RGATestFiller(): JSX.Element | null {
             </ul>
           </div>
         )}
+
+        {/* Instructions de test */}
+        <details className="fr-mt-2w">
+          <summary className="fr-text--sm" style={{ cursor: "pointer" }}>
+            📖 Comment tester la migration ?
+          </summary>
+          <div className="fr-text--xs fr-mt-1w" style={{ paddingLeft: "1rem" }}>
+            <ol>
+              <li>
+                <strong>Cliquer sur "Ancien système (sessionStorage)"</strong>{" "}
+                pour simuler l'ancien comportement
+              </li>
+              <li>
+                <strong>Se connecter avec FranceConnect</strong>
+              </li>
+              <li>
+                <strong>Observer les logs console</strong> pour voir la
+                migration automatique
+              </li>
+              <li>
+                <strong>Vérifier en BDD</strong> que les données sont bien
+                migrées (via Drizzle Studio)
+              </li>
+              <li>
+                <strong>Vérifier que sessionStorage est vide</strong> après
+                migration (console :{" "}
+                <code>sessionStorage.getItem('fonds-argile-rga-data')</code>)
+              </li>
+            </ol>
+          </div>
+        </details>
       </div>
     </div>
   );

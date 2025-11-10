@@ -1,12 +1,7 @@
-"use client";
-
-import { useParcoursContext } from "./ParcoursContext";
+import { validateRGAData } from "@/features/simulateur-rga";
 import { Step } from "../domain";
+import { useParcoursContext } from "./ParcoursContext";
 
-/**
- * Hook simplifié pour utiliser le parcours
- * Wrapper autour du context pour une API plus simple
- */
 export function useParcours() {
   const context = useParcoursContext();
 
@@ -30,6 +25,21 @@ export function useParcours() {
     isLoading: context.isLoading,
     isSyncing: context.isSyncing,
     error: context.error,
+
+    // Simulateur RGA
+    tempRgaData: context.tempRgaData,
+    rgaData: context.rgaData,
+
+    // Actions RGA
+    saveTempRgaData: context.saveTempRgaData,
+    clearTempRgaData: context.clearTempRgaData,
+
+    // Validation RGA
+    validateRGAData,
+    isValidRGA: context.rgaData
+      ? validateRGAData(context.rgaData).length === 0
+      : false,
+    rgaErrors: context.rgaData ? validateRGAData(context.rgaData) : [],
 
     // Actions simplifiées
     refresh: context.refresh,
