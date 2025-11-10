@@ -211,11 +211,23 @@ export function ParcoursProvider({
 
   // Chargement initial : parcours + localStorage/sessionStorage
   useEffect(() => {
+    console.log("[DEBUG Parcours] isInIframe:", window.self !== window.top);
+    try {
+      const localTest = localStorage.getItem("fonds-argile-rga-data");
+      const sessionTest = sessionStorage.getItem("fonds-argile-rga-data");
+      console.log("[DEBUG Parcours] localStorage:", !!localTest);
+      console.log("[DEBUG Parcours] sessionStorage:", !!sessionTest);
+    } catch (e) {
+      console.error("[DEBUG Parcours] Erreur accès storage:", e);
+    }
+
     // Charger le parcours
     fetchParcours();
 
     // Charger les données RGA depuis localStorage OU sessionStorage (fallback)
     const stored = storageAdapter.get();
+    console.log("[DEBUG Parcours] storageAdapter.get():", !!stored);
+
     if (stored) {
       setTempRgaData(stored);
 
