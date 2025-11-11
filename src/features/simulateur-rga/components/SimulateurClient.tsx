@@ -69,23 +69,6 @@ export default function SimulateurClient({
         }
 
         const success = saveRGA(rgaData);
-        console.log("[DEBUG Iframe] saveRGA success:", success);
-        console.log("[DEBUG Iframe] isInIframe:", window.self !== window.top);
-        console.log(
-          "[DEBUG Iframe] Storage utilisé:",
-          window.self !== window.top ? "sessionStorage" : "localStorage"
-        );
-
-        // Vérifier ce qui est vraiment stocké
-        try {
-          const localTest = localStorage.getItem("fonds-argile-rga-data");
-          const sessionTest = sessionStorage.getItem("fonds-argile-rga-data");
-          console.log("[DEBUG Iframe] Dans localStorage:", !!localTest);
-          console.log("[DEBUG Iframe] Dans sessionStorage:", !!sessionTest);
-        } catch (e) {
-          console.error("[DEBUG Iframe] Erreur accès storage:", e);
-        }
-
         if (!success) {
           setProcessingErrors([
             "Échec de la sauvegarde des données en session",
@@ -98,10 +81,13 @@ export default function SimulateurClient({
         isProcessingRef.current = true;
 
         setTimeout(() => {
-          // En mode embed : L'utilisateur quitte le site partenaire mais garde ses données
+          // En mode embed : ouvrir dans un nouvel onglet
           // En mode normal : redirection classique
           if (embedMode) {
-            window.location.href = `${window.location.origin}/connexion`;
+            window.open("/connexion", "_blank");
+            // Réinitialiser l'état après ouverture
+            setProcessingState("idle");
+            isProcessingRef.current = false;
           } else {
             router.push("/connexion");
           }
