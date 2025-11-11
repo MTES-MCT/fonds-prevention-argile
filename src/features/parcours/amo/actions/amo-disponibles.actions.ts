@@ -4,7 +4,12 @@ import { getSession } from "@/features/auth/server";
 import { ROLES } from "@/features/auth/domain/value-objects/constants";
 import type { ActionResult } from "@/shared/types";
 import { Amo } from "../domain/entities";
-import { db, entreprisesAmo, entreprisesAmoCommunes } from "@/shared/database";
+import {
+  db,
+  entreprisesAmo,
+  entreprisesAmoCommunes,
+  entreprisesAmoEpci,
+} from "@/shared/database";
 import { eq, like } from "drizzle-orm";
 import {
   getCodeDepartementFromCodeInsee,
@@ -13,10 +18,11 @@ import {
 import { parcoursRepo } from "@/shared/database/repositories";
 
 /**
- * Récupère la liste des AMO disponibles pour le code INSEE de l'utilisateur
- * Recherche par :
- * 1. Code INSEE exact dans entreprises_amo_communes (prioritaire)
- * 2. Code département extrait du code INSEE dans le champ departements
+ * Récupère la liste des AMO disponibles pour le territoire de l'utilisateur
+ * Recherche par hiérarchie :
+ * 1. Code EPCI dans entreprises_amo_epci (prioritaire si disponible)
+ * 2. Code INSEE exact dans entreprises_amo_communes
+ * 3. Code département extrait du code INSEE dans le champ departements (fallback)
  */
 export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
   try {
@@ -34,7 +40,7 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
       };
     }
 
-    // Extraire le code département
+    // Extraire le code INSEE
     const codeInsee = normalizeCodeInsee(
       parcours.rgaSimulationData.logement.commune
     );
@@ -49,7 +55,30 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
     // Extraire le code département
     const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
 
-    // 1. Récupérer les AMO qui ont le code INSEE spécifique
+    // Extraire le code EPCI (si disponible)
+    const codeEpci = parcours.rgaSimulationData.logement?.epci?.trim() || null;
+
+    // 1. Récupérer les AMO qui couvrent l'EPCI spécifique (si disponible)
+    const amosParEpci = codeEpci
+      ? await db
+          .selectDistinct({
+            id: entreprisesAmo.id,
+            nom: entreprisesAmo.nom,
+            siret: entreprisesAmo.siret,
+            departements: entreprisesAmo.departements,
+            emails: entreprisesAmo.emails,
+            telephone: entreprisesAmo.telephone,
+            adresse: entreprisesAmo.adresse,
+          })
+          .from(entreprisesAmo)
+          .innerJoin(
+            entreprisesAmoEpci,
+            eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId)
+          )
+          .where(eq(entreprisesAmoEpci.codeEpci, codeEpci))
+      : [];
+
+    // 2. Récupérer les AMO qui ont le code INSEE spécifique
     const amosParCodeInsee = await db
       .selectDistinct({
         id: entreprisesAmo.id,
@@ -67,8 +96,7 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
       )
       .where(eq(entreprisesAmoCommunes.codeInsee, codeInsee));
 
-    // 2. Récupérer les AMO qui couvrent le département entier
-    // Format recherché : "Seine-et-Marne 77" ou "Gers 32"
+    // 3. Récupérer les AMO qui couvrent le département entier (fallback)
     const amosParDepartement = await db
       .select({
         id: entreprisesAmo.id,
@@ -85,7 +113,12 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
     // Fusionner et dédupliquer les résultats par ID
     const amosMap = new Map<string, Amo>();
 
-    for (const amo of [...amosParCodeInsee, ...amosParDepartement]) {
+    // Ordre d'insertion respecte la priorité : EPCI > INSEE > Département
+    for (const amo of [
+      ...amosParEpci,
+      ...amosParCodeInsee,
+      ...amosParDepartement,
+    ]) {
       if (!amosMap.has(amo.id)) {
         amosMap.set(amo.id, amo);
       }
@@ -107,7 +140,7 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
 }
 
 /**
- * Récupère la liste de tous les AMO avec leurs codes INSEE
+ * Récupère la liste de tous les AMO avec leurs codes INSEE et EPCI
  */
 export async function getAllAmos(): Promise<
   ActionResult<Array<Amo & { communes: { codeInsee: string }[] }>>
@@ -119,8 +152,8 @@ export async function getAllAmos(): Promise<
       throw new Error("Accès refusé");
     }
 
-    // Récupérer les AMO avec leurs communes
-    const allAmosWithCommunes = await db
+    // Récupérer les AMO avec leurs communes et EPCI
+    const allAmosWithRelations = await db
       .select({
         id: entreprisesAmo.id,
         nom: entreprisesAmo.nom,
@@ -130,21 +163,26 @@ export async function getAllAmos(): Promise<
         telephone: entreprisesAmo.telephone,
         adresse: entreprisesAmo.adresse,
         codeInsee: entreprisesAmoCommunes.codeInsee,
+        codeEpci: entreprisesAmoEpci.codeEpci,
       })
       .from(entreprisesAmo)
       .leftJoin(
         entreprisesAmoCommunes,
         eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
       )
+      .leftJoin(
+        entreprisesAmoEpci,
+        eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId)
+      )
       .orderBy(entreprisesAmo.nom);
 
-    // Grouper les codes INSEE par AMO
+    // Grouper les codes INSEE et EPCI par AMO
     const amosMap = new Map<
       string,
-      Amo & { communes: { codeInsee: string }[] }
+      Amo & { communes: { codeInsee: string }[]; epci: { codeEpci: string }[] }
     >();
 
-    for (const row of allAmosWithCommunes) {
+    for (const row of allAmosWithRelations) {
       if (!amosMap.has(row.id)) {
         amosMap.set(row.id, {
           id: row.id,
@@ -155,12 +193,26 @@ export async function getAllAmos(): Promise<
           telephone: row.telephone,
           adresse: row.adresse,
           communes: [],
+          epci: [],
         });
       }
 
       const amo = amosMap.get(row.id);
-      if (amo && row.codeInsee) {
-        amo.communes.push({ codeInsee: row.codeInsee });
+      if (amo) {
+        // Ajouter le code INSEE s'il existe et n'est pas déjà présent
+        if (
+          row.codeInsee &&
+          !amo.communes.some((c) => c.codeInsee === row.codeInsee)
+        ) {
+          amo.communes.push({ codeInsee: row.codeInsee });
+        }
+        // Ajouter le code EPCI s'il existe et n'est pas déjà présent
+        if (
+          row.codeEpci &&
+          !amo.epci.some((e) => e.codeEpci === row.codeEpci)
+        ) {
+          amo.epci.push({ codeEpci: row.codeEpci });
+        }
       }
     }
 
