@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import RGATestFiller from "./debug/RGATestFiller";
 import { useSimulateurRga } from "../hooks";
 import { parseRGAParams } from "../services/parser.service";
+import { encryptRGAData } from "../actions/encrypt-rga-data.actions";
+import type { PartialRGAFormData } from "../domain/entities";
 
 interface RGAMessage {
   type: string;
@@ -40,92 +42,136 @@ export default function SimulateurClient({
     "https://mesaides.renov.gouv.fr",
   ].filter(Boolean);
 
-  useEffect(() => {
-    const processRGAData = async (searchParamsString: string) => {
+  /**
+   * Gère la redirection en mode embed avec chiffrement
+   */
+  const handleEmbedRedirect = async (rgaData: PartialRGAFormData) => {
+    try {
       setProcessingState("processing");
-      setProcessingErrors([]);
 
-      try {
-        const urlSearchParams = new URLSearchParams(searchParamsString);
+      // Chiffrer les données via Server Action
+      const result = await encryptRGAData(rgaData);
 
-        const allParams: Record<string, string> = {};
-        for (const [key, value] of urlSearchParams.entries()) {
-          allParams[key] = value;
-        }
-
-        const rgaData = parseRGAParams(urlSearchParams);
-
-        if (Object.keys(rgaData).length === 0) {
-          setProcessingErrors([
-            "Aucun paramètre RGA trouvé dans les données reçues",
-          ]);
-          setProcessingState("error");
-          return;
-        }
-
-        const validationErrors = validateRGAData(rgaData);
-        if (validationErrors.length > 0) {
-          setProcessingErrors(validationErrors);
-        }
-
-        const success = saveRGA(rgaData);
-        console.log("[DEBUG Iframe] saveRGA success:", success);
-        console.log("[DEBUG Iframe] isInIframe:", window.self !== window.top);
-        console.log(
-          "[DEBUG Iframe] Storage utilisé:",
-          window.self !== window.top ? "sessionStorage" : "localStorage"
-        );
-
-        // Vérifier ce qui est vraiment stocké
-        try {
-          const localTest = localStorage.getItem("fonds-argile-rga-data");
-          const sessionTest = sessionStorage.getItem("fonds-argile-rga-data");
-          console.log("[DEBUG Iframe] Dans localStorage:", !!localTest);
-          console.log("[DEBUG Iframe] Dans sessionStorage:", !!sessionTest);
-        } catch (e) {
-          console.error("[DEBUG Iframe] Erreur accès storage:", e);
-        }
-
-        if (!success) {
-          setProcessingErrors([
-            "Échec de la sauvegarde des données en session",
-          ]);
-          setProcessingState("error");
-          return;
-        }
-
-        setProcessingState("success");
-        isProcessingRef.current = true;
-
-        setTimeout(() => {
-          // En mode embed : L'utilisateur quitte le site partenaire mais garde ses données
-          // En mode normal : redirection classique
-          if (embedMode) {
-            window.location.href = `${window.location.origin}/connexion`;
-          } else {
-            router.push("/connexion");
-          }
-        }, REDIRECT_DELAY_MS);
-      } catch (error) {
-        console.error("Erreur lors du traitement des données RGA:", error);
-        setProcessingErrors(["Une erreur inattendue s'est produite"]);
+      if (!result.success) {
+        setProcessingErrors([
+          "Erreur lors de la sécurisation des données.",
+          "Veuillez réessayer.",
+        ]);
         setProcessingState("error");
+        isProcessingRef.current = false;
+        return;
       }
-    };
 
-    const handleIframeMessage = (event: MessageEvent<RGAMessage>) => {
-      if (isProcessingRef.current) return;
-      if (!IFRAME_ALLOWED_ORIGINS.includes(event.origin)) return;
-      if (event.data.type === "RGA_DEMANDE_AIDE") {
-        processRGAData(event.data.searchParams);
+      // Utiliser hash fragment (pas envoyé au serveur)
+      const connectionUrl = `${window.location.origin}/connexion#d=${result.encrypted}`;
+
+      // Ouvrir dans nouvel onglet
+      const newWindow = window.open(connectionUrl, "_blank");
+
+      if (
+        !newWindow ||
+        newWindow.closed ||
+        typeof newWindow.closed === "undefined"
+      ) {
+        // Popup bloquée
+        setProcessingErrors([
+          "Veuillez autoriser les fenêtres popup pour continuer.",
+          connectionUrl,
+        ]);
+        setProcessingState("error");
+      } else {
+        setProcessingState("success");
       }
-    };
 
+      // Réinitialiser après 3s
+      setTimeout(() => {
+        setProcessingState("idle");
+        isProcessingRef.current = false;
+      }, 3000);
+    } catch (error) {
+      console.error("[Embed] Erreur:", error);
+      setProcessingErrors(["Une erreur inattendue s'est produite"]);
+      setProcessingState("error");
+      isProcessingRef.current = false;
+    }
+  };
+
+  /**
+   * Gère la redirection en mode normal
+   */
+  const handleNormalRedirect = () => {
+    router.push("/connexion");
+  };
+
+  /**
+   * Traite les données RGA reçues de l'iframe
+   */
+  const processRGAData = async (searchParamsString: string) => {
+    setProcessingState("processing");
+    setProcessingErrors([]);
+
+    try {
+      const urlSearchParams = new URLSearchParams(searchParamsString);
+
+      const rgaData = parseRGAParams(urlSearchParams);
+
+      if (Object.keys(rgaData).length === 0) {
+        setProcessingErrors([
+          "Aucun paramètre RGA trouvé dans les données reçues",
+        ]);
+        setProcessingState("error");
+        return;
+      }
+
+      const validationErrors = validateRGAData(rgaData);
+      if (validationErrors.length > 0) {
+        setProcessingErrors(validationErrors);
+      }
+
+      const success = saveRGA(rgaData);
+      if (!success) {
+        setProcessingErrors(["Échec de la sauvegarde des données en session"]);
+        setProcessingState("error");
+        return;
+      }
+
+      setProcessingState("success");
+      isProcessingRef.current = true;
+
+      // Redirection après un délai
+      setTimeout(async () => {
+        if (embedMode) {
+          await handleEmbedRedirect(rgaData);
+        } else {
+          handleNormalRedirect();
+        }
+      }, REDIRECT_DELAY_MS);
+    } catch (error) {
+      console.error("Erreur lors du traitement des données RGA:", error);
+      setProcessingErrors(["Une erreur inattendue s'est produite"]);
+      setProcessingState("error");
+    }
+  };
+
+  /**
+   * Gère les messages reçus de l'iframe
+   */
+  const handleIframeMessage = (event: MessageEvent<RGAMessage>) => {
+    if (isProcessingRef.current) return;
+    if (!IFRAME_ALLOWED_ORIGINS.includes(event.origin)) return;
+    if (event.data.type === "RGA_DEMANDE_AIDE") {
+      processRGAData(event.data.searchParams);
+    }
+  };
+
+  // Écoute des messages de l'iframe
+  useEffect(() => {
     window.addEventListener("message", handleIframeMessage);
     return () => {
       window.removeEventListener("message", handleIframeMessage);
     };
-  }, [IFRAME_ALLOWED_ORIGINS, router, saveRGA, validateRGAData, embedMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [IFRAME_ALLOWED_ORIGINS, embedMode]);
 
   const renderProcessingOverlay = () => {
     if (processingState === "idle") return null;
@@ -180,9 +226,23 @@ export default function SimulateurClient({
                 <h2 className="fr-h3">Données enregistrées</h2>
                 <p>Vos données ont été enregistrées avec succès.</p>
                 {embedMode ? (
-                  <p className="fr-text--sm fr-mt-2w">
-                    La page de connexion s'est ouverte dans un nouvel onglet.
-                  </p>
+                  <>
+                    <p className="fr-text--sm fr-mt-2w">
+                      La page de connexion s'est ouverte dans un nouvel onglet.
+                    </p>
+                    <p className="fr-text--xs fr-mt-1w">
+                      Si aucun onglet ne s'est ouvert,{" "}
+                      <a
+                        href={`${window.location.origin}/connexion`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="fr-link"
+                      >
+                        cliquez ici pour continuer
+                      </a>
+                      .
+                    </p>
+                  </>
                 ) : (
                   <button
                     className="fr-btn fr-btn--primary fr-mt-2w"
@@ -196,16 +256,40 @@ export default function SimulateurClient({
 
             {processingState === "error" && (
               <div>
-                <h2 className="fr-h3">Erreur de traitement</h2>
+                <h2 className="fr-h3">
+                  {embedMode &&
+                  processingErrors.some((e) => e.includes("popup"))
+                    ? "Action requise"
+                    : "Erreur de traitement"}
+                </h2>
+
                 {processingErrors.length > 0 && (
-                  <ul className="fr-mt-2w">
-                    {processingErrors.map((error, index) => (
-                      <li key={index} className="fr-text--sm">
-                        {error}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="fr-mt-2w">
+                    {processingErrors.map((error, index) => {
+                      // Si c'est une URL, l'afficher comme lien
+                      if (error.startsWith("http")) {
+                        return (
+                          <div key={index} className="fr-mt-2w">
+                            <a
+                              href={error}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="fr-btn fr-btn--primary"
+                            >
+                              Continuer vers la connexion
+                            </a>
+                          </div>
+                        );
+                      }
+                      return (
+                        <p key={index} className="fr-text--sm">
+                          {error}
+                        </p>
+                      );
+                    })}
+                  </div>
                 )}
+
                 <div className="fr-btns-group fr-mt-3w">
                   <button
                     className="fr-btn fr-btn--secondary"
