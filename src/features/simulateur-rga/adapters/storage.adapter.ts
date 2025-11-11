@@ -111,6 +111,7 @@ export const storageAdapter = {
     try {
       return sessionStorage.getItem(RGA_SESSION_KEY) !== null;
     } catch (error) {
+      console.error("Erreur vérification sessionStorage RGA:", error);
       return false;
     }
   },
