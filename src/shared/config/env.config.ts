@@ -107,6 +107,7 @@ const serverSchema = z.object({
   BREVO_API_KEY: z.string(),
   EMAIL_FROM: z.string().email("EMAIL_FROM doit être une adresse email valide"),
 
+  RGA_ENCRYPTION_KEY: z.string().min(32),
   ADMIN_PASSWORD: z.string().min(8),
   JWT_SECRET: z.string().min(32),
   BASE_URL: z.string().url().default("http://localhost:3000"),
