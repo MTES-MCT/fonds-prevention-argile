@@ -109,10 +109,6 @@ export default function RGATestFiller(): JSX.Element | null {
       // Sauvegarder dans sessionStorage (ancien système)
       sessionStorage.setItem(RGA_SESSION_KEY, JSON.stringify(payload));
 
-      console.log(
-        "[DEBUG] Données de test enregistrées dans sessionStorage (ancien système)"
-      );
-
       setIsSessionSuccess(true);
 
       // Réinitialiser le message après 3 secondes

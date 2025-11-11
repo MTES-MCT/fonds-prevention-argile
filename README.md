@@ -257,6 +257,56 @@ Configuration dans `.talismanrc` pour les exceptions et les fichiers à ignorer.
 
 > **Important** : Ne jamais contourner Talisman sans vérification. Si un fichier est bloqué, vérifiez qu'il ne contient pas de données sensibles avant de l'ajouter aux exceptions.
 
+## 🔐 Gestion des données RGA en mode embed
+
+### Contexte
+
+Le simulateur RGA peut être intégré en iframe sur des sites partenaires. Lorsque l'utilisateur termine sa simulation, il doit être redirigé vers notre page de connexion pour créer son compte. Problème : `window.open()` crée un **nouveau contexte avec un localStorage vide**, les données de la simulation sont donc perdues.
+
+### Solution : Chiffrement dans l'URL
+
+**Flow en mode embed :**
+
+```
+1. Iframe → Simulation terminée
+   └─ Chiffrement AES-256-GCM côté serveur (Server Action)
+   └─ URL générée : /connexion#d=abc123:def456:ghi789...
+
+2. Nouvel onglet → Page /connexion
+   └─ Déchiffrement des données (Server Action)
+   └─ Sauvegarde en localStorage
+   └─ Nettoyage de l'URL (hash fragment)
+
+3. Après connexion FranceConnect
+   └─ Migration automatique localStorage → Base de données
+   └─ Nettoyage du localStorage
+```
+
+**Sécurité :**
+
+- ✅ Chiffrement AES-256-GCM avec clé secrète côté serveur
+- ✅ Hash fragment (`#d=...`) jamais envoyé au serveur
+- ✅ URL nettoyée immédiatement après lecture
+- ✅ Données temporaires uniquement
+
+**Fichiers concernés :**
+
+- `src/features/simulateur-rga/services/encryption.service.ts` - Service de chiffrement/déchiffrement
+- `src/features/simulateur-rga/actions/encrypt-rga-data.actions.ts` - Server Action chiffrement
+- `src/features/simulateur-rga/actions/decrypt-rga-data.actions.ts` - Server Action déchiffrement
+- `src/features/simulateur-rga/components/SimulateurClient.tsx` - Gestion mode embed
+- `src/features/parcours/core/context/ParcoursProvider.tsx` - Déchiffrement et migration BDD
+
+**Variables d'environnement :**
+
+```bash
+# Clé de chiffrement (32 bytes en hexadécimal - 64 caractères)
+# Générer avec : node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+RGA_ENCRYPTION_KEY=a1b2c3d4e5f6...
+```
+
+**Note :** En mode normal (sans iframe), les données transitent directement via localStorage sans passer par l'URL, le chiffrement n'est donc pas utilisé.
+
 ## Contribution
 
 1. Créez une branche pour votre fonctionnalité

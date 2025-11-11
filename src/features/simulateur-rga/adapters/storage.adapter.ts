@@ -64,10 +64,6 @@ export const storageAdapter = {
       const sessionData = sessionStorage.getItem(RGA_SESSION_KEY);
 
       if (sessionData) {
-        console.log(
-          "[RGA Storage] Données trouvées dans sessionStorage (ancien système)"
-        );
-
         const parsed: StoredRGAData = JSON.parse(sessionData);
 
         if (parsed.data) {
@@ -134,7 +130,6 @@ export const storageAdapter = {
   clearSessionStorage(): void {
     try {
       sessionStorage.removeItem(RGA_SESSION_KEY);
-      console.log("[RGA Storage] sessionStorage nettoyé");
     } catch (error) {
       console.error("Erreur nettoyage sessionStorage RGA:", error);
     }

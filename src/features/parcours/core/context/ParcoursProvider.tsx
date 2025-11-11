@@ -80,13 +80,9 @@ export function ParcoursProvider({
     const encrypted = hash.replace("#d=", "");
 
     try {
-      console.log("[RGA] Déchiffrement des données depuis URL...");
-
       const result = await decryptRGAData(encrypted);
 
       if (result.success && result.data) {
-        console.log("[RGA] ✅ Données déchiffrées avec succès");
-
         // Sauvegarder en localStorage (on est hors iframe maintenant)
         storageAdapter.save(result.data);
         setTempRgaData(result.data);
@@ -115,13 +111,6 @@ export function ParcoursProvider({
 
     if (stored) {
       setTempRgaData(stored);
-
-      // Log pour debug
-      if (storageAdapter.hasSessionStorageData()) {
-        console.log(
-          "[RGA] Données chargées depuis sessionStorage (ancien système)"
-        );
-      }
     }
   }, []);
 
@@ -287,9 +276,6 @@ export function ParcoursProvider({
 
     // Vérifier si déjà des données en BDD
     if (parcours.rgaSimulationData) {
-      console.log(
-        "[Migration sessionStorage] Données déjà en BDD, nettoyage sessionStorage"
-      );
       storageAdapter.clearSessionStorage();
       return;
     }
@@ -302,15 +288,11 @@ export function ParcoursProvider({
     }
 
     try {
-      console.log("[Migration sessionStorage] Migration en cours...");
-
       const result = await migrateSimulationDataToDatabase(
         sessionData as RGAFormData
       );
 
       if (result.success) {
-        console.log("[Migration sessionStorage] ✅ Migration réussie");
-
         // Nettoyer sessionStorage après migration réussie
         storageAdapter.clearSessionStorage();
 
@@ -344,7 +326,6 @@ export function ParcoursProvider({
       );
 
       if (result.success) {
-        console.log("[Migration localStorage] ✅ Migration réussie");
         clearTempRgaData();
         await fetchParcours();
       } else {

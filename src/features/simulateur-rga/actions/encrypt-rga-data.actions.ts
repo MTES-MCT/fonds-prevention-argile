@@ -29,8 +29,6 @@ export async function encryptRGAData(
     // Chiffrer
     const encrypted = encryptData(jsonString);
 
-    console.log("[Encrypt RGA] Données chiffrées avec succès");
-
     return {
       success: true,
       encrypted,

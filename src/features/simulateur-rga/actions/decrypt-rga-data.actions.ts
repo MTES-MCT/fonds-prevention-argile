@@ -29,8 +29,6 @@ export async function decryptRGAData(
     // Parser le JSON
     const data = JSON.parse(jsonString) as PartialRGAFormData;
 
-    console.log("[Decrypt RGA] Données déchiffrées avec succès");
-
     return {
       success: true,
       data,
