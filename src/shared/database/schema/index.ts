@@ -1,4 +1,4 @@
-// IMPORTANT : Exporter les enums AVANT les tables pour éviter les erreurs de dépendances circulaires
+// Exporter les enums AVANT les tables pour éviter les erreurs de dépendances circulaires
 export {
   stepPgEnum,
   statusPgEnum,
@@ -6,12 +6,13 @@ export {
   statutValidationAmoPgEnum,
 } from "../enums/enums";
 
-// Puis exporter les tables
+// Exporter les tables
 export * from "./users";
 export * from "./parcours-prevention";
 export * from "./dossiers-demarches-simplifiees";
 export * from "./email-notifications";
 export * from "./entreprises-amo";
 export * from "./entreprises-amo-communes";
+export * from "./entreprises-amo-epci";
 export * from "./parcours-amo-validations";
 export * from "./amo-validation-tokens";

@@ -1,6 +1,7 @@
 import { pgTable, uuid, timestamp, varchar, text } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { entreprisesAmoCommunes } from "./entreprises-amo-communes";
+import { entreprisesAmoEpci } from "./entreprises-amo-epci";
 
 // Table des entreprises AMO (Assistance à Maîtrise d'Ouvrage)
 export const entreprisesAmo = pgTable("entreprises_amo", {
@@ -18,11 +19,12 @@ export const entreprisesAmo = pgTable("entreprises_amo", {
     .$onUpdate(() => new Date()),
 });
 
-// Relations : une entreprise AMO peut couvrir plusieurs communes spécifiques (optionnel)
+// Relations : une entreprise AMO peut couvrir plusieurs communes et EPCI spécifiques (optionnel)
 export const entreprisesAmoRelations = relations(
   entreprisesAmo,
   ({ many }) => ({
     communes: many(entreprisesAmoCommunes),
+    epci: many(entreprisesAmoEpci),
   })
 );
 
