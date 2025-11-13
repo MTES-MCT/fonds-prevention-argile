@@ -15,7 +15,7 @@ import {
 } from "@/features/parcours/dossiers-ds/utils";
 import { useEffect, useState } from "react";
 
-interface DossierDetailProps {
+interface EligibiliteDossierDetailProps {
   dossierNumber: number;
   onClose: () => void;
 }
@@ -34,10 +34,10 @@ function formatFieldValue(champ: Champ): string {
   return champ.stringValue || "—";
 }
 
-export default function DossierDetail({
+export default function EligibiliteDossierDetail({
   dossierNumber,
   onClose,
-}: DossierDetailProps) {
+}: EligibiliteDossierDetailProps) {
   const [dossier, setDossier] = useState<Dossier | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

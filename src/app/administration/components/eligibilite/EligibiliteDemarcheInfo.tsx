@@ -1,10 +1,12 @@
 import { DemarcheDetailed } from "@/features/parcours/dossiers-ds/adapters/graphql";
 
-interface DemarcheInfoProps {
+interface EligibiliteDemarcheInfoProps {
   demarche: DemarcheDetailed;
 }
 
-export default function DemarcheInfo({ demarche }: DemarcheInfoProps) {
+export default function EligibiliteDemarcheInfo({
+  demarche,
+}: EligibiliteDemarcheInfoProps) {
   return (
     <div className="fr-card fr-mb-4w">
       <div className="fr-card__body">

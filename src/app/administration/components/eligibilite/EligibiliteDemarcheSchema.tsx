@@ -3,15 +3,15 @@
 import { ChampDescriptor } from "@/features/parcours/dossiers-ds/adapters/graphql";
 import { useState } from "react";
 
-interface DemarcheSchemaProps {
+interface EligibiliteDemarcheSchemaProps {
   champDescriptors?: ChampDescriptor[];
 }
 
 type GroupBy = "none" | "type" | "required";
 
-export default function DemarcheSchema({
+export default function EligibiliteDemarcheSchema({
   champDescriptors,
-}: DemarcheSchemaProps) {
+}: EligibiliteDemarcheSchemaProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isJsonExpanded, setIsJsonExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
