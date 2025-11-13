@@ -343,8 +343,7 @@ export default function SimulateurClient({
               <p className="fr-callout__text">
                 Si vous rencontrez des difficultés avec le simulateur, vous
                 pouvez nous contacter par mail à
-                contact@fonds-prevention-argile.beta.gouv.fr ou via le tchat en
-                bas à droite.
+                contact@fonds-prevention-argile.beta.gouv.fr.
               </p>
             </div>
           </div>
