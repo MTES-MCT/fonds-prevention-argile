@@ -3,10 +3,13 @@ import { db } from "@/shared/database/client";
 import {
   entreprisesAmo,
   entreprisesAmoCommunes,
+  entreprisesAmoEpci,
 } from "@/shared/database/schema";
+import { eq } from "drizzle-orm";
 
 interface AmoRow {
   nom: string;
+  epci: string;
   siret: string;
   departements: string;
   emails: string;
@@ -20,7 +23,9 @@ interface ImportResult {
   message: string;
   stats?: {
     entreprisesCreated: number;
+    entreprisesUpdated: number;
     communesCreated: number;
+    epciCreated: number;
   };
   errors?: string[];
 }
@@ -31,6 +36,7 @@ interface ImportResult {
 
 /**
  * Parse et importe les données AMO depuis un fichier Excel
+ * Utilise le SIRET comme clé unique pour UPDATE ou INSERT
  */
 export async function importAmosFromExcel(
   formData: FormData,
@@ -93,15 +99,18 @@ export async function importAmosFromExcel(
     };
   }
 
-  // 5. Nettoyer les tables existantes si demandé
+  // 5. Nettoyer les tables existantes si demandé (ATTENTION: ne jamais utiliser en prod)
   if (clearExisting) {
+    await db.delete(entreprisesAmoEpci);
     await db.delete(entreprisesAmoCommunes);
     await db.delete(entreprisesAmo);
   }
 
-  // 6. Insérer les données
+  // 6. Insérer ou mettre à jour les données
   let entreprisesCreated = 0;
+  let entreprisesUpdated = 0;
   let communesCreated = 0;
+  let epciCreated = 0;
   const errors: string[] = [];
 
   for (const row of data) {
@@ -148,7 +157,16 @@ export async function importAmosFromExcel(
         .filter((dep) => dep.length > 0)
         .join(", ");
 
-      // Insérer l'entreprise
+      // Vérifier si l'AMO existe déjà (basé sur SIRET)
+      const existingAmo = await db
+        .select({ id: entreprisesAmo.id })
+        .from(entreprisesAmo)
+        .where(eq(entreprisesAmo.siret, siret))
+        .limit(1);
+
+      const isUpdate = existingAmo.length > 0;
+
+      // UPSERT de l'entreprise (INSERT ou UPDATE selon existence)
       const [entreprise] = await db
         .insert(entreprisesAmo)
         .values({
@@ -159,11 +177,53 @@ export async function importAmosFromExcel(
           telephone: formatTelephone(row.telephone),
           adresse: String(row.adresse || "").trim(),
         })
+        .onConflictDoUpdate({
+          target: entreprisesAmo.siret,
+          set: {
+            nom: row.nom.trim(),
+            departements: departementsFormatted,
+            emails: emailsList.join(";"),
+            telephone: formatTelephone(row.telephone),
+            adresse: String(row.adresse || "").trim(),
+            updatedAt: new Date(),
+          },
+        })
         .returning();
 
-      entreprisesCreated++;
+      if (isUpdate) {
+        entreprisesUpdated++;
+      } else {
+        entreprisesCreated++;
+      }
 
-      // Parser et insérer les codes INSEE (optionnel)
+      // Supprimer les anciens EPCI et communes de cette AMO
+      await db
+        .delete(entreprisesAmoEpci)
+        .where(eq(entreprisesAmoEpci.entrepriseAmoId, entreprise.id));
+
+      await db
+        .delete(entreprisesAmoCommunes)
+        .where(eq(entreprisesAmoCommunes.entrepriseAmoId, entreprise.id));
+
+      // Parser et insérer les nouveaux codes EPCI (optionnel)
+      if (row.epci?.trim()) {
+        const codesEpci = row.epci
+          .split(";")
+          .map((code) => code.trim())
+          .filter((code) => /^\d{9}$/.test(code));
+
+        if (codesEpci.length > 0) {
+          const epciData = codesEpci.map((codeEpci) => ({
+            entrepriseAmoId: entreprise.id,
+            codeEpci,
+          }));
+
+          await db.insert(entreprisesAmoEpci).values(epciData);
+          epciCreated += codesEpci.length;
+        }
+      }
+
+      // Parser et insérer les nouveaux codes INSEE (optionnel)
       if (row.codes_insee?.trim()) {
         const codesInsee = row.codes_insee
           .split(",")
@@ -189,12 +249,22 @@ export async function importAmosFromExcel(
   }
 
   // 7. Retourner le résultat
+  const totalEntreprises = entreprisesCreated + entreprisesUpdated;
+  const actionVerb =
+    entreprisesCreated > 0 && entreprisesUpdated > 0
+      ? "créées/mises à jour"
+      : entreprisesCreated > 0
+        ? "créées"
+        : "mises à jour";
+
   return {
     success: true,
-    message: `Import réussi : ${entreprisesCreated} entreprises et ${communesCreated} communes créées`,
+    message: `Import réussi : ${totalEntreprises} entreprises ${actionVerb}, ${epciCreated} EPCI et ${communesCreated} communes associées`,
     stats: {
       entreprisesCreated,
+      entreprisesUpdated,
       communesCreated,
+      epciCreated,
     },
     errors: errors.length > 0 ? errors : undefined,
   };

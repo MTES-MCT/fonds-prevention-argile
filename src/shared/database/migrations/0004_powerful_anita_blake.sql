@@ -1,0 +1,1 @@
+ALTER TABLE "entreprises_amo" ADD CONSTRAINT "entreprises_amo_siret_unique" UNIQUE("siret");

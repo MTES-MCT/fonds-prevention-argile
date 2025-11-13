@@ -8,15 +8,16 @@ import {
   importAmoFromExcel,
 } from "@/features/parcours/amo/actions";
 
-interface AmoWithCommunes extends Amo {
+interface AmoWithRelations extends Amo {
   communes?: { codeInsee: string }[];
+  epci?: { codeEpci: string }[];
 }
 
 export function AmoSeedUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [clearExisting, setClearExisting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [amos, setAmos] = useState<AmoWithCommunes[]>([]);
+  const [amos, setAmos] = useState<AmoWithRelations[]>([]);
   const [isLoadingAmos, setIsLoadingAmos] = useState(true);
 
   const [state, formAction, isPending] = useActionState(
@@ -196,8 +197,20 @@ export function AmoSeedUpload() {
             <div className="fr-mt-2w">
               <p className="fr-text--bold">Statistiques :</p>
               <ul>
-                <li>{state.stats.entreprisesCreated} entreprises créées</li>
-                <li>{state.stats.communesCreated} communes associées</li>
+                {state.stats.entreprisesCreated > 0 && (
+                  <li>{state.stats.entreprisesCreated} entreprises créées</li>
+                )}
+                {state.stats.entreprisesUpdated > 0 && (
+                  <li>
+                    {state.stats.entreprisesUpdated} entreprises mises à jour
+                  </li>
+                )}
+                {state.stats.epciCreated > 0 && (
+                  <li>{state.stats.epciCreated} EPCI associés</li>
+                )}
+                {state.stats.communesCreated > 0 && (
+                  <li>{state.stats.communesCreated} communes associées</li>
+                )}
               </ul>
             </div>
           )}
@@ -247,6 +260,7 @@ export function AmoSeedUpload() {
                         <th scope="col">Nom</th>
                         <th scope="col">SIRET</th>
                         <th scope="col">Départements</th>
+                        <th scope="col">Codes EPCI</th>
                         <th scope="col">Emails</th>
                         <th scope="col">Téléphone</th>
                         <th scope="col">Adresse</th>
@@ -260,6 +274,11 @@ export function AmoSeedUpload() {
                           <td className="fr-text--sm">{amo.siret || "-"}</td>
                           <td className="fr-text--sm">
                             {amo.departements || "-"}
+                          </td>
+                          <td className="fr-text--sm">
+                            {amo.epci && amo.epci.length > 0
+                              ? amo.epci.map((e) => e.codeEpci).join(", ")
+                              : "-"}
                           </td>
                           <td className="fr-text--sm">
                             {amo.emails

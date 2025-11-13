@@ -9,7 +9,9 @@ interface SeedResult {
   message: string;
   stats?: {
     entreprisesCreated: number;
+    entreprisesUpdated: number;
     communesCreated: number;
+    epciCreated: number;
   };
   errors?: string[];
 }

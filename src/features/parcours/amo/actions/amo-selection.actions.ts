@@ -8,6 +8,7 @@ import {
   amoValidationTokens,
   entreprisesAmo,
   entreprisesAmoCommunes,
+  entreprisesAmoEpci,
   parcoursAmoValidations,
 } from "@/shared/database/schema";
 import { and, eq, like, or } from "drizzle-orm";
@@ -91,13 +92,21 @@ export async function choisirAmo(params: {
     // Extraire le code département
     const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
 
-    // Vérifier que l'AMO couvre soit le code INSEE spécifique, soit le département
+    // Extraire le code EPCI (si disponible)
+    const codeEpci =
+      parcours?.rgaSimulationData?.logement?.epci?.trim() || null;
+
+    // Vérifier que l'AMO couvre le territoire selon la hiérarchie : EPCI > INSEE > Département
     const amoValide = await db
       .select({
         id: entreprisesAmo.id,
         departements: entreprisesAmo.departements,
       })
       .from(entreprisesAmo)
+      .leftJoin(
+        entreprisesAmoEpci,
+        eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId)
+      )
       .leftJoin(
         entreprisesAmoCommunes,
         eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
@@ -106,7 +115,11 @@ export async function choisirAmo(params: {
         and(
           eq(entreprisesAmo.id, entrepriseAmoId),
           or(
+            // Priorité 1 : EPCI spécifique (si code EPCI disponible)
+            codeEpci ? eq(entreprisesAmoEpci.codeEpci, codeEpci) : undefined,
+            // Priorité 2 : Code INSEE spécifique
             eq(entreprisesAmoCommunes.codeInsee, codeInsee),
+            // Priorité 3 : Département (fallback)
             like(entreprisesAmo.departements, `%${codeDepartement}%`)
           )
         )
@@ -116,7 +129,8 @@ export async function choisirAmo(params: {
     if (amoValide.length === 0) {
       return {
         success: false,
-        error: "Cette AMO ne couvre pas votre commune ou département",
+        error:
+          "Cette AMO ne couvre pas votre territoire (EPCI, commune ou département)",
       };
     }
 
