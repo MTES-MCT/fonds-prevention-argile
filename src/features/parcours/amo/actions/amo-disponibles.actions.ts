@@ -56,7 +56,9 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
     const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
 
     // Extraire le code EPCI (si disponible)
-    const codeEpci = parcours.rgaSimulationData.logement?.epci?.trim() || null;
+    const codeEpci = parcours.rgaSimulationData.logement?.epci
+      ? String(parcours.rgaSimulationData.logement.epci).trim()
+      : null;
 
     // 1. Récupérer les AMO qui couvrent l'EPCI spécifique (si disponible)
     const amosParEpci = codeEpci

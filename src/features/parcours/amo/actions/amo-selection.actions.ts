@@ -93,8 +93,9 @@ export async function choisirAmo(params: {
     const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
 
     // Extraire le code EPCI (si disponible)
-    const codeEpci =
-      parcours?.rgaSimulationData?.logement?.epci?.trim() || null;
+    const codeEpci = parcours?.rgaSimulationData?.logement?.epci
+      ? String(parcours.rgaSimulationData.logement.epci).trim()
+      : null;
 
     // Vérifier que l'AMO couvre le territoire selon la hiérarchie : EPCI > INSEE > Département
     const amoValide = await db
