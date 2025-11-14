@@ -122,6 +122,7 @@ export default function MonCompteClient() {
               <p className="fr-alert__title">Demande envoyée</p>
               <p>
                 Votre demande de confirmation a été envoyée à l'AMO sélectionné.
+                Merci de le contacter directement par mail ou téléphone également.
               </p>
             </div>
           )}
