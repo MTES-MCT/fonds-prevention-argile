@@ -60,7 +60,7 @@ export default function StepDetailAmo() {
             isDisabled ? { color: "var(--text-disabled-grey)" } : undefined
           }
         >
-          1. Choisir mon AMO
+          1. Contacter un AMO
         </h5>
 
         {/* Détail AMO */}
@@ -89,7 +89,7 @@ export default function StepDetailAmo() {
                 isDisabled ? { color: "var(--text-mention-grey)" } : undefined
               }
             >
-              Choisissez votre AMO parmi les choix dans le tableau ci-dessus.
+              Contactez puis indiquez votre AMO parmi les choix ci-dessus.
             </p>
 
             <Link
@@ -102,7 +102,7 @@ export default function StepDetailAmo() {
                 width: "fit-content",
               }}
             >
-              Choisir mon AMO
+              Contacter un AMO
             </Link>
           </>
         )}

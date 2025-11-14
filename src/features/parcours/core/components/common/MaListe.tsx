@@ -53,7 +53,7 @@ export default function MaListe() {
                 if (!status.isActive) {
                   return (
                     <a aria-disabled="true" role="link" className="fr-link">
-                      Choisir un AMO dans la liste
+                      Contacter et indiquer un AMO dans la liste
                     </a>
                   );
                 }
@@ -61,7 +61,7 @@ export default function MaListe() {
                 if (status.isCompleted) {
                   return (
                     <span className="fr-link" style={status.style}>
-                      Choisir un AMO dans la liste{" "}
+                      Contacter et indiquer un AMO dans la liste{" "}
                       <span
                         className="fr-icon-checkbox-circle-fill text-green-800"
                         aria-hidden="true"
@@ -72,7 +72,7 @@ export default function MaListe() {
 
                 return (
                   <Link className="fr-link" href="#choix-amo">
-                    Choisir un AMO dans la liste
+                    Contacter et indiquer un AMO dans la liste
                   </Link>
                 );
               })()}
