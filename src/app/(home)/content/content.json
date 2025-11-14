@@ -178,7 +178,21 @@
         "title": "Construire en terrain argileux",
         "description": "Découvrez une plaquette du ministère de la transition écologique sur le phénomène du RGA et les bonnes pratiques à adopter.",
         "linkUrl": "https://www.ecologie.gouv.fr/sites/default/files/documents/construire_en_terrain_argileux_reglementation_et_bonnes_pratiques-v_modif%20ccmi.pdf?utm_source=fonds-prevention-argile"
-      }
+      },
+      {
+        "imageUrl": "/images/home/plaquette.webp",
+        "imageAlt": "Comment protéger sa maison",
+        "title": "RGA : Comment protéger sa maison en 4 pages",
+        "description": "Découvrez une plaquette du ministère expliquant comment protéger sa maison du phénomène de retrait gonflement des argiles",
+        "linkUrl": "https://www.ecologie.gouv.fr/sites/default/files/documents/retrait-gonflement-argile-comment-proteger-sa-maison_web.pdf"
+      },
+      {
+        "imageUrl": "/images/home/guide.webp",
+        "imageAlt": "Guide grand public sur le RGA",
+        "title": "Mesures de prévention, adaptation et remédiation du RGA",
+        "description": "Guide à destination des particuliers et des collectivités",
+        "linkUrl": "https://www.ecologie.gouv.fr/sites/default/files/documents/prevention_adaptation_remediation_RGA_guide_web.pdf"
+      },
     ]
   },
   "faq_section": {
