@@ -19,10 +19,13 @@ import { parcoursRepo } from "@/shared/database/repositories";
 
 /**
  * Récupère la liste des AMO disponibles pour le territoire de l'utilisateur
- * Recherche par hiérarchie :
- * 1. Code EPCI dans entreprises_amo_epci (prioritaire si disponible)
- * 2. Code INSEE exact dans entreprises_amo_communes
- * 3. Code département extrait du code INSEE dans le champ departements (fallback)
+ *
+ * Logique de sélection EXCLUSIVE :
+ * 1. Si des AMO couvrent l'EPCI du citoyen → retourner UNIQUEMENT ces AMO
+ * 2. Sinon, si des AMO couvrent le département → retourner UNIQUEMENT ces AMO
+ * 3. Ne JAMAIS mélanger des AMO trouvés par EPCI avec ceux trouvés par département
+ *
+ * Note : Les codes INSEE spécifiques (entreprises_amo_communes) ne sont pas utilisés dans cette version
  */
 export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
   try {
@@ -80,25 +83,15 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
           .where(eq(entreprisesAmoEpci.codeEpci, codeEpci))
       : [];
 
-    // 2. Récupérer les AMO qui ont le code INSEE spécifique
-    const amosParCodeInsee = await db
-      .selectDistinct({
-        id: entreprisesAmo.id,
-        nom: entreprisesAmo.nom,
-        siret: entreprisesAmo.siret,
-        departements: entreprisesAmo.departements,
-        emails: entreprisesAmo.emails,
-        telephone: entreprisesAmo.telephone,
-        adresse: entreprisesAmo.adresse,
-      })
-      .from(entreprisesAmo)
-      .innerJoin(
-        entreprisesAmoCommunes,
-        eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
-      )
-      .where(eq(entreprisesAmoCommunes.codeInsee, codeInsee));
+    // Si des AMO couvrent l'EPCI, retourner UNIQUEMENT ceux-là (logique exclusive)
+    if (amosParEpci.length > 0) {
+      return {
+        success: true,
+        data: amosParEpci,
+      };
+    }
 
-    // 3. Récupérer les AMO qui couvrent le département entier (fallback)
+    // 2. Sinon, récupérer les AMO qui couvrent le département entier (fallback)
     const amosParDepartement = await db
       .select({
         id: entreprisesAmo.id,
@@ -112,26 +105,17 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
       .from(entreprisesAmo)
       .where(like(entreprisesAmo.departements, `%${codeDepartement}%`));
 
-    // Fusionner et dédupliquer les résultats par ID
-    const amosMap = new Map<string, Amo>();
-
-    // Ordre d'insertion respecte la priorité : EPCI > INSEE > Département
-    for (const amo of [
-      ...amosParEpci,
-      ...amosParCodeInsee,
-      ...amosParDepartement,
-    ]) {
-      if (!amosMap.has(amo.id)) {
-        amosMap.set(amo.id, amo);
-      }
-    }
-
-    const amosDisponibles = Array.from(amosMap.values());
-
     return {
       success: true,
-      data: amosDisponibles,
+      data: amosParDepartement,
     };
+
+    // Note : Code INSEE spécifique désactivé dans cette version
+    // const amosParCodeInsee = await db
+    //   .selectDistinct({...})
+    //   .from(entreprisesAmo)
+    //   .innerJoin(entreprisesAmoCommunes, ...)
+    //   .where(eq(entreprisesAmoCommunes.codeInsee, codeInsee));
   } catch (error) {
     console.error("Erreur getAmosDisponibles:", error);
     return {
