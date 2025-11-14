@@ -160,7 +160,7 @@ export default function CalloutAmoTodo({
           <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
             {!amoRefusee ? (
               <>
-                <p className="fr-callout__title">Choisissez votre AMO</p>
+                <p className="fr-callout__title">Contactez un AMO</p>
                 <p className="fr-callout__text fr-mb-4w">
                   Le recours à un AMO (Assistant à Maîtrise d'ouvrage) est
                   obligatoire pour bénéficier du Fonds prévention argile.
@@ -187,7 +187,7 @@ export default function CalloutAmoTodo({
               id="amo-fieldset"
               aria-labelledby="amo-fieldset-legend"
             >
-              <h6>Choisissez votre Assistant à Maîtrise d'Ouvrage certifié.</h6>
+              <h6>Indiquez l'AMO avec qui vous avez contractualisé.</h6>
 
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
                 {amoList.map((amo) => (
@@ -281,8 +281,9 @@ export default function CalloutAmoTodo({
                       </h2>
                       <p>
                         Pour valider votre sélection d'AMO, nous allons lui
-                        envoyer un e-mail afin de demander sa confirmation. Vous
-                        pourrez ensuite avancer à l'étape suivante.
+                        envoyer un e-mail afin de demander sa confirmation. Veillez
+                        à le contacter par téléghone ou mail pour un premier contact.
+                        Vous pourrez ensuite avancer à l'étape suivante.
                       </p>
 
                       {selectedAmo && (
