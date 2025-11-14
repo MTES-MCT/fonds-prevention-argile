@@ -1,3 +1,24 @@
 /* Tailwind CSS */
 @import "tailwindcss";
 
+/**
+ * Fix bug DSFR v1.14.2 - Navigation dropdown positioning
+ * Date: 14/11/2025
+ * 
+ * Problème: Les menus déroulants de navigation (.fr-menu) s'affichent en bas de page
+ * au lieu de s'afficher sous leurs boutons respectifs.
+ * 
+ * Cause: Conflit CSS dans dsfr.min.css où position: relative du core écrase 
+ * position: static de navigation.min.css pour .fr-nav__item, cassant le contexte 
+ * de positionnement absolu des menus.
+ * 
+ * Solution: Forcer position: relative sur .fr-nav__item pour créer le contexte
+ * de positionnement nécessaire aux menus en position: absolute.
+ * 
+ * À retirer quand le bug sera corrigé dans une future version du DSFR.
+ */
+@media (min-width: 62em) {
+  .fr-nav__item {
+    position: relative !important;
+  }
+}
