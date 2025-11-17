@@ -355,6 +355,13 @@ export function ParcoursProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Re-fetch parcours quand l'authentification change
+  useEffect(() => {
+    if (isAuthenticated && !parcours) {
+      fetchParcours();
+    }
+  }, [isAuthenticated, parcours, fetchParcours]);
+
   // Migration sessionStorage → BDD (ancien système)
   useEffect(() => {
     migrateSessionStorageToDB();
