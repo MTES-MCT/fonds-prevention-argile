@@ -3,7 +3,7 @@
 import { useAuth } from "@/features/auth/client";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParcours } from "../context/useParcours";
 import { Step } from "../domain";
 import { PourEnSavoirPlusSectionContent } from "@/app/(home)/components/PourEnSavoirPlusSection";
@@ -44,8 +44,39 @@ export default function MonCompteClient() {
   // État de chargement global
   const isLoading = isAuthLoading || isLoadingRGA || isLoadingParcours;
 
+  // LOG: État du composant
+  useEffect(() => {
+    console.log("=== MonCompteClient render ===", {
+      isLoading,
+      isAuthLoading,
+      isLoadingRGA,
+      isLoadingParcours,
+      hasRGAData,
+      hasUser: !!user,
+      userFirstName: user?.firstName,
+      hasParcours,
+      currentStep,
+      statutAmo,
+      lastDSStatus,
+      hasDossiers,
+    });
+  }, [
+    isLoading,
+    isAuthLoading,
+    isLoadingRGA,
+    isLoadingParcours,
+    hasRGAData,
+    user,
+    hasParcours,
+    currentStep,
+    statutAmo,
+    lastDSStatus,
+    hasDossiers,
+  ]);
+
   // Afficher un message de déconnexion
   if (isLoggingOut) {
+    console.log(">>> MonCompteClient: isLoggingOut = true");
     return (
       <div className="fr-container fr-py-8w">
         <div className="fr-alert fr-alert--info">
@@ -58,16 +89,19 @@ export default function MonCompteClient() {
 
   // Gestion du chargement initial
   if (isLoading) {
+    console.log(">>> MonCompteClient: isLoading = true");
     return <Loading />;
   }
 
   // Si pas d'user (ne devrait pas arriver car page protégée)
   if (!user) {
+    console.log(">>> MonCompteClient: no user");
     return null;
   }
 
   // Cas où simulation nécessaire (France Connect sans données de RGA)
   if (!hasRGAData) {
+    console.log(">>> MonCompteClient: no RGA data");
     return (
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
@@ -76,6 +110,8 @@ export default function MonCompteClient() {
       </section>
     );
   }
+
+  console.log(">>> MonCompteClient: rendering main content");
 
   return (
     <>
@@ -164,29 +200,47 @@ function CalloutManager({
   onAmoSuccess: () => void;
   refresh: () => Promise<void>;
 }) {
+  console.log("=== CalloutManager render ===", {
+    hasParcours,
+    currentStep,
+    statutAmo,
+    dsStatus,
+  });
+
   // Si pas de parcours, rien à afficher
   if (!hasParcours || !currentStep) {
+    console.log(
+      ">>> CalloutManager: no parcours or no currentStep, returning null"
+    );
     return null;
   }
+
+  console.log(`>>> CalloutManager: switching on currentStep: ${currentStep}`);
 
   // Gestion selon l'étape courante
   switch (currentStep) {
     case Step.CHOIX_AMO:
+      console.log(">>> CalloutManager: rendering CHOIX_AMO");
       return renderChoixAmoCallout(statutAmo, onAmoSuccess, refresh);
 
     case Step.ELIGIBILITE:
+      console.log(">>> CalloutManager: rendering ELIGIBILITE");
       return renderEligibiliteCallout(dsStatus);
 
     case Step.DIAGNOSTIC:
+      console.log(">>> CalloutManager: rendering DIAGNOSTIC");
       return renderDiagnosticCallout(dsStatus);
 
     case Step.DEVIS:
+      console.log(">>> CalloutManager: rendering DEVIS");
       return renderDevisCallout(dsStatus);
 
     case Step.FACTURES:
+      console.log(">>> CalloutManager: rendering FACTURES");
       return renderFacturesCallout(dsStatus);
 
     default:
+      console.log(">>> CalloutManager: default case, returning null");
       return null;
   }
 }
@@ -197,19 +251,27 @@ function renderChoixAmoCallout(
   onAmoSuccess: () => void,
   refresh: () => Promise<void>
 ) {
+  console.log(">>> renderChoixAmoCallout:", { statutAmo });
+
   if (statutAmo === null) {
+    console.log(">>> renderChoixAmoCallout: returning CalloutAmoTodo");
     return <CalloutAmoTodo onSuccess={onAmoSuccess} refresh={refresh} />;
   }
 
   if (statutAmo === StatutValidationAmo.EN_ATTENTE) {
+    console.log(">>> renderChoixAmoCallout: returning CalloutAmoEnAttente");
     return <CalloutAmoEnAttente />;
   }
 
   if (statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
+    console.log(
+      ">>> renderChoixAmoCallout: returning CalloutAmoLogementNonEligible"
+    );
     return <CalloutAmoLogementNonEligible />;
   }
 
   if (statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE) {
+    console.log(">>> renderChoixAmoCallout: returning CalloutAmoTodo (refusé)");
     return (
       <CalloutAmoTodo
         accompagnementRefuse
@@ -218,53 +280,83 @@ function renderChoixAmoCallout(
       />
     );
   }
+
+  console.log(">>> renderChoixAmoCallout: no match, returning undefined");
 }
 
 function renderEligibiliteCallout(dsStatus: DSStatus | null) {
+  console.log(">>> renderEligibiliteCallout:", { dsStatus });
+
   if (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE) {
+    console.log(
+      ">>> renderEligibiliteCallout: returning CalloutEligibiliteTodo"
+    );
     return <CalloutEligibiliteTodo />;
   }
 
   if (dsStatus === DSStatus.EN_CONSTRUCTION) {
+    console.log(
+      ">>> renderEligibiliteCallout: returning CalloutEligibiliteEnConstruction"
+    );
     return <CalloutEligibiliteEnConstruction />;
   }
 
   if (dsStatus === DSStatus.EN_INSTRUCTION) {
+    console.log(
+      ">>> renderEligibiliteCallout: returning CalloutEligibiliteEnInstruction"
+    );
     return <CalloutEligibiliteEnInstruction />;
   }
 
   if (dsStatus === DSStatus.ACCEPTE) {
+    console.log(
+      ">>> renderEligibiliteCallout: returning CalloutEligibiliteAccepte"
+    );
     return <CalloutEligibiliteAccepte />;
   }
 
   if (dsStatus === DSStatus.REFUSE) {
+    console.log(
+      ">>> renderEligibiliteCallout: returning CalloutEligibiliteRefuse"
+    );
     return <CalloutEligibiliteRefuse />;
   }
 
+  console.log(">>> renderEligibiliteCallout: no match, returning null");
   return null;
 }
 
 function renderDiagnosticCallout(dsStatus: DSStatus | null) {
+  console.log(">>> renderDiagnosticCallout:", { dsStatus });
+
   if (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE) {
+    console.log(">>> renderDiagnosticCallout: returning CalloutDiagnosticTodo");
     return <CalloutDiagnosticTodo />;
   }
 
   if (dsStatus === DSStatus.EN_CONSTRUCTION) {
+    console.log(
+      ">>> renderDiagnosticCallout: returning CalloutDiagnosticTodo (en construction)"
+    );
     return <CalloutDiagnosticTodo />;
   }
 
   if (dsStatus === DSStatus.EN_INSTRUCTION) {
+    console.log(">>> renderDiagnosticCallout: EN_INSTRUCTION (commented out)");
     // return <CalloutDiagnosticEnInstruction />;
   }
 
   if (dsStatus === DSStatus.ACCEPTE) {
+    console.log(">>> renderDiagnosticCallout: ACCEPTE (commented out)");
     // return <CalloutDiagnosticAccepte />;
   }
 
+  console.log(">>> renderDiagnosticCallout: no match, returning null");
   return null;
 }
 
 function renderDevisCallout(dsStatus: DSStatus | null) {
+  console.log(">>> renderDevisCallout:", { dsStatus });
   // TODO: Créer les callouts pour le devis
   return (
     <div>
@@ -275,6 +367,7 @@ function renderDevisCallout(dsStatus: DSStatus | null) {
 }
 
 function renderFacturesCallout(dsStatus: DSStatus | null) {
+  console.log(">>> renderFacturesCallout:", { dsStatus });
   // TODO: Créer les callouts pour les factures
   return (
     <div>
