@@ -1,6 +1,6 @@
 "use client";
 
-import { AUTH_METHODS, useAuth } from "@/features/auth/client";
+import { useAuth } from "@/features/auth/client";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
 import { useState } from "react";
@@ -66,22 +66,8 @@ export default function MonCompteClient() {
     return null;
   }
 
-  // Si France Connect mais pas de données
-  const isFranceConnectWithoutData =
-    user.authMethod === AUTH_METHODS.FRANCECONNECT &&
-    !hasRGAData &&
-    !hasDossiers &&
-    currentStep !== Step.CHOIX_AMO;
-
-  // Conditions de simulation nécessaire
-
-  const needsSimulation =
-    !hasRGAData && // Pas de données RGA (ni BDD, ni localStorage, ni sessionStorage)
-    !hasParcours && // Pas de parcours créé
-    currentStep !== Step.CHOIX_AMO; // Exception pour CHOIX_AMO
-
-  // Cas où simulation nécessaire (France Connect sans données ou pas de RGA ni parcours)
-  if (isFranceConnectWithoutData || needsSimulation) {
+  // Cas où simulation nécessaire (France Connect sans données de RGA)
+  if (!hasRGAData) {
     return (
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
@@ -122,7 +108,8 @@ export default function MonCompteClient() {
               <p className="fr-alert__title">Demande envoyée</p>
               <p>
                 Votre demande de confirmation a été envoyée à l'AMO sélectionné.
-                Merci de le contacter directement par mail ou téléphone également.
+                Merci de le contacter directement par mail ou téléphone
+                également.
               </p>
             </div>
           )}
