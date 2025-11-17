@@ -18,21 +18,21 @@ describe("rga-to-db.mapper", () => {
       commune_nom: "Paris 1er Arrondissement",
       coordonnees: "48.8566,2.3522",
       clef_ban: "75101_1234_00001",
-      commune_denormandie: "non",
+      commune_denormandie: false,
       annee_de_construction: "1990",
       rnb: "RNB123456",
       niveaux: 2,
       zone_dexposition: "moyen",
       type: "maison",
-      mitoyen: "oui",
-      proprietaire_occupant: "oui",
+      mitoyen: false,
+      proprietaire_occupant: true,
     },
     taxeFonciere: {
-      commune_eligible: "oui",
+      commune_eligible: false,
     },
     rga: {
-      assure: "oui",
-      indemnise_indemnise_rga: "non",
+      assure: true,
+      indemnise_indemnise_rga: false,
       sinistres: "saine",
     },
     menage: {
@@ -40,8 +40,8 @@ describe("rga-to-db.mapper", () => {
       personnes: 4,
     },
     vous: {
-      proprietaire_condition: "oui",
-      proprietaire_occupant_rga: "oui",
+      proprietaire_condition: true,
+      proprietaire_occupant_rga: true,
     },
   };
 
@@ -55,17 +55,6 @@ describe("rga-to-db.mapper", () => {
       expect(result).toHaveProperty("menage");
       expect(result).toHaveProperty("vous");
       expect(result).toHaveProperty("simulatedAt");
-    });
-
-    it("devrait convertir 'oui'/'non' en boolean", () => {
-      const result = mapRGAFormDataToDBSchema(mockRGAFormData);
-
-      expect(result.logement.mitoyen).toBe(true);
-      expect(result.logement.proprietaire_occupant).toBe(true);
-      expect(result.logement.commune_denormandie).toBe(false);
-      expect(result.rga.assure).toBe(true);
-      expect(result.rga.indemnise_indemnise_rga).toBe(false);
-      expect(result.taxeFonciere.commune_eligible).toBe(true);
     });
 
     it("devrait préserver les valeurs numériques", () => {
@@ -133,15 +122,15 @@ describe("rga-to-db.mapper", () => {
       expect(result).toHaveProperty("vous");
     });
 
-    it("devrait convertir boolean en 'oui'/'non'", () => {
+    it("devrait convertir et préserver les booleans", () => {
       const result = mapDBToRGAFormData(mockDBData);
 
-      expect(result.logement?.mitoyen).toBe("oui");
-      expect(result.logement?.proprietaire_occupant).toBe("oui");
-      expect(result.logement?.commune_denormandie).toBe("non");
-      expect(result.rga?.assure).toBe("oui");
-      expect(result.rga?.indemnise_indemnise_rga).toBe("non");
-      expect(result.taxeFonciere?.commune_eligible).toBe("oui");
+      expect(result.logement?.mitoyen).toBe(true);
+      expect(result.logement?.proprietaire_occupant).toBe(true);
+      expect(result.logement?.commune_denormandie).toBe(false);
+      expect(result.rga?.assure).toBe(true);
+      expect(result.rga?.indemnise_indemnise_rga).toBe(false);
+      expect(result.taxeFonciere?.commune_eligible).toBe(true);
     });
 
     it("devrait préserver les valeurs numériques", () => {
