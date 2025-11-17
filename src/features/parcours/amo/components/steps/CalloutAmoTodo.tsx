@@ -237,8 +237,6 @@ export default function CalloutAmoTodo({
                   </div>
                 ))}
               </div>
-
-              <div className="fr-messages-group" aria-live="polite"></div>
             </fieldset>
 
             {selectedAmoId && (
