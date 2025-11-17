@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { useParcours } from "../../../context/useParcours";
-import { Step } from "../../../domain";
+import { useParcours } from "../../../core/context/useParcours";
+import { Step } from "../../../core/domain";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 
 export default function StepDetailAmo() {

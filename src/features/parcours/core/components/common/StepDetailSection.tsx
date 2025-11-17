@@ -2,7 +2,7 @@ import StepDetailEligibilite from "../steps/eligibilite/StepDetailEligibilite";
 import StepDetailDiagnostic from "../steps/diagnostic/StepDetailDiagnostic";
 import StepDetailFactures from "../steps/factures/StepDetailFactures";
 import StepDetailDevis from "../steps/devis/StepDetailDevis";
-import StepDetailAmo from "../steps/amo/StepDetailAmo";
+import StepDetailAmo from "../../../amo/components/steps/StepDetailAmo";
 
 export default function StepDetailSection() {
   return (

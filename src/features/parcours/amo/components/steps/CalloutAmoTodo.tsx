@@ -191,7 +191,14 @@ export default function CalloutAmoTodo({
 
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
                 {amoList.map((amo) => (
-                  <div key={amo.id} className="fr-col-12 fr-col-md-6">
+                  <div
+                    key={amo.id}
+                    className={
+                      amoList.length === 1
+                        ? "fr-col-12"
+                        : "fr-col-12 fr-col-md-6"
+                    }
+                  >
                     <div className="fr-fieldset__element">
                       <div className="fr-radio-group fr-radio-rich">
                         <input
@@ -230,8 +237,6 @@ export default function CalloutAmoTodo({
                   </div>
                 ))}
               </div>
-
-              <div className="fr-messages-group" aria-live="polite"></div>
             </fieldset>
 
             {selectedAmoId && (
@@ -281,9 +286,10 @@ export default function CalloutAmoTodo({
                       </h2>
                       <p>
                         Pour valider votre sélection d'AMO, nous allons lui
-                        envoyer un e-mail afin de demander sa confirmation. Veillez
-                        à le contacter par téléghone ou mail pour un premier contact.
-                        Vous pourrez ensuite avancer à l'étape suivante.
+                        envoyer un e-mail afin de demander sa confirmation.
+                        Veillez à le contacter par téléghone ou mail pour un
+                        premier contact. Vous pourrez ensuite avancer à l'étape
+                        suivante.
                       </p>
 
                       {selectedAmo && (

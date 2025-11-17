@@ -13,25 +13,25 @@ export interface RGAFormData {
     commune_nom: string;
     coordonnees: string;
     clef_ban: string;
-    commune_denormandie: "oui" | "non";
+    commune_denormandie: boolean;
     annee_de_construction: string;
     rnb: string;
     niveaux: number;
     zone_dexposition: "faible" | "moyen" | "fort";
     type: "maison" | "appartement";
-    mitoyen: "oui" | "non";
-    proprietaire_occupant: "oui" | "non";
+    mitoyen: boolean;
+    proprietaire_occupant: boolean;
   };
 
   // Taxe foncière
   taxeFonciere: {
-    commune_eligible: "oui" | "non";
+    commune_eligible: boolean;
   };
 
   // RGA
   rga: {
-    assure: "oui" | "non";
-    indemnise_indemnise_rga: "oui" | "non";
+    assure: boolean;
+    indemnise_indemnise_rga: boolean;
     sinistres: "saine" | "très peu endommagée" | "endommagée";
   };
 
@@ -43,8 +43,8 @@ export interface RGAFormData {
 
   // Propriétaire
   vous: {
-    proprietaire_condition?: "oui" | "non";
-    proprietaire_occupant_rga?: "oui" | "non";
+    proprietaire_condition?: boolean;
+    proprietaire_occupant_rga?: boolean;
   };
 }
 

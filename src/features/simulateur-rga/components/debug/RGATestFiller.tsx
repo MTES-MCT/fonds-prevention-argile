@@ -17,21 +17,21 @@ const TEST_RGA_DATA: PartialRGAFormData = {
     commune_nom: "Saint-Maur",
     coordonnees: "46.79937275370108,1.6307522502094969",
     clef_ban: "36202_0180_00019_bis",
-    commune_denormandie: "non",
+    commune_denormandie: false,
     annee_de_construction: "1994",
     rnb: "JCRJ2AXH481J",
     niveaux: 1,
     zone_dexposition: "fort",
     type: "maison",
-    mitoyen: "non",
-    proprietaire_occupant: "oui",
+    mitoyen: false,
+    proprietaire_occupant: true,
   },
   taxeFonciere: {
-    commune_eligible: "non",
+    commune_eligible: false,
   },
   rga: {
-    assure: "oui",
-    indemnise_indemnise_rga: "non",
+    assure: true,
+    indemnise_indemnise_rga: false,
     sinistres: "saine",
   },
   menage: {
@@ -39,8 +39,8 @@ const TEST_RGA_DATA: PartialRGAFormData = {
     personnes: 7,
   },
   vous: {
-    proprietaire_condition: "oui",
-    proprietaire_occupant_rga: "oui",
+    proprietaire_condition: true,
+    proprietaire_occupant_rga: true,
   },
 };
 

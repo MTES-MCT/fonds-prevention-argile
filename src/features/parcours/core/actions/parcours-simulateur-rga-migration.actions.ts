@@ -43,7 +43,12 @@ export async function migrateSimulationDataToDatabase(
     }
 
     // 4. Mapper les données RGA
+    console.log("rgaData :>> ", JSON.stringify(rgaData, null, 2));
     const rgaSimulationData = mapRGAFormDataToDBSchema(rgaData);
+    console.log(
+      "rgaSimulationData :>> ",
+      JSON.stringify(rgaSimulationData, null, 2)
+    );
 
     // 5. Sauvegarder en base de données
     await parcoursRepo.updateRGAData(parcours.id, rgaSimulationData);
