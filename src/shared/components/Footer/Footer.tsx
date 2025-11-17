@@ -85,11 +85,6 @@ const Footer = () => {
                   Accessibilité : non conforme
                 </Link>
               </li>
-              <li className="fr-footer__bottom-item" key="statistiques">
-                <Link className="fr-footer__bottom-link" href="/statistiques">
-                  Statistiques
-                </Link>
-              </li>
 
               <li className="fr-footer__bottom-item">
                 <button
