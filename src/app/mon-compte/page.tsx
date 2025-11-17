@@ -1,6 +1,5 @@
 import { getCurrentUser, ROLES } from "@/features/auth";
 import MonCompteClient from "@/features/parcours/core/components/MonCompteClient";
-import { ParcoursProvider } from "@/features/parcours/core/context/ParcoursProvider";
 import { redirect } from "next/navigation";
 
 export default async function MonComptePage() {
@@ -12,9 +11,5 @@ export default async function MonComptePage() {
     redirect("/connexion");
   }
 
-  return (
-    <ParcoursProvider autoSync={false}>
-      <MonCompteClient />
-    </ParcoursProvider>
-  );
+  return <MonCompteClient />;
 }
