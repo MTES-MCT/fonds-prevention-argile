@@ -3,7 +3,7 @@
 import { AUTH_METHODS, useAuth } from "@/features/auth/client";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParcours } from "../context/useParcours";
 import { Step } from "../domain";
 import { PourEnSavoirPlusSectionContent } from "@/app/(home)/components/PourEnSavoirPlusSection";
