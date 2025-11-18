@@ -1,1 +1,1 @@
-export * from "./rga-simulation.types";
+export * from "../../../../shared/domain/types/rga-simulation.types";
