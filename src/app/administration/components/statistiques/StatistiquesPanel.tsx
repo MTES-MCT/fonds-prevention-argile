@@ -138,12 +138,12 @@ export default function StatistiquesPanel() {
           <li role="presentation">
             <button
               type="button"
-              id="storybook-tab-0"
+              id="statistiques-tab-0"
               className="fr-tabs__tab"
               tabIndex={0}
               role="tab"
               aria-selected="true"
-              aria-controls="storybook-tab-0-panel">
+              aria-controls="statistiques-tab-0-panel">
               Statistiques globales
             </button>
           </li>
@@ -152,12 +152,12 @@ export default function StatistiquesPanel() {
           <li role="presentation">
             <button
               type="button"
-              id="storybook-tab-1"
+              id="statistiques-tab-1"
               className="fr-tabs__tab"
               tabIndex={-1}
               role="tab"
               aria-selected="false"
-              aria-controls="storybook-tab-1-panel">
+              aria-controls="statistiques-tab-1-panel">
               Statistiques des visites
             </button>
           </li>
@@ -166,12 +166,12 @@ export default function StatistiquesPanel() {
           <li role="presentation">
             <button
               type="button"
-              id="storybook-tab-2"
+              id="statistiques-tab-2"
               className="fr-tabs__tab"
               tabIndex={-1}
               role="tab"
               aria-selected="false"
-              aria-controls="storybook-tab-2-panel">
+              aria-controls="statistiques-tab-2-panel">
               Statistiques du funnel Mes Aides Réno
             </button>
           </li>
@@ -179,10 +179,10 @@ export default function StatistiquesPanel() {
 
         {/* Statistiques globales */}
         <div
-          id="storybook-tab-0-panel"
+          id="statistiques-tab-0-panel"
           className="fr-tabs__panel fr-tabs__panel--selected"
           role="tabpanel"
-          aria-labelledby="storybook-tab-0"
+          aria-labelledby="statistiques-tab-0"
           tabIndex={0}>
           <h2 className="fr-h3 fr-mb-3w">Statistiques globales</h2>
 
@@ -213,10 +213,10 @@ export default function StatistiquesPanel() {
 
         {/* Statistiques des visites */}
         <div
-          id="storybook-tab-1-panel"
+          id="statistiques-tab-1-panel"
           className="fr-tabs__panel"
           role="tabpanel"
-          aria-labelledby="storybook-tab-1"
+          aria-labelledby="statistiques-tab-1"
           tabIndex={0}>
           <h2 className="fr-h3 fr-mt-6w fr-mb-3w">Statistiques des visites</h2>
 
@@ -238,10 +238,10 @@ export default function StatistiquesPanel() {
 
         {/* Statistiques du funnel Mes Aides Réno */}
         <div
-          id="storybook-tab-2-panel"
+          id="statistiques-tab-2-panel"
           className="fr-tabs__panel"
           role="tabpanel"
-          aria-labelledby="storybook-tab-2"
+          aria-labelledby="statistiques-tab-2"
           tabIndex={0}>
           {/* Statistiques du funnel Mes Aides Réno */}
           <h3 className="fr-h3 fr-mt-6w fr-mb-3w">
