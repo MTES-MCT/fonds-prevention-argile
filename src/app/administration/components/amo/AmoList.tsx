@@ -9,14 +9,18 @@ interface AmoWithRelations extends Amo {
   epci?: { codeEpci: string }[];
 }
 
-export function AmoList() {
+interface AmoListProps {
+  onEdit: (amo: AmoWithRelations) => void;
+  refreshTrigger: number;
+}
+
+export function AmoList({ onEdit, refreshTrigger }: AmoListProps) {
   const [amos, setAmos] = useState<AmoWithRelations[]>([]);
   const [isLoadingAmos, setIsLoadingAmos] = useState(true);
 
-  // Charger les AMO au montage du composant
   useEffect(() => {
     loadAmos();
-  }, []);
+  }, [refreshTrigger]);
 
   const loadAmos = async () => {
     setIsLoadingAmos(true);
@@ -34,7 +38,6 @@ export function AmoList() {
 
   return (
     <div className="fr-container">
-      {/* Table des AMO */}
       <h2 className="fr-h4 fr-mb-2w">Liste des AMO enregistrées</h2>
 
       {isLoadingAmos ? (
@@ -64,6 +67,7 @@ export function AmoList() {
                       <th scope="col">Téléphone</th>
                       <th scope="col">Adresse</th>
                       <th scope="col">Codes INSEE spécifiques</th>
+                      <th scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -84,6 +88,15 @@ export function AmoList() {
                           {amo.communes && amo.communes.length > 0
                             ? amo.communes.map((c) => c.codeInsee).join(", ")
                             : "-"}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="fr-btn fr-btn--sm fr-btn--secondary"
+                            onClick={() => onEdit(amo)}
+                            title="Modifier">
+                            Modifier
+                          </button>
                         </td>
                       </tr>
                     ))}
