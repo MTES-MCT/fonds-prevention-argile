@@ -253,7 +253,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     section: DSSection.MAISON,
     type: DSFieldType.CHECKBOX,
     rgaPath: "rga.indemnise_indemnise_rga",
-    transformer: (value: unknown) => String(value === true || value === "oui"),
+    transformer: (value: unknown) => String(value === true),
   },
   "Q2hhbXAtNTU0MjU1MA==": {
     id: "Q2hhbXAtNTU0MjU1MA==",
@@ -266,7 +266,13 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     label: "Montant de l'indemnisation",
     section: DSSection.MAISON,
     type: DSFieldType.NUMBER,
-    transformer: (value: unknown) => (value ? Number(value) : 0),
+    transformer: (value: unknown) => {
+      if (value === null || value === undefined || value === "") {
+        return undefined; // Ne pas remplir le champ
+      }
+      const montant = Number(value);
+      return isNaN(montant) ? undefined : montant;
+    },
   },
   "Q2hhbXAtNTU0Mjc5Mg==": {
     id: "Q2hhbXAtNTU0Mjc5Mg==",
