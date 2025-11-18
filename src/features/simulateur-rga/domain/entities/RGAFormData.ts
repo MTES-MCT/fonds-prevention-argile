@@ -1,3 +1,33 @@
+// Constantes pour les valeurs possibles
+const ZONES_EXPOSITION = ["faible", "moyen", "fort"] as const;
+const TYPES_LOGEMENT = ["maison", "appartement"] as const;
+const ETATS_SINISTRE = ["saine", "très peu endommagée", "endommagée"] as const;
+
+// Types dérivés des constantes
+export type ZoneExposition = (typeof ZONES_EXPOSITION)[number];
+export type TypeLogement = (typeof TYPES_LOGEMENT)[number];
+export type EtatSinistre = (typeof ETATS_SINISTRE)[number];
+
+// Type guards
+export const isZoneExposition = (value: unknown): value is ZoneExposition => {
+  return (
+    typeof value === "string" &&
+    ZONES_EXPOSITION.includes(value as ZoneExposition)
+  );
+};
+
+export const isTypeLogement = (value: unknown): value is TypeLogement => {
+  return (
+    typeof value === "string" && TYPES_LOGEMENT.includes(value as TypeLogement)
+  );
+};
+
+export const isEtatSinistre = (value: unknown): value is EtatSinistre => {
+  return (
+    typeof value === "string" && ETATS_SINISTRE.includes(value as EtatSinistre)
+  );
+};
+
 /**
  * Entité représentant les données du simulateur RGA
  * Reçues depuis l'iframe MesAidesRénov
@@ -17,8 +47,8 @@ export interface RGAFormData {
     annee_de_construction: string;
     rnb: string;
     niveaux: number;
-    zone_dexposition: "faible" | "moyen" | "fort";
-    type: "maison" | "appartement";
+    zone_dexposition: ZoneExposition;
+    type: TypeLogement;
     mitoyen: boolean;
     proprietaire_occupant: boolean;
   };
@@ -32,7 +62,7 @@ export interface RGAFormData {
   rga: {
     assure: boolean;
     indemnise_indemnise_rga: boolean;
-    sinistres: "saine" | "très peu endommagée" | "endommagée";
+    sinistres: EtatSinistre;
   };
 
   // Ménage

@@ -1,3 +1,4 @@
+import { isEtatSinistre } from "@/features/simulateur-rga";
 import type { DSField } from "../types/ds-field.types";
 import { DSFieldType } from "./ds-field-type.enum";
 import { DSSection } from "./ds-section.enum";
@@ -210,12 +211,8 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
   "Q2hhbXAtNTY3MDU4OA==": {
     id: "Q2hhbXAtNTY3MDU4OA==",
     label: "Désordres architecturaux identifiés",
-    type: DSFieldType.CHECKBOX,
     section: DSSection.MAISON,
-    rgaPath: "rga.sinistres",
-    transformer: (value: unknown) => {
-      return String(value === "endommagée" ? "oui" : "non");
-    },
+    type: DSFieldType.CHECKBOX,
   },
   "Q2hhbXAtNTY3MDUwNg==": {
     id: "Q2hhbXAtNTY3MDUwNg==",
@@ -224,6 +221,11 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     type: DSFieldType.CHECKBOX,
     rgaPath: "rga.sinistres",
     transformer: (value: unknown) => {
+      if (!isEtatSinistre(value)) {
+        console.warn("RGA - Valeur inattendue pour sinistres:", value);
+        return "non";
+      }
+      console.log("RGA - Microfissures :>>", value);
       return String(value === "très peu endommagée" ? "oui" : "non");
     },
   },
