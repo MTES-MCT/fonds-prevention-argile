@@ -1,4 +1,8 @@
-import { isEtatSinistre } from "@/features/simulateur-rga";
+import {
+  isEtatSinistre,
+  isZoneExposition,
+  ZoneExposition,
+} from "@/features/simulateur-rga";
 import type { DSField } from "../types/ds-field.types";
 import { DSFieldType } from "./ds-field-type.enum";
 import { DSSection } from "./ds-section.enum";
@@ -154,7 +158,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     section: DSSection.MAISON,
     type: DSFieldType.CHECKBOX,
     rgaPath: "logement.proprietaire_occupant",
-    transformer: (value: unknown) => String(value === true || value === "oui"),
+    transformer: (value: unknown) => String(value === true),
   },
   "Q2hhbXAtNTU0MjgyMA==": {
     id: "Q2hhbXAtNTU0MjgyMA==",
@@ -169,14 +173,16 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     type: DSFieldType.DROPDOWN,
     rgaPath: "logement.zone_dexposition",
     transformer: (value: unknown) => {
-      const zoneMapping: Record<string, string> = {
+      if (!isZoneExposition(value)) {
+        console.warn("RGA - Valeur inattendue pour zone d'exposition:", value);
+        return "";
+      }
+      const zoneMapping: Record<ZoneExposition, string> = {
         faible: "Faible",
         moyen: "Moyenne",
         fort: "Forte",
       };
-      return typeof value === "string" && value in zoneMapping
-        ? zoneMapping[value]
-        : "";
+      return zoneMapping[value];
     },
   },
   "Q2hhbXAtNTQxNjY5MQ==": {
@@ -185,7 +191,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     section: DSSection.MAISON,
     type: DSFieldType.CHECKBOX,
     rgaPath: "logement.mitoyen",
-    transformer: (value: unknown) => String(value === true || value === "oui"),
+    transformer: (value: unknown) => String(value === true),
   },
   "Q2hhbXAtNTQxNzM0OA==": {
     id: "Q2hhbXAtNTQxNzM0OA==",
@@ -200,7 +206,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     section: DSSection.MAISON,
     type: DSFieldType.CHECKBOX,
     rgaPath: "rga.assure",
-    transformer: (value: unknown) => String(value === true || value === "oui"),
+    transformer: (value: unknown) => String(value === true),
   },
   "Q2hhbXAtNTYwODAzOQ==": {
     id: "Q2hhbXAtNTYwODAzOQ==",
@@ -226,7 +232,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
         return "non";
       }
       console.log("RGA - Microfissures :>>", value);
-      return String(value === "très peu endommagée" ? "oui" : "non");
+      return String(value === "très peu endommagée");
     },
   },
   "Q2hhbXAtNTQxNzM5Mg==": {
@@ -260,6 +266,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     label: "Montant de l'indemnisation",
     section: DSSection.MAISON,
     type: DSFieldType.NUMBER,
+    transformer: (value: unknown) => (value ? Number(value) : 0),
   },
   "Q2hhbXAtNTU0Mjc5Mg==": {
     id: "Q2hhbXAtNTU0Mjc5Mg==",
