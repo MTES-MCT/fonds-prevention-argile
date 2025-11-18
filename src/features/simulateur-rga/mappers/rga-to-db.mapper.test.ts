@@ -34,6 +34,7 @@ describe("rga-to-db.mapper", () => {
       assure: true,
       indemnise_indemnise_rga: false,
       sinistres: "saine",
+      indemnise_montant_indemnite: 0,
     },
     menage: {
       revenu_rga: 35000,
@@ -63,6 +64,7 @@ describe("rga-to-db.mapper", () => {
       expect(result.menage.revenu_rga).toBe(35000);
       expect(result.menage.personnes).toBe(4);
       expect(result.logement.niveaux).toBe(2);
+      expect(result.rga.indemnise_montant_indemnite).toBe(0);
     });
 
     it("devrait ajouter un timestamp", () => {
@@ -100,6 +102,7 @@ describe("rga-to-db.mapper", () => {
         assure: true,
         indemnise_indemnise_rga: false,
         sinistres: "saine",
+        indemnise_montant_indemnite: 15000,
       },
       menage: {
         revenu_rga: 35000,
@@ -139,6 +142,7 @@ describe("rga-to-db.mapper", () => {
       expect(result.menage?.revenu_rga).toBe(35000);
       expect(result.menage?.personnes).toBe(4);
       expect(result.logement?.niveaux).toBe(2);
+      expect(result.rga?.indemnise_montant_indemnite).toBe(15000);
     });
 
     it("devrait être l'inverse de mapRGAFormDataToDBSchema", () => {
@@ -153,6 +157,9 @@ describe("rga-to-db.mapper", () => {
       expect(formData.rga?.assure).toBe(mockRGAFormData.rga.assure);
       expect(formData.menage?.revenu_rga).toBe(
         mockRGAFormData.menage.revenu_rga
+      );
+      expect(formData.rga?.indemnise_montant_indemnite).toBe(
+        mockRGAFormData.rga.indemnise_montant_indemnite
       );
     });
   });

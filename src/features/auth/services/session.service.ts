@@ -55,7 +55,7 @@ export async function createSessionCookies(
       ? SESSION_DURATION.admin
       : SESSION_DURATION.particulier;
 
-  const cookieOptions = getCookieOptions(maxAge); // ✅ Utiliser le helper
+  const cookieOptions = getCookieOptions(maxAge);
 
   cookieStore.set(COOKIE_NAMES.SESSION, token, cookieOptions);
   cookieStore.set(COOKIE_NAMES.SESSION_ROLE, role, cookieOptions);

@@ -12,6 +12,7 @@ import { prefillClient } from "../../dossiers-ds/adapters";
 import { createDossierForCurrentStep } from "../../dossiers-ds/services";
 import { parcoursRepo } from "@/shared/database";
 import { cleanupRGADataAfterDS } from "@/features/simulateur-rga/services/cleanup.service";
+import { DS_FIELDS_ELIGIBILITE } from "../../dossiers-ds/domain";
 
 // Activer les logs de debug si la variable d'environnement est définie
 const DEBUG_ELIGIBILITE = process.env.DEBUG_ELIGIBILITE === "true";
@@ -142,7 +143,17 @@ export async function createEligibiliteDossier(
     Object.entries(prefillData).forEach(([key, value]) => {
       const valueStr =
         typeof value === "object" ? JSON.stringify(value) : String(value);
-      debugLog(`    - ${key}: ${valueStr}`);
+
+      // Extraire l'ID du champ (enlever le préfixe "champ_")
+      const fieldId = key.replace(/^champ_/, "");
+
+      // Chercher le label dans DS_FIELDS_ELIGIBILITE
+      const field = DS_FIELDS_ELIGIBILITE[fieldId];
+      const label = field?.label || "Champ personnalisé AMO";
+
+      debugLog(`    - ${label}`);
+      debugLog(`      ID: ${fieldId}`);
+      debugLog(`      Valeur: ${valueStr}`);
     });
 
     // 5. Créer le dossier DS via l'API

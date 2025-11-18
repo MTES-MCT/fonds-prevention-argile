@@ -12,5 +12,5 @@ export interface DSField {
   transformer?: (
     value: unknown,
     rgaData?: Record<string, unknown>
-  ) => string | number | boolean | (string | number)[];
+  ) => string | number | boolean | unknown | (string | number)[];
 }
