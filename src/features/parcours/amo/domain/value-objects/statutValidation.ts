@@ -1,17 +1,8 @@
-/**
- * Statuts possibles pour la validation AMO
- */
-export enum StatutValidationAmo {
-  EN_ATTENTE = "en_attente",
-  LOGEMENT_ELIGIBLE = "logement_eligible",
-  LOGEMENT_NON_ELIGIBLE = "logement_non_eligible",
-  ACCOMPAGNEMENT_REFUSE = "accompagnement_refuse",
-}
+// Réexporter depuis le Shared Kernel
+export { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
-/**
- * Type dérivé des statuts
- */
-export type StatutValidationAmoType = `${StatutValidationAmo}`;
+// Importer pour utiliser dans les fonctions
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
 /**
  * Helper pour vérifier si un statut est final
@@ -31,8 +22,5 @@ export function isValidationAcceptee(statut: StatutValidationAmo): boolean {
  * Helper pour vérifier si la validation est refusée
  */
 export function isValidationRefusee(statut: StatutValidationAmo): boolean {
-  return (
-    statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE ||
-    statut === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
-  );
+  return statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE || statut === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE;
 }

@@ -3,7 +3,7 @@ import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { entreprisesAmo } from "./entreprises-amo";
 import { statutValidationAmoPgEnum } from "../enums/enums";
-import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
 export const parcoursAmoValidations = pgTable("parcours_amo_validations", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -20,9 +20,7 @@ export const parcoursAmoValidations = pgTable("parcours_amo_validations", {
     .references(() => entreprisesAmo.id, { onDelete: "restrict" }),
 
   // Statut de la validation
-  statut: statutValidationAmoPgEnum("statut")
-    .notNull()
-    .default(StatutValidationAmo.EN_ATTENTE),
+  statut: statutValidationAmoPgEnum("statut").notNull().default(StatutValidationAmo.EN_ATTENTE),
 
   // Commentaire/justification de l'AMO
   commentaire: text("commentaire"),
@@ -30,6 +28,8 @@ export const parcoursAmoValidations = pgTable("parcours_amo_validations", {
   // Données personnelles temporaires (supprimées après validation)
   userPrenom: text("user_prenom"),
   userNom: text("user_nom"),
+  userEmail: text("user_email"),
+  userTelephone: text("user_telephone"),
   adresseLogement: text("adresse_logement"),
 
   // Timestamps
@@ -44,21 +44,17 @@ export const parcoursAmoValidations = pgTable("parcours_amo_validations", {
 });
 
 // Relations
-export const parcoursAmoValidationsRelations = relations(
-  parcoursAmoValidations,
-  ({ one }) => ({
-    parcours: one(parcoursPrevention, {
-      fields: [parcoursAmoValidations.parcoursId],
-      references: [parcoursPrevention.id],
-    }),
-    entrepriseAmo: one(entreprisesAmo, {
-      fields: [parcoursAmoValidations.entrepriseAmoId],
-      references: [entreprisesAmo.id],
-    }),
-  })
-);
+export const parcoursAmoValidationsRelations = relations(parcoursAmoValidations, ({ one }) => ({
+  parcours: one(parcoursPrevention, {
+    fields: [parcoursAmoValidations.parcoursId],
+    references: [parcoursPrevention.id],
+  }),
+  entrepriseAmo: one(entreprisesAmo, {
+    fields: [parcoursAmoValidations.entrepriseAmoId],
+    references: [entreprisesAmo.id],
+  }),
+}));
 
 // Types TypeScript générés
 export type ParcoursAmoValidation = typeof parcoursAmoValidations.$inferSelect;
-export type NewParcoursAmoValidation =
-  typeof parcoursAmoValidations.$inferInsert;
+export type NewParcoursAmoValidation = typeof parcoursAmoValidations.$inferInsert;

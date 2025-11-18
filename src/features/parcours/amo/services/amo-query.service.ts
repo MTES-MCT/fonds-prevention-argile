@@ -9,6 +9,7 @@ import {
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
 import { Amo } from "../domain/entities";
 import { StatutValidationAmo } from "../domain/value-objects";
+import { entreprisesAmoRepo } from "@/shared/database";
 
 /**
  * Service de requêtes lecture seule pour les AMO
@@ -27,9 +28,7 @@ export async function getAmosForCodeInsee(userId: string): Promise<Amo[]> {
     .where(eq(parcoursPrevention.userId, userId))
     .limit(1);
 
-  const codeInsee = normalizeCodeInsee(
-    parcours?.rgaSimulationData?.logement?.commune
-  );
+  const codeInsee = normalizeCodeInsee(parcours?.rgaSimulationData?.logement?.commune);
 
   if (!codeInsee) {
     throw new Error("Simulation RGA non complétée (code INSEE manquant)");
@@ -50,10 +49,7 @@ export async function getAmosForCodeInsee(userId: string): Promise<Amo[]> {
       adresse: entreprisesAmo.adresse,
     })
     .from(entreprisesAmo)
-    .innerJoin(
-      entreprisesAmoCommunes,
-      eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
-    )
+    .innerJoin(entreprisesAmoCommunes, eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId))
     .where(eq(entreprisesAmoCommunes.codeInsee, codeInsee));
 
   // 2. AMO qui couvrent le département entier
@@ -85,9 +81,7 @@ export async function getAmosForCodeInsee(userId: string): Promise<Amo[]> {
 /**
  * Récupère tous les AMO avec leurs communes (admin)
  */
-export async function getAllAmosWithCommunes(): Promise<
-  Array<Amo & { communes: { codeInsee: string }[] }>
-> {
+export async function getAllAmosWithCommunes(): Promise<Array<Amo & { communes: { codeInsee: string }[] }>> {
   const allAmosWithCommunes = await db
     .select({
       id: entreprisesAmo.id,
@@ -100,17 +94,11 @@ export async function getAllAmosWithCommunes(): Promise<
       codeInsee: entreprisesAmoCommunes.codeInsee,
     })
     .from(entreprisesAmo)
-    .leftJoin(
-      entreprisesAmoCommunes,
-      eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
-    )
+    .leftJoin(entreprisesAmoCommunes, eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId))
     .orderBy(entreprisesAmo.nom);
 
   // Grouper les codes INSEE par AMO
-  const amosMap = new Map<
-    string,
-    Amo & { communes: { codeInsee: string }[] }
-  >();
+  const amosMap = new Map<string, Amo & { communes: { codeInsee: string }[] }>();
 
   for (const row of allAmosWithCommunes) {
     if (!amosMap.has(row.id)) {
@@ -162,10 +150,7 @@ export async function getUserSelectedAmo(userId: string): Promise<Amo | null> {
       adresse: entreprisesAmo.adresse,
     })
     .from(parcoursAmoValidations)
-    .innerJoin(
-      entreprisesAmo,
-      eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id)
-    )
+    .innerJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
     .where(eq(parcoursAmoValidations.parcoursId, parcours.id))
     .limit(1);
 
@@ -175,9 +160,7 @@ export async function getUserSelectedAmo(userId: string): Promise<Amo | null> {
 /**
  * Récupère l'AMO qui a refusé l'accompagnement
  */
-export async function getUserRejectedAmo(
-  userId: string
-): Promise<{ id: string; nom: string } | null> {
+export async function getUserRejectedAmo(userId: string): Promise<{ id: string; nom: string } | null> {
   // Récupérer le parcours
   const [parcours] = await db
     .select({ id: parcoursPrevention.id })
@@ -196,17 +179,11 @@ export async function getUserRejectedAmo(
       nom: entreprisesAmo.nom,
     })
     .from(parcoursAmoValidations)
-    .innerJoin(
-      entreprisesAmo,
-      eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id)
-    )
+    .innerJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
     .where(
       and(
         eq(parcoursAmoValidations.parcoursId, parcours.id),
-        eq(
-          parcoursAmoValidations.statut,
-          StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
-        )
+        eq(parcoursAmoValidations.statut, StatutValidationAmo.ACCOMPAGNEMENT_REFUSE)
       )
     )
     .limit(1);
@@ -238,10 +215,7 @@ export async function getAmoById(amoId: string): Promise<Amo | null> {
 /**
  * Vérifie qu'un AMO couvre un code INSEE
  */
-export async function checkAmoCoversCodeInsee(
-  amoId: string,
-  codeInsee: string
-): Promise<boolean> {
+export async function checkAmoCoversCodeInsee(amoId: string, codeInsee: string): Promise<boolean> {
   const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
 
   const result = await db
@@ -249,20 +223,23 @@ export async function checkAmoCoversCodeInsee(
       id: entreprisesAmo.id,
     })
     .from(entreprisesAmo)
-    .leftJoin(
-      entreprisesAmoCommunes,
-      eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
-    )
+    .leftJoin(entreprisesAmoCommunes, eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId))
     .where(
       and(
         eq(entreprisesAmo.id, amoId),
-        or(
-          eq(entreprisesAmoCommunes.codeInsee, codeInsee),
-          like(entreprisesAmo.departements, `%${codeDepartement}%`)
-        )
+        or(eq(entreprisesAmoCommunes.codeInsee, codeInsee), like(entreprisesAmo.departements, `%${codeDepartement}%`))
       )
     )
     .limit(1);
 
   return result.length > 0;
+}
+
+/**
+ * Récupère tous les AMO avec leurs communes et EPCI (admin)
+ */
+export async function getAllAmosWithRelations(): Promise<
+  Array<Amo & { communes: { codeInsee: string }[]; epci: { codeEpci: string }[] }>
+> {
+  return await entreprisesAmoRepo.findAllWithRelations();
 }

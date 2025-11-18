@@ -61,6 +61,8 @@ describe("amo-validation.service", () => {
       entrepriseAmoId: "amo-456",
       userPrenom: "Jean",
       userNom: "Dupont",
+      userEmail: "jean.dupont@example.com",
+      userTelephone: "0123456789",
       adresseLogement: "123 rue de la Paix, 75001 Paris",
     };
 
@@ -130,6 +132,8 @@ describe("amo-validation.service", () => {
         statut: "en_attente" as StatutValidationAmo,
         userPrenom: validParams.userPrenom,
         userNom: validParams.userNom,
+        userEmail: validParams.userEmail,
+        userTelephone: validParams.userTelephone,
         adresseLogement: validParams.adresseLogement,
         choisieAt: new Date(),
         valideeAt: null,
@@ -163,10 +167,7 @@ describe("amo-validation.service", () => {
         expect(result.data.message).toBe("AMO sélectionnée avec succès");
         expect(result.data.token).toBe("mock-uuid-token");
       }
-      expect(parcoursRepo.updateStatus).toHaveBeenCalledWith(
-        mockParcours.id,
-        Status.EN_INSTRUCTION
-      );
+      expect(parcoursRepo.updateStatus).toHaveBeenCalledWith(mockParcours.id, Status.EN_INSTRUCTION);
     });
 
     it("devrait échouer si le prénom est vide", async () => {
@@ -217,6 +218,54 @@ describe("amo-validation.service", () => {
       }
     });
 
+    it("devrait échouer si l'email est vide", async () => {
+      const result = await selectAmoForUser(userId, {
+        ...validParams,
+        userEmail: "  ",
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe("L'email est requis");
+      }
+    });
+
+    it("devrait échouer si l'email est absent", async () => {
+      const result = await selectAmoForUser(userId, {
+        ...validParams,
+        userEmail: "",
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe("L'email est requis");
+      }
+    });
+
+    it("devrait échouer si le téléphone est vide", async () => {
+      const result = await selectAmoForUser(userId, {
+        ...validParams,
+        userTelephone: "  ",
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe("Le téléphone est requis");
+      }
+    });
+
+    it("devrait échouer si le téléphone est absent", async () => {
+      const result = await selectAmoForUser(userId, {
+        ...validParams,
+        userTelephone: "",
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe("Le téléphone est requis");
+      }
+    });
+
     it("devrait échouer si l'adresse du logement est vide", async () => {
       const result = await selectAmoForUser(userId, {
         ...validParams,
@@ -262,9 +311,7 @@ describe("amo-validation.service", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe(
-          "Vous n'êtes pas à l'étape de choix de l'AMO"
-        );
+        expect(result.error).toBe("Vous n'êtes pas à l'étape de choix de l'AMO");
       }
     });
 
@@ -278,9 +325,7 @@ describe("amo-validation.service", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe(
-          "Simulation RGA non complétée (code INSEE manquant)"
-        );
+        expect(result.error).toBe("Simulation RGA non complétée (code INSEE manquant)");
       }
     });
 
@@ -291,9 +336,7 @@ describe("amo-validation.service", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe(
-          "Cette AMO ne couvre pas votre commune ou département"
-        );
+        expect(result.error).toBe("Cette AMO ne couvre pas votre commune ou département");
       }
     });
 
@@ -313,9 +356,7 @@ describe("amo-validation.service", () => {
       vi.setSystemTime(now);
 
       const expectedExpiresAt = new Date(now);
-      expectedExpiresAt.setDate(
-        expectedExpiresAt.getDate() + AMO_VALIDATION_TOKEN_VALIDITY_DAYS
-      );
+      expectedExpiresAt.setDate(expectedExpiresAt.getDate() + AMO_VALIDATION_TOKEN_VALIDITY_DAYS);
 
       await selectAmoForUser(userId, validParams);
 
@@ -371,6 +412,8 @@ describe("amo-validation.service", () => {
         userPrenom: "  Jean  ",
         userNom: "  Dupont  ",
         adresseLogement: "  123 rue de la Paix  ",
+        userEmail: "  jean.dupont@example.com  ",
+        userTelephone: "  0123456789  ",
       };
 
       await selectAmoForUser(userId, paramsWithSpaces);
@@ -381,6 +424,8 @@ describe("amo-validation.service", () => {
           userPrenom: "Jean",
           userNom: "Dupont",
           adresseLogement: "123 rue de la Paix",
+          userEmail: "jean.dupont@example.com",
+          userTelephone: "0123456789",
         })
       );
     });
@@ -398,6 +443,8 @@ describe("amo-validation.service", () => {
       entrepriseAmoId: "amo-456",
       userNom: "Dupont",
       userPrenom: "Jean",
+      userEmail: "jean.dupont@example.com",
+      userTelephone: "0123456789",
       adresseLogement: "123 rue de la Paix",
       parcoursId: "parcours-789",
       rgaSimulationData: {
@@ -446,6 +493,8 @@ describe("amo-validation.service", () => {
             nom: mockTokenData.userNom,
             prenom: mockTokenData.userPrenom,
             adresseLogement: mockTokenData.adresseLogement,
+            email: mockTokenData.userEmail,
+            telephone: mockTokenData.userTelephone,
           },
           statut: mockTokenData.statut,
           choisieAt: mockTokenData.choisieAt,
@@ -540,6 +589,8 @@ describe("amo-validation.service", () => {
         ...mockTokenData,
         userNom: null,
         userPrenom: null,
+        userEmail: null,
+        userTelephone: null,
         adresseLogement: null,
         rgaSimulationData: null,
       };
@@ -563,6 +614,8 @@ describe("amo-validation.service", () => {
           nom: "",
           prenom: "",
           adresseLogement: "",
+          email: "",
+          telephone: "",
         });
       }
     });
@@ -675,10 +728,7 @@ describe("amo-validation.service", () => {
     it("devrait passer le parcours en VALIDE", async () => {
       await approveValidation(validationId);
 
-      expect(parcoursRepo.updateStatus).toHaveBeenCalledWith(
-        parcoursId,
-        Status.VALIDE
-      );
+      expect(parcoursRepo.updateStatus).toHaveBeenCalledWith(parcoursId, Status.VALIDE);
     });
 
     it("devrait faire progresser vers l'étape ELIGIBILITE", async () => {
@@ -726,9 +776,7 @@ describe("amo-validation.service", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe(
-          "Erreur lors de la progression vers l'éligibilité"
-        );
+        expect(result.error).toBe("Erreur lors de la progression vers l'éligibilité");
       }
     });
   });
@@ -806,10 +854,7 @@ describe("amo-validation.service", () => {
     it("devrait repasser le parcours en TODO", async () => {
       await rejectEligibility(validationId, commentaire);
 
-      expect(parcoursRepo.updateStatus).toHaveBeenCalledWith(
-        mockValidation.parcoursId,
-        Status.TODO
-      );
+      expect(parcoursRepo.updateStatus).toHaveBeenCalledWith(mockValidation.parcoursId, Status.TODO);
     });
 
     it("devrait échouer si la validation n'est pas trouvée", async () => {
@@ -904,10 +949,7 @@ describe("amo-validation.service", () => {
     it("devrait repasser le parcours en TODO", async () => {
       await rejectAccompagnement(validationId, commentaire);
 
-      expect(parcoursRepo.updateStatus).toHaveBeenCalledWith(
-        mockValidation.parcoursId,
-        Status.TODO
-      );
+      expect(parcoursRepo.updateStatus).toHaveBeenCalledWith(mockValidation.parcoursId, Status.TODO);
     });
 
     it("devrait échouer si la validation n'est pas trouvée", async () => {

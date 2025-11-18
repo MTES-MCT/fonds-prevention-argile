@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { cleanupRGADataAfterDS } from "./cleanup.service";
-import { RGADeletionReason } from "../domain/types/rga-simulation.types";
+import { RGADeletionReason } from "../../../shared/domain/types/rga-simulation.types";
 import type { ParcoursPrevention } from "@/shared/database/schema/parcours-prevention";
 
 // Mock du repository
@@ -31,9 +31,7 @@ describe("cleanupRGADataAfterDS", () => {
         rgaDataDeletionReason: RGADeletionReason.SENT_TO_DS,
       };
 
-      vi.mocked(parcoursRepo.deleteRGAData).mockResolvedValue(
-        mockParcours as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.deleteRGAData).mockResolvedValue(mockParcours as ParcoursPrevention);
 
       const result = await cleanupRGADataAfterDS(parcoursId);
 
@@ -41,10 +39,7 @@ describe("cleanupRGADataAfterDS", () => {
       if (result.success) {
         expect(result.data).toBeUndefined();
       }
-      expect(parcoursRepo.deleteRGAData).toHaveBeenCalledWith(
-        parcoursId,
-        RGADeletionReason.SENT_TO_DS
-      );
+      expect(parcoursRepo.deleteRGAData).toHaveBeenCalledWith(parcoursId, RGADeletionReason.SENT_TO_DS);
       expect(parcoursRepo.deleteRGAData).toHaveBeenCalledTimes(1);
     });
 
@@ -55,15 +50,11 @@ describe("cleanupRGADataAfterDS", () => {
         rgaSimulationData: null,
       };
 
-      vi.mocked(parcoursRepo.deleteRGAData).mockResolvedValue(
-        mockParcours as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.deleteRGAData).mockResolvedValue(mockParcours as ParcoursPrevention);
 
       await cleanupRGADataAfterDS(parcoursId);
 
-      expect(console.log).toHaveBeenCalledWith(
-        `[Cleanup] Suppression des données RGA pour le parcours ${parcoursId}`
-      );
+      expect(console.log).toHaveBeenCalledWith(`[Cleanup] Suppression des données RGA pour le parcours ${parcoursId}`);
       expect(console.log).toHaveBeenCalledWith(
         `[Cleanup] Données RGA supprimées avec succès pour le parcours ${parcoursId}`
       );
@@ -82,18 +73,14 @@ describe("cleanupRGADataAfterDS", () => {
       if (!result.success) {
         expect(result.error).toBe("Parcours non trouvé");
       }
-      expect(console.error).toHaveBeenCalledWith(
-        `[Cleanup] Parcours ${parcoursId} non trouvé ou suppression échouée`
-      );
+      expect(console.error).toHaveBeenCalledWith(`[Cleanup] Parcours ${parcoursId} non trouvé ou suppression échouée`);
     });
 
     it("devrait gérer les erreurs du repository", async () => {
       const parcoursId = "test-parcours-id";
       const errorMessage = "Erreur base de données";
 
-      vi.mocked(parcoursRepo.deleteRGAData).mockRejectedValue(
-        new Error(errorMessage)
-      );
+      vi.mocked(parcoursRepo.deleteRGAData).mockRejectedValue(new Error(errorMessage));
 
       const result = await cleanupRGADataAfterDS(parcoursId);
 
@@ -110,17 +97,13 @@ describe("cleanupRGADataAfterDS", () => {
     it("devrait gérer les erreurs non-Error", async () => {
       const parcoursId = "test-parcours-id";
 
-      vi.mocked(parcoursRepo.deleteRGAData).mockRejectedValue(
-        "Erreur inconnue"
-      );
+      vi.mocked(parcoursRepo.deleteRGAData).mockRejectedValue("Erreur inconnue");
 
       const result = await cleanupRGADataAfterDS(parcoursId);
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe(
-          "Erreur lors de la suppression des données RGA"
-        );
+        expect(result.error).toBe("Erreur lors de la suppression des données RGA");
       }
     });
   });
@@ -137,10 +120,7 @@ describe("cleanupRGADataAfterDS", () => {
       if (!result.success) {
         expect(result.error).toBe("Parcours non trouvé");
       }
-      expect(parcoursRepo.deleteRGAData).toHaveBeenCalledWith(
-        "",
-        RGADeletionReason.SENT_TO_DS
-      );
+      expect(parcoursRepo.deleteRGAData).toHaveBeenCalledWith("", RGADeletionReason.SENT_TO_DS);
     });
 
     it("devrait toujours utiliser RGADeletionReason.SENT_TO_DS", async () => {
@@ -150,9 +130,7 @@ describe("cleanupRGADataAfterDS", () => {
         rgaDataDeletionReason: RGADeletionReason.SENT_TO_DS,
       };
 
-      vi.mocked(parcoursRepo.deleteRGAData).mockResolvedValue(
-        mockParcours as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.deleteRGAData).mockResolvedValue(mockParcours as ParcoursPrevention);
 
       await cleanupRGADataAfterDS(parcoursId);
 

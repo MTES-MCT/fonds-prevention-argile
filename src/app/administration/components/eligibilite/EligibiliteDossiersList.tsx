@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import DossierDetail from "./DossierDetail";
+import DossierDetail from "./EligibiliteDossierDetail";
 import { DossiersConnection } from "@/features/parcours/dossiers-ds/adapters/graphql";
 
-interface DossiersListProps {
+interface EligibiliteDossiersListProps {
   dossiersConnection: DossiersConnection | null;
   demarcheId: number;
 }
@@ -31,9 +31,9 @@ function getStateBadgeClass(state: string): string {
   return `fr-badge ${stateClasses[state] || ""}`;
 }
 
-export default function DossiersList({
+export default function EligibiliteDossiersList({
   dossiersConnection,
-}: DossiersListProps) {
+}: EligibiliteDossiersListProps) {
   const [selectedDossier, setSelectedDossier] = useState<number | null>(null);
   const [filterState, setFilterState] = useState<string>("all");
 

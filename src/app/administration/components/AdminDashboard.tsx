@@ -1,158 +1,138 @@
 "use client";
 
 import { useState } from "react";
-import DemarcheInfo from "./DemarcheInfo";
-import DemarcheSchema from "./DemarcheSchema";
-import DossiersList from "./DossiersList";
-import EmailNotificationsList from "./EmailNotificationsList";
-import { AmoSeedUpload } from "./AmoSeedUpload";
-import {
-  DemarcheDetailed,
-  DossiersConnection,
-} from "@/features/parcours/dossiers-ds/adapters/graphql";
-import StatistiquesPanel from "./StatistiquesPanel";
+import StatistiquesPanel from "./statistiques/StatistiquesPanel";
+import UsersPanel from "./users/UsersPanel";
+import AmoPanel from "./amo/AmoPanel";
+import EligibilitePanel from "./eligibilite/EligibilitePanel";
+import DiagnosticPanel from "./diagnostic/DiagnosticPanel";
+import DevisPanel from "./devis/DevisPanel";
+import FacturesPanel from "./factures/FacturesPanel";
+import type { ActionResult } from "@/shared/types";
+import type { DemarcheDetailed, DossiersConnection } from "@/features/parcours/dossiers-ds/adapters/graphql/types";
 
-interface AdminDashboardProps {
-  demarche: DemarcheDetailed;
-  dossiersConnection: DossiersConnection | null;
-  schema: DemarcheDetailed | null;
+type TabId = "statistiques" | "users" | "amo" | "eligibilite" | "diagnostic" | "devis" | "factures";
+
+interface DemarcheData {
+  demarche: ActionResult<DemarcheDetailed>;
+  schema: ActionResult<DemarcheDetailed>;
+  dossiers: ActionResult<DossiersConnection>;
 }
 
-type TabId =
-  | "statistiques"
-  | "early-access"
-  | "demarche-info"
-  | "dossiers"
-  | "amo";
+interface AdminDashboardProps {
+  eligibiliteData: DemarcheData;
+}
 
-export default function AdminDashboard({
-  demarche,
-  dossiersConnection,
-  schema,
-}: AdminDashboardProps) {
+export default function AdminDashboard({ eligibiliteData }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabId>("statistiques");
 
-  const tabs = [
+  const links = [
     {
       id: "statistiques" as TabId,
       label: "Statistiques",
-      icon: "fr-icon-bar-chart-box-line",
+      icon: "fr-icon-bar-chart-box-fill",
     },
     {
-      id: "early-access" as TabId,
-      label: "Accès anticipés",
-      icon: "fr-icon-mail-line",
-    },
-    {
-      id: "demarche-info" as TabId,
-      label: "Infos démarche",
-      icon: "fr-icon-information-line",
-    },
-    {
-      id: "dossiers" as TabId,
-      label: "Dossiers",
-      icon: "fr-icon-file-text-line",
+      id: "users" as TabId,
+      label: "Utilisateurs",
+      icon: "fr-icon-user-fill",
     },
     {
       id: "amo" as TabId,
       label: "Entreprises AMO",
-      icon: "fr-icon-building-line",
+      icon: "fr-icon-building-fill",
+    },
+    {
+      id: "eligibilite" as TabId,
+      label: "Eligibilité",
+      icon: "fr-icon-questionnaire-fill",
+    },
+    {
+      id: "diagnostic" as TabId,
+      label: "Diagnostic",
+      icon: "fr-icon-survey-fill",
+    },
+    {
+      id: "devis" as TabId,
+      label: "Devis",
+      icon: "fr-icon-file-text-fill",
+    },
+    {
+      id: "factures" as TabId,
+      label: "Factures",
+      icon: "fr-icon-draft-fill",
     },
   ];
 
   return (
-    <div className="fr-container fr-py-6w">
-      <h1 className="fr-h2 fr-mb-4w">Administration - Fonds de Prévention</h1>
+    <>
+      {/* Navigation principale avec ombre */}
+      <div style={{ boxShadow: "0 8px 16px 0 rgba(0, 0, 0, 0.1)" }}>
+        <div className="fr-container">
+          <nav className="fr-nav" role="navigation" aria-label="Menu d'administration">
+            <ul className="fr-nav__list">
+              {links.map((link) => (
+                <li key={link.id} className="fr-nav__item">
+                  <button
+                    type="button"
+                    className="fr-nav__link"
+                    aria-current={activeTab === link.id ? "page" : undefined}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setActiveTab(link.id);
+                    }}>
+                    <span className={`${link.icon} fr-mr-2v`} />
+                    {link.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+      </div>
 
-      <div className="fr-tabs">
-        <ul
-          className="fr-tabs__list"
-          role="tablist"
-          aria-label="Onglets d'administration"
-        >
-          {tabs.map((tab) => (
-            <li key={tab.id} role="presentation">
-              <button
-                type="button"
-                id={`tab-${tab.id}`}
-                className={`fr-tabs__tab ${tab.icon} fr-tabs__tab--icon-left`}
-                tabIndex={activeTab === tab.id ? 0 : -1}
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-controls={`panel-${tab.id}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-
+      {/* Contenu des panels */}
+      <div className="fr-container fr-mt-6w">
         {/* Panel Statistiques */}
-        <div
-          id="panel-statistiques"
-          className={`fr-tabs__panel ${activeTab === "statistiques" ? "fr-tabs__panel--selected" : ""}`}
-          role="tabpanel"
-          aria-labelledby="tab-statistiques"
-          tabIndex={0}
-        >
+        <div className={activeTab === "statistiques" ? "" : "fr-hidden"} role="region" aria-label="Statistiques">
           <StatistiquesPanel />
         </div>
 
-        {/* Panel Accès anticipés */}
-        <div
-          id="panel-early-access"
-          className={`fr-tabs__panel ${activeTab === "early-access" ? "fr-tabs__panel--selected" : ""}`}
-          role="tabpanel"
-          aria-labelledby="tab-early-access"
-          tabIndex={0}
-        >
-          <h2 className="fr-h3 fr-mb-3w">Inscriptions accès anticipés</h2>
-          <EmailNotificationsList />
-        </div>
-
-        {/* Panel Infos démarche */}
-        <div
-          id="panel-demarche-info"
-          className={`fr-tabs__panel ${activeTab === "demarche-info" ? "fr-tabs__panel--selected" : ""}`}
-          role="tabpanel"
-          aria-labelledby="tab-demarche-info"
-          tabIndex={0}
-        >
-          <DemarcheInfo demarche={demarche} />
-          <div className="fr-mt-6w">
-            <DemarcheSchema
-              champDescriptors={schema?.activeRevision?.champDescriptors}
-            />
-          </div>
-        </div>
-
-        {/* Panel Dossiers */}
-        <div
-          id="panel-dossiers"
-          className={`fr-tabs__panel ${activeTab === "dossiers" ? "fr-tabs__panel--selected" : ""}`}
-          role="tabpanel"
-          aria-labelledby="tab-dossiers"
-          tabIndex={0}
-        >
-          <h2 className="fr-h3 fr-mb-3w">Gestion des dossiers</h2>
-          <DossiersList
-            dossiersConnection={dossiersConnection}
-            demarcheId={demarche.number}
-          />
+        {/* Panel Utilisateurs */}
+        <div className={activeTab === "users" ? "" : "fr-hidden"} role="region" aria-label="Utilisateurs">
+          <UsersPanel />
         </div>
 
         {/* Panel Entreprises AMO */}
-        <div
-          id="panel-amo"
-          className={`fr-tabs__panel ${activeTab === "amo" ? "fr-tabs__panel--selected" : ""}`}
-          role="tabpanel"
-          aria-labelledby="tab-amo"
-          tabIndex={0}
-        >
-          <AmoSeedUpload />
+        <div className={activeTab === "amo" ? "" : "fr-hidden"} role="region" aria-label="Entreprises AMO">
+          <AmoPanel />
+        </div>
+
+        {/* Panel Eligibilite */}
+        <div className={activeTab === "eligibilite" ? "" : "fr-hidden"} role="region" aria-label="Eligibilité">
+          <EligibilitePanel
+            demarcheResponse={eligibiliteData.demarche}
+            schemaResponse={eligibiliteData.schema}
+            dossiersResponse={eligibiliteData.dossiers}
+          />
+        </div>
+
+        {/* Panel Diagnostic */}
+        <div className={activeTab === "diagnostic" ? "" : "fr-hidden"} role="region" aria-label="Diagnostic">
+          <DiagnosticPanel />
+        </div>
+
+        {/* Panel Devis */}
+        <div className={activeTab === "devis" ? "" : "fr-hidden"} role="region" aria-label="Devis">
+          <DevisPanel />
+        </div>
+
+        {/* Panel Factures */}
+        <div className={activeTab === "factures" ? "" : "fr-hidden"} role="region" aria-label="Factures">
+          <FacturesPanel />
         </div>
       </div>
-    </div>
+    </>
   );
 }

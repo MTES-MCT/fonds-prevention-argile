@@ -9,17 +9,14 @@ import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status"
 import type { Parcours, Step } from "../domain";
 import { obtenirMonParcours } from "../actions";
 import { getValidationAmo } from "../../amo/actions";
-import {
-  syncAllUserDossiers,
-  syncUserDossierStatus,
-} from "../../dossiers-ds/actions/dossier-sync.actions";
+import { syncAllUserDossiers, syncUserDossierStatus } from "../../dossiers-ds/actions/dossier-sync.actions";
 import { DossierDS } from "../../dossiers-ds";
 import { PartialRGAFormData, RGAFormData } from "@/features/simulateur-rga";
 import { storageAdapter } from "@/features/simulateur-rga/adapters/storage.adapter";
 import { migrateSimulationDataToDatabase } from "../actions/parcours-simulateur-rga-migration.actions";
 import { mapDBToRGAFormData } from "@/features/simulateur-rga/mappers";
 import { decryptRGAData } from "@/features/simulateur-rga/actions/decrypt-rga-data.actions";
-import { useAuth } from "@/features/auth/client";
+import { ROLES, useAuth } from "@/features/auth/client";
 
 interface ParcoursProviderProps {
   children: React.ReactNode;
@@ -27,13 +24,9 @@ interface ParcoursProviderProps {
   syncInterval?: number;
 }
 
-export function ParcoursProvider({
-  children,
-  autoSync = false,
-  syncInterval = 300000,
-}: ParcoursProviderProps) {
+export function ParcoursProvider({ children, autoSync = false, syncInterval = 300000 }: ParcoursProviderProps) {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   // État principal
   const [parcours, setParcours] = useState<Parcours | null>(null);
@@ -43,8 +36,7 @@ export function ParcoursProvider({
 
   // État AMO
   const [statutAmo, setStatutAmo] = useState<StatutValidationAmo | null>(null);
-  const [validationAmoComplete, setValidationAmoComplete] =
-    useState<ValidationAmoComplete | null>(null);
+  const [validationAmoComplete, setValidationAmoComplete] = useState<ValidationAmoComplete | null>(null);
 
   // État de synchronisation
   const [isSyncing, setIsSyncing] = useState(false);
@@ -56,9 +48,7 @@ export function ParcoursProvider({
   const [prochainEtape, setProchainEtape] = useState<Step | null>(null);
 
   // Simulateur RGA
-  const [tempRgaData, setTempRgaData] = useState<PartialRGAFormData | null>(
-    null
-  );
+  const [tempRgaData, setTempRgaData] = useState<PartialRGAFormData | null>(null);
 
   // Refs
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -116,8 +106,8 @@ export function ParcoursProvider({
 
   // Fonction de chargement du parcours
   const fetchParcours = useCallback(async () => {
-    // Si non authentifié, skip (mode embed RGA uniquement)
-    if (!isAuthenticated) {
+    // Si non authentifié (mode embed RGA uniquement) OU si admin, skip
+    if (!isAuthenticated || user?.role === ROLES.ADMIN) {
       setIsLoading(false);
       return;
     }
@@ -132,9 +122,7 @@ export function ParcoursProvider({
         setIsComplete(result.data.isComplete);
         setProchainEtape(result.data.prochainEtape);
 
-        const currentDossier = result.data.dossiers.find(
-          (d) => d.demarcheEtape === result.data.parcours.currentStep
-        );
+        const currentDossier = result.data.dossiers.find((d) => d.demarcheEtape === result.data.parcours.currentStep);
         if (currentDossier) {
           setLastDSStatus(currentDossier.etatDs as DSStatus);
         }
@@ -149,10 +137,7 @@ export function ParcoursProvider({
           setValidationAmoComplete(null);
         }
       } else {
-        const errorMessage =
-          !result.success && result.error
-            ? result.error
-            : "Impossible de récupérer le parcours";
+        const errorMessage = !result.success && result.error ? result.error : "Impossible de récupérer le parcours";
         setError(errorMessage);
       }
     } catch (err) {
@@ -161,7 +146,14 @@ export function ParcoursProvider({
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.role]);
+
+  // Re-fetch parcours quand l'authentification change
+  useEffect(() => {
+    if (isAuthenticated && !parcours && user?.role !== ROLES.ADMIN) {
+      fetchParcours();
+    }
+  }, [isAuthenticated, user?.role, parcours, fetchParcours]);
 
   // Fonction de synchronisation stabilisée
   const syncNow = useCallback(
@@ -190,10 +182,7 @@ export function ParcoursProvider({
             router.refresh();
           }
         } else {
-          const errorMessage =
-            !result.success && result.error
-              ? result.error
-              : "Erreur de synchronisation";
+          const errorMessage = !result.success && result.error ? result.error : "Erreur de synchronisation";
           setError(errorMessage);
         }
       } catch (err) {
@@ -226,10 +215,7 @@ export function ParcoursProvider({
           router.refresh();
         }
       } else {
-        const errorMessage =
-          !result.success && result.error
-            ? result.error
-            : "Erreur de synchronisation complète";
+        const errorMessage = !result.success && result.error ? result.error : "Erreur de synchronisation complète";
         setError(errorMessage);
       }
     } catch (err) {
@@ -288,9 +274,7 @@ export function ParcoursProvider({
     }
 
     try {
-      const result = await migrateSimulationDataToDatabase(
-        sessionData as RGAFormData
-      );
+      const result = await migrateSimulationDataToDatabase(sessionData as RGAFormData);
 
       if (result.success) {
         // Nettoyer sessionStorage après migration réussie
@@ -321,9 +305,7 @@ export function ParcoursProvider({
     }
 
     try {
-      const result = await migrateSimulationDataToDatabase(
-        tempRgaData as RGAFormData
-      );
+      const result = await migrateSimulationDataToDatabase(tempRgaData as RGAFormData);
 
       if (result.success) {
         clearTempRgaData();
@@ -374,8 +356,8 @@ export function ParcoursProvider({
 
   // Sync unique au chargement
   useEffect(() => {
-    // Sync uniquement si authentifié et parcours existant
-    if (isAuthenticated && parcours) {
+    // Sync uniquement si authentifié, pas admin, et parcours existant
+    if (isAuthenticated && user?.role !== ROLES.ADMIN && parcours) {
       const timer = setTimeout(() => {
         syncNow();
       }, 2000);
@@ -384,12 +366,12 @@ export function ParcoursProvider({
         clearTimeout(timer);
       };
     }
-  }, [isAuthenticated, parcours, syncNow]);
+  }, [isAuthenticated, user?.role, parcours, syncNow]);
 
   // Auto-sync avec intervalle
   useEffect(() => {
     // Auto-sync uniquement si authentifié
-    if (!autoSync || !isAuthenticated || !parcours) return;
+    if (!autoSync || !isAuthenticated || user?.role === ROLES.ADMIN || !parcours) return;
 
     intervalRef.current = setInterval(() => {
       syncNow();
@@ -401,7 +383,7 @@ export function ParcoursProvider({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoSync, isAuthenticated]);
+  }, [autoSync, isAuthenticated, user?.role]);
 
   // Helpers
   const getDossierByStep = useCallback(
@@ -424,9 +406,7 @@ export function ParcoursProvider({
   }, [parcours, getDossierByStep]);
 
   // Getter RGA : converti en format uniforme
-  const rgaData = parcours?.rgaSimulationData
-    ? mapDBToRGAFormData(parcours.rgaSimulationData)
-    : tempRgaData;
+  const rgaData = parcours?.rgaSimulationData ? mapDBToRGAFormData(parcours.rgaSimulationData) : tempRgaData;
 
   const value = {
     // Données
@@ -472,9 +452,5 @@ export function ParcoursProvider({
     getCurrentDossier,
   };
 
-  return (
-    <ParcoursContext.Provider value={value}>
-      {children}
-    </ParcoursContext.Provider>
-  );
+  return <ParcoursContext.Provider value={value}>{children}</ParcoursContext.Provider>;
 }

@@ -387,7 +387,7 @@ export default function SimulateurClient({
             </div>
           </nav>
 
-          <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
+          <h1 className="fr-mb-6w text-(--text-title-grey)">
             Simulateur d'éligibilité au Fonds prévention argile
           </h1>
 

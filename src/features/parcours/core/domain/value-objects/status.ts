@@ -1,11 +1,8 @@
-/**
- * Statuts internes de validation du parcours
- */
-export enum Status {
-  TODO = "TODO",
-  EN_INSTRUCTION = "EN_INSTRUCTION",
-  VALIDE = "VALIDE",
-}
+// Réexporter depuis le Shared Kernel
+export { Status } from "@/shared/domain/value-objects/status.enum";
+
+// Importer pour utiliser dans les fonctions utilitaires
+import { Status } from "@/shared/domain/value-objects/status.enum";
 
 /**
  * Labels français des statuts (pour affichage)

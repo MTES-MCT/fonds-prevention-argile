@@ -1,24 +1,13 @@
-/**
- * Étapes du parcours de prévention RGA
- */
-export enum Step {
-  CHOIX_AMO = "CHOIX_AMO",
-  ELIGIBILITE = "ELIGIBILITE",
-  DIAGNOSTIC = "DIAGNOSTIC",
-  DEVIS = "DEVIS",
-  FACTURES = "FACTURES",
-}
+// Réexporter depuis le Shared Kernel
+export { Step } from "@/shared/domain/value-objects/step.enum";
+
+// Importer pour utiliser dans les fonctions
+import { Step } from "@/shared/domain/value-objects/step.enum";
 
 /**
  * Ordre des étapes dans le parcours
  */
-export const STEP_ORDER = [
-  Step.CHOIX_AMO,
-  Step.ELIGIBILITE,
-  Step.DIAGNOSTIC,
-  Step.DEVIS,
-  Step.FACTURES,
-] as const;
+export const STEP_ORDER = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES] as const;
 
 /**
  * Type dérivé pour l'ordre des étapes
