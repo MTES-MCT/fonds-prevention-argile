@@ -96,6 +96,7 @@ describe("amo-validation.service", () => {
           assure: true,
           indemnise_indemnise_rga: false,
           sinistres: "saine" as const,
+          indemnise_montant_indemnite: 0,
         },
         menage: { revenu_rga: 35000, personnes: 4 },
         vous: { proprietaire_condition: true, proprietaire_occupant_rga: true },

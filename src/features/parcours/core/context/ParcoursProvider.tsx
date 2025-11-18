@@ -304,7 +304,7 @@ export function ParcoursProvider({
     } catch (error) {
       console.error("[Migration sessionStorage] - Erreur:", error);
     }
-  }, [isAuthenticated, parcours, fetchParcours]); // ✅ Ajouter fetchParcours
+  }, [isAuthenticated, parcours, fetchParcours]);
 
   /**
    * Migration localStorage → BDD après connexion
