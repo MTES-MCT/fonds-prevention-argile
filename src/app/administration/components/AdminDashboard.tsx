@@ -4,12 +4,8 @@ import { useState } from "react";
 import DemarcheInfo from "./eligibilite/EligibiliteDemarcheInfo";
 import DemarcheSchema from "./eligibilite/EligibiliteDemarcheSchema";
 import DossiersList from "./eligibilite/EligibiliteDossiersList";
-import EmailNotificationsList from "./acces-anticipes/EmailNotificationsList";
 import { AmoSeedUpload } from "./amo/AmoSeedUpload";
-import {
-  DemarcheDetailed,
-  DossiersConnection,
-} from "@/features/parcours/dossiers-ds/adapters/graphql";
+import { DemarcheDetailed, DossiersConnection } from "@/features/parcours/dossiers-ds/adapters/graphql";
 import StatistiquesPanel from "./statistiques/StatistiquesPanel";
 
 interface AdminDashboardProps {
@@ -18,18 +14,9 @@ interface AdminDashboardProps {
   schema: DemarcheDetailed | null;
 }
 
-type TabId =
-  | "statistiques"
-  | "early-access"
-  | "demarche-info"
-  | "dossiers"
-  | "amo";
+type TabId = "statistiques" | "demarche-info" | "dossiers" | "amo";
 
-export default function AdminDashboard({
-  demarche,
-  dossiersConnection,
-  schema,
-}: AdminDashboardProps) {
+export default function AdminDashboard({ demarche, dossiersConnection, schema }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabId>("statistiques");
   const [isStatsMenuOpen, setIsStatsMenuOpen] = useState(false);
 
@@ -38,11 +25,6 @@ export default function AdminDashboard({
       id: "statistiques" as TabId,
       label: "Statistiques",
       icon: "fr-icon-bar-chart-box-line",
-    },
-    {
-      id: "early-access" as TabId,
-      label: "Accès anticipés",
-      icon: "fr-icon-mail-line",
     },
     {
       id: "demarche-info" as TabId,
@@ -66,11 +48,7 @@ export default function AdminDashboard({
       {/* Navigation principale avec ombre */}
       <div style={{ boxShadow: "0 8px 16px 0 rgba(0, 0, 0, 0.1)" }}>
         <div className="fr-container">
-          <nav
-            className="fr-nav"
-            role="navigation"
-            aria-label="Menu d'administration"
-          >
+          <nav className="fr-nav" role="navigation" aria-label="Menu d'administration">
             <ul className="fr-nav__list">
               {/* Menu déroulant géré manuellement */}
               <li className="fr-nav__item">
@@ -79,18 +57,14 @@ export default function AdminDashboard({
                   className="fr-nav__btn"
                   aria-expanded={isStatsMenuOpen}
                   aria-controls="collapse-menu-stats"
-                  aria-current={
-                    activeTab === "statistiques" ? "true" : undefined
-                  }
-                  onClick={() => setIsStatsMenuOpen(!isStatsMenuOpen)}
-                >
+                  aria-current={activeTab === "statistiques" ? "true" : undefined}
+                  onClick={() => setIsStatsMenuOpen(!isStatsMenuOpen)}>
                   <span className="fr-icon-bar-chart-box-line fr-mr-2v" />
                   Statistiques
                 </button>
                 <div
                   className={`fr-collapse fr-menu ${isStatsMenuOpen ? "fr-collapse--expanded" : ""}`}
-                  id="collapse-menu-stats"
-                >
+                  id="collapse-menu-stats">
                   <ul className="fr-menu__list">
                     <li>
                       <a
@@ -100,8 +74,7 @@ export default function AdminDashboard({
                           e.preventDefault();
                           setActiveTab("statistiques");
                           setIsStatsMenuOpen(false);
-                        }}
-                      >
+                        }}>
                         Vue globale
                       </a>
                     </li>
@@ -113,8 +86,7 @@ export default function AdminDashboard({
                           e.preventDefault();
                           setActiveTab("statistiques");
                           setIsStatsMenuOpen(false);
-                        }}
-                      >
+                        }}>
                         Détails
                       </a>
                     </li>
@@ -132,8 +104,7 @@ export default function AdminDashboard({
                     onClick={(e) => {
                       e.preventDefault();
                       setActiveTab(link.id);
-                    }}
-                  >
+                    }}>
                     <span className={`${link.icon} fr-mr-2v`} />
                     {link.label}
                   </a>
@@ -158,57 +129,26 @@ export default function AdminDashboard({
       {/* Contenu des panels */}
       <div className="fr-container fr-mt-6w">
         {/* Panel Statistiques */}
-        <div
-          className={activeTab === "statistiques" ? "" : "fr-hidden"}
-          role="region"
-          aria-label="Statistiques"
-        >
+        <div className={activeTab === "statistiques" ? "" : "fr-hidden"} role="region" aria-label="Statistiques">
           <StatistiquesPanel />
         </div>
 
-        {/* Panel Accès anticipés */}
-        <div
-          className={activeTab === "early-access" ? "" : "fr-hidden"}
-          role="region"
-          aria-label="Accès anticipés"
-        >
-          <h2 className="fr-h3 fr-mb-3w">Inscriptions accès anticipés</h2>
-          <EmailNotificationsList />
-        </div>
-
         {/* Panel Infos démarche */}
-        <div
-          className={activeTab === "demarche-info" ? "" : "fr-hidden"}
-          role="region"
-          aria-label="Infos démarche"
-        >
+        <div className={activeTab === "demarche-info" ? "" : "fr-hidden"} role="region" aria-label="Infos démarche">
           <DemarcheInfo demarche={demarche} />
           <div className="fr-mt-6w">
-            <DemarcheSchema
-              champDescriptors={schema?.activeRevision?.champDescriptors}
-            />
+            <DemarcheSchema champDescriptors={schema?.activeRevision?.champDescriptors} />
           </div>
         </div>
 
         {/* Panel Dossiers */}
-        <div
-          className={activeTab === "dossiers" ? "" : "fr-hidden"}
-          role="region"
-          aria-label="Dossiers"
-        >
+        <div className={activeTab === "dossiers" ? "" : "fr-hidden"} role="region" aria-label="Dossiers">
           <h2 className="fr-h3 fr-mb-3w">Gestion des dossiers</h2>
-          <DossiersList
-            dossiersConnection={dossiersConnection}
-            demarcheId={demarche.number}
-          />
+          <DossiersList dossiersConnection={dossiersConnection} demarcheId={demarche.number} />
         </div>
 
         {/* Panel Entreprises AMO */}
-        <div
-          className={activeTab === "amo" ? "" : "fr-hidden"}
-          role="region"
-          aria-label="Entreprises AMO"
-        >
+        <div className={activeTab === "amo" ? "" : "fr-hidden"} role="region" aria-label="Entreprises AMO">
           <AmoSeedUpload />
         </div>
       </div>
