@@ -32,11 +32,11 @@ export async function choisirAmo(params: {
   userPrenom: string;
   userNom: string;
   adresseLogement: string;
-  email: string;
-  telephone: string;
+  userEmail: string;
+  userTelephone: string;
 }): Promise<ActionResult<{ message: string; token: string }>> {
   try {
-    const { entrepriseAmoId, userPrenom, userNom, adresseLogement, email, telephone } = params;
+    const { entrepriseAmoId, userPrenom, userNom, adresseLogement, userEmail, userTelephone } = params;
 
     // Validation des données personnelles
     if (!userPrenom?.trim()) {
@@ -48,10 +48,10 @@ export async function choisirAmo(params: {
     if (!adresseLogement?.trim()) {
       return { success: false, error: "L'adresse du logement est requise" };
     }
-    if (!email?.trim()) {
+    if (!userEmail?.trim()) {
       return { success: false, error: "L'email est requis" };
     }
-    if (!telephone?.trim()) {
+    if (!userTelephone?.trim()) {
       return { success: false, error: "Le téléphone est requis" };
     }
 
@@ -133,8 +133,8 @@ export async function choisirAmo(params: {
     await db
       .update(users)
       .set({
-        email: email.trim(),
-        telephone: telephone.trim(),
+        email: userEmail.trim(),
+        telephone: userTelephone.trim(),
       })
       .where(eq(users.id, session.userId));
 
@@ -147,6 +147,8 @@ export async function choisirAmo(params: {
         statut: StatutValidationAmo.EN_ATTENTE,
         userPrenom: userPrenom.trim(),
         userNom: userNom.trim(),
+        userEmail: userEmail.trim(),
+        userTelephone: userTelephone.trim(),
         adresseLogement: adresseLogement.trim(),
       })
       .onConflictDoUpdate({
@@ -159,6 +161,8 @@ export async function choisirAmo(params: {
           commentaire: null,
           userPrenom: userPrenom.trim(),
           userNom: userNom.trim(),
+          userEmail: userEmail.trim(),
+          userTelephone: userTelephone.trim(),
           adresseLogement: adresseLogement.trim(),
         },
       })

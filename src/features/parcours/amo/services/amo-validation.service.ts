@@ -1,18 +1,11 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/shared/database/client";
-import {
-  amoValidationTokens,
-  parcoursAmoValidations,
-  parcoursPrevention,
-} from "@/shared/database/schema";
+import { amoValidationTokens, parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
 import { parcoursRepo } from "@/shared/database/repositories";
 
 import { checkAmoCoversCodeInsee, getAmoById } from "./amo-query.service";
 import { ActionResult } from "@/shared/types/action-result.types";
-import {
-  AMO_VALIDATION_TOKEN_VALIDITY_DAYS,
-  StatutValidationAmo,
-} from "../domain/value-objects";
+import { AMO_VALIDATION_TOKEN_VALIDITY_DAYS, StatutValidationAmo } from "../domain/value-objects";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { ValidationAmoData } from "../domain/entities";
 import { Status, Step } from "../../core";
@@ -32,10 +25,12 @@ export async function selectAmoForUser(
     entrepriseAmoId: string;
     userPrenom: string;
     userNom: string;
+    userEmail: string;
+    userTelephone: string;
     adresseLogement: string;
   }
 ): Promise<ActionResult<{ message: string; token: string }>> {
-  const { entrepriseAmoId, userPrenom, userNom, adresseLogement } = params;
+  const { entrepriseAmoId, userPrenom, userNom, userEmail, userTelephone, adresseLogement } = params;
 
   // Validation des données personnelles
   if (!userPrenom?.trim()) {
@@ -46,6 +41,12 @@ export async function selectAmoForUser(
   }
   if (!adresseLogement?.trim()) {
     return { success: false, error: "L'adresse du logement est requise" };
+  }
+  if (!userEmail?.trim()) {
+    return { success: false, error: "L'email est requis" };
+  }
+  if (!userTelephone?.trim()) {
+    return { success: false, error: "Le téléphone est requis" };
   }
 
   // Récupérer le parcours de l'utilisateur
@@ -70,9 +71,7 @@ export async function selectAmoForUser(
     };
   }
 
-  const codeInsee = normalizeCodeInsee(
-    parcours.rgaSimulationData?.logement?.commune
-  );
+  const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData?.logement?.commune);
 
   if (!codeInsee) {
     return {
@@ -99,6 +98,8 @@ export async function selectAmoForUser(
       statut: "en_attente" as StatutValidationAmo,
       userPrenom: userPrenom.trim(),
       userNom: userNom.trim(),
+      userEmail: userEmail.trim(),
+      userTelephone: userTelephone.trim(),
       adresseLogement: adresseLogement.trim(),
     })
     .onConflictDoUpdate({
@@ -111,6 +112,8 @@ export async function selectAmoForUser(
         commentaire: null,
         userPrenom: userPrenom.trim(),
         userNom: userNom.trim(),
+        userEmail: userEmail.trim(),
+        userTelephone: userTelephone.trim(),
         adresseLogement: adresseLogement.trim(),
       },
     })
@@ -319,9 +322,7 @@ export async function rejectAccompagnement(
 /**
  * Récupère les données de validation par token
  */
-export async function getValidationByToken(
-  token: string
-): Promise<ActionResult<ValidationAmoData>> {
+export async function getValidationByToken(token: string): Promise<ActionResult<ValidationAmoData>> {
   // Récupérer le token avec toutes les données associées
   const [tokenData] = await db
     .select({
@@ -334,24 +335,19 @@ export async function getValidationByToken(
       entrepriseAmoId: parcoursAmoValidations.entrepriseAmoId,
       userNom: parcoursAmoValidations.userNom,
       userPrenom: parcoursAmoValidations.userPrenom,
+      userEmail: parcoursAmoValidations.userEmail,
+      userTelephone: parcoursAmoValidations.userTelephone,
       adresseLogement: parcoursAmoValidations.adresseLogement,
       parcoursId: parcoursPrevention.id,
       rgaSimulationData: parcoursPrevention.rgaSimulationData,
     })
     .from(amoValidationTokens)
-    .innerJoin(
-      parcoursAmoValidations,
-      eq(amoValidationTokens.parcoursAmoValidationId, parcoursAmoValidations.id)
-    )
-    .innerJoin(
-      parcoursPrevention,
-      eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id)
-    )
+    .innerJoin(parcoursAmoValidations, eq(amoValidationTokens.parcoursAmoValidationId, parcoursAmoValidations.id))
+    .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
     .where(eq(amoValidationTokens.token, token))
     .limit(1);
 
-  const userCodeInsee =
-    normalizeCodeInsee(tokenData?.rgaSimulationData?.logement?.commune) || "";
+  const userCodeInsee = normalizeCodeInsee(tokenData?.rgaSimulationData?.logement?.commune) || "";
 
   if (!tokenData) {
     return {
@@ -386,6 +382,8 @@ export async function getValidationByToken(
         codeInsee: userCodeInsee,
         nom: tokenData.userNom || "",
         prenom: tokenData.userPrenom || "",
+        email: tokenData.userEmail || "",
+        telephone: tokenData.userTelephone || "",
         adresseLogement: tokenData.adresseLogement || "",
       },
       statut: tokenData.statut,
@@ -406,6 +404,8 @@ async function deleteUserPersonalData(validationId: string): Promise<void> {
     .set({
       userPrenom: null,
       userNom: null,
+      userEmail: null,
+      userTelephone: null,
       adresseLogement: null,
     })
     .where(eq(parcoursAmoValidations.id, validationId));

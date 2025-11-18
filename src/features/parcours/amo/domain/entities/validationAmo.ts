@@ -40,6 +40,8 @@ export interface ValidationAmoData {
     codeInsee: string;
     nom: string;
     prenom: string;
+    email: string;
+    telephone: string;
     adresseLogement: string;
   };
   statut: StatutValidationAmo;

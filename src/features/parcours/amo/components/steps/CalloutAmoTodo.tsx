@@ -105,8 +105,8 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
       userPrenom: user.firstName,
       userNom: user.lastName,
       adresseLogement: rgaData.logement.adresse,
-      email: email.trim(),
-      telephone: telephone.trim(),
+      userEmail: email.trim(),
+      userTelephone: telephone.trim(),
     });
 
     if (result.success) {
