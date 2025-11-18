@@ -10,11 +10,7 @@ export class UserRepository extends BaseRepository<User> {
    * Trouve un utilisateur par ID
    */
   async findById(id: string): Promise<User | null> {
-    const result = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
 
     return result[0] || null;
   }
@@ -45,11 +41,7 @@ export class UserRepository extends BaseRepository<User> {
    * Met à jour un utilisateur
    */
   async update(id: string, data: Partial<NewUser>): Promise<User | null> {
-    const result = await db
-      .update(users)
-      .set(data)
-      .where(eq(users.id, id))
-      .returning();
+    const result = await db.update(users).set(data).where(eq(users.id, id)).returning();
 
     return result[0] || null;
   }
@@ -67,11 +59,7 @@ export class UserRepository extends BaseRepository<User> {
    * Vérifie si un utilisateur existe
    */
   async exists(id: string): Promise<boolean> {
-    const result = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+    const result = await db.select({ id: users.id }).from(users).where(eq(users.id, id)).limit(1);
 
     return result.length > 0;
   }
@@ -80,9 +68,7 @@ export class UserRepository extends BaseRepository<User> {
    * Compte le nombre d'utilisateurs
    */
   async count(where?: SQL): Promise<number> {
-    const query = db
-      .select({ count: sql<number>`cast(count(*) as integer)` })
-      .from(users);
+    const query = db.select({ count: sql<number>`cast(count(*) as integer)` }).from(users);
 
     if (where) {
       query.where(where);
@@ -96,11 +82,7 @@ export class UserRepository extends BaseRepository<User> {
    * Trouve un utilisateur par FranceConnect ID
    */
   async findByFcId(fcId: string): Promise<User | null> {
-    const result = await db
-      .select()
-      .from(users)
-      .where(eq(users.fcId, fcId))
-      .limit(1);
+    const result = await db.select().from(users).where(eq(users.fcId, fcId)).limit(1);
 
     return result[0] || null;
   }
@@ -108,9 +90,7 @@ export class UserRepository extends BaseRepository<User> {
   /**
    * Crée ou met à jour un utilisateur depuis FranceConnect
    */
-  async upsertFromFranceConnect(
-    userInfo: FranceConnectUserInfo
-  ): Promise<User> {
+  async upsertFromFranceConnect(userInfo: FranceConnectUserInfo): Promise<User> {
     const fcId = userInfo.sub;
 
     // Recherche de l'utilisateur existant
@@ -120,6 +100,7 @@ export class UserRepository extends BaseRepository<User> {
       //  Mise à jour : lastLogin + codeInsee si fourni et pas déjà présent
       const updates: Partial<NewUser> = {
         lastLogin: new Date(),
+        email: userInfo.email || existingUser.email, // Met à jour l'email si fourni
       };
 
       const updated = await this.update(existingUser.id, updates);
@@ -133,6 +114,7 @@ export class UserRepository extends BaseRepository<User> {
       // Création d'un nouvel utilisateur
       return await this.create({
         fcId,
+        email: userInfo.email,
         lastLogin: new Date(),
       });
     }
@@ -142,11 +124,7 @@ export class UserRepository extends BaseRepository<User> {
    * Met à jour la date de dernière connexion
    */
   async updateLastLogin(id: string): Promise<User | null> {
-    const result = await db
-      .update(users)
-      .set({ lastLogin: new Date() })
-      .where(eq(users.id, id))
-      .returning();
+    const result = await db.update(users).set({ lastLogin: new Date() }).where(eq(users.id, id)).returning();
 
     return result[0] || null;
   }
@@ -155,11 +133,7 @@ export class UserRepository extends BaseRepository<User> {
    * Met à jour la date de dernière connexion par FranceConnect ID
    */
   async updateLastLoginByFcId(fcId: string): Promise<User | null> {
-    const result = await db
-      .update(users)
-      .set({ lastLogin: new Date() })
-      .where(eq(users.fcId, fcId))
-      .returning();
+    const result = await db.update(users).set({ lastLogin: new Date() }).where(eq(users.fcId, fcId)).returning();
 
     return result[0] || null;
   }
