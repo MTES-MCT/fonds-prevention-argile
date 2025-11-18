@@ -116,7 +116,7 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
     const updateData: Partial<NewEntrepriseAmo> = {};
 
     if (data.nom !== undefined) updateData.nom = data.nom;
-    if (data.siret !== undefined) updateData.siret = data.siret || "";
+    // Ne pas permettre de mettre à jour le SIRET via cette méthode (clé unique)
     if (data.departements !== undefined) updateData.departements = data.departements;
     if (data.emails !== undefined) updateData.emails = data.emails;
     if (data.telephone !== undefined) updateData.telephone = data.telephone || "";

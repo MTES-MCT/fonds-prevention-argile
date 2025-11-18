@@ -26,7 +26,7 @@ export default function AmoPanel() {
       if (modal && window.dsfr) {
         // Attendre que le DOM soit mis à jour
         setTimeout(() => {
-          window.dsfr(modal).modal.disclose();
+          window.dsfr?.(modal)?.modal?.disclose();
         }, 0);
       }
     }
