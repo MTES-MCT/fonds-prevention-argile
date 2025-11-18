@@ -219,6 +219,14 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     label: "Désordres architecturaux identifiés",
     section: DSSection.MAISON,
     type: DSFieldType.CHECKBOX,
+    rgaPath: "rga.sinistres",
+    transformer: (value: unknown) => {
+      if (!isEtatSinistre(value)) {
+        console.warn("RGA - Valeur inattendue pour sinistres:", value);
+        return "non";
+      }
+      return String(value === "endommagée");
+    },
   },
   "Q2hhbXAtNTY3MDUwNg==": {
     id: "Q2hhbXAtNTY3MDUwNg==",
