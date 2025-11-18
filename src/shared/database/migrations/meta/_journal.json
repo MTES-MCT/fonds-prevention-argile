@@ -43,6 +43,13 @@
       "when": 1763462591632,
       "tag": "0005_fresh_betty_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1763466013484,
+      "tag": "0006_tiresome_ezekiel_stane",
+      "breakpoints": true
     }
   ]
 }

@@ -28,6 +28,8 @@ export const parcoursAmoValidations = pgTable("parcours_amo_validations", {
   // Données personnelles temporaires (supprimées après validation)
   userPrenom: text("user_prenom"),
   userNom: text("user_nom"),
+  userEmail: text("user_email"),
+  userTelephone: text("user_telephone"),
   adresseLogement: text("adresse_logement"),
 
   // Timestamps
