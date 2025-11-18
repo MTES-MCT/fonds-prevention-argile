@@ -2,24 +2,37 @@
 
 import { getSession, ROLES } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types";
-import type {
-  DemarcheDetailed,
-  DossiersConnection,
-  Dossier,
-  DossiersFilters,
-} from "../adapters/graphql/types";
+import type { DemarcheDetailed, DossiersConnection, Dossier, DossiersFilters } from "../adapters/graphql/types";
 import { graphqlClient } from "../adapters";
+import { getServerEnv } from "@/shared/config/env.config";
+import { Step } from "../../core";
 
 /**
  * Actions admin pour gérer les démarches DS
  */
 
 /**
- * Récupère les détails d'une démarche
+ * Map un Step vers son ID de démarche DS correspondant
  */
-export async function getDemarcheDetails(
-  demarcheNumber: number
-): Promise<ActionResult<DemarcheDetailed>> {
+function getStepDemarcheId(step: Step): number {
+  const env = getServerEnv();
+
+  const stepToDemarcheMap: Record<Step, string> = {
+    [Step.CHOIX_AMO]: env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE,
+    [Step.ELIGIBILITE]: env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE,
+    [Step.DIAGNOSTIC]: env.DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC,
+    [Step.DEVIS]: env.DEMARCHES_SIMPLIFIEES_ID_DEVIS,
+    [Step.FACTURES]: env.DEMARCHES_SIMPLIFIEES_ID_FACTURES,
+  };
+
+  return parseInt(stepToDemarcheMap[step], 10);
+}
+
+/**
+ * Récupère les détails d'une démarche
+ * @param stepOrDemarcheNumber - Step enum ou numéro de démarche direct
+ */
+export async function getDemarcheDetails(stepOrDemarcheNumber: Step | number): Promise<ActionResult<DemarcheDetailed>> {
   try {
     const session = await getSession();
 
@@ -29,6 +42,9 @@ export async function getDemarcheDetails(
         error: "Accès non autorisé",
       };
     }
+
+    const demarcheNumber =
+      typeof stepOrDemarcheNumber === "number" ? stepOrDemarcheNumber : getStepDemarcheId(stepOrDemarcheNumber);
 
     const demarche = await graphqlClient.getDemarcheDetailed(demarcheNumber);
 
@@ -53,10 +69,51 @@ export async function getDemarcheDetails(
 }
 
 /**
+ * Récupère le schéma d'une démarche
+ * @param stepOrDemarcheNumber - Step enum ou numéro de démarche direct
+ */
+export async function getDemarcheSchema(stepOrDemarcheNumber: Step | number): Promise<ActionResult<DemarcheDetailed>> {
+  try {
+    const session = await getSession();
+
+    if (!session?.userId || session.role !== ROLES.ADMIN) {
+      return {
+        success: false,
+        error: "Accès non autorisé",
+      };
+    }
+
+    const demarcheNumber =
+      typeof stepOrDemarcheNumber === "number" ? stepOrDemarcheNumber : getStepDemarcheId(stepOrDemarcheNumber);
+
+    const demarche = await graphqlClient.getDemarcheSchema(demarcheNumber);
+
+    if (!demarche) {
+      return {
+        success: false,
+        error: `Démarche ${demarcheNumber} non trouvée`,
+      };
+    }
+
+    return {
+      success: true,
+      data: demarche,
+    };
+  } catch (error) {
+    console.error("Erreur getDemarcheSchema:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    };
+  }
+}
+
+/**
  * Récupère les dossiers d'une démarche avec filtres
+ * @param stepOrDemarcheNumber - Step enum ou numéro de démarche direct
  */
 export async function getDossiers(
-  demarcheNumber: number,
+  stepOrDemarcheNumber: Step | number,
   filters?: DossiersFilters
 ): Promise<ActionResult<DossiersConnection>> {
   try {
@@ -69,10 +126,10 @@ export async function getDossiers(
       };
     }
 
-    const dossiers = await graphqlClient.getDemarcheDossiers(
-      demarcheNumber,
-      filters
-    );
+    const demarcheNumber =
+      typeof stepOrDemarcheNumber === "number" ? stepOrDemarcheNumber : getStepDemarcheId(stepOrDemarcheNumber);
+
+    const dossiers = await graphqlClient.getDemarcheDossiers(demarcheNumber, filters);
 
     if (!dossiers) {
       return {
@@ -97,9 +154,7 @@ export async function getDossiers(
 /**
  * Récupère un dossier par son numéro
  */
-export async function getDossierByNumber(
-  dossierNumber: number
-): Promise<ActionResult<Dossier>> {
+export async function getDossierByNumber(dossierNumber: number): Promise<ActionResult<Dossier>> {
   try {
     const session = await getSession();
 

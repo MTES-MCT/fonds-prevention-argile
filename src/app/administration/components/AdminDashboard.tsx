@@ -1,50 +1,66 @@
 "use client";
 
 import { useState } from "react";
-import DemarcheInfo from "./eligibilite/EligibiliteDemarcheInfo";
-import DemarcheSchema from "./eligibilite/EligibiliteDemarcheSchema";
-import DossiersList from "./eligibilite/EligibiliteDossiersList";
-import { AmoSeedUpload } from "./amo/AmoSeedUpload";
-import { DemarcheDetailed, DossiersConnection } from "@/features/parcours/dossiers-ds/adapters/graphql";
 import StatistiquesPanel from "./statistiques/StatistiquesPanel";
 import UsersPanel from "./users/UsersPanel";
+import AmoPanel from "./amo/AmoPanel";
+import EligibilitePanel from "./eligibilite/EligibilitePanel";
+import DiagnosticPanel from "./diagnostic/DiagnosticPanel";
+import DevisPanel from "./devis/DevisPanel";
+import FacturesPanel from "./factures/FacturesPanel";
+import type { ActionResult } from "@/shared/types";
+import type { DemarcheDetailed, DossiersConnection } from "@/features/parcours/dossiers-ds/adapters/graphql/types";
 
-interface AdminDashboardProps {
-  demarche: DemarcheDetailed;
-  dossiersConnection: DossiersConnection | null;
-  schema: DemarcheDetailed | null;
+type TabId = "statistiques" | "users" | "amo" | "eligibilite" | "diagnostic" | "devis" | "factures";
+
+interface DemarcheData {
+  demarche: ActionResult<DemarcheDetailed>;
+  schema: ActionResult<DemarcheDetailed>;
+  dossiers: ActionResult<DossiersConnection>;
 }
 
-type TabId = "statistiques" | "users" | "amo" | "demarche-info" | "dossiers";
+interface AdminDashboardProps {
+  eligibiliteData: DemarcheData;
+}
 
-export default function AdminDashboard({ demarche, dossiersConnection, schema }: AdminDashboardProps) {
+export default function AdminDashboard({ eligibiliteData }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabId>("statistiques");
 
   const links = [
     {
       id: "statistiques" as TabId,
       label: "Statistiques",
-      icon: "fr-icon-bar-chart-box-line",
+      icon: "fr-icon-bar-chart-box-fill",
     },
     {
       id: "users" as TabId,
       label: "Utilisateurs",
-      icon: "fr-icon-user-line",
+      icon: "fr-icon-user-fill",
     },
     {
       id: "amo" as TabId,
       label: "Entreprises AMO",
-      icon: "fr-icon-building-line",
+      icon: "fr-icon-building-fill",
     },
     {
-      id: "demarche-info" as TabId,
-      label: "Démarche DS",
-      icon: "fr-icon-information-line",
+      id: "eligibilite" as TabId,
+      label: "Eligibilité",
+      icon: "fr-icon-questionnaire-fill",
     },
     {
-      id: "dossiers" as TabId,
-      label: "Dossiers",
-      icon: "fr-icon-file-text-line",
+      id: "diagnostic" as TabId,
+      label: "Diagnostic",
+      icon: "fr-icon-survey-fill",
+    },
+    {
+      id: "devis" as TabId,
+      label: "Devis",
+      icon: "fr-icon-file-text-fill",
+    },
+    {
+      id: "factures" as TabId,
+      label: "Factures",
+      icon: "fr-icon-draft-fill",
     },
   ];
 
@@ -55,20 +71,20 @@ export default function AdminDashboard({ demarche, dossiersConnection, schema }:
         <div className="fr-container">
           <nav className="fr-nav" role="navigation" aria-label="Menu d'administration">
             <ul className="fr-nav__list">
-              {/* Liens directs */}
               {links.map((link) => (
                 <li key={link.id} className="fr-nav__item">
-                  <a
+                  <button
+                    type="button"
                     className="fr-nav__link"
-                    href="#"
                     aria-current={activeTab === link.id ? "page" : undefined}
                     onClick={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       setActiveTab(link.id);
                     }}>
                     <span className={`${link.icon} fr-mr-2v`} />
                     {link.label}
-                  </a>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -90,21 +106,31 @@ export default function AdminDashboard({ demarche, dossiersConnection, schema }:
 
         {/* Panel Entreprises AMO */}
         <div className={activeTab === "amo" ? "" : "fr-hidden"} role="region" aria-label="Entreprises AMO">
-          <AmoSeedUpload />
+          <AmoPanel />
         </div>
 
-        {/* Panel Infos démarche */}
-        <div className={activeTab === "demarche-info" ? "" : "fr-hidden"} role="region" aria-label="Infos démarche">
-          <DemarcheInfo demarche={demarche} />
-          <div className="fr-mt-6w">
-            <DemarcheSchema champDescriptors={schema?.activeRevision?.champDescriptors} />
-          </div>
+        {/* Panel Eligibilite */}
+        <div className={activeTab === "eligibilite" ? "" : "fr-hidden"} role="region" aria-label="Eligibilité">
+          <EligibilitePanel
+            demarcheResponse={eligibiliteData.demarche}
+            schemaResponse={eligibiliteData.schema}
+            dossiersResponse={eligibiliteData.dossiers}
+          />
         </div>
 
-        {/* Panel Dossiers */}
-        <div className={activeTab === "dossiers" ? "" : "fr-hidden"} role="region" aria-label="Dossiers">
-          <h2 className="fr-h3 fr-mb-3w">Gestion des dossiers</h2>
-          <DossiersList dossiersConnection={dossiersConnection} demarcheId={demarche.number} />
+        {/* Panel Diagnostic */}
+        <div className={activeTab === "diagnostic" ? "" : "fr-hidden"} role="region" aria-label="Diagnostic">
+          <DiagnosticPanel />
+        </div>
+
+        {/* Panel Devis */}
+        <div className={activeTab === "devis" ? "" : "fr-hidden"} role="region" aria-label="Devis">
+          <DevisPanel />
+        </div>
+
+        {/* Panel Factures */}
+        <div className={activeTab === "factures" ? "" : "fr-hidden"} role="region" aria-label="Factures">
+          <FacturesPanel />
         </div>
       </div>
     </>

@@ -3,10 +3,7 @@
 import { useActionState, useState, useEffect } from "react";
 import Link from "next/link";
 import { Amo } from "@/features/parcours/amo";
-import {
-  getAllAmos,
-  importAmoFromExcel,
-} from "@/features/parcours/amo/actions";
+import { getAllAmos, importAmoFromExcel } from "@/features/parcours/amo/actions";
 
 interface AmoWithRelations extends Amo {
   communes?: { codeInsee: string }[];
@@ -17,15 +14,12 @@ export function AmoSeedUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [clearExisting, setClearExisting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [amos, setAmos] = useState<AmoWithRelations[]>([]);
-  const [isLoadingAmos, setIsLoadingAmos] = useState(true);
+  const [, setAmos] = useState<AmoWithRelations[]>([]);
+  const [, setIsLoadingAmos] = useState(true);
 
-  const [state, formAction, isPending] = useActionState(
-    async (_prevState: unknown, formData: FormData) => {
-      return await importAmoFromExcel(formData, clearExisting);
-    },
-    null
-  );
+  const [state, formAction, isPending] = useActionState(async (_prevState: unknown, formData: FormData) => {
+    return await importAmoFromExcel(formData, clearExisting);
+  }, null);
 
   // Charger les AMO au montage du composant et après un import réussi
   useEffect(() => {
@@ -74,17 +68,12 @@ export function AmoSeedUpload() {
     setIsDragOver(false);
 
     const droppedFile = e.dataTransfer.files[0];
-    if (
-      droppedFile &&
-      (droppedFile.name.endsWith(".xlsx") || droppedFile.name.endsWith(".xls"))
-    ) {
+    if (droppedFile && (droppedFile.name.endsWith(".xlsx") || droppedFile.name.endsWith(".xls"))) {
       setFile(droppedFile);
 
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(droppedFile);
-      const fileInput = document.getElementById(
-        "file-upload"
-      ) as HTMLInputElement;
+      const fileInput = document.getElementById("file-upload") as HTMLInputElement;
       if (fileInput) {
         fileInput.files = dataTransfer.files;
       }
@@ -99,14 +88,13 @@ export function AmoSeedUpload() {
       <div className="fr-callout fr-mb-4w">
         <h3 className="fr-callout__title">Fichier exemple</h3>
         <p className="fr-callout__text">
-          Téléchargez le fichier exemple pour voir le format attendu. Vous
-          pourrez le remplir sur votre ordinateur puis l'uploader ici.
+          Téléchargez le fichier exemple pour voir le format attendu. Vous pourrez le remplir sur votre ordinateur puis
+          l'uploader ici.
         </p>
         <Link
           href="/templates/amo-exemple.xlsx"
           download="amo-exemple.xlsx"
-          className="fr-btn fr-btn--secondary fr-btn--sm fr-btn--icon-left"
-        >
+          className="fr-btn fr-btn--secondary fr-btn--sm fr-btn--icon-left">
           Télécharger le fichier exemple
         </Link>
       </div>
@@ -127,21 +115,16 @@ export function AmoSeedUpload() {
           `}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
+          onDrop={handleDrop}>
           <div className="fr-upload-group">
             <label className="fr-label cursor-pointer" htmlFor="file-upload">
               <span className="text-lg font-semibold block mb-2">
                 {file ? "Fichier sélectionné" : "Importer un fichier Excel"}
               </span>
               <span className="fr-hint-text block mb-4">
-                {file
-                  ? file.name
-                  : "Glissez-déposez votre fichier ici ou cliquez pour sélectionner"}
+                {file ? file.name : "Glissez-déposez votre fichier ici ou cliquez pour sélectionner"}
               </span>
-              <span className="fr-hint-text text-sm">
-                Formats acceptés : .xlsx, .xls
-              </span>
+              <span className="fr-hint-text text-sm">Formats acceptés : .xlsx, .xls</span>
             </label>
             <input
               className="sr-only"
@@ -167,50 +150,32 @@ export function AmoSeedUpload() {
           />
           <label className="fr-label" htmlFor="clear-existing">
             Supprimer toutes les données AMO existantes avant l'import
-            <span className="fr-hint-text">
-              Attention : cette action est irréversible
-            </span>
+            <span className="fr-hint-text">Attention : cette action est irréversible</span>
           </label>
         </div>
 
         {/* Bouton de soumission */}
-        <button
-          type="submit"
-          className="fr-btn fr-btn--icon-left"
-          disabled={!file || isPending}
-        >
+        <button type="submit" className="fr-btn fr-btn--icon-left" disabled={!file || isPending}>
           {isPending ? "Import en cours..." : "Importer les données"}
         </button>
       </form>
 
       {/* Résultat */}
       {state && (
-        <div
-          className={`fr-alert ${state.success ? "fr-alert--success" : "fr-alert--error"} fr-mt-4w`}
-        >
-          <h3 className="fr-alert__title">
-            {state.success ? "Import réussi" : "Erreur lors de l'import"}
-          </h3>
+        <div className={`fr-alert ${state.success ? "fr-alert--success" : "fr-alert--error"} fr-mt-4w`}>
+          <h3 className="fr-alert__title">{state.success ? "Import réussi" : "Erreur lors de l'import"}</h3>
           <p>{state.message}</p>
 
           {state.stats && (
             <div className="fr-mt-2w">
               <p className="fr-text--bold">Statistiques :</p>
               <ul>
-                {state.stats.entreprisesCreated > 0 && (
-                  <li>{state.stats.entreprisesCreated} entreprises créées</li>
-                )}
+                {state.stats.entreprisesCreated > 0 && <li>{state.stats.entreprisesCreated} entreprises créées</li>}
                 {state.stats.entreprisesUpdated > 0 && (
-                  <li>
-                    {state.stats.entreprisesUpdated} entreprises mises à jour
-                  </li>
+                  <li>{state.stats.entreprisesUpdated} entreprises mises à jour</li>
                 )}
-                {state.stats.epciCreated > 0 && (
-                  <li>{state.stats.epciCreated} EPCI associés</li>
-                )}
-                {state.stats.communesCreated > 0 && (
-                  <li>{state.stats.communesCreated} communes associées</li>
-                )}
+                {state.stats.epciCreated > 0 && <li>{state.stats.epciCreated} EPCI associés</li>}
+                {state.stats.communesCreated > 0 && <li>{state.stats.communesCreated} communes associées</li>}
               </ul>
             </div>
           )}
@@ -222,96 +187,12 @@ export function AmoSeedUpload() {
                 {state.errors.slice(0, 10).map((error, index) => (
                   <li key={index}>{error}</li>
                 ))}
-                {state.errors.length > 10 && (
-                  <li>... et {state.errors.length - 10} autres erreurs</li>
-                )}
+                {state.errors.length > 10 && <li>... et {state.errors.length - 10} autres erreurs</li>}
               </ul>
             </div>
           )}
         </div>
       )}
-
-      {/* Table des AMO */}
-      <div className="fr-mt-6w">
-        <h3 className="fr-h4 fr-mb-2w">Liste des AMO enregistrées</h3>
-
-        {isLoadingAmos ? (
-          <div className="fr-py-4w text-center">
-            <p>Chargement des AMO...</p>
-          </div>
-        ) : amos.length === 0 ? (
-          <div className="fr-callout fr-callout--info">
-            <p className="fr-callout__text">
-              Aucune AMO enregistrée pour le moment. Importez un fichier Excel
-              pour commencer.
-            </p>
-          </div>
-        ) : (
-          <div className="fr-table fr-table--lg fr-table--bordered fr-table--multiline">
-            <div className="fr-table__wrapper">
-              <div className="fr-table__container">
-                <div className="fr-table__content">
-                  <table>
-                    <caption className="sr-only">
-                      Liste des entreprises AMO
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Nom</th>
-                        <th scope="col">SIRET</th>
-                        <th scope="col">Départements</th>
-                        <th scope="col">Codes EPCI</th>
-                        <th scope="col">Emails</th>
-                        <th scope="col">Téléphone</th>
-                        <th scope="col">Adresse</th>
-                        <th scope="col">Codes INSEE spécifiques</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {amos.map((amo) => (
-                        <tr key={amo.id}>
-                          <td>{amo.nom}</td>
-                          <td className="fr-text--sm">{amo.siret || "-"}</td>
-                          <td className="fr-text--sm">
-                            {amo.departements || "-"}
-                          </td>
-                          <td className="fr-text--sm">
-                            {amo.epci && amo.epci.length > 0
-                              ? amo.epci.map((e) => e.codeEpci).join(", ")
-                              : "-"}
-                          </td>
-                          <td className="fr-text--sm">
-                            {amo.emails
-                              ? amo.emails
-                                  .split(";")
-                                  .map((email, idx) => (
-                                    <div key={idx}>{email}</div>
-                                  ))
-                              : "-"}
-                          </td>
-                          <td>{amo.telephone || "-"}</td>
-                          <td className="fr-text--sm">{amo.adresse || "-"}</td>
-                          <td className="fr-text--sm">
-                            {amo.communes && amo.communes.length > 0
-                              ? amo.communes.map((c) => c.codeInsee).join(", ")
-                              : "-"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {amos.length > 0 && (
-          <p className="fr-text--sm fr-mt-2w text-gray-600">
-            Total : {amos.length} AMO enregistrée{amos.length > 1 ? "s" : ""}
-          </p>
-        )}
-      </div>
     </div>
   );
 }
