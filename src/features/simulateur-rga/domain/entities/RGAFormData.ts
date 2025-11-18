@@ -63,6 +63,7 @@ export interface RGAFormData {
     assure: boolean;
     indemnise_indemnise_rga: boolean;
     sinistres: EtatSinistre;
+    indemnise_montant_indemnite: number;
   };
 
   // Ménage

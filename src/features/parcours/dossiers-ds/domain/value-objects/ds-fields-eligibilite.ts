@@ -266,6 +266,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     label: "Montant de l'indemnisation",
     section: DSSection.MAISON,
     type: DSFieldType.NUMBER,
+    rgaPath: "rga.indemnise_montant_indemnite",
     transformer: (value: unknown) => {
       if (value === null || value === undefined || value === "") {
         return undefined; // Ne pas remplir le champ

@@ -35,6 +35,7 @@ export function mapRGAFormDataToDBSchema(
     rga: {
       assure: rgaData.rga.assure,
       indemnise_indemnise_rga: rgaData.rga.indemnise_indemnise_rga,
+      indemnise_montant_indemnite: rgaData.rga.indemnise_montant_indemnite,
       sinistres: rgaData.rga.sinistres,
     },
 
@@ -85,6 +86,7 @@ export function mapDBToRGAFormData(
       assure: dbData.rga.assure,
       indemnise_indemnise_rga: dbData.rga.indemnise_indemnise_rga,
       sinistres: dbData.rga.sinistres,
+      indemnise_montant_indemnite: dbData.rga.indemnise_montant_indemnite,
     },
     menage: {
       revenu_rga: dbData.menage.revenu_rga,

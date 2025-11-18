@@ -33,6 +33,7 @@ export interface RGASimulationData {
     assure: boolean;
     indemnise_indemnise_rga: boolean;
     sinistres: "saine" | "très peu endommagée" | "endommagée";
+    indemnise_montant_indemnite: number;
   };
 
   // Ménage
