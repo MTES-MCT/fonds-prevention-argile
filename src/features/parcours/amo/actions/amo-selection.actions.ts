@@ -10,16 +10,11 @@ import {
   entreprisesAmoCommunes,
   entreprisesAmoEpci,
   parcoursAmoValidations,
+  users,
 } from "@/shared/database/schema";
 import { and, eq, like, or } from "drizzle-orm";
-import {
-  getCodeDepartementFromCodeInsee,
-  normalizeCodeInsee,
-} from "../utils/amo.utils";
-import {
-  AMO_VALIDATION_TOKEN_VALIDITY_DAYS,
-  StatutValidationAmo,
-} from "../domain/value-objects";
+import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
+import { AMO_VALIDATION_TOKEN_VALIDITY_DAYS, StatutValidationAmo } from "../domain/value-objects";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { Amo } from "../domain/entities";
 import { Status, Step } from "../../core";
@@ -37,9 +32,11 @@ export async function choisirAmo(params: {
   userPrenom: string;
   userNom: string;
   adresseLogement: string;
+  email: string;
+  telephone: string;
 }): Promise<ActionResult<{ message: string; token: string }>> {
   try {
-    const { entrepriseAmoId, userPrenom, userNom, adresseLogement } = params;
+    const { entrepriseAmoId, userPrenom, userNom, adresseLogement, email, telephone } = params;
 
     // Validation des données personnelles
     if (!userPrenom?.trim()) {
@@ -50,6 +47,12 @@ export async function choisirAmo(params: {
     }
     if (!adresseLogement?.trim()) {
       return { success: false, error: "L'adresse du logement est requise" };
+    }
+    if (!email?.trim()) {
+      return { success: false, error: "L'email est requis" };
+    }
+    if (!telephone?.trim()) {
+      return { success: false, error: "Le téléphone est requis" };
     }
 
     const session = await getSession();
@@ -78,9 +81,7 @@ export async function choisirAmo(params: {
       };
     }
 
-    const codeInsee = normalizeCodeInsee(
-      parcours?.rgaSimulationData?.logement?.commune
-    );
+    const codeInsee = normalizeCodeInsee(parcours?.rgaSimulationData?.logement?.commune);
 
     if (!codeInsee) {
       return {
@@ -104,14 +105,8 @@ export async function choisirAmo(params: {
         departements: entreprisesAmo.departements,
       })
       .from(entreprisesAmo)
-      .leftJoin(
-        entreprisesAmoEpci,
-        eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId)
-      )
-      .leftJoin(
-        entreprisesAmoCommunes,
-        eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
-      )
+      .leftJoin(entreprisesAmoEpci, eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId))
+      .leftJoin(entreprisesAmoCommunes, eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId))
       .where(
         and(
           eq(entreprisesAmo.id, entrepriseAmoId),
@@ -130,10 +125,18 @@ export async function choisirAmo(params: {
     if (amoValide.length === 0) {
       return {
         success: false,
-        error:
-          "Cette AMO ne couvre pas votre territoire (EPCI, commune ou département)",
+        error: "Cette AMO ne couvre pas votre territoire (EPCI, commune ou département)",
       };
     }
+
+    // Mettre à jour l'email et le téléphone de l'utilisateur
+    await db
+      .update(users)
+      .set({
+        email: email.trim(),
+        telephone: telephone.trim(),
+      })
+      .where(eq(users.id, session.userId));
 
     // Créer ou mettre à jour la validation AMO
     const [validation] = await db
@@ -260,10 +263,7 @@ export async function getAmoChoisie(): Promise<ActionResult<Amo | null>> {
         adresse: entreprisesAmo.adresse,
       })
       .from(parcoursAmoValidations)
-      .innerJoin(
-        entreprisesAmo,
-        eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id)
-      )
+      .innerJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
       .where(eq(parcoursAmoValidations.parcoursId, parcours.id))
       .limit(1);
 
@@ -283,9 +283,7 @@ export async function getAmoChoisie(): Promise<ActionResult<Amo | null>> {
 /**
  * Récupérer uniquement l'id et le nom de l'AMO qui a refusé l'accompagnement
  */
-export async function getAmoRefusee(): Promise<
-  ActionResult<{ id: string; nom: string } | null>
-> {
+export async function getAmoRefusee(): Promise<ActionResult<{ id: string; nom: string } | null>> {
   try {
     const session = await getSession();
     if (!session?.userId) {
@@ -303,17 +301,11 @@ export async function getAmoRefusee(): Promise<
         nom: entreprisesAmo.nom,
       })
       .from(parcoursAmoValidations)
-      .innerJoin(
-        entreprisesAmo,
-        eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id)
-      )
+      .innerJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
       .where(
         and(
           eq(parcoursAmoValidations.parcoursId, parcours.id),
-          eq(
-            parcoursAmoValidations.statut,
-            StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
-          )
+          eq(parcoursAmoValidations.statut, StatutValidationAmo.ACCOMPAGNEMENT_REFUSE)
         )
       )
       .limit(1);
