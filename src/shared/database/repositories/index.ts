@@ -4,3 +4,4 @@ export type { PaginationParams, PaginationResult } from "./base.repository";
 export { userRepository as userRepo } from "./user.repository";
 export { parcoursPreventionRepository as parcoursRepo } from "./parcours-prevention.repository";
 export { dossierDemarchesSimplifieesRepository as dossierDsRepo } from "./dossiers-demarches-simplifiees.repository";
+export { entreprisesAmoRepository as entreprisesAmoRepo } from "./entreprises-amo.repository";
