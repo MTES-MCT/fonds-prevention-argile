@@ -71,13 +71,9 @@ export default function MonCompteClient() {
     user.authMethod === AUTH_METHODS.FRANCECONNECT && !hasRGAData && !hasDossiers && currentStep !== Step.CHOIX_AMO;
 
   // Conditions de simulation nécessaire
-  const needsSimulation =
-    !hasRGAData && // Pas de données RGA (ni BDD, ni localStorage, ni sessionStorage)
-    !hasParcours && // Pas de parcours créé
-    currentStep !== Step.CHOIX_AMO; // Exception pour CHOIX_AMO
+  const needsSimulation = !hasRGAData && !hasDossiers;
 
-  // Cas où simulation nécessaire (France Connect sans données ou pas de RGA ni parcours)
-  if (isFranceConnectWithoutData || needsSimulation) {
+  if (needsSimulation) {
     return (
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
