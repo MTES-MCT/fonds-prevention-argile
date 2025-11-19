@@ -10,7 +10,11 @@ interface AmoWithRelations extends Amo {
   epci?: { codeEpci: string }[];
 }
 
-export function AmoSeedUpload() {
+interface AmoSeedUploadProps {
+  onImportSuccess?: () => void;
+}
+
+export function AmoSeedUpload({ onImportSuccess }: AmoSeedUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [clearExisting, setClearExisting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -29,6 +33,7 @@ export function AmoSeedUpload() {
   useEffect(() => {
     if (state?.success) {
       loadAmos();
+      onImportSuccess?.(); // Callback après un import réussi
     }
   }, [state]);
 

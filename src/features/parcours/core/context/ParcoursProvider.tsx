@@ -17,12 +17,15 @@ import { migrateSimulationDataToDatabase } from "../actions/parcours-simulateur-
 import { mapDBToRGAFormData } from "@/features/simulateur-rga/mappers";
 import { decryptRGAData } from "@/features/simulateur-rga/actions/decrypt-rga-data.actions";
 import { ROLES, useAuth } from "@/features/auth/client";
+import { createDebugLogger } from "@/shared/utils";
 
 interface ParcoursProviderProps {
   children: React.ReactNode;
   autoSync?: boolean;
   syncInterval?: number;
 }
+
+const debug = createDebugLogger("PARCOURS_PROVIDER");
 
 export function ParcoursProvider({ children, autoSync = false, syncInterval = 300000 }: ParcoursProviderProps) {
   const router = useRouter();
@@ -50,9 +53,14 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
   // Simulateur RGA
   const [tempRgaData, setTempRgaData] = useState<PartialRGAFormData | null>(null);
 
-  // Refs
+  // Refs pour éviter les appels multiples
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isSyncingRef = useRef(false);
+  const hasFetchedRef = useRef(false);
+  const hasInitializedRef = useRef(false);
+  const hasMigratedSessionRef = useRef(false);
+  const hasMigratedLocalStorageRef = useRef(false);
+  const hasInitialSyncRef = useRef(false);
 
   /**
    * Charge les données RGA depuis l'URL (mode embed avec chiffrement)
@@ -104,17 +112,35 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     }
   }, []);
 
-  // Fonction de chargement du parcours
+  // Fonction de chargement du parcours (stabilisée)
   const fetchParcours = useCallback(async () => {
+    debug.log("[fetchParcours] Start", {
+      isAuthenticated,
+      role: user?.role,
+      hasFetched: hasFetchedRef.current,
+    });
+
     // Si non authentifié (mode embed RGA uniquement) OU si admin, skip
     if (!isAuthenticated || user?.role === ROLES.ADMIN) {
+      debug.log("[fetchParcours] Skip - not auth or admin");
       setIsLoading(false);
+      hasFetchedRef.current = true;
       return;
     }
+
+    // Éviter les appels multiples pendant un chargement
+    if (hasFetchedRef.current) {
+      debug.log("[fetchParcours] Skip - already fetched");
+      return;
+    }
+
+    hasFetchedRef.current = true;
+    debug.log("[fetchParcours] Fetching...");
 
     try {
       setError(null);
       const result = await obtenirMonParcours();
+      debug.log("[fetchParcours] obtenirMonParcours result:", result.success);
 
       if (result.success && result.data) {
         setParcours(result.data.parcours);
@@ -127,35 +153,42 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
           setLastDSStatus(currentDossier.etatDs as DSStatus);
         }
 
+        debug.log("[fetchParcours] Fetching AMO validation...");
         // Récupérer le statut AMO
         const validationResult = await getValidationAmo();
+        debug.log("[fetchParcours] getValidationAmo result:", validationResult.success);
+
         if (validationResult.success && validationResult.data) {
           setStatutAmo(validationResult.data.statut);
           setValidationAmoComplete(validationResult.data);
+          debug.log("[fetchParcours] AMO statut set:", validationResult.data.statut);
         } else {
           setStatutAmo(null);
           setValidationAmoComplete(null);
+          debug.log("[fetchParcours] No AMO validation data");
         }
+
+        debug.log("[fetchParcours] Complete");
       } else {
         const errorMessage = !result.success && result.error ? result.error : "Impossible de récupérer le parcours";
         setError(errorMessage);
+        console.error("[fetchParcours] Error:", errorMessage);
       }
     } catch (err) {
-      console.error("Erreur lors du chargement du parcours:", err);
+      console.error("[fetchParcours] Exception:", err);
       setError("Erreur lors du chargement");
     } finally {
       setIsLoading(false);
     }
   }, [isAuthenticated, user?.role]);
 
-  // Re-fetch parcours quand l'authentification change
-  useEffect(() => {
-    if (isAuthenticated && !parcours && user?.role !== ROLES.ADMIN) {
-      fetchParcours();
-    }
-  }, [isAuthenticated, user?.role, parcours, fetchParcours]);
+  // Refresh : permet de forcer un nouveau fetch
+  const refreshParcours = useCallback(async () => {
+    hasFetchedRef.current = false;
+    await fetchParcours();
+  }, [fetchParcours]);
 
-  // Fonction de synchronisation stabilisée
+  // Fonction de synchronisation
   const syncNow = useCallback(
     async (step?: Step) => {
       if (isSyncingRef.current) return;
@@ -178,7 +211,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
           }
 
           if (result.data.updated) {
-            await fetchParcours();
+            await refreshParcours();
             router.refresh();
           }
         } else {
@@ -193,7 +226,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
         isSyncingRef.current = false;
       }
     },
-    [parcours?.currentStep, fetchParcours, router]
+    [parcours?.currentStep, refreshParcours, router]
   );
 
   // Fonction de synchronisation complète
@@ -211,7 +244,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
         setLastSync(new Date());
 
         if (result.data.totalUpdated > 0) {
-          await fetchParcours();
+          await refreshParcours();
           router.refresh();
         }
       } else {
@@ -225,7 +258,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
       setIsSyncing(false);
       isSyncingRef.current = false;
     }
-  }, [fetchParcours, router]);
+  }, [refreshParcours, router]);
 
   // Action RGA : sauvegarde temporaire
   const saveTempRgaData = useCallback((data: PartialRGAFormData): boolean => {
@@ -241,6 +274,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     }
   }, []);
 
+  // Action RGA : nettoyage des données temporaires
   const clearTempRgaData = useCallback(() => {
     storageAdapter.clear();
     setTempRgaData(null);
@@ -250,19 +284,36 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
    * Migration des données sessionStorage → BDD (ancien système)
    */
   const migrateSessionStorageToDB = useCallback(async () => {
+    debug.log("[migrateSessionStorageToDB] Start", {
+      hasMigrated: hasMigratedSessionRef.current,
+      isAuthenticated,
+      hasParcours: !!parcours,
+    });
+
+    // Guard : éviter les migrations multiples
+    if (hasMigratedSessionRef.current) {
+      debug.log("[migrateSessionStorageToDB] Skip - already migrated");
+      return;
+    }
+
     // Nécessite authentification + parcours
     if (!isAuthenticated || !parcours) {
+      debug.log("[migrateSessionStorageToDB] Skip - missing requirements");
       return;
     }
 
     // Vérifier si des données existent dans sessionStorage
     if (!storageAdapter.hasSessionStorageData()) {
+      debug.log("[migrateSessionStorageToDB] Skip - no sessionStorage data");
+      hasMigratedSessionRef.current = true; // Marquer comme vérifié
       return;
     }
 
     // Vérifier si déjà des données en BDD
     if (parcours.rgaSimulationData) {
+      debug.log("[migrateSessionStorageToDB] Skip - data already in DB, cleaning sessionStorage");
       storageAdapter.clearSessionStorage();
+      hasMigratedSessionRef.current = true;
       return;
     }
 
@@ -270,95 +321,238 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     const sessionData = storageAdapter.getFromSessionStorage();
 
     if (!sessionData) {
+      debug.log("[migrateSessionStorageToDB] Skip - no data retrieved");
+      hasMigratedSessionRef.current = true;
       return;
     }
+
+    // Marquer comme en cours avant l'appel async
+    hasMigratedSessionRef.current = true;
+    debug.log("[migrateSessionStorageToDB] Migrating to DB...");
 
     try {
       const result = await migrateSimulationDataToDatabase(sessionData as RGAFormData);
 
       if (result.success) {
+        debug.log("[migrateSessionStorageToDB] Migration successful");
         // Nettoyer sessionStorage après migration réussie
         storageAdapter.clearSessionStorage();
 
         // Rafraîchir le parcours
-        await fetchParcours();
+        await refreshParcours();
       } else {
-        console.error("[Migration sessionStorage] - Échec:", result.error);
+        console.error("[migrateSessionStorageToDB] Migration failed:", result.error);
+        // En cas d'échec, permettre une nouvelle tentative
+        hasMigratedSessionRef.current = false;
       }
     } catch (error) {
-      console.error("[Migration sessionStorage] - Erreur:", error);
+      console.error("[migrateSessionStorageToDB] Exception:", error);
+      // En cas d'erreur, permettre une nouvelle tentative
+      hasMigratedSessionRef.current = false;
     }
-  }, [isAuthenticated, parcours, fetchParcours]);
+  }, [isAuthenticated, parcours, refreshParcours]);
 
   /**
    * Migration localStorage → BDD après connexion
    */
   const migrateLocalStorageToDB = useCallback(async () => {
+    debug.log("[migrateLocalStorageToDB] Start", {
+      hasMigrated: hasMigratedLocalStorageRef.current,
+      isAuthenticated,
+      hasParcours: !!parcours,
+      hasTempRgaData: !!tempRgaData,
+    });
+
+    // Guard : éviter les migrations multiples
+    if (hasMigratedLocalStorageRef.current) {
+      debug.log("[migrateLocalStorageToDB] Skip - already migrated");
+      return;
+    }
+
     // Nécessite authentification + parcours
     if (!isAuthenticated || !parcours) {
+      debug.log("[migrateLocalStorageToDB] Skip - missing requirements");
       return;
     }
 
     // Seulement si tempRgaData existe et pas encore en BDD
     if (!tempRgaData || parcours.rgaSimulationData) {
+      debug.log("[migrateLocalStorageToDB] Skip - no tempRgaData or already in DB");
+      hasMigratedLocalStorageRef.current = true;
       return;
     }
+
+    // Marquer comme en cours avant l'appel async
+    hasMigratedLocalStorageRef.current = true;
+    debug.log("[migrateLocalStorageToDB] Migrating to DB...");
 
     try {
       const result = await migrateSimulationDataToDatabase(tempRgaData as RGAFormData);
 
       if (result.success) {
+        debug.log("[migrateLocalStorageToDB] Migration successful");
+
+        // Recharger le parcours depuis la BDD pour récupérer les données migrées
+        debug.log("[migrateLocalStorageToDB] Reloading parcours from DB...");
+        hasFetchedRef.current = false; // Réinitialiser le guard pour permettre le refetch
+        await fetchParcours(); // Refetch le parcours avec les données RGA maintenant en BDD
+
+        // Nettoyer localStorage APRÈS le refetch (quand parcours.rgaSimulationData existe)
         clearTempRgaData();
-        await fetchParcours();
+
+        debug.log("[migrateLocalStorageToDB] Migration complete, parcours reloaded");
       } else {
-        console.error("[Migration localStorage] - Échec:", result.error);
+        console.error("[migrateLocalStorageToDB] Migration failed:", result.error);
+        // En cas d'échec, permettre une nouvelle tentative
+        hasMigratedLocalStorageRef.current = false;
       }
     } catch (error) {
-      console.error("[Migration localStorage] - Erreur:", error);
+      console.error("[migrateLocalStorageToDB] Exception:", error);
+      // En cas d'erreur, permettre une nouvelle tentative
+      hasMigratedLocalStorageRef.current = false;
     }
   }, [isAuthenticated, tempRgaData, parcours, clearTempRgaData, fetchParcours]);
 
-  // Chargement initial : URL → storage → parcours
+  // ============================================
+  // INITIALISATION - Données RGA
+  // ============================================
+  // Charge les données RGA depuis URL (embed) ou storage (localStorage/sessionStorage)
+  // S'exécute une seule fois au montage du composant
+  // Indépendant de l'authentification car les données RGA peuvent exister avant connexion
   useEffect(() => {
-    const initializeData = async () => {
-      // 1. Essayer de charger depuis URL (mode embed chiffré)
-      const loadedFromURL = await loadRGAFromURL();
+    debug.log("[ParcoursProvider] INIT RGA - Start", {
+      hasInitialized: hasInitializedRef.current,
+    });
 
-      // 2. Si pas d'URL, charger depuis storage
+    // Guard : éviter la double initialisation en mode strict de React
+    if (hasInitializedRef.current) {
+      debug.log("[ParcoursProvider] INIT RGA - Skip (already initialized)");
+      return;
+    }
+    hasInitializedRef.current = true;
+
+    const initializeRGAData = async () => {
+      // 1. Essayer de charger depuis URL (mode embed avec données chiffrées)
+      debug.log("[ParcoursProvider] INIT RGA - Loading from URL...");
+      const loadedFromURL = await loadRGAFromURL();
+      debug.log("[ParcoursProvider] INIT RGA - Loaded from URL:", loadedFromURL);
+
+      // 2. Si pas de données dans l'URL, charger depuis storage
       if (!loadedFromURL) {
+        debug.log("[ParcoursProvider] INIT RGA - Loading from storage...");
         loadRGAFromStorage();
+        debug.log("[ParcoursProvider] INIT RGA - Storage load complete");
       }
 
-      // 3. Charger le parcours
-      await fetchParcours();
+      debug.log("[ParcoursProvider] INIT RGA - Complete");
     };
 
-    initializeData();
+    initializeRGAData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Dépendances vides = exécution unique au montage
 
-  // Re-fetch parcours quand l'authentification change
+  // ============================================
+  // INITIALISATION - Parcours utilisateur
+  // ============================================
+  // Charge le parcours utilisateur depuis la BDD
+  // S'exécute quand l'authentification est déterminée (isAuthenticated passe de undefined à true/false)
+  // Nécessite que l'utilisateur soit authentifié et ne soit pas admin
   useEffect(() => {
-    if (isAuthenticated && !parcours) {
+    debug.log("[ParcoursProvider] INIT PARCOURS - Start", {
+      isAuthenticated,
+      role: user?.role,
+      hasFetched: hasFetchedRef.current,
+    });
+
+    // Guard : éviter les appels multiples
+    if (hasFetchedRef.current) {
+      debug.log("[ParcoursProvider] INIT PARCOURS - Skip (already fetched)");
+      return;
+    }
+
+    // Cas 1 : Utilisateur authentifié et non-admin → charger le parcours
+    if (isAuthenticated && user?.role !== ROLES.ADMIN) {
+      debug.log("[ParcoursProvider] INIT PARCOURS - Fetching parcours (user authenticated)");
       fetchParcours();
     }
-  }, [isAuthenticated, parcours, fetchParcours]);
+    // Cas 2 : Utilisateur non authentifié (ou admin) → pas de parcours à charger
+    // IMPORTANT : Ne PAS marquer hasFetchedRef ici car l'auth peut changer
+    else if (isAuthenticated === false || user?.role === ROLES.ADMIN) {
+      debug.log("[ParcoursProvider] INIT PARCOURS - Skip (not authenticated or admin)");
+      setIsLoading(false);
+    }
+    // Cas 3 : isAuthenticated === undefined → en attente de la détermination de l'auth
+    else {
+      debug.log("[ParcoursProvider] INIT PARCOURS - Waiting for auth determination...");
+    }
+  }, [isAuthenticated, user?.role, fetchParcours]);
 
-  // Migration sessionStorage → BDD (ancien système)
+  // ============================================
+  // MIGRATION : SESSION STORAGE → BDD
+  // ============================================
+  // Migre les anciennes données du sessionStorage (ancien système) vers la BDD
+  // S'exécute après le chargement du parcours si des données sessionStorage existent
+  // Ne s'exécute qu'une seule fois grâce au guard hasMigratedSessionRef
   useEffect(() => {
-    migrateSessionStorageToDB();
-  }, [migrateSessionStorageToDB]);
+    debug.log("[ParcoursProvider] MIGRATION SESSION - Check", {
+      hasParcours: !!parcours,
+      isAuthenticated,
+      hasMigrated: hasMigratedSessionRef.current,
+    });
 
-  // Migration localStorage → BDD après connexion
-  useEffect(() => {
-    migrateLocalStorageToDB();
-  }, [migrateLocalStorageToDB]);
+    if (parcours && isAuthenticated) {
+      migrateSessionStorageToDB();
+    }
+  }, [parcours, isAuthenticated, migrateSessionStorageToDB]);
 
-  // Sync unique au chargement
+  // ============================================
+  // MIGRATION : LOCAL STORAGE → BDD
+  // ============================================
+  // Migre les données du localStorage vers la BDD après connexion
+  // Scénario : utilisateur remplit simulateur → données en localStorage → connexion FC → migration BDD
+  // S'exécute après le chargement du parcours si tempRgaData existe
+  // Ne s'exécute qu'une seule fois grâce au guard hasMigratedLocalStorageRef
   useEffect(() => {
+    debug.log("[ParcoursProvider] MIGRATION LOCAL - Check", {
+      hasParcours: !!parcours,
+      isAuthenticated,
+      hasTempRgaData: !!tempRgaData,
+      hasMigrated: hasMigratedLocalStorageRef.current,
+    });
+
+    if (parcours && isAuthenticated && tempRgaData) {
+      migrateLocalStorageToDB();
+    }
+  }, [parcours, isAuthenticated, tempRgaData, migrateLocalStorageToDB]);
+
+  // ============================================
+  // SYNC INITIAL : STATUTS DÉMARCHES SIMPLIFIÉES
+  // ============================================
+  // Synchronise les statuts des dossiers Démarches Simplifiées 2 secondes après le chargement
+  // Permet de vérifier si les statuts ont changé depuis la dernière visite
+  // Ne s'exécute qu'une seule fois grâce au guard hasInitialSyncRef
+  useEffect(() => {
+    debug.log("[ParcoursProvider] SYNC INITIAL - Check", {
+      hasInitialSync: hasInitialSyncRef.current,
+      isAuthenticated,
+      role: user?.role,
+      hasParcours: !!parcours,
+      isSyncing: isSyncingRef.current,
+    });
+
+    // Guard : éviter les syncs multiples
+    if (hasInitialSyncRef.current) {
+      debug.log("[ParcoursProvider] SYNC INITIAL - Skip (already synced)");
+      return;
+    }
+
     // Sync uniquement si authentifié, pas admin, et parcours existant
-    if (isAuthenticated && user?.role !== ROLES.ADMIN && parcours) {
+    if (isAuthenticated && user?.role !== ROLES.ADMIN && parcours && !isSyncingRef.current) {
+      hasInitialSyncRef.current = true;
+      debug.log("[ParcoursProvider] SYNC INITIAL - Scheduling sync in 2s...");
+
       const timer = setTimeout(() => {
+        debug.log("[ParcoursProvider] SYNC INITIAL - Executing sync now");
         syncNow();
       }, 2000);
 
@@ -368,22 +562,40 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     }
   }, [isAuthenticated, user?.role, parcours, syncNow]);
 
-  // Auto-sync avec intervalle
+  // ============================================
+  // AUTO-SYNC : SYNCHRONISATION PÉRIODIQUE
+  // ============================================
+  // Synchronise automatiquement les statuts DS à intervalle régulier (par défaut 5 minutes)
+  // Activé uniquement si autoSync=true dans les props du Provider
+  // Permet de garder les données à jour sans que l'utilisateur rafraîchisse la page
   useEffect(() => {
-    // Auto-sync uniquement si authentifié
-    if (!autoSync || !isAuthenticated || user?.role === ROLES.ADMIN || !parcours) return;
+    debug.log("[ParcoursProvider] AUTO-SYNC - Check", {
+      autoSync,
+      isAuthenticated,
+      role: user?.role,
+      hasParcours: !!parcours,
+      syncInterval,
+    });
 
+    // Auto-sync uniquement si activé et utilisateur authentifié non-admin
+    if (!autoSync || !isAuthenticated || user?.role === ROLES.ADMIN || !parcours) {
+      debug.log("[ParcoursProvider] AUTO-SYNC - Disabled");
+      return;
+    }
+
+    debug.log("[ParcoursProvider] AUTO-SYNC - Setting up interval");
     intervalRef.current = setInterval(() => {
+      debug.log("[ParcoursProvider] AUTO-SYNC - Executing sync");
       syncNow();
     }, syncInterval);
 
     return () => {
       if (intervalRef.current) {
+        debug.log("[ParcoursProvider] AUTO-SYNC - Clearing interval");
         clearInterval(intervalRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoSync, isAuthenticated, user?.role]);
+  }, [autoSync, isAuthenticated, user?.role, parcours, syncNow, syncInterval]);
 
   // Helpers
   const getDossierByStep = useCallback(
@@ -442,7 +654,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     clearTempRgaData,
 
     // Actions
-    refresh: fetchParcours,
+    refresh: refreshParcours,
     syncNow,
     syncAll,
 

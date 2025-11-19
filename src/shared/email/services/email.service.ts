@@ -1,11 +1,8 @@
 import { TransactionalEmailsApi, SendSmtpEmail } from "@getbrevo/brevo";
 import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
-import {
-  emailConfig,
-  isEmailEnabled,
-  isLocalDevelopment,
-} from "../config/email.config";
+import { emailConfig, isEmailEnabled, isLocalDevelopment } from "../config/email.config";
+import { createDebugLogger } from "@/shared/utils/debug.utils";
 
 interface SendEmailParams {
   to: string | string[];
@@ -23,6 +20,8 @@ interface SendEmailResult {
   messageId?: string;
   error?: string;
 }
+
+const debug = createDebugLogger("EMAIL_SERVICE");
 
 /**
  * Service d'envoi d'emails unifié
@@ -47,13 +46,11 @@ export class EmailService {
       });
 
       // Log seulement si variable d'environnement activée
-      if (process.env.DEBUG_EMAIL_SERVICE === "true") {
-        console.log("Email service (local SMTP/Mailhog):", {
-          host: emailConfig.smtp.host,
-          port: emailConfig.smtp.port,
-          webUI: "http://localhost:8025",
-        });
-      }
+      debug.log("Email service (local SMTP/Mailhog):", {
+        host: emailConfig.smtp.host,
+        port: emailConfig.smtp.port,
+        webUI: "http://localhost:8025",
+      });
     } else {
       // Configuration Brevo pour staging/production
       if (!emailConfig.apiKey) {
@@ -92,9 +89,7 @@ export class EmailService {
     }
 
     try {
-      const recipients = Array.isArray(params.to)
-        ? params.to.join(", ")
-        : params.to;
+      const recipients = Array.isArray(params.to) ? params.to.join(", ") : params.to;
 
       const info = await this.smtpTransporter.sendMail({
         from: `${emailConfig.from.name} <${emailConfig.from.email}>`,
@@ -123,9 +118,7 @@ export class EmailService {
   /**
    * Envoi via Brevo (staging/production)
    */
-  private async sendViaBrevo(
-    params: SendEmailParams
-  ): Promise<SendEmailResult> {
+  private async sendViaBrevo(params: SendEmailParams): Promise<SendEmailResult> {
     if (!this.brevoApi || !isEmailEnabled()) {
       console.warn("Brevo non configuré (BREVO_API_KEY manquante)");
       return {
@@ -135,9 +128,7 @@ export class EmailService {
     }
 
     try {
-      const recipients = Array.isArray(params.to)
-        ? params.to.map((email) => ({ email }))
-        : [{ email: params.to }];
+      const recipients = Array.isArray(params.to) ? params.to.map((email) => ({ email })) : [{ email: params.to }];
 
       const sendSmtpEmail: SendSmtpEmail = {
         sender: {

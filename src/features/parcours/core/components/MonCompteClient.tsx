@@ -1,6 +1,6 @@
 "use client";
 
-import { AUTH_METHODS, useAuth } from "@/features/auth/client";
+import { useAuth } from "@/features/auth/client";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
 import { useState } from "react";
@@ -44,8 +44,19 @@ export default function MonCompteClient() {
   // État de chargement global
   const isLoading = isAuthLoading || isLoadingRGA || isLoadingParcours;
 
+  console.log("[MonCompteClient] State", {
+    isLoading,
+    hasRGAData,
+    user: !!user,
+    hasParcours,
+    hasDossiers,
+    currentStep,
+    statutAmo,
+  });
+
   // Afficher un message de déconnexion
   if (isLoggingOut) {
+    console.log("[MonCompteClient] Logging out");
     return (
       <div className="fr-container fr-py-8w">
         <div className="fr-alert fr-alert--info">
@@ -56,31 +67,26 @@ export default function MonCompteClient() {
     );
   }
 
-  // Gestion du chargement initial
-  if (isLoading) {
+  // Afficher le chargement si les données ne sont pas prêtes
+  if (isLoading || hasRGAData === undefined) {
+    console.log("[MonCompteClient] Loading...");
     return <Loading />;
   }
 
-  // Si pas d'user (ne devrait pas arriver car page protégée)
+  // Si pas d'utilisateur connecté (après le loading)
   if (!user) {
     return null;
   }
 
-  // Si France Connect mais pas de données
-  const isFranceConnectWithoutData =
-    user.authMethod === AUTH_METHODS.FRANCECONNECT &&
-    !hasRGAData &&
-    !hasDossiers &&
-    currentStep !== Step.CHOIX_AMO;
-
   // Conditions de simulation nécessaire
-  const needsSimulation =
-    !hasRGAData && // Pas de données RGA (ni BDD, ni localStorage, ni sessionStorage)
-    !hasParcours && // Pas de parcours créé
-    currentStep !== Step.CHOIX_AMO; // Exception pour CHOIX_AMO
+  const needsSimulation = !hasRGAData && !hasDossiers;
+  console.log("[MonCompteClient] needsSimulation:", needsSimulation, {
+    hasRGAData,
+    hasDossiers,
+  });
 
-  // Cas où simulation nécessaire (France Connect sans données ou pas de RGA ni parcours)
-  if (isFranceConnectWithoutData || needsSimulation) {
+  if (needsSimulation) {
+    console.log("[MonCompteClient] Showing SimulationNeededAlert");
     return (
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
@@ -89,6 +95,8 @@ export default function MonCompteClient() {
       </section>
     );
   }
+
+  console.log("[MonCompteClient] Rendering normal view");
 
   return (
     <>
@@ -102,16 +110,13 @@ export default function MonCompteClient() {
               {/* Badge de statut d'étape */}
               {hasParcours && (
                 <p className="fr-badge fr-badge--new fr-mr-2w">
-                  {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo) ||
-                    "À faire"}
+                  {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo) || "À faire"}
                 </p>
               )}
             </li>
             <li>
               {/* Badge d'étape */}
-              {hasParcours && currentStep && (
-                <p className="fr-badge">{STEP_LABELS[currentStep]} </p>
-              )}
+              {hasParcours && currentStep && <p className="fr-badge">{STEP_LABELS[currentStep]} </p>}
             </li>
           </ul>
 
@@ -120,9 +125,8 @@ export default function MonCompteClient() {
             <div className="fr-alert fr-alert--success fr-mb-2w">
               <p className="fr-alert__title">Demande envoyée</p>
               <p>
-                Votre demande de confirmation a été envoyée à l'AMO sélectionné.
-                Merci de le contacter directement par mail ou téléphone
-                également.
+                Votre demande de confirmation a été envoyée à l'AMO sélectionné. Merci de le contacter directement par
+                mail ou téléphone également.
               </p>
             </div>
           )}
@@ -148,9 +152,7 @@ export default function MonCompteClient() {
         </div>
 
         {/* Section "Pour en savoir plus" si logement non éligible */}
-        {statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && (
-          <PourEnSavoirPlusSectionContent />
-        )}
+        {statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && <PourEnSavoirPlusSectionContent />}
       </section>
 
       {/* Sections communes */}
@@ -223,13 +225,7 @@ function renderChoixAmoCallout(
   }
 
   if (statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE) {
-    return (
-      <CalloutAmoTodo
-        accompagnementRefuse
-        onSuccess={onAmoSuccess}
-        refresh={refresh}
-      />
-    );
+    return <CalloutAmoTodo accompagnementRefuse onSuccess={onAmoSuccess} refresh={refresh} />;
   }
 
   return undefined;
