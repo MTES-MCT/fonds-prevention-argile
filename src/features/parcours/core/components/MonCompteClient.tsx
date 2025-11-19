@@ -56,22 +56,19 @@ export default function MonCompteClient() {
     );
   }
 
-  // Gestion du chargement initial
-  if (isLoading) {
+  // Afficher le chargement si les données ne sont pas prêtes
+  if (isLoading || hasRGAData === undefined) {
     return <Loading />;
   }
 
-  // Si pas d'user (ne devrait pas arriver car page protégée)
+  // Si pas d'utilisateur connecté (après le loading)
   if (!user) {
     return null;
   }
 
   // Si France Connect mais pas de données
   const isFranceConnectWithoutData =
-    user.authMethod === AUTH_METHODS.FRANCECONNECT &&
-    !hasRGAData &&
-    !hasDossiers &&
-    currentStep !== Step.CHOIX_AMO;
+    user.authMethod === AUTH_METHODS.FRANCECONNECT && !hasRGAData && !hasDossiers && currentStep !== Step.CHOIX_AMO;
 
   // Conditions de simulation nécessaire
   const needsSimulation =
@@ -102,16 +99,13 @@ export default function MonCompteClient() {
               {/* Badge de statut d'étape */}
               {hasParcours && (
                 <p className="fr-badge fr-badge--new fr-mr-2w">
-                  {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo) ||
-                    "À faire"}
+                  {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo) || "À faire"}
                 </p>
               )}
             </li>
             <li>
               {/* Badge d'étape */}
-              {hasParcours && currentStep && (
-                <p className="fr-badge">{STEP_LABELS[currentStep]} </p>
-              )}
+              {hasParcours && currentStep && <p className="fr-badge">{STEP_LABELS[currentStep]} </p>}
             </li>
           </ul>
 
@@ -120,9 +114,8 @@ export default function MonCompteClient() {
             <div className="fr-alert fr-alert--success fr-mb-2w">
               <p className="fr-alert__title">Demande envoyée</p>
               <p>
-                Votre demande de confirmation a été envoyée à l'AMO sélectionné.
-                Merci de le contacter directement par mail ou téléphone
-                également.
+                Votre demande de confirmation a été envoyée à l'AMO sélectionné. Merci de le contacter directement par
+                mail ou téléphone également.
               </p>
             </div>
           )}
@@ -148,9 +141,7 @@ export default function MonCompteClient() {
         </div>
 
         {/* Section "Pour en savoir plus" si logement non éligible */}
-        {statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && (
-          <PourEnSavoirPlusSectionContent />
-        )}
+        {statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && <PourEnSavoirPlusSectionContent />}
       </section>
 
       {/* Sections communes */}
@@ -223,13 +214,7 @@ function renderChoixAmoCallout(
   }
 
   if (statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE) {
-    return (
-      <CalloutAmoTodo
-        accompagnementRefuse
-        onSuccess={onAmoSuccess}
-        refresh={refresh}
-      />
-    );
+    return <CalloutAmoTodo accompagnementRefuse onSuccess={onAmoSuccess} refresh={refresh} />;
   }
 
   return undefined;
