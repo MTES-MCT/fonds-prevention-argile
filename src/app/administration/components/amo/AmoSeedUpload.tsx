@@ -35,7 +35,7 @@ export function AmoSeedUpload({ onImportSuccess }: AmoSeedUploadProps) {
       loadAmos();
       onImportSuccess?.(); // Callback après un import réussi
     }
-  }, [state]);
+  }, [state, onImportSuccess]);
 
   const loadAmos = async () => {
     setIsLoadingAmos(true);

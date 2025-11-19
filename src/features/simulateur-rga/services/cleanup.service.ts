@@ -3,9 +3,7 @@
  * Gère la suppression des données de simulation après envoi à DS
  */
 
-import { parcoursRepo } from "@/shared/database/repositories";
 import type { ActionResult } from "@/shared/types";
-import { RGADeletionReason } from "@/shared/domain/types/rga-simulation.types";
 import { RGA_RETENTION_DAYS } from "../domain/value-objects/rga-retention.config";
 
 /**

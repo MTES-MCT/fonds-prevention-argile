@@ -189,6 +189,7 @@ export function getSharedEnv() {
 
       _sharedEnv = {
         NEXT_PUBLIC_APP_ENV: appEnv as "local" | "docker" | "staging" | "production",
+        NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL: process.env.NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL || "",
       };
       return _sharedEnv;
     }
