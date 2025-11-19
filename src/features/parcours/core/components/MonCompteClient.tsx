@@ -1,6 +1,6 @@
 "use client";
 
-import { AUTH_METHODS, useAuth } from "@/features/auth/client";
+import { useAuth } from "@/features/auth/client";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
 import { useState } from "react";
@@ -44,8 +44,19 @@ export default function MonCompteClient() {
   // État de chargement global
   const isLoading = isAuthLoading || isLoadingRGA || isLoadingParcours;
 
+  console.log("[MonCompteClient] State", {
+    isLoading,
+    hasRGAData,
+    user: !!user,
+    hasParcours,
+    hasDossiers,
+    currentStep,
+    statutAmo,
+  });
+
   // Afficher un message de déconnexion
   if (isLoggingOut) {
+    console.log("[MonCompteClient] Logging out");
     return (
       <div className="fr-container fr-py-8w">
         <div className="fr-alert fr-alert--info">
@@ -58,6 +69,7 @@ export default function MonCompteClient() {
 
   // Afficher le chargement si les données ne sont pas prêtes
   if (isLoading || hasRGAData === undefined) {
+    console.log("[MonCompteClient] Loading...");
     return <Loading />;
   }
 
@@ -66,14 +78,15 @@ export default function MonCompteClient() {
     return null;
   }
 
-  // Si France Connect mais pas de données
-  const isFranceConnectWithoutData =
-    user.authMethod === AUTH_METHODS.FRANCECONNECT && !hasRGAData && !hasDossiers && currentStep !== Step.CHOIX_AMO;
-
   // Conditions de simulation nécessaire
   const needsSimulation = !hasRGAData && !hasDossiers;
+  console.log("[MonCompteClient] needsSimulation:", needsSimulation, {
+    hasRGAData,
+    hasDossiers,
+  });
 
   if (needsSimulation) {
+    console.log("[MonCompteClient] Showing SimulationNeededAlert");
     return (
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
@@ -82,6 +95,8 @@ export default function MonCompteClient() {
       </section>
     );
   }
+
+  console.log("[MonCompteClient] Rendering normal view");
 
   return (
     <>
