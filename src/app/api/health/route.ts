@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { db } from "@/shared/database";
+import packageJson from "../../../../package.json";
 
 export async function GET() {
   const timestamp = new Date().toISOString();
@@ -9,7 +10,7 @@ export async function GET() {
     status: "OK" as "OK" | "DEGRADED" | "ERROR",
     timestamp,
     service: "Fonds prévention argile API",
-    version: "1.0.0", // TODO récupérer dynamiquement
+    version: packageJson.version,
     environment: process.env.NEXT_PUBLIC_APP_ENV || "unknown",
     checks: {
       api: "OK" as "OK" | "ERROR",
