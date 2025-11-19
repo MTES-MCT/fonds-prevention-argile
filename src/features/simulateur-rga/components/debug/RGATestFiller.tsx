@@ -127,24 +127,16 @@ export default function RGATestFiller(): JSX.Element | null {
       <div className="fr-callout fr-callout--pink-tuile">
         <h3 className="fr-callout__title">Mode DEBUG</h3>
         <p className="fr-callout__text">
-          Remplir automatiquement le formulaire avec des données de test
-          (Saint-Maur, maison 1994, 7 personnes, 50k€ revenus)
+          Remplir automatiquement le formulaire avec des données de test (Saint-Maur, maison 1994, 7 personnes, 50k€
+          revenus)
         </p>
 
         <div className="fr-btns-group fr-btns-group--inline">
           {/* Bouton localStorage (nouveau système) */}
-          <button
-            className="fr-btn"
-            onClick={handleFillTestData}
-            disabled={isLoading || isRedirecting}
-            type="button"
-          >
+          <button className="fr-btn" onClick={handleFillTestData} disabled={isLoading || isRedirecting} type="button">
             {isLoading ? (
               <>
-                <span
-                  className="fr-loader fr-loader--sm"
-                  aria-hidden="true"
-                ></span>
+                <span className="fr-loader fr-loader--sm" aria-hidden="true"></span>
                 <span className="fr-ml-1w">Chargement...</span>
               </>
             ) : isRedirecting ? (
@@ -159,14 +151,10 @@ export default function RGATestFiller(): JSX.Element | null {
             className="fr-btn fr-btn--secondary"
             onClick={handleFillSessionStorage}
             disabled={isSessionLoading}
-            type="button"
-          >
+            type="button">
             {isSessionLoading ? (
               <>
-                <span
-                  className="fr-loader fr-loader--sm"
-                  aria-hidden="true"
-                ></span>
+                <span className="fr-loader fr-loader--sm" aria-hidden="true"></span>
                 <span className="fr-ml-1w">Chargement...</span>
               </>
             ) : (
@@ -179,16 +167,12 @@ export default function RGATestFiller(): JSX.Element | null {
         {isSuccess && (
           <div className="fr-alert fr-alert--success fr-mt-2w fr-alert--sm">
             <p className="fr-text--sm fr-mb-0">
-              <strong>✅ localStorage</strong> - Données sauvegardées
+              <strong>localStorage</strong> - Données sauvegardées
               {isRedirecting && " - Redirection vers la connexion..."}
             </p>
             {validationErrors.length > 0 && (
-              <p
-                className="fr-text--xs fr-mt-1w fr-mb-0"
-                style={{ color: "#ce0600" }}
-              >
-                Attention : quelques erreurs de validation (données partielles
-                sauvegardées)
+              <p className="fr-text--xs fr-mt-1w fr-mb-0" style={{ color: "#ce0600" }}>
+                Attention : quelques erreurs de validation (données partielles sauvegardées)
               </p>
             )}
           </div>
@@ -198,12 +182,10 @@ export default function RGATestFiller(): JSX.Element | null {
         {isSessionSuccess && (
           <div className="fr-alert fr-alert--info fr-mt-2w fr-alert--sm">
             <p className="fr-text--sm fr-mb-0">
-              <strong>✅ sessionStorage (ancien système)</strong> - Données de
-              test enregistrées
+              <strong> sessionStorage (ancien système)</strong> - Données de test enregistrées
             </p>
             <p className="fr-text--xs fr-mt-1w fr-mb-0">
-              💡 Connectez-vous maintenant pour tester la migration automatique
-              vers la BDD
+              💡 Connectez-vous maintenant pour tester la migration automatique vers la BDD
             </p>
           </div>
         )}
@@ -228,23 +210,19 @@ export default function RGATestFiller(): JSX.Element | null {
           <div className="fr-text--xs fr-mt-1w" style={{ paddingLeft: "1rem" }}>
             <ol>
               <li>
-                <strong>Cliquer sur "Ancien système (sessionStorage)"</strong>{" "}
-                pour simuler l'ancien comportement
+                <strong>Cliquer sur "Ancien système (sessionStorage)"</strong> pour simuler l'ancien comportement
               </li>
               <li>
                 <strong>Se connecter avec FranceConnect</strong>
               </li>
               <li>
-                <strong>Observer les logs console</strong> pour voir la
-                migration automatique
+                <strong>Observer les logs console</strong> pour voir la migration automatique
               </li>
               <li>
-                <strong>Vérifier en BDD</strong> que les données sont bien
-                migrées (via Drizzle Studio)
+                <strong>Vérifier en BDD</strong> que les données sont bien migrées (via Drizzle Studio)
               </li>
               <li>
-                <strong>Vérifier que sessionStorage est vide</strong> après
-                migration (console :{" "}
+                <strong>Vérifier que sessionStorage est vide</strong> après migration (console :{" "}
                 <code>sessionStorage.getItem('fonds-argile-rga-data')</code>)
               </li>
             </ol>
