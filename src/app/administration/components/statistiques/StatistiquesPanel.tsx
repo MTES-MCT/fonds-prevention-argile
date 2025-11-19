@@ -131,7 +131,7 @@ export default function StatistiquesPanel() {
   ];
 
   return (
-    <div className="container fr-mb-8v">
+    <div className="w-full">
       <div className="fr-tabs">
         <ul className="fr-tabs__list" role="tablist" aria-label="Système d'onglets statistiques">
           {/* Onglets des statistiques globales */}
