@@ -43,7 +43,7 @@ export default function AmoPanel() {
 
   return (
     <>
-      <div className="container fr-mb-8v">
+      <div className="w-full">
         <div className="fr-tabs">
           <ul className="fr-tabs__list" role="tablist" aria-label="Système d'onglets statistiques">
             <li role="presentation">

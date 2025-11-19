@@ -86,7 +86,7 @@ export function AmoSeedUpload({ onImportSuccess }: AmoSeedUploadProps) {
   };
 
   return (
-    <div className="fr-container fr-py-6w">
+    <div className="w-full">
       <h2 className="fr-h3">Import des entreprises AMO</h2>
 
       {/* Télécharger le template */}

@@ -37,7 +37,7 @@ export function AmoList({ onEdit, refreshTrigger }: AmoListProps) {
   };
 
   return (
-    <div className="fr-container">
+    <div className="w-full">
       <h2 className="fr-h4 fr-mb-2w">Liste des AMO enregistrées</h2>
 
       {isLoadingAmos ? (

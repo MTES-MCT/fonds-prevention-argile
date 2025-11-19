@@ -4,3 +4,4 @@ export * from "./parcours-progression.actions";
 export * from "./parcours-query.actions";
 export * from "./eligibilite.actions";
 export * from "./parcours-simulateur-rga-migration.actions";
+export * from "./users-tracking.actions";

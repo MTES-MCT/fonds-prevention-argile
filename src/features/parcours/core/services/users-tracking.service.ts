@@ -1,0 +1,187 @@
+import { db } from "@/shared/database/client";
+import { users } from "@/shared/database/schema/users";
+import { parcoursPrevention } from "@/shared/database/schema/parcours-prevention";
+import { parcoursAmoValidations } from "@/shared/database/schema/parcours-amo-validations";
+import { entreprisesAmo } from "@/shared/database/schema/entreprises-amo";
+import { dossiersDemarchesSimplifiees } from "@/shared/database/schema/dossiers-demarches-simplifiees";
+import { desc, eq } from "drizzle-orm";
+import { Step } from "@/shared/domain/value-objects/step.enum";
+import type { UserWithParcoursDetails, DossierInfo } from "../domain/types/user-with-parcours.types";
+
+/**
+ * Service pour récupérer les utilisateurs avec tous les détails de leur parcours
+ */
+
+/**
+ * Récupère tous les utilisateurs avec leurs parcours, validations AMO et dossiers DS
+ */
+export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]> {
+  // Requête principale avec tous les LEFT JOINs
+  const results = await db
+    .select({
+      // User
+      userId: users.id,
+      userFcId: users.fcId,
+      userEmail: users.email,
+      userTelephone: users.telephone,
+      userLastLogin: users.lastLogin,
+      userCreatedAt: users.createdAt,
+      userUpdatedAt: users.updatedAt,
+
+      // Parcours
+      parcoursId: parcoursPrevention.id,
+      parcoursCurrentStep: parcoursPrevention.currentStep,
+      parcoursCurrentStatus: parcoursPrevention.currentStatus,
+      parcoursCreatedAt: parcoursPrevention.createdAt,
+      parcoursUpdatedAt: parcoursPrevention.updatedAt,
+      parcoursCompletedAt: parcoursPrevention.completedAt,
+      parcoursRgaSimulationData: parcoursPrevention.rgaSimulationData,
+      parcoursRgaSimulationCompletedAt: parcoursPrevention.rgaSimulationCompletedAt,
+      parcoursRgaDataDeletedAt: parcoursPrevention.rgaDataDeletedAt,
+
+      // Validation AMO
+      validationId: parcoursAmoValidations.id,
+      validationStatut: parcoursAmoValidations.statut,
+      validationChoisieAt: parcoursAmoValidations.choisieAt,
+      validationValideeAt: parcoursAmoValidations.valideeAt,
+      validationCommentaire: parcoursAmoValidations.commentaire,
+      validationUserPrenom: parcoursAmoValidations.userPrenom,
+      validationUserNom: parcoursAmoValidations.userNom,
+      validationUserEmail: parcoursAmoValidations.userEmail,
+      validationUserTelephone: parcoursAmoValidations.userTelephone,
+      validationAdresseLogement: parcoursAmoValidations.adresseLogement,
+
+      // AMO
+      amoId: entreprisesAmo.id,
+      amoNom: entreprisesAmo.nom,
+      amoSiret: entreprisesAmo.siret,
+      amoAdresse: entreprisesAmo.adresse,
+      amoEmails: entreprisesAmo.emails,
+      amoTelephone: entreprisesAmo.telephone,
+
+      // Dossier DS
+      dossierId: dossiersDemarchesSimplifiees.id,
+      dossierStep: dossiersDemarchesSimplifiees.step,
+      dossierDsNumber: dossiersDemarchesSimplifiees.dsNumber,
+      dossierDsId: dossiersDemarchesSimplifiees.dsId,
+      dossierDsStatus: dossiersDemarchesSimplifiees.dsStatus,
+      dossierSubmittedAt: dossiersDemarchesSimplifiees.submittedAt,
+      dossierProcessedAt: dossiersDemarchesSimplifiees.processedAt,
+      dossierCreatedAt: dossiersDemarchesSimplifiees.createdAt,
+      dossierUpdatedAt: dossiersDemarchesSimplifiees.updatedAt,
+      dossierLastSyncAt: dossiersDemarchesSimplifiees.lastSyncAt,
+    })
+    .from(users)
+    .leftJoin(parcoursPrevention, eq(users.id, parcoursPrevention.userId))
+    .leftJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
+    .leftJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
+    .leftJoin(dossiersDemarchesSimplifiees, eq(parcoursPrevention.id, dossiersDemarchesSimplifiees.parcoursId))
+    .orderBy(desc(users.createdAt));
+
+  // Grouper les résultats par utilisateur
+  const usersMap = new Map<string, UserWithParcoursDetails>();
+
+  for (const row of results) {
+    // Si l'utilisateur n'est pas encore dans la map
+    if (!usersMap.has(row.userId)) {
+      usersMap.set(row.userId, {
+        user: {
+          id: row.userId,
+          fcId: row.userFcId,
+          email: row.userEmail,
+          telephone: row.userTelephone,
+          lastLogin: row.userLastLogin,
+          createdAt: row.userCreatedAt,
+          updatedAt: row.userUpdatedAt,
+        },
+        parcours: row.parcoursId
+          ? {
+              id: row.parcoursId,
+              currentStep: row.parcoursCurrentStep!,
+              currentStatus: row.parcoursCurrentStatus!,
+              createdAt: row.parcoursCreatedAt!,
+              updatedAt: row.parcoursUpdatedAt!,
+              completedAt: row.parcoursCompletedAt,
+              rgaSimulationCompletedAt: row.parcoursRgaSimulationCompletedAt,
+              rgaDataDeletedAt: row.parcoursRgaDataDeletedAt,
+            }
+          : null,
+        rgaSimulation: row.parcoursRgaSimulationData
+          ? {
+              logement: {
+                adresse: row.parcoursRgaSimulationData.logement?.adresse || "",
+                commune: row.parcoursRgaSimulationData.logement?.commune_nom || "",
+                codeInsee: row.parcoursRgaSimulationData.logement?.commune || "",
+                departement: row.parcoursRgaSimulationData.logement?.code_departement || "",
+                typeConstruction: row.parcoursRgaSimulationData.logement?.type || "",
+              },
+            }
+          : null,
+        amoValidation: row.validationId
+          ? {
+              id: row.validationId,
+              statut: row.validationStatut!,
+              choisieAt: row.validationChoisieAt!,
+              valideeAt: row.validationValideeAt,
+              commentaire: row.validationCommentaire,
+              amo: {
+                id: row.amoId!,
+                nom: row.amoNom!,
+                siret: row.amoSiret,
+                adresse: row.amoAdresse,
+                emails: row.amoEmails!,
+                telephone: row.amoTelephone,
+              },
+              userData: {
+                prenom: row.validationUserPrenom,
+                nom: row.validationUserNom,
+                email: row.validationUserEmail,
+                telephone: row.validationUserTelephone,
+                adresseLogement: row.validationAdresseLogement,
+              },
+            }
+          : null,
+        dossiers: {
+          eligibilite: null,
+          diagnostic: null,
+          devis: null,
+          factures: null,
+        },
+      });
+    }
+
+    // Ajouter le dossier si présent
+    const userDetail = usersMap.get(row.userId)!;
+    if (row.dossierId && row.dossierStep) {
+      const dossierInfo: DossierInfo = {
+        id: row.dossierId,
+        dsNumber: row.dossierDsNumber,
+        dsId: row.dossierDsId,
+        dsStatus: row.dossierDsStatus!,
+        submittedAt: row.dossierSubmittedAt,
+        processedAt: row.dossierProcessedAt,
+        createdAt: row.dossierCreatedAt!,
+        updatedAt: row.dossierUpdatedAt!,
+        lastSyncAt: row.dossierLastSyncAt,
+      };
+
+      // Affecter au bon step
+      switch (row.dossierStep) {
+        case Step.ELIGIBILITE:
+          userDetail.dossiers.eligibilite = dossierInfo;
+          break;
+        case Step.DIAGNOSTIC:
+          userDetail.dossiers.diagnostic = dossierInfo;
+          break;
+        case Step.DEVIS:
+          userDetail.dossiers.devis = dossierInfo;
+          break;
+        case Step.FACTURES:
+          userDetail.dossiers.factures = dossierInfo;
+          break;
+      }
+    }
+  }
+
+  return Array.from(usersMap.values());
+}
