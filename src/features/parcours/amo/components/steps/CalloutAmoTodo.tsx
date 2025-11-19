@@ -66,6 +66,13 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
     loadAmoData();
   }, [accompagnementRefuse]);
 
+  // Mettre à jour l'email quand user change
+  useEffect(() => {
+    if (user?.email) {
+      setEmail(user.email);
+    }
+  }, [user?.email]);
+
   // Gérer la sélection d'un AMO
   const handleAmoSelection = (amoId: string) => {
     setSelectedAmoId(amoId);
@@ -144,6 +151,7 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
 
   return (
     <div id="choix-amo">
+      {/* Message d'erreur */}
       {error && (
         <div className="fr-alert fr-alert--error fr-mb-2w">
           <p className="fr-alert__title">Erreur</p>
@@ -151,6 +159,7 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
         </div>
       )}
 
+      {/* Liste vide */}
       {amoList.length === 0 && (
         <div className="fr-callout fr-callout--blue-ecume fr-icon-info-line">
           <p className="fr-callout__title">Aucun AMO n'est disponible pour le moment dans votre commune.</p>
@@ -160,6 +169,7 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
         </div>
       )}
 
+      {/* Liste d'AMO */}
       {amoList.length > 0 && (
         <>
           <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">

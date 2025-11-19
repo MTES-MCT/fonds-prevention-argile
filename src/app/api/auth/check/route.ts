@@ -1,4 +1,5 @@
 import { getCurrentUser, isAuthenticated } from "@/features/auth";
+import { userRepo } from "@/shared/database";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -14,17 +15,25 @@ export async function GET() {
 
     const user = await getCurrentUser();
 
+    if (!user) {
+      return NextResponse.json({
+        authenticated: false,
+        user: null,
+      });
+    }
+
+    // Récupérer l'email depuis la DB
+    const dbUser = await userRepo.findById(user.id);
+
     return NextResponse.json({
       authenticated: true,
-      user: user
-        ? {
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            role: user.role,
-            authMethod: user.authMethod,
-          }
-        : null,
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: dbUser?.email ?? null,
+        role: user.role,
+        authMethod: user.authMethod,
+      },
     });
   } catch (error) {
     console.error("Erreur lors de la vérification de session:", error);
