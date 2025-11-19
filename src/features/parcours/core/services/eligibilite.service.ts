@@ -8,7 +8,6 @@ import { getAmoChoisie } from "../../amo/actions";
 import { prefillClient } from "../../dossiers-ds/adapters";
 import { createDossierForCurrentStep } from "../../dossiers-ds/services";
 import { parcoursRepo } from "@/shared/database";
-import { cleanupRGADataAfterDS } from "@/features/simulateur-rga/services/cleanup.service";
 import { DS_FIELDS_ELIGIBILITE } from "../../dossiers-ds/domain";
 import { createDebugLogger } from "@/shared/utils";
 
@@ -183,17 +182,6 @@ export async function createEligibiliteDossier(
     debug.log("Mise à jour du statut du parcours...");
     await parcoursRepo.updateStatus(parcoursData.parcours.id, Status.TODO);
     debug.log("Statut mis à jour: TODO");
-
-    // 9. Supprimer les données RGA (RGPD)
-    debug.log("Suppression des données RGA après envoi à DS...");
-    const cleanupResult = await cleanupRGADataAfterDS(parcoursData.parcours.id);
-
-    if (!cleanupResult.success) {
-      // On ne bloque pas le processus si le cleanup échoue, on log juste
-      console.warn("Échec du cleanup des données RGA:", cleanupResult.error);
-    } else {
-      debug.log("Données RGA supprimées avec succès");
-    }
 
     debug.log("=== DOSSIER ÉLIGIBILITÉ CRÉÉ AVEC SUCCÈS ===");
 

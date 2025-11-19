@@ -63,7 +63,7 @@ jobs:
           # Variables d'environnement pour le build
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1
-          DEMARCHES_SIMPLIFIEES_BASE_URL: https://www.demarches-simplifiees.fr
+          NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL: https://www.demarches-simplifiees.fr
           DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY: "API_KEY_EXAMPLE"
           DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL: https://www.demarches-simplifiees.fr/api/v2/graphql
           DEMARCHES_SIMPLIFIEES_REST_API_URL: https://www.demarches-simplifiees.fr/api/public/v1

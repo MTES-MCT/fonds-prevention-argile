@@ -58,9 +58,7 @@ const franceConnectEnvSchema = z.object({
 
   // URLs de callback
   FC_CALLBACK_URL: z.string().url("FC_CALLBACK_URL doit être une URL valide"),
-  FC_POST_LOGOUT_URL: z
-    .string()
-    .url("FC_POST_LOGOUT_URL doit être une URL valide"),
+  FC_POST_LOGOUT_URL: z.string().url("FC_POST_LOGOUT_URL doit être une URL valide"),
 
   // Environnement FranceConnect
   FC_BASE_URL: z.string().url("FC_BASE_URL doit être une URL valide"),
@@ -77,15 +75,11 @@ const franceConnectEnvSchema = z.object({
 const serverSchema = z.object({
   NEXT_TELEMETRY_DISABLED: z.string().optional(),
   DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY: z.string().min(1),
-  DEMARCHES_SIMPLIFIEES_BASE_URL: z.string().min(1),
   DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL: z
     .string()
     .url()
     .default("https://www.demarches-simplifiees.fr/api/v2/graphql"),
-  DEMARCHES_SIMPLIFIEES_REST_API_URL: z
-    .string()
-    .url()
-    .default("https://www.demarches-simplifiees.fr/api/public/v1"),
+  DEMARCHES_SIMPLIFIEES_REST_API_URL: z.string().url().default("https://www.demarches-simplifiees.fr/api/public/v1"),
 
   // Configuration des 4 démarches dans DS
   DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE: z.string().min(1),
@@ -129,9 +123,8 @@ const clientSchema = z.object({
 
 // Schéma de validation des variables d'environnement partagées
 const sharedSchema = z.object({
-  NEXT_PUBLIC_APP_ENV: z
-    .enum(["local", "docker", "staging", "production"])
-    .default("local"),
+  NEXT_PUBLIC_APP_ENV: z.enum(["local", "docker", "staging", "production"]).default("local"),
+  NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL: z.string().min(1),
 });
 
 // ==========================================
@@ -149,10 +142,7 @@ export function getServerEnv() {
   if (!_serverEnv) {
     const result = serverSchema.safeParse(process.env);
     if (!result.success) {
-      console.error(
-        "Invalid server environment variables:",
-        result.error.format()
-      );
+      console.error("Invalid server environment variables:", result.error.format());
       throw new Error("Invalid server environment variables");
     }
     _serverEnv = result.data;
@@ -179,10 +169,7 @@ export function getClientEnv() {
 
     const result = clientSchema.safeParse(envObject);
     if (!result.success) {
-      console.error(
-        "Invalid client environment variables:",
-        result.error.format()
-      );
+      console.error("Invalid client environment variables:", result.error.format());
       throw new Error("Invalid client environment variables");
     }
     _clientEnv = result.data;
@@ -201,11 +188,8 @@ export function getSharedEnv() {
       const appEnv = process.env.NEXT_PUBLIC_APP_ENV || "local";
 
       _sharedEnv = {
-        NEXT_PUBLIC_APP_ENV: appEnv as
-          | "local"
-          | "docker"
-          | "staging"
-          | "production",
+        NEXT_PUBLIC_APP_ENV: appEnv as "local" | "docker" | "staging" | "production",
+        NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL: process.env.NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL || "",
       };
       return _sharedEnv;
     }
@@ -213,10 +197,7 @@ export function getSharedEnv() {
     // Côté serveur : validation Zod complète
     const result = sharedSchema.safeParse(process.env);
     if (!result.success) {
-      console.error(
-        "Invalid shared environment variables:",
-        result.error.format()
-      );
+      console.error("Invalid shared environment variables:", result.error.format());
       throw new Error("Invalid shared environment variables");
     }
     _sharedEnv = result.data;
@@ -231,10 +212,8 @@ export function getSharedEnv() {
 
 export const isLocal = () => getSharedEnv().NEXT_PUBLIC_APP_ENV === "local";
 export const isStaging = () => getSharedEnv().NEXT_PUBLIC_APP_ENV === "staging";
-export const isProduction = () =>
-  getSharedEnv().NEXT_PUBLIC_APP_ENV === "production";
-export const isDevelopment = () =>
-  ["local", "docker"].includes(getSharedEnv().NEXT_PUBLIC_APP_ENV);
+export const isProduction = () => getSharedEnv().NEXT_PUBLIC_APP_ENV === "production";
+export const isDevelopment = () => ["local", "docker"].includes(getSharedEnv().NEXT_PUBLIC_APP_ENV);
 
 // ==========================================
 // Validation au démarrage (serveur uniquement)
