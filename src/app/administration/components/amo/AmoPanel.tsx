@@ -83,7 +83,7 @@ export default function AmoPanel() {
           </div>
 
           <div id="amo-tab-1-panel" className="fr-tabs__panel" role="tabpanel" aria-labelledby="amo-tab-1" tabIndex={0}>
-            <AmoSeedUpload />
+            <AmoSeedUpload onImportSuccess={handleSuccess} />
           </div>
         </div>
       </div>
