@@ -1,4 +1,4 @@
-import { getCurrentUser, isAuthenticated } from "@/features/auth";
+import { getCurrentUser, isAuthenticated, ROLES } from "@/features/auth";
 import { userRepo } from "@/shared/database";
 import { NextResponse } from "next/server";
 
@@ -22,7 +22,21 @@ export async function GET() {
       });
     }
 
-    // Récupérer l'email depuis la DB
+    // Si c'est l'admin, retourner directement sans chercher dans la DB
+    if (user.role === ROLES.ADMIN) {
+      return NextResponse.json({
+        authenticated: true,
+        user: {
+          firstName: user.firstName,
+          lastName: user.lastName || "Admin",
+          email: null,
+          role: user.role,
+          authMethod: user.authMethod,
+        },
+      });
+    }
+
+    // Pour les utilisateurs normaux, récupérer l'email depuis la DB
     const dbUser = await userRepo.findById(user.id);
 
     return NextResponse.json({
