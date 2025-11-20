@@ -101,6 +101,8 @@ export class UserRepository extends BaseRepository<User> {
       const updates: Partial<NewUser> = {
         lastLogin: new Date(),
         email: userInfo.email || existingUser.email, // Met à jour l'email si fourni
+        nom: userInfo.family_name || existingUser.nom,
+        prenom: userInfo.given_name || existingUser.prenom,
       };
 
       const updated = await this.update(existingUser.id, updates);
@@ -115,6 +117,8 @@ export class UserRepository extends BaseRepository<User> {
       return await this.create({
         fcId,
         email: userInfo.email,
+        nom: userInfo.family_name,
+        prenom: userInfo.given_name,
         lastLogin: new Date(),
       });
     }
