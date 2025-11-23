@@ -7,11 +7,14 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import Loading from "@/app/loading";
 import { UsersTable } from "./UsersTable";
 import { UserWithParcoursDetails } from "@/features/parcours/core";
+import { DepartementFilter } from "./filters/departements/DepartementFilter";
+import { filterUsersByDepartement } from "./filters/departements/departementFilter.utils";
 
 export default function UsersTrackingPanel() {
   const [users, setUsers] = useState<UserWithParcoursDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDepartement, setSelectedDepartement] = useState<string>("");
 
   useEffect(() => {
     loadUsers();
@@ -37,19 +40,23 @@ export default function UsersTrackingPanel() {
     }
   };
 
-  // Calcul des statistiques
+  // Filtrer les users par département si un filtre est actif
+  const filteredUsers = selectedDepartement ? filterUsersByDepartement(users, selectedDepartement) : users;
+
+  // Calcul des statistiques (basé sur les users filtrés)
   const stats = {
-    total: users.length,
-    avecAmo: users.filter((u) => u.amoValidation !== null).length,
-    amoValidee: users.filter((u) => u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_ELIGIBLE).length,
-    amoEnAttente: users.filter((u) => u.amoValidation?.statut === StatutValidationAmo.EN_ATTENTE).length,
-    amoRefusee: users.filter((u) => u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE).length,
+    total: filteredUsers.length,
+    avecAmo: filteredUsers.filter((u) => u.amoValidation !== null).length,
+    amoValidee: filteredUsers.filter((u) => u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_ELIGIBLE).length,
+    amoEnAttente: filteredUsers.filter((u) => u.amoValidation?.statut === StatutValidationAmo.EN_ATTENTE).length,
+    amoRefusee: filteredUsers.filter((u) => u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE)
+      .length,
     parEtape: {
-      choixAmo: users.filter((u) => u.parcours?.currentStep === Step.CHOIX_AMO).length,
-      eligibilite: users.filter((u) => u.parcours?.currentStep === Step.ELIGIBILITE).length,
-      diagnostic: users.filter((u) => u.parcours?.currentStep === Step.DIAGNOSTIC).length,
-      devis: users.filter((u) => u.parcours?.currentStep === Step.DEVIS).length,
-      factures: users.filter((u) => u.parcours?.currentStep === Step.FACTURES).length,
+      choixAmo: filteredUsers.filter((u) => u.parcours?.currentStep === Step.CHOIX_AMO).length,
+      eligibilite: filteredUsers.filter((u) => u.parcours?.currentStep === Step.ELIGIBILITE).length,
+      diagnostic: filteredUsers.filter((u) => u.parcours?.currentStep === Step.DIAGNOSTIC).length,
+      devis: filteredUsers.filter((u) => u.parcours?.currentStep === Step.DEVIS).length,
+      factures: filteredUsers.filter((u) => u.parcours?.currentStep === Step.FACTURES).length,
     },
   };
 
@@ -78,7 +85,7 @@ export default function UsersTrackingPanel() {
               <div className="fr-card__body">
                 <div className="fr-card__content">
                   <p className="fr-card__title fr-text--lg fr-mb-1v">{stats.total}</p>
-                  <p className="fr-text--sm">Utilisateurs inscrits</p>
+                  <p className="fr-text--sm">Utilisateurs {selectedDepartement ? "filtrés" : "inscrits"}</p>
                 </div>
               </div>
             </div>
@@ -156,13 +163,26 @@ export default function UsersTrackingPanel() {
         </div>
       )}
 
+      {/* Filtre par département */}
+      {!error && (
+        <DepartementFilter
+          users={users}
+          selectedDepartement={selectedDepartement}
+          onDepartementChange={setSelectedDepartement}
+        />
+      )}
+
       {/* Liste des utilisateurs ou message vide */}
-      {!error && users.length === 0 ? (
+      {!error && filteredUsers.length === 0 && selectedDepartement ? (
+        <div className="fr-callout fr-callout--info">
+          <p className="fr-callout__text">Aucun utilisateur trouvé pour le département {selectedDepartement}.</p>
+        </div>
+      ) : !error && users.length === 0 ? (
         <div className="fr-callout fr-callout--info">
           <p className="fr-callout__text">Aucun utilisateur enregistré pour le moment.</p>
         </div>
       ) : (
-        <div>{!error && users.length > 0 && <UsersTable users={users} />}</div>
+        <div>{!error && filteredUsers.length > 0 && <UsersTable users={filteredUsers} />}</div>
       )}
     </div>
   );

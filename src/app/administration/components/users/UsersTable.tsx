@@ -59,9 +59,10 @@ function getUserFullName(user: UserWithParcoursDetails): string {
 }
 
 /**
- * Récupère la commune et le département
+ * Récupère la commune et le département avec fallback sur adresse_logement
  */
 function getCommuneInfo(user: UserWithParcoursDetails): string {
+  // Source 1 : rgaSimulation (préféré, données structurées)
   const commune = user.rgaSimulation?.logement?.commune;
   const departement = user.rgaSimulation?.logement?.departement;
 
@@ -70,6 +71,12 @@ function getCommuneInfo(user: UserWithParcoursDetails): string {
   }
   if (commune) return commune;
   if (departement) return departement;
+
+  // Source 2 : Fallback sur adresse_logement (moins précis mais mieux que rien)
+  const adresseLogement = user.amoValidation?.userData?.adresseLogement;
+  if (adresseLogement) {
+    return adresseLogement;
+  }
 
   return "—";
 }
@@ -238,7 +245,7 @@ export function UsersTable({ users }: UsersTableProps) {
                       </td>
                     </tr>
 
-                    {/* Ligne dépliable (à faire en 2.3) */}
+                    {/* Ligne détail dépliable  */}
                     {expandedUserId === user.user.id && (
                       <tr>
                         <td colSpan={9}>
