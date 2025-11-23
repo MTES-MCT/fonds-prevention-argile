@@ -74,6 +74,51 @@ function getCommuneInfo(user: UserWithParcoursDetails): string {
   return "—";
 }
 
+/**
+ * Détermine l'état d'un token de validation
+ */
+function getTokenStatus(token: { expiresAt: Date; usedAt: Date | null }): {
+  label: string;
+  badgeClass: string;
+  isValid: boolean;
+} {
+  const now = new Date();
+
+  // Token déjà utilisé
+  if (token.usedAt) {
+    return {
+      label: "Utilisé",
+      badgeClass: "fr-badge--info",
+      isValid: false,
+    };
+  }
+
+  // Token expiré
+  if (token.expiresAt < now) {
+    return {
+      label: "Expiré",
+      badgeClass: "fr-badge--error",
+      isValid: false,
+    };
+  }
+
+  // Token valide
+  return {
+    label: "Valide",
+    badgeClass: "fr-badge--success",
+    isValid: true,
+  };
+}
+
+/**
+ * Génère l'URL complète du lien de validation AMO
+ */
+function getValidationUrl(token: string): string {
+  // Récupère l'URL de base (window.location.origin en client-side)
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  return `${baseUrl}/amo/validation/${token}`;
+}
+
 export function UsersTable({ users }: UsersTableProps) {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
@@ -97,7 +142,9 @@ export function UsersTable({ users }: UsersTableProps) {
                   <th scope="col">Commune (Dpt)</th>
                   <th scope="col">Date d'inscription</th>
                   <th scope="col">Étape actuelle</th>
+                  <th scope="col">Nom de l'AMO</th>
                   <th scope="col">Statut AMO</th>
+                  <th scope="col">Lien validation AMO</th>
                 </tr>
               </thead>
               <tbody>
@@ -141,6 +188,15 @@ export function UsersTable({ users }: UsersTableProps) {
                         )}
                       </td>
 
+                      {/* Nom AMO */}
+                      <td>
+                        {user.amoValidation?.amo.nom ? (
+                          <span className={`fr-badge fr-badge--sm`}>{user.amoValidation.amo.nom}</span>
+                        ) : (
+                          <span> - </span>
+                        )}
+                      </td>
+
                       {/* Statut AMO */}
                       <td>
                         {user.amoValidation ? (
@@ -150,6 +206,34 @@ export function UsersTable({ users }: UsersTableProps) {
                           </span>
                         ) : (
                           <span className="fr-badge fr-badge--sm fr-badge--new">Non demandé</span>
+                        )}
+                      </td>
+
+                      {/* Lien validation AMO */}
+                      <td>
+                        {user.amoValidation?.token ? (
+                          <div className="fr-grid-row fr-grid-row--gutters">
+                            <div className="fr-col-12">
+                              <a
+                                href={getValidationUrl(user.amoValidation.token.token)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="fr-link fr-text--sm"
+                                title="Ouvrir le lien de validation">
+                                Voir le lien
+                              </a>
+                            </div>
+                            <div className="fr-col-12">
+                              <span
+                                className={`fr-badge fr-badge--sm ${
+                                  getTokenStatus(user.amoValidation.token).badgeClass
+                                }`}>
+                                {getTokenStatus(user.amoValidation.token).label}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="fr-badge fr-badge--sm fr-badge--new">Non généré</span>
                         )}
                       </td>
                     </tr>
