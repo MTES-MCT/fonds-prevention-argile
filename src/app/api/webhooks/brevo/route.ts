@@ -1,40 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerEnv } from "@/shared/config/env.config";
-import { isValidBrevoPayload, processBrevoWebhook } from "@/features/parcours/amo/services/brevo-webhook.service";
+import {
+  processBrevoWebhook,
+  isValidBrevoPayload,
+} from "@/features/amo-validation/services/brevo-webhook.service";
 
 /**
  * Webhook Brevo pour le tracking des emails AMO
  *
- * Route sécurisée par token dans l'URL : /api/webhooks/brevo/[token]
- * Le token doit correspondre à BREVO_WEBHOOK_SECRET
+ * Route sécurisée par token Bearer dans le header Authorization
+ * Header attendu : Authorization: Bearer {BREVO_WEBHOOK_SECRET}
  *
  * Brevo envoie des événements : delivered, opened, click, soft_bounce, hard_bounce, etc.
  */
 
-interface RouteParams {
-  params: Promise<{ token: string }>;
+/**
+ * Vérifie le token d'authentification Bearer
+ */
+function verifyBearerToken(request: NextRequest): boolean {
+  const authHeader = request.headers.get("authorization");
+
+  if (!authHeader) {
+    return false;
+  }
+
+  // Format attendu : "Bearer {token}"
+  const parts = authHeader.split(" ");
+  if (parts.length !== 2 || parts[0] !== "Bearer") {
+    return false;
+  }
+
+  const token = parts[1];
+  const expectedToken = getServerEnv().BREVO_WEBHOOK_SECRET;
+
+  if (!expectedToken) {
+    console.error("[Brevo Webhook] BREVO_WEBHOOK_SECRET non configuré");
+    return false;
+  }
+
+  return token === expectedToken;
 }
 
 /**
- * POST /api/webhooks/brevo/[token]
+ * POST /api/webhooks/brevo
  */
-export async function POST(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const { token } = await params;
-
-    // Vérifier le token de sécurité
-    const expectedToken = getServerEnv().BREVO_WEBHOOK_SECRET;
-
-    if (!expectedToken) {
-      console.error("[Brevo Webhook] BREVO_WEBHOOK_SECRET non configuré");
-      // Retourner 200 pour éviter les retries Brevo
-      return NextResponse.json({ success: false, error: "Configuration manquante" });
-    }
-
-    if (token !== expectedToken) {
-      console.warn("[Brevo Webhook] Token invalide reçu");
+    // Vérifier l'authentification Bearer
+    if (!verifyBearerToken(request)) {
+      console.warn("[Brevo Webhook] Authentification invalide");
       // Retourner 200 pour éviter les retries Brevo (mais on ne traite pas)
-      return NextResponse.json({ success: false, error: "Token invalide" });
+      return NextResponse.json({ success: false, error: "Authentification invalide" });
     }
 
     // Parser le payload
@@ -56,7 +72,9 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     const result = await processBrevoWebhook(payload);
 
     if (result.updated) {
-      console.log(`[Brevo Webhook] Événement ${result.event} traité pour messageId: ${result.messageId}`);
+      console.log(
+        `[Brevo Webhook] Événement ${result.event} traité pour messageId: ${result.messageId}`
+      );
     }
 
     return NextResponse.json({
@@ -76,14 +94,11 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
 }
 
 /**
- * GET /api/webhooks/brevo/[token]
+ * GET /api/webhooks/brevo
  * Pour vérifier que la route est accessible (health check)
  */
-export async function GET(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
-  const { token } = await params;
-  const expectedToken = getServerEnv().BREVO_WEBHOOK_SECRET;
-
-  if (token !== expectedToken) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  if (!verifyBearerToken(request)) {
     return NextResponse.json({ status: "unauthorized" }, { status: 401 });
   }
 
