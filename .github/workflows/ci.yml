@@ -92,6 +92,7 @@ jobs:
           DB_PASSWORD: "fonds_argile_password"
           DB_NAME: "fonds_argile"
           BREVO_API_KEY: "BREVO_API_KEY_EXAMPLE"
+          BREVO_WEBHOOK_SECRET: "BREVO_WEBHOOK_SECRET_EXAMPLE_1234567890abcdef"
           EMAIL_FROM: "noreply@fonds-argile.local"
           MATOMO_API_TOKEN: "MATOMO_API_TOKEN_EXAMPLE"
           MATOMO_MES_AIDES_RENO_API_TOKEN: "MATOMO_MES_AIDES_RENO_API_TOKEN_EXAMPLE"

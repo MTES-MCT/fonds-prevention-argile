@@ -99,6 +99,7 @@ const serverSchema = z.object({
 
   // Clé API Brevo pour l'envoi d'emails + configuration de l'expéditeur
   BREVO_API_KEY: z.string(),
+  BREVO_WEBHOOK_SECRET: z.string().min(32, "BREVO_WEBHOOK_SECRET doit faire au moins 32 caractères"),
   EMAIL_FROM: z.string().email("EMAIL_FROM doit être une adresse email valide"),
 
   RGA_ENCRYPTION_KEY: z.string().min(32),
