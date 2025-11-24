@@ -3,178 +3,18 @@ import { db } from "@/shared/database/client";
 import { amoValidationTokens, parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
 import { parcoursRepo } from "@/shared/database/repositories";
 
-import { checkAmoCoversCodeInsee, getAmoById } from "./amo-query.service";
+import { getAmoById } from "./amo-query.service";
 import { ActionResult } from "@/shared/types/action-result.types";
-import { AMO_VALIDATION_TOKEN_VALIDITY_DAYS, StatutValidationAmo } from "../domain/value-objects";
-import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
+import { StatutValidationAmo } from "../domain/value-objects";
 import { ValidationAmoData } from "../domain/entities";
-import { Status, Step } from "../../core";
+import { Status } from "../../core";
 import { moveToNextStep } from "../../core/services";
 import { normalizeCodeInsee } from "../utils/amo.utils";
 
 /**
- * Service de gestion des validations AMO
+ * Service de gestion des validations AMO (approve/reject/get)
+ * La sélection AMO est dans amo-selection.service.ts
  */
-
-/**
- * Sélectionne un AMO pour l'utilisateur
- */
-export async function selectAmoForUser(
-  userId: string,
-  params: {
-    entrepriseAmoId: string;
-    userPrenom: string;
-    userNom: string;
-    userEmail: string;
-    userTelephone: string;
-    adresseLogement: string;
-  }
-): Promise<ActionResult<{ message: string; token: string }>> {
-  const { entrepriseAmoId, userPrenom, userNom, userEmail, userTelephone, adresseLogement } = params;
-
-  // Validation des données personnelles
-  if (!userPrenom?.trim()) {
-    return { success: false, error: "Le prénom est requis" };
-  }
-  if (!userNom?.trim()) {
-    return { success: false, error: "Le nom est requis" };
-  }
-  if (!adresseLogement?.trim()) {
-    return { success: false, error: "L'adresse du logement est requise" };
-  }
-  if (!userEmail?.trim()) {
-    return { success: false, error: "L'email est requis" };
-  }
-  if (!userTelephone?.trim()) {
-    return { success: false, error: "Le téléphone est requis" };
-  }
-
-  // Récupérer le parcours de l'utilisateur
-  const parcours = await parcoursRepo.findByUserId(userId);
-  if (!parcours) {
-    return { success: false, error: "Parcours non trouvé" };
-  }
-
-  // Vérifier qu'on est bien à l'étape CHOIX_AMO
-  if (parcours.currentStep !== Step.CHOIX_AMO) {
-    return {
-      success: false,
-      error: "Vous n'êtes pas à l'étape de choix de l'AMO",
-    };
-  }
-
-  // Vérifier que le parcours a les données RGA
-  if (!parcours.rgaSimulationData?.logement?.commune) {
-    return {
-      success: false,
-      error: "Simulation RGA non complétée (code INSEE manquant)",
-    };
-  }
-
-  const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData?.logement?.commune);
-
-  if (!codeInsee) {
-    return {
-      success: false,
-      error: "Simulation RGA non complétée (code INSEE invalide)",
-    };
-  }
-
-  // Vérifier que l'AMO couvre le code INSEE
-  const amoCovers = await checkAmoCoversCodeInsee(entrepriseAmoId, codeInsee);
-  if (!amoCovers) {
-    return {
-      success: false,
-      error: "Cette AMO ne couvre pas votre commune ou département",
-    };
-  }
-
-  // Créer ou mettre à jour la validation AMO
-  const [validation] = await db
-    .insert(parcoursAmoValidations)
-    .values({
-      parcoursId: parcours.id,
-      entrepriseAmoId,
-      statut: "en_attente" as StatutValidationAmo,
-      userPrenom: userPrenom.trim(),
-      userNom: userNom.trim(),
-      userEmail: userEmail.trim(),
-      userTelephone: userTelephone.trim(),
-      adresseLogement: adresseLogement.trim(),
-    })
-    .onConflictDoUpdate({
-      target: parcoursAmoValidations.parcoursId,
-      set: {
-        entrepriseAmoId,
-        statut: "en_attente" as StatutValidationAmo,
-        choisieAt: new Date(),
-        valideeAt: null,
-        commentaire: null,
-        userPrenom: userPrenom.trim(),
-        userNom: userNom.trim(),
-        userEmail: userEmail.trim(),
-        userTelephone: userTelephone.trim(),
-        adresseLogement: adresseLogement.trim(),
-      },
-    })
-    .returning();
-
-  if (!validation) {
-    return {
-      success: false,
-      error: "Erreur lors de la création de la validation",
-    };
-  }
-
-  // Générer un token unique
-  const token = crypto.randomUUID();
-
-  // Calculer la date d'expiration
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + AMO_VALIDATION_TOKEN_VALIDITY_DAYS);
-
-  // Créer le token de validation
-  await db.insert(amoValidationTokens).values({
-    parcoursAmoValidationId: validation.id,
-    token,
-    expiresAt,
-  });
-
-  // Récupérer les infos de l'AMO pour l'email
-  const amo = await getAmoById(entrepriseAmoId);
-  if (!amo) {
-    return { success: false, error: "AMO non trouvée" };
-  }
-
-  // Envoyer l'email de validation à l'AMO
-  const emailsList = amo.emails.split(";").map((e) => e.trim());
-
-  const emailResult = await sendValidationAmoEmail({
-    amoEmail: emailsList,
-    amoNom: amo.nom,
-    demandeurNom: userNom,
-    demandeurPrenom: userPrenom,
-    demandeurCodeInsee: codeInsee ?? "",
-    adresseLogement,
-    token,
-  });
-
-  if (!emailResult.success) {
-    console.error("Erreur envoi email AMO:", emailResult.error);
-    // On continue quand même, l'email n'est pas bloquant
-  }
-
-  // Passer le parcours en EN_INSTRUCTION
-  await parcoursRepo.updateStatus(parcours.id, Status.EN_INSTRUCTION);
-
-  return {
-    success: true,
-    data: {
-      message: "AMO sélectionnée avec succès",
-      token,
-    },
-  };
-}
 
 /**
  * Approuve la validation (logement éligible)
@@ -207,7 +47,7 @@ export async function approveValidation(
   await db
     .update(parcoursAmoValidations)
     .set({
-      statut: "logement_eligible" as StatutValidationAmo,
+      statut: StatutValidationAmo.LOGEMENT_ELIGIBLE,
       commentaire: commentaire || null,
       valideeAt: new Date(),
     })
@@ -218,9 +58,6 @@ export async function approveValidation(
     .update(amoValidationTokens)
     .set({ usedAt: new Date() })
     .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
-
-  // Supprimer les données personnelles (RGPD)
-  await deleteUserPersonalData(validationId);
 
   // Passer le parcours en VALIDE
   await parcoursRepo.updateStatus(validation.parcoursId, Status.VALIDE);
@@ -251,7 +88,7 @@ export async function rejectEligibility(
   const [validation] = await db
     .update(parcoursAmoValidations)
     .set({
-      statut: "logement_non_eligible" as StatutValidationAmo,
+      statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
       commentaire,
       valideeAt: new Date(),
     })
@@ -267,9 +104,6 @@ export async function rejectEligibility(
     .update(amoValidationTokens)
     .set({ usedAt: new Date() })
     .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
-
-  // Supprimer les données personnelles (RGPD)
-  await deleteUserPersonalData(validationId);
 
   // Repasser le parcours en TODO
   await parcoursRepo.updateStatus(validation.parcoursId, Status.TODO);
@@ -290,7 +124,7 @@ export async function rejectAccompagnement(
   const [validation] = await db
     .update(parcoursAmoValidations)
     .set({
-      statut: "accompagnement_refuse" as StatutValidationAmo,
+      statut: StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
       commentaire,
       valideeAt: new Date(),
     })
@@ -306,9 +140,6 @@ export async function rejectAccompagnement(
     .update(amoValidationTokens)
     .set({ usedAt: new Date() })
     .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
-
-  // Supprimer les données personnelles (RGPD)
-  await deleteUserPersonalData(validationId);
 
   // Repasser le parcours en TODO
   await parcoursRepo.updateStatus(validation.parcoursId, Status.TODO);
@@ -393,20 +224,4 @@ export async function getValidationByToken(token: string): Promise<ActionResult<
       isUsed: !!tokenData.usedAt,
     },
   };
-}
-
-/**
- * Supprime les données personnelles (RGPD)
- */
-async function deleteUserPersonalData(validationId: string): Promise<void> {
-  await db
-    .update(parcoursAmoValidations)
-    .set({
-      userPrenom: null,
-      userNom: null,
-      userEmail: null,
-      userTelephone: null,
-      adresseLogement: null,
-    })
-    .where(eq(parcoursAmoValidations.id, validationId));
 }

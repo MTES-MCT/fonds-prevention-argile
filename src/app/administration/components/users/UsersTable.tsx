@@ -5,7 +5,7 @@ import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-valida
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { formatDate } from "@/shared/utils/date.utils";
 import { UserDetailRow } from "./UserDetailRow";
-import { UserWithParcoursDetails } from "@/features/parcours/core";
+import { UserWithParcoursDetails, EmailTrackingStatus } from "@/features/parcours/core";
 
 interface UsersTableProps {
   users: UserWithParcoursDetails[];
@@ -41,6 +41,65 @@ const STATUT_AMO_BADGE_CLASSES: Record<StatutValidationAmo, string> = {
   [StatutValidationAmo.LOGEMENT_NON_ELIGIBLE]: "fr-badge--error",
   [StatutValidationAmo.ACCOMPAGNEMENT_REFUSE]: "fr-badge--warning",
 };
+
+/**
+ * Labels français des statuts de tracking email
+ */
+const EMAIL_TRACKING_LABELS: Record<EmailTrackingStatus, string> = {
+  non_envoye: "Non envoyé",
+  envoye: "Envoyé",
+  delivre: "Délivré",
+  ouvert: "Ouvert",
+  clique: "Cliqué",
+  bounce_soft: "Erreur temp.",
+  bounce_hard: "Erreur",
+};
+
+/**
+ * Classes CSS DSFR pour les badges de tracking email
+ */
+const EMAIL_TRACKING_BADGE_CLASSES: Record<EmailTrackingStatus, string> = {
+  non_envoye: "fr-badge--new",
+  envoye: "fr-badge--info",
+  delivre: "fr-badge--info",
+  ouvert: "fr-badge--success",
+  clique: "fr-badge--success",
+  bounce_soft: "fr-badge--warning",
+  bounce_hard: "fr-badge--error",
+};
+
+/**
+ * Détermine le statut du tracking email
+ */
+function getEmailTrackingStatus(
+  emailTracking: UserWithParcoursDetails["amoValidation"] extends null
+    ? never
+    : NonNullable<UserWithParcoursDetails["amoValidation"]>["emailTracking"]
+): EmailTrackingStatus {
+  // Priorité aux erreurs
+  if (emailTracking.bounceType === "hard") {
+    return "bounce_hard";
+  }
+  if (emailTracking.bounceType === "soft") {
+    return "bounce_soft";
+  }
+
+  // Ensuite par ordre de progression (du plus avancé au moins avancé)
+  if (emailTracking.clickedAt) {
+    return "clique";
+  }
+  if (emailTracking.openedAt) {
+    return "ouvert";
+  }
+  if (emailTracking.deliveredAt) {
+    return "delivre";
+  }
+  if (emailTracking.sentAt) {
+    return "envoye";
+  }
+
+  return "non_envoye";
+}
 
 /**
  * Récupère le nom complet de l'utilisateur
@@ -151,112 +210,146 @@ export function UsersTable({ users }: UsersTableProps) {
                   <th scope="col">Étape actuelle</th>
                   <th scope="col">Nom de l'AMO</th>
                   <th scope="col">Statut AMO</th>
+                  <th scope="col">Statut Email</th>
                   <th scope="col">Lien validation AMO</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
-                  <React.Fragment key={user.user.id}>
-                    <tr key={user.user.id}>
-                      {/* Actions */}
-                      <td>
-                        <button
-                          type="button"
-                          className="fr-btn fr-btn--sm fr-btn--secondary"
-                          onClick={() => toggleExpand(user.user.id)}
-                          title={expandedUserId === user.user.id ? "Masquer les détails" : "Voir les détails"}>
-                          {expandedUserId === user.user.id ? "Masquer" : "Voir détails"}
-                        </button>
-                      </td>
+                {users.map((user) => {
+                  // Calculer le statut email une fois par ligne
+                  const emailStatus = user.amoValidation
+                    ? getEmailTrackingStatus(user.amoValidation.emailTracking)
+                    : null;
 
-                      {/* Nom */}
-                      <td>{getUserFullName(user)}</td>
+                  return (
+                    <React.Fragment key={user.user.id}>
+                      <tr key={user.user.id}>
+                        {/* Actions */}
+                        <td>
+                          <button
+                            type="button"
+                            className="fr-btn fr-btn--sm fr-btn--secondary"
+                            onClick={() => toggleExpand(user.user.id)}
+                            title={expandedUserId === user.user.id ? "Masquer les détails" : "Voir les détails"}>
+                            {expandedUserId === user.user.id ? "Masquer" : "Voir détails"}
+                          </button>
+                        </td>
 
-                      {/* Email */}
-                      <td className="fr-text--sm">{user.user.email || "—"}</td>
+                        {/* Nom */}
+                        <td>{getUserFullName(user)}</td>
 
-                      {/* Téléphone */}
-                      <td className="fr-text--sm">{user.user.telephone || "—"}</td>
+                        {/* Email */}
+                        <td className="fr-text--sm">{user.user.email || "—"}</td>
 
-                      {/* Commune */}
-                      <td className="fr-text--sm">{getCommuneInfo(user)}</td>
+                        {/* Téléphone */}
+                        <td className="fr-text--sm">{user.user.telephone || "—"}</td>
 
-                      {/* Date d'inscription */}
-                      <td className="fr-text--sm">{formatDate(user.user.createdAt.toISOString())}</td>
+                        {/* Commune */}
+                        <td className="fr-text--sm">{getCommuneInfo(user)}</td>
 
-                      {/* Étape actuelle */}
-                      <td>
-                        {user.parcours ? (
-                          <span className="fr-badge fr-badge--sm fr-badge--blue-ecume">
-                            {STEP_LABELS[user.parcours.currentStep]}
-                          </span>
-                        ) : (
-                          <span className="fr-badge fr-badge--sm fr-badge--new">Aucun parcours</span>
-                        )}
-                      </td>
+                        {/* Date d'inscription */}
+                        <td className="fr-text--sm">{formatDate(user.user.createdAt.toISOString())}</td>
 
-                      {/* Nom AMO */}
-                      <td>
-                        {user.amoValidation?.amo.nom ? (
-                          <span className={`fr-badge fr-badge--sm`}>{user.amoValidation.amo.nom}</span>
-                        ) : (
-                          <span> - </span>
-                        )}
-                      </td>
+                        {/* Étape actuelle */}
+                        <td>
+                          {user.parcours ? (
+                            <span className="fr-badge fr-badge--sm fr-badge--blue-ecume">
+                              {STEP_LABELS[user.parcours.currentStep]}
+                            </span>
+                          ) : (
+                            <span className="fr-badge fr-badge--sm fr-badge--new">Aucun parcours</span>
+                          )}
+                        </td>
 
-                      {/* Statut AMO */}
-                      <td>
-                        {user.amoValidation ? (
-                          <span
-                            className={`fr-badge fr-badge--sm ${STATUT_AMO_BADGE_CLASSES[user.amoValidation.statut]}`}>
-                            {STATUT_AMO_LABELS[user.amoValidation.statut]}
-                          </span>
-                        ) : (
-                          <span className="fr-badge fr-badge--sm fr-badge--new">Non demandé</span>
-                        )}
-                      </td>
+                        {/* Nom AMO */}
+                        <td>
+                          {user.amoValidation?.amo.nom ? (
+                            <span className={`fr-badge fr-badge--sm`}>{user.amoValidation.amo.nom}</span>
+                          ) : (
+                            <span> - </span>
+                          )}
+                        </td>
 
-                      {/* Lien validation AMO */}
-                      <td>
-                        {user.amoValidation?.token ? (
-                          <div className="fr-grid-row fr-grid-row--gutters">
-                            <div className="fr-col-12">
-                              <a
-                                href={getValidationUrl(user.amoValidation.token.token)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="fr-link fr-text--sm"
-                                title="Ouvrir le lien de validation">
-                                Voir le lien
-                              </a>
+                        {/* Statut AMO */}
+                        <td>
+                          {user.amoValidation ? (
+                            <span
+                              className={`fr-badge fr-badge--sm ${STATUT_AMO_BADGE_CLASSES[user.amoValidation.statut]}`}>
+                              {STATUT_AMO_LABELS[user.amoValidation.statut]}
+                            </span>
+                          ) : (
+                            <span className="fr-badge fr-badge--sm fr-badge--new">Non demandé</span>
+                          )}
+                        </td>
+
+                        {/* Statut Email */}
+                        <td>
+                          {emailStatus ? (
+                            <span
+                              className={`fr-badge fr-badge--sm ${EMAIL_TRACKING_BADGE_CLASSES[emailStatus]}`}
+                              title={
+                                user.amoValidation?.emailTracking.bounceReason ||
+                                (user.amoValidation?.emailTracking.clickedAt
+                                  ? `Cliqué le ${formatDate(user.amoValidation.emailTracking.clickedAt.toISOString())}`
+                                  : user.amoValidation?.emailTracking.openedAt
+                                    ? `Ouvert le ${formatDate(user.amoValidation.emailTracking.openedAt.toISOString())}`
+                                    : user.amoValidation?.emailTracking.deliveredAt
+                                      ? `Délivré le ${formatDate(user.amoValidation.emailTracking.deliveredAt.toISOString())}`
+                                      : user.amoValidation?.emailTracking.sentAt
+                                        ? `Envoyé le ${formatDate(user.amoValidation.emailTracking.sentAt.toISOString())}`
+                                        : undefined)
+                              }>
+                              {EMAIL_TRACKING_LABELS[emailStatus]}
+                            </span>
+                          ) : (
+                            <span className="fr-badge fr-badge--sm fr-badge--new">—</span>
+                          )}
+                        </td>
+
+                        {/* Lien validation AMO */}
+                        <td>
+                          {user.amoValidation?.token ? (
+                            <div className="fr-grid-row fr-grid-row--gutters">
+                              {getTokenStatus(user.amoValidation.token).isValid && (
+                                <div className="fr-col-12">
+                                  <a
+                                    href={getValidationUrl(user.amoValidation.token.token)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="fr-link fr-text--sm"
+                                    title="Ouvrir le lien de validation">
+                                    Voir le lien
+                                  </a>
+                                </div>
+                              )}
+                              <div className="fr-col-12">
+                                <span
+                                  className={`fr-badge fr-badge--sm ${
+                                    getTokenStatus(user.amoValidation.token).badgeClass
+                                  }`}>
+                                  {getTokenStatus(user.amoValidation.token).label}
+                                </span>
+                              </div>
                             </div>
-                            <div className="fr-col-12">
-                              <span
-                                className={`fr-badge fr-badge--sm ${
-                                  getTokenStatus(user.amoValidation.token).badgeClass
-                                }`}>
-                                {getTokenStatus(user.amoValidation.token).label}
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="fr-badge fr-badge--sm fr-badge--new">Non généré</span>
-                        )}
-                      </td>
-                    </tr>
-
-                    {/* Ligne détail dépliable  */}
-                    {expandedUserId === user.user.id && (
-                      <tr>
-                        <td colSpan={9}>
-                          <div className="fr-p-4w" style={{ backgroundColor: "#f6f6f6" }}>
-                            {expandedUserId === user.user.id && <UserDetailRow user={user} />}
-                          </div>
+                          ) : (
+                            <span className="fr-badge fr-badge--sm fr-badge--new">Non généré</span>
+                          )}
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                ))}
+
+                      {/* Ligne détail dépliable  */}
+                      {expandedUserId === user.user.id && (
+                        <tr>
+                          <td colSpan={11}>
+                            <div className="fr-p-4w" style={{ backgroundColor: "#f6f6f6" }}>
+                              {expandedUserId === user.user.id && <UserDetailRow user={user} />}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

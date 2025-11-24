@@ -76,6 +76,17 @@ export interface UserWithParcoursDetails {
       expiresAt: Date;
       usedAt: Date | null;
     } | null;
+
+    // Tracking email Brevo
+    emailTracking: {
+      brevoMessageId: string | null;
+      sentAt: Date | null;
+      deliveredAt: Date | null;
+      openedAt: Date | null;
+      clickedAt: Date | null;
+      bounceType: "hard" | "soft" | null;
+      bounceReason: string | null;
+    };
   } | null;
 
   // ===== Dossiers Démarches Simplifiées =====
@@ -101,3 +112,15 @@ export interface DossierInfo {
   updatedAt: Date;
   lastSyncAt: Date | null;
 }
+
+/**
+ * Statut simplifié du tracking email pour affichage
+ */
+export type EmailTrackingStatus =
+  | "non_envoye" // Pas de brevoMessageId
+  | "envoye" // sentAt renseigné
+  | "delivre" // deliveredAt renseigné
+  | "ouvert" // openedAt renseigné
+  | "clique" // clickedAt renseigné
+  | "bounce_soft" // bounceType = soft
+  | "bounce_hard"; // bounceType = hard

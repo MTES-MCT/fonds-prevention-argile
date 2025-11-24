@@ -54,6 +54,15 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
       validationUserTelephone: parcoursAmoValidations.userTelephone,
       validationAdresseLogement: parcoursAmoValidations.adresseLogement,
 
+      // Tracking email Brevo
+      validationBrevoMessageId: parcoursAmoValidations.brevoMessageId,
+      validationEmailSentAt: parcoursAmoValidations.emailSentAt,
+      validationEmailDeliveredAt: parcoursAmoValidations.emailDeliveredAt,
+      validationEmailOpenedAt: parcoursAmoValidations.emailOpenedAt,
+      validationEmailClickedAt: parcoursAmoValidations.emailClickedAt,
+      validationEmailBounceType: parcoursAmoValidations.emailBounceType,
+      validationEmailBounceReason: parcoursAmoValidations.emailBounceReason,
+
       // AMO
       amoId: entreprisesAmo.id,
       amoNom: entreprisesAmo.nom,
@@ -161,6 +170,15 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
                     usedAt: row.tokenUsedAt,
                   }
                 : null,
+              emailTracking: {
+                brevoMessageId: row.validationBrevoMessageId,
+                sentAt: row.validationEmailSentAt,
+                deliveredAt: row.validationEmailDeliveredAt,
+                openedAt: row.validationEmailOpenedAt,
+                clickedAt: row.validationEmailClickedAt,
+                bounceType: row.validationEmailBounceType as "hard" | "soft" | null,
+                bounceReason: row.validationEmailBounceReason,
+              },
             }
           : null,
         dossiers: {
