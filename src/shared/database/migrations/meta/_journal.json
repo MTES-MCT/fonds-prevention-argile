@@ -57,6 +57,13 @@
       "when": 1763473524493,
       "tag": "0007_blushing_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1763649431704,
+      "tag": "0008_cuddly_multiple_man",
+      "breakpoints": true
     }
   ]
 }

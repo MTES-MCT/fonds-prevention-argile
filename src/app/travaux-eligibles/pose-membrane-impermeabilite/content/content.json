@@ -9,7 +9,7 @@
   },
   "image": {
     "alt": "Fonds prévention argile - Pose d'une membrane étanche",
-    "src": "/images/travaux-eligibles/geomembrane.png",
+    "src": "/images/travaux-eligibles/geomembrane.webp",
     "description": "Pose d'une membrane étanche - Crédit photo Franck Béchade, France Argile"
   },
   "une_des_solutions": [
@@ -42,9 +42,7 @@
   "quand_mettre_en_oeuvre": {
     "prevention": {
       "title": "En prévention",
-      "details": [
-        "Sur un terrain plat (moins de 3% de pente)."
-      ]
+      "details": ["Sur un terrain plat (moins de 3% de pente)."]
     },
     "traitement": {
       "title": "Points de vigilance",

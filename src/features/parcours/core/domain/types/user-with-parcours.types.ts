@@ -65,6 +65,15 @@ export interface UserWithParcoursDetails {
       telephone: string | null;
       adresseLogement: string | null;
     };
+
+    // Token de validation AMO
+    token: {
+      id: string;
+      token: string;
+      createdAt: Date;
+      expiresAt: Date;
+      usedAt: Date | null;
+    } | null;
   } | null;
 
   // ===== Dossiers Démarches Simplifiées =====

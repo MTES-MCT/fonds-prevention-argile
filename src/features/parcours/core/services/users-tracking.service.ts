@@ -7,6 +7,7 @@ import { dossiersDemarchesSimplifiees } from "@/shared/database/schema/dossiers-
 import { desc, eq } from "drizzle-orm";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { UserWithParcoursDetails, DossierInfo } from "../domain/types/user-with-parcours.types";
+import { amoValidationTokens } from "@/shared/database";
 
 /**
  * Service pour récupérer les utilisateurs avec tous les détails de leur parcours
@@ -59,6 +60,13 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
       amoEmails: entreprisesAmo.emails,
       amoTelephone: entreprisesAmo.telephone,
 
+      // Token de validation AMO
+      tokenId: amoValidationTokens.id,
+      tokenValue: amoValidationTokens.token,
+      tokenCreatedAt: amoValidationTokens.createdAt,
+      tokenExpiresAt: amoValidationTokens.expiresAt,
+      tokenUsedAt: amoValidationTokens.usedAt,
+
       // Dossier DS
       dossierId: dossiersDemarchesSimplifiees.id,
       dossierStep: dossiersDemarchesSimplifiees.step,
@@ -75,6 +83,7 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
     .leftJoin(parcoursPrevention, eq(users.id, parcoursPrevention.userId))
     .leftJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
     .leftJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
+    .leftJoin(amoValidationTokens, eq(parcoursAmoValidations.id, amoValidationTokens.parcoursAmoValidationId))
     .leftJoin(dossiersDemarchesSimplifiees, eq(parcoursPrevention.id, dossiersDemarchesSimplifiees.parcoursId))
     .orderBy(desc(users.createdAt));
 
@@ -139,6 +148,15 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
                 telephone: row.validationUserTelephone,
                 adresseLogement: row.validationAdresseLogement,
               },
+               token: row.tokenId
+                ? {
+                    id: row.tokenId,
+                    token: row.tokenValue!,
+                    createdAt: row.tokenCreatedAt!,
+                    expiresAt: row.tokenExpiresAt!,
+                    usedAt: row.tokenUsedAt,
+                  }
+                : null,
             }
           : null,
         dossiers: {

@@ -9,7 +9,7 @@
   },
   "image": {
     "alt": "Fonds prévention argile - Un service de l'État",
-    "src": "/images/travaux-eligibles/drainage-eaux-deportees.png",
+    "src": "/images/travaux-eligibles/drainage-eaux-deportees.webp",
     "description": "Drainage des eaux pluviales déportées - Crédit photo Franck Béchade, France Argile"
   },
   "une_des_solutions": [
@@ -52,11 +52,11 @@
       "details": [
         "Un essai de perméabilité du sol de type porchet est indispensable avant tous travaux en lien avec l'infiltration des eaux pluviales.",
         "Le réseau de drainage des eaux superficielles et de ruissellement est impérativement séparatif des eaux pluviales et déporté des fondations de la maison.",
-        "Pour assurer la durabilité et l'efficacité de ces dispositifs de gestion des eaux, leur bon entretien régulier est indispensable.", 
+        "Pour assurer la durabilité et l'efficacité de ces dispositifs de gestion des eaux, leur bon entretien régulier est indispensable.",
         "Les drains agricoles sont à proscrire absolument."
       ]
-    }, 
-    "generalite":""
+    },
+    "generalite": ""
   },
 
   "a_retenir": [

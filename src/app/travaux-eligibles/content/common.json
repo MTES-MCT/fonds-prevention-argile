@@ -16,7 +16,7 @@
             "type": "reperage-fuite-reseaux-eaux",
             "image": {
               "alt": "Fonds prévention argile - Repérage des fuites des réseaux d'eau",
-              "src": "/images/travaux-eligibles/reperage-fuites.png"
+              "src": "/images/travaux-eligibles/reperage-fuites.webp"
             },
             "pageUrl": "/travaux-eligibles/reperage-fuite-reseaux-eaux"
           },
@@ -52,7 +52,7 @@
             "type": "drainage-eaux-deportees",
             "image": {
               "alt": "drainage des eaux déportées et séparatif des eaux pluviales",
-              "src": "/images/travaux-eligibles/drainage-eaux-deportees.png"
+              "src": "/images/travaux-eligibles/drainage-eaux-deportees.webp"
             },
             "pageUrl": "/travaux-eligibles/drainage-eaux-deportees"
           }
@@ -67,7 +67,7 @@
             "type": "installation-ecran-anti-racine",
             "image": {
               "alt": "Installation d'un écran anti-racine",
-              "src": "/images/travaux-eligibles/anti-racine.png"
+              "src": "/images/travaux-eligibles/anti-racine.webp"
             },
             "pageUrl": "/travaux-eligibles/installation-ecran-anti-racine"
           },
@@ -76,7 +76,7 @@
             "type": "suppression-systemes-racinaires",
             "image": {
               "alt": "Suppression des systèmes racinaires trop proche de la maison",
-              "src": "/images/travaux-eligibles/abattage.png"
+              "src": "/images/travaux-eligibles/abattage.webp"
             },
             "pageUrl": "/travaux-eligibles/suppression-systemes-racinaires"
           }
@@ -91,7 +91,7 @@
             "type": "pose-membrane-impermeabilite",
             "image": {
               "alt": "Pose d'une membrane d'imperméabilité autour de la maison",
-              "src": "/images/travaux-eligibles/geomembrane.png"
+              "src": "/images/travaux-eligibles/geomembrane.webp"
             },
             "pageUrl": "/travaux-eligibles/pose-membrane-impermeabilite"
           },
