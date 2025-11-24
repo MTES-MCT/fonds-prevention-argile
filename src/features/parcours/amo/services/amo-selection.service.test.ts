@@ -4,7 +4,6 @@ import { db } from "@/shared/database/client";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { Status, Step } from "../../core";
-import { AMO_VALIDATION_TOKEN_VALIDITY_DAYS } from "../domain/value-objects";
 import type { StatutValidationAmo } from "../domain/value-objects";
 
 // Mock des dépendances

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { processBrevoWebhook, isTrackedEvent, isValidBrevoPayload } from "./brevo-webhook.service";
 import { db } from "@/shared/database/client";
-import type { BrevoWebhookPayload, BrevoWebhookEvent } from "@/shared/domain/types/brevo-webhook.types";
+import type { BrevoWebhookPayload } from "@/shared/domain/types/brevo-webhook.types";
 
 // Mock des dépendances
 vi.mock("@/shared/database/client", () => ({

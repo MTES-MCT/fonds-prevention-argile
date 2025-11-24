@@ -7,13 +7,10 @@ import {
 } from "./amo-validation.service";
 import { db } from "@/shared/database/client";
 import { parcoursRepo } from "@/shared/database/repositories";
-import { checkAmoCoversCodeInsee, getAmoById } from "./amo-query.service";
-import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
+import { getAmoById } from "./amo-query.service";
 import { moveToNextStep } from "../../core/services";
 import { Status, Step } from "../../core";
-import { AMO_VALIDATION_TOKEN_VALIDITY_DAYS } from "../domain/value-objects";
 import type { StatutValidationAmo } from "../domain/value-objects";
-import { selectAmoForUser } from "./amo-selection.service";
 
 // Mock des dépendances
 vi.mock("@/shared/database/client", () => ({

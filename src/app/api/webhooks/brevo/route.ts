@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerEnv } from "@/shared/config/env.config";
-import {
-  processBrevoWebhook,
-  isValidBrevoPayload,
-} from "@/features/amo-validation/services/brevo-webhook.service";
+import { isValidBrevoPayload, processBrevoWebhook } from "@/features/parcours/amo/services/brevo-webhook.service";
 
 /**
  * Webhook Brevo pour le tracking des emails AMO
@@ -72,9 +69,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const result = await processBrevoWebhook(payload);
 
     if (result.updated) {
-      console.log(
-        `[Brevo Webhook] Événement ${result.event} traité pour messageId: ${result.messageId}`
-      );
+      console.log(`[Brevo Webhook] Événement ${result.event} traité pour messageId: ${result.messageId}`);
     }
 
     return NextResponse.json({
