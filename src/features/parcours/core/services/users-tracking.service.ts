@@ -24,6 +24,8 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
       userId: users.id,
       userFcId: users.fcId,
       userEmail: users.email,
+      userName: users.nom,
+      userFirstName: users.prenom,
       userTelephone: users.telephone,
       userLastLogin: users.lastLogin,
       userCreatedAt: users.createdAt,
@@ -98,6 +100,8 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
           id: row.userId,
           fcId: row.userFcId,
           email: row.userEmail,
+          name: row.userName,
+          firstName: row.userFirstName,
           telephone: row.userTelephone,
           lastLogin: row.userLastLogin,
           createdAt: row.userCreatedAt,
@@ -148,7 +152,7 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
                 telephone: row.validationUserTelephone,
                 adresseLogement: row.validationAdresseLogement,
               },
-               token: row.tokenId
+              token: row.tokenId
                 ? {
                     id: row.tokenId,
                     token: row.tokenValue!,

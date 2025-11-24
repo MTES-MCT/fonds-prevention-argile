@@ -10,6 +10,8 @@ export interface UserWithParcoursDetails {
     id: string;
     fcId: string;
     email: string | null;
+    name: string | null;
+    firstName: string | null;
     telephone: string | null;
     lastLogin: Date;
     createdAt: Date;

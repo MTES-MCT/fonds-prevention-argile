@@ -46,8 +46,8 @@ const STATUT_AMO_BADGE_CLASSES: Record<StatutValidationAmo, string> = {
  * Récupère le nom complet de l'utilisateur
  */
 function getUserFullName(user: UserWithParcoursDetails): string {
-  const prenom = user.amoValidation?.userData.prenom;
-  const nom = user.amoValidation?.userData.nom;
+  const prenom = user.user.firstName;
+  const nom = user.user.name;
 
   if (prenom && nom) {
     return `${prenom} ${nom}`;
