@@ -220,16 +220,18 @@ export function UsersTable({ users }: UsersTableProps) {
                       <td>
                         {user.amoValidation?.token ? (
                           <div className="fr-grid-row fr-grid-row--gutters">
-                            <div className="fr-col-12">
-                              <a
-                                href={getValidationUrl(user.amoValidation.token.token)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="fr-link fr-text--sm"
-                                title="Ouvrir le lien de validation">
-                                Voir le lien
-                              </a>
-                            </div>
+                            {getTokenStatus(user.amoValidation.token).isValid && (
+                              <div className="fr-col-12">
+                                <a
+                                  href={getValidationUrl(user.amoValidation.token.token)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="fr-link fr-text--sm"
+                                  title="Ouvrir le lien de validation">
+                                  Voir le lien
+                                </a>
+                              </div>
+                            )}
                             <div className="fr-col-12">
                               <span
                                 className={`fr-badge fr-badge--sm ${
