@@ -96,6 +96,14 @@ const Footer = () => {
                   Paramètres d'affichage
                 </button>
               </li>
+              <li className="fr-footer__bottom-item" key="mentions-legales">
+                <Link
+                  className="fr-footer__bottom-link"
+                  href="/documentation/integration-iframe"
+                >
+                  Intégrer le simulateur sur son site
+                </Link>
+              </li>
             </ul>
             <div className="fr-footer__bottom-copy">
               <p>
