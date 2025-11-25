@@ -7,12 +7,8 @@ export const PROTECTED_ROUTES = {
 // Routes publiques
 export const PUBLIC_ROUTES = {
   auth: ["/connexion", "/inscription"],
-  franceConnectApi: [
-    "/api/auth/fc/callback",
-    "/api/auth/fc/login",
-    "/api/auth/fc/logout",
-    "/oidc-callback",
-  ],
+  franceConnectApi: ["/api/auth/fc/callback", "/api/auth/fc/login", "/api/auth/fc/logout", "/oidc-callback"],
+  proConnectApi: ["/api/auth/pc/callback", "/api/auth/pc/login", "/api/auth/pc/logout"],
   static: [
     "/",
     "/mentions-legales",
@@ -20,6 +16,7 @@ export const PUBLIC_ROUTES = {
     "/politique-confidentialite",
     "/accessibilite",
     "/donnees-personnelles",
+    "/documentation/integration-iframe",
   ],
 } as const;
 

@@ -1,12 +1,10 @@
 import { cookies } from "next/headers";
 import { verifyToken } from "../utils/jwt.utils";
-import { COOKIE_NAMES, ROLES } from "../domain/value-objects/constants";
-import {
-  getCookieOptions,
-  SESSION_DURATION,
-} from "../domain/value-objects/configs/session.config";
+import { COOKIE_NAMES } from "../domain/value-objects/constants";
+import { getCookieOptions, SESSION_DURATION } from "../domain/value-objects/configs/session.config";
 import type { JWTPayload } from "../domain/entities";
 import type { UserRole } from "../domain/types";
+import { isAgentRole } from "@/shared/domain/value-objects";
 
 /**
  * Service de gestion des sessions
@@ -43,17 +41,13 @@ export async function hasRole(role: string): Promise<boolean> {
 /**
  * Crée les cookies de session
  */
-export async function createSessionCookies(
-  token: string,
-  role: string
-): Promise<void> {
+export async function createSessionCookies(token: string, role: string): Promise<void> {
   const cookieStore = await cookies();
 
   // Déterminer la durée selon le rôle
-  const maxAge =
-    role === ROLES.ADMIN
-      ? SESSION_DURATION.admin
-      : SESSION_DURATION.particulier;
+  // Agents (ADMIN, INSTRUCTEUR, AMO) → durée admin
+  // PARTICULIER → durée particulier
+  const maxAge = isAgentRole(role as UserRole) ? SESSION_DURATION.admin : SESSION_DURATION.particulier;
 
   const cookieOptions = getCookieOptions(maxAge);
 
@@ -74,11 +68,12 @@ export async function clearSessionCookies(): Promise<void> {
 }
 
 /**
- * Récupère le rôle depuis les cookies (optimisation)
+ * Récupère le rôle depuis les cookies
  */
 export async function getRoleFromCookies(): Promise<UserRole | null> {
   const cookieStore = await cookies();
-  return cookieStore.get(COOKIE_NAMES.SESSION_ROLE)?.value as UserRole | null;
+  const roleValue = cookieStore.get(COOKIE_NAMES.SESSION_ROLE)?.value;
+  return roleValue ? (roleValue as UserRole) : null;
 }
 
 /**
@@ -86,11 +81,7 @@ export async function getRoleFromCookies(): Promise<UserRole | null> {
  */
 export async function saveRedirectUrl(url: string): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(
-    COOKIE_NAMES.REDIRECT_TO,
-    url,
-    getCookieOptions(SESSION_DURATION.redirectCookie)
-  );
+  cookieStore.set(COOKIE_NAMES.REDIRECT_TO, url, getCookieOptions(SESSION_DURATION.redirectCookie));
 }
 
 /**

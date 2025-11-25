@@ -2,7 +2,8 @@ import { eq, sql, SQL, desc } from "drizzle-orm";
 import { db } from "../client";
 import { agents, type Agent, type NewAgent } from "../schema/agents";
 import { BaseRepository } from "./base.repository";
-import { AgentRole } from "@/shared/domain/value-objects/agent-role.enum";
+import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
+import { AgentRole } from "@/shared/domain/value-objects";
 
 /**
  * Interface pour les données ProConnect lors de l'upsert
@@ -112,7 +113,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
    */
   async upsertFromProConnect(
     proConnectData: ProConnectAgentData,
-    defaultRole: AgentRole = AgentRole.INSTRUCTEUR
+    defaultRole: AgentRole = AGENT_ROLES.INSTRUCTEUR
   ): Promise<Agent> {
     // Vérifier si l'agent existe déjà (par sub)
     const existingAgent = await this.findBySub(proConnectData.sub);

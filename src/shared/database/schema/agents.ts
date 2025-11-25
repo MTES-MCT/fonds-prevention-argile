@@ -1,6 +1,6 @@
 import { pgTable, varchar, timestamp, uuid } from "drizzle-orm/pg-core";
 import { agentRolePgEnum } from "../enums/enums";
-import { AgentRole } from "@/shared/domain/value-objects/agent-role.enum";
+import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
 
 /**
  * Table des agents ProConnect
@@ -24,7 +24,7 @@ export const agents = pgTable("agents", {
   organizationalUnit: varchar("organizational_unit", { length: 255 }),
 
   // Rôle de l'agent
-  role: agentRolePgEnum("role").notNull().default(AgentRole.INSTRUCTEUR),
+  role: agentRolePgEnum("role").notNull().default(AGENT_ROLES.INSTRUCTEUR),
 
   // Timestamps
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),

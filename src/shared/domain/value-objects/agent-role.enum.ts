@@ -1,17 +1,13 @@
+import { UserRole } from "./user-role.enum";
+
 /**
- * Rôles disponibles pour les agents ProConnect
+ * Valeurs des rôles agents pour Drizzle pgEnum
+ * Note: Drizzle nécessite un objet constant, pas un enum TypeScript
  */
-export const AgentRole = {
-  ADMIN: "ADMIN",
-  INSTRUCTEUR: "INSTRUCTEUR",
-  AMO: "AMO",
+export const AGENT_ROLES = {
+  ADMIN: UserRole.ADMIN,
+  INSTRUCTEUR: UserRole.INSTRUCTEUR,
+  AMO: UserRole.AMO,
 } as const;
 
-export type AgentRole = (typeof AgentRole)[keyof typeof AgentRole];
-
-/**
- * Vérifie si une valeur est un rôle agent valide
- */
-export function isValidAgentRole(role: string): role is AgentRole {
-  return Object.values(AgentRole).includes(role as AgentRole);
-}
+export type AGENT_ROLES = (typeof AGENT_ROLES)[keyof typeof AGENT_ROLES];

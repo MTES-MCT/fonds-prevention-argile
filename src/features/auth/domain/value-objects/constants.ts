@@ -1,9 +1,13 @@
-// Énumération des rôles
+import { UserRole } from "@/shared/domain/value-objects";
+
+/**
+ * Rôles utilisateurs (réexporté depuis shared)
+ */
 export const ROLES = {
-  ADMIN: "admin",
-  PARTICULIER: "particulier",
-  AMO: "amo",
-  INSTRUCTEUR: "instructeur",
+  PARTICULIER: UserRole.PARTICULIER,
+  ADMIN: UserRole.ADMIN,
+  INSTRUCTEUR: UserRole.INSTRUCTEUR,
+  AMO: UserRole.AMO,
 } as const;
 
 // Énumération des méthodes d'authentification

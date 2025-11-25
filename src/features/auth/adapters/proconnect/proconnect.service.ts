@@ -14,8 +14,8 @@ import type { ErrorCode } from "../../domain/errors/authErrors";
 import { JWTPayload } from "../../domain/entities";
 import { agentsRepo } from "@/shared/database/repositories";
 import { PC_ERROR_MAPPING, PC_USER_ERROR_MESSAGES, createPCError } from "./proconnect.errors";
-import { AgentRole } from "@/shared/domain/value-objects/agent-role.enum";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
+import { AgentRole } from "@/shared/domain/value-objects";
 
 /**
  * Génère l'URL d'autorisation ProConnect
