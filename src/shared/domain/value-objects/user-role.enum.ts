@@ -6,7 +6,7 @@ export enum UserRole {
   PARTICULIER = "particulier",
 
   // Agents (ProConnect)
-  ADMIN = "admin",
+  ADMINISTRATEUR = "administrateur",
   INSTRUCTEUR = "instructeur",
   AMO = "amo",
 }
@@ -14,7 +14,7 @@ export enum UserRole {
 /**
  * Rôles agents uniquement (accès administration)
  */
-export const AGENT_ROLES = [UserRole.ADMIN, UserRole.INSTRUCTEUR, UserRole.AMO] as const;
+export const AGENT_ROLES = [UserRole.ADMINISTRATEUR, UserRole.INSTRUCTEUR, UserRole.AMO] as const;
 
 export type AgentRole = (typeof AGENT_ROLES)[number];
 

@@ -1,4 +1,4 @@
-CREATE TYPE "public"."agent_role" AS ENUM('ADMIN', 'INSTRUCTEUR', 'AMO');--> statement-breakpoint
+CREATE TYPE "public"."agent_role" AS ENUM('administrateur', 'instructeur', 'amo');--> statement-breakpoint
 CREATE TABLE "agents" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"sub" varchar(255) NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE "agents" (
 	"siret" varchar(14),
 	"phone" varchar(50),
 	"organizational_unit" varchar(255),
-	"role" "agent_role" DEFAULT 'INSTRUCTEUR' NOT NULL,
+	"role" "agent_role" DEFAULT 'instructeur' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "agents_sub_unique" UNIQUE("sub"),
