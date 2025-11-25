@@ -2,11 +2,11 @@
 import { ROLES, useAuth } from "../client";
 
 /**
- * Hook pour vérifier si l'utilisateur est admin
+ * Hook pour vérifier si l'utilisateur est un agent (admin, instructeur, amo)
  */
-export function useIsAdmin() {
+export function useIsAgent() {
   const { user } = useAuth();
-  return user?.role === ROLES.ADMIN;
+  return user?.role === ROLES.ADMIN || user?.role === ROLES.INSTRUCTEUR || user?.role === ROLES.AMO;
 }
 
 /**

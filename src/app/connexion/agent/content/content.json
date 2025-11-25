@@ -1,0 +1,9 @@
+{
+  "title": "Connexion au Fonds Prévention Argile - Agent",
+  "proConnect": {
+    "title": "Se connecter avec ProConnect",
+    "description": "ProConnect est la solution proposée par l'État pour sécuriser et simplifier la connexion aux services en ligne.",
+    "connectLogin": "S'identifier avec",
+    "connectBrand": "ProConnect"
+  }
+}

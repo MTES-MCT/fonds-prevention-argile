@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/features/auth/client";
-import content from "../content/content.json";
+import content from "../../content/content.json";
 import { useState } from "react";
 
 export default function ConnexionAdminClient() {
@@ -32,41 +32,25 @@ export default function ConnexionAdminClient() {
                         <fieldset
                           className="fr-fieldset"
                           id="login-fieldset"
-                          aria-labelledby="login-fieldset-legend login-fieldset-messages"
-                        >
-                          <legend
-                            className="fr-fieldset__legend"
-                            id="login-fieldset-legend"
-                          >
+                          aria-labelledby="login-fieldset-legend login-fieldset-messages">
+                          <legend className="fr-fieldset__legend" id="login-fieldset-legend">
                             <h2>Connexion administrateur</h2>
                           </legend>
 
                           <div className="fr-fieldset__element">
-                            <p className="fr-text--sm">
-                              Accès réservé aux administrateurs du site.
-                            </p>
+                            <p className="fr-text--sm">Accès réservé aux administrateurs du site.</p>
                           </div>
 
                           <div className="fr-fieldset__element">
-                            <div
-                              className={`fr-password ${error ? "fr-password--error" : ""}`}
-                              id="password-admin"
-                            >
-                              <label
-                                className="fr-label"
-                                htmlFor="password-input"
-                              >
+                            <div className={`fr-password ${error ? "fr-password--error" : ""}`} id="password-admin">
+                              <label className="fr-label" htmlFor="password-input">
                                 Mot de passe administrateur
-                                <span className="fr-hint-text">
-                                  Saisissez le mot de passe fourni par l'équipe
-                                </span>
+                                <span className="fr-hint-text">Saisissez le mot de passe fourni par l'équipe</span>
                               </label>
                               <div className="fr-input-wrap">
                                 <input
                                   className="fr-password__input fr-input"
-                                  aria-describedby={
-                                    error ? "password-error" : "password-hint"
-                                  }
+                                  aria-describedby={error ? "password-error" : "password-hint"}
                                   aria-required="true"
                                   name="password"
                                   autoComplete="current-password"
@@ -79,10 +63,7 @@ export default function ConnexionAdminClient() {
                               </div>
 
                               {error && (
-                                <p
-                                  id="password-error"
-                                  className="fr-error-text"
-                                >
+                                <p id="password-error" className="fr-error-text">
                                   {error}
                                 </p>
                               )}
@@ -93,14 +74,9 @@ export default function ConnexionAdminClient() {
                                   id="password-show"
                                   type="checkbox"
                                   checked={showPassword}
-                                  onChange={(e) =>
-                                    setShowPassword(e.target.checked)
-                                  }
+                                  onChange={(e) => setShowPassword(e.target.checked)}
                                 />
-                                <label
-                                  className="fr-password__checkbox fr-label"
-                                  htmlFor="password-show"
-                                >
+                                <label className="fr-password__checkbox fr-label" htmlFor="password-show">
                                   {content.passwordShow}
                                 </label>
                               </div>
@@ -110,11 +86,7 @@ export default function ConnexionAdminClient() {
                           <div className="fr-fieldset__element">
                             <ul className="fr-btns-group">
                               <li>
-                                <button
-                                  className="fr-mt-2v fr-btn"
-                                  type="submit"
-                                  disabled={isLoading || !password}
-                                >
+                                <button className="fr-mt-2v fr-btn" type="submit" disabled={isLoading || !password}>
                                   {isLoading ? "Connexion..." : content.connect}
                                 </button>
                               </li>
