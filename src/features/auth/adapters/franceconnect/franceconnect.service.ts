@@ -119,7 +119,7 @@ export async function getStoredNonce(): Promise<string | null> {
  */
 export async function createFranceConnectSession(
   userId: string,
-  fcIdToken?: string,
+  idToken?: string,
   firstName?: string,
   lastName?: string
 ): Promise<void> {
@@ -129,7 +129,7 @@ export async function createFranceConnectSession(
     firstName,
     lastName,
     authMethod: AUTH_METHODS.FRANCECONNECT,
-    fcIdToken,
+    idToken: idToken,
     exp: Date.now() + SESSION_DURATION.particulier * 1000,
     iat: Date.now(),
   };

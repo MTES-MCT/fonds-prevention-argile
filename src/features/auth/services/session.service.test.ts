@@ -259,7 +259,7 @@ describe("session.service", () => {
         userId: "agent-123",
         role: ROLES.ADMIN,
         authMethod: AUTH_METHODS.PROCONNECT,
-        fcIdToken: "pc-id-token",
+        idToken: "pc-id-token",
         exp: Date.now() + 3600000,
         iat: Date.now(),
       };
@@ -271,7 +271,7 @@ describe("session.service", () => {
 
       expect(result).toEqual({
         authMethod: AUTH_METHODS.PROCONNECT,
-        fcIdToken: "pc-id-token",
+        idToken: "pc-id-token",
       });
       expect(mockCookieStore.delete).toHaveBeenCalledTimes(4);
     });
@@ -281,7 +281,7 @@ describe("session.service", () => {
         userId: "user-123",
         role: ROLES.PARTICULIER,
         authMethod: AUTH_METHODS.FRANCECONNECT,
-        fcIdToken: "fc-id-token",
+        idToken: "fc-id-token",
         exp: Date.now() + 3600000,
         iat: Date.now(),
       };
@@ -293,7 +293,7 @@ describe("session.service", () => {
 
       expect(result).toEqual({
         authMethod: AUTH_METHODS.FRANCECONNECT,
-        fcIdToken: "fc-id-token",
+        idToken: "fc-id-token",
       });
     });
 
@@ -304,7 +304,7 @@ describe("session.service", () => {
 
       expect(result).toEqual({
         authMethod: null,
-        fcIdToken: null,
+        idToken: null,
       });
       expect(mockCookieStore.delete).toHaveBeenCalledTimes(4);
     });

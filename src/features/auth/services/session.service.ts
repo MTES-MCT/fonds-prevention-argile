@@ -103,13 +103,13 @@ export async function getAndClearRedirectUrl(): Promise<string | null> {
  */
 export async function logout(): Promise<{
   authMethod: string | null;
-  fcIdToken?: string | null;
+  idToken?: string | null;
 }> {
   const session = await getSession();
   await clearSessionCookies();
 
   return {
     authMethod: session?.authMethod || null,
-    fcIdToken: session?.fcIdToken || null,
+    idToken: session?.idToken || null,
   };
 }

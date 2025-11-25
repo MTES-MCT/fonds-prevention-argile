@@ -1,9 +1,4 @@
-import {
-  AUTH_METHODS,
-  clearSessionCookies,
-  generateLogoutUrl,
-  getSession,
-} from "@/features/auth";
+import { AUTH_METHODS, clearSessionCookies, generateLogoutUrl, getSession } from "@/features/auth";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -11,11 +6,8 @@ export async function POST() {
     const session = await getSession();
 
     // Verifier si l'utilisateur est connecté via FranceConnect
-    if (
-      session?.authMethod === AUTH_METHODS.FRANCECONNECT &&
-      session?.fcIdToken
-    ) {
-      const logoutUrl = generateLogoutUrl(session.fcIdToken);
+    if (session?.authMethod === AUTH_METHODS.FRANCECONNECT && session?.idToken) {
+      const logoutUrl = generateLogoutUrl(session.idToken);
 
       // Nettoyer la session locale
       await clearSessionCookies();
@@ -28,15 +20,9 @@ export async function POST() {
     }
 
     // Cas d'erreur : pas de token FC
-    return NextResponse.json(
-      { success: false, error: "Session FranceConnect invalide" },
-      { status: 400 }
-    );
+    return NextResponse.json({ success: false, error: "Session FranceConnect invalide" }, { status: 400 });
   } catch (error) {
     console.error("Erreur lors de la déconnexion FranceConnect:", error);
-    return NextResponse.json(
-      { success: false, error: "Erreur serveur" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Erreur serveur" }, { status: 500 });
   }
 }

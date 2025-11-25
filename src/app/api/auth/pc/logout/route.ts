@@ -6,8 +6,8 @@ export async function POST() {
   try {
     const session = await getSession();
 
-    if (session?.authMethod === AUTH_METHODS.PROCONNECT && session?.fcIdToken) {
-      const logoutUrl = generateLogoutUrl(session.fcIdToken);
+    if (session?.authMethod === AUTH_METHODS.PROCONNECT && session?.idToken) {
+      const logoutUrl = generateLogoutUrl(session.idToken);
       await clearSessionCookies();
 
       return NextResponse.json({

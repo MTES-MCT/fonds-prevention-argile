@@ -152,7 +152,7 @@ export async function createProConnectSession(
     firstName,
     lastName,
     authMethod: AUTH_METHODS.PROCONNECT,
-    fcIdToken: pcIdToken, // Réutilise le champ pour l'id_token PC
+    idToken: pcIdToken, // Réutilise le champ pour l'id_token PC
     exp: Date.now() + SESSION_DURATION.admin * 1000,
     iat: Date.now(),
   };
