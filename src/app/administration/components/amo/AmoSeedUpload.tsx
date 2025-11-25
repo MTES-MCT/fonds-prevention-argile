@@ -1,14 +1,8 @@
 "use client";
 
-import { useActionState, useState, useEffect } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { Amo } from "@/features/parcours/amo";
-import { getAllAmos, importAmoFromExcel } from "@/features/parcours/amo/actions";
-
-interface AmoWithRelations extends Amo {
-  communes?: { codeInsee: string }[];
-  epci?: { codeEpci: string }[];
-}
+import { importAmoFromExcel } from "@/features/parcours/amo/actions";
 
 interface AmoSeedUploadProps {
   onImportSuccess?: () => void;
@@ -18,38 +12,17 @@ export function AmoSeedUpload({ onImportSuccess }: AmoSeedUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [clearExisting, setClearExisting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [, setAmos] = useState<AmoWithRelations[]>([]);
-  const [, setIsLoadingAmos] = useState(true);
 
   const [state, formAction, isPending] = useActionState(async (_prevState: unknown, formData: FormData) => {
-    return await importAmoFromExcel(formData, clearExisting);
+    const shouldClear = formData.get("clearExisting") === "true";
+    const result = await importAmoFromExcel(formData, shouldClear);
+
+    if (result.success) {
+      onImportSuccess?.();
+    }
+
+    return result;
   }, null);
-
-  // Charger les AMO au montage du composant et après un import réussi
-  useEffect(() => {
-    loadAmos();
-  }, []);
-
-  useEffect(() => {
-    if (state?.success) {
-      loadAmos();
-      onImportSuccess?.(); // Callback après un import réussi
-    }
-  }, [state, onImportSuccess]);
-
-  const loadAmos = async () => {
-    setIsLoadingAmos(true);
-    try {
-      const result = await getAllAmos();
-      if (result.success && result.data) {
-        setAmos(result.data);
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement des AMO:", error);
-    } finally {
-      setIsLoadingAmos(false);
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -89,7 +62,6 @@ export function AmoSeedUpload({ onImportSuccess }: AmoSeedUploadProps) {
     <div className="w-full fr-mb-6w">
       <h2 className="fr-h3">Import des entreprises AMO</h2>
 
-      {/* Télécharger le template */}
       <div className="fr-callout fr-mb-4w">
         <h3 className="fr-callout__title">Fichier exemple</h3>
         <p className="fr-callout__text">
@@ -104,9 +76,7 @@ export function AmoSeedUpload({ onImportSuccess }: AmoSeedUploadProps) {
         </Link>
       </div>
 
-      {/* Formulaire d'upload */}
       <form action={formAction}>
-        {/* Zone de drag & drop stylisée */}
         <div
           className={`
             fr-mb-4w
@@ -144,11 +114,12 @@ export function AmoSeedUpload({ onImportSuccess }: AmoSeedUploadProps) {
           </div>
         </div>
 
-        {/* Option de nettoyage */}
         <div className="fr-checkbox-group fr-my-4w">
           <input
             type="checkbox"
             id="clear-existing"
+            name="clearExisting"
+            value="true"
             checked={clearExisting}
             onChange={(e) => setClearExisting(e.target.checked)}
             disabled={isPending}
@@ -159,13 +130,11 @@ export function AmoSeedUpload({ onImportSuccess }: AmoSeedUploadProps) {
           </label>
         </div>
 
-        {/* Bouton de soumission */}
         <button type="submit" className="fr-btn fr-btn--icon-left" disabled={!file || isPending}>
           {isPending ? "Import en cours..." : "Importer les données"}
         </button>
       </form>
 
-      {/* Résultat */}
       {state && (
         <div className={`fr-alert ${state.success ? "fr-alert--success" : "fr-alert--error"} fr-mt-4w`}>
           <h3 className="fr-alert__title">{state.success ? "Import réussi" : "Erreur lors de l'import"}</h3>

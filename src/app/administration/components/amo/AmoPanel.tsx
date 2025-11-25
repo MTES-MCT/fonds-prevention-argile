@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AmoSeedUpload } from "./AmoSeedUpload";
 import { AmoList } from "./AmoList";
 import { AmoEditModal } from "./AmoEditModal";
@@ -36,10 +36,10 @@ export default function AmoPanel() {
     setEditingAmo(null);
   };
 
-  const handleSuccess = () => {
+  const handleSuccess = useCallback(() => {
     setRefreshTrigger((prev) => prev + 1);
     setEditingAmo(null);
-  };
+  }, []);
 
   return (
     <>
