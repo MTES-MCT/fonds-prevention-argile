@@ -1,5 +1,5 @@
 {
-  "id": "96c84345-c446-48c0-8510-ad503441cbbd",
+  "id": "1e4211f9-2c2e-4887-b7c4-ab0d705a05ab",
   "prevId": "9b5a339d-0205-4f3b-81ec-c1f8716dc573",
   "version": "7",
   "dialect": "postgresql",
@@ -69,7 +69,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'INSTRUCTEUR'"
+          "default": "'instructeur'"
         },
         "created_at": {
           "name": "created_at",
@@ -893,9 +893,9 @@
       "name": "agent_role",
       "schema": "public",
       "values": [
-        "ADMIN",
-        "INSTRUCTEUR",
-        "AMO"
+        "administrateur",
+        "instructeur",
+        "amo"
       ]
     },
     "public.ds_status": {
