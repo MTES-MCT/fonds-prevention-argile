@@ -79,9 +79,26 @@ export async function verifyState(state: string): Promise<boolean> {
   const cookieStore = await cookies();
   const storedState = cookieStore.get(COOKIE_NAMES.PC_STATE)?.value;
 
+  console.log("🔐 [PC State] Verification:", {
+    hasStoredState: !!storedState,
+    hasReceivedState: !!state,
+    match: storedState === state,
+    storedPreview: storedState?.substring(0, 10) + "...",
+    receivedPreview: state?.substring(0, 10) + "...",
+  });
+
+  if (!storedState || !state) {
+    return false;
+  }
+
+  if (storedState !== state) {
+    return false;
+  }
+
+  // Supprimer le cookie après vérification
   cookieStore.delete(COOKIE_NAMES.PC_STATE);
 
-  return storedState === state;
+  return true;
 }
 
 /**
@@ -108,9 +125,9 @@ export async function verifyNonce(idToken: string): Promise<boolean> {
 /**
  * Récupère le nonce stocké
  */
-export async function getStoredNonce(): Promise<string | null> {
+export async function getStoredNonce(): Promise<string | undefined> {
   const cookieStore = await cookies();
-  const nonce = cookieStore.get(COOKIE_NAMES.PC_NONCE)?.value || null;
+  const nonce = cookieStore.get(COOKIE_NAMES.PC_NONCE)?.value || undefined;
 
   if (nonce) {
     cookieStore.delete(COOKIE_NAMES.PC_NONCE);
@@ -195,6 +212,20 @@ export async function handleProConnectCallback(code: string, state: string): Pro
 
     // 4. Récupérer les infos utilisateur
     const userInfo = await getUserInfo(tokens.access_token);
+
+    // 🔍 DEBUG : Voir exactement ce que ProConnect renvoie
+    console.log("📦 [PC UserInfo] Données reçues:", {
+      sub: userInfo.sub,
+      email: userInfo.email,
+      given_name: userInfo.given_name,
+      usual_name: userInfo.usual_name,
+      uid: userInfo.uid,
+      siret: userInfo.siret,
+      phone: userInfo.phone,
+      organizational_unit: userInfo.organizational_unit,
+      // Afficher tous les champs reçus
+      raw_keys: Object.keys(userInfo),
+    });
 
     // 5. Valider les données obligatoires
     if (!validateProConnectUserInfo(userInfo)) {

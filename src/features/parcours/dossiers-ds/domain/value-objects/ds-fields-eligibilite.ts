@@ -1,8 +1,4 @@
-import {
-  isEtatSinistre,
-  isZoneExposition,
-  ZoneExposition,
-} from "@/features/simulateur-rga";
+import { isEtatSinistre, isZoneExposition, ZoneExposition } from "@/features/simulateur-rga";
 import type { DSField } from "../types/ds-field.types";
 import { DSFieldType } from "./ds-field-type.enum";
 import { DSSection } from "./ds-section.enum";
@@ -132,8 +128,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
       const codeInsee = String(value || "");
       const logement = fullData?.logement as { adresse?: string } | undefined;
       const adresse = logement?.adresse;
-      const codePostalMatch =
-        typeof adresse === "string" ? adresse.match(/\b(\d{5})\b/) : null;
+      const codePostalMatch = typeof adresse === "string" ? adresse.match(/\b(\d{5})\b/) : null;
       const codePostal = codePostalMatch ? codePostalMatch[1] : "";
       const result = [codePostal, codeInsee];
       return result;
@@ -239,7 +234,6 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
         console.warn("RGA - Valeur inattendue pour sinistres:", value);
         return "non";
       }
-      console.log("RGA - Microfissures :>>", value);
       return String(value === "très peu endommagée");
     },
   },

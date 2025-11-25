@@ -22,10 +22,12 @@ export interface ProConnectTokenResponse {
 export interface ProConnectUserInfo {
   sub: string; // Identifiant unique technique
   email: string; // Email (obligatoire)
-  given_name: string; // Prénom(s)
-  usual_name: string; // Nom de famille d'usage
-  uid: string; // Identifiant unique du FI
-  siret: string; // Identifiant d'établissement (14 chiffres)
+  given_name?: string; // Prénom(s)
+  usual_name?: string; // Nom de famille d'usage
+
+  // Champs liés à l'organisation (optionnels selon le FI)
+  uid?: string; // Identifiant unique du FI
+  siret?: string;
 
   // Champs optionnels (selon le FI)
   phone?: string;
