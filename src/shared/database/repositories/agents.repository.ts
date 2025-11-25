@@ -180,4 +180,4 @@ export class AgentsRepository extends BaseRepository<Agent> {
   }
 }
 
-export const agentsRepo = new AgentsRepository();
+export const agentsRepository = new AgentsRepository();

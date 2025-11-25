@@ -14,6 +14,8 @@ fileignoreconfig:
     checksum: 6e6566e0bbd7d174407615d4d3e6bb034138d6b2c8a5ccfe45e9251eb22cfb70
   - filename: src/features/simulateur-rga/services/encryption.service.test.ts
     checksum: 67300b3a06b8cf0c7c0f4b66e311edee0853ac3818a036031057d72a5ebc19f3
+  - filename: src/features/auth/utils/oauth.utils.ts
+    checksum: 609d35be973a9d825bf134d173b12abcbb9046438c46f0e8aafa3343dc308f69
 
 # Seuil de détection élevé pour éviter les faux positifs
 threshold: high

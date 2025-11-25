@@ -1,28 +1,33 @@
 import { cookies } from "next/headers";
-import { getFranceConnectConfig } from "./franceconnect.config";
+import { getProConnectConfig } from "./proconnect.config";
 import { createToken, decodeToken } from "../../utils/jwt.utils";
-import type { FranceConnectTokenResponse, FranceConnectUserInfo, FranceConnectError } from "./franceconnect.types";
-
-import { AUTH_METHODS, COOKIE_NAMES, getCookieOptions, ROLES, SESSION_DURATION } from "../../domain/value-objects";
+import type {
+  ProConnectTokenResponse,
+  ProConnectUserInfo,
+  ProConnectError,
+  ProConnectCallbackResult,
+} from "./proconnect.types";
+import { validateProConnectUserInfo, sanitizeProConnectUserInfo } from "./proconnect.utils";
+import { AUTH_METHODS, COOKIE_NAMES, getCookieOptions, SESSION_DURATION } from "../../domain/value-objects";
 import { ERROR_CODES } from "../../domain/errors/authErrors";
 import type { ErrorCode } from "../../domain/errors/authErrors";
 import { JWTPayload } from "../../domain/entities";
-import { userRepo } from "@/shared/database/repositories";
-import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
-import { getOrCreateParcours } from "@/features/parcours/core/services";
+import { agentsRepo } from "@/shared/database/repositories";
+import { PC_ERROR_MAPPING, PC_USER_ERROR_MESSAGES, createPCError } from "./proconnect.errors";
+import { AgentRole } from "@/shared/domain/value-objects/agent-role.enum";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
 
 /**
- * Génère l'URL d'autorisation FranceConnect
+ * Génère l'URL d'autorisation ProConnect
  */
 export async function generateAuthorizationUrl(): Promise<string> {
-  const config = getFranceConnectConfig();
+  const config = getProConnectConfig();
   const state = generateSecureRandomString(32);
   const nonce = generateSecureRandomString(32);
 
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAMES.FC_STATE, state, getCookieOptions(300));
-  cookieStore.set(COOKIE_NAMES.FC_NONCE, nonce, getCookieOptions(300));
+  cookieStore.set(COOKIE_NAMES.PC_STATE, state, getCookieOptions(300));
+  cookieStore.set(COOKIE_NAMES.PC_NONCE, nonce, getCookieOptions(300));
 
   const params = new URLSearchParams({
     response_type: "code",
@@ -40,8 +45,8 @@ export async function generateAuthorizationUrl(): Promise<string> {
 /**
  * Échange le code d'autorisation contre les tokens
  */
-export async function exchangeCodeForTokens(code: string): Promise<FranceConnectTokenResponse> {
-  const config = getFranceConnectConfig();
+export async function exchangeCodeForTokens(code: string): Promise<ProConnectTokenResponse> {
+  const config = getProConnectConfig();
 
   const params = new URLSearchParams({
     grant_type: "authorization_code",
@@ -60,8 +65,8 @@ export async function exchangeCodeForTokens(code: string): Promise<FranceConnect
   });
 
   if (!response.ok) {
-    const error = (await response.json()) as FranceConnectError;
-    throw createFCError.general(error.error_description || "Échec de l'échange du code");
+    const error = (await response.json()) as ProConnectError;
+    throw createPCError.tokenExchange(error.error_description || "Échec de l'échange du code");
   }
 
   return response.json();
@@ -72,28 +77,28 @@ export async function exchangeCodeForTokens(code: string): Promise<FranceConnect
  */
 export async function verifyState(state: string): Promise<boolean> {
   const cookieStore = await cookies();
-  const storedState = cookieStore.get(COOKIE_NAMES.FC_STATE)?.value;
+  const storedState = cookieStore.get(COOKIE_NAMES.PC_STATE)?.value;
 
-  cookieStore.delete(COOKIE_NAMES.FC_STATE);
+  cookieStore.delete(COOKIE_NAMES.PC_STATE);
 
   return storedState === state;
 }
 
 /**
- * Vérifie le nonce dans l'id_token FranceConnect
+ * Vérifie le nonce dans l'id_token ProConnect
  */
 export async function verifyNonce(idToken: string): Promise<boolean> {
   const decoded = decodeToken(idToken);
 
   if (!decoded?.nonce) {
-    console.error("Pas de nonce dans l'id_token");
+    console.error("[ProConnect] Pas de nonce dans l'id_token");
     return false;
   }
 
   const storedNonce = await getStoredNonce();
 
   if (!storedNonce) {
-    console.error("Pas de nonce stocké");
+    console.error("[ProConnect] Pas de nonce stocké");
     return false;
   }
 
@@ -105,48 +110,50 @@ export async function verifyNonce(idToken: string): Promise<boolean> {
  */
 export async function getStoredNonce(): Promise<string | null> {
   const cookieStore = await cookies();
-  const nonce = cookieStore.get(COOKIE_NAMES.FC_NONCE)?.value || null;
+  const nonce = cookieStore.get(COOKIE_NAMES.PC_NONCE)?.value || null;
 
   if (nonce) {
-    cookieStore.delete(COOKIE_NAMES.FC_NONCE);
+    cookieStore.delete(COOKIE_NAMES.PC_NONCE);
   }
 
   return nonce;
 }
 
 /**
- * Crée une session FranceConnect
+ * Crée une session ProConnect pour un agent
  */
-export async function createFranceConnectSession(
-  userId: string,
-  fcIdToken?: string,
+export async function createProConnectSession(
+  agentId: string,
+  agentRole: AgentRole,
+  pcIdToken?: string,
   firstName?: string,
   lastName?: string
 ): Promise<void> {
   const payload: JWTPayload = {
-    userId,
-    role: ROLES.PARTICULIER,
+    userId: agentId,
+    role: agentRole,
     firstName,
     lastName,
-    authMethod: AUTH_METHODS.FRANCECONNECT,
-    fcIdToken,
-    exp: Date.now() + SESSION_DURATION.particulier * 1000,
+    authMethod: AUTH_METHODS.PROCONNECT,
+    fcIdToken: pcIdToken, // Réutilise le champ pour l'id_token PC
+    exp: Date.now() + SESSION_DURATION.admin * 1000,
     iat: Date.now(),
   };
 
   const token = createToken(payload);
   const cookieStore = await cookies();
-  const cookieOptions = getCookieOptions(SESSION_DURATION.particulier);
+  const cookieOptions = getCookieOptions(SESSION_DURATION.admin);
 
   cookieStore.set(COOKIE_NAMES.SESSION, token, cookieOptions);
-  cookieStore.set(COOKIE_NAMES.SESSION_ROLE, ROLES.PARTICULIER, cookieOptions);
+  cookieStore.set(COOKIE_NAMES.SESSION_ROLE, agentRole, cookieOptions);
+  cookieStore.set(COOKIE_NAMES.SESSION_AUTH, AUTH_METHODS.PROCONNECT, cookieOptions);
 }
 
 /**
- * Génère l'URL de déconnexion FranceConnect
+ * Génère l'URL de déconnexion ProConnect
  */
 export function generateLogoutUrl(idToken: string, state?: string): string {
-  const config = getFranceConnectConfig();
+  const config = getProConnectConfig();
   const logoutState = state || generateSecureRandomString(32);
 
   const params = new URLSearchParams({
@@ -159,12 +166,9 @@ export function generateLogoutUrl(idToken: string, state?: string): string {
 }
 
 /**
- * Traite le callback FranceConnect complet
+ * Traite le callback ProConnect complet
  */
-export async function handleFranceConnectCallback(
-  code: string,
-  state: string
-): Promise<{ success: boolean; error?: string; shouldLogout?: boolean }> {
+export async function handleProConnectCallback(code: string, state: string): Promise<ProConnectCallbackResult> {
   try {
     // 1. Vérifier le state
     const isValidState = await verifyState(state);
@@ -192,18 +196,36 @@ export async function handleFranceConnectCallback(
     // 4. Récupérer les infos utilisateur
     const userInfo = await getUserInfo(tokens.access_token);
 
-    // 5. Créer ou récupérer l'utilisateur en base
-    const user = await userRepo.upsertFromFranceConnect(userInfo);
+    // 5. Valider les données obligatoires
+    if (!validateProConnectUserInfo(userInfo)) {
+      return {
+        success: false,
+        error: "Données ProConnect incomplètes",
+        shouldLogout: true,
+      };
+    }
 
-    // 6. Initialiser le parcours si première connexion
-    await getOrCreateParcours(user.id);
+    // 6. Nettoyer les données
+    const sanitizedUserInfo = sanitizeProConnectUserInfo(userInfo);
 
-    // 7. Créer la session avec l'userId
-    await createFranceConnectSession(user.id, tokens.id_token, userInfo.given_name, userInfo.family_name);
+    // 7. Créer ou récupérer l'agent en base
+    const agent = await agentsRepo.upsertFromProConnect({
+      sub: sanitizedUserInfo.sub,
+      email: sanitizedUserInfo.email,
+      given_name: sanitizedUserInfo.given_name,
+      usual_name: sanitizedUserInfo.usual_name,
+      uid: sanitizedUserInfo.uid,
+      siret: sanitizedUserInfo.siret,
+      phone: sanitizedUserInfo.phone,
+      organizational_unit: sanitizedUserInfo.organizational_unit,
+    });
+
+    // 8. Créer la session avec l'agentId et son rôle
+    await createProConnectSession(agent.id, agent.role, tokens.id_token, agent.givenName, agent.usualName);
 
     return { success: true };
   } catch (error) {
-    console.error("Erreur callback FranceConnect:", error);
+    console.error("[ProConnect] Erreur callback:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erreur inconnue",
@@ -212,23 +234,26 @@ export async function handleFranceConnectCallback(
 }
 
 /**
- * Gère les erreurs du callback FranceConnect
+ * Gère les erreurs du callback ProConnect
  */
-export function handleFranceConnectError(
+export function handleProConnectError(
   error: string,
   errorDescription?: string
 ): { success: boolean; error: string; code: ErrorCode } {
-  console.error("[FranceConnect Error]", {
+  console.error("[ProConnect Error]", {
     error,
     description: errorDescription,
     timestamp: new Date().toISOString(),
   });
 
-  // Mapper l'erreur FC
-  const errorCode: ErrorCode = (FC_ERROR_MAPPING[error] as ErrorCode) || ERROR_CODES.FRANCECONNECT_ERROR;
+  // Mapper l'erreur PC
+  const errorCode: ErrorCode = (PC_ERROR_MAPPING[error] as ErrorCode) || ERROR_CODES.PROCONNECT_ERROR;
 
-  // Récupérer le message correspondant
-  const message = FC_ERROR_MESSAGES[errorCode] || FC_ERROR_MESSAGES[ERROR_CODES.FRANCECONNECT_ERROR];
+  // Récupérer le message correspondant avec fallback
+  const message =
+    PC_USER_ERROR_MESSAGES[errorCode] ||
+    PC_USER_ERROR_MESSAGES[ERROR_CODES.PROCONNECT_ERROR] ||
+    "Une erreur est survenue lors de la connexion ProConnect";
 
   return {
     success: false,
@@ -240,8 +265,8 @@ export function handleFranceConnectError(
 /**
  * Récupère les informations utilisateur (méthode privée)
  */
-async function getUserInfo(accessToken: string): Promise<FranceConnectUserInfo> {
-  const config = getFranceConnectConfig();
+async function getUserInfo(accessToken: string): Promise<ProConnectUserInfo> {
+  const config = getProConnectConfig();
 
   const response = await fetch(config.urls.userinfo, {
     headers: {
@@ -250,8 +275,8 @@ async function getUserInfo(accessToken: string): Promise<FranceConnectUserInfo> 
   });
 
   if (!response.ok) {
-    throw createFCError.general("Impossible de récupérer les informations utilisateur");
+    throw createPCError.userInfo("Impossible de récupérer les informations utilisateur");
   }
 
-  return parseJSONorJWT<FranceConnectUserInfo>(response);
+  return parseJSONorJWT<ProConnectUserInfo>(response);
 }
