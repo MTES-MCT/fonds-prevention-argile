@@ -34,7 +34,7 @@ export function sanitizeProConnectUserInfo(userInfo: ProConnectUserInfo): ProCon
   return {
     ...userInfo,
     email: userInfo.email.toLowerCase().trim(),
-    given_name: userInfo.given_name?.trim(),
+    given_name: userInfo.given_name.trim(),
     usual_name: userInfo.usual_name?.trim(),
     siret: userInfo.siret?.replace(/\s/g, ""), // Enlever les espaces
     phone: userInfo.phone?.trim(),

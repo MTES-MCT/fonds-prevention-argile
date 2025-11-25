@@ -12,7 +12,7 @@ export interface ProConnectAgentData {
   sub: string;
   email: string;
   given_name: string;
-  usual_name: string;
+  usual_name?: string;
   uid?: string;
   siret?: string;
   phone?: string;

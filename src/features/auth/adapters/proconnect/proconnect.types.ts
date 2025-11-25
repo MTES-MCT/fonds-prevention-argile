@@ -22,7 +22,7 @@ export interface ProConnectTokenResponse {
 export interface ProConnectUserInfo {
   sub: string; // Identifiant unique technique
   email: string; // Email (obligatoire)
-  given_name?: string; // Prénom(s)
+  given_name: string; // Prénom(s)
   usual_name?: string; // Nom de famille d'usage
 
   // Champs liés à l'organisation (optionnels selon le FI)

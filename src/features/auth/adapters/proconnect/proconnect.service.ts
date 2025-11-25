@@ -152,7 +152,7 @@ export async function createProConnectSession(
     firstName,
     lastName,
     authMethod: AUTH_METHODS.PROCONNECT,
-    idToken: pcIdToken, // Réutilise le champ pour l'id_token PC
+    idToken: pcIdToken,
     exp: Date.now() + SESSION_DURATION.admin * 1000,
     iat: Date.now(),
   };
@@ -252,7 +252,7 @@ export async function handleProConnectCallback(code: string, state: string): Pro
     });
 
     // 8. Créer la session avec l'agentId et son rôle
-    await createProConnectSession(agent.id, agent.role, tokens.id_token, agent.givenName, agent.usualName);
+    await createProConnectSession(agent.id, agent.role, tokens.id_token, agent.givenName, agent.usualName || "");
 
     return { success: true };
   } catch (error) {
