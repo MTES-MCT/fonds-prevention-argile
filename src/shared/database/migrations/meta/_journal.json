@@ -71,6 +71,13 @@
       "when": 1763991530744,
       "tag": "0009_eager_scrambler",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1764065812029,
+      "tag": "0010_milky_spitfire",
+      "breakpoints": true
     }
   ]
 }
