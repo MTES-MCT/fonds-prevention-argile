@@ -13,9 +13,9 @@ export const agents = pgTable("agents", {
   sub: varchar("sub", { length: 255 }).notNull().unique(),
   email: varchar("email", { length: 255 }).notNull().unique(),
 
-  // Informations personnelles (obligatoires ProConnect)
+  // Informations personnelles
   givenName: varchar("given_name", { length: 255 }).notNull(),
-  usualName: varchar("usual_name", { length: 255 }).notNull(),
+  usualName: varchar("usual_name", { length: 255 }),
 
   // Informations complémentaires ProConnect
   uid: varchar("uid", { length: 255 }),
