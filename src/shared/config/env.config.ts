@@ -56,12 +56,12 @@ const franceConnectEnvSchema = z.object({
   FC_CLIENT_ID: z.string().min(1, "FC_CLIENT_ID est requis"),
   FC_CLIENT_SECRET: z.string().min(1, "FC_CLIENT_SECRET est requis"),
 
+  // URL FranceConnect
+  FC_BASE_URL: z.string().url("FC_BASE_URL doit être une URL valide"),
+
   // URLs de callback
   FC_CALLBACK_URL: z.string().url("FC_CALLBACK_URL doit être une URL valide"),
   FC_POST_LOGOUT_URL: z.string().url("FC_POST_LOGOUT_URL doit être une URL valide"),
-
-  // Environnement FranceConnect
-  FC_BASE_URL: z.string().url("FC_BASE_URL doit être une URL valide"),
 
   // Scopes (optionnel avec valeur par défaut)
   FC_SCOPES: z.string().default("openid given_name family_name email"),
@@ -69,6 +69,27 @@ const franceConnectEnvSchema = z.object({
   // Sécurité
   FC_STATE_TTL: z.string().transform(Number).default("300"),
   FC_ACR_VALUES: z.string().default("eidas1"),
+});
+
+// Schéma de validation des variables d'environnement ProConnect
+const proConnectEnvSchema = z.object({
+  // Identifiants ProConnect
+  PC_CLIENT_ID: z.string().min(1),
+  PC_CLIENT_SECRET: z.string().min(1),
+
+  // URL ProConnect
+  PC_BASE_URL: z.string().url(),
+
+  // URLs de callback
+  PC_CALLBACK_URL: z.string().url(),
+  PC_POST_LOGOUT_URL: z.string().url(),
+
+  // Scopes (optionnel avec valeur par défaut)
+  PC_SCOPES: z.string().default("openid email"),
+
+  // Sécurité
+  PC_STATE_TTL: z.coerce.number().default(300),
+  PC_ACR_VALUES: z.string().default("eidas1"),
 });
 
 // Schéma de validation des variables d'environnement côté serveur
@@ -109,6 +130,9 @@ const serverSchema = z.object({
 
   // Variables FranceConnect
   ...franceConnectEnvSchema.shape,
+
+  // Variables ProConnect
+  ...proConnectEnvSchema.shape,
 });
 
 // Schéma de validation des variables d'environnement côté client
