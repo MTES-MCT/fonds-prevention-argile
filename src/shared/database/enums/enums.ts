@@ -1,8 +1,5 @@
 import { pgEnum } from "drizzle-orm/pg-core";
-import { Status } from "@/shared/domain/value-objects/status.enum";
-import { Step } from "@/shared/domain/value-objects/step.enum";
-import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { Status, Step, DSStatus, StatutValidationAmo, AgentRole } from "@/shared/domain/value-objects";
 
 /**
  * PgEnums pour la base de données PostgreSQL
@@ -34,3 +31,5 @@ export const statutValidationAmoPgEnum = pgEnum("statut_validation_amo", [
   StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
   StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
 ]);
+
+export const agentRolePgEnum = pgEnum("agent_role", [AgentRole.ADMIN, AgentRole.INSTRUCTEUR, AgentRole.AMO]);
