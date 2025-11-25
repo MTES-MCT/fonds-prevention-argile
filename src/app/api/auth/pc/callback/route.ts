@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(new URL(finalRedirect, request.url));
   } catch (err) {
+    console.error("Erreur lors du callback ProConnect:", err);
     return NextResponse.redirect(new URL("/connexion/agent?error=pc_auth_failed", request.url));
   }
 }

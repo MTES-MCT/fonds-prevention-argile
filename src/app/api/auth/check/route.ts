@@ -1,5 +1,6 @@
-import { getCurrentUser, isAuthenticated, ROLES } from "@/features/auth";
+import { getCurrentUser, isAuthenticated, AUTH_METHODS } from "@/features/auth";
 import { userRepo } from "@/shared/database";
+import { agentsRepo } from "@/shared/database/repositories";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -22,32 +23,44 @@ export async function GET() {
       });
     }
 
-    // Si c'est l'admin, retourner directement sans chercher dans la DB
-    if (user.role === ROLES.ADMIN) {
+    // ProConnect : récupérer l'agent depuis la DB
+    if (user.authMethod === AUTH_METHODS.PROCONNECT) {
+      const agent = await agentsRepo.findById(user.id);
+
       return NextResponse.json({
         authenticated: true,
         user: {
-          firstName: user.firstName,
-          lastName: user.lastName || "Admin",
-          email: null,
+          id: user.id,
+          firstName: user.firstName ?? agent?.givenName,
+          lastName: user.lastName ?? agent?.usualName,
+          email: agent?.email ?? null,
           role: user.role,
           authMethod: user.authMethod,
         },
       });
     }
 
-    // Pour les utilisateurs normaux, récupérer l'email depuis la DB
-    const dbUser = await userRepo.findById(user.id);
+    // FranceConnect : récupérer l'utilisateur depuis la DB
+    if (user.authMethod === AUTH_METHODS.FRANCECONNECT) {
+      const dbUser = await userRepo.findById(user.id);
 
+      return NextResponse.json({
+        authenticated: true,
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: dbUser?.email ?? null,
+          role: user.role,
+          authMethod: user.authMethod,
+        },
+      });
+    }
+
+    // Fallback (ne devrait pas arriver)
     return NextResponse.json({
-      authenticated: true,
-      user: {
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: dbUser?.email ?? null,
-        role: user.role,
-        authMethod: user.authMethod,
-      },
+      authenticated: false,
+      user: null,
     });
   } catch (error) {
     console.error("Erreur lors de la vérification de session:", error);

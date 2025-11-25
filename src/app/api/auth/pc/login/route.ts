@@ -12,9 +12,7 @@ export async function GET() {
     return NextResponse.redirect(authUrl);
   } catch (error) {
     console.error("Erreur lors de l'initiation ProConnect:", error);
-
     const baseUrl = getServerEnv().BASE_URL || "http://localhost:3000";
-
-    return NextResponse.redirect(new URL("/connexion/administration?error=pc_init_failed", baseUrl));
+    return NextResponse.redirect(new URL("/connexion/agent?error=pc_init_failed", baseUrl));
   }
 }

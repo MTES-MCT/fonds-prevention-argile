@@ -75,7 +75,6 @@ jobs:
           DEMARCHES_SIMPLIFIEES_NOM_DEVIS: "xxxxx-xxx-xxx-xxx"
           DEMARCHES_SIMPLIFIEES_ID_FACTURES: "126064"
           DEMARCHES_SIMPLIFIEES_NOM_FACTURES: "xxxxx-xxx-xxx-xxx"
-          ADMIN_PASSWORD: "examplepassword"
           JWT_SECRET: "supersecretkeywithmorethan32characters"
           FC_CLIENT_ID: "exampleclientid"
           FC_CLIENT_SECRET: "exampleclientsecret"
