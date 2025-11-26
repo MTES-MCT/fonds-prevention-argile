@@ -27,7 +27,8 @@ import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSect
 
 export default function MonCompteClient() {
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
-  const { hasData: hasRGAData, isLoading: isLoadingRGA } = useSimulateurRga();
+  const { hasData: hasTempRGAData, isLoading: isLoadingRGA } = useSimulateurRga();
+
   const [showAmoSuccessAlert, setShowAmoSuccessAlert] = useState(false);
 
   // Utilisation du hook parcours simplifié
@@ -38,8 +39,11 @@ export default function MonCompteClient() {
     lastDSStatus,
     statutAmo,
     refresh,
+    parcours,
     isLoading: isLoadingParcours,
   } = useParcours();
+
+  const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
 
   // État de chargement global
   const isLoading = isAuthLoading || isLoadingRGA || isLoadingParcours;
