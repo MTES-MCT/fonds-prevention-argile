@@ -6,9 +6,7 @@ import StepDetailSection from "./common/StepDetailSection";
 import { useState } from "react";
 import { useParcours } from "../context/useParcours";
 import { Step } from "../domain";
-import { PourEnSavoirPlusSectionContent } from "@/app/(home)/components/PourEnSavoirPlusSection";
 import { StatutValidationAmo } from "../../amo/domain/value-objects";
-import FaqAccountSection from "@/app/mon-compte/components/FaqAccountSection";
 import { DSStatus } from "../../dossiers-ds/domain";
 import {
   CalloutAmoEnAttente,
@@ -21,9 +19,11 @@ import {
   CalloutEligibiliteRefuse,
   CalloutEligibiliteTodo,
 } from "./steps";
-import Loading from "@/app/loading";
-import SimulationNeededAlert from "@/app/mon-compte/components/SimulationNeededAlert";
 import { useSimulateurRga } from "@/features/simulateur-rga";
+import Loading from "@/app/(main)/loading";
+import SimulationNeededAlert from "@/app/(main)/mon-compte/components/SimulationNeededAlert";
+import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/PourEnSavoirPlusSection";
+import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
 
 export default function MonCompteClient() {
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
