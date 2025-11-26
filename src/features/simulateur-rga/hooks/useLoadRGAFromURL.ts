@@ -42,7 +42,7 @@ export function useLoadRGAFromURL() {
           // Nettoyer l'URL
           window.history.replaceState({}, "", window.location.pathname);
         } else {
-          console.error("[useLoadRGAFromURL] Decryption failed:", result.error);
+          console.error("[useLoadRGAFromURL] Decryption failed:", !result.success && result.error);
         }
       } catch (error) {
         console.error("[useLoadRGAFromURL] Exception:", error);

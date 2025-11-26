@@ -76,18 +76,16 @@ export default function RGATestFiller(): JSX.Element | null {
         console.warn("Données de test avec erreurs de validation:", errors);
       }
 
-      // Sauvegarder les données de test en session
-      const success = saveRGA(TEST_RGA_DATA);
+      // Sauvegarder les données de test dans le store
+      saveRGA(TEST_RGA_DATA);
 
-      if (success) {
-        setIsSuccess(true);
-        setIsRedirecting(true);
+      setIsSuccess(true);
+      setIsRedirecting(true);
 
-        // Petit délai pour afficher le message de succès
-        setTimeout(() => {
-          router.push("/connexion");
-        }, 1500);
-      }
+      // Petit délai pour afficher le message de succès
+      setTimeout(() => {
+        router.push("/connexion");
+      }, 1500);
     } catch (error) {
       console.error("Erreur lors du remplissage des données de test:", error);
     } finally {
