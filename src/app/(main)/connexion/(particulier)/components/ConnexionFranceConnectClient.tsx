@@ -4,8 +4,12 @@ import content from "../content/content.json";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FC_ERROR_MAPPING } from "@/features/auth/client";
+import { useLoadRGAFromURL } from "@/features/simulateur-rga/hooks/useLoadRGAFromURL";
 
 export default function ConnexionFranceConnectClient() {
+  // Charger les données RGA depuis l'URL si présentes (mode embed)
+  useLoadRGAFromURL();
+
   const [fcError, setFcError] = useState<string | null>(null);
   const searchParams = useSearchParams();
 
@@ -59,8 +63,7 @@ export default function ConnexionFranceConnectClient() {
                         <button
                           className="fr-btn--close fr-btn"
                           title="Masquer le message"
-                          onClick={() => setFcError(null)}
-                        >
+                          onClick={() => setFcError(null)}>
                           Masquer le message
                         </button>
                       </div>
@@ -69,29 +72,18 @@ export default function ConnexionFranceConnectClient() {
                     {/* FranceConnect - ACTIVÉ */}
                     <div className="fr-mb-6v">
                       <h2>{content.franceConnect.title}</h2>
-                      <p className="fr-mb-4v">
-                        {content.franceConnect.description}
-                      </p>
+                      <p className="fr-mb-4v">{content.franceConnect.description}</p>
                       <div className="fr-connect-group">
-                        <button
-                          className="fr-connect"
-                          onClick={handleFranceConnect}
-                          type="button"
-                        >
-                          <span className="fr-connect__login">
-                            {content.franceConnect.connectLogin}
-                          </span>
-                          <span className="fr-connect__brand">
-                            {content.franceConnect.connectBrand}
-                          </span>
+                        <button className="fr-connect" onClick={handleFranceConnect} type="button">
+                          <span className="fr-connect__login">{content.franceConnect.connectLogin}</span>
+                          <span className="fr-connect__brand">{content.franceConnect.connectBrand}</span>
                         </button>
                         <p className="fr-text--sm fr-mt-2v">
                           <a
                             href="https://franceconnect.gouv.fr/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="fr-link"
-                          >
+                            className="fr-link">
                             Qu'est-ce que FranceConnect ?
                           </a>
                         </p>
