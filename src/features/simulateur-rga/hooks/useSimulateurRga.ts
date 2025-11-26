@@ -1,6 +1,6 @@
 "use client";
 
-import { useRGAStore, selectTempRgaData, selectIsHydrated, selectHasRGAData } from "../stores";
+import { useRGAStore, selectTempRgaData, selectIsHydrated } from "../stores";
 import { validateRGAData } from "../services/validator.service";
 
 /**
