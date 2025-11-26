@@ -12,11 +12,7 @@ export default function QuestCeQueLeRgaSection() {
         <div className="fr-grid-row items-center gap-6 md:gap-0">
           {/* Zone image */}
           <div className="fr-col-12 fr-col-md-6 flex justify-center md:justify-start md:pr-8 lg:pr-8">
-            <figure
-              role="group"
-              className="fr-content-media"
-              aria-label="Description / Source"
-            >
+            <figure role="group" className="fr-content-media" aria-label="Description / Source">
               <div className="fr-content-media__img">
                 <Image
                   alt={content.what_is_rga_section.image.alt}
@@ -25,12 +21,11 @@ export default function QuestCeQueLeRgaSection() {
                   quality={85}
                   width={500}
                   height={320}
+                  style={{ width: "auto", height: "auto" }}
                   src={content.what_is_rga_section.image.src}
                 />
               </div>
-              <figcaption className="fr-content-media__caption">
-                {content.what_is_rga_section.image.caption}
-              </figcaption>
+              <figcaption className="fr-content-media__caption">{content.what_is_rga_section.image.caption}</figcaption>
             </figure>
           </div>
 
@@ -38,9 +33,7 @@ export default function QuestCeQueLeRgaSection() {
           <div className="fr-col-12 fr-col-md-6">
             <h2>{content.what_is_rga_section.title}</h2>
             <div className="fr-callout fr-callout--pink-macaron">
-              <p className="fr-callout__text fr-text--sm">
-                {richTextParser(content.what_is_rga_section.highlight)}
-              </p>
+              <p className="fr-callout__text fr-text--sm">{richTextParser(content.what_is_rga_section.highlight)}</p>
             </div>
             <p>{richTextParser(content.what_is_rga_section.subtitle)}</p>
             <p>{richTextParser(content.what_is_rga_section.subtitle2)}</p>
