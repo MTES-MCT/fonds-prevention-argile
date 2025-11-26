@@ -5,7 +5,7 @@ import type { PartialRGAFormData } from "../domain/entities";
 const RGA_STORAGE_KEY = "fonds-argile-rga-data";
 const RGA_SESSION_KEY = "fonds-argile-rga-data"; // Ancien système
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
-const STORAGE_VERSION = "1.0";
+const STORAGE_VERSION = "1.0"; // TODO : gérer les versions si besoin
 
 /**
  * Format de stockage (compatible avec l'ancien système)

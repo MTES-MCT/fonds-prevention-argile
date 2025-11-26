@@ -1,4 +1,3 @@
-import { validateRGAData } from "@/features/simulateur-rga";
 import { Step } from "../domain";
 import { useParcoursContext } from "./ParcoursContext";
 
@@ -26,24 +25,10 @@ export function useParcours() {
     isSyncing: context.isSyncing,
     error: context.error,
 
-    // Simulateur RGA
-    tempRgaData: context.tempRgaData,
-    rgaData: context.rgaData,
-
-    // Actions RGA
-    saveTempRgaData: context.saveTempRgaData,
-    clearTempRgaData: context.clearTempRgaData,
-
-    // Validation RGA
-    validateRGAData,
-    isValidRGA: context.rgaData
-      ? validateRGAData(context.rgaData).length === 0
-      : false,
-    rgaErrors: context.rgaData ? validateRGAData(context.rgaData) : [],
-
-    // Actions simplifiées
+    // Actions
     refresh: context.refresh,
     syncNow: context.syncNow,
+    syncAll: context.syncAll,
 
     // Helpers courants
     getDossierUrl: (step: Step) => {
@@ -54,5 +39,8 @@ export function useParcours() {
       const dossier = context.getCurrentDossier();
       return dossier?.demarcheUrl || null;
     },
+    getDossierByStep: context.getDossierByStep,
+    getDSStatusByStep: context.getDSStatusByStep,
+    getCurrentDossier: context.getCurrentDossier,
   };
 }
