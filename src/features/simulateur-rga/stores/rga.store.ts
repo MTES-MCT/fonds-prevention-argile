@@ -42,6 +42,8 @@ interface RGAState {
  */
 const rgaStorage = {
   getItem: (name: string): string | null => {
+    if (typeof window === "undefined") return null;
+
     try {
       const raw = localStorage.getItem(name);
       if (!raw) return null;
@@ -64,6 +66,8 @@ const rgaStorage = {
   },
 
   setItem: (name: string, value: string): void => {
+    if (typeof window === "undefined") return;
+
     try {
       const parsed = JSON.parse(value);
       const data = parsed.state?.tempRgaData;
@@ -87,6 +91,8 @@ const rgaStorage = {
   },
 
   removeItem: (name: string): void => {
+    if (typeof window === "undefined") return;
+
     localStorage.removeItem(name);
   },
 };
