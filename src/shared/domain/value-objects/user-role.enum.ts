@@ -45,3 +45,10 @@ export function isAdminRole(role: UserRole | string): role is AdminRole {
 export function isValidRole(value: unknown): value is UserRole {
   return typeof value === "string" && Object.values(UserRole).includes(value as UserRole);
 }
+
+/**
+ *  Vérifie si un rôle est un super administrateur
+ */
+export function isSuperAdminRole(role: UserRole | string): boolean {
+  return role === UserRole.SUPER_ADMINISTRATEUR;
+}

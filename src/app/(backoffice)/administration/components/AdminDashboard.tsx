@@ -10,8 +10,11 @@ import FacturesPanel from "./factures/FacturesPanel";
 import type { ActionResult } from "@/shared/types";
 import type { DemarcheDetailed, DossiersConnection } from "@/features/parcours/dossiers-ds/adapters/graphql/types";
 import UsersTrackingPanel from "./users/UsersTrackingPanel";
+import AgentsPanel from "./agents/AgentsPanel";
+import { useAgentRole } from "@/features/auth/hooks";
+import { isSuperAdminRole } from "@/shared/domain/value-objects";
 
-type TabId = "statistiques" | "users" | "amo" | "eligibilite" | "diagnostic" | "devis" | "factures";
+type TabId = "statistiques" | "users" | "agents" | "amo" | "eligibilite" | "diagnostic" | "devis" | "factures";
 
 interface DemarcheData {
   demarche: ActionResult<DemarcheDetailed>;
@@ -25,6 +28,8 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ eligibiliteData }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabId>("statistiques");
+  const agentRole = useAgentRole();
+  const isSuperAdmin = agentRole ? isSuperAdminRole(agentRole) : false;
 
   const links = [
     {
@@ -38,31 +43,47 @@ export default function AdminDashboard({ eligibiliteData }: AdminDashboardProps)
       icon: "fr-icon-user-fill",
     },
     {
+      id: "agents" as TabId,
+      label: "Agents",
+      icon: "fr-icon-team-fill",
+      superAdminOnly: true,
+    },
+    {
       id: "amo" as TabId,
       label: "Entreprises AMO",
       icon: "fr-icon-building-fill",
+      superAdminOnly: true,
     },
     {
       id: "eligibilite" as TabId,
       label: "Eligibilité",
       icon: "fr-icon-questionnaire-fill",
+      superAdminOnly: true,
     },
     {
       id: "diagnostic" as TabId,
       label: "Diagnostic",
       icon: "fr-icon-survey-fill",
+      superAdminOnly: true,
     },
     {
       id: "devis" as TabId,
       label: "Devis",
       icon: "fr-icon-file-text-fill",
+      superAdminOnly: true,
     },
     {
       id: "factures" as TabId,
       label: "Factures",
       icon: "fr-icon-draft-fill",
+      superAdminOnly: true,
     },
   ];
+
+  const visibleLinks = links.filter((link) => {
+    if (link.superAdminOnly && !isSuperAdmin) return false;
+    return true;
+  });
 
   return (
     <>
@@ -71,7 +92,7 @@ export default function AdminDashboard({ eligibiliteData }: AdminDashboardProps)
         <div className="fr-container">
           <nav className="fr-nav" role="navigation" aria-label="Menu d'administration">
             <ul className="fr-nav__list">
-              {links.map((link) => (
+              {visibleLinks.map((link) => (
                 <li key={link.id} className="fr-nav__item">
                   <button
                     type="button"
@@ -108,6 +129,19 @@ export default function AdminDashboard({ eligibiliteData }: AdminDashboardProps)
             <div className="w-full flex justify-center fr-mt-6w">
               <UsersTrackingPanel />
             </div>
+          </div>
+
+          {/* Panel Agents */}
+          <div className={activeTab === "agents" ? "" : "fr-hidden"} role="region" aria-label="Gestion des agents">
+            {isSuperAdmin ? (
+              <div className="w-full flex justify-center fr-mt-6w">
+                <AgentsPanel />
+              </div>
+            ) : (
+              <div className="fr-alert fr-alert--info">
+                <p>Vous n'avez pas la permission d'accéder à cette section.</p>
+              </div>
+            )}
           </div>
 
           {/* Panel Entreprises AMO */}
