@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { UserRole } from "@/shared/domain/value-objects";
 import type { AgentRole } from "@/shared/domain/value-objects";
-import type { AgentWithPermissions } from "@/features/backoffice/administration/services/agents-admin.service";
 import DepartementsSelect from "./DepartementsSelect";
+import { AgentWithPermissions } from "@/features/backoffice";
 
 interface AgentFormModalProps {
   isOpen: boolean;

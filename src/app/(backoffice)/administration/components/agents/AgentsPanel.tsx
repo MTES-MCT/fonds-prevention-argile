@@ -7,10 +7,10 @@ import {
   updateAgentAction,
   deleteAgentAction,
 } from "@/features/backoffice/administration/actions/agents.actions";
-import type { AgentWithPermissions } from "@/features/backoffice/administration/services/agents-admin.service";
 import AgentsList from "./AgentsList";
 import AgentFormModal, { type AgentFormData } from "./AgentFormModal";
 import AgentDeleteModal from "./AgentDeleteModal";
+import { AgentWithPermissions } from "@/features/backoffice";
 
 export default function AgentsPanel() {
   const [agents, setAgents] = useState<AgentWithPermissions[]>([]);

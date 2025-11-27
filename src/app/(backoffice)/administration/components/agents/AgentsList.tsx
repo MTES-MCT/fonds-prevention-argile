@@ -2,7 +2,7 @@
 
 import { UserRole } from "@/shared/domain/value-objects";
 import { DEPARTEMENTS } from "@/shared/constants/departements.constants";
-import type { AgentWithPermissions } from "@/features/backoffice/administration/services/agents-admin.service";
+import { AgentWithPermissions } from "@/features/backoffice";
 
 interface AgentsListProps {
   agents: AgentWithPermissions[];

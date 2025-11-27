@@ -3,36 +3,7 @@ import type { Agent } from "@/shared/database/schema/agents";
 import type { AgentRole } from "@/shared/domain/value-objects";
 import { DEPARTEMENTS } from "@/shared/constants/departements.constants";
 import { agentPermissionsRepository } from "@/shared/database";
-
-/**
- * Agent avec ses permissions (départements)
- */
-export interface AgentWithPermissions {
-  agent: Agent;
-  departements: string[];
-}
-
-/**
- * Données pour créer un agent
- */
-export interface CreateAgentData {
-  email: string;
-  givenName: string;
-  usualName?: string;
-  role: AgentRole;
-  departements?: string[];
-}
-
-/**
- * Données pour mettre à jour un agent
- */
-export interface UpdateAgentData {
-  email?: string;
-  givenName?: string;
-  usualName?: string;
-  role?: AgentRole;
-  departements?: string[];
-}
+import { AgentWithPermissions } from "../domain/types/agent-with-permissions.types";
 
 /**
  * Récupère tous les agents avec leurs permissions
