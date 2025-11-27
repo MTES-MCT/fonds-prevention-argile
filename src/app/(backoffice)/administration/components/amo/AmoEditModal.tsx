@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { updateAmo } from "@/features/parcours/amo/actions";
 import type { Amo } from "@/features/parcours/amo";
+import { updateAmo } from "@/features/backoffice";
 
 interface AmoEditModalProps {
   amo: Amo & {

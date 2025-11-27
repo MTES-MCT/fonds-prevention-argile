@@ -4,7 +4,7 @@ import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-valida
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { formatDateTime } from "@/shared/utils/date.utils";
-import { UserWithParcoursDetails } from "@/features/parcours/core";
+import { UserWithParcoursDetails } from "@/features/backoffice";
 
 interface UserTimelineProps {
   user: UserWithParcoursDetails;

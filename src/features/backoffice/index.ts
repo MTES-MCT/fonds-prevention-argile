@@ -8,3 +8,9 @@ export {
   // Components
   AccesNonAutorise,
 } from "./shared";
+
+// Administration
+export * from "./administration";
+
+// Statistiques
+export * from "./statistiques";

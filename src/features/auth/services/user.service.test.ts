@@ -28,7 +28,7 @@ describe("user.service", () => {
       it("devrait retourner les infos admin par défaut", async () => {
         const mockSession: JWTPayload = {
           userId: "admin-123",
-          role: ROLES.ADMIN,
+          role: ROLES.ADMINISTRATEUR,
           authMethod: AUTH_METHODS.PASSWORD,
           exp: Date.now() + 3600000,
           iat: Date.now(),
@@ -40,7 +40,7 @@ describe("user.service", () => {
 
         expect(result).toMatchObject({
           id: "admin-123",
-          role: ROLES.ADMIN,
+          role: ROLES.ADMINISTRATEUR,
           authMethod: AUTH_METHODS.PASSWORD,
           firstName: "Administrateur",
         });
@@ -52,7 +52,7 @@ describe("user.service", () => {
       it("devrait retourner les infos pour ADMIN ProConnect", async () => {
         const mockSession: JWTPayload = {
           userId: "agent-123",
-          role: ROLES.ADMIN,
+          role: ROLES.ADMINISTRATEUR,
           authMethod: AUTH_METHODS.PROCONNECT,
           firstName: "Jean",
           lastName: "Dupont",
@@ -66,7 +66,7 @@ describe("user.service", () => {
 
         expect(result).toMatchObject({
           id: "agent-123",
-          role: ROLES.ADMIN,
+          role: ROLES.ADMINISTRATEUR,
           authMethod: AUTH_METHODS.PROCONNECT,
           firstName: "Jean",
           lastName: "Dupont",
@@ -74,10 +74,10 @@ describe("user.service", () => {
         expect(result?.loginTime).toBeDefined();
       });
 
-      it("devrait retourner les infos pour INSTRUCTEUR ProConnect", async () => {
+      it("devrait retourner les infos pour SUPER_ADMINISTRATEUR ProConnect", async () => {
         const mockSession: JWTPayload = {
-          userId: "instructeur-456",
-          role: ROLES.INSTRUCTEUR,
+          userId: "superadmin-456",
+          role: ROLES.SUPER_ADMINISTRATEUR,
           authMethod: AUTH_METHODS.PROCONNECT,
           firstName: "Marie",
           lastName: "Martin",
@@ -90,8 +90,8 @@ describe("user.service", () => {
         const result = await getCurrentUser();
 
         expect(result).toMatchObject({
-          id: "instructeur-456",
-          role: ROLES.INSTRUCTEUR,
+          id: "superadmin-456",
+          role: ROLES.SUPER_ADMINISTRATEUR,
           authMethod: AUTH_METHODS.PROCONNECT,
           firstName: "Marie",
           lastName: "Martin",

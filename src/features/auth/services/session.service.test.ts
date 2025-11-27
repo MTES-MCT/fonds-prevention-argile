@@ -60,7 +60,7 @@ describe("session.service", () => {
     it("devrait retourner le payload JWT pour une session valide", async () => {
       const mockPayload: JWTPayload = {
         userId: "user-123",
-        role: ROLES.ADMIN,
+        role: ROLES.ADMINISTRATEUR,
         authMethod: AUTH_METHODS.PROCONNECT,
         exp: Date.now() + 3600000,
         iat: Date.now(),
@@ -116,7 +116,7 @@ describe("session.service", () => {
     it("devrait retourner true si l'utilisateur a le rôle spécifié", async () => {
       const mockPayload: JWTPayload = {
         userId: "user-123",
-        role: ROLES.ADMIN,
+        role: ROLES.ADMINISTRATEUR,
         authMethod: AUTH_METHODS.PROCONNECT,
         exp: Date.now() + 3600000,
         iat: Date.now(),
@@ -125,15 +125,15 @@ describe("session.service", () => {
       mockCookieStore.get.mockReturnValue({ value: "valid-token" });
       vi.mocked(verifyToken).mockReturnValue(mockPayload);
 
-      expect(await hasRole(ROLES.ADMIN)).toBe(true);
-      expect(await hasRole(ROLES.INSTRUCTEUR)).toBe(false);
+      expect(await hasRole(ROLES.ADMINISTRATEUR)).toBe(true);
+      expect(await hasRole(ROLES.SUPER_ADMINISTRATEUR)).toBe(false);
       expect(await hasRole(ROLES.PARTICULIER)).toBe(false);
     });
 
     it("devrait retourner false si aucune session", async () => {
       mockCookieStore.get.mockReturnValue(undefined);
 
-      const result = await hasRole(ROLES.ADMIN);
+      const result = await hasRole(ROLES.ADMINISTRATEUR);
 
       expect(result).toBe(false);
     });
@@ -143,7 +143,7 @@ describe("session.service", () => {
     it("devrait créer des cookies avec durée admin pour ADMIN", async () => {
       const token = "admin-token";
 
-      await createSessionCookies(token, ROLES.ADMIN);
+      await createSessionCookies(token, ROLES.ADMINISTRATEUR);
 
       expect(mockCookieStore.set).toHaveBeenCalledTimes(2);
       expect(mockCookieStore.set).toHaveBeenCalledWith(
@@ -153,19 +153,19 @@ describe("session.service", () => {
       );
       expect(mockCookieStore.set).toHaveBeenCalledWith(
         COOKIE_NAMES.SESSION_ROLE,
-        ROLES.ADMIN,
+        ROLES.ADMINISTRATEUR,
         expect.objectContaining({ maxAge: expect.any(Number) })
       );
     });
 
-    it("devrait créer des cookies avec durée admin pour INSTRUCTEUR", async () => {
-      const token = "instructeur-token";
+    it("devrait créer des cookies avec durée admin pour SUPER_ADMINISTRATEUR", async () => {
+      const token = "superadmin-token";
 
-      await createSessionCookies(token, ROLES.INSTRUCTEUR);
+      await createSessionCookies(token, ROLES.SUPER_ADMINISTRATEUR);
 
       expect(mockCookieStore.set).toHaveBeenCalledWith(
         COOKIE_NAMES.SESSION_ROLE,
-        ROLES.INSTRUCTEUR,
+        ROLES.SUPER_ADMINISTRATEUR,
         expect.any(Object)
       );
     });
@@ -205,11 +205,11 @@ describe("session.service", () => {
 
   describe("getRoleFromCookies", () => {
     it("devrait retourner le rôle depuis les cookies", async () => {
-      mockCookieStore.get.mockReturnValue({ value: ROLES.ADMIN });
+      mockCookieStore.get.mockReturnValue({ value: ROLES.ADMINISTRATEUR });
 
       const result = await getRoleFromCookies();
 
-      expect(result).toBe(ROLES.ADMIN);
+      expect(result).toBe(ROLES.ADMINISTRATEUR);
       expect(mockCookieStore.get).toHaveBeenCalledWith(COOKIE_NAMES.SESSION_ROLE);
     });
 
@@ -266,7 +266,7 @@ describe("session.service", () => {
     it("devrait nettoyer les cookies et retourner les infos de session pour ProConnect", async () => {
       const mockPayload: JWTPayload = {
         userId: "agent-123",
-        role: ROLES.ADMIN,
+        role: ROLES.ADMINISTRATEUR,
         authMethod: AUTH_METHODS.PROCONNECT,
         idToken: "pc-id-token",
         exp: Date.now() + 3600000,

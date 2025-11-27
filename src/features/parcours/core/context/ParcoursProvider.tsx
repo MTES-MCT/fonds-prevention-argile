@@ -60,7 +60,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     });
 
     // Si non authentifié OU si admin, skip
-    if (!isAuthenticated || user?.role === ROLES.ADMIN) {
+    if (!isAuthenticated || user?.role === ROLES.ADMINISTRATEUR) {
       debug.log("[fetchParcours] Skip - not auth or admin");
       setIsLoading(false);
       hasFetchedRef.current = true;
@@ -216,12 +216,12 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     }
 
     // Cas 1 : Utilisateur authentifié et non-admin → charger le parcours
-    if (isAuthenticated && user?.role !== ROLES.ADMIN) {
+    if (isAuthenticated && user?.role !== ROLES.ADMINISTRATEUR) {
       debug.log("[ParcoursProvider] INIT PARCOURS - Fetching parcours (user authenticated)");
       fetchParcours();
     }
     // Cas 2 : Utilisateur non authentifié (ou admin) → pas de parcours à charger
-    else if (isAuthenticated === false || user?.role === ROLES.ADMIN) {
+    else if (isAuthenticated === false || user?.role === ROLES.ADMINISTRATEUR) {
       debug.log("[ParcoursProvider] INIT PARCOURS - Skip (not authenticated or admin)");
       setIsLoading(false);
     }
@@ -250,7 +250,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     }
 
     // Sync uniquement si authentifié, pas admin, et parcours existant
-    if (isAuthenticated && user?.role !== ROLES.ADMIN && parcours && !isSyncingRef.current) {
+    if (isAuthenticated && user?.role !== ROLES.ADMINISTRATEUR && parcours && !isSyncingRef.current) {
       hasInitialSyncRef.current = true;
       debug.log("[ParcoursProvider] SYNC INITIAL - Scheduling sync in 2s...");
 
@@ -278,7 +278,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     });
 
     // Auto-sync uniquement si activé et utilisateur authentifié non-admin
-    if (!autoSync || !isAuthenticated || user?.role === ROLES.ADMIN || !parcours) {
+    if (!autoSync || !isAuthenticated || user?.role === ROLES.ADMINISTRATEUR || !parcours) {
       debug.log("[ParcoursProvider] AUTO-SYNC - Disabled");
       return;
     }

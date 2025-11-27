@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getUsersWithParcours } from "@/features/parcours/core/actions";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { UsersTable } from "./UsersTable";
-import { UserWithParcoursDetails } from "@/features/parcours/core";
 import { DepartementFilter } from "./filters/departements/DepartementFilter";
 import { filterUsersByDepartement } from "./filters/departements/departementFilter.utils";
 import Loading from "@/app/(main)/loading";
+import { getUsersWithParcours, UserWithParcoursDetails } from "@/features/backoffice";
 
 /**
  * Calcule le pourcentage avec gestion du cas 0

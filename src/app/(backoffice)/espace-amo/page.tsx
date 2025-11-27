@@ -26,10 +26,8 @@ export default async function EspaceAgentPage() {
   // Redirection selon le rôle
   switch (agent.role) {
     case UserRole.ADMINISTRATEUR:
+    case UserRole.SUPER_ADMINISTRATEUR:
       redirect(ROUTES.backoffice.administration.root);
-
-    case UserRole.INSTRUCTEUR:
-      redirect(ROUTES.backoffice.instruction.root);
 
     case UserRole.AMO:
       redirect(ROUTES.backoffice.espaceAmo.root);

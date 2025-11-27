@@ -1,4 +1,4 @@
-import { UserWithParcoursDetails } from "@/features/parcours/core";
+import { UserWithParcoursDetails } from "@/features/backoffice";
 
 /**
  * Constante représentant l'absence de département

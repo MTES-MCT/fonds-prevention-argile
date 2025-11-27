@@ -1,6 +1,6 @@
 "use client";
 
-import { UserWithParcoursDetails } from "@/features/parcours/core";
+import { UserWithParcoursDetails } from "@/features/backoffice";
 import { getDepartementName } from "@/shared/constants/departements.constants";
 import {
   countUsersByDepartement,

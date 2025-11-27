@@ -6,6 +6,7 @@ import type { DemarcheDetailed, DossiersConnection, Dossier, DossiersFilters } f
 import { graphqlClient } from "../adapters";
 import { getServerEnv } from "@/shared/config/env.config";
 import { Step } from "../../core";
+import { isAdminRole } from "@/shared/domain/value-objects/user-role.enum";
 
 /**
  * Actions admin pour gérer les démarches DS
@@ -36,7 +37,7 @@ export async function getDemarcheDetails(stepOrDemarcheNumber: Step | number): P
   try {
     const session = await getSession();
 
-    if (!session?.userId || session.role !== ROLES.ADMIN) {
+    if (!session?.userId || !isAdminRole(session.role)) {
       return {
         success: false,
         error: "Accès non autorisé",
@@ -76,7 +77,7 @@ export async function getDemarcheSchema(stepOrDemarcheNumber: Step | number): Pr
   try {
     const session = await getSession();
 
-    if (!session?.userId || session.role !== ROLES.ADMIN) {
+    if (!session?.userId || !isAdminRole(session.role)) {
       return {
         success: false,
         error: "Accès non autorisé",
@@ -119,7 +120,7 @@ export async function getDossiers(
   try {
     const session = await getSession();
 
-    if (!session?.userId || session.role !== ROLES.ADMIN) {
+    if (!session?.userId || !isAdminRole(session.role)) {
       return {
         success: false,
         error: "Accès non autorisé",
@@ -158,7 +159,7 @@ export async function getDossierByNumber(dossierNumber: number): Promise<ActionR
   try {
     const session = await getSession();
 
-    if (!session?.userId || session.role !== ROLES.ADMIN) {
+    if (!session?.userId || !isAdminRole(session.role)) {
       return {
         success: false,
         error: "Accès non autorisé",

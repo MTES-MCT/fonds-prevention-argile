@@ -113,7 +113,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
    */
   async upsertFromProConnect(
     proConnectData: ProConnectAgentData,
-    defaultRole: AgentRole = AGENT_ROLES.INSTRUCTEUR
+    defaultRole: AgentRole = AGENT_ROLES.ADMINISTRATEUR
   ): Promise<Agent> {
     // Vérifier si l'agent existe déjà (par sub)
     const existingAgent = await this.findBySub(proConnectData.sub);

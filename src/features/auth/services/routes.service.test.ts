@@ -17,11 +17,6 @@ describe("routes.service", () => {
       expect(isAdminRoute(ROUTES.backoffice.espaceAmo.dossiers)).toBe(true);
     });
 
-    it("devrait identifier les routes instruction comme admin", () => {
-      expect(isAdminRoute(ROUTES.backoffice.instruction.root)).toBe(true);
-      expect(isAdminRoute(`${ROUTES.backoffice.instruction.root}/dossiers`)).toBe(true);
-    });
-
     it("devrait identifier les routes API privées comme admin", () => {
       expect(isAdminRoute("/api/private")).toBe(true);
       expect(isAdminRoute("/api/private/users")).toBe(true);
@@ -82,7 +77,6 @@ describe("routes.service", () => {
       expect(isProtectedRoute(ROUTES.backoffice.administration.root)).toBe(true);
       expect(isProtectedRoute(`${ROUTES.backoffice.administration.root}/users`)).toBe(true);
       expect(isProtectedRoute(ROUTES.backoffice.espaceAmo.root)).toBe(true);
-      expect(isProtectedRoute(ROUTES.backoffice.instruction.root)).toBe(true);
       expect(isProtectedRoute("/api/private")).toBe(true);
       expect(isProtectedRoute("/test")).toBe(true);
     });
@@ -111,32 +105,27 @@ describe("routes.service", () => {
   describe("canAccessRoute", () => {
     describe("Routes backoffice (agents)", () => {
       it("devrait autoriser l'accès ADMIN aux routes backoffice", () => {
-        expect(canAccessRoute(ROUTES.backoffice.administration.root, ROLES.ADMIN)).toBe(true);
-        expect(canAccessRoute(`${ROUTES.backoffice.administration.root}/users`, ROLES.ADMIN)).toBe(true);
-        expect(canAccessRoute(ROUTES.backoffice.espaceAmo.root, ROLES.ADMIN)).toBe(true);
-        expect(canAccessRoute(ROUTES.backoffice.instruction.root, ROLES.ADMIN)).toBe(true);
-        expect(canAccessRoute("/api/private", ROLES.ADMIN)).toBe(true);
-        expect(canAccessRoute("/test", ROLES.ADMIN)).toBe(true);
+        expect(canAccessRoute(ROUTES.backoffice.administration.root, ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute(`${ROUTES.backoffice.administration.root}/users`, ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute(ROUTES.backoffice.espaceAmo.root, ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute("/api/private", ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute("/test", ROLES.ADMINISTRATEUR)).toBe(true);
       });
 
-      it("devrait autoriser l'accès INSTRUCTEUR aux routes backoffice", () => {
-        expect(canAccessRoute(ROUTES.backoffice.administration.root, ROLES.INSTRUCTEUR)).toBe(true);
-        expect(canAccessRoute(ROUTES.backoffice.instruction.root, ROLES.INSTRUCTEUR)).toBe(true);
-        expect(canAccessRoute(ROUTES.backoffice.espaceAmo.root, ROLES.INSTRUCTEUR)).toBe(true);
-        expect(canAccessRoute("/api/private", ROLES.INSTRUCTEUR)).toBe(true);
+      it("devrait autoriser l'accès SUPER_ADMINISTRATEUR aux routes backoffice", () => {
+        expect(canAccessRoute(ROUTES.backoffice.administration.root, ROLES.SUPER_ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute("/api/private", ROLES.SUPER_ADMINISTRATEUR)).toBe(true);
       });
 
       it("devrait autoriser l'accès AMO aux routes backoffice", () => {
         expect(canAccessRoute(ROUTES.backoffice.administration.root, ROLES.AMO)).toBe(true);
         expect(canAccessRoute(ROUTES.backoffice.espaceAmo.root, ROLES.AMO)).toBe(true);
-        expect(canAccessRoute(ROUTES.backoffice.instruction.root, ROLES.AMO)).toBe(true);
         expect(canAccessRoute("/api/private", ROLES.AMO)).toBe(true);
       });
 
       it("devrait refuser l'accès PARTICULIER aux routes backoffice", () => {
         expect(canAccessRoute(ROUTES.backoffice.administration.root, ROLES.PARTICULIER)).toBe(false);
         expect(canAccessRoute(ROUTES.backoffice.espaceAmo.root, ROLES.PARTICULIER)).toBe(false);
-        expect(canAccessRoute(ROUTES.backoffice.instruction.root, ROLES.PARTICULIER)).toBe(false);
         expect(canAccessRoute("/api/private", ROLES.PARTICULIER)).toBe(false);
         expect(canAccessRoute("/test", ROLES.PARTICULIER)).toBe(false);
       });
@@ -156,14 +145,14 @@ describe("routes.service", () => {
       });
 
       it("devrait refuser l'accès ADMIN aux routes particulier", () => {
-        expect(canAccessRoute(ROUTES.particulier.monCompte, ROLES.ADMIN)).toBe(false);
-        expect(canAccessRoute(ROUTES.particulier.mesDossiers, ROLES.ADMIN)).toBe(false);
-        expect(canAccessRoute(ROUTES.particulier.mesDemandes, ROLES.ADMIN)).toBe(false);
+        expect(canAccessRoute(ROUTES.particulier.monCompte, ROLES.ADMINISTRATEUR)).toBe(false);
+        expect(canAccessRoute(ROUTES.particulier.mesDossiers, ROLES.ADMINISTRATEUR)).toBe(false);
+        expect(canAccessRoute(ROUTES.particulier.mesDemandes, ROLES.ADMINISTRATEUR)).toBe(false);
       });
 
-      it("devrait refuser l'accès INSTRUCTEUR aux routes particulier", () => {
-        expect(canAccessRoute(ROUTES.particulier.monCompte, ROLES.INSTRUCTEUR)).toBe(false);
-        expect(canAccessRoute(ROUTES.particulier.mesDossiers, ROLES.INSTRUCTEUR)).toBe(false);
+      it("devrait refuser l'accès SUPER_ADMINISTRATEUR aux routes particulier", () => {
+        expect(canAccessRoute(ROUTES.particulier.monCompte, ROLES.SUPER_ADMINISTRATEUR)).toBe(false);
+        expect(canAccessRoute(ROUTES.particulier.mesDossiers, ROLES.SUPER_ADMINISTRATEUR)).toBe(false);
       });
 
       it("devrait refuser l'accès AMO aux routes particulier", () => {
@@ -179,15 +168,15 @@ describe("routes.service", () => {
 
     describe("Routes publiques", () => {
       it("devrait autoriser l'accès ADMIN aux routes publiques", () => {
-        expect(canAccessRoute(ROUTES.home, ROLES.ADMIN)).toBe(true);
-        expect(canAccessRoute(ROUTES.connexion.particulier, ROLES.ADMIN)).toBe(true);
-        expect(canAccessRoute(ROUTES.mentionsLegales, ROLES.ADMIN)).toBe(true);
-        expect(canAccessRoute(ROUTES.cgu, ROLES.ADMIN)).toBe(true);
+        expect(canAccessRoute(ROUTES.home, ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute(ROUTES.connexion.particulier, ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute(ROUTES.mentionsLegales, ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute(ROUTES.cgu, ROLES.ADMINISTRATEUR)).toBe(true);
       });
 
-      it("devrait autoriser l'accès INSTRUCTEUR aux routes publiques", () => {
-        expect(canAccessRoute(ROUTES.home, ROLES.INSTRUCTEUR)).toBe(true);
-        expect(canAccessRoute(ROUTES.connexion.particulier, ROLES.INSTRUCTEUR)).toBe(true);
+      it("devrait autoriser l'accès SUPER_ADMINISTRATEUR aux routes publiques", () => {
+        expect(canAccessRoute(ROUTES.home, ROLES.SUPER_ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute(ROUTES.connexion.particulier, ROLES.SUPER_ADMINISTRATEUR)).toBe(true);
       });
 
       it("devrait autoriser l'accès AMO aux routes publiques", () => {
@@ -211,16 +200,16 @@ describe("routes.service", () => {
 
     describe("Cas edge", () => {
       it("devrait gérer une route vide", () => {
-        expect(canAccessRoute("", ROLES.ADMIN)).toBe(true);
-        expect(canAccessRoute("", ROLES.INSTRUCTEUR)).toBe(true);
+        expect(canAccessRoute("", ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute("", ROLES.SUPER_ADMINISTRATEUR)).toBe(true);
         expect(canAccessRoute("", ROLES.AMO)).toBe(true);
         expect(canAccessRoute("", ROLES.PARTICULIER)).toBe(true);
         expect(canAccessRoute("", undefined)).toBe(false);
       });
 
       it("devrait gérer une route inconnue", () => {
-        expect(canAccessRoute("/route-inconnue", ROLES.ADMIN)).toBe(true);
-        expect(canAccessRoute("/route-inconnue", ROLES.INSTRUCTEUR)).toBe(true);
+        expect(canAccessRoute("/route-inconnue", ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute("/route-inconnue", ROLES.SUPER_ADMINISTRATEUR)).toBe(true);
         expect(canAccessRoute("/route-inconnue", ROLES.AMO)).toBe(true);
         expect(canAccessRoute("/route-inconnue", ROLES.PARTICULIER)).toBe(true);
         expect(canAccessRoute("/route-inconnue", undefined)).toBe(false);

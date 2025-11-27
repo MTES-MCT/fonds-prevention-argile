@@ -12,6 +12,13 @@ export enum UserRole {
 }
 
 /**
+ * Rôles administrateurs (accès /administration)
+ */
+export const ADMIN_ROLES = [UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR] as const;
+
+export type AdminRole = (typeof ADMIN_ROLES)[number];
+
+/**
  * Rôles agents uniquement
  */
 export const AGENT_ROLES = [UserRole.ADMINISTRATEUR, UserRole.SUPER_ADMINISTRATEUR, UserRole.AMO] as const;
@@ -23,6 +30,13 @@ export type AgentRole = (typeof AGENT_ROLES)[number];
  */
 export function isAgentRole(role: UserRole | string): role is AgentRole {
   return AGENT_ROLES.includes(role as AgentRole);
+}
+
+/**
+ * Vérifie si un rôle est un rôle administrateur
+ */
+export function isAdminRole(role: UserRole | string): role is AdminRole {
+  return ADMIN_ROLES.includes(role as AdminRole);
 }
 
 /**

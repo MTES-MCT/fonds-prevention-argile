@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { formatDateTime } from "@/shared/utils/date.utils";
-import { UserWithParcoursDetails } from "@/features/parcours/core";
+import { UserWithParcoursDetails } from "@/features/backoffice";
 import { UserTimeline } from "./UserTimeline";
 
 interface UserDetailRowProps {

@@ -6,11 +6,11 @@ import { DEFAULT_REDIRECTS } from "../domain/value-objects/configs/routes.config
 describe("redirects.service", () => {
   describe("getDefaultRedirect", () => {
     it("devrait retourner /administration pour le rôle ADMIN", () => {
-      expect(getDefaultRedirect(ROLES.ADMIN)).toBe(DEFAULT_REDIRECTS.administrateur);
+      expect(getDefaultRedirect(ROLES.ADMINISTRATEUR)).toBe(DEFAULT_REDIRECTS.administrateur);
     });
 
-    it("devrait retourner /instruction pour le rôle INSTRUCTEUR", () => {
-      expect(getDefaultRedirect(ROLES.INSTRUCTEUR)).toBe(DEFAULT_REDIRECTS.instructeur);
+    it("devrait retourner /instruction pour le rôle SUPER_ADMINISTRATEUR", () => {
+      expect(getDefaultRedirect(ROLES.SUPER_ADMINISTRATEUR)).toBe(DEFAULT_REDIRECTS.super_administrateur);
     });
 
     it("devrait retourner /espace-amo pour le rôle AMO", () => {
@@ -34,11 +34,11 @@ describe("redirects.service", () => {
     });
 
     it("devrait rediriger ADMIN vers /administration", () => {
-      expect(getUnauthorizedRedirect(ROLES.ADMIN)).toBe(DEFAULT_REDIRECTS.administrateur);
+      expect(getUnauthorizedRedirect(ROLES.ADMINISTRATEUR)).toBe(DEFAULT_REDIRECTS.administrateur);
     });
 
-    it("devrait rediriger INSTRUCTEUR vers /instruction", () => {
-      expect(getUnauthorizedRedirect(ROLES.INSTRUCTEUR)).toBe(DEFAULT_REDIRECTS.instructeur);
+    it("devrait rediriger SUPER_ADMINISTRATEUR vers /administation", () => {
+      expect(getUnauthorizedRedirect(ROLES.SUPER_ADMINISTRATEUR)).toBe(DEFAULT_REDIRECTS.super_administrateur);
     });
 
     it("devrait rediriger AMO vers /espace-amo", () => {
@@ -57,13 +57,13 @@ describe("redirects.service", () => {
 
   describe("getPostLoginRedirect", () => {
     describe("Avec un chemin cible (intendedPath)", () => {
-      it("devrait rediriger ADMIN vers le chemin cible", () => {
-        expect(getPostLoginRedirect(ROLES.ADMIN, "/test")).toBe("/test");
-        expect(getPostLoginRedirect(ROLES.ADMIN, "/administration/users")).toBe("/administration/users");
+      it("devrait rediriger ADMINISTRATEUR vers le chemin cible", () => {
+        expect(getPostLoginRedirect(ROLES.ADMINISTRATEUR, "/test")).toBe("/test");
+        expect(getPostLoginRedirect(ROLES.ADMINISTRATEUR, "/administration/users")).toBe("/administration/users");
       });
 
-      it("devrait rediriger INSTRUCTEUR vers le chemin cible", () => {
-        expect(getPostLoginRedirect(ROLES.INSTRUCTEUR, "/test")).toBe("/test");
+      it("devrait rediriger SUPER_ADMINISTRATEUR vers le chemin cible", () => {
+        expect(getPostLoginRedirect(ROLES.SUPER_ADMINISTRATEUR, "/test")).toBe("/test");
       });
 
       it("devrait rediriger AMO vers le chemin cible", () => {
@@ -76,26 +76,26 @@ describe("redirects.service", () => {
       });
 
       it("devrait rediriger vers le chemin cible même si c'est une route publique", () => {
-        expect(getPostLoginRedirect(ROLES.ADMIN, "/mentions-legales")).toBe("/mentions-legales");
+        expect(getPostLoginRedirect(ROLES.ADMINISTRATEUR, "/mentions-legales")).toBe("/mentions-legales");
         expect(getPostLoginRedirect(ROLES.PARTICULIER, "/cgu")).toBe("/cgu");
       });
 
       it("ne devrait pas rediriger vers / si intendedPath est /", () => {
-        expect(getPostLoginRedirect(ROLES.ADMIN, "/")).toBe(DEFAULT_REDIRECTS.administrateur);
-        expect(getPostLoginRedirect(ROLES.INSTRUCTEUR, "/")).toBe(DEFAULT_REDIRECTS.instructeur);
+        expect(getPostLoginRedirect(ROLES.ADMINISTRATEUR, "/")).toBe(DEFAULT_REDIRECTS.administrateur);
+        expect(getPostLoginRedirect(ROLES.SUPER_ADMINISTRATEUR, "/")).toBe(DEFAULT_REDIRECTS.super_administrateur);
         expect(getPostLoginRedirect(ROLES.AMO, "/")).toBe(DEFAULT_REDIRECTS.amo);
         expect(getPostLoginRedirect(ROLES.PARTICULIER, "/")).toBe(DEFAULT_REDIRECTS.particulier);
       });
     });
 
     describe("Sans chemin cible (intendedPath)", () => {
-      it("devrait rediriger ADMIN vers /administration par défaut", () => {
-        expect(getPostLoginRedirect(ROLES.ADMIN)).toBe(DEFAULT_REDIRECTS.administrateur);
-        expect(getPostLoginRedirect(ROLES.ADMIN, undefined)).toBe(DEFAULT_REDIRECTS.administrateur);
+      it("devrait rediriger ADMINISTRATEUR vers /administration par défaut", () => {
+        expect(getPostLoginRedirect(ROLES.ADMINISTRATEUR)).toBe(DEFAULT_REDIRECTS.administrateur);
+        expect(getPostLoginRedirect(ROLES.ADMINISTRATEUR, undefined)).toBe(DEFAULT_REDIRECTS.administrateur);
       });
 
-      it("devrait rediriger INSTRUCTEUR vers /instruction par défaut", () => {
-        expect(getPostLoginRedirect(ROLES.INSTRUCTEUR)).toBe(DEFAULT_REDIRECTS.instructeur);
+      it("devrait rediriger SUPER_ADMINISTRATEUR vers /administration par défaut", () => {
+        expect(getPostLoginRedirect(ROLES.SUPER_ADMINISTRATEUR)).toBe(DEFAULT_REDIRECTS.super_administrateur);
       });
 
       it("devrait rediriger AMO vers /espace-amo par défaut", () => {
@@ -110,8 +110,8 @@ describe("redirects.service", () => {
 
     describe("Cas edge", () => {
       it("devrait gérer une chaîne vide comme intendedPath", () => {
-        expect(getPostLoginRedirect(ROLES.ADMIN, "")).toBe(DEFAULT_REDIRECTS.administrateur);
-        expect(getPostLoginRedirect(ROLES.INSTRUCTEUR, "")).toBe(DEFAULT_REDIRECTS.instructeur);
+        expect(getPostLoginRedirect(ROLES.ADMINISTRATEUR, "")).toBe(DEFAULT_REDIRECTS.administrateur);
+        expect(getPostLoginRedirect(ROLES.SUPER_ADMINISTRATEUR, "")).toBe(DEFAULT_REDIRECTS.super_administrateur);
         expect(getPostLoginRedirect(ROLES.AMO, "")).toBe(DEFAULT_REDIRECTS.amo);
         expect(getPostLoginRedirect(ROLES.PARTICULIER, "")).toBe(DEFAULT_REDIRECTS.particulier);
       });

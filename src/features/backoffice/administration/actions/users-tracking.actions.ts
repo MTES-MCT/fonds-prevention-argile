@@ -1,10 +1,10 @@
 "use server";
 
 import { getSession } from "@/features/auth/server";
-import { ROLES } from "@/features/auth/domain/value-objects/constants";
 import { getUsersWithParcours as getUsersWithParcoursService } from "../services/users-tracking.service";
 import type { ActionResult } from "@/shared/types";
 import type { UserWithParcoursDetails } from "../domain/types/user-with-parcours.types";
+import { isAdminRole } from "@/shared/domain/value-objects";
 
 /**
  * Récupère tous les utilisateurs avec leurs parcours (admin uniquement)
@@ -13,7 +13,7 @@ export async function getUsersWithParcours(): Promise<ActionResult<UserWithParco
   try {
     const session = await getSession();
 
-    if (!session?.userId || session.role !== ROLES.ADMIN) {
+    if (!session?.userId || !isAdminRole(session.role)) {
       return {
         success: false,
         error: "Accès non autorisé. Réservé aux administrateurs.",

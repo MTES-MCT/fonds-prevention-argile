@@ -1,14 +1,12 @@
 "use client";
 
-import type { FunnelStatistiques, FunnelStep } from "@/features/statistiques";
+import type { FunnelStatistiques, FunnelStep } from "@/features/backoffice";
 
 interface StatistiquesFunnelProps {
   funnel: FunnelStatistiques;
 }
 
-export default function StatistiquesFunnel({
-  funnel,
-}: StatistiquesFunnelProps) {
+export default function StatistiquesFunnel({ funnel }: StatistiquesFunnelProps) {
   if (funnel.etapes.length === 0) {
     return (
       <div className="fr-alert fr-alert--info">
@@ -54,8 +52,7 @@ export default function StatistiquesFunnel({
                 <h3 className="fr-tile__title">Taux de conversion global</h3>
                 <p
                   className="fr-tile__detail fr-text--lg fr-text--bold"
-                  style={{ color: "var(--text-default-success)" }}
-                >
+                  style={{ color: "var(--text-default-success)" }}>
                   {funnel.tauxConversionGlobal.toLocaleString("fr-FR")} %
                 </p>
               </div>

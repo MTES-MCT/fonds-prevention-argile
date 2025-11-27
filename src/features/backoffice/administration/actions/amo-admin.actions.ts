@@ -1,11 +1,11 @@
 "use server";
 
 import { getSession } from "@/features/auth/server";
-import { ROLES } from "@/features/auth/domain/value-objects/constants";
-import { importAmosFromExcel } from "../services/amo-import.service";
-import * as amoMutationsService from "../services/amo-mutations.service";
+import * as amoMutationsService from "../../../parcours/amo/services/amo-mutations.service";
 import { ActionResult } from "@/shared/types";
-import { Amo } from "../domain/entities";
+import { isAdminRole } from "@/shared/domain/value-objects";
+import { importAmosFromExcel } from "@/features/parcours/amo/services/amo-import.service";
+import { Amo } from "@/features/parcours/amo";
 
 interface SeedResult {
   success: boolean;
@@ -25,7 +25,7 @@ interface SeedResult {
 export async function importAmoFromExcel(formData: FormData, clearExisting: boolean = false): Promise<SeedResult> {
   const session = await getSession();
 
-  if (!session || session.role !== ROLES.ADMIN) {
+  if (!session || !isAdminRole(session.role)) {
     return {
       success: false,
       message: "Action non autorisée. Accès réservé aux administrateurs.",
@@ -63,7 +63,7 @@ export async function updateAmo(
   try {
     const session = await getSession();
 
-    if (!session?.userId || session.role !== ROLES.ADMIN) {
+    if (!session?.userId || !isAdminRole(session.role)) {
       return {
         success: false,
         error: "Accès non autorisé",
@@ -92,7 +92,7 @@ export async function deleteAmo(amoId: string): Promise<ActionResult<void>> {
   try {
     const session = await getSession();
 
-    if (!session?.userId || session.role !== ROLES.ADMIN) {
+    if (!session?.userId || !isAdminRole(session.role)) {
       return {
         success: false,
         error: "Accès non autorisé",

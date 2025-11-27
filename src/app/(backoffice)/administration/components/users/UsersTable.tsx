@@ -5,7 +5,7 @@ import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-valida
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { formatDate } from "@/shared/utils/date.utils";
 import { UserDetailRow } from "./UserDetailRow";
-import { UserWithParcoursDetails, EmailTrackingStatus } from "@/features/parcours/core";
+import { UserWithParcoursDetails, EmailTrackingStatus } from "@/features/backoffice";
 
 interface UsersTableProps {
   users: UserWithParcoursDetails[];

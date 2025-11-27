@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { importAmoFromExcel } from "@/features/parcours/amo/actions";
+import { importAmoFromExcel } from "@/features/backoffice";
 
 interface AmoSeedUploadProps {
   onImportSuccess?: () => void;
