@@ -5,8 +5,8 @@ import { UserRole } from "./user-role.enum";
  * Note: Drizzle nécessite un objet constant, pas un enum TypeScript
  */
 export const AGENT_ROLES = {
-  ADMIN: UserRole.ADMINISTRATEUR,
-  INSTRUCTEUR: UserRole.INSTRUCTEUR,
+  ADMINISTRATEUR: UserRole.ADMINISTRATEUR,
+  SUPER_ADMINISTRATEUR: UserRole.SUPER_ADMINISTRATEUR,
   AMO: UserRole.AMO,
 } as const;
 

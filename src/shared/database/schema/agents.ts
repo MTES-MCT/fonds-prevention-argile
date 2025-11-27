@@ -24,7 +24,7 @@ export const agents = pgTable("agents", {
   organizationalUnit: varchar("organizational_unit", { length: 255 }),
 
   // Rôle de l'agent
-  role: agentRolePgEnum("role").notNull().default(AGENT_ROLES.INSTRUCTEUR),
+  role: agentRolePgEnum("role").notNull().default(AGENT_ROLES.ADMINISTRATEUR),
 
   // Timestamps
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),

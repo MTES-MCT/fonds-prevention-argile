@@ -33,4 +33,8 @@ export const statutValidationAmoPgEnum = pgEnum("statut_validation_amo", [
   StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
 ]);
 
-export const agentRolePgEnum = pgEnum("agent_role", [AGENT_ROLES.ADMIN, AGENT_ROLES.INSTRUCTEUR, AGENT_ROLES.AMO]);
+export const agentRolePgEnum = pgEnum("agent_role", [
+  AGENT_ROLES.ADMINISTRATEUR,
+  AGENT_ROLES.SUPER_ADMINISTRATEUR,
+  AGENT_ROLES.AMO,
+]);

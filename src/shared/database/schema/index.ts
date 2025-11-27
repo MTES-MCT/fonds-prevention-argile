@@ -10,3 +10,5 @@ export * from "./entreprises-amo-communes";
 export * from "./entreprises-amo-epci";
 export * from "./parcours-amo-validations";
 export * from "./amo-validation-tokens";
+export * from "./agents";
+export * from "./agent-permissions";
