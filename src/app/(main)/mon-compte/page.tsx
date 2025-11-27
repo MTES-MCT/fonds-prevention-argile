@@ -1,4 +1,4 @@
-import { getCurrentUser, ROLES } from "@/features/auth";
+import { getCurrentUser, ROLES, ROUTES } from "@/features/auth";
 import MonCompteClient from "@/features/parcours/core/components/MonCompteClient";
 import { redirect } from "next/navigation";
 
@@ -8,7 +8,7 @@ export default async function MonComptePage() {
   const user = await getCurrentUser();
 
   if (!user || user.role !== ROLES.PARTICULIER) {
-    redirect("/connexion");
+    redirect(ROUTES.connexion.particulier);
   }
 
   return <MonCompteClient />;

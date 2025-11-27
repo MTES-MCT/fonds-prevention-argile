@@ -1,56 +1,57 @@
 import { describe, it, expect } from "vitest";
 import { getDefaultRedirect, getUnauthorizedRedirect, getPostLoginRedirect } from "./redirects.service";
 import { ROLES } from "../domain/value-objects/constants";
+import { DEFAULT_REDIRECTS } from "../domain/value-objects/configs/routes.config";
 
 describe("redirects.service", () => {
   describe("getDefaultRedirect", () => {
     it("devrait retourner /administration pour le rôle ADMIN", () => {
-      expect(getDefaultRedirect(ROLES.ADMIN)).toBe("/administration");
+      expect(getDefaultRedirect(ROLES.ADMIN)).toBe(DEFAULT_REDIRECTS.administrateur);
     });
 
-    it("devrait retourner /administration pour le rôle INSTRUCTEUR", () => {
-      expect(getDefaultRedirect(ROLES.INSTRUCTEUR)).toBe("/administration");
+    it("devrait retourner /instruction pour le rôle INSTRUCTEUR", () => {
+      expect(getDefaultRedirect(ROLES.INSTRUCTEUR)).toBe(DEFAULT_REDIRECTS.instructeur);
     });
 
-    it("devrait retourner /administration pour le rôle AMO", () => {
-      expect(getDefaultRedirect(ROLES.AMO)).toBe("/administration");
+    it("devrait retourner /espace-amo pour le rôle AMO", () => {
+      expect(getDefaultRedirect(ROLES.AMO)).toBe(DEFAULT_REDIRECTS.amo);
     });
 
     it("devrait retourner /mon-compte pour le rôle PARTICULIER", () => {
-      expect(getDefaultRedirect(ROLES.PARTICULIER)).toBe("/mon-compte");
+      expect(getDefaultRedirect(ROLES.PARTICULIER)).toBe(DEFAULT_REDIRECTS.particulier);
     });
 
     it("devrait retourner / pour un rôle inconnu", () => {
       // @ts-expect-error - Test avec une valeur invalide intentionnellement
-      expect(getDefaultRedirect("unknown_role")).toBe("/");
+      expect(getDefaultRedirect("unknown_role")).toBe(DEFAULT_REDIRECTS.home);
     });
   });
 
   describe("getUnauthorizedRedirect", () => {
     it("devrait rediriger vers /connexion si aucun rôle", () => {
-      expect(getUnauthorizedRedirect()).toBe("/connexion");
-      expect(getUnauthorizedRedirect(undefined)).toBe("/connexion");
+      expect(getUnauthorizedRedirect()).toBe(DEFAULT_REDIRECTS.login);
+      expect(getUnauthorizedRedirect(undefined)).toBe(DEFAULT_REDIRECTS.login);
     });
 
     it("devrait rediriger ADMIN vers /administration", () => {
-      expect(getUnauthorizedRedirect(ROLES.ADMIN)).toBe("/administration");
+      expect(getUnauthorizedRedirect(ROLES.ADMIN)).toBe(DEFAULT_REDIRECTS.administrateur);
     });
 
-    it("devrait rediriger INSTRUCTEUR vers /administration", () => {
-      expect(getUnauthorizedRedirect(ROLES.INSTRUCTEUR)).toBe("/administration");
+    it("devrait rediriger INSTRUCTEUR vers /instruction", () => {
+      expect(getUnauthorizedRedirect(ROLES.INSTRUCTEUR)).toBe(DEFAULT_REDIRECTS.instructeur);
     });
 
-    it("devrait rediriger AMO vers /administration", () => {
-      expect(getUnauthorizedRedirect(ROLES.AMO)).toBe("/administration");
+    it("devrait rediriger AMO vers /espace-amo", () => {
+      expect(getUnauthorizedRedirect(ROLES.AMO)).toBe(DEFAULT_REDIRECTS.amo);
     });
 
     it("devrait rediriger PARTICULIER vers /mon-compte", () => {
-      expect(getUnauthorizedRedirect(ROLES.PARTICULIER)).toBe("/mon-compte");
+      expect(getUnauthorizedRedirect(ROLES.PARTICULIER)).toBe(DEFAULT_REDIRECTS.particulier);
     });
 
     it("devrait rediriger un rôle inconnu vers /", () => {
       // @ts-expect-error - Test avec une valeur invalide intentionnellement
-      expect(getUnauthorizedRedirect("unknown_role")).toBe("/");
+      expect(getUnauthorizedRedirect("unknown_role")).toBe(DEFAULT_REDIRECTS.home);
     });
   });
 
@@ -80,39 +81,39 @@ describe("redirects.service", () => {
       });
 
       it("ne devrait pas rediriger vers / si intendedPath est /", () => {
-        expect(getPostLoginRedirect(ROLES.ADMIN, "/")).toBe("/administration");
-        expect(getPostLoginRedirect(ROLES.INSTRUCTEUR, "/")).toBe("/administration");
-        expect(getPostLoginRedirect(ROLES.AMO, "/")).toBe("/administration");
-        expect(getPostLoginRedirect(ROLES.PARTICULIER, "/")).toBe("/mon-compte");
+        expect(getPostLoginRedirect(ROLES.ADMIN, "/")).toBe(DEFAULT_REDIRECTS.administrateur);
+        expect(getPostLoginRedirect(ROLES.INSTRUCTEUR, "/")).toBe(DEFAULT_REDIRECTS.instructeur);
+        expect(getPostLoginRedirect(ROLES.AMO, "/")).toBe(DEFAULT_REDIRECTS.amo);
+        expect(getPostLoginRedirect(ROLES.PARTICULIER, "/")).toBe(DEFAULT_REDIRECTS.particulier);
       });
     });
 
     describe("Sans chemin cible (intendedPath)", () => {
       it("devrait rediriger ADMIN vers /administration par défaut", () => {
-        expect(getPostLoginRedirect(ROLES.ADMIN)).toBe("/administration");
-        expect(getPostLoginRedirect(ROLES.ADMIN, undefined)).toBe("/administration");
+        expect(getPostLoginRedirect(ROLES.ADMIN)).toBe(DEFAULT_REDIRECTS.administrateur);
+        expect(getPostLoginRedirect(ROLES.ADMIN, undefined)).toBe(DEFAULT_REDIRECTS.administrateur);
       });
 
-      it("devrait rediriger INSTRUCTEUR vers /administration par défaut", () => {
-        expect(getPostLoginRedirect(ROLES.INSTRUCTEUR)).toBe("/administration");
+      it("devrait rediriger INSTRUCTEUR vers /instruction par défaut", () => {
+        expect(getPostLoginRedirect(ROLES.INSTRUCTEUR)).toBe(DEFAULT_REDIRECTS.instructeur);
       });
 
-      it("devrait rediriger AMO vers /administration par défaut", () => {
-        expect(getPostLoginRedirect(ROLES.AMO)).toBe("/administration");
+      it("devrait rediriger AMO vers /espace-amo par défaut", () => {
+        expect(getPostLoginRedirect(ROLES.AMO)).toBe(DEFAULT_REDIRECTS.amo);
       });
 
       it("devrait rediriger PARTICULIER vers /mon-compte par défaut", () => {
-        expect(getPostLoginRedirect(ROLES.PARTICULIER)).toBe("/mon-compte");
-        expect(getPostLoginRedirect(ROLES.PARTICULIER, undefined)).toBe("/mon-compte");
+        expect(getPostLoginRedirect(ROLES.PARTICULIER)).toBe(DEFAULT_REDIRECTS.particulier);
+        expect(getPostLoginRedirect(ROLES.PARTICULIER, undefined)).toBe(DEFAULT_REDIRECTS.particulier);
       });
     });
 
     describe("Cas edge", () => {
       it("devrait gérer une chaîne vide comme intendedPath", () => {
-        expect(getPostLoginRedirect(ROLES.ADMIN, "")).toBe("/administration");
-        expect(getPostLoginRedirect(ROLES.INSTRUCTEUR, "")).toBe("/administration");
-        expect(getPostLoginRedirect(ROLES.AMO, "")).toBe("/administration");
-        expect(getPostLoginRedirect(ROLES.PARTICULIER, "")).toBe("/mon-compte");
+        expect(getPostLoginRedirect(ROLES.ADMIN, "")).toBe(DEFAULT_REDIRECTS.administrateur);
+        expect(getPostLoginRedirect(ROLES.INSTRUCTEUR, "")).toBe(DEFAULT_REDIRECTS.instructeur);
+        expect(getPostLoginRedirect(ROLES.AMO, "")).toBe(DEFAULT_REDIRECTS.amo);
+        expect(getPostLoginRedirect(ROLES.PARTICULIER, "")).toBe(DEFAULT_REDIRECTS.particulier);
       });
 
       it("devrait gérer un chemin cible complexe", () => {
@@ -122,7 +123,7 @@ describe("redirects.service", () => {
 
       it("devrait gérer un rôle inconnu sans intendedPath", () => {
         // @ts-expect-error - Test avec une valeur invalide intentionnellement
-        expect(getPostLoginRedirect("unknown_role")).toBe("/");
+        expect(getPostLoginRedirect("unknown_role")).toBe(DEFAULT_REDIRECTS.home);
       });
 
       it("devrait gérer un rôle inconnu avec intendedPath", () => {

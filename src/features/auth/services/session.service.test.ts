@@ -11,6 +11,7 @@ import {
   logout,
 } from "./session.service";
 import { COOKIE_NAMES, ROLES, AUTH_METHODS } from "../domain/value-objects/constants";
+import { ROUTES } from "../domain/value-objects/configs/routes.config";
 import type { JWTPayload } from "../domain/entities";
 
 // Mock des dépendances
@@ -222,8 +223,16 @@ describe("session.service", () => {
   });
 
   describe("saveRedirectUrl", () => {
-    it("devrait sauvegarder l'URL de redirection", async () => {
-      const url = "/administration/users";
+    it("devrait sauvegarder l'URL de redirection pour une route backoffice", async () => {
+      const url = `${ROUTES.backoffice.administration.root}/users`;
+
+      await saveRedirectUrl(url);
+
+      expect(mockCookieStore.set).toHaveBeenCalledWith(COOKIE_NAMES.REDIRECT_TO, url, expect.any(Object));
+    });
+
+    it("devrait sauvegarder l'URL de redirection pour une route particulier", async () => {
+      const url = ROUTES.particulier.monCompte;
 
       await saveRedirectUrl(url);
 
@@ -233,7 +242,7 @@ describe("session.service", () => {
 
   describe("getAndClearRedirectUrl", () => {
     it("devrait récupérer et supprimer l'URL de redirection", async () => {
-      const redirectUrl = "/mon-compte";
+      const redirectUrl = ROUTES.particulier.monCompte;
       mockCookieStore.get.mockReturnValue({ value: redirectUrl });
 
       const result = await getAndClearRedirectUrl();

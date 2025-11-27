@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
-import { AuthProvider } from "@/features/auth/client";
+import { AuthProvider, ROUTES } from "@/features/auth/client";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { AUTH_METHODS } from "@/features/auth/domain/value-objects/constants";
 import { Header, Matomo } from "@/shared/components";
@@ -20,7 +20,7 @@ export default async function BackofficeLayout({ children }: BackofficeLayoutPro
 
   // Vérifier l'authentification ProConnect
   if (!user || user.authMethod !== AUTH_METHODS.PROCONNECT) {
-    redirect("/connexion/agent");
+    redirect(ROUTES.connexion.agent);
   }
 
   return (

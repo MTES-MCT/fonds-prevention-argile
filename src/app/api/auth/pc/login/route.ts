@@ -1,3 +1,4 @@
+import { ROUTES } from "@/features/auth";
 import { generateAuthorizationUrl } from "@/features/auth/adapters/proconnect/proconnect.service";
 import { getServerEnv } from "@/shared/config/env.config";
 import { NextResponse } from "next/server";
@@ -13,6 +14,6 @@ export async function GET() {
   } catch (error) {
     console.error("Erreur lors de l'initiation ProConnect:", error);
     const baseUrl = getServerEnv().BASE_URL || "http://localhost:3000";
-    return NextResponse.redirect(new URL("/connexion/agent?error=pc_init_failed", baseUrl));
+    return NextResponse.redirect(new URL(`${ROUTES.connexion.agent}?error=pc_init_failed`, baseUrl));
   }
 }

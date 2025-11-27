@@ -3,7 +3,7 @@
 import content from "../content/content.json";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { FC_ERROR_MAPPING } from "@/features/auth/client";
+import { FC_ERROR_MAPPING, ROUTES } from "@/features/auth/client";
 import { useLoadRGAFromURL } from "@/features/simulateur-rga/hooks/useLoadRGAFromURL";
 
 export default function ConnexionFranceConnectClient() {
@@ -41,7 +41,7 @@ export default function ConnexionFranceConnectClient() {
 
   const handleFranceConnect = () => {
     // Rediriger vers l'API FranceConnect
-    window.location.href = "/api/auth/fc/login";
+    window.location.href = ROUTES.api.auth.fc.login;
   };
 
   return (

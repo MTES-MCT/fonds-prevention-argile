@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import content from "../content/content.json";
+import { ROUTES } from "@/features/auth";
 
 export default function ConnexionProConnectClient() {
   const [pcError, setPcError] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export default function ConnexionProConnectClient() {
 
   const handleProConnect = () => {
     // Rediriger vers l'API ProConnect
-    window.location.href = "/api/auth/pc/login";
+    window.location.href = ROUTES.api.auth.pc.login;
   };
 
   return (

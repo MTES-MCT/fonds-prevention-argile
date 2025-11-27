@@ -1,4 +1,4 @@
-import { PROTECTED_ROUTES, ROLES } from "../domain/value-objects";
+import { PROTECTED_ROUTES, ROLES, ROUTES } from "../domain/value-objects";
 import type { UserRole } from "../domain/types";
 import { isAgentRole } from "@/shared/domain/value-objects";
 
@@ -44,4 +44,23 @@ export function canAccessRoute(path: string, role?: UserRole): boolean {
   }
 
   return true; // Routes publiques
+}
+
+/**
+ * Vérifie si un chemin correspond à une route du backoffice
+ * (alias plus explicite de isAdminRoute pour le code métier)
+ */
+export function isBackofficeRoute(path: string): boolean {
+  return (
+    path.startsWith(ROUTES.backoffice.administration.root) ||
+    path.startsWith(ROUTES.backoffice.espaceAmo.root) ||
+    path.startsWith(ROUTES.backoffice.instruction.root)
+  );
+}
+
+/**
+ * Vérifie si un chemin est une route API
+ */
+export function isApiRoute(path: string): boolean {
+  return path.startsWith("/api/");
 }

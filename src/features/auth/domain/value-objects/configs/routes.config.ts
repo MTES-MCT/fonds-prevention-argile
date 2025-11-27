@@ -1,40 +1,138 @@
+//  Routes de l'application
+export const ROUTES = {
+  // Pages publiques
+  home: "/",
+  simulateur: "/simulateur",
+  mentionsLegales: "/mentions-legales",
+  cgu: "/cgu",
+  politiqueConfidentialite: "/politique-confidentialite",
+  accessibilite: "/accessibilite",
+  donneesPersonnelles: "/donnees-personnelles",
+  documentation: {
+    integrationIframe: "/documentation/integration-iframe",
+  },
+
+  // Authentification
+  connexion: {
+    particulier: "/connexion",
+    agent: "/connexion/agent",
+  },
+  deconnexion: "/deconnexion",
+
+  // Espace Particulier (FranceConnect)
+  particulier: {
+    monCompte: "/mon-compte",
+    mesDossiers: "/mes-dossiers",
+    mesDemandes: "/mes-demandes",
+  },
+
+  // Backoffice Agents (ProConnect)
+  backoffice: {
+    // Administration (Administrateurs)
+    administration: {
+      root: "/administration",
+      utilisateurs: "/administration/utilisateurs",
+      statistiques: "/administration/statistiques",
+      amos: "/administration/amos",
+      eligibilite: "/administration/eligibilite",
+      diagnostic: "/administration/diagnostic",
+      devis: "/administration/devis",
+      factures: "/administration/factures",
+    },
+
+    // Espace AMO (Agents AMO)
+    espaceAmo: {
+      root: "/espace-amo",
+      notifications: "/espace-amo/notifications",
+      dossiers: "/espace-amo/dossiers",
+    },
+
+    // Instruction (Instructeurs)
+    instruction: {
+      root: "/instruction",
+      dossiers: "/instruction/dossiers",
+      dossier: (id: string) => `/instruction/dossiers/${id}` as const,
+    },
+  },
+
+  // Validation AMO (lien externe envoyé par email)
+  amoValidation: {
+    root: "/amo/validation",
+    token: (token: string) => `/amo/validation/${token}` as const,
+  },
+  // API Routes
+  api: {
+    auth: {
+      check: "/api/auth/check",
+      fc: {
+        callback: "/api/auth/fc/callback",
+        login: "/api/auth/fc/login",
+        logout: "/api/auth/fc/logout",
+      },
+      pc: {
+        callback: "/api/auth/pc/callback",
+        login: "/api/auth/pc/login",
+        logout: "/api/auth/pc/logout",
+      },
+    },
+    health: "/api/health",
+    webhooks: {
+      brevo: "/api/webhooks/brevo",
+    },
+  },
+
+  // OIDC Callback (FranceConnect)
+  oidcCallback: "/oidc-callback",
+} as const;
+
 // Routes protégées par rôle
 export const PROTECTED_ROUTES = {
-  // Routes agents (ProConnect) - toutes redirigent via /espace-agent
+  // Routes agents (ProConnect) - tous les rôles agents peuvent accéder
   admin: [
-    "/espace-agent",
-    "/admin",
-    "/instruction",
-    "/espace-amo",
-    "/administration", // Legacy - TODO à supprimer après migration
+    ROUTES.backoffice.administration.root,
+    ROUTES.backoffice.espaceAmo.root,
+    ROUTES.backoffice.instruction.root,
     "/api/private",
     "/test",
   ],
   // Routes particuliers (FranceConnect)
-  particulier: ["/mon-compte", "/mes-dossiers", "/mes-demandes"],
+  particulier: [ROUTES.particulier.monCompte, ROUTES.particulier.mesDossiers, ROUTES.particulier.mesDemandes],
 } as const;
 
 // Routes publiques
 export const PUBLIC_ROUTES = {
-  auth: ["/connexion", "/inscription"],
-  franceConnectApi: ["/api/auth/fc/callback", "/api/auth/fc/login", "/api/auth/fc/logout", "/oidc-callback"],
-  proConnectApi: ["/api/auth/pc/callback", "/api/auth/pc/login", "/api/auth/pc/logout"],
+  auth: [ROUTES.connexion.particulier, ROUTES.connexion.agent, "/inscription"],
+  franceConnectApi: [
+    ROUTES.api.auth.fc.callback,
+    ROUTES.api.auth.fc.login,
+    ROUTES.api.auth.fc.logout,
+    ROUTES.oidcCallback,
+  ],
+  proConnectApi: [ROUTES.api.auth.pc.callback, ROUTES.api.auth.pc.login, ROUTES.api.auth.pc.logout],
   static: [
-    "/",
-    "/mentions-legales",
-    "/cgu",
-    "/politique-confidentialite",
-    "/accessibilite",
-    "/donnees-personnelles",
-    "/documentation/integration-iframe",
+    ROUTES.home,
+    ROUTES.mentionsLegales,
+    ROUTES.cgu,
+    ROUTES.politiqueConfidentialite,
+    ROUTES.accessibilite,
+    ROUTES.donneesPersonnelles,
+    ROUTES.documentation.integrationIframe,
   ],
 } as const;
 
-// Redirections par défaut
+// Redirections par défaut selon le contexte
 export const DEFAULT_REDIRECTS = {
-  admin: "/espace-agent", // Point d'entrée unique agents
-  particulier: "/mon-compte",
-  login: "/connexion",
-  home: "/",
-  afterLogout: "/",
+  // Par rôle agent
+  administrateur: ROUTES.backoffice.administration.root,
+  amo: ROUTES.backoffice.espaceAmo.root,
+  instructeur: ROUTES.backoffice.instruction.root,
+
+  // Particulier
+  particulier: ROUTES.particulier.monCompte,
+
+  // Génériques
+  login: ROUTES.connexion.particulier,
+  loginAgent: ROUTES.connexion.agent,
+  home: ROUTES.home,
+  afterLogout: ROUTES.home,
 } as const;

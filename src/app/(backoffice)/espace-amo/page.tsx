@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentAgent, AccesNonAutorise } from "@/features/backoffice";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
+import { ROUTES } from "@/features/auth";
 
 /**
  * Point d'entrée unique pour les agents ProConnect
@@ -25,13 +26,13 @@ export default async function EspaceAgentPage() {
   // Redirection selon le rôle
   switch (agent.role) {
     case UserRole.ADMINISTRATEUR:
-      redirect("/admin");
+      redirect(ROUTES.backoffice.administration.root);
 
     case UserRole.INSTRUCTEUR:
-      redirect("/instruction");
+      redirect(ROUTES.backoffice.instruction.root);
 
     case UserRole.AMO:
-      redirect("/espace-amo");
+      redirect(ROUTES.backoffice.espaceAmo.root);
 
     default:
       // Rôle inconnu ou non géré

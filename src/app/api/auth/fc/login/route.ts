@@ -1,4 +1,4 @@
-import { generateAuthorizationUrl } from "@/features/auth";
+import { generateAuthorizationUrl, ROUTES } from "@/features/auth";
 import { getServerEnv } from "@/shared/config/env.config";
 import { NextResponse } from "next/server";
 
@@ -20,8 +20,6 @@ export async function GET() {
     const baseUrl = getServerEnv().BASE_URL || "http://localhost:3000";
 
     // En cas d'erreur, rediriger vers la page de connexion avec un message
-    return NextResponse.redirect(
-      new URL("/connexion?error=fc_init_failed", baseUrl)
-    );
+    return NextResponse.redirect(new URL(`${ROUTES.connexion.particulier}?error=fc_init_failed`, baseUrl));
   }
 }

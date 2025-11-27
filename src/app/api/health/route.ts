@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { db } from "@/shared/database";
-import packageJson from "../../../../../package.json";
+import packageJson from "../../../../package.json";
 
 export async function GET() {
   const timestamp = new Date().toISOString();

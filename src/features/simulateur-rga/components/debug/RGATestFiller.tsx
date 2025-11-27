@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { PartialRGAFormData } from "../../domain/entities";
 import { useSimulateurRga } from "../../hooks";
 import { isProduction } from "@/shared/config/env.config";
+import { ROUTES } from "@/features/auth";
 
 // Données de test adaptées au type RGAFormData avec structure imbriquée
 const TEST_RGA_DATA: PartialRGAFormData = {
@@ -84,7 +85,7 @@ export default function RGATestFiller(): JSX.Element | null {
 
       // Petit délai pour afficher le message de succès
       setTimeout(() => {
-        router.push("/connexion");
+        router.push(ROUTES.connexion.particulier);
       }, 1500);
     } catch (error) {
       console.error("Erreur lors du remplissage des données de test:", error);

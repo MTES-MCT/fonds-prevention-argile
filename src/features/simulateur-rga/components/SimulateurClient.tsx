@@ -8,6 +8,7 @@ import { useSimulateurRga } from "../hooks";
 import { parseRGAParams } from "../services/parser.service";
 import { encryptRGAData } from "../actions/encrypt-rga-data.actions";
 import type { PartialRGAFormData } from "../domain/entities";
+import { ROUTES } from "@/features/auth";
 
 interface RGAMessage {
   type: string;
@@ -84,7 +85,7 @@ export default function SimulateurClient({ embedMode = false }: SimulateurClient
    * Gère la redirection en mode normal
    */
   const handleNormalRedirect = () => {
-    router.push("/connexion");
+    router.push(ROUTES.connexion.particulier);
   };
 
   /**
@@ -217,7 +218,9 @@ export default function SimulateurClient({ embedMode = false }: SimulateurClient
                     </p>
                   </>
                 ) : (
-                  <button className="fr-btn fr-btn--primary fr-mt-2w" onClick={() => router.push("/connexion")}>
+                  <button
+                    className="fr-btn fr-btn--primary fr-mt-2w"
+                    onClick={() => router.push(ROUTES.connexion.particulier)}>
                     Continuer
                   </button>
                 )}

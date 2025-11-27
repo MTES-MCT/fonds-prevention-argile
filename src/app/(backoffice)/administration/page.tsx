@@ -1,8 +1,8 @@
-import AdminDashboard from "./components/AdminDashboard";
 import { Step } from "@/features/parcours/core";
 import { getDemarcheDetails, getDemarcheSchema, getDossiers } from "@/features/parcours/dossiers-ds/actions";
 import { Suspense } from "react";
-import Loading from "../loading";
+import Loading from "../../(main)/loading";
+import AdminDashboard from "./components/AdminDashboard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

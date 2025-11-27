@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { AuthUser } from "../domain/entities";
-import { AUTH_METHODS } from "../domain/value-objects";
+import { AUTH_METHODS, ROUTES } from "../domain/value-objects";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Vérifier l'authentification via l'API
   const checkAuth = useCallback(async () => {
     try {
-      const response = await fetch("/api/auth/check", {
+      const response = await fetch(ROUTES.api.auth.check, {
         cache: "no-store",
       });
 
@@ -63,9 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let logoutUrl = "/";
 
         if (user?.authMethod === AUTH_METHODS.FRANCECONNECT) {
-          logoutUrl = "/api/auth/fc/logout";
+          logoutUrl = ROUTES.api.auth.fc.logout;
         } else if (user?.authMethod === AUTH_METHODS.PROCONNECT) {
-          logoutUrl = "/api/auth/pc/logout";
+          logoutUrl = ROUTES.api.auth.pc.logout;
         }
 
         const response = await fetch(logoutUrl, {
