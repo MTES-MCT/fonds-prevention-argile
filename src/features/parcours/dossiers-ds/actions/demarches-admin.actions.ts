@@ -1,6 +1,6 @@
 "use server";
 
-import { getSession, ROLES } from "@/features/auth/server";
+import { getSession } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types";
 import type { DemarcheDetailed, DossiersConnection, Dossier, DossiersFilters } from "../adapters/graphql/types";
 import { graphqlClient } from "../adapters";
