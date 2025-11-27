@@ -11,12 +11,12 @@ import { UserRole as UserRoleEnum } from "@/shared/domain/value-objects/user-rol
  */
 export function getDefaultRedirect(role: UserRole): string {
   switch (role) {
+    case UserRoleEnum.SUPER_ADMINISTRATEUR:
+      return DEFAULT_REDIRECTS.super_administrateur;
     case UserRoleEnum.ADMINISTRATEUR:
       return DEFAULT_REDIRECTS.administrateur;
     case UserRoleEnum.AMO:
       return DEFAULT_REDIRECTS.amo;
-    case UserRoleEnum.INSTRUCTEUR:
-      return DEFAULT_REDIRECTS.instructeur;
     case UserRoleEnum.PARTICULIER:
       return DEFAULT_REDIRECTS.particulier;
     default:

@@ -7,7 +7,7 @@ import { AgentRole } from "@/shared/domain/value-objects/user-role.enum";
  */
 export function useIsAgent() {
   const { user } = useAuth();
-  return user?.role === ROLES.ADMIN || user?.role === ROLES.INSTRUCTEUR || user?.role === ROLES.AMO;
+  return user?.role === ROLES.ADMINISTRATEUR || user?.role === ROLES.SUPER_ADMINISTRATEUR || user?.role === ROLES.AMO;
 }
 
 /**
@@ -35,7 +35,7 @@ export function useAgentRole(): AgentRole | null {
 
   if (!user) return null;
 
-  if (user.role === ROLES.ADMIN || user.role === ROLES.INSTRUCTEUR || user.role === ROLES.AMO) {
+  if (user.role === ROLES.ADMINISTRATEUR || user.role === ROLES.SUPER_ADMINISTRATEUR || user.role === ROLES.AMO) {
     return user.role as AgentRole;
   }
 

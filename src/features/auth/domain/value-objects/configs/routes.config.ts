@@ -32,6 +32,7 @@ export const ROUTES = {
     administration: {
       root: "/administration",
       utilisateurs: "/administration/utilisateurs",
+      agents: "/administration/agents", // Gestion des agents (super admin only)
       statistiques: "/administration/statistiques",
       amos: "/administration/amos",
       eligibilite: "/administration/eligibilite",
@@ -45,13 +46,6 @@ export const ROUTES = {
       root: "/espace-amo",
       notifications: "/espace-amo/notifications",
       dossiers: "/espace-amo/dossiers",
-    },
-
-    // Instruction (Instructeurs)
-    instruction: {
-      root: "/instruction",
-      dossiers: "/instruction/dossiers",
-      dossier: (id: string) => `/instruction/dossiers/${id}` as const,
     },
   },
 
@@ -88,13 +82,7 @@ export const ROUTES = {
 // Routes protégées par rôle
 export const PROTECTED_ROUTES = {
   // Routes agents (ProConnect) - tous les rôles agents peuvent accéder
-  admin: [
-    ROUTES.backoffice.administration.root,
-    ROUTES.backoffice.espaceAmo.root,
-    ROUTES.backoffice.instruction.root,
-    "/api/private",
-    "/test",
-  ],
+  admin: [ROUTES.backoffice.administration.root, ROUTES.backoffice.espaceAmo.root, "/api/private", "/test"],
   // Routes particuliers (FranceConnect)
   particulier: [ROUTES.particulier.monCompte, ROUTES.particulier.mesDossiers, ROUTES.particulier.mesDemandes],
 } as const;
@@ -123,9 +111,9 @@ export const PUBLIC_ROUTES = {
 // Redirections par défaut selon le contexte
 export const DEFAULT_REDIRECTS = {
   // Par rôle agent
+  super_administrateur: ROUTES.backoffice.administration.root,
   administrateur: ROUTES.backoffice.administration.root,
   amo: ROUTES.backoffice.espaceAmo.root,
-  instructeur: ROUTES.backoffice.instruction.root,
 
   // Particulier
   particulier: ROUTES.particulier.monCompte,

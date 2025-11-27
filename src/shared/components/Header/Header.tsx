@@ -14,6 +14,7 @@ function AgentNavLinks() {
 
   switch (agentRole) {
     case UserRole.ADMINISTRATEUR:
+    case UserRole.SUPER_ADMINISTRATEUR:
       return (
         <li>
           <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
@@ -36,15 +37,6 @@ function AgentNavLinks() {
             </Link>
           </li>
         </>
-      );
-
-    case UserRole.INSTRUCTEUR:
-      return (
-        <li>
-          <Link href={ROUTES.backoffice.instruction.root} className="fr-icon-draft-line fr-btn">
-            Instruction
-          </Link>
-        </li>
       );
 
     default:
@@ -60,6 +52,7 @@ function AgentNavLinksMobile() {
 
   switch (agentRole) {
     case UserRole.ADMINISTRATEUR:
+    case UserRole.SUPER_ADMINISTRATEUR:
       return (
         <li>
           <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
@@ -82,15 +75,6 @@ function AgentNavLinksMobile() {
             </Link>
           </li>
         </>
-      );
-
-    case UserRole.INSTRUCTEUR:
-      return (
-        <li>
-          <Link href={ROUTES.backoffice.instruction.root} className="fr-icon-draft-line fr-btn">
-            Instruction
-          </Link>
-        </li>
       );
 
     default:

@@ -5,8 +5,8 @@ import { UserRole } from "@/shared/domain/value-objects";
  */
 export const ROLES = {
   PARTICULIER: UserRole.PARTICULIER,
-  ADMIN: UserRole.ADMINISTRATEUR,
-  INSTRUCTEUR: UserRole.INSTRUCTEUR,
+  ADMINISTRATEUR: UserRole.ADMINISTRATEUR,
+  SUPER_ADMINISTRATEUR: UserRole.SUPER_ADMINISTRATEUR,
   AMO: UserRole.AMO,
 } as const;
 
