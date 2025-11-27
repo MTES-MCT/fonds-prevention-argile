@@ -1,10 +1,21 @@
-import type { Agent } from "@/shared/database/schema/agents";
-
 /**
  * Agent avec ses permissions (départements)
  */
 export interface AgentWithPermissions {
-  agent: Agent;
+  agent: {
+    id: string;
+    sub: string;
+    email: string;
+    givenName: string;
+    usualName: string | null;
+    uid: string | null;
+    siret: string | null;
+    phone: string | null;
+    organizationalUnit: string | null;
+    role: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
   departements: string[];
 }
 

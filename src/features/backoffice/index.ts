@@ -1,16 +1,8 @@
-// Shared
-export {
-  // Services
-  getAgentByEmail,
-  getAgentBySub,
-  // Actions
-  getCurrentAgent,
-  // Components
-  AccesNonAutorise,
-} from "./shared";
+// Shared - Composants uniquement
+export { AccesNonAutorise } from "./shared/components";
 
-// Administration
+// Shared - Actions uniquement
+export { getCurrentAgent } from "./shared/actions";
+
 export * from "./administration";
-
-// Statistiques
 export * from "./statistiques";

@@ -115,10 +115,10 @@ export class AgentsRepository extends BaseRepository<Agent> {
     proConnectData: ProConnectAgentData,
     defaultRole: AgentRole = AGENT_ROLES.ADMINISTRATEUR
   ): Promise<Agent> {
-    // Vérifier si l'agent existe déjà (par sub)
-    const existingAgent = await this.findBySub(proConnectData.sub);
+    // 1. Vérifier si l'agent existe déjà par sub
+    const existingBySub = await this.findBySub(proConnectData.sub);
 
-    if (existingAgent) {
+    if (existingBySub) {
       // Mettre à jour les informations de l'agent existant
       const [updatedAgent] = await db
         .update(agents)
@@ -138,7 +138,31 @@ export class AgentsRepository extends BaseRepository<Agent> {
       return updatedAgent;
     }
 
-    // Créer un nouvel agent avec le rôle par défaut
+    // 2. Vérifier si l'agent existe par email (cas d'un agent pré-créé avec sub pending_)
+    const existingByEmail = await this.findByEmail(proConnectData.email);
+
+    if (existingByEmail) {
+      // Mettre à jour le sub et les autres informations
+      const [updatedAgent] = await db
+        .update(agents)
+        .set({
+          sub: proConnectData.sub, // Mise à jour du sub !
+          givenName: proConnectData.given_name,
+          usualName: proConnectData.usual_name,
+          uid: proConnectData.uid,
+          siret: proConnectData.siret,
+          phone: proConnectData.phone,
+          organizationalUnit: proConnectData.organizational_unit,
+          updatedAt: new Date(),
+        })
+        .where(eq(agents.email, proConnectData.email))
+        .returning();
+
+      return updatedAgent;
+    }
+
+    // 3. Créer un nouvel agent (email non trouvé = agent non autorisé)
+    // TODO : Vérifier si la création est autorisée dans ce contexte
     const [newAgent] = await db
       .insert(agents)
       .values({
