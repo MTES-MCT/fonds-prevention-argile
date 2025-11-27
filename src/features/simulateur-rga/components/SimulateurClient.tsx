@@ -8,7 +8,7 @@ import { useSimulateurRga } from "../hooks";
 import { parseRGAParams } from "../services/parser.service";
 import { encryptRGAData } from "../actions/encrypt-rga-data.actions";
 import type { PartialRGAFormData } from "../domain/entities";
-import { ROUTES } from "@/features/auth";
+import { ROUTES } from "@/features/auth/client";
 
 interface RGAMessage {
   type: string;

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useParcours } from "../../../context/useParcours";
 import { envoyerDossierEligibiliteAvecDonnees } from "../../../actions";
 import { useSimulateurRga } from "@/features/simulateur-rga";
-import { ROUTES } from "@/features/auth";
+import { ROUTES } from "@/features/auth/client";
 
 export default function CalloutEligibiliteTodo() {
   const router = useRouter();

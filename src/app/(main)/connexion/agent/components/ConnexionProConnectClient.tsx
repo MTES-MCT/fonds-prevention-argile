@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import content from "../content/content.json";
-import { ROUTES } from "@/features/auth";
+import { ROUTES } from "@/features/auth/client";
 
 export default function ConnexionProConnectClient() {
   const [pcError, setPcError] = useState<string | null>(null);

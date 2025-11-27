@@ -1,6 +1,6 @@
 "use client";
 
-import { ROUTES } from "@/features/auth";
+import { ROUTES } from "@/features/auth/client";
 import Link from "next/link";
 
 export default function ForbiddenSimulator() {

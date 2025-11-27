@@ -17,14 +17,10 @@ export * from "./hooks";
 export * from "./domain/value-objects/configs/routes.config";
 
 // JWT decode utils (client-safe)
-export {
-  decodeToken,
-  isTokenExpired,
-  getRoleFromToken,
-} from "./utils/jwt-decode.utils";
+export { decodeToken, isTokenExpired, getRoleFromToken } from "./utils/jwt-decode.utils";
 
 // Erreurs FC (pour affichage messages)
-export {
-  FC_ERROR_MESSAGES,
-  FC_ERROR_MAPPING,
-} from "./adapters/franceconnect/franceconnect.errors";
+export { FC_ERROR_MESSAGES, FC_ERROR_MAPPING } from "./adapters/franceconnect/franceconnect.errors";
+
+// Routes
+export { ROUTES } from "./domain/value-objects/configs/routes.config";

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PartialRGAFormData } from "../../domain/entities";
 import { useSimulateurRga } from "../../hooks";
 import { isProduction } from "@/shared/config/env.config";
-import { ROUTES } from "@/features/auth";
+import { ROUTES } from "@/features/auth/client";
 
 // Données de test adaptées au type RGAFormData avec structure imbriquée
 const TEST_RGA_DATA: PartialRGAFormData = {
