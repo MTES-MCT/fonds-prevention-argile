@@ -12,14 +12,15 @@ import AgentFormModal, { type AgentFormData } from "./AgentFormModal";
 import AgentDeleteModal from "./AgentDeleteModal";
 import { AgentWithPermissions } from "@/features/backoffice";
 
+const MODAL_DELETE_ID = "modal-delete-agent";
+const MODAL_FORM_ID = "modal-form-agent";
+
 export default function AgentsPanel() {
   const [agents, setAgents] = useState<AgentWithPermissions[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Modal states
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AgentWithPermissions | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,19 +47,16 @@ export default function AgentsPanel() {
   // Ouvrir le modal d'ajout
   const handleAdd = () => {
     setSelectedAgent(null);
-    setIsFormModalOpen(true);
   };
 
   // Ouvrir le modal d'édition
   const handleEdit = (agent: AgentWithPermissions) => {
     setSelectedAgent(agent);
-    setIsFormModalOpen(true);
   };
 
   // Ouvrir le modal de suppression
   const handleDelete = (agent: AgentWithPermissions) => {
     setSelectedAgent(agent);
-    setIsDeleteModalOpen(true);
   };
 
   // Soumettre le formulaire (création ou modification)
@@ -94,7 +92,6 @@ export default function AgentsPanel() {
 
       // Recharger la liste
       await loadAgents();
-      setIsFormModalOpen(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -115,7 +112,6 @@ export default function AgentsPanel() {
 
       // Recharger la liste
       await loadAgents();
-      setIsDeleteModalOpen(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -129,7 +125,12 @@ export default function AgentsPanel() {
           <h2 className="text-2xl font-bold mb-1">Gestion des agents</h2>
           <p className="text-gray-600">Gérez les agents qui ont accès au backoffice et leurs permissions.</p>
         </div>
-        <button type="button" className="fr-btn" onClick={handleAdd}>
+        <button
+          type="button"
+          className="fr-btn"
+          aria-controls={MODAL_FORM_ID}
+          data-fr-opened="false"
+          onClick={handleAdd}>
           <span className="fr-icon-add-line fr-icon--sm mr-2" aria-hidden="true" />
           Ajouter un agent
         </button>
@@ -170,22 +171,27 @@ export default function AgentsPanel() {
           </div>
 
           {/* Liste */}
-          <AgentsList agents={agents} onEdit={handleEdit} onDelete={handleDelete} isLoading={isSubmitting} />
+          <AgentsList
+            agents={agents}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            isLoading={isSubmitting}
+            modalDeleteId={MODAL_DELETE_ID}
+            modalFormId={MODAL_FORM_ID}
+          />
         </>
       )}
 
       {/* Modals */}
       <AgentFormModal
-        isOpen={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
+        modalId={MODAL_FORM_ID}
         onSubmit={handleFormSubmit}
         agent={selectedAgent}
         isLoading={isSubmitting}
       />
 
       <AgentDeleteModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
+        modalId={MODAL_DELETE_ID}
         onConfirm={handleDeleteConfirm}
         agent={selectedAgent}
         isLoading={isSubmitting}

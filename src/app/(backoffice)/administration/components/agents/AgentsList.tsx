@@ -9,6 +9,8 @@ interface AgentsListProps {
   onEdit: (agent: AgentWithPermissions) => void;
   onDelete: (agent: AgentWithPermissions) => void;
   isLoading?: boolean;
+  modalDeleteId: string;
+  modalFormId: string;
 }
 
 /**
@@ -43,7 +45,14 @@ function getRoleBadgeClass(role: string): string {
   }
 }
 
-export default function AgentsList({ agents, onEdit, onDelete, isLoading = false }: AgentsListProps) {
+export default function AgentsList({
+  agents,
+  onEdit,
+  onDelete,
+  isLoading = false,
+  modalDeleteId,
+  modalFormId,
+}: AgentsListProps) {
   if (agents.length === 0) {
     return (
       <div className="fr-callout">
@@ -133,6 +142,8 @@ export default function AgentsList({ agents, onEdit, onDelete, isLoading = false
                     <button
                       type="button"
                       className="fr-btn fr-btn--sm fr-btn--secondary"
+                      aria-controls={modalFormId}
+                      data-fr-opened="false"
                       onClick={() => onEdit(agentData)}
                       disabled={isLoading}
                       title="Modifier">
@@ -141,6 +152,8 @@ export default function AgentsList({ agents, onEdit, onDelete, isLoading = false
                     <button
                       type="button"
                       className="fr-btn fr-btn--sm fr-btn--tertiary-no-outline text-red-600"
+                      aria-controls={modalDeleteId}
+                      data-fr-opened="false"
                       onClick={() => onDelete(agentData)}
                       disabled={isLoading}
                       title="Supprimer">
