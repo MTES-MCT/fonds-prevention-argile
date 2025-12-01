@@ -1,0 +1,57 @@
+{
+  "degats": {
+    "title": "Des dégâts visibles et coûteux",
+    "emoji": "🏚️",
+    "content": [
+      "Sur votre maison, le RGA se manifeste par des fissures en escalier sur les façades, des décollements entre murs et plafonds, des portes et fenêtres qui se bloquent, ou encore des fissurations de carrelage. Ces désordres, d'abord discrets, s'aggravent avec le temps et peuvent compromettre la solidité structurelle de votre logement.",
+      "Les épisodes de sécheresse de plus en plus fréquents et intenses accentuent ce phénomène de RGA. En France, il a déjà coûté plus de 11 milliards d'euros en indemnisations, ce qui en fait le 2ᵉ risque naturel le plus onéreux après les inondations."
+    ]
+  },
+  "coutInaction": {
+    "title": "Le coût de l'inaction",
+    "emoji": "😓",
+    "content": [
+      "Ignorer les risques et ne pas protéger votre maison, c'est vous exposer vous et vos proches à un risque considérable.",
+      "D'autre part, le coût moyen d'un sinistre lié au RGA est de 16 500€ et peut aller jusqu'à 75 000€, entraînant 12 à 24 mois de relogement selon l'ampleur des dégâts. Sans compter la dévalorisation de votre bien immobilier en cas de désordres non traités.",
+      "L'inaction est bien plus coûteuse que l'action."
+    ]
+  },
+  "etatAccompagne": {
+    "title": "L'État vous accompagne pour agir avant sinistre",
+    "emoji": "🛟",
+    "content": [
+      "N'attendez pas que les fissures apparaissent. Des travaux préventifs permettent de protéger votre maison : bonne gestion des eaux, de la végétation et régulation de l'humidité au niveau des fondations.",
+      "Pour vous accompagner, l'État a créé le Fonds de Prévention Argile. Ce dispositif finance en partie :"
+    ],
+    "liste": [
+      "Un diagnostic de vulnérabilité au retrait gonflement des argiles",
+      "Un accompagnement administratif et technique",
+      "Des travaux de prévention"
+    ],
+    "conclusion": "Les propriétaires occupants de maison situés en zone à risque fort et sous conditions peuvent bénéficier de ces aides."
+  },
+  "cta": {
+    "small": {
+      "text": "N'attendez pas d'être sinistrés. Protégez-vous et bénéficiez de l'aide l'État.",
+      "buttonLabel": "Vérifier mon éligibilité",
+      "buttonLink": "/simulateur",
+      "image": {
+        "src": "/images/rga/cta-small.webp",
+        "alt": "Maison exposée au soleil"
+      }
+    },
+    "fullWidth": {
+      "text": "Le Fonds de Prévention Argile traite des causes, pas des conséquences. Agissez avant qu'il ne soit trop tard.",
+      "buttonLabel": "Vérifier mon éligibilité",
+      "buttonLink": "/simulateur",
+      "image": {
+        "src": "/images/rga/cta-fullwidth.webp",
+        "alt": "Intérieur de maison confortable"
+      }
+    }
+  },
+  "breadcrumb": {
+    "home": "Accueil",
+    "rga": "RGA"
+  }
+}

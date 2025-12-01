@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "title": "RGA - {nom_epci} | Fonds Prévention Argile",
+    "description": "Découvrez les risques de retrait-gonflement des argiles sur le territoire de {nom_epci}. Vérifiez si votre maison est éligible aux aides de l'État."
+  },
+  "hero": {
+    "title": "Le Retrait-Gonflement des Argiles sur le territoire de {nom_epci}",
+    "breadcrumb": ["Accueil", "RGA", "{nom_departement}", "{nom_epci}"]
+  },
+  "introduction": {
+    "title": "Risques Retrait-Gonflement sur {nom_epci}",
+    "content": "Sur le territoire de {nom_epci}, de nombreuses communes sont situées sur des sols argileux sensibles aux variations d'humidité. Lors des périodes de sécheresse, ces argiles se rétractent, provoquant des tassements de terrain. À l'inverse, lors d'épisodes pluvieux, elles se gorgent d'eau et gonflent. Ces mouvements alternés, appelés Retrait-Gonflement des Argiles (RGA), fragilisent progressivement les fondations des habitations."
+  },
+  "carte": {
+    "zoom": 11,
+    "centerType": "centroid"
+  },
+  "enSavoirPlus": {
+    "title": "En savoir plus sur le RGA dans {nom_epci}",
+    "description": "Découvrez la situation dans les communes de l'intercommunalité"
+  },
+  "zoneTerritoire": {
+    "title": "Le Retrait-Gonflement des Argiles dans le département du {nom_departement}",
+    "description": "Consultez les informations pour les autres communes du département"
+  },
+  "etatAccompagne": {
+    "conclusionLocale": "Les propriétaires occupants de maison sur le territoire de {nom_epci} situés en zone à risque fort et sous conditions peuvent bénéficier de ces aides."
+  }
+}
