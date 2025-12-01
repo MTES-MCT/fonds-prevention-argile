@@ -1,0 +1,90 @@
+[
+  {
+    "code": "03",
+    "nom": "Allier",
+    "slug": "allier",
+    "population": 334715,
+    "nombreCommunesRGA": 10,
+    "nombreEpciRGA": 5
+  },
+  {
+    "code": "04",
+    "nom": "Alpes-de-Haute-Provence",
+    "slug": "alpes-de-haute-provence",
+    "population": 167179,
+    "nombreCommunesRGA": 10,
+    "nombreEpciRGA": 4
+  },
+  {
+    "code": "24",
+    "nom": "Dordogne",
+    "slug": "dordogne",
+    "population": 416325,
+    "nombreCommunesRGA": 10,
+    "nombreEpciRGA": 6
+  },
+  {
+    "code": "32",
+    "nom": "Gers",
+    "slug": "gers",
+    "population": 192450,
+    "nombreCommunesRGA": 10,
+    "nombreEpciRGA": 8
+  },
+  {
+    "code": "36",
+    "nom": "Indre",
+    "slug": "indre",
+    "population": 216809,
+    "nombreCommunesRGA": 10,
+    "nombreEpciRGA": 6
+  },
+  {
+    "code": "47",
+    "nom": "Lot-et-Garonne",
+    "slug": "lot-et-garonne",
+    "population": 332226,
+    "nombreCommunesRGA": 10,
+    "nombreEpciRGA": 4
+  },
+  {
+    "code": "54",
+    "nom": "Meurthe-et-Moselle",
+    "slug": "meurthe-et-moselle",
+    "population": 732898,
+    "nombreCommunesRGA": 10,
+    "nombreEpciRGA": 6
+  },
+  {
+    "code": "59",
+    "nom": "Nord",
+    "slug": "nord",
+    "population": 2616532,
+    "nombreCommunesRGA": 10,
+    "nombreEpciRGA": 5
+  },
+  {
+    "code": "63",
+    "nom": "Puy-de-Dôme",
+    "slug": "puy-de-dome",
+    "population": 664037,
+    "nombreCommunesRGA": 10,
+    "nombreEpciRGA": 4
+  },
+  {
+    "code": "81",
+    "nom": "Tarn",
+    "slug": "tarn",
+    "population": 396168,
+    "nombreCommunesRGA": 10,
+    "nombreEpciRGA": 5
+  },
+  {
+    "code": "82",
+    "nom": "Tarn-et-Garonne",
+    "slug": "tarn-et-garonne",
+    "population": 264924,
+    "nombreCommunesRGA": 10,
+    "nombreEpciRGA": 6
+  }
+]

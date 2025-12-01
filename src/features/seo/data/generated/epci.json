@@ -1,0 +1,770 @@
+[
+  {
+    "codeSiren": "200071082",
+    "nom": "CA Montluçon Communauté",
+    "slug": "ca-montlucon-communaute-200071082",
+    "codesDepartements": [
+      "03"
+    ],
+    "codesCommunes": [
+      "03185",
+      "03101"
+    ],
+    "population": 59380
+  },
+  {
+    "codeSiren": "200071363",
+    "nom": "CA Vichy Communauté",
+    "slug": "ca-vichy-communaute-200071363",
+    "codesDepartements": [
+      "03"
+    ],
+    "codesCommunes": [
+      "03310",
+      "03095",
+      "03023"
+    ],
+    "population": 84566
+  },
+  {
+    "codeSiren": "200071140",
+    "nom": "CA Moulins Communauté",
+    "slug": "ca-moulins-communaute-200071140",
+    "codesDepartements": [
+      "03",
+      "58"
+    ],
+    "codesCommunes": [
+      "03190",
+      "03321"
+    ],
+    "population": 64246
+  },
+  {
+    "codeSiren": "200071512",
+    "nom": "CC Commentry Montmarault Néris Communauté",
+    "slug": "cc-commentry-montmarault-neris-communaute-200071512",
+    "codesDepartements": [
+      "03"
+    ],
+    "codesCommunes": [
+      "03082"
+    ],
+    "population": 25346
+  },
+  {
+    "codeSiren": "200071389",
+    "nom": "CC Saint-Pourçain Sioule Limagne",
+    "slug": "cc-saint-pourcain-sioule-limagne-200071389",
+    "codesDepartements": [
+      "03"
+    ],
+    "codesCommunes": [
+      "03118",
+      "03254"
+    ],
+    "population": 33672
+  },
+  {
+    "codeSiren": "200034700",
+    "nom": "CA Durance-Lubéron-Verdon Agglomération",
+    "slug": "ca-durance-luberon-verdon-agglomeration-200034700",
+    "codesDepartements": [
+      "04",
+      "83"
+    ],
+    "codesCommunes": [
+      "04112",
+      "04143",
+      "04242",
+      "04152",
+      "04197"
+    ],
+    "population": 63654
+  },
+  {
+    "codeSiren": "200067437",
+    "nom": "CA Provence-Alpes-Agglomération",
+    "slug": "ca-provence-alpes-agglomeration-200067437",
+    "codesDepartements": [
+      "04"
+    ],
+    "codesCommunes": [
+      "04070",
+      "04049",
+      "04116"
+    ],
+    "population": 48726
+  },
+  {
+    "codeSiren": "200068765",
+    "nom": "CC du Sisteronais-Buëch",
+    "slug": "cc-du-sisteronais-buech-200068765",
+    "codesDepartements": [
+      "04",
+      "05",
+      "26"
+    ],
+    "codesCommunes": [
+      "04209"
+    ],
+    "population": 25482
+  },
+  {
+    "codeSiren": "240400440",
+    "nom": "CC Pays Forcalquier et Montagne de Lure",
+    "slug": "cc-pays-forcalquier-et-montagne-de-lure-240400440",
+    "codesDepartements": [
+      "04"
+    ],
+    "codesCommunes": [
+      "04088"
+    ],
+    "population": 9996
+  },
+  {
+    "codeSiren": "200040392",
+    "nom": "CA Le Grand Périgueux",
+    "slug": "ca-le-grand-perigueux-200040392",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24322",
+      "24053",
+      "24138",
+      "24557",
+      "24312"
+    ],
+    "population": 104933
+  },
+  {
+    "codeSiren": "200070647",
+    "nom": "CA Bergeracoise",
+    "slug": "ca-bergeracoise-200070647",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24037"
+    ],
+    "population": 61551
+  },
+  {
+    "codeSiren": "200027217",
+    "nom": "CC Sarlat-Périgord Noir",
+    "slug": "cc-sarlat-perigord-noir-200027217",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24520"
+    ],
+    "population": 16168
+  },
+  {
+    "codeSiren": "200041150",
+    "nom": "CC Terrassonnais Haut Périgord Noir",
+    "slug": "cc-terrassonnais-haut-perigord-noir-200041150",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24547"
+    ],
+    "population": 22161
+  },
+  {
+    "codeSiren": "200040384",
+    "nom": "CC Isle Double Landais",
+    "slug": "cc-isle-double-landais-200040384",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24294"
+    ],
+    "population": 12546
+  },
+  {
+    "codeSiren": "200040095",
+    "nom": "CC Isle Vern Salembre en Périgord",
+    "slug": "cc-isle-vern-salembre-en-perigord-200040095",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24372"
+    ],
+    "population": 18912
+  },
+  {
+    "codeSiren": "200066926",
+    "nom": "CA Grand Auch Coeur de Gascogne",
+    "slug": "ca-grand-auch-coeur-de-gascogne-200066926",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32013",
+      "32307"
+    ],
+    "population": 39498
+  },
+  {
+    "codeSiren": "200023620",
+    "nom": "CC de la Gascogne Toulousaine",
+    "slug": "cc-de-la-gascogne-toulousaine-200023620",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32160"
+    ],
+    "population": 17060
+  },
+  {
+    "codeSiren": "243200417",
+    "nom": "CC de la Tenarèze",
+    "slug": "cc-de-la-tenareze-243200417",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32107"
+    ],
+    "population": 14327
+  },
+  {
+    "codeSiren": "243200391",
+    "nom": "CC de la Lomagne Gersoise",
+    "slug": "cc-de-la-lomagne-gersoise-243200391",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32132",
+      "32208"
+    ],
+    "population": 19309
+  },
+  {
+    "codeSiren": "243200458",
+    "nom": "CC du Grand Armagnac",
+    "slug": "cc-du-grand-armagnac-243200458",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32119"
+    ],
+    "population": 13441
+  },
+  {
+    "codeSiren": "243200607",
+    "nom": "CC Artagnan de Fezensac",
+    "slug": "cc-artagnan-de-fezensac-243200607",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32462"
+    ],
+    "population": 6953
+  },
+  {
+    "codeSiren": "243200425",
+    "nom": "CC Coeur d'Astarac en Gascogne",
+    "slug": "cc-coeur-d-astarac-en-gascogne-243200425",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32256"
+    ],
+    "population": 7720
+  },
+  {
+    "codeSiren": "200042372",
+    "nom": "CC des Coteaux Arrats Gimone",
+    "slug": "cc-des-coteaux-arrats-gimone-200042372",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32147"
+    ],
+    "population": 10784
+  },
+  {
+    "codeSiren": "243600327",
+    "nom": "CA Châteauroux Métropole",
+    "slug": "ca-chateauroux-metropole-243600327",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36044",
+      "36063",
+      "36159",
+      "36005",
+      "36202"
+    ],
+    "population": 72566
+  },
+  {
+    "codeSiren": "243600236",
+    "nom": "CC du Pays d'Issoudun",
+    "slug": "cc-du-pays-d-issoudun-243600236",
+    "codesDepartements": [
+      "18",
+      "36"
+    ],
+    "codesCommunes": [
+      "36088"
+    ],
+    "population": 18778
+  },
+  {
+    "codeSiren": "243600319",
+    "nom": "CC Brenne - Val de Creuse",
+    "slug": "cc-brenne-val-de-creuse-243600319",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36018"
+    ],
+    "population": 17565
+  },
+  {
+    "codeSiren": "200068872",
+    "nom": "CC Éguzon - Argenton - Vallée de la Creuse",
+    "slug": "cc-eguzon-argenton-vallee-de-la-creuse-200068872",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36006"
+    ],
+    "population": 19302
+  },
+  {
+    "codeSiren": "243600301",
+    "nom": "CC Val de l'Indre - Brenne",
+    "slug": "cc-val-de-l-indre-brenne-243600301",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36031"
+    ],
+    "population": 13242
+  },
+  {
+    "codeSiren": "243600350",
+    "nom": "CC de la Châtre et Sainte-Sévère",
+    "slug": "cc-de-la-chatre-et-sainte-severe-243600350",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36046"
+    ],
+    "population": 16134
+  },
+  {
+    "codeSiren": "200096956",
+    "nom": "CA Agglomération d'Agen",
+    "slug": "ca-agglomeration-d-agen-200096956",
+    "codesDepartements": [
+      "47"
+    ],
+    "codesCommunes": [
+      "47001",
+      "47201",
+      "47032",
+      "47031",
+      "47100"
+    ],
+    "population": 101727
+  },
+  {
+    "codeSiren": "200023307",
+    "nom": "CA du Grand Villeneuvois",
+    "slug": "ca-du-grand-villeneuvois-200023307",
+    "codesDepartements": [
+      "47"
+    ],
+    "codesCommunes": [
+      "47323",
+      "47252"
+    ],
+    "population": 47899
+  },
+  {
+    "codeSiren": "200030674",
+    "nom": "CA Val de Garonne Agglomération",
+    "slug": "ca-val-de-garonne-agglomeration-200030674",
+    "codesDepartements": [
+      "47"
+    ],
+    "codesCommunes": [
+      "47157",
+      "47310"
+    ],
+    "population": 60690
+  },
+  {
+    "codeSiren": "200068948",
+    "nom": "CC Albret Communauté",
+    "slug": "cc-albret-communaute-200068948",
+    "codesDepartements": [
+      "47"
+    ],
+    "codesCommunes": [
+      "47195"
+    ],
+    "population": 25866
+  },
+  {
+    "codeSiren": "245400676",
+    "nom": "Métropole du Grand Nancy",
+    "slug": "metropole-du-grand-nancy-245400676",
+    "codesDepartements": [
+      "54"
+    ],
+    "codesCommunes": [
+      "54395",
+      "54547",
+      "54304",
+      "54578",
+      "54482"
+    ],
+    "population": 258208
+  },
+  {
+    "codeSiren": "200070324",
+    "nom": "CC du Territoire de Lunéville à Baccarat",
+    "slug": "cc-du-territoire-de-luneville-a-baccarat-200070324",
+    "codesDepartements": [
+      "54"
+    ],
+    "codesCommunes": [
+      "54329"
+    ],
+    "population": 40609
+  },
+  {
+    "codeSiren": "200070563",
+    "nom": "CC Terres Touloises",
+    "slug": "cc-terres-touloises-200070563",
+    "codesDepartements": [
+      "54"
+    ],
+    "codesCommunes": [
+      "54528"
+    ],
+    "population": 44293
+  },
+  {
+    "codeSiren": "245400262",
+    "nom": "CA Grand Longwy Agglomération",
+    "slug": "ca-grand-longwy-agglomeration-245400262",
+    "codesDepartements": [
+      "54"
+    ],
+    "codesCommunes": [
+      "54323"
+    ],
+    "population": 63645
+  },
+  {
+    "codeSiren": "200041515",
+    "nom": "CC du Bassin de Pont-à-Mousson",
+    "slug": "cc-du-bassin-de-pont-a-mousson-200041515",
+    "codesDepartements": [
+      "54"
+    ],
+    "codesCommunes": [
+      "54431"
+    ],
+    "population": 40203
+  },
+  {
+    "codeSiren": "245701404",
+    "nom": "CC du Pays Haut Val d'Alzette",
+    "slug": "cc-du-pays-haut-val-d-alzette-245701404",
+    "codesDepartements": [
+      "54",
+      "57"
+    ],
+    "codesCommunes": [
+      "54580"
+    ],
+    "population": 29465
+  },
+  {
+    "codeSiren": "200093201",
+    "nom": "Métropole Européenne de Lille",
+    "slug": "metropole-europeenne-de-lille-200093201",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59350",
+      "59512",
+      "59599",
+      "59009",
+      "59650",
+      "59378"
+    ],
+    "population": 1194040
+  },
+  {
+    "codeSiren": "245900428",
+    "nom": "CU de Dunkerque",
+    "slug": "cu-de-dunkerque-245900428",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59183"
+    ],
+    "population": 192635
+  },
+  {
+    "codeSiren": "245901160",
+    "nom": "CA Valenciennes Métropole",
+    "slug": "ca-valenciennes-metropole-245901160",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59606"
+    ],
+    "population": 191885
+  },
+  {
+    "codeSiren": "200044618",
+    "nom": "CA Douaisis Agglo",
+    "slug": "ca-douaisis-agglo-200044618",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59178"
+    ],
+    "population": 148901
+  },
+  {
+    "codeSiren": "200068500",
+    "nom": "CA de Cambrai",
+    "slug": "ca-de-cambrai-200068500",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59122"
+    ],
+    "population": 80469
+  },
+  {
+    "codeSiren": "246300701",
+    "nom": "Clermont Auvergne Métropole",
+    "slug": "clermont-auvergne-metropole-246300701",
+    "codesDepartements": [
+      "63"
+    ],
+    "codesCommunes": [
+      "63113",
+      "63124",
+      "63075",
+      "63284",
+      "63032",
+      "63014",
+      "63164"
+    ],
+    "population": 296677
+  },
+  {
+    "codeSiren": "200070753",
+    "nom": "CA Riom Limagne et Volcans",
+    "slug": "ca-riom-limagne-et-volcans-200070753",
+    "codesDepartements": [
+      "63"
+    ],
+    "codesCommunes": [
+      "63300"
+    ],
+    "population": 68319
+  },
+  {
+    "codeSiren": "200070407",
+    "nom": "CA Agglo Pays d'Issoire",
+    "slug": "ca-agglo-pays-d-issoire-200070407",
+    "codesDepartements": [
+      "63"
+    ],
+    "codesCommunes": [
+      "63178"
+    ],
+    "population": 56681
+  },
+  {
+    "codeSiren": "200070712",
+    "nom": "CC Thiers Dore et Montagne",
+    "slug": "cc-thiers-dore-et-montagne-200070712",
+    "codesDepartements": [
+      "63"
+    ],
+    "codesCommunes": [
+      "63430"
+    ],
+    "population": 36767
+  },
+  {
+    "codeSiren": "248100737",
+    "nom": "CA de l'Albigeois (C2A)",
+    "slug": "ca-de-l-albigeois-c2a-248100737",
+    "codesDepartements": [
+      "81"
+    ],
+    "codesCommunes": [
+      "81004",
+      "81257"
+    ],
+    "population": 84183
+  },
+  {
+    "codeSiren": "248100430",
+    "nom": "CA de Castres Mazamet",
+    "slug": "ca-de-castres-mazamet-248100430",
+    "codesDepartements": [
+      "81"
+    ],
+    "codesCommunes": [
+      "81065",
+      "81163",
+      "81120"
+    ],
+    "population": 78974
+  },
+  {
+    "codeSiren": "200066124",
+    "nom": "CA Gaillac-Graulhet",
+    "slug": "ca-gaillac-graulhet-200066124",
+    "codesDepartements": [
+      "81"
+    ],
+    "codesCommunes": [
+      "81099",
+      "81105"
+    ],
+    "population": 76216
+  },
+  {
+    "codeSiren": "200034023",
+    "nom": "CC Tarn-Agout",
+    "slug": "cc-tarn-agout-200034023",
+    "codesDepartements": [
+      "31",
+      "81"
+    ],
+    "codesCommunes": [
+      "81140",
+      "81271"
+    ],
+    "population": 29922
+  },
+  {
+    "codeSiren": "200040905",
+    "nom": "CC Carmausin-Ségala",
+    "slug": "cc-carmausin-segala-200040905",
+    "codesDepartements": [
+      "81"
+    ],
+    "codesCommunes": [
+      "81060"
+    ],
+    "population": 30115
+  },
+  {
+    "codeSiren": "248200099",
+    "nom": "CA Grand Montauban",
+    "slug": "ca-grand-montauban-248200099",
+    "codesDepartements": [
+      "82"
+    ],
+    "codesCommunes": [
+      "82121",
+      "82124"
+    ],
+    "population": 81397
+  },
+  {
+    "codeSiren": "200066322",
+    "nom": "CC Terres des Confluences",
+    "slug": "cc-terres-des-confluences-200066322",
+    "codesDepartements": [
+      "82"
+    ],
+    "codesCommunes": [
+      "82033",
+      "82112"
+    ],
+    "population": 42367
+  },
+  {
+    "codeSiren": "248200057",
+    "nom": "CC du Quercy Caussadais",
+    "slug": "cc-du-quercy-caussadais-248200057",
+    "codesDepartements": [
+      "82"
+    ],
+    "codesCommunes": [
+      "82037"
+    ],
+    "population": 20434
+  },
+  {
+    "codeSiren": "200066652",
+    "nom": "CC Grand Sud Tarn-et-Garonne",
+    "slug": "cc-grand-sud-tarn-et-garonne-200066652",
+    "codesDepartements": [
+      "82"
+    ],
+    "codesCommunes": [
+      "82125",
+      "82190",
+      "82075"
+    ],
+    "population": 43301
+  },
+  {
+    "codeSiren": "200066884",
+    "nom": "CC Quercy Vert-Aveyron",
+    "slug": "cc-quercy-vert-aveyron-200066884",
+    "codesDepartements": [
+      "82"
+    ],
+    "codesCommunes": [
+      "82134"
+    ],
+    "population": 21707
+  },
+  {
+    "codeSiren": "248200016",
+    "nom": "CC des Deux Rives",
+    "slug": "cc-des-deux-rives-248200016",
+    "codesDepartements": [
+      "32",
+      "47",
+      "82"
+    ],
+    "codesCommunes": [
+      "82186"
+    ],
+    "population": 19013
+  }
+]

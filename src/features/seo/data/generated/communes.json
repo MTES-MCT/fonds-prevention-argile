@@ -1,0 +1,1338 @@
+[
+  {
+    "codeInsee": "03185",
+    "nom": "Montluçon",
+    "slug": "montlucon-03185",
+    "population": 33317,
+    "codeDepartement": "03",
+    "codeEpci": "200071082",
+    "codesPostaux": [
+      "03100"
+    ],
+    "nomEpci": "CA Montluçon Communauté"
+  },
+  {
+    "codeInsee": "03310",
+    "nom": "Vichy",
+    "slug": "vichy-03310",
+    "population": 25702,
+    "codeDepartement": "03",
+    "codeEpci": "200071363",
+    "codesPostaux": [
+      "03200"
+    ],
+    "nomEpci": "CA Vichy Communauté"
+  },
+  {
+    "codeInsee": "03190",
+    "nom": "Moulins",
+    "slug": "moulins-03190",
+    "population": 19344,
+    "codeDepartement": "03",
+    "codeEpci": "200071140",
+    "codesPostaux": [
+      "03000"
+    ],
+    "nomEpci": "CA Moulins Communauté"
+  },
+  {
+    "codeInsee": "03095",
+    "nom": "Cusset",
+    "slug": "cusset-03095",
+    "population": 13329,
+    "codeDepartement": "03",
+    "codeEpci": "200071363",
+    "codesPostaux": [
+      "03300"
+    ],
+    "nomEpci": "CA Vichy Communauté"
+  },
+  {
+    "codeInsee": "03321",
+    "nom": "Yzeure",
+    "slug": "yzeure-03321",
+    "population": 12670,
+    "codeDepartement": "03",
+    "codeEpci": "200071140",
+    "codesPostaux": [
+      "03400"
+    ],
+    "nomEpci": "CA Moulins Communauté"
+  },
+  {
+    "codeInsee": "03023",
+    "nom": "Bellerive-sur-Allier",
+    "slug": "bellerive-sur-allier-03023",
+    "population": 8898,
+    "codeDepartement": "03",
+    "codeEpci": "200071363",
+    "codesPostaux": [
+      "03700"
+    ],
+    "nomEpci": "CA Vichy Communauté"
+  },
+  {
+    "codeInsee": "03101",
+    "nom": "Domérat",
+    "slug": "domerat-03101",
+    "population": 8665,
+    "codeDepartement": "03",
+    "codeEpci": "200071082",
+    "codesPostaux": [
+      "03410"
+    ],
+    "nomEpci": "CA Montluçon Communauté"
+  },
+  {
+    "codeInsee": "03082",
+    "nom": "Commentry",
+    "slug": "commentry-03082",
+    "population": 6018,
+    "codeDepartement": "03",
+    "codeEpci": "200071512",
+    "codesPostaux": [
+      "03600"
+    ],
+    "nomEpci": "CC Commentry Montmarault Néris Communauté"
+  },
+  {
+    "codeInsee": "03118",
+    "nom": "Gannat",
+    "slug": "gannat-03118",
+    "population": 5684,
+    "codeDepartement": "03",
+    "codeEpci": "200071389",
+    "codesPostaux": [
+      "03800"
+    ],
+    "nomEpci": "CC Saint-Pourçain Sioule Limagne"
+  },
+  {
+    "codeInsee": "03254",
+    "nom": "Saint-Pourçain-sur-Sioule",
+    "slug": "saint-pourcain-sur-sioule-03254",
+    "population": 4894,
+    "codeDepartement": "03",
+    "codeEpci": "200071389",
+    "codesPostaux": [
+      "03500"
+    ],
+    "nomEpci": "CC Saint-Pourçain Sioule Limagne"
+  },
+  {
+    "codeInsee": "04112",
+    "nom": "Manosque",
+    "slug": "manosque-04112",
+    "population": 22807,
+    "codeDepartement": "04",
+    "codeEpci": "200034700",
+    "codesPostaux": [
+      "04100"
+    ],
+    "nomEpci": "CA Durance-Lubéron-Verdon Agglomération"
+  },
+  {
+    "codeInsee": "04070",
+    "nom": "Digne-les-Bains",
+    "slug": "digne-les-bains-04070",
+    "population": 17694,
+    "codeDepartement": "04",
+    "codeEpci": "200067437",
+    "codesPostaux": [
+      "04000"
+    ],
+    "nomEpci": "CA Provence-Alpes-Agglomération"
+  },
+  {
+    "codeInsee": "04209",
+    "nom": "Sisteron",
+    "slug": "sisteron-04209",
+    "population": 7776,
+    "codeDepartement": "04",
+    "codeEpci": "200068765",
+    "codesPostaux": [
+      "04200"
+    ],
+    "nomEpci": "CC du Sisteronais-Buëch"
+  },
+  {
+    "codeInsee": "04143",
+    "nom": "Oraison",
+    "slug": "oraison-04143",
+    "population": 6042,
+    "codeDepartement": "04",
+    "codeEpci": "200034700",
+    "codesPostaux": [
+      "04700"
+    ],
+    "nomEpci": "CA Durance-Lubéron-Verdon Agglomération"
+  },
+  {
+    "codeInsee": "04088",
+    "nom": "Forcalquier",
+    "slug": "forcalquier-04088",
+    "population": 5142,
+    "codeDepartement": "04",
+    "codeEpci": "240400440",
+    "codesPostaux": [
+      "04300"
+    ],
+    "nomEpci": "CC Pays Forcalquier et Montagne de Lure"
+  },
+  {
+    "codeInsee": "04049",
+    "nom": "Château-Arnoux-Saint-Auban",
+    "slug": "chateau-arnoux-saint-auban-04049",
+    "population": 5095,
+    "codeDepartement": "04",
+    "codeEpci": "200067437",
+    "codesPostaux": [
+      "04160",
+      "04600"
+    ],
+    "nomEpci": "CA Provence-Alpes-Agglomération"
+  },
+  {
+    "codeInsee": "04242",
+    "nom": "Villeneuve",
+    "slug": "villeneuve-04242",
+    "population": 4386,
+    "codeDepartement": "04",
+    "codeEpci": "200034700",
+    "codesPostaux": [
+      "04180"
+    ],
+    "nomEpci": "CA Durance-Lubéron-Verdon Agglomération"
+  },
+  {
+    "codeInsee": "04116",
+    "nom": "Les Mées",
+    "slug": "les-mees-04116",
+    "population": 3992,
+    "codeDepartement": "04",
+    "codeEpci": "200067437",
+    "codesPostaux": [
+      "04190"
+    ],
+    "nomEpci": "CA Provence-Alpes-Agglomération"
+  },
+  {
+    "codeInsee": "04152",
+    "nom": "Pierrevert",
+    "slug": "pierrevert-04152",
+    "population": 3943,
+    "codeDepartement": "04",
+    "codeEpci": "200034700",
+    "codesPostaux": [
+      "04860"
+    ],
+    "nomEpci": "CA Durance-Lubéron-Verdon Agglomération"
+  },
+  {
+    "codeInsee": "04197",
+    "nom": "Sainte-Tulle",
+    "slug": "sainte-tulle-04197",
+    "population": 3530,
+    "codeDepartement": "04",
+    "codeEpci": "200034700",
+    "codesPostaux": [
+      "04220"
+    ],
+    "nomEpci": "CA Durance-Lubéron-Verdon Agglomération"
+  },
+  {
+    "codeInsee": "24322",
+    "nom": "Périgueux",
+    "slug": "perigueux-24322",
+    "population": 29876,
+    "codeDepartement": "24",
+    "codeEpci": "200040392",
+    "codesPostaux": [
+      "24000"
+    ],
+    "nomEpci": "CA Le Grand Périgueux"
+  },
+  {
+    "codeInsee": "24037",
+    "nom": "Bergerac",
+    "slug": "bergerac-24037",
+    "population": 26852,
+    "codeDepartement": "24",
+    "codeEpci": "200070647",
+    "codesPostaux": [
+      "24100"
+    ],
+    "nomEpci": "CA Bergeracoise"
+  },
+  {
+    "codeInsee": "24053",
+    "nom": "Boulazac Isle Manoire",
+    "slug": "boulazac-isle-manoire-24053",
+    "population": 10628,
+    "codeDepartement": "24",
+    "codeEpci": "200040392",
+    "codesPostaux": [
+      "24330",
+      "24750"
+    ],
+    "nomEpci": "CA Le Grand Périgueux"
+  },
+  {
+    "codeInsee": "24520",
+    "nom": "Sarlat-la-Canéda",
+    "slug": "sarlat-la-caneda-24520",
+    "population": 8786,
+    "codeDepartement": "24",
+    "codeEpci": "200027217",
+    "codesPostaux": [
+      "24200"
+    ],
+    "nomEpci": "CC Sarlat-Périgord Noir"
+  },
+  {
+    "codeInsee": "24138",
+    "nom": "Coulounieix-Chamiers",
+    "slug": "coulounieix-chamiers-24138",
+    "population": 7537,
+    "codeDepartement": "24",
+    "codeEpci": "200040392",
+    "codesPostaux": [
+      "24660"
+    ],
+    "nomEpci": "CA Le Grand Périgueux"
+  },
+  {
+    "codeInsee": "24557",
+    "nom": "Trélissac",
+    "slug": "trelissac-24557",
+    "population": 7319,
+    "codeDepartement": "24",
+    "codeEpci": "200040392",
+    "codesPostaux": [
+      "24750"
+    ],
+    "nomEpci": "CA Le Grand Périgueux"
+  },
+  {
+    "codeInsee": "24547",
+    "nom": "Terrasson-Lavilledieu",
+    "slug": "terrasson-lavilledieu-24547",
+    "population": 6262,
+    "codeDepartement": "24",
+    "codeEpci": "200041150",
+    "codesPostaux": [
+      "24120"
+    ],
+    "nomEpci": "CC Terrassonnais Haut Périgord Noir"
+  },
+  {
+    "codeInsee": "24294",
+    "nom": "Montpon-Ménestérol",
+    "slug": "montpon-menesterol-24294",
+    "population": 5845,
+    "codeDepartement": "24",
+    "codeEpci": "200040384",
+    "codesPostaux": [
+      "24700"
+    ],
+    "nomEpci": "CC Isle Double Landais"
+  },
+  {
+    "codeInsee": "24372",
+    "nom": "Saint-Astier",
+    "slug": "saint-astier-24372",
+    "population": 5309,
+    "codeDepartement": "24",
+    "codeEpci": "200040095",
+    "codesPostaux": [
+      "24110"
+    ],
+    "nomEpci": "CC Isle Vern Salembre en Périgord"
+  },
+  {
+    "codeInsee": "24312",
+    "nom": "Sanilhac",
+    "slug": "sanilhac-24312",
+    "population": 4720,
+    "codeDepartement": "24",
+    "codeEpci": "200040392",
+    "codesPostaux": [
+      "24380",
+      "24660",
+      "24750"
+    ],
+    "nomEpci": "CA Le Grand Périgueux"
+  },
+  {
+    "codeInsee": "32013",
+    "nom": "Auch",
+    "slug": "auch-32013",
+    "population": 22825,
+    "codeDepartement": "32",
+    "codeEpci": "200066926",
+    "codesPostaux": [
+      "32000"
+    ],
+    "nomEpci": "CA Grand Auch Coeur de Gascogne"
+  },
+  {
+    "codeInsee": "32160",
+    "nom": "L'Isle-Jourdain",
+    "slug": "l-isle-jourdain-32160",
+    "population": 9499,
+    "codeDepartement": "32",
+    "codeEpci": "200023620",
+    "codesPostaux": [
+      "32600"
+    ],
+    "nomEpci": "CC de la Gascogne Toulousaine"
+  },
+  {
+    "codeInsee": "32107",
+    "nom": "Condom",
+    "slug": "condom-32107",
+    "population": 6454,
+    "codeDepartement": "32",
+    "codeEpci": "243200417",
+    "codesPostaux": [
+      "32100"
+    ],
+    "nomEpci": "CC de la Tenarèze"
+  },
+  {
+    "codeInsee": "32132",
+    "nom": "Fleurance",
+    "slug": "fleurance-32132",
+    "population": 6130,
+    "codeDepartement": "32",
+    "codeEpci": "243200391",
+    "codesPostaux": [
+      "32500"
+    ],
+    "nomEpci": "CC de la Lomagne Gersoise"
+  },
+  {
+    "codeInsee": "32119",
+    "nom": "Eauze",
+    "slug": "eauze-32119",
+    "population": 4060,
+    "codeDepartement": "32",
+    "codeEpci": "243200458",
+    "codesPostaux": [
+      "32800"
+    ],
+    "nomEpci": "CC du Grand Armagnac"
+  },
+  {
+    "codeInsee": "32208",
+    "nom": "Lectoure",
+    "slug": "lectoure-32208",
+    "population": 3685,
+    "codeDepartement": "32",
+    "codeEpci": "243200391",
+    "codesPostaux": [
+      "32700"
+    ],
+    "nomEpci": "CC de la Lomagne Gersoise"
+  },
+  {
+    "codeInsee": "32462",
+    "nom": "Vic-Fezensac",
+    "slug": "vic-fezensac-32462",
+    "population": 3578,
+    "codeDepartement": "32",
+    "codeEpci": "243200607",
+    "codesPostaux": [
+      "32190"
+    ],
+    "nomEpci": "CC Artagnan de Fezensac"
+  },
+  {
+    "codeInsee": "32256",
+    "nom": "Mirande",
+    "slug": "mirande-32256",
+    "population": 3442,
+    "codeDepartement": "32",
+    "codeEpci": "243200425",
+    "codesPostaux": [
+      "32300"
+    ],
+    "nomEpci": "CC Coeur d'Astarac en Gascogne"
+  },
+  {
+    "codeInsee": "32147",
+    "nom": "Gimont",
+    "slug": "gimont-32147",
+    "population": 3110,
+    "codeDepartement": "32",
+    "codeEpci": "200042372",
+    "codesPostaux": [
+      "32200"
+    ],
+    "nomEpci": "CC des Coteaux Arrats Gimone"
+  },
+  {
+    "codeInsee": "32307",
+    "nom": "Pavie",
+    "slug": "pavie-32307",
+    "population": 2540,
+    "codeDepartement": "32",
+    "codeEpci": "200066926",
+    "codesPostaux": [
+      "32550"
+    ],
+    "nomEpci": "CA Grand Auch Coeur de Gascogne"
+  },
+  {
+    "codeInsee": "36044",
+    "nom": "Châteauroux",
+    "slug": "chateauroux-36044",
+    "population": 43079,
+    "codeDepartement": "36",
+    "codeEpci": "243600327",
+    "codesPostaux": [
+      "36000"
+    ],
+    "nomEpci": "CA Châteauroux Métropole"
+  },
+  {
+    "codeInsee": "36088",
+    "nom": "Issoudun",
+    "slug": "issoudun-36088",
+    "population": 10953,
+    "codeDepartement": "36",
+    "codeEpci": "243600236",
+    "codesPostaux": [
+      "36100"
+    ],
+    "nomEpci": "CC du Pays d'Issoudun"
+  },
+  {
+    "codeInsee": "36063",
+    "nom": "Déols",
+    "slug": "deols-36063",
+    "population": 7618,
+    "codeDepartement": "36",
+    "codeEpci": "243600327",
+    "codesPostaux": [
+      "36130"
+    ],
+    "nomEpci": "CA Châteauroux Métropole"
+  },
+  {
+    "codeInsee": "36018",
+    "nom": "Le Blanc",
+    "slug": "le-blanc-36018",
+    "population": 6188,
+    "codeDepartement": "36",
+    "codeEpci": "243600319",
+    "codesPostaux": [
+      "36300"
+    ],
+    "nomEpci": "CC Brenne - Val de Creuse"
+  },
+  {
+    "codeInsee": "36159",
+    "nom": "Le Poinçonnet",
+    "slug": "le-poinconnet-36159",
+    "population": 5848,
+    "codeDepartement": "36",
+    "codeEpci": "243600327",
+    "codesPostaux": [
+      "36330"
+    ],
+    "nomEpci": "CA Châteauroux Métropole"
+  },
+  {
+    "codeInsee": "36006",
+    "nom": "Argenton-sur-Creuse",
+    "slug": "argenton-sur-creuse-36006",
+    "population": 4817,
+    "codeDepartement": "36",
+    "codeEpci": "200068872",
+    "codesPostaux": [
+      "36200"
+    ],
+    "nomEpci": "CC Éguzon - Argenton - Vallée de la Creuse"
+  },
+  {
+    "codeInsee": "36031",
+    "nom": "Buzançais",
+    "slug": "buzancais-36031",
+    "population": 4431,
+    "codeDepartement": "36",
+    "codeEpci": "243600301",
+    "codesPostaux": [
+      "36500"
+    ],
+    "nomEpci": "CC Val de l'Indre - Brenne"
+  },
+  {
+    "codeInsee": "36046",
+    "nom": "La Châtre",
+    "slug": "la-chatre-36046",
+    "population": 4038,
+    "codeDepartement": "36",
+    "codeEpci": "243600350",
+    "codesPostaux": [
+      "36400"
+    ],
+    "nomEpci": "CC de la Châtre et Sainte-Sévère"
+  },
+  {
+    "codeInsee": "36005",
+    "nom": "Ardentes",
+    "slug": "ardentes-36005",
+    "population": 3747,
+    "codeDepartement": "36",
+    "codeEpci": "243600327",
+    "codesPostaux": [
+      "36120"
+    ],
+    "nomEpci": "CA Châteauroux Métropole"
+  },
+  {
+    "codeInsee": "36202",
+    "nom": "Saint-Maur",
+    "slug": "saint-maur-36202",
+    "population": 3589,
+    "codeDepartement": "36",
+    "codeEpci": "243600327",
+    "codesPostaux": [
+      "36250"
+    ],
+    "nomEpci": "CA Châteauroux Métropole"
+  },
+  {
+    "codeInsee": "47001",
+    "nom": "Agen",
+    "slug": "agen-47001",
+    "population": 32193,
+    "codeDepartement": "47",
+    "codeEpci": "200096956",
+    "codesPostaux": [
+      "47000"
+    ],
+    "nomEpci": "CA Agglomération d'Agen"
+  },
+  {
+    "codeInsee": "47323",
+    "nom": "Villeneuve-sur-Lot",
+    "slug": "villeneuve-sur-lot-47323",
+    "population": 22004,
+    "codeDepartement": "47",
+    "codeEpci": "200023307",
+    "codesPostaux": [
+      "47300"
+    ],
+    "nomEpci": "CA du Grand Villeneuvois"
+  },
+  {
+    "codeInsee": "47157",
+    "nom": "Marmande",
+    "slug": "marmande-47157",
+    "population": 17361,
+    "codeDepartement": "47",
+    "codeEpci": "200030674",
+    "codesPostaux": [
+      "47200"
+    ],
+    "nomEpci": "CA Val de Garonne Agglomération"
+  },
+  {
+    "codeInsee": "47310",
+    "nom": "Tonneins",
+    "slug": "tonneins-47310",
+    "population": 9461,
+    "codeDepartement": "47",
+    "codeEpci": "200030674",
+    "codesPostaux": [
+      "47400"
+    ],
+    "nomEpci": "CA Val de Garonne Agglomération"
+  },
+  {
+    "codeInsee": "47201",
+    "nom": "Le Passage",
+    "slug": "le-passage-47201",
+    "population": 9360,
+    "codeDepartement": "47",
+    "codeEpci": "200096956",
+    "codesPostaux": [
+      "47520"
+    ],
+    "nomEpci": "CA Agglomération d'Agen"
+  },
+  {
+    "codeInsee": "47195",
+    "nom": "Nérac",
+    "slug": "nerac-47195",
+    "population": 6937,
+    "codeDepartement": "47",
+    "codeEpci": "200068948",
+    "codesPostaux": [
+      "47600"
+    ],
+    "nomEpci": "CC Albret Communauté"
+  },
+  {
+    "codeInsee": "47252",
+    "nom": "Sainte-Livrade-sur-Lot",
+    "slug": "sainte-livrade-sur-lot-47252",
+    "population": 6518,
+    "codeDepartement": "47",
+    "codeEpci": "200023307",
+    "codesPostaux": [
+      "47110"
+    ],
+    "nomEpci": "CA du Grand Villeneuvois"
+  },
+  {
+    "codeInsee": "47032",
+    "nom": "Bon-Encontre",
+    "slug": "bon-encontre-47032",
+    "population": 6386,
+    "codeDepartement": "47",
+    "codeEpci": "200096956",
+    "codesPostaux": [
+      "47240"
+    ],
+    "nomEpci": "CA Agglomération d'Agen"
+  },
+  {
+    "codeInsee": "47031",
+    "nom": "Boé",
+    "slug": "boe-47031",
+    "population": 5784,
+    "codeDepartement": "47",
+    "codeEpci": "200096956",
+    "codesPostaux": [
+      "47550"
+    ],
+    "nomEpci": "CA Agglomération d'Agen"
+  },
+  {
+    "codeInsee": "47100",
+    "nom": "Foulayronnes",
+    "slug": "foulayronnes-47100",
+    "population": 5480,
+    "codeDepartement": "47",
+    "codeEpci": "200096956",
+    "codesPostaux": [
+      "47510"
+    ],
+    "nomEpci": "CA Agglomération d'Agen"
+  },
+  {
+    "codeInsee": "54395",
+    "nom": "Nancy",
+    "slug": "nancy-54395",
+    "population": 104387,
+    "codeDepartement": "54",
+    "codeEpci": "245400676",
+    "codesPostaux": [
+      "54000",
+      "54100"
+    ],
+    "nomEpci": "Métropole du Grand Nancy"
+  },
+  {
+    "codeInsee": "54547",
+    "nom": "Vandœuvre-lès-Nancy",
+    "slug": "vandoeuvre-les-nancy-54547",
+    "population": 29697,
+    "codeDepartement": "54",
+    "codeEpci": "245400676",
+    "codesPostaux": [
+      "54500"
+    ],
+    "nomEpci": "Métropole du Grand Nancy"
+  },
+  {
+    "codeInsee": "54329",
+    "nom": "Lunéville",
+    "slug": "luneville-54329",
+    "population": 17920,
+    "codeDepartement": "54",
+    "codeEpci": "200070324",
+    "codesPostaux": [
+      "54300"
+    ],
+    "nomEpci": "CC du Territoire de Lunéville à Baccarat"
+  },
+  {
+    "codeInsee": "54528",
+    "nom": "Toul",
+    "slug": "toul-54528",
+    "population": 15570,
+    "codeDepartement": "54",
+    "codeEpci": "200070563",
+    "codesPostaux": [
+      "54200"
+    ],
+    "nomEpci": "CC Terres Touloises"
+  },
+  {
+    "codeInsee": "54323",
+    "nom": "Longwy",
+    "slug": "longwy-54323",
+    "population": 15492,
+    "codeDepartement": "54",
+    "codeEpci": "245400262",
+    "codesPostaux": [
+      "54400"
+    ],
+    "nomEpci": "CA Grand Longwy Agglomération"
+  },
+  {
+    "codeInsee": "54304",
+    "nom": "Laxou",
+    "slug": "laxou-54304",
+    "population": 15126,
+    "codeDepartement": "54",
+    "codeEpci": "245400676",
+    "codesPostaux": [
+      "54520"
+    ],
+    "nomEpci": "Métropole du Grand Nancy"
+  },
+  {
+    "codeInsee": "54578",
+    "nom": "Villers-lès-Nancy",
+    "slug": "villers-les-nancy-54578",
+    "population": 14938,
+    "codeDepartement": "54",
+    "codeEpci": "245400676",
+    "codesPostaux": [
+      "54600"
+    ],
+    "nomEpci": "Métropole du Grand Nancy"
+  },
+  {
+    "codeInsee": "54431",
+    "nom": "Pont-à-Mousson",
+    "slug": "pont-a-mousson-54431",
+    "population": 14383,
+    "codeDepartement": "54",
+    "codeEpci": "200041515",
+    "codesPostaux": [
+      "54700"
+    ],
+    "nomEpci": "CC du Bassin de Pont-à-Mousson"
+  },
+  {
+    "codeInsee": "54482",
+    "nom": "Saint-Max",
+    "slug": "saint-max-54482",
+    "population": 10100,
+    "codeDepartement": "54",
+    "codeEpci": "245400676",
+    "codesPostaux": [
+      "54130"
+    ],
+    "nomEpci": "Métropole du Grand Nancy"
+  },
+  {
+    "codeInsee": "54580",
+    "nom": "Villerupt",
+    "slug": "villerupt-54580",
+    "population": 10086,
+    "codeDepartement": "54",
+    "codeEpci": "245701404",
+    "codesPostaux": [
+      "54190"
+    ],
+    "nomEpci": "CC du Pays Haut Val d'Alzette"
+  },
+  {
+    "codeInsee": "59350",
+    "nom": "Lille",
+    "slug": "lille-59350",
+    "population": 238695,
+    "codeDepartement": "59",
+    "codeEpci": "200093201",
+    "codesPostaux": [
+      "59000",
+      "59160",
+      "59260",
+      "59777",
+      "59800"
+    ],
+    "nomEpci": "Métropole Européenne de Lille"
+  },
+  {
+    "codeInsee": "59512",
+    "nom": "Roubaix",
+    "slug": "roubaix-59512",
+    "population": 99507,
+    "codeDepartement": "59",
+    "codeEpci": "200093201",
+    "codesPostaux": [
+      "59100"
+    ],
+    "nomEpci": "Métropole Européenne de Lille"
+  },
+  {
+    "codeInsee": "59599",
+    "nom": "Tourcoing",
+    "slug": "tourcoing-59599",
+    "population": 99160,
+    "codeDepartement": "59",
+    "codeEpci": "200093201",
+    "codesPostaux": [
+      "59200"
+    ],
+    "nomEpci": "Métropole Européenne de Lille"
+  },
+  {
+    "codeInsee": "59183",
+    "nom": "Dunkerque",
+    "slug": "dunkerque-59183",
+    "population": 87013,
+    "codeDepartement": "59",
+    "codeEpci": "245900428",
+    "codesPostaux": [
+      "59140",
+      "59240",
+      "59279",
+      "59430",
+      "59640"
+    ],
+    "nomEpci": "CU de Dunkerque"
+  },
+  {
+    "codeInsee": "59009",
+    "nom": "Villeneuve-d'Ascq",
+    "slug": "villeneuve-d-ascq-59009",
+    "population": 62342,
+    "codeDepartement": "59",
+    "codeEpci": "200093201",
+    "codesPostaux": [
+      "59491",
+      "59493",
+      "59650"
+    ],
+    "nomEpci": "Métropole Européenne de Lille"
+  },
+  {
+    "codeInsee": "59606",
+    "nom": "Valenciennes",
+    "slug": "valenciennes-59606",
+    "population": 42979,
+    "codeDepartement": "59",
+    "codeEpci": "245901160",
+    "codesPostaux": [
+      "59300"
+    ],
+    "nomEpci": "CA Valenciennes Métropole"
+  },
+  {
+    "codeInsee": "59650",
+    "nom": "Wattrelos",
+    "slug": "wattrelos-59650",
+    "population": 40881,
+    "codeDepartement": "59",
+    "codeEpci": "200093201",
+    "codesPostaux": [
+      "59150"
+    ],
+    "nomEpci": "Métropole Européenne de Lille"
+  },
+  {
+    "codeInsee": "59378",
+    "nom": "Marcq-en-Barœul",
+    "slug": "marcq-en-baroeul-59378",
+    "population": 39943,
+    "codeDepartement": "59",
+    "codeEpci": "200093201",
+    "codesPostaux": [
+      "59700"
+    ],
+    "nomEpci": "Métropole Européenne de Lille"
+  },
+  {
+    "codeInsee": "59178",
+    "nom": "Douai",
+    "slug": "douai-59178",
+    "population": 39833,
+    "codeDepartement": "59",
+    "codeEpci": "200044618",
+    "codesPostaux": [
+      "59500"
+    ],
+    "nomEpci": "CA Douaisis Agglo"
+  },
+  {
+    "codeInsee": "59122",
+    "nom": "Cambrai",
+    "slug": "cambrai-59122",
+    "population": 31568,
+    "codeDepartement": "59",
+    "codeEpci": "200068500",
+    "codesPostaux": [
+      "59400"
+    ],
+    "nomEpci": "CA de Cambrai"
+  },
+  {
+    "codeInsee": "63113",
+    "nom": "Clermont-Ferrand",
+    "slug": "clermont-ferrand-63113",
+    "population": 147751,
+    "codeDepartement": "63",
+    "codeEpci": "246300701",
+    "codesPostaux": [
+      "63000",
+      "63100"
+    ],
+    "nomEpci": "Clermont Auvergne Métropole"
+  },
+  {
+    "codeInsee": "63124",
+    "nom": "Cournon-d'Auvergne",
+    "slug": "cournon-d-auvergne-63124",
+    "population": 20020,
+    "codeDepartement": "63",
+    "codeEpci": "246300701",
+    "codesPostaux": [
+      "63800"
+    ],
+    "nomEpci": "Clermont Auvergne Métropole"
+  },
+  {
+    "codeInsee": "63300",
+    "nom": "Riom",
+    "slug": "riom-63300",
+    "population": 18680,
+    "codeDepartement": "63",
+    "codeEpci": "200070753",
+    "codesPostaux": [
+      "63200"
+    ],
+    "nomEpci": "CA Riom Limagne et Volcans"
+  },
+  {
+    "codeInsee": "63075",
+    "nom": "Chamalières",
+    "slug": "chamalieres-63075",
+    "population": 17591,
+    "codeDepartement": "63",
+    "codeEpci": "246300701",
+    "codesPostaux": [
+      "63400"
+    ],
+    "nomEpci": "Clermont Auvergne Métropole"
+  },
+  {
+    "codeInsee": "63178",
+    "nom": "Issoire",
+    "slug": "issoire-63178",
+    "population": 15078,
+    "codeDepartement": "63",
+    "codeEpci": "200070407",
+    "codesPostaux": [
+      "63500"
+    ],
+    "nomEpci": "CA Agglo Pays d'Issoire"
+  },
+  {
+    "codeInsee": "63284",
+    "nom": "Pont-du-Château",
+    "slug": "pont-du-chateau-63284",
+    "population": 12422,
+    "codeDepartement": "63",
+    "codeEpci": "246300701",
+    "codesPostaux": [
+      "63430"
+    ],
+    "nomEpci": "Clermont Auvergne Métropole"
+  },
+  {
+    "codeInsee": "63430",
+    "nom": "Thiers",
+    "slug": "thiers-63430",
+    "population": 11686,
+    "codeDepartement": "63",
+    "codeEpci": "200070712",
+    "codesPostaux": [
+      "63300"
+    ],
+    "nomEpci": "CC Thiers Dore et Montagne"
+  },
+  {
+    "codeInsee": "63032",
+    "nom": "Beaumont",
+    "slug": "beaumont-63032",
+    "population": 10787,
+    "codeDepartement": "63",
+    "codeEpci": "246300701",
+    "codesPostaux": [
+      "63110"
+    ],
+    "nomEpci": "Clermont Auvergne Métropole"
+  },
+  {
+    "codeInsee": "63014",
+    "nom": "Aubière",
+    "slug": "aubiere-63014",
+    "population": 10273,
+    "codeDepartement": "63",
+    "codeEpci": "246300701",
+    "codesPostaux": [
+      "63170"
+    ],
+    "nomEpci": "Clermont Auvergne Métropole"
+  },
+  {
+    "codeInsee": "63164",
+    "nom": "Gerzat",
+    "slug": "gerzat-63164",
+    "population": 10268,
+    "codeDepartement": "63",
+    "codeEpci": "246300701",
+    "codesPostaux": [
+      "63360"
+    ],
+    "nomEpci": "Clermont Auvergne Métropole"
+  },
+  {
+    "codeInsee": "81004",
+    "nom": "Albi",
+    "slug": "albi-81004",
+    "population": 50605,
+    "codeDepartement": "81",
+    "codeEpci": "248100737",
+    "codesPostaux": [
+      "81000"
+    ],
+    "nomEpci": "CA de l'Albigeois (C2A)"
+  },
+  {
+    "codeInsee": "81065",
+    "nom": "Castres",
+    "slug": "castres-81065",
+    "population": 42700,
+    "codeDepartement": "81",
+    "codeEpci": "248100430",
+    "codesPostaux": [
+      "81100"
+    ],
+    "nomEpci": "CA de Castres Mazamet"
+  },
+  {
+    "codeInsee": "81099",
+    "nom": "Gaillac",
+    "slug": "gaillac-81099",
+    "population": 16080,
+    "codeDepartement": "81",
+    "codeEpci": "200066124",
+    "codesPostaux": [
+      "81600"
+    ],
+    "nomEpci": "CA Gaillac-Graulhet"
+  },
+  {
+    "codeInsee": "81105",
+    "nom": "Graulhet",
+    "slug": "graulhet-81105",
+    "population": 13275,
+    "codeDepartement": "81",
+    "codeEpci": "200066124",
+    "codesPostaux": [
+      "81300"
+    ],
+    "nomEpci": "CA Gaillac-Graulhet"
+  },
+  {
+    "codeInsee": "81140",
+    "nom": "Lavaur",
+    "slug": "lavaur-81140",
+    "population": 10884,
+    "codeDepartement": "81",
+    "codeEpci": "200034023",
+    "codesPostaux": [
+      "81500"
+    ],
+    "nomEpci": "CC Tarn-Agout"
+  },
+  {
+    "codeInsee": "81163",
+    "nom": "Mazamet",
+    "slug": "mazamet-81163",
+    "population": 10123,
+    "codeDepartement": "81",
+    "codeEpci": "248100430",
+    "codesPostaux": [
+      "81200"
+    ],
+    "nomEpci": "CA de Castres Mazamet"
+  },
+  {
+    "codeInsee": "81060",
+    "nom": "Carmaux",
+    "slug": "carmaux-81060",
+    "population": 9927,
+    "codeDepartement": "81",
+    "codeEpci": "200040905",
+    "codesPostaux": [
+      "81400"
+    ],
+    "nomEpci": "CC Carmausin-Ségala"
+  },
+  {
+    "codeInsee": "81271",
+    "nom": "Saint-Sulpice-la-Pointe",
+    "slug": "saint-sulpice-la-pointe-81271",
+    "population": 9674,
+    "codeDepartement": "81",
+    "codeEpci": "200034023",
+    "codesPostaux": [
+      "81370"
+    ],
+    "nomEpci": "CC Tarn-Agout"
+  },
+  {
+    "codeInsee": "81257",
+    "nom": "Saint-Juéry",
+    "slug": "saint-juery-81257",
+    "population": 6575,
+    "codeDepartement": "81",
+    "codeEpci": "248100737",
+    "codesPostaux": [
+      "81160"
+    ],
+    "nomEpci": "CA de l'Albigeois (C2A)"
+  },
+  {
+    "codeInsee": "81120",
+    "nom": "Labruguière",
+    "slug": "labruguiere-81120",
+    "population": 6567,
+    "codeDepartement": "81",
+    "codeEpci": "248100430",
+    "codesPostaux": [
+      "81290"
+    ],
+    "nomEpci": "CA de Castres Mazamet"
+  },
+  {
+    "codeInsee": "82121",
+    "nom": "Montauban",
+    "slug": "montauban-82121",
+    "population": 62487,
+    "codeDepartement": "82",
+    "codeEpci": "248200099",
+    "codesPostaux": [
+      "82000"
+    ],
+    "nomEpci": "CA Grand Montauban"
+  },
+  {
+    "codeInsee": "82033",
+    "nom": "Castelsarrasin",
+    "slug": "castelsarrasin-82033",
+    "population": 14335,
+    "codeDepartement": "82",
+    "codeEpci": "200066322",
+    "codesPostaux": [
+      "82100"
+    ],
+    "nomEpci": "CC Terres des Confluences"
+  },
+  {
+    "codeInsee": "82112",
+    "nom": "Moissac",
+    "slug": "moissac-82112",
+    "population": 13652,
+    "codeDepartement": "82",
+    "codeEpci": "200066322",
+    "codesPostaux": [
+      "82200"
+    ],
+    "nomEpci": "CC Terres des Confluences"
+  },
+  {
+    "codeInsee": "82037",
+    "nom": "Caussade",
+    "slug": "caussade-82037",
+    "population": 6858,
+    "codeDepartement": "82",
+    "codeEpci": "248200057",
+    "codesPostaux": [
+      "82300"
+    ],
+    "nomEpci": "CC du Quercy Caussadais"
+  },
+  {
+    "codeInsee": "82125",
+    "nom": "Montech",
+    "slug": "montech-82125",
+    "population": 6657,
+    "codeDepartement": "82",
+    "codeEpci": "200066652",
+    "codesPostaux": [
+      "82700"
+    ],
+    "nomEpci": "CC Grand Sud Tarn-et-Garonne"
+  },
+  {
+    "codeInsee": "82134",
+    "nom": "Nègrepelisse",
+    "slug": "negrepelisse-82134",
+    "population": 5839,
+    "codeDepartement": "82",
+    "codeEpci": "200066884",
+    "codesPostaux": [
+      "82800"
+    ],
+    "nomEpci": "CC Quercy Vert-Aveyron"
+  },
+  {
+    "codeInsee": "82186",
+    "nom": "Valence",
+    "slug": "valence-82186",
+    "population": 5287,
+    "codeDepartement": "82",
+    "codeEpci": "248200016",
+    "codesPostaux": [
+      "82400"
+    ],
+    "nomEpci": "CC des Deux Rives"
+  },
+  {
+    "codeInsee": "82190",
+    "nom": "Verdun-sur-Garonne",
+    "slug": "verdun-sur-garonne-82190",
+    "population": 4914,
+    "codeDepartement": "82",
+    "codeEpci": "200066652",
+    "codesPostaux": [
+      "82600"
+    ],
+    "nomEpci": "CC Grand Sud Tarn-et-Garonne"
+  },
+  {
+    "codeInsee": "82124",
+    "nom": "Montbeton",
+    "slug": "montbeton-82124",
+    "population": 4335,
+    "codeDepartement": "82",
+    "codeEpci": "248200099",
+    "codesPostaux": [
+      "82290"
+    ],
+    "nomEpci": "CA Grand Montauban"
+  },
+  {
+    "codeInsee": "82075",
+    "nom": "Grisolles",
+    "slug": "grisolles-82075",
+    "population": 4206,
+    "codeDepartement": "82",
+    "codeEpci": "200066652",
+    "codesPostaux": [
+      "82170"
+    ],
+    "nomEpci": "CC Grand Sud Tarn-et-Garonne"
+  }
+]

@@ -35,6 +35,9 @@ export const API_GEO = {
     epci: "/epcis",
     communesByEpci: "/epcis/{code}/communes",
   },
+
+  // Délai entre les appels API en millisecondes (rate limiting)
+  delayBetweenCalls: 300,
 } as const;
 
 /**

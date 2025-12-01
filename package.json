@@ -31,7 +31,8 @@
     "fresh": "rm -rf .next node_modules pnpm-lock.yaml && pnpm install && pnpm start:dev",
     "prepare": "husky",
     "precommit": "talisman --githook pre-commit",
-    "talisman:check": "talisman --scan"
+    "talisman:check": "talisman --scan",
+    "seo:generate": "tsx src/features/seo/scripts/generate-seo-data.ts"
   },
   "dependencies": {
     "@getbrevo/brevo": "3.0.1",
