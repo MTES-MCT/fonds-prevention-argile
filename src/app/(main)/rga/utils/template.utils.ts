@@ -1,26 +1,14 @@
 import type { CommuneSEO, DepartementSEO, EpciSEO } from "@/features/seo";
 
 /**
- * Types pour les placeholders des templates
+ * Type pour les placeholders des templates
  */
-export interface DepartementPlaceholders {
-  nom_departement: string;
-  code_departement: string;
-}
-
-export interface CommunePlaceholders extends DepartementPlaceholders {
-  nom_commune: string;
-  code_postal: string;
-}
-
-export interface EpciPlaceholders extends DepartementPlaceholders {
-  nom_epci: string;
-}
+export type Placeholders = Record<string, string>;
 
 /**
  * Remplace les placeholders dans une chaîne de caractères
  */
-export function hydratePlaceholders(template: string, placeholders: Record<string, string>): string {
+export function hydratePlaceholders(template: string, placeholders: Placeholders): string {
   let result = template;
 
   for (const [key, value] of Object.entries(placeholders)) {
@@ -34,10 +22,7 @@ export function hydratePlaceholders(template: string, placeholders: Record<strin
 /**
  * Hydrate récursivement un objet JSON avec les placeholders
  */
-export function hydrateTemplate<T extends Record<string, unknown>>(
-  template: T,
-  placeholders: Record<string, string>
-): T {
+export function hydrateTemplate<T extends Record<string, unknown>>(template: T, placeholders: Placeholders): T {
   const result: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(template)) {
@@ -64,7 +49,7 @@ export function hydrateTemplate<T extends Record<string, unknown>>(
 /**
  * Crée les placeholders pour un département
  */
-export function createDepartementPlaceholders(departement: DepartementSEO): DepartementPlaceholders {
+export function createDepartementPlaceholders(departement: DepartementSEO): Placeholders {
   return {
     nom_departement: departement.nom,
     code_departement: departement.code,
@@ -74,7 +59,7 @@ export function createDepartementPlaceholders(departement: DepartementSEO): Depa
 /**
  * Crée les placeholders pour une commune
  */
-export function createCommunePlaceholders(commune: CommuneSEO, departement: DepartementSEO): CommunePlaceholders {
+export function createCommunePlaceholders(commune: CommuneSEO, departement: DepartementSEO): Placeholders {
   return {
     nom_commune: commune.nom,
     code_postal: commune.codesPostaux[0] || commune.codeInsee,
@@ -86,7 +71,7 @@ export function createCommunePlaceholders(commune: CommuneSEO, departement: Depa
 /**
  * Crée les placeholders pour un EPCI
  */
-export function createEpciPlaceholders(epci: EpciSEO, departement: DepartementSEO): EpciPlaceholders {
+export function createEpciPlaceholders(epci: EpciSEO, departement: DepartementSEO): Placeholders {
   return {
     nom_epci: epci.nom,
     nom_departement: departement.nom,

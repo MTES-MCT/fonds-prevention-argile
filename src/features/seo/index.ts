@@ -25,3 +25,6 @@ export type {
 
 // Utils exports
 export { generateSlug, generateDepartementSlug, generateCommuneSlug, generateEpciSlug } from "./utils";
+
+// Services exports
+export * from "./services";
