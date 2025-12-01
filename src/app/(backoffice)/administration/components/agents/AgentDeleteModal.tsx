@@ -1,7 +1,7 @@
 "use client";
 
+import { AgentWithPermissions } from "@/features/backoffice";
 import { createPortal } from "react-dom";
-import type { AgentWithPermissions } from "@/features/backoffice/administration/services/agents-admin.service";
 
 interface AgentDeleteModalProps {
   isOpen: boolean;

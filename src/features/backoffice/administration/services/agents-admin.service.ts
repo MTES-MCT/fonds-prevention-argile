@@ -1,9 +1,8 @@
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 import type { Agent } from "@/shared/database/schema/agents";
-import type { AgentRole } from "@/shared/domain/value-objects";
 import { DEPARTEMENTS } from "@/shared/constants/departements.constants";
 import { agentPermissionsRepository } from "@/shared/database";
-import { AgentWithPermissions } from "../domain/types/agent-with-permissions.types";
+import { AgentWithPermissions, CreateAgentData, UpdateAgentData } from "../domain/types/agent-with-permissions.types";
 
 /**
  * Récupère tous les agents avec leurs permissions

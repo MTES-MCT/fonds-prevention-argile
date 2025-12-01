@@ -10,10 +10,8 @@ import {
   createAgent,
   updateAgent,
   deleteAgent,
-  type AgentWithPermissions,
-  type CreateAgentData,
-  type UpdateAgentData,
 } from "../services/agents-admin.service";
+import { AgentWithPermissions, UpdateAgentData } from "../domain/types";
 
 /**
  * Récupère tous les agents avec leurs permissions (super admin uniquement)

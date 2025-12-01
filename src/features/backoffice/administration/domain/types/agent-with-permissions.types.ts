@@ -1,3 +1,5 @@
+import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
+
 /**
  * Agent avec ses permissions (départements)
  */
@@ -26,7 +28,7 @@ export interface CreateAgentData {
   email: string;
   givenName: string;
   usualName?: string;
-  role: string;
+  role: AGENT_ROLES;
   departements?: string[];
 }
 
@@ -37,6 +39,6 @@ export interface UpdateAgentData {
   email?: string;
   givenName?: string;
   usualName?: string;
-  role?: string;
+  role?: AGENT_ROLES;
   departements?: string[];
 }
