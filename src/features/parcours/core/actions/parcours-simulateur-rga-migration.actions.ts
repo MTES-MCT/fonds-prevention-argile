@@ -10,9 +10,7 @@ import { parcoursRepo } from "@/shared/database/repositories";
  * Migre les données du simulateur RGA depuis localStorage vers la base de données
  * Appelée automatiquement après connexion FranceConnect
  */
-export async function migrateSimulationDataToDatabase(
-  rgaData: RGAFormData
-): Promise<ActionResult<void>> {
+export async function migrateSimulationDataToDatabase(rgaData: RGAFormData): Promise<ActionResult<void>> {
   try {
     // 1. Vérifier session utilisateur
     const session = await getSession();
@@ -43,12 +41,7 @@ export async function migrateSimulationDataToDatabase(
     }
 
     // 4. Mapper les données RGA
-    console.log("rgaData :>> ", JSON.stringify(rgaData, null, 2));
     const rgaSimulationData = mapRGAFormDataToDBSchema(rgaData);
-    console.log(
-      "rgaSimulationData :>> ",
-      JSON.stringify(rgaSimulationData, null, 2)
-    );
 
     // 5. Sauvegarder en base de données
     await parcoursRepo.updateRGAData(parcours.id, rgaSimulationData);
@@ -61,10 +54,7 @@ export async function migrateSimulationDataToDatabase(
     console.error("[Migration RGA] Erreur:", error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Erreur lors de la migration des données RGA",
+      error: error instanceof Error ? error.message : "Erreur lors de la migration des données RGA",
     };
   }
 }

@@ -1,6 +1,8 @@
 import { getSession } from "./session.service";
 import { AUTH_METHODS } from "../domain/value-objects/constants";
 import type { AuthUser } from "../domain/entities";
+import type { UserRole } from "../domain/types";
+import { isAgentRole } from "@/shared/domain/value-objects";
 
 /**
  * Service de gestion des utilisateurs
@@ -13,7 +15,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   const session = await getSession();
   if (!session) return null;
 
-  // Pour un admin, pas besoin de DB
+  // Pour un admin avec ancien système mot de passe (legacy)
   if (session.authMethod === AUTH_METHODS.PASSWORD) {
     return {
       id: session.userId,
@@ -24,13 +26,35 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     };
   }
 
-  // Pour un utilisateur FranceConnect
+  // Pour un agent ProConnect
+  if (session.authMethod === AUTH_METHODS.PROCONNECT && isAgentRole(session.role as UserRole)) {
+    return {
+      id: session.userId,
+      role: session.role,
+      authMethod: session.authMethod,
+      loginTime: new Date().toISOString(),
+      firstName: session.firstName,
+      lastName: session.lastName,
+    };
+  }
+
+  // Pour un particulier FranceConnect
+  if (session.authMethod === AUTH_METHODS.FRANCECONNECT) {
+    return {
+      id: session.userId,
+      role: session.role,
+      authMethod: session.authMethod,
+      loginTime: new Date().toISOString(),
+      firstName: session.firstName,
+      lastName: session.lastName,
+    };
+  }
+
+  // Fallback
   return {
     id: session.userId,
     role: session.role,
     authMethod: session.authMethod,
     loginTime: new Date().toISOString(),
-    firstName: session.firstName,
-    lastName: session.lastName,
   };
 }

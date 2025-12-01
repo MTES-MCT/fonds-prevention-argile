@@ -7,7 +7,7 @@ export interface JWTPayload {
   firstName?: string;
   lastName?: string;
   authMethod: string;
-  fcIdToken?: string;
+  idToken?: string;
   exp: number;
   iat: number;
 }

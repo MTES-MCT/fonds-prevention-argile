@@ -7,7 +7,6 @@ import type { StatutValidationAmo } from "../../amo/domain/value-objects";
 import type { ValidationAmoComplete } from "../../amo/domain/entities";
 import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status";
 import { DossierDS } from "../../dossiers-ds";
-import { PartialRGAFormData } from "@/features/simulateur-rga";
 
 interface ParcoursContextType {
   // Données principales
@@ -36,18 +35,10 @@ interface ParcoursContextType {
   prochainEtape: Step | null;
   hasParcours: boolean;
 
-  // Simulateur RGA
-  tempRgaData: PartialRGAFormData | null; // localStorage avant FC
-  rgaData: PartialRGAFormData | null; // BDD
-
   // Actions
   refresh: () => Promise<void>;
   syncNow: (step?: Step) => Promise<void>;
   syncAll: () => Promise<void>;
-
-  // Actions Simulateur RGA
-  saveTempRgaData: (data: PartialRGAFormData) => boolean;
-  clearTempRgaData: () => void;
 
   // Helpers
   getDossierByStep: (step: Step) => DossierDS | undefined;
@@ -55,9 +46,7 @@ interface ParcoursContextType {
   getCurrentDossier: () => DossierDS | undefined;
 }
 
-const ParcoursContext = createContext<ParcoursContextType | undefined>(
-  undefined
-);
+const ParcoursContext = createContext<ParcoursContextType | undefined>(undefined);
 
 export function useParcoursContext() {
   const context = useContext(ParcoursContext);

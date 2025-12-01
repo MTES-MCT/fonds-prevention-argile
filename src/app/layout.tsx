@@ -26,17 +26,14 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css"
 import "../styles/globals.css";
 import "../styles/loading.css";
 import { DsfrProvider } from "@/shared/components";
-import { ConditionalLayout } from "@/shared/components/ConditionalLayout/ConditionalLayout";
 
 export const metadata: Metadata = {
   title: "Fonds prévention argile",
-  description:
-    "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
+  description: "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
   metadataBase: new URL("https://fonds-preventions-argile.beta.gouv.fr"),
   openGraph: {
     title: "Fonds prévention argile",
-    description:
-      "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
+    description: "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
     url: "https://fonds-preventions-argile.beta.gouv.fr",
     siteName: "Fonds prévention argile",
     images: [
@@ -53,8 +50,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Fonds prévention argile",
-    description:
-      "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
+    description: "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
     images: ["/images/home/logement-concerne.webp"],
   },
 };
@@ -67,41 +63,18 @@ export default function RootLayout({
   return (
     <html data-fr-scheme="system" lang="fr">
       <head>
-        <meta
-          content="telephone=no,date=no,address=no,email=no,url=no"
-          name="format-detection"
-        />
-        <meta
-          content="width=device-width, initial-scale=1, shrink-to-fit=no"
-          name="viewport"
-        />
+        <meta content="telephone=no,date=no,address=no,email=no,url=no" name="format-detection" />
+        <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport" />
         <meta content="#000091" name="theme-color" />
 
         {/* DSFR Favicons */}
-        <link
-          href="/dsfr/favicon/apple-touch-icon.png"
-          rel="apple-touch-icon"
-        />
-        <link
-          href="/dsfr/favicon/favicon.svg"
-          rel="icon"
-          type="image/svg+xml"
-        />
-        <link
-          href="/dsfr/favicon/favicon.ico"
-          rel="shortcut icon"
-          type="image/x-icon"
-        />
-        <link
-          crossOrigin="use-credentials"
-          href="/dsfr/favicon/manifest.webmanifest"
-          rel="manifest"
-        />
+        <link href="/dsfr/favicon/apple-touch-icon.png" rel="apple-touch-icon" />
+        <link href="/dsfr/favicon/favicon.svg" rel="icon" type="image/svg+xml" />
+        <link href="/dsfr/favicon/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+        <link crossOrigin="use-credentials" href="/dsfr/favicon/manifest.webmanifest" rel="manifest" />
       </head>
       <body className="flex flex-col min-h-screen">
-        <DsfrProvider>
-          <ConditionalLayout>{children}</ConditionalLayout>
-        </DsfrProvider>
+        <DsfrProvider>{children}</DsfrProvider>
       </body>
     </html>
   );

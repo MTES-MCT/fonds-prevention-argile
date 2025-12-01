@@ -37,7 +37,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.22.0
+          version: 10.23.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -75,7 +75,6 @@ jobs:
           DEMARCHES_SIMPLIFIEES_NOM_DEVIS: "xxxxx-xxx-xxx-xxx"
           DEMARCHES_SIMPLIFIEES_ID_FACTURES: "126064"
           DEMARCHES_SIMPLIFIEES_NOM_FACTURES: "xxxxx-xxx-xxx-xxx"
-          ADMIN_PASSWORD: "examplepassword"
           JWT_SECRET: "supersecretkeywithmorethan32characters"
           FC_CLIENT_ID: "exampleclientid"
           FC_CLIENT_SECRET: "exampleclientsecret"
@@ -101,3 +100,11 @@ jobs:
           NEXT_PUBLIC_MATOMO_SITE_ID: "111"
           NEXT_PUBLIC_MATOMO_URL: "https://stats.beta.gouv.fr"
           RGA_ENCRYPTION_KEY: "12345678901234567890123456789012"
+          PC_CLIENT_ID: "proconnectclientid"
+          PC_CLIENT_SECRET: "proconnectclientsecret"
+          PC_CALLBACK_URL: "http://localhost:3000/api/proconnect/callback"
+          PC_POST_LOGOUT_URL: "http://localhost:3000/"
+          PC_BASE_URL: "https://proconnect.gouv.fr"
+          PC_SCOPES: "openid email"
+          PC_ACR_VALUES: "eidas1"
+          PC_STATE_TTL: "300"

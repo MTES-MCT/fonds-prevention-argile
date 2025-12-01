@@ -1,12 +1,13 @@
 "use client";
 import { ROLES, useAuth } from "../client";
+import { AgentRole } from "@/shared/domain/value-objects/user-role.enum";
 
 /**
- * Hook pour vérifier si l'utilisateur est admin
+ * Hook pour vérifier si l'utilisateur est un agent (admin, instructeur, amo)
  */
-export function useIsAdmin() {
+export function useIsAgent() {
   const { user } = useAuth();
-  return user?.role === ROLES.ADMIN;
+  return user?.role === ROLES.ADMINISTRATEUR || user?.role === ROLES.SUPER_ADMINISTRATEUR || user?.role === ROLES.AMO;
 }
 
 /**
@@ -23,4 +24,20 @@ export function useIsParticulier() {
 export function useHasRole(role: string) {
   const { user } = useAuth();
   return user?.role === role;
+}
+
+/**
+ * Hook pour récupérer le rôle agent spécifique
+ * Retourne le rôle si l'utilisateur est un agent, null sinon
+ */
+export function useAgentRole(): AgentRole | null {
+  const { user } = useAuth();
+
+  if (!user) return null;
+
+  if (user.role === ROLES.ADMINISTRATEUR || user.role === ROLES.SUPER_ADMINISTRATEUR || user.role === ROLES.AMO) {
+    return user.role as AgentRole;
+  }
+
+  return null;
 }

@@ -1,21 +1,13 @@
 "use server";
 
 import { getSession } from "@/features/auth/server";
-import { ROLES } from "@/features/auth/domain/value-objects/constants";
 import type { ActionResult } from "@/shared/types";
 import { Amo } from "../domain/entities";
-import {
-  db,
-  entreprisesAmo,
-  entreprisesAmoCommunes,
-  entreprisesAmoEpci,
-} from "@/shared/database";
+import { db, entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "@/shared/database";
 import { eq, like } from "drizzle-orm";
-import {
-  getCodeDepartementFromCodeInsee,
-  normalizeCodeInsee,
-} from "../utils/amo.utils";
+import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
 import { parcoursRepo } from "@/shared/database/repositories";
+import { isAdminRole } from "@/shared/domain/value-objects";
 
 /**
  * Récupère la liste des AMO disponibles pour le territoire de l'utilisateur
@@ -44,9 +36,7 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
     }
 
     // Extraire le code INSEE
-    const codeInsee = normalizeCodeInsee(
-      parcours.rgaSimulationData.logement.commune
-    );
+    const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData.logement.commune);
 
     if (!codeInsee) {
       return {
@@ -76,10 +66,7 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
             adresse: entreprisesAmo.adresse,
           })
           .from(entreprisesAmo)
-          .innerJoin(
-            entreprisesAmoEpci,
-            eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId)
-          )
+          .innerJoin(entreprisesAmoEpci, eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId))
           .where(eq(entreprisesAmoEpci.codeEpci, codeEpci))
       : [];
 
@@ -128,13 +115,11 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
 /**
  * Récupère la liste de tous les AMO avec leurs codes INSEE et EPCI
  */
-export async function getAllAmos(): Promise<
-  ActionResult<Array<Amo & { communes: { codeInsee: string }[] }>>
-> {
+export async function getAllAmos(): Promise<ActionResult<Array<Amo & { communes: { codeInsee: string }[] }>>> {
   try {
     const session = await getSession();
 
-    if (!session || session.role !== ROLES.ADMIN) {
+    if (!session || !isAdminRole(session.role)) {
       throw new Error("Accès refusé");
     }
 
@@ -152,21 +137,12 @@ export async function getAllAmos(): Promise<
         codeEpci: entreprisesAmoEpci.codeEpci,
       })
       .from(entreprisesAmo)
-      .leftJoin(
-        entreprisesAmoCommunes,
-        eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId)
-      )
-      .leftJoin(
-        entreprisesAmoEpci,
-        eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId)
-      )
+      .leftJoin(entreprisesAmoCommunes, eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId))
+      .leftJoin(entreprisesAmoEpci, eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId))
       .orderBy(entreprisesAmo.nom);
 
     // Grouper les codes INSEE et EPCI par AMO
-    const amosMap = new Map<
-      string,
-      Amo & { communes: { codeInsee: string }[]; epci: { codeEpci: string }[] }
-    >();
+    const amosMap = new Map<string, Amo & { communes: { codeInsee: string }[]; epci: { codeEpci: string }[] }>();
 
     for (const row of allAmosWithRelations) {
       if (!amosMap.has(row.id)) {
@@ -186,17 +162,11 @@ export async function getAllAmos(): Promise<
       const amo = amosMap.get(row.id);
       if (amo) {
         // Ajouter le code INSEE s'il existe et n'est pas déjà présent
-        if (
-          row.codeInsee &&
-          !amo.communes.some((c) => c.codeInsee === row.codeInsee)
-        ) {
+        if (row.codeInsee && !amo.communes.some((c) => c.codeInsee === row.codeInsee)) {
           amo.communes.push({ codeInsee: row.codeInsee });
         }
         // Ajouter le code EPCI s'il existe et n'est pas déjà présent
-        if (
-          row.codeEpci &&
-          !amo.epci.some((e) => e.codeEpci === row.codeEpci)
-        ) {
+        if (row.codeEpci && !amo.epci.some((e) => e.codeEpci === row.codeEpci)) {
           amo.epci.push({ codeEpci: row.codeEpci });
         }
       }

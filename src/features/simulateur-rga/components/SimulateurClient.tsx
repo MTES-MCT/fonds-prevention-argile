@@ -8,6 +8,7 @@ import { useSimulateurRga } from "../hooks";
 import { parseRGAParams } from "../services/parser.service";
 import { encryptRGAData } from "../actions/encrypt-rga-data.actions";
 import type { PartialRGAFormData } from "../domain/entities";
+import { ROUTES } from "@/features/auth/client";
 
 interface RGAMessage {
   type: string;
@@ -22,25 +23,19 @@ interface SimulateurClientProps {
   embedMode?: boolean;
 }
 
-export default function SimulateurClient({
-  embedMode = false,
-}: SimulateurClientProps) {
+export default function SimulateurClient({ embedMode = false }: SimulateurClientProps) {
   const router = useRouter();
   const { saveRGA, validateRGAData } = useSimulateurRga();
   const isProcessingRef = useRef(false);
 
-  const [processingState, setProcessingState] =
-    useState<ProcessingState>("idle");
+  const [processingState, setProcessingState] = useState<ProcessingState>("idle");
   const [processingErrors, setProcessingErrors] = useState<string[]>([]);
 
   const iframeUrl = process.env.NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL;
   const iframeHeight = process.env.NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_HEIGHT;
   const iframeOrigin = iframeUrl ? new URL(iframeUrl).origin : null;
 
-  const IFRAME_ALLOWED_ORIGINS = [
-    iframeOrigin,
-    "https://mesaides.renov.gouv.fr",
-  ].filter(Boolean);
+  const IFRAME_ALLOWED_ORIGINS = [iframeOrigin, "https://mesaides.renov.gouv.fr"].filter(Boolean);
 
   /**
    * Gère la redirection en mode embed avec chiffrement
@@ -53,10 +48,7 @@ export default function SimulateurClient({
       const result = await encryptRGAData(rgaData);
 
       if (!result.success) {
-        setProcessingErrors([
-          "Erreur lors de la sécurisation des données.",
-          "Veuillez réessayer.",
-        ]);
+        setProcessingErrors(["Erreur lors de la sécurisation des données.", "Veuillez réessayer."]);
         setProcessingState("error");
         isProcessingRef.current = false;
         return;
@@ -68,16 +60,9 @@ export default function SimulateurClient({
       // Ouvrir dans nouvel onglet
       const newWindow = window.open(connectionUrl, "_blank");
 
-      if (
-        !newWindow ||
-        newWindow.closed ||
-        typeof newWindow.closed === "undefined"
-      ) {
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
         // Popup bloquée
-        setProcessingErrors([
-          "Veuillez autoriser les fenêtres popup pour continuer.",
-          connectionUrl,
-        ]);
+        setProcessingErrors(["Veuillez autoriser les fenêtres popup pour continuer.", connectionUrl]);
         setProcessingState("error");
       } else {
         setProcessingState("success");
@@ -100,7 +85,7 @@ export default function SimulateurClient({
    * Gère la redirection en mode normal
    */
   const handleNormalRedirect = () => {
-    router.push("/connexion");
+    router.push(ROUTES.connexion.particulier);
   };
 
   /**
@@ -116,9 +101,7 @@ export default function SimulateurClient({
       const rgaData = parseRGAParams(urlSearchParams);
 
       if (Object.keys(rgaData).length === 0) {
-        setProcessingErrors([
-          "Aucun paramètre RGA trouvé dans les données reçues",
-        ]);
+        setProcessingErrors(["Aucun paramètre RGA trouvé dans les données reçues"]);
         setProcessingState("error");
         return;
       }
@@ -128,12 +111,8 @@ export default function SimulateurClient({
         setProcessingErrors(validationErrors);
       }
 
-      const success = saveRGA(rgaData);
-      if (!success) {
-        setProcessingErrors(["Échec de la sauvegarde des données en session"]);
-        setProcessingState("error");
-        return;
-      }
+      // Sauvegarder les données RGA en session
+      saveRGA(rgaData);
 
       setProcessingState("success");
       isProcessingRef.current = true;
@@ -193,8 +172,7 @@ export default function SimulateurClient({
           alignItems: "center",
           justifyContent: "center",
           zIndex: 9999,
-        }}
-      >
+        }}>
         <div className="fr-modal__body">
           <div
             className="fr-modal__content"
@@ -204,8 +182,7 @@ export default function SimulateurClient({
               borderRadius: "8px",
               maxWidth: "500px",
               width: "90%",
-            }}
-          >
+            }}>
             {processingState === "processing" && (
               <div>
                 <h2 className="fr-h3">Traitement en cours...</h2>
@@ -227,17 +204,14 @@ export default function SimulateurClient({
                 <p>Vos données ont été enregistrées avec succès.</p>
                 {embedMode ? (
                   <>
-                    <p className="fr-text--sm fr-mt-2w">
-                      La page de connexion s'est ouverte dans un nouvel onglet.
-                    </p>
+                    <p className="fr-text--sm fr-mt-2w">La page de connexion s'est ouverte dans un nouvel onglet.</p>
                     <p className="fr-text--xs fr-mt-1w">
                       Si aucun onglet ne s'est ouvert,{" "}
                       <a
                         href={`${window.location.origin}/connexion`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="fr-link"
-                      >
+                        className="fr-link">
                         cliquez ici pour continuer
                       </a>
                       .
@@ -246,8 +220,7 @@ export default function SimulateurClient({
                 ) : (
                   <button
                     className="fr-btn fr-btn--primary fr-mt-2w"
-                    onClick={() => router.push("/connexion")}
-                  >
+                    onClick={() => router.push(ROUTES.connexion.particulier)}>
                     Continuer
                   </button>
                 )}
@@ -257,8 +230,7 @@ export default function SimulateurClient({
             {processingState === "error" && (
               <div>
                 <h2 className="fr-h3">
-                  {embedMode &&
-                  processingErrors.some((e) => e.includes("popup"))
+                  {embedMode && processingErrors.some((e) => e.includes("popup"))
                     ? "Action requise"
                     : "Erreur de traitement"}
                 </h2>
@@ -274,8 +246,7 @@ export default function SimulateurClient({
                               href={error}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="fr-btn fr-btn--primary"
-                            >
+                              className="fr-btn fr-btn--primary">
                               Continuer vers la connexion
                             </a>
                           </div>
@@ -296,8 +267,7 @@ export default function SimulateurClient({
                     onClick={() => {
                       setProcessingState("idle");
                       setProcessingErrors([]);
-                    }}
-                  >
+                    }}>
                     Fermer
                   </button>
                 </div>
@@ -330,9 +300,8 @@ export default function SimulateurClient({
           ) : (
             <div className="fr-alert fr-alert--error fr-m-4w">
               <p>
-                <strong>Erreur de configuration :</strong> L'URL du simulateur
-                n'est pas définie. Variable d'environnement
-                NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL manquante.
+                <strong>Erreur de configuration :</strong> L'URL du simulateur n'est pas définie. Variable
+                d'environnement NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL manquante.
               </p>
             </div>
           )}
@@ -341,8 +310,7 @@ export default function SimulateurClient({
             <div className="fr-callout">
               <h3 className="fr-callout__title">Besoin d'aide ?</h3>
               <p className="fr-callout__text">
-                Si vous rencontrez des difficultés avec le simulateur, vous
-                pouvez nous contacter par mail à
+                Si vous rencontrez des difficultés avec le simulateur, vous pouvez nous contacter par mail à
                 contact@fonds-prevention-argile.beta.gouv.fr.
               </p>
             </div>
@@ -359,16 +327,8 @@ export default function SimulateurClient({
 
       <section className="fr-container-fluid fr-py-4w">
         <div className="fr-container">
-          <nav
-            role="navigation"
-            className="fr-breadcrumb"
-            aria-label="vous êtes ici :"
-          >
-            <button
-              className="fr-breadcrumb__button"
-              aria-expanded="false"
-              aria-controls="breadcrumb"
-            >
+          <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
+            <button className="fr-breadcrumb__button" aria-expanded="false" aria-controls="breadcrumb">
               Voir le fil d'Ariane
             </button>
             <div className="fr-collapse" id="breadcrumb">
@@ -387,9 +347,7 @@ export default function SimulateurClient({
             </div>
           </nav>
 
-          <h1 className="fr-mb-6w text-(--text-title-grey)">
-            Simulateur d'éligibilité au Fonds prévention argile
-          </h1>
+          <h1 className="fr-mb-6w text-(--text-title-grey)">Simulateur d'éligibilité au Fonds prévention argile</h1>
 
           <RGATestFiller />
 
@@ -408,9 +366,8 @@ export default function SimulateurClient({
           ) : (
             <div className="fr-alert fr-alert--error fr-mt-4w fr-mb-6w">
               <p>
-                <strong>Erreur de configuration :</strong> L'URL du simulateur
-                n'est pas définie. Variable d'environnement
-                NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL manquante.
+                <strong>Erreur de configuration :</strong> L'URL du simulateur n'est pas définie. Variable
+                d'environnement NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL manquante.
               </p>
             </div>
           )}
@@ -419,20 +376,15 @@ export default function SimulateurClient({
         <div className="fr-container">
           <noscript>
             <div className="fr-alert fr-alert--warning">
-              <p>
-                Le simulateur nécessite JavaScript pour fonctionner
-                correctement.
-              </p>
+              <p>Le simulateur nécessite JavaScript pour fonctionner correctement.</p>
             </div>
           </noscript>
 
           <div className="fr-callout fr-mt-4w">
             <h3 className="fr-callout__title">Besoin d'aide ?</h3>
             <p className="fr-callout__text">
-              Si vous rencontrez des difficultés avec le simulateur, vous pouvez
-              nous contacter par mail à
-              contact@fonds-prevention-argile.beta.gouv.fr ou via le tchat en
-              bas à droite.
+              Si vous rencontrez des difficultés avec le simulateur, vous pouvez nous contacter par mail à
+              contact@fonds-prevention-argile.beta.gouv.fr ou via le tchat en bas à droite.
             </p>
           </div>
         </div>

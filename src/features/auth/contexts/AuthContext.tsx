@@ -1,26 +1,15 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  ReactNode,
-  useMemo,
-} from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { AuthUser } from "../domain/entities";
-import { AUTH_METHODS } from "../domain/value-objects";
+import { AUTH_METHODS, ROUTES } from "../domain/value-objects";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isLoggingOut: boolean;
   user: AuthUser | null;
-  error: string | null;
-  login: (password: string) => Promise<{ success: boolean; error?: string }>;
-  loginWithFranceConnect: () => void;
   logout: (redirectTo?: string) => Promise<void>;
   checkAuth: () => Promise<void>;
 }
@@ -32,13 +21,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   // Vérifier l'authentification via l'API
   const checkAuth = useCallback(async () => {
     try {
-      const response = await fetch("/api/auth/check", {
+      const response = await fetch(ROUTES.api.auth.check, {
         cache: "no-store",
       });
 
@@ -59,46 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Connexion admin avec mot de passe
-  const login = useCallback(
-    async (password: string) => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password }),
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          await checkAuth();
-          router.push("/administration");
-          return { success: true };
-        } else {
-          const errorMsg = data.error || "Mot de passe incorrect";
-          setError(errorMsg);
-          return { success: false, error: errorMsg };
-        }
-      } catch (err) {
-        const errorMsg = "Erreur de connexion. Veuillez réessayer. " + err;
-        setError(errorMsg);
-        return { success: false, error: errorMsg };
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [router, checkAuth]
-  );
-
-  // Connexion FranceConnect
-  const loginWithFranceConnect = useCallback(() => {
-    window.location.href = "/api/auth/fc/login";
-  }, []);
-
   // Déconnexion
   const logout = useCallback(
     async (redirectTo?: string) => {
@@ -112,10 +60,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         // Déterminer la route de déconnexion selon le type d'auth
-        const logoutUrl =
-          user?.authMethod === AUTH_METHODS.FRANCECONNECT
-            ? "/api/auth/fc/logout"
-            : "/api/auth/logout";
+        let logoutUrl = "/";
+
+        if (user?.authMethod === AUTH_METHODS.FRANCECONNECT) {
+          logoutUrl = ROUTES.api.auth.fc.logout;
+        } else if (user?.authMethod === AUTH_METHODS.PROCONNECT) {
+          logoutUrl = ROUTES.api.auth.pc.logout;
+        }
 
         const response = await fetch(logoutUrl, {
           method: "POST",
@@ -126,16 +77,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (response.ok) {
           setIsAuthenticated(false);
           setUser(null);
-          setError(null);
 
           // Stocker le flag de déconnexion dans localStorage
           localStorage.setItem("logout_success", "true");
 
           // Utiliser l'URL de redirection fournie par l'API
           if (data.redirectUrl) {
-            // Pour FranceConnect ou déconnexion standard
             if (data.redirectUrl.startsWith("http")) {
-              // URL externe (FranceConnect)
+              // URL externe (FranceConnect / ProConnect)
               window.location.href = data.redirectUrl;
             } else {
               // URL interne
@@ -148,10 +97,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         console.error("Erreur lors de la déconnexion:", err);
-        setError("Erreur lors de la déconnexion");
-        setIsLoggingOut(false);
+        // En cas d'erreur, rediriger quand même vers l'accueil
+        setIsAuthenticated(false);
+        setUser(null);
+        router.push("/");
       } finally {
         setIsLoading(false);
+        setIsLoggingOut(false);
       }
     },
     [router, user]
@@ -181,28 +133,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       isLoggingOut,
       user,
-      error,
-      login,
-      loginWithFranceConnect,
       logout,
       checkAuth,
     }),
-    [
-      isAuthenticated,
-      isLoading,
-      isLoggingOut,
-      user,
-      error,
-      login,
-      loginWithFranceConnect,
-      logout,
-      checkAuth,
-    ]
+    [isAuthenticated, isLoading, isLoggingOut, user, logout, checkAuth]
   );
 
-  return (
-    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
 
 // Hook principal

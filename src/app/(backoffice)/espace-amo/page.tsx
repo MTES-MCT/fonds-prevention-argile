@@ -1,0 +1,39 @@
+import { redirect } from "next/navigation";
+import { getCurrentAgent, AccesNonAutorise } from "@/features/backoffice";
+import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
+import { ROUTES } from "@/features/auth";
+
+/**
+ * Point d'entrée unique pour les agents ProConnect
+ *
+ * Redirige automatiquement vers l'espace correspondant au rôle :
+ * - Administrateur → /admin
+ * - Instructeur → /instruction
+ * - AMO → /espace-amo
+ *
+ * Affiche une page d'erreur si l'agent n'est pas enregistré
+ */
+export default async function EspaceAgentPage() {
+  const result = await getCurrentAgent();
+
+  // Agent non trouvé en BDD ou erreur
+  if (!result.success) {
+    return <AccesNonAutorise />;
+  }
+
+  const agent = result.data;
+
+  // Redirection selon le rôle
+  switch (agent.role) {
+    case UserRole.ADMINISTRATEUR:
+    case UserRole.SUPER_ADMINISTRATEUR:
+      redirect(ROUTES.backoffice.administration.root);
+
+    case UserRole.AMO:
+      redirect(ROUTES.backoffice.espaceAmo.root);
+
+    default:
+      // Rôle inconnu ou non géré
+      return <AccesNonAutorise />;
+  }
+}

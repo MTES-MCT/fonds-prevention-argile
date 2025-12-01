@@ -1,39 +1,49 @@
-import { useParcours } from "@/features/parcours/core/context/useParcours";
+"use client";
+
+import { useRGAStore, selectTempRgaData, selectIsHydrated } from "../stores";
+import { validateRGAData } from "../services/validator.service";
 
 /**
- * Hook SimulateurRGA (facade de ParcoursContext)
+ * Hook pour interagir avec le simulateur RGA
+ * Utilise le store Zustand
  */
 export function useSimulateurRga() {
-  const { validateRGAData, rgaData, saveTempRgaData, clearTempRgaData, isLoading } = useParcours();
+  // Sélecteurs granulaires pour éviter les re-renders inutiles
+  const tempRgaData = useRGAStore(selectTempRgaData);
+  const isHydrated = useRGAStore(selectIsHydrated);
 
-  // Pendant le chargement données incomplètes
-  if (isLoading) {
+  // Actions
+  const saveRGA = useRGAStore((state) => state.saveRGA);
+  const clearRGA = useRGAStore((state) => state.clearRGA);
+
+  // Helper pour vérifier si les données sont valides
+  const hasValidData = (): boolean => {
+    if (!tempRgaData) return false;
+    if (Object.keys(tempRgaData).length === 0) return false;
+    if (!tempRgaData.logement) return false;
+    return true;
+  };
+
+  // Pendant l'hydratation (SSR → Client)
+  if (!isHydrated) {
     return {
       data: undefined,
       isLoading: true,
       hasData: undefined,
-      saveRGA: saveTempRgaData,
-      updateRGA: saveTempRgaData,
-      clearRGA: clearTempRgaData,
-      validateRGAData: validateRGAData,
+      saveRGA,
+      updateRGA: saveRGA,
+      clearRGA,
+      validateRGAData,
     };
   }
 
-  // Fonction helper pour vérifier si les données sont réellement présentes
-  const hasValidData = () => {
-    if (!rgaData) return false;
-    if (Object.keys(rgaData).length === 0) return false;
-    if (!rgaData.logement) return false;
-    return true;
-  };
-
   return {
-    data: rgaData,
+    data: tempRgaData,
     isLoading: false,
     hasData: hasValidData(),
-    saveRGA: saveTempRgaData,
-    updateRGA: saveTempRgaData,
-    clearRGA: clearTempRgaData,
-    validateRGAData: validateRGAData,
+    saveRGA,
+    updateRGA: saveRGA,
+    clearRGA,
+    validateRGAData,
   };
 }

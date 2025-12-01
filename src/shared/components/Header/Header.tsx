@@ -1,12 +1,90 @@
 "use client";
 
 import { useAuth } from "@/features/auth/client";
-import { useIsAdmin } from "@/features/auth/hooks";
+import { useAgentRole, useIsAgent } from "@/features/auth/hooks";
+import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
+import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import Link from "next/link";
+
+/**
+ * Liens de navigation pour les agents selon leur rôle
+ */
+function AgentNavLinks() {
+  const agentRole = useAgentRole();
+
+  switch (agentRole) {
+    case UserRole.ADMINISTRATEUR:
+    case UserRole.SUPER_ADMINISTRATEUR:
+      return (
+        <li>
+          <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
+            Administration
+          </Link>
+        </li>
+      );
+
+    case UserRole.AMO:
+      return (
+        <>
+          <li>
+            <Link href={ROUTES.backoffice.espaceAmo.notifications} className="fr-icon-notification-3-line fr-btn">
+              Notifications
+            </Link>
+          </li>
+          <li>
+            <Link href={ROUTES.backoffice.espaceAmo.dossiers} className="fr-icon-folder-2-line fr-btn">
+              Mes dossiers
+            </Link>
+          </li>
+        </>
+      );
+
+    default:
+      return null;
+  }
+}
+
+/**
+ * Liens de navigation pour les agents (version mobile)
+ */
+function AgentNavLinksMobile() {
+  const agentRole = useAgentRole();
+
+  switch (agentRole) {
+    case UserRole.ADMINISTRATEUR:
+    case UserRole.SUPER_ADMINISTRATEUR:
+      return (
+        <li>
+          <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
+            Administration
+          </Link>
+        </li>
+      );
+
+    case UserRole.AMO:
+      return (
+        <>
+          <li>
+            <Link href={ROUTES.backoffice.espaceAmo.notifications} className="fr-icon-notification-3-line fr-btn">
+              Notifications
+            </Link>
+          </li>
+          <li>
+            <Link href={ROUTES.backoffice.espaceAmo.dossiers} className="fr-icon-folder-2-line fr-btn">
+              Mes dossiers
+            </Link>
+          </li>
+        </>
+      );
+
+    default:
+      return null;
+  }
+}
 
 const Header = () => {
   const { isAuthenticated, logout } = useAuth();
-  const isAdmin = useIsAdmin();
+  const isAgent = useIsAgent();
 
   return (
     <header role="banner" className="fr-header" id="header-3">
@@ -31,29 +109,21 @@ const Header = () => {
                     title="Menu"
                     type="button"
                     id="menu-4"
-                    className="fr-btn--menu fr-btn"
-                  >
+                    className="fr-btn--menu fr-btn">
                     Menu
                   </button>
                 </div>
               </div>
               <div className="fr-header__service">
                 <Link
-                  href="/"
-                  title={`Retour à l'accueil du site - Fonds prévention argile - République Française`}
-                >
+                  href={ROUTES.home}
+                  title={`Retour à l'accueil du site - Fonds prévention argile - République Française`}>
                   <span className="flex flex-row items-center">
-                    <p className="fr-header__service-title mr-4!">
-                      Fonds prévention argile
-                    </p>
-                    <p className="fr-badge fr-badge--success fr-badge--no-icon">
-                      BETA
-                    </p>
+                    <p className="fr-header__service-title mr-4!">Fonds prévention argile</p>
+                    <p className="fr-badge fr-badge--success fr-badge--no-icon">BETA</p>
                   </span>
                 </Link>
-                <p className="fr-header__service-tagline">
-                  Retrait Gonflement des Argiles - Aides aux ménages
-                </p>
+                <p className="fr-header__service-tagline">Retrait Gonflement des Argiles - Aides aux ménages</p>
               </div>
             </div>
             <div className="fr-header__tools">
@@ -62,39 +132,28 @@ const Header = () => {
                   {!isAuthenticated ? (
                     <>
                       <li>
-                        <Link
-                          href="/connexion"
-                          className="fr-icon-account-circle-fill fr-btn"
-                        >
+                        <Link href={ROUTES.connexion.agent} className="fr-icon-government-fill fr-btn">
+                          Agent
+                        </Link>
+                      </li>
+                      <li>
+                        <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
                           Se connecter
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          href="/simulateur"
-                          className="fr-btn--account fr-icon-checkbox-circle-fill fr-btn"
-                        >
+                        <Link href={ROUTES.simulateur} className="fr-btn--account fr-icon-checkbox-circle-fill fr-btn">
                           Vérifier mon éligibilité
                         </Link>
                       </li>
                     </>
                   ) : (
                     <>
-                      {isAdmin ? (
-                        <li>
-                          <Link
-                            href="/administration"
-                            className="fr-icon-settings-5-line fr-btn"
-                          >
-                            Administration
-                          </Link>
-                        </li>
+                      {isAgent ? (
+                        <AgentNavLinks />
                       ) : (
                         <li>
-                          <Link
-                            href="/mon-compte"
-                            className="fr-icon-folder-2-fill fr-btn"
-                          >
+                          <Link href={ROUTES.particulier.monCompte} className="fr-icon-folder-2-fill fr-btn">
                             Mon dossier
                           </Link>
                         </li>
@@ -103,8 +162,7 @@ const Header = () => {
                         <button
                           onClick={() => logout()}
                           className="fr-btn--account fr-icon-logout-box-r-line fr-btn"
-                          type="button"
-                        >
+                          type="button">
                           Se déconnecter
                         </button>
                       </li>
@@ -116,19 +174,14 @@ const Header = () => {
           </div>
         </div>
       </div>
-      <div
-        className="fr-header__menu fr-modal"
-        id="menu-modal-5"
-        aria-labelledby="menu-4"
-      >
+      <div className="fr-header__menu fr-modal" id="menu-modal-5" aria-labelledby="menu-4">
         <div className="fr-container">
           <button
             aria-controls="menu-modal-5"
             title="Fermer"
             type="button"
             id="button-32"
-            className="fr-btn--close fr-btn"
-          >
+            className="fr-btn--close fr-btn">
             Fermer
           </button>
           <div className="fr-header__menu-links">
@@ -136,39 +189,28 @@ const Header = () => {
               {!isAuthenticated ? (
                 <>
                   <li>
-                    <Link
-                      href="/connexion"
-                      className="fr-icon-account-circle-fill fr-btn"
-                    >
+                    <Link href={ROUTES.connexion.agent} className="fr-icon-government-fill fr-btn">
+                      Agent
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
                       Se connecter
                     </Link>
                   </li>
                   <li>
-                    <Link
-                      href="/simulateur"
-                      className="fr-btn--account fr-icon-checkbox-circle-fill fr-btn"
-                    >
+                    <Link href={ROUTES.simulateur} className="fr-btn--account fr-icon-checkbox-circle-fill fr-btn">
                       Vérifier mon éligibilité
                     </Link>
                   </li>
                 </>
               ) : (
                 <>
-                  {isAdmin ? (
-                    <li>
-                      <Link
-                        href="/administration"
-                        className="fr-icon-settings-5-line fr-btn"
-                      >
-                        Administration
-                      </Link>
-                    </li>
+                  {isAgent ? (
+                    <AgentNavLinksMobile />
                   ) : (
                     <li>
-                      <Link
-                        href="/mon-compte"
-                        className="fr-icon-folder-2-fill fr-btn"
-                      >
+                      <Link href={ROUTES.particulier.monCompte} className="fr-icon-folder-2-fill fr-btn">
                         Mon dossier
                       </Link>
                     </li>
@@ -177,8 +219,7 @@ const Header = () => {
                     <button
                       onClick={() => logout()}
                       className="fr-btn--account fr-icon-logout-box-r-line fr-btn"
-                      type="button"
-                    >
+                      type="button">
                       Se déconnecter
                     </button>
                   </li>

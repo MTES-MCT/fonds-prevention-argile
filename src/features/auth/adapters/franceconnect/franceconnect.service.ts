@@ -1,32 +1,16 @@
 import { cookies } from "next/headers";
 import { getFranceConnectConfig } from "./franceconnect.config";
 import { createToken, decodeToken } from "../../utils/jwt.utils";
-import type {
-  FranceConnectTokenResponse,
-  FranceConnectUserInfo,
-  FranceConnectError,
-} from "./franceconnect.types";
-import {
-  generateSecureRandomString,
-  parseJSONorJWT,
-} from "./franceconnect.utils";
-import {
-  AUTH_METHODS,
-  COOKIE_NAMES,
-  getCookieOptions,
-  ROLES,
-  SESSION_DURATION,
-} from "../../domain/value-objects";
+import type { FranceConnectTokenResponse, FranceConnectUserInfo, FranceConnectError } from "./franceconnect.types";
+
+import { AUTH_METHODS, COOKIE_NAMES, getCookieOptions, ROLES, SESSION_DURATION } from "../../domain/value-objects";
 import { ERROR_CODES } from "../../domain/errors/authErrors";
 import type { ErrorCode } from "../../domain/errors/authErrors";
 import { JWTPayload } from "../../domain/entities";
 import { userRepo } from "@/shared/database/repositories";
-import {
-  FC_ERROR_MAPPING,
-  FC_ERROR_MESSAGES,
-  createFCError,
-} from "./franceconnect.errors";
+import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
 import { getOrCreateParcours } from "@/features/parcours/core/services";
+import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
 
 /**
  * Génère l'URL d'autorisation FranceConnect
@@ -56,9 +40,7 @@ export async function generateAuthorizationUrl(): Promise<string> {
 /**
  * Échange le code d'autorisation contre les tokens
  */
-export async function exchangeCodeForTokens(
-  code: string
-): Promise<FranceConnectTokenResponse> {
+export async function exchangeCodeForTokens(code: string): Promise<FranceConnectTokenResponse> {
   const config = getFranceConnectConfig();
 
   const params = new URLSearchParams({
@@ -79,9 +61,7 @@ export async function exchangeCodeForTokens(
 
   if (!response.ok) {
     const error = (await response.json()) as FranceConnectError;
-    throw createFCError.general(
-      error.error_description || "Échec de l'échange du code"
-    );
+    throw createFCError.general(error.error_description || "Échec de l'échange du code");
   }
 
   return response.json();
@@ -139,7 +119,7 @@ export async function getStoredNonce(): Promise<string | null> {
  */
 export async function createFranceConnectSession(
   userId: string,
-  fcIdToken?: string,
+  idToken?: string,
   firstName?: string,
   lastName?: string
 ): Promise<void> {
@@ -149,7 +129,7 @@ export async function createFranceConnectSession(
     firstName,
     lastName,
     authMethod: AUTH_METHODS.FRANCECONNECT,
-    fcIdToken,
+    idToken: idToken,
     exp: Date.now() + SESSION_DURATION.particulier * 1000,
     iat: Date.now(),
   };
@@ -219,12 +199,7 @@ export async function handleFranceConnectCallback(
     await getOrCreateParcours(user.id);
 
     // 7. Créer la session avec l'userId
-    await createFranceConnectSession(
-      user.id,
-      tokens.id_token,
-      userInfo.given_name,
-      userInfo.family_name
-    );
+    await createFranceConnectSession(user.id, tokens.id_token, userInfo.given_name, userInfo.family_name);
 
     return { success: true };
   } catch (error) {
@@ -250,13 +225,10 @@ export function handleFranceConnectError(
   });
 
   // Mapper l'erreur FC
-  const errorCode: ErrorCode =
-    (FC_ERROR_MAPPING[error] as ErrorCode) || ERROR_CODES.FRANCECONNECT_ERROR;
+  const errorCode: ErrorCode = (FC_ERROR_MAPPING[error] as ErrorCode) || ERROR_CODES.FRANCECONNECT_ERROR;
 
   // Récupérer le message correspondant
-  const message =
-    FC_ERROR_MESSAGES[errorCode] ||
-    FC_ERROR_MESSAGES[ERROR_CODES.FRANCECONNECT_ERROR];
+  const message = FC_ERROR_MESSAGES[errorCode] || FC_ERROR_MESSAGES[ERROR_CODES.FRANCECONNECT_ERROR];
 
   return {
     success: false,
@@ -268,9 +240,7 @@ export function handleFranceConnectError(
 /**
  * Récupère les informations utilisateur (méthode privée)
  */
-async function getUserInfo(
-  accessToken: string
-): Promise<FranceConnectUserInfo> {
+async function getUserInfo(accessToken: string): Promise<FranceConnectUserInfo> {
   const config = getFranceConnectConfig();
 
   const response = await fetch(config.urls.userinfo, {
@@ -280,9 +250,7 @@ async function getUserInfo(
   });
 
   if (!response.ok) {
-    throw createFCError.general(
-      "Impossible de récupérer les informations utilisateur"
-    );
+    throw createFCError.general("Impossible de récupérer les informations utilisateur");
   }
 
   return parseJSONorJWT<FranceConnectUserInfo>(response);

@@ -6,9 +6,7 @@ import StepDetailSection from "./common/StepDetailSection";
 import { useState } from "react";
 import { useParcours } from "../context/useParcours";
 import { Step } from "../domain";
-import { PourEnSavoirPlusSectionContent } from "@/app/(home)/components/PourEnSavoirPlusSection";
 import { StatutValidationAmo } from "../../amo/domain/value-objects";
-import FaqAccountSection from "@/app/mon-compte/components/FaqAccountSection";
 import { DSStatus } from "../../dossiers-ds/domain";
 import {
   CalloutAmoEnAttente,
@@ -21,13 +19,20 @@ import {
   CalloutEligibiliteRefuse,
   CalloutEligibiliteTodo,
 } from "./steps";
-import Loading from "@/app/loading";
-import SimulationNeededAlert from "@/app/mon-compte/components/SimulationNeededAlert";
 import { useSimulateurRga } from "@/features/simulateur-rga";
+import Loading from "@/app/(main)/loading";
+import SimulationNeededAlert from "@/app/(main)/mon-compte/components/SimulationNeededAlert";
+import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/PourEnSavoirPlusSection";
+import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
+import { useMigrateRGAToDB } from "../hooks";
 
 export default function MonCompteClient() {
+  // Migration RGA si nécessaire (après connexion FC)
+  useMigrateRGAToDB();
+
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
-  const { hasData: hasRGAData, isLoading: isLoadingRGA } = useSimulateurRga();
+  const { hasData: hasTempRGAData, isLoading: isLoadingRGA } = useSimulateurRga();
+
   const [showAmoSuccessAlert, setShowAmoSuccessAlert] = useState(false);
 
   // Utilisation du hook parcours simplifié
@@ -38,25 +43,17 @@ export default function MonCompteClient() {
     lastDSStatus,
     statutAmo,
     refresh,
+    parcours,
     isLoading: isLoadingParcours,
   } = useParcours();
+
+  const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
 
   // État de chargement global
   const isLoading = isAuthLoading || isLoadingRGA || isLoadingParcours;
 
-  console.log("[MonCompteClient] State", {
-    isLoading,
-    hasRGAData,
-    user: !!user,
-    hasParcours,
-    hasDossiers,
-    currentStep,
-    statutAmo,
-  });
-
   // Afficher un message de déconnexion
   if (isLoggingOut) {
-    console.log("[MonCompteClient] Logging out");
     return (
       <div className="fr-container fr-py-8w">
         <div className="fr-alert fr-alert--info">
@@ -69,7 +66,6 @@ export default function MonCompteClient() {
 
   // Afficher le chargement si les données ne sont pas prêtes
   if (isLoading || hasRGAData === undefined) {
-    console.log("[MonCompteClient] Loading...");
     return <Loading />;
   }
 
@@ -80,13 +76,8 @@ export default function MonCompteClient() {
 
   // Conditions de simulation nécessaire
   const needsSimulation = !hasRGAData && !hasDossiers;
-  console.log("[MonCompteClient] needsSimulation:", needsSimulation, {
-    hasRGAData,
-    hasDossiers,
-  });
 
   if (needsSimulation) {
-    console.log("[MonCompteClient] Showing SimulationNeededAlert");
     return (
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
@@ -95,8 +86,6 @@ export default function MonCompteClient() {
       </section>
     );
   }
-
-  console.log("[MonCompteClient] Rendering normal view");
 
   return (
     <>

@@ -22,28 +22,24 @@ export async function middleware(request: NextRequest) {
   if (PUBLIC_ROUTES.franceConnectApi.some((route) => path.startsWith(route))) {
     return NextResponse.next();
   }
+  //  Ne pas intercepter les routes API ProConnect
+  if (PUBLIC_ROUTES.proConnectApi.some((route) => path.startsWith(route))) {
+    return NextResponse.next();
+  }
 
   // Vérifier le type de route
   const isProtected = isProtectedRoute(path);
-  const isAuthRoute = PUBLIC_ROUTES.auth.some((route) =>
-    path.startsWith(route)
-  );
+  const isAuthRoute = PUBLIC_ROUTES.auth.some((route) => path.startsWith(route));
 
   // Récupérer le cookie de session
   const session = request.cookies.get(COOKIE_NAMES.SESSION)?.value;
 
   // Si route protégée et pas de session -> rediriger vers connexion
   if (isProtected && !session) {
-    const response = NextResponse.redirect(
-      new URL(DEFAULT_REDIRECTS.login, request.url)
-    );
+    const response = NextResponse.redirect(new URL(DEFAULT_REDIRECTS.login, request.url));
 
     // Sauvegarder l'URL demandée pour rediriger après connexion
-    response.cookies.set(
-      COOKIE_NAMES.REDIRECT_TO,
-      path,
-      getCookieOptions(SESSION_DURATION.redirectCookie)
-    );
+    response.cookies.set(COOKIE_NAMES.REDIRECT_TO, path, getCookieOptions(SESSION_DURATION.redirectCookie));
 
     return response;
   }
@@ -60,9 +56,7 @@ export async function middleware(request: NextRequest) {
 
       if (!role && isProtected) {
         // Session invalide - nettoyer et rediriger
-        const response = NextResponse.redirect(
-          new URL(DEFAULT_REDIRECTS.login, request.url)
-        );
+        const response = NextResponse.redirect(new URL(DEFAULT_REDIRECTS.login, request.url));
 
         // Nettoyer tous les cookies de session
         response.cookies.delete(COOKIE_NAMES.SESSION);
@@ -89,9 +83,7 @@ export async function middleware(request: NextRequest) {
 
         if (redirectTo) {
           // Supprimer le cookie redirectTo et rediriger
-          const response = NextResponse.redirect(
-            new URL(redirectTo, request.url)
-          );
+          const response = NextResponse.redirect(new URL(redirectTo, request.url));
           response.cookies.delete(COOKIE_NAMES.REDIRECT_TO);
           return response;
         }

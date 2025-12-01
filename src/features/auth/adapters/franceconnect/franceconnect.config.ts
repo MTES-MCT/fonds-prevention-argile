@@ -1,23 +1,25 @@
-/**
- * Configuration FranceConnect
- */
-
 import { getServerEnv } from "@/shared/config/env.config";
+import { FC_ENDPOINTS } from "./franceconnect.constants";
 
-// Helper pour construire les URLs FranceConnect
+/**
+ * Helper pour construire les URLs FranceConnect
+ */
 export function getFranceConnectUrls(baseUrl?: string) {
   const base = baseUrl || getServerEnv().FC_BASE_URL;
 
   return {
-    authorization: `${base}/api/v2/authorize`,
-    token: `${base}/api/v2/token`,
-    userinfo: `${base}/api/v2/userinfo`,
-    logout: `${base}/api/v2/session/end`,
-    jwks: `${base}/api/v2/jwks`,
+    authorization: `${base}${FC_ENDPOINTS.AUTHORIZATION}`,
+    token: `${base}${FC_ENDPOINTS.TOKEN}`,
+    userinfo: `${base}${FC_ENDPOINTS.USERINFO}`,
+    logout: `${base}${FC_ENDPOINTS.LOGOUT}`,
+    jwks: `${base}${FC_ENDPOINTS.JWKS}`,
+    discovery: `${base}${FC_ENDPOINTS.DISCOVERY}`,
   };
 }
 
-// Configuration FranceConnect complète
+/**
+ * Configuration FranceConnect complète
+ */
 export function getFranceConnectConfig() {
   const env = getServerEnv();
   const urls = getFranceConnectUrls();

@@ -2,3 +2,4 @@ ignoredBuiltDependencies:
   - core-js-pure
   - esbuild
   - unrs-resolver
+minimumReleaseAge: 1440 # 1 jour (en minutes)

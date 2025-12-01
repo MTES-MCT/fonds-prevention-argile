@@ -1,5 +1,6 @@
-import { DEFAULT_REDIRECTS, ROLES } from "../domain/value-objects";
+import { DEFAULT_REDIRECTS, ROUTES } from "../domain/value-objects/configs/routes.config";
 import type { UserRole } from "../domain/types";
+import { UserRole as UserRoleEnum } from "@/shared/domain/value-objects/user-role.enum";
 
 /**
  * Service de gestion des redirections
@@ -9,9 +10,18 @@ import type { UserRole } from "../domain/types";
  * Obtient la redirection par défaut pour un rôle
  */
 export function getDefaultRedirect(role: UserRole): string {
-  return role === ROLES.ADMIN
-    ? DEFAULT_REDIRECTS.admin
-    : DEFAULT_REDIRECTS.particulier;
+  switch (role) {
+    case UserRoleEnum.SUPER_ADMINISTRATEUR:
+      return DEFAULT_REDIRECTS.super_administrateur;
+    case UserRoleEnum.ADMINISTRATEUR:
+      return DEFAULT_REDIRECTS.administrateur;
+    case UserRoleEnum.AMO:
+      return DEFAULT_REDIRECTS.amo;
+    case UserRoleEnum.PARTICULIER:
+      return DEFAULT_REDIRECTS.particulier;
+    default:
+      return DEFAULT_REDIRECTS.home;
+  }
 }
 
 /**
@@ -26,15 +36,19 @@ export function getUnauthorizedRedirect(role?: UserRole): string {
 /**
  * Obtient la redirection après login selon le rôle
  */
-export function getPostLoginRedirect(
-  role: UserRole,
-  intendedPath?: string
-): string {
-  // Si l'utilisateur voulait accéder à une page spécifique
-  if (intendedPath && intendedPath !== "/") {
+export function getPostLoginRedirect(role: UserRole, intendedPath?: string): string {
+  // Si l'utilisateur voulait accéder à une page spécifique (non vide et différente de /)
+  if (intendedPath && intendedPath !== ROUTES.home) {
     return intendedPath;
   }
 
   // Sinon, redirection par défaut selon le rôle
   return getDefaultRedirect(role);
+}
+
+/**
+ * Obtient la page de connexion appropriée selon le contexte
+ */
+export function getLoginRedirect(isAgent: boolean = false): string {
+  return isAgent ? DEFAULT_REDIRECTS.loginAgent : DEFAULT_REDIRECTS.login;
 }
