@@ -2,17 +2,18 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import {
-  getAllCommunes,
-  getCommuneBySlug,
+  getAllEpcis,
+  getEpciBySlug,
   getDepartementByCode,
-  getEpciBySiren,
+  getTopCommunesByEpci,
   getTopCommunesByDepartement,
 } from "@/features/seo";
 
-import { hydrateTemplate, createCommunePlaceholders } from "../../utils";
+import { hydrateTemplate, createEpciPlaceholders } from "../../utils";
 
 import {
   RgaBreadcrumb,
+  CommunesCards,
   CommunesTags,
   SectionDegats,
   SectionCoutInaction,
@@ -23,8 +24,7 @@ import {
 
 import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
-import { RgaFooterTerritoires } from "../../components/RgaFooterTerritoires";
-import { richTextParser } from "@/shared/utils";
+import richTextParser from "@/shared/utils/richTextParser.utils";
 
 // Nombre de communes à afficher
 const NB_COMMUNES_A_AFFICHER = 8;
@@ -36,13 +36,13 @@ interface PageProps {
 }
 
 /**
- * Génère les paramètres statiques pour toutes les pages commune
+ * Génère les paramètres statiques pour toutes les pages EPCI
  */
 export async function generateStaticParams() {
-  const communes = getAllCommunes();
+  const epcis = getAllEpcis();
 
-  return communes.map((commune) => ({
-    slug: commune.slug,
+  return epcis.map((epci) => ({
+    slug: epci.slug,
   }));
 }
 
@@ -51,23 +51,23 @@ export async function generateStaticParams() {
  */
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const commune = getCommuneBySlug(slug);
+  const epci = getEpciBySlug(slug);
 
-  if (!commune) {
+  if (!epci) {
     return {
-      title: "Commune non trouvée",
+      title: "EPCI non trouvé",
     };
   }
 
-  const departement = getDepartementByCode(commune.codeDepartement);
+  const departement = getDepartementByCode(epci.codesDepartements[0]);
 
   if (!departement) {
     return {
-      title: "Commune non trouvée",
+      title: "EPCI non trouvé",
     };
   }
 
-  const placeholders = createCommunePlaceholders(commune, departement);
+  const placeholders = createEpciPlaceholders(epci, departement);
   const content = hydrateTemplate(templateContent, placeholders);
 
   return {
@@ -82,35 +82,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /**
- * Page commune RGA
+ * Page EPCI RGA
  */
-export default async function CommunePage({ params }: PageProps) {
+export default async function EpciPage({ params }: PageProps) {
   const { slug } = await params;
-  const commune = getCommuneBySlug(slug);
+  const epci = getEpciBySlug(slug);
 
-  if (!commune) {
+  if (!epci) {
     notFound();
   }
 
-  const departement = getDepartementByCode(commune.codeDepartement);
+  const departement = getDepartementByCode(epci.codesDepartements[0]);
 
   if (!departement) {
     notFound();
   }
 
   // Récupérer les données associées
-  const epci = commune.codeEpci ? getEpciBySiren(commune.codeEpci) : undefined;
+  const communesEpci = getTopCommunesByEpci(epci.codeSiren, NB_COMMUNES_A_AFFICHER);
   const communesDepartement = getTopCommunesByDepartement(departement.code, NB_COMMUNES_A_AFFICHER);
 
   // Hydrater le contenu avec les placeholders
-  const placeholders = createCommunePlaceholders(commune, departement);
+  const placeholders = createEpciPlaceholders(epci, departement);
   const content = hydrateTemplate(templateContent, placeholders);
 
   return (
     <main>
-      {/* Fil d'Ariane */}
+      {/* Hero */}
       <div className="fr-container">
-        <RgaBreadcrumb departement={departement} commune={commune} />
+        <RgaBreadcrumb departement={departement} epci={epci} />
       </div>
 
       {/* Introduction */}
@@ -120,7 +120,10 @@ export default async function CommunePage({ params }: PageProps) {
       </div>
 
       {/* Carte */}
-      <MapPlaceholder title={commune.nom} zoom={content.carte.zoom} />
+      <MapPlaceholder title={epci.nom} zoom={content.carte.zoom} />
+
+      {/* En savoir plus - Communes de l'EPCI */}
+      <CommunesCards communes={communesEpci} title={content.enSavoirPlus.title} />
 
       {/* Dégâts visibles */}
       <SectionDegats />
@@ -142,22 +145,17 @@ export default async function CommunePage({ params }: PageProps) {
         communes={communesDepartement}
         title={content.zoneTerritoire.title}
         description={content.zoneTerritoire.description}
-        currentCommuneInsee={commune.codeInsee}
       />
 
-      {/* Lien vers l'EPCI */}
-      {epci && (
-        <section className="fr-py-4w">
-          <div className="fr-container">
-            <p>
-              {commune.nom} fait partie de <a href={`/rga/epci/${epci.slug}`}>{epci.nom}</a>.
-            </p>
-          </div>
-        </section>
-      )}
-
-      {/* Footer territoires */}
-      <RgaFooterTerritoires />
+      {/* Lien vers le département */}
+      <section className="fr-py-4w">
+        <div className="fr-container">
+          <p>
+            {epci.nom} fait partie du département <a href={`/rga/departement/${departement.slug}`}>{departement.nom}</a>
+            .
+          </p>
+        </div>
+      </section>
     </main>
   );
 }

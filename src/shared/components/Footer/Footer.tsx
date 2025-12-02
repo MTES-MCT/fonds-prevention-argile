@@ -1,9 +1,19 @@
 import Link from "next/link";
+import { ReactNode } from "react";
 
-const Footer = () => {
+interface FooterProps {
+  topContent?: ReactNode;
+}
+
+const Footer = ({ topContent }: FooterProps) => {
   return (
     <>
-      <footer className="fr-footer" role="contentinfo" id="footer-7361">
+      <footer className="fr-footer" role="contentinfo" id="footer-main">
+        {topContent && (
+          <div className="fr-footer__top">
+            <div className="fr-container">{topContent}</div>
+          </div>
+        )}
         <div className="fr-container">
           <div className="fr-footer__body">
             <div className="fr-footer__brand fr-enlarge-link">
@@ -20,12 +30,12 @@ const Footer = () => {
             <div className="fr-footer__content">
               <div className="fr-footer__content-desc [&_a]:after:content-none!">
                 Fonds prévention argile est une plateforme numérique conçue par la{" "}
-                <a
+                <Link
                   href="https://www.ecologie.gouv.fr/direction-generale-lamenagement-du-logement-et-nature-dgaln-0"
                   rel="noopener noreferrer"
                   target="_blank">
                   Direction générale de l'aménagement, du logement et de la nature (DGALN)
-                </a>{" "}
+                </Link>{" "}
                 en partenariat avec le programme{" "}
                 <a href="https://beta.gouv.fr/" rel="noopener noreferrer" target="_blank">
                   beta.gouv
@@ -81,12 +91,12 @@ const Footer = () => {
               <p>
                 Sauf mention explicite de propriété intellectuelle détenue par des tiers, les contenus de ce site sont
                 proposés sous{" "}
-                <a
+                <Link
                   href="https://github.com/etalab/licence-ouverte/blob/master/LO.md"
                   rel="noopener noreferrer"
                   target="_blank">
                   licence etalab-2.0
-                </a>
+                </Link>
               </p>
             </div>
           </div>
@@ -110,7 +120,7 @@ const Footer = () => {
                 <div className="fr-modal__content">
                   <h2 id="footer-display-title" className="fr-modal__title">
                     {" "}
-                    Paramètres d’affichage{" "}
+                    Paramètres d'affichage{" "}
                   </h2>
                   <div id="fr-display" className="fr-display">
                     <fieldset
@@ -119,7 +129,7 @@ const Footer = () => {
                       aria-labelledby="display-fieldset-legend display-fieldset-messages">
                       <legend className="fr-fieldset__legend--regular fr-fieldset__legend" id="display-fieldset-legend">
                         {" "}
-                        Choisissez un thème pour personnaliser l’apparence du site.{" "}
+                        Choisissez un thème pour personnaliser l'apparence du site.{" "}
                       </legend>
                       <div className="fr-fieldset__element">
                         <div className="fr-radio-group fr-radio-rich">

@@ -24,7 +24,6 @@ import {
 
 import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
-import { RgaFooterTerritoires } from "../../components/RgaFooterTerritoires";
 import richTextParser from "@/shared/utils/richTextParser.utils";
 import { formatDepartementAvecArticle } from "@/features/seo/domain/config/departements-label.config";
 
@@ -140,9 +139,6 @@ export default async function DepartementPage({ params }: PageProps) {
         epcis={epcis}
         title={`Risques Retrait-Gonflement dans les intercommunalités ${formatDepartementAvecArticle(departement.code, departement.nom)} (${departement.code})`}
       />
-
-      {/* Footer territoires */}
-      <RgaFooterTerritoires />
     </main>
   );
 }

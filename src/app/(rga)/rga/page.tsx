@@ -4,9 +4,8 @@ import { getAllDepartements, getAllEpcis } from "@/features/seo";
 
 import commonContent from "./content/common.json";
 import Link from "next/link";
-import SavoirSiConcerneSection from "../(home)/components/SavoirSiConcerneSection";
 import { CtaSmall } from "./components";
-import { RgaFooterTerritoires } from "./components/RgaFooterTerritoires";
+import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
 
 export const metadata: Metadata = {
   title: "Retrait-Gonflement des Argiles (RGA) | Fonds Prévention Argile",
@@ -165,9 +164,6 @@ export default function RgaIndexPage() {
 
       {/* CTA Full Width */}
       <SavoirSiConcerneSection />
-
-      {/* Footer territoires */}
-      <RgaFooterTerritoires />
     </main>
   );
 }
