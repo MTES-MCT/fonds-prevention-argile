@@ -19,7 +19,7 @@ export const ZOOM = {
   /** Vue France entière */
   france: 4.8,
   /** Vue département */
-  departement: 10,
+  departement: 8,
   /** Vue EPCI */
   epci: 11,
   /** Vue commune */
@@ -68,9 +68,9 @@ export const FLY_TO_DELAY = 1000;
  * Couleurs des niveaux d'aléa (pour référence, définies aussi dans le style)
  */
 export const ALEA_COLORS = {
-  fort: "#ff0000",
-  moyen: "#ffa500",
-  faible: "#ffff00",
+  fort: "#F09790",
+  moyen: "#F6D396",
+  faible: "#F8F775",
   nul: "transparent",
 } as const;
 

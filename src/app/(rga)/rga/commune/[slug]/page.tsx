@@ -170,7 +170,6 @@ export default async function CommunePage({ params }: PageProps) {
       <CommunesTags
         communes={communesDepartement}
         title={content.zoneTerritoire.title}
-        description={content.zoneTerritoire.description}
         currentCommuneInsee={commune.codeInsee}
       />
 

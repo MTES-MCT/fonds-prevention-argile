@@ -31,23 +31,21 @@ export function RgaMapContainer({
 
   return (
     <div className="fr-mb-4w">
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
         <RgaMap
           {...mapProps}
           onBuildingSelect={handleBuildingSelect}
           onBuildingDataChange={setBuildingData}
           onLoadingChange={setIsLoading}
         />
-
         {showLegend && (
           <div
+            className="p-4"
             style={{
-              position: "absolute",
-              bottom: "1rem",
-              left: "1rem",
+              bottom: "0",
+              left: "0",
+              right: "0",
               zIndex: 10,
-              borderRadius: "0.25rem",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
             }}>
             <RgaMapLegend />
           </div>
@@ -57,9 +55,7 @@ export function RgaMapContainer({
       {showBuildingInfo && !mapProps.readOnly && (
         <div className="fr-mt-2w">
           {isLoading && <p className="fr-text--sm fr-text--light">Chargement des informations du bâtiment...</p>}
-
           {!isLoading && buildingData && <RgaBuildingInfo building={buildingData} />}
-
           {!isLoading && !buildingData && (
             <p className="fr-text--sm fr-text--light">Cliquez sur un bâtiment pour voir ses informations</p>
           )}
