@@ -19,11 +19,14 @@ import {
   SectionCoutInaction,
   SectionEtatAccompagne,
   CtaSmall,
-  CtaFullWidth,
   MapPlaceholder,
 } from "../../components";
 
 import templateContent from "../content/template.json";
+import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
+import { RgaFooterTerritoires } from "../../components/RgaFooterTerritoires";
+import richTextParser from "@/shared/utils/richTextParser.utils";
+import { formatDepartementAvecArticle } from "@/features/seo/domain/config/departements-label.config";
 
 interface PageProps {
   params: Promise<{
@@ -90,31 +93,22 @@ export default async function DepartementPage({ params }: PageProps) {
 
   return (
     <main>
-      {/* Hero */}
-      <section className="fr-py-6w">
-        <div className="fr-container">
-          <RgaBreadcrumb departement={departement} />
-          <h1>{content.hero.title}</h1>
-        </div>
-      </section>
+      {/* Fil d'Ariane */}
+      <div className="fr-container">
+        <RgaBreadcrumb departement={departement} />
+      </div>
 
       {/* Introduction */}
-      <section className="fr-py-4w">
-        <div className="fr-container">
-          <h2>{content.introduction.title}</h2>
-          <p>{content.introduction.content}</p>
-        </div>
-      </section>
+      <div className="fr-container">
+        <h2>{content.introduction.title}</h2>
+        <p>{richTextParser(content.introduction.content)}</p>
+      </div>
 
       {/* Carte */}
       <MapPlaceholder title={departement.nom} zoom={content.carte.zoom} />
 
-      {/* En savoir plus - 8 communes */}
-      <CommunesCards
-        communes={communes}
-        title={content.enSavoirPlus.title}
-        description={content.enSavoirPlus.description}
-      />
+      {/* En savoir plus - communes */}
+      <CommunesCards communes={communes} title={content.enSavoirPlus.title} />
 
       {/* Dégâts visibles */}
       <SectionDegats />
@@ -126,10 +120,10 @@ export default async function DepartementPage({ params }: PageProps) {
       <SectionCoutInaction />
 
       {/* L'État vous accompagne */}
-      <SectionEtatAccompagne conclusionLocale={content.etatAccompagne.conclusionLocale} />
+      <SectionEtatAccompagne />
 
       {/* CTA Full Width */}
-      <CtaFullWidth />
+      <SavoirSiConcerneSection />
 
       {/* Zone territoire - Tags des communes */}
       <CommunesTags
@@ -139,7 +133,13 @@ export default async function DepartementPage({ params }: PageProps) {
       />
 
       {/* Liste des EPCI */}
-      <EpciTags epcis={epcis} title={`Intercommunalités du ${departement.nom}`} />
+      <EpciTags
+        epcis={epcis}
+        title={`Risques Retrait-Gonflement dans les intercommunalités ${formatDepartementAvecArticle(departement.code, departement.nom)} (${departement.code})`}
+      />
+
+      {/* Footer territoires */}
+      <RgaFooterTerritoires />
     </main>
   );
 }

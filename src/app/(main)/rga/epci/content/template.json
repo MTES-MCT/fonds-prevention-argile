@@ -20,7 +20,7 @@
     "description": "Découvrez la situation dans les communes de l'intercommunalité"
   },
   "zoneTerritoire": {
-    "title": "Le Retrait-Gonflement des Argiles dans le département du {nom_departement}",
+    "title": "Le Retrait-Gonflement des Argiles dans le département {departement_avec_article}",
     "description": "Consultez les informations pour les autres communes du département"
   },
   "etatAccompagne": {

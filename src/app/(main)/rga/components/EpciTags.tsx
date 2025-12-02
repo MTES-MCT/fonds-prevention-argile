@@ -17,7 +17,7 @@ export function EpciTags({ epcis, title }: EpcisTagsProps) {
           {epcis.map((epci) => (
             <li key={epci.codeSiren}>
               <a href={`/rga/epci/${epci.slug}`} className="fr-tag">
-                {epci.nom}
+                Risques Retrait-Gonflement des Argiles {epci.nom}
               </a>
             </li>
           ))}

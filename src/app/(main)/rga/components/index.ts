@@ -5,6 +5,5 @@ export { SectionDegats } from "./SectionDegats";
 export { SectionCoutInaction } from "./SectionCoutInaction";
 export { SectionEtatAccompagne } from "./SectionEtatAccompagne";
 export { CtaSmall } from "./CtaSmall";
-export { CtaFullWidth } from "./CtaFullWidth";
 export { MapPlaceholder } from "./MapPlaceholder";
 export { EpciTags } from "./EpciTags";

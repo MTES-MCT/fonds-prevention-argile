@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 
-import { getAllDepartements } from "@/features/seo";
+import { getAllDepartements, getAllEpcis } from "@/features/seo";
 
 import commonContent from "./content/common.json";
 import Link from "next/link";
+import SavoirSiConcerneSection from "../(home)/components/SavoirSiConcerneSection";
+import { CtaSmall } from "./components";
+import { RgaFooterTerritoires } from "./components/RgaFooterTerritoires";
 
 export const metadata: Metadata = {
   title: "Retrait-Gonflement des Argiles (RGA) | Fonds Prévention Argile",
@@ -22,11 +25,12 @@ export const metadata: Metadata = {
  */
 export default function RgaIndexPage() {
   const departements = getAllDepartements();
+  const epciList = getAllEpcis();
 
   return (
     <main>
       {/* Hero */}
-      <section className="fr-py-6w">
+      <section className="fr-py-2v">
         <div className="fr-container">
           {/* Breadcrumb */}
           <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
@@ -53,6 +57,23 @@ export default function RgaIndexPage() {
           <p className="fr-text--lead">
             Le Fonds de Prévention Argile accompagne les propriétaires de maisons situées dans les 11 départements
             éligibles au dispositif.
+          </p>
+        </div>
+      </section>
+
+      {/* Qu'est-ce que le RGA */}
+      <section className="fr-py-2w">
+        <div className="fr-container">
+          <h2>Qu'est-ce que le Retrait-Gonflement des Argiles ?</h2>
+          <p>
+            Le phénomène de retrait-gonflement des argiles se manifeste par des changements du volume d'un sol argileux
+            à proximité des fondations d'une maison. Sec, il se rétracte ; humide, il gonfle, endommageant notamment les
+            maisons individuelles.
+          </p>
+          <p>
+            Le changement climatique aggrave ce phénomène : les dernières projections réalisées par la Caisse centrale
+            de réassurance (CCR) tablent sur une <strong>augmentation de 44% à 162%</strong> de la sinistralité due au
+            retrait-gonglement des argiles d'ici 2050.
           </p>
         </div>
       </section>
@@ -91,19 +112,21 @@ export default function RgaIndexPage() {
         </div>
       </section>
 
-      {/* Qu'est-ce que le RGA */}
+      {/* Liste des EPCI */}
       <section className="fr-py-4w">
         <div className="fr-container">
-          <h2>Qu'est-ce que le Retrait-Gonflement des Argiles ?</h2>
-          <p>
-            Le sol de nombreuses régions françaises contient des argiles sensibles aux variations d'humidité. Lors des
-            périodes de sécheresse, ces argiles se rétractent, provoquant des tassements de terrain. À l'inverse, lors
-            d'épisodes pluvieux, elles se gorgent d'eau et gonflent.
-          </p>
-          <p>
-            Ces mouvements alternés, appelés Retrait-Gonflement des Argiles (RGA), fragilisent progressivement les
-            fondations des habitations et peuvent causer des dégâts importants.
-          </p>
+          <h2>Intercommunalités éligibles</h2>
+          <p>{epciList.length} intercommunalités sont concernées par le dispositif.</p>
+
+          <ul className="fr-tags-group">
+            {epciList.map((epci) => (
+              <li key={epci.codeSiren}>
+                <a href={`/rga/epci/${epci.slug}`} className="fr-tag">
+                  {epci.nom}
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -120,16 +143,7 @@ export default function RgaIndexPage() {
       </section>
 
       {/* CTA */}
-      <section className="fr-py-4w">
-        <div className="fr-container">
-          <div className="fr-callout">
-            <p className="fr-callout__text">{commonContent.cta.small.text}</p>
-            <a className="fr-btn" href={commonContent.cta.small.buttonLink}>
-              {commonContent.cta.small.buttonLabel}
-            </a>
-          </div>
-        </div>
-      </section>
+      <CtaSmall />
 
       {/* L'État vous accompagne */}
       <section className="fr-py-4w">
@@ -150,20 +164,10 @@ export default function RgaIndexPage() {
       </section>
 
       {/* CTA Full Width */}
-      <section className="fr-py-4w" style={{ backgroundColor: "#f5f5fe" }}>
-        <div className="fr-container">
-          <div className="fr-grid-row fr-grid-row--middle">
-            <div className="fr-col-12 fr-col-md-6">
-              <p className="fr-text--lead">{commonContent.cta.fullWidth.text}</p>
-              <a className="fr-btn" href={commonContent.cta.fullWidth.buttonLink}>
-                {commonContent.cta.fullWidth.buttonLabel}
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
+      <SavoirSiConcerneSection />
 
-      {/* Footer spécifique - TODO: Composant dédié */}
+      {/* Footer territoires */}
+      <RgaFooterTerritoires />
     </main>
   );
 }

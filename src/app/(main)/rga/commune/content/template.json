@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "RGA à {nom_commune} ({code_postal}) | Fonds Prévention Argile",
-    "description": "Votre maison à {nom_commune} est-elle exposée au retrait-gonflement des argiles ? Découvrez les aides de l'État pour protéger votre logement dans le {nom_departement}."
+    "description": "Votre maison à {nom_commune} est-elle exposée au retrait-gonflement des argiles ? Découvrez les aides de l'État pour protéger votre logement en {nom_departement}."
   },
   "hero": {
     "title": "Le Retrait-Gonflement des Argiles à {nom_commune}",
@@ -9,7 +9,7 @@
   },
   "introduction": {
     "title": "Risques Retrait-Gonflement {nom_departement} ({code_departement})",
-    "content": "À {nom_commune} ({code_postal}), comme dans une partie du {nom_departement}, le sol contient des argiles sensibles aux variations d'humidité. Lors des périodes de sécheresse, ces argiles se rétractent, provoquant des tassements de terrain. À l'inverse, lors d'épisodes pluvieux, elles se gorgent d'eau et gonflent. Ces mouvements alternés, appelés Retrait-Gonflement des Argiles (RGA), fragilisent progressivement les fondations des habitations."
+    "content": "À {nom_commune} ({code_postal}), comme dans une partie {departement_avec_article}, le sol contient des argiles sensibles aux variations d'humidité. Lors des périodes de sécheresse, ces argiles se rétractent, provoquant des tassements de terrain. À l'inverse, lors d'épisodes pluvieux, elles se gorgent d'eau et gonflent. Ces mouvements alternés, appelés Retrait-Gonflement des Argiles (RGA), fragilisent progressivement les fondations des habitations."
   },
   "carte": {
     "zoom": 13,
@@ -20,7 +20,7 @@
     "description": "Découvrez la situation dans les communes voisines"
   },
   "zoneTerritoire": {
-    "title": "Le Retrait-Gonflement des Argiles dans le département du {nom_departement}",
+    "title": "Le Retrait-Gonflement des Argiles dans le département {departement_avec_article}",
     "description": "Consultez les informations pour les autres communes du département"
   },
   "etatAccompagne": {

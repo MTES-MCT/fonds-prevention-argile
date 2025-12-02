@@ -20,11 +20,12 @@ import {
   SectionCoutInaction,
   SectionEtatAccompagne,
   CtaSmall,
-  CtaFullWidth,
   MapPlaceholder,
 } from "../../components";
 
 import templateContent from "../content/template.json";
+import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
+import { RgaFooterTerritoires } from "../../components/RgaFooterTerritoires";
 
 interface PageProps {
   params: Promise<{
@@ -126,11 +127,7 @@ export default async function CommunePage({ params }: PageProps) {
       <MapPlaceholder title={commune.nom} zoom={content.carte.zoom} />
 
       {/* En savoir plus - 8 communes voisines */}
-      <CommunesCards
-        communes={communesVoisines}
-        title={content.enSavoirPlus.title}
-        description={content.enSavoirPlus.description}
-      />
+      <CommunesCards communes={communesVoisines} title={content.enSavoirPlus.title} />
 
       {/* Dégâts visibles */}
       <SectionDegats />
@@ -145,7 +142,7 @@ export default async function CommunePage({ params }: PageProps) {
       <SectionEtatAccompagne conclusionLocale={content.etatAccompagne.conclusionLocale} />
 
       {/* CTA Full Width */}
-      <CtaFullWidth />
+      <SavoirSiConcerneSection />
 
       {/* Zone territoire - Tags des communes du département */}
       <CommunesTags
@@ -165,6 +162,9 @@ export default async function CommunePage({ params }: PageProps) {
           </div>
         </section>
       )}
+
+      {/* Footer territoires */}
+      <RgaFooterTerritoires />
     </main>
   );
 }

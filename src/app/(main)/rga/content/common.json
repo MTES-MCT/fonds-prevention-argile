@@ -4,7 +4,7 @@
     "emoji": "🏚️",
     "content": [
       "Sur votre maison, le RGA se manifeste par des fissures en escalier sur les façades, des décollements entre murs et plafonds, des portes et fenêtres qui se bloquent, ou encore des fissurations de carrelage. Ces désordres, d'abord discrets, s'aggravent avec le temps et peuvent compromettre la solidité structurelle de votre logement.",
-      "Les épisodes de sécheresse de plus en plus fréquents et intenses accentuent ce phénomène de RGA. En France, il a déjà coûté plus de 11 milliards d'euros en indemnisations, ce qui en fait le 2ᵉ risque naturel le plus onéreux après les inondations."
+      "Les épisodes de sécheresse de plus en plus fréquents et intenses accentuent ce phénomène de RGA. En France, il a déjà coûté plus de <strong>11 milliards d'euros</strong> en indemnisations, ce qui en fait le <strong>2ᵉ risque naturel le plus onéreux</strong> après les inondations."
     ]
   },
   "coutInaction": {
@@ -12,7 +12,7 @@
     "emoji": "😓",
     "content": [
       "Ignorer les risques et ne pas protéger votre maison, c'est vous exposer vous et vos proches à un risque considérable.",
-      "D'autre part, le coût moyen d'un sinistre lié au RGA est de 16 500€ et peut aller jusqu'à 75 000€, entraînant 12 à 24 mois de relogement selon l'ampleur des dégâts. Sans compter la dévalorisation de votre bien immobilier en cas de désordres non traités.",
+      "D'autre part, le coût moyen d'un sinistre lié au RGA est de <strong>16 500€</strong> et peut aller <strong>jusqu'à 75 000€</strong>, entraînant <strong>12 à 24 mois de relogement</strong> selon l'ampleur des dégâts. Sans compter la <strong>dévalorisation de votre bien immobilier</strong> en cas de désordres non traités.",
       "L'inaction est bien plus coûteuse que l'action."
     ]
   },
@@ -20,23 +20,23 @@
     "title": "L'État vous accompagne pour agir avant sinistre",
     "emoji": "🛟",
     "content": [
-      "N'attendez pas que les fissures apparaissent. Des travaux préventifs permettent de protéger votre maison : bonne gestion des eaux, de la végétation et régulation de l'humidité au niveau des fondations.",
-      "Pour vous accompagner, l'État a créé le Fonds de Prévention Argile. Ce dispositif finance en partie :"
+      "N'attendez pas que les fissures apparaissent. Des <strong>travaux préventifs</strong> permettent de protéger votre maison : bonne gestion des eaux, de la végétation et régulation de l'humidité au niveau des fondations.",
+      "Pour vous accompagner, l'État a créé le <strong>Fonds de Prévention Argile</strong>. Ce dispositif finance en partie :"
     ],
     "liste": [
-      "Un diagnostic de vulnérabilité au retrait gonflement des argiles",
-      "Un accompagnement administratif et technique",
-      "Des travaux de prévention"
+      "Un <strong>diagnostic de vulnérabilité</strong> au retrait gonflement des argiles",
+      "Un <strong>accompagnement administratif</strong> et <strong>technique</strong>",
+      "Des <strong>travaux de prévention</strong>"
     ],
-    "conclusion": "Les propriétaires occupants de maison situés en zone à risque fort et sous conditions peuvent bénéficier de ces aides."
+    "conclusion": "<strong>Les propriétaires occupants de maison</strong> situés en zone à risque fort et sous conditions peuvent bénéficier de ces aides."
   },
   "cta": {
     "small": {
-      "text": "N'attendez pas d'être sinistrés. Protégez-vous et bénéficiez de l'aide l'État.",
+      "text": "N'attendez pas d'être sinistrés. Protégez-vous et bénéficiez de l'aide de l'État.",
       "buttonLabel": "Vérifier mon éligibilité",
       "buttonLink": "/simulateur",
       "image": {
-        "src": "/images/rga/cta-small.webp",
+        "src": "/images/rga/cta.png",
         "alt": "Maison exposée au soleil"
       }
     },

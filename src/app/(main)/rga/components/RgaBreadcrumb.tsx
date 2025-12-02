@@ -31,11 +31,11 @@ export function RgaBreadcrumb({ departement, commune, epci }: RgaBreadcrumbProps
             <li>
               {commune || epci ? (
                 <a className="fr-breadcrumb__link" href={`/rga/departement/${departement.slug}`}>
-                  {departement.nom}
+                  {departement.nom} ({departement.code})
                 </a>
               ) : (
                 <span className="fr-breadcrumb__link" aria-current="page">
-                  {departement.nom}
+                  {departement.nom} ({departement.code})
                 </span>
               )}
             </li>

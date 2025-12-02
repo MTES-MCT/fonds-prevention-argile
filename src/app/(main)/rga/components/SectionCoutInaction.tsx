@@ -1,3 +1,4 @@
+import richTextParser from "@/shared/utils/richTextParser.utils";
 import commonContent from "../content/common.json";
 
 export function SectionCoutInaction() {
@@ -7,9 +8,8 @@ export function SectionCoutInaction() {
         <h2>
           {commonContent.coutInaction.emoji} {commonContent.coutInaction.title}
         </h2>
-        {commonContent.coutInaction.content.map((paragraph, index) => (
-          <p key={index}>{paragraph}</p>
-        ))}
+
+        {richTextParser(commonContent.coutInaction.content.join("\n"))}
       </div>
     </section>
   );

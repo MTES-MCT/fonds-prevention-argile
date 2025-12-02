@@ -1,4 +1,5 @@
 import type { CommuneSEO, DepartementSEO, EpciSEO } from "@/features/seo";
+import { formatDepartementAvecArticle } from "@/features/seo/domain";
 
 /**
  * Type pour les placeholders des templates
@@ -53,6 +54,7 @@ export function createDepartementPlaceholders(departement: DepartementSEO): Plac
   return {
     nom_departement: departement.nom,
     code_departement: departement.code,
+    departement_avec_article: formatDepartementAvecArticle(departement.code, departement.nom),
   };
 }
 
@@ -65,6 +67,7 @@ export function createCommunePlaceholders(commune: CommuneSEO, departement: Depa
     code_postal: commune.codesPostaux[0] || commune.codeInsee,
     nom_departement: departement.nom,
     code_departement: departement.code,
+    departement_avec_article: formatDepartementAvecArticle(departement.code, departement.nom),
   };
 }
 
@@ -76,5 +79,6 @@ export function createEpciPlaceholders(epci: EpciSEO, departement: DepartementSE
     nom_epci: epci.nom,
     nom_departement: departement.nom,
     code_departement: departement.code,
+    departement_avec_article: formatDepartementAvecArticle(departement.code, departement.nom),
   };
 }

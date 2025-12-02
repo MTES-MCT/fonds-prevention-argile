@@ -19,11 +19,12 @@ import {
   SectionCoutInaction,
   SectionEtatAccompagne,
   CtaSmall,
-  CtaFullWidth,
   MapPlaceholder,
 } from "../../components";
 
 import templateContent from "../content/template.json";
+import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
+import { RgaFooterTerritoires } from "../../components/RgaFooterTerritoires";
 
 interface PageProps {
   params: Promise<{
@@ -124,11 +125,7 @@ export default async function EpciPage({ params }: PageProps) {
       <MapPlaceholder title={epci.nom} zoom={content.carte.zoom} />
 
       {/* En savoir plus - Communes de l'EPCI */}
-      <CommunesCards
-        communes={communesEpci}
-        title={content.enSavoirPlus.title}
-        description={content.enSavoirPlus.description}
-      />
+      <CommunesCards communes={communesEpci} title={content.enSavoirPlus.title} />
 
       {/* Dégâts visibles */}
       <SectionDegats />
@@ -143,7 +140,7 @@ export default async function EpciPage({ params }: PageProps) {
       <SectionEtatAccompagne conclusionLocale={content.etatAccompagne.conclusionLocale} />
 
       {/* CTA Full Width */}
-      <CtaFullWidth />
+      <SavoirSiConcerneSection />
 
       {/* Zone territoire - Tags des communes du département */}
       <CommunesTags
@@ -161,6 +158,9 @@ export default async function EpciPage({ params }: PageProps) {
           </p>
         </div>
       </section>
+
+      {/* Footer territoires */}
+      <RgaFooterTerritoires />
     </main>
   );
 }
