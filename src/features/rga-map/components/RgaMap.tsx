@@ -1,0 +1,71 @@
+"use client";
+
+import { useEffect } from "react";
+import "maplibre-gl/dist/maplibre-gl.css";
+
+import { useRgaMap } from "../hooks/useRgaMap";
+import { useRgaMapMarker } from "../hooks/useRgaMapMarker";
+import { useRgaBuildingSelection } from "../hooks/useRgaBuildingSelection";
+import type { RgaMapProps } from "../domain/types";
+import type { BuildingData } from "@/shared/services/bdnb";
+
+interface RgaMapInternalProps extends RgaMapProps {
+  onBuildingDataChange?: (data: BuildingData | null) => void;
+  onLoadingChange?: (isLoading: boolean) => void;
+}
+
+export function RgaMap({
+  center,
+  zoom,
+  readOnly = false,
+  showMarker = false,
+  onBuildingSelect,
+  onError,
+  onBuildingDataChange,
+  onLoadingChange,
+  height = "500px",
+  className = "",
+}: RgaMapInternalProps) {
+  const { mapRef, map, isReady } = useRgaMap({
+    center,
+    zoom,
+  });
+
+  useRgaMapMarker({
+    map,
+    coordinates: center,
+    showMarker,
+    flyToOnMount: Boolean(center),
+  });
+
+  const { buildingData, isLoading } = useRgaBuildingSelection({
+    map,
+    enabled: !readOnly && isReady,
+    onBuildingSelect,
+    onError,
+  });
+
+  // Remonter les données au parent
+  useEffect(() => {
+    onBuildingDataChange?.(buildingData);
+  }, [buildingData, onBuildingDataChange]);
+
+  useEffect(() => {
+    onLoadingChange?.(isLoading);
+  }, [isLoading, onLoadingChange]);
+
+  return (
+    <div
+      ref={mapRef}
+      className={className}
+      style={{
+        height,
+        width: "100%",
+        borderRadius: "0.5rem",
+        overflow: "hidden",
+      }}
+      aria-label="Carte des zones d'aléa retrait-gonflement des argiles"
+      role="application"
+    />
+  );
+}
