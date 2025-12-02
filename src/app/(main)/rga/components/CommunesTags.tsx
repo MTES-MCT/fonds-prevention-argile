@@ -23,7 +23,7 @@ export function CommunesTags({ communes, title, description, currentCommuneInsee
                 href={`/rga/commune/${commune.slug}`}
                 className="fr-tag"
                 aria-current={commune.codeInsee === currentCommuneInsee ? "page" : undefined}>
-                Risques Retrait-Gonflement des Argiles à {commune.nom}
+                Risques Retrait-Gonflement des Argiles à {commune.nom} ({commune.codesPostaux.join(", ")})
               </a>
             </li>
           ))}

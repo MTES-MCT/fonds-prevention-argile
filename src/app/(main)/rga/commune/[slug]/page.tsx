@@ -6,7 +6,6 @@ import {
   getCommuneBySlug,
   getDepartementByCode,
   getEpciBySiren,
-  getNextCommunesByPopulation,
   getTopCommunesByDepartement,
 } from "@/features/seo";
 
@@ -14,7 +13,6 @@ import { hydrateTemplate, createCommunePlaceholders } from "../../utils";
 
 import {
   RgaBreadcrumb,
-  CommunesCards,
   CommunesTags,
   SectionDegats,
   SectionCoutInaction,
@@ -26,6 +24,10 @@ import {
 import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
 import { RgaFooterTerritoires } from "../../components/RgaFooterTerritoires";
+import { richTextParser } from "@/shared/utils";
+
+// Nombre de communes à afficher
+const NB_COMMUNES_A_AFFICHER = 8;
 
 interface PageProps {
   params: Promise<{
@@ -98,8 +100,7 @@ export default async function CommunePage({ params }: PageProps) {
 
   // Récupérer les données associées
   const epci = commune.codeEpci ? getEpciBySiren(commune.codeEpci) : undefined;
-  const communesVoisines = getNextCommunesByPopulation(commune, 8);
-  const communesDepartement = getTopCommunesByDepartement(departement.code, 8);
+  const communesDepartement = getTopCommunesByDepartement(departement.code, NB_COMMUNES_A_AFFICHER);
 
   // Hydrater le contenu avec les placeholders
   const placeholders = createCommunePlaceholders(commune, departement);
@@ -107,27 +108,19 @@ export default async function CommunePage({ params }: PageProps) {
 
   return (
     <main>
-      {/* Hero */}
-      <section className="fr-py-6w">
-        <div className="fr-container">
-          <RgaBreadcrumb departement={departement} commune={commune} />
-          <h1>{content.hero.title}</h1>
-        </div>
-      </section>
+      {/* Fil d'Ariane */}
+      <div className="fr-container">
+        <RgaBreadcrumb departement={departement} commune={commune} />
+      </div>
 
       {/* Introduction */}
-      <section className="fr-py-4w">
-        <div className="fr-container">
-          <h2>{content.introduction.title}</h2>
-          <p>{content.introduction.content}</p>
-        </div>
-      </section>
+      <div className="fr-container">
+        <h2>{content.introduction.title}</h2>
+        <p>{richTextParser(content.introduction.content)}</p>
+      </div>
 
       {/* Carte */}
       <MapPlaceholder title={commune.nom} zoom={content.carte.zoom} />
-
-      {/* En savoir plus - 8 communes voisines */}
-      <CommunesCards communes={communesVoisines} title={content.enSavoirPlus.title} />
 
       {/* Dégâts visibles */}
       <SectionDegats />
@@ -139,7 +132,7 @@ export default async function CommunePage({ params }: PageProps) {
       <SectionCoutInaction />
 
       {/* L'État vous accompagne */}
-      <SectionEtatAccompagne conclusionLocale={content.etatAccompagne.conclusionLocale} />
+      <SectionEtatAccompagne />
 
       {/* CTA Full Width */}
       <SavoirSiConcerneSection />

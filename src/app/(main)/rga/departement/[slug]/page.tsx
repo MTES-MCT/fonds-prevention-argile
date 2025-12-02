@@ -28,6 +28,9 @@ import { RgaFooterTerritoires } from "../../components/RgaFooterTerritoires";
 import richTextParser from "@/shared/utils/richTextParser.utils";
 import { formatDepartementAvecArticle } from "@/features/seo/domain/config/departements-label.config";
 
+// Nombre de communes à afficher dans la section "En savoir plus"
+const NB_COMMUNES_A_AFFICHER = 8;
+
 interface PageProps {
   params: Promise<{
     slug: string;
@@ -84,7 +87,7 @@ export default async function DepartementPage({ params }: PageProps) {
   }
 
   // Récupérer les données associées
-  const communes = getTopCommunesByDepartement(departement.code, 8);
+  const communes = getTopCommunesByDepartement(departement.code, NB_COMMUNES_A_AFFICHER);
   const epcis = getEpcisByDepartement(departement.code);
 
   // Hydrater le contenu avec les placeholders

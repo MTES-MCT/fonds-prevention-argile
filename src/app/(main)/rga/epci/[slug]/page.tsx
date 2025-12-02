@@ -25,6 +25,10 @@ import {
 import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
 import { RgaFooterTerritoires } from "../../components/RgaFooterTerritoires";
+import richTextParser from "@/shared/utils/richTextParser.utils";
+
+// Nombre de communes à afficher
+const NB_COMMUNES_A_AFFICHER = 8;
 
 interface PageProps {
   params: Promise<{
@@ -96,8 +100,8 @@ export default async function EpciPage({ params }: PageProps) {
   }
 
   // Récupérer les données associées
-  const communesEpci = getTopCommunesByEpci(epci.codeSiren, 8);
-  const communesDepartement = getTopCommunesByDepartement(departement.code, 8);
+  const communesEpci = getTopCommunesByEpci(epci.codeSiren, NB_COMMUNES_A_AFFICHER);
+  const communesDepartement = getTopCommunesByDepartement(departement.code, NB_COMMUNES_A_AFFICHER);
 
   // Hydrater le contenu avec les placeholders
   const placeholders = createEpciPlaceholders(epci, departement);
@@ -106,20 +110,15 @@ export default async function EpciPage({ params }: PageProps) {
   return (
     <main>
       {/* Hero */}
-      <section className="fr-py-6w">
-        <div className="fr-container">
-          <RgaBreadcrumb departement={departement} epci={epci} />
-          <h1>{content.hero.title}</h1>
-        </div>
-      </section>
+      <div className="fr-container">
+        <RgaBreadcrumb departement={departement} epci={epci} />
+      </div>
 
       {/* Introduction */}
-      <section className="fr-py-4w">
-        <div className="fr-container">
-          <h2>{content.introduction.title}</h2>
-          <p>{content.introduction.content}</p>
-        </div>
-      </section>
+      <div className="fr-container">
+        <h2>{content.introduction.title}</h2>
+        <p>{richTextParser(content.introduction.content)}</p>
+      </div>
 
       {/* Carte */}
       <MapPlaceholder title={epci.nom} zoom={content.carte.zoom} />
@@ -137,7 +136,7 @@ export default async function EpciPage({ params }: PageProps) {
       <SectionCoutInaction />
 
       {/* L'État vous accompagne */}
-      <SectionEtatAccompagne conclusionLocale={content.etatAccompagne.conclusionLocale} />
+      <SectionEtatAccompagne />
 
       {/* CTA Full Width */}
       <SavoirSiConcerneSection />
