@@ -324,3 +324,29 @@ Si vous souhaitez uniquement modifier des textes de l'application :
 2. Éditez les fichiers JSON dans `src/content/`
 3. Créez une Pull Request en décrivant les changements apportés
 4. Aucune connaissance technique n'est requise pour ce type de contribution
+
+## Sécurité des dépendances
+
+Ce projet applique des mesures de protection contre les attaques de type supply chain (ex: shai-hulud).
+
+### Configuration `.npmrc`
+
+| Option | Valeur | Protection |
+|--------|--------|------------|
+| `ignore-scripts` | `true` | Bloque l'exécution automatique des scripts `postinstall`, `preinstall`, etc. Empêche l'exécution de code malveillant lors de l'installation |
+| `auto-install-peers` | `false` | Désactive l'installation automatique des peer dependencies, évitant l'ajout silencieux de packages non audités |
+
+### Configuration `pnpm-workspace.yaml`
+
+| Option | Valeur | Protection |
+|--------|--------|------------|
+| `savePrefix` | `~` | Limite les mises à jour automatiques aux versions patch uniquement (ex: `5.1.x`). Évite les breaking changes inattendus |
+| `minimumReleaseAge` | `10080` | Refuse les packages publiés depuis moins de 7 jours. Laisse le temps à la communauté de détecter des versions compromises |
+| `trustPolicy` | `no-downgrade` | Empêche la republication d'une version existante avec un contenu différent (attaque par remplacement) |
+| `onlyBuiltDependencies` | whitelist | Seuls les packages listés peuvent exécuter des scripts de build natifs. Tous les autres sont bloqués |
+
+### Packages autorisés pour les builds natifs
+
+- `@next/swc-*` : Compilateur SWC de Next.js (binaires Rust)
+- `esbuild` : Bundler (binaire Go)
+- `sharp` : Traitement d'images (bindings C++)
