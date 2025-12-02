@@ -15,6 +15,7 @@ import QuelsSontTravauxEligiblesSection from "./components/QuelsSontTravauxEligi
 import PourEnSavoirPlusSection from "./components/PourEnSavoirPlusSection";
 import FaqSection from "./components/FaqSection";
 import QuiSommesNousSection from "./components/QuiSommesNousSection";
+import { DEPARTEMENTS_ELIGIBLES_RGA } from "@/features/seo";
 
 export default function Home() {
   const { showLogoutMessage, clearLogoutMessage } = useLogoutMessage();
@@ -23,7 +24,7 @@ export default function Home() {
     <>
       <Notice
         className="fr-notice--info"
-        description={content.notice.description}
+        description={`${content.notice.description} ${DEPARTEMENTS_ELIGIBLES_RGA.join(" • ")}`}
         title={content.notice.title}
         more={content.notice.more}
         more_link={content.notice.more_link}

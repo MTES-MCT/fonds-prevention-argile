@@ -1,0 +1,2 @@
+# Ce dossier contient les fichiers JSON générés par le script scripts/seo/generate-seo-data.ts
+# Les fichiers générés sont versionnés pour garantir la stabilité du build

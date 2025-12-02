@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "title": "RGA à {nom_commune} ({code_postal}) | Fonds Prévention Argile",
+    "description": "Votre maison à {nom_commune} est-elle exposée au retrait-gonflement des argiles ? Découvrez les aides de l'État pour protéger votre logement en {nom_departement}."
+  },
+  "hero": {
+    "title": "Le Retrait-Gonflement des Argiles à {nom_commune}",
+    "breadcrumb": ["Accueil", "RGA", "{nom_departement}", "{nom_commune}"]
+  },
+  "introduction": {
+    "title": "Risques Retrait-Gonflement {nom_departement} ({code_departement})",
+    "content": "À <strong>{nom_commune} ({code_postal})</strong>, comme dans une partie <strong>{departement_avec_article}</strong>, le sol contient des argiles sensibles aux variations d'humidité. Lors des périodes de sécheresse, ces argiles se rétractent, provoquant des tassements de terrain. À l'inverse, lors d'épisodes pluvieux, elles se gorgent d'eau et gonflent. Ces mouvements alternés, appelés <strong>Retrait-Gonflement des Argiles (RGA)</strong>, fragilisent progressivement les fondations des habitations."
+  },
+  "carte": {
+    "zoom": 13,
+    "centerType": "mairie"
+  },
+  "enSavoirPlus": {
+    "title": "En savoir plus sur le RGA près de {nom_commune}",
+    "description": "Découvrez la situation dans les communes voisines"
+  },
+  "zoneTerritoire": {
+    "title": "Le Retrait-Gonflement des Argiles dans le département {departement_avec_article}",
+    "description": "Consultez les informations pour les autres communes du département"
+  },
+  "etatAccompagne": {
+    "conclusionLocale": "Les propriétaires occupants de maison à {nom_commune} situés en zone à risque fort et sous conditions peuvent bénéficier de ces aides."
+  }
+}

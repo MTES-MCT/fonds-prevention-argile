@@ -3,6 +3,7 @@ import content from "../(home)/content/content.json";
 import { AUTH_METHODS, getCurrentUser } from "@/features/auth";
 import { Notice } from "@/shared/components";
 import { SimulateurClient } from "@/features/simulateur-rga";
+import { DEPARTEMENTS_ELIGIBLES_RGA } from "@/features/seo/domain/config/seo.config";
 
 export default async function SimulateurPage() {
   const user = await getCurrentUser();
@@ -21,7 +22,7 @@ export default async function SimulateurPage() {
     <>
       <Notice
         className="fr-notice--info"
-        description={content.notice.description}
+        description={`${content.notice.description} ${DEPARTEMENTS_ELIGIBLES_RGA.join(" • ")}`}
         title={content.notice.title}
         more={content.notice.more}
         more_link={content.notice.more_link}

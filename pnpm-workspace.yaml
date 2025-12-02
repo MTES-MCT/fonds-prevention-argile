@@ -1,5 +1,18 @@
-ignoredBuiltDependencies:
-  - core-js-pure
+packages:
+  - "."
+
+savePrefix: "~"
+minimumReleaseAge: 10080 # one week in minutes
+trustPolicy: no-downgrade
+
+onlyBuiltDependencies:
+  - "@next/swc-linux-x64-gnu"
+  - "@next/swc-darwin-arm64"
+  - "@next/swc-darwin-x64"
+  - "@next/swc-win32-x64-msvc"
   - esbuild
-  - unrs-resolver
-minimumReleaseAge: 1440 # 1 jour (en minutes)
+  - sharp
+
+trustPolicyExclude:
+  # Types-only, runtime-safe. Voir https://github.com/nodejs/undici/issues/4666
+  - undici-types
