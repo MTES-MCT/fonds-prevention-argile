@@ -12,3 +12,7 @@ onlyBuiltDependencies:
   - "@next/swc-win32-x64-msvc"
   - esbuild
   - sharp
+
+trustPolicyExclude:
+  # Types-only, runtime-safe. Voir https://github.com/nodejs/undici/issues/4666
+  - undici-types
