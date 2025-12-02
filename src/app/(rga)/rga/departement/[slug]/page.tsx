@@ -20,6 +20,7 @@ import {
   SectionEtatAccompagne,
   CtaSmall,
   MapPlaceholder,
+  JsonLd,
 } from "../../components";
 
 import templateContent from "../content/template.json";
@@ -93,8 +94,28 @@ export default async function DepartementPage({ params }: PageProps) {
   const placeholders = createDepartementPlaceholders(departement);
   const content = hydrateTemplate(templateContent, placeholders);
 
+  // Données JSON-LD
+  const jsonLdData = {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name: `Retrait-Gonflement des Argiles en ${departement.nom}`,
+    description: content.meta.description,
+    url: `https://fonds-prevention-argile.beta.gouv.fr/rga/departement/${departement.slug}`,
+    geo: {
+      "@type": "GeoShape",
+      name: departement.nom,
+    },
+    isPartOf: {
+      "@type": "Country",
+      name: "France",
+    },
+  };
+
   return (
     <main>
+      {/* Données JSON-LD */}
+      <JsonLd data={jsonLdData} />
+
       {/* Fil d'Ariane */}
       <div className="fr-container">
         <RgaBreadcrumb departement={departement} />

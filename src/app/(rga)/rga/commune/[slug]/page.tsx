@@ -20,12 +20,13 @@ import {
   SectionEtatAccompagne,
   CtaSmall,
   MapPlaceholder,
+  CommunesMemeEpci,
+  JsonLd,
 } from "../../components";
 
 import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
 import { richTextParser } from "@/shared/utils";
-import { CommunesMemeEpci } from "../../components/communes/CommunesMemeEpci";
 
 // Nombre de communes à afficher
 const NB_COMMUNES_A_AFFICHER = 8;
@@ -108,8 +109,31 @@ export default async function CommunePage({ params }: PageProps) {
   const placeholders = createCommunePlaceholders(commune, departement);
   const content = hydrateTemplate(templateContent, placeholders);
 
+  // Données JSON-LD
+  const jsonLdData = {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name: `Retrait-Gonflement des Argiles à ${commune.nom}`,
+    description: content.meta.description,
+    url: `https://fonds-prevention-argile.beta.gouv.fr/rga/commune/${commune.slug}`,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: commune.nom,
+      postalCode: commune.codesPostaux[0] ?? "",
+      addressRegion: departement.nom,
+      addressCountry: "FR",
+    },
+    containedInPlace: {
+      "@type": "AdministrativeArea",
+      name: departement.nom,
+    },
+  };
+
   return (
     <main>
+      {/* Données JSON-LD */}
+      <JsonLd data={jsonLdData} />
+
       {/* Fil d'Ariane */}
       <div className="fr-container">
         <RgaBreadcrumb departement={departement} commune={commune} />

@@ -21,6 +21,7 @@ import {
   SectionEtatAccompagne,
   CtaSmall,
   MapPlaceholder,
+  JsonLd,
 } from "../../components";
 
 import templateContent from "../content/template.json";
@@ -109,8 +110,28 @@ export default async function EpciPage({ params }: PageProps) {
   const placeholders = createEpciPlaceholders(epci, departement);
   const content = hydrateTemplate(templateContent, placeholders);
 
+  // Données JSON-LD
+  const jsonLdData = {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name: `Retrait-Gonflement des Argiles - ${epci.nom}`,
+    description: content.meta.description,
+    url: `https://fonds-prevention-argile.beta.gouv.fr/rga/epci/${epci.slug}`,
+    geo: {
+      "@type": "GeoShape",
+      name: epci.nom,
+    },
+    containedInPlace: {
+      "@type": "AdministrativeArea",
+      name: departement.nom,
+    },
+  };
+
   return (
     <main>
+      {/* Données JSON-LD */}
+      <JsonLd data={jsonLdData} />
+
       {/* Hero */}
       <div className="fr-container">
         <RgaBreadcrumb departement={departement} epci={epci} />

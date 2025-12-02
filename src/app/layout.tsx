@@ -28,11 +28,11 @@ import "../styles/loading.css";
 import { DsfrProvider } from "@/shared/components";
 
 export const metadata: Metadata = {
-  title: "Fonds prévention argile",
+  title: "Fonds préventions argile",
   description: "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
   metadataBase: new URL("https://fonds-preventions-argile.beta.gouv.fr"),
   openGraph: {
-    title: "Fonds prévention argile",
+    title: "Fonds préventions argile",
     description: "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
     url: "https://fonds-preventions-argile.beta.gouv.fr",
     siteName: "Fonds prévention argile",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Fonds prévention argile",
+    title: "Fonds préventions argile",
     description: "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
     images: ["/images/home/logement-concerne.webp"],
   },
