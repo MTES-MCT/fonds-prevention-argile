@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import {
   getAllCommunes,
   getCommuneBySlug,
+  getCommunesByEpci,
   getDepartementByCode,
   getEpciBySiren,
   getTopCommunesByDepartement,
@@ -24,6 +25,7 @@ import {
 import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
 import { richTextParser } from "@/shared/utils";
+import { CommunesMemeEpci } from "../../components/communes/CommunesMemeEpci";
 
 // Nombre de communes à afficher
 const NB_COMMUNES_A_AFFICHER = 8;
@@ -100,6 +102,7 @@ export default async function CommunePage({ params }: PageProps) {
   // Récupérer les données associées
   const epci = commune.codeEpci ? getEpciBySiren(commune.codeEpci) : undefined;
   const communesDepartement = getTopCommunesByDepartement(departement.code, NB_COMMUNES_A_AFFICHER);
+  const communesEpci = epci ? getCommunesByEpci(epci.codeSiren) : [];
 
   // Hydrater le contenu avec les placeholders
   const placeholders = createCommunePlaceholders(commune, departement);
@@ -136,6 +139,9 @@ export default async function CommunePage({ params }: PageProps) {
       {/* CTA Full Width */}
       <SavoirSiConcerneSection />
 
+      {/* Communes du même EPCI */}
+      {epci && <CommunesMemeEpci communes={communesEpci} epci={epci} currentCommuneInsee={commune.codeInsee} />}
+
       {/* Zone territoire - Tags des communes du département */}
       <CommunesTags
         communes={communesDepartement}
@@ -144,16 +150,24 @@ export default async function CommunePage({ params }: PageProps) {
         currentCommuneInsee={commune.codeInsee}
       />
 
-      {/* Lien vers l'EPCI */}
-      {epci && (
-        <section className="fr-py-4w">
-          <div className="fr-container">
-            <p>
-              {commune.nom} fait partie de <a href={`/rga/epci/${epci.slug}`}>{epci.nom}</a>.
-            </p>
-          </div>
-        </section>
-      )}
+      {/* Liens vers le département et l'EPCI */}
+      <section className="fr-py-4w">
+        <div className="fr-container">
+          <p>
+            {commune.nom} est une commune du département{" "}
+            <a href={`/rga/departement/${departement.slug}`}>
+              {departement.nom} ({departement.code})
+            </a>
+            {epci && (
+              <>
+                {" "}
+                et fait partie de l'intercommunalité <a href={`/rga/epci/${epci.slug}`}>{epci.nom}</a>
+              </>
+            )}
+            .
+          </p>
+        </div>
+      </section>
     </main>
   );
 }

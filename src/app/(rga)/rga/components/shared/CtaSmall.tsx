@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import commonContent from "../content/common.json";
+import commonContent from "../../content/common.json";
 
 export function CtaSmall() {
   return (

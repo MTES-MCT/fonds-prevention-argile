@@ -7,6 +7,7 @@ import {
   getDepartementByCode,
   getTopCommunesByEpci,
   getTopCommunesByDepartement,
+  getEpcisByDepartement,
 } from "@/features/seo";
 
 import { hydrateTemplate, createEpciPlaceholders } from "../../utils";
@@ -25,6 +26,7 @@ import {
 import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
 import richTextParser from "@/shared/utils/richTextParser.utils";
+import { EpcisMemeDepartement } from "../../components/epci/EpcisMemeDepartement";
 
 // Nombre de communes à afficher
 const NB_COMMUNES_A_AFFICHER = 8;
@@ -101,6 +103,7 @@ export default async function EpciPage({ params }: PageProps) {
   // Récupérer les données associées
   const communesEpci = getTopCommunesByEpci(epci.codeSiren, NB_COMMUNES_A_AFFICHER);
   const communesDepartement = getTopCommunesByDepartement(departement.code, NB_COMMUNES_A_AFFICHER);
+  const epcisDepartement = getEpcisByDepartement(departement.code);
 
   // Hydrater le contenu avec les placeholders
   const placeholders = createEpciPlaceholders(epci, departement);
@@ -146,6 +149,9 @@ export default async function EpciPage({ params }: PageProps) {
         title={content.zoneTerritoire.title}
         description={content.zoneTerritoire.description}
       />
+
+      {/* Autres EPCIs du département */}
+      <EpcisMemeDepartement epcis={epcisDepartement} departement={departement} currentEpciSiren={epci.codeSiren} />
 
       {/* Lien vers le département */}
       <section className="fr-py-4w">

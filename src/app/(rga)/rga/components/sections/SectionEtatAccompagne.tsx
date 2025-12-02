@@ -1,5 +1,5 @@
 import richTextParser from "@/shared/utils/richTextParser.utils";
-import commonContent from "../content/common.json";
+import commonContent from "../../content/common.json";
 
 export function SectionEtatAccompagne() {
   return (

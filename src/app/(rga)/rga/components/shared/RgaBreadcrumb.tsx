@@ -10,6 +10,9 @@ interface RgaBreadcrumbProps {
 export function RgaBreadcrumb({ departement, commune, epci }: RgaBreadcrumbProps) {
   const id = `breadcrumb-${commune?.slug || epci?.slug || departement?.slug || "rga"}`;
 
+  // Le département est cliquable si on est sur une page commune OU une page EPCI
+  const isDepartementClickable = Boolean(commune || epci);
+
   return (
     <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
       <button className="fr-breadcrumb__button" aria-expanded="false" aria-controls={id}>
@@ -29,10 +32,10 @@ export function RgaBreadcrumb({ departement, commune, epci }: RgaBreadcrumbProps
           </li>
           {departement && (
             <li>
-              {commune || epci ? (
-                <a className="fr-breadcrumb__link" href={`/rga/departement/${departement.slug}`}>
+              {isDepartementClickable ? (
+                <Link className="fr-breadcrumb__link" href={`/rga/departement/${departement.slug}`}>
                   {departement.nom} ({departement.code})
-                </a>
+                </Link>
               ) : (
                 <span className="fr-breadcrumb__link" aria-current="page">
                   {departement.nom} ({departement.code})
@@ -40,17 +43,17 @@ export function RgaBreadcrumb({ departement, commune, epci }: RgaBreadcrumbProps
               )}
             </li>
           )}
-          {commune && (
-            <li>
-              <span className="fr-breadcrumb__link" aria-current="page">
-                {commune.nom}
-              </span>
-            </li>
-          )}
           {epci && (
             <li>
               <span className="fr-breadcrumb__link" aria-current="page">
                 {epci.nom}
+              </span>
+            </li>
+          )}
+          {commune && (
+            <li>
+              <span className="fr-breadcrumb__link" aria-current="page">
+                {commune.nom}
               </span>
             </li>
           )}
