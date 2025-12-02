@@ -4,20 +4,21 @@ import { useEffect, useRef } from "react";
 import maplibregl, { Marker } from "maplibre-gl";
 
 import { ZOOM, FLY_TO_DELAY, MARKER_ICON_SIZE } from "../domain/config";
-import type { Coordinates } from "../domain/types";
+import { Coordinates } from "@/shared/types";
 
 interface UseRgaMapMarkerOptions {
   map: maplibregl.Map | null;
   coordinates?: Coordinates;
   showMarker?: boolean;
   flyToOnMount?: boolean;
+  zoom?: number;
 }
 
 /**
  * Hook pour gérer le marqueur et le centrage de la carte
  */
 export function useRgaMapMarker(options: UseRgaMapMarkerOptions): void {
-  const { map, coordinates, showMarker = false, flyToOnMount = true } = options;
+  const { map, coordinates, showMarker = false, flyToOnMount = true, zoom } = options;
 
   const markerRef = useRef<Marker | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -51,7 +52,7 @@ export function useRgaMapMarker(options: UseRgaMapMarkerOptions): void {
       timeoutRef.current = setTimeout(() => {
         map.flyTo({
           center: [lon, lat],
-          zoom: ZOOM.building,
+          zoom: zoom ?? ZOOM.building, // Zoom par défaut si non spécifié
         });
       }, FLY_TO_DELAY);
     }

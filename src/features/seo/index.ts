@@ -10,8 +10,6 @@ export {
 } from "./domain";
 
 export type {
-  // Config types
-  CodeDepartementEligible,
   // Territory types
   DepartementSEO,
   CommuneSEO,

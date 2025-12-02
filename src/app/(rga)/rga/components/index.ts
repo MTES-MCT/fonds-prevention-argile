@@ -14,6 +14,6 @@ export { SectionEtatAccompagne } from "./sections/SectionEtatAccompagne";
 // Components Shared
 export { RgaBreadcrumb } from "./shared/RgaBreadcrumb";
 export { CtaSmall } from "./shared/CtaSmall";
-export { MapPlaceholder } from "./shared/MapPlaceholder";
 export { RgaTopFooterContent } from "./shared/RgaTopFooterContent";
 export { JsonLd } from "./shared/JsonLd";
+export { RgaMapSection } from "./shared/RgaMapSection";

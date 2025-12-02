@@ -20,8 +20,8 @@ import {
   SectionCoutInaction,
   SectionEtatAccompagne,
   CtaSmall,
-  MapPlaceholder,
   JsonLd,
+  RgaMapSection,
 } from "../../components";
 
 import templateContent from "../content/template.json";
@@ -144,7 +144,7 @@ export default async function EpciPage({ params }: PageProps) {
       </div>
 
       {/* Carte */}
-      <MapPlaceholder title={epci.nom} zoom={content.carte.zoom} />
+      <RgaMapSection title={epci.nom} centre={epci.centre} zoomLevel="epci" />
 
       {/* En savoir plus - Communes de l'EPCI */}
       <CommunesCards communes={communesEpci} title={content.enSavoirPlus.title} />

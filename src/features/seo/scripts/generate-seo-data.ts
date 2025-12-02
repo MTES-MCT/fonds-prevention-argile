@@ -18,31 +18,13 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { DEPARTEMENTS_ELIGIBLES_RGA, COMMUNES_PAR_DEPARTEMENT, API_GEO } from "../domain/config/seo.config";
-import { DEPARTEMENTS } from "../../../shared/constants/departements.constants";
 
-/**
- * Normalise un code département pour le lookup dans DEPARTEMENTS
- * Les codes "03", "04" etc. deviennent "3", "4" pour correspondre aux clés du référentiel
- */
-function normalizeCodeForLookup(code: string): string {
-  // Supprimer le zéro initial si présent (sauf pour les codes spéciaux comme "2A", "2B")
-  if (/^0\d$/.test(code)) {
-    return code.replace(/^0/, "");
-  }
-  return code;
-}
-
-/**
- * Récupère le nom d'un département à partir de son code (avec ou sans zéro initial)
- */
-function getDepartementNom(code: string): string {
-  const normalizedCode = normalizeCodeForLookup(code);
-  return DEPARTEMENTS[normalizedCode] || DEPARTEMENTS[code] || code;
-}
 import type { DepartementSEO, CommuneSEO, EpciSEO, CoconSEOData } from "../domain/types";
 import { generateDepartementSlug, generateCommuneSlug, generateEpciSlug } from "../utils/slug.utils";
 
-import { fetchCommunesByDepartement, fetchEpci, delay, logger } from "./fetch-territoires";
+import { fetchCommunesByDepartement, fetchEpci, logger } from "./fetch-territoires";
+import { Coordinates } from "@/shared/types";
+import { calculateCentroid, delay, extractCoordinates, getDepartementNom } from "@/shared/utils";
 
 // ============================================================================
 // Types internes
@@ -70,26 +52,25 @@ async function processDepartement(
   epciCodes: string[];
 }> {
   const nomDepartement = getDepartementNom(codeDepartement);
+  if (!nomDepartement) {
+    throw new Error(`Nom de département introuvable pour le code ${codeDepartement}`);
+  }
   logger.progress(`Traitement du département ${codeDepartement} - ${nomDepartement}`);
 
-  // Récupérer toutes les communes du département
   const communesApi = await fetchCommunesByDepartement(codeDepartement);
   logger.log(`  └─ ${communesApi.length} communes récupérées`);
 
-  // Trier par population décroissante (0 si non renseignée)
   const communesTriees = communesApi
     .map((c) => ({ ...c, population: c.population ?? 0 }))
     .sort((a, b) => b.population - a.population);
 
-  // Garder les X premières
   const communesSelectionnees = communesTriees.slice(0, maxCommunes);
   logger.log(`  └─ ${communesSelectionnees.length} communes sélectionnées (top population)`);
 
-  // Collecter les codes EPCI uniques
   const epciCodes = [...new Set(communesSelectionnees.map((c) => c.codeEpci).filter((code): code is string => !!code))];
   logger.log(`  └─ ${epciCodes.length} EPCI associés`);
 
-  // Construire les objets CommuneSEO
+  // Construire les objets CommuneSEO avec coordonnées
   const communes: CommuneSEO[] = communesSelectionnees.map((c) => ({
     codeInsee: c.code,
     nom: c.nom,
@@ -98,9 +79,16 @@ async function processDepartement(
     codeDepartement: c.codeDepartement,
     codeEpci: c.codeEpci,
     codesPostaux: c.codesPostaux || [],
+    centre: extractCoordinates(c.centre),
   }));
 
-  // Construire l'objet DepartementSEO
+  // Calculer le centroïde du département à partir de TOUTES les communes
+  const allCentres = communesApi
+    .map((c) => extractCoordinates(c.centre))
+    .filter((c): c is Coordinates => c !== undefined);
+
+  const departementCentre = calculateCentroid(allCentres);
+
   const departement: DepartementSEO = {
     code: codeDepartement,
     nom: nomDepartement,
@@ -108,6 +96,7 @@ async function processDepartement(
     population: communesApi.reduce((sum, c) => sum + (c.population ?? 0), 0),
     nombreCommunesRGA: communes.length,
     nombreEpciRGA: epciCodes.length,
+    centre: departementCentre,
   };
 
   return { departement, communes, epciCodes };
@@ -136,6 +125,7 @@ async function processEpcis(epciCodes: Set<string>, communesByEpci: Map<string, 
         codesDepartements: epciApi.codesDepartements || [],
         codesCommunes: communesMembres.map((c) => c.codeInsee),
         population: epciApi.population,
+        centre: extractCoordinates(epciApi.centre),
       };
 
       epcis.push(epci);
@@ -144,7 +134,6 @@ async function processEpcis(epciCodes: Set<string>, communesByEpci: Map<string, 
       logger.error(`  └─ Erreur EPCI ${codeSiren}:`, error);
     }
 
-    // Rate limiting
     if (i < epciArray.length - 1) {
       await delay(API_GEO.delayBetweenCalls);
     }

@@ -10,7 +10,11 @@
       "03185",
       "03101"
     ],
-    "population": 59380
+    "population": 59380,
+    "centre": {
+      "lat": 46.2654,
+      "lon": 2.5734
+    }
   },
   {
     "codeSiren": "200071363",
@@ -24,7 +28,11 @@
       "03095",
       "03023"
     ],
-    "population": 84566
+    "population": 84566,
+    "centre": {
+      "lat": 46.0908,
+      "lon": 3.5453
+    }
   },
   {
     "codeSiren": "200071140",
@@ -38,7 +46,11 @@
       "03190",
       "03321"
     ],
-    "population": 64246
+    "population": 64246,
+    "centre": {
+      "lat": 46.5938,
+      "lon": 3.28
+    }
   },
   {
     "codeSiren": "200071512",
@@ -50,7 +62,11 @@
     "codesCommunes": [
       "03082"
     ],
-    "population": 25346
+    "population": 25346,
+    "centre": {
+      "lat": 46.3576,
+      "lon": 2.8817
+    }
   },
   {
     "codeSiren": "200071389",
@@ -63,7 +79,11 @@
       "03118",
       "03254"
     ],
-    "population": 33672
+    "population": 33672,
+    "centre": {
+      "lat": 46.2515,
+      "lon": 3.1678
+    }
   },
   {
     "codeSiren": "200034700",
@@ -80,7 +100,11 @@
       "04152",
       "04197"
     ],
-    "population": 63654
+    "population": 63654,
+    "centre": {
+      "lat": 43.8428,
+      "lon": 5.9219
+    }
   },
   {
     "codeSiren": "200067437",
@@ -94,7 +118,11 @@
       "04049",
       "04116"
     ],
-    "population": 48726
+    "population": 48726,
+    "centre": {
+      "lat": 44.0818,
+      "lon": 6.2056
+    }
   },
   {
     "codeSiren": "200068765",
@@ -108,7 +136,11 @@
     "codesCommunes": [
       "04209"
     ],
-    "population": 25482
+    "population": 25482,
+    "centre": {
+      "lat": 44.3256,
+      "lon": 5.8478
+    }
   },
   {
     "codeSiren": "240400440",
@@ -120,7 +152,11 @@
     "codesCommunes": [
       "04088"
     ],
-    "population": 9996
+    "population": 9996,
+    "centre": {
+      "lat": 44.0215,
+      "lon": 5.796
+    }
   },
   {
     "codeSiren": "200040392",
@@ -136,7 +172,11 @@
       "24557",
       "24312"
     ],
-    "population": 104933
+    "population": 104933,
+    "centre": {
+      "lat": 45.102,
+      "lon": 0.7416
+    }
   },
   {
     "codeSiren": "200070647",
@@ -148,7 +188,11 @@
     "codesCommunes": [
       "24037"
     ],
-    "population": 61551
+    "population": 61551,
+    "centre": {
+      "lat": 44.8627,
+      "lon": 0.4289
+    }
   },
   {
     "codeSiren": "200027217",
@@ -160,7 +204,11 @@
     "codesCommunes": [
       "24520"
     ],
-    "population": 16168
+    "population": 16168,
+    "centre": {
+      "lat": 44.9028,
+      "lon": 1.197
+    }
   },
   {
     "codeSiren": "200041150",
@@ -172,7 +220,11 @@
     "codesCommunes": [
       "24547"
     ],
-    "population": 22161
+    "population": 22161,
+    "centre": {
+      "lat": 45.1709,
+      "lon": 1.172
+    }
   },
   {
     "codeSiren": "200040384",
@@ -184,7 +236,11 @@
     "codesCommunes": [
       "24294"
     ],
-    "population": 12546
+    "population": 12546,
+    "centre": {
+      "lat": 45.066,
+      "lon": 0.1554
+    }
   },
   {
     "codeSiren": "200040095",
@@ -196,7 +252,11 @@
     "codesCommunes": [
       "24372"
     ],
-    "population": 18912
+    "population": 18912,
+    "centre": {
+      "lat": 45.1197,
+      "lon": 0.4709
+    }
   },
   {
     "codeSiren": "200066926",
@@ -209,7 +269,11 @@
       "32013",
       "32307"
     ],
-    "population": 39498
+    "population": 39498,
+    "centre": {
+      "lat": 43.6966,
+      "lon": 0.5752
+    }
   },
   {
     "codeSiren": "200023620",
@@ -221,7 +285,11 @@
     "codesCommunes": [
       "32160"
     ],
-    "population": 17060
+    "population": 17060,
+    "centre": {
+      "lat": 43.5916,
+      "lon": 1.0667
+    }
   },
   {
     "codeSiren": "243200417",
@@ -233,7 +301,11 @@
     "codesCommunes": [
       "32107"
     ],
-    "population": 14327
+    "population": 14327,
+    "centre": {
+      "lat": 43.934,
+      "lon": 0.3257
+    }
   },
   {
     "codeSiren": "243200391",
@@ -246,7 +318,11 @@
       "32132",
       "32208"
     ],
-    "population": 19309
+    "population": 19309,
+    "centre": {
+      "lat": 43.9168,
+      "lon": 0.6378
+    }
   },
   {
     "codeSiren": "243200458",
@@ -258,7 +334,11 @@
     "codesCommunes": [
       "32119"
     ],
-    "population": 13441
+    "population": 13441,
+    "centre": {
+      "lat": 43.8664,
+      "lon": 0.0358
+    }
   },
   {
     "codeSiren": "243200607",
@@ -270,7 +350,11 @@
     "codesCommunes": [
       "32462"
     ],
-    "population": 6953
+    "population": 6953,
+    "centre": {
+      "lat": 43.7218,
+      "lon": 0.2691
+    }
   },
   {
     "codeSiren": "243200425",
@@ -282,7 +366,11 @@
     "codesCommunes": [
       "32256"
     ],
-    "population": 7720
+    "population": 7720,
+    "centre": {
+      "lat": 43.5159,
+      "lon": 0.304
+    }
   },
   {
     "codeSiren": "200042372",
@@ -294,7 +382,11 @@
     "codesCommunes": [
       "32147"
     ],
-    "population": 10784
+    "population": 10784,
+    "centre": {
+      "lat": 43.5507,
+      "lon": 0.8091
+    }
   },
   {
     "codeSiren": "243600327",
@@ -310,7 +402,11 @@
       "36005",
       "36202"
     ],
-    "population": 72566
+    "population": 72566,
+    "centre": {
+      "lat": 46.7836,
+      "lon": 1.7242
+    }
   },
   {
     "codeSiren": "243600236",
@@ -323,7 +419,11 @@
     "codesCommunes": [
       "36088"
     ],
-    "population": 18778
+    "population": 18778,
+    "centre": {
+      "lat": 46.9525,
+      "lon": 2.0235
+    }
   },
   {
     "codeSiren": "243600319",
@@ -335,7 +435,11 @@
     "codesCommunes": [
       "36018"
     ],
-    "population": 17565
+    "population": 17565,
+    "centre": {
+      "lat": 46.6143,
+      "lon": 1.2144
+    }
   },
   {
     "codeSiren": "200068872",
@@ -347,7 +451,11 @@
     "codesCommunes": [
       "36006"
     ],
-    "population": 19302
+    "population": 19302,
+    "centre": {
+      "lat": 46.573,
+      "lon": 1.5642
+    }
   },
   {
     "codeSiren": "243600301",
@@ -359,7 +467,11 @@
     "codesCommunes": [
       "36031"
     ],
-    "population": 13242
+    "population": 13242,
+    "centre": {
+      "lat": 46.8486,
+      "lon": 1.4432
+    }
   },
   {
     "codeSiren": "243600350",
@@ -371,7 +483,11 @@
     "codesCommunes": [
       "36046"
     ],
-    "population": 16134
+    "population": 16134,
+    "centre": {
+      "lat": 46.5871,
+      "lon": 2.0413
+    }
   },
   {
     "codeSiren": "200096956",
@@ -387,7 +503,11 @@
       "47031",
       "47100"
     ],
-    "population": 101727
+    "population": 101727,
+    "centre": {
+      "lat": 44.168,
+      "lon": 0.7114
+    }
   },
   {
     "codeSiren": "200023307",
@@ -400,7 +520,11 @@
       "47323",
       "47252"
     ],
-    "population": 47899
+    "population": 47899,
+    "centre": {
+      "lat": 44.3548,
+      "lon": 0.6674
+    }
   },
   {
     "codeSiren": "200030674",
@@ -413,7 +537,11 @@
       "47157",
       "47310"
     ],
-    "population": 60690
+    "population": 60690,
+    "centre": {
+      "lat": 44.4714,
+      "lon": 0.2223
+    }
   },
   {
     "codeSiren": "200068948",
@@ -425,7 +553,11 @@
     "codesCommunes": [
       "47195"
     ],
-    "population": 25866
+    "population": 25866,
+    "centre": {
+      "lat": 44.1274,
+      "lon": 0.323
+    }
   },
   {
     "codeSiren": "245400676",
@@ -441,7 +573,11 @@
       "54578",
       "54482"
     ],
-    "population": 258208
+    "population": 258208,
+    "centre": {
+      "lat": 48.6731,
+      "lon": 6.1837
+    }
   },
   {
     "codeSiren": "200070324",
@@ -453,7 +589,11 @@
     "codesCommunes": [
       "54329"
     ],
-    "population": 40609
+    "population": 40609,
+    "centre": {
+      "lat": 48.5179,
+      "lon": 6.6309
+    }
   },
   {
     "codeSiren": "200070563",
@@ -465,7 +605,11 @@
     "codesCommunes": [
       "54528"
     ],
-    "population": 44293
+    "population": 44293,
+    "centre": {
+      "lat": 48.7325,
+      "lon": 5.9001
+    }
   },
   {
     "codeSiren": "245400262",
@@ -477,7 +621,11 @@
     "codesCommunes": [
       "54323"
     ],
-    "population": 63645
+    "population": 63645,
+    "centre": {
+      "lat": 49.475,
+      "lon": 5.7842
+    }
   },
   {
     "codeSiren": "200041515",
@@ -489,7 +637,11 @@
     "codesCommunes": [
       "54431"
     ],
-    "population": 40203
+    "population": 40203,
+    "centre": {
+      "lat": 48.886,
+      "lon": 6.0527
+    }
   },
   {
     "codeSiren": "245701404",
@@ -502,7 +654,11 @@
     "codesCommunes": [
       "54580"
     ],
-    "population": 29465
+    "population": 29465,
+    "centre": {
+      "lat": 49.4312,
+      "lon": 5.9654
+    }
   },
   {
     "codeSiren": "200093201",
@@ -519,7 +675,11 @@
       "59650",
       "59378"
     ],
-    "population": 1194040
+    "population": 1194040,
+    "centre": {
+      "lat": 50.6472,
+      "lon": 3.0308
+    }
   },
   {
     "codeSiren": "245900428",
@@ -531,7 +691,11 @@
     "codesCommunes": [
       "59183"
     ],
-    "population": 192635
+    "population": 192635,
+    "centre": {
+      "lat": 51.0004,
+      "lon": 2.3326
+    }
   },
   {
     "codeSiren": "245901160",
@@ -543,7 +707,11 @@
     "codesCommunes": [
       "59606"
     ],
-    "population": 191885
+    "population": 191885,
+    "centre": {
+      "lat": 50.3734,
+      "lon": 3.55
+    }
   },
   {
     "codeSiren": "200044618",
@@ -555,7 +723,11 @@
     "codesCommunes": [
       "59178"
     ],
-    "population": 148901
+    "population": 148901,
+    "centre": {
+      "lat": 50.362,
+      "lon": 3.1172
+    }
   },
   {
     "codeSiren": "200068500",
@@ -567,7 +739,11 @@
     "codesCommunes": [
       "59122"
     ],
-    "population": 80469
+    "population": 80469,
+    "centre": {
+      "lat": 50.139,
+      "lon": 3.2077
+    }
   },
   {
     "codeSiren": "246300701",
@@ -585,7 +761,11 @@
       "63014",
       "63164"
     ],
-    "population": 296677
+    "population": 296677,
+    "centre": {
+      "lat": 45.774,
+      "lon": 3.1156
+    }
   },
   {
     "codeSiren": "200070753",
@@ -597,7 +777,11 @@
     "codesCommunes": [
       "63300"
     ],
-    "population": 68319
+    "population": 68319,
+    "centre": {
+      "lat": 45.8905,
+      "lon": 3.0811
+    }
   },
   {
     "codeSiren": "200070407",
@@ -609,7 +793,11 @@
     "codesCommunes": [
       "63178"
     ],
-    "population": 56681
+    "population": 56681,
+    "centre": {
+      "lat": 45.4648,
+      "lon": 3.2205
+    }
   },
   {
     "codeSiren": "200070712",
@@ -621,7 +809,11 @@
     "codesCommunes": [
       "63430"
     ],
-    "population": 36767
+    "population": 36767,
+    "centre": {
+      "lat": 45.8532,
+      "lon": 3.5832
+    }
   },
   {
     "codeSiren": "248100737",
@@ -634,7 +826,11 @@
       "81004",
       "81257"
     ],
-    "population": 84183
+    "population": 84183,
+    "centre": {
+      "lat": 43.9009,
+      "lon": 2.1392
+    }
   },
   {
     "codeSiren": "248100430",
@@ -648,7 +844,11 @@
       "81163",
       "81120"
     ],
-    "population": 78974
+    "population": 78974,
+    "centre": {
+      "lat": 43.5435,
+      "lon": 2.3376
+    }
   },
   {
     "codeSiren": "200066124",
@@ -661,7 +861,11 @@
       "81099",
       "81105"
     ],
-    "population": 76216
+    "population": 76216,
+    "centre": {
+      "lat": 43.905,
+      "lon": 1.808
+    }
   },
   {
     "codeSiren": "200034023",
@@ -675,7 +879,11 @@
       "81140",
       "81271"
     ],
-    "population": 29922
+    "population": 29922,
+    "centre": {
+      "lat": 43.6843,
+      "lon": 1.7772
+    }
   },
   {
     "codeSiren": "200040905",
@@ -687,7 +895,11 @@
     "codesCommunes": [
       "81060"
     ],
-    "population": 30115
+    "population": 30115,
+    "centre": {
+      "lat": 44.0791,
+      "lon": 2.1801
+    }
   },
   {
     "codeSiren": "248200099",
@@ -700,7 +912,11 @@
       "82121",
       "82124"
     ],
-    "population": 81397
+    "population": 81397,
+    "centre": {
+      "lat": 44.013,
+      "lon": 1.3231
+    }
   },
   {
     "codeSiren": "200066322",
@@ -713,7 +929,11 @@
       "82033",
       "82112"
     ],
-    "population": 42367
+    "population": 42367,
+    "centre": {
+      "lat": 44.0701,
+      "lon": 1.1146
+    }
   },
   {
     "codeSiren": "248200057",
@@ -725,7 +945,11 @@
     "codesCommunes": [
       "82037"
     ],
-    "population": 20434
+    "population": 20434,
+    "centre": {
+      "lat": 44.1972,
+      "lon": 1.5168
+    }
   },
   {
     "codeSiren": "200066652",
@@ -739,7 +963,11 @@
       "82190",
       "82075"
     ],
-    "population": 43301
+    "population": 43301,
+    "centre": {
+      "lat": 43.889,
+      "lon": 1.2875
+    }
   },
   {
     "codeSiren": "200066884",
@@ -751,7 +979,11 @@
     "codesCommunes": [
       "82134"
     ],
-    "population": 21707
+    "population": 21707,
+    "centre": {
+      "lat": 44.0211,
+      "lon": 1.5551
+    }
   },
   {
     "codeSiren": "248200016",
@@ -765,6 +997,10 @@
     "codesCommunes": [
       "82186"
     ],
-    "population": 19013
+    "population": 19013,
+    "centre": {
+      "lat": 44.1139,
+      "lon": 0.8952
+    }
   }
 ]

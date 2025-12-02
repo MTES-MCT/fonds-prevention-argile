@@ -5,7 +5,7 @@ import maplibregl from "maplibre-gl";
 import { Protocol } from "pmtiles";
 
 import { RGA_MAP_STYLE_URL, DEFAULT_CENTER, ZOOM, MAX_BOUNDS } from "../domain/config";
-import type { Coordinates } from "../domain/types";
+import { Coordinates } from "@/shared/types";
 
 interface UseRgaMapOptions {
   center?: Coordinates;

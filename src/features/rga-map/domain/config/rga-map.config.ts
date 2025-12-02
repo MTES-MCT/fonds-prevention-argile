@@ -19,9 +19,9 @@ export const ZOOM = {
   /** Vue France entière */
   france: 4.8,
   /** Vue département */
-  departement: 8,
+  departement: 10,
   /** Vue EPCI */
-  epci: 10,
+  epci: 11,
   /** Vue commune */
   commune: 12,
   /** Vue bâtiment (après centrage sur adresse) */

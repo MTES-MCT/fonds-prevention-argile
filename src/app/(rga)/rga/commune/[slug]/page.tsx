@@ -19,9 +19,9 @@ import {
   SectionCoutInaction,
   SectionEtatAccompagne,
   CtaSmall,
-  MapPlaceholder,
   CommunesMemeEpci,
   JsonLd,
+  RgaMapSection,
 } from "../../components";
 
 import templateContent from "../content/template.json";
@@ -146,7 +146,7 @@ export default async function CommunePage({ params }: PageProps) {
       </div>
 
       {/* Carte */}
-      <MapPlaceholder title={commune.nom} zoom={content.carte.zoom} />
+      <RgaMapSection title={commune.nom} centre={commune.centre} zoomLevel="commune" />
 
       {/* Dégâts visibles */}
       <SectionDegats />

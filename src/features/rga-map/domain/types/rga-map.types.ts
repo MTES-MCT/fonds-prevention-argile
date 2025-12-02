@@ -1,12 +1,5 @@
 import type { BuildingData } from "@/shared/services/bdnb";
-
-/**
- * Coordonnées géographiques
- */
-export interface Coordinates {
-  lat: number;
-  lon: number;
-}
+import { Coordinates } from "@/shared/types";
 
 /**
  * Props du composant RgaMap

@@ -19,14 +19,14 @@ import {
   SectionCoutInaction,
   SectionEtatAccompagne,
   CtaSmall,
-  MapPlaceholder,
   JsonLd,
+  RgaMapSection,
 } from "../../components";
 
 import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
 import richTextParser from "@/shared/utils/richTextParser.utils";
-import { formatDepartementAvecArticle } from "@/features/seo/domain/config/departements-label.config";
+import { formatDepartementAvecArticle } from "@/shared/utils";
 
 // Nombre de communes à afficher dans la section "En savoir plus"
 const NB_COMMUNES_A_AFFICHER = 8;
@@ -128,7 +128,7 @@ export default async function DepartementPage({ params }: PageProps) {
       </div>
 
       {/* Carte */}
-      <MapPlaceholder title={departement.nom} zoom={content.carte.zoom} />
+      <RgaMapSection title={departement.nom} centre={departement.centre} zoomLevel="departement" />
 
       {/* En savoir plus - communes */}
       <CommunesCards communes={communes} title={content.enSavoirPlus.title} />

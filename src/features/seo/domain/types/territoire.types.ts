@@ -2,6 +2,8 @@
  * Types pour le cocon sémantique SEO des territoires RGA
  */
 
+import { Coordinates } from "@/shared/types";
+
 /**
  * Département avec données SEO
  */
@@ -16,6 +18,8 @@ export interface DepartementSEO {
   nombreCommunesRGA: number;
   /** Nombre d'EPCI inclus dans le cocon SEO */
   nombreEpciRGA: number;
+  /** Centroïde du département (moyenne des communes) */
+  centre?: Coordinates;
 }
 
 /**
@@ -34,6 +38,8 @@ export interface CommuneSEO {
   nomEpci?: string;
   /** Codes postaux de la commune */
   codesPostaux: string[];
+  /** Centroïde de la commune */
+  centre?: Coordinates;
 }
 
 /**
@@ -50,6 +56,8 @@ export interface EpciSEO {
   codesCommunes: string[];
   /** Population totale de l'EPCI */
   population?: number;
+  /** Centroïde de l'EPCI */
+  centre?: Coordinates;
 }
 
 /**
@@ -86,6 +94,11 @@ export interface ApiGeoCommune {
   codesPostaux: string[];
   population?: number;
   codeEpci?: string;
+  /** Centre géographique GeoJSON */
+  centre?: {
+    type: "Point";
+    coordinates: [number, number]; // [lon, lat]
+  };
 }
 
 /**
@@ -96,6 +109,11 @@ export interface ApiGeoEpci {
   nom: string;
   codesDepartements: string[];
   population?: number;
+  /** Centre géographique GeoJSON */
+  centre?: {
+    type: "Point";
+    coordinates: [number, number]; // [lon, lat]
+  };
 }
 
 /**

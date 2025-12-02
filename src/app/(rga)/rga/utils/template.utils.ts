@@ -1,5 +1,5 @@
 import type { CommuneSEO, DepartementSEO, EpciSEO } from "@/features/seo";
-import { formatDepartementAvecArticle } from "@/features/seo/domain";
+import { formatDepartementAvecArticle } from "@/shared/utils";
 
 /**
  * Type pour les placeholders des templates

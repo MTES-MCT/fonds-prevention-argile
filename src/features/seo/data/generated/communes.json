@@ -9,6 +9,10 @@
     "codesPostaux": [
       "03100"
     ],
+    "centre": {
+      "lat": 46.3428,
+      "lon": 2.608
+    },
     "nomEpci": "CA Montluçon Communauté"
   },
   {
@@ -21,6 +25,10 @@
     "codesPostaux": [
       "03200"
     ],
+    "centre": {
+      "lat": 46.1318,
+      "lon": 3.4254
+    },
     "nomEpci": "CA Vichy Communauté"
   },
   {
@@ -33,6 +41,10 @@
     "codesPostaux": [
       "03000"
     ],
+    "centre": {
+      "lat": 46.5591,
+      "lon": 3.3255
+    },
     "nomEpci": "CA Moulins Communauté"
   },
   {
@@ -45,6 +57,10 @@
     "codesPostaux": [
       "03300"
     ],
+    "centre": {
+      "lat": 46.1342,
+      "lon": 3.4774
+    },
     "nomEpci": "CA Vichy Communauté"
   },
   {
@@ -57,6 +73,10 @@
     "codesPostaux": [
       "03400"
     ],
+    "centre": {
+      "lat": 46.5662,
+      "lon": 3.3854
+    },
     "nomEpci": "CA Moulins Communauté"
   },
   {
@@ -69,6 +89,10 @@
     "codesPostaux": [
       "03700"
     ],
+    "centre": {
+      "lat": 46.1202,
+      "lon": 3.4025
+    },
     "nomEpci": "CA Vichy Communauté"
   },
   {
@@ -81,6 +105,10 @@
     "codesPostaux": [
       "03410"
     ],
+    "centre": {
+      "lat": 46.3706,
+      "lon": 2.5462
+    },
     "nomEpci": "CA Montluçon Communauté"
   },
   {
@@ -93,6 +121,10 @@
     "codesPostaux": [
       "03600"
     ],
+    "centre": {
+      "lat": 46.2734,
+      "lon": 2.7509
+    },
     "nomEpci": "CC Commentry Montmarault Néris Communauté"
   },
   {
@@ -105,6 +137,10 @@
     "codesPostaux": [
       "03800"
     ],
+    "centre": {
+      "lat": 46.0991,
+      "lon": 3.1708
+    },
     "nomEpci": "CC Saint-Pourçain Sioule Limagne"
   },
   {
@@ -117,6 +153,10 @@
     "codesPostaux": [
       "03500"
     ],
+    "centre": {
+      "lat": 46.3047,
+      "lon": 3.3028
+    },
     "nomEpci": "CC Saint-Pourçain Sioule Limagne"
   },
   {
@@ -129,6 +169,10 @@
     "codesPostaux": [
       "04100"
     ],
+    "centre": {
+      "lat": 43.8293,
+      "lon": 5.7896
+    },
     "nomEpci": "CA Durance-Lubéron-Verdon Agglomération"
   },
   {
@@ -141,6 +185,10 @@
     "codesPostaux": [
       "04000"
     ],
+    "centre": {
+      "lat": 44.0954,
+      "lon": 6.2495
+    },
     "nomEpci": "CA Provence-Alpes-Agglomération"
   },
   {
@@ -153,6 +201,10 @@
     "codesPostaux": [
       "04200"
     ],
+    "centre": {
+      "lat": 44.1993,
+      "lon": 5.9276
+    },
     "nomEpci": "CC du Sisteronais-Buëch"
   },
   {
@@ -165,6 +217,10 @@
     "codesPostaux": [
       "04700"
     ],
+    "centre": {
+      "lat": 43.9116,
+      "lon": 5.9232
+    },
     "nomEpci": "CA Durance-Lubéron-Verdon Agglomération"
   },
   {
@@ -177,6 +233,10 @@
     "codesPostaux": [
       "04300"
     ],
+    "centre": {
+      "lat": 43.9582,
+      "lon": 5.7842
+    },
     "nomEpci": "CC Pays Forcalquier et Montagne de Lure"
   },
   {
@@ -190,6 +250,10 @@
       "04160",
       "04600"
     ],
+    "centre": {
+      "lat": 44.0801,
+      "lon": 5.9942
+    },
     "nomEpci": "CA Provence-Alpes-Agglomération"
   },
   {
@@ -202,6 +266,10 @@
     "codesPostaux": [
       "04180"
     ],
+    "centre": {
+      "lat": 43.8848,
+      "lon": 5.8509
+    },
     "nomEpci": "CA Durance-Lubéron-Verdon Agglomération"
   },
   {
@@ -214,6 +282,10 @@
     "codesPostaux": [
       "04190"
     ],
+    "centre": {
+      "lat": 43.9956,
+      "lon": 5.9679
+    },
     "nomEpci": "CA Provence-Alpes-Agglomération"
   },
   {
@@ -226,6 +298,10 @@
     "codesPostaux": [
       "04860"
     ],
+    "centre": {
+      "lat": 43.808,
+      "lon": 5.725
+    },
     "nomEpci": "CA Durance-Lubéron-Verdon Agglomération"
   },
   {
@@ -238,6 +314,10 @@
     "codesPostaux": [
       "04220"
     ],
+    "centre": {
+      "lat": 43.7822,
+      "lon": 5.7662
+    },
     "nomEpci": "CA Durance-Lubéron-Verdon Agglomération"
   },
   {
@@ -250,6 +330,10 @@
     "codesPostaux": [
       "24000"
     ],
+    "centre": {
+      "lat": 45.1939,
+      "lon": 0.7105
+    },
     "nomEpci": "CA Le Grand Périgueux"
   },
   {
@@ -262,6 +346,10 @@
     "codesPostaux": [
       "24100"
     ],
+    "centre": {
+      "lat": 44.8519,
+      "lon": 0.4883
+    },
     "nomEpci": "CA Bergeracoise"
   },
   {
@@ -275,6 +363,10 @@
       "24330",
       "24750"
     ],
+    "centre": {
+      "lat": 45.1385,
+      "lon": 0.7878
+    },
     "nomEpci": "CA Le Grand Périgueux"
   },
   {
@@ -287,6 +379,10 @@
     "codesPostaux": [
       "24200"
     ],
+    "centre": {
+      "lat": 44.906,
+      "lon": 1.1994
+    },
     "nomEpci": "CC Sarlat-Périgord Noir"
   },
   {
@@ -299,6 +395,10 @@
     "codesPostaux": [
       "24660"
     ],
+    "centre": {
+      "lat": 45.1712,
+      "lon": 0.6861
+    },
     "nomEpci": "CA Le Grand Périgueux"
   },
   {
@@ -311,6 +411,10 @@
     "codesPostaux": [
       "24750"
     ],
+    "centre": {
+      "lat": 45.2114,
+      "lon": 0.7738
+    },
     "nomEpci": "CA Le Grand Périgueux"
   },
   {
@@ -323,6 +427,10 @@
     "codesPostaux": [
       "24120"
     ],
+    "centre": {
+      "lat": 45.118,
+      "lon": 1.3022
+    },
     "nomEpci": "CC Terrassonnais Haut Périgord Noir"
   },
   {
@@ -335,6 +443,10 @@
     "codesPostaux": [
       "24700"
     ],
+    "centre": {
+      "lat": 45.0163,
+      "lon": 0.147
+    },
     "nomEpci": "CC Isle Double Landais"
   },
   {
@@ -347,6 +459,10 @@
     "codesPostaux": [
       "24110"
     ],
+    "centre": {
+      "lat": 45.1426,
+      "lon": 0.5146
+    },
     "nomEpci": "CC Isle Vern Salembre en Périgord"
   },
   {
@@ -361,6 +477,10 @@
       "24660",
       "24750"
     ],
+    "centre": {
+      "lat": 45.1079,
+      "lon": 0.7435
+    },
     "nomEpci": "CA Le Grand Périgueux"
   },
   {
@@ -373,6 +493,10 @@
     "codesPostaux": [
       "32000"
     ],
+    "centre": {
+      "lat": 43.6602,
+      "lon": 0.5673
+    },
     "nomEpci": "CA Grand Auch Coeur de Gascogne"
   },
   {
@@ -385,6 +509,10 @@
     "codesPostaux": [
       "32600"
     ],
+    "centre": {
+      "lat": 43.6159,
+      "lon": 1.0826
+    },
     "nomEpci": "CC de la Gascogne Toulousaine"
   },
   {
@@ -397,6 +525,10 @@
     "codesPostaux": [
       "32100"
     ],
+    "centre": {
+      "lat": 43.9653,
+      "lon": 0.3782
+    },
     "nomEpci": "CC de la Tenarèze"
   },
   {
@@ -409,6 +541,10 @@
     "codesPostaux": [
       "32500"
     ],
+    "centre": {
+      "lat": 43.8432,
+      "lon": 0.6405
+    },
     "nomEpci": "CC de la Lomagne Gersoise"
   },
   {
@@ -421,6 +557,10 @@
     "codesPostaux": [
       "32800"
     ],
+    "centre": {
+      "lat": 43.8614,
+      "lon": 0.1057
+    },
     "nomEpci": "CC du Grand Armagnac"
   },
   {
@@ -433,6 +573,10 @@
     "codesPostaux": [
       "32700"
     ],
+    "centre": {
+      "lat": 43.945,
+      "lon": 0.6524
+    },
     "nomEpci": "CC de la Lomagne Gersoise"
   },
   {
@@ -445,6 +589,10 @@
     "codesPostaux": [
       "32190"
     ],
+    "centre": {
+      "lat": 43.7662,
+      "lon": 0.2903
+    },
     "nomEpci": "CC Artagnan de Fezensac"
   },
   {
@@ -457,6 +605,10 @@
     "codesPostaux": [
       "32300"
     ],
+    "centre": {
+      "lat": 43.52,
+      "lon": 0.4053
+    },
     "nomEpci": "CC Coeur d'Astarac en Gascogne"
   },
   {
@@ -469,6 +621,10 @@
     "codesPostaux": [
       "32200"
     ],
+    "centre": {
+      "lat": 43.6175,
+      "lon": 0.8815
+    },
     "nomEpci": "CC des Coteaux Arrats Gimone"
   },
   {
@@ -481,6 +637,10 @@
     "codesPostaux": [
       "32550"
     ],
+    "centre": {
+      "lat": 43.6055,
+      "lon": 0.5857
+    },
     "nomEpci": "CA Grand Auch Coeur de Gascogne"
   },
   {
@@ -493,6 +653,10 @@
     "codesPostaux": [
       "36000"
     ],
+    "centre": {
+      "lat": 46.8023,
+      "lon": 1.6903
+    },
     "nomEpci": "CA Châteauroux Métropole"
   },
   {
@@ -505,6 +669,10 @@
     "codesPostaux": [
       "36100"
     ],
+    "centre": {
+      "lat": 46.9447,
+      "lon": 2.0077
+    },
     "nomEpci": "CC du Pays d'Issoudun"
   },
   {
@@ -517,6 +685,10 @@
     "codesPostaux": [
       "36130"
     ],
+    "centre": {
+      "lat": 46.8397,
+      "lon": 1.7018
+    },
     "nomEpci": "CA Châteauroux Métropole"
   },
   {
@@ -529,6 +701,10 @@
     "codesPostaux": [
       "36300"
     ],
+    "centre": {
+      "lat": 46.6351,
+      "lon": 1.0955
+    },
     "nomEpci": "CC Brenne - Val de Creuse"
   },
   {
@@ -541,6 +717,10 @@
     "codesPostaux": [
       "36330"
     ],
+    "centre": {
+      "lat": 46.7544,
+      "lon": 1.7257
+    },
     "nomEpci": "CA Châteauroux Métropole"
   },
   {
@@ -553,6 +733,10 @@
     "codesPostaux": [
       "36200"
     ],
+    "centre": {
+      "lat": 46.5752,
+      "lon": 1.494
+    },
     "nomEpci": "CC Éguzon - Argenton - Vallée de la Creuse"
   },
   {
@@ -565,6 +749,10 @@
     "codesPostaux": [
       "36500"
     ],
+    "centre": {
+      "lat": 46.8833,
+      "lon": 1.421
+    },
     "nomEpci": "CC Val de l'Indre - Brenne"
   },
   {
@@ -577,6 +765,10 @@
     "codesPostaux": [
       "36400"
     ],
+    "centre": {
+      "lat": 46.5709,
+      "lon": 1.9928
+    },
     "nomEpci": "CC de la Châtre et Sainte-Sévère"
   },
   {
@@ -589,6 +781,10 @@
     "codesPostaux": [
       "36120"
     ],
+    "centre": {
+      "lat": 46.7373,
+      "lon": 1.8151
+    },
     "nomEpci": "CA Châteauroux Métropole"
   },
   {
@@ -601,6 +797,10 @@
     "codesPostaux": [
       "36250"
     ],
+    "centre": {
+      "lat": 46.8109,
+      "lon": 1.6203
+    },
     "nomEpci": "CA Châteauroux Métropole"
   },
   {
@@ -613,6 +813,10 @@
     "codesPostaux": [
       "47000"
     ],
+    "centre": {
+      "lat": 44.201,
+      "lon": 0.6302
+    },
     "nomEpci": "CA Agglomération d'Agen"
   },
   {
@@ -625,6 +829,10 @@
     "codesPostaux": [
       "47300"
     ],
+    "centre": {
+      "lat": 44.4183,
+      "lon": 0.7484
+    },
     "nomEpci": "CA du Grand Villeneuvois"
   },
   {
@@ -637,6 +845,10 @@
     "codesPostaux": [
       "47200"
     ],
+    "centre": {
+      "lat": 44.5014,
+      "lon": 0.1689
+    },
     "nomEpci": "CA Val de Garonne Agglomération"
   },
   {
@@ -649,6 +861,10 @@
     "codesPostaux": [
       "47400"
     ],
+    "centre": {
+      "lat": 44.3842,
+      "lon": 0.3296
+    },
     "nomEpci": "CA Val de Garonne Agglomération"
   },
   {
@@ -661,6 +877,10 @@
     "codesPostaux": [
       "47520"
     ],
+    "centre": {
+      "lat": 44.1898,
+      "lon": 0.5873
+    },
     "nomEpci": "CA Agglomération d'Agen"
   },
   {
@@ -673,6 +893,10 @@
     "codesPostaux": [
       "47600"
     ],
+    "centre": {
+      "lat": 44.1339,
+      "lon": 0.347
+    },
     "nomEpci": "CC Albret Communauté"
   },
   {
@@ -685,6 +909,10 @@
     "codesPostaux": [
       "47110"
     ],
+    "centre": {
+      "lat": 44.4064,
+      "lon": 0.6005
+    },
     "nomEpci": "CA du Grand Villeneuvois"
   },
   {
@@ -697,6 +925,10 @@
     "codesPostaux": [
       "47240"
     ],
+    "centre": {
+      "lat": 44.2089,
+      "lon": 0.6906
+    },
     "nomEpci": "CA Agglomération d'Agen"
   },
   {
@@ -709,6 +941,10 @@
     "codesPostaux": [
       "47550"
     ],
+    "centre": {
+      "lat": 44.1695,
+      "lon": 0.6494
+    },
     "nomEpci": "CA Agglomération d'Agen"
   },
   {
@@ -721,6 +957,10 @@
     "codesPostaux": [
       "47510"
     ],
+    "centre": {
+      "lat": 44.2562,
+      "lon": 0.6426
+    },
     "nomEpci": "CA Agglomération d'Agen"
   },
   {
@@ -734,6 +974,10 @@
       "54000",
       "54100"
     ],
+    "centre": {
+      "lat": 48.6881,
+      "lon": 6.1734
+    },
     "nomEpci": "Métropole du Grand Nancy"
   },
   {
@@ -746,6 +990,10 @@
     "codesPostaux": [
       "54500"
     ],
+    "centre": {
+      "lat": 48.66,
+      "lon": 6.1603
+    },
     "nomEpci": "Métropole du Grand Nancy"
   },
   {
@@ -758,6 +1006,10 @@
     "codesPostaux": [
       "54300"
     ],
+    "centre": {
+      "lat": 48.5963,
+      "lon": 6.5101
+    },
     "nomEpci": "CC du Territoire de Lunéville à Baccarat"
   },
   {
@@ -770,6 +1022,10 @@
     "codesPostaux": [
       "54200"
     ],
+    "centre": {
+      "lat": 48.6794,
+      "lon": 5.898
+    },
     "nomEpci": "CC Terres Touloises"
   },
   {
@@ -782,6 +1038,10 @@
     "codesPostaux": [
       "54400"
     ],
+    "centre": {
+      "lat": 49.5217,
+      "lon": 5.7672
+    },
     "nomEpci": "CA Grand Longwy Agglomération"
   },
   {
@@ -794,6 +1054,10 @@
     "codesPostaux": [
       "54520"
     ],
+    "centre": {
+      "lat": 48.6839,
+      "lon": 6.1183
+    },
     "nomEpci": "Métropole du Grand Nancy"
   },
   {
@@ -806,6 +1070,10 @@
     "codesPostaux": [
       "54600"
     ],
+    "centre": {
+      "lat": 48.6603,
+      "lon": 6.1276
+    },
     "nomEpci": "Métropole du Grand Nancy"
   },
   {
@@ -818,6 +1086,10 @@
     "codesPostaux": [
       "54700"
     ],
+    "centre": {
+      "lat": 48.9222,
+      "lon": 6.047
+    },
     "nomEpci": "CC du Bassin de Pont-à-Mousson"
   },
   {
@@ -830,6 +1102,10 @@
     "codesPostaux": [
       "54130"
     ],
+    "centre": {
+      "lat": 48.7061,
+      "lon": 6.2041
+    },
     "nomEpci": "Métropole du Grand Nancy"
   },
   {
@@ -842,6 +1118,10 @@
     "codesPostaux": [
       "54190"
     ],
+    "centre": {
+      "lat": 49.466,
+      "lon": 5.9275
+    },
     "nomEpci": "CC du Pays Haut Val d'Alzette"
   },
   {
@@ -858,6 +1138,10 @@
       "59777",
       "59800"
     ],
+    "centre": {
+      "lat": 50.6311,
+      "lon": 3.0468
+    },
     "nomEpci": "Métropole Européenne de Lille"
   },
   {
@@ -870,6 +1154,10 @@
     "codesPostaux": [
       "59100"
     ],
+    "centre": {
+      "lat": 50.6887,
+      "lon": 3.1843
+    },
     "nomEpci": "Métropole Européenne de Lille"
   },
   {
@@ -882,6 +1170,10 @@
     "codesPostaux": [
       "59200"
     ],
+    "centre": {
+      "lat": 50.721,
+      "lon": 3.1577
+    },
     "nomEpci": "Métropole Européenne de Lille"
   },
   {
@@ -898,6 +1190,10 @@
       "59430",
       "59640"
     ],
+    "centre": {
+      "lat": 51.0183,
+      "lon": 2.3431
+    },
     "nomEpci": "CU de Dunkerque"
   },
   {
@@ -912,6 +1208,10 @@
       "59493",
       "59650"
     ],
+    "centre": {
+      "lat": 50.6362,
+      "lon": 3.1619
+    },
     "nomEpci": "Métropole Européenne de Lille"
   },
   {
@@ -924,6 +1224,10 @@
     "codesPostaux": [
       "59300"
     ],
+    "centre": {
+      "lat": 50.362,
+      "lon": 3.5142
+    },
     "nomEpci": "CA Valenciennes Métropole"
   },
   {
@@ -936,6 +1240,10 @@
     "codesPostaux": [
       "59150"
     ],
+    "centre": {
+      "lat": 50.7125,
+      "lon": 3.2159
+    },
     "nomEpci": "Métropole Européenne de Lille"
   },
   {
@@ -948,6 +1256,10 @@
     "codesPostaux": [
       "59700"
     ],
+    "centre": {
+      "lat": 50.6793,
+      "lon": 3.1006
+    },
     "nomEpci": "Métropole Européenne de Lille"
   },
   {
@@ -960,6 +1272,10 @@
     "codesPostaux": [
       "59500"
     ],
+    "centre": {
+      "lat": 50.3785,
+      "lon": 3.1004
+    },
     "nomEpci": "CA Douaisis Agglo"
   },
   {
@@ -972,6 +1288,10 @@
     "codesPostaux": [
       "59400"
     ],
+    "centre": {
+      "lat": 50.1722,
+      "lon": 3.2413
+    },
     "nomEpci": "CA de Cambrai"
   },
   {
@@ -985,6 +1305,10 @@
       "63000",
       "63100"
     ],
+    "centre": {
+      "lat": 45.787,
+      "lon": 3.1127
+    },
     "nomEpci": "Clermont Auvergne Métropole"
   },
   {
@@ -997,6 +1321,10 @@
     "codesPostaux": [
       "63800"
     ],
+    "centre": {
+      "lat": 45.742,
+      "lon": 3.1885
+    },
     "nomEpci": "Clermont Auvergne Métropole"
   },
   {
@@ -1009,6 +1337,10 @@
     "codesPostaux": [
       "63200"
     ],
+    "centre": {
+      "lat": 45.8937,
+      "lon": 3.1274
+    },
     "nomEpci": "CA Riom Limagne et Volcans"
   },
   {
@@ -1021,6 +1353,10 @@
     "codesPostaux": [
       "63400"
     ],
+    "centre": {
+      "lat": 45.7741,
+      "lon": 3.0605
+    },
     "nomEpci": "Clermont Auvergne Métropole"
   },
   {
@@ -1033,6 +1369,10 @@
     "codesPostaux": [
       "63500"
     ],
+    "centre": {
+      "lat": 45.5442,
+      "lon": 3.2444
+    },
     "nomEpci": "CA Agglo Pays d'Issoire"
   },
   {
@@ -1045,6 +1385,10 @@
     "codesPostaux": [
       "63430"
     ],
+    "centre": {
+      "lat": 45.7972,
+      "lon": 3.2361
+    },
     "nomEpci": "Clermont Auvergne Métropole"
   },
   {
@@ -1057,6 +1401,10 @@
     "codesPostaux": [
       "63300"
     ],
+    "centre": {
+      "lat": 45.8653,
+      "lon": 3.538
+    },
     "nomEpci": "CC Thiers Dore et Montagne"
   },
   {
@@ -1069,6 +1417,10 @@
     "codesPostaux": [
       "63110"
     ],
+    "centre": {
+      "lat": 45.75,
+      "lon": 3.0853
+    },
     "nomEpci": "Clermont Auvergne Métropole"
   },
   {
@@ -1081,6 +1433,10 @@
     "codesPostaux": [
       "63170"
     ],
+    "centre": {
+      "lat": 45.752,
+      "lon": 3.1272
+    },
     "nomEpci": "Clermont Auvergne Métropole"
   },
   {
@@ -1093,6 +1449,10 @@
     "codesPostaux": [
       "63360"
     ],
+    "centre": {
+      "lat": 45.8277,
+      "lon": 3.1601
+    },
     "nomEpci": "Clermont Auvergne Métropole"
   },
   {
@@ -1105,6 +1465,10 @@
     "codesPostaux": [
       "81000"
     ],
+    "centre": {
+      "lat": 43.929,
+      "lon": 2.1323
+    },
     "nomEpci": "CA de l'Albigeois (C2A)"
   },
   {
@@ -1117,6 +1481,10 @@
     "codesPostaux": [
       "81100"
     ],
+    "centre": {
+      "lat": 43.6132,
+      "lon": 2.2448
+    },
     "nomEpci": "CA de Castres Mazamet"
   },
   {
@@ -1129,6 +1497,10 @@
     "codesPostaux": [
       "81600"
     ],
+    "centre": {
+      "lat": 43.9119,
+      "lon": 1.8898
+    },
     "nomEpci": "CA Gaillac-Graulhet"
   },
   {
@@ -1141,6 +1513,10 @@
     "codesPostaux": [
       "81300"
     ],
+    "centre": {
+      "lat": 43.7592,
+      "lon": 1.9976
+    },
     "nomEpci": "CA Gaillac-Graulhet"
   },
   {
@@ -1153,6 +1529,10 @@
     "codesPostaux": [
       "81500"
     ],
+    "centre": {
+      "lat": 43.6915,
+      "lon": 1.8137
+    },
     "nomEpci": "CC Tarn-Agout"
   },
   {
@@ -1165,6 +1545,10 @@
     "codesPostaux": [
       "81200"
     ],
+    "centre": {
+      "lat": 43.4666,
+      "lon": 2.3863
+    },
     "nomEpci": "CA de Castres Mazamet"
   },
   {
@@ -1177,6 +1561,10 @@
     "codesPostaux": [
       "81400"
     ],
+    "centre": {
+      "lat": 44.0548,
+      "lon": 2.1672
+    },
     "nomEpci": "CC Carmausin-Ségala"
   },
   {
@@ -1189,6 +1577,10 @@
     "codesPostaux": [
       "81370"
     ],
+    "centre": {
+      "lat": 43.7567,
+      "lon": 1.6906
+    },
     "nomEpci": "CC Tarn-Agout"
   },
   {
@@ -1201,6 +1593,10 @@
     "codesPostaux": [
       "81160"
     ],
+    "centre": {
+      "lat": 43.9362,
+      "lon": 2.2293
+    },
     "nomEpci": "CA de l'Albigeois (C2A)"
   },
   {
@@ -1213,6 +1609,10 @@
     "codesPostaux": [
       "81290"
     ],
+    "centre": {
+      "lat": 43.5026,
+      "lon": 2.2591
+    },
     "nomEpci": "CA de Castres Mazamet"
   },
   {
@@ -1225,6 +1625,10 @@
     "codesPostaux": [
       "82000"
     ],
+    "centre": {
+      "lat": 44.0217,
+      "lon": 1.3646
+    },
     "nomEpci": "CA Grand Montauban"
   },
   {
@@ -1237,6 +1641,10 @@
     "codesPostaux": [
       "82100"
     ],
+    "centre": {
+      "lat": 44.0536,
+      "lon": 1.1211
+    },
     "nomEpci": "CC Terres des Confluences"
   },
   {
@@ -1249,6 +1657,10 @@
     "codesPostaux": [
       "82200"
     ],
+    "centre": {
+      "lat": 44.1219,
+      "lon": 1.1002
+    },
     "nomEpci": "CC Terres des Confluences"
   },
   {
@@ -1261,6 +1673,10 @@
     "codesPostaux": [
       "82300"
     ],
+    "centre": {
+      "lat": 44.1582,
+      "lon": 1.5426
+    },
     "nomEpci": "CC du Quercy Caussadais"
   },
   {
@@ -1273,6 +1689,10 @@
     "codesPostaux": [
       "82700"
     ],
+    "centre": {
+      "lat": 43.9623,
+      "lon": 1.2363
+    },
     "nomEpci": "CC Grand Sud Tarn-et-Garonne"
   },
   {
@@ -1285,6 +1705,10 @@
     "codesPostaux": [
       "82800"
     ],
+    "centre": {
+      "lat": 44.0629,
+      "lon": 1.5373
+    },
     "nomEpci": "CC Quercy Vert-Aveyron"
   },
   {
@@ -1297,6 +1721,10 @@
     "codesPostaux": [
       "82400"
     ],
+    "centre": {
+      "lat": 44.1064,
+      "lon": 0.9043
+    },
     "nomEpci": "CC des Deux Rives"
   },
   {
@@ -1309,6 +1737,10 @@
     "codesPostaux": [
       "82600"
     ],
+    "centre": {
+      "lat": 43.841,
+      "lon": 1.2169
+    },
     "nomEpci": "CC Grand Sud Tarn-et-Garonne"
   },
   {
@@ -1321,6 +1753,10 @@
     "codesPostaux": [
       "82290"
     ],
+    "centre": {
+      "lat": 44.0139,
+      "lon": 1.2661
+    },
     "nomEpci": "CA Grand Montauban"
   },
   {
@@ -1333,6 +1769,10 @@
     "codesPostaux": [
       "82170"
     ],
+    "centre": {
+      "lat": 43.824,
+      "lon": 1.2923
+    },
     "nomEpci": "CC Grand Sud Tarn-et-Garonne"
   }
 ]

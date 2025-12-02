@@ -39,13 +39,6 @@ function createSeoLogger() {
 export const logger = createSeoLogger();
 
 /**
- * Délai entre les appels API (rate limiting)
- */
-export async function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
  * Effectue un appel à l'API Géo avec gestion d'erreurs
  */
 async function fetchGeoApi<T>(endpoint: string): Promise<T> {
@@ -69,20 +62,18 @@ export async function fetchDepartement(code: string): Promise<ApiGeoDepartement>
 }
 
 /**
- * Récupère toutes les communes d'un département avec leur population
- * @param codeDepartement - Code du département (ex: "03")
- * @returns Liste des communes avec population
+ * Récupère toutes les communes d'un département avec leur population et centre
  */
 export async function fetchCommunesByDepartement(codeDepartement: string): Promise<ApiGeoCommune[]> {
-  const endpoint = `/departements/${codeDepartement}/communes?fields=code,nom,codeDepartement,codeRegion,codesPostaux,population,codeEpci`;
+  const endpoint = `/departements/${codeDepartement}/communes?fields=code,nom,codeDepartement,codeRegion,codesPostaux,population,codeEpci,centre`;
   return fetchGeoApi<ApiGeoCommune[]>(endpoint);
 }
 
 /**
- * Récupère les informations d'un EPCI par son code SIREN
+ * Récupère les informations d'un EPCI par son code SIREN (avec centre)
  */
 export async function fetchEpci(codeSiren: string): Promise<ApiGeoEpci> {
-  const endpoint = `/epcis/${codeSiren}?fields=code,nom,codesDepartements,population`;
+  const endpoint = `/epcis/${codeSiren}?fields=code,nom,codesDepartements,population,centre`;
   return fetchGeoApi<ApiGeoEpci>(endpoint);
 }
 

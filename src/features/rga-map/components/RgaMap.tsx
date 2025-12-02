@@ -36,6 +36,7 @@ export function RgaMap({
     coordinates: center,
     showMarker,
     flyToOnMount: Boolean(center),
+    zoom,
   });
 
   const { buildingData, isLoading } = useRgaBuildingSelection({
