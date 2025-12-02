@@ -149,11 +149,7 @@ export default async function DepartementPage({ params }: PageProps) {
       <SavoirSiConcerneSection />
 
       {/* Zone territoire - Tags des communes */}
-      <CommunesTags
-        communes={communes}
-        title={content.zoneTerritoire.title}
-        description={content.zoneTerritoire.description}
-      />
+      <CommunesTags communes={communes} title={content.zoneTerritoire.title} />
 
       {/* Liste des EPCI */}
       <EpciTags

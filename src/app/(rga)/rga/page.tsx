@@ -6,6 +6,7 @@ import commonContent from "./content/common.json";
 import Link from "next/link";
 import { CtaSmall } from "./components";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
+import { richTextParser } from "@/shared/utils";
 
 export const metadata: Metadata = {
   title: "Retrait-Gonflement des Argiles (RGA) | Fonds Prévention Argile",
@@ -54,8 +55,10 @@ export default function RgaIndexPage() {
 
           <h1>Le Retrait-Gonflement des Argiles en France</h1>
           <p className="fr-text--lead">
-            Le Fonds de Prévention Argile accompagne les propriétaires de maisons situées dans les 11 départements
-            éligibles au dispositif.
+            Le fonds de prévention argile accompagne les propriétaires occupants de maisons individuelles (sous
+            certaines conditions) situées dans les 11 départements éligible au dispositif. C’est un fonds de prévention
+            et vise les maisons non sinistrées (sans fissures) afin d’accompagner les ménages à réaliser un diagnostic
+            de vulnérabilité et des travaux de prévention pour protéger leur maison du retrait-gonflement des argiles.
           </p>
         </div>
       </section>
@@ -81,10 +84,6 @@ export default function RgaIndexPage() {
       <section className="fr-py-4w">
         <div className="fr-container">
           <h2>Départements éligibles au dispositif</h2>
-          <p>
-            Cliquez sur un département pour découvrir les informations locales sur le risque RGA et les communes
-            concernées.
-          </p>
 
           <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
             {departements.map((departement) => (
@@ -136,7 +135,7 @@ export default function RgaIndexPage() {
             {commonContent.degats.emoji} {commonContent.degats.title}
           </h2>
           {commonContent.degats.content.map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
+            <p key={index}>{richTextParser(paragraph)}</p>
           ))}
         </div>
       </section>
@@ -151,14 +150,14 @@ export default function RgaIndexPage() {
             {commonContent.etatAccompagne.emoji} {commonContent.etatAccompagne.title}
           </h2>
           {commonContent.etatAccompagne.content.map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
+            <p key={index}>{richTextParser(paragraph)}</p>
           ))}
           <ul>
             {commonContent.etatAccompagne.liste.map((item, index) => (
-              <li key={index}>{item}</li>
+              <li key={index}>{richTextParser(item)}</li>
             ))}
           </ul>
-          <p>{commonContent.etatAccompagne.conclusion}</p>
+          <p>{richTextParser(commonContent.etatAccompagne.conclusion)}</p>
         </div>
       </section>
 

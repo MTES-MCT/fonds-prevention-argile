@@ -3,18 +3,16 @@ import type { CommuneSEO } from "@/features/seo";
 interface CommunesTagsProps {
   communes: CommuneSEO[];
   title: string;
-  description?: string;
   currentCommuneInsee?: string;
 }
 
-export function CommunesTags({ communes, title, description, currentCommuneInsee }: CommunesTagsProps) {
+export function CommunesTags({ communes, title, currentCommuneInsee }: CommunesTagsProps) {
   if (communes.length === 0) return null;
 
   return (
     <section className="fr-py-4w">
       <div className="fr-container">
         <h2>{title}</h2>
-        {description && <p>{description}</p>}
 
         <ul className="fr-tags-group">
           {communes.map((commune) => (

@@ -165,11 +165,7 @@ export default async function EpciPage({ params }: PageProps) {
       <SavoirSiConcerneSection />
 
       {/* Zone territoire - Tags des communes du département */}
-      <CommunesTags
-        communes={communesDepartement}
-        title={content.zoneTerritoire.title}
-        description={content.zoneTerritoire.description}
-      />
+      <CommunesTags communes={communesDepartement} title={content.zoneTerritoire.title} />
 
       {/* Autres EPCIs du département */}
       <EpcisMemeDepartement epcis={epcisDepartement} departement={departement} currentEpciSiren={epci.codeSiren} />

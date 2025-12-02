@@ -20,8 +20,7 @@
     "description": "Découvrez la situation dans les communes voisines"
   },
   "zoneTerritoire": {
-    "title": "Le Retrait-Gonflement des Argiles dans le département {departement_avec_article}",
-    "description": "Consultez les informations pour les autres communes du département"
+    "title": "Le Retrait-Gonflement des Argiles dans le département {departement_avec_article}"
   },
   "etatAccompagne": {
     "conclusionLocale": "Les propriétaires occupants de maison à {nom_commune} situés en zone à risque fort et sous conditions peuvent bénéficier de ces aides."
