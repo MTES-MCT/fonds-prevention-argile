@@ -96,11 +96,6 @@ export default function RgaIndexPage() {
                           {departement.nom} ({departement.code})
                         </a>
                       </h3>
-                      <p className="fr-card__desc">
-                        {departement.population?.toLocaleString("fr-FR")} habitants
-                        <br />
-                        {departement.nombreCommunesRGA} communes référencées
-                      </p>
                     </div>
                   </div>
                 </div>
