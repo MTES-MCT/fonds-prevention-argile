@@ -5,16 +5,18 @@ import { getStatistiquesAction } from "@/features/backoffice";
 import type { Statistiques } from "@/features/backoffice";
 import { useDsfrChart } from "@/shared/hooks/useDsfrChart";
 import StatistiquesFunnel from "./StatistiquesFunnel";
+import StatCard from "../shared/StatCard";
+
+type ViewId = "globales" | "visites" | "funnel";
 
 export default function StatistiquesPanel() {
   const [stats, setStats] = useState<Statistiques | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<ViewId>("globales");
 
-  // Charger le composant LineChart
   const chartLoaded = useDsfrChart("LineChart");
 
-  // Charger les statistiques au montage du composant
   useEffect(() => {
     async function loadStats() {
       setLoading(true);
@@ -34,7 +36,6 @@ export default function StatistiquesPanel() {
     loadStats();
   }, []);
 
-  // Masquer les tooltips du graphique après son chargement
   useEffect(() => {
     if (chartLoaded) {
       setTimeout(() => {
@@ -48,13 +49,11 @@ export default function StatistiquesPanel() {
     }
   }, [chartLoaded]);
 
-  // Mémoriser les données triées
   const visitesTriees = useMemo(() => {
     if (!stats) return [];
     return [...stats.visitesParJour].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [stats]);
 
-  // Mémoriser les données formatées pour le graphique
   const chartData = useMemo(() => {
     const datesFormatees = visitesTriees.map((visite) =>
       new Date(visite.date).toLocaleDateString("fr-FR", {
@@ -132,97 +131,83 @@ export default function StatistiquesPanel() {
 
   return (
     <div className="w-full">
-      <div className="fr-tabs">
-        <ul className="fr-tabs__list" role="tablist" aria-label="Système d'onglets statistiques">
-          {/* Onglets des statistiques globales */}
-          <li role="presentation">
-            <button
-              type="button"
-              id="statistiques-tab-0"
-              className="fr-tabs__tab"
-              tabIndex={0}
-              role="tab"
-              aria-selected="true"
-              aria-controls="statistiques-tab-0-panel">
+      {/* En-tête */}
+      <div className="fr-mb-6w">
+        <h1 className="fr-h2 fr-mb-2w">Statistiques</h1>
+        <p className="fr-text--lg fr-text-mention--grey">
+          Visualisez les données d'usage et de performance de la plateforme
+        </p>
+      </div>
+
+      {/* Contrôle segmenté */}
+      <fieldset className="fr-segmented fr-mb-6w">
+        <legend className="fr-segmented__legend fr-sr-only">Sélection de la vue statistiques</legend>
+        <div className="fr-segmented__elements">
+          <div className="fr-segmented__element">
+            <input
+              value="globales"
+              checked={activeView === "globales"}
+              type="radio"
+              id="segmented-stats-1"
+              name="segmented-stats"
+              onChange={() => setActiveView("globales")}
+            />
+            <label className="fr-icon-bar-chart-box-fill fr-label" htmlFor="segmented-stats-1">
               Statistiques globales
-            </button>
-          </li>
+            </label>
+          </div>
+          <div className="fr-segmented__element">
+            <input
+              value="visites"
+              checked={activeView === "visites"}
+              type="radio"
+              id="segmented-stats-2"
+              name="segmented-stats"
+              onChange={() => setActiveView("visites")}
+            />
+            <label className="fr-icon-eye-line fr-label" htmlFor="segmented-stats-2">
+              Visites
+            </label>
+          </div>
+          <div className="fr-segmented__element">
+            <input
+              value="funnel"
+              checked={activeView === "funnel"}
+              type="radio"
+              id="segmented-stats-3"
+              name="segmented-stats"
+              onChange={() => setActiveView("funnel")}
+            />
+            <label className="fr-icon-arrow-down-line fr-label" htmlFor="segmented-stats-3">
+              Funnel Mes Aides Réno
+            </label>
+          </div>
+        </div>
+      </fieldset>
 
-          {/* Onglets des statistiques des visites */}
-          <li role="presentation">
-            <button
-              type="button"
-              id="statistiques-tab-1"
-              className="fr-tabs__tab"
-              tabIndex={-1}
-              role="tab"
-              aria-selected="false"
-              aria-controls="statistiques-tab-1-panel">
-              Statistiques des visites
-            </button>
-          </li>
-
-          {/* Onglets des statistiques du funnel Mes Aides Réno */}
-          <li role="presentation">
-            <button
-              type="button"
-              id="statistiques-tab-2"
-              className="fr-tabs__tab"
-              tabIndex={-1}
-              role="tab"
-              aria-selected="false"
-              aria-controls="statistiques-tab-2-panel">
-              Statistiques du funnel Mes Aides Réno
-            </button>
-          </li>
-        </ul>
-
-        {/* Statistiques globales */}
-        <div
-          id="statistiques-tab-0-panel"
-          className="fr-tabs__panel fr-tabs__panel--selected"
-          role="tabpanel"
-          aria-labelledby="statistiques-tab-0"
-          tabIndex={0}>
+      {/* Vue Statistiques globales */}
+      {activeView === "globales" && (
+        <div>
           <h2 className="fr-h3 fr-mb-3w">Statistiques globales</h2>
-
-          {/* Tuiles des statistiques globales */}
           <div className="fr-grid-row fr-grid-row--gutters">
             {statistiquesGlobales.map((stat) => (
-              <div key={stat.title} className="fr-col-12 fr-col-md-6 fr-col-lg-4">
-                <div className="fr-tile fr-tile--sm">
-                  <div className="fr-tile__body">
-                    <div className="fr-tile__content">
-                      <h3 className="fr-tile__title">{stat.title}</h3>
-                      <p className="fr-tile__detail fr-text--lg fr-text--bold">{stat.value.toLocaleString("fr-FR")}</p>
-                    </div>
-                  </div>
-                  <div className="fr-tile__header">
-                    <div className="fr-tile__pictogram">
-                      <span
-                        className={`${stat.icon} fr-text--xl`}
-                        aria-hidden="true"
-                        style={{ fontSize: "3rem" }}></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <StatCard
+                key={stat.title}
+                number={stat.value.toLocaleString("fr-FR")}
+                label={stat.title}
+                icon={stat.icon}
+              />
             ))}
           </div>
         </div>
+      )}
 
-        {/* Statistiques des visites */}
-        <div
-          id="statistiques-tab-1-panel"
-          className="fr-tabs__panel"
-          role="tabpanel"
-          aria-labelledby="statistiques-tab-1"
-          tabIndex={0}>
-          <h2 className="fr-h3 fr-mt-6w fr-mb-3w">Statistiques des visites</h2>
-
-          {/* Graphique des visites */}
+      {/* Vue Statistiques des visites */}
+      {activeView === "visites" && (
+        <div>
+          <h2 className="fr-h3 fr-mb-3w">Statistiques des visites</h2>
           {chartLoaded && visitesTriees.length > 0 && (
-            <div className="fr-mt-6w">
+            <div className="fr-mt-4w p-12 fr-background-default--grey">
               <h3 className="fr-h4 fr-mb-2w">Évolution des visites depuis l'ouverture (16/10/2025)</h3>
               <line-chart
                 key="visites-chart"
@@ -235,21 +220,16 @@ export default function StatistiquesPanel() {
             </div>
           )}
         </div>
+      )}
 
-        {/* Statistiques du funnel Mes Aides Réno */}
-        <div
-          id="statistiques-tab-2-panel"
-          className="fr-tabs__panel"
-          role="tabpanel"
-          aria-labelledby="statistiques-tab-2"
-          tabIndex={0}>
-          {/* Statistiques du funnel Mes Aides Réno */}
-          <h3 className="fr-h3 fr-mt-6w fr-mb-3w">
-            Funnel : Complétude du simulateur RGA (Mes Aides Réno) sur les 7 derniers jours
-          </h3>
+      {/* Vue Funnel Mes Aides Réno */}
+      {activeView === "funnel" && (
+        <div>
+          <h2 className="fr-h3 fr-mb-3w">Funnel : Complétude du simulateur RGA (Mes Aides Réno)</h2>
+          <p className="fr-text--sm fr-text-mention--grey fr-mb-4w">Sur les 7 derniers jours</p>
           <StatistiquesFunnel funnel={stats.funnelSimulateurRGA} />
         </div>
-      </div>
+      )}
     </div>
   );
 }

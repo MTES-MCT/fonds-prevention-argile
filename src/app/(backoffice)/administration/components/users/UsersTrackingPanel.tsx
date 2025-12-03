@@ -8,6 +8,7 @@ import { DepartementFilter } from "./filters/departements/DepartementFilter";
 import { filterUsersByDepartement } from "./filters/departements/departementFilter.utils";
 import Loading from "@/app/(main)/loading";
 import { getUsersWithParcours, UserWithParcoursDetails } from "@/features/backoffice";
+import StatCard from "../shared/StatCard";
 
 /**
  * Calcule le pourcentage avec gestion du cas 0
@@ -68,7 +69,13 @@ export default function UsersTrackingPanel() {
 
   return (
     <div className="w-full">
-      <h2 className="fr-h4 fr-mb-4w">Suivi des utilisateurs</h2>
+      {/* En-tête */}
+      <div className="fr-mb-6w">
+        <h1 className="fr-h2 fr-mb-2w">Suivi des utilisateurs</h1>
+        <p className="fr-text--lg fr-text-mention--grey">
+          Visualisez les informations et le parcours des utilisateurs inscrits sur la plateforme.
+        </p>
+      </div>
 
       {/* Erreur */}
       {error && (
@@ -82,85 +89,56 @@ export default function UsersTrackingPanel() {
       {!error && (
         <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
           {/* Total utilisateurs */}
-          <div className="fr-col-12 fr-col-md-3">
-            <div className="fr-card fr-card--no-border">
-              <div className="fr-card__body">
-                <div className="fr-card__content">
-                  <p className="fr-card__title fr-text--lg fr-mb-1v">{stats.total}</p>
-                  <p className="fr-text--sm">Utilisateurs {selectedDepartement ? "filtrés" : "inscrits"}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <StatCard
+            number={stats.total.toString()}
+            label={`Utilisateurs ${selectedDepartement ? "filtrés" : "inscrits"}`}
+          />
 
           {/* AMO validée */}
-          <div className="fr-col-12 fr-col-md-3">
-            <div className="fr-card fr-card--no-border">
-              <div className="fr-card__body">
-                <div className="fr-card__content">
-                  <p className="fr-card__title fr-text--lg fr-mb-1v">{stats.amoValidee}</p>
-                  <p className="fr-text--sm">AMO validée</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <StatCard number={stats.amoValidee.toString()} label="AMO validée" />
 
           {/* AMO en attente */}
-          <div className="fr-col-12 fr-col-md-3">
-            <div className="fr-card fr-card--no-border">
-              <div className="fr-card__body">
-                <div className="fr-card__content">
-                  <p className="fr-card__title fr-text--lg fr-mb-1v">{stats.amoEnAttente}</p>
-                  <p className="fr-text--sm">AMO en attente</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <StatCard number={stats.amoEnAttente.toString()} label="AMO en attente" />
 
           {/* AMO refusée */}
-          <div className="fr-col-12 fr-col-md-3">
-            <div className="fr-card fr-card--no-border">
-              <div className="fr-card__body">
-                <div className="fr-card__content">
-                  <p className="fr-card__title fr-text--lg fr-mb-1v">{stats.amoRefusee}</p>
-                  <p className="fr-text--sm">AMO refusée</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <StatCard number={stats.amoRefusee.toString()} label="AMO refusée" />
         </div>
       )}
 
       {/* Répartition par étape */}
       {!error && stats.total > 0 && (
-        <div className="fr-callout fr-callout--blue-ecume fr-mb-4w">
-          <h3 className="fr-callout__title">Répartition par étape</h3>
+        <div className="fr-mb-6w">
+          <h2 className="fr-h2 fr-mb-2w">Répartition par étape</h2>
+          <p className="fr-text--lg fr-text-mention--grey">
+            Nombre d'utilisateurs actuellement à chaque étape du parcours.
+          </p>
+
           <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col">
-              <p className="fr-text--sm fr-mb-0">
-                <strong>Choix AMO :</strong> {stats.parEtape.choixAmo}
-              </p>
-            </div>
-            <div className="fr-col">
-              <p className="fr-text--sm fr-mb-0">
-                <strong>Éligibilité :</strong> {stats.parEtape.eligibilite}
-              </p>
-            </div>
-            <div className="fr-col">
-              <p className="fr-text--sm fr-mb-0">
-                <strong>Diagnostic :</strong> {stats.parEtape.diagnostic}
-              </p>
-            </div>
-            <div className="fr-col">
-              <p className="fr-text--sm fr-mb-0">
-                <strong>Devis :</strong> {stats.parEtape.devis}
-              </p>
-            </div>
-            <div className="fr-col">
-              <p className="fr-text--sm fr-mb-0">
-                <strong>Factures :</strong> {stats.parEtape.factures}
-              </p>
-            </div>
+            <StatCard
+              className="fr-col-12 fr-col-md-3 fr-col-lg-2"
+              label="Choix AMO"
+              number={stats.parEtape.choixAmo.toString()}
+            />
+            <StatCard
+              className="fr-col-12 fr-col-md-3 fr-col-lg-2"
+              label="Éligibilité"
+              number={stats.parEtape.eligibilite.toString()}
+            />
+            <StatCard
+              className="fr-col-12 fr-col-md-3 fr-col-lg-2"
+              label="Diagnostic"
+              number={stats.parEtape.diagnostic.toString()}
+            />
+            <StatCard
+              className="fr-col-12 fr-col-md-3 fr-col-lg-2"
+              label="Devis"
+              number={stats.parEtape.devis.toString()}
+            />
+            <StatCard
+              className="fr-col-12 fr-col-md-3 fr-col-lg-2"
+              label="Factures"
+              number={stats.parEtape.factures.toString()}
+            />
           </div>
         </div>
       )}
