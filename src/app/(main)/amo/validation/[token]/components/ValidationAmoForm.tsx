@@ -15,12 +15,9 @@ interface ValidationAmoFormProps {
   token: string;
 }
 
-export default function ValidationAmoForm({
-  validationId,
-}: ValidationAmoFormProps) {
-  const [choix, setChoix] = useState<StatutValidationAmo | undefined>(
-    undefined
-  );
+export default function ValidationAmoForm({ validationId }: ValidationAmoFormProps) {
+  const [choix, setChoix] = useState<StatutValidationAmo | undefined>(undefined);
+  const [commentaire, setCommentaire] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +27,18 @@ export default function ValidationAmoForm({
     if (!choix) {
       setError("Veuillez sélectionner une option");
       return;
+    }
+
+    // Validation du commentaire pour le cas "non éligible"
+    if (choix === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
+      if (!commentaire.trim()) {
+        setError("Veuillez préciser la raison de l'inéligibilité");
+        return;
+      }
+      if (commentaire.trim().length < 10) {
+        setError("Veuillez fournir une raison détaillée (minimum 10 caractères)");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -43,16 +52,10 @@ export default function ValidationAmoForm({
           result = await validerLogementEligible(validationId);
           break;
         case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
-          result = await refuserLogementNonEligible(
-            validationId,
-            "Le logement n'est pas éligible selon les critères du Fonds prévention argile"
-          );
+          result = await refuserLogementNonEligible(validationId, commentaire.trim());
           break;
         case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
-          result = await refuserAccompagnement(
-            validationId,
-            "Accompagnement refusé"
-          );
+          result = await refuserAccompagnement(validationId, "Accompagnement refusé");
           break;
       }
 
@@ -74,34 +77,22 @@ export default function ValidationAmoForm({
       case StatutValidationAmo.LOGEMENT_ELIGIBLE:
         return (
           <div className="fr-alert fr-alert--success">
-            <p className="fr-alert__title">
-              Vous avez validé l'éligibilité du logement
-            </p>
-            <p className="fr-alert__description">
-              Le demandeur a été notifié de votre décision.
-            </p>
+            <p className="fr-alert__title">Vous avez validé l'éligibilité du logement</p>
+            <p className="fr-alert__description">Le demandeur a été notifié de votre décision.</p>
           </div>
         );
       case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
         return (
           <div className="fr-alert fr-alert--success">
-            <p className="fr-alert__title">
-              Vous avez indiqué que le logement n'est pas éligible
-            </p>
-            <p className="fr-alert__description">
-              Le demandeur a été notifié de votre décision.
-            </p>
+            <p className="fr-alert__title">Vous avez indiqué que le logement n'est pas éligible</p>
+            <p className="fr-alert__description">Le demandeur a été notifié de votre décision.</p>
           </div>
         );
       case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
         return (
           <div className="fr-alert fr-alert--success">
-            <p className="fr-alert__title">
-              Vous avez refusé d'accompagner ce demandeur
-            </p>
-            <p className="fr-alert__description">
-              Le demandeur a été notifié de votre décision.
-            </p>
+            <p className="fr-alert__title">Vous avez refusé d'accompagner ce demandeur</p>
+            <p className="fr-alert__description">Le demandeur a été notifié de votre décision.</p>
           </div>
         );
     }
@@ -119,8 +110,7 @@ export default function ValidationAmoForm({
       <fieldset
         className="fr-fieldset"
         id="choix-validation-fieldset"
-        aria-labelledby="choix-validation-legend choix-validation-messages"
-      >
+        aria-labelledby="choix-validation-legend choix-validation-messages">
         <div className="fr-fieldset__element">
           <div className="fr-radio-group fr-radio-rich">
             <input
@@ -136,7 +126,7 @@ export default function ValidationAmoForm({
             </label>
             <div className="fr-radio-rich__pictogram">
               <Image
-                alt="Erreur technique"
+                alt="Validation réussie"
                 className="shrink-0"
                 height={150}
                 src="/illustrations/success.svg"
@@ -153,9 +143,7 @@ export default function ValidationAmoForm({
               id="radio-non-eligible"
               name="choix-validation"
               checked={choix === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE}
-              onChange={() =>
-                setChoix(StatutValidationAmo.LOGEMENT_NON_ELIGIBLE)
-              }
+              onChange={() => setChoix(StatutValidationAmo.LOGEMENT_NON_ELIGIBLE)}
               disabled={isSubmitting}
             />
             <label className="fr-label" htmlFor="radio-non-eligible">
@@ -163,7 +151,7 @@ export default function ValidationAmoForm({
             </label>
             <div className="fr-radio-rich__pictogram">
               <Image
-                alt="Erreur technique"
+                alt="Avertissement"
                 className="shrink-0"
                 height={150}
                 src="/illustrations/warning.svg"
@@ -180,55 +168,54 @@ export default function ValidationAmoForm({
               id="radio-refuse"
               name="choix-validation"
               checked={choix === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE}
-              onChange={() =>
-                setChoix(StatutValidationAmo.ACCOMPAGNEMENT_REFUSE)
-              }
+              onChange={() => setChoix(StatutValidationAmo.ACCOMPAGNEMENT_REFUSE)}
               disabled={isSubmitting}
             />
             <label className="fr-label" htmlFor="radio-refuse">
               Je n'accompagne pas ce demandeur
             </label>
             <div className="fr-radio-rich__pictogram">
-              <Image
-                alt="Erreur technique"
-                className="shrink-0"
-                height={150}
-                src="/illustrations/error.svg"
-                width={150}
-              />
+              <Image alt="Refus" className="shrink-0" height={150} src="/illustrations/error.svg" width={150} />
             </div>
           </div>
         </div>
 
-        <div
-          className="fr-messages-group"
-          id="choix-validation-messages"
-          aria-live="polite"
-        ></div>
+        <div className="fr-messages-group" id="choix-validation-messages" aria-live="polite"></div>
       </fieldset>
 
+      {/* Zone de texte pour la raison de l'inéligibilité */}
+      {choix === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && (
+        <div className="fr-input-group fr-mt-4w" id="commentaire-group">
+          <label className="fr-label" htmlFor="commentaire-input">
+            Merci de préciser les raisons de l'inéligibilité du demandeur
+            <span className="fr-hint-text">Ceci nous permet de comprendre ce qui a pu bloquer</span>
+          </label>
+          <textarea
+            className="fr-input"
+            aria-describedby="commentaire-messages"
+            id="commentaire-input"
+            name="commentaire"
+            rows={4}
+            value={commentaire}
+            onChange={(e) => setCommentaire(e.target.value)}
+            disabled={isSubmitting}
+            placeholder="Ex : Le logement n'est pas situé dans une zone exposée au risque RGA..."
+          />
+          <div className="fr-messages-group" id="commentaire-messages" aria-live="polite"></div>
+        </div>
+      )}
+
       <p className="fr-text--sm fr-mt-4w text-gray-500">
-        Attention, en confirmant votre accompagnement, vous attestez que le
-        demandeur est éligible selon les critères définis par l'arrêté du 6
-        septembre 2025 (
-        <a
-          href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052201370"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        Attention, en confirmant votre accompagnement, vous attestez que le demandeur est éligible selon les critères
+        définis par l'arrêté du 6 septembre 2025 (
+        <a href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052201370" target="_blank" rel="noopener noreferrer">
           https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052201370
         </a>
-        ). En cas de non éligibilité du dossier, vous ne pourrez pas faire
-        avancer son dossier.
+        ). En cas de non éligibilité du dossier, vous ne pourrez pas faire avancer son dossier.
       </p>
 
       <div className="fr-mt-4w">
-        <button
-          type="button"
-          className="fr-btn"
-          onClick={handleSubmit}
-          disabled={!choix || isSubmitting}
-        >
+        <button type="button" className="fr-btn" onClick={handleSubmit} disabled={!choix || isSubmitting}>
           {isSubmitting ? "Envoi en cours..." : "Choix confirmé"}
         </button>
       </div>
