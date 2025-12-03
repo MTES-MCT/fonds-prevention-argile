@@ -1,7 +1,7 @@
 import richTextParser from "@/shared/utils/richTextParser.utils";
 import commonContent from "../../content/common.json";
 
-export function SectionEtatAccompagne() {
+export function SectionEtatAccompagne({ conclusionLocale }: { conclusionLocale?: string }) {
   return (
     <section className="fr-py-4w">
       <div className="fr-container">
@@ -16,7 +16,7 @@ export function SectionEtatAccompagne() {
             <li key={index}>{richTextParser(item)}</li>
           ))}
         </ul>
-        <p>{richTextParser(commonContent.etatAccompagne.conclusion)}</p>
+        <p>{richTextParser(conclusionLocale ?? commonContent.etatAccompagne.conclusion)}</p>
       </div>
     </section>
   );
