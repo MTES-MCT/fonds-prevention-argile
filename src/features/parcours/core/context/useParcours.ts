@@ -44,3 +44,12 @@ export function useParcours() {
     getCurrentDossier: context.getCurrentDossier,
   };
 }
+
+// Hook optionnel qui ne plante pas si hors contexte
+export function useOptionalParcours() {
+  try {
+    return useParcours();
+  } catch {
+    return null;
+  }
+}

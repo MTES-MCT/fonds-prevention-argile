@@ -30,7 +30,6 @@ interface RGAState {
   saveRGA: (data: PartialRGAFormData) => void;
   clearRGA: () => void;
   setHydrated: () => void;
-  syncFromDB: (data: PartialRGAFormData | null) => void;
 
   // Migration ancien système
   migrateFromSessionStorage: () => boolean;
@@ -58,6 +57,7 @@ const rgaStorage = {
         return null;
       }
 
+      // Retourner au format Zustand (juste la data)
       return JSON.stringify({ state: { tempRgaData: stored.data }, version: 0 });
     } catch (error) {
       console.error("[RGA Store] Erreur lecture localStorage:", error);
@@ -99,6 +99,7 @@ const rgaStorage = {
 
 /**
  * Store Zustand pour les données RGA du simulateur
+ * Utilisé UNIQUEMENT comme cache temporaire avant authentification
  */
 export const useRGAStore = create<RGAState>()(
   persist(
@@ -120,14 +121,6 @@ export const useRGAStore = create<RGAState>()(
 
       setHydrated: () => {
         set({ isHydrated: true });
-      },
-
-      // Synchroniser depuis la base de données
-      syncFromDB: (data: PartialRGAFormData | null) => {
-        if (data && Object.keys(data).length > 0) {
-          console.log("[RGA Store] 🔄 Synchronisation depuis la base de données");
-          set({ tempRgaData: data });
-        }
       },
 
       // Migration depuis sessionStorage (ancien système)

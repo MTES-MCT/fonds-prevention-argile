@@ -13,7 +13,6 @@ import { syncAllUserDossiers, syncUserDossierStatus } from "../../dossiers-ds/ac
 import { DossierDS } from "../../dossiers-ds";
 import { ROLES, useAuth } from "@/features/auth/client";
 import { createDebugLogger } from "@/shared/utils";
-import { useRGAStore } from "@/features/simulateur-rga/stores";
 
 interface ParcoursProviderProps {
   children: React.ReactNode;
@@ -87,12 +86,6 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
         setDossiers(result.data.dossiers);
         setIsComplete(result.data.isComplete);
         setProchainEtape(result.data.prochainEtape);
-
-        // Synchroniser les données RGA si présentes en base
-        if (result.data.parcours.rgaSimulationData) {
-          debug.log("[fetchParcours] Syncing RGA data to store");
-          useRGAStore.getState().syncFromDB(result.data.parcours.rgaSimulationData);
-        }
 
         const currentDossier = result.data.dossiers.find((d) => d.demarcheEtape === result.data.parcours.currentStep);
         if (currentDossier) {

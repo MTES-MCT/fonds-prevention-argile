@@ -2,25 +2,40 @@
 
 import { useRGAStore, selectTempRgaData, selectIsHydrated } from "../stores";
 import { validateRGAData } from "../services/validator.service";
+import { useAuth } from "@/features/auth/client";
+import { useOptionalParcours, useParcours } from "@/features/parcours/core/context/useParcours";
 
 /**
  * Hook pour interagir avec le simulateur RGA
- * Utilise le store Zustand
+ *
+ * Architecture :
+ * - AVANT connexion : Utilise Zustand (localStorage) comme cache temporaire
+ * - APRÈS connexion : Utilise les données de la base (via ParcoursContext)
+ *
+ * Le hook fait l'arbitrage automatique selon l'état d'authentification
  */
 export function useSimulateurRga() {
-  // Sélecteurs granulaires pour éviter les re-renders inutiles
+  const { isAuthenticated } = useAuth();
+  const parcoursData = useOptionalParcours();
+  const parcours = parcoursData?.parcours ?? null;
+
+  // Données du store Zustand (localStorage) - cache temporaire pré-auth
   const tempRgaData = useRGAStore(selectTempRgaData);
   const isHydrated = useRGAStore(selectIsHydrated);
 
-  // Actions
+  // Actions (toujours depuis le store Zustand)
   const saveRGA = useRGAStore((state) => state.saveRGA);
   const clearRGA = useRGAStore((state) => state.clearRGA);
 
+  // Connecté + données en base → utiliser la base (source de vérité)
+  // Sinon → utiliser localStorage (cache temporaire)
+  const rgaData = isAuthenticated && parcours?.rgaSimulationData ? parcours.rgaSimulationData : tempRgaData;
+
   // Helper pour vérifier si les données sont valides
   const hasValidData = (): boolean => {
-    if (!tempRgaData) return false;
-    if (Object.keys(tempRgaData).length === 0) return false;
-    if (!tempRgaData.logement) return false;
+    if (!rgaData) return false;
+    if (Object.keys(rgaData).length === 0) return false;
+    if (!rgaData.logement) return false;
     return true;
   };
 
@@ -38,10 +53,10 @@ export function useSimulateurRga() {
   }
 
   return {
-    data: tempRgaData,
+    data: rgaData, // Arbitrage automatique : DB si connecté, sinon localStorage
     isLoading: false,
     hasData: hasValidData(),
-    saveRGA,
+    saveRGA, // Utile uniquement avant connexion
     updateRGA: saveRGA,
     clearRGA,
     validateRGAData,
