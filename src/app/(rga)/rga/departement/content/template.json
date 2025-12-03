@@ -22,6 +22,6 @@
     "title": "Le Retrait-Gonflement des Argiles dans le département {departement_avec_article} ({code_departement})"
   },
   "etatAccompagne": {
-    "conclusionLocale": "Les propriétaires occupants de maison en {nom_departement} situés en zone à risque fort et sous conditions peuvent bénéficier de ces aides."
+    "conclusionLocale": "<strong>Les propriétaires occupants de maison individuelle en {nom_departement}</strong> situés en zone à risque fort et sous conditions peuvent bénéficier de ces aides."
   }
 }

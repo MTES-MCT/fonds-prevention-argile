@@ -158,7 +158,7 @@ export default async function CommunePage({ params }: PageProps) {
       <SectionCoutInaction />
 
       {/* L'État vous accompagne */}
-      <SectionEtatAccompagne />
+      <SectionEtatAccompagne conclusionLocale={content.etatAccompagne.conclusionLocale} />
 
       {/* CTA Full Width */}
       <SavoirSiConcerneSection />

@@ -159,7 +159,7 @@ export default async function EpciPage({ params }: PageProps) {
       <SectionCoutInaction />
 
       {/* L'État vous accompagne */}
-      <SectionEtatAccompagne />
+      <SectionEtatAccompagne conclusionLocale={content.etatAccompagne.conclusionLocale} />
 
       {/* CTA Full Width */}
       <SavoirSiConcerneSection />

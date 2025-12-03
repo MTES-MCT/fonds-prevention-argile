@@ -88,6 +88,7 @@ const Header = () => {
 
   return (
     <header role="banner" className="fr-header" id="header-3">
+      {/* Menu desktop */}
       <div className="fr-header__body">
         <div className="fr-container">
           <div className="fr-header__body-row">
@@ -105,10 +106,10 @@ const Header = () => {
                 <div className="fr-header__navbar">
                   <button
                     data-fr-opened="false"
-                    aria-controls="menu-modal-5"
+                    aria-controls="menu-modal-mobile"
                     title="Menu"
                     type="button"
-                    id="menu-4"
+                    id="menu-mobile"
                     className="fr-btn--menu fr-btn">
                     Menu
                   </button>
@@ -131,11 +132,6 @@ const Header = () => {
                 <ul className="fr-btns-group">
                   {!isAuthenticated ? (
                     <>
-                      <li>
-                        <Link href={ROUTES.connexion.agent} className="fr-icon-government-fill fr-btn">
-                          Agent
-                        </Link>
-                      </li>
                       <li>
                         <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
                           Se connecter
@@ -174,10 +170,12 @@ const Header = () => {
           </div>
         </div>
       </div>
-      <div className="fr-header__menu fr-modal" id="menu-modal-5" aria-labelledby="menu-4">
+
+      {/* Menu mobile */}
+      <div className="fr-header__menu fr-modal" id="menu-modal-mobile" aria-labelledby="menu-mobile">
         <div className="fr-container">
           <button
-            aria-controls="menu-modal-5"
+            aria-controls="menu-modal-mobile"
             title="Fermer"
             type="button"
             id="button-32"
@@ -188,11 +186,6 @@ const Header = () => {
             <ul className="fr-btns-group">
               {!isAuthenticated ? (
                 <>
-                  <li>
-                    <Link href={ROUTES.connexion.agent} className="fr-icon-government-fill fr-btn">
-                      Agent
-                    </Link>
-                  </li>
                   <li>
                     <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
                       Se connecter

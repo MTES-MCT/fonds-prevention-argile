@@ -96,11 +96,6 @@ export default function RgaIndexPage() {
                           {departement.nom} ({departement.code})
                         </a>
                       </h3>
-                      <p className="fr-card__desc">
-                        {departement.population?.toLocaleString("fr-FR")} habitants
-                        <br />
-                        {departement.nombreCommunesRGA} communes référencées
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -113,8 +108,7 @@ export default function RgaIndexPage() {
       {/* Liste des EPCI */}
       <section className="fr-py-4w">
         <div className="fr-container">
-          <h2>Intercommunalités éligibles</h2>
-          <p>{epciList.length} intercommunalités sont concernées par le dispositif.</p>
+          <h2>Quelques intercommunalités éligibles</h2>
 
           <ul className="fr-tags-group">
             {epciList.map((epci) => (

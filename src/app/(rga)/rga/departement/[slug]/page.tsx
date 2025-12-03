@@ -143,7 +143,7 @@ export default async function DepartementPage({ params }: PageProps) {
       <SectionCoutInaction />
 
       {/* L'État vous accompagne */}
-      <SectionEtatAccompagne />
+      <SectionEtatAccompagne conclusionLocale={content.etatAccompagne.conclusionLocale} />
 
       {/* CTA Full Width */}
       <SavoirSiConcerneSection />
