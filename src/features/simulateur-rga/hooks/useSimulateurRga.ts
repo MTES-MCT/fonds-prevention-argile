@@ -56,7 +56,7 @@ export function useSimulateurRga() {
     data: rgaData, // Arbitrage automatique : DB si connecté, sinon localStorage
     isLoading: false,
     hasData: hasValidData(),
-    saveRGA, // Utile uniquement avant connexion
+    saveRGA,
     updateRGA: saveRGA,
     clearRGA,
     validateRGAData,

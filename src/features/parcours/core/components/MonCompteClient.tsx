@@ -52,6 +52,9 @@ export default function MonCompteClient() {
   // État de chargement global
   const isLoading = isAuthLoading || isLoadingRGA || isLoadingParcours;
 
+  // Conditions de simulation nécessaire
+  const needsSimulation = !isLoadingParcours && !hasRGAData && !hasDossiers;
+
   // Afficher un message de déconnexion
   if (isLoggingOut) {
     return (
@@ -65,7 +68,7 @@ export default function MonCompteClient() {
   }
 
   // Afficher le chargement si les données ne sont pas prêtes
-  if (isLoading || hasRGAData === undefined) {
+  if (isLoading || hasTempRGAData === undefined) {
     return <Loading />;
   }
 
@@ -73,9 +76,6 @@ export default function MonCompteClient() {
   if (!user) {
     return null;
   }
-
-  // Conditions de simulation nécessaire
-  const needsSimulation = !hasRGAData && !hasDossiers;
 
   if (needsSimulation) {
     return (
