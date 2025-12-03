@@ -36,6 +36,14 @@ export async function refuserLogementNonEligible(
   commentaire: string
 ): Promise<ActionResult<{ message: string }>> {
   try {
+    // Validation côté serveur
+    if (!commentaire || commentaire.trim().length < 10) {
+      return {
+        success: false,
+        error: "Un commentaire détaillé est requis pour justifier l'inéligibilité (minimum 10 caractères)",
+      };
+    }
+
     const result = await rejectEligibility(validationId, commentaire);
     return result;
   } catch (error) {
@@ -69,9 +77,7 @@ export async function refuserAccompagnement(
 /**
  * Récupérer les données de validation par token
  */
-export async function getValidationDataByToken(
-  token: string
-): Promise<ActionResult<ValidationAmoData>> {
+export async function getValidationDataByToken(token: string): Promise<ActionResult<ValidationAmoData>> {
   try {
     const result = await getValidationByToken(token);
     return result;

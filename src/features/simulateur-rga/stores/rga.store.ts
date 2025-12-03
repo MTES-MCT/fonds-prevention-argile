@@ -5,7 +5,7 @@ import type { PartialRGAFormData } from "../domain/entities";
 const RGA_STORAGE_KEY = "fonds-argile-rga-data";
 const RGA_SESSION_KEY = "fonds-argile-rga-data"; // Ancien système
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
-const STORAGE_VERSION = "1.0"; // TODO : gérer les versions si besoin
+const STORAGE_VERSION = "1.0";
 
 /**
  * Format de stockage (compatible avec l'ancien système)
@@ -30,6 +30,7 @@ interface RGAState {
   saveRGA: (data: PartialRGAFormData) => void;
   clearRGA: () => void;
   setHydrated: () => void;
+  syncFromDB: (data: PartialRGAFormData | null) => void;
 
   // Migration ancien système
   migrateFromSessionStorage: () => boolean;
@@ -57,7 +58,6 @@ const rgaStorage = {
         return null;
       }
 
-      // Retourner au format Zustand (juste la data)
       return JSON.stringify({ state: { tempRgaData: stored.data }, version: 0 });
     } catch (error) {
       console.error("[RGA Store] Erreur lecture localStorage:", error);
@@ -120,6 +120,14 @@ export const useRGAStore = create<RGAState>()(
 
       setHydrated: () => {
         set({ isHydrated: true });
+      },
+
+      // Synchroniser depuis la base de données
+      syncFromDB: (data: PartialRGAFormData | null) => {
+        if (data && Object.keys(data).length > 0) {
+          console.log("[RGA Store] 🔄 Synchronisation depuis la base de données");
+          set({ tempRgaData: data });
+        }
       },
 
       // Migration depuis sessionStorage (ancien système)
