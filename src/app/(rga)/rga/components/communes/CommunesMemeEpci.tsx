@@ -16,7 +16,7 @@ export function CommunesMemeEpci({ communes, epci, currentCommuneInsee }: Commun
   return (
     <section className="fr-py-4w">
       <div className="fr-container">
-        <h2>Le Retrait-Gonflement des Argiles dans les autres communes de {epci.nom}</h2>
+        <h2>Le Retrait-Gonflement des Argiles communes de {epci.nom}</h2>
 
         <ul className="fr-tags-group">
           {autresCommunes.map((commune) => (
