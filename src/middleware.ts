@@ -11,11 +11,21 @@ import {
   decodeToken,
   isValidRole,
   isProtectedRoute,
-  canAccessRoute,
   getDefaultRedirect,
   ROUTES,
 } from "@/features/auth/edge";
 
+/**
+ * Middleware de gestion de l'authentification
+ *
+ * Responsabilités :
+ * - Vérifier que l'utilisateur est authentifié (session valide)
+ * - Rediriger vers la page de connexion si non authentifié
+ * - Rediriger les utilisateurs connectés hors des pages de connexion
+ *
+ * Note : Les autorisations (rôles) sont gérées par les pages elles-mêmes
+ * via les composants AccesNonAutorise pour une meilleure UX
+ */
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
@@ -23,7 +33,8 @@ export async function middleware(request: NextRequest) {
   if (PUBLIC_ROUTES.franceConnectApi.some((route) => path.startsWith(route))) {
     return NextResponse.next();
   }
-  //  Ne pas intercepter les routes API ProConnect
+
+  // Ne pas intercepter les routes API ProConnect
   if (PUBLIC_ROUTES.proConnectApi.some((route) => path.startsWith(route))) {
     return NextResponse.next();
   }
@@ -42,8 +53,8 @@ export async function middleware(request: NextRequest) {
       path.startsWith(ROUTES.backoffice.administration.root) || path.startsWith(ROUTES.backoffice.espaceAmo.root);
 
     const loginUrl = isBackofficeRoute
-      ? DEFAULT_REDIRECTS.loginAgent // /connexion/agent
-      : DEFAULT_REDIRECTS.login; // /connexion
+      ? ROUTES.connexion.agent // /connexion/agent
+      : ROUTES.connexion.particulier; // /connexion
 
     const response = NextResponse.redirect(new URL(loginUrl, request.url));
 
@@ -53,7 +64,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Si on a une session, vérifier les permissions
+  // Si on a une session, gérer les redirections
   if (session) {
     // Récupérer le rôle depuis un cookie dédié
     let role = request.cookies.get(COOKIE_NAMES.SESSION_ROLE)?.value;
@@ -76,32 +87,24 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Vérifier les permissions selon le rôle
-    if (role && isValidRole(role)) {
-      // Vérifier l'accès à la route
-      if (!canAccessRoute(path, role)) {
-        // Rediriger vers l'espace approprié
-        const redirect = getDefaultRedirect(role);
-        return NextResponse.redirect(new URL(redirect, request.url));
+    // Si route d'auth et session existe -> rediriger vers le bon espace
+    if (isAuthRoute && role && isValidRole(role)) {
+      // Vérifier s'il y a une URL de redirection sauvegardée
+      const redirectTo = request.cookies.get(COOKIE_NAMES.REDIRECT_TO)?.value;
+
+      if (redirectTo) {
+        // Supprimer le cookie redirectTo et rediriger
+        const response = NextResponse.redirect(new URL(redirectTo, request.url));
+        response.cookies.delete(COOKIE_NAMES.REDIRECT_TO);
+        return response;
       }
 
-      // Si route d'auth et session existe -> rediriger vers le bon espace
-      if (isAuthRoute) {
-        // Vérifier s'il y a une URL de redirection sauvegardée
-        const redirectTo = request.cookies.get(COOKIE_NAMES.REDIRECT_TO)?.value;
-
-        if (redirectTo) {
-          // Supprimer le cookie redirectTo et rediriger
-          const response = NextResponse.redirect(new URL(redirectTo, request.url));
-          response.cookies.delete(COOKIE_NAMES.REDIRECT_TO);
-          return response;
-        }
-
-        // Sinon redirection par défaut selon le rôle
-        const defaultRedirect = getDefaultRedirect(role);
-        return NextResponse.redirect(new URL(defaultRedirect, request.url));
-      }
+      // Sinon redirection par défaut selon le rôle
+      const defaultRedirect = getDefaultRedirect(role);
+      return NextResponse.redirect(new URL(defaultRedirect, request.url));
     }
+
+    // Si session valide alors laisser passer les pages géreront elles-mêmes les autorisations (rôles)
   }
 
   return NextResponse.next();
