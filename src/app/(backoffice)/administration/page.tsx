@@ -31,11 +31,18 @@ async function AdminDataLoader() {
   );
 }
 
+/**
+ * Page d'administration - Réservée aux administrateurs
+ *
+ * Accessible uniquement par les rôles :
+ * - ADMINISTRATEUR
+ * - SUPER_ADMINISTRATEUR
+ */
 export default async function AdminPage() {
   // Vérifier que l'utilisateur est admin
   const access = await checkAdminAccess();
 
-  // Si pas connecté du tout : redirect vers connexion agent
+  // Si pas connecté du tout redirect vers connexion agent
   if (!access.hasAccess && access.errorCode === "NOT_AUTHENTICATED") {
     redirect(ROUTES.connexion.agent);
   }
@@ -45,7 +52,7 @@ export default async function AdminPage() {
     return <AccesNonAutoriseAdmin />;
   }
 
-  // Utilisateur admin valide : afficher le dashboard
+  // Utilisateur admin valide : afficher le dashboard avec le menu latéral
   return (
     <Suspense fallback={<Loading />}>
       <AdminDataLoader />

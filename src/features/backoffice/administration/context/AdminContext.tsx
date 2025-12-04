@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import { DEFAULT_ADMIN_TAB } from "@/features/backoffice/administration/domain/value-objects/constants";
 import type { TabId } from "@/features/backoffice/administration/domain/types/tab.types";
+import { DEFAULT_ADMIN_TAB } from "../domain";
 
 interface AdminContextValue {
   activeTab: TabId;
