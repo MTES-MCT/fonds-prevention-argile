@@ -1,39 +1,48 @@
 import { redirect } from "next/navigation";
-import { getCurrentAgent, AccesNonAutorise } from "@/features/backoffice";
-import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
-import { ROUTES } from "@/features/auth";
+import { checkAmoAccess, checkProConnectAccess, ROUTES } from "@/features/auth";
+import { AccesNonAutoriseAmo, AccesNonAutoriseAgentNonEnregistre } from "@/shared/components";
+import { getCurrentAgent } from "@/features/backoffice";
 
 /**
- * Point d'entrée unique pour les agents ProConnect
+ * Espace AMO - Réservé aux agents AMO
  *
- * Redirige automatiquement vers l'espace correspondant au rôle :
- * - Administrateur → /admin
- * - Instructeur → /instruction
- * - AMO → /espace-amo
- *
- * Affiche une page d'erreur si l'agent n'est pas enregistré
  */
-export default async function EspaceAgentPage() {
-  const result = await getCurrentAgent();
+export default async function EspaceAmoPage() {
+  // Vérifier que l'utilisateur est connecté via ProConnect
+  const proConnectCheck = await checkProConnectAccess();
 
-  // Agent non trouvé en BDD ou erreur
-  if (!result.success) {
-    return <AccesNonAutorise />;
+  // Si pas connecté du tout → redirect vers connexion agent
+  if (!proConnectCheck.hasAccess && proConnectCheck.errorCode === "NOT_AUTHENTICATED") {
+    redirect(ROUTES.connexion.agent);
   }
 
-  const agent = result.data;
-
-  // Redirection selon le rôle
-  switch (agent.role) {
-    case UserRole.ADMINISTRATEUR:
-    case UserRole.SUPER_ADMINISTRATEUR:
-      redirect(ROUTES.backoffice.administration.root);
-
-    case UserRole.AMO:
-      redirect(ROUTES.backoffice.espaceAmo.root);
-
-    default:
-      // Rôle inconnu ou non géré
-      return <AccesNonAutorise />;
+  // Si pas ProConnect (ex: FranceConnect) : bloquer
+  if (!proConnectCheck.hasAccess) {
+    return <AccesNonAutoriseAmo />;
   }
+
+  // Vérifier que l'agent est enregistré en BDD
+  const agentResult = await getCurrentAgent();
+  if (!agentResult.success) {
+    return <AccesNonAutoriseAgentNonEnregistre />;
+  }
+
+  // Vérifier que l'utilisateur est AMO
+  const amoCheck = await checkAmoAccess();
+  if (!amoCheck.hasAccess) {
+    return <AccesNonAutoriseAmo />;
+  }
+
+  // TODO: Afficher le contenu de l'espace AMO
+  return (
+    <main role="main" id="content">
+      <div className="fr-container">
+        <div className="fr-my-7w">
+          <h1>Espace AMO</h1>
+          <p className="fr-text--lead">Bienvenue dans votre espace de gestion AMO.</p>
+          {/* TODO: Ajouter les composants de l'espace AMO */}
+        </div>
+      </div>
+    </main>
+  );
 }

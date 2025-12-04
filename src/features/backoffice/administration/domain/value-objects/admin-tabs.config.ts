@@ -48,3 +48,9 @@ export const ADMIN_TABS: AdminTab[] = [
     superAdminOnly: true,
   },
 ];
+
+/**
+ * Onglet par défaut - Premier onglet de la liste ADMIN_TABS
+ *
+ */
+export const DEFAULT_ADMIN_TAB: TabId = ADMIN_TABS[0].id;

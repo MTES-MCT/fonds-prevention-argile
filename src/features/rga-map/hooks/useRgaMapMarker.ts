@@ -70,7 +70,7 @@ export function useRgaMapMarker(options: UseRgaMapMarkerOptions): void {
         timeoutRef.current = null;
       }
     };
-  }, [map, coordinates?.lat, coordinates?.lon, showMarker, flyToOnMount]);
+  }, [map, coordinates, zoom, showMarker, flyToOnMount]);
 }
 
 /**

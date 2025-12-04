@@ -75,7 +75,7 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
       setIsReady(false);
       newMap.remove();
     };
-  }, []);
+  }, [center, zoom]);
 
   return {
     mapRef,

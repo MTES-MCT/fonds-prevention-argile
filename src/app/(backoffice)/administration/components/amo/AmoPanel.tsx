@@ -11,9 +11,12 @@ interface AmoWithRelations extends Amo {
   epci?: { codeEpci: string }[];
 }
 
+type ViewId = "liste" | "import";
+
 export default function AmoPanel() {
   const [editingAmo, setEditingAmo] = useState<AmoWithRelations | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [activeView, setActiveView] = useState<ViewId>("liste");
 
   const handleEdit = (amo: AmoWithRelations) => {
     setEditingAmo(amo);
@@ -24,7 +27,6 @@ export default function AmoPanel() {
     if (editingAmo) {
       const modal = document.getElementById("modal-edit-amo");
       if (modal && window.dsfr) {
-        // Attendre que le DOM soit mis à jour
         setTimeout(() => {
           window.dsfr?.(modal)?.modal?.disclose();
         }, 0);
@@ -43,49 +45,63 @@ export default function AmoPanel() {
 
   return (
     <>
-      <div className="w-full fr-mb-4w">
-        <div className="fr-tabs">
-          <ul className="fr-tabs__list" role="tablist" aria-label="Système d'onglets statistiques">
-            <li role="presentation">
-              <button
-                type="button"
-                id="amo-tab-0"
-                className="fr-tabs__tab"
-                tabIndex={0}
-                role="tab"
-                aria-selected="true"
-                aria-controls="amo-tab-0-panel">
-                Listes des entreprises AMO
-              </button>
-            </li>
+      <div className="w-full">
+        {/* En-tête */}
+        <div className="fr-mb-6w">
+          <h1 className="fr-h2 fr-mb-2w">Gestion des AMO</h1>
+          <p className="fr-text--lg fr-text-mention--grey">
+            Gérez les Assistants à Maîtrise d'Ouvrage (AMO) et importez de nouvelles entreprises.
+          </p>
+        </div>
 
-            <li role="presentation">
-              <button
-                type="button"
-                id="amo-tab-1"
-                className="fr-tabs__tab"
-                tabIndex={-1}
-                role="tab"
-                aria-selected="false"
-                aria-controls="amo-tab-1-panel">
-                Import des entreprises AMO
-              </button>
-            </li>
-          </ul>
+        {/* Contrôle segmenté */}
+        <fieldset className="fr-segmented fr-mb-6w">
+          <legend className="fr-segmented__legend fr-sr-only">Sélection de la vue AMO</legend>
+          <div className="fr-segmented__elements">
+            <div className="fr-segmented__element">
+              <input
+                value="liste"
+                checked={activeView === "liste"}
+                type="radio"
+                id="segmented-amo-1"
+                name="segmented-amo"
+                onChange={() => setActiveView("liste")}
+              />
+              <label className="fr-icon-building-fill fr-label" htmlFor="segmented-amo-1">
+                Liste des entreprises
+              </label>
+            </div>
+            <div className="fr-segmented__element">
+              <input
+                value="import"
+                checked={activeView === "import"}
+                type="radio"
+                id="segmented-amo-2"
+                name="segmented-amo"
+                onChange={() => setActiveView("import")}
+              />
+              <label className="fr-icon-upload-line fr-label" htmlFor="segmented-amo-2">
+                Import
+              </label>
+            </div>
+          </div>
+        </fieldset>
 
-          <div
-            id="amo-tab-0-panel"
-            className="fr-tabs__panel fr-tabs__panel--selected"
-            role="tabpanel"
-            aria-labelledby="amo-tab-0"
-            tabIndex={0}>
+        {/* Vue Liste */}
+        {activeView === "liste" && (
+          <div>
+            <h2 className="fr-h3 fr-mb-3w">Liste des entreprises AMO</h2>
             <AmoList onEdit={handleEdit} refreshTrigger={refreshTrigger} />
           </div>
+        )}
 
-          <div id="amo-tab-1-panel" className="fr-tabs__panel" role="tabpanel" aria-labelledby="amo-tab-1" tabIndex={0}>
+        {/* Vue Import */}
+        {activeView === "import" && (
+          <div>
+            <h2 className="fr-h3 fr-mb-3w">Import des entreprises AMO</h2>
             <AmoSeedUpload onImportSuccess={handleSuccess} />
           </div>
-        </div>
+        )}
       </div>
 
       {/* Modale toujours présente dans le DOM */}

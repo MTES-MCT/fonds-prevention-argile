@@ -11,7 +11,7 @@ export * from "./domain/errors";
 
 // Services
 export * from "./services";
- 
+
 // Adapters FranceConnect
 export * from "./adapters/franceconnect/franceconnect.service";
 export * from "./adapters/franceconnect/franceconnect.config";
@@ -22,3 +22,6 @@ export * from "./adapters/franceconnect/franceconnect.errors";
 export * from "./utils/jwt.utils";
 export { decodeToken as decodeTokenFromJwtDecode } from "./utils/jwt-decode.utils";
 export * from "./utils/validation.utils";
+
+// Permissions (toutes les fonctions de vérification)
+export * from "./permissions";

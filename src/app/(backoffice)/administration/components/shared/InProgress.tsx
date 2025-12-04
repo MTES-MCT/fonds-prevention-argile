@@ -4,7 +4,7 @@ import Image from "next/image";
 export default function InProgress() {
   return (
     <div
-      className="fr-container"
+      className="fr-container fr-background-default--grey p-12"
       style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div className="fr-grid-row fr-grid-row--center fr-grid-row--middle">
         <div className="fr-col-12 fr-col-md-8 fr-col-lg-6" style={{ textAlign: "center" }}>

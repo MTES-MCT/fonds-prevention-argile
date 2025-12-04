@@ -1,19 +1,10 @@
 "use client";
 
-import { useAgentRole } from "@/features/auth/hooks";
-import { isSuperAdminRole } from "@/shared/domain/value-objects";
 import { ADMIN_TABS } from "@/features/backoffice/administration/domain/value-objects/admin-tabs.config";
 import { useAdminTab } from "@/features/backoffice";
 
 export default function AdminSideMenu() {
   const { activeTab, setActiveTab } = useAdminTab();
-  const agentRole = useAgentRole();
-  const isSuperAdmin = agentRole ? isSuperAdminRole(agentRole) : false;
-
-  const visibleLinks = ADMIN_TABS.filter((link) => {
-    if (link.superAdminOnly && !isSuperAdmin) return false;
-    return true;
-  });
 
   return (
     <nav className="fr-sidemenu fr-px-4w" role="navigation" aria-label="Menu d'administration">
@@ -31,7 +22,7 @@ export default function AdminSideMenu() {
             Administration
           </div>
           <ul className="fr-sidemenu__list">
-            {visibleLinks.map((link) => (
+            {ADMIN_TABS.map((link) => (
               <li key={link.id} className="fr-sidemenu__item">
                 <button
                   type="button"

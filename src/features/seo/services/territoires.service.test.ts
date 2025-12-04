@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import type { DepartementSEO, CommuneSEO, EpciSEO } from "@/features/seo";
+import type {  CommuneSEO } from "@/features/seo";
 
 // Mock des imports JSON - les données doivent être DANS la factory
 vi.mock("../data/generated/departements.json", () => ({

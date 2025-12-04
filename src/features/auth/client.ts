@@ -24,3 +24,7 @@ export { FC_ERROR_MESSAGES, FC_ERROR_MAPPING } from "./adapters/franceconnect/fr
 
 // Routes
 export { ROUTES } from "./domain/value-objects/configs/routes.config";
+
+// Permissions (types uniquement pour typage côté client)
+export type { AccessCheckResult, AccessCheckOptions } from "./permissions/domain/types";
+export { AccessErrorCode } from "./permissions/domain/value-objects/constants";
