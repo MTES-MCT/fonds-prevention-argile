@@ -14,7 +14,16 @@ import { amoValidationTokens } from "@/shared/database";
  */
 
 /**
+ * Anonymise un nom en ne gardant que la première lettre suivie d'un point
+ */
+function anonymiserNom(nom: string | null): string | null {
+  if (!nom || nom.length === 0) return null;
+  return `${nom.charAt(0).toUpperCase()}.`;
+}
+
+/**
  * Récupère tous les utilisateurs avec leurs parcours, validations AMO et dossiers DS
+ * Les données personnelles sont anonymisées côté serveur
  */
 export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]> {
   // Requête principale avec tous les LEFT JOINs
@@ -109,7 +118,8 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
           id: row.userId,
           fcId: row.userFcId,
           email: row.userEmail,
-          name: row.userName,
+          // Anonymisation : Prénom + première lettre du nom
+          name: anonymiserNom(row.userName),
           firstName: row.userFirstName,
           telephone: row.userTelephone,
           lastLogin: row.userLastLogin,
@@ -128,17 +138,8 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
               rgaDataDeletedAt: row.parcoursRgaDataDeletedAt,
             }
           : null,
-        rgaSimulation: row.parcoursRgaSimulationData
-          ? {
-              logement: {
-                adresse: row.parcoursRgaSimulationData.logement?.adresse || "",
-                commune: row.parcoursRgaSimulationData.logement?.commune_nom || "",
-                codeInsee: row.parcoursRgaSimulationData.logement?.commune || "",
-                departement: row.parcoursRgaSimulationData.logement?.code_departement || "",
-                typeConstruction: row.parcoursRgaSimulationData.logement?.type || "",
-              },
-            }
-          : null,
+        // Exposer rgaSimulationData complet pour les statistiques
+        rgaSimulation: row.parcoursRgaSimulationData || null,
         amoValidation: row.validationId
           ? {
               id: row.validationId,
@@ -155,8 +156,9 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
                 telephone: row.amoTelephone,
               },
               userData: {
+                // Anonymisation : Prénom + première lettre du nom
                 prenom: row.validationUserPrenom,
-                nom: row.validationUserNom,
+                nom: anonymiserNom(row.validationUserNom),
                 email: row.validationUserEmail,
                 telephone: row.validationUserTelephone,
                 adresseLogement: row.validationAdresseLogement,

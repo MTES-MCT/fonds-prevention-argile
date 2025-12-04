@@ -1,5 +1,6 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 
 /**
  * Informations détaillées sur l'utilisateur et son parcours
@@ -10,7 +11,7 @@ export interface UserWithParcoursDetails {
     id: string;
     fcId: string;
     email: string | null;
-    name: string | null;
+    name: string | null; // Anonymisé : première lettre + "."
     firstName: string | null;
     telephone: string | null;
     lastLogin: Date;
@@ -30,16 +31,8 @@ export interface UserWithParcoursDetails {
     rgaDataDeletedAt: Date | null;
   } | null;
 
-  // ===== Données simulation RGA =====
-  rgaSimulation: {
-    logement: {
-      adresse: string;
-      commune: string;
-      codeInsee: string;
-      departement: string;
-      typeConstruction: string;
-    } | null;
-  } | null;
+  // ===== Données simulation RGA complètes =====
+  rgaSimulation: RGASimulationData | null;
 
   // ===== Validation AMO =====
   amoValidation: {
@@ -62,7 +55,7 @@ export interface UserWithParcoursDetails {
     // Données user temporaires (avant validation)
     userData: {
       prenom: string | null;
-      nom: string | null;
+      nom: string | null; // Anonymisé : première lettre + "."
       email: string | null;
       telephone: string | null;
       adresseLogement: string | null;

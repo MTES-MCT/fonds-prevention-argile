@@ -117,19 +117,19 @@ export function UserDetailRow({ user }: UserDetailRowProps) {
                       </div>
                       <div className="fr-col-6">
                         <dt className="fr-text--bold">Commune</dt>
-                        <dd className="fr-text--sm">{user.rgaSimulation.logement.commune || "—"}</dd>
+                        <dd className="fr-text--sm">{user.rgaSimulation.logement.commune_nom || "—"}</dd>
                       </div>
                       <div className="fr-col-6">
                         <dt className="fr-text--bold">Code INSEE</dt>
-                        <dd className="fr-text--sm">{user.rgaSimulation.logement.codeInsee || "—"}</dd>
+                        <dd className="fr-text--sm">{user.rgaSimulation.logement.commune || "—"}</dd>
                       </div>
                       <div className="fr-col-6">
                         <dt className="fr-text--bold">Département</dt>
-                        <dd className="fr-text--sm">{user.rgaSimulation.logement.departement || "—"}</dd>
+                        <dd className="fr-text--sm">{user.rgaSimulation.logement.code_departement || "—"}</dd>
                       </div>
                       <div className="fr-col-6">
                         <dt className="fr-text--bold">Type de construction</dt>
-                        <dd className="fr-text--sm">{user.rgaSimulation.logement.typeConstruction || "—"}</dd>
+                        <dd className="fr-text--sm">{user.rgaSimulation.logement.type || "—"}</dd>
                       </div>
                       <div className="fr-col-6">
                         <dt className="fr-text--bold">Date de simulation</dt>

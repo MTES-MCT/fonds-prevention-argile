@@ -122,8 +122,8 @@ function getUserFullName(user: UserWithParcoursDetails): string {
  */
 function getCommuneInfo(user: UserWithParcoursDetails): string {
   // Source 1 : rgaSimulation (préféré, données structurées)
-  const commune = user.rgaSimulation?.logement?.commune;
-  const departement = user.rgaSimulation?.logement?.departement;
+  const commune = user.rgaSimulation?.logement?.commune_nom;
+  const departement = user.rgaSimulation?.logement?.code_departement;
 
   if (commune && departement) {
     return `${commune} (${departement})`;
