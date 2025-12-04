@@ -10,8 +10,6 @@ import type { ActionResult } from "@/shared/types";
 import type { DemarcheDetailed, DossiersConnection } from "@/features/parcours/dossiers-ds/adapters/graphql/types";
 import UsersTrackingPanel from "./users/UsersTrackingPanel";
 import AgentsPanel from "./agents/AgentsPanel";
-import { useAgentRole } from "@/features/auth/hooks";
-import { isSuperAdminRole } from "@/shared/domain/value-objects";
 import { useAdminTab } from "@/features/backoffice";
 
 interface DemarcheData {
@@ -26,8 +24,6 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ eligibiliteData }: AdminDashboardProps) {
   const { activeTab } = useAdminTab();
-  const agentRole = useAgentRole();
-  const isSuperAdmin = agentRole ? isSuperAdminRole(agentRole) : false;
 
   return (
     <>
@@ -38,35 +34,17 @@ export default function AdminDashboard({ eligibiliteData }: AdminDashboardProps)
 
       {/* Panel Utilisateurs */}
       <div className={activeTab === "users" ? "" : "fr-hidden"} role="region" aria-label="Utilisateurs">
-        {isSuperAdmin ? (
-          <UsersTrackingPanel />
-        ) : (
-          <div className="fr-alert fr-alert--info">
-            <p>Vous n'avez pas la permission d'accéder à cette section.</p>
-          </div>
-        )}
+        <UsersTrackingPanel />
       </div>
 
       {/* Panel Agents */}
       <div className={activeTab === "agents" ? "" : "fr-hidden"} role="region" aria-label="Gestion des agents">
-        {isSuperAdmin ? (
-          <AgentsPanel />
-        ) : (
-          <div className="fr-alert fr-alert--info">
-            <p>Vous n'avez pas la permission d'accéder à cette section.</p>
-          </div>
-        )}
+        <AgentsPanel />
       </div>
 
       {/* Panel Entreprises AMO */}
       <div className={activeTab === "amo" ? "" : "fr-hidden"} role="region" aria-label="Entreprises AMO">
-        {isSuperAdmin ? (
-          <AmoPanel />
-        ) : (
-          <div className="fr-alert fr-alert--info">
-            <p>Vous n'avez pas la permission d'accéder à cette section.</p>
-          </div>
-        )}
+        <AmoPanel />
       </div>
 
       {/* Panel Eligibilite */}
