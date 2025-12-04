@@ -27,6 +27,9 @@ export function useSimulateurRga() {
   const saveRGA = useRGAStore((state) => state.saveRGA);
   const clearRGA = useRGAStore((state) => state.clearRGA);
 
+  // Race condition post-FranceConnect : si authentifié MAIS parcours pas encore chargé ou sans données RGA → en chargement
+  const isWaitingForParcours = isAuthenticated && (!parcours || !parcours.rgaSimulationData);
+
   // Connecté + données en base → utiliser la base (source de vérité)
   // Sinon → utiliser localStorage (cache temporaire)
   const rgaData = isAuthenticated && parcours?.rgaSimulationData ? parcours.rgaSimulationData : tempRgaData;
@@ -41,6 +44,19 @@ export function useSimulateurRga() {
 
   // Pendant l'hydratation (SSR → Client)
   if (!isHydrated) {
+    return {
+      data: undefined,
+      isLoading: true,
+      hasData: undefined,
+      saveRGA,
+      updateRGA: saveRGA,
+      clearRGA,
+      validateRGAData,
+    };
+  }
+
+  // Attente du chargement du parcours après FranceConnect
+  if (isWaitingForParcours) {
     return {
       data: undefined,
       isLoading: true,

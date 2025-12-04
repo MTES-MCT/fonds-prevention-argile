@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import AdminSideMenu from "./shared/AdminSideMenu";
 import StatistiquesPanel from "./statistiques/StatistiquesPanel";
 import AmoPanel from "./amo/AmoPanel";
@@ -25,30 +26,55 @@ interface AdminDashboardProps {
 
 /**
  * Dashboard principal de l'administration
- *
  */
 export default function AdminDashboard({ eligibiliteData }: AdminDashboardProps) {
   const { activeTab } = useAdminTab();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <div className="fr-container-fluid" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <div className="fr-grid-row bg-(--background-alt-blue-france)" style={{ flex: 1 }}>
-        {/* Menu latéral - sticky avec séparateur sur toute la hauteur */}
+      <div className="fr-grid-row" style={{ flex: 1 }}>
+        {/* Bouton menu mobile - visible uniquement sur mobile */}
         <div
-          className="fr-col-12 fr-col-md-3 fr-col-lg-2 fr-background-default--grey"
+          className="fr-col-12 fr-hidden-lg"
+          style={{ padding: "1rem", borderBottom: "1px solid var(--border-default-grey)" }}>
+          <button
+            className="fr-btn fr-btn--secondary fr-btn--icon-left fr-icon-menu-line"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="admin-mobile-menu">
+            Menu
+          </button>
+        </div>
+
+        {/* Menu latéral - masqué sur mobile sauf si ouvert */}
+        <div
+          id="admin-mobile-menu"
+          className={`fr-col-12 fr-col-lg-3 fr-col-xl-2 fr-background-default--grey ${
+            isMobileMenuOpen ? "" : "fr-hidden fr-unhidden-lg"
+          }`}
           style={{
-            minWidth: "250px",
-            maxWidth: "280px",
             borderRight: "1px solid var(--border-default-grey)",
           }}>
-          <div style={{ position: "sticky", top: "0", height: "100vh", overflowY: "auto" }}>
+          <div
+            style={{
+              position: "sticky",
+              top: "0",
+              maxHeight: "100vh",
+              overflowY: "auto",
+            }}>
             <AdminSideMenu />
           </div>
         </div>
 
-        {/* Contenu principal - pleine largeur restante */}
-        <div className="fr-col-12 fr-col-md-9 fr-col-lg-10 bg-(--background-alt-blue-france)" style={{ flex: 1 }}>
-          <div className="fr-py-6w p-12">
+        {/* Contenu principal - s'adapte selon la taille d'écran */}
+        <div
+          className="fr-col-12 fr-col-lg-9 fr-col-xl-10"
+          style={{
+            backgroundColor: "var(--background-alt-blue-france)",
+            minHeight: "calc(100vh - 80px)",
+          }}>
+          <div className="fr-py-6w fr-px-2w fr-px-md-6w">
             {/* Panel Statistiques */}
             <div className={activeTab === "statistiques" ? "" : "fr-hidden"} role="region" aria-label="Statistiques">
               <StatistiquesPanel />

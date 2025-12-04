@@ -14,7 +14,7 @@ interface CalloutAmoTodoProps {
 
 export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess, refresh }: CalloutAmoTodoProps) {
   const { user } = useAuth();
-  const { data: rgaData } = useSimulateurRga();
+  const { data: rgaData, isLoading: isLoadingRga } = useSimulateurRga();
 
   const [amoList, setAmoList] = useState<Amo[]>([]);
   const [selectedAmoId, setSelectedAmoId] = useState<string | null>(null);
@@ -33,6 +33,11 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
 
   // Charger les données des AMO au montage du composant
   useEffect(() => {
+    // Attendre que les données RGA soient disponibles
+    if (isLoadingRga) {
+      return;
+    }
+
     async function loadAmoData() {
       try {
         let refuseeId: string | null = null;
@@ -64,7 +69,7 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
     }
 
     loadAmoData();
-  }, [accompagnementRefuse]);
+  }, [accompagnementRefuse, isLoadingRga]);
 
   // Mettre à jour l'email quand user change
   useEffect(() => {
@@ -141,10 +146,11 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
 
   const selectedAmo = amoList.find((amo) => amo.id === selectedAmoId);
 
-  if (isLoading) {
+  // Afficher un loader pendant le chargement des données RGA ou des AMO
+  if (isLoadingRga || isLoading) {
     return (
       <div className="fr-callout">
-        <p className="fr-callout__text">Chargement des informations AMO...</p>
+        <p className="fr-callout__text">Chargement des informations...</p>
       </div>
     );
   }
@@ -161,7 +167,7 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
 
       {/* Liste vide */}
       {amoList.length === 0 && (
-        <div className="fr-callout fr-callout--blue-ecume fr-icon-info-line">
+        <div className="fr-callout fr-callout--blue-ecume">
           <p className="fr-callout__title">Aucun AMO n'est disponible pour le moment dans votre commune.</p>
           <p className="fr-callout__text">
             Veuillez contacter le support - contact@fonds-prevention-argile.beta.gouv.fr
@@ -172,7 +178,7 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
       {/* Liste d'AMO */}
       {amoList.length > 0 && (
         <>
-          <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
+          <div className="fr-callout fr-callout--yellow-moutarde">
             {!amoRefusee ? (
               <>
                 <p className="fr-callout__title">Contactez un AMO</p>
@@ -259,8 +265,7 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
                       )}
 
                       <h2 id="modal-confirm-amo-title" className="fr-modal__title">
-                        <span className="fr-icon-arrow-right-line fr-icon--lg" aria-hidden="true"></span> Demande de
-                        confirmation à l'AMO
+                        Demande de confirmation à l'AMO
                       </h2>
 
                       {selectedAmo && (
@@ -280,7 +285,7 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
 
                       <p>
                         Pour valider votre sélection d'AMO, nous allons lui envoyer un e-mail afin de demander sa
-                        confirmation. Veillez à le contacter par téléghone ou mail pour un premier contact. Vous pourrez
+                        confirmation. Veillez à le contacter par téléphone ou mail pour un premier contact. Vous pourrez
                         ensuite avancer à l'étape suivante.
                       </p>
 
