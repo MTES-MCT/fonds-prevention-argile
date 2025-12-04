@@ -1,6 +1,7 @@
 "use client";
 
 import type { FunnelStatistiques, FunnelStep } from "@/features/backoffice";
+import StatCard from "../shared/StatCard";
 
 interface StatistiquesFunnelProps {
   funnel: FunnelStatistiques;
@@ -19,46 +20,12 @@ export default function StatistiquesFunnel({ funnel }: StatistiquesFunnelProps) 
     <div>
       {/* Métriques globales */}
       <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
-        <div className="fr-col-12 fr-col-md-4">
-          <div className="fr-tile fr-tile--sm">
-            <div className="fr-tile__body">
-              <div className="fr-tile__content">
-                <h3 className="fr-tile__title">Visiteurs initiaux</h3>
-                <p className="fr-tile__detail fr-text--lg fr-text--bold">
-                  {funnel.visiteursInitiaux.toLocaleString("fr-FR")}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="fr-col-12 fr-col-md-4">
-          <div className="fr-tile fr-tile--sm">
-            <div className="fr-tile__body">
-              <div className="fr-tile__content">
-                <h3 className="fr-tile__title">Conversions finales</h3>
-                <p className="fr-tile__detail fr-text--lg fr-text--bold">
-                  {funnel.conversionsFinales.toLocaleString("fr-FR")}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="fr-col-12 fr-col-md-4">
-          <div className="fr-tile fr-tile--sm">
-            <div className="fr-tile__body">
-              <div className="fr-tile__content">
-                <h3 className="fr-tile__title">Taux de conversion global</h3>
-                <p
-                  className="fr-tile__detail fr-text--lg fr-text--bold"
-                  style={{ color: "var(--text-default-success)" }}>
-                  {funnel.tauxConversionGlobal.toLocaleString("fr-FR")} %
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <StatCard label="Visiteurs initiaux" number={funnel.visiteursInitiaux.toLocaleString("fr-FR")} />
+        <StatCard label="Conversions finales" number={funnel.conversionsFinales.toLocaleString("fr-FR")} />
+        <StatCard
+          label="Taux de conversion global"
+          number={`${funnel.tauxConversionGlobal.toLocaleString("fr-FR")} %`}
+        />
       </div>
 
       {/* Tableau des étapes */}

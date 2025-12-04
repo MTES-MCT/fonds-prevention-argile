@@ -1,5 +1,7 @@
 "use client";
 
+import InProgress from "../shared/InProgress";
+
 export default function FacturesPanel() {
-  return <p>En cours de développement</p>;
+  return <InProgress />;
 }

@@ -11,6 +11,7 @@ import AgentsList from "./AgentsList";
 import AgentFormModal, { type AgentFormData } from "./AgentFormModal";
 import AgentDeleteModal from "./AgentDeleteModal";
 import { AgentWithPermissions } from "@/features/backoffice";
+import StatCard from "../shared/StatCard";
 
 const MODAL_DELETE_ID = "modal-delete-agent";
 const MODAL_FORM_ID = "modal-form-agent";
@@ -122,8 +123,13 @@ export default function AgentsPanel() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold mb-1">Gestion des agents</h2>
-          <p className="text-gray-600">Gérez les agents qui ont accès au backoffice et leurs permissions.</p>
+          {/* En-tête */}
+          <div className="fr-mb-6w">
+            <h1 className="fr-h2 fr-mb-2w">Gestion des agents</h1>
+            <p className="fr-text--lg fr-text-mention--grey">
+              Gérez les agents ayant accès au backoffice et leurs permissions.
+            </p>
+          </div>
         </div>
         <button
           type="button"
@@ -151,23 +157,16 @@ export default function AgentsPanel() {
       ) : (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="fr-card fr-card--no-border p-4 bg-gray-50">
-              <div className="text-3xl font-bold">{agents.length}</div>
-              <div className="text-sm text-gray-600">Agents total</div>
-            </div>
-            <div className="fr-card fr-card--no-border p-4 bg-gray-50">
-              <div className="text-3xl font-bold">
-                {agents.filter((a) => a.agent.role === "super_administrateur").length}
-              </div>
-              <div className="text-sm text-gray-600">Super Admins</div>
-            </div>
-            <div className="fr-card fr-card--no-border p-4 bg-gray-50">
-              <div className="text-3xl font-bold">
-                {agents.filter((a) => a.agent.sub.startsWith("pending_")).length}
-              </div>
-              <div className="text-sm text-gray-600">En attente de connexion</div>
-            </div>
+          <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
+            <StatCard label="Agents total" number={agents.length.toString()} />
+            <StatCard
+              label="Super Admins"
+              number={agents.filter((a) => a.agent.role === "super_administrateur").length.toString()}
+            />
+            <StatCard
+              label="En attente de connexion"
+              number={agents.filter((a) => a.agent.sub.startsWith("pending_")).length.toString()}
+            />
           </div>
 
           {/* Liste */}
