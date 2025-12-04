@@ -37,9 +37,7 @@ export function AmoList({ onEdit, refreshTrigger }: AmoListProps) {
   };
 
   return (
-    <div className="w-full fr-mb-6w">
-      <h2 className="fr-h4 fr-mb-2w">Liste des AMO enregistrées</h2>
-
+    <div className="fr-mb-6w">
       {isLoadingAmos ? (
         <div className="fr-py-4w text-center">
           <p>Chargement des AMO...</p>
