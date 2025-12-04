@@ -81,7 +81,9 @@ export function UsersTable({ users }: UsersTableProps) {
                         <td>
                           <button
                             type="button"
-                            className="fr-btn fr-btn--sm fr-btn--secondary"
+                            className={`fr-btn fr-btn--sm fr-btn--secondary ${
+                              expandedUserId === user.user.id ? "fr-icon-arrow-up-s-line" : "fr-icon-arrow-down-s-line"
+                            } fr-btn--icon-left`}
                             onClick={() => toggleExpand(user.user.id)}
                             title={expandedUserId === user.user.id ? "Masquer les détails" : "Voir les détails"}>
                             {expandedUserId === user.user.id ? "Masquer" : "Voir détails"}
