@@ -10,7 +10,7 @@ export const AUCUN_DEPARTEMENT = "__AUCUN__";
  */
 export function extractDepartement(user: UserWithParcoursDetails): string | null {
   // Source 1 : rgaSimulation (préféré, donnée structurée fiable)
-  const departement = user.rgaSimulation?.logement?.departement;
+  const departement = user.rgaSimulation?.logement?.code_departement;
   if (departement) {
     // Convertir en string si c'est un nombre
     return String(departement);

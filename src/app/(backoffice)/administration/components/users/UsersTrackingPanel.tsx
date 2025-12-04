@@ -1,23 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
-import { Step } from "@/shared/domain/value-objects/step.enum";
 import { UsersTable } from "./UsersTable";
 import { DepartementFilter } from "./filters/departements/DepartementFilter";
 import { filterUsersByDepartement } from "./filters/departements/departementFilter.utils";
 import Loading from "@/app/(main)/loading";
 import { getUsersWithParcours, UserWithParcoursDetails } from "@/features/backoffice";
-import StatCard from "../shared/StatCard";
+import { UsersAmoStats, UsersEtapesStats, UsersSimulationRgaStats } from "./statistiques";
 
-/**
- * Calcule le pourcentage avec gestion du cas 0
- */
+type StatisticsView = "etape" | "amo" | "simulation";
+
 export default function UsersTrackingPanel() {
   const [users, setUsers] = useState<UserWithParcoursDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDepartement, setSelectedDepartement] = useState<string>("");
+  const [activeView, setActiveView] = useState<StatisticsView>("etape");
 
   useEffect(() => {
     loadUsers();
@@ -46,23 +44,6 @@ export default function UsersTrackingPanel() {
   // Filtrer les users par département si un filtre est actif
   const filteredUsers = selectedDepartement ? filterUsersByDepartement(users, selectedDepartement) : users;
 
-  // Calcul des statistiques (basé sur les users filtrés)
-  const stats = {
-    total: filteredUsers.length,
-    avecAmo: filteredUsers.filter((u) => u.amoValidation !== null).length,
-    amoValidee: filteredUsers.filter((u) => u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_ELIGIBLE).length,
-    amoEnAttente: filteredUsers.filter((u) => u.amoValidation?.statut === StatutValidationAmo.EN_ATTENTE).length,
-    amoRefusee: filteredUsers.filter((u) => u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE)
-      .length,
-    parEtape: {
-      choixAmo: filteredUsers.filter((u) => u.parcours?.currentStep === Step.CHOIX_AMO).length,
-      eligibilite: filteredUsers.filter((u) => u.parcours?.currentStep === Step.ELIGIBILITE).length,
-      diagnostic: filteredUsers.filter((u) => u.parcours?.currentStep === Step.DIAGNOSTIC).length,
-      devis: filteredUsers.filter((u) => u.parcours?.currentStep === Step.DEVIS).length,
-      factures: filteredUsers.filter((u) => u.parcours?.currentStep === Step.FACTURES).length,
-    },
-  };
-
   if (isLoading) {
     return <Loading />;
   }
@@ -85,71 +66,79 @@ export default function UsersTrackingPanel() {
         </div>
       )}
 
-      {/* Statistiques */}
+      {/* Contrôle segmenté pour choisir les statistiques */}
       {!error && (
-        <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
-          {/* Total utilisateurs */}
-          <StatCard
-            number={stats.total.toString()}
-            label={`Utilisateurs ${selectedDepartement ? "filtrés" : "inscrits"}`}
-          />
-
-          {/* AMO validée */}
-          <StatCard number={stats.amoValidee.toString()} label="AMO validée" />
-
-          {/* AMO en attente */}
-          <StatCard number={stats.amoEnAttente.toString()} label="AMO en attente" />
-
-          {/* AMO refusée */}
-          <StatCard number={stats.amoRefusee.toString()} label="AMO refusée" />
+        <div className="fr-mb-4w">
+          <p className="fr-h4 fr-mb-2w">Statistiques</p>
+          <div className="fr-segmented fr-segmented--no-legend" role="tablist">
+            <div className="fr-segmented__elements">
+              <div className="fr-segmented__element">
+                <input
+                  type="radio"
+                  id="stats-etape"
+                  name="stats-view"
+                  checked={activeView === "etape"}
+                  onChange={() => setActiveView("etape")}
+                />
+                <label className="fr-label" htmlFor="stats-etape">
+                  <span className="fr-icon-bar-chart-box-fill fr-mr-1w" aria-hidden="true" />
+                  Répartition par étape
+                </label>
+              </div>
+              <div className="fr-segmented__element">
+                <input
+                  type="radio"
+                  id="stats-amo"
+                  name="stats-view"
+                  checked={activeView === "amo"}
+                  onChange={() => setActiveView("amo")}
+                />
+                <label className="fr-label" htmlFor="stats-amo">
+                  <span className="fr-icon-user-line fr-mr-1w" aria-hidden="true" />
+                  Répartition AMO
+                </label>
+              </div>
+              <div className="fr-segmented__element">
+                <input
+                  type="radio"
+                  id="stats-simulation"
+                  name="stats-view"
+                  checked={activeView === "simulation"}
+                  onChange={() => setActiveView("simulation")}
+                />
+                <label className="fr-label" htmlFor="stats-simulation">
+                  <span className="fr-icon-line-chart-line fr-mr-1w" aria-hidden="true" />
+                  Simulation RGA
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Répartition par étape */}
-      {!error && stats.total > 0 && (
-        <div className="fr-mb-6w">
-          <h2 className="fr-h2 fr-mb-2w">Répartition par étape</h2>
-          <p className="fr-text--lg fr-text-mention--grey">
-            Nombre d'utilisateurs actuellement à chaque étape du parcours.
-          </p>
-
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <StatCard
-              className="fr-col-12 fr-col-md-3 fr-col-lg-2"
-              label="Choix AMO"
-              number={stats.parEtape.choixAmo.toString()}
-            />
-            <StatCard
-              className="fr-col-12 fr-col-md-3 fr-col-lg-2"
-              label="Éligibilité"
-              number={stats.parEtape.eligibilite.toString()}
-            />
-            <StatCard
-              className="fr-col-12 fr-col-md-3 fr-col-lg-2"
-              label="Diagnostic"
-              number={stats.parEtape.diagnostic.toString()}
-            />
-            <StatCard
-              className="fr-col-12 fr-col-md-3 fr-col-lg-2"
-              label="Devis"
-              number={stats.parEtape.devis.toString()}
-            />
-            <StatCard
-              className="fr-col-12 fr-col-md-3 fr-col-lg-2"
-              label="Factures"
-              number={stats.parEtape.factures.toString()}
-            />
-          </div>
+      {/* Statistiques selon la vue sélectionnée */}
+      {!error && (
+        <div>
+          {activeView === "etape" && (
+            <UsersEtapesStats users={filteredUsers} selectedDepartement={selectedDepartement} />
+          )}
+          {activeView === "amo" && <UsersAmoStats users={filteredUsers} selectedDepartement={selectedDepartement} />}
+          {activeView === "simulation" && (
+            <UsersSimulationRgaStats users={filteredUsers} selectedDepartement={selectedDepartement} />
+          )}
         </div>
       )}
 
       {/* Filtre par département */}
       {!error && (
-        <DepartementFilter
-          users={users}
-          selectedDepartement={selectedDepartement}
-          onDepartementChange={setSelectedDepartement}
-        />
+        <>
+          <p className="fr-h4 fr-mb-2w">Filtres</p>
+          <DepartementFilter
+            users={users}
+            selectedDepartement={selectedDepartement}
+            onDepartementChange={setSelectedDepartement}
+          />
+        </>
       )}
 
       {/* Liste des utilisateurs ou message vide */}

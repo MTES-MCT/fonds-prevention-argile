@@ -1,7 +1,6 @@
 "use client";
 
 import AdminSideMenu from "./shared/AdminSideMenu";
-import Footer from "@/shared/components/Footer/Footer";
 import StatistiquesPanel from "./statistiques/StatistiquesPanel";
 import AmoPanel from "./amo/AmoPanel";
 import EligibilitePanel from "./eligibilite/EligibilitePanel";
