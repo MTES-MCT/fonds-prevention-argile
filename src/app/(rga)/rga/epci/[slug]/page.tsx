@@ -62,7 +62,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const departement = getDepartementByCode(epci.codesDepartements[0]);
+  // Chercher le premier département éligible parmi ceux de l'EPCI
+  const departement = epci.codesDepartements.map((code) => getDepartementByCode(code)).find((dep) => dep !== undefined);
 
   if (!departement) {
     return {
@@ -95,7 +96,8 @@ export default async function EpciPage({ params }: PageProps) {
     notFound();
   }
 
-  const departement = getDepartementByCode(epci.codesDepartements[0]);
+  // Chercher le premier département éligible parmi ceux de l'EPCI
+  const departement = epci.codesDepartements.map((code) => getDepartementByCode(code)).find((dep) => dep !== undefined);
 
   if (!departement) {
     notFound();
