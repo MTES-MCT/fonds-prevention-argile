@@ -13,6 +13,7 @@ import {
   isProtectedRoute,
   canAccessRoute,
   getDefaultRedirect,
+  ROUTES,
 } from "@/features/auth/edge";
 
 export async function middleware(request: NextRequest) {
@@ -36,7 +37,15 @@ export async function middleware(request: NextRequest) {
 
   // Si route protégée et pas de session -> rediriger vers connexion
   if (isProtected && !session) {
-    const response = NextResponse.redirect(new URL(DEFAULT_REDIRECTS.login, request.url));
+    // Détecter si c'est une route backoffice (agents) ou particulier
+    const isBackofficeRoute =
+      path.startsWith(ROUTES.backoffice.administration.root) || path.startsWith(ROUTES.backoffice.espaceAmo.root);
+
+    const loginUrl = isBackofficeRoute
+      ? DEFAULT_REDIRECTS.loginAgent // /connexion/agent
+      : DEFAULT_REDIRECTS.login; // /connexion
+
+    const response = NextResponse.redirect(new URL(loginUrl, request.url));
 
     // Sauvegarder l'URL demandée pour rediriger après connexion
     response.cookies.set(COOKIE_NAMES.REDIRECT_TO, path, getCookieOptions(SESSION_DURATION.redirectCookie));
