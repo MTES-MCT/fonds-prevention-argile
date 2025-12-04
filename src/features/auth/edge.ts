@@ -11,30 +11,17 @@ export * from "./domain/value-objects/configs/routes.config";
 export * from "./domain/value-objects/configs/session.config";
 
 // JWT decode uniquement (sans crypto Node.js)
-export {
-  decodeToken,
-  isTokenExpired,
-  getRoleFromToken,
-} from "./utils/jwt-decode.utils";
+export { decodeToken, isTokenExpired, getRoleFromToken } from "./utils/jwt-decode.utils";
 
 // Helpers de validation (sans crypto Node.js)
-export {
-  isValidRole,
-  isValidAuthMethod,
-  validateSessionCookies,
-} from "./utils/validation.utils";
+export { isValidRole, isValidAuthMethod, validateSessionCookies } from "./utils/validation.utils";
 
 // Services de routes (compatible Edge Runtime)
-export {
-  isAdminRoute,
-  isParticulierRoute,
-  isProtectedRoute,
-  canAccessRoute,
-} from "./services/routes.service";
+export { isAdminRoute, isParticulierRoute, isProtectedRoute, canAccessRoute } from "./services/routes.service";
 
 // Services de redirections (compatible Edge Runtime)
-export {
-  getDefaultRedirect,
-  getUnauthorizedRedirect,
-  getPostLoginRedirect,
-} from "./services/redirects.service";
+export { getDefaultRedirect, getUnauthorizedRedirect, getPostLoginRedirect } from "./services/redirects.service";
+
+// Permissions (types uniquement pour typage côté client)
+export type { AccessCheckResult, AccessCheckOptions } from "./permissions/domain/types";
+export { AccessErrorCode } from "./permissions/domain/value-objects/constants";
