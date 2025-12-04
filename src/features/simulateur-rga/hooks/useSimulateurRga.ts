@@ -3,7 +3,7 @@
 import { useRGAStore, selectTempRgaData, selectIsHydrated } from "../stores";
 import { validateRGAData } from "../services/validator.service";
 import { useAuth } from "@/features/auth/client";
-import { useOptionalParcours, useParcours } from "@/features/parcours/core/context/useParcours";
+import { useOptionalParcours } from "@/features/parcours/core/context/useParcours";
 
 /**
  * Hook pour interagir avec le simulateur RGA
