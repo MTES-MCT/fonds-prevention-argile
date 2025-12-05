@@ -14,16 +14,6 @@ export function isValidSiret(siret: string): boolean {
  */
 export function validateProConnectUserInfo(userInfo: Partial<ProConnectUserInfo>): userInfo is ProConnectUserInfo {
   const isValid = !!(userInfo.sub && userInfo.email && userInfo.given_name);
-
-  // Log pour debug
-  if (!isValid) {
-    console.log("[PC Validation] Champs manquants:", {
-      hasSub: !!userInfo.sub,
-      hasEmail: !!userInfo.email,
-      hasGivenName: !!userInfo.given_name,
-    });
-  }
-
   return isValid;
 }
 
