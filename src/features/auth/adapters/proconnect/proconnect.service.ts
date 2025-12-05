@@ -79,14 +79,6 @@ export async function verifyState(state: string): Promise<boolean> {
   const cookieStore = await cookies();
   const storedState = cookieStore.get(COOKIE_NAMES.PC_STATE)?.value;
 
-  console.log("🔐 [PC State] Verification:", {
-    hasStoredState: !!storedState,
-    hasReceivedState: !!state,
-    match: storedState === state,
-    storedPreview: storedState?.substring(0, 10) + "...",
-    receivedPreview: state?.substring(0, 10) + "...",
-  });
-
   if (!storedState || !state) {
     return false;
   }
@@ -213,20 +205,6 @@ export async function handleProConnectCallback(code: string, state: string): Pro
     // 4. Récupérer les infos utilisateur
     const userInfo = await getUserInfo(tokens.access_token);
 
-    // 🔍 DEBUG : Voir exactement ce que ProConnect renvoie
-    console.log("📦 [PC UserInfo] Données reçues:", {
-      sub: userInfo.sub,
-      email: userInfo.email,
-      given_name: userInfo.given_name,
-      usual_name: userInfo.usual_name,
-      uid: userInfo.uid,
-      siret: userInfo.siret,
-      phone: userInfo.phone,
-      organizational_unit: userInfo.organizational_unit,
-      // Afficher tous les champs reçus
-      raw_keys: Object.keys(userInfo),
-    });
-
     // 5. Valider les données obligatoires
     if (!validateProConnectUserInfo(userInfo)) {
       return {
@@ -239,8 +217,8 @@ export async function handleProConnectCallback(code: string, state: string): Pro
     // 6. Nettoyer les données
     const sanitizedUserInfo = sanitizeProConnectUserInfo(userInfo);
 
-    // 7. Créer ou récupérer l'agent en base
-    const agent = await agentsRepo.upsertFromProConnect({
+    // 7. Authentifier l'agent
+    const agent = await agentsRepo.authenticateFromProConnect({
       sub: sanitizedUserInfo.sub,
       email: sanitizedUserInfo.email,
       given_name: sanitizedUserInfo.given_name,
@@ -251,7 +229,16 @@ export async function handleProConnectCallback(code: string, state: string): Pro
       organizational_unit: sanitizedUserInfo.organizational_unit,
     });
 
-    // 8. Créer la session avec l'agentId et son rôle
+    // 8. Vérifier que l'agent est autorisé
+    if (!agent) {
+      return {
+        success: false,
+        error: "Accès non autorisé. Votre compte n'est pas enregistré dans le système.",
+        shouldLogout: true,
+      };
+    }
+
+    // 9. Créer la session avec l'agentId et son rôle
     await createProConnectSession(agent.id, agent.role, tokens.id_token, agent.givenName, agent.usualName || "");
 
     return { success: true };

@@ -13,16 +13,12 @@ export async function cleanupExpiredRGAData(
   retentionDays: number = RGA_RETENTION_DAYS
 ): Promise<ActionResult<{ deletedCount: number }>> {
   try {
-    console.log(`[Cleanup] Recherche des données RGA expirées (>${retentionDays} jours)`);
-
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() - retentionDays);
 
     // TODO: Implémenter la recherche et suppression des parcours expirés
     // Pour l'instant, on retourne 0
     // Cette fonction sera complétée dans la Phase 5 de la todo liste
-
-    console.log(`[Cleanup] Nettoyage des données expirées à implémenter`);
 
     return {
       success: true,

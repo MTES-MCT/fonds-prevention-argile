@@ -135,7 +135,6 @@ export const useRGAStore = create<RGAState>()(
           // Migrer vers le store (et donc localStorage via persist)
           set({ tempRgaData: stored.data });
 
-          console.log("[RGA Store] Migration sessionStorage → localStorage réussie");
           return true;
         } catch (error) {
           console.error("[RGA Store] Erreur migration sessionStorage:", error);
