@@ -1,15 +1,24 @@
 "use server";
 
+import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
+import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { AllersVers, allersVersRepository } from "@/shared/database";
 import { ActionResult } from "@/shared/types";
 import { revalidatePath } from "next/cache";
 import { AllersVersImportResult } from "../domain";
 import { importAllersVersFromExcel } from "../services/allers-vers-import.service";
 
-/**
- * Action pour importer des Allers Vers depuis un fichier Excel
- */
 export async function importAllersVersAction(formData: FormData): Promise<ActionResult<AllersVersImportResult>> {
+  // Vérifier la permission d'import
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.ALLERS_VERS_IMPORT);
+
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante pour importer des Allers Vers",
+    };
+  }
+
   try {
     const file = formData.get("file") as File;
 
@@ -20,17 +29,11 @@ export async function importAllersVersAction(formData: FormData): Promise<Action
       };
     }
 
-    // Récupérer le flag clearExisting
     const clearExisting = formData.get("clearExisting") === "true";
-
-    // Convertir le fichier en buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Importer avec ou sans suppression
     const result = await importAllersVersFromExcel(buffer, clearExisting);
-
-    // Revalider les pages admin
     revalidatePath("/administration");
 
     if (result.success) {
@@ -53,9 +56,6 @@ export async function importAllersVersAction(formData: FormData): Promise<Action
   }
 }
 
-/**
- * Action pour mettre à jour un Allers Vers
- */
 export async function updateAllersVersAction(
   id: string,
   data: {
@@ -67,10 +67,19 @@ export async function updateAllersVersAction(
     epci: string[];
   }
 ): Promise<ActionResult<AllersVers>> {
+  // Vérifier la permission d'écriture
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.ALLERS_VERS_WRITE);
+
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante pour modifier un Allers Vers",
+    };
+  }
+
   try {
     const { allersVersRepository } = await import("@/shared/database/repositories");
 
-    // Mettre à jour l'Allers Vers
     const updated = await allersVersRepository.update(id, {
       nom: data.nom,
       emails: data.emails,
@@ -85,13 +94,9 @@ export async function updateAllersVersAction(
       };
     }
 
-    // Mettre à jour les relations départements
     await allersVersRepository.updateDepartementsRelations(id, data.departements);
-
-    // Mettre à jour les relations EPCI
     await allersVersRepository.updateEpciRelations(id, data.epci);
 
-    // Revalider les pages admin et SEO
     revalidatePath("/administration");
     revalidatePath("/rga", "layout");
 
@@ -108,13 +113,33 @@ export async function updateAllersVersAction(
   }
 }
 
-/**
- * Supprime tous les Allers Vers existants
- */
-export async function deleteAllAllersVers(): Promise<void> {
-  const allAllersVers = await allersVersRepository.findAll();
+export async function deleteAllAllersVers(): Promise<ActionResult<void>> {
+  // Vérifier la permission de suppression
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.ALLERS_VERS_DELETE);
 
-  for (const av of allAllersVers) {
-    await allersVersRepository.delete(av.id);
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante pour supprimer des Allers Vers",
+    };
+  }
+
+  try {
+    const allAllersVers = await allersVersRepository.findAll();
+
+    for (const av of allAllersVers) {
+      await allersVersRepository.delete(av.id);
+    }
+
+    return {
+      success: true,
+      data: undefined,
+    };
+  } catch (error) {
+    console.error("Erreur lors de la suppression des Allers Vers:", error);
+    return {
+      success: false,
+      error: "Impossible de supprimer les Allers Vers",
+    };
   }
 }

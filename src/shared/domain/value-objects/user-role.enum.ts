@@ -22,7 +22,12 @@ export type AdminRole = (typeof ADMIN_ROLES)[number];
 /**
  * Rôles agents uniquement
  */
-export const AGENT_ROLES = [UserRole.ADMINISTRATEUR, UserRole.SUPER_ADMINISTRATEUR, UserRole.AMO] as const;
+export const AGENT_ROLES = [
+  UserRole.ADMINISTRATEUR,
+  UserRole.SUPER_ADMINISTRATEUR,
+  UserRole.AMO,
+  UserRole.ANALYSTE,
+] as const;
 
 export type AgentRole = (typeof AGENT_ROLES)[number];
 

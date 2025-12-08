@@ -1,9 +1,9 @@
 "use server";
 
-import { getSession } from "@/features/auth/server";
+import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
+import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import * as amoMutationsService from "../../../parcours/amo/services/amo-mutations.service";
 import { ActionResult } from "@/shared/types";
-import { isAdminRole } from "@/shared/domain/value-objects";
 import { importAmosFromExcel } from "@/features/backoffice/administration/services/amo-import.service";
 import { Amo } from "@/features/parcours/amo";
 
@@ -19,16 +19,14 @@ interface SeedResult {
   errors?: string[];
 }
 
-/**
- * Importe les données AMO depuis un fichier Excel (admin uniquement)
- */
 export async function importAmoFromExcel(formData: FormData, clearExisting: boolean = false): Promise<SeedResult> {
-  const session = await getSession();
+  // Vérifier la permission d'import
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.AMO_IMPORT);
 
-  if (!session || !isAdminRole(session.role)) {
+  if (!permissionCheck.hasAccess) {
     return {
       success: false,
-      message: "Action non autorisée. Accès réservé aux administrateurs.",
+      message: "Permission insuffisante pour importer des AMO",
     };
   }
 
@@ -44,9 +42,6 @@ export async function importAmoFromExcel(formData: FormData, clearExisting: bool
   }
 }
 
-/**
- * Met à jour une AMO
- */
 export async function updateAmo(
   amoId: string,
   data: {
@@ -60,16 +55,17 @@ export async function updateAmo(
     epci?: string[];
   }
 ): Promise<ActionResult<Amo>> {
+  // Vérifier la permission d'écriture
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.AMO_WRITE);
+
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante pour modifier une AMO",
+    };
+  }
+
   try {
-    const session = await getSession();
-
-    if (!session?.userId || !isAdminRole(session.role)) {
-      return {
-        success: false,
-        error: "Accès non autorisé",
-      };
-    }
-
     const updated = await amoMutationsService.updateAmo(amoId, data);
 
     return {
@@ -85,20 +81,18 @@ export async function updateAmo(
   }
 }
 
-/**
- * Supprime une AMO
- */
 export async function deleteAmo(amoId: string): Promise<ActionResult<void>> {
+  // Vérifier la permission de suppression
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.AMO_DELETE);
+
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante pour supprimer une AMO",
+    };
+  }
+
   try {
-    const session = await getSession();
-
-    if (!session?.userId || !isAdminRole(session.role)) {
-      return {
-        success: false,
-        error: "Accès non autorisé",
-      };
-    }
-
     await amoMutationsService.deleteAmo(amoId);
 
     return {

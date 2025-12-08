@@ -25,6 +25,7 @@ const ROLE_OPTIONS: { value: AgentRole; label: string }[] = [
   { value: UserRole.SUPER_ADMINISTRATEUR, label: "Super Administrateur" },
   { value: UserRole.ADMINISTRATEUR, label: "Administrateur" },
   { value: UserRole.AMO, label: "AMO" },
+  { value: UserRole.ANALYSTE, label: "Analyste" },
 ];
 
 export default function AgentFormModal({ modalId, onSubmit, agent, isLoading = false }: AgentFormModalProps) {

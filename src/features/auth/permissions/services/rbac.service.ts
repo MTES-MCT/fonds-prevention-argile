@@ -1,5 +1,5 @@
 import type { UserRole } from "@/shared/domain/value-objects";
-import { ROLE_PERMISSIONS, BackofficePermission } from "../domain/value-objects/rbac-permissions";
+import { ROLE_PERMISSIONS, BackofficePermission, TAB_PERMISSIONS } from "../domain/value-objects/rbac-permissions";
 
 /**
  * Vérifie si un rôle possède une permission spécifique
@@ -34,7 +34,6 @@ export function getRolePermissions(role: UserRole): BackofficePermission[] {
  * Vérifie si un rôle peut accéder à un onglet
  */
 export function canAccessTab(role: UserRole, tabKey: string): boolean {
-  const { TAB_PERMISSIONS } = require("../domain/value-objects/rbac-permissions");
   const requiredPermissions = TAB_PERMISSIONS[tabKey] || [];
 
   if (requiredPermissions.length === 0) {

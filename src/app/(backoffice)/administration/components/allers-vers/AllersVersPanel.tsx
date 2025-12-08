@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { AllersVersSeedUpload } from "./AllersVersSeedUpload";
 import { AllerVersList } from "./AllerVersList";
 import { AllersVersEditModal } from "./AllersVersEditModal";
+import { useHasPermission } from "@/features/auth/hooks/usePermissions";
+import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import type { AllersVers } from "@/features/seo/allers-vers";
 
 interface AllersVersWithRelations extends AllersVers {
@@ -18,7 +20,12 @@ export default function AllersVersPanel() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [activeView, setActiveView] = useState<ViewId>("liste");
 
+  // Vérifier les permissions
+  const canWrite = useHasPermission(BackofficePermission.ALLERS_VERS_WRITE);
+  const canImport = useHasPermission(BackofficePermission.ALLERS_VERS_IMPORT);
+
   const handleEdit = (allersVers: AllersVersWithRelations) => {
+    if (!canWrite) return; // Sécurité supplémentaire
     setEditingAllersVers(allersVers);
   };
 
@@ -54,7 +61,7 @@ export default function AllersVersPanel() {
           </p>
         </div>
 
-        {/* Contrôle segmenté */}
+        {/* Contrôle segmenté - masquer l'onglet import si pas de permission */}
         <fieldset className="fr-segmented fr-mb-6w">
           <legend className="fr-segmented__legend fr-sr-only">Sélection de la vue Allers Vers</legend>
           <div className="fr-segmented__elements">
@@ -71,19 +78,21 @@ export default function AllersVersPanel() {
                 Liste des structures
               </label>
             </div>
-            <div className="fr-segmented__element">
-              <input
-                value="import"
-                checked={activeView === "import"}
-                type="radio"
-                id="segmented-allers-vers-2"
-                name="segmented-allers-vers"
-                onChange={() => setActiveView("import")}
-              />
-              <label className="fr-icon-upload-line fr-label" htmlFor="segmented-allers-vers-2">
-                Import
-              </label>
-            </div>
+            {canImport && (
+              <div className="fr-segmented__element">
+                <input
+                  value="import"
+                  checked={activeView === "import"}
+                  type="radio"
+                  id="segmented-allers-vers-2"
+                  name="segmented-allers-vers"
+                  onChange={() => setActiveView("import")}
+                />
+                <label className="fr-icon-upload-line fr-label" htmlFor="segmented-allers-vers-2">
+                  Import
+                </label>
+              </div>
+            )}
           </div>
         </fieldset>
 
@@ -91,12 +100,12 @@ export default function AllersVersPanel() {
         {activeView === "liste" && (
           <div>
             <h2 className="fr-h3 fr-mb-3w">Liste des structures Allers Vers</h2>
-            <AllerVersList onEdit={handleEdit} refreshTrigger={refreshTrigger} />
+            <AllerVersList onEdit={handleEdit} refreshTrigger={refreshTrigger} canEdit={canWrite} />
           </div>
         )}
 
-        {/* Vue Import */}
-        {activeView === "import" && (
+        {/* Vue Import - seulement si permission */}
+        {activeView === "import" && canImport && (
           <div>
             <h2 className="fr-h3 fr-mb-3w">Import des structures Allers Vers</h2>
             <AllersVersSeedUpload onImportSuccess={handleSuccess} />
@@ -104,8 +113,8 @@ export default function AllersVersPanel() {
         )}
       </div>
 
-      {/* Modale toujours présente dans le DOM */}
-      {editingAllersVers && (
+      {/* Modale toujours présente dans le DOM - seulement si permission d'écriture */}
+      {editingAllersVers && canWrite && (
         <AllersVersEditModal allersVers={editingAllersVers} onClose={handleCloseModal} onSuccess={handleSuccess} />
       )}
     </>

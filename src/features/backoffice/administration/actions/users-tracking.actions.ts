@@ -1,25 +1,23 @@
 "use server";
 
-import { getSession } from "@/features/auth/server";
+import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
+import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { getUsersWithParcours as getUsersWithParcoursService } from "../services/users-tracking.service";
 import type { ActionResult } from "@/shared/types";
 import type { UserWithParcoursDetails } from "../domain/types/user-with-parcours.types";
-import { isAdminRole } from "@/shared/domain/value-objects";
 
-/**
- * Récupère tous les utilisateurs avec leurs parcours (admin uniquement)
- */
 export async function getUsersWithParcours(): Promise<ActionResult<UserWithParcoursDetails[]>> {
+  // Vérifier la permission de lecture des users
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.USERS_READ);
+
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante pour consulter les utilisateurs",
+    };
+  }
+
   try {
-    const session = await getSession();
-
-    if (!session?.userId || !isAdminRole(session.role)) {
-      return {
-        success: false,
-        error: "Accès non autorisé. Réservé aux administrateurs.",
-      };
-    }
-
     const users = await getUsersWithParcoursService();
 
     return {

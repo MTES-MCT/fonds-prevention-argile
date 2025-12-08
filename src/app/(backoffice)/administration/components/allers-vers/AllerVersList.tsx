@@ -11,9 +11,10 @@ interface AllersVersWithRelations extends AllersVers {
 interface AllersVersListProps {
   onEdit: (allersVers: AllersVersWithRelations) => void;
   refreshTrigger: number;
+  canEdit: boolean;
 }
 
-export function AllerVersList({ onEdit, refreshTrigger }: AllersVersListProps) {
+export function AllerVersList({ onEdit, refreshTrigger, canEdit }: AllersVersListProps) {
   const [allersVers, setAllersVers] = useState<AllersVersWithRelations[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -62,7 +63,7 @@ export function AllerVersList({ onEdit, refreshTrigger }: AllersVersListProps) {
                       <th scope="col">Emails</th>
                       <th scope="col">Téléphone</th>
                       <th scope="col">Adresse</th>
-                      <th scope="col">Actions</th>
+                      {canEdit && <th scope="col">Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -84,15 +85,17 @@ export function AllerVersList({ onEdit, refreshTrigger }: AllersVersListProps) {
                         </td>
                         <td>{av.telephone || "-"}</td>
                         <td className="fr-text--sm">{av.adresse || "-"}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className="fr-btn fr-btn--sm fr-btn--secondary"
-                            onClick={() => onEdit(av)}
-                            title="Modifier">
-                            Modifier
-                          </button>
-                        </td>
+                        {canEdit && (
+                          <td>
+                            <button
+                              type="button"
+                              className="fr-btn fr-btn--sm fr-btn--secondary"
+                              onClick={() => onEdit(av)}
+                              title="Modifier">
+                              Modifier
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

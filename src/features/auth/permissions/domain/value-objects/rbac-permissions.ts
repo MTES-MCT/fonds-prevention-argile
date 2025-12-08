@@ -47,7 +47,7 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
   ],
 
   [UserRole.ADMINISTRATEUR]: [
-    // Accès total sauf gestion des agents
+    // Accès total sauf agents
     BackofficePermission.STATS_READ,
     BackofficePermission.USERS_READ,
     BackofficePermission.USERS_STATS_READ,
@@ -60,7 +60,6 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.ALLERS_VERS_WRITE,
     BackofficePermission.ALLERS_VERS_DELETE,
     BackofficePermission.ALLERS_VERS_IMPORT,
-    BackofficePermission.AGENTS_READ,
     BackofficePermission.ELIGIBILITE_READ,
     BackofficePermission.ELIGIBILITE_WRITE,
     BackofficePermission.DIAGNOSTIC_READ,
@@ -73,7 +72,6 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.STATS_READ,
     BackofficePermission.USERS_READ,
     BackofficePermission.USERS_STATS_READ,
-    BackofficePermission.USERS_DETAIL_READ,
     BackofficePermission.AMO_READ,
     BackofficePermission.ALLERS_VERS_READ,
   ],

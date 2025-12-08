@@ -24,6 +24,8 @@ function getRoleLabel(role: string): string {
       return "Administrateur";
     case UserRole.AMO:
       return "AMO";
+    case UserRole.ANALYSTE:
+      return "Analyste";
     default:
       return role;
   }
@@ -40,6 +42,8 @@ function getRoleBadgeClass(role: string): string {
       return "fr-badge--green-emeraude";
     case UserRole.AMO:
       return "fr-badge--blue-cumulus";
+    case UserRole.ANALYSTE:
+      return "fr-badge--orange-safran";
     default:
       return "";
   }

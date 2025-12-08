@@ -12,9 +12,10 @@ interface AmoWithRelations extends Amo {
 interface AmoListProps {
   onEdit: (amo: AmoWithRelations) => void;
   refreshTrigger: number;
+  canEdit: boolean;
 }
 
-export function AmoList({ onEdit, refreshTrigger }: AmoListProps) {
+export function AmoList({ onEdit, refreshTrigger, canEdit }: AmoListProps) {
   const [amos, setAmos] = useState<AmoWithRelations[]>([]);
   const [isLoadingAmos, setIsLoadingAmos] = useState(true);
 
@@ -65,7 +66,7 @@ export function AmoList({ onEdit, refreshTrigger }: AmoListProps) {
                       <th scope="col">Téléphone</th>
                       <th scope="col">Adresse</th>
                       <th scope="col">Codes INSEE spécifiques</th>
-                      <th scope="col">Actions</th>
+                      {canEdit && <th scope="col">Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -87,15 +88,17 @@ export function AmoList({ onEdit, refreshTrigger }: AmoListProps) {
                             ? amo.communes.map((c) => c.codeInsee).join(", ")
                             : "-"}
                         </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="fr-btn fr-btn--sm fr-btn--secondary"
-                            onClick={() => onEdit(amo)}
-                            title="Modifier">
-                            Modifier
-                          </button>
-                        </td>
+                        {canEdit && (
+                          <td>
+                            <button
+                              type="button"
+                              className="fr-btn fr-btn--sm fr-btn--secondary"
+                              onClick={() => onEdit(amo)}
+                              title="Modifier">
+                              Modifier
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
