@@ -7,3 +7,4 @@ export { dossierDemarchesSimplifieesRepository as dossierDsRepo } from "./dossie
 export { entreprisesAmoRepository as entreprisesAmoRepo } from "./entreprises-amo.repository";
 export { agentsRepository as agentsRepo } from "./agents.repository";
 export { agentPermissionsRepository } from "./agent-permissions.repository";
+export { allersVersRepository } from "./allers-vers.repository";
