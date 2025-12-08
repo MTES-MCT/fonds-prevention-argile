@@ -9,6 +9,7 @@ export enum UserRole {
   ADMINISTRATEUR = "administrateur",
   SUPER_ADMINISTRATEUR = "super_administrateur",
   AMO = "amo",
+  ANALYSTE = "analyste",
 }
 
 /**
