@@ -1,2 +1,2 @@
 export * from "./allers-vers-query.service";
-export * from "./allers-vers-import.service";
+export * from "../../../backoffice/administration/services/allers-vers-import.service";

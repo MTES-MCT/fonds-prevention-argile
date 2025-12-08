@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { importAllersVersAction } from "@/features/seo/allers-vers";
+import { importAllersVersAction } from "@/features/backoffice";
 
 interface AllersVersSeedUploadProps {
   onImportSuccess?: () => void;

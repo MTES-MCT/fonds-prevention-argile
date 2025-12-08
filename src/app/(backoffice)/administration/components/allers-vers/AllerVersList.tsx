@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getAllAllersVersWithRelationsAction } from "@/features/seo/allers-vers";
-import type { AllersVers } from "@/features/seo/allers-vers";
+import { getAllAllersVersWithRelationsAction, type AllersVers } from "@/features/seo/allers-vers";
 
 interface AllersVersWithRelations extends AllersVers {
   departements?: { codeDepartement: string }[];

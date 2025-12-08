@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { allersVersRepository } from "@/shared/database/repositories";
-import type { AllersVersImportRow, AllersVersImportResult } from "../domain/types";
+import { AllersVersImportResult, AllersVersImportRow } from "../domain";
 
 /**
  * Service d'import des Allers Vers depuis Excel
@@ -148,16 +148,5 @@ export async function importAllersVersFromExcel(buffer: Buffer): Promise<AllersV
       created: 0,
       errors: [`Erreur lors du traitement du fichier: ${error instanceof Error ? error.message : "Erreur inconnue"}`],
     };
-  }
-}
-
-/**
- * Supprime tous les Allers Vers existants
- */
-export async function deleteAllAllersVers(): Promise<void> {
-  const allAllersVers = await allersVersRepository.findAll();
-
-  for (const av of allAllersVers) {
-    await allersVersRepository.delete(av.id);
   }
 }

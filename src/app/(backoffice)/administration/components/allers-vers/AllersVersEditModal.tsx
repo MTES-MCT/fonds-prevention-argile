@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { allersVersRepository } from "@/shared/database/repositories";
 import type { AllersVers } from "@/features/seo/allers-vers";
+import { updateAllersVersAction } from "@/features/backoffice";
 
 interface AllersVersWithRelations extends AllersVers {
   departements?: { codeDepartement: string }[];
@@ -51,30 +51,30 @@ export function AllersVersEditModal({ allersVers, onClose, onSuccess }: AllersVe
         .map((e) => e.trim())
         .filter(Boolean);
 
-      // Mettre à jour l'Allers Vers
-      await allersVersRepository.update(allersVers.id, {
+      // Appeler l'action
+      const result = await updateAllersVersAction(allersVers.id, {
         nom: formData.nom,
         emails: emailsArray,
         telephone: formData.telephone,
         adresse: formData.adresse,
+        departements: departementsArray,
+        epci: epciArray,
       });
 
-      // Mettre à jour les relations départements
-      await allersVersRepository.updateDepartementsRelations(allersVers.id, departementsArray);
+      if (result.success) {
+        // Fermer la modale avec l'API DSFR
+        const modal = document.getElementById(modalId);
+        if (modal && window.dsfr) {
+          window.dsfr(modal).modal.conceal();
+        }
 
-      // Mettre à jour les relations EPCI
-      await allersVersRepository.updateEpciRelations(allersVers.id, epciArray);
-
-      // Fermer la modale avec l'API DSFR
-      const modal = document.getElementById(modalId);
-      if (modal && window.dsfr) {
-        window.dsfr(modal).modal.conceal();
+        onSuccess();
+        onClose();
+      } else {
+        setError(result.error || "Erreur lors de la mise à jour");
       }
-
-      onSuccess();
-      onClose();
     } catch (err) {
-      setError("Erreur lors de la mise à jour");
+      setError("Erreur inattendue");
       console.error(err);
     } finally {
       setIsSubmitting(false);

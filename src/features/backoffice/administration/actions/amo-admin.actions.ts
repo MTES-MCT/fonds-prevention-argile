@@ -4,7 +4,7 @@ import { getSession } from "@/features/auth/server";
 import * as amoMutationsService from "../../../parcours/amo/services/amo-mutations.service";
 import { ActionResult } from "@/shared/types";
 import { isAdminRole } from "@/shared/domain/value-objects";
-import { importAmosFromExcel } from "@/features/parcours/amo/services/amo-import.service";
+import { importAmosFromExcel } from "@/features/backoffice/administration/services/amo-import.service";
 import { Amo } from "@/features/parcours/amo";
 
 interface SeedResult {
