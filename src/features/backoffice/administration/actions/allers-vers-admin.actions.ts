@@ -20,15 +20,15 @@ export async function importAllersVersAction(formData: FormData): Promise<Action
       };
     }
 
+    // Récupérer le flag clearExisting
+    const clearExisting = formData.get("clearExisting") === "true";
+
     // Convertir le fichier en buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Supprimer les Allers Vers existants
-    await deleteAllAllersVers();
-
-    // Importer les nouveaux
-    const result = await importAllersVersFromExcel(buffer);
+    // Importer avec ou sans suppression
+    const result = await importAllersVersFromExcel(buffer, clearExisting);
 
     // Revalider les pages admin
     revalidatePath("/administration");

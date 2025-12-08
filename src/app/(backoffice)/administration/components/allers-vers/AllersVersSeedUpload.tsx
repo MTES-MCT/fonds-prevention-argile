@@ -11,6 +11,7 @@ interface AllersVersSeedUploadProps {
 export function AllersVersSeedUpload({ onImportSuccess }: AllersVersSeedUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [clearExisting, setClearExisting] = useState(false);
 
   const [state, formAction, isPending] = useActionState(async (_prevState: unknown, formData: FormData) => {
     const result = await importAllersVersAction(formData);
@@ -120,6 +121,22 @@ export function AllersVersSeedUpload({ onImportSuccess }: AllersVersSeedUploadPr
               required
             />
           </div>
+        </div>
+
+        <div className="fr-checkbox-group fr-my-4w">
+          <input
+            type="checkbox"
+            id="clear-existing-allers-vers"
+            name="clearExisting"
+            value="true"
+            checked={clearExisting}
+            onChange={(e) => setClearExisting(e.target.checked)}
+            disabled={isPending}
+          />
+          <label className="fr-label" htmlFor="clear-existing-allers-vers">
+            Supprimer toutes les structures Allers Vers existantes avant l'import
+            <span className="fr-hint-text">Attention : cette action est irréversible</span>
+          </label>
         </div>
 
         <button type="submit" className="fr-btn fr-btn--icon-left" disabled={!file || isPending}>

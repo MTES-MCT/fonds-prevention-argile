@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { allersVersRepository } from "@/shared/database/repositories";
 import { AllersVersImportResult, AllersVersImportRow } from "../domain";
+import { deleteAllAllersVers } from "../actions";
 
 /**
  * Service d'import des Allers Vers depuis Excel
@@ -112,7 +113,10 @@ function parseEpci(epciStr: string): string[] {
 /**
  * Importe des Allers Vers depuis un fichier Excel
  */
-export async function importAllersVersFromExcel(buffer: Buffer): Promise<AllersVersImportResult> {
+export async function importAllersVersFromExcel(
+  buffer: Buffer,
+  clearExisting: boolean = false
+): Promise<AllersVersImportResult> {
   const errors: string[] = [];
   let created = 0;
 
@@ -126,6 +130,11 @@ export async function importAllersVersFromExcel(buffer: Buffer): Promise<AllersV
         created: 0,
         errors: ["Le fichier est vide ou mal formaté"],
       };
+    }
+
+    // Supprimer les données existantes si demandé
+    if (clearExisting) {
+      await deleteAllAllersVers();
     }
 
     // Valider et importer chaque ligne
