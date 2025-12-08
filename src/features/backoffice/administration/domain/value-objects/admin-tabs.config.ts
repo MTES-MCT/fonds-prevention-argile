@@ -23,6 +23,7 @@ export const ADMIN_TABS: AdminTab[] = [
     icon: "fr-icon-building-fill",
     superAdminOnly: true,
   },
+  { id: "allers-vers" as TabId, label: "Allers-Vers", icon: "fr-icon-arrow-go-forward-line", superAdminOnly: true },
   {
     id: "eligibilite" as TabId,
     label: "Eligibilité",

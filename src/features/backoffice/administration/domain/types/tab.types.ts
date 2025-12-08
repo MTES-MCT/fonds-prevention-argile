@@ -1,4 +1,13 @@
-export type TabId = "statistiques" | "users" | "agents" | "amo" | "eligibilite" | "diagnostic" | "devis" | "factures";
+export type TabId =
+  | "statistiques"
+  | "users"
+  | "agents"
+  | "amo"
+  | "allers-vers"
+  | "eligibilite"
+  | "diagnostic"
+  | "devis"
+  | "factures";
 
 export interface AdminTab {
   id: TabId;
