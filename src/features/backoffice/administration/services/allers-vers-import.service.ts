@@ -14,12 +14,39 @@ function parseExcelFile(buffer: Buffer): AllersVersImportRow[] {
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
-  const rows = XLSX.utils.sheet_to_json<AllersVersImportRow>(worksheet, {
-    raw: false,
+  // Parser avec raw: true pour obtenir les valeurs brutes
+  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
+    raw: true,
     defval: "",
   });
 
-  return rows;
+  // Convertir et nettoyer les données
+  return rows.map((row) => ({
+    nom: String(row.nom || ""),
+    emails: String(row.emails || ""),
+    telephone: cleanPhoneNumber(String(row.telephone || "")),
+    adresse: String(row.adresse || ""),
+    departements: String(row.departements || ""),
+    epci: String(row.epci || ""),
+  }));
+}
+
+/**
+ * Nettoie et formate un numéro de téléphone
+ * Ajoute le zéro de tête si manquant pour les numéros français
+ */
+function cleanPhoneNumber(phone: string): string {
+  if (!phone) return "";
+
+  // Convertir en string et enlever tous les caractères non-numériques
+  const cleaned = String(phone).replace(/\D/g, "");
+
+  // Si le numéro fait 9 chiffres, ajouter le zéro de tête
+  if (cleaned.length === 9) {
+    return `0${cleaned}`;
+  }
+
+  return cleaned;
 }
 
 /**
@@ -52,12 +79,19 @@ function parseEmails(emailsStr: string): string[] {
 }
 
 /**
- * Parse les départements depuis une chaîne
+ * Parse les départements depuis une chaîne et extrait les codes uniquement
+ * Format attendu: "Nom du département CODE" (ex: "Indre 36", "Alpes de Haute provence 04")
  */
 function parseDepartements(departementsStr: string): string[] {
   return departementsStr
     .split(",")
-    .map((d) => d.trim())
+    .map((d) => {
+      const trimmed = d.trim();
+      // Extraire le code du département (2 ou 3 caractères à la fin)
+      // Supporte les formats: "Indre 36", "Corse-du-Sud 2A", "Seine-et-Marne 77"
+      const match = trimmed.match(/(\d{2,3}[AB]?)\s*$/);
+      return match ? match[1] : trimmed;
+    })
     .filter((d) => d.length > 0);
 }
 
