@@ -1,0 +1,1147 @@
+{
+  "id": "a997988e-357f-4fb7-bdf2-06bf243ec598",
+  "prevId": "7c5bb443-9392-44d8-8b3d-0c75560cba1d",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.agent_permissions": {
+      "name": "agent_permissions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "departement_code": {
+          "name": "departement_code",
+          "type": "varchar(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "agent_permissions_agent_id_agents_id_fk": {
+          "name": "agent_permissions_agent_id_agents_id_fk",
+          "tableFrom": "agent_permissions",
+          "tableTo": "agents",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.agents": {
+      "name": "agents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "sub": {
+          "name": "sub",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "given_name": {
+          "name": "given_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "usual_name": {
+          "name": "usual_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uid": {
+          "name": "uid",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "siret": {
+          "name": "siret",
+          "type": "varchar(14)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organizational_unit": {
+          "name": "organizational_unit",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "agent_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'administrateur'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "agents_sub_unique": {
+          "name": "agents_sub_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "sub"
+          ]
+        },
+        "agents_email_unique": {
+          "name": "agents_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.allers_vers_departements": {
+      "name": "allers_vers_departements",
+      "schema": "",
+      "columns": {
+        "allers_vers_id": {
+          "name": "allers_vers_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_departement": {
+          "name": "code_departement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "allers_vers_departements_allers_vers_id_allers_vers_id_fk": {
+          "name": "allers_vers_departements_allers_vers_id_allers_vers_id_fk",
+          "tableFrom": "allers_vers_departements",
+          "tableTo": "allers_vers",
+          "columnsFrom": [
+            "allers_vers_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "allers_vers_departements_allers_vers_id_code_departement_pk": {
+          "name": "allers_vers_departements_allers_vers_id_code_departement_pk",
+          "columns": [
+            "allers_vers_id",
+            "code_departement"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.allers_vers_epci": {
+      "name": "allers_vers_epci",
+      "schema": "",
+      "columns": {
+        "allers_vers_id": {
+          "name": "allers_vers_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_epci": {
+          "name": "code_epci",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "allers_vers_epci_allers_vers_id_allers_vers_id_fk": {
+          "name": "allers_vers_epci_allers_vers_id_allers_vers_id_fk",
+          "tableFrom": "allers_vers_epci",
+          "tableTo": "allers_vers",
+          "columnsFrom": [
+            "allers_vers_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "allers_vers_epci_allers_vers_id_code_epci_pk": {
+          "name": "allers_vers_epci_allers_vers_id_code_epci_pk",
+          "columns": [
+            "allers_vers_id",
+            "code_epci"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.allers_vers": {
+      "name": "allers_vers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "emails": {
+          "name": "emails",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telephone": {
+          "name": "telephone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "adresse": {
+          "name": "adresse",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.amo_validation_tokens": {
+      "name": "amo_validation_tokens",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "parcours_amo_validation_id": {
+          "name": "parcours_amo_validation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "used_at": {
+          "name": "used_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "amo_validation_token_idx": {
+          "name": "amo_validation_token_idx",
+          "columns": [
+            {
+              "expression": "token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "amo_validation_validation_id_idx": {
+          "name": "amo_validation_validation_id_idx",
+          "columns": [
+            {
+              "expression": "parcours_amo_validation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "amo_validation_tokens_parcours_amo_validation_id_parcours_amo_validations_id_fk": {
+          "name": "amo_validation_tokens_parcours_amo_validation_id_parcours_amo_validations_id_fk",
+          "tableFrom": "amo_validation_tokens",
+          "tableTo": "parcours_amo_validations",
+          "columnsFrom": [
+            "parcours_amo_validation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "amo_validation_tokens_token_unique": {
+          "name": "amo_validation_tokens_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.dossiers_demarches_simplifiees": {
+      "name": "dossiers_demarches_simplifiees",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "parcours_id": {
+          "name": "parcours_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "step": {
+          "name": "step",
+          "type": "step",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ds_number": {
+          "name": "ds_number",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ds_id": {
+          "name": "ds_id",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ds_demarche_id": {
+          "name": "ds_demarche_id",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ds_status": {
+          "name": "ds_status",
+          "type": "ds_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'en_construction'"
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ds_url": {
+          "name": "ds_url",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "last_sync_at": {
+          "name": "last_sync_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "dossiers_demarches_simplifiees_parcours_id_parcours_prevention_id_fk": {
+          "name": "dossiers_demarches_simplifiees_parcours_id_parcours_prevention_id_fk",
+          "tableFrom": "dossiers_demarches_simplifiees",
+          "tableTo": "parcours_prevention",
+          "columnsFrom": [
+            "parcours_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "dossiers_demarches_simplifiees_ds_number_unique": {
+          "name": "dossiers_demarches_simplifiees_ds_number_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "ds_number"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.entreprises_amo_communes": {
+      "name": "entreprises_amo_communes",
+      "schema": "",
+      "columns": {
+        "entreprise_amo_id": {
+          "name": "entreprise_amo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_insee": {
+          "name": "code_insee",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "entreprises_amo_communes_entreprise_amo_id_entreprises_amo_id_fk": {
+          "name": "entreprises_amo_communes_entreprise_amo_id_entreprises_amo_id_fk",
+          "tableFrom": "entreprises_amo_communes",
+          "tableTo": "entreprises_amo",
+          "columnsFrom": [
+            "entreprise_amo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "entreprises_amo_communes_entreprise_amo_id_code_insee_pk": {
+          "name": "entreprises_amo_communes_entreprise_amo_id_code_insee_pk",
+          "columns": [
+            "entreprise_amo_id",
+            "code_insee"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.entreprises_amo_epci": {
+      "name": "entreprises_amo_epci",
+      "schema": "",
+      "columns": {
+        "entreprise_amo_id": {
+          "name": "entreprise_amo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_epci": {
+          "name": "code_epci",
+          "type": "varchar(9)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "entreprises_amo_epci_entreprise_amo_id_entreprises_amo_id_fk": {
+          "name": "entreprises_amo_epci_entreprise_amo_id_entreprises_amo_id_fk",
+          "tableFrom": "entreprises_amo_epci",
+          "tableTo": "entreprises_amo",
+          "columnsFrom": [
+            "entreprise_amo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "entreprises_amo_epci_entreprise_amo_id_code_epci_pk": {
+          "name": "entreprises_amo_epci_entreprise_amo_id_code_epci_pk",
+          "columns": [
+            "entreprise_amo_id",
+            "code_epci"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.entreprises_amo": {
+      "name": "entreprises_amo",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "nom": {
+          "name": "nom",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "siret": {
+          "name": "siret",
+          "type": "varchar(14)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "departements": {
+          "name": "departements",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "emails": {
+          "name": "emails",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telephone": {
+          "name": "telephone",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adresse": {
+          "name": "adresse",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "entreprises_amo_siret_unique": {
+          "name": "entreprises_amo_siret_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "siret"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "fc_id": {
+          "name": "fc_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prenom": {
+          "name": "prenom",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telephone": {
+          "name": "telephone",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_login": {
+          "name": "last_login",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_fc_id_unique": {
+          "name": "users_fc_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "fc_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.parcours_prevention": {
+      "name": "parcours_prevention",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current_step": {
+          "name": "current_step",
+          "type": "step",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'choix_amo'"
+        },
+        "current_status": {
+          "name": "current_status",
+          "type": "status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'todo'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rga_simulation_data": {
+          "name": "rga_simulation_data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rga_simulation_completed_at": {
+          "name": "rga_simulation_completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rga_data_deleted_at": {
+          "name": "rga_data_deleted_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rga_data_deletion_reason": {
+          "name": "rga_data_deletion_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "parcours_prevention_user_id_users_id_fk": {
+          "name": "parcours_prevention_user_id_users_id_fk",
+          "tableFrom": "parcours_prevention",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "parcours_prevention_user_id_unique": {
+          "name": "parcours_prevention_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.parcours_amo_validations": {
+      "name": "parcours_amo_validations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "parcours_id": {
+          "name": "parcours_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entreprise_amo_id": {
+          "name": "entreprise_amo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "statut": {
+          "name": "statut",
+          "type": "statut_validation_amo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'en_attente'"
+        },
+        "commentaire": {
+          "name": "commentaire",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_prenom": {
+          "name": "user_prenom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_nom": {
+          "name": "user_nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_email": {
+          "name": "user_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_telephone": {
+          "name": "user_telephone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adresse_logement": {
+          "name": "adresse_logement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brevo_message_id": {
+          "name": "brevo_message_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_sent_at": {
+          "name": "email_sent_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_delivered_at": {
+          "name": "email_delivered_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_opened_at": {
+          "name": "email_opened_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_clicked_at": {
+          "name": "email_clicked_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_bounce_type": {
+          "name": "email_bounce_type",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_bounce_reason": {
+          "name": "email_bounce_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "choisie_at": {
+          "name": "choisie_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "validee_at": {
+          "name": "validee_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "parcours_amo_validations_brevo_message_id_idx": {
+          "name": "parcours_amo_validations_brevo_message_id_idx",
+          "columns": [
+            {
+              "expression": "brevo_message_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "parcours_amo_validations_parcours_id_parcours_prevention_id_fk": {
+          "name": "parcours_amo_validations_parcours_id_parcours_prevention_id_fk",
+          "tableFrom": "parcours_amo_validations",
+          "tableTo": "parcours_prevention",
+          "columnsFrom": [
+            "parcours_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "parcours_amo_validations_entreprise_amo_id_entreprises_amo_id_fk": {
+          "name": "parcours_amo_validations_entreprise_amo_id_entreprises_amo_id_fk",
+          "tableFrom": "parcours_amo_validations",
+          "tableTo": "entreprises_amo",
+          "columnsFrom": [
+            "entreprise_amo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "parcours_amo_validations_parcours_id_unique": {
+          "name": "parcours_amo_validations_parcours_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "parcours_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.agent_role": {
+      "name": "agent_role",
+      "schema": "public",
+      "values": [
+        "administrateur",
+        "super_administrateur",
+        "amo"
+      ]
+    },
+    "public.ds_status": {
+      "name": "ds_status",
+      "schema": "public",
+      "values": [
+        "en_construction",
+        "en_instruction",
+        "accepte",
+        "refuse",
+        "classe_sans_suite",
+        "non_accessible"
+      ]
+    },
+    "public.status": {
+      "name": "status",
+      "schema": "public",
+      "values": [
+        "todo",
+        "en_instruction",
+        "valide"
+      ]
+    },
+    "public.statut_validation_amo": {
+      "name": "statut_validation_amo",
+      "schema": "public",
+      "values": [
+        "en_attente",
+        "logement_eligible",
+        "logement_non_eligible",
+        "accompagnement_refuse"
+      ]
+    },
+    "public.step": {
+      "name": "step",
+      "schema": "public",
+      "values": [
+        "choix_amo",
+        "eligibilite",
+        "diagnostic",
+        "devis",
+        "factures"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
