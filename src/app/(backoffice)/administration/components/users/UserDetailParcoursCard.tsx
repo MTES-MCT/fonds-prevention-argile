@@ -102,7 +102,7 @@ export function UserParcoursCard({ user }: UserParcoursCardProps) {
     <div className="fr-p-0">
       {/* Indicateur de progression horizontal */}
       <div className="fr-grid-row fr-grid-row--gutters fr-mb-3v" style={{ gap: "0.5rem" }}>
-        {PARCOURS_STEPS.map((stepConfig, index) => {
+        {PARCOURS_STEPS.filter((_, index) => index === currentStepIndex).map((stepConfig, index) => {
           const state = currentStepIndex >= 0 ? getStepState(index, currentStepIndex) : "todo";
 
           return (
