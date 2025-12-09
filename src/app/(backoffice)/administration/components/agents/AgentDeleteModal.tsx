@@ -1,6 +1,6 @@
 "use client";
 
-import type { AgentWithPermissions } from "@/features/backoffice/administration/domain/types";
+import { AgentWithPermissions } from "@/features/backoffice";
 
 interface AgentDeleteModalProps {
   modalId: string;

@@ -1,7 +1,6 @@
 "use client";
 
-import { ADMIN_TABS } from "@/features/backoffice/administration/domain/value-objects/admin-tabs.config";
-import { useAdminTab } from "@/features/backoffice";
+import { ADMIN_TABS, useAdminTab } from "@/features/backoffice";
 import { useAuth } from "@/features/auth/client";
 import { canAccessTab } from "@/features/auth/permissions/services/rbac.service";
 import type { UserRole } from "@/shared/domain/value-objects";
