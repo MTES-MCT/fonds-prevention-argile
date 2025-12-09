@@ -28,9 +28,3 @@ export const API_GEO = {
   },
   delayBetweenCalls: 300,
 } as const;
-
-/**
- * Durée de revalidation ISR pour les pages SEO statiques
- * En secondes
- */
-export const SEO_REVALIDATE_TIME = 3600; // 1 heure

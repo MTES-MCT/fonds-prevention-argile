@@ -28,13 +28,12 @@ import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
 import richTextParser from "@/shared/utils/richTextParser.utils";
 import { EpcisMemeDepartement } from "../../components/epci/EpcisMemeDepartement";
-import { SEO_REVALIDATE_TIME } from "@/features/seo/domain";
 
 // Nombre de communes à afficher
 const NB_COMMUNES_A_AFFICHER = 8;
 
 // Durée de revalidation ISR
-export const revalidate = SEO_REVALIDATE_TIME;
+export const revalidate = 3600; // 1 heure;
 
 interface PageProps {
   params: Promise<{
