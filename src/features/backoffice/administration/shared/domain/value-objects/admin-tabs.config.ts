@@ -8,7 +8,7 @@ export const ADMIN_TABS: AdminTab[] = [
   },
   {
     id: "users" as TabId,
-    label: "Utilisateurs",
+    label: "Demandeurs",
     icon: "fr-icon-user-fill",
   },
   {
