@@ -11,9 +11,7 @@ vi.mock("@/features/auth/permissions/services/permissions.service", () => ({
   checkBackofficePermission: vi.fn(),
 }));
 
-vi.mock("@/features/backoffice/administration/services/amo-import.service", () => ({
-  importAmosFromExcel: vi.fn(),
-}));
+vi.mock("@/features/backoffice/administration/gestion-amo/services/amo-import.service");
 
 vi.mock("@/features/parcours/amo/services/amo-mutations.service", () => ({
   updateAmo: vi.fn(),
@@ -26,7 +24,7 @@ vi.mock("@/shared/config/env.config", () => createEnvConfigMock());
 // Import des mocks après déclaration
 import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
 import * as amoMutationsService from "@/features/parcours/amo/services/amo-mutations.service";
-import { importAmosFromExcel } from "../services";
+import { importAmosFromExcel } from "@/features/backoffice/administration/gestion-amo/services/amo-import.service";
 
 describe("amo-admin.actions", () => {
   // Helper pour créer une AMO de test

@@ -1,4 +1,3 @@
-import { vi } from "vitest";
 import { AuthUser } from "@/features/auth";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import type { JWTPayload } from "@/features/auth/domain/entities/jwtPayload";

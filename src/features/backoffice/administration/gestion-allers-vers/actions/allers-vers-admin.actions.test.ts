@@ -11,9 +11,7 @@ vi.mock("@/features/auth/permissions/services/permissions.service", () => ({
   checkBackofficePermission: vi.fn(),
 }));
 
-vi.mock("@/features/backoffice/administration/services/allers-vers-import.service", () => ({
-  importAllersVersFromExcel: vi.fn(),
-}));
+vi.mock("@/features/backoffice/administration/gestion-allers-vers/services/allers-vers-import.service");
 
 vi.mock("@/shared/database/repositories", () => ({
   allersVersRepository: {
@@ -36,7 +34,7 @@ vi.mock("@/shared/config/env.config", () => createEnvConfigMock());
 import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
 import { allersVersRepository } from "@/shared/database/repositories";
 import { revalidatePath } from "next/cache";
-import { importAllersVersFromExcel } from "../services";
+import { importAllersVersFromExcel } from "@/features/backoffice/administration/gestion-allers-vers/services/allers-vers-import.service";
 
 describe("allers-vers-admin.actions", () => {
   // Helper pour créer un Allers Vers de test
