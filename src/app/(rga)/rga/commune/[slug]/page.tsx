@@ -28,9 +28,13 @@ import {
 import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
 import { richTextParser } from "@/shared/utils";
+import { SEO_REVALIDATE_TIME } from "@/features/seo/domain";
 
 // Nombre de communes à afficher
 const NB_COMMUNES_A_AFFICHER = 8;
+
+// Durée de revalidation ISR
+export const revalidate = SEO_REVALIDATE_TIME;
 
 interface PageProps {
   params: Promise<{
