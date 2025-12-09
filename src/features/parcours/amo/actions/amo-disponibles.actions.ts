@@ -7,7 +7,7 @@ import { db, entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "
 import { eq, like } from "drizzle-orm";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
 import { parcoursRepo } from "@/shared/database/repositories";
-import { isAdminRole } from "@/shared/domain/value-objects";
+import { isAgentRole } from "@/shared/domain/value-objects";
 
 /**
  * Récupère la liste des AMO disponibles pour le territoire de l'utilisateur
@@ -119,7 +119,7 @@ export async function getAllAmos(): Promise<ActionResult<Array<Amo & { communes:
   try {
     const session = await getSession();
 
-    if (!session || !isAdminRole(session.role)) {
+    if (!session || !isAgentRole(session.role)) {
       throw new Error("Accès refusé");
     }
 

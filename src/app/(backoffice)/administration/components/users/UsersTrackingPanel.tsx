@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { UsersTable } from "./UsersTable";
 import { DepartementFilter } from "./filters/departements/DepartementFilter";
 import { filterUsersByDepartement } from "./filters/departements/departementFilter.utils";
 import Loading from "@/app/(main)/loading";
-import { getUsersWithParcours, UserWithParcoursDetails } from "@/features/backoffice";
+import { getUsersForStats, getUsersWithParcours, UserWithParcoursDetails } from "@/features/backoffice";
 import { UsersAmoStats, UsersEtapesStats, UsersSimulationRgaStats } from "./statistiques";
 import { useHasPermission } from "@/features/auth/hooks/usePermissions";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
@@ -19,19 +19,16 @@ export default function UsersTrackingPanel() {
   const [selectedDepartement, setSelectedDepartement] = useState<string>("");
   const [activeView, setActiveView] = useState<StatisticsView>("etape");
 
-  // Vérifier les permissions
+  // Permissions
   const canViewUserDetails = useHasPermission(BackofficePermission.USERS_DETAIL_READ);
+  const canReadUsers = useHasPermission(BackofficePermission.USERS_READ);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const result = await getUsersWithParcours();
+      const result = canReadUsers ? await getUsersWithParcours() : await getUsersForStats();
 
       if (result.success) {
         setUsers(result.data);
@@ -44,7 +41,11 @@ export default function UsersTrackingPanel() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [canReadUsers]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   // Filtrer les users par département si un filtre est actif
   const filteredUsers = selectedDepartement ? filterUsersByDepartement(users, selectedDepartement) : users;

@@ -13,6 +13,7 @@ function AgentNavLinks() {
   const agentRole = useAgentRole();
 
   switch (agentRole) {
+    case UserRole.ANALYSTE:
     case UserRole.ADMINISTRATEUR:
     case UserRole.SUPER_ADMINISTRATEUR:
       return (
@@ -51,6 +52,7 @@ function AgentNavLinksMobile() {
   const agentRole = useAgentRole();
 
   switch (agentRole) {
+    case UserRole.ANALYSTE:
     case UserRole.ADMINISTRATEUR:
     case UserRole.SUPER_ADMINISTRATEUR:
       return (
