@@ -57,3 +57,4 @@ yarn-error.log*
 # Ignorer tous les fichiers Excel SAUF le template
 *.xlsx
 !public/templates/amo-exemple.xlsx
+!public/templates/allers-vers-exemple.xlsx
