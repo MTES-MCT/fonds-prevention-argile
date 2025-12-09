@@ -48,6 +48,7 @@ export default function AllersVersPanel() {
   const handleSuccess = useCallback(() => {
     setRefreshTrigger((prev) => prev + 1);
     setEditingAllersVers(null);
+    setActiveView("liste");
   }, []);
 
   return (
