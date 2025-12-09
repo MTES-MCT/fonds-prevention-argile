@@ -32,8 +32,7 @@ import { EpcisMemeDepartement } from "../../components/epci/EpcisMemeDepartement
 // Nombre de communes à afficher
 const NB_COMMUNES_A_AFFICHER = 8;
 
-// Durée de revalidation ISR
-export const revalidate = 3600; // 1 heure;
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{

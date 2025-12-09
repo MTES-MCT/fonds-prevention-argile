@@ -32,8 +32,7 @@ import { formatDepartementAvecArticle } from "@/shared/utils";
 // Nombre de communes à afficher dans la section "En savoir plus"
 const NB_COMMUNES_A_AFFICHER = 8;
 
-// Durée de revalidation ISR
-export const revalidate = 3600; // 1 heure;
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{
