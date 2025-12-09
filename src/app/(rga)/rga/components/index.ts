@@ -17,3 +17,4 @@ export { CtaSmall } from "./shared/CtaSmall";
 export { RgaTopFooterContent } from "./shared/RgaTopFooterContent";
 export { JsonLd } from "./shared/JsonLd";
 export { RgaMapSection } from "./shared/RgaMapSection";
+export { DisplayAllersVers } from "./shared/DisplayAllersVers";

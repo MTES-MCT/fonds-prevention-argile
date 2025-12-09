@@ -8,6 +8,7 @@ export const ROLES = {
   ADMINISTRATEUR: UserRole.ADMINISTRATEUR,
   SUPER_ADMINISTRATEUR: UserRole.SUPER_ADMINISTRATEUR,
   AMO: UserRole.AMO,
+  ANALYSTE: UserRole.ANALYSTE,
 } as const;
 
 // Énumération des méthodes d'authentification

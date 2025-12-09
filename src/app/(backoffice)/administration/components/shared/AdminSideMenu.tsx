@@ -1,10 +1,19 @@
 "use client";
 
-import { ADMIN_TABS } from "@/features/backoffice/administration/domain/value-objects/admin-tabs.config";
-import { useAdminTab } from "@/features/backoffice";
+import { ADMIN_TABS, useAdminTab } from "@/features/backoffice";
+import { useAuth } from "@/features/auth/client";
+import { canAccessTab } from "@/features/auth/permissions/services/rbac.service";
+import type { UserRole } from "@/shared/domain/value-objects";
+import { useMemo } from "react";
 
 export default function AdminSideMenu() {
   const { activeTab, setActiveTab } = useAdminTab();
+  const { user } = useAuth();
+
+  const visibleTabs = useMemo(() => {
+    if (!user) return [];
+    return ADMIN_TABS.filter((tab) => canAccessTab(user.role as UserRole, tab.id));
+  }, [user]);
 
   return (
     <nav className="fr-sidemenu fr-px-4w" role="navigation" aria-label="Menu d'administration">
@@ -22,7 +31,7 @@ export default function AdminSideMenu() {
             Administration
           </div>
           <ul className="fr-sidemenu__list">
-            {ADMIN_TABS.map((link) => (
+            {visibleTabs.map((link) => (
               <li key={link.id} className="fr-sidemenu__item">
                 <button
                   type="button"

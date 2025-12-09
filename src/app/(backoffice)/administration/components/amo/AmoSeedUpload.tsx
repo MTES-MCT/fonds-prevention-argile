@@ -60,18 +60,30 @@ export function AmoSeedUpload({ onImportSuccess }: AmoSeedUploadProps) {
 
   return (
     <div className="fr-mb-6w fr-background-default--grey p-12">
-      <div className="fr-callout fr-mb-4w">
-        <h3 className="fr-callout__title">Fichier exemple</h3>
-        <p className="fr-callout__text">
-          Téléchargez le fichier exemple pour voir le format attendu. Vous pourrez le remplir sur votre ordinateur puis
-          l'uploader ici.
-        </p>
-        <Link
-          href="/templates/amo-exemple.xlsx"
-          download="amo-exemple.xlsx"
-          className="fr-btn fr-btn--secondary fr-btn--sm fr-btn--icon-left">
-          Télécharger le fichier exemple
-        </Link>
+      {/* Telechargement exemple */}
+      <div className="fr-tile fr-tile--download fr-enlarge-link fr-mb-6w" id="tile-12">
+        <div className="fr-tile__body">
+          <div className="fr-tile__content">
+            <h3 className="fr-tile__title">
+              <Link href="/templates/amo-exemple.xlsx" download="amo-exemple.xlsx">
+                Télécharger le fichier exemple
+              </Link>
+            </h3>
+            <p className="fr-tile__detail">
+              Téléchargez le fichier exemple pour voir le format attendu. Vous pourrez le remplir sur votre ordinateur
+              puis l'uploader ici.
+            </p>
+          </div>
+        </div>
+        <div className="fr-tile__header">
+          <div className="fr-tile__pictogram">
+            <svg aria-hidden="true" className="fr-artwork" viewBox="0 0 80 80" width="80px" height="80px">
+              <use className="fr-artwork-decorative" href="/illustrations/document-download.svg"></use>
+              <use className="fr-artwork-minor" href="/illustrations/document-download.svg"></use>
+              <use className="fr-artwork-major" href="/illustrations/document-download.svg"></use>
+            </svg>
+          </div>
+        </div>
       </div>
 
       <form action={formAction}>

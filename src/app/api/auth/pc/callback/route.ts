@@ -37,7 +37,13 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL(`${ROUTES.connexion.agent}?error=pc_security_error`, baseUrl));
       }
 
-      return NextResponse.redirect(new URL(`${ROUTES.connexion.agent}?error=${result.error}`, baseUrl));
+      // Déterminer le code d'erreur approprié
+      const errorCode =
+        result.error?.includes("non autorisé") || result.error?.includes("non enregistré")
+          ? "pc_unauthorized"
+          : "pc_auth_failed";
+
+      return NextResponse.redirect(new URL(`${ROUTES.connexion.agent}?error=${errorCode}`, baseUrl));
     }
 
     // Récupérer l'URL de redirection sauvegardée (si existe)

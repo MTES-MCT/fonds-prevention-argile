@@ -92,8 +92,8 @@ export function UsersSimulationRgaStats({ users, selectedDepartement }: UsersSim
             number={usersAvecRga.length.toString()}
             label={`Simulations ${selectedDepartement ? "filtrées" : "réalisées"}`}
           />
-          <StatCard number={statsAvecFissures.toString()} label="Avec fissures" />
-          <StatCard number={statsSansFissures.toString()} label="Sans fissures" />
+          <StatCard number={statsAvecFissures.toString()} label="Avec micro-fissures" />
+          <StatCard number={statsSansFissures.toString()} label="Sans micro-fissures" />
         </div>
       </div>
 

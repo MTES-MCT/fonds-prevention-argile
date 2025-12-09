@@ -17,6 +17,9 @@ export default function ConnexionProConnectClient() {
         case "access_denied":
           setPcError("Vous avez annulé la connexion ProConnect.");
           break;
+        case "pc_unauthorized":
+          setPcError("Accès non autorisé. Veuillez contacter un administrateur pour obtenir l'accès.");
+          break;
         case "pc_security_error":
           setPcError("Erreur de sécurité. Veuillez réessayer.");
           break;

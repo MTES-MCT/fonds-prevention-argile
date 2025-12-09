@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { UserRole } from "@/shared/domain/value-objects";
 import type { AgentRole } from "@/shared/domain/value-objects";
 import DepartementsSelect from "./DepartementsSelect";
-import type { AgentWithPermissions } from "@/features/backoffice/administration/domain/types";
+import { AgentWithPermissions } from "@/features/backoffice";
 
 interface AgentFormModalProps {
   modalId: string;
@@ -25,6 +25,7 @@ const ROLE_OPTIONS: { value: AgentRole; label: string }[] = [
   { value: UserRole.SUPER_ADMINISTRATEUR, label: "Super Administrateur" },
   { value: UserRole.ADMINISTRATEUR, label: "Administrateur" },
   { value: UserRole.AMO, label: "AMO" },
+  { value: UserRole.ANALYSTE, label: "Analyste" },
 ];
 
 export default function AgentFormModal({ modalId, onSubmit, agent, isLoading = false }: AgentFormModalProps) {

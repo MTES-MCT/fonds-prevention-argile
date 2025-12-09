@@ -7,6 +7,8 @@ import { filterUsersByDepartement } from "./filters/departements/departementFilt
 import Loading from "@/app/(main)/loading";
 import { getUsersWithParcours, UserWithParcoursDetails } from "@/features/backoffice";
 import { UsersAmoStats, UsersEtapesStats, UsersSimulationRgaStats } from "./statistiques";
+import { useHasPermission } from "@/features/auth/hooks/usePermissions";
+import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 
 type StatisticsView = "etape" | "amo" | "simulation";
 
@@ -16,6 +18,9 @@ export default function UsersTrackingPanel() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDepartement, setSelectedDepartement] = useState<string>("");
   const [activeView, setActiveView] = useState<StatisticsView>("etape");
+
+  // Vérifier les permissions
+  const canViewUserDetails = useHasPermission(BackofficePermission.USERS_DETAIL_READ);
 
   useEffect(() => {
     loadUsers();
@@ -31,7 +36,7 @@ export default function UsersTrackingPanel() {
       if (result.success) {
         setUsers(result.data);
       } else {
-        setError(result.error || "Erreur lors du chargement des utilisateurs");
+        setError(result.error || "Erreur lors du chargement des demandeurs");
       }
     } catch (err) {
       console.error("Erreur loadUsers:", err);
@@ -52,9 +57,11 @@ export default function UsersTrackingPanel() {
     <div className="w-full">
       {/* En-tête */}
       <div className="fr-mb-6w">
-        <h1 className="fr-h2 fr-mb-2w">Suivi des utilisateurs</h1>
+        <h1 className="fr-h2 fr-mb-2w">Suivi des demandeurs</h1>
         <p className="fr-text--lg fr-text-mention--grey">
-          Visualisez les informations et le parcours des utilisateurs inscrits sur la plateforme.
+          {canViewUserDetails
+            ? "Visualisez les informations et le parcours des demandeurs inscrits sur la plateforme."
+            : "Consultez les statistiques agrégées des demandeurs inscrits sur la plateforme."}
         </p>
       </div>
 
@@ -129,8 +136,8 @@ export default function UsersTrackingPanel() {
         </div>
       )}
 
-      {/* Filtre par département */}
-      {!error && (
+      {/* Filtre par département - Seulement si permission de voir les détails */}
+      {!error && canViewUserDetails && (
         <>
           <p className="fr-h4 fr-mb-2w">Filtres</p>
           <DepartementFilter
@@ -141,17 +148,21 @@ export default function UsersTrackingPanel() {
         </>
       )}
 
-      {/* Liste des utilisateurs ou message vide */}
-      {!error && filteredUsers.length === 0 && selectedDepartement ? (
-        <div className="fr-callout fr-callout--info">
-          <p className="fr-callout__text">Aucun utilisateur trouvé pour le département {selectedDepartement}.</p>
-        </div>
-      ) : !error && users.length === 0 ? (
-        <div className="fr-callout fr-callout--info">
-          <p className="fr-callout__text">Aucun utilisateur enregistré pour le moment.</p>
-        </div>
-      ) : (
-        <div>{!error && filteredUsers.length > 0 && <UsersTable users={filteredUsers} />}</div>
+      {/* Liste des utilisateurs ou message vide - Seulement si permission de voir les détails */}
+      {!error && canViewUserDetails && (
+        <>
+          {filteredUsers.length === 0 && selectedDepartement ? (
+            <div className="fr-callout fr-callout--info">
+              <p className="fr-callout__text">Aucun demandeur trouvé pour le département {selectedDepartement}.</p>
+            </div>
+          ) : users.length === 0 ? (
+            <div className="fr-callout fr-callout--info">
+              <p className="fr-callout__text">Aucun demandeur enregistré pour le moment.</p>
+            </div>
+          ) : (
+            filteredUsers.length > 0 && <UsersTable users={filteredUsers} />
+          )}
+        </>
       )}
     </div>
   );

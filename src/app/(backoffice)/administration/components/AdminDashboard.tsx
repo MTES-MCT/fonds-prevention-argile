@@ -13,6 +13,7 @@ import AgentsPanel from "./agents/AgentsPanel";
 import { useAdminTab } from "@/features/backoffice";
 import type { ActionResult } from "@/shared/types";
 import type { DemarcheDetailed, DossiersConnection } from "@/features/parcours/dossiers-ds/adapters/graphql/types";
+import { AllersVersPanel } from "./allers-vers";
 
 interface DemarcheData {
   demarche: ActionResult<DemarcheDetailed>;
@@ -93,6 +94,11 @@ export default function AdminDashboard({ eligibiliteData }: AdminDashboardProps)
             {/* Panel Entreprises AMO */}
             <div className={activeTab === "amo" ? "" : "fr-hidden"} role="region" aria-label="Entreprises AMO">
               <AmoPanel />
+            </div>
+
+            {/* Panel Allers Vers */}
+            <div className={activeTab === "allers-vers" ? "" : "fr-hidden"} role="region" aria-label="Allers Vers">
+              <AllersVersPanel />
             </div>
 
             {/* Panel Eligibilite */}

@@ -7,7 +7,12 @@ import { AgentRole } from "@/shared/domain/value-objects/user-role.enum";
  */
 export function useIsAgent() {
   const { user } = useAuth();
-  return user?.role === ROLES.ADMINISTRATEUR || user?.role === ROLES.SUPER_ADMINISTRATEUR || user?.role === ROLES.AMO;
+  return (
+    user?.role === ROLES.ADMINISTRATEUR ||
+    user?.role === ROLES.SUPER_ADMINISTRATEUR ||
+    user?.role === ROLES.AMO ||
+    user?.role === ROLES.ANALYSTE
+  );
 }
 
 /**
@@ -35,9 +40,22 @@ export function useAgentRole(): AgentRole | null {
 
   if (!user) return null;
 
-  if (user.role === ROLES.ADMINISTRATEUR || user.role === ROLES.SUPER_ADMINISTRATEUR || user.role === ROLES.AMO) {
+  if (
+    user.role === ROLES.ADMINISTRATEUR ||
+    user.role === ROLES.SUPER_ADMINISTRATEUR ||
+    user.role === ROLES.AMO ||
+    user.role === ROLES.ANALYSTE
+  ) {
     return user.role as AgentRole;
   }
 
   return null;
+}
+
+/**
+ * Hook pour vérifier si l'utilisateur a le rôle Analyste
+ */
+export function useIsAnalyste(): boolean {
+  const { user } = useAuth();
+  return user?.role === ROLES.ANALYSTE;
 }

@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  getAgentsAction,
-  createAgentAction,
-  updateAgentAction,
-  deleteAgentAction,
-} from "@/features/backoffice/administration/actions/agents.actions";
 import AgentsList from "./AgentsList";
 import AgentFormModal, { type AgentFormData } from "./AgentFormModal";
 import AgentDeleteModal from "./AgentDeleteModal";
-import { AgentWithPermissions } from "@/features/backoffice";
+import {
+  AgentWithPermissions,
+  createAgentAction,
+  deleteAgentAction,
+  getAgentsAction,
+  updateAgentAction,
+} from "@/features/backoffice";
 import StatCard from "../shared/StatCard";
 
 const MODAL_DELETE_ID = "modal-delete-agent";

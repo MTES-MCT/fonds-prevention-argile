@@ -310,3 +310,58 @@ export function toActionResult(checkResult: AccessCheckResult): ActionResult<Aut
     error: checkResult.reason || "Accès refusé",
   };
 }
+
+import { hasPermission, canAccessTab } from "./rbac.service";
+import type { BackofficePermission } from "../domain/value-objects/rbac-permissions";
+
+/**
+ * Vérifie si l'utilisateur actuel a une permission spécifique
+ */
+export async function checkBackofficePermission(permission: BackofficePermission): Promise<AccessCheckResult> {
+  const userCheck = await checkUserAccess();
+  if (!userCheck.hasAccess || !userCheck.user) {
+    return userCheck;
+  }
+
+  const user = userCheck.user;
+  const hasRequiredPermission = hasPermission(user.role as UserRole, permission);
+
+  if (!hasRequiredPermission) {
+    return {
+      hasAccess: false,
+      reason: `Permission insuffisante : ${permission}`,
+      errorCode: AccessErrorCode.INSUFFICIENT_PERMISSIONS,
+    };
+  }
+
+  return {
+    hasAccess: true,
+    user,
+  };
+}
+
+/**
+ * Vérifie si l'utilisateur actuel peut accéder à un onglet du backoffice
+ */
+export async function checkTabAccess(tabKey: string): Promise<AccessCheckResult> {
+  const userCheck = await checkUserAccess();
+  if (!userCheck.hasAccess || !userCheck.user) {
+    return userCheck;
+  }
+
+  const user = userCheck.user;
+  const canAccess = canAccessTab(user.role as UserRole, tabKey);
+
+  if (!canAccess) {
+    return {
+      hasAccess: false,
+      reason: `Accès refusé à l'onglet : ${tabKey}`,
+      errorCode: AccessErrorCode.INSUFFICIENT_PERMISSIONS,
+    };
+  }
+
+  return {
+    hasAccess: true,
+    user,
+  };
+}

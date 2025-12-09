@@ -141,7 +141,7 @@ export default async function EpciPage({ params }: PageProps) {
 
       {/* Introduction */}
       <div className="fr-container">
-        <h2>{content.introduction.title}</h2>
+        <h1>{content.introduction.title}</h1>
         <p>{richTextParser(content.introduction.content)}</p>
       </div>
 

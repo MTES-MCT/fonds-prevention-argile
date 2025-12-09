@@ -21,6 +21,7 @@ import {
   CtaSmall,
   JsonLd,
   RgaMapSection,
+  DisplayAllersVers,
 } from "../../components";
 
 import templateContent from "../content/template.json";
@@ -123,7 +124,7 @@ export default async function DepartementPage({ params }: PageProps) {
 
       {/* Introduction */}
       <div className="fr-container">
-        <h2>{content.introduction.title}</h2>
+        <h1>{content.introduction.title}</h1>
         <p>{richTextParser(content.introduction.content)}</p>
       </div>
 
@@ -144,6 +145,9 @@ export default async function DepartementPage({ params }: PageProps) {
 
       {/* L'État vous accompagne */}
       <SectionEtatAccompagne conclusionLocale={content.etatAccompagne.conclusionLocale} />
+
+      {/* Allers Vers - Conseillers locaux */}
+      <DisplayAllersVers codeDepartement={departement.code} nomDepartement={departement.nom} />
 
       {/* CTA Full Width */}
       <SavoirSiConcerneSection />

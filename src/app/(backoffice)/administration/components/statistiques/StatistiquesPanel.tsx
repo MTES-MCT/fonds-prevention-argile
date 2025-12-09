@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { getStatistiquesAction } from "@/features/backoffice";
-import type { Statistiques } from "@/features/backoffice";
+import { getStatistiquesAction, Statistiques } from "@/features/backoffice";
 import { useDsfrChart } from "@/shared/hooks/useDsfrChart";
 import StatistiquesFunnel from "./StatistiquesFunnel";
 import StatCard from "../shared/StatCard";
