@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { AuthProvider } from "@/features/auth/client";
 import { Crisp, Footer, Header, Matomo, PostLogoutRedirect } from "@/shared/components";
+import { RgaTopFooterContent } from "../(rga)/rga/components";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -15,7 +16,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <Crisp />
         <Header />
         <main className="flex-1">{children}</main>
-        <Footer />
+        <Footer topContent={<RgaTopFooterContent />} />
       </AuthProvider>
     </>
   );
