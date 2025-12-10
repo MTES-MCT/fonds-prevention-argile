@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatDate, formatDateTime } from "./date.utils";
+import { dateToSqlString, formatDate, formatDateTime, parseFrenchDateToSql, sqlStringToDate } from "./date.utils";
 
 describe("Date utilities", () => {
   describe("formatDate", () => {
@@ -79,6 +79,37 @@ describe("Date utilities", () => {
       const result = formatDateTime("2024-03-15T14:30:00Z");
       expect(result).toContain("/03/2024");
       expect(result).toMatch(/\d{2}:\d{2}|\d{2} h \d{2}/);
+    });
+  });
+
+  describe("dateToSqlString", () => {
+    it("should convert Date to SQL string format", () => {
+      const date = new Date("2025-12-10T10:30:00Z");
+      expect(dateToSqlString(date)).toBe("2025-12-10");
+    });
+
+    it("should pad single digit months and days", () => {
+      const date = new Date("2025-01-05T00:00:00Z");
+      expect(dateToSqlString(date)).toBe("2025-01-05");
+    });
+  });
+
+  describe("sqlStringToDate", () => {
+    it("should convert SQL string to Date", () => {
+      const date = sqlStringToDate("2025-12-10");
+      expect(date.getFullYear()).toBe(2025);
+      expect(date.getMonth()).toBe(11); // 0-indexed
+      expect(date.getDate()).toBe(10);
+    });
+  });
+
+  describe("parseFrenchDateToSql", () => {
+    it("should convert French date format to SQL", () => {
+      expect(parseFrenchDateToSql("10/12/2025")).toBe("2025-12-10");
+    });
+
+    it("should handle dates with single digits", () => {
+      expect(parseFrenchDateToSql("5/3/2025")).toBe("2025-03-05");
     });
   });
 });

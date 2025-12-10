@@ -19,10 +19,7 @@ const DATETIME_FORMAT: Intl.DateTimeFormatOptions = {
  * @param options - Options de formatage Intl.DateTimeFormat
  * @returns La date formatée ou "—" si invalide
  */
-function formatDateWithOptions(
-  dateInput: string | null | undefined,
-  options: Intl.DateTimeFormatOptions
-): string {
+function formatDateWithOptions(dateInput: string | null | undefined, options: Intl.DateTimeFormatOptions): string {
   if (!dateInput) return DEFAULT_VALUE;
 
   try {
@@ -72,10 +69,7 @@ export function addDays(date: Date, days: number): Date {
  * @param days - Nombre de jours à ajouter
  * @returns Une nouvelle instance de Date avec les jours ajoutés ou null si invalide
  */
-export function addDaysToString(
-  dateString: string | null | undefined,
-  days: number
-): Date | null {
+export function addDaysToString(dateString: string | null | undefined, days: number): Date | null {
   if (!dateString) return null;
 
   try {
@@ -99,4 +93,39 @@ export function daysBetween(date1: Date, date2: Date): number {
   const msPerDay = 1000 * 60 * 60 * 24;
   const diff = Math.abs(date2.getTime() - date1.getTime());
   return Math.floor(diff / msPerDay);
+}
+
+/**
+ * Convertit une Date en string au format SQL (YYYY-MM-DD)
+ * Utilisé pour les colonnes PostgreSQL de type DATE
+ *
+ * @example
+ * dateToSqlString(new Date('2025-12-10')) // "2025-12-10"
+ */
+export function dateToSqlString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Convertit un string SQL (YYYY-MM-DD) en Date
+ *
+ * @example
+ * sqlStringToDate("2025-12-10") // Date object
+ */
+export function sqlStringToDate(dateString: string): Date {
+  return new Date(dateString);
+}
+
+/**
+ * Parse une date au format DD/MM/YYYY (format API Georisques) vers YYYY-MM-DD
+ *
+ * @example
+ * parseFrenchDateToSql("10/12/2025") // "2025-12-10"
+ */
+export function parseFrenchDateToSql(frenchDate: string): string {
+  const [day, month, year] = frenchDate.split("/");
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 }

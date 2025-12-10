@@ -8,3 +8,4 @@ export { entreprisesAmoRepository as entreprisesAmoRepo } from "./entreprises-am
 export { agentsRepository as agentsRepo } from "./agents.repository";
 export { agentPermissionsRepository } from "./agent-permissions.repository";
 export { allersVersRepository } from "./allers-vers.repository";
+export { catastrophesNaturellesRepository } from "./catastrophes-naturelles.repository";
