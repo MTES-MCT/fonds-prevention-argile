@@ -28,6 +28,8 @@ import {
 import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
 import { richTextParser } from "@/shared/utils";
+import { CatnatTableCommune } from "../../components/catnat";
+import { getCatnatForCommuneAction } from "@/features/seo/catnat/actions/catnat.actions";
 
 // Nombre de communes à afficher
 const NB_COMMUNES_A_AFFICHER = 8;
@@ -99,6 +101,9 @@ export default async function CommunePage({ params }: PageProps) {
 
   const departement = getDepartementByCode(commune.codeDepartement);
 
+  // Récupérer les catastrophes naturelles
+  const catnats = await getCatnatForCommuneAction(commune.codeInsee);
+
   if (!departement) {
     notFound();
   }
@@ -150,6 +155,9 @@ export default async function CommunePage({ params }: PageProps) {
 
       {/* Carte */}
       <RgaMapSection title={commune.nom} centre={commune.centre} zoomLevel="commune" />
+
+      {/* Historique des catastrophes naturelles */}
+      <CatnatTableCommune catnats={catnats} nomCommune={commune.nom} codeDepartement={departement.code} />
 
       {/* Dégâts visibles */}
       <SectionDegats />

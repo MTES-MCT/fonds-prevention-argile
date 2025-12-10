@@ -15,3 +15,4 @@ export * from "./agent-permissions";
 export * from "./allers-vers";
 export * from "./allers-vers-departements";
 export * from "./allers-vers-epci";
+export * from "./catastrophes-naturelles";

@@ -28,6 +28,8 @@ import templateContent from "../content/template.json";
 import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConcerneSection";
 import richTextParser from "@/shared/utils/richTextParser.utils";
 import { formatDepartementAvecArticle } from "@/shared/utils";
+import { getTotalCatnatForDepartementAction } from "@/features/seo/catnat/actions";
+import { CatnatSummary } from "../../components/catnat";
 
 // Nombre de communes à afficher dans la section "En savoir plus"
 const NB_COMMUNES_A_AFFICHER = 8;
@@ -93,6 +95,9 @@ export default async function DepartementPage({ params }: PageProps) {
   const communes = getTopCommunesByDepartement(departement.code, NB_COMMUNES_A_AFFICHER);
   const epcis = getEpcisByDepartement(departement.code);
 
+  // Récupérer le total de catastrophes naturelles
+  const totalCatnat = await getTotalCatnatForDepartementAction(departement.code);
+
   // Hydrater le contenu avec les placeholders
   const placeholders = createDepartementPlaceholders(departement);
   const content = hydrateTemplate(templateContent, placeholders);
@@ -132,6 +137,14 @@ export default async function DepartementPage({ params }: PageProps) {
 
       {/* Carte */}
       <RgaMapSection title={departement.nom} centre={departement.centre} zoomLevel="departement" />
+
+      {/* Résumé catastrophes naturelles */}
+      <CatnatSummary
+        totalCatnat={totalCatnat}
+        nomTerritoire={departement.nom}
+        typeTerritoire="département"
+        codeTerritoire={departement.code}
+      />
 
       {/* En savoir plus - communes */}
       <CommunesCards communes={communes} title={content.enSavoirPlus.title} />
