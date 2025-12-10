@@ -1,5 +1,7 @@
 "use server";
 
+import { catastrophesNaturellesRepository } from "@/shared/database";
+import { getEpciBySiren } from "../../services";
 import { catnatService } from "../services/catnat.service";
 import type { CatastropheNaturelle } from "@/shared/database/schema/catastrophes-naturelles";
 
@@ -36,5 +38,22 @@ export async function getCatnatStatsByTypeAction(codeInsee: string) {
   } catch (error) {
     console.error(`Error fetching CATNAT stats for commune ${codeInsee}:`, error);
     return [];
+  }
+}
+
+/**
+ * Récupère le nombre total de catastrophes naturelles pour un EPCI
+ */
+export async function getTotalCatnatForEpciAction(codeSiren: string): Promise<number> {
+  try {
+    // Récupérer les communes de l'EPCI
+    const epci = getEpciBySiren(codeSiren);
+    if (!epci) return 0;
+
+    const catnats = await catastrophesNaturellesRepository.findByCodesInsee(epci.codesCommunes);
+    return catnats.length;
+  } catch (error) {
+    console.error(`Error fetching CATNAT total for EPCI ${codeSiren}:`, error);
+    return 0;
   }
 }

@@ -1,2 +1,2 @@
-export * from "./CatnatSummaryDepartement";
 export * from "./CatnatTableCommune";
+export * from "./CatnatSummary";

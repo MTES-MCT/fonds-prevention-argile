@@ -29,7 +29,7 @@ import SavoirSiConcerneSection from "@/app/(main)/(home)/components/SavoirSiConc
 import richTextParser from "@/shared/utils/richTextParser.utils";
 import { formatDepartementAvecArticle } from "@/shared/utils";
 import { getTotalCatnatForDepartementAction } from "@/features/seo/catnat/actions";
-import { CatnatSummaryDepartement } from "../../components/catnat";
+import { CatnatSummary } from "../../components/catnat";
 
 // Nombre de communes à afficher dans la section "En savoir plus"
 const NB_COMMUNES_A_AFFICHER = 8;
@@ -139,10 +139,11 @@ export default async function DepartementPage({ params }: PageProps) {
       <RgaMapSection title={departement.nom} centre={departement.centre} zoomLevel="departement" />
 
       {/* Résumé catastrophes naturelles */}
-      <CatnatSummaryDepartement
+      <CatnatSummary
         totalCatnat={totalCatnat}
-        nomDepartement={departement.nom}
-        codeDepartement={departement.code}
+        nomTerritoire={departement.nom}
+        typeTerritoire="département"
+        codeTerritoire={departement.code}
       />
 
       {/* En savoir plus - communes */}
