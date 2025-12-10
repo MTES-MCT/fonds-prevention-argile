@@ -1,14 +1,17 @@
-import { pgTable, text, date, index, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, date, index, timestamp, primaryKey } from "drizzle-orm/pg-core";
 
 /**
  * Table des catastrophes naturelles (CATNAT)
  * Source: API Georisques - https://www.georisques.gouv.fr/doc-api
+ *
+ * Note: Une même catastrophe (même code_national_catnat) peut concerner plusieurs communes
+ * La clé primaire est donc composite: (code_national_catnat, code_insee)
  */
 export const catastrophesNaturelles = pgTable(
   "catastrophes_naturelles",
   {
-    // Identifiant unique de l'arrêté de catastrophe naturelle
-    codeNationalCatnat: text("code_national_catnat").primaryKey(),
+    // Identifiant de l'arrêté de catastrophe naturelle
+    codeNationalCatnat: text("code_national_catnat").notNull(),
 
     // Dates de l'événement
     dateDebutEvt: date("date_debut_evt").notNull(),
@@ -30,6 +33,9 @@ export const catastrophesNaturelles = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => ({
+    // Clé primaire composite
+    pk: primaryKey({ columns: [table.codeNationalCatnat, table.codeInsee] }),
+
     // Index pour les requêtes par commune
     codeInseeIdx: index("catastrophes_naturelles_code_insee_idx").on(table.codeInsee),
 
@@ -41,6 +47,9 @@ export const catastrophesNaturelles = pgTable(
 
     // Index pour les requêtes par type de risque
     libelleRisqueIdx: index("catastrophes_naturelles_libelle_risque_idx").on(table.libelleRisqueJo),
+
+    // Index pour les requêtes par code national
+    codeNationalIdx: index("catastrophes_naturelles_code_national_idx").on(table.codeNationalCatnat),
   })
 );
 

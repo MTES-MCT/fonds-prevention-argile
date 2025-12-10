@@ -1,22 +1,29 @@
-import { eq, gte, desc, sql, inArray, SQL } from "drizzle-orm";
+import { eq, and, gte, desc, sql, inArray, SQL } from "drizzle-orm";
 import { db } from "../client";
 import { catastrophesNaturelles } from "../schema/catastrophes-naturelles";
 import type { CatastropheNaturelle, NewCatastropheNaturelle } from "../schema/catastrophes-naturelles";
-import { BaseRepository } from "./base.repository";
 import { dateToSqlString } from "@/shared/utils";
 
 /**
  * Repository pour les catastrophes naturelles
+ *
+ * Note: Ce repository n'étend pas BaseRepository car la table utilise une clé composite
+ * (codeNationalCatnat, codeInsee) au lieu d'un ID simple.
  */
-export class CatastrophesNaturellesRepository extends BaseRepository<CatastropheNaturelle> {
+export class CatastrophesNaturellesRepository {
   /**
-   * Trouve une catastrophe naturelle par son code national
+   * Trouve une catastrophe naturelle par sa clé composite
    */
-  async findById(codeNationalCatnat: string): Promise<CatastropheNaturelle | null> {
+  async findByCompositeKey(codeNationalCatnat: string, codeInsee: string): Promise<CatastropheNaturelle | null> {
     const [result] = await db
       .select()
       .from(catastrophesNaturelles)
-      .where(eq(catastrophesNaturelles.codeNationalCatnat, codeNationalCatnat))
+      .where(
+        and(
+          eq(catastrophesNaturelles.codeNationalCatnat, codeNationalCatnat),
+          eq(catastrophesNaturelles.codeInsee, codeInsee)
+        )
+      )
       .limit(1);
 
     return result || null;
@@ -32,27 +39,19 @@ export class CatastrophesNaturellesRepository extends BaseRepository<Catastrophe
   /**
    * Crée une nouvelle catastrophe naturelle
    */
-  async create(data: Partial<CatastropheNaturelle>): Promise<CatastropheNaturelle> {
-    const insertData: NewCatastropheNaturelle = {
-      codeNationalCatnat: data.codeNationalCatnat!,
-      dateDebutEvt: data.dateDebutEvt!,
-      dateFinEvt: data.dateFinEvt!,
-      datePublicationArrete: data.datePublicationArrete!,
-      datePublicationJo: data.datePublicationJo!,
-      libelleRisqueJo: data.libelleRisqueJo!,
-      codeInsee: data.codeInsee!,
-      libelleCommune: data.libelleCommune!,
-    };
-
-    const [created] = await db.insert(catastrophesNaturelles).values(insertData).returning();
-
+  async create(data: NewCatastropheNaturelle): Promise<CatastropheNaturelle> {
+    const [created] = await db.insert(catastrophesNaturelles).values(data).returning();
     return created;
   }
 
   /**
    * Met à jour une catastrophe naturelle
    */
-  async update(codeNationalCatnat: string, data: Partial<CatastropheNaturelle>): Promise<CatastropheNaturelle | null> {
+  async update(
+    codeNationalCatnat: string,
+    codeInsee: string,
+    data: Partial<NewCatastropheNaturelle>
+  ): Promise<CatastropheNaturelle | null> {
     const updateData: Partial<NewCatastropheNaturelle> = {
       ...data,
       updatedAt: new Date(),
@@ -61,7 +60,12 @@ export class CatastrophesNaturellesRepository extends BaseRepository<Catastrophe
     const [updated] = await db
       .update(catastrophesNaturelles)
       .set(updateData)
-      .where(eq(catastrophesNaturelles.codeNationalCatnat, codeNationalCatnat))
+      .where(
+        and(
+          eq(catastrophesNaturelles.codeNationalCatnat, codeNationalCatnat),
+          eq(catastrophesNaturelles.codeInsee, codeInsee)
+        )
+      )
       .returning();
 
     return updated || null;
@@ -70,10 +74,15 @@ export class CatastrophesNaturellesRepository extends BaseRepository<Catastrophe
   /**
    * Supprime une catastrophe naturelle
    */
-  async delete(codeNationalCatnat: string): Promise<boolean> {
+  async delete(codeNationalCatnat: string, codeInsee: string): Promise<boolean> {
     const result = await db
       .delete(catastrophesNaturelles)
-      .where(eq(catastrophesNaturelles.codeNationalCatnat, codeNationalCatnat))
+      .where(
+        and(
+          eq(catastrophesNaturelles.codeNationalCatnat, codeNationalCatnat),
+          eq(catastrophesNaturelles.codeInsee, codeInsee)
+        )
+      )
       .returning();
 
     return result.length > 0;
@@ -82,11 +91,16 @@ export class CatastrophesNaturellesRepository extends BaseRepository<Catastrophe
   /**
    * Vérifie si une catastrophe naturelle existe
    */
-  async exists(codeNationalCatnat: string): Promise<boolean> {
+  async exists(codeNationalCatnat: string, codeInsee: string): Promise<boolean> {
     const result = await db
       .select({ code: catastrophesNaturelles.codeNationalCatnat })
       .from(catastrophesNaturelles)
-      .where(eq(catastrophesNaturelles.codeNationalCatnat, codeNationalCatnat))
+      .where(
+        and(
+          eq(catastrophesNaturelles.codeNationalCatnat, codeNationalCatnat),
+          eq(catastrophesNaturelles.codeInsee, codeInsee)
+        )
+      )
       .limit(1);
 
     return result.length > 0;
@@ -106,6 +120,13 @@ export class CatastrophesNaturellesRepository extends BaseRepository<Catastrophe
     return result?.count || 0;
   }
 
+  /**
+   * Exécute une transaction
+   */
+  protected async transaction<R>(callback: (tx: typeof db) => Promise<R>): Promise<R> {
+    return await callback(db);
+  }
+
   // ========================================================================
   // Méthodes spécifiques au métier
   // ========================================================================
@@ -121,9 +142,14 @@ export class CatastrophesNaturellesRepository extends BaseRepository<Catastrophe
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: catastrophesNaturelles.codeNationalCatnat,
+        target: [catastrophesNaturelles.codeNationalCatnat, catastrophesNaturelles.codeInsee],
         set: {
-          ...data,
+          dateDebutEvt: sql`excluded.date_debut_evt`,
+          dateFinEvt: sql`excluded.date_fin_evt`,
+          datePublicationArrete: sql`excluded.date_publication_arrete`,
+          datePublicationJo: sql`excluded.date_publication_jo`,
+          libelleRisqueJo: sql`excluded.libelle_risque_jo`,
+          libelleCommune: sql`excluded.libelle_commune`,
           updatedAt: new Date(),
         },
       })
@@ -153,8 +179,14 @@ export class CatastrophesNaturellesRepository extends BaseRepository<Catastrophe
             }))
           )
           .onConflictDoUpdate({
-            target: catastrophesNaturelles.codeNationalCatnat,
+            target: [catastrophesNaturelles.codeNationalCatnat, catastrophesNaturelles.codeInsee],
             set: {
+              dateDebutEvt: sql`excluded.date_debut_evt`,
+              dateFinEvt: sql`excluded.date_fin_evt`,
+              datePublicationArrete: sql`excluded.date_publication_arrete`,
+              datePublicationJo: sql`excluded.date_publication_jo`,
+              libelleRisqueJo: sql`excluded.libelle_risque_jo`,
+              libelleCommune: sql`excluded.libelle_commune`,
               updatedAt: new Date(),
             },
           });
@@ -182,12 +214,7 @@ export class CatastrophesNaturellesRepository extends BaseRepository<Catastrophe
     return db
       .select()
       .from(catastrophesNaturelles)
-      .where(
-        this.createAndConditions(
-          eq(catastrophesNaturelles.codeInsee, codeInsee),
-          gte(catastrophesNaturelles.dateDebutEvt, dateString)
-        )
-      )
+      .where(and(eq(catastrophesNaturelles.codeInsee, codeInsee), gte(catastrophesNaturelles.dateDebutEvt, dateString)))
       .orderBy(desc(catastrophesNaturelles.dateDebutEvt));
   }
 

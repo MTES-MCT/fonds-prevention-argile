@@ -1,5 +1,5 @@
 {
-  "id": "b8a59f14-2df9-4993-893e-28090908f0bf",
+  "id": "c38a6c97-c930-4bc7-921c-4cc143967496",
   "prevId": "1cc3e482-e1b9-480a-b22f-e49e9a1ea3a5",
   "version": "7",
   "dialect": "postgresql",
@@ -413,7 +413,7 @@
         "code_national_catnat": {
           "name": "code_national_catnat",
           "type": "text",
-          "primaryKey": true,
+          "primaryKey": false,
           "notNull": true
         },
         "date_debut_evt": {
@@ -539,10 +539,33 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "catastrophes_naturelles_code_national_idx": {
+          "name": "catastrophes_naturelles_code_national_idx",
+          "columns": [
+            {
+              "expression": "code_national_catnat",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "catastrophes_naturelles_code_national_catnat_code_insee_pk": {
+          "name": "catastrophes_naturelles_code_national_catnat_code_insee_pk",
+          "columns": [
+            "code_national_catnat",
+            "code_insee"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
