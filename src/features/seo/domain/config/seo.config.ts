@@ -13,7 +13,7 @@ export {
 /**
  * Nombre de communes à générer par département (triées par population)
  */
-export const COMMUNES_PAR_DEPARTEMENT = 30;
+export const COMMUNES_PAR_DEPARTEMENT = 70;
 
 /**
  * Configuration de l'API Géo

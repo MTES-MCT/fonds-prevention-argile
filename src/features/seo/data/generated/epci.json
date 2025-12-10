@@ -8,7 +8,13 @@
     ],
     "codesCommunes": [
       "03185",
-      "03101"
+      "03101",
+      "03098",
+      "03211",
+      "03262",
+      "03212",
+      "03314",
+      "03140"
     ],
     "population": 59380,
     "centre": {
@@ -26,7 +32,21 @@
     "codesCommunes": [
       "03310",
       "03095",
-      "03023"
+      "03023",
+      "03236",
+      "03094",
+      "03001",
+      "03264",
+      "03304",
+      "03306",
+      "03258",
+      "03044",
+      "03165",
+      "03093",
+      "03126",
+      "03157",
+      "03110",
+      "03060"
     ],
     "population": 84566,
     "centre": {
@@ -44,7 +64,19 @@
     ],
     "codesCommunes": [
       "03190",
-      "03321"
+      "03321",
+      "03013",
+      "03155",
+      "03275",
+      "03290",
+      "03156",
+      "03200",
+      "03197",
+      "03025",
+      "03286",
+      "03040",
+      "03316",
+      "03283"
     ],
     "population": 64246,
     "centre": {
@@ -60,7 +92,14 @@
       "03"
     ],
     "codesCommunes": [
-      "03082"
+      "03082",
+      "03195",
+      "03084",
+      "03186",
+      "03106",
+      "03315",
+      "03104",
+      "03052"
     ],
     "population": 25346,
     "centre": {
@@ -77,12 +116,139 @@
     ],
     "codesCommunes": [
       "03118",
-      "03254"
+      "03254",
+      "03107",
+      "03043",
+      "03053",
+      "03022"
     ],
     "population": 33672,
     "centre": {
       "lat": 46.2515,
       "lon": 3.1678
+    }
+  },
+  {
+    "codeSiren": "200071470",
+    "nom": "CC Entr'Allier Besbre et Loire",
+    "slug": "cc-entr-allier-besbre-et-loire-200071470",
+    "codesDepartements": [
+      "03"
+    ],
+    "codesCommunes": [
+      "03298",
+      "03102",
+      "03019",
+      "03100",
+      "03103"
+    ],
+    "population": 24322,
+    "centre": {
+      "lat": 46.424,
+      "lon": 3.679
+    }
+  },
+  {
+    "codeSiren": "240300491",
+    "nom": "CC du Pays de Lapalisse",
+    "slug": "cc-du-pays-de-lapalisse-240300491",
+    "codesDepartements": [
+      "03"
+    ],
+    "codesCommunes": [
+      "03138"
+    ],
+    "population": 8460,
+    "centre": {
+      "lat": 46.2373,
+      "lon": 3.6621
+    }
+  },
+  {
+    "codeSiren": "240300657",
+    "nom": "CC du Pays d'Huriel",
+    "slug": "cc-du-pays-d-huriel-240300657",
+    "codesDepartements": [
+      "03"
+    ],
+    "codesCommunes": [
+      "03128"
+    ],
+    "population": 7332,
+    "centre": {
+      "lat": 46.4213,
+      "lon": 2.4271
+    }
+  },
+  {
+    "codeSiren": "200071496",
+    "nom": "CC du Bocage Bourbonnais",
+    "slug": "cc-du-bocage-bourbonnais-200071496",
+    "codesDepartements": [
+      "03"
+    ],
+    "codesCommunes": [
+      "03036",
+      "03247",
+      "03046"
+    ],
+    "population": 13654,
+    "centre": {
+      "lat": 46.5146,
+      "lon": 3.0483
+    }
+  },
+  {
+    "codeSiren": "240300566",
+    "nom": "CC du Val de Cher",
+    "slug": "cc-du-val-de-cher-240300566",
+    "codesDepartements": [
+      "03"
+    ],
+    "codesCommunes": [
+      "03297",
+      "03301",
+      "03111"
+    ],
+    "population": 5461,
+    "centre": {
+      "lat": 46.4875,
+      "lon": 2.6335
+    }
+  },
+  {
+    "codeSiren": "240300558",
+    "nom": "CC du Pays de Tronçais",
+    "slug": "cc-du-pays-de-troncais-240300558",
+    "codesDepartements": [
+      "03"
+    ],
+    "codesCommunes": [
+      "03048",
+      "03003"
+    ],
+    "population": 7431,
+    "centre": {
+      "lat": 46.621,
+      "lon": 2.7711
+    }
+  },
+  {
+    "codeSiren": "200071884",
+    "nom": "CC Le Grand Charolais",
+    "slug": "cc-le-grand-charolais-200071884",
+    "codesDepartements": [
+      "03",
+      "71"
+    ],
+    "codesCommunes": [
+      "03173",
+      "03063"
+    ],
+    "population": 39454,
+    "centre": {
+      "lat": 46.4746,
+      "lon": 4.1693
     }
   },
   {
@@ -98,7 +264,17 @@
       "04143",
       "04242",
       "04152",
-      "04197"
+      "04197",
+      "04245",
+      "04230",
+      "04094",
+      "04166",
+      "04063",
+      "04034",
+      "04172",
+      "04157",
+      "04189",
+      "04004"
     ],
     "population": 63654,
     "centre": {
@@ -116,7 +292,25 @@
     "codesCommunes": [
       "04070",
       "04049",
-      "04116"
+      "04116",
+      "04149",
+      "04108",
+      "04244",
+      "04001",
+      "04079",
+      "04205",
+      "04110",
+      "04036",
+      "04047",
+      "04217",
+      "04135",
+      "04046",
+      "04121",
+      "04031",
+      "04122",
+      "04084",
+      "04113",
+      "04203"
     ],
     "population": 48726,
     "centre": {
@@ -134,7 +328,9 @@
       "26"
     ],
     "codesCommunes": [
-      "04209"
+      "04209",
+      "04123",
+      "04134"
     ],
     "population": 25482,
     "centre": {
@@ -150,12 +346,135 @@
       "04"
     ],
     "codesCommunes": [
-      "04088"
+      "04088",
+      "04178",
+      "04065",
+      "04151",
+      "04206"
     ],
     "population": 9996,
     "centre": {
       "lat": 44.0215,
       "lon": 5.796
+    }
+  },
+  {
+    "codeSiren": "200072304",
+    "nom": "CC Vallée de l'Ubaye - Serre-Ponçon",
+    "slug": "cc-vallee-de-l-ubaye-serre-poncon-200072304",
+    "codesDepartements": [
+      "04"
+    ],
+    "codesCommunes": [
+      "04019",
+      "04096",
+      "04033",
+      "04195",
+      "04226"
+    ],
+    "population": 7620,
+    "centre": {
+      "lat": 44.4487,
+      "lon": 6.5997
+    }
+  },
+  {
+    "codeSiren": "200071025",
+    "nom": "CC Haute-Provence - Pays de Banon",
+    "slug": "cc-haute-provence-pays-de-banon-200071025",
+    "codesDepartements": [
+      "04"
+    ],
+    "codesCommunes": [
+      "04160",
+      "04111",
+      "04192",
+      "04018",
+      "04188",
+      "04068",
+      "04208",
+      "04163"
+    ],
+    "population": 10059,
+    "centre": {
+      "lat": 43.9897,
+      "lon": 5.6569
+    }
+  },
+  {
+    "codeSiren": "200071033",
+    "nom": "CC Jabron-Lure-Vançon-Durance",
+    "slug": "cc-jabron-lure-vancon-durance-200071033",
+    "codesDepartements": [
+      "04",
+      "26"
+    ],
+    "codesCommunes": [
+      "04145",
+      "04200",
+      "04013",
+      "04053",
+      "04139"
+    ],
+    "population": 5393,
+    "centre": {
+      "lat": 44.1238,
+      "lon": 5.8174
+    }
+  },
+  {
+    "codeSiren": "200068625",
+    "nom": "CC Alpes-Provence-Verdon \"Sources de lumière\"",
+    "slug": "cc-alpes-provence-verdon-sources-de-lumiere-200068625",
+    "codesDepartements": [
+      "04"
+    ],
+    "codesCommunes": [
+      "04039",
+      "04173",
+      "04008",
+      "04006",
+      "04076",
+      "04061"
+    ],
+    "population": 11417,
+    "centre": {
+      "lat": 44.0289,
+      "lon": 6.5947
+    }
+  },
+  {
+    "codeSiren": "200040624",
+    "nom": "CC Pays d'Apt-Luberon",
+    "slug": "cc-pays-d-apt-luberon-200040624",
+    "codesDepartements": [
+      "04",
+      "84"
+    ],
+    "codesCommunes": [
+      "04045"
+    ],
+    "population": 28347,
+    "centre": {
+      "lat": 43.9031,
+      "lon": 5.4046
+    }
+  },
+  {
+    "codeSiren": "200067825",
+    "nom": "CA Gap-Tallard-Durance",
+    "slug": "ca-gap-tallard-durance-200067825",
+    "codesDepartements": [
+      "04",
+      "05"
+    ],
+    "codesCommunes": [
+      "04066"
+    ],
+    "population": 50743,
+    "centre": {
+      "lat": 44.5033,
+      "lon": 5.9958
     }
   },
   {
@@ -170,7 +489,21 @@
       "24053",
       "24138",
       "24557",
-      "24312"
+      "24312",
+      "24102",
+      "24026",
+      "24256",
+      "24098",
+      "24350",
+      "24139",
+      "24115",
+      "24002",
+      "24571",
+      "24540",
+      "24362",
+      "24266",
+      "24010",
+      "24011"
     ],
     "population": 104933,
     "centre": {
@@ -186,7 +519,17 @@
       "24"
     ],
     "codesCommunes": [
-      "24037"
+      "24037",
+      "24340",
+      "24225",
+      "24222",
+      "24487",
+      "24145",
+      "24194",
+      "24140",
+      "24182",
+      "24237",
+      "24534"
     ],
     "population": 61551,
     "centre": {
@@ -218,7 +561,9 @@
       "24"
     ],
     "codesCommunes": [
-      "24547"
+      "24547",
+      "24229",
+      "24550"
     ],
     "population": 22161,
     "centre": {
@@ -234,7 +579,9 @@
       "24"
     ],
     "codesCommunes": [
-      "24294"
+      "24294",
+      "24264",
+      "24329"
     ],
     "population": 12546,
     "centre": {
@@ -250,12 +597,270 @@
       "24"
     ],
     "codesCommunes": [
-      "24372"
+      "24372",
+      "24309",
+      "24442",
+      "24295"
     ],
     "population": 18912,
     "centre": {
       "lat": 45.1197,
       "lon": 0.4709
+    }
+  },
+  {
+    "codeSiren": "200040400",
+    "nom": "CC du Périgord Ribéracois",
+    "slug": "cc-du-perigord-riberacois-200040400",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24352",
+      "24553"
+    ],
+    "population": 19449,
+    "centre": {
+      "lat": 45.2871,
+      "lon": 0.3955
+    }
+  },
+  {
+    "codeSiren": "200041572",
+    "nom": "CC Dronne et Belle",
+    "slug": "cc-dronne-et-belle-200041572",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24064",
+      "24253"
+    ],
+    "population": 11393,
+    "centre": {
+      "lat": 45.3905,
+      "lon": 0.5751
+    }
+  },
+  {
+    "codeSiren": "200071819",
+    "nom": "CC du Périgord Nontronnais",
+    "slug": "cc-du-perigord-nontronnais-200071819",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24311"
+    ],
+    "population": 15184,
+    "centre": {
+      "lat": 45.5777,
+      "lon": 0.6783
+    }
+  },
+  {
+    "codeSiren": "242400935",
+    "nom": "CC du Pays de Saint Aulaye",
+    "slug": "cc-du-pays-de-saint-aulaye-242400935",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24354",
+      "24376"
+    ],
+    "population": 6688,
+    "centre": {
+      "lat": 45.1694,
+      "lon": 0.1126
+    }
+  },
+  {
+    "codeSiren": "200034833",
+    "nom": "CC des Bastides Dordogne-Périgord",
+    "slug": "cc-des-bastides-dordogne-perigord-200034833",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24223",
+      "24068",
+      "24028"
+    ],
+    "population": 18601,
+    "centre": {
+      "lat": 44.7766,
+      "lon": 0.8009
+    }
+  },
+  {
+    "codeSiren": "242400752",
+    "nom": "CC Périgord-Limousin",
+    "slug": "cc-perigord-limousin-242400752",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24551",
+      "24133"
+    ],
+    "population": 14078,
+    "centre": {
+      "lat": 45.4571,
+      "lon": 0.9635
+    }
+  },
+  {
+    "codeSiren": "200069094",
+    "nom": "CC Isle et Crempse en Périgord",
+    "slug": "cc-isle-et-crempse-en-perigord-200069094",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24299",
+      "24259",
+      "24462"
+    ],
+    "population": 14475,
+    "centre": {
+      "lat": 45.0151,
+      "lon": 0.4311
+    }
+  },
+  {
+    "codeSiren": "200041168",
+    "nom": "CC de la Vallée de l'Homme",
+    "slug": "cc-de-la-vallee-de-l-homme-200041168",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24291",
+      "24067",
+      "24356"
+    ],
+    "population": 15989,
+    "centre": {
+      "lat": 44.9961,
+      "lon": 1.0613
+    }
+  },
+  {
+    "codeSiren": "200040889",
+    "nom": "CC de Portes Sud Périgord",
+    "slug": "cc-de-portes-sud-perigord-200040889",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24167"
+    ],
+    "population": 8450,
+    "centre": {
+      "lat": 44.7334,
+      "lon": 0.5305
+    }
+  },
+  {
+    "codeSiren": "243301371",
+    "nom": "CC du Pays Foyen",
+    "slug": "cc-du-pays-foyen-243301371",
+    "codesDepartements": [
+      "24",
+      "33"
+    ],
+    "codesCommunes": [
+      "24335"
+    ],
+    "population": 16540,
+    "centre": {
+      "lat": 44.8064,
+      "lon": 0.1666
+    }
+  },
+  {
+    "codeSiren": "200034197",
+    "nom": "CC de Montaigne Montravel et Gurson",
+    "slug": "cc-de-montaigne-montravel-et-gurson-200034197",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24370",
+      "24226",
+      "24289"
+    ],
+    "population": 11859,
+    "centre": {
+      "lat": 44.9075,
+      "lon": 0.129
+    }
+  },
+  {
+    "codeSiren": "200041051",
+    "nom": "CC Vallée de la Dordogne et Forêt Bessède",
+    "slug": "cc-vallee-de-la-dordogne-et-foret-bessede-200041051",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24396",
+      "24035",
+      "24142"
+    ],
+    "population": 8965,
+    "centre": {
+      "lat": 44.8075,
+      "lon": 1.0223
+    }
+  },
+  {
+    "codeSiren": "200040830",
+    "nom": "CC du Pays de Fénelon",
+    "slug": "cc-du-pays-de-fenelon-200040830",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24082"
+    ],
+    "population": 9728,
+    "centre": {
+      "lat": 44.9355,
+      "lon": 1.3251
+    }
+  },
+  {
+    "codeSiren": "242401024",
+    "nom": "CC Isle-Loue-Auvézère en Périgord",
+    "slug": "cc-isle-loue-auvezere-en-perigord-242401024",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24164"
+    ],
+    "population": 13805,
+    "centre": {
+      "lat": 45.3363,
+      "lon": 1.101
+    }
+  },
+  {
+    "codeSiren": "200041440",
+    "nom": "CC de Domme- Villefranche du Périgord",
+    "slug": "cc-de-domme-villefranche-du-perigord-200041440",
+    "codesDepartements": [
+      "24"
+    ],
+    "codesCommunes": [
+      "24091"
+    ],
+    "population": 8552,
+    "centre": {
+      "lat": 44.7069,
+      "lon": 1.1322
     }
   },
   {
@@ -267,7 +872,19 @@
     ],
     "codesCommunes": [
       "32013",
-      "32307"
+      "32307",
+      "32331",
+      "32162",
+      "32083",
+      "32301",
+      "32117",
+      "32279",
+      "32312",
+      "32282",
+      "32076",
+      "32348",
+      "32368",
+      "32019"
     ],
     "population": 39498,
     "centre": {
@@ -283,7 +900,13 @@
       "32"
     ],
     "codesCommunes": [
-      "32160"
+      "32160",
+      "32334",
+      "32425",
+      "32268",
+      "32210",
+      "32016",
+      "32121"
     ],
     "population": 17060,
     "centre": {
@@ -299,7 +922,12 @@
       "32"
     ],
     "codesCommunes": [
-      "32107"
+      "32107",
+      "32290",
+      "32459",
+      "32095",
+      "32404",
+      "32180"
     ],
     "population": 14327,
     "centre": {
@@ -316,7 +944,11 @@
     ],
     "codesCommunes": [
       "32132",
-      "32208"
+      "32208",
+      "32286",
+      "32306",
+      "32345",
+      "32253"
     ],
     "population": 19309,
     "centre": {
@@ -332,7 +964,12 @@
       "32"
     ],
     "codesCommunes": [
-      "32119"
+      "32119",
+      "32096",
+      "32079",
+      "32149",
+      "32127",
+      "32190"
     ],
     "population": 13441,
     "centre": {
@@ -364,7 +1001,10 @@
       "32"
     ],
     "codesCommunes": [
-      "32256"
+      "32256",
+      "32252",
+      "32285",
+      "32159"
     ],
     "population": 7720,
     "centre": {
@@ -380,12 +1020,158 @@
       "32"
     ],
     "codesCommunes": [
-      "32147"
+      "32147",
+      "32012",
+      "32412",
+      "32433",
+      "32123"
     ],
     "population": 10784,
     "centre": {
       "lat": 43.5507,
       "lon": 0.8091
+    }
+  },
+  {
+    "codeSiren": "243200599",
+    "nom": "CC du Saves",
+    "slug": "cc-du-saves-243200599",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32410",
+      "32213"
+    ],
+    "population": 9849,
+    "centre": {
+      "lat": 43.4673,
+      "lon": 0.9154
+    }
+  },
+  {
+    "codeSiren": "200034726",
+    "nom": "CC Bastides de Lomagne",
+    "slug": "cc-bastides-de-lomagne-200034726",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32249",
+      "32370",
+      "32106",
+      "32269"
+    ],
+    "population": 11318,
+    "centre": {
+      "lat": 43.7974,
+      "lon": 0.8904
+    }
+  },
+  {
+    "codeSiren": "243200409",
+    "nom": "CC du Bas Armagnac",
+    "slug": "cc-du-bas-armagnac-243200409",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32296",
+      "32155",
+      "32227"
+    ],
+    "population": 8714,
+    "centre": {
+      "lat": 43.7827,
+      "lon": -0.048
+    }
+  },
+  {
+    "codeSiren": "200035632",
+    "nom": "CC Armagnac Adour",
+    "slug": "cc-armagnac-adour-200035632",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32344",
+      "32001",
+      "32463",
+      "32378"
+    ],
+    "population": 6568,
+    "centre": {
+      "lat": 43.6818,
+      "lon": -0.0228
+    }
+  },
+  {
+    "codeSiren": "200072320",
+    "nom": "CC Val de Gers",
+    "slug": "cc-val-de-gers-200072320",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32242",
+      "32426",
+      "32029"
+    ],
+    "population": 9783,
+    "centre": {
+      "lat": 43.4942,
+      "lon": 0.5551
+    }
+  },
+  {
+    "codeSiren": "243200508",
+    "nom": "CC Bastides et Vallons du Gers",
+    "slug": "cc-bastides-et-vallons-du-gers-243200508",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32319",
+      "32233",
+      "32036"
+    ],
+    "population": 6969,
+    "centre": {
+      "lat": 43.5465,
+      "lon": 0.1294
+    }
+  },
+  {
+    "codeSiren": "200030435",
+    "nom": "CC d'Aire-sur-l'Adour",
+    "slug": "cc-d-aire-sur-l-adour-200030435",
+    "codesDepartements": [
+      "32",
+      "40"
+    ],
+    "codesCommunes": [
+      "32027"
+    ],
+    "population": 12922,
+    "centre": {
+      "lat": 43.6732,
+      "lon": -0.3192
+    }
+  },
+  {
+    "codeSiren": "200035756",
+    "nom": "CC Astarac Arros en Gascogne",
+    "slug": "cc-astarac-arros-en-gascogne-200035756",
+    "codesDepartements": [
+      "32"
+    ],
+    "codesCommunes": [
+      "32464"
+    ],
+    "population": 7171,
+    "centre": {
+      "lat": 43.4513,
+      "lon": 0.3517
     }
   },
   {
@@ -400,7 +1186,14 @@
       "36063",
       "36159",
       "36005",
-      "36202"
+      "36202",
+      "36128",
+      "36101",
+      "36009",
+      "36071",
+      "36057",
+      "36064",
+      "36112"
     ],
     "population": 72566,
     "centre": {
@@ -417,7 +1210,10 @@
       "36"
     ],
     "codesCommunes": [
-      "36088"
+      "36088",
+      "36171",
+      "36199",
+      "36021"
     ],
     "population": 18778,
     "centre": {
@@ -433,7 +1229,10 @@
       "36"
     ],
     "codesCommunes": [
-      "36018"
+      "36018",
+      "36224",
+      "36165",
+      "36220"
     ],
     "population": 17565,
     "centre": {
@@ -449,7 +1248,16 @@
       "36"
     ],
     "codesCommunes": [
-      "36006"
+      "36006",
+      "36154",
+      "36192",
+      "36200",
+      "36070",
+      "36231",
+      "36161",
+      "36158",
+      "36042",
+      "36032"
     ],
     "population": 19302,
     "centre": {
@@ -465,7 +1273,11 @@
       "36"
     ],
     "codesCommunes": [
-      "36031"
+      "36031",
+      "36241",
+      "36142",
+      "36232",
+      "36194"
     ],
     "population": 13242,
     "centre": {
@@ -481,12 +1293,181 @@
       "36"
     ],
     "codesCommunes": [
-      "36046"
+      "36046",
+      "36127",
+      "36109",
+      "36180",
+      "36208"
     ],
     "population": 16134,
     "centre": {
       "lat": 46.5871,
       "lon": 2.0413
+    }
+  },
+  {
+    "codeSiren": "243600293",
+    "nom": "CC Levroux Boischaut Champagne",
+    "slug": "cc-levroux-boischaut-champagne-243600293",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36093",
+      "36247"
+    ],
+    "population": 6162,
+    "centre": {
+      "lat": 46.9879,
+      "lon": 1.6276
+    }
+  },
+  {
+    "codeSiren": "243600202",
+    "nom": "CC Chabris - Pays de Bazelle",
+    "slug": "cc-chabris-pays-de-bazelle-243600202",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36034",
+      "36229",
+      "36162"
+    ],
+    "population": 6185,
+    "centre": {
+      "lat": 47.187,
+      "lon": 1.6952
+    }
+  },
+  {
+    "codeSiren": "200035848",
+    "nom": "CC du Châtillonnais en Berry",
+    "slug": "cc-du-chatillonnais-en-berry-200035848",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36045",
+      "36055",
+      "36149"
+    ],
+    "population": 5638,
+    "centre": {
+      "lat": 46.9598,
+      "lon": 1.206
+    }
+  },
+  {
+    "codeSiren": "200040558",
+    "nom": "CC Écueillé-Valençay",
+    "slug": "cc-ecueille-valencay-200040558",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36228",
+      "36103",
+      "36069",
+      "36244",
+      "36233",
+      "36155",
+      "36107",
+      "36237"
+    ],
+    "population": 10933,
+    "centre": {
+      "lat": 47.0983,
+      "lon": 1.4388
+    }
+  },
+  {
+    "codeSiren": "200068880",
+    "nom": "CC Champagne Boischauts",
+    "slug": "cc-champagne-boischauts-200068880",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36230",
+      "36140",
+      "36003"
+    ],
+    "population": 9691,
+    "centre": {
+      "lat": 46.9417,
+      "lon": 1.8842
+    }
+  },
+  {
+    "codeSiren": "200018521",
+    "nom": "CC du Val de Bouzanne",
+    "slug": "cc-du-val-de-bouzanne-200018521",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36141",
+      "36056"
+    ],
+    "population": 5969,
+    "centre": {
+      "lat": 46.6025,
+      "lon": 1.7797
+    }
+  },
+  {
+    "codeSiren": "200007052",
+    "nom": "CC de la Marche Berrichonne",
+    "slug": "cc-de-la-marche-berrichonne-200007052",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36001",
+      "36189",
+      "36060",
+      "36146"
+    ],
+    "population": 5504,
+    "centre": {
+      "lat": 46.471,
+      "lon": 1.7967
+    }
+  },
+  {
+    "codeSiren": "200035137",
+    "nom": "CC Marche Occitane - Val d'Anglin",
+    "slug": "cc-marche-occitane-val-d-anglin-200035137",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36035",
+      "36016"
+    ],
+    "population": 6517,
+    "centre": {
+      "lat": 46.4772,
+      "lon": 1.2715
+    }
+  },
+  {
+    "codeSiren": "243600343",
+    "nom": "CC Coeur de Brenne",
+    "slug": "cc-coeur-de-brenne-243600343",
+    "codesDepartements": [
+      "36"
+    ],
+    "codesCommunes": [
+      "36123",
+      "36113",
+      "36010"
+    ],
+    "population": 4659,
+    "centre": {
+      "lat": 46.8029,
+      "lon": 1.1822
     }
   },
   {
@@ -501,7 +1482,24 @@
       "47201",
       "47032",
       "47031",
-      "47100"
+      "47100",
+      "47209",
+      "47145",
+      "47069",
+      "47091",
+      "47051",
+      "47040",
+      "47225",
+      "47015",
+      "47238",
+      "47246",
+      "47137",
+      "47169",
+      "47300",
+      "47016",
+      "47060",
+      "47128",
+      "47019"
     ],
     "population": 101727,
     "centre": {
@@ -518,7 +1516,14 @@
     ],
     "codesCommunes": [
       "47323",
-      "47252"
+      "47252",
+      "47215",
+      "47027",
+      "47049",
+      "47138",
+      "47146",
+      "47075",
+      "47117"
     ],
     "population": 47899,
     "centre": {
@@ -535,7 +1540,17 @@
     ],
     "codesCommunes": [
       "47157",
-      "47310"
+      "47310",
+      "47233",
+      "47065",
+      "47326",
+      "47024",
+      "47110",
+      "47159",
+      "47165",
+      "47101",
+      "47068",
+      "47301"
     ],
     "population": 60690,
     "centre": {
@@ -551,12 +1566,143 @@
       "47"
     ],
     "codesCommunes": [
-      "47195"
+      "47195",
+      "47143",
+      "47021",
+      "47167",
+      "47043",
+      "47097",
+      "47318"
     ],
     "population": 25866,
     "centre": {
       "lat": 44.1274,
       "lon": 0.323
+    }
+  },
+  {
+    "codeSiren": "200068930",
+    "nom": "CC Fumel Vallée du Lot",
+    "slug": "cc-fumel-vallee-du-lot-200068930",
+    "codesDepartements": [
+      "47"
+    ],
+    "codesCommunes": [
+      "47106",
+      "47185",
+      "47203",
+      "47280",
+      "47179",
+      "47283"
+    ],
+    "population": 24601,
+    "centre": {
+      "lat": 44.4659,
+      "lon": 0.9255
+    }
+  },
+  {
+    "codeSiren": "244701355",
+    "nom": "CC des Coteaux et Landes de Gascogne",
+    "slug": "cc-des-coteaux-et-landes-de-gascogne-244701355",
+    "codesDepartements": [
+      "47"
+    ],
+    "codesCommunes": [
+      "47052"
+    ],
+    "population": 12590,
+    "centre": {
+      "lat": 44.2833,
+      "lon": 0.0531
+    }
+  },
+  {
+    "codeSiren": "200068922",
+    "nom": "CC du Confluent et des Coteaux de Prayssas",
+    "slug": "cc-du-confluent-et-des-coteaux-de-prayssas-200068922",
+    "codesDepartements": [
+      "47"
+    ],
+    "codesCommunes": [
+      "47004",
+      "47210",
+      "47078",
+      "47213"
+    ],
+    "population": 17768,
+    "centre": {
+      "lat": 44.2971,
+      "lon": 0.4344
+    }
+  },
+  {
+    "codeSiren": "244700464",
+    "nom": "CC du Pays de Lauzun",
+    "slug": "cc-du-pays-de-lauzun-244700464",
+    "codesDepartements": [
+      "47"
+    ],
+    "codesCommunes": [
+      "47168",
+      "47264"
+    ],
+    "population": 10362,
+    "centre": {
+      "lat": 44.5969,
+      "lon": 0.4035
+    }
+  },
+  {
+    "codeSiren": "200036523",
+    "nom": "CC des Bastides en Haut Agenais Périgord",
+    "slug": "cc-des-bastides-en-haut-agenais-perigord-200036523",
+    "codesDepartements": [
+      "47"
+    ],
+    "codesCommunes": [
+      "47175",
+      "47048",
+      "47057",
+      "47324"
+    ],
+    "population": 17015,
+    "centre": {
+      "lat": 44.5775,
+      "lon": 0.7006
+    }
+  },
+  {
+    "codeSiren": "244701405",
+    "nom": "CC Lot et Tolzac",
+    "slug": "cc-lot-et-tolzac-244701405",
+    "codesDepartements": [
+      "47"
+    ],
+    "codesCommunes": [
+      "47054",
+      "47306"
+    ],
+    "population": 7426,
+    "centre": {
+      "lat": 44.4589,
+      "lon": 0.4806
+    }
+  },
+  {
+    "codeSiren": "244700449",
+    "nom": "CC du Pays de Duras",
+    "slug": "cc-du-pays-de-duras-244700449",
+    "codesDepartements": [
+      "47"
+    ],
+    "codesCommunes": [
+      "47086"
+    ],
+    "population": 5730,
+    "centre": {
+      "lat": 44.6768,
+      "lon": 0.2299
     }
   },
   {
@@ -571,7 +1717,19 @@
       "54547",
       "54304",
       "54578",
-      "54482"
+      "54482",
+      "54357",
+      "54274",
+      "54526",
+      "54184",
+      "54339",
+      "54300",
+      "54328",
+      "54257",
+      "54498",
+      "54439",
+      "54495",
+      "54197"
     ],
     "population": 258208,
     "centre": {
@@ -587,7 +1745,9 @@
       "54"
     ],
     "codesCommunes": [
-      "54329"
+      "54329",
+      "54039",
+      "54116"
     ],
     "population": 40609,
     "centre": {
@@ -603,7 +1763,11 @@
       "54"
     ],
     "codesCommunes": [
-      "54528"
+      "54528",
+      "54174",
+      "54232",
+      "54205",
+      "54557"
     ],
     "population": 44293,
     "centre": {
@@ -619,7 +1783,18 @@
       "54"
     ],
     "codesCommunes": [
-      "54323"
+      "54323",
+      "54382",
+      "54261",
+      "54270",
+      "54314",
+      "54451",
+      "54254",
+      "54234",
+      "54138",
+      "54321",
+      "54367",
+      "54493"
     ],
     "population": 63645,
     "centre": {
@@ -635,7 +1810,10 @@
       "54"
     ],
     "codesCommunes": [
-      "54431"
+      "54431",
+      "54079",
+      "54157",
+      "54415"
     ],
     "population": 40203,
     "centre": {
@@ -661,6 +1839,140 @@
     }
   },
   {
+    "codeSiren": "245400189",
+    "nom": "CC des Pays du Sel et du Vermois",
+    "slug": "cc-des-pays-du-sel-et-du-vermois-245400189",
+    "codesDepartements": [
+      "54"
+    ],
+    "codesCommunes": [
+      "54159",
+      "54483",
+      "54549",
+      "54462"
+    ],
+    "population": 28698,
+    "centre": {
+      "lat": 48.5972,
+      "lon": 6.3151
+    }
+  },
+  {
+    "codeSiren": "200070845",
+    "nom": "CC Orne Lorraine Confluences",
+    "slug": "cc-orne-lorraine-confluences-200070845",
+    "codesDepartements": [
+      "54"
+    ],
+    "codesCommunes": [
+      "54273",
+      "54099",
+      "54280",
+      "54263",
+      "54028",
+      "54136",
+      "54542"
+    ],
+    "population": 52850,
+    "centre": {
+      "lat": 49.2109,
+      "lon": 5.8758
+    }
+  },
+  {
+    "codeSiren": "245400601",
+    "nom": "CC du Bassin de Pompey",
+    "slug": "cc-du-bassin-de-pompey-245400601",
+    "codesDepartements": [
+      "54"
+    ],
+    "codesCommunes": [
+      "54115",
+      "54215",
+      "54318",
+      "54430",
+      "54090",
+      "54150",
+      "54305"
+    ],
+    "population": 39626,
+    "centre": {
+      "lat": 48.7619,
+      "lon": 6.1215
+    }
+  },
+  {
+    "codeSiren": "245400171",
+    "nom": "CC Moselle et Madon",
+    "slug": "cc-moselle-et-madon-245400171",
+    "codesDepartements": [
+      "54"
+    ],
+    "codesCommunes": [
+      "54397",
+      "54111",
+      "54459"
+    ],
+    "population": 28192,
+    "centre": {
+      "lat": 48.6074,
+      "lon": 6.1012
+    }
+  },
+  {
+    "codeSiren": "200043693",
+    "nom": "CC Terre Lorraine du Longuyonnais",
+    "slug": "cc-terre-lorraine-du-longuyonnais-200043693",
+    "codesDepartements": [
+      "54"
+    ],
+    "codesCommunes": [
+      "54322"
+    ],
+    "population": 15334,
+    "centre": {
+      "lat": 49.4573,
+      "lon": 5.6328
+    }
+  },
+  {
+    "codeSiren": "200067643",
+    "nom": "CC Meurthe Mortagne Moselle",
+    "slug": "cc-meurthe-mortagne-moselle-200067643",
+    "codesDepartements": [
+      "54"
+    ],
+    "codesCommunes": [
+      "54076",
+      "54152"
+    ],
+    "population": 16456,
+    "centre": {
+      "lat": 48.4867,
+      "lon": 6.4031
+    }
+  },
+  {
+    "codeSiren": "200070290",
+    "nom": "CC Coeur du Pays Haut",
+    "slug": "cc-coeur-du-pays-haut-200070290",
+    "codesDepartements": [
+      "54",
+      "55"
+    ],
+    "codesCommunes": [
+      "54533",
+      "54029",
+      "54425",
+      "54536"
+    ],
+    "population": 23280,
+    "centre": {
+      "lat": 49.3626,
+      "lon": 5.8506
+    }
+  },
+  {
     "codeSiren": "200093201",
     "nom": "Métropole Européenne de Lille",
     "slug": "metropole-europeenne-de-lille-200093201",
@@ -673,7 +1985,37 @@
       "59599",
       "59009",
       "59650",
-      "59378"
+      "59378",
+      "59328",
+      "59017",
+      "59360",
+      "59368",
+      "59410",
+      "59163",
+      "59279",
+      "59646",
+      "59507",
+      "59299",
+      "59220",
+      "59648",
+      "59286",
+      "59367",
+      "59508",
+      "59421",
+      "59560",
+      "59527",
+      "59152",
+      "59386",
+      "59636",
+      "59011",
+      "59426",
+      "59090",
+      "59339",
+      "59343",
+      "59143",
+      "59457",
+      "59352",
+      "59317"
     ],
     "population": 1194040,
     "centre": {
@@ -689,7 +2031,12 @@
       "59"
     ],
     "codesCommunes": [
-      "59183"
+      "59183",
+      "59155",
+      "59271",
+      "59273",
+      "59588",
+      "59131"
     ],
     "population": 192635,
     "centre": {
@@ -705,7 +2052,14 @@
       "59"
     ],
     "codesCommunes": [
-      "59606"
+      "59606",
+      "59014",
+      "59383",
+      "59112",
+      "59544",
+      "59616",
+      "59153",
+      "59447"
     ],
     "population": 191885,
     "centre": {
@@ -721,7 +2075,8 @@
       "59"
     ],
     "codesCommunes": [
-      "59178"
+      "59178",
+      "59569"
     ],
     "population": 148901,
     "centre": {
@@ -746,6 +2101,144 @@
     }
   },
   {
+    "codeSiren": "200043396",
+    "nom": "CA Maubeuge Val de Sambre",
+    "slug": "ca-maubeuge-val-de-sambre-200043396",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59392",
+      "59291",
+      "59324",
+      "59033"
+    ],
+    "population": 122909,
+    "centre": {
+      "lat": 50.2519,
+      "lon": 3.9915
+    }
+  },
+  {
+    "codeSiren": "200040947",
+    "nom": "CA Coeur de Flandre",
+    "slug": "ca-coeur-de-flandre-200040947",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59295",
+      "59043"
+    ],
+    "population": 102562,
+    "centre": {
+      "lat": 50.7687,
+      "lon": 2.5912
+    }
+  },
+  {
+    "codeSiren": "200042190",
+    "nom": "CA de la Porte du Hainaut",
+    "slug": "ca-de-la-porte-du-hainaut-200042190",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59172",
+      "59526",
+      "59491",
+      "59179",
+      "59205"
+    ],
+    "population": 158351,
+    "centre": {
+      "lat": 50.3792,
+      "lon": 3.4043
+    }
+  },
+  {
+    "codeSiren": "200030633",
+    "nom": "CA du Caudrésis et du Catésis",
+    "slug": "ca-du-caudresis-et-du-catesis-200030633",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59139"
+    ],
+    "population": 63265,
+    "centre": {
+      "lat": 50.1181,
+      "lon": 3.4904
+    }
+  },
+  {
+    "codeSiren": "245901152",
+    "nom": "CA Coeur d'Ostrevent",
+    "slug": "ca-coeur-d-ostrevent-245901152",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59574",
+      "59008"
+    ],
+    "population": 70247,
+    "centre": {
+      "lat": 50.369,
+      "lon": 3.2526
+    }
+  },
+  {
+    "codeSiren": "200043404",
+    "nom": "CC du Sud Avesnois",
+    "slug": "cc-du-sud-avesnois-200043404",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59249"
+    ],
+    "population": 24414,
+    "centre": {
+      "lat": 50.0523,
+      "lon": 4.1055
+    }
+  },
+  {
+    "codeSiren": "245900758",
+    "nom": "CC Flandre Lys",
+    "slug": "cc-flandre-lys-245900758",
+    "codesDepartements": [
+      "59",
+      "62"
+    ],
+    "codesCommunes": [
+      "59400"
+    ],
+    "population": 40142,
+    "centre": {
+      "lat": 50.6298,
+      "lon": 2.6847
+    }
+  },
+  {
+    "codeSiren": "200041960",
+    "nom": "CC Pévèle-Carembault",
+    "slug": "cc-pevele-carembault-200041960",
+    "codesDepartements": [
+      "59"
+    ],
+    "codesCommunes": [
+      "59449"
+    ],
+    "population": 98918,
+    "centre": {
+      "lat": 50.5099,
+      "lon": 3.1562
+    }
+  },
+  {
     "codeSiren": "246300701",
     "nom": "Clermont Auvergne Métropole",
     "slug": "clermont-auvergne-metropole-246300701",
@@ -759,7 +2252,21 @@
       "63284",
       "63032",
       "63014",
-      "63164"
+      "63164",
+      "63063",
+      "63193",
+      "63307",
+      "63070",
+      "63069",
+      "63308",
+      "63019",
+      "63345",
+      "63042",
+      "63263",
+      "63099",
+      "63272",
+      "63254",
+      "63141"
     ],
     "population": 296677,
     "centre": {
@@ -775,7 +2282,19 @@
       "63"
     ],
     "codesCommunes": [
-      "63300"
+      "63300",
+      "63103",
+      "63470",
+      "63245",
+      "63148",
+      "63417",
+      "63213",
+      "63322",
+      "63327",
+      "63092",
+      "63244",
+      "63381",
+      "63224"
     ],
     "population": 68319,
     "centre": {
@@ -791,7 +2310,11 @@
       "63"
     ],
     "codesCommunes": [
-      "63178"
+      "63178",
+      "63050",
+      "63352",
+      "63022",
+      "63282"
     ],
     "population": 56681,
     "centre": {
@@ -807,12 +2330,163 @@
       "63"
     ],
     "codesCommunes": [
-      "63430"
+      "63430",
+      "63125",
+      "63291",
+      "63393",
+      "63066",
+      "63231"
     ],
     "population": 36767,
     "centre": {
       "lat": 45.8532,
       "lon": 3.5832
+    }
+  },
+  {
+    "codeSiren": "200070761",
+    "nom": "CC Ambert Livradois Forez",
+    "slug": "cc-ambert-livradois-forez-200070761",
+    "codesDepartements": [
+      "63"
+    ],
+    "codesCommunes": [
+      "63003",
+      "63010"
+    ],
+    "population": 27596,
+    "centre": {
+      "lat": 45.5423,
+      "lon": 3.7051
+    }
+  },
+  {
+    "codeSiren": "246301097",
+    "nom": "CC Entre Dore et Allier",
+    "slug": "cc-entre-dore-et-allier-246301097",
+    "codesDepartements": [
+      "63"
+    ],
+    "codesCommunes": [
+      "63195",
+      "63265",
+      "63276"
+    ],
+    "population": 19687,
+    "centre": {
+      "lat": 45.8535,
+      "lon": 3.391
+    }
+  },
+  {
+    "codeSiren": "200069177",
+    "nom": "CC Mond'Arverne Communauté",
+    "slug": "cc-mond-arverne-communaute-200069177",
+    "codesDepartements": [
+      "63"
+    ],
+    "codesCommunes": [
+      "63457",
+      "63214",
+      "63455",
+      "63302",
+      "63262",
+      "63026",
+      "63227",
+      "63315",
+      "63084"
+    ],
+    "population": 41032,
+    "centre": {
+      "lat": 45.656,
+      "lon": 3.1604
+    }
+  },
+  {
+    "codeSiren": "200067627",
+    "nom": "CC Billom Communauté",
+    "slug": "cc-billom-communaute-200067627",
+    "codesDepartements": [
+      "63"
+    ],
+    "codesCommunes": [
+      "63040",
+      "63453",
+      "63226",
+      "63106"
+    ],
+    "population": 26098,
+    "centre": {
+      "lat": 45.7293,
+      "lon": 3.3622
+    }
+  },
+  {
+    "codeSiren": "200072080",
+    "nom": "CC du Pays de Saint-Eloy",
+    "slug": "cc-du-pays-de-saint-eloy-200072080",
+    "codesDepartements": [
+      "63"
+    ],
+    "codesCommunes": [
+      "63338"
+    ],
+    "population": 15464,
+    "centre": {
+      "lat": 46.0908,
+      "lon": 2.7594
+    }
+  },
+  {
+    "codeSiren": "200071199",
+    "nom": "CC Plaine Limagne",
+    "slug": "cc-plaine-limagne-200071199",
+    "codesDepartements": [
+      "63"
+    ],
+    "codesCommunes": [
+      "63210",
+      "63001"
+    ],
+    "population": 21410,
+    "centre": {
+      "lat": 45.9827,
+      "lon": 3.2909
+    }
+  },
+  {
+    "codeSiren": "200072098",
+    "nom": "CC Combrailles Sioule et Morge",
+    "slug": "cc-combrailles-sioule-et-morge-200072098",
+    "codesDepartements": [
+      "63"
+    ],
+    "codesCommunes": [
+      "63116",
+      "63349",
+      "63004"
+    ],
+    "population": 19861,
+    "centre": {
+      "lat": 46.0124,
+      "lon": 2.9601
+    }
+  },
+  {
+    "codeSiren": "246300966",
+    "nom": "CC du Massif du Sancy",
+    "slug": "cc-du-massif-du-sancy-246300966",
+    "codesDepartements": [
+      "15",
+      "63"
+    ],
+    "codesCommunes": [
+      "63047"
+    ],
+    "population": 9576,
+    "centre": {
+      "lat": 45.4879,
+      "lon": 2.8797
     }
   },
   {
@@ -824,7 +2498,17 @@
     ],
     "codesCommunes": [
       "81004",
-      "81257"
+      "81257",
+      "81144",
+      "81218",
+      "81156",
+      "81018",
+      "81052",
+      "81284",
+      "81074",
+      "81063",
+      "81097",
+      "81297"
     ],
     "population": 84183,
     "centre": {
@@ -842,7 +2526,13 @@
     "codesCommunes": [
       "81065",
       "81163",
-      "81120"
+      "81120",
+      "81021",
+      "81209",
+      "81002",
+      "81204",
+      "81130",
+      "81238"
     ],
     "population": 78974,
     "centre": {
@@ -859,7 +2549,20 @@
     ],
     "codesCommunes": [
       "81099",
-      "81105"
+      "81105",
+      "81220",
+      "81145",
+      "81070",
+      "81038",
+      "81131",
+      "81039",
+      "81171",
+      "81104",
+      "81046",
+      "81276",
+      "81051",
+      "81283",
+      "81294"
     ],
     "population": 76216,
     "centre": {
@@ -877,7 +2580,9 @@
     ],
     "codesCommunes": [
       "81140",
-      "81271"
+      "81271",
+      "81116",
+      "81261"
     ],
     "population": 29922,
     "centre": {
@@ -893,12 +2598,179 @@
       "81"
     ],
     "codesCommunes": [
-      "81060"
+      "81060",
+      "81033",
+      "81048",
+      "81244",
+      "81170",
+      "81101"
     ],
     "population": 30115,
     "centre": {
       "lat": 44.0791,
       "lon": 2.1801
+    }
+  },
+  {
+    "codeSiren": "248100158",
+    "nom": "CC du Sor et de l'Agout",
+    "slug": "cc-du-sor-et-de-l-agout-248100158",
+    "codesDepartements": [
+      "81"
+    ],
+    "codesCommunes": [
+      "81273",
+      "81219",
+      "81289",
+      "81281",
+      "81325",
+      "81081"
+    ],
+    "population": 23206,
+    "centre": {
+      "lat": 43.5367,
+      "lon": 2.0264
+    }
+  },
+  {
+    "codeSiren": "200034049",
+    "nom": "CC Centre Tarn",
+    "slug": "cc-centre-tarn-200034049",
+    "codesDepartements": [
+      "81"
+    ],
+    "codesCommunes": [
+      "81222",
+      "81182",
+      "81233",
+      "81147"
+    ],
+    "population": 11276,
+    "centre": {
+      "lat": 43.7774,
+      "lon": 2.2337
+    }
+  },
+  {
+    "codeSiren": "243100567",
+    "nom": "CC Aux sources du Canal du Midi",
+    "slug": "cc-aux-sources-du-canal-du-midi-243100567",
+    "codesDepartements": [
+      "11",
+      "31",
+      "81"
+    ],
+    "codesCommunes": [
+      "81288",
+      "81032"
+    ],
+    "population": 21764,
+    "centre": {
+      "lat": 43.4641,
+      "lon": 2.0081
+    }
+  },
+  {
+    "codeSiren": "200066553",
+    "nom": "CC du Haut-Languedoc",
+    "slug": "cc-du-haut-languedoc-200066553",
+    "codesDepartements": [
+      "34",
+      "81"
+    ],
+    "codesCommunes": [
+      "81124"
+    ],
+    "population": 7954,
+    "centre": {
+      "lat": 43.6442,
+      "lon": 2.7761
+    }
+  },
+  {
+    "codeSiren": "200066561",
+    "nom": "CC Sidobre Vals et Plateaux",
+    "slug": "cc-sidobre-vals-et-plateaux-200066561",
+    "codesDepartements": [
+      "81"
+    ],
+    "codesCommunes": [
+      "81227",
+      "81042",
+      "81128",
+      "81037"
+    ],
+    "population": 12437,
+    "centre": {
+      "lat": 43.695,
+      "lon": 2.4196
+    }
+  },
+  {
+    "codeSiren": "200034056",
+    "nom": "CC du Lautrécois et du Pays d'Agout",
+    "slug": "cc-du-lautrecois-et-du-pays-d-agout-200034056",
+    "codesDepartements": [
+      "81"
+    ],
+    "codesCommunes": [
+      "81139",
+      "81315",
+      "81078"
+    ],
+    "population": 14303,
+    "centre": {
+      "lat": 43.6943,
+      "lon": 2.0449
+    }
+  },
+  {
+    "codeSiren": "248100745",
+    "nom": "CC Thoré Montagne Noire",
+    "slug": "cc-thore-montagne-noire-248100745",
+    "codesDepartements": [
+      "81"
+    ],
+    "codesCommunes": [
+      "81115",
+      "81036"
+    ],
+    "population": 5057,
+    "centre": {
+      "lat": 43.4992,
+      "lon": 2.5282
+    }
+  },
+  {
+    "codeSiren": "248100497",
+    "nom": "CC Val 81",
+    "slug": "cc-val-81-248100497",
+    "codesDepartements": [
+      "81"
+    ],
+    "codesCommunes": [
+      "81308"
+    ],
+    "population": 5559,
+    "centre": {
+      "lat": 44.0162,
+      "lon": 2.367
+    }
+  },
+  {
+    "codeSiren": "200034031",
+    "nom": "CC des Monts d'Alban et du Villefranchois",
+    "slug": "cc-des-monts-d-alban-et-du-villefranchois-200034031",
+    "codesDepartements": [
+      "81"
+    ],
+    "codesCommunes": [
+      "81317"
+    ],
+    "population": 6360,
+    "centre": {
+      "lat": 43.8621,
+      "lon": 2.4108
     }
   },
   {
@@ -910,7 +2782,15 @@
     ],
     "codesCommunes": [
       "82121",
-      "82124"
+      "82124",
+      "82025",
+      "82167",
+      "82044",
+      "82098",
+      "82085",
+      "82052",
+      "82090",
+      "82150"
     ],
     "population": 81397,
     "centre": {
@@ -927,7 +2807,12 @@
     ],
     "codesCommunes": [
       "82033",
-      "82112"
+      "82112",
+      "82096",
+      "82169",
+      "82171",
+      "82031",
+      "82051"
     ],
     "population": 42367,
     "centre": {
@@ -943,7 +2828,13 @@
       "82"
     ],
     "codesCommunes": [
-      "82037"
+      "82037",
+      "82179",
+      "82149",
+      "82131",
+      "82126",
+      "82113",
+      "82110"
     ],
     "population": 20434,
     "centre": {
@@ -961,7 +2852,22 @@
     "codesCommunes": [
       "82125",
       "82190",
-      "82075"
+      "82075",
+      "82079",
+      "82142",
+      "82123",
+      "82136",
+      "82048",
+      "82005",
+      "82062",
+      "82027",
+      "82017",
+      "82135",
+      "82194",
+      "82105",
+      "82173",
+      "82023",
+      "82178"
     ],
     "population": 43301,
     "centre": {
@@ -977,7 +2883,14 @@
       "82"
     ],
     "codesCommunes": [
-      "82134"
+      "82134",
+      "82161",
+      "82002",
+      "82115",
+      "82018",
+      "82132",
+      "82176",
+      "82184"
     ],
     "population": 21707,
     "centre": {
@@ -995,12 +2908,92 @@
       "82"
     ],
     "codesCommunes": [
-      "82186"
+      "82186",
+      "82101",
+      "82050",
+      "82089",
+      "82049",
+      "82072",
+      "82073",
+      "82008"
     ],
     "population": 19013,
     "centre": {
       "lat": 44.1139,
       "lon": 0.8952
+    }
+  },
+  {
+    "codeSiren": "248200065",
+    "nom": "CC de la Lomagne Tarn-et-Garonnaise",
+    "slug": "cc-de-la-lomagne-tarn-et-garonnaise-248200065",
+    "codesDepartements": [
+      "82"
+    ],
+    "codesCommunes": [
+      "82013",
+      "82097"
+    ],
+    "population": 10003,
+    "centre": {
+      "lat": 43.9102,
+      "lon": 0.9372
+    }
+  },
+  {
+    "codeSiren": "200067122",
+    "nom": "CC du Pays de Lafrançaise",
+    "slug": "cc-du-pays-de-lafrancaise-200067122",
+    "codesDepartements": [
+      "82"
+    ],
+    "codesCommunes": [
+      "82087",
+      "82076",
+      "82108",
+      "82080",
+      "82011"
+    ],
+    "population": 11246,
+    "centre": {
+      "lat": 44.1528,
+      "lon": 1.2903
+    }
+  },
+  {
+    "codeSiren": "248200107",
+    "nom": "CC du Quercy Rouergue et des Gorges de l'Aveyron",
+    "slug": "cc-du-quercy-rouergue-et-des-gorges-de-l-aveyron-248200107",
+    "codesDepartements": [
+      "81",
+      "82"
+    ],
+    "codesCommunes": [
+      "82155",
+      "82038"
+    ],
+    "population": 7848,
+    "centre": {
+      "lat": 44.2187,
+      "lon": 1.8179
+    }
+  },
+  {
+    "codeSiren": "200040418",
+    "nom": "CC du Pays de Serres en Quercy",
+    "slug": "cc-du-pays-de-serres-en-quercy-200040418",
+    "codesDepartements": [
+      "82"
+    ],
+    "codesCommunes": [
+      "82094",
+      "82117",
+      "82042"
+    ],
+    "population": 8386,
+    "centre": {
+      "lat": 44.2748,
+      "lon": 1.0867
     }
   }
 ]
