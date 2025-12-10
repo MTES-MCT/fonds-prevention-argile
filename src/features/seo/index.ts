@@ -26,3 +26,9 @@ export { generateSlug, generateDepartementSlug, generateCommuneSlug, generateEpc
 
 // Services exports
 export * from "./services";
+
+// Catna
+export * from "./catnat";
+
+// Aller vers
+export * from "./allers-vers";

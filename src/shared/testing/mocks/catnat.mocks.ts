@@ -1,5 +1,5 @@
-import type { ApiGeorisquesCatnat, ApiGeorisquesResponse } from "@/features/seo/adapters/georisques";
-import type { CatastropheNaturelle, NewCatastropheNaturelle } from "@/shared/database/schema/catastrophes-naturelles";
+import { ApiGeorisquesCatnat, ApiGeorisquesResponse } from "@/features/seo";
+import { CatastropheNaturelle, NewCatastropheNaturelle } from "@/shared/database";
 
 /**
  * Mock d'une catastrophe naturelle récente (format API)
@@ -118,3 +118,17 @@ export const mockDbCatnatList: CatastropheNaturelle[] = [
     libelleCommune: "PRIVAS",
   },
 ];
+
+/**
+ * Mock d'une autre sécheresse récente (différente commune)
+ */
+export const mockApiCatnatSecheresse2: ApiGeorisquesCatnat = {
+  code_national_catnat: "INTE2300789C",
+  date_debut_evt: "01/07/2023",
+  date_fin_evt: "30/09/2023",
+  date_publication_arrete: "15/10/2023",
+  date_publication_jo: "20/10/2023",
+  libelle_risque_jo: "Sécheresse",
+  code_insee: "07186",
+  libelle_commune: "PRIVAS",
+};

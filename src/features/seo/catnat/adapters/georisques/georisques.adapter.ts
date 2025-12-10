@@ -1,4 +1,4 @@
-import { API_GEORISQUES } from "../../domain/config/seo.config";
+import { API_GEORISQUES } from "../../domain/config/catnat.config";
 import type {
   ApiGeorisquesCatnat,
   ApiGeorisquesResponse,

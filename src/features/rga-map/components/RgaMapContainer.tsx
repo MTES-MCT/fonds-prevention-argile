@@ -31,7 +31,7 @@ export function RgaMapContainer({
 
   return (
     <div className="fr-mb-4w">
-      <div style={{ position: "relative", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+      <div style={{ position: "relative", borderRadius: "0.6rem", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
         <RgaMap
           {...mapProps}
           onBuildingSelect={handleBuildingSelect}
@@ -40,7 +40,7 @@ export function RgaMapContainer({
         />
         {showLegend && (
           <div
-            className="p-4"
+            className="px-4 pb-4"
             style={{
               bottom: "0",
               left: "0",

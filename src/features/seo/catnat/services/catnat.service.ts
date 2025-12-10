@@ -1,9 +1,10 @@
 import { catastrophesNaturellesRepository } from "@/shared/database/repositories";
 import { parseFrenchDateToSql } from "@/shared/utils";
 import { delay } from "@/shared/utils";
-import { API_GEORISQUES } from "../domain/config/seo.config";
+import { API_GEORISQUES } from "../../domain/config/seo.config";
 import { fetchCatnatByCodeInsee, fetchCatnatByCodesInsee, type ApiGeorisquesCatnat } from "../adapters/georisques";
 import type { NewCatastropheNaturelle } from "@/shared/database/schema/catastrophes-naturelles";
+import { CATNAT_RGA_TYPES } from "../domain";
 
 /**
  * Statistiques d'import des catastrophes naturelles
@@ -59,6 +60,27 @@ export const catnatService = {
   },
 
   /**
+   * Filtre les catastrophes pour ne garder que celles liées au RGA (sécheresse)
+   */
+  filterByRGA(catnats: ApiGeorisquesCatnat[]): ApiGeorisquesCatnat[] {
+    return catnats.filter((catnat) => {
+      const libelle = catnat.libelle_risque_jo.toLowerCase();
+      return CATNAT_RGA_TYPES.keywords.some((keyword) => libelle.includes(keyword));
+    });
+  },
+
+  /**
+   * Filtre les catastrophes par date ET par type RGA
+   */
+  filterForRGA(catnats: ApiGeorisquesCatnat[], years: number = API_GEORISQUES.yearsToFetch): ApiGeorisquesCatnat[] {
+    // D'abord filtrer par type RGA (sécheresse)
+    const rgaCatnats = this.filterByRGA(catnats);
+
+    // Puis filtrer par date (20 ans)
+    return this.filterByYears(rgaCatnats, years);
+  },
+
+  /**
    * Importe les catastrophes naturelles pour une commune
    */
   async importForCommune(codeInsee: string): Promise<{
@@ -75,21 +97,21 @@ export const catnatService = {
         return { success: true, imported: 0, skipped: 0 };
       }
 
-      // Filtrer par date (20 ans)
-      const recentCatnats = this.filterByYears(apiCatnats);
-      const skipped = apiCatnats.length - recentCatnats.length;
+      // Filtrer par RGA (sécheresse) et par date (20 ans)
+      const rgaCatnats = this.filterForRGA(apiCatnats);
+      const skipped = apiCatnats.length - rgaCatnats.length;
 
-      if (recentCatnats.length === 0) {
+      if (rgaCatnats.length === 0) {
         return { success: true, imported: 0, skipped };
       }
 
       // Transformer et insérer en BDD
-      const dbCatnats = recentCatnats.map((catnat) => this.transformApiToDb(catnat));
+      const dbCatnats = rgaCatnats.map((catnat) => this.transformApiToDb(catnat));
       await catastrophesNaturellesRepository.batchUpsert(dbCatnats);
 
       return {
         success: true,
-        imported: recentCatnats.length,
+        imported: rgaCatnats.length,
         skipped,
       };
     } catch (error) {
@@ -137,15 +159,15 @@ export const catnatService = {
         const apiCatnats = await fetchCatnatByCodesInsee(batch);
         stats.totalCatnat += apiCatnats.length;
 
-        // Filtrer par date (20 ans)
-        const recentCatnats = this.filterByYears(apiCatnats);
-        stats.catnatSkipped += apiCatnats.length - recentCatnats.length;
+        // Filtrer par RGA (sécheresse) et par date (20 ans)
+        const rgaCatnats = this.filterForRGA(apiCatnats);
+        stats.catnatSkipped += apiCatnats.length - rgaCatnats.length;
 
-        if (recentCatnats.length > 0) {
+        if (rgaCatnats.length > 0) {
           // Transformer et insérer en BDD
-          const dbCatnats = recentCatnats.map((catnat) => this.transformApiToDb(catnat));
+          const dbCatnats = rgaCatnats.map((catnat) => this.transformApiToDb(catnat));
           await catastrophesNaturellesRepository.batchUpsert(dbCatnats);
-          stats.catnatImported += recentCatnats.length;
+          stats.catnatImported += rgaCatnats.length;
         }
 
         // Marquer toutes les communes du batch comme succès

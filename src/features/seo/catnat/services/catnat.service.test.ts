@@ -6,8 +6,8 @@ import {
   mockApiCatnatRecent,
   mockApiCatnatOld,
   mockApiCatnatInondation,
-  mockNewDbCatnat,
   mockDbCatnat,
+  mockApiCatnatSecheresse2,
 } from "@/shared/testing/mocks/catnat.mocks";
 import * as utils from "@/shared/utils";
 
@@ -84,6 +84,44 @@ describe("catnatService", () => {
     });
   });
 
+  describe("filterByRGA", () => {
+    it("should keep only sécheresse catastrophes", () => {
+      const result = catnatService.filterByRGA([mockApiCatnatRecent, mockApiCatnatInondation]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].libelle_risque_jo).toBe("Sécheresse");
+    });
+
+    it("should filter out non-RGA catastrophes", () => {
+      const result = catnatService.filterByRGA([mockApiCatnatInondation]);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it("should be case insensitive", () => {
+      const catnatWithDifferentCase = {
+        ...mockApiCatnatRecent,
+        libelle_risque_jo: "SÉCHERESSE ET RÉHYDRATATION DES SOLS",
+      };
+
+      const result = catnatService.filterByRGA([catnatWithDifferentCase]);
+
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe("filterForRGA", () => {
+    it("should filter by RGA type and years", () => {
+      const result = catnatService.filterForRGA([mockApiCatnatRecent, mockApiCatnatOld, mockApiCatnatInondation], 20);
+
+      // mockApiCatnatRecent: Sécheresse + récent = OK
+      // mockApiCatnatOld: Sécheresse + > 20 ans = KO
+      // mockApiCatnatInondation: Pas sécheresse = KO
+      expect(result).toHaveLength(1);
+      expect(result[0].code_national_catnat).toBe("INTE2400123A");
+    });
+  });
+
   describe("importForCommune", () => {
     it("should successfully import catastrophes for a commune", async () => {
       vi.mocked(georisquesAdapter.fetchCatnatByCodeInsee).mockResolvedValue([mockApiCatnatRecent]);
@@ -98,15 +136,19 @@ describe("catnatService", () => {
       expect(catastrophesNaturellesRepository.batchUpsert).toHaveBeenCalledTimes(1);
     });
 
-    it("should skip old catastrophes", async () => {
-      vi.mocked(georisquesAdapter.fetchCatnatByCodeInsee).mockResolvedValue([mockApiCatnatRecent, mockApiCatnatOld]);
+    it("should skip old and non-RGA catastrophes", async () => {
+      vi.mocked(georisquesAdapter.fetchCatnatByCodeInsee).mockResolvedValue([
+        mockApiCatnatRecent, // Sécheresse récente → importée
+        mockApiCatnatOld, // Sécheresse > 20 ans → ignorée
+        mockApiCatnatInondation, // Inondation → ignorée
+      ]);
       vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
 
       const result = await catnatService.importForCommune("63113");
 
       expect(result.success).toBe(true);
       expect(result.imported).toBe(1);
-      expect(result.skipped).toBe(1);
+      expect(result.skipped).toBe(2); // 1 vieille + 1 inondation
     });
 
     it("should handle commune with no catastrophes", async () => {
@@ -117,6 +159,17 @@ describe("catnatService", () => {
       expect(result.success).toBe(true);
       expect(result.imported).toBe(0);
       expect(result.skipped).toBe(0);
+      expect(catastrophesNaturellesRepository.batchUpsert).not.toHaveBeenCalled();
+    });
+
+    it("should handle commune with only non-RGA catastrophes", async () => {
+      vi.mocked(georisquesAdapter.fetchCatnatByCodeInsee).mockResolvedValue([mockApiCatnatInondation]);
+
+      const result = await catnatService.importForCommune("63113");
+
+      expect(result.success).toBe(true);
+      expect(result.imported).toBe(0);
+      expect(result.skipped).toBe(1);
       expect(catastrophesNaturellesRepository.batchUpsert).not.toHaveBeenCalled();
     });
 
@@ -143,9 +196,10 @@ describe("catnatService", () => {
 
   describe("importForCommunes", () => {
     it("should import catastrophes for multiple communes", async () => {
+      // Utiliser 2 sécheresses au lieu de sécheresse + inondation
       vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([
         mockApiCatnatRecent,
-        mockApiCatnatInondation,
+        mockApiCatnatSecheresse2,
       ]);
       vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
 
@@ -154,13 +208,28 @@ describe("catnatService", () => {
       expect(result.totalCommunes).toBe(2);
       expect(result.communesSuccess).toBe(2);
       expect(result.communesFailed).toBe(0);
-      expect(result.catnatImported).toBe(2);
+      expect(result.catnatImported).toBe(2); // Maintenant ça passe
       expect(georisquesAdapter.fetchCatnatByCodesInsee).toHaveBeenCalledWith(["63113", "07186"]);
+    });
+
+    // Ajouter un nouveau test pour vérifier le filtrage
+    it("should filter out non-RGA catastrophes during import", async () => {
+      vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([
+        mockApiCatnatRecent, // Sécheresse → importée
+        mockApiCatnatInondation, // Inondation → filtrée
+      ]);
+      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+
+      const result = await catnatService.importForCommunes(["63113", "07186"]);
+
+      expect(result.totalCatnat).toBe(2); // 2 trouvées au total
+      expect(result.catnatImported).toBe(1); // 1 sécheresse importée
+      expect(result.catnatSkipped).toBe(1); // 1 inondation ignorée
     });
 
     it("should handle batching (> 10 communes)", async () => {
       const codesInsee = Array.from({ length: 25 }, (_, i) => `6311${i}`);
-      vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]);
+      vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]); // Sécheresse uniquement
       vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
 
       await catnatService.importForCommunes(codesInsee);
@@ -171,7 +240,7 @@ describe("catnatService", () => {
     });
 
     it("should call progress callback", async () => {
-      vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]);
+      vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]); // Sécheresse uniquement
       vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
 
       const progressCallback = vi.fn();

@@ -12,6 +12,7 @@ import type { BuildingData } from "@/shared/services/bdnb";
 interface RgaMapInternalProps extends RgaMapProps {
   onBuildingDataChange?: (data: BuildingData | null) => void;
   onLoadingChange?: (isLoading: boolean) => void;
+  padding?: string; // 🆕 Nouvelle prop
 }
 
 export function RgaMap({
@@ -25,6 +26,7 @@ export function RgaMap({
   onLoadingChange,
   height = "500px",
   className = "",
+  padding = "0.8rem",
 }: RgaMapInternalProps) {
   const { mapRef, map, isReady } = useRgaMap({
     center,
@@ -56,17 +58,19 @@ export function RgaMap({
   }, [isLoading, onLoadingChange]);
 
   return (
-    <div
-      ref={mapRef}
-      className={className}
-      style={{
-        height,
-        width: "100%",
-        borderRadius: "0.5rem",
-        overflow: "hidden",
-      }}
-      aria-label="Carte des zones d'aléa retrait-gonflement des argiles"
-      role="application"
-    />
+    <div style={{ padding }}>
+      <div
+        ref={mapRef}
+        className={className}
+        style={{
+          height,
+          width: "100%",
+          borderRadius: "0.6rem",
+          overflow: "hidden",
+        }}
+        aria-label="Carte des zones d'aléa retrait-gonflement des argiles"
+        role="application"
+      />
+    </div>
   );
 }

@@ -17,7 +17,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { catnatService, type CatnatImportStats } from "../services/catnat.service";
-import type { CommuneSEO } from "../domain/types";
+import type { CommuneSEO } from "../../domain/types";
 
 // ============================================================================
 // Types et configuration
@@ -74,7 +74,7 @@ const logger = createLogger();
  * Charge les communes depuis le fichier JSON généré
  */
 function loadCommunes(): CommuneSEO[] {
-  const communesPath = path.join(__dirname, "../data/generated/communes.json");
+  const communesPath = path.join(__dirname, "../../data/generated/communes.json");
 
   if (!fs.existsSync(communesPath)) {
     throw new Error(
