@@ -203,13 +203,15 @@ function displayResults(result: ImportResult) {
   console.log(" Communes :");
   console.log(`   • Total        : ${formatNumber(stats.totalCommunes)}`);
   console.log(`   • Traitées     : ${formatNumber(stats.communesProcessed)}`);
-  console.log(`   • Succès       : ${formatNumber(stats.communesSuccess)} ✅`);
-  console.log(`   • Échecs       : ${formatNumber(stats.communesFailed)} ${stats.communesFailed > 0 ? "❌" : ""}`);
+  console.log(`   • Succès       : ${formatNumber(stats.communesSuccess)}`);
+  console.log(
+    `   • Échecs       : ${formatNumber(stats.communesFailed)} ${stats.communesFailed > 0 ? " [Erreurs] " : ""}`
+  );
 
   // Statistiques catastrophes
   console.log("\n  Catastrophes naturelles :");
   console.log(`   • Total trouvées  : ${formatNumber(stats.totalCatnat)}`);
-  console.log(`   • Importées       : ${formatNumber(stats.catnatImported)} ✅`);
+  console.log(`   • Importées       : ${formatNumber(stats.catnatImported)}`);
   console.log(`   • Ignorées (> 20 ans) : ${formatNumber(stats.catnatSkipped)}`);
 
   // Taux de succès
