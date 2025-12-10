@@ -159,15 +159,48 @@ export const catnatService = {
         const apiCatnats = await fetchCatnatByCodesInsee(batch);
         stats.totalCatnat += apiCatnats.length;
 
+        // Filtrer les données invalides
+        const validCatnats = apiCatnats.filter((catnat) => {
+          const isValid = this.validateApiCatnat(catnat);
+          if (!isValid) {
+            console.warn(
+              `CATNAT invalide ignorée: ${catnat.code_national_catnat || "NO_CODE"} - ${catnat.code_insee || "NO_INSEE"}`
+            );
+          }
+          return isValid;
+        });
+
+        const invalidCount = apiCatnats.length - validCatnats.length;
+        if (invalidCount > 0) {
+          console.log(`Batch ${batchIndex + 1}/${batches.length}: ${invalidCount} CATNAT invalide(s) ignorée(s)`);
+          stats.catnatSkipped += invalidCount;
+        }
+
         // Filtrer par RGA (sécheresse) et par date (20 ans)
-        const rgaCatnats = this.filterForRGA(apiCatnats);
-        stats.catnatSkipped += apiCatnats.length - rgaCatnats.length;
+        const rgaCatnats = this.filterForRGA(validCatnats);
+        const filteredCount = validCatnats.length - rgaCatnats.length;
+        stats.catnatSkipped += filteredCount;
 
         if (rgaCatnats.length > 0) {
-          // Transformer et insérer en BDD
+          // Transformer
           const dbCatnats = rgaCatnats.map((catnat) => this.transformApiToDb(catnat));
-          await catastrophesNaturellesRepository.batchUpsert(dbCatnats);
-          stats.catnatImported += rgaCatnats.length;
+
+          // Dédupliquer
+          const uniqueCatnats = this.deduplicateCatnats(dbCatnats);
+          const duplicatesCount = dbCatnats.length - uniqueCatnats.length;
+
+          // Insérer en BDD
+          try {
+            await catastrophesNaturellesRepository.batchUpsert(uniqueCatnats);
+            stats.catnatImported += uniqueCatnats.length;
+          } catch (insertError) {
+            console.error(`Erreur d'insertion pour le batch ${batchIndex + 1}/${batches.length}:`, insertError);
+            throw insertError; // Re-throw pour être catchée par le catch externe
+          }
+        } else {
+          console.log(
+            `ℹBatch ${batchIndex + 1}/${batches.length}: Aucune CATNAT RGA à importer (${apiCatnats.length} trouvées, toutes filtrées)`
+          );
         }
 
         // Marquer toutes les communes du batch comme succès
@@ -176,6 +209,11 @@ export const catnatService = {
       } catch (error) {
         // En cas d'erreur sur le batch, marquer toutes les communes comme échec
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+        console.error(
+          `Erreur sur le batch ${batchIndex + 1}/${batches.length} (${batch.length} communes):`,
+          errorMessage
+        );
 
         for (const codeInsee of batch) {
           stats.communesFailed++;
@@ -234,5 +272,36 @@ export const catnatService = {
    */
   async getStatsByTypeForCommune(codeInsee: string) {
     return catastrophesNaturellesRepository.getStatsByTypeForCommune(codeInsee);
+  },
+
+  /**
+   * Déduplique les catastrophes par clé composite (codeNationalCatnat + codeInsee)
+   * Garde la dernière occurrence en cas de doublon
+   */
+  deduplicateCatnats(catnats: NewCatastropheNaturelle[]): NewCatastropheNaturelle[] {
+    const map = new Map<string, NewCatastropheNaturelle>();
+
+    for (const catnat of catnats) {
+      const key = `${catnat.codeNationalCatnat}|${catnat.codeInsee}`;
+      map.set(key, catnat); // Écrase les doublons avec la dernière occurrence
+    }
+
+    return Array.from(map.values());
+  },
+
+  /**
+   * Valide qu'une catastrophe API a toutes les données requises
+   */
+  validateApiCatnat(catnat: ApiGeorisquesCatnat): boolean {
+    return !!(
+      catnat.code_national_catnat &&
+      catnat.code_insee &&
+      catnat.date_debut_evt &&
+      catnat.date_fin_evt &&
+      catnat.date_publication_arrete &&
+      catnat.date_publication_jo &&
+      catnat.libelle_risque_jo &&
+      catnat.libelle_commune
+    );
   },
 };

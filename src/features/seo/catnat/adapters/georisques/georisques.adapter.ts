@@ -16,14 +16,14 @@ function createGeorisquesLogger() {
   return {
     log: (...args: unknown[]) => {
       if (isEnabled) {
-        console.log("[GEORISQUES]", ...args);
+        console.log("\n[GEORISQUES]", ...args);
       }
     },
     error: (...args: unknown[]) => {
-      console.error("[GEORISQUES]", ...args);
+      console.error("\n[GEORISQUES]", ...args);
     },
     progress: (...args: unknown[]) => {
-      console.log("[GEORISQUES]", ...args);
+      console.log("\n[GEORISQUES]", ...args);
     },
   };
 }
