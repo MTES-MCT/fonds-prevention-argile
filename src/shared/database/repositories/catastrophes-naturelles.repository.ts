@@ -232,63 +232,97 @@ export class CatastrophesNaturellesRepository {
   }
 
   /**
-   * Compte le nombre de catastrophes naturelles par commune pour un département
-   */
-  async countByDepartement(codesDepartement: string[]): Promise<
-    Array<{
-      codeInsee: string;
-      libelleCommune: string;
-      count: number;
-    }>
-  > {
-    // On récupère toutes les catastrophes puis on groupe côté application
-    const allCatnats = await db
-      .select({
-        codeInsee: catastrophesNaturelles.codeInsee,
-        libelleCommune: catastrophesNaturelles.libelleCommune,
-        codeNationalCatnat: catastrophesNaturelles.codeNationalCatnat,
-      })
-      .from(catastrophesNaturelles);
-
-    // Filtrer par département (les 2 ou 3 premiers caractères du code INSEE selon le département)
-    const filteredByDept = allCatnats.filter((catnat) =>
-      codesDepartement.some((codeDept) => catnat.codeInsee.startsWith(codeDept))
-    );
-
-    // Grouper par commune
-    const grouped = new Map<string, { libelleCommune: string; count: number }>();
-
-    for (const catnat of filteredByDept) {
-      const existing = grouped.get(catnat.codeInsee);
-      if (existing) {
-        existing.count++;
-      } else {
-        grouped.set(catnat.codeInsee, {
-          libelleCommune: catnat.libelleCommune,
-          count: 1,
-        });
-      }
-    }
-
-    return Array.from(grouped.entries()).map(([codeInsee, data]) => ({
-      codeInsee,
-      libelleCommune: data.libelleCommune,
-      count: data.count,
-    }));
-  }
-
-  /**
-   * Compte le total de catastrophes naturelles pour un département
+   * Compte le total de catastrophes naturelles uniques pour un département
+   * (dédupliquées par codeNationalCatnat)
    */
   async getTotalByDepartement(codeDepartement: string): Promise<number> {
     const result = await db
       .select({
-        count: sql<number>`cast(count(*) as integer)`,
+        count: sql<number>`cast(count(DISTINCT ${catastrophesNaturelles.codeNationalCatnat}) as integer)`,
       })
       .from(catastrophesNaturelles)
       .where(sql`${catastrophesNaturelles.codeInsee} LIKE ${codeDepartement + "%"}`);
 
     return result[0]?.count ?? 0;
+  }
+
+  /**
+   * Récupère la liste des catastrophes naturelles uniques touchant un département
+   */
+  async getUniqueCatastrophesByDepartement(codeDepartement: string): Promise<CatastropheNaturelle[]> {
+    // Sous-requête pour récupérer un seul enregistrement par codeNationalCatnat
+    const subquery = db
+      .select({
+        codeNationalCatnat: catastrophesNaturelles.codeNationalCatnat,
+        minCodeInsee: sql<string>`MIN(${catastrophesNaturelles.codeInsee})`.as("min_code_insee"),
+      })
+      .from(catastrophesNaturelles)
+      .where(sql`${catastrophesNaturelles.codeInsee} LIKE ${codeDepartement + "%"}`)
+      .groupBy(catastrophesNaturelles.codeNationalCatnat)
+      .as("subquery");
+
+    const result = await db
+      .select()
+      .from(catastrophesNaturelles)
+      .innerJoin(
+        subquery,
+        and(
+          eq(catastrophesNaturelles.codeNationalCatnat, subquery.codeNationalCatnat),
+          eq(catastrophesNaturelles.codeInsee, subquery.minCodeInsee)
+        )
+      )
+      .orderBy(desc(catastrophesNaturelles.dateDebutEvt));
+
+    return result.map((r) => r.catastrophes_naturelles);
+  }
+
+  /**
+   * Compte le total de catastrophes naturelles uniques pour un EPCI
+   * (dédupliquées par codeNationalCatnat)
+   */
+  async getTotalByEpci(codesInseeEpci: string[]): Promise<number> {
+    if (codesInseeEpci.length === 0) return 0;
+
+    const result = await db
+      .select({
+        count: sql<number>`cast(count(DISTINCT ${catastrophesNaturelles.codeNationalCatnat}) as integer)`,
+      })
+      .from(catastrophesNaturelles)
+      .where(inArray(catastrophesNaturelles.codeInsee, codesInseeEpci));
+
+    return result[0]?.count ?? 0;
+  }
+
+  /**
+   * Récupère la liste des catastrophes naturelles uniques touchant un EPCI
+   */
+  async getUniqueCatastrophesByEpci(codesInseeEpci: string[]): Promise<CatastropheNaturelle[]> {
+    if (codesInseeEpci.length === 0) return [];
+
+    // Sous-requête pour récupérer un seul enregistrement par codeNationalCatnat
+    const subquery = db
+      .select({
+        codeNationalCatnat: catastrophesNaturelles.codeNationalCatnat,
+        minCodeInsee: sql<string>`MIN(${catastrophesNaturelles.codeInsee})`.as("min_code_insee"),
+      })
+      .from(catastrophesNaturelles)
+      .where(inArray(catastrophesNaturelles.codeInsee, codesInseeEpci))
+      .groupBy(catastrophesNaturelles.codeNationalCatnat)
+      .as("subquery");
+
+    const result = await db
+      .select()
+      .from(catastrophesNaturelles)
+      .innerJoin(
+        subquery,
+        and(
+          eq(catastrophesNaturelles.codeNationalCatnat, subquery.codeNationalCatnat),
+          eq(catastrophesNaturelles.codeInsee, subquery.minCodeInsee)
+        )
+      )
+      .orderBy(desc(catastrophesNaturelles.dateDebutEvt));
+
+    return result.map((r) => r.catastrophes_naturelles);
   }
 
   /**
