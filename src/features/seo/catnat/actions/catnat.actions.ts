@@ -50,8 +50,8 @@ export async function getTotalCatnatForEpciAction(codeSiren: string): Promise<nu
     const epci = getEpciBySiren(codeSiren);
     if (!epci) return 0;
 
-    const catnats = await catastrophesNaturellesRepository.findByCodesInsee(epci.codesCommunes);
-    return catnats.length;
+    // Récupérer le total des catastrophes naturelles pour ces communes
+    return await catastrophesNaturellesRepository.getTotalByEpci(epci.codesCommunes);
   } catch (error) {
     console.error(`Error fetching CATNAT total for EPCI ${codeSiren}:`, error);
     return 0;

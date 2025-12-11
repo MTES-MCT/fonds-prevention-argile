@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getArticleDepartement } from "@/shared/utils/departements.utils";
 
 interface CatnatSummaryProps {
   totalCatnat: number;
@@ -16,13 +17,10 @@ export function CatnatSummary({ totalCatnat, nomTerritoire, typeTerritoire, code
     return null;
   }
 
-  // Adapter le libellé selon le type de territoire
-  const libelleZone = typeTerritoire === "département" ? `l'ensemble du département` : `l'ensemble du territoire`;
-
-  // Construire le titre avec ou sans code
+  // Construire le titre avec l'article grammatical approprié
   const titreComplet =
     typeTerritoire === "département" && codeTerritoire
-      ? `Historique des catastrophes naturelles dans le ${nomTerritoire} (${codeTerritoire})`
+      ? `Historique des catastrophes naturelles dans ${getArticleDepartement(codeTerritoire)}${nomTerritoire} (${codeTerritoire})`
       : `Historique des catastrophes naturelles dans ${nomTerritoire}`;
 
   return (
@@ -35,7 +33,6 @@ export function CatnatSummary({ totalCatnat, nomTerritoire, typeTerritoire, code
             {totalCatnat} épisode{totalCatnat > 1 ? "s" : ""} de sécheresse classé{totalCatnat > 1 ? "s" : ""}{" "}
             catastrophe naturelle
           </p>
-          <p className="fr-callout__text">Déclarées sur les 10 dernières années sur {libelleZone}.</p>
         </div>
 
         <div className="fr-mt-3w">
