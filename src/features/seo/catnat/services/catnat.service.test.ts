@@ -115,7 +115,7 @@ describe("catnatService", () => {
       const result = catnatService.filterForRGA([mockApiCatnatRecent, mockApiCatnatOld, mockApiCatnatInondation], 20);
 
       // mockApiCatnatRecent: Sécheresse + récent = OK
-      // mockApiCatnatOld: Sécheresse + > 20 ans = KO
+      // mockApiCatnatOld: Sécheresse + > X années = KO
       // mockApiCatnatInondation: Pas sécheresse = KO
       expect(result).toHaveLength(1);
       expect(result[0].code_national_catnat).toBe("INTE2400123A");
@@ -139,7 +139,7 @@ describe("catnatService", () => {
     it("should skip old and non-RGA catastrophes", async () => {
       vi.mocked(georisquesAdapter.fetchCatnatByCodeInsee).mockResolvedValue([
         mockApiCatnatRecent, // Sécheresse récente → importée
-        mockApiCatnatOld, // Sécheresse > 20 ans → ignorée
+        mockApiCatnatOld, // Sécheresse > X années → ignorée
         mockApiCatnatInondation, // Inondation → ignorée
       ]);
       vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);

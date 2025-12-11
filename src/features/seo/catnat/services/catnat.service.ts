@@ -16,7 +16,7 @@ export interface CatnatImportStats {
   communesFailed: number;
   totalCatnat: number;
   catnatImported: number;
-  catnatSkipped: number; // Anciennes (> 20 ans)
+  catnatSkipped: number; // Anciennes (> X années) et autres filtrées
   errors: Array<{ codeInsee: string; error: string }>;
 }
 
@@ -76,7 +76,7 @@ export const catnatService = {
     // D'abord filtrer par type RGA (sécheresse)
     const rgaCatnats = this.filterByRGA(catnats);
 
-    // Puis filtrer par date (20 ans)
+    // Puis filtrer par date (X années)
     return this.filterByYears(rgaCatnats, years);
   },
 
@@ -97,7 +97,7 @@ export const catnatService = {
         return { success: true, imported: 0, skipped: 0 };
       }
 
-      // Filtrer par RGA (sécheresse) et par date (20 ans)
+      // Filtrer par RGA (sécheresse) et par date (X années)
       const rgaCatnats = this.filterForRGA(apiCatnats);
       const skipped = apiCatnats.length - rgaCatnats.length;
 
@@ -176,7 +176,7 @@ export const catnatService = {
           stats.catnatSkipped += invalidCount;
         }
 
-        // Filtrer par RGA (sécheresse) et par date (20 ans)
+        // Filtrer par RGA (sécheresse) et par date (X années)
         const rgaCatnats = this.filterForRGA(validCatnats);
         const filteredCount = validCatnats.length - rgaCatnats.length;
         stats.catnatSkipped += filteredCount;
@@ -187,7 +187,6 @@ export const catnatService = {
 
           // Dédupliquer
           const uniqueCatnats = this.deduplicateCatnats(dbCatnats);
-          const duplicatesCount = dbCatnats.length - uniqueCatnats.length;
 
           // Insérer en BDD
           try {
