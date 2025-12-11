@@ -114,6 +114,8 @@ export async function fetchCatnatByCodesInsee(codesInsee: string[]): Promise<Api
 
     logger.log(`  └─ Batch ${i + 1}/${batches.length}: ${batch.length} communes`);
 
+    // Compteur pour le batch actuel
+    const batchStartIndex = allCatnats.length;
     let currentPage = 1;
     let hasMorePages = true;
 
@@ -135,7 +137,8 @@ export async function fetchCatnatByCodesInsee(codesInsee: string[]): Promise<Api
       currentPage++;
     }
 
-    logger.log(`      Total batch: ${allCatnats.length} catastrophes`);
+    const batchCount = allCatnats.length - batchStartIndex;
+    logger.log(`      Total batch: ${batchCount} catastrophes (Total cumulé: ${allCatnats.length})`);
   }
 
   return allCatnats;
