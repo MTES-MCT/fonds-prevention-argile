@@ -212,7 +212,7 @@ function displayResults(result: ImportResult) {
   console.log("\n  Catastrophes naturelles :");
   console.log(`   • Total trouvées  : ${formatNumber(stats.totalCatnat)}`);
   console.log(`   • Importées       : ${formatNumber(stats.catnatImported)}`);
-  console.log(`   • Ignorées (> 20 ans) : ${formatNumber(stats.catnatSkipped)}`);
+  console.log(`   • Ignorées : ${formatNumber(stats.catnatSkipped)}`);
 
   // Taux de succès
   const successRate =

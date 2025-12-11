@@ -20,8 +20,6 @@ export const API_GEORISQUES = {
   },
   /** Délai entre les appels API en ms (rate limiting) */
   delayBetweenCalls: 300,
-  /** Nombre d'années de catastrophes à récupérer */
-  yearsToFetch: 10,
 } as const;
 
 /**

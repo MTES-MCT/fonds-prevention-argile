@@ -44,7 +44,7 @@ function getDepartementsParRegion(): RegionData[] {
   }).filter((region) => region.departements.length > 0);
 }
 
-export function RgaTopFooterContent() {
+export function RgaFooter() {
   const regions = getDepartementsParRegion();
 
   return (

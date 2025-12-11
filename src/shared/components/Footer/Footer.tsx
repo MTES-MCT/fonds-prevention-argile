@@ -1,19 +1,15 @@
 import Link from "next/link";
-import { ReactNode } from "react";
+import { RgaFooter } from "../RgaFooter/RgaFooter";
 
-interface FooterProps {
-  topContent?: ReactNode;
-}
-
-const Footer = ({ topContent }: FooterProps) => {
+const Footer = () => {
   return (
     <>
       <footer className="fr-footer" role="contentinfo" id="footer-main">
-        {topContent && (
-          <div className="fr-footer__top">
-            <div className="fr-container">{topContent}</div>
+        <div className="fr-footer__top">
+          <div className="fr-container">
+            <RgaFooter />
           </div>
-        )}
+        </div>
         <div className="fr-container">
           <div className="fr-footer__body">
             <div className="fr-footer__brand fr-enlarge-link">
