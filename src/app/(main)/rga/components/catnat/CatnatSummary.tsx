@@ -35,7 +35,6 @@ export function CatnatSummary({ totalCatnat, nomTerritoire, typeTerritoire, code
             {totalCatnat} épisode{totalCatnat > 1 ? "s" : ""} de sécheresse classé{totalCatnat > 1 ? "s" : ""}{" "}
             catastrophe naturelle
           </p>
-          <p className="fr-callout__text">Déclarées sur les 10 dernières années sur {libelleZone}.</p>
         </div>
 
         <div className="fr-mt-3w">
