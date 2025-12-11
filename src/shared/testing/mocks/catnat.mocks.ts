@@ -16,7 +16,7 @@ export const mockApiCatnatRecent: ApiGeorisquesCatnat = {
 };
 
 /**
- * Mock d'une catastrophe naturelle ancienne (> X années, format API)
+ * Mock d'une catastrophe naturelle ancienne (format API)
  */
 export const mockApiCatnatOld: ApiGeorisquesCatnat = {
   code_national_catnat: "INTE0100760A",

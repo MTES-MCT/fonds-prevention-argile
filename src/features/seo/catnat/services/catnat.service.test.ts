@@ -108,17 +108,15 @@ describe("catnatService", () => {
 
       expect(result).toHaveLength(1);
     });
-  });
 
-  describe("filterForRGA", () => {
-    it("should filter by RGA type and years", () => {
-      const result = catnatService.filterForRGA([mockApiCatnatRecent, mockApiCatnatOld, mockApiCatnatInondation], 20);
+    it("should keep all RGA-type catastrophes regardless of age", () => {
+      const result = catnatService.filterByRGA([mockApiCatnatRecent, mockApiCatnatOld, mockApiCatnatInondation]);
 
-      // mockApiCatnatRecent: Sécheresse + récent = OK
-      // mockApiCatnatOld: Sécheresse + > X années = KO
-      // mockApiCatnatInondation: Pas sécheresse = KO
-      expect(result).toHaveLength(1);
-      expect(result[0].code_national_catnat).toBe("INTE2400123A");
+      // mockApiCatnatRecent: Sécheresse → OK
+      // mockApiCatnatOld: Sécheresse → OK (pas de filtre de date)
+      // mockApiCatnatInondation: Inondation → KO
+      expect(result).toHaveLength(2); // Les 2 sécheresses
+      expect(result.map((c) => c.libelle_risque_jo)).toEqual(["Sécheresse", "Sécheresse"]);
     });
   });
 
@@ -136,10 +134,10 @@ describe("catnatService", () => {
       expect(catastrophesNaturellesRepository.batchUpsert).toHaveBeenCalledTimes(1);
     });
 
-    it("should skip old and non-RGA catastrophes", async () => {
+    it("should import all RGA catastrophes regardless of age", async () => {
       vi.mocked(georisquesAdapter.fetchCatnatByCodeInsee).mockResolvedValue([
         mockApiCatnatRecent, // Sécheresse récente → importée
-        mockApiCatnatOld, // Sécheresse > X années → ignorée
+        mockApiCatnatOld, // Sécheresse vieille → importée aussi maintenant
         mockApiCatnatInondation, // Inondation → ignorée
       ]);
       vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
@@ -147,8 +145,8 @@ describe("catnatService", () => {
       const result = await catnatService.importForCommune("63113");
 
       expect(result.success).toBe(true);
-      expect(result.imported).toBe(1);
-      expect(result.skipped).toBe(2); // 1 vieille + 1 inondation
+      expect(result.imported).toBe(2); // 2 sécheresses importées
+      expect(result.skipped).toBe(1); // 1 inondation ignorée
     });
 
     it("should handle commune with no catastrophes", async () => {

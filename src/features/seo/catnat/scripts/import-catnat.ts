@@ -18,7 +18,6 @@ import * as fs from "fs";
 import * as path from "path";
 import { catnatService, type CatnatImportStats } from "../services/catnat.service";
 import type { CommuneSEO } from "../../domain/types";
-import { API_GEORISQUES } from "../domain";
 
 // ============================================================================
 // Types et configuration
@@ -213,7 +212,7 @@ function displayResults(result: ImportResult) {
   console.log("\n  Catastrophes naturelles :");
   console.log(`   • Total trouvées  : ${formatNumber(stats.totalCatnat)}`);
   console.log(`   • Importées       : ${formatNumber(stats.catnatImported)}`);
-  console.log(`   • Ignorées (> ${API_GEORISQUES.yearsToFetch} ans) : ${formatNumber(stats.catnatSkipped)}`);
+  console.log(`   • Ignorées : ${formatNumber(stats.catnatSkipped)}`);
 
   // Taux de succès
   const successRate =
