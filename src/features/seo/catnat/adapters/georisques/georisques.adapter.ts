@@ -114,16 +114,28 @@ export async function fetchCatnatByCodesInsee(codesInsee: string[]): Promise<Api
 
     logger.log(`  └─ Batch ${i + 1}/${batches.length}: ${batch.length} communes`);
 
-    const params: Record<string, string> = {
-      code_insee: codeInseeBatch,
-      page_size: API_GEORISQUES.limits.defaultPageSize.toString(),
-    };
+    let currentPage = 1;
+    let hasMorePages = true;
 
-    const response = await fetchGeorisquesApi<ApiGeorisquesResponse>(API_GEORISQUES.endpoints.catnat, params);
+    while (hasMorePages) {
+      const params: Record<string, string> = {
+        code_insee: codeInseeBatch,
+        page: currentPage.toString(),
+        page_size: API_GEORISQUES.limits.defaultPageSize.toString(),
+      };
 
-    allCatnats.push(...response.data);
+      const response = await fetchGeorisquesApi<ApiGeorisquesResponse>(API_GEORISQUES.endpoints.catnat, params);
 
-    logger.log(`      ${response.results} catastrophes récupérées`);
+      allCatnats.push(...response.data);
+
+      logger.log(`      Page ${currentPage}/${response.total_pages}: ${response.data.length} catastrophes récupérées`);
+
+      // Vérifier s'il y a d'autres pages
+      hasMorePages = currentPage < response.total_pages;
+      currentPage++;
+    }
+
+    logger.log(`      Total batch: ${allCatnats.length} catastrophes`);
   }
 
   return allCatnats;
