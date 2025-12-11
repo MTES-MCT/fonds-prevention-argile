@@ -55,35 +55,6 @@ describe("catnatService", () => {
     });
   });
 
-  describe("filterByYears", () => {
-    it("should keep recent catastrophes (< 20 years)", () => {
-      const result = catnatService.filterByYears([mockApiCatnatRecent], 20);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].code_national_catnat).toBe("INTE2400123A");
-    });
-
-    it("should filter out old catastrophes (> 20 years)", () => {
-      const result = catnatService.filterByYears([mockApiCatnatOld], 20);
-
-      expect(result).toHaveLength(0);
-    });
-
-    it("should filter mixed old and recent catastrophes", () => {
-      const result = catnatService.filterByYears([mockApiCatnatRecent, mockApiCatnatOld, mockApiCatnatInondation], 20);
-
-      expect(result).toHaveLength(2);
-      expect(result.map((c) => c.code_national_catnat)).toEqual(["INTE2400123A", "INTE2300456B"]);
-    });
-
-    it("should use custom year filter", () => {
-      const result = catnatService.filterByYears([mockApiCatnatInondation], 1);
-
-      // mockApiCatnatInondation est de 2023, donc > 1 an
-      expect(result).toHaveLength(0);
-    });
-  });
-
   describe("filterByRGA", () => {
     it("should keep only sécheresse catastrophes", () => {
       const result = catnatService.filterByRGA([mockApiCatnatRecent, mockApiCatnatInondation]);

@@ -46,20 +46,6 @@ export const catnatService = {
   },
 
   /**
-   * Filtre les catastrophes par date (garde uniquement les X dernières années)
-   */
-  filterByYears(catnats: ApiGeorisquesCatnat[], years: number = API_GEORISQUES.yearsToFetch): ApiGeorisquesCatnat[] {
-    const cutoffDate = new Date();
-    cutoffDate.setFullYear(cutoffDate.getFullYear() - years);
-
-    return catnats.filter((catnat) => {
-      const [day, month, year] = catnat.date_debut_evt.split("/").map(Number);
-      const catnatDate = new Date(year, month - 1, day);
-      return catnatDate >= cutoffDate;
-    });
-  },
-
-  /**
    * Filtre les catastrophes pour ne garder que celles liées au RGA (sécheresse)
    */
   filterByRGA(catnats: ApiGeorisquesCatnat[]): ApiGeorisquesCatnat[] {
