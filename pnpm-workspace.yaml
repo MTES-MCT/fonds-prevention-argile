@@ -3,6 +3,10 @@ packages:
 
 savePrefix: "~"
 minimumReleaseAge: 10080 # one week in minutes
+minimumReleaseAgeExclude:
+  - next
+  - "@next/env"
+
 trustPolicy: no-downgrade
 
 onlyBuiltDependencies:

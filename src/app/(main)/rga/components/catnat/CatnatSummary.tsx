@@ -28,7 +28,7 @@ export function CatnatSummary({ totalCatnat, nomTerritoire, typeTerritoire, code
       <div className="fr-container">
         <h2 className="fr-h3 fr-mb-3w">{titreComplet}</h2>
 
-        <div className="fr-callout fr-callout--brown-caramel fr-icon-warning-line">
+        <div className="fr-callout fr-callout--orange-terre-battue fr-icon-warning-line">
           <p className="fr-callout__title">
             {totalCatnat} épisode{totalCatnat > 1 ? "s" : ""} de sécheresse classé{totalCatnat > 1 ? "s" : ""}{" "}
             catastrophe naturelle

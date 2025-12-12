@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { getAllDepartements, getAllEpcis } from "@/features/seo";
+import { getAllCommunes, getAllDepartements, getAllEpcis } from "@/features/seo";
 
 import commonContent from "./content/common.json";
 import Link from "next/link";
@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 export default function RgaIndexPage() {
   const departements = getAllDepartements();
   const epciList = getAllEpcis();
+  const communes = getAllCommunes();
 
   return (
     <main>
@@ -59,6 +60,12 @@ export default function RgaIndexPage() {
             certaines conditions) situées dans les 11 départements éligible au dispositif. C’est un fonds de prévention
             et vise les maisons non sinistrées (sans fissures) afin d’accompagner les ménages à réaliser un diagnostic
             de vulnérabilité et des travaux de prévention pour protéger leur maison du retrait-gonflement des argiles.
+          </p>
+
+          <p className="fr-text--lead">
+            Le fonds de prévention argile accompagne les propriétaires occupants de maisons individuelles dans{" "}
+            <strong>{departements.length} départements</strong>, couvrant <strong>{communes.length} communes</strong>
+            et <strong>{epciList.length} intercommunalités</strong>.
           </p>
         </div>
       </section>
@@ -102,6 +109,23 @@ export default function RgaIndexPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Liste des Communes */}
+      <section className="fr-py-4w">
+        <div className="fr-container">
+          <h2>Quelques communes éligibles</h2>
+
+          <ul className="fr-tags-group">
+            {communes.map((commune) => (
+              <li key={commune.codeInsee}>
+                <a href={`/rga/commune/${commune.slug}`} className="fr-tag">
+                  {commune.nom}
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
