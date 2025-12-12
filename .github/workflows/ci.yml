@@ -54,6 +54,14 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+        env:
+          # Variables d'environnement pour les tests
+          NODE_ENV: test
+          DB_HOST: "localhost"
+          DB_PORT: "5432"
+          DB_USER: "fonds_argile_user"
+          DB_PASSWORD: "fonds_argile_password"
+          DB_NAME: "fonds_argile"
 
       - name: Build application
         run: pnpm build

@@ -186,7 +186,7 @@ function ValidationLink({ user }: { user: UserWithParcoursDetails }) {
     return <span>—</span>;
   }
 
-  const validationUrl = `/validation-amo/${token.token}`;
+  const validationUrl = `/amo/validation/${token.token}`;
 
   return (
     <a
