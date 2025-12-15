@@ -1,9 +1,7 @@
 /**
  * Données RGA stockées en JSONB dans la base de données
- * Structure identique à RGAFormData mais nettoyée/normalisée
  */
 export interface RGASimulationData {
-  // Logement
   logement: {
     adresse: string;
     code_region: string;
@@ -23,12 +21,10 @@ export interface RGASimulationData {
     proprietaire_occupant: boolean;
   };
 
-  // Taxe foncière
   taxeFonciere: {
     commune_eligible: boolean;
   };
 
-  // RGA
   rga: {
     assure: boolean;
     indemnise_indemnise_rga: boolean;
@@ -36,28 +32,37 @@ export interface RGASimulationData {
     indemnise_montant_indemnite: number;
   };
 
-  // Ménage
   menage: {
     revenu_rga: number;
     personnes: number;
   };
 
-  // Propriétaire
   vous: {
     proprietaire_condition?: boolean;
     proprietaire_occupant_rga?: boolean;
   };
 
-  // Timestamp de simulation
   simulatedAt: string; // ISO date
 }
+
+/**
+ * Type pour les données RGA partielles (formulaire en cours)
+ */
+export type PartialRGASimulationData = {
+  logement?: Partial<RGASimulationData["logement"]>;
+  taxeFonciere?: Partial<RGASimulationData["taxeFonciere"]>;
+  rga?: Partial<RGASimulationData["rga"]>;
+  menage?: Partial<RGASimulationData["menage"]>;
+  vous?: Partial<RGASimulationData["vous"]>;
+  simulatedAt?: string;
+};
 
 /**
  * Raison de suppression des données RGA (RGPD)
  */
 export enum RGADeletionReason {
-  SENT_TO_DS = "sent_to_ds", // Envoyé à Démarches Simplifiées
-  EXPIRED = "expired", // Expiration après X jours
-  MANUAL = "manual", // Suppression manuelle par admin
-  USER_REQUEST = "user_request", // Demande de l'utilisateur (droit à l'oubli)
+  SENT_TO_DS = "sent_to_ds",
+  EXPIRED = "expired",
+  MANUAL = "manual",
+  USER_REQUEST = "user_request",
 }
