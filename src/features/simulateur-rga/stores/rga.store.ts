@@ -1,9 +1,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { PartialRGAFormData } from "../domain/entities";
+import type { PartialRGASimulationData } from "@/shared/domain/types";
 
 const RGA_STORAGE_KEY = "fonds-argile-rga-data";
-const RGA_SESSION_KEY = "fonds-argile-rga-data"; // Ancien système
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
 const STORAGE_VERSION = "1.0";
 
@@ -11,7 +10,7 @@ const STORAGE_VERSION = "1.0";
  * Format de stockage (compatible avec l'ancien système)
  */
 interface StoredRGAData {
-  data: PartialRGAFormData;
+  data: PartialRGASimulationData;
   timestamp: number;
   version: string;
 }
@@ -21,20 +20,15 @@ interface StoredRGAData {
  */
 interface RGAState {
   // Données
-  tempRgaData: PartialRGAFormData | null;
+  tempRgaData: PartialRGASimulationData | null;
 
   // Hydratation (pour éviter le flash côté client)
   isHydrated: boolean;
 
   // Actions
-  saveRGA: (data: PartialRGAFormData) => void;
+  saveRGA: (data: PartialRGASimulationData) => void;
   clearRGA: () => void;
   setHydrated: () => void;
-
-  // Migration ancien système
-  migrateFromSessionStorage: () => boolean;
-  clearSessionStorage: () => void;
-  hasSessionStorageData: () => boolean;
 }
 
 /**
@@ -109,53 +103,16 @@ export const useRGAStore = create<RGAState>()(
       isHydrated: false,
 
       // Actions
-      saveRGA: (data: PartialRGAFormData) => {
+      saveRGA: (data: PartialRGASimulationData) => {
         set({ tempRgaData: data });
       },
 
       clearRGA: () => {
         set({ tempRgaData: null });
-        // Nettoyer aussi sessionStorage (ancien système)
-        get().clearSessionStorage();
       },
 
       setHydrated: () => {
         set({ isHydrated: true });
-      },
-
-      // Migration depuis sessionStorage (ancien système)
-      migrateFromSessionStorage: (): boolean => {
-        try {
-          const raw = sessionStorage.getItem(RGA_SESSION_KEY);
-          if (!raw) return false;
-
-          const stored: StoredRGAData = JSON.parse(raw);
-          if (!stored.data) return false;
-
-          // Migrer vers le store (et donc localStorage via persist)
-          set({ tempRgaData: stored.data });
-
-          return true;
-        } catch (error) {
-          console.error("[RGA Store] Erreur migration sessionStorage:", error);
-          return false;
-        }
-      },
-
-      clearSessionStorage: () => {
-        try {
-          sessionStorage.removeItem(RGA_SESSION_KEY);
-        } catch (error) {
-          console.error("[RGA Store] Erreur nettoyage sessionStorage:", error);
-        }
-      },
-
-      hasSessionStorageData: (): boolean => {
-        try {
-          return sessionStorage.getItem(RGA_SESSION_KEY) !== null;
-        } catch {
-          return false;
-        }
       },
     }),
     {
@@ -166,11 +123,6 @@ export const useRGAStore = create<RGAState>()(
         // Appelé après l'hydratation
         if (state) {
           state.setHydrated();
-
-          // Si pas de données en localStorage, tenter migration sessionStorage
-          if (!state.tempRgaData && state.hasSessionStorageData()) {
-            state.migrateFromSessionStorage();
-          }
         }
       },
     }
