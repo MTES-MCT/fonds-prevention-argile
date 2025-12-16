@@ -2,7 +2,7 @@ import ForbiddenSimulator from "./components/ForbiddenSimulator";
 import content from "../(home)/content/content.json";
 import { AUTH_METHODS, getCurrentUser } from "@/features/auth";
 import { Notice } from "@/shared/components";
-import { SimulateurClient } from "@/features/simulateur-rga";
+import { SimulateurClient } from "@/features/simulateur";
 import { DEPARTEMENTS_ELIGIBLES_RGA } from "@/features/seo/domain/config/seo.config";
 
 export default async function SimulateurPage() {

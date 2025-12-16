@@ -7,8 +7,8 @@ import RGATestFiller from "./debug/RGATestFiller";
 import { useSimulateurRga } from "../hooks";
 import { parseRGAParams } from "../services/parser.service";
 import { encryptRGAData } from "../actions/encrypt-rga-data.actions";
-import type { PartialRGAFormData } from "../domain/entities";
 import { ROUTES } from "@/features/auth/client";
+import { PartialRGASimulationData } from "../domain";
 
 interface RGAMessage {
   type: string;
@@ -40,7 +40,7 @@ export default function SimulateurClient({ embedMode = false }: SimulateurClient
   /**
    * Gère la redirection en mode embed avec chiffrement
    */
-  const handleEmbedRedirect = async (rgaData: PartialRGAFormData) => {
+  const handleEmbedRedirect = async (rgaData: PartialRGASimulationData) => {
     try {
       setProcessingState("processing");
 

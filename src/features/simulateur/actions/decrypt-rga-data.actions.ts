@@ -1,19 +1,17 @@
 "use server";
 
+import { PartialRGASimulationData } from "../domain";
 import { decryptData } from "../services/encryption.service";
-import { PartialRGAFormData } from "../domain/entities";
 
 export type DecryptRGADataResult =
-  | { success: true; data: PartialRGAFormData }
+  | { success: true; data: PartialRGASimulationData }
   | { success: false; error: string };
 
 /**
  * Déchiffre les données RGA côté serveur
  * Utilisé en mode embed pour récupération depuis URL
  */
-export async function decryptRGAData(
-  encrypted: string
-): Promise<DecryptRGADataResult> {
+export async function decryptRGAData(encrypted: string): Promise<DecryptRGADataResult> {
   try {
     // Validation
     if (!encrypted || typeof encrypted !== "string") {
@@ -27,7 +25,7 @@ export async function decryptRGAData(
     const jsonString = decryptData(encrypted);
 
     // Parser le JSON
-    const data = JSON.parse(jsonString) as PartialRGAFormData;
+    const data = JSON.parse(jsonString) as PartialRGASimulationData;
 
     return {
       success: true,

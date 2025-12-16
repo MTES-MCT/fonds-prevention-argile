@@ -1,4 +1,4 @@
-import { PartialRGAFormData } from "../domain/entities";
+import { PartialRGASimulationData } from "../domain";
 
 /**
  * Nettoie une clé de paramètre URL
@@ -37,9 +37,7 @@ function cleanAndConvertValue(value: string): string | number | boolean {
 /**
  * Parse les paramètres RGA depuis l'URL
  */
-export function parseRGAParams(
-  searchParams: URLSearchParams
-): PartialRGAFormData {
+export function parseRGAParams(searchParams: URLSearchParams): PartialRGASimulationData {
   const tempResult: {
     logement?: Record<string, unknown>;
     taxeFonciere?: Record<string, unknown>;
@@ -90,5 +88,5 @@ export function parseRGAParams(
     }
   }
 
-  return tempResult as PartialRGAFormData;
+  return tempResult as PartialRGASimulationData;
 }

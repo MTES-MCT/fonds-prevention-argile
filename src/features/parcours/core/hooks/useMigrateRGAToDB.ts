@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRGAStore } from "@/features/simulateur-rga";
 import { useAuth } from "@/features/auth/client";
 import { useParcours } from "../context/useParcours";
 import { migrateSimulationDataToDatabase } from "../actions/parcours-simulateur-rga-migration.actions";
-import type { RGAFormData } from "@/features/simulateur-rga";
 import { createDebugLogger } from "@/shared/utils";
+import { RGASimulationData, useRGAStore } from "@/features/simulateur";
 
 const debug = createDebugLogger("MIGRATE_RGA");
 
@@ -93,7 +92,7 @@ export function useMigrateRGAToDB() {
       debug.log("[MigrationRGAtoDB] Starting migration...");
 
       try {
-        const result = await migrateSimulationDataToDatabase(tempRgaData as RGAFormData);
+        const result = await migrateSimulationDataToDatabase(tempRgaData as RGASimulationData);
 
         if (result.success) {
           debug.log("[MigrationRGAtoDB] Migration successful");

@@ -1,6 +1,5 @@
 import type { ActionResult } from "@/shared/types";
 import { Step } from "../domain/value-objects/step";
-import { PartialRGAFormData } from "@/features/simulateur-rga";
 import { getParcoursComplet } from "./parcours-state.service";
 import { mapRGAToDSFormat, validateRGADataForDS } from "../../dossiers-ds/mappers/rga-to-ds.mapper";
 import { Status } from "../domain";
@@ -10,6 +9,7 @@ import { createDossierForCurrentStep } from "../../dossiers-ds/services";
 import { parcoursRepo } from "@/shared/database";
 import { DS_FIELDS_ELIGIBILITE } from "../../dossiers-ds/domain";
 import { createDebugLogger } from "@/shared/utils";
+import { PartialRGASimulationData } from "@/features/simulateur";
 
 const debug = createDebugLogger("ELIGIBILITE");
 
@@ -29,7 +29,7 @@ interface EligibiliteResult {
  */
 export async function createEligibiliteDossier(
   userId: string,
-  rgaData: PartialRGAFormData
+  rgaData: PartialRGASimulationData
 ): Promise<ActionResult<EligibiliteResult>> {
   try {
     debug.log("=== DÉBUT CRÉATION DOSSIER ÉLIGIBILITÉ ===");

@@ -2,13 +2,13 @@
 
 import { JSX, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PartialRGAFormData } from "../../domain/entities";
 import { useSimulateurRga } from "../../hooks";
 import { isProduction } from "@/shared/config/env.config";
 import { ROUTES } from "@/features/auth/client";
+import { PartialRGASimulationData } from "../../domain";
 
 // Données de test adaptées au type RGAFormData avec structure imbriquée
-const TEST_RGA_DATA: PartialRGAFormData = {
+const TEST_RGA_DATA: PartialRGASimulationData = {
   logement: {
     adresse: "19B Rue des Clefs Moreaux 36250 Saint-Maur",
     code_region: "24",

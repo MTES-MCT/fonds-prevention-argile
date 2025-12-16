@@ -1,19 +1,15 @@
 "use server";
 
+import { PartialRGASimulationData } from "../domain";
 import { encryptData } from "../services/encryption.service";
-import { PartialRGAFormData } from "../domain/entities";
 
-export type EncryptRGADataResult =
-  | { success: true; encrypted: string }
-  | { success: false; error: string };
+export type EncryptRGADataResult = { success: true; encrypted: string } | { success: false; error: string };
 
 /**
  * Chiffre les données RGA côté serveur
  * Utilisé en mode embed pour transmission sécurisée via URL
  */
-export async function encryptRGAData(
-  data: PartialRGAFormData
-): Promise<EncryptRGADataResult> {
+export async function encryptRGAData(data: PartialRGASimulationData): Promise<EncryptRGADataResult> {
   try {
     // Validation basique
     if (!data || typeof data !== "object") {

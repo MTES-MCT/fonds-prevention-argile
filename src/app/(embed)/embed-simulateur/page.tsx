@@ -1,6 +1,6 @@
 import ForbiddenSimulator from "@/app/(main)/simulateur/components/ForbiddenSimulator";
 import { AUTH_METHODS, getCurrentUser } from "@/features/auth";
-import { SimulateurClient } from "@/features/simulateur-rga";
+import { SimulateurClient } from "@/features/simulateur";
 
 export default async function EmbedSimulateurPage() {
   const user = await getCurrentUser();

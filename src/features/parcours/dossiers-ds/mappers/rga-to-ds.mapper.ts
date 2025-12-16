@@ -3,16 +3,16 @@
  * Utilise les constantes centralisées pour le mapping
  */
 
-import { PartialRGAFormData } from "@/features/simulateur-rga";
 import { PrefillData } from "../adapters/rest";
 import { getMappableFields, getValueByPath } from "../utils";
 import { DSField } from "../domain";
+import { PartialRGASimulationData } from "@/features/simulateur";
 
 /**
  * Mappe les données RGA vers le format de préremplissage DS
  * Utilise les constantes centralisées pour le mapping
  */
-export function mapRGAToDSFormat(rgaData: PartialRGAFormData): PrefillData {
+export function mapRGAToDSFormat(rgaData: PartialRGASimulationData): PrefillData {
   const prefillData: PrefillData = {};
 
   // Récupérer uniquement les champs qui ont un mapping RGA
@@ -23,17 +23,12 @@ export function mapRGAToDSFormat(rgaData: PartialRGAFormData): PrefillData {
     if (!field.rgaPath) return;
 
     // Récupérer la valeur depuis l'objet RGA en utilisant le chemin
-    const value = getValueByPath(
-      rgaData as Record<string, unknown>,
-      field.rgaPath
-    );
+    const value = getValueByPath(rgaData as Record<string, unknown>, field.rgaPath);
 
     // Si la valeur existe
     if (value !== undefined && value !== null && value !== "") {
       // Appliquer la transformation si elle existe
-      const transformedValue = field.transformer
-        ? field.transformer(value, rgaData as Record<string, unknown>)
-        : value;
+      const transformedValue = field.transformer ? field.transformer(value, rgaData as Record<string, unknown>) : value;
 
       // S'assurer que la valeur transformée est du bon type
       if (
@@ -73,7 +68,7 @@ export function mapRGAToDSFormat(rgaData: PartialRGAFormData): PrefillData {
 /**
  * Valide que toutes les données requises sont présentes
  */
-export function validateRGADataForDS(rgaData: PartialRGAFormData): {
+export function validateRGADataForDS(rgaData: PartialRGASimulationData): {
   isValid: boolean;
   errors: string[];
   warnings: string[];

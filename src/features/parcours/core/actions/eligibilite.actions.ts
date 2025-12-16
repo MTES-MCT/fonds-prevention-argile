@@ -2,11 +2,8 @@
 
 import { getSession } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types";
-import {
-  createEligibiliteDossier,
-  canCreateEligibiliteDossier,
-} from "../services/eligibilite.service";
-import { PartialRGAFormData } from "@/features/simulateur-rga";
+import { createEligibiliteDossier, canCreateEligibiliteDossier } from "../services/eligibilite.service";
+import { PartialRGASimulationData } from "@/features/simulateur";
 
 interface EligibiliteResult {
   dossierUrl: string;
@@ -19,7 +16,7 @@ interface EligibiliteResult {
  * Crée un dossier d'éligibilité avec les données RGA
  */
 export async function envoyerDossierEligibiliteAvecDonnees(
-  rgaData: PartialRGAFormData
+  rgaData: PartialRGASimulationData
 ): Promise<ActionResult<EligibiliteResult>> {
   try {
     const session = await getSession();
@@ -37,10 +34,7 @@ export async function envoyerDossierEligibiliteAvecDonnees(
     console.error("Erreur envoi éligibilité:", error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Erreur lors de l'envoi du dossier",
+      error: error instanceof Error ? error.message : "Erreur lors de l'envoi du dossier",
     };
   }
 }
@@ -48,9 +42,7 @@ export async function envoyerDossierEligibiliteAvecDonnees(
 /**
  * Vérifie si l'utilisateur peut créer un dossier d'éligibilité
  */
-export async function peutCreerDossierEligibilite(): Promise<
-  ActionResult<boolean>
-> {
+export async function peutCreerDossierEligibilite(): Promise<ActionResult<boolean>> {
   try {
     const session = await getSession();
     if (!session?.userId) {
@@ -66,9 +58,7 @@ export async function peutCreerDossierEligibilite(): Promise<
   } catch (error) {
     return {
       success: false,
-      error:
-        "Erreur lors de la vérification " +
-        (error instanceof Error ? error.message : "inconnue"),
+      error: "Erreur lors de la vérification " + (error instanceof Error ? error.message : "inconnue"),
     };
   }
 }

@@ -1,4 +1,4 @@
-import { isEtatSinistre, isZoneExposition, ZoneExposition } from "@/features/simulateur-rga";
+import { isEtatSinistre, isZoneExposition, ZoneExposition } from "@/features/simulateur/domain/value-objects";
 import type { DSField } from "../types/ds-field.types";
 import { DSFieldType } from "./ds-field-type.enum";
 import { DSSection } from "./ds-section.enum";
