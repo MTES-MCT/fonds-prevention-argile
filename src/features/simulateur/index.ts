@@ -1,5 +1,5 @@
 // Domain
-export * from "./domain/entities";
+export * from "./domain";
 
 // Stores (Zustand)
 export { useRGAStore, selectTempRgaData, selectIsHydrated, selectHasRGAData } from "./stores";

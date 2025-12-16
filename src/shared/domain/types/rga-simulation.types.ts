@@ -56,13 +56,3 @@ export type PartialRGASimulationData = {
   vous?: Partial<RGASimulationData["vous"]>;
   simulatedAt?: string;
 };
-
-/**
- * Raison de suppression des données RGA (RGPD)
- */
-export enum RGADeletionReason {
-  SENT_TO_DS = "sent_to_ds",
-  EXPIRED = "expired",
-  MANUAL = "manual",
-  USER_REQUEST = "user_request",
-}

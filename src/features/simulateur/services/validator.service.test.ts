@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { validateRGAData } from "./validator.service";
-import { PartialRGAFormData } from "../domain/entities";
+import { PartialRGASimulationData } from "../domain/types";
 
 describe("validateRGAData", () => {
   describe("Données valides", () => {
     it("devrait retourner un tableau vide pour des données complètes et valides", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix, 75001 Paris",
           type: "maison",
@@ -37,7 +37,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait accepter un revenu positif", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           type: "appartement",
@@ -68,7 +68,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait accepter un nombre de personnes de 1", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           type: "maison",
@@ -101,7 +101,7 @@ describe("validateRGAData", () => {
 
   describe("Adresse du logement", () => {
     it("devrait retourner une erreur si l'adresse est manquante", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           type: "maison",
           code_region: "11",
@@ -132,7 +132,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait retourner une erreur si la section logement est absente", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         menage: {
           revenu_rga: 30000,
           personnes: 4,
@@ -145,7 +145,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait retourner une erreur si l'adresse est une chaîne vide", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "",
           type: "maison",
@@ -178,7 +178,7 @@ describe("validateRGAData", () => {
 
   describe("Type de logement", () => {
     it("devrait retourner une erreur si le type est manquant", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           code_region: "11",
@@ -209,7 +209,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait retourner une erreur si le type est une chaîne vide", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           type: "" as "maison",
@@ -242,7 +242,7 @@ describe("validateRGAData", () => {
 
   describe("Revenu du ménage", () => {
     it("devrait retourner une erreur si le revenu est manquant", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           type: "maison",
@@ -272,7 +272,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait retourner une erreur si le revenu est égal à 0", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           type: "maison",
@@ -303,7 +303,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait retourner une erreur si le revenu est négatif", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           type: "maison",
@@ -334,7 +334,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait retourner une erreur si la section menage est absente", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           type: "maison",
@@ -364,7 +364,7 @@ describe("validateRGAData", () => {
 
   describe("Nombre de personnes", () => {
     it("devrait retourner une erreur si le nombre de personnes est manquant", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           type: "maison",
@@ -394,7 +394,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait retourner une erreur si le nombre de personnes est égal à 0", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           type: "maison",
@@ -425,7 +425,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait retourner une erreur si le nombre de personnes est négatif", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           type: "maison",
@@ -458,7 +458,7 @@ describe("validateRGAData", () => {
 
   describe("Combinaisons d'erreurs", () => {
     it("devrait retourner plusieurs erreurs si plusieurs champs sont invalides", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           code_region: "11",
           code_departement: "75",
@@ -491,7 +491,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait retourner toutes les erreurs possibles si toutes les données sont manquantes", () => {
-      const data: PartialRGAFormData = {};
+      const data: PartialRGASimulationData = {};
 
       const errors = validateRGAData(data);
 
@@ -503,7 +503,7 @@ describe("validateRGAData", () => {
     });
 
     it("devrait retourner 3 erreurs si seule l'adresse est présente", () => {
-      const data: PartialRGAFormData = {
+      const data: PartialRGASimulationData = {
         logement: {
           adresse: "10 rue de la Paix",
           code_region: "11",

@@ -1,9 +1,5 @@
 // Réexport depuis le Shared Kernel
-export type {
-  RGASimulationData,
-  RGADeletionReason,
-  PartialRGASimulationData,
-} from "@/shared/domain/types/rga-simulation.types";
+export type { RGASimulationData, PartialRGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 
 // Réexport des types revenus
 export {
@@ -12,4 +8,4 @@ export {
   calculerTrancheRevenu,
   getSeuilsRevenu,
   isRegionIDF,
-} from "@/shared/domain/types/rga-revenus.types";
+} from "@/features/simulateur/domain/types/rga-revenus.types";

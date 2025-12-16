@@ -1,32 +1,17 @@
 import { eq, sql, SQL, desc } from "drizzle-orm";
 import { db } from "../client";
 import { parcoursPrevention } from "../schema/parcours-prevention";
-import {
-  BaseRepository,
-  PaginationParams,
-  PaginationResult,
-} from "./base.repository";
-import type {
-  ParcoursPrevention,
-  NewParcoursPrevention,
-} from "../schema/parcours-prevention";
+import { BaseRepository, PaginationParams, PaginationResult } from "./base.repository";
+import type { ParcoursPrevention, NewParcoursPrevention } from "../schema/parcours-prevention";
 import { getNextStep, Status, Step } from "@/features/parcours/core";
-import {
-  RGADeletionReason,
-  RGASimulationData,
-} from "@/features/simulateur-rga/domain/types";
-import { RGA_RETENTION_DAYS } from "@/features/simulateur-rga/domain/value-objects/rga-retention.config";
+import { RGASimulationData } from "@/shared/domain/types";
 
 export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevention> {
   /**
    * Trouve un parcours par ID
    */
   async findById(id: string): Promise<ParcoursPrevention | null> {
-    const result = await db
-      .select()
-      .from(parcoursPrevention)
-      .where(eq(parcoursPrevention.id, id))
-      .limit(1);
+    const result = await db.select().from(parcoursPrevention).where(eq(parcoursPrevention.id, id)).limit(1);
 
     return result[0] || null;
   }
@@ -35,10 +20,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
    * Récupère tous les parcours
    */
   async findAll(): Promise<ParcoursPrevention[]> {
-    return await db
-      .select()
-      .from(parcoursPrevention)
-      .orderBy(desc(parcoursPrevention.createdAt));
+    return await db.select().from(parcoursPrevention).orderBy(desc(parcoursPrevention.createdAt));
   }
 
   /**
@@ -53,15 +35,8 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   /**
    * Met à jour un parcours
    */
-  async update(
-    id: string,
-    data: Partial<NewParcoursPrevention>
-  ): Promise<ParcoursPrevention | null> {
-    const result = await db
-      .update(parcoursPrevention)
-      .set(data)
-      .where(eq(parcoursPrevention.id, id))
-      .returning();
+  async update(id: string, data: Partial<NewParcoursPrevention>): Promise<ParcoursPrevention | null> {
+    const result = await db.update(parcoursPrevention).set(data).where(eq(parcoursPrevention.id, id)).returning();
 
     return result[0] || null;
   }
@@ -70,10 +45,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
    * Supprime un parcours
    */
   async delete(id: string): Promise<boolean> {
-    const result = await db
-      .delete(parcoursPrevention)
-      .where(eq(parcoursPrevention.id, id))
-      .returning();
+    const result = await db.delete(parcoursPrevention).where(eq(parcoursPrevention.id, id)).returning();
 
     return result.length > 0;
   }
@@ -95,9 +67,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
    * Compte le nombre de parcours
    */
   async count(where?: SQL): Promise<number> {
-    const query = db
-      .select({ count: sql<number>`cast(count(*) as integer)` })
-      .from(parcoursPrevention);
+    const query = db.select({ count: sql<number>`cast(count(*) as integer)` }).from(parcoursPrevention);
 
     if (where) {
       query.where(where);
@@ -111,11 +81,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
    * Trouve le parcours unique d'un utilisateur (un seul parcours par user)
    */
   async findByUserId(userId: string): Promise<ParcoursPrevention | null> {
-    const result = await db
-      .select()
-      .from(parcoursPrevention)
-      .where(eq(parcoursPrevention.userId, userId))
-      .limit(1);
+    const result = await db.select().from(parcoursPrevention).where(eq(parcoursPrevention.userId, userId)).limit(1);
 
     return result[0] || null;
   }
@@ -123,11 +89,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   /**
    * Met à jour l'étape courante d'un parcours
    */
-  async updateStep(
-    id: string,
-    step: Step,
-    status: Status = Status.TODO
-  ): Promise<ParcoursPrevention | null> {
+  async updateStep(id: string, step: Step, status: Status = Status.TODO): Promise<ParcoursPrevention | null> {
     return await this.update(id, {
       currentStep: step,
       currentStatus: status,
@@ -137,10 +99,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   /**
    * Met à jour le statut d'un parcours
    */
-  async updateStatus(
-    id: string,
-    status: Status
-  ): Promise<ParcoursPrevention | null> {
+  async updateStatus(id: string, status: Status): Promise<ParcoursPrevention | null> {
     return await this.update(id, {
       currentStatus: status,
     });
@@ -158,9 +117,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   /**
    * Récupère les parcours avec pagination
    */
-  async findWithPagination(
-    params: PaginationParams = {}
-  ): Promise<PaginationResult<ParcoursPrevention>> {
+  async findWithPagination(params: PaginationParams = {}): Promise<PaginationResult<ParcoursPrevention>> {
     const { page = 1, limit = 10 } = params;
     const offset = (page - 1) * limit;
 
@@ -260,10 +217,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   /**
    * Sauvegarde les données RGA du simulateur dans le parcours
    */
-  async updateRGAData(
-    parcoursId: string,
-    rgaData: RGASimulationData
-  ): Promise<ParcoursPrevention | null> {
+  async updateRGAData(parcoursId: string, rgaData: RGASimulationData): Promise<ParcoursPrevention | null> {
     return await this.update(parcoursId, {
       rgaSimulationData: rgaData,
       rgaSimulationCompletedAt: new Date(),
@@ -285,42 +239,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
    * Compte le nombre de parcours avec données RGA
    */
   async countWithRGAData(): Promise<number> {
-    return await this.count(
-      sql`${parcoursPrevention.rgaSimulationData} IS NOT NULL`
-    );
-  }
-
-  /**
-   * Supprime les données RGA d'un parcours (soft delete)
-   */
-  async deleteRGAData(
-    parcoursId: string,
-    reason: RGADeletionReason
-  ): Promise<ParcoursPrevention | null> {
-    return await this.update(parcoursId, {
-      rgaSimulationData: null,
-      rgaDataDeletedAt: new Date(),
-      rgaDataDeletionReason: reason,
-    });
-  }
-
-  /**
-   * Trouve les parcours avec données RGA expirées (> X jours sans dossier DS)
-   */
-  async findExpiredRGAData(
-    expirationDays: number = RGA_RETENTION_DAYS
-  ): Promise<ParcoursPrevention[]> {
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() - expirationDays);
-
-    return await db
-      .select()
-      .from(parcoursPrevention)
-      .where(
-        sql`${parcoursPrevention.rgaSimulationData} IS NOT NULL 
-            AND ${parcoursPrevention.rgaSimulationCompletedAt} < ${expirationDate}
-            AND ${parcoursPrevention.rgaDataDeletedAt} IS NULL`
-      );
+    return await this.count(sql`${parcoursPrevention.rgaSimulationData} IS NOT NULL`);
   }
 
   /**
@@ -328,10 +247,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
    */
   async hasRGAData(parcoursId: string): Promise<boolean> {
     const parcours = await this.findById(parcoursId);
-    return (
-      parcours?.rgaSimulationData !== null &&
-      parcours?.rgaSimulationData !== undefined
-    );
+    return parcours?.rgaSimulationData !== null && parcours?.rgaSimulationData !== undefined;
   }
 }
 

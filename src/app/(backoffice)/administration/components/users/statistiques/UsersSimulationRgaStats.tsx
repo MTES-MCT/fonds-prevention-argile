@@ -1,8 +1,8 @@
 "use client";
 
+import { calculerTrancheRevenu, TrancheRevenuRga } from "@/features/simulateur";
 import StatCard from "../../shared/StatCard";
 import { UserWithParcoursDetails } from "@/features/backoffice";
-import { calculerTrancheRevenu, TrancheRevenuRga } from "@/features/simulateur-rga/domain/types";
 
 interface UsersSimulationRgaStatsProps {
   users: UserWithParcoursDetails[];

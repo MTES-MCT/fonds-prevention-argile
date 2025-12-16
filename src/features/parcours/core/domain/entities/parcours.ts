@@ -1,6 +1,6 @@
 import type { Step } from "../value-objects/step";
 import type { Status } from "../value-objects/status";
-import { RGASimulationData } from "@/features/simulateur-rga/domain/types";
+import { RGASimulationData } from "@/features/simulateur";
 
 /**
  * Entité Parcours de prévention

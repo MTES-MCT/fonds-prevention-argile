@@ -1,10 +1,10 @@
-import { PartialRGAFormData } from "../domain/entities";
+import { PartialRGASimulationData } from "../domain/types";
 
 /**
  * Valide les données RGA essentielles
  * Retourne un tableau d'erreurs (vide si valide)
  */
-export function validateRGAData(data: PartialRGAFormData): string[] {
+export function validateRGAData(data: PartialRGASimulationData): string[] {
   const errors: string[] = [];
 
   if (!data.logement?.adresse) {
