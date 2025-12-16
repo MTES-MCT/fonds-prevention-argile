@@ -41,12 +41,11 @@ export function createInitialSimulationState(): SimulationState {
 }
 
 /**
- * Vérifie si la simulation est terminée (éligible ou non)
+ * Vérifie si la simulation a un résultat (terminée)
  */
-export function isSimulationComplete(state: SimulationState): boolean {
+export function hasSimulationResult(state: SimulationState): boolean {
   return state.result !== null;
 }
-
 /**
  * Vérifie si la simulation a abouti à une éligibilité
  */
