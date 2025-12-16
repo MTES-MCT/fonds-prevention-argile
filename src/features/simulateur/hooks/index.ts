@@ -1,2 +1,3 @@
-export { useSimulateurRga } from "./useSimulateurRga";
-export { useLoadRGAFromURL } from "./useLoadRGAFromURL";
+export * from "./useSimulateurRga";
+export * from "./useLoadRGAFromURL";
+export * from "./useSimulateurFormulaire";
