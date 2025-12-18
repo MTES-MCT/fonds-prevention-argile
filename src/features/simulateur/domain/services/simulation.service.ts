@@ -2,7 +2,7 @@ import type { PartialRGASimulationData } from "@/shared/domain/types";
 import type { SimulationState } from "../entities/simulation-state.entity";
 import { createInitialSimulationState } from "../entities/simulation-state.entity";
 import { SimulateurStep } from "../value-objects/simulateur-step.enum";
-import { getNextStep, getPreviousStep } from "../rules/navigation";
+import { getNextStep } from "../rules/navigation";
 import { EligibilityService } from "./eligibility.service";
 
 /**

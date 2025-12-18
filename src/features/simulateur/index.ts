@@ -12,4 +12,4 @@ export { validateRGAData } from "./services/validator.service";
 export { useSimulateurRga } from "./hooks";
 
 // Components
-export { SimulateurClient, RGATestFiller } from "./components";
+export * from "./components";
