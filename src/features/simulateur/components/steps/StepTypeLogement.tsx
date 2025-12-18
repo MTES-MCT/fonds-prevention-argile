@@ -36,12 +36,16 @@ export function StepTypeLogement({
   };
 
   return (
-    <SimulateurLayout title="Quel est le type de votre logement ?" currentStep={numeroEtape} totalSteps={totalEtapes}>
-      <fieldset className="fr-fieldset">
+    <SimulateurLayout
+      title="Le logement est-il une maison ou un appartement ?"
+      subtitle="Par maison, nous entendons maison individuelle hors copropriété."
+      currentStep={numeroEtape}
+      totalSteps={totalEtapes}>
+      <fieldset className="fr-fieldset md:w-1/2" id="type-logement-fieldset">
         <legend className="fr-fieldset__legend fr-sr-only">Type de logement</legend>
 
-        <div className="fr-fieldset__content">
-          <div className="fr-radio-group">
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
               id="type-maison"
@@ -51,11 +55,13 @@ export function StepTypeLogement({
               onChange={() => setSelected("maison")}
             />
             <label className="fr-label" htmlFor="type-maison">
-              Maison individuelle
+              Une maison
             </label>
           </div>
+        </div>
 
-          <div className="fr-radio-group">
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
               id="type-appartement"
@@ -65,7 +71,7 @@ export function StepTypeLogement({
               onChange={() => setSelected("appartement")}
             />
             <label className="fr-label" htmlFor="type-appartement">
-              Appartement
+              Un appartement
             </label>
           </div>
         </div>

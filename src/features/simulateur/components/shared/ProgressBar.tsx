@@ -11,16 +11,12 @@ interface ProgressBarProps {
 export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
   if (currentStep === null) return null;
 
-  const progression = Math.round((currentStep / totalSteps) * 100);
-
   return (
-    <div className="fr-mb-4w">
-      <p className="fr-text--sm fr-mb-1w">
+    <div className="fr-stepper">
+      <span className="fr-stepper__state">
         Étape {currentStep} sur {totalSteps}
-      </p>
-      <div className="fr-progress" role="progressbar" aria-valuenow={progression} aria-valuemin={0} aria-valuemax={100}>
-        <div className="fr-progress__bar" style={{ width: `${progression}%` }} />
-      </div>
+      </span>
+      <div className="fr-stepper__steps" data-fr-current-step={currentStep} data-fr-steps={totalSteps}></div>
     </div>
   );
 }
