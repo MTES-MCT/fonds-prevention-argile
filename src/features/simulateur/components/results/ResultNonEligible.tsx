@@ -31,9 +31,9 @@ export function ResultNonEligible({ checks, reasonMessage, onRestart }: ResultNo
             <div className="px-4 md:px-8 pb-4 md:pb-0 fr-mt-4w md:fr-mt-6w">
               <h5 className="fr-mb-4w">Simulateur d'éligibilité au Fonds Prévention Argile</h5>
 
-              <div className="fr-alert fr-alert--error fr-mb-4w">
-                <h2 className="fr-alert__title">Vous n'êtes pas éligible</h2>
-                <p>{reasonMessage}</p>
+              <div className="fr-callout fr-icon-warning-line fr-callout--pink-macaron">
+                <h2 className="fr-callout__title">Vous n'êtes pas éligible</h2>
+                <p>Votre logement ne répond pas aux critères du dispositif.</p>
               </div>
 
               <EligibilityChecksList checks={checks} />

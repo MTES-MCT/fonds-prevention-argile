@@ -56,17 +56,22 @@ export function EligibilityChecksList({ checks }: EligibilityChecksListProps) {
             Détails de votre éligibilité
           </button>
         </h3>
-        <div className="fr-collapse" id="accordion-eligibility-checks">
-          <ol className="fr-pl-3w">
-            {CHECK_ORDER.map((key) => {
-              const value = checks[key];
-              return (
-                <li key={key} className="fr-mb-1w">
-                  <span>{CHECK_LABELS[key]}</span> <CheckBadge value={value} />
-                </li>
-              );
-            })}
-          </ol>
+        <div
+          className="fr-collapse fr-collapse--expanded bg-white px-4"
+          aria-expanded="true"
+          id="accordion-eligibility-checks">
+          <div className="fr-accordion__content ">
+            <ol className="fr-pl-3w">
+              {CHECK_ORDER.map((key) => {
+                const value = checks[key];
+                return (
+                  <li key={key} className="fr-mb-1w">
+                    <span>{CHECK_LABELS[key]}</span> <CheckBadge value={value} />
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
         </div>
       </section>
     </div>
