@@ -39,7 +39,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   const [niveaux, setNiveaux] = useState(initialValue?.niveaux?.toString() ?? "");
 
   // TODO: Ces valeurs seront remplies par la carte/API
-  const [selectedData, setSelectedData] = useState<AdresseData | null>(initialValue ?? null);
+  const [selectedData] = useState<AdresseData | null>(initialValue ?? null);
 
   const isValid = adresse && anneeConstruction && niveaux && selectedData?.zone_dexposition;
 

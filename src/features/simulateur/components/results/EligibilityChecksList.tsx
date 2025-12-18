@@ -58,7 +58,7 @@ export function EligibilityChecksList({ checks }: EligibilityChecksListProps) {
         </h3>
         <div className="fr-collapse" id="accordion-eligibility-checks">
           <ol className="fr-pl-3w">
-            {CHECK_ORDER.map((key, index) => {
+            {CHECK_ORDER.map((key) => {
               const value = checks[key];
               return (
                 <li key={key} className="fr-mb-1w">

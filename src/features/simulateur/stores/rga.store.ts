@@ -97,7 +97,7 @@ const rgaStorage = {
  */
 export const useRGAStore = create<RGAState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       // État initial
       tempRgaData: null,
       isHydrated: false,

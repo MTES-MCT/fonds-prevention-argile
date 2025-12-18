@@ -2,7 +2,6 @@
 
 import type { EligibilityChecks } from "../../domain/entities/eligibility-result.entity";
 import { EligibilityChecksList } from "./EligibilityChecksList";
-import { NavigationButtons } from "../shared/NavigationButtons";
 
 interface ResultEligibleProps {
   checks: EligibilityChecks;

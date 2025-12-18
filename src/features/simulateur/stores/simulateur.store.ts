@@ -31,7 +31,7 @@ interface SimulateurState {
  */
 export const useSimulateurStore = create<SimulateurState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       // État initial
       simulation: SimulationService.create(),
       isHydrated: false,

@@ -214,6 +214,7 @@ describe("SimulationService", () => {
 
       const newState = SimulationService.reset();
 
+      expect(state.answers).not.toEqual(newState.answers);
       expect(newState.currentStep).toBe(SimulateurStep.INTRO);
       expect(newState.answers).toEqual({});
       expect(newState.history).toEqual([]);
