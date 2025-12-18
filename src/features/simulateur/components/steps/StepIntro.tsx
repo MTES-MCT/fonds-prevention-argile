@@ -9,34 +9,41 @@ interface StepIntroProps {
  */
 export function StepIntro({ onStart }: StepIntroProps) {
   return (
-    <div className="fr-container fr-py-4w">
+    <div className="fr-container fr-mb-8w">
       <div className="fr-grid-row fr-grid-row--center">
-        <div className="fr-col-12 fr-col-md-8 fr-col-lg-6">
-          <h1 className="fr-h2 fr-mb-2w">Testez votre éligibilité</h1>
+        <div className="fr-col-12 fr-col-md-8 fr-col-lg-8 p-20 bg-[var(--background-alt-grey)]">
+          <h5 className="fr-h5 fr-mb-4w">Simulateur d'éligibilité au Fonds Prévention Argile</h5>
 
-          <p className="fr-text--lg fr-mb-4w">
-            Vérifiez en quelques minutes si vous pouvez bénéficier du Fonds Prévention Argile pour protéger votre maison
-            contre le retrait-gonflement des argiles.
-          </p>
-
-          <div className="fr-callout fr-mb-4w">
-            <h2 className="fr-callout__title">Ce dont vous aurez besoin</h2>
-            <ul className="fr-mt-2w">
-              <li>L'adresse de votre logement</li>
-              <li>L'année de construction de votre maison</li>
-              <li>Votre revenu fiscal de référence</li>
-            </ul>
-          </div>
-
-          <div className="fr-callout fr-callout--blue-ecume fr-mb-4w">
-            <p className="fr-callout__text">
-              Cette simulation est gratuite et ne vous engage à rien. Elle prend environ 3 minutes.
+          <div className="fr-callout fr-icon-warning-line fr-callout--pink-macaron">
+            <p>
+              Attention, si votre logement est déjà touché par{" "}
+              <strong>des fissures de plus de 1mm d'épaisseur à l'extérieur et/ou à l'intérieur</strong>, votre logement
+              n'est <strong>pas éligible</strong>.
             </p>
           </div>
 
-          <button type="button" className="fr-btn fr-btn--lg" onClick={onStart}>
-            Commencer le test
-          </button>
+          <p className="fr-mb-3w">
+            En quelques étapes, découvrez si votre logement et votre situation correspondent aux critères d'éligibilité
+            définis par l'État pour bénéficier des aides financières{" "}
+            <a
+              href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000050310058"
+              target="_blank"
+              rel="noopener noreferrer">
+              (arrêté du 6 septembre 2025)
+            </a>
+            .
+          </p>
+
+          <p className="fr-text--bold fr-mb-4w">
+            Si vous êtes éligible, nous vous transmettrons les coordonnées d'Assistants à Maîtrise d'Ouvrage locaux et
+            certifiés à contacter pour continuer vos démarches.
+          </p>
+
+          <div className="fr-btns-group fr-btns-group--right">
+            <button type="button" className="fr-btn" onClick={onStart}>
+              Démarrer
+            </button>
+          </div>
         </div>
       </div>
     </div>
