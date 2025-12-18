@@ -39,7 +39,7 @@ export function StepIntro({ onStart }: StepIntroProps) {
             certifiés à contacter pour continuer vos démarches.
           </p>
 
-          <div className="fr-btns-group fr-btns-group--right">
+          <div className="justify-end flex">
             <button type="button" className="fr-btn" onClick={onStart}>
               Démarrer
             </button>
