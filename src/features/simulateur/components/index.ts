@@ -1,2 +1,4 @@
-export { default as SimulateurClient } from "./SimulateurClient";
-export { default as RGATestFiller } from "./debug/RGATestFiller";
+export { SimulateurFormulaire } from "./SimulateurFormulaire";
+export * from "./shared";
+export * from "./steps";
+export * from "./results";

@@ -1,0 +1,9 @@
+export { StepIntro } from "./StepIntro";
+export { StepTypeLogement } from "./StepTypeLogement";
+export { StepAdresse } from "./StepAdresse";
+export { StepEtatMaison } from "./StepEtatMaison";
+export { StepMitoyennete } from "./StepMitoyennete";
+export { StepIndemnisation } from "./StepIndemnisation";
+export { StepAssurance } from "./StepAssurance";
+export { StepProprietaire } from "./StepProprietaire";
+export { StepRevenus } from "./StepRevenus";
