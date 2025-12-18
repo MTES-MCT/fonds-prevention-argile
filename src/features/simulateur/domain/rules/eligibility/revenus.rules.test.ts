@@ -97,7 +97,7 @@ describe("revenus.rules", () => {
     it("retourne la tranche modeste", () => {
       const tranche = getTrancheRevenus({
         nombrePersonnes: 2,
-        revenuFiscalReference: 25000,
+        revenuFiscalReference: 28000,
         codeRegion: "75",
       });
       expect(tranche).toBe("modeste");
