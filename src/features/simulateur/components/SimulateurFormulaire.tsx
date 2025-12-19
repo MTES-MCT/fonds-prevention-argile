@@ -134,11 +134,11 @@ export function SimulateurFormulaire() {
 
     case SimulateurStep.RESULTAT:
       if (isEligible && checks) {
-        return <ResultEligible checks={checks} onContinue={handleContinueToFC} onRestart={reset} />;
+        return <ResultEligible checks={checks} onContinue={handleContinueToFC} onRestart={reset} onBack={goBack} />;
       }
 
-      if (!isEligible && checks && reasonMessage) {
-        return <ResultNonEligible checks={checks} reasonMessage={reasonMessage} onRestart={reset} />;
+      if (!isEligible && checks) {
+        return <ResultNonEligible checks={checks} onRestart={reset} onBack={goBack} />;
       }
 
       // Fallback si état incohérent

@@ -35,16 +35,12 @@ export function StepMitoyennete({
   };
 
   return (
-    <SimulateurLayout
-      title="Votre maison est-elle mitoyenne ?"
-      description="Une maison mitoyenne partage au moins un mur avec une autre habitation"
-      currentStep={numeroEtape}
-      totalSteps={totalEtapes}>
-      <fieldset className="fr-fieldset">
+    <SimulateurLayout title="La maison est-elle mitoyenne ?" currentStep={numeroEtape} totalSteps={totalEtapes}>
+      <fieldset className="fr-fieldset md:w-1/2" id="mitoyennete-fieldset">
         <legend className="fr-fieldset__legend fr-sr-only">Mitoyenneté</legend>
 
-        <div className="fr-fieldset__content">
-          <div className="fr-radio-group">
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
               id="mitoyen-non"
@@ -53,11 +49,13 @@ export function StepMitoyennete({
               onChange={() => setSelected(false)}
             />
             <label className="fr-label" htmlFor="mitoyen-non">
-              Non, ma maison est indépendante
+              Non
             </label>
           </div>
+        </div>
 
-          <div className="fr-radio-group">
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
               id="mitoyen-oui"
@@ -66,7 +64,7 @@ export function StepMitoyennete({
               onChange={() => setSelected(true)}
             />
             <label className="fr-label" htmlFor="mitoyen-oui">
-              Oui, ma maison est mitoyenne
+              Oui
             </label>
           </div>
         </div>

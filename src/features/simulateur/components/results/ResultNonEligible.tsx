@@ -6,14 +6,14 @@ import { EligibilityChecksList } from "./EligibilityChecksList";
 
 interface ResultNonEligibleProps {
   checks: EligibilityChecks;
-  reasonMessage: string;
   onRestart: () => void;
+  onBack: () => void;
 }
 
 /**
  * Page de résultat : non éligible
  */
-export function ResultNonEligible({ checks, reasonMessage, onRestart }: ResultNonEligibleProps) {
+export function ResultNonEligible({ checks, onRestart, onBack }: ResultNonEligibleProps) {
   return (
     <div className="bg-[var(--background-alt-grey)] min-h-screen md:min-h-0 md:bg-transparent">
       <div className="fr-container fr-mb-8w">
@@ -36,25 +36,18 @@ export function ResultNonEligible({ checks, reasonMessage, onRestart }: ResultNo
                 <p>Votre logement ne répond pas aux critères du dispositif.</p>
               </div>
 
-              <EligibilityChecksList checks={checks} />
-
-              <div className="fr-mt-4w">
-                <h3 className="fr-h5">Que faire ?</h3>
-                <p>
-                  Même si vous n'êtes pas éligible au Fonds Prévention Argile, vous pouvez consulter nos ressources pour
-                  mieux comprendre le phénomène de retrait-gonflement des argiles et protéger votre logement.
-                </p>
-              </div>
+              <EligibilityChecksList checks={checks} isEligible={false} />
 
               <div className="fr-mt-4w flex flex-col-reverse md:flex-row md:justify-end gap-2">
-                <Link
-                  href="/signes-a-surveiller/fissures-en-escalier"
-                  className="fr-btn fr-btn--tertiary !w-full md:!w-auto justify-center">
-                  En savoir plus sur le RGA
-                </Link>
                 <button
                   type="button"
-                  className="fr-btn fr-btn--secondary !w-full md:!w-auto justify-center"
+                  className="fr-btn fr-btn--tertiary !w-full md:!w-auto justify-center"
+                  onClick={onBack}>
+                  Précédent
+                </button>
+                <button
+                  type="button"
+                  className="fr-btn fr-btn--secondary fr-icon-arrow-go-back-line fr-btn--icon-left  !w-full md:!w-auto justify-center"
                   onClick={onRestart}>
                   Recommencer la simulation
                 </button>

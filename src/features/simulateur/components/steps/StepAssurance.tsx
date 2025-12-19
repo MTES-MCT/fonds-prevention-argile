@@ -36,14 +36,14 @@ export function StepAssurance({
 
   return (
     <SimulateurLayout
-      title="Votre maison est-elle couverte par une assurance habitation ?"
+      title="La maison est-elle couverte par un contrat d'assurance habitation ?"
       currentStep={numeroEtape}
       totalSteps={totalEtapes}>
-      <fieldset className="fr-fieldset">
+      <fieldset className="fr-fieldset md:w-1/2" id="assurance-fieldset">
         <legend className="fr-fieldset__legend fr-sr-only">Assurance habitation</legend>
 
-        <div className="fr-fieldset__content">
-          <div className="fr-radio-group">
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
               id="assure-oui"
@@ -52,11 +52,13 @@ export function StepAssurance({
               onChange={() => setSelected(true)}
             />
             <label className="fr-label" htmlFor="assure-oui">
-              Oui, ma maison est assurée
+              Oui
             </label>
           </div>
+        </div>
 
-          <div className="fr-radio-group">
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
               id="assure-non"
@@ -65,7 +67,7 @@ export function StepAssurance({
               onChange={() => setSelected(false)}
             />
             <label className="fr-label" htmlFor="assure-non">
-              Non, ma maison n'est pas assurée
+              Non
             </label>
           </div>
         </div>

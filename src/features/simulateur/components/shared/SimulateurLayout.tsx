@@ -26,6 +26,9 @@ export function SimulateurLayout({
   totalSteps,
   showProgress = true,
 }: SimulateurLayoutProps) {
+  const hasSubContent = subtitle || description;
+  const titleMargin = hasSubContent ? "fr-mb-1v" : "fr-mb-4w";
+
   return (
     <div className="bg-[var(--background-alt-grey)] min-h-screen md:min-h-0 md:bg-transparent">
       <div className="fr-container fr-mb-8w">
@@ -42,13 +45,9 @@ export function SimulateurLayout({
             </div>
             <div className="px-4 md:px-8 pb-4 md:pb-0 fr-mt-4w md:fr-mt-6w">
               <h5 className="fr-mb-4w">Simulateur d'éligibilité au Fonds Prévention Argile</h5>
-
               {showProgress && <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />}
-
-              {title && <h4 className="fr-mb-1v">{title}</h4>}
-              {subtitle && <p className="fr-text--sm fr-mb-4w text-gray-500">{subtitle}</p>}
-              {description && <p className="fr-text--lg fr-mb-4w">{description}</p>}
-
+              {title && <h4 className={titleMargin}>{title}</h4>}
+              {subtitle && <p className="fr-text--sm fr-mb-2w text-gray-500">{subtitle}</p>}
               {children}
             </div>
           </div>

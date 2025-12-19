@@ -38,12 +38,13 @@ const CHECK_ORDER: (keyof EligibilityChecks)[] = [
 
 interface EligibilityChecksListProps {
   checks: EligibilityChecks;
+  isEligible?: boolean;
 }
 
 /**
  * Affiche la liste des critères d'éligibilité avec OUI/NON/—
  */
-export function EligibilityChecksList({ checks }: EligibilityChecksListProps) {
+export function EligibilityChecksList({ checks, isEligible = true }: EligibilityChecksListProps) {
   return (
     <div className="fr-accordions-group">
       <section className="fr-accordion">
@@ -51,15 +52,12 @@ export function EligibilityChecksList({ checks }: EligibilityChecksListProps) {
           <button
             type="button"
             className="fr-accordion__btn"
-            aria-expanded="false"
+            aria-expanded="true"
             aria-controls="accordion-eligibility-checks">
-            Détails de votre éligibilité
+            Détails de votre {isEligible ? "éligibilité" : "non-éligibilité"}
           </button>
         </h3>
-        <div
-          className="fr-collapse fr-collapse--expanded bg-white px-4"
-          aria-expanded="true"
-          id="accordion-eligibility-checks">
+        <div className="fr-collapse fr-collapse--expanded px-4" id="accordion-eligibility-checks">
           <div className="fr-accordion__content ">
             <ol className="fr-pl-3w">
               {CHECK_ORDER.map((key) => {
@@ -84,7 +82,7 @@ interface CheckBadgeProps {
 
 function CheckBadge({ value }: CheckBadgeProps) {
   if (value === null) {
-    return <span className="fr-badge fr-badge--sm">—</span>;
+    return <span className="fr-badge fr-badge--sm">Non évalué</span>;
   }
 
   if (value) {

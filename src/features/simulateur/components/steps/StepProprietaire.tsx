@@ -36,14 +36,15 @@ export function StepProprietaire({
 
   return (
     <SimulateurLayout
-      title="Êtes-vous propriétaire occupant de cette résidence principale ?"
+      title="Êtes-vous propriétaire occupant du logement concerné comme résidence principale ?"
+      subtitle="Les résidences secondaires et les maisons en location sont exclues du dispositif."
       currentStep={numeroEtape}
       totalSteps={totalEtapes}>
-      <fieldset className="fr-fieldset">
+      <fieldset className="fr-fieldset md:w-1/2" id="proprietaire-fieldset">
         <legend className="fr-fieldset__legend fr-sr-only">Propriétaire occupant</legend>
 
-        <div className="fr-fieldset__content">
-          <div className="fr-radio-group">
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
               id="proprietaire-oui"
@@ -52,12 +53,13 @@ export function StepProprietaire({
               onChange={() => setSelected(true)}
             />
             <label className="fr-label" htmlFor="proprietaire-oui">
-              Oui, je suis propriétaire occupant
-              <span className="fr-hint-text">C'est ma résidence principale</span>
+              Oui
             </label>
           </div>
+        </div>
 
-          <div className="fr-radio-group">
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
               id="proprietaire-non"
@@ -67,7 +69,6 @@ export function StepProprietaire({
             />
             <label className="fr-label" htmlFor="proprietaire-non">
               Non
-              <span className="fr-hint-text">Locataire, résidence secondaire, ou bailleur</span>
             </label>
           </div>
         </div>

@@ -50,7 +50,6 @@ export function StepTypeLogement({
               type="radio"
               id="type-maison"
               name="type-logement"
-              value="maison"
               checked={selected === "maison"}
               onChange={() => setSelected("maison")}
             />
@@ -66,7 +65,6 @@ export function StepTypeLogement({
               type="radio"
               id="type-appartement"
               name="type-logement"
-              value="appartement"
               checked={selected === "appartement"}
               onChange={() => setSelected("appartement")}
             />

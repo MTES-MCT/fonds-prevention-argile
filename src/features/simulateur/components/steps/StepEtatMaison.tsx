@@ -37,15 +37,17 @@ export function StepEtatMaison({
 
   return (
     <SimulateurLayout
-      title="Quel est l'état actuel de votre maison ?"
-      description="Concernant les fissures et désordres liés au sol"
+      title="Quel est l'état de la maison ?"
+      subtitle="⚠️ Prenez soin de lire les détails des réponses, cette étape est cruciale dans la suite de votre parcours."
       currentStep={numeroEtape}
       totalSteps={totalEtapes}>
-      <fieldset className="fr-fieldset">
-        <legend className="fr-fieldset__legend fr-sr-only">État de la maison</legend>
+      <fieldset className="fr-fieldset" id="etat-maison-fieldset" aria-labelledby="etat-maison-legend">
+        <legend className="fr-fieldset__legend--regular fr-fieldset__legend fr-sr-only" id="etat-maison-legend">
+          État de la maison
+        </legend>
 
-        <div className="fr-fieldset__content">
-          <div className="fr-radio-group">
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
               id="etat-saine"
@@ -56,11 +58,15 @@ export function StepEtatMaison({
             />
             <label className="fr-label" htmlFor="etat-saine">
               Saine
-              <span className="fr-hint-text">Aucune fissure visible</span>
+              <span className="fr-hint-text fr-text-default--info">
+                Aucune fissure visible, à l'intérieur comme à l'extérieur
+              </span>
             </label>
           </div>
+        </div>
 
-          <div className="fr-radio-group">
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
               id="etat-tres-peu-endommagee"
@@ -71,11 +77,15 @@ export function StepEtatMaison({
             />
             <label className="fr-label" htmlFor="etat-tres-peu-endommagee">
               Très peu endommagée
-              <span className="fr-hint-text">Quelques microfissures superficielles</span>
+              <span className="fr-hint-text fr-text-default--info">
+                Micro-fissures (<strong>1mm d'écartement maximum</strong>) sur les murs extérieurs et/ou intérieurs
+              </span>
             </label>
           </div>
+        </div>
 
-          <div className="fr-radio-group">
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
               id="etat-endommagee"
@@ -85,8 +95,11 @@ export function StepEtatMaison({
               onChange={() => setSelected("endommagée")}
             />
             <label className="fr-label" htmlFor="etat-endommagee">
-              Endommagée
-              <span className="fr-hint-text">Fissures importantes, désordres structurels</span>
+              Endommagée avec des premiers désordres structuraux déjà présents
+              <span className="fr-hint-text fr-text-default--info">
+                Fissures importantes (<strong>supérieures à 1mm d'écartement</strong>) sur les murs extérieurs et/ou
+                intérieurs
+              </span>
             </label>
           </div>
         </div>
