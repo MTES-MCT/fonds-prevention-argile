@@ -43,13 +43,13 @@ export function StepMitoyennete({
           <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
-              id="mitoyen-non"
+              id="mitoyen-oui"
               name="mitoyennete"
-              checked={selected === false}
-              onChange={() => setSelected(false)}
+              checked={selected === true}
+              onChange={() => setSelected(true)}
             />
-            <label className="fr-label" htmlFor="mitoyen-non">
-              Non
+            <label className="fr-label" htmlFor="mitoyen-oui">
+              Oui
             </label>
           </div>
         </div>
@@ -58,13 +58,13 @@ export function StepMitoyennete({
           <div className="fr-radio-group fr-radio-rich">
             <input
               type="radio"
-              id="mitoyen-oui"
+              id="mitoyen-non"
               name="mitoyennete"
-              checked={selected === true}
-              onChange={() => setSelected(true)}
+              checked={selected === false}
+              onChange={() => setSelected(false)}
             />
-            <label className="fr-label" htmlFor="mitoyen-oui">
-              Oui
+            <label className="fr-label" htmlFor="mitoyen-non">
+              Non
             </label>
           </div>
         </div>

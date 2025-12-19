@@ -25,6 +25,7 @@ export function StepRevenus({ initialValue, numeroEtape, totalEtapes, canGoBack,
   const [revenuFiscal, setRevenuFiscal] = useState<string>(initialValue?.revenuFiscalReference?.toString() ?? "");
 
   const isValid = nombrePersonnes !== "" && revenuFiscal !== "";
+  const isLastStep = numeroEtape === totalEtapes;
 
   const handleSubmit = () => {
     if (!isValid) return;
@@ -38,7 +39,8 @@ export function StepRevenus({ initialValue, numeroEtape, totalEtapes, canGoBack,
 
   return (
     <SimulateurLayout
-      title="Quels sont les revenus de votre ménage ?"
+      title="Combien de personne y'a-t-il dans votre foyer fiscal ?"
+      subtitle="Votre foyer fiscal correspond aux personnes inscrites avec vous sur votre déclaration d'impôt : vous-même, votre conjoint éventuel et vos enfants à charge."
       currentStep={numeroEtape}
       totalSteps={totalEtapes}>
       <div className="fr-input-group">
@@ -74,14 +76,13 @@ export function StepRevenus({ initialValue, numeroEtape, totalEtapes, canGoBack,
         />
       </div>
 
-      <div className="fr-callout fr-callout--blue-ecume fr-mt-3w">
-        <p className="fr-callout__text fr-text--sm">
-          Le revenu fiscal de référence permet de déterminer votre tranche de revenus et le taux de prise en charge de
-          l'aide.
-        </p>
-      </div>
-
-      <NavigationButtons onPrevious={onBack} onNext={handleSubmit} canGoBack={canGoBack} isNextDisabled={!isValid} />
+      <NavigationButtons
+        onPrevious={onBack}
+        onNext={handleSubmit}
+        canGoBack={canGoBack}
+        isNextDisabled={!isValid}
+        nextLabel={isLastStep ? "Voir le résultat" : "Suivant"}
+      />
     </SimulateurLayout>
   );
 }
