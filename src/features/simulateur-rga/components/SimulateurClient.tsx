@@ -346,18 +346,10 @@ export default function SimulateurClient({ embedMode = false }: SimulateurClient
               </ol>
             </div>
           </nav>
+
           <h1 className="fr-mb-6w text-(--text-title-grey)">Simulateur d'éligibilité au Fonds prévention argile</h1>
 
           <RGATestFiller />
-
-          {/* Message simulateur indisponible */}
-          <div className="fr-alert fr-alert--warning">
-            <h3 className="fr-alert__title">Simulateur temporairement indisponible</h3>
-            <p>
-              En raison d&#39;un problème technique, le simulateur d&#39;éligibilité n&#39;est pas accessible pour le
-              moment. Nous mettons tout en œuvre pour résoudre ce problème rapidement.
-            </p>
-          </div>
 
           {iframeUrl ? (
             <iframe
