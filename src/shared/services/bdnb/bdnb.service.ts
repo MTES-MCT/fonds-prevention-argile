@@ -98,7 +98,7 @@ function transformBdnbToBuilding(
     batimentGroupeId: batiment.batiment_groupe_id,
     lat: coordinates.lat,
     lon: coordinates.lon,
-    aleaArgiles: batiment.alea_argiles ?? null,
+    aleaArgiles: batiment.alea_argiles ? (batiment.alea_argiles.toLowerCase() as BdnbAleaArgile) : null, // Normaliser la casse
     anneeConstruction: batiment.annee_construction ?? null,
     nombreNiveaux: batiment.nb_niveau ?? null,
     surfaceHabitable: batiment.surface_habitable ?? null,
@@ -120,17 +120,10 @@ export function isInRgaZone(aleaArgiles: BdnbAleaArgile): boolean {
 }
 
 /**
- * Retourne le niveau de risque RGA (pour affichage)
+ * Détermine le niveau de risque RGA à partir de l'aléa argiles
+ * @param aleaArgiles
+ * @returns
  */
 export function getRgaRiskLevel(aleaArgiles: BdnbAleaArgile): "fort" | "moyen" | "faible" | "nul" {
-  switch (aleaArgiles) {
-    case "Fort":
-      return "fort";
-    case "Moyen":
-      return "moyen";
-    case "Faible":
-      return "faible";
-    default:
-      return "nul";
-  }
+  return aleaArgiles ?? "nul";
 }

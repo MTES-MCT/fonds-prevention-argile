@@ -215,7 +215,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
               value={addressInput}
               onChange={handleInputChange}
               name="adresse"
-              placeholder="Ex: 91 rue de Notz, Châteauroux"
+              placeholder="Ex: 97 rue de Notz, Châteauroux"
               autoComplete="street-address"
               autoFocus
             />
@@ -263,36 +263,34 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
           )}
         </div>
 
-        <div className="container bg-white p-4 rounded-md shadow-md">
-          {/* Carte (affichée uniquement après sélection d'adresse) */}
-          {selectedAddress && mapCenter && (
-            <div className="container">
-              {!buildingData && (
-                <p className="fr-text--sm fr-text--bold fr-mb-2w">
-                  Cliquez sur votre bâtiment (point bleu) pour le sélectionner :
-                </p>
-              )}
-              <RgaMapContainer
-                center={mapCenter}
-                showMarker={true}
-                showLegend={true}
-                variant="minimal"
-                onBuildingSelect={handleBuildingSelect}
-              />
-            </div>
-          )}
+        {/* Carte (affichée uniquement après sélection d'adresse) */}
+        {selectedAddress && mapCenter && (
+          <div className="container bg-white p-4">
+            {!buildingData && (
+              <p className="fr-text--sm fr-text--bold fr-mb-2w">
+                Cliquez sur votre bâtiment (point bleu) pour le sélectionner :
+              </p>
+            )}
+            <RgaMapContainer
+              center={mapCenter}
+              showMarker={true}
+              showLegend={true}
+              variant="minimal"
+              onBuildingSelect={handleBuildingSelect}
+            />
+          </div>
+        )}
 
-          {/* Formulaire de vérification/complétion des données */}
-          {buildingData && selectedAddress && (
-            <div className="fr-mb-4w">
-              <BuildingDataForm
-                address={selectedAddress.properties.label}
-                buildingData={buildingData}
-                onChange={handleFormChange}
-              />
-            </div>
-          )}
-        </div>
+        {/* Formulaire de vérification/complétion des données */}
+        {buildingData && selectedAddress && (
+          <div className="fr-mb-4w bg-white p-4">
+            <BuildingDataForm
+              address={selectedAddress.properties.label}
+              buildingData={buildingData}
+              onChange={handleFormChange}
+            />
+          </div>
+        )}
       </div>
 
       <NavigationButtons onPrevious={onBack} onNext={handleSubmit} canGoBack={canGoBack} isNextDisabled={!isValid} />
