@@ -200,7 +200,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   return (
     <SimulateurLayout
       title="Où se situe votre logement ?"
-      subtitle="Recherchez votre adresse puis sélectionnez votre bâtiment sur la carte"
+      subtitle="Recherchez votre adresse puis sélectionnez votre logement sur la carte"
       currentStep={numeroEtape}
       totalSteps={totalEtapes}>
       <div className="container ">
@@ -239,9 +239,9 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
               id={`fieldset-${radioGroupId}`}
               aria-labelledby={`fieldset-${radioGroupId}-legend`}>
               <legend
-                className="fr-fieldset__legend--regular fr-fieldset__legend"
+                className="fr-fieldset__legend--regular fr-fieldset__legend italic"
                 id={`fieldset-${radioGroupId}-legend`}>
-                Sélectionnez votre adresse
+                Sélectionnez votre adresse parmi les résultats suivants :
               </legend>
               {addressResults.map((feature, index) => (
                 <div className="fr-fieldset__element" key={feature.properties.id}>
