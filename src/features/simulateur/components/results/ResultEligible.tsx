@@ -17,7 +17,7 @@ interface ResultEligibleProps {
  * Page de résultat : éligible
  */
 export function ResultEligible({ checks, onContinue, onRestart, onBack }: ResultEligibleProps) {
-  const [amoList, setAmoList] = useState<Amo[]>([
+  const [amoList] = useState<Amo[]>([
     {
       id: "1",
       nom: "AMO Conseil",

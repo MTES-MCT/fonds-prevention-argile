@@ -8,7 +8,7 @@ const LEGEND_ITEMS = [
 
 export function RgaMapLegend() {
   return (
-    <div className="flex items-center justify-start fr-background-default--grey space-x-1.5">
+    <div className="flex items-center justify-start space-x-1.5">
       <span className="text-xs fr-text--bold">Risque argile :</span>
       {LEGEND_ITEMS.map(({ level, color }) => (
         <span

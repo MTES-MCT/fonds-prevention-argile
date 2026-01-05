@@ -28,7 +28,6 @@ export function SimulateurFormulaire() {
     currentStep,
     answers,
     checks,
-    reasonMessage,
     numeroEtape,
     totalEtapes,
     canGoBack,
