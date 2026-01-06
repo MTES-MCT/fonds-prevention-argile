@@ -169,26 +169,114 @@ describe("EligibilityService", () => {
       expect(result?.reason).toBe(EligibilityReason.MAISON_MITOYENNE);
     });
 
-    it("retourne non éligible avec raison DEJA_INDEMNISE", () => {
-      const answers: PartialRGASimulationData = {
-        logement: {
-          type: "maison",
-          code_departement: "47",
-          zone_dexposition: "fort",
-          annee_de_construction: anneeAncienne,
-          niveaux: 2,
-          mitoyen: false,
-        },
-        rga: {
-          sinistres: "saine",
-          indemnise_indemnise_rga: true,
-          indemnise_montant_indemnite: 15000,
-        },
-      };
-      const { result } = EligibilityService.evaluate(answers);
+    describe("DEJA_INDEMNISE", () => {
+      it("retourne non éligible si indemnisé après le 30 juin 2025", () => {
+        const answers: PartialRGASimulationData = {
+          logement: {
+            type: "maison",
+            code_departement: "47",
+            zone_dexposition: "fort",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+            mitoyen: false,
+          },
+          rga: {
+            sinistres: "saine",
+            indemnise_indemnise_rga: true,
+            indemnise_avant_juillet_2025: false,
+          },
+        };
+        const { result } = EligibilityService.evaluate(answers);
 
-      expect(result?.eligible).toBe(false);
-      expect(result?.reason).toBe(EligibilityReason.DEJA_INDEMNISE);
+        expect(result?.eligible).toBe(false);
+        expect(result?.reason).toBe(EligibilityReason.DEJA_INDEMNISE);
+      });
+
+      it("retourne non éligible si indemnisé entre 2015 et 2025 avec montant > 10 000 €", () => {
+        const answers: PartialRGASimulationData = {
+          logement: {
+            type: "maison",
+            code_departement: "47",
+            zone_dexposition: "fort",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+            mitoyen: false,
+          },
+          rga: {
+            sinistres: "saine",
+            indemnise_indemnise_rga: true,
+            indemnise_avant_juillet_2025: true,
+            indemnise_avant_juillet_2015: false,
+            indemnise_montant_indemnite: 15000,
+          },
+        };
+        const { result } = EligibilityService.evaluate(answers);
+
+        expect(result?.eligible).toBe(false);
+        expect(result?.reason).toBe(EligibilityReason.DEJA_INDEMNISE);
+      });
+
+      it("retourne éligible si indemnisé avant le 1er juillet 2015", () => {
+        const answers: PartialRGASimulationData = {
+          logement: {
+            type: "maison",
+            code_departement: "47",
+            zone_dexposition: "fort",
+            code_region: "75",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+            mitoyen: false,
+            proprietaire_occupant: true,
+          },
+          rga: {
+            sinistres: "saine",
+            indemnise_indemnise_rga: true,
+            indemnise_avant_juillet_2025: true,
+            indemnise_avant_juillet_2015: true,
+            indemnise_montant_indemnite: 50000, // Montant élevé mais OK car avant 2015
+            assure: true,
+          },
+          menage: {
+            personnes: 2,
+            revenu_rga: 25000,
+          },
+        };
+        const { result, checks } = EligibilityService.evaluate(answers);
+
+        expect(result?.eligible).toBe(true);
+        expect(checks.indemnisation).toBe(true);
+      });
+
+      it("retourne éligible si indemnisé entre 2015 et 2025 avec montant <= 10 000 €", () => {
+        const answers: PartialRGASimulationData = {
+          logement: {
+            type: "maison",
+            code_departement: "47",
+            zone_dexposition: "fort",
+            code_region: "75",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+            mitoyen: false,
+            proprietaire_occupant: true,
+          },
+          rga: {
+            sinistres: "saine",
+            indemnise_indemnise_rga: true,
+            indemnise_avant_juillet_2025: true,
+            indemnise_avant_juillet_2015: false,
+            indemnise_montant_indemnite: 5000,
+            assure: true,
+          },
+          menage: {
+            personnes: 2,
+            revenu_rga: 25000,
+          },
+        };
+        const { result, checks } = EligibilityService.evaluate(answers);
+
+        expect(result?.eligible).toBe(true);
+        expect(checks.indemnisation).toBe(true);
+      });
     });
 
     it("retourne non éligible avec raison NON_ASSURE", () => {

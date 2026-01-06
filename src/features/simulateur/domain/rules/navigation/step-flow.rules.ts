@@ -140,6 +140,8 @@ export function evaluateEligibility(answers: PartialRGASimulationData): {
   if (answers.rga?.indemnise_indemnise_rga !== undefined) {
     const indemnisationResult = checkIndemnisation({
       dejaIndemnise: answers.rga.indemnise_indemnise_rga,
+      avantJuillet2025: answers.rga.indemnise_avant_juillet_2025,
+      avantJuillet2015: answers.rga.indemnise_avant_juillet_2015,
       montant: answers.rga.indemnise_montant_indemnite,
     });
     checks.indemnisation = indemnisationResult.passed;

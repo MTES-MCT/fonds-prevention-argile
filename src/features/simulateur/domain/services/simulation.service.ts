@@ -179,7 +179,14 @@ const STEP_SPECIFIC_KEYS: Partial<Record<SimulateurStep, Record<string, string[]
   },
   [SimulateurStep.ETAT_MAISON]: { rga: ["sinistres"] },
   [SimulateurStep.MITOYENNETE]: { logement: ["mitoyen"] },
-  [SimulateurStep.INDEMNISATION]: { rga: ["indemnise_indemnise_rga", "indemnise_montant_indemnite"] },
+  [SimulateurStep.INDEMNISATION]: {
+    rga: [
+      "indemnise_indemnise_rga",
+      "indemnise_avant_juillet_2025",
+      "indemnise_avant_juillet_2015",
+      "indemnise_montant_indemnite",
+    ],
+  },
   [SimulateurStep.ASSURANCE]: { rga: ["assure"] },
   [SimulateurStep.PROPRIETAIRE]: { logement: ["proprietaire_occupant"] },
   [SimulateurStep.REVENUS]: { menage: ["personnes", "revenu_rga"] },

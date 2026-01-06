@@ -28,8 +28,10 @@ export interface RGASimulationData {
   rga: {
     assure: boolean;
     indemnise_indemnise_rga: boolean;
+    indemnise_avant_juillet_2025?: boolean;
+    indemnise_avant_juillet_2015?: boolean;
+    indemnise_montant_indemnite?: number;
     sinistres: "saine" | "très peu endommagée" | "endommagée";
-    indemnise_montant_indemnite: number;
   };
 
   menage: {

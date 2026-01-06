@@ -74,11 +74,14 @@ export function StepIndemnisation({
   const handleSubmit = () => {
     if (!isValid()) return;
 
-    const montantValue = dejaIndemnise && avantJuillet2025 && avantJuillet2015 === false ? parseInt(montant, 10) : 0;
+    const montantValue =
+      dejaIndemnise && avantJuillet2025 && avantJuillet2015 === false ? parseInt(montant, 10) : undefined;
 
     onSubmit({
       rga: {
         indemnise_indemnise_rga: dejaIndemnise,
+        indemnise_avant_juillet_2025: dejaIndemnise ? avantJuillet2025 : undefined,
+        indemnise_avant_juillet_2015: dejaIndemnise && avantJuillet2025 ? avantJuillet2015 : undefined,
         indemnise_montant_indemnite: montantValue,
       },
     });

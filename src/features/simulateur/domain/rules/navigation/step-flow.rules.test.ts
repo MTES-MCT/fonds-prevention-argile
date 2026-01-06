@@ -220,7 +220,7 @@ describe("step-flow.rules", () => {
     });
 
     describe("early exit - INDEMNISATION", () => {
-      it("déclenche early exit pour trop indemnisé", () => {
+      it("déclenche early exit si indemnisé après le 30 juin 2025", () => {
         const anneeAncienne = (new Date().getFullYear() - 20).toString();
         const answers: PartialRGASimulationData = {
           logement: {
@@ -234,6 +234,31 @@ describe("step-flow.rules", () => {
           rga: {
             sinistres: "saine",
             indemnise_indemnise_rga: true,
+            indemnise_avant_juillet_2025: false,
+          },
+        };
+        const result = evaluateEligibility(answers);
+        expect(result.shouldExit).toBe(true);
+        expect(result.failedAtStep).toBe(SimulateurStep.INDEMNISATION);
+        expect(result.checks.indemnisation).toBe(false);
+      });
+
+      it("déclenche early exit si indemnisé entre 2015 et 2025 avec montant > 10 000 €", () => {
+        const anneeAncienne = (new Date().getFullYear() - 20).toString();
+        const answers: PartialRGASimulationData = {
+          logement: {
+            type: "maison",
+            code_departement: "47",
+            zone_dexposition: "fort",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+            mitoyen: false,
+          },
+          rga: {
+            sinistres: "saine",
+            indemnise_indemnise_rga: true,
+            indemnise_avant_juillet_2025: true,
+            indemnise_avant_juillet_2015: false,
             indemnise_montant_indemnite: 15000,
           },
         };
@@ -241,6 +266,54 @@ describe("step-flow.rules", () => {
         expect(result.shouldExit).toBe(true);
         expect(result.failedAtStep).toBe(SimulateurStep.INDEMNISATION);
         expect(result.checks.indemnisation).toBe(false);
+      });
+
+      it("ne déclenche pas early exit si indemnisé avant le 1er juillet 2015", () => {
+        const anneeAncienne = (new Date().getFullYear() - 20).toString();
+        const answers: PartialRGASimulationData = {
+          logement: {
+            type: "maison",
+            code_departement: "47",
+            zone_dexposition: "fort",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+            mitoyen: false,
+          },
+          rga: {
+            sinistres: "saine",
+            indemnise_indemnise_rga: true,
+            indemnise_avant_juillet_2025: true,
+            indemnise_avant_juillet_2015: true,
+            indemnise_montant_indemnite: 50000, // Montant élevé mais OK car avant 2015
+          },
+        };
+        const result = evaluateEligibility(answers);
+        expect(result.shouldExit).toBe(false);
+        expect(result.checks.indemnisation).toBe(true);
+      });
+
+      it("ne déclenche pas early exit si indemnisé entre 2015 et 2025 avec montant <= 10 000 €", () => {
+        const anneeAncienne = (new Date().getFullYear() - 20).toString();
+        const answers: PartialRGASimulationData = {
+          logement: {
+            type: "maison",
+            code_departement: "47",
+            zone_dexposition: "fort",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+            mitoyen: false,
+          },
+          rga: {
+            sinistres: "saine",
+            indemnise_indemnise_rga: true,
+            indemnise_avant_juillet_2025: true,
+            indemnise_avant_juillet_2015: false,
+            indemnise_montant_indemnite: 5000,
+          },
+        };
+        const result = evaluateEligibility(answers);
+        expect(result.shouldExit).toBe(false);
+        expect(result.checks.indemnisation).toBe(true);
       });
     });
 
@@ -327,7 +400,7 @@ describe("step-flow.rules", () => {
     });
 
     describe("parcours complet éligible", () => {
-      it("ne déclenche pas early exit pour un dossier éligible complet", () => {
+      it("ne déclenche pas early exit pour un dossier éligible complet (jamais indemnisé)", () => {
         const anneeAncienne = (new Date().getFullYear() - 20).toString();
         const answers: PartialRGASimulationData = {
           logement: {
@@ -364,6 +437,70 @@ describe("step-flow.rules", () => {
         expect(result.checks.assurance).toBe(true);
         expect(result.checks.proprietaireOccupant).toBe(true);
         expect(result.checks.revenusEligibles).toBe(true);
+      });
+
+      it("ne déclenche pas early exit pour un dossier éligible complet (indemnisé avant 2015)", () => {
+        const anneeAncienne = (new Date().getFullYear() - 20).toString();
+        const answers: PartialRGASimulationData = {
+          logement: {
+            type: "maison",
+            code_departement: "47",
+            zone_dexposition: "fort",
+            code_region: "75",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+            mitoyen: false,
+            proprietaire_occupant: true,
+          },
+          rga: {
+            sinistres: "saine",
+            indemnise_indemnise_rga: true,
+            indemnise_avant_juillet_2025: true,
+            indemnise_avant_juillet_2015: true,
+            indemnise_montant_indemnite: 50000,
+            assure: true,
+          },
+          menage: {
+            personnes: 2,
+            revenu_rga: 25000,
+          },
+        };
+        const result = evaluateEligibility(answers);
+        expect(result.shouldExit).toBe(false);
+        expect(result.failedAtStep).toBeNull();
+        expect(result.checks.indemnisation).toBe(true);
+      });
+
+      it("ne déclenche pas early exit pour un dossier éligible complet (indemnisé 2015-2025, montant faible)", () => {
+        const anneeAncienne = (new Date().getFullYear() - 20).toString();
+        const answers: PartialRGASimulationData = {
+          logement: {
+            type: "maison",
+            code_departement: "47",
+            zone_dexposition: "fort",
+            code_region: "75",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+            mitoyen: false,
+            proprietaire_occupant: true,
+          },
+          rga: {
+            sinistres: "saine",
+            indemnise_indemnise_rga: true,
+            indemnise_avant_juillet_2025: true,
+            indemnise_avant_juillet_2015: false,
+            indemnise_montant_indemnite: 5000,
+            assure: true,
+          },
+          menage: {
+            personnes: 2,
+            revenu_rga: 25000,
+          },
+        };
+        const result = evaluateEligibility(answers);
+        expect(result.shouldExit).toBe(false);
+        expect(result.failedAtStep).toBeNull();
+        expect(result.checks.indemnisation).toBe(true);
       });
     });
   });

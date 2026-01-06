@@ -190,18 +190,19 @@ export function UserDetailSimulation({ user }: UserDetailSimulationProps) {
             </div>
 
             {/* Montant indemnité */}
-            {user.rgaSimulation.rga.indemnise_montant_indemnite > 0 && (
-              <div className="fr-grid-row fr-py-2w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
-                <div className="fr-col-12 fr-col-md-4">
-                  <dt className="fr-text--regular fr-mb-0">Montant indemnité</dt>
+            {user.rgaSimulation.rga.indemnise_montant_indemnite &&
+              user.rgaSimulation.rga.indemnise_montant_indemnite > 0 && (
+                <div className="fr-grid-row fr-py-2w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
+                  <div className="fr-col-12 fr-col-md-4">
+                    <dt className="fr-text--regular fr-mb-0">Montant indemnité</dt>
+                  </div>
+                  <div className="fr-col-12 fr-col-md-8">
+                    <dd className="fr-text--bold fr-mb-0">
+                      {formatEuros(user.rgaSimulation.rga.indemnise_montant_indemnite)}
+                    </dd>
+                  </div>
                 </div>
-                <div className="fr-col-12 fr-col-md-8">
-                  <dd className="fr-text--bold fr-mb-0">
-                    {formatEuros(user.rgaSimulation.rga.indemnise_montant_indemnite)}
-                  </dd>
-                </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
       )}
