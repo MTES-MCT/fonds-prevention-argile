@@ -120,10 +120,7 @@ export function StepRevenus({ initialValue, numeroEtape, totalEtapes, canGoBack,
             <span className="fr-hint-text">
               Si vous avez plusieurs déclarations, additionnez les revenus. Le revenu fiscal de référence se trouve sur
               la première page de{" "}
-              <a
-                href="https://www.service-public.fr/particuliers/vosdroits/F99"
-                target="_blank"
-                rel="noopener noreferrer">
+              <a href="https://cfspart-idp.impots.gouv.fr/" target="_blank" rel="noopener noreferrer">
                 votre dernier avis d'impôt sur le revenu
               </a>
             </span>
