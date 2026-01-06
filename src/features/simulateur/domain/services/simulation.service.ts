@@ -87,11 +87,15 @@ export const SimulationService = {
     const previousStep = state.history[state.history.length - 1];
     const newHistory = state.history.slice(0, -1);
 
+    // Effacer les réponses de l'étape qu'on quitte
+    const cleanedAnswers = clearAnswersForStep(state.currentStep, state.answers);
+
     return {
       ...state,
       currentStep: previousStep,
       history: newHistory,
-      result: null, // Effacer le résultat si on revient en arrière
+      answers: cleanedAnswers,
+      result: null,
       updatedAt: new Date().toISOString(),
     };
   },
@@ -151,4 +155,64 @@ function mergeAnswers(current: PartialRGASimulationData, updates: PartialRGASimu
       ...updates.vous,
     },
   };
+}
+
+/**
+ * Clés spécifiques à effacer par étape
+ */
+const STEP_SPECIFIC_KEYS: Partial<Record<SimulateurStep, Record<string, string[]>>> = {
+  [SimulateurStep.TYPE_LOGEMENT]: { logement: ["type"] },
+  [SimulateurStep.ADRESSE]: {
+    logement: [
+      "adresse",
+      "commune",
+      "commune_nom",
+      "code_departement",
+      "code_region",
+      "coordonnees",
+      "clef_ban",
+      "zone_dexposition",
+      "annee_de_construction",
+      "niveaux",
+      "rnb",
+    ],
+  },
+  [SimulateurStep.ETAT_MAISON]: { rga: ["sinistres"] },
+  [SimulateurStep.MITOYENNETE]: { logement: ["mitoyen"] },
+  [SimulateurStep.INDEMNISATION]: { rga: ["indemnise_indemnise_rga", "indemnise_montant_indemnite"] },
+  [SimulateurStep.ASSURANCE]: { rga: ["assure"] },
+  [SimulateurStep.PROPRIETAIRE]: { logement: ["proprietaire_occupant"] },
+  [SimulateurStep.REVENUS]: { menage: ["personnes", "revenu_rga"] },
+};
+
+/**
+ * Efface les réponses associées à une étape spécifique
+ */
+function clearAnswersForStep(step: SimulateurStep, answers: PartialRGASimulationData): PartialRGASimulationData {
+  const specificKeys = STEP_SPECIFIC_KEYS[step];
+
+  if (!specificKeys) {
+    return answers;
+  }
+
+  const cleaned: PartialRGASimulationData = {
+    logement: answers.logement ? { ...answers.logement } : undefined,
+    taxeFonciere: answers.taxeFonciere ? { ...answers.taxeFonciere } : undefined,
+    rga: answers.rga ? { ...answers.rga } : undefined,
+    menage: answers.menage ? { ...answers.menage } : undefined,
+    vous: answers.vous ? { ...answers.vous } : undefined,
+  };
+
+  for (const [section, keys] of Object.entries(specificKeys)) {
+    const sectionKey = section as keyof PartialRGASimulationData;
+    const sectionData = cleaned[sectionKey];
+
+    if (sectionData && typeof sectionData === "object") {
+      for (const key of keys) {
+        delete (sectionData as Record<string, unknown>)[key];
+      }
+    }
+  }
+
+  return cleaned;
 }
