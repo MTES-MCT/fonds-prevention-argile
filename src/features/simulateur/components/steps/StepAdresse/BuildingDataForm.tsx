@@ -101,7 +101,7 @@ export function BuildingDataForm({ address, buildingData, onChange }: BuildingDa
   return (
     <div className="fr-p-2w border-solid border border-gray-200">
       <div className="fr-mb-4v" style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-        <span className="fr-badge fr-badge--success">{address}</span>
+        <span className="fr-badge fr-badge--success">{buildingData?.adresse || address}</span>
         <span className="fr-badge fr-badge--error fr-badge--no-icon">{aleaConfig.label}</span>
       </div>
 
