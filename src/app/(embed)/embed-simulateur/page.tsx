@@ -8,7 +8,7 @@ export default async function EmbedSimulateurPage() {
   // Si connecté avec FranceConnect, bloquer
   if (user && user.authMethod === AUTH_METHODS.FRANCECONNECT) {
     return (
-      <div className="fr-container fr-py-8w">
+      <div className="w-full">
         <ForbiddenSimulator />
       </div>
     );
@@ -16,7 +16,7 @@ export default async function EmbedSimulateurPage() {
 
   // Afficher le simulateur en mode embed
   return (
-    <div className="h-screen flex flex-col">
+    <div className="w-full" style={{ minHeight: "650px" }}>
       <SimulateurFormulaire />
     </div>
   );
