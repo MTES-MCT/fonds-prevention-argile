@@ -18,6 +18,7 @@ import {
 
 // Results
 import { ResultEligible, ResultNonEligible } from "./results";
+import { useEffect } from "react";
 
 /**
  * Composant orchestrateur du simulateur d'éligibilité
@@ -38,6 +39,11 @@ export function SimulateurFormulaire() {
     reset,
     commitToRGAStore,
   } = useSimulateurFormulaire();
+
+  // Scroll to top à chaque changement d'étape
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentStep]);
 
   // Loading state (hydratation SSR)
   if (isLoading) {
