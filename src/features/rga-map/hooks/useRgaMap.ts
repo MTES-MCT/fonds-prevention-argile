@@ -28,6 +28,10 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [isReady, setIsReady] = useState(false);
 
+  // Extraire les valeurs primitives pour éviter les re-renders
+  const centerLat = center?.lat;
+  const centerLon = center?.lon;
+
   // Enregistrer le protocole PMTiles
   useEffect(() => {
     const protocol = new Protocol();
@@ -38,13 +42,14 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
     };
   }, []);
 
-  // Initialiser la carte
+  // Initialiser la carte (une seule fois)
   useEffect(() => {
     if (!mapRef.current) return;
 
-    const initialCenter: [number, number] = center ? [center.lon, center.lat] : DEFAULT_CENTER;
+    const initialCenter: [number, number] =
+      centerLon !== undefined && centerLat !== undefined ? [centerLon, centerLat] : DEFAULT_CENTER;
 
-    const initialZoom = zoom ?? (center ? ZOOM.building : ZOOM.france);
+    const initialZoom = zoom ?? (centerLat !== undefined ? ZOOM.building : ZOOM.france);
 
     const newMap = new maplibregl.Map({
       container: mapRef.current,
@@ -52,7 +57,7 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
       center: initialCenter,
       zoom: initialZoom,
       maxBounds: MAX_BOUNDS,
-      attributionControl: false, // Désactive complètement
+      attributionControl: false,
     });
 
     // Ajouter les contrôles de navigation
@@ -76,7 +81,7 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
       setIsReady(false);
       newMap.remove();
     };
-  }, [center, zoom]);
+  }, [centerLat, centerLon, zoom]);
 
   return {
     mapRef,
