@@ -52,6 +52,7 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
       center: initialCenter,
       zoom: initialZoom,
       maxBounds: MAX_BOUNDS,
+      attributionControl: false, // Désactive complètement
     });
 
     // Ajouter les contrôles de navigation
@@ -59,7 +60,7 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
       new maplibregl.NavigationControl({
         visualizePitch: true,
         showZoom: true,
-        showCompass: true,
+        showCompass: false,
       }),
       "top-right"
     );
