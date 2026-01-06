@@ -27,17 +27,9 @@ export function StepIntro({ onStart }: StepIntroProps) {
             <div className="px-4 md:px-8 pb-4 md:pb-0 fr-mt-4w md:fr-mt-6w">
               <h5 className="fr-mb-4w">Simulateur d'éligibilité au Fonds Prévention Argile</h5>
 
-              <div className="fr-callout fr-icon-warning-line fr-callout--pink-macaron">
-                <p>
-                  Attention, si votre logement est déjà touché par{" "}
-                  <strong>des fissures de plus de 1mm d'épaisseur à l'extérieur et/ou à l'intérieur</strong>, votre
-                  logement n'est <strong>pas éligible</strong>.
-                </p>
-              </div>
-
               <p className="fr-mb-3w">
                 En quelques étapes, découvrez si votre logement et votre situation correspondent aux critères
-                d'éligibilité définis par l'État pour bénéficier des aides financières{" "}
+                d'éligibilité définis par l'État pour bénéficier des aides du fonds de prévention{" "}
                 <Link
                   href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000050310058"
                   target="_blank"
@@ -45,11 +37,6 @@ export function StepIntro({ onStart }: StepIntroProps) {
                   (arrêté du 6 septembre 2025)
                 </Link>
                 .
-              </p>
-
-              <p className="fr-text--bold fr-mb-4w">
-                Si vous êtes éligible, nous vous transmettrons les coordonnées d'Assistants à Maîtrise d'Ouvrage locaux
-                et certifiés à contacter pour continuer vos démarches.
               </p>
 
               <div className="flex flex-col md:flex-row md:justify-end">
