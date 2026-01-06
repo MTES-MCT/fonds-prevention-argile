@@ -1,10 +1,6 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { db } from "@/shared/database/client";
-import {
-  entreprisesAmo,
-  entreprisesAmoCommunes,
-  entreprisesAmoEpci,
-} from "@/shared/database/schema";
+import { entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "@/shared/database/schema";
 import { eq } from "drizzle-orm";
 
 interface AmoRow {
@@ -31,18 +27,87 @@ interface ImportResult {
 }
 
 /**
- * Service d'import des AMO depuis Excel
+ * Extrait la valeur d'une cellule Excel en string
  */
+function getCellValue(cell: ExcelJS.Cell): string {
+  const value = cell.value;
+
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  if (typeof value === "object") {
+    if ("result" in value) {
+      return String(value.result ?? "");
+    }
+    if ("richText" in value) {
+      return value.richText.map((rt) => rt.text).join("");
+    }
+    if ("text" in value) {
+      return String(value.text ?? "");
+    }
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+    return String(value);
+  }
+
+  return String(value);
+}
+
+/**
+ * Parse un fichier Excel et retourne les lignes typées
+ */
+async function parseExcelFile(buffer: ArrayBuffer): Promise<AmoRow[]> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+
+  const worksheet = workbook.worksheets[0];
+
+  if (!worksheet) {
+    return [];
+  }
+
+  const rows: AmoRow[] = [];
+  const headers: string[] = [];
+
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) {
+      row.eachCell((cell, colNumber) => {
+        headers[colNumber] = String(cell.value || "")
+          .toLowerCase()
+          .trim();
+      });
+      return;
+    }
+
+    const rowData: Record<string, string> = {};
+    row.eachCell((cell, colNumber) => {
+      const header = headers[colNumber];
+      if (header) {
+        rowData[header] = getCellValue(cell);
+      }
+    });
+
+    rows.push({
+      nom: rowData.nom || "",
+      epci: rowData.epci || "",
+      siret: rowData.siret || "",
+      departements: rowData.departements || "",
+      emails: rowData.emails || "",
+      telephone: rowData.telephone || "",
+      adresse: rowData.adresse || "",
+      codes_insee: rowData.codes_insee || "",
+    });
+  });
+
+  return rows;
+}
 
 /**
  * Parse et importe les données AMO depuis un fichier Excel
- * Utilise le SIRET comme clé unique pour UPDATE ou INSERT
  */
-export async function importAmosFromExcel(
-  formData: FormData,
-  clearExisting: boolean = false
-): Promise<ImportResult> {
-  // 1. Récupérer le fichier
+export async function importAmosFromExcel(formData: FormData, clearExisting: boolean = false): Promise<ImportResult> {
   const file = formData.get("file") as File;
 
   if (!file) {
@@ -52,7 +117,6 @@ export async function importAmosFromExcel(
     };
   }
 
-  // Vérifier le type de fichier
   if (!file.name.endsWith(".xlsx") && !file.name.endsWith(".xls")) {
     return {
       success: false,
@@ -60,18 +124,8 @@ export async function importAmosFromExcel(
     };
   }
 
-  // 2. Lire le fichier Excel
   const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, {
-    cellDates: true,
-    cellStyles: true,
-  });
-
-  const sheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheetName];
-
-  // 3. Convertir en JSON
-  const data = XLSX.utils.sheet_to_json<AmoRow>(worksheet);
+  const data = await parseExcelFile(arrayBuffer);
 
   if (data.length === 0) {
     return {
@@ -80,33 +134,23 @@ export async function importAmosFromExcel(
     };
   }
 
-  // 4. Valider la structure
-  const requiredColumns = [
-    "nom",
-    "siret",
-    "departements",
-    "emails",
-    "telephone",
-    "adresse",
-  ];
+  const trulyRequired = ["nom", "siret", "departements", "emails"];
   const firstRow = data[0];
-  const missingColumns = requiredColumns.filter((col) => !(col in firstRow));
+  const missingRequired = trulyRequired.filter((col) => !(col in firstRow));
 
-  if (missingColumns.length > 0) {
+  if (missingRequired.length > 0) {
     return {
       success: false,
-      message: `Colonnes manquantes : ${missingColumns.join(", ")}`,
+      message: `Colonnes manquantes : ${missingRequired.join(", ")}`,
     };
   }
 
-  // 5. Nettoyer les tables existantes si demandé (ATTENTION: ne jamais utiliser en prod)
   if (clearExisting) {
     await db.delete(entreprisesAmoEpci);
     await db.delete(entreprisesAmoCommunes);
     await db.delete(entreprisesAmo);
   }
 
-  // 6. Insérer ou mettre à jour les données
   let entreprisesCreated = 0;
   let entreprisesUpdated = 0;
   let communesCreated = 0;
@@ -115,20 +159,17 @@ export async function importAmosFromExcel(
 
   for (const row of data) {
     try {
-      // Validation basique
       if (!row.nom?.trim()) {
         errors.push(`Ligne ignorée : nom manquant`);
         continue;
       }
 
-      // Validation SIRET
       const siret = String(row.siret || "").trim();
       if (!siret || !/^\d{14}$/.test(siret)) {
         errors.push(`${row.nom} : SIRET invalide (doit être 14 chiffres)`);
         continue;
       }
 
-      // Validation emails
       if (!row.emails?.trim()) {
         errors.push(`${row.nom} : emails manquants`);
         continue;
@@ -144,20 +185,17 @@ export async function importAmosFromExcel(
         continue;
       }
 
-      // Validation départements
       if (!row.departements?.trim()) {
         errors.push(`${row.nom} : départements manquants`);
         continue;
       }
 
-      // Nettoyer les départements
       const departementsFormatted = row.departements
         .split(",")
         .map((dep) => dep.trim())
         .filter((dep) => dep.length > 0)
         .join(", ");
 
-      // Vérifier si l'AMO existe déjà (basé sur SIRET)
       const existingAmo = await db
         .select({ id: entreprisesAmo.id })
         .from(entreprisesAmo)
@@ -166,7 +204,6 @@ export async function importAmosFromExcel(
 
       const isUpdate = existingAmo.length > 0;
 
-      // UPSERT de l'entreprise (INSERT ou UPDATE selon existence)
       const [entreprise] = await db
         .insert(entreprisesAmo)
         .values({
@@ -196,16 +233,10 @@ export async function importAmosFromExcel(
         entreprisesCreated++;
       }
 
-      // Supprimer les anciens EPCI et communes de cette AMO
-      await db
-        .delete(entreprisesAmoEpci)
-        .where(eq(entreprisesAmoEpci.entrepriseAmoId, entreprise.id));
+      await db.delete(entreprisesAmoEpci).where(eq(entreprisesAmoEpci.entrepriseAmoId, entreprise.id));
 
-      await db
-        .delete(entreprisesAmoCommunes)
-        .where(eq(entreprisesAmoCommunes.entrepriseAmoId, entreprise.id));
+      await db.delete(entreprisesAmoCommunes).where(eq(entreprisesAmoCommunes.entrepriseAmoId, entreprise.id));
 
-      // Parser et insérer les nouveaux codes EPCI (optionnel)
       if (row.epci?.trim()) {
         const codesEpci = row.epci
           .split(";")
@@ -217,13 +248,11 @@ export async function importAmosFromExcel(
             entrepriseAmoId: entreprise.id,
             codeEpci,
           }));
-
           await db.insert(entreprisesAmoEpci).values(epciData);
           epciCreated += codesEpci.length;
         }
       }
 
-      // Parser et insérer les nouveaux codes INSEE (optionnel)
       if (row.codes_insee?.trim()) {
         const codesInsee = row.codes_insee
           .split(",")
@@ -235,20 +264,16 @@ export async function importAmosFromExcel(
             entrepriseAmoId: entreprise.id,
             codeInsee,
           }));
-
           await db.insert(entreprisesAmoCommunes).values(communesData);
           communesCreated += codesInsee.length;
         }
       }
     } catch (error) {
       console.error(`Erreur pour ${row.nom}:`, error);
-      errors.push(
-        `${row.nom} : ${error instanceof Error ? error.message : "Erreur inconnue"}`
-      );
+      errors.push(`${row.nom} : ${error instanceof Error ? error.message : "Erreur inconnue"}`);
     }
   }
 
-  // 7. Retourner le résultat
   const totalEntreprises = entreprisesCreated + entreprisesUpdated;
   const actionVerb =
     entreprisesCreated > 0 && entreprisesUpdated > 0
@@ -270,16 +295,10 @@ export async function importAmosFromExcel(
   };
 }
 
-/**
- * Formate un numéro de téléphone français
- */
 function formatTelephone(value: string | number): string {
   const tel = String(value || "").trim();
-
-  // Si c'est un nombre et qu'il a 9 chiffres, ajouter le 0 devant
   if (/^\d{9}$/.test(tel)) {
     return `0${tel}`;
   }
-
   return tel;
 }

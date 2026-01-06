@@ -18,9 +18,6 @@ interface StepRevenusProps {
   onBack: () => void;
 }
 
-/** Options pour le nombre de personnes */
-const PERSONNES_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1);
-
 /**
  * Génère les options de tranches de revenus à partir des seuils
  * Retourne un tableau avec label et valeur représentative
@@ -69,12 +66,6 @@ export function StepRevenus({ initialValue, numeroEtape, totalEtapes, canGoBack,
     const seuils = getSeuilsRevenu(nombrePersonnes, false); // false = hors IDF
     return generateTrancheOptions(seuils);
   }, [nombrePersonnes]);
-
-  // Reset de la tranche si le nombre de personnes change
-  const handlePersonnesChange = (value: number) => {
-    setNombrePersonnes(value);
-    setSelectedTranche(null); // Reset la sélection de tranche
-  };
 
   const isValid = nombrePersonnes !== null && selectedTranche !== null;
 

@@ -3,8 +3,6 @@
 import Link from "next/link";
 import type { EligibilityChecks } from "../../domain/entities/eligibility-result.entity";
 import { EligibilityChecksList } from "./EligibilityChecksList";
-import { Amo } from "@/features/parcours/amo";
-import { useState } from "react";
 
 interface ResultEligibleProps {
   checks: EligibilityChecks;
@@ -17,30 +15,6 @@ interface ResultEligibleProps {
  * Page de résultat : éligible
  */
 export function ResultEligible({ checks, onContinue, onRestart, onBack }: ResultEligibleProps) {
-  const [amoList] = useState<Amo[]>([
-    {
-      id: "1",
-      nom: "AMO Conseil",
-      emails: "",
-      telephone: "01 23 45 67 89",
-      adresse: "10 rue de l'Argile, 75000 Paris",
-      siret: "",
-      departements: "",
-    },
-    {
-      id: "2",
-      nom: "Expertise Sols",
-      emails: "",
-      telephone: "09 87 65 43 21",
-      adresse: "5 avenue des Géotechniciens, 69000 Lyon",
-      siret: "",
-      departements: "",
-    },
-  ]);
-  const [selectedAmoId, setSelectedAmoId] = useState<string | null>(null);
-
-  const handleAmoSelection = (amoId: string) => setSelectedAmoId(amoId);
-
   return (
     <div className="bg-[var(--background-alt-grey)] min-h-screen md:min-h-0 md:bg-transparent">
       <div className="fr-container fr-mb-8w">
@@ -68,49 +42,6 @@ export function ResultEligible({ checks, onContinue, onRestart, onBack }: Result
                   Faire la demande d'aides
                 </button>
               </div>
-
-              {/*  Affichage des AMO */}
-              {/* <div className="fr-callout fr-icon-info-line">
-                <h3 className="fr-callout__title">
-                  Vous souhaitez gagner du temps ? Choissisez et contactez votre Assistant à Maîtrise d’Ouvrage
-                  certifié.
-                </h3>
-                <p className="fr-callout__text">
-                  Le recours à un AMO (Assistant à Maîtrise d’Ouvrage) est obligatoire pour bénéficier du Fonds
-                  Prévention Argile. Vous pouvez dès à présent contacter l’un des prestataires suivant, ils ont été
-                  sélectionnés selon votre localisation :
-                </p>
-                <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
-                  {amoList.map((amo) => (
-                    <div key={amo.id} className={amoList.length === 1 ? "fr-col-12" : "fr-col-12 fr-col-md-6"}>
-                      <div className="fr-fieldset__element">
-                        <div className="fr-radio-group fr-radio-rich">
-                          <input
-                            type="radio"
-                            id={`radio-amo-${amo.id}`}
-                            name="amo-selection"
-                            value={amo.id}
-                            checked={selectedAmoId === amo.id}
-                            onChange={() => handleAmoSelection(amo.id)}
-                          />
-                          <label className="fr-label" htmlFor={`radio-amo-${amo.id}`}>
-                            <span className="fr-text--bold fr-mb-1v">{amo.nom}</span>
-                            {amo.emails && (
-                              <span className="fr-text--sm fr-text--light block">
-                                {amo.emails.split(";").join(", ")}
-                              </span>
-                            )}
-                            {amo.telephone && <span className="fr-text--sm fr-text--light block">{amo.telephone}</span>}
-                            {amo.adresse && (
-                              <span className="fr-text--sm fr-text--light block text-gray-500">{amo.adresse}</span>
-                            )}
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div> */}
 
               <EligibilityChecksList checks={checks} />
 

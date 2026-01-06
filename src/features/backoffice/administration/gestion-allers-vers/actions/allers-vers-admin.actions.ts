@@ -31,9 +31,8 @@ export async function importAllersVersAction(formData: FormData): Promise<Action
 
     const clearExisting = formData.get("clearExisting") === "true";
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const result = await importAllersVersFromExcel(arrayBuffer, clearExisting);
 
-    const result = await importAllersVersFromExcel(buffer, clearExisting);
     revalidatePath("/administration");
 
     if (result.success) {

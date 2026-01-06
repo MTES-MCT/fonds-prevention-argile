@@ -221,7 +221,12 @@ describe("allers-vers-admin.actions", () => {
       const result = await importAllersVersAction(formData);
 
       expect(result.success).toBe(true);
-      expect(importAllersVersFromExcel).toHaveBeenCalledWith(expect.any(Buffer), true);
+      expect(importAllersVersFromExcel).toHaveBeenCalledTimes(1);
+
+      const callArgs = vi.mocked(importAllersVersFromExcel).mock.calls[0];
+      // Vérifie que le premier argument a une propriété byteLength (caractéristique d'un ArrayBuffer)
+      expect(callArgs[0]).toHaveProperty("byteLength");
+      expect(callArgs[1]).toBe(true);
     });
 
     it("devrait gérer les erreurs d'import", async () => {
