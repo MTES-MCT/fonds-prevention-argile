@@ -263,14 +263,23 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
           )}
         </div>
 
-        {/* Carte (affichée uniquement après sélection d'adresse) */}
+        {/* Container carte + formulaire */}
         {selectedAddress && mapCenter && (
-          <div className="container bg-white p-4">
+          <div
+            className="fr-mb-4w border-solid border border-gray-200"
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: "0.5rem",
+              padding: "0.5rem",
+            }}>
+            {/* Message d'instruction (visible tant que pas de bâtiment sélectionné) */}
             {!buildingData && (
               <p className="fr-text--sm fr-text--bold fr-mb-2w">
                 Cliquez sur votre bâtiment (point bleu) pour le sélectionner :
               </p>
             )}
+
+            {/* Carte */}
             <RgaMapContainer
               center={mapCenter}
               showMarker={true}
@@ -278,17 +287,17 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
               variant="minimal"
               onBuildingSelect={handleBuildingSelect}
             />
-          </div>
-        )}
 
-        {/* Formulaire de vérification/complétion des données */}
-        {buildingData && selectedAddress && (
-          <div className="fr-mb-4w bg-white p-4">
-            <BuildingDataForm
-              address={selectedAddress.properties.label}
-              buildingData={buildingData}
-              onChange={handleFormChange}
-            />
+            {/* Formulaire (visible après sélection d'un bâtiment) */}
+            {buildingData && (
+              <div className="px-2 py-1">
+                <BuildingDataForm
+                  address={selectedAddress.properties.label}
+                  buildingData={buildingData}
+                  onChange={handleFormChange}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

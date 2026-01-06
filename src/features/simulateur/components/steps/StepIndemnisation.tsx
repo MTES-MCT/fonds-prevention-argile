@@ -127,9 +127,7 @@ export function StepIndemnisation({
       {/* Question 2 : Avant juillet 2025 ? */}
       {dejaIndemnise && (
         <fieldset className="fr-fieldset fr-mt-4w" id="avant-2025-fieldset">
-          <h4 className="fr-fieldset__legend--regular fr-fieldset__legend h4">
-            Avez-vous reçu cette indemnité au titre du retrait-gonflement des argiles avant le 1er juillet 2025 ?
-          </h4>
+          <h4>Avez-vous reçu cette indemnité au titre du retrait-gonflement des argiles avant le 1er juillet 2025 ?</h4>
 
           <div className="md:w-1/2">
             <div className="fr-fieldset__element ">
@@ -167,38 +165,38 @@ export function StepIndemnisation({
 
       {/* Question 3 : Avant juillet 2015 ? */}
       {dejaIndemnise && avantJuillet2025 && (
-        <fieldset className="fr-fieldset fr-mt-4w md:w-1/2" id="avant-2015-fieldset">
-          <legend className="fr-fieldset__legend--regular fr-fieldset__legend">
-            La date de cette indemnité précède-elle le 1er juillet 2015 ?
-          </legend>
+        <fieldset className="fr-fieldset fr-mt-4w" id="avant-2015-fieldset">
+          <h4>La date de cette indemnité précède-elle le 1er juillet 2015 ?</h4>
 
-          <div className="fr-fieldset__element">
-            <div className="fr-radio-group fr-radio-rich">
-              <input
-                type="radio"
-                id="avant-2015-oui"
-                name="avant-2015"
-                checked={avantJuillet2015 === true}
-                onChange={() => handleAvantJuillet2015Change(true)}
-              />
-              <label className="fr-label" htmlFor="avant-2015-oui">
-                Oui
-              </label>
+          <div className="md:w-1/2">
+            <div className="fr-fieldset__element">
+              <div className="fr-radio-group fr-radio-rich">
+                <input
+                  type="radio"
+                  id="avant-2015-oui"
+                  name="avant-2015"
+                  checked={avantJuillet2015 === true}
+                  onChange={() => handleAvantJuillet2015Change(true)}
+                />
+                <label className="fr-label" htmlFor="avant-2015-oui">
+                  Oui
+                </label>
+              </div>
             </div>
-          </div>
 
-          <div className="fr-fieldset__element">
-            <div className="fr-radio-group fr-radio-rich">
-              <input
-                type="radio"
-                id="avant-2015-non"
-                name="avant-2015"
-                checked={avantJuillet2015 === false}
-                onChange={() => handleAvantJuillet2015Change(false)}
-              />
-              <label className="fr-label" htmlFor="avant-2015-non">
-                Non
-              </label>
+            <div className="fr-fieldset__element">
+              <div className="fr-radio-group fr-radio-rich">
+                <input
+                  type="radio"
+                  id="avant-2015-non"
+                  name="avant-2015"
+                  checked={avantJuillet2015 === false}
+                  onChange={() => handleAvantJuillet2015Change(false)}
+                />
+                <label className="fr-label" htmlFor="avant-2015-non">
+                  Non
+                </label>
+              </div>
             </div>
           </div>
         </fieldset>
@@ -207,19 +205,19 @@ export function StepIndemnisation({
       {/* Question 4 : Montant */}
       {dejaIndemnise && avantJuillet2025 && avantJuillet2015 === false && (
         <div className="fr-input-group fr-mt-4w">
-          <label className="fr-label" htmlFor="montant-indemnisation">
-            Quel est le montant TTC de l'indemnisation reçue au titre du retrait-gonflement des argiles ?
-          </label>
-          <div className="fr-input-wrap fr-input-wrap--addon">
-            <input
-              className="fr-input md:w-1/4"
-              type="number"
-              id="montant-indemnisation"
-              min="0"
-              value={montant}
-              onChange={(e) => setMontant(e.target.value)}
-            />
-            <span className="fr-addon">€</span>
+          <h4>Quel est le montant TTC de l'indemnisation reçue au titre du retrait-gonflement des argiles ?</h4>
+          <div className="md:w-1/2">
+            <div className="fr-input-wrap fr-input-wrap--addon">
+              <input
+                className="fr-input md:w-1/2"
+                type="number"
+                id="montant-indemnisation"
+                min="0"
+                value={montant}
+                onChange={(e) => setMontant(e.target.value)}
+              />
+              <span className="fr-addon fr-ml-2w">€</span>
+            </div>
           </div>
         </div>
       )}

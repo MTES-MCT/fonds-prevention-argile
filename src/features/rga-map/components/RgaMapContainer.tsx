@@ -35,27 +35,25 @@ export function RgaMapContainer({
       : { position: "relative" as const };
 
   return (
-    <div className="fr-mb-4w ">
-      <div style={containerStyle}>
-        <RgaMap
-          {...mapProps}
-          onBuildingSelect={handleBuildingSelect}
-          onBuildingDataChange={setBuildingData}
-          onLoadingChange={setIsLoading}
-        />
-        {showLegend && (
-          <div
-            className="px-4 pb-4"
-            style={{
-              bottom: "0",
-              left: "0",
-              right: "0",
-              zIndex: 10,
-            }}>
-            <RgaMapLegend />
-          </div>
-        )}
-      </div>
+    <div style={containerStyle}>
+      <RgaMap
+        {...mapProps}
+        onBuildingSelect={handleBuildingSelect}
+        onBuildingDataChange={setBuildingData}
+        onLoadingChange={setIsLoading}
+      />
+      {showLegend && (
+        <div
+          className="px-4 pb-4"
+          style={{
+            bottom: "0",
+            left: "0",
+            right: "0",
+            zIndex: 10,
+          }}>
+          <RgaMapLegend />
+        </div>
+      )}
     </div>
   );
 }

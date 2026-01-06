@@ -69,7 +69,8 @@ export function ResultEligible({ checks, onContinue, onRestart, onBack }: Result
                 </button>
               </div>
 
-              <div className="fr-callout fr-icon-info-line">
+              {/*  Affichage des AMO */}
+              {/* <div className="fr-callout fr-icon-info-line">
                 <h3 className="fr-callout__title">
                   Vous souhaitez gagner du temps ? Choissisez et contactez votre Assistant à Maîtrise d’Ouvrage
                   certifié.
@@ -109,7 +110,7 @@ export function ResultEligible({ checks, onContinue, onRestart, onBack }: Result
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               <EligibilityChecksList checks={checks} />
 
