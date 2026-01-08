@@ -39,7 +39,6 @@ export function RgaMapSection({ title, centre, zoomLevel }: RgaMapSectionProps) 
           readOnly
           showLegend
           showMarker
-          showBuildingInfo={false}
           height="400px"
         />
       </div>

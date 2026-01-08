@@ -19,7 +19,7 @@ import {
   CalloutEligibiliteRefuse,
   CalloutEligibiliteTodo,
 } from "./steps";
-import { useSimulateurRga } from "@/features/simulateur-rga";
+import { useSimulateurRga } from "@/features/simulateur";
 import Loading from "@/app/(main)/loading";
 import SimulationNeededAlert from "@/app/(main)/mon-compte/components/SimulationNeededAlert";
 import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/PourEnSavoirPlusSection";

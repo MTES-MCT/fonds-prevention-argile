@@ -3,7 +3,7 @@
 import { useAuth } from "@/features/auth/client";
 import { Amo } from "@/features/parcours/amo";
 import { choisirAmo, getAmoRefusee, getAmosDisponibles } from "@/features/parcours/amo/actions";
-import { useSimulateurRga } from "@/features/simulateur-rga";
+import { useSimulateurRga } from "@/features/simulateur";
 import { useEffect, useState } from "react";
 
 interface CalloutAmoTodoProps {

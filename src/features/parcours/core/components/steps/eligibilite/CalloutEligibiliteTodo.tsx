@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useParcours } from "../../../context/useParcours";
 import { envoyerDossierEligibiliteAvecDonnees } from "../../../actions";
-import { useSimulateurRga } from "@/features/simulateur-rga";
+import { useSimulateurRga } from "@/features/simulateur";
 import { ROUTES } from "@/features/auth/client";
 
 export default function CalloutEligibiliteTodo() {

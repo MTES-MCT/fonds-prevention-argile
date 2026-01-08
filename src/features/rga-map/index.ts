@@ -1,5 +1,5 @@
 // Components
-export { RgaMap, RgaMapContainer, RgaMapLegend, RgaBuildingInfo } from "./components";
+export { RgaMap, RgaMapContainer, RgaMapLegend } from "./components";
 
 // Hooks
 export { useRgaMap, useRgaMapMarker, useRgaBuildingSelection, flyToCoordinates } from "./hooks";

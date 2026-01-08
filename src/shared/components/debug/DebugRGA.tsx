@@ -1,18 +1,14 @@
 "use client";
 
-import { PartialRGAFormData } from "@/features/simulateur-rga";
+import { PartialRGASimulationData } from "@/shared/domain/types";
 
 interface DebugRGAProps {
   urlSearchParams: URLSearchParams;
-  rgaData: PartialRGAFormData;
+  rgaData: PartialRGASimulationData;
   hasSessionData?: boolean;
 }
 
-export function DebugRGA({
-  urlSearchParams,
-  rgaData,
-  hasSessionData,
-}: DebugRGAProps) {
+export function DebugRGA({ urlSearchParams, rgaData, hasSessionData }: DebugRGAProps) {
   // Ne s'affiche qu'en développement local
   if (process.env.NODE_ENV !== "development") {
     return null;
@@ -25,15 +21,12 @@ export function DebugRGA({
         backgroundColor: "#f0f0f0",
         padding: "20px",
         border: "2px solid #ccc",
-      }}
-    >
+      }}>
       <h2>DEBUG RGA (développement uniquement)</h2>
 
       <details className="fr-mb-4w">
         <summary>Paramètres bruts reçus</summary>
-        <pre className="fr-text--xs">
-          {JSON.stringify(Object.fromEntries(urlSearchParams), null, 2)}
-        </pre>
+        <pre className="fr-text--xs">{JSON.stringify(Object.fromEntries(urlSearchParams), null, 2)}</pre>
       </details>
 
       <details className="fr-mb-4w">
@@ -43,8 +36,7 @@ export function DebugRGA({
 
       <div className="fr-alert fr-alert--info">
         <p>
-          <strong>Session :</strong>{" "}
-          {hasSessionData ? "Données présentes" : "Pas de données"}
+          <strong>Session :</strong> {hasSessionData ? "Données présentes" : "Pas de données"}
         </p>
       </div>
     </div>

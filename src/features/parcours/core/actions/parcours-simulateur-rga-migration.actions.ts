@@ -2,15 +2,14 @@
 
 import { getSession } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types";
-import { mapRGAFormDataToDBSchema } from "@/features/simulateur-rga/mappers";
-import type { RGAFormData } from "@/features/simulateur-rga/domain/entities";
+import type { RGASimulationData, PartialRGASimulationData } from "@/shared/domain/types";
 import { parcoursRepo } from "@/shared/database/repositories";
 
 /**
  * Migre les données du simulateur RGA depuis localStorage vers la base de données
  * Appelée automatiquement après connexion FranceConnect
  */
-export async function migrateSimulationDataToDatabase(rgaData: RGAFormData): Promise<ActionResult<void>> {
+export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulationData): Promise<ActionResult<void>> {
   try {
     // 1. Vérifier session utilisateur
     const session = await getSession();
@@ -40,8 +39,11 @@ export async function migrateSimulationDataToDatabase(rgaData: RGAFormData): Pro
       };
     }
 
-    // 4. Mapper les données RGA
-    const rgaSimulationData = mapRGAFormDataToDBSchema(rgaData);
+    // 4. Ajouter le timestamp de simulation
+    const rgaSimulationData: RGASimulationData = {
+      ...rgaData,
+      simulatedAt: new Date().toISOString(),
+    } as RGASimulationData;
 
     // 5. Sauvegarder en base de données
     await parcoursRepo.updateRGAData(parcours.id, rgaSimulationData);

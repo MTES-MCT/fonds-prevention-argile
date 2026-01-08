@@ -4,7 +4,7 @@ import content from "../content/content.json";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FC_ERROR_MAPPING, ROUTES } from "@/features/auth/client";
-import { useLoadRGAFromURL } from "@/features/simulateur-rga/hooks/useLoadRGAFromURL";
+import { useLoadRGAFromURL } from "@/features/simulateur/hooks";
 
 export default function ConnexionFranceConnectClient() {
   // Charger les données RGA depuis l'URL si présentes (mode embed)

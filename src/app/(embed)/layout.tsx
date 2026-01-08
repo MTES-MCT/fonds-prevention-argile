@@ -8,11 +8,9 @@ interface EmbedLayoutProps {
 
 export default function EmbedLayout({ children }: EmbedLayoutProps) {
   return (
-    <>
-      <AuthProvider>
-        <Matomo />
-        <main className="flex-1 h-full">{children}</main>
-      </AuthProvider>
-    </>
+    <AuthProvider>
+      <Matomo />
+      <main className="min-h-screen flex items-center justify-center">{children}</main>
+    </AuthProvider>
   );
 }

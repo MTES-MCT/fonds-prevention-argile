@@ -16,7 +16,7 @@ export interface BdnbBatimentConstruction {
 /**
  * Niveaux d'aléa argile possibles
  */
-export type BdnbAleaArgile = "Fort" | "Moyen" | "Faible" | null;
+export type BdnbAleaArgile = "fort" | "moyen" | "faible" | null;
 
 /**
  * Réponse de l'endpoint batiment_groupe_complet
