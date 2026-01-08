@@ -81,8 +81,7 @@ export function StepRevenus({ initialValue, numeroEtape, totalEtapes, canGoBack,
 
   return (
     <SimulateurLayout
-      title="Combien de personne y'a-t-il dans votre foyer fiscal ?"
-      subtitle="Votre foyer fiscal correspond aux personnes inscrites avec vous sur votre déclaration d'impôt : vous-même, votre conjoint éventuel et vos enfants à charge."
+      title="Combien de personne y'a-t-il dans votre foyer ?"
       currentStep={numeroEtape}
       totalSteps={totalEtapes}>
       {/* Nombre de personnes */}
@@ -106,7 +105,7 @@ export function StepRevenus({ initialValue, numeroEtape, totalEtapes, canGoBack,
         <fieldset className="fr-fieldset fr-mt-4w" id="tranche-fieldset">
           <legend className="fr-fieldset__legend">
             <h2 className="fr-h6">
-              Quel est le revenu fiscal de référence total de votre foyer fiscal (tous les membres) ?
+              Quel est votre revenu fiscal de référence ?
             </h2>
             <span className="fr-hint-text">
               Si vous avez plusieurs déclarations, additionnez les revenus. Le revenu fiscal de référence se trouve sur

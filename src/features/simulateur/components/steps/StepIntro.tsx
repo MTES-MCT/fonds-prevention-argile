@@ -11,10 +11,10 @@ interface StepIntroProps {
  */
 export function StepIntro({ onStart }: StepIntroProps) {
   return (
-    <div className="bg-[var(--background-alt-grey)] min-h-screen md:min-h-0 md:bg-transparent">
+    <div className="bg-(--background-alt-grey) md:bg-transparent">
       <div className="fr-container fr-mb-8w">
         <div className="fr-grid-row fr-grid-row--center">
-          <div className="fr-col-12 fr-col-md-8 fr-col-lg-8 md:bg-[var(--background-alt-grey)] p-0 md:p-10">
+          <div className="fr-col-12 fr-col-md-8 fr-col-lg-8 md:bg-(--background-alt-grey) p-0 md:p-10">
             <div className="flex justify-end fr-mb-2w px-4 pt-4 md:px-0 md:pt-0">
               <Link
                 id="link-help"
