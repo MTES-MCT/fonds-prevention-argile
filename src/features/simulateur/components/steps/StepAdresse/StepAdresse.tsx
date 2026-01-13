@@ -11,6 +11,7 @@ import {
   MIN_QUERY_LENGTH,
   type BanFeature,
 } from "@/shared/adapters/ban";
+import { getEpciByCommune } from "@/shared/adapters/geo";
 import { RgaMapContainer } from "@/features/rga-map";
 import type { BuildingData } from "@/shared/services/bdnb";
 
@@ -54,6 +55,9 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
 
   // Adresse sélectionnée (après clic sur RadioButton)
   const [selectedAddress, setSelectedAddress] = useState<BanFeature | null>(null);
+
+  // Code EPCI récupéré via API Geo
+  const [codeEpci, setCodeEpci] = useState<string | null>(null);
 
   // Bâtiment sélectionné sur la carte (après clic sur point bleu)
   const [buildingData, setBuildingData] = useState<BuildingData | null>(null);
@@ -101,13 +105,24 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   }, [debouncedInput, selectedAddress?.properties.label]);
 
   // Gestionnaire de sélection d'adresse
-  const handleAddressSelect = useCallback((feature: BanFeature) => {
+  const handleAddressSelect = useCallback(async (feature: BanFeature) => {
     setSelectedAddress(feature);
     setAddressInput(feature.properties.label);
     setAddressResults(null);
     // Reset du bâtiment sélectionné car nouvelle adresse
     setBuildingData(null);
     setFormData({ anneeConstruction: null, nombreNiveaux: null });
+    // Reset du code EPCI
+    setCodeEpci(null);
+
+    // Récupérer le code EPCI via API Geo
+    try {
+      const epci = await getEpciByCommune(feature.properties.citycode);
+      setCodeEpci(epci);
+    } catch (error) {
+      console.error("Erreur récupération EPCI:", error);
+      // On continue sans EPCI, le fallback département sera utilisé
+    }
   }, []);
 
   // Gestionnaire de changement d'input
@@ -121,6 +136,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
         setSelectedAddress(null);
         setBuildingData(null);
         setFormData({ anneeConstruction: null, nombreNiveaux: null });
+        setCodeEpci(null);
       }
     },
     [selectedAddress]
@@ -149,7 +165,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   const handleSubmit = useCallback(() => {
     if (!selectedAddress || !buildingData) return;
 
-    const addressData = mapBanFeatureToAddressData(selectedAddress);
+    const addressData = mapBanFeatureToAddressData(selectedAddress, { codeEpci: codeEpci ?? undefined });
 
     onSubmit({
       logement: {
@@ -158,6 +174,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
         commune_nom: addressData.nomCommune,
         code_departement: addressData.codeDepartement,
         code_region: addressData.codeRegion,
+        epci: addressData.codeEpci,
         coordonnees: formatCoordinatesString(addressData.coordinates),
         clef_ban: addressData.clefBan,
         // Données du bâtiment (BDNB + potentiellement éditées)
@@ -167,7 +184,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
         rnb: buildingData.rnbId,
       },
     });
-  }, [selectedAddress, buildingData, formData, onSubmit]);
+  }, [selectedAddress, buildingData, formData, codeEpci, onSubmit]);
 
   // Validation : peut passer à l'étape suivante ?
   const isValid =
