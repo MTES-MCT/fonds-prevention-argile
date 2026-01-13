@@ -16,6 +16,7 @@ import PourEnSavoirPlusSection from "./components/PourEnSavoirPlusSection";
 import FaqSection from "./components/FaqSection";
 import QuiSommesNousSection from "./components/QuiSommesNousSection";
 import { DEPARTEMENTS_ELIGIBLES_RGA } from "@/features/seo";
+import ConseillersLocauxAllersVersSection from "./components/ConseillersLocauxAllersVersSection";
 
 export default function Home() {
   const { showLogoutMessage, clearLogoutMessage } = useLogoutMessage();
@@ -51,6 +52,7 @@ export default function Home() {
         <QuiPeutBeneficierAidesSection />
         <MontantDesAidesSection />
         <CommentCaMarcheSection />
+        <ConseillersLocauxAllersVersSection />
         <SavoirSiConcerneSection />
         <QuelsSontTravauxEligiblesSection />
         <PourEnSavoirPlusSection />

@@ -117,6 +117,19 @@
       }
     ]
   },
+  "conseillersLocaux_allers_vers_section": {
+    "title": "Vous avez des questions ? Votre conseiller local y répond gratuitement",
+    "description": "Des conseillers locaux sont missionnés par l'Etat pour répondre à vos questions et vous aider à bien comprendre l'objectif et le fonctionnement du fonds.",
+    "description2": "Vous avez des doutes, vous ne savez pas si ce diagnostic et ces travaux peuvent vous être utiles? Rapprochez-vous de votre conseiller local pour en parler concrètement.",
+    "description3": "Ils vous apportent informations et conseils afin de vous lancer dans votre démarche de prévention.",
+    "description4": "Cet accompagnement est gratuit.",
+    "cta_label": "Trouver mon conseiller local",
+    "cta_url": "/trouver-mon-conseiller-local",
+    "image": {
+      "alt": "Fonds prévention argile - Un service de l'État",
+      "src": "/images/home/conseillers-locaux-aller-vers.png"
+    }
+  },
   "qui_peut_beneficier_aides_section": {
     "image": {
       "alt": "Fonds prévention argile - Un service de l'État",
