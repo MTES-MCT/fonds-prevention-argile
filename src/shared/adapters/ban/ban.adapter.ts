@@ -216,12 +216,21 @@ export function extractCoordinates(feature: BanFeature): BanCoordinates {
 }
 
 /**
+ * Options pour le mapping d'adresse BAN
+ */
+export interface MapBanFeatureOptions {
+  /** Code EPCI (récupéré via API Geo) */
+  codeEpci?: string;
+}
+
+/**
  * Convertit une feature BAN en données d'adresse pour le simulateur
  *
  * @param feature - Feature BAN sélectionnée
+ * @param options - Options additionnelles (codeEpci, etc.)
  * @returns Données d'adresse formatées
  */
-export function mapBanFeatureToAddressData(feature: BanFeature): BanAddressData {
+export function mapBanFeatureToAddressData(feature: BanFeature, options: MapBanFeatureOptions = {}): BanAddressData {
   const { properties, geometry } = feature;
   const codeDepartement = extractDepartementFromContext(properties.context);
   const codeRegion = getRegionFromDepartement(codeDepartement);
@@ -235,6 +244,7 @@ export function mapBanFeatureToAddressData(feature: BanFeature): BanAddressData 
     codePostal: properties.postcode,
     codeDepartement,
     codeRegion,
+    codeEpci: options.codeEpci,
     coordinates: { lat, lon },
   };
 }
