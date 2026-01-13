@@ -52,10 +52,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
   };
 
   // Helper pour mocker les résultats de requêtes DB
-  const mockDbResults = (
-    epciResults: unknown[],
-    departementResults: unknown[]
-  ) => {
+  const mockDbResults = (epciResults: unknown[], departementResults: unknown[]) => {
     // Mock pour selectDistinct (requête EPCI)
     vi.mocked(db.selectDistinct).mockReturnValue({
       from: vi.fn().mockReturnValue({
@@ -79,9 +76,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
       mockValidSession();
 
       const parcours = createMockParcours("36006", "200068872");
-      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(
-        parcours as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours as ParcoursPrevention);
 
       const amoEpci = {
         id: "amo-a-id",
@@ -125,9 +120,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
       mockValidSession();
 
       const parcours = createMockParcours("36006", "999999999");
-      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(
-        parcours as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours as ParcoursPrevention);
 
       const amoDepartement = {
         id: "amo-c-id",
@@ -160,9 +153,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
       mockValidSession();
 
       const parcours = createMockParcours("36006", "200068872");
-      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(
-        parcours as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours as ParcoursPrevention);
 
       const amoEpci1 = {
         id: "amo-a-id",
@@ -216,9 +207,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
       mockValidSession();
 
       const parcours = createMockParcours("36006", "999999999");
-      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(
-        parcours as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours as ParcoursPrevention);
 
       const amoDept1 = {
         id: "amo-d-id",
@@ -261,9 +250,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
       mockValidSession();
 
       const parcours = createMockParcours("36006", null);
-      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(
-        parcours as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours as ParcoursPrevention);
 
       const amoDepartement = {
         id: "amo-f-id",
@@ -295,9 +282,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
       mockValidSession();
 
       const parcours = createMockParcours("99999", "999999999");
-      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(
-        parcours as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours as ParcoursPrevention);
 
       mockDbResults([], []);
 
@@ -318,9 +303,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
       mockValidSession();
 
       const parcours = createMockParcours(36006, 200068872);
-      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(
-        parcours as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours as ParcoursPrevention);
 
       const amoEpci = {
         id: "amo-number-id",
@@ -375,9 +358,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
         } as ParcoursPrevention["rgaSimulationData"],
       };
 
-      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(
-        parcoursIncomplet as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcoursIncomplet as ParcoursPrevention);
 
       // WHEN
       const result = await getAmosDisponibles();
@@ -386,9 +367,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
       expect(result.success).toBe(false);
       if (result.success) throw new Error("Expected error");
 
-      expect(result.error).toBe(
-        "Simulation RGA non complétée (code INSEE manquant)"
-      );
+      expect(result.error).toBe("Simulation RGA non complétée (code INSEE manquant)");
     });
 
     it("doit retourner une erreur si le code INSEE est invalide", async () => {
@@ -396,9 +375,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
       mockValidSession();
 
       const parcoursInvalide = createMockParcours("INVALID", null);
-      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(
-        parcoursInvalide as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcoursInvalide as ParcoursPrevention);
 
       // WHEN
       const result = await getAmosDisponibles();
@@ -407,9 +384,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
       expect(result.success).toBe(false);
       if (result.success) throw new Error("Expected error");
 
-      expect(result.error).toBe(
-        "Simulation RGA non complétée (code INSEE invalide)"
-      );
+      expect(result.error).toBe("Simulation RGA non complétée (code INSEE invalide)");
     });
   });
 
@@ -419,9 +394,7 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
       mockValidSession();
 
       const parcours = createMockParcours("36006", null);
-      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(
-        parcours as ParcoursPrevention
-      );
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours as ParcoursPrevention);
 
       const amoDepartement = {
         id: "amo-dept-id",
@@ -440,6 +413,49 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
 
       // THEN
       expect(db.select).toHaveBeenCalled();
+    });
+  });
+
+  describe("Test 9 : EPCI undefined (non renseigné)", () => {
+    it("doit retourner les AMO du département si l'EPCI est undefined", async () => {
+      // GIVEN
+      mockValidSession();
+
+      // Simuler un parcours où epci n'existe pas du tout (undefined)
+      const parcoursWithoutEpci: Partial<ParcoursPrevention> = {
+        id: "parcours-123",
+        userId: "user-123",
+        rgaSimulationData: {
+          logement: {
+            commune: "54099", // Bouxières-aux-Dames
+            // PAS de champ epci du tout
+          },
+        } as ParcoursPrevention["rgaSimulationData"],
+      };
+
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcoursWithoutEpci as ParcoursPrevention);
+
+      const amoDepartement = {
+        id: "amo-dept-id",
+        nom: "AMO Département 54",
+        siret: "99999999999999",
+        departements: "Meurthe-et-Moselle 54",
+        emails: "dept54@amo.fr",
+        telephone: "0123456789",
+        adresse: "Adresse",
+      };
+
+      mockDbResults([], [amoDepartement]);
+
+      // WHEN
+      const result = await getAmosDisponibles();
+
+      // THEN
+      expect(result.success).toBe(true);
+      if (!result.success) throw new Error("Expected success");
+
+      // Vérifie que le fallback département a bien été utilisé
+      expect(result.data).toHaveLength(1);
     });
   });
 });
