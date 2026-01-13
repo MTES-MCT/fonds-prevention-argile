@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "title": "Trouver mon conseiller local | Fonds Prévention Argile",
+    "description": "Trouvez un conseiller local près de chez vous pour vous accompagner dans votre projet de prévention contre le retrait-gonflement des argiles (RGA)."
+  },
+  "breadcrumb": {
+    "home": "Accueil",
+    "currentPage": "Trouver mon conseiller local"
+  },
+  "page": {
+    "title": "Trouvez votre conseiller local pour débuter",
+    "subtitle": "Vous avez des doutes ou des questions concernant le fonds de prévention argile ? Vous n'êtes pas sûr d'être éligible ou souhaitez comprendre davantage le fonctionnement ? N'hésitez pas à contacter votre conseiller local certifié dans votre département pour un accompagnement personnalisé.",
+    "filterLabel": "Quel est le département du logement concerné ?",
+    "filterPlaceholder": "Tous les départements",
+    "noResults": "Aucun conseiller trouvé pour ce département.",
+    "loading": "Chargement des conseillers...",
+    "error": "Une erreur est survenue lors du chargement des conseillers.",
+    "totalResults": "conseiller(s) disponible(s)"
+  }
+}

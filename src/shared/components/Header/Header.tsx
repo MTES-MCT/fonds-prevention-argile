@@ -140,6 +140,12 @@ const Header = () => {
                         </Link>
                       </li>
                       <li>
+                        <Link href={ROUTES.conseillers} className="fr-icon-map-pin-user-fill fr-btn">
+                          Trouver mon conseiller
+                        </Link>
+                      </li>
+
+                      <li>
                         <Link href={ROUTES.simulateur} className="fr-btn--account fr-icon-checkbox-circle-fill fr-btn">
                           Vérifier mon éligibilité
                         </Link>
@@ -150,11 +156,18 @@ const Header = () => {
                       {isAgent ? (
                         <AgentNavLinks />
                       ) : (
-                        <li>
-                          <Link href={ROUTES.particulier.monCompte} className="fr-icon-folder-2-fill fr-btn">
-                            Mon dossier
-                          </Link>
-                        </li>
+                        <>
+                          <li>
+                            <Link href={ROUTES.conseillers} className="fr-icon-map-pin-user-fill fr-btn">
+                              Trouver mon conseiller
+                            </Link>
+                          </li>
+                          <li>
+                            <Link href={ROUTES.particulier.monCompte} className="fr-icon-folder-2-fill fr-btn">
+                              Mon dossier
+                            </Link>
+                          </li>
+                        </>
                       )}
                       <li>
                         <button
@@ -194,6 +207,12 @@ const Header = () => {
                     </Link>
                   </li>
                   <li>
+                    <Link href={ROUTES.conseillers} className="fr-icon-user-heart-line fr-btn">
+                      Trouver mon conseiller
+                    </Link>
+                  </li>
+
+                  <li>
                     <Link href={ROUTES.simulateur} className="fr-btn--account fr-icon-checkbox-circle-fill fr-btn">
                       Vérifier mon éligibilité
                     </Link>
@@ -204,11 +223,18 @@ const Header = () => {
                   {isAgent ? (
                     <AgentNavLinksMobile />
                   ) : (
-                    <li>
-                      <Link href={ROUTES.particulier.monCompte} className="fr-icon-folder-2-fill fr-btn">
-                        Mon dossier
-                      </Link>
-                    </li>
+                    <>
+                      <li>
+                        <Link href={ROUTES.conseillers} className="fr-icon-user-heart-line fr-btn">
+                          Trouver mon conseiller
+                        </Link>
+                      </li>
+                      <li>
+                        <Link href={ROUTES.particulier.monCompte} className="fr-icon-folder-2-fill fr-btn">
+                          Mon dossier
+                        </Link>
+                      </li>
+                    </>
                   )}
                   <li>
                     <button
