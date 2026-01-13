@@ -142,6 +142,9 @@ export interface BanAddressData {
   /** Code région (extrait du context) */
   codeRegion: string;
 
+  /** Code EPCI (récupéré via API Geo) */
+  codeEpci?: string;
+
   /** Coordonnées */
   coordinates: BanCoordinates;
 }

@@ -3,6 +3,7 @@ export const ROUTES = {
   // Pages publiques
   home: "/",
   simulateur: "/simulateur",
+  conseillers: "/trouver-mon-conseiller-local",
   mentionsLegales: "/mentions-legales",
   cgu: "/cgu",
   politiqueConfidentialite: "/politique-confidentialite",
@@ -99,6 +100,7 @@ export const PUBLIC_ROUTES = {
   proConnectApi: [ROUTES.api.auth.pc.callback, ROUTES.api.auth.pc.login, ROUTES.api.auth.pc.logout],
   static: [
     ROUTES.home,
+    ROUTES.conseillers,
     ROUTES.mentionsLegales,
     ROUTES.cgu,
     ROUTES.politiqueConfidentialite,
