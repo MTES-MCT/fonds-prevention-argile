@@ -2,10 +2,9 @@
 
 import { useState, useMemo, useEffect } from "react";
 import type { AllersVers } from "@/features/seo/allers-vers";
-import { getDepartementEligible } from "@/shared/constants/rga.constants";
-import { ConseillerCard } from "./ConseillerCard";
 import { DepartementSelect } from "./DepartementSelect";
 import { getDepartementNom } from "@/shared/utils";
+import { ContactCard } from "@/shared/components";
 
 interface AllersVersWithRelations extends AllersVers {
   departements?: { codeDepartement: string }[];
@@ -161,9 +160,16 @@ export function ConseillersClient({ initialConseillers, content }: ConseillersCl
                           <p className="fr-mb-2w">Pour la métropole de Nancy</p>
                           <div className="fr-grid-row fr-grid-row--gutters">
                             {alohe.map((conseiller) => (
-                              <div key={conseiller.id} className="fr-col-12 fr-col-md-6 fr-col-lg-4">
-                                <ConseillerCard conseiller={conseiller} />
-                              </div>
+                              <ContactCard
+                                key={conseiller.id}
+                                id={conseiller.id}
+                                nom={conseiller.nom}
+                                emails={conseiller.emails}
+                                telephone={conseiller.telephone}
+                                adresse={conseiller.adresse}
+                                selectable={false}
+                                colSize="third"
+                              />
                             ))}
                           </div>
                         </div>
@@ -174,9 +180,16 @@ export function ConseillersClient({ initialConseillers, content }: ConseillersCl
                           <p className="fr-mb-2w">Pour toute autre localisation</p>
                           <div className="fr-grid-row fr-grid-row--gutters">
                             {autres.map((conseiller) => (
-                              <div key={conseiller.id} className="fr-col-12 fr-col-md-6 fr-col-lg-4">
-                                <ConseillerCard conseiller={conseiller} />
-                              </div>
+                              <ContactCard
+                                key={conseiller.id}
+                                id={conseiller.id}
+                                nom={conseiller.nom}
+                                emails={conseiller.emails}
+                                telephone={conseiller.telephone}
+                                adresse={conseiller.adresse}
+                                selectable={false}
+                                colSize="third"
+                              />
                             ))}
                           </div>
                         </div>
@@ -193,9 +206,16 @@ export function ConseillersClient({ initialConseillers, content }: ConseillersCl
                     </h3>
                     <div className="fr-grid-row fr-grid-row--gutters">
                       {conseillers.map((conseiller) => (
-                        <div key={conseiller.id} className="fr-col-12 fr-col-md-6 fr-col-lg-4">
-                          <ConseillerCard conseiller={conseiller} />
-                        </div>
+                        <ContactCard
+                          key={conseiller.id}
+                          id={conseiller.id}
+                          nom={conseiller.nom}
+                          emails={conseiller.emails}
+                          telephone={conseiller.telephone}
+                          adresse={conseiller.adresse}
+                          selectable={false}
+                          colSize="third"
+                        />
                       ))}
                     </div>
                   </div>

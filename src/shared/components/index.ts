@@ -10,3 +10,4 @@ export { default as DsfrProvider } from "./DsfrProvider/DsfrProvider";
 export { default as PostLogoutRedirect } from "./PostLogoutRedirect/PostLogoutRedirect";
 export * from "./Header/Header";
 export * from "./AccesNonAutorise/AccesNonAutorise";
+export { ContactCard } from "./ContactCard/ContactCard";
