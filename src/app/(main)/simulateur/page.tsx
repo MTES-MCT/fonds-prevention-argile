@@ -1,24 +1,10 @@
-import ForbiddenSimulator from "./components/ForbiddenSimulator";
 import content from "../(home)/content/content.json";
-import { AUTH_METHODS, getCurrentUser } from "@/features/auth";
 import { Notice } from "@/shared/components";
 import { DEPARTEMENTS_ELIGIBLES_RGA } from "@/features/seo/domain/config/seo.config";
 import { SimulateurFormulaire } from "@/features/simulateur";
 import Link from "next/link";
 
 export default async function SimulateurPage() {
-  const user = await getCurrentUser();
-
-  // Si connecté avec FranceConnect, bloquer
-  if (user && user.authMethod === AUTH_METHODS.FRANCECONNECT) {
-    return (
-      <div className="fr-container fr-py-8w">
-        <ForbiddenSimulator />
-      </div>
-    );
-  }
-
-  // Sinon, afficher le simulateur
   return (
     <>
       <Notice

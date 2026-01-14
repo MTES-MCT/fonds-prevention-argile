@@ -226,17 +226,6 @@ Le simulateur RGA permet à un particulier de :
   - Liste des erreurs
   - Bouton "Fermer"
 
-**Test du blocage après connexion FranceConnect :**
-
-- [ ] Se connecter avec FranceConnect
-- [ ] Naviguer vers `/simulateur`
-- [ ] ✅ **Blocage attendu :** Composant ForbiddenSimulator affiché
-- [ ] ✅ Message "Accès restreint" visible
-- [ ] ✅ Explication : iframes non autorisées après connexion FC
-- [ ] ✅ Bouton "Accéder à mon dossier" présent
-- [ ] Cliquer sur "Accéder à mon dossier"
-- [ ] ✅ **Redirection attendue :** Vers `/mon-compte`
-
 **Test de configuration manquante :**
 
 - [ ] Retirer temporairement `NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL`
@@ -370,19 +359,6 @@ Le simulateur RGA permet à un particulier de :
 - [ ] Cliquer sur "Demander l'aide"
 - [ ] ✅ **Overlay "Erreur de traitement" :** Visible
 - [ ] ✅ **Message d'erreur :** "Échec de la sauvegarde des données en session"
-
----
-
-### ⚠️ Parcours alternatif : Utilisateur déjà connecté
-
-**Scénario : Utilisateur connecté avec FranceConnect essaie d'accéder au simulateur**
-
-- [ ] Se connecter avec FranceConnect
-- [ ] Naviguer vers `/simulateur`
-- [ ] ✅ **Blocage :** Composant ForbiddenSimulator affiché
-- [ ] ✅ **Message :** "Le simulateur n'est pas accessible après une connexion FranceConnect"
-- [ ] ✅ **Explication :** Raison de sécurité (iframes)
-- [ ] ✅ **Bouton CTA :** "Accéder à mon dossier"
 
 ---
 
