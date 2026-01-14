@@ -36,7 +36,8 @@
     "precommit": "talisman --githook pre-commit",
     "talisman:check": "talisman --scan",
     "seo:generate": "tsx src/features/seo/scripts/generate-seo-data.ts",
-    "seo:import-catnat": "tsx src/features/seo/catnat/scripts/import-catnat.ts"
+    "seo:import-catnat": "tsx src/features/seo/catnat/scripts/import-catnat.ts",
+    "fix:epci": "tsx scripts/fix-missing-epci/fix-missing-epci.ts"
   },
   "dependencies": {
     "@getbrevo/brevo": "3.0.1",

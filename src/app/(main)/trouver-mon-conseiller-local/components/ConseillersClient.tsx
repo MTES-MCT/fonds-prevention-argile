@@ -2,10 +2,9 @@
 
 import { useState, useMemo, useEffect } from "react";
 import type { AllersVers } from "@/features/seo/allers-vers";
-import { getDepartementEligible } from "@/shared/constants/rga.constants";
-import { ConseillerCard } from "./ConseillerCard";
 import { DepartementSelect } from "./DepartementSelect";
 import { getDepartementNom } from "@/shared/utils";
+import { ContactCard } from "@/shared/components";
 
 interface AllersVersWithRelations extends AllersVers {
   departements?: { codeDepartement: string }[];
@@ -26,6 +25,19 @@ interface PageContent {
 interface ConseillersClientProps {
   initialConseillers: AllersVersWithRelations[];
   content: PageContent;
+}
+
+// Normalise un nom pour comparaison (uppercase + suppression accents)
+function normalizeNom(nom: string): string {
+  return nom
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+}
+
+// Vérifie si c'est le conseiller ALOHÉ
+function isAlohe(conseiller: AllersVersWithRelations): boolean {
+  return normalizeNom(conseiller.nom || "") === "ALOHE";
 }
 
 export function ConseillersClient({ initialConseillers, content }: ConseillersClientProps) {
@@ -133,20 +145,82 @@ export function ConseillersClient({ initialConseillers, content }: ConseillersCl
             </div>
           ) : (
             <div>
-              {Array.from(conseillersGroupedByDepartement.entries()).map(([deptCode, conseillers]) => (
-                <div key={deptCode} className="fr-mb-8w">
-                  <h3 className="fr-mb-3w">
-                    {deptCode === "autres" ? "Autres" : `${deptCode} - ${getDepartementNom(deptCode)}`}
-                  </h3>
-                  <div className="fr-grid-row fr-grid-row--gutters">
-                    {conseillers.map((conseiller) => (
-                      <div key={conseiller.id} className="fr-col-12 fr-col-md-6 fr-col-lg-4">
-                        <ConseillerCard conseiller={conseiller} />
-                      </div>
-                    ))}
+              {Array.from(conseillersGroupedByDepartement.entries()).map(([deptCode, conseillers]) => {
+                // Cas spécial département 54 : sous-groupes Métropole Nancy / Autres
+                if (deptCode === "54") {
+                  const alohe = conseillers.filter(isAlohe);
+                  const autres = conseillers.filter((c) => !isAlohe(c));
+
+                  return (
+                    <div key={deptCode} className="fr-mb-8w">
+                      <h3 className="fr-mb-3w">{`${deptCode} - ${getDepartementNom(deptCode)}`}</h3>
+
+                      {alohe.length > 0 && (
+                        <div className="fr-mb-4w">
+                          <p className="fr-mb-2w">Pour la métropole de Nancy</p>
+                          <div className="fr-grid-row fr-grid-row--gutters">
+                            {alohe.map((conseiller) => (
+                              <ContactCard
+                                key={conseiller.id}
+                                id={conseiller.id}
+                                nom={conseiller.nom}
+                                emails={conseiller.emails}
+                                telephone={conseiller.telephone}
+                                adresse={conseiller.adresse}
+                                selectable={false}
+                                colSize="third"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {autres.length > 0 && (
+                        <div className="fr-mb-4w">
+                          <p className="fr-mb-2w">Pour toute autre localisation</p>
+                          <div className="fr-grid-row fr-grid-row--gutters">
+                            {autres.map((conseiller) => (
+                              <ContactCard
+                                key={conseiller.id}
+                                id={conseiller.id}
+                                nom={conseiller.nom}
+                                emails={conseiller.emails}
+                                telephone={conseiller.telephone}
+                                adresse={conseiller.adresse}
+                                selectable={false}
+                                colSize="third"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Cas standard
+                return (
+                  <div key={deptCode} className="fr-mb-8w">
+                    <h3 className="fr-mb-3w">
+                      {deptCode === "autres" ? "Autres" : `${deptCode} - ${getDepartementNom(deptCode)}`}
+                    </h3>
+                    <div className="fr-grid-row fr-grid-row--gutters">
+                      {conseillers.map((conseiller) => (
+                        <ContactCard
+                          key={conseiller.id}
+                          id={conseiller.id}
+                          nom={conseiller.nom}
+                          emails={conseiller.emails}
+                          telephone={conseiller.telephone}
+                          adresse={conseiller.adresse}
+                          selectable={false}
+                          colSize="third"
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
