@@ -131,7 +131,7 @@ export function BuildingDataForm({ address, buildingData, onChange }: BuildingDa
       {/* Champ : Nombre de niveaux */}
       <div className="fr-select-group fr-mb-3w">
         <label className="fr-label" htmlFor={`niveaux-${inputId}`}>
-          Nombre de niveaux du logement
+          Nombre de niveaux du logement (sous-sol compris)
         </label>
         <select
           className="fr-select"
