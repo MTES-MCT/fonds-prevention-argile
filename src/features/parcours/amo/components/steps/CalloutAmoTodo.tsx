@@ -9,6 +9,7 @@ import { getAllersVersByDepartementOrEpciAction } from "@/features/seo/allers-ve
 import type { AllersVers } from "@/features/seo/allers-vers";
 import { getCodeDepartementFromCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { ContactCard } from "@/shared/components";
+import { useParcours } from "@/features/parcours/core/context/useParcours";
 
 interface CalloutAmoTodoProps {
   accompagnementRefuse?: boolean;
@@ -19,6 +20,7 @@ interface CalloutAmoTodoProps {
 export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess, refresh }: CalloutAmoTodoProps) {
   const { user } = useAuth();
   const { data: rgaData, isLoading: isLoadingRga } = useSimulateurRga();
+  const { parcours, isLoading: isLoadingParcours } = useParcours();
 
   const [amoList, setAmoList] = useState<Amo[]>([]);
   const [allersVersList, setAllersVersList] = useState<AllersVers[]>([]);
@@ -37,8 +39,9 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
   const [telephone, setTelephone] = useState("");
 
   // Charger les données des AMO au montage du composant
+  // Attendre que les données RGA soient en base (après migration)
   useEffect(() => {
-    if (isLoadingRga) {
+    if (isLoadingRga || isLoadingParcours || !parcours?.rgaSimulationData) {
       return;
     }
 
@@ -98,7 +101,14 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
     }
 
     loadData();
-  }, [accompagnementRefuse, isLoadingRga, rgaData?.logement?.commune, rgaData?.logement?.epci]);
+  }, [
+    accompagnementRefuse,
+    isLoadingRga,
+    isLoadingParcours,
+    parcours?.rgaSimulationData,
+    rgaData?.logement?.commune,
+    rgaData?.logement?.epci,
+  ]);
 
   // Mettre à jour l'email quand user change
   useEffect(() => {
@@ -168,7 +178,8 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
   const selectedAmo = amoList.find((amo) => amo.id === selectedAmoId);
 
   // Afficher un indicateur de chargement si les données sont en cours de chargement
-  if (isLoadingRga || isLoading) {
+  // ou si les données RGA ne sont pas encore en base
+  if (isLoadingRga || isLoadingParcours || isLoading || !parcours?.rgaSimulationData) {
     return (
       <div className="fr-callout">
         <p className="fr-callout__text">Chargement des informations...</p>
