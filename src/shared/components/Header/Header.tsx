@@ -144,7 +144,6 @@ const Header = () => {
                           Trouver mon conseiller
                         </Link>
                       </li>
-
                       <li>
                         <Link href={ROUTES.simulateur} className="fr-btn--account fr-icon-checkbox-circle-fill fr-btn">
                           Vérifier mon éligibilité
@@ -160,6 +159,11 @@ const Header = () => {
                           <li>
                             <Link href={ROUTES.conseillers} className="fr-icon-map-pin-user-fill fr-btn">
                               Trouver mon conseiller
+                            </Link>
+                          </li>
+                          <li>
+                            <Link href={ROUTES.simulateur} className="fr-icon-checkbox-circle-fill fr-btn">
+                              Vérifier mon éligibilité
                             </Link>
                           </li>
                           <li>
@@ -211,7 +215,6 @@ const Header = () => {
                       Trouver mon conseiller
                     </Link>
                   </li>
-
                   <li>
                     <Link href={ROUTES.simulateur} className="fr-btn--account fr-icon-checkbox-circle-fill fr-btn">
                       Vérifier mon éligibilité
@@ -227,6 +230,11 @@ const Header = () => {
                       <li>
                         <Link href={ROUTES.conseillers} className="fr-icon-user-heart-line fr-btn">
                           Trouver mon conseiller
+                        </Link>
+                      </li>
+                      <li>
+                        <Link href={ROUTES.simulateur} className="fr-icon-checkbox-circle-fill fr-btn">
+                          Vérifier mon éligibilité
                         </Link>
                       </li>
                       <li>

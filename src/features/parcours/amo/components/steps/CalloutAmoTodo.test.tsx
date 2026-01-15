@@ -5,6 +5,7 @@ import * as amoActions from "@/features/parcours/amo/actions";
 import * as allersVersActions from "@/features/seo/allers-vers/actions";
 import * as authClient from "@/features/auth/client";
 import * as simulateurHooks from "@/features/simulateur";
+import * as parcoursContext from "@/features/parcours/core/context/useParcours";
 
 // Mock des dépendances
 vi.mock("@/features/parcours/amo/actions", () => ({
@@ -23,6 +24,10 @@ vi.mock("@/features/auth/client", () => ({
 
 vi.mock("@/features/simulateur", () => ({
   useSimulateurRga: vi.fn(),
+}));
+
+vi.mock("@/features/parcours/core/context/useParcours", () => ({
+  useParcours: vi.fn(),
 }));
 
 describe("CalloutAmoTodo", () => {
@@ -64,6 +69,40 @@ describe("CalloutAmoTodo", () => {
     } as ReturnType<typeof simulateurHooks.useSimulateurRga>);
   };
 
+  // Helper pour mocker useParcours
+  const mockParcours = (isLoading: boolean, commune?: string, epci?: string) => {
+    vi.mocked(parcoursContext.useParcours).mockReturnValue({
+      parcours: commune
+        ? {
+            id: "parcours-123",
+            userId: "user-123",
+            rgaSimulationData: {
+              logement: {
+                commune,
+                epci,
+                adresse: "1 rue Test",
+              },
+            },
+            currentStep: "CHOIX_AMO",
+            currentStatus: "TODO",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            completedAt: null,
+            rgaSimulationCompletedAt: new Date(),
+            rgaDataDeletedAt: null,
+            rgaDataDeletionReason: null,
+          }
+        : null,
+      isLoading,
+      hasParcours: !!commune,
+      hasDossiers: false,
+      currentStep: null,
+      lastDSStatus: null,
+      statutAmo: null,
+      refresh: vi.fn(),
+    } as unknown as ReturnType<typeof parcoursContext.useParcours>);
+  };
+
   // Helper pour créer un AMO mock
   const createMockAmo = (id: string, nom: string) => ({
     id,
@@ -87,6 +126,25 @@ describe("CalloutAmoTodo", () => {
   describe("Cas 1 : État de chargement", () => {
     it("affiche le loader quand isLoadingRga est true", () => {
       mockSimulateurRga(true);
+      mockParcours(false, "75001");
+
+      render(<CalloutAmoTodo />);
+
+      expect(screen.getByText("Chargement des informations...")).toBeInTheDocument();
+    });
+
+    it("affiche le loader quand isLoadingParcours est true", () => {
+      mockSimulateurRga(false, "75001");
+      mockParcours(true, "75001");
+
+      render(<CalloutAmoTodo />);
+
+      expect(screen.getByText("Chargement des informations...")).toBeInTheDocument();
+    });
+
+    it("affiche le loader quand parcours.rgaSimulationData est null", () => {
+      mockSimulateurRga(false, "75001");
+      mockParcours(false); // Pas de données RGA
 
       render(<CalloutAmoTodo />);
 
@@ -97,6 +155,7 @@ describe("CalloutAmoTodo", () => {
   describe("Cas 2 : Aucun AMO, aucun Allers Vers", () => {
     it("affiche le message 'AMO pas encore disponible' quand aucun contact n'est trouvé", async () => {
       mockSimulateurRga(false, "75001", undefined);
+      mockParcours(false, "75001", undefined);
 
       vi.mocked(amoActions.getAmosDisponibles).mockResolvedValue({
         success: true,
@@ -121,6 +180,7 @@ describe("CalloutAmoTodo", () => {
   describe("Cas 3 : Aucun AMO, Allers Vers disponibles", () => {
     it("affiche le conseiller dédié quand seul un Allers Vers est disponible", async () => {
       mockSimulateurRga(false, "82001", undefined);
+      mockParcours(false, "82001", undefined);
 
       vi.mocked(amoActions.getAmosDisponibles).mockResolvedValue({
         success: true,
@@ -144,6 +204,7 @@ describe("CalloutAmoTodo", () => {
 
     it("affiche plusieurs conseillers si plusieurs Allers Vers sont disponibles", async () => {
       mockSimulateurRga(false, "36001", undefined);
+      mockParcours(false, "36001", undefined);
 
       vi.mocked(amoActions.getAmosDisponibles).mockResolvedValue({
         success: true,
@@ -161,12 +222,15 @@ describe("CalloutAmoTodo", () => {
         expect(screen.getByText("Adil 36")).toBeInTheDocument();
         expect(screen.getByText("Soliha 36")).toBeInTheDocument();
       });
+
+      expect(screen.getByText("Vos conseillers locaux mandatés par l'État :")).toBeInTheDocument();
     });
   });
 
   describe("Cas 4 : AMO disponibles", () => {
     it("affiche le callout jaune avec les AMO quand disponibles", async () => {
       mockSimulateurRga(false, "24001", undefined);
+      mockParcours(false, "24001", undefined);
 
       vi.mocked(amoActions.getAmosDisponibles).mockResolvedValue({
         success: true,
@@ -185,6 +249,7 @@ describe("CalloutAmoTodo", () => {
 
     it("affiche plusieurs AMO avec des radio buttons", async () => {
       mockSimulateurRga(false, "32001", undefined);
+      mockParcours(false, "32001", undefined);
 
       vi.mocked(amoActions.getAmosDisponibles).mockResolvedValue({
         success: true,
@@ -206,6 +271,7 @@ describe("CalloutAmoTodo", () => {
   describe("Cas 5 : AMO refusé", () => {
     it("affiche le message de refus et filtre l'AMO refusé de la liste", async () => {
       mockSimulateurRga(false, "36001", undefined);
+      mockParcours(false, "36001", undefined);
 
       vi.mocked(amoActions.getAmoRefusee).mockResolvedValue({
         success: true,
@@ -233,6 +299,7 @@ describe("CalloutAmoTodo", () => {
   describe("Cas 6 : Gestion des erreurs", () => {
     it("affiche une erreur quand getAmosDisponibles échoue", async () => {
       mockSimulateurRga(false, "36001", undefined);
+      mockParcours(false, "36001", undefined);
 
       vi.mocked(amoActions.getAmosDisponibles).mockResolvedValue({
         success: false,
@@ -251,6 +318,7 @@ describe("CalloutAmoTodo", () => {
   describe("Cas 7 : Pas d'appel Allers Vers si AMO disponibles", () => {
     it("ne charge pas les Allers Vers si des AMO sont disponibles", async () => {
       mockSimulateurRga(false, "32001", undefined);
+      mockParcours(false, "32001", undefined);
 
       vi.mocked(amoActions.getAmosDisponibles).mockResolvedValue({
         success: true,

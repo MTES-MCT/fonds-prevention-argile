@@ -18,6 +18,7 @@ export function useSimulateurRga() {
   const { isAuthenticated } = useAuth();
   const parcoursData = useOptionalParcours();
   const parcours = parcoursData?.parcours ?? null;
+  const isParcoursLoading = parcoursData?.isLoading ?? false;
 
   // Données du store Zustand (localStorage) - cache temporaire pré-auth
   const tempRgaData = useRGAStore(selectTempRgaData);
@@ -27,8 +28,9 @@ export function useSimulateurRga() {
   const saveRGA = useRGAStore((state) => state.saveRGA);
   const clearRGA = useRGAStore((state) => state.clearRGA);
 
-  // Race condition post-FranceConnect : si authentifié MAIS parcours pas encore chargé ou sans données RGA → en chargement
-  const isWaitingForParcours = isAuthenticated && (!parcours || !parcours.rgaSimulationData);
+  // Race condition post-FranceConnect : si authentifié ET parcours en cours de chargement → en chargement
+  // Note : si parcours chargé mais rgaSimulationData null, ce n'est PAS un loading, c'est un état valide
+  const isWaitingForParcours = isAuthenticated && !parcours && isParcoursLoading;
 
   // Connecté + données en base → utiliser la base (source de vérité)
   // Sinon → utiliser localStorage (cache temporaire)

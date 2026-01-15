@@ -176,7 +176,6 @@ Ce document contient les checklists de tests manuels à effectuer avant chaque d
 **Prérequis :** Connecté avec FranceConnect
 
 - [ ] Naviguer vers `/simulateur`
-- [ ] ✅ **Blocage attendu :** Message "Accès restreint" affiché
 - [ ] ✅ Explication : "Le simulateur n'est pas accessible après une connexion FranceConnect"
 - [ ] ✅ Bouton "Accéder à mon dossier" présent
 - [ ] ✅ L'iframe du simulateur n'est PAS visible

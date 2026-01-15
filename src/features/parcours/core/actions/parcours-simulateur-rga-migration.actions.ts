@@ -8,6 +8,7 @@ import { parcoursRepo } from "@/shared/database/repositories";
 /**
  * Migre les données du simulateur RGA depuis localStorage vers la base de données
  * Appelée automatiquement après connexion FranceConnect
+ * Si une simulation existe déjà, elle est écrasée par la nouvelle
  */
 export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulationData): Promise<ActionResult<void>> {
   try {
@@ -30,22 +31,13 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
       };
     }
 
-    // 3. Vérifier que les données ne sont pas déjà migrées
-    if (parcours.rgaSimulationData) {
-      console.warn("Données RGA déjà présentes en BDD, migration ignorée");
-      return {
-        success: true,
-        data: undefined,
-      };
-    }
-
-    // 4. Ajouter le timestamp de simulation
+    // 3. Ajouter le timestamp de simulation
     const rgaSimulationData: RGASimulationData = {
       ...rgaData,
       simulatedAt: new Date().toISOString(),
     } as RGASimulationData;
 
-    // 5. Sauvegarder en base de données
+    // 4. Sauvegarder en base de données (écrase l'ancienne simulation si existante)
     await parcoursRepo.updateRGAData(parcours.id, rgaSimulationData);
 
     return {
