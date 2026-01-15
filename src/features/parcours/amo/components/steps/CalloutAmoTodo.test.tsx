@@ -161,6 +161,9 @@ describe("CalloutAmoTodo", () => {
         expect(screen.getByText("Adil 36")).toBeInTheDocument();
         expect(screen.getByText("Soliha 36")).toBeInTheDocument();
       });
+
+      // Ajouter cette assertion pour vérifier le pluriel
+      expect(screen.getByText("Vos conseillers locaux mandatés par l'État :")).toBeInTheDocument();
     });
   });
 

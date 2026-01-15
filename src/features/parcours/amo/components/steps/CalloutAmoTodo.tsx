@@ -200,7 +200,11 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
             lorsque l'AMO sera disponible.
           </p>
 
-          <p className="fr-text--bold fr-mb-2w">Votre conseiller local mandaté par l'État :</p>
+          <p className="fr-text--bold fr-mb-2w">
+            {allersVersList.length === 1
+              ? "Votre conseiller local mandaté par l'État :"
+              : "Vos conseillers locaux mandatés par l'État :"}
+          </p>
 
           <div className="fr-grid-row fr-grid-row--gutters">
             {allersVersList.map((allerVers) => (
