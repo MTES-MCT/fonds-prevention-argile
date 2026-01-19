@@ -5,8 +5,6 @@ Ce document contient les checklists de tests manuels pour valider le bon fonctio
 ## 📋 Prérequis
 
 - [ ] Application lancée (local ou staging)
-- [ ] Variable `NEXT_PUBLIC_MESAIDES_RENOV_IFRAME_URL` configurée
-- [ ] Iframe MesAidesRénov accessible
 - [ ] Navigation privée activée (pour tester sans cache)
 
 ---
@@ -403,10 +401,13 @@ Le simulateur RGA permet à un particulier de :
 - [ ] Simuler un message depuis une origine non autorisée (via console)
 
 ```javascript
-window.postMessage({
-  type: "RGA_DEMANDE_AIDE",
-  searchParams: "test=1"
-}, "*");
+window.postMessage(
+  {
+    type: "RGA_DEMANDE_AIDE",
+    searchParams: "test=1",
+  },
+  "*"
+);
 ```
 
 - [ ] ✅ **Sécurité :** Message ignoré (pas de traitement)
@@ -467,10 +468,13 @@ window.postMessage({
 - [ ] Simuler un message avec des données invalides via console :
 
 ```javascript
-window.postMessage({
-  type: "RGA_DEMANDE_AIDE",
-  searchParams: "invalid=data&&&broken"
-}, window.location.origin);
+window.postMessage(
+  {
+    type: "RGA_DEMANDE_AIDE",
+    searchParams: "invalid=data&&&broken",
+  },
+  window.location.origin
+);
 ```
 
 - [ ] ✅ **Gestion d'erreur :** Message d'erreur approprié
