@@ -4,7 +4,7 @@ import type {
   FunnelStep,
   MatomoFunnelFlowTableResponse,
 } from "../domain/types/matomo-funnels.types";
-import { getServerEnv } from "@/shared/config/env.config";
+import { getClientEnv } from "@/shared/config/env.config";
 
 /**
  * Récupère les statistiques du funnel "Complétude du simulateur RGA" sur les 7 derniers jours
@@ -12,8 +12,8 @@ import { getServerEnv } from "@/shared/config/env.config";
  */
 export async function getFunnelSimulateurRGA(): Promise<FunnelStatistiques> {
   try {
-    const serverEnv = getServerEnv();
-    const FUNNEL_ID = serverEnv.MATOMO_FUNNEL_ID;
+    const clientEnv = getClientEnv();
+    const FUNNEL_ID = clientEnv.NEXT_PUBLIC_MATOMO_FUNNEL_ID || "";
     const NB_JOURS_PERIODE = 7;
 
     // Calculer la plage des NB_JOURS_PERIODE derniers jours

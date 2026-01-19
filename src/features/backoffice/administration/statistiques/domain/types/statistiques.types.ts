@@ -46,7 +46,7 @@ export interface Statistiques {
    */
   visitesParJour: VisiteParJour[];
 
-  // === STATISTIQUES FUNNEL (Mes Aides Réno) ===
+  // === STATISTIQUES FUNNEL ===
 
   /**
    * Statistiques du funnel "Complétude du simulateur RGA"
