@@ -112,9 +112,8 @@ const serverSchema = z.object({
   DEMARCHES_SIMPLIFIEES_ID_FACTURES: z.string().min(1),
   DEMARCHES_SIMPLIFIEES_NOM_FACTURES: z.string().min(1),
 
-  // Clés API Matomo pour le tracking
+  // Clé API Matomo pour le tracking
   MATOMO_API_TOKEN: z.string().min(1),
-  MATOMO_FUNNEL_ID: z.string().min(1),
 
   // Clé API Brevo pour l'envoi d'emails + configuration de l'expéditeur
   BREVO_API_KEY: z.string(),
@@ -135,6 +134,7 @@ const serverSchema = z.object({
 // Schéma de validation des variables d'environnement côté client
 const clientSchema = z.object({
   NEXT_PUBLIC_MATOMO_SITE_ID: z.string().min(1).optional(),
+  NEXT_PUBLIC_MATOMO_FUNNEL_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_MATOMO_URL: z.string().url().optional(),
   NEXT_PUBLIC_CRISP_WEBSITE_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
@@ -181,6 +181,7 @@ export function getClientEnv() {
     // Construction manuelle de l'objet env car Next.js ne permet pas d'accéder à process.env côté client
     const envObject = {
       NEXT_PUBLIC_MATOMO_SITE_ID: process.env.NEXT_PUBLIC_MATOMO_SITE_ID,
+      NEXT_PUBLIC_MATOMO_FUNNEL_ID: process.env.NEXT_PUBLIC_MATOMO_FUNNEL_ID,
       NEXT_PUBLIC_MATOMO_URL: process.env.NEXT_PUBLIC_MATOMO_URL,
       NEXT_PUBLIC_CRISP_WEBSITE_ID: process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID,
       NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,

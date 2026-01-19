@@ -70,7 +70,7 @@ export async function fetchMatomoFunnel(
   if (!clientEnv.NEXT_PUBLIC_MATOMO_URL) {
     throw new Error("Configuration Matomo incomplète (URL manquant)");
   }
-  const MATOMO_FUNNEL_ID = serverEnv.MATOMO_FUNNEL_ID;
+  const MATOMO_FUNNEL_ID = clientEnv.NEXT_PUBLIC_MATOMO_FUNNEL_ID || "";
   const MATOMO_API_TOKEN = serverEnv.MATOMO_API_TOKEN;
 
   // Paramètres de la requête en POST
