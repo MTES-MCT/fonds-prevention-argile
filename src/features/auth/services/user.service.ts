@@ -3,6 +3,7 @@ import { AUTH_METHODS } from "../domain/value-objects/constants";
 import type { AuthUser } from "../domain/entities";
 import type { UserRole } from "../domain/types";
 import { isAgentRole } from "@/shared/domain/value-objects";
+import { agentsRepo } from "@/shared/database";
 
 /**
  * Service de gestion des utilisateurs
@@ -28,6 +29,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   // Pour un agent ProConnect
   if (session.authMethod === AUTH_METHODS.PROCONNECT && isAgentRole(session.role as UserRole)) {
+    // Récupérer les infos complémentaires de l'agent depuis la BDD
+    const agent = await agentsRepo.findBySub(session.userId);
+
     return {
       id: session.userId,
       role: session.role,
@@ -35,6 +39,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       loginTime: new Date().toISOString(),
       firstName: session.firstName,
       lastName: session.lastName,
+      agentId: agent?.id,
+      entrepriseAmoId: agent?.entrepriseAmoId ?? undefined,
     };
   }
 
