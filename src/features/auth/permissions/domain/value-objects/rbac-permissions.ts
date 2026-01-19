@@ -35,6 +35,10 @@ export enum BackofficePermission {
   DIAGNOSTIC_READ = "diagnostic:read",
   DEVIS_READ = "devis:read",
   FACTURES_READ = "factures:read",
+
+  // Dossiers AMO (permissions spécifiques pour le scope AMO)
+  DOSSIERS_AMO_READ = "dossiers-amo:read",
+  DOSSIERS_AMO_STATS_READ = "dossiers-amo:stats:read",
 }
 
 /**
@@ -65,10 +69,12 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.DIAGNOSTIC_READ,
     BackofficePermission.DEVIS_READ,
     BackofficePermission.FACTURES_READ,
+    BackofficePermission.DOSSIERS_AMO_READ,
+    BackofficePermission.DOSSIERS_AMO_STATS_READ,
   ],
 
   [UserRole.ANALYSTE]: [
-    // Lecture seule : stats, users, AMO, allers-vers
+    // Lecture seule : stats, users stats, AMO, allers-vers
     BackofficePermission.STATS_READ,
     BackofficePermission.USERS_STATS_READ,
     BackofficePermission.AMO_READ,
@@ -76,7 +82,9 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
   ],
 
   [UserRole.AMO]: [
-    // Accès limité pour les AMO (à définir selon besoins)
+    // Accès limité : dossiers de son entreprise AMO uniquement (lecture seule)
+    BackofficePermission.DOSSIERS_AMO_READ,
+    BackofficePermission.DOSSIERS_AMO_STATS_READ,
   ],
 };
 
@@ -85,7 +93,7 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
  */
 export const TAB_PERMISSIONS: Record<string, BackofficePermission[]> = {
   statistiques: [BackofficePermission.STATS_READ],
-  users: [BackofficePermission.USERS_STATS_READ], // Accès aux stats des users = accès à l'onglet
+  users: [BackofficePermission.USERS_STATS_READ],
   amo: [BackofficePermission.AMO_READ],
   "allers-vers": [BackofficePermission.ALLERS_VERS_READ],
   agents: [BackofficePermission.AGENTS_READ],
@@ -93,4 +101,6 @@ export const TAB_PERMISSIONS: Record<string, BackofficePermission[]> = {
   diagnostic: [BackofficePermission.DIAGNOSTIC_READ],
   devis: [BackofficePermission.DEVIS_READ],
   factures: [BackofficePermission.FACTURES_READ],
+  // Onglet spécifique pour les AMO (espace-amo)
+  "dossiers-amo": [BackofficePermission.DOSSIERS_AMO_READ],
 };
