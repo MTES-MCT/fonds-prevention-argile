@@ -4,7 +4,7 @@
     "nom": "Allier",
     "slug": "allier",
     "population": 334715,
-    "nombreCommunesRGA": 70,
+    "nombreCommunesRGA": 150,
     "nombreEpciRGA": 12,
     "centre": {
       "lat": 46.351768,
@@ -16,8 +16,8 @@
     "nom": "Alpes-de-Haute-Provence",
     "slug": "alpes-de-haute-provence",
     "population": 167179,
-    "nombreCommunesRGA": 70,
-    "nombreEpciRGA": 10,
+    "nombreCommunesRGA": 150,
+    "nombreEpciRGA": 12,
     "centre": {
       "lat": 44.075077,
       "lon": 6.145066
@@ -28,7 +28,7 @@
     "nom": "Dordogne",
     "slug": "dordogne",
     "population": 416325,
-    "nombreCommunesRGA": 70,
+    "nombreCommunesRGA": 150,
     "nombreEpciRGA": 21,
     "centre": {
       "lat": 45.0635,
@@ -40,8 +40,8 @@
     "nom": "Gers",
     "slug": "gers",
     "population": 192450,
-    "nombreCommunesRGA": 70,
-    "nombreEpciRGA": 16,
+    "nombreCommunesRGA": 150,
+    "nombreEpciRGA": 17,
     "centre": {
       "lat": 43.662717,
       "lon": 0.461973
@@ -52,7 +52,7 @@
     "nom": "Indre",
     "slug": "indre",
     "population": 216809,
-    "nombreCommunesRGA": 70,
+    "nombreCommunesRGA": 150,
     "nombreEpciRGA": 15,
     "centre": {
       "lat": 46.770515,
@@ -64,7 +64,7 @@
     "nom": "Lot-et-Garonne",
     "slug": "lot-et-garonne",
     "population": 332226,
-    "nombreCommunesRGA": 70,
+    "nombreCommunesRGA": 150,
     "nombreEpciRGA": 11,
     "centre": {
       "lat": 44.391563,
@@ -76,8 +76,8 @@
     "nom": "Meurthe-et-Moselle",
     "slug": "meurthe-et-moselle",
     "population": 732898,
-    "nombreCommunesRGA": 70,
-    "nombreEpciRGA": 13,
+    "nombreCommunesRGA": 150,
+    "nombreEpciRGA": 18,
     "centre": {
       "lat": 48.782274,
       "lon": 6.168185
@@ -88,8 +88,8 @@
     "nom": "Nord",
     "slug": "nord",
     "population": 2616532,
-    "nombreCommunesRGA": 70,
-    "nombreEpciRGA": 13,
+    "nombreCommunesRGA": 150,
+    "nombreEpciRGA": 17,
     "centre": {
       "lat": 50.417262,
       "lon": 3.25921
@@ -100,8 +100,8 @@
     "nom": "Puy-de-Dôme",
     "slug": "puy-de-dome",
     "population": 664037,
-    "nombreCommunesRGA": 70,
-    "nombreEpciRGA": 12,
+    "nombreCommunesRGA": 150,
+    "nombreEpciRGA": 14,
     "centre": {
       "lat": 45.731408,
       "lon": 3.17343
@@ -112,8 +112,8 @@
     "nom": "Tarn",
     "slug": "tarn",
     "population": 396168,
-    "nombreCommunesRGA": 70,
-    "nombreEpciRGA": 14,
+    "nombreCommunesRGA": 150,
+    "nombreEpciRGA": 16,
     "centre": {
       "lat": 43.803455,
       "lon": 2.112752
@@ -124,7 +124,7 @@
     "nom": "Tarn-et-Garonne",
     "slug": "tarn-et-garonne",
     "population": 264924,
-    "nombreCommunesRGA": 70,
+    "nombreCommunesRGA": 150,
     "nombreEpciRGA": 10,
     "centre": {
       "lat": 44.062754,
