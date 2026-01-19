@@ -6,6 +6,7 @@ import { UserDetailRow } from "./UserDetailRow";
 import { UserWithParcoursDetails, EmailTrackingStatus } from "@/features/backoffice";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import { DSStatus } from "@/shared/domain/value-objects";
 
 interface UsersTableProps {
   users: UserWithParcoursDetails[];
@@ -156,15 +157,45 @@ function StatusBadges({ user }: { user: UserWithParcoursDetails }) {
         return null;
     }
 
-    if (dossier?.submittedAt) {
-      return (
-        <span className="fr-badge fr-badge--info fr-badge--sm">
-          EN INSTRUCTION LE {formatDate(dossier.submittedAt.toISOString())}
-        </span>
-      );
-    }
+    if (!dossier) return null;
 
-    return null;
+    // Vérifier le vrai statut DS, pas seulement submittedAt
+    switch (dossier.dsStatus) {
+      case DSStatus.EN_CONSTRUCTION:
+        return (
+          <span className="fr-badge fr-badge--warning fr-badge--sm">
+            BROUILLON CRÉÉ LE {formatDate(dossier.createdAt.toISOString())}
+          </span>
+        );
+
+      case DSStatus.EN_INSTRUCTION:
+        return (
+          <span className="fr-badge fr-badge--info fr-badge--sm">
+            EN INSTRUCTION{dossier.submittedAt ? ` LE ${formatDate(dossier.submittedAt.toISOString())}` : ""}
+          </span>
+        );
+
+      case DSStatus.ACCEPTE:
+        return (
+          <span className="fr-badge fr-badge--success fr-badge--sm">
+            ACCEPTÉ{dossier.processedAt ? ` LE ${formatDate(dossier.processedAt.toISOString())}` : ""}
+          </span>
+        );
+
+      case DSStatus.REFUSE:
+      case DSStatus.CLASSE_SANS_SUITE:
+        return (
+          <span className="fr-badge fr-badge--error fr-badge--sm">
+            REFUSÉ{dossier.processedAt ? ` LE ${formatDate(dossier.processedAt.toISOString())}` : ""}
+          </span>
+        );
+
+      case DSStatus.NON_ACCESSIBLE:
+        return <span className="fr-badge fr-badge--error fr-badge--sm">NON ACCESSIBLE</span>;
+
+      default:
+        return null;
+    }
   };
 
   return (

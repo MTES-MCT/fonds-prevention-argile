@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { useRgaMap } from "../hooks/useRgaMap";
@@ -8,11 +8,12 @@ import { useRgaMapMarker } from "../hooks/useRgaMapMarker";
 import { useRgaBuildingSelection } from "../hooks/useRgaBuildingSelection";
 import type { RgaMapProps } from "../domain/types";
 import type { BuildingData } from "@/shared/services/bdnb";
+import type { Coordinates } from "@/shared/types";
 
 interface RgaMapInternalProps extends RgaMapProps {
   onBuildingDataChange?: (data: BuildingData | null) => void;
   onLoadingChange?: (isLoading: boolean) => void;
-  padding?: string; // 🆕 Nouvelle prop
+  padding?: string;
 }
 
 export function RgaMap({
@@ -33,19 +34,33 @@ export function RgaMap({
     zoom,
   });
 
-  useRgaMapMarker({
-    map,
-    coordinates: center,
-    showMarker,
-    flyToOnMount: Boolean(center),
-    zoom,
-  });
-
-  const { buildingData, isLoading } = useRgaBuildingSelection({
+  const { selectedBuilding, buildingData, isLoading } = useRgaBuildingSelection({
     map,
     enabled: !readOnly && isReady,
     onBuildingSelect,
     onError,
+  });
+
+  // Calculer les coordonnées du marqueur : bâtiment sélectionné > coordonnées initiales
+  const markerCoordinates: Coordinates | undefined = useMemo(() => {
+    if (selectedBuilding) {
+      return {
+        lat: selectedBuilding.coordinates.lat,
+        lon: selectedBuilding.coordinates.lon,
+      };
+    }
+    return center;
+  }, [selectedBuilding, center]);
+
+  // Afficher le marqueur si demandé OU si un bâtiment est sélectionné
+  const shouldShowMarker = showMarker || Boolean(selectedBuilding);
+
+  useRgaMapMarker({
+    map,
+    coordinates: markerCoordinates,
+    showMarker: shouldShowMarker,
+    flyToOnMount: Boolean(center) && !selectedBuilding,
+    zoom,
   });
 
   // Remonter les données au parent
