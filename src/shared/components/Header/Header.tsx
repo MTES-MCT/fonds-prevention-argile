@@ -211,7 +211,7 @@ const Header = () => {
                     </Link>
                   </li>
                   <li>
-                    <Link href={ROUTES.conseillers} className="fr-icon-user-heart-line fr-btn">
+                    <Link href={ROUTES.conseillers} className="fr-icon-map-pin-user-fill fr-btn">
                       Trouver mon conseiller
                     </Link>
                   </li>
