@@ -76,7 +76,7 @@ export interface FunnelStep {
 }
 
 /**
- * Statistiques du funnel de conversion Mes Aides Réno
+ * Statistiques du funnel de conversion 
  */
 export interface FunnelStatistiques {
   /**

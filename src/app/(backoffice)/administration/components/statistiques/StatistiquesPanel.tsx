@@ -178,7 +178,7 @@ export default function StatistiquesPanel() {
               onChange={() => setActiveView("funnel")}
             />
             <label className="fr-icon-arrow-down-line fr-label" htmlFor="segmented-stats-3">
-              Funnel Mes Aides Réno
+              Funnel Simulateur
             </label>
           </div>
         </div>
@@ -221,10 +221,10 @@ export default function StatistiquesPanel() {
         </div>
       )}
 
-      {/* Vue Funnel Mes Aides Réno */}
+      {/* Vue Funnel Simulateur */}
       {activeView === "funnel" && (
         <div>
-          <h2 className="fr-h3 fr-mb-3w">Funnel : Complétude du simulateur RGA (Mes Aides Réno)</h2>
+          <h2 className="fr-h3 fr-mb-3w">Funnel : Complétude du simulateur RGA</h2>
           <p className="fr-text--sm fr-text-mention--grey fr-mb-4w">Sur les 7 derniers jours</p>
           <StatistiquesFunnel funnel={stats.funnelSimulateurRGA} />
         </div>

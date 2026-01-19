@@ -54,7 +54,7 @@ export async function fetchMatomoVisits(
 }
 
 /**
- * Récupère les statistiques d'un funnel depuis l'API Matomo Mes Aides Réno
+ * Récupère les statistiques d'un funnel depuis l'API Matomo
  * @param funnelId - ID du funnel à récupérer
  * @param period - Période : 'day', 'week', 'month', 'year', 'range'
  * @param date - Date au format 'YYYY-MM-DD' ou plage 'YYYY-MM-DD,YYYY-MM-DD'

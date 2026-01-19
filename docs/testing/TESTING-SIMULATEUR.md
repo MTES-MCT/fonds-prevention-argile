@@ -13,7 +13,7 @@ Ce document contient les checklists de tests manuels pour valider le bon fonctio
 
 Le simulateur RGA permet à un particulier de :
 
-1. **Vérifier son éligibilité** via l'iframe MesAidesRénov
+1. **Vérifier son éligibilité**
 2. **Recevoir et parser** les données du simulateur
 3. **Valider** les données essentielles
 4. **Sauvegarder** en session pour continuité
@@ -169,13 +169,6 @@ Le simulateur RGA permet à un particulier de :
 ### 🖥️ Couche Présentation - Composants UI
 
 #### ✅ Composant SimulateurClient
-
-**Test d'affichage de l'iframe :**
-
-- [ ] Naviguer vers `/simulateur` (sans être connecté)
-- [ ] ✅ **Succès attendu :** L'iframe MesAidesRénov s'affiche
-- [ ] ✅ Hauteur de l'iframe : 800px (ou valeur configurée)
-- [ ] ✅ L'iframe est responsive
 
 **Test du fil d'Ariane :**
 
