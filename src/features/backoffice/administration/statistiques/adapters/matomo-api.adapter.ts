@@ -70,20 +70,19 @@ export async function fetchMatomoFunnel(
   if (!clientEnv.NEXT_PUBLIC_MATOMO_URL) {
     throw new Error("Configuration Matomo incomplète (URL manquant)");
   }
-
-  const MATOMO_MES_AIDES_RENO_SITE_ID = serverEnv.MATOMO_MES_AIDES_RENO_SITE_ID;
-  const MATOMO_MES_AIDES_RENO_API_TOKEN = serverEnv.MATOMO_MES_AIDES_RENO_API_TOKEN;
+  const MATOMO_FUNNEL_ID = serverEnv.MATOMO_FUNNEL_ID;
+  const MATOMO_API_TOKEN = serverEnv.MATOMO_API_TOKEN;
 
   // Paramètres de la requête en POST
   const params = new URLSearchParams({
     module: "API",
     method: "Funnels.getFunnelFlowTable",
-    idSite: MATOMO_MES_AIDES_RENO_SITE_ID,
+    idSite: MATOMO_FUNNEL_ID,
     idFunnel: funnelId,
     period,
     date,
     format: "JSON",
-    token_auth: MATOMO_MES_AIDES_RENO_API_TOKEN,
+    token_auth: MATOMO_API_TOKEN,
   });
 
   const response = await fetch(clientEnv.NEXT_PUBLIC_MATOMO_URL, {
