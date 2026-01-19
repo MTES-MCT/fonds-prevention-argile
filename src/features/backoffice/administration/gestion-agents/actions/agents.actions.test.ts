@@ -9,6 +9,12 @@ vi.mock("@/features/auth/server", () => ({
 
 vi.mock("@/shared/domain/value-objects", () => ({
   isSuperAdminRole: vi.fn(),
+  UserRole: {
+    SUPER_ADMINISTRATEUR: "super_administrateur",
+    ADMINISTRATEUR: "administrateur",
+    AMO: "amo",
+    ANALYSTE: "analyste",
+  },
 }));
 
 vi.mock("../services/agents-admin.service", () => ({
@@ -257,6 +263,51 @@ describe("agents.actions", () => {
 
       expect(result.success).toBe(true);
     });
+
+    it("devrait exiger une entreprise AMO pour le rôle AMO", async () => {
+      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
+      vi.mocked(getSession).mockResolvedValue(mockSession);
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const result = await createAgentAction({
+        ...validAgentData,
+        role: UserRole.AMO as AgentRole,
+        // pas d'entrepriseAmoId
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("entreprise AMO");
+      }
+    });
+
+    it("devrait autoriser la création d'un AMO avec entreprise", async () => {
+      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
+      vi.mocked(getSession).mockResolvedValue(mockSession);
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const mockAmoAgent = createMockAgentWithPermissions({
+        agent: {
+          ...createMockAgentWithPermissions().agent,
+          role: UserRole.AMO,
+          entrepriseAmoId: "entreprise-123",
+        },
+        entrepriseAmo: {
+          id: "entreprise-123",
+          nom: "AMO Test",
+          siret: "12345678901234",
+        },
+      });
+      vi.mocked(agentsAdminService.createAgent).mockResolvedValue(mockAmoAgent);
+
+      const result = await createAgentAction({
+        ...validAgentData,
+        role: UserRole.AMO as AgentRole,
+        entrepriseAmoId: "entreprise-123",
+      });
+
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("updateAgentAction", () => {
@@ -319,6 +370,22 @@ describe("agents.actions", () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBe("Agent non trouvé");
+      }
+    });
+
+    it("devrait exiger une entreprise AMO lors du passage au rôle AMO", async () => {
+      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
+      vi.mocked(getSession).mockResolvedValue(mockSession);
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const result = await updateAgentAction("agent-123", {
+        role: UserRole.AMO as AgentRole,
+        entrepriseAmoId: null, // explicitement null
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("entreprise AMO");
       }
     });
   });

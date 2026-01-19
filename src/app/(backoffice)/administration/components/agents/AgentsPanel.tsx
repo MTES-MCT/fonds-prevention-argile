@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AgentsList from "./AgentsList";
-import AgentFormModal, { type AgentFormData } from "./AgentFormModal";
+import AgentFormModal, { type AgentFormData, type EntrepriseAmoOption } from "./AgentFormModal";
 import AgentDeleteModal from "./AgentDeleteModal";
 import {
   AgentWithPermissions,
@@ -11,6 +11,7 @@ import {
   getAgentsAction,
   updateAgentAction,
 } from "@/features/backoffice";
+import { getEntreprisesAmoOptions } from "@/features/backoffice/administration/gestion-amo/actions";
 import StatCard from "../shared/StatCard";
 
 const MODAL_DELETE_ID = "modal-delete-agent";
@@ -18,6 +19,7 @@ const MODAL_FORM_ID = "modal-form-agent";
 
 export default function AgentsPanel() {
   const [agents, setAgents] = useState<AgentWithPermissions[]>([]);
+  const [entreprisesAmo, setEntreprisesAmo] = useState<EntrepriseAmoOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,25 +27,29 @@ export default function AgentsPanel() {
   const [selectedAgent, setSelectedAgent] = useState<AgentWithPermissions | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Charger les agents
-  const loadAgents = useCallback(async () => {
+  // Charger les agents et les entreprises AMO
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
-    const result = await getAgentsAction();
+    const [agentsResult, entreprisesResult] = await Promise.all([getAgentsAction(), getEntreprisesAmoOptions()]);
 
-    if (result.success) {
-      setAgents(result.data);
+    if (agentsResult.success) {
+      setAgents(agentsResult.data);
     } else {
-      setError(result.error || "Erreur lors du chargement des agents");
+      setError(agentsResult.error || "Erreur lors du chargement des agents");
+    }
+
+    if (entreprisesResult.success) {
+      setEntreprisesAmo(entreprisesResult.data);
     }
 
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    loadAgents();
-  }, [loadAgents]);
+    loadData();
+  }, [loadData]);
 
   // Ouvrir le modal d'ajout
   const handleAdd = () => {
@@ -75,6 +81,7 @@ export default function AgentsPanel() {
           usualName: data.usualName || undefined,
           role: data.role,
           departements: data.departements,
+          entrepriseAmoId: data.entrepriseAmoId,
         });
       } else {
         // Mode création
@@ -84,6 +91,7 @@ export default function AgentsPanel() {
           usualName: data.usualName || undefined,
           role: data.role,
           departements: data.departements,
+          entrepriseAmoId: data.entrepriseAmoId,
         });
       }
 
@@ -92,7 +100,7 @@ export default function AgentsPanel() {
       }
 
       // Recharger la liste
-      await loadAgents();
+      await loadData();
     } finally {
       setIsSubmitting(false);
     }
@@ -112,7 +120,7 @@ export default function AgentsPanel() {
       }
 
       // Recharger la liste
-      await loadAgents();
+      await loadData();
     } finally {
       setIsSubmitting(false);
     }
@@ -163,6 +171,7 @@ export default function AgentsPanel() {
               label="Super Admins"
               number={agents.filter((a) => a.agent.role === "super_administrateur").length.toString()}
             />
+            <StatCard label="AMO" number={agents.filter((a) => a.agent.role === "amo").length.toString()} />
             <StatCard
               label="En attente de connexion"
               number={agents.filter((a) => a.agent.sub.startsWith("pending_")).length.toString()}
@@ -187,6 +196,7 @@ export default function AgentsPanel() {
         onSubmit={handleFormSubmit}
         agent={selectedAgent}
         isLoading={isSubmitting}
+        entreprisesAmo={entreprisesAmo}
       />
 
       <AgentDeleteModal
