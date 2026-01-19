@@ -43,3 +43,21 @@ export interface DossierAccessCheck {
   /** Raison du refus (si hasAccess = false) */
   reason?: string;
 }
+
+/**
+ * Filtres de scope pour les requêtes de données
+ * Utilisé par les services pour filtrer les résultats selon le scope de l'utilisateur
+ */
+export interface ScopeFilters {
+  /** Si défini, filtrer par ces IDs d'entreprises AMO */
+  entrepriseAmoIds?: string[];
+
+  /** Si défini, filtrer par ces codes de départements */
+  departements?: string[];
+
+  /** Si true, exclure les dossiers qui ont déjà une AMO */
+  excludeWithAmo?: boolean;
+
+  /** Si true, aucun résultat ne doit être retourné (accès refusé) */
+  noAccess?: boolean;
+}

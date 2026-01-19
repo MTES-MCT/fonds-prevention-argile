@@ -14,6 +14,10 @@ vi.mock("@/features/auth/permissions/services/permissions.service", () => ({
   checkBackofficePermission: vi.fn(),
 }));
 
+vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
+  getScopeFilters: vi.fn(),
+}));
+
 vi.mock("../services/statistiques.service", () => ({
   getStatistiques: vi.fn(),
 }));
@@ -23,12 +27,15 @@ vi.mock("@/shared/config/env.config", () => createEnvConfigMock());
 
 // Import des actions à tester APRÈS le mock des dépendances
 import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
+import { getScopeFilters } from "@/features/auth/permissions/services/agent-scope.service";
 import { getStatistiques } from "../services/statistiques.service";
 import { getStatistiquesAction } from "./get-statistiques.action";
 
 describe("statistiques.actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Par défaut, pas de filtre de scope (accès national)
+    vi.mocked(getScopeFilters).mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -54,7 +61,8 @@ describe("statistiques.actions", () => {
         expect(result.data.nombreComptesCreés).toBe(150);
       }
       expect(checkBackofficePermission).toHaveBeenCalledWith(BackofficePermission.STATS_READ);
-      expect(getStatistiques).toHaveBeenCalled();
+      expect(getScopeFilters).toHaveBeenCalled();
+      expect(getStatistiques).toHaveBeenCalledWith(null);
     });
 
     it("devrait autoriser l'accès pour ADMINISTRATEUR", async () => {
@@ -74,6 +82,7 @@ describe("statistiques.actions", () => {
         expect(result.data).toEqual(mockStats);
       }
       expect(checkBackofficePermission).toHaveBeenCalled();
+      expect(getScopeFilters).toHaveBeenCalled();
     });
 
     it("devrait autoriser l'accès pour ANALYSTE", async () => {
@@ -93,6 +102,7 @@ describe("statistiques.actions", () => {
         expect(result.data).toEqual(mockStats);
       }
       expect(checkBackofficePermission).toHaveBeenCalledWith(BackofficePermission.STATS_READ);
+      expect(getScopeFilters).toHaveBeenCalled();
     });
 
     it("devrait refuser l'accès pour AMO", async () => {
@@ -108,6 +118,7 @@ describe("statistiques.actions", () => {
       if (!result.success) {
         expect(result.error).toBe("Permission insuffisante pour consulter les statistiques");
       }
+      expect(getScopeFilters).not.toHaveBeenCalled();
       expect(getStatistiques).not.toHaveBeenCalled();
     });
 
@@ -124,7 +135,26 @@ describe("statistiques.actions", () => {
       if (!result.success) {
         expect(result.error).toBe("Permission insuffisante pour consulter les statistiques");
       }
+      expect(getScopeFilters).not.toHaveBeenCalled();
       expect(getStatistiques).not.toHaveBeenCalled();
+    });
+
+    it("devrait passer les filtres de scope au service", async () => {
+      const mockUser = createMockAuthUser(UserRole.ADMINISTRATEUR);
+      vi.mocked(checkBackofficePermission).mockResolvedValue({
+        hasAccess: true,
+        user: mockUser,
+      });
+
+      const scopeFilters = { entrepriseAmoIds: ["entreprise-123"] };
+      vi.mocked(getScopeFilters).mockResolvedValue(scopeFilters);
+
+      const mockStats = createMockStatistiques();
+      vi.mocked(getStatistiques).mockResolvedValue(mockStats);
+
+      await getStatistiquesAction();
+
+      expect(getStatistiques).toHaveBeenCalledWith(scopeFilters);
     });
 
     it("devrait gérer les erreurs de récupération", async () => {
@@ -201,7 +231,7 @@ describe("statistiques.actions", () => {
       const result = await getStatistiquesAction();
 
       expect(result.success).toBe(true);
-      if (result.success) {
+      if (result.success && result.data.funnelSimulateurRGA) {
         expect(result.data.funnelSimulateurRGA).toHaveProperty("etapes");
         expect(result.data.funnelSimulateurRGA).toHaveProperty("visiteursInitiaux");
         expect(result.data.funnelSimulateurRGA).toHaveProperty("conversionsFinales");
@@ -263,6 +293,7 @@ describe("statistiques.actions", () => {
       const result = await getStatistiquesAction();
 
       expect(result.success).toBe(false);
+      expect(getScopeFilters).not.toHaveBeenCalled();
       expect(getStatistiques).not.toHaveBeenCalled();
     });
 

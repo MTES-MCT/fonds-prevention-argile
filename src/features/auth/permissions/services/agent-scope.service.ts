@@ -1,15 +1,13 @@
+import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { agentPermissionsRepository } from "@/shared/database";
-import type { AgentScope, AgentScopeInput, DossierAccessCheck } from "../domain/types/agent-scope.types";
+import type { AgentScope, AgentScopeInput, DossierAccessCheck, ScopeFilters } from "../domain/types/agent-scope.types";
 
 /**
  * Calcule le scope de données d'un agent en fonction de son rôle et ses permissions
  */
 export async function calculateAgentScope(agent: AgentScopeInput): Promise<AgentScope> {
   const { role, entrepriseAmoId } = agent;
-
-  // Super admin et admin ont accès national
-  const isNational = role === UserRole.SUPER_ADMINISTRATEUR || role === UserRole.ADMINISTRATEUR;
 
   // Récupérer les départements assignés (pour analystes et futurs allers-vers)
   const departements = await agentPermissionsRepository.getDepartementsByAgentId(agent.id);
@@ -155,17 +153,13 @@ export function canViewStatsForTerritory(scope: AgentScope, departementCode?: st
 }
 
 /**
- * Génère la clause WHERE SQL pour filtrer les dossiers selon le scope
+ * Génère les conditions de filtrage pour les requêtes de données
  * Retourne null si accès national (pas de filtre nécessaire)
  *
  * @param scope - Le scope de l'agent
  * @returns Les conditions de filtrage ou null
  */
-export function getScopeFilterConditions(scope: AgentScope): {
-  entrepriseAmoIds?: string[];
-  departements?: string[];
-  excludeWithAmo?: boolean;
-} | null {
+export function getScopeFilterConditions(scope: AgentScope): ScopeFilters | null {
   // Accès national = pas de filtre
   if (scope.canViewAllDossiers) {
     return null;
@@ -201,4 +195,28 @@ export function isAmoConfigured(agent: AgentScopeInput): boolean {
     return true; // Non applicable pour les autres rôles
   }
   return agent.entrepriseAmoId !== null;
+}
+
+/**
+ * Récupère les filtres de scope pour l'utilisateur actuellement connecté
+ * Fonction principale à utiliser dans les server actions
+ *
+ * @returns Les filtres à appliquer aux requêtes, ou null si accès national
+ */
+export async function getScopeFilters(): Promise<ScopeFilters | null> {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { noAccess: true };
+  }
+
+  const agentInput: AgentScopeInput = {
+    id: user.agentId ?? "",
+    role: user.role,
+    entrepriseAmoId: user.entrepriseAmoId ?? null,
+  };
+
+  const scope = await calculateAgentScope(agentInput);
+
+  return getScopeFilterConditions(scope);
 }

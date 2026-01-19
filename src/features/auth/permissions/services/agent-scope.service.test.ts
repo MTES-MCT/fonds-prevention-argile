@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
-import type { AgentScope, AgentScopeInput, DossierAccessCheck } from "../domain/types/agent-scope.types";
+import type { AgentScope, AgentScopeInput } from "../domain/types/agent-scope.types";
 
 // Mock du repository
 vi.mock("@/shared/database", () => ({

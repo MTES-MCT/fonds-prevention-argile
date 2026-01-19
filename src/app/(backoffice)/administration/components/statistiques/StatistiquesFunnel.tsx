@@ -4,10 +4,18 @@ import type { FunnelStatistiques, FunnelStep } from "@/features/backoffice";
 import StatCard from "../shared/StatCard";
 
 interface StatistiquesFunnelProps {
-  funnel: FunnelStatistiques;
+  funnel: FunnelStatistiques | null;
 }
 
 export default function StatistiquesFunnel({ funnel }: StatistiquesFunnelProps) {
+  if (!funnel) {
+    return (
+      <div className="fr-alert fr-alert--info">
+        <p>Les données du funnel ne sont pas disponibles pour votre profil</p>
+      </div>
+    );
+  }
+
   if (funnel.etapes.length === 0) {
     return (
       <div className="fr-alert fr-alert--info">

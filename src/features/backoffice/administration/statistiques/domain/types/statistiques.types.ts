@@ -50,8 +50,9 @@ export interface Statistiques {
 
   /**
    * Statistiques du funnel "Complétude du simulateur RGA"
+   * Null si les données ne sont pas disponibles ou si l'accès est restreint
    */
-  funnelSimulateurRGA: FunnelStatistiques;
+  funnelSimulateurRGA: FunnelStatistiques | null;
 }
 
 /**

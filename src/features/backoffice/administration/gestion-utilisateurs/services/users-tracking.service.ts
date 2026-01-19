@@ -4,10 +4,11 @@ import { parcoursPrevention } from "@/shared/database/schema/parcours-prevention
 import { parcoursAmoValidations } from "@/shared/database/schema/parcours-amo-validations";
 import { entreprisesAmo } from "@/shared/database/schema/entreprises-amo";
 import { dossiersDemarchesSimplifiees } from "@/shared/database/schema/dossiers-demarches-simplifiees";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { UserWithParcoursDetails, DossierInfo } from "../domain/types/user-with-parcours.types";
 import { amoValidationTokens } from "@/shared/database";
+import type { ScopeFilters } from "@/features/auth/permissions/domain/types/agent-scope.types";
 
 /**
  * Service pour récupérer les utilisateurs avec tous les détails de leur parcours
@@ -24,10 +25,28 @@ function anonymiserNom(nom: string | null): string | null {
 /**
  * Récupère tous les utilisateurs avec leurs parcours, validations AMO et dossiers DS
  * Les données personnelles sont anonymisées côté serveur
+ *
+ * @param scopeFilters - Filtres optionnels selon le scope de l'agent
+ *   - entrepriseAmoIds: Filtre par entreprises AMO (pour les agents AMO)
+ *   - departements: Filtre par départements (pour les analystes - futur)
+ *   - noAccess: Si true, retourne un tableau vide
  */
-export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]> {
+export async function getUsersWithParcours(scopeFilters?: ScopeFilters | null): Promise<UserWithParcoursDetails[]> {
+  // Si noAccess, retourner un tableau vide
+  if (scopeFilters?.noAccess) {
+    return [];
+  }
+
+  // Construire les conditions de filtrage
+  const whereConditions = [];
+
+  // Filtre par entreprises AMO
+  if (scopeFilters?.entrepriseAmoIds && scopeFilters.entrepriseAmoIds.length > 0) {
+    whereConditions.push(inArray(parcoursAmoValidations.entrepriseAmoId, scopeFilters.entrepriseAmoIds));
+  }
+
   // Requête principale avec tous les LEFT JOINs
-  const results = await db
+  let query = db
     .select({
       // User
       userId: users.id,
@@ -104,8 +123,15 @@ export async function getUsersWithParcours(): Promise<UserWithParcoursDetails[]>
     .leftJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
     .leftJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
     .leftJoin(amoValidationTokens, eq(parcoursAmoValidations.id, amoValidationTokens.parcoursAmoValidationId))
-    .leftJoin(dossiersDemarchesSimplifiees, eq(parcoursPrevention.id, dossiersDemarchesSimplifiees.parcoursId))
-    .orderBy(desc(users.createdAt));
+    .leftJoin(dossiersDemarchesSimplifiees, eq(parcoursPrevention.id, dossiersDemarchesSimplifiees.parcoursId));
+
+  // Appliquer les filtres si présents
+  if (whereConditions.length > 0) {
+    query = query.where(and(...whereConditions)) as typeof query;
+  }
+
+  // Exécuter la requête avec tri
+  const results = await query.orderBy(desc(users.createdAt));
 
   // Grouper les résultats par utilisateur
   const usersMap = new Map<string, UserWithParcoursDetails>();
