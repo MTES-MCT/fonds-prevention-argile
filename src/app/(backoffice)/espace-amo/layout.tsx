@@ -17,7 +17,7 @@ export default function EspaceAmoLayout({ children }: EspaceAmoLayoutProps) {
       <AmoHeader />
       <div className="fr-container">
         <AmoNavigation />
-        <div className="fr-tabs__panel fr-tabs__panel--selected fr-py-4w">{children}</div>
+        <div className="fr-py-4w">{children}</div>
       </div>
     </AmoProvider>
   );
