@@ -1,0 +1,1 @@
+export { AmoDossiersPanel } from "./AmoDossiersPanel";

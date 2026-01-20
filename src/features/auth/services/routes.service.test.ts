@@ -13,8 +13,8 @@ describe("routes.service", () => {
 
     it("devrait identifier les routes espace-amo comme admin", () => {
       expect(isAdminRoute(ROUTES.backoffice.espaceAmo.root)).toBe(true);
-      expect(isAdminRoute(ROUTES.backoffice.espaceAmo.notifications)).toBe(true);
       expect(isAdminRoute(ROUTES.backoffice.espaceAmo.dossiers)).toBe(true);
+      expect(isAdminRoute(ROUTES.backoffice.espaceAmo.statistiques)).toBe(true);
     });
 
     it("devrait identifier les routes API privées comme admin", () => {

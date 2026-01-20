@@ -2,14 +2,14 @@ import { redirect } from "next/navigation";
 import { checkAmoAccess, checkProConnectAccess, ROUTES } from "@/features/auth";
 import { AccesNonAutoriseAmo, AccesNonAutoriseAgentNonEnregistre } from "@/shared/components";
 import { getCurrentAgent } from "@/features/backoffice";
-import { AmoDemandesPanel } from "./components/AmoDemandesPanel";
+import { AmoStatistiquesPanel } from "./components/AmoStatistiquesPanel";
 
 /**
- * Espace AMO - Page principale : Demandes en attente
+ * Espace AMO - Page des statistiques
  *
- * Affiche les demandes de validation en attente pour l'entreprise AMO
+ * Affiche les statistiques de l'activité AMO
  */
-export default async function EspaceAmoPage() {
+export default async function StatistiquesAmoPage() {
   // Vérifier que l'utilisateur est connecté via ProConnect
   const proConnectCheck = await checkProConnectAccess();
 
@@ -35,5 +35,5 @@ export default async function EspaceAmoPage() {
     return <AccesNonAutoriseAmo />;
   }
 
-  return <AmoDemandesPanel />;
+  return <AmoStatistiquesPanel />;
 }

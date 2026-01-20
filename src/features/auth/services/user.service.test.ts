@@ -11,7 +11,7 @@ vi.mock("./session.service", () => ({
 // Mock du repository agents
 vi.mock("@/shared/database", () => ({
   agentsRepo: {
-    findBySub: vi.fn(),
+    findById: vi.fn(),
   },
 }));
 
@@ -54,7 +54,7 @@ describe("user.service", () => {
         });
         expect(result?.loginTime).toBeDefined();
         // Pas d'appel au repository pour le mode password
-        expect(agentsRepo.findBySub).not.toHaveBeenCalled();
+        expect(agentsRepo.findById).not.toHaveBeenCalled();
       });
     });
 
@@ -71,7 +71,7 @@ describe("user.service", () => {
         };
 
         vi.mocked(getSession).mockResolvedValue(mockSession);
-        vi.mocked(agentsRepo.findBySub).mockResolvedValue({
+        vi.mocked(agentsRepo.findById).mockResolvedValue({
           id: "agent-db-id-123",
           sub: "sub-agent-123",
           email: "jean.dupont@gouv.fr",
@@ -99,7 +99,7 @@ describe("user.service", () => {
         });
         expect(result?.entrepriseAmoId).toBeUndefined();
         expect(result?.loginTime).toBeDefined();
-        expect(agentsRepo.findBySub).toHaveBeenCalledWith("sub-agent-123");
+        expect(agentsRepo.findById).toHaveBeenCalledWith("sub-agent-123");
       });
 
       it("devrait retourner les infos pour SUPER_ADMINISTRATEUR ProConnect", async () => {
@@ -114,7 +114,7 @@ describe("user.service", () => {
         };
 
         vi.mocked(getSession).mockResolvedValue(mockSession);
-        vi.mocked(agentsRepo.findBySub).mockResolvedValue({
+        vi.mocked(agentsRepo.findById).mockResolvedValue({
           id: "agent-db-id-456",
           sub: "superadmin-456",
           email: "marie.martin@gouv.fr",
@@ -154,7 +154,7 @@ describe("user.service", () => {
         };
 
         vi.mocked(getSession).mockResolvedValue(mockSession);
-        vi.mocked(agentsRepo.findBySub).mockResolvedValue({
+        vi.mocked(agentsRepo.findById).mockResolvedValue({
           id: "agent-db-id-789",
           sub: "amo-789",
           email: "pierre.bernard@amo.fr",
@@ -195,7 +195,7 @@ describe("user.service", () => {
         };
 
         vi.mocked(getSession).mockResolvedValue(mockSession);
-        vi.mocked(agentsRepo.findBySub).mockResolvedValue({
+        vi.mocked(agentsRepo.findById).mockResolvedValue({
           id: "agent-db-id-no-amo",
           sub: "amo-no-entreprise",
           email: "lucas.petit@amo.fr",
@@ -234,7 +234,7 @@ describe("user.service", () => {
         };
 
         vi.mocked(getSession).mockResolvedValue(mockSession);
-        vi.mocked(agentsRepo.findBySub).mockResolvedValue(null);
+        vi.mocked(agentsRepo.findById).mockResolvedValue(null);
 
         const result = await getCurrentUser();
 
@@ -261,7 +261,7 @@ describe("user.service", () => {
         };
 
         vi.mocked(getSession).mockResolvedValue(mockSession);
-        vi.mocked(agentsRepo.findBySub).mockResolvedValue({
+        vi.mocked(agentsRepo.findById).mockResolvedValue({
           id: "agent-db-analyste",
           sub: "analyste-123",
           email: "claire.durand@gouv.fr",
@@ -315,7 +315,7 @@ describe("user.service", () => {
         });
         expect(result?.loginTime).toBeDefined();
         // Pas d'appel au repository pour FranceConnect
-        expect(agentsRepo.findBySub).not.toHaveBeenCalled();
+        expect(agentsRepo.findById).not.toHaveBeenCalled();
       });
 
       it("devrait gérer un particulier sans nom/prénom", async () => {

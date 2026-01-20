@@ -30,11 +30,12 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   // Pour un agent ProConnect
   if (session.authMethod === AUTH_METHODS.PROCONNECT && isAgentRole(session.role as UserRole)) {
     // Récupérer les infos complémentaires de l'agent depuis la BDD
-    const agent = await agentsRepo.findBySub(session.userId);
+    // Note: session.userId contient l'ID de l'agent (UUID), pas le sub ProConnect
+    const agent = await agentsRepo.findById(session.userId);
 
     return {
       id: session.userId,
-      role: session.role,
+      role: agent?.role ?? session.role, // Utiliser le rôle de la BDD (plus à jour)
       authMethod: session.authMethod,
       loginTime: new Date().toISOString(),
       firstName: session.firstName,

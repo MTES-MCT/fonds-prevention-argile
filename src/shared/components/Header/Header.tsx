@@ -26,18 +26,11 @@ function AgentNavLinks() {
 
     case UserRole.AMO:
       return (
-        <>
-          <li>
-            <Link href={ROUTES.backoffice.espaceAmo.notifications} className="fr-icon-notification-3-line fr-btn">
-              Notifications
-            </Link>
-          </li>
-          <li>
-            <Link href={ROUTES.backoffice.espaceAmo.dossiers} className="fr-icon-folder-2-line fr-btn">
-              Mes dossiers
-            </Link>
-          </li>
-        </>
+        <li>
+          <Link href={ROUTES.backoffice.espaceAmo.root} className="fr-icon-building-fill fr-btn">
+            Mon espace AMO
+          </Link>
+        </li>
       );
 
     default:
@@ -65,18 +58,11 @@ function AgentNavLinksMobile() {
 
     case UserRole.AMO:
       return (
-        <>
-          <li>
-            <Link href={ROUTES.backoffice.espaceAmo.notifications} className="fr-icon-notification-3-line fr-btn">
-              Notifications
-            </Link>
-          </li>
-          <li>
-            <Link href={ROUTES.backoffice.espaceAmo.dossiers} className="fr-icon-folder-2-line fr-btn">
-              Mes dossiers
-            </Link>
-          </li>
-        </>
+        <li>
+          <Link href={ROUTES.backoffice.espaceAmo.root} className="fr-icon-building-fill fr-btn">
+            Mon espace AMO
+          </Link>
+        </li>
       );
 
     default:

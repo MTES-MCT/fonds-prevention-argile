@@ -14,6 +14,7 @@ import {
   getDefaultRedirect,
   ROUTES,
 } from "@/features/auth/edge";
+import { UserRole } from "@/shared/domain/value-objects";
 
 /**
  * Middleware de gestion de l'authentification
@@ -93,6 +94,17 @@ export async function middleware(request: NextRequest) {
       const redirectTo = request.cookies.get(COOKIE_NAMES.REDIRECT_TO)?.value;
 
       if (redirectTo) {
+        // Vérifier que la redirection est compatible avec le rôle
+        const isAmoRole = role === UserRole.AMO;
+        const isAdminRoute = redirectTo.startsWith(ROUTES.backoffice.administration.root);
+
+        if (isAmoRole && isAdminRoute) {
+          // AMO tentant d'accéder à /administration -> rediriger vers espace-amo
+          const response = NextResponse.redirect(new URL(ROUTES.backoffice.espaceAmo.root, request.url));
+          response.cookies.delete(COOKIE_NAMES.REDIRECT_TO);
+          return response;
+        }
+
         // Supprimer le cookie redirectTo et rediriger
         const response = NextResponse.redirect(new URL(redirectTo, request.url));
         response.cookies.delete(COOKIE_NAMES.REDIRECT_TO);

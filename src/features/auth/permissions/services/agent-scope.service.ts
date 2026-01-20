@@ -9,13 +9,11 @@ import type { AgentScope, AgentScopeInput, DossierAccessCheck, ScopeFilters } fr
 export async function calculateAgentScope(agent: AgentScopeInput): Promise<AgentScope> {
   const { role, entrepriseAmoId } = agent;
 
-  // Récupérer les départements assignés (pour analystes et futurs allers-vers)
-  const departements = await agentPermissionsRepository.getDepartementsByAgentId(agent.id);
-
   // Construire le scope selon le rôle
   switch (role) {
     case UserRole.SUPER_ADMINISTRATEUR:
     case UserRole.ADMINISTRATEUR:
+      // Les admins ont accès national, pas besoin de récupérer les départements
       return {
         isNational: true,
         entrepriseAmoIds: [],
@@ -27,6 +25,7 @@ export async function calculateAgentScope(agent: AgentScopeInput): Promise<Agent
       };
 
     case UserRole.AMO:
+      // Les AMO n'ont pas de départements assignés, juste leur entreprise
       return {
         isNational: false,
         entrepriseAmoIds: entrepriseAmoId ? [entrepriseAmoId] : [],
@@ -37,7 +36,9 @@ export async function calculateAgentScope(agent: AgentScopeInput): Promise<Agent
         canViewDossiersWithoutAmo: false,
       };
 
-    case UserRole.ANALYSTE:
+    case UserRole.ANALYSTE: {
+      // Récupérer les départements assignés seulement si agentId est valide
+      const departements = agent.id ? await agentPermissionsRepository.getDepartementsByAgentId(agent.id) : [];
       return {
         isNational: departements.length === 0, // Si pas de départements assignés = accès national pour stats
         entrepriseAmoIds: [],
@@ -47,6 +48,7 @@ export async function calculateAgentScope(agent: AgentScopeInput): Promise<Agent
         canViewDossiersByEntreprise: false,
         canViewDossiersWithoutAmo: false,
       };
+    }
 
     default:
       // Rôle inconnu = aucun accès
