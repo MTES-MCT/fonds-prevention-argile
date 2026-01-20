@@ -5,6 +5,7 @@ import { useAgentRole, useIsAgent } from "@/features/auth/hooks";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import Link from "next/link";
+import { RoleNavigation } from "./RoleNavigation";
 
 /**
  * Liens de navigation pour les agents selon leur rôle
@@ -20,15 +21,6 @@ function AgentNavLinks() {
         <li>
           <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
             Administration
-          </Link>
-        </li>
-      );
-
-    case UserRole.AMO:
-      return (
-        <li>
-          <Link href={ROUTES.backoffice.espaceAmo.root} className="fr-icon-building-fill fr-btn">
-            Mon espace AMO
           </Link>
         </li>
       );
@@ -52,15 +44,6 @@ function AgentNavLinksMobile() {
         <li>
           <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
             Administration
-          </Link>
-        </li>
-      );
-
-    case UserRole.AMO:
-      return (
-        <li>
-          <Link href={ROUTES.backoffice.espaceAmo.root} className="fr-icon-building-fill fr-btn">
-            Mon espace AMO
           </Link>
         </li>
       );
@@ -175,6 +158,9 @@ const Header = () => {
           </div>
         </div>
       </div>
+
+      {/* Navigation par rôle (AMO, etc.) */}
+      <RoleNavigation />
 
       {/* Menu mobile */}
       <div className="fr-header__menu fr-modal" id="menu-modal-mobile" aria-labelledby="menu-mobile">

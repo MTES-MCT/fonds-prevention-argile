@@ -1,7 +1,3 @@
-import { redirect } from "next/navigation";
-import { checkAmoAccess, checkProConnectAccess, ROUTES } from "@/features/auth";
-import { AccesNonAutoriseAmo, AccesNonAutoriseAgentNonEnregistre } from "@/shared/components";
-import { getCurrentAgent } from "@/features/backoffice";
 import { getValidationDataByToken } from "@/features/parcours/amo/actions";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 import ValidationAmoForm from "./components/ValidationAmoForm";
@@ -15,38 +11,11 @@ interface ValidationAmoPageProps {
 /**
  * Espace AMO - Page de validation d'une demande
  *
- * Accessible uniquement aux AMO connectés via ProConnect
+ * L'accès AMO est vérifié par le layout parent (layout.tsx)
  * Le token est utilisé pour identifier la demande à valider
  */
 export default async function ValidationAmoPage({ params }: ValidationAmoPageProps) {
   const { token } = await params;
-
-  // Vérifier que l'utilisateur est connecté via ProConnect
-  const proConnectCheck = await checkProConnectAccess();
-
-  // Si pas connecté du tout → redirect vers connexion agent avec retour vers cette page
-  if (!proConnectCheck.hasAccess && proConnectCheck.errorCode === "NOT_AUTHENTICATED") {
-    // Encode l'URL de retour pour revenir ici après connexion
-    const returnUrl = encodeURIComponent(`/espace-amo/validation/${token}`);
-    redirect(`${ROUTES.connexion.agent}?returnTo=${returnUrl}`);
-  }
-
-  // Si pas ProConnect (ex: FranceConnect) : bloquer
-  if (!proConnectCheck.hasAccess) {
-    return <AccesNonAutoriseAmo />;
-  }
-
-  // Vérifier que l'agent est enregistré en BDD
-  const agentResult = await getCurrentAgent();
-  if (!agentResult.success) {
-    return <AccesNonAutoriseAgentNonEnregistre />;
-  }
-
-  // Vérifier que l'utilisateur est AMO
-  const amoCheck = await checkAmoAccess();
-  if (!amoCheck.hasAccess) {
-    return <AccesNonAutoriseAmo />;
-  }
 
   // Récupérer et vérifier le token côté serveur
   const result = await getValidationDataByToken(token);

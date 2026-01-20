@@ -1,39 +1,14 @@
-import { redirect } from "next/navigation";
-import { checkAmoAccess, checkProConnectAccess, ROUTES } from "@/features/auth";
-import { AccesNonAutoriseAmo, AccesNonAutoriseAgentNonEnregistre } from "@/shared/components";
-import { getCurrentAgent } from "@/features/backoffice";
-import { AmoDemandesPanel } from "./components/AmoDemandesPanel";
+import { AmoAccueilHeader } from "./accueil/components/AmoAccueilHeader";
+import { AmoAccueilPanel } from "./accueil/components/AmoAccueilPanel";
 
 /**
- * Espace AMO - Page principale : Demandes en attente
- *
- * Affiche les demandes de validation en attente pour l'entreprise AMO
+ * Espace AMO - Page d'accueil
  */
-export default async function EspaceAmoPage() {
-  // Vérifier que l'utilisateur est connecté via ProConnect
-  const proConnectCheck = await checkProConnectAccess();
-
-  // Si pas connecté du tout → redirect vers connexion agent
-  if (!proConnectCheck.hasAccess && proConnectCheck.errorCode === "NOT_AUTHENTICATED") {
-    redirect(ROUTES.connexion.agent);
-  }
-
-  // Si pas ProConnect (ex: FranceConnect) : bloquer
-  if (!proConnectCheck.hasAccess) {
-    return <AccesNonAutoriseAmo />;
-  }
-
-  // Vérifier que l'agent est enregistré en BDD
-  const agentResult = await getCurrentAgent();
-  if (!agentResult.success) {
-    return <AccesNonAutoriseAgentNonEnregistre />;
-  }
-
-  // Vérifier que l'utilisateur est AMO
-  const amoCheck = await checkAmoAccess();
-  if (!amoCheck.hasAccess) {
-    return <AccesNonAutoriseAmo />;
-  }
-
-  return <AmoDemandesPanel />;
+export default function EspaceAmoPage() {
+  return (
+    <>
+      <AmoAccueilHeader />
+      <AmoAccueilPanel />
+    </>
+  );
 }

@@ -2,11 +2,10 @@
  * Types pour les onglets de l'espace AMO
  */
 
-export type AmoTabId = "demandes" | "dossiers" | "statistiques";
+export type AmoTabId = "accueil" | "dossiers" | "statistiques";
 
 export interface AmoTab {
   id: AmoTabId;
   label: string;
-  icon: string;
   href: string;
 }
