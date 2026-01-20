@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getAmosDisponibles } from "./amo-disponibles.actions";
+import { getAmosDisponibles, getAllAmos } from "./amo-disponibles.actions";
 import { getSession } from "@/features/auth/server";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { db } from "@/shared/database/client";
 import type { ParcoursPrevention } from "@/shared/database/schema";
+import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 
 // Mock des dépendances
 vi.mock("@/features/auth/server", () => ({
@@ -456,6 +457,146 @@ describe("getAmosDisponibles - Logique exclusive EPCI/Département", () => {
 
       // Vérifie que le fallback département a bien été utilisé
       expect(result.data).toHaveLength(1);
+    });
+  });
+});
+
+describe("getAllAmos - Restriction accès administrateurs", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Helper pour mocker les résultats de la requête getAllAmos
+  const mockGetAllAmosDbResults = (results: unknown[]) => {
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        leftJoin: vi.fn().mockReturnValue({
+          leftJoin: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue(results),
+          }),
+        }),
+      }),
+    } as unknown as ReturnType<typeof db.select>);
+  };
+
+  describe("Accès autorisé pour les administrateurs", () => {
+    it("devrait autoriser l'accès pour SUPER_ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue({
+        userId: "admin-123",
+        role: UserRole.SUPER_ADMINISTRATEUR,
+      } as Awaited<ReturnType<typeof getSession>>);
+
+      mockGetAllAmosDbResults([]);
+
+      const result = await getAllAmos();
+
+      expect(result.success).toBe(true);
+    });
+
+    it("devrait autoriser l'accès pour ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue({
+        userId: "admin-123",
+        role: UserRole.ADMINISTRATEUR,
+      } as Awaited<ReturnType<typeof getSession>>);
+
+      mockGetAllAmosDbResults([]);
+
+      const result = await getAllAmos();
+
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("Accès refusé pour les non-administrateurs", () => {
+    it("devrait refuser l'accès pour AMO", async () => {
+      vi.mocked(getSession).mockResolvedValue({
+        userId: "amo-123",
+        role: UserRole.AMO,
+      } as Awaited<ReturnType<typeof getSession>>);
+
+      const result = await getAllAmos();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Erreur lors de la récupération des AMO");
+    });
+
+    it("devrait refuser l'accès pour ANALYSTE", async () => {
+      vi.mocked(getSession).mockResolvedValue({
+        userId: "analyste-123",
+        role: UserRole.ANALYSTE,
+      } as Awaited<ReturnType<typeof getSession>>);
+
+      const result = await getAllAmos();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Erreur lors de la récupération des AMO");
+    });
+
+    it("devrait refuser l'accès pour PARTICULIER", async () => {
+      vi.mocked(getSession).mockResolvedValue({
+        userId: "particulier-123",
+        role: UserRole.PARTICULIER,
+      } as Awaited<ReturnType<typeof getSession>>);
+
+      const result = await getAllAmos();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Erreur lors de la récupération des AMO");
+    });
+
+    it("devrait refuser l'accès si non connecté", async () => {
+      vi.mocked(getSession).mockResolvedValue(null);
+
+      const result = await getAllAmos();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Erreur lors de la récupération des AMO");
+    });
+  });
+
+  describe("Retour des données pour les administrateurs", () => {
+    it("devrait retourner la liste des AMO avec leurs relations", async () => {
+      vi.mocked(getSession).mockResolvedValue({
+        userId: "admin-123",
+        role: UserRole.SUPER_ADMINISTRATEUR,
+      } as Awaited<ReturnType<typeof getSession>>);
+
+      const mockAmoData = [
+        {
+          id: "amo-1",
+          nom: "AMO Test 1",
+          siret: "11111111111111",
+          departements: "Paris 75",
+          emails: "test1@amo.fr",
+          telephone: "0123456789",
+          adresse: "1 rue Test",
+          codeInsee: "75001",
+          codeEpci: "200054781",
+        },
+        {
+          id: "amo-1",
+          nom: "AMO Test 1",
+          siret: "11111111111111",
+          departements: "Paris 75",
+          emails: "test1@amo.fr",
+          telephone: "0123456789",
+          adresse: "1 rue Test",
+          codeInsee: "75002",
+          codeEpci: null,
+        },
+      ];
+
+      mockGetAllAmosDbResults(mockAmoData);
+
+      const result = await getAllAmos();
+
+      expect(result.success).toBe(true);
+      if (!result.success) throw new Error("Expected success");
+
+      // Les données sont groupées par AMO
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe("amo-1");
+      expect(result.data[0].communes).toHaveLength(2);
     });
   });
 });
