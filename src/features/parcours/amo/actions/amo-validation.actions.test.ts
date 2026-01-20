@@ -82,7 +82,9 @@ describe("amo-validation.actions - Sécurité", () => {
         const result = await validerLogementEligible("validation-123");
 
         expect(result.success).toBe(false);
-        expect(result.error).toBe("Non authentifié");
+        if (!result.success) {
+          expect(result.error).toBe("Non authentifié");
+        }
         expect(approveValidation).not.toHaveBeenCalled();
       });
     });
@@ -139,7 +141,9 @@ describe("amo-validation.actions - Sécurité", () => {
         const result = await validerLogementEligible("validation-123");
 
         expect(result.success).toBe(false);
-        expect(result.error).toBe("Cette demande ne vous est pas destinée");
+        if (!result.success) {
+          expect(result.error).toBe("Cette demande ne vous est pas destinée");
+        }
         expect(approveValidation).not.toHaveBeenCalled();
       });
 
@@ -149,7 +153,9 @@ describe("amo-validation.actions - Sécurité", () => {
         const result = await validerLogementEligible("validation-123");
 
         expect(result.success).toBe(false);
-        expect(result.error).toBe("Votre compte AMO n'est pas configuré");
+        if (!result.success) {
+          expect(result.error).toBe("Votre compte AMO n'est pas configuré");
+        }
         expect(approveValidation).not.toHaveBeenCalled();
       });
 
@@ -160,7 +166,9 @@ describe("amo-validation.actions - Sécurité", () => {
         const result = await validerLogementEligible("validation-123");
 
         expect(result.success).toBe(false);
-        expect(result.error).toBe("Validation non trouvée");
+        if (!result.success) {
+          expect(result.error).toBe("Validation non trouvée");
+        }
         expect(approveValidation).not.toHaveBeenCalled();
       });
     });
@@ -172,7 +180,9 @@ describe("amo-validation.actions - Sécurité", () => {
         const result = await validerLogementEligible("validation-123");
 
         expect(result.success).toBe(false);
-        expect(result.error).toBe("Accès réservé aux AMO");
+        if (!result.success) {
+          expect(result.error).toBe("Accès réservé aux AMO");
+        }
         expect(approveValidation).not.toHaveBeenCalled();
       });
     });
@@ -184,7 +194,9 @@ describe("amo-validation.actions - Sécurité", () => {
         const result = await validerLogementEligible("validation-123");
 
         expect(result.success).toBe(false);
-        expect(result.error).toBe("Accès réservé aux AMO");
+        if (!result.success) {
+          expect(result.error).toBe("Accès réservé aux AMO");
+        }
         expect(approveValidation).not.toHaveBeenCalled();
       });
     });
@@ -201,7 +213,9 @@ describe("amo-validation.actions - Sécurité", () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Cette demande ne vous est pas destinée");
+      if (!result.success) {
+        expect(result.error).toBe("Cette demande ne vous est pas destinée");
+      }
       expect(rejectEligibility).not.toHaveBeenCalled();
     });
 
@@ -229,7 +243,9 @@ describe("amo-validation.actions - Sécurité", () => {
       const result = await refuserLogementNonEligible("validation-123", "Court");
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("minimum 10 caractères");
+      if (!result.success) {
+        expect(result.error).toContain("minimum 10 caractères");
+      }
       expect(rejectEligibility).not.toHaveBeenCalled();
     });
   });
@@ -245,7 +261,9 @@ describe("amo-validation.actions - Sécurité", () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Cette demande ne vous est pas destinée");
+      if (!result.success) {
+        expect(result.error).toBe("Cette demande ne vous est pas destinée");
+      }
       expect(rejectAccompagnementService).not.toHaveBeenCalled();
     });
 
@@ -294,7 +312,9 @@ describe("amo-validation.actions - Sécurité", () => {
       const result = await validerLogementEligible("validation-123");
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Erreur lors de la validation");
+      if (!result.success) {
+        expect(result.error).toBe("Erreur lors de la validation");
+      }
     });
   });
 });

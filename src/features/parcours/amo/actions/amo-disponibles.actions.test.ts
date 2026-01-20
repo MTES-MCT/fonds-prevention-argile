@@ -517,7 +517,9 @@ describe("getAllAmos - Restriction accès administrateurs", () => {
       const result = await getAllAmos();
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Erreur lors de la récupération des AMO");
+      if (!result.success) {
+        expect(result.error).toBe("Erreur lors de la récupération des AMO");
+      }
     });
 
     it("devrait refuser l'accès pour ANALYSTE", async () => {
@@ -529,7 +531,9 @@ describe("getAllAmos - Restriction accès administrateurs", () => {
       const result = await getAllAmos();
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Erreur lors de la récupération des AMO");
+      if (!result.success) {
+        expect(result.error).toBe("Erreur lors de la récupération des AMO");
+      }
     });
 
     it("devrait refuser l'accès pour PARTICULIER", async () => {
@@ -541,7 +545,9 @@ describe("getAllAmos - Restriction accès administrateurs", () => {
       const result = await getAllAmos();
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Erreur lors de la récupération des AMO");
+      if (!result.success) {
+        expect(result.error).toBe("Erreur lors de la récupération des AMO");
+      }
     });
 
     it("devrait refuser l'accès si non connecté", async () => {
@@ -550,7 +556,9 @@ describe("getAllAmos - Restriction accès administrateurs", () => {
       const result = await getAllAmos();
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Erreur lors de la récupération des AMO");
+      if (!result.success) {
+        expect(result.error).toBe("Erreur lors de la récupération des AMO");
+      }
     });
   });
 
