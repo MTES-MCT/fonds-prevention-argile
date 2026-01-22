@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Agent } from "@/shared/database/schema/agents";
 import type { AmoStatistiques } from "../domain/types";
+import { Step } from "@/shared/domain/value-objects/step.enum";
+import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 
 // Mock des dépendances AVANT les imports
 vi.mock("@/features/backoffice/shared/actions/agent.actions", () => ({
@@ -27,7 +29,7 @@ const createMockAgent = (override?: Partial<Agent>): Agent => ({
   siret: null,
   phone: null,
   organizationalUnit: null,
-  role: "amo",
+  role: UserRole.AMO,
   entrepriseAmoId: "entreprise-amo-456",
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -44,6 +46,13 @@ const createMockAmoStatistiques = (override?: Partial<AmoStatistiques>): AmoStat
       refusees: 4,
     },
   },
+  repartitionParEtape: [
+    { etape: Step.CHOIX_AMO, label: "Choix AMO", count: 5 },
+    { etape: Step.ELIGIBILITE, label: "Éligibilité", count: 2 },
+    { etape: Step.DIAGNOSTIC, label: "Diagnostic", count: 2 },
+    { etape: Step.DEVIS, label: "Devis", count: 3 },
+    { etape: Step.FACTURES, label: "Factures", count: 0 },
+  ],
   ...override,
 });
 
@@ -150,6 +159,13 @@ describe("getAmoStatistiquesAction", () => {
           refusees: 0,
         },
       },
+      repartitionParEtape: [
+        { etape: Step.CHOIX_AMO, label: "Choix AMO", count: 0 },
+        { etape: Step.ELIGIBILITE, label: "Éligibilité", count: 0 },
+        { etape: Step.DIAGNOSTIC, label: "Diagnostic", count: 0 },
+        { etape: Step.DEVIS, label: "Devis", count: 0 },
+        { etape: Step.FACTURES, label: "Factures", count: 0 },
+      ],
     };
     vi.mocked(getAmoStatistiques).mockResolvedValue(emptyStats);
 

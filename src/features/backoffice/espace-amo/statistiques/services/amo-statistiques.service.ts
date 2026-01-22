@@ -1,8 +1,9 @@
 import { count, eq, and, or } from "drizzle-orm";
 import { db } from "@/shared/database/client";
-import { parcoursAmoValidations } from "@/shared/database/schema";
+import { parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
-import type { AmoIndicateursCles, AmoStatistiques } from "../domain/types";
+import { Step } from "@/shared/domain/value-objects/step.enum";
+import type { AmoIndicateursCles, AmoStatistiques, RepartitionParEtape } from "../domain/types";
 
 /**
  * Service de statistiques pour l'espace AMO
@@ -10,16 +11,32 @@ import type { AmoIndicateursCles, AmoStatistiques } from "../domain/types";
  * Fournit les indicateurs clés pour un AMO connecté
  */
 
+/** Labels des étapes pour l'affichage */
+const STEP_LABELS: Record<Step, string> = {
+  [Step.CHOIX_AMO]: "Choix AMO",
+  [Step.ELIGIBILITE]: "Éligibilité",
+  [Step.DIAGNOSTIC]: "Diagnostic",
+  [Step.DEVIS]: "Devis",
+  [Step.FACTURES]: "Factures",
+};
+
+/** Ordre des étapes */
+const STEPS_ORDER: Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES];
+
 /**
  * Récupère les statistiques complètes pour une entreprise AMO
  *
  * @param entrepriseAmoId - ID de l'entreprise AMO
  */
 export async function getAmoStatistiques(entrepriseAmoId: string): Promise<AmoStatistiques> {
-  const indicateursCles = await getIndicateursCles(entrepriseAmoId);
+  const [indicateursCles, repartitionParEtape] = await Promise.all([
+    getIndicateursCles(entrepriseAmoId),
+    getRepartitionParEtape(entrepriseAmoId),
+  ]);
 
   return {
     indicateursCles,
+    repartitionParEtape,
   };
 }
 
@@ -102,4 +119,36 @@ async function getDemandesAccompagnement(
     acceptees,
     refusees,
   };
+}
+
+/**
+ * Récupère la répartition des dossiers par étape du parcours
+ *
+ * Compte uniquement les dossiers en cours d'accompagnement (LOGEMENT_ELIGIBLE)
+ */
+async function getRepartitionParEtape(entrepriseAmoId: string): Promise<RepartitionParEtape[]> {
+  // Récupérer le count par étape pour les dossiers de cette entreprise AMO
+  const results = await Promise.all(
+    STEPS_ORDER.map(async (step) => {
+      const result = await db
+        .select({ count: count() })
+        .from(parcoursPrevention)
+        .innerJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
+        .where(
+          and(
+            eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+            eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
+            eq(parcoursPrevention.currentStep, step)
+          )
+        );
+
+      return {
+        etape: step,
+        label: STEP_LABELS[step],
+        count: result[0]?.count ?? 0,
+      };
+    })
+  );
+
+  return results;
 }

@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { getAmoStatistiquesAction } from "@/features/backoffice/espace-amo/statistiques/actions";
 import type { AmoStatistiques } from "@/features/backoffice/espace-amo/statistiques/domain/types";
-import { StatTile } from "../../shared";
+import { IndicateursCles } from "./IndicateursCles";
+import { RepartitionParEtape } from "./RepartitionParEtape";
+import { RepartitionParRevenu } from "./RepartitionParRevenu";
+import { TopCommunes } from "./TopCommunes";
 
 /**
  * Panel des statistiques pour l'espace AMO
@@ -11,6 +14,9 @@ import { StatTile } from "../../shared";
  * Affiche les indicateurs clés :
  * - Nombre de dossiers en cours d'accompagnement
  * - Nombre de demandes d'accompagnement (acceptées / refusées)
+ * - Répartition par étape du parcours
+ * - Répartition par revenus (à venir)
+ * - Top 5 des communes (à venir)
  */
 export function AmoStatistiquesPanel() {
   const [stats, setStats] = useState<AmoStatistiques | null>(null);
@@ -62,31 +68,13 @@ export function AmoStatistiquesPanel() {
     return null;
   }
 
-  const { indicateursCles } = stats;
-
   return (
     <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
       <div className="fr-container">
-        {/* Indicateurs clés */}
-        <div className="fr-mb-6w">
-          <h2 className="fr-h4 fr-mb-1w">Indicateurs clés</h2>
-          <p className="fr-text-mention--grey fr-mb-3w">Sur la période</p>
-
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col-12 fr-col-md-6">
-              <StatTile
-                number={indicateursCles.nombreDossiersEnCoursAccompagnement.toLocaleString("fr-FR")}
-                label="Dossiers en cours d'accompagnement"
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <StatTile
-                number={indicateursCles.nombreDemandesAccompagnement.total.toLocaleString("fr-FR")}
-                label={`Demandes d'accompagnement traitées (${indicateursCles.nombreDemandesAccompagnement.acceptees} acceptées - ${indicateursCles.nombreDemandesAccompagnement.refusees} refusées)`}
-              />
-            </div>
-          </div>
-        </div>
+        <IndicateursCles indicateurs={stats.indicateursCles} />
+        <RepartitionParEtape repartition={stats.repartitionParEtape} />
+        <RepartitionParRevenu />
+        <TopCommunes />
       </div>
     </section>
   );

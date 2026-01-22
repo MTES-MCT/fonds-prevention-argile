@@ -1,3 +1,5 @@
+import { Step } from "@/shared/domain/value-objects";
+
 /**
  * Types pour les statistiques de l'espace AMO
  */
@@ -17,8 +19,18 @@ export interface AmoIndicateursCles {
 }
 
 /**
+ * Répartition des dossiers par étape du parcours
+ */
+export interface RepartitionParEtape {
+  etape: Step;
+  label: string;
+  count: number;
+}
+
+/**
  * Statistiques complètes de l'AMO
  */
 export interface AmoStatistiques {
   indicateursCles: AmoIndicateursCles;
+  repartitionParEtape: RepartitionParEtape[];
 }
