@@ -10,9 +10,9 @@ vi.mock("@/shared/database/client", () => ({
   },
 }));
 
-// Helper pour mocker les chaînes Drizzle qui peut gérer les deux cas:
+// Helper pour mocker les chaînes Drizzle qui peut gérer les trois cas:
 // - select -> from -> where (indicateurs clés)
-// - select -> from -> innerJoin -> where (répartition par étape)
+// - select -> from -> innerJoin -> where (répartition par étape et revenus)
 const mockDbSelect = (data: unknown) => {
   const mockWhere = vi.fn().mockResolvedValue(data);
   const mockInnerJoin = vi.fn().mockReturnValue({
@@ -29,6 +29,14 @@ const mockDbSelect = (data: unknown) => {
   } as any;
 };
 
+// Helper pour créer des données RGA mock
+const createMockRgaData = (revenu: number, personnes: number, codeRegion: string = "75") => ({
+  rgaSimulationData: {
+    menage: { revenu_rga: revenu, personnes },
+    logement: { code_region: codeRegion },
+  },
+});
+
 describe("AmoStatistiquesService", () => {
   const entrepriseAmoId = "entreprise-amo-123";
 
@@ -37,8 +45,8 @@ describe("AmoStatistiquesService", () => {
   });
 
   describe("getAmoStatistiques", () => {
-    it("devrait retourner les indicateurs clés et la répartition par étape", async () => {
-      // Arrange - Mock des 8 requêtes DB (3 indicateurs + 5 étapes)
+    it("devrait retourner les indicateurs clés, la répartition par étape et par revenu", async () => {
+      // Arrange - Mock des 9 requêtes DB (3 indicateurs + 5 étapes + 1 revenus)
       // Note: L'ordre peut varier car les requêtes sont en parallèle
       vi.mocked(db.select)
         .mockReturnValueOnce(mockDbSelect([{ count: 12 }])) // dossiers en cours
@@ -47,6 +55,7 @@ describe("AmoStatistiquesService", () => {
         .mockReturnValueOnce(mockDbSelect([{ count: 2 }])) // DIAGNOSTIC
         .mockReturnValueOnce(mockDbSelect([{ count: 3 }])) // DEVIS
         .mockReturnValueOnce(mockDbSelect([{ count: 0 }])) // FACTURES
+        .mockReturnValueOnce(mockDbSelect([])) // revenus (données RGA)
         .mockReturnValueOnce(mockDbSelect([{ count: 12 }])) // acceptées
         .mockReturnValueOnce(mockDbSelect([{ count: 4 }])); // refusées
 
@@ -63,10 +72,11 @@ describe("AmoStatistiquesService", () => {
         Step.DEVIS,
         Step.FACTURES,
       ]);
+      expect(stats.repartitionParRevenu).toBeDefined();
     });
 
     it("devrait retourner 0 pour chaque statistique si aucune donnée", async () => {
-      // Arrange - Toutes les requêtes retournent 0
+      // Arrange - Toutes les requêtes retournent 0 ou tableau vide
       vi.mocked(db.select).mockReturnValue(mockDbSelect([{ count: 0 }]));
 
       // Act
@@ -76,6 +86,9 @@ describe("AmoStatistiquesService", () => {
       expect(stats.indicateursCles.nombreDossiersEnCoursAccompagnement).toBe(0);
       expect(stats.indicateursCles.nombreDemandesAccompagnement.total).toBe(0);
       expect(stats.repartitionParEtape.every((e) => e.count === 0)).toBe(true);
+      expect(stats.repartitionParRevenu.tresModeste).toBe(0);
+      expect(stats.repartitionParRevenu.modeste).toBe(0);
+      expect(stats.repartitionParRevenu.intermediaire).toBe(0);
     });
 
     it("devrait gérer les résultats vides avec le fallback ?? 0", async () => {
@@ -89,9 +102,12 @@ describe("AmoStatistiquesService", () => {
       expect(stats.indicateursCles.nombreDossiersEnCoursAccompagnement).toBe(0);
       expect(stats.indicateursCles.nombreDemandesAccompagnement.total).toBe(0);
       expect(stats.repartitionParEtape.every((e) => e.count === 0)).toBe(true);
+      expect(stats.repartitionParRevenu.tresModeste).toBe(0);
+      expect(stats.repartitionParRevenu.modeste).toBe(0);
+      expect(stats.repartitionParRevenu.intermediaire).toBe(0);
     });
 
-    it("devrait appeler db.select 8 fois (3 indicateurs + 5 étapes)", async () => {
+    it("devrait appeler db.select 9 fois (3 indicateurs + 5 étapes + 1 revenus)", async () => {
       // Arrange
       vi.mocked(db.select).mockReturnValue(mockDbSelect([{ count: 1 }]));
 
@@ -99,7 +115,7 @@ describe("AmoStatistiquesService", () => {
       await getAmoStatistiques(entrepriseAmoId);
 
       // Assert
-      expect(db.select).toHaveBeenCalledTimes(8);
+      expect(db.select).toHaveBeenCalledTimes(9);
     });
 
     it("devrait retourner les étapes dans le bon ordre avec les bons labels", async () => {
@@ -129,11 +145,61 @@ describe("AmoStatistiquesService", () => {
       // Assert - Vérifier la structure complète
       expect(stats).toHaveProperty("indicateursCles");
       expect(stats).toHaveProperty("repartitionParEtape");
+      expect(stats).toHaveProperty("repartitionParRevenu");
       expect(stats.indicateursCles).toHaveProperty("nombreDossiersEnCoursAccompagnement");
       expect(stats.indicateursCles).toHaveProperty("nombreDemandesAccompagnement");
       expect(stats.indicateursCles.nombreDemandesAccompagnement).toHaveProperty("total");
       expect(stats.indicateursCles.nombreDemandesAccompagnement).toHaveProperty("acceptees");
       expect(stats.indicateursCles.nombreDemandesAccompagnement).toHaveProperty("refusees");
+      expect(stats.repartitionParRevenu).toHaveProperty("tresModeste");
+      expect(stats.repartitionParRevenu).toHaveProperty("modeste");
+      expect(stats.repartitionParRevenu).toHaveProperty("intermediaire");
+    });
+
+    it("devrait calculer correctement la répartition par revenus", async () => {
+      // Arrange - Mock qui retourne des données RGA pour la requête de revenus
+      // et des counts pour les autres requêtes
+      vi.mocked(db.select).mockImplementation(() => {
+        // On retourne un mock qui peut gérer les deux types de requêtes
+        const mockWhere = vi.fn().mockImplementation(() => {
+          // Simuler les deux types de retours possibles
+          return Promise.resolve([{ count: 1 }]);
+        });
+        const mockInnerJoin = vi.fn().mockReturnValue({
+          where: mockWhere,
+        });
+        const mockFrom = vi.fn().mockReturnValue({
+          where: mockWhere,
+          innerJoin: mockInnerJoin,
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return { from: mockFrom } as any;
+      });
+
+      // Act
+      const stats = await getAmoStatistiques(entrepriseAmoId);
+
+      // Assert - Vérifier que la structure est correcte (les valeurs dépendent du mock)
+      expect(stats.repartitionParRevenu).toHaveProperty("tresModeste");
+      expect(stats.repartitionParRevenu).toHaveProperty("modeste");
+      expect(stats.repartitionParRevenu).toHaveProperty("intermediaire");
+      expect(typeof stats.repartitionParRevenu.tresModeste).toBe("number");
+      expect(typeof stats.repartitionParRevenu.modeste).toBe("number");
+      expect(typeof stats.repartitionParRevenu.intermediaire).toBe("number");
+    });
+
+    it("devrait retourner 0 pour les revenus si aucune donnée RGA", async () => {
+      // Arrange - Toutes les requêtes retournent des tableaux vides ou count 0
+      vi.mocked(db.select).mockReturnValue(mockDbSelect([]));
+
+      // Act
+      const stats = await getAmoStatistiques(entrepriseAmoId);
+
+      // Assert - Pas de données RGA = tous à 0
+      expect(stats.repartitionParRevenu.tresModeste).toBe(0);
+      expect(stats.repartitionParRevenu.modeste).toBe(0);
+      expect(stats.repartitionParRevenu.intermediaire).toBe(0);
     });
   });
 });

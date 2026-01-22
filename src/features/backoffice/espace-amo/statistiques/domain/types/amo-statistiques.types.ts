@@ -28,9 +28,25 @@ export interface RepartitionParEtape {
 }
 
 /**
+ * Catégories de revenus pour la répartition
+ * Note: "supérieure" est exclue du dispositif
+ */
+export type CategorieRevenu = "très modeste" | "modeste" | "intermédiaire";
+
+/**
+ * Répartition des dossiers par catégorie de revenus
+ */
+export interface RepartitionParRevenu {
+  tresModeste: number;
+  modeste: number;
+  intermediaire: number;
+}
+
+/**
  * Statistiques complètes de l'AMO
  */
 export interface AmoStatistiques {
   indicateursCles: AmoIndicateursCles;
   repartitionParEtape: RepartitionParEtape[];
+  repartitionParRevenu: RepartitionParRevenu;
 }

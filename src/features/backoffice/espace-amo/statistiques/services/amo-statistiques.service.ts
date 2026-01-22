@@ -3,7 +3,16 @@ import { db } from "@/shared/database/client";
 import { parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
-import type { AmoIndicateursCles, AmoStatistiques, RepartitionParEtape } from "../domain/types";
+import {
+  calculerTrancheRevenu,
+  isRegionIDF,
+} from "@/features/simulateur/domain/types/rga-revenus.types";
+import type {
+  AmoIndicateursCles,
+  AmoStatistiques,
+  RepartitionParEtape,
+  RepartitionParRevenu,
+} from "../domain/types";
 
 /**
  * Service de statistiques pour l'espace AMO
@@ -29,14 +38,16 @@ const STEPS_ORDER: Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, 
  * @param entrepriseAmoId - ID de l'entreprise AMO
  */
 export async function getAmoStatistiques(entrepriseAmoId: string): Promise<AmoStatistiques> {
-  const [indicateursCles, repartitionParEtape] = await Promise.all([
+  const [indicateursCles, repartitionParEtape, repartitionParRevenu] = await Promise.all([
     getIndicateursCles(entrepriseAmoId),
     getRepartitionParEtape(entrepriseAmoId),
+    getRepartitionParRevenu(entrepriseAmoId),
   ]);
 
   return {
     indicateursCles,
     repartitionParEtape,
+    repartitionParRevenu,
   };
 }
 
@@ -151,4 +162,65 @@ async function getRepartitionParEtape(entrepriseAmoId: string): Promise<Repartit
   );
 
   return results;
+}
+
+/**
+ * Récupère la répartition des dossiers par catégorie de revenus
+ *
+ * Compte uniquement les dossiers en cours d'accompagnement (LOGEMENT_ELIGIBLE)
+ * et dont les données RGA sont disponibles
+ */
+async function getRepartitionParRevenu(entrepriseAmoId: string): Promise<RepartitionParRevenu> {
+  // Récupérer tous les parcours avec leurs données RGA
+  const parcours = await db
+    .select({
+      rgaSimulationData: parcoursPrevention.rgaSimulationData,
+    })
+    .from(parcoursPrevention)
+    .innerJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
+    .where(
+      and(
+        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+        eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE)
+      )
+    );
+
+  // Initialiser les compteurs
+  const repartition: RepartitionParRevenu = {
+    tresModeste: 0,
+    modeste: 0,
+    intermediaire: 0,
+  };
+
+  // Calculer la tranche de revenu pour chaque parcours
+  for (const p of parcours) {
+    const data = p.rgaSimulationData;
+
+    // Vérifier que les données nécessaires sont présentes
+    if (!data?.menage?.revenu_rga || !data?.menage?.personnes || !data?.logement?.code_region) {
+      continue;
+    }
+
+    const tranche = calculerTrancheRevenu(
+      data.menage.revenu_rga,
+      data.menage.personnes,
+      isRegionIDF(data.logement.code_region)
+    );
+
+    // Incrémenter le compteur correspondant (exclure "supérieure")
+    switch (tranche) {
+      case "très modeste":
+        repartition.tresModeste++;
+        break;
+      case "modeste":
+        repartition.modeste++;
+        break;
+      case "intermédiaire":
+        repartition.intermediaire++;
+        break;
+      // "supérieure" est exclue du dispositif
+    }
+  }
+
+  return repartition;
 }

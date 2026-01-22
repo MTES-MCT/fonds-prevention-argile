@@ -53,6 +53,11 @@ const createMockAmoStatistiques = (override?: Partial<AmoStatistiques>): AmoStat
     { etape: Step.DEVIS, label: "Devis", count: 3 },
     { etape: Step.FACTURES, label: "Factures", count: 0 },
   ],
+  repartitionParRevenu: {
+    tresModeste: 3,
+    modeste: 5,
+    intermediaire: 4,
+  },
   ...override,
 });
 
@@ -166,6 +171,11 @@ describe("getAmoStatistiquesAction", () => {
         { etape: Step.DEVIS, label: "Devis", count: 0 },
         { etape: Step.FACTURES, label: "Factures", count: 0 },
       ],
+      repartitionParRevenu: {
+        tresModeste: 0,
+        modeste: 0,
+        intermediaire: 0,
+      },
     };
     vi.mocked(getAmoStatistiques).mockResolvedValue(emptyStats);
 
