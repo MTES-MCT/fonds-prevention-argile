@@ -43,10 +43,20 @@ export interface RepartitionParRevenu {
 }
 
 /**
+ * Commune avec son nombre de demandeurs
+ */
+export interface CommuneStats {
+  commune: string;
+  codeDepartement: string;
+  nombreDemandeurs: number;
+}
+
+/**
  * Statistiques complètes de l'AMO
  */
 export interface AmoStatistiques {
   indicateursCles: AmoIndicateursCles;
   repartitionParEtape: RepartitionParEtape[];
   repartitionParRevenu: RepartitionParRevenu;
+  topCommunes: CommuneStats[];
 }

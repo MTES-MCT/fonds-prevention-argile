@@ -58,6 +58,10 @@ const createMockAmoStatistiques = (override?: Partial<AmoStatistiques>): AmoStat
     modeste: 5,
     intermediaire: 4,
   },
+  topCommunes: [
+    { commune: "Paris", codeDepartement: "75", nombreDemandeurs: 5 },
+    { commune: "Lyon", codeDepartement: "69", nombreDemandeurs: 3 },
+  ],
   ...override,
 });
 
@@ -176,6 +180,7 @@ describe("getAmoStatistiquesAction", () => {
         modeste: 0,
         intermediaire: 0,
       },
+      topCommunes: [],
     };
     vi.mocked(getAmoStatistiques).mockResolvedValue(emptyStats);
 

@@ -30,10 +30,20 @@ const mockDbSelect = (data: unknown) => {
 };
 
 // Helper pour créer des données RGA mock
-const createMockRgaData = (revenu: number, personnes: number, codeRegion: string = "75") => ({
+const createMockRgaData = (
+  revenu: number,
+  personnes: number,
+  codeRegion: string = "75",
+  communeNom?: string,
+  codeDepartement?: string
+) => ({
   rgaSimulationData: {
     menage: { revenu_rga: revenu, personnes },
-    logement: { code_region: codeRegion },
+    logement: {
+      code_region: codeRegion,
+      ...(communeNom && { commune_nom: communeNom }),
+      ...(codeDepartement && { code_departement: codeDepartement }),
+    },
   },
 });
 
@@ -45,8 +55,8 @@ describe("AmoStatistiquesService", () => {
   });
 
   describe("getAmoStatistiques", () => {
-    it("devrait retourner les indicateurs clés, la répartition par étape et par revenu", async () => {
-      // Arrange - Mock des 9 requêtes DB (3 indicateurs + 5 étapes + 1 revenus)
+    it("devrait retourner les indicateurs clés, la répartition par étape, par revenu et les top communes", async () => {
+      // Arrange - Mock des 10 requêtes DB (3 indicateurs + 5 étapes + 1 revenus + 1 communes)
       // Note: L'ordre peut varier car les requêtes sont en parallèle
       vi.mocked(db.select)
         .mockReturnValueOnce(mockDbSelect([{ count: 12 }])) // dossiers en cours
@@ -56,6 +66,7 @@ describe("AmoStatistiquesService", () => {
         .mockReturnValueOnce(mockDbSelect([{ count: 3 }])) // DEVIS
         .mockReturnValueOnce(mockDbSelect([{ count: 0 }])) // FACTURES
         .mockReturnValueOnce(mockDbSelect([])) // revenus (données RGA)
+        .mockReturnValueOnce(mockDbSelect([])) // communes (données RGA)
         .mockReturnValueOnce(mockDbSelect([{ count: 12 }])) // acceptées
         .mockReturnValueOnce(mockDbSelect([{ count: 4 }])); // refusées
 
@@ -73,6 +84,8 @@ describe("AmoStatistiquesService", () => {
         Step.FACTURES,
       ]);
       expect(stats.repartitionParRevenu).toBeDefined();
+      expect(stats.topCommunes).toBeDefined();
+      expect(Array.isArray(stats.topCommunes)).toBe(true);
     });
 
     it("devrait retourner 0 pour chaque statistique si aucune donnée", async () => {
@@ -107,7 +120,7 @@ describe("AmoStatistiquesService", () => {
       expect(stats.repartitionParRevenu.intermediaire).toBe(0);
     });
 
-    it("devrait appeler db.select 9 fois (3 indicateurs + 5 étapes + 1 revenus)", async () => {
+    it("devrait appeler db.select 10 fois (3 indicateurs + 5 étapes + 1 revenus + 1 communes)", async () => {
       // Arrange
       vi.mocked(db.select).mockReturnValue(mockDbSelect([{ count: 1 }]));
 
@@ -115,7 +128,7 @@ describe("AmoStatistiquesService", () => {
       await getAmoStatistiques(entrepriseAmoId);
 
       // Assert
-      expect(db.select).toHaveBeenCalledTimes(9);
+      expect(db.select).toHaveBeenCalledTimes(10);
     });
 
     it("devrait retourner les étapes dans le bon ordre avec les bons labels", async () => {
@@ -200,6 +213,32 @@ describe("AmoStatistiquesService", () => {
       expect(stats.repartitionParRevenu.tresModeste).toBe(0);
       expect(stats.repartitionParRevenu.modeste).toBe(0);
       expect(stats.repartitionParRevenu.intermediaire).toBe(0);
+    });
+
+    it("devrait retourner un tableau vide pour topCommunes si aucune donnée de commune", async () => {
+      // Arrange - Toutes les requêtes retournent des tableaux vides
+      vi.mocked(db.select).mockReturnValue(mockDbSelect([]));
+
+      // Act
+      const stats = await getAmoStatistiques(entrepriseAmoId);
+
+      // Assert
+      expect(stats.topCommunes).toEqual([]);
+    });
+
+    it("devrait retourner la structure complète avec topCommunes", async () => {
+      // Arrange
+      vi.mocked(db.select).mockReturnValue(mockDbSelect([{ count: 5 }]));
+
+      // Act
+      const stats = await getAmoStatistiques(entrepriseAmoId);
+
+      // Assert - Vérifier la structure complète incluant topCommunes
+      expect(stats).toHaveProperty("indicateursCles");
+      expect(stats).toHaveProperty("repartitionParEtape");
+      expect(stats).toHaveProperty("repartitionParRevenu");
+      expect(stats).toHaveProperty("topCommunes");
+      expect(Array.isArray(stats.topCommunes)).toBe(true);
     });
   });
 });

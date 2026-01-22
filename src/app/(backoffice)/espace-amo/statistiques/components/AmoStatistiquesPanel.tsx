@@ -74,7 +74,7 @@ export function AmoStatistiquesPanel() {
         <IndicateursCles indicateurs={stats.indicateursCles} />
         <RepartitionParEtape repartition={stats.repartitionParEtape} />
         <RepartitionParRevenu repartition={stats.repartitionParRevenu} />
-        <TopCommunes />
+        <TopCommunes communes={stats.topCommunes} />
       </div>
     </section>
   );

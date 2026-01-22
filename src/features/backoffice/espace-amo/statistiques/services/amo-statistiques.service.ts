@@ -10,6 +10,7 @@ import {
 import type {
   AmoIndicateursCles,
   AmoStatistiques,
+  CommuneStats,
   RepartitionParEtape,
   RepartitionParRevenu,
 } from "../domain/types";
@@ -38,16 +39,18 @@ const STEPS_ORDER: Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, 
  * @param entrepriseAmoId - ID de l'entreprise AMO
  */
 export async function getAmoStatistiques(entrepriseAmoId: string): Promise<AmoStatistiques> {
-  const [indicateursCles, repartitionParEtape, repartitionParRevenu] = await Promise.all([
+  const [indicateursCles, repartitionParEtape, repartitionParRevenu, topCommunes] = await Promise.all([
     getIndicateursCles(entrepriseAmoId),
     getRepartitionParEtape(entrepriseAmoId),
     getRepartitionParRevenu(entrepriseAmoId),
+    getTopCommunes(entrepriseAmoId),
   ]);
 
   return {
     indicateursCles,
     repartitionParEtape,
     repartitionParRevenu,
+    topCommunes,
   };
 }
 
@@ -223,4 +226,62 @@ async function getRepartitionParRevenu(entrepriseAmoId: string): Promise<Reparti
   }
 
   return repartition;
+}
+
+/**
+ * Récupère le top 5 des communes avec le plus de demandeurs
+ *
+ * Compte uniquement les dossiers en cours d'accompagnement (LOGEMENT_ELIGIBLE)
+ * et dont les données de commune sont disponibles
+ */
+async function getTopCommunes(entrepriseAmoId: string): Promise<CommuneStats[]> {
+  // Récupérer tous les parcours avec leurs données de logement
+  const parcours = await db
+    .select({
+      rgaSimulationData: parcoursPrevention.rgaSimulationData,
+    })
+    .from(parcoursPrevention)
+    .innerJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
+    .where(
+      and(
+        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+        eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE)
+      )
+    );
+
+  // Grouper par commune et compter
+  const communeMap = new Map<string, { commune: string; codeDepartement: string; count: number }>();
+
+  for (const p of parcours) {
+    const data = p.rgaSimulationData;
+
+    // Vérifier que les données de commune sont présentes
+    if (!data?.logement?.commune_nom || !data?.logement?.code_departement) {
+      continue;
+    }
+
+    const key = `${data.logement.commune_nom}-${data.logement.code_departement}`;
+    const existing = communeMap.get(key);
+
+    if (existing) {
+      existing.count++;
+    } else {
+      communeMap.set(key, {
+        commune: data.logement.commune_nom,
+        codeDepartement: data.logement.code_departement,
+        count: 1,
+      });
+    }
+  }
+
+  // Trier par count décroissant et prendre les 5 premiers
+  const sorted = Array.from(communeMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  return sorted.map((item) => ({
+    commune: item.commune,
+    codeDepartement: item.codeDepartement,
+    nombreDemandeurs: item.count,
+  }));
 }
