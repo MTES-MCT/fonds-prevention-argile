@@ -104,13 +104,16 @@ const Header = () => {
                   {!isAuthenticated ? (
                     <>
                       <li>
-                        <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
-                          Se connecter
+                        <Link
+                          href={ROUTES.connexion.agent}
+                          className="fr-icon-briefcase-fill fr-btn fr-btn--tertiary-no-outline"
+                          style={{ color: "var(--text-default-error)" }}>
+                          ProConnect
                         </Link>
                       </li>
                       <li>
-                        <Link href={ROUTES.conseillers} className="fr-icon-map-pin-user-fill fr-btn">
-                          Trouver mon conseiller
+                        <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
+                          Connexion particulier
                         </Link>
                       </li>
                       <li>
@@ -178,13 +181,16 @@ const Header = () => {
               {!isAuthenticated ? (
                 <>
                   <li>
-                    <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
-                      Se connecter
+                    <Link
+                      href={ROUTES.connexion.agent}
+                      className="fr-icon-briefcase-fill fr-btn fr-btn--tertiary-no-outline"
+                      style={{ color: "var(--text-default-error)" }}>
+                      ProConnect
                     </Link>
                   </li>
                   <li>
-                    <Link href={ROUTES.conseillers} className="fr-icon-map-pin-user-fill fr-btn">
-                      Trouver mon conseiller
+                    <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
+                      Connexion particulier
                     </Link>
                   </li>
                   <li>
