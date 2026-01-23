@@ -37,70 +37,77 @@ export default async function DemandeDetailPage({ params }: PageProps) {
   const nomComplet = formatNomComplet(demande.demandeur.prenom, demande.demandeur.nom);
 
   return (
-    <div className="fr-container fr-py-4w">
-      {/* Fil d'Ariane */}
-      <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
-        <button className="fr-breadcrumb__button" aria-expanded="false" aria-controls="breadcrumb-1">
-          Voir le fil d&apos;Ariane
-        </button>
-        <div className="fr-collapse" id="breadcrumb-1">
-          <ol className="fr-breadcrumb__list">
-            <li>
-              <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.root}>
-                Accueil
-              </Link>
-            </li>
-            <li>
-              <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.root}>
-                Demandes d&apos;accompagnement
-              </Link>
-            </li>
-            <li>
-              <a className="fr-breadcrumb__link" aria-current="page">
-                {nomComplet}
-              </a>
-            </li>
-          </ol>
+    <>
+      <div className="fr-container fr-py-4w">
+        {/* Fil d'Ariane */}
+        <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
+          <button className="fr-breadcrumb__button" aria-expanded="false" aria-controls="breadcrumb-1">
+            Voir le fil d&apos;Ariane
+          </button>
+          <div className="fr-collapse" id="breadcrumb-1">
+            <ol className="fr-breadcrumb__list">
+              <li>
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.root}>
+                  Accueil
+                </Link>
+              </li>
+              <li>
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.root}>
+                  Demandes d&apos;accompagnement
+                </Link>
+              </li>
+              <li>
+                <a className="fr-breadcrumb__link" aria-current="page">
+                  {nomComplet}
+                </a>
+              </li>
+            </ol>
+          </div>
+        </nav>
+
+        {/* Titre de la page */}
+        <div className="fr-mb-4w">
+          <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
+          <p className="fr-badge fr-badge--new">Nouvelle demande du {formatDate(demande.dateCreation.toISOString())}</p>
         </div>
-      </nav>
 
-      {/* Titre de la page */}
-      <div className="fr-mb-6w">
-        <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
-        <p className="fr-badge fr-badge--new">Nouvelle demande du {formatDate(demande.dateCreation.toISOString())}</p>
-      </div>
-
-      <div className="fr-grid-row fr-grid-row--gutters">
-        {/* Colonne gauche */}
-        <div className="fr-col-12 fr-col-md-8">
-          {/* Composant de réponse */}
-          <div className="fr-mb-4w">
+        {/* Section en-tête : Réponse + InfoDemandeur */}
+        <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
+          <div className="fr-col-12 fr-col-md-8">
             <ReponseAccompagnement demandeId={demande.id} statutActuel={demande.statut} />
           </div>
-
-          {/* Informations demandeur */}
-          <div className="fr-mb-4w">
-            <InfoDemandeur demandeur={demande.demandeur} />
+          <div className="fr-col-12 fr-col-md-4">
+            <div style={{ alignSelf: "flex-start" }}>
+              <InfoDemandeur demandeur={demande.demandeur} />
+            </div>
           </div>
-
-          {/* Informations logement */}
-          <div className="fr-mb-4w">
-            <InfoLogement logement={demande.logement} />
-          </div>
-
-          {/* Carte du logement */}
-          <div className="fr-mb-4w">
-            <CarteLogement logement={demande.logement} adresse={demande.demandeur.adresse} />
-          </div>
-        </div>
-
-        {/* Colonne droite */}
-        <div className="fr-col-12 fr-col-md-4">
-          {/* Liste À faire */}
-          <AFaire />
         </div>
       </div>
-    </div>
+
+      {/* Panneau principal avec fond bleu - container fluid */}
+      <section className="fr-background-alt--blue-france fr-py-4w">
+        <div className="fr-container">
+          <div className="fr-grid-row fr-grid-row--gutters">
+            {/* Colonne gauche : InfoLogement + CarteLogement */}
+            <div className="fr-col-12 fr-col-md-8">
+              <div className="fr-mb-4w">
+                <InfoLogement logement={demande.logement} />
+              </div>
+              <div>
+                <CarteLogement logement={demande.logement} adresse={demande.demandeur.adresse} />
+              </div>
+            </div>
+
+            {/* Colonne droite : À faire */}
+            <div className="fr-col-12 fr-col-md-4">
+              <div style={{ alignSelf: "flex-start" }}>
+                <AFaire />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
 

@@ -83,7 +83,7 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
 
   return (
     <div className="fr-callout fr-callout--yellow-moutarde">
-      <h3 className="fr-callout__title">Accompagnez-vous ce demandeur</h3>
+      <h3 className="fr-callout__title">Souhaitez-vous accompagner ce demandeur ?</h3>
       <p className="fr-callout__text">
         Attention, en confirmant votre accompagnement, vous attestez que le demandeur est éligible selon les critères
         définis par{" "}
