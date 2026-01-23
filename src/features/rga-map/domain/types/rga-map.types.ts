@@ -26,6 +26,13 @@ export interface RgaMapProps {
   readOnly?: boolean;
 
   /**
+   * Verrouiller la sélection
+   * Empêche la sélection d'un autre bâtiment
+   * @default false
+   */
+  locked?: boolean;
+
+  /**
    * Afficher un marqueur au centre
    * @default false
    */

@@ -9,7 +9,11 @@ interface ValidationAmoPageProps {
 }
 
 /**
- * Espace AMO - Page de validation d'une demande
+ * Espace AMO - Page de validation d'une demande (via token email)
+ *
+ * NOTE: Cette page est maintenue pour compatibilité avec les liens email existants.
+ * La nouvelle interface de gestion des demandes se trouve dans /espace-amo/demande/[id]
+ * qui offre une meilleure expérience utilisateur avec plus d'informations.
  *
  * L'accès AMO est vérifié par le layout parent (layout.tsx)
  * Le token est utilisé pour identifier la demande à valider

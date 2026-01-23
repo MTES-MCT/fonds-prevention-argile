@@ -85,7 +85,7 @@ export function getPrecisionText(etape: Step, statut: Status, dsStatus: DSStatus
         return "Le demandeur doit remplir et soumettre le formulaire d'éligibilité.";
       }
       if (statut === Status.EN_INSTRUCTION) {
-        return "En instruction";
+        return "En instruction par la DDT.";
       }
       break;
 
@@ -94,7 +94,7 @@ export function getPrecisionText(etape: Step, statut: Status, dsStatus: DSStatus
         return "Éligibilité validée. Le demandeur doit transmettre le diagnostic réalisé.";
       }
       if (statut === Status.EN_INSTRUCTION) {
-        return "En instruction";
+        return "En instruction par la DDT.";
       }
       break;
 
@@ -103,7 +103,7 @@ export function getPrecisionText(etape: Step, statut: Status, dsStatus: DSStatus
         return "Diagnostic accepté. Le demandeur doit transmettre les devis pour accord avant travaux.";
       }
       if (statut === Status.EN_INSTRUCTION) {
-        return "En instruction";
+        return "En instruction par la DDT.";
       }
       break;
 
@@ -112,7 +112,7 @@ export function getPrecisionText(etape: Step, statut: Status, dsStatus: DSStatus
         return "Devis acceptés. Le demandeur doit transmettre les factures après travaux pour recevoir les aides.";
       }
       if (statut === Status.EN_INSTRUCTION) {
-        return "En instruction";
+        return "En instruction par la DDT.";
       }
       if (statut === Status.VALIDE) {
         return "Factures acceptées. Paiement et clôture de la demande à venir.";

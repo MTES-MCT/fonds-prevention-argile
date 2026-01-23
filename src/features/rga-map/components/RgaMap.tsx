@@ -20,6 +20,7 @@ export function RgaMap({
   center,
   zoom,
   readOnly = false,
+  locked = false,
   showMarker = false,
   onBuildingSelect,
   onError,
@@ -36,7 +37,7 @@ export function RgaMap({
 
   const { selectedBuilding, buildingData, isLoading } = useRgaBuildingSelection({
     map,
-    enabled: !readOnly && isReady,
+    enabled: !readOnly && !locked && isReady,
     onBuildingSelect,
     onError,
   });
