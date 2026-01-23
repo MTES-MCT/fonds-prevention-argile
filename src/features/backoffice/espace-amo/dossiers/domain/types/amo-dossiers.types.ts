@@ -28,6 +28,8 @@ export interface DossierSuivi {
   dsStatus: DSStatus | null;
   /** Date de validation de la demande (acceptation par l'AMO) */
   dateValidation: Date;
+  /** Date du dernier changement de statut */
+  dateDernierStatut: Date;
 }
 
 /**

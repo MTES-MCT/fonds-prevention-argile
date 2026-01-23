@@ -68,6 +68,7 @@ async function getDossiersSuivis(entrepriseAmoId: string): Promise<DossierSuivi[
       rgaSimulationData: parcoursPrevention.rgaSimulationData,
       currentStep: parcoursPrevention.currentStep,
       currentStatus: parcoursPrevention.currentStatus,
+      parcoursUpdatedAt: parcoursPrevention.updatedAt,
     })
     .from(parcoursAmoValidations)
     .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
@@ -104,6 +105,7 @@ async function getDossiersSuivis(entrepriseAmoId: string): Promise<DossierSuivi[
         statut: row.currentStatus,
         dsStatus: dossierDS[0]?.dsStatus ?? null,
         dateValidation: row.valideeAt!,
+        dateDernierStatut: row.parcoursUpdatedAt!,
       };
     })
   );

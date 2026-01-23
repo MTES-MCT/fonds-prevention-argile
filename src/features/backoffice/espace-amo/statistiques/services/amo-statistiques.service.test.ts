@@ -29,24 +29,6 @@ const mockDbSelect = (data: unknown) => {
   } as any;
 };
 
-// Helper pour créer des données RGA mock
-const createMockRgaData = (
-  revenu: number,
-  personnes: number,
-  codeRegion: string = "75",
-  communeNom?: string,
-  codeDepartement?: string
-) => ({
-  rgaSimulationData: {
-    menage: { revenu_rga: revenu, personnes },
-    logement: {
-      code_region: codeRegion,
-      ...(communeNom && { commune_nom: communeNom }),
-      ...(codeDepartement && { code_departement: codeDepartement }),
-    },
-  },
-});
-
 describe("AmoStatistiquesService", () => {
   const entrepriseAmoId = "entreprise-amo-123";
 
