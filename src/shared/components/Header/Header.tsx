@@ -103,14 +103,14 @@ const Header = () => {
                 <ul className="fr-btns-group">
                   {!isAuthenticated ? (
                     <>
-                      <li>
+                      {/* <li>
                         <Link
                           href={ROUTES.connexion.agent}
                           className="fr-icon-briefcase-fill fr-btn fr-btn--tertiary-no-outline"
                           style={{ color: "var(--text-default-error)" }}>
                           ProConnect
                         </Link>
-                      </li>
+                      </li> */}
                       <li>
                         <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
                           Connexion particulier
@@ -180,14 +180,14 @@ const Header = () => {
             <ul className="fr-btns-group">
               {!isAuthenticated ? (
                 <>
-                  <li>
+                  {/* <li>
                     <Link
                       href={ROUTES.connexion.agent}
                       className="fr-icon-briefcase-fill fr-btn fr-btn--tertiary-no-outline"
                       style={{ color: "var(--text-default-error)" }}>
                       ProConnect
                     </Link>
-                  </li>
+                  </li> */}
                   <li>
                     <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
                       Connexion particulier
