@@ -9,10 +9,7 @@ export function AmoAccueilPanel() {
         {/* TODO: Table des dossiers suivis */}
         <div className="fr-callout fr-my-4w">
           <h3 className="fr-callout__title">En cours de développement</h3>
-          <p className="fr-callout__text">
-            Cette fonctionnalité est en cours de développement. Vous pourrez bientôt suivre l&apos;avancement des
-            dossiers que vous accompagnez.
-          </p>
+          <p className="fr-callout__text">Cette fonctionnalité est en cours de développement.</p>
         </div>
       </div>
     </section>
