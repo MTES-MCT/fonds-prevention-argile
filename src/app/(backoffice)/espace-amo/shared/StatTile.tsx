@@ -9,27 +9,29 @@ interface StatTileProps {
 
 export function StatTile({ number, label, description }: StatTileProps) {
   return (
-    <div className="fr-tile fr-tile--horizontal" style={{ paddingBottom: 0 }}>
-      <div className="fr-tile__body" style={{ paddingBottom: 0 }}>
-        <div className="fr-tile__content" style={{ alignItems: "flex-start" }}>
-          <h3
-            className="fr-tile__title"
-            style={{
-              fontSize: "3rem",
-              fontWeight: "700",
-              lineHeight: "1.2",
-              textAlign: "left",
-            }}>
-            {number}
-          </h3>
-          <p
-            className="fr-tile__desc fr-text-mention--grey"
-            style={{ color: "var(--text-mention-grey)", textAlign: "left", width: "100%", marginBottom: 0 }}>
-            {label}
-          </p>
-          {description && <p className="fr-tile__detail">{description}</p>}
-        </div>
-      </div>
+    <div
+      className="fr-p-3w"
+      style={{
+        backgroundColor: "var(--background-default-grey)",
+        border: "1px solid var(--border-default-grey)",
+        boxShadow: "inset 0 -4px 0 0 black",
+        height: "100%",
+      }}>
+      <p
+        className="fr-mb-1w"
+        style={{
+          fontSize: "3rem",
+          fontWeight: "700",
+          lineHeight: "1.2",
+        }}>
+        {number}
+      </p>
+      <p className="fr-text-mention--grey fr-mb-1v">{label}</p>
+      {description ? (
+        <p className="fr-text-mention--grey fr-text--sm fr-mb-0">{description}</p>
+      ) : (
+        <p className="fr-mb-0">&nbsp;</p>
+      )}
     </div>
   );
 }

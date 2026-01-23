@@ -1,11 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAgentRole } from "@/features/auth/hooks";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import { AMO_TABS } from "@/features/backoffice/espace-amo/shared/domain/value-objects/amo-tabs.config";
 import type { AmoTab } from "@/features/backoffice/espace-amo/shared/domain/types/amo-tab.types";
+import { getNombreDemandesEnAttenteAction } from "@/features/backoffice/espace-amo/accueil/actions";
+import { CountBadge } from "@/shared/components/CountBadge";
 
 /**
  * Détermine l'onglet actif selon le pathname
@@ -32,6 +35,16 @@ function getActiveTab(pathname: string, tabs: AmoTab[]): string | null {
 function AmoNavigation() {
   const pathname = usePathname();
   const activeTab = getActiveTab(pathname, AMO_TABS);
+  const [nombreDemandesEnAttente, setNombreDemandesEnAttente] = useState<number>(0);
+
+  useEffect(() => {
+    async function loadNombreDemandes() {
+      const count = await getNombreDemandesEnAttenteAction();
+      setNombreDemandesEnAttente(count);
+    }
+
+    loadNombreDemandes();
+  }, []);
 
   return (
     <nav className="fr-nav" id="amo-navigation" role="navigation" aria-label="Menu espace AMO">
@@ -40,6 +53,7 @@ function AmoNavigation() {
           <li key={tab.id} className="fr-nav__item">
             <Link href={tab.href} className="fr-nav__link" aria-current={activeTab === tab.id ? "page" : undefined}>
               {tab.label}
+              {tab.id === "accueil" && <CountBadge count={nombreDemandesEnAttente} />}
             </Link>
           </li>
         ))}

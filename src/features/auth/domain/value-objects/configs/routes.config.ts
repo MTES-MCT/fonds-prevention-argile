@@ -47,6 +47,7 @@ export const ROUTES = {
       root: "/espace-amo",
       dossiers: "/espace-amo/dossiers",
       statistiques: "/espace-amo/statistiques",
+      demande: (id: string) => `/espace-amo/demande/${id}` as const,
       validation: (token: string) => `/espace-amo/validation/${token}` as const,
     },
   },
