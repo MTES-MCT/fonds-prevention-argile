@@ -5,6 +5,7 @@ import { useAgentRole, useIsAgent } from "@/features/auth/hooks";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import Link from "next/link";
+import { RoleNavigation } from "./RoleNavigation";
 
 /**
  * Liens de navigation pour les agents selon leur rôle
@@ -22,22 +23,6 @@ function AgentNavLinks() {
             Administration
           </Link>
         </li>
-      );
-
-    case UserRole.AMO:
-      return (
-        <>
-          <li>
-            <Link href={ROUTES.backoffice.espaceAmo.notifications} className="fr-icon-notification-3-line fr-btn">
-              Notifications
-            </Link>
-          </li>
-          <li>
-            <Link href={ROUTES.backoffice.espaceAmo.dossiers} className="fr-icon-folder-2-line fr-btn">
-              Mes dossiers
-            </Link>
-          </li>
-        </>
       );
 
     default:
@@ -61,22 +46,6 @@ function AgentNavLinksMobile() {
             Administration
           </Link>
         </li>
-      );
-
-    case UserRole.AMO:
-      return (
-        <>
-          <li>
-            <Link href={ROUTES.backoffice.espaceAmo.notifications} className="fr-icon-notification-3-line fr-btn">
-              Notifications
-            </Link>
-          </li>
-          <li>
-            <Link href={ROUTES.backoffice.espaceAmo.dossiers} className="fr-icon-folder-2-line fr-btn">
-              Mes dossiers
-            </Link>
-          </li>
-        </>
       );
 
     default:
@@ -135,13 +104,16 @@ const Header = () => {
                   {!isAuthenticated ? (
                     <>
                       <li>
-                        <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
-                          Se connecter
+                        <Link
+                          href={ROUTES.connexion.agent}
+                          className="fr-icon-briefcase-fill fr-btn fr-btn--tertiary-no-outline"
+                          style={{ color: "var(--text-default-error)" }}>
+                          ProConnect
                         </Link>
                       </li>
                       <li>
-                        <Link href={ROUTES.conseillers} className="fr-icon-map-pin-user-fill fr-btn">
-                          Trouver mon conseiller
+                        <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
+                          Connexion particulier
                         </Link>
                       </li>
                       <li>
@@ -190,6 +162,9 @@ const Header = () => {
         </div>
       </div>
 
+      {/* Navigation par rôle (AMO, etc.) */}
+      <RoleNavigation />
+
       {/* Menu mobile */}
       <div className="fr-header__menu fr-modal" id="menu-modal-mobile" aria-labelledby="menu-mobile">
         <div className="fr-container">
@@ -206,13 +181,16 @@ const Header = () => {
               {!isAuthenticated ? (
                 <>
                   <li>
-                    <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
-                      Se connecter
+                    <Link
+                      href={ROUTES.connexion.agent}
+                      className="fr-icon-briefcase-fill fr-btn fr-btn--tertiary-no-outline"
+                      style={{ color: "var(--text-default-error)" }}>
+                      ProConnect
                     </Link>
                   </li>
                   <li>
-                    <Link href={ROUTES.conseillers} className="fr-icon-map-pin-user-fill fr-btn">
-                      Trouver mon conseiller
+                    <Link href={ROUTES.connexion.particulier} className="fr-icon-account-circle-fill fr-btn">
+                      Connexion particulier
                     </Link>
                   </li>
                   <li>

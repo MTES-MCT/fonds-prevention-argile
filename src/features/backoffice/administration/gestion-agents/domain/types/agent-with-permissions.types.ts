@@ -1,7 +1,16 @@
 import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
 
 /**
- * Agent avec ses permissions (départements)
+ * Informations de l'entreprise AMO liée à un agent
+ */
+export interface AgentEntrepriseAmoInfo {
+  id: string;
+  nom: string;
+  siret: string;
+}
+
+/**
+ * Agent avec ses permissions (départements) et son entreprise AMO
  */
 export interface AgentWithPermissions {
   agent: {
@@ -15,10 +24,12 @@ export interface AgentWithPermissions {
     phone: string | null;
     organizationalUnit: string | null;
     role: string;
+    entrepriseAmoId: string | null;
     createdAt: Date;
     updatedAt: Date;
   };
   departements: string[];
+  entrepriseAmo: AgentEntrepriseAmoInfo | null;
 }
 
 /**
@@ -30,6 +41,7 @@ export interface CreateAgentData {
   usualName?: string;
   role: AGENT_ROLES;
   departements?: string[];
+  entrepriseAmoId?: string;
 }
 
 /**
@@ -41,4 +53,5 @@ export interface UpdateAgentData {
   usualName?: string;
   role?: AGENT_ROLES;
   departements?: string[];
+  entrepriseAmoId?: string | null;
 }

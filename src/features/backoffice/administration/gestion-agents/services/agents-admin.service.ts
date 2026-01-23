@@ -1,25 +1,37 @@
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 import type { Agent } from "@/shared/database/schema/agents";
 import { DEPARTEMENTS } from "@/shared/constants/departements.constants";
-import { agentPermissionsRepository } from "@/shared/database";
-import {
-  AgentWithPermissions,
-  CreateAgentData,
-  UpdateAgentData,
-} from "../domain/types/agent-with-permissions.types";
+import { agentPermissionsRepository, entreprisesAmoRepo } from "@/shared/database";
+import { UserRole } from "@/shared/domain/value-objects";
+import { AgentWithPermissions, CreateAgentData, UpdateAgentData } from "../domain/types/agent-with-permissions.types";
 
 /**
- * Récupère tous les agents avec leurs permissions
+ * Récupère tous les agents avec leurs permissions et entreprise AMO
  */
 export async function getAllAgentsWithPermissions(): Promise<AgentWithPermissions[]> {
-  const agents = await agentsRepository.findAll();
+  const agentsWithAmo = await agentsRepository.findAllWithEntrepriseAmo();
 
   const agentsWithPermissions: AgentWithPermissions[] = await Promise.all(
-    agents.map(async (agent) => {
-      const departements = await agentPermissionsRepository.getDepartementsByAgentId(agent.id);
+    agentsWithAmo.map(async (agentWithAmo) => {
+      const departements = await agentPermissionsRepository.getDepartementsByAgentId(agentWithAmo.id);
       return {
-        agent,
+        agent: {
+          id: agentWithAmo.id,
+          sub: agentWithAmo.sub,
+          email: agentWithAmo.email,
+          givenName: agentWithAmo.givenName,
+          usualName: agentWithAmo.usualName,
+          uid: agentWithAmo.uid,
+          siret: agentWithAmo.siret,
+          phone: agentWithAmo.phone,
+          organizationalUnit: agentWithAmo.organizationalUnit,
+          role: agentWithAmo.role,
+          entrepriseAmoId: agentWithAmo.entrepriseAmoId,
+          createdAt: agentWithAmo.createdAt,
+          updatedAt: agentWithAmo.updatedAt,
+        },
         departements,
+        entrepriseAmo: agentWithAmo.entrepriseAmo,
       };
     })
   );
@@ -31,15 +43,47 @@ export async function getAllAgentsWithPermissions(): Promise<AgentWithPermission
  * Récupère un agent avec ses permissions par ID
  */
 export async function getAgentWithPermissions(agentId: string): Promise<AgentWithPermissions | null> {
-  const agent = await agentsRepository.findById(agentId);
-  if (!agent) return null;
+  const agentWithAmo = await agentsRepository.findByIdWithEntrepriseAmo(agentId);
+  if (!agentWithAmo) return null;
 
   const departements = await agentPermissionsRepository.getDepartementsByAgentId(agentId);
 
   return {
-    agent,
+    agent: {
+      id: agentWithAmo.id,
+      sub: agentWithAmo.sub,
+      email: agentWithAmo.email,
+      givenName: agentWithAmo.givenName,
+      usualName: agentWithAmo.usualName,
+      uid: agentWithAmo.uid,
+      siret: agentWithAmo.siret,
+      phone: agentWithAmo.phone,
+      organizationalUnit: agentWithAmo.organizationalUnit,
+      role: agentWithAmo.role,
+      entrepriseAmoId: agentWithAmo.entrepriseAmoId,
+      createdAt: agentWithAmo.createdAt,
+      updatedAt: agentWithAmo.updatedAt,
+    },
     departements,
+    entrepriseAmo: agentWithAmo.entrepriseAmo,
   };
+}
+
+/**
+ * Valide les données spécifiques au rôle AMO
+ */
+async function validateAmoData(role: string, entrepriseAmoId?: string): Promise<void> {
+  if (role === UserRole.AMO) {
+    if (!entrepriseAmoId) {
+      throw new Error("Une entreprise AMO doit être sélectionnée pour un agent avec le rôle AMO");
+    }
+
+    // Vérifier que l'entreprise AMO existe
+    const entrepriseExists = await entreprisesAmoRepo.exists(entrepriseAmoId);
+    if (!entrepriseExists) {
+      throw new Error("L'entreprise AMO sélectionnée n'existe pas");
+    }
+  }
 }
 
 /**
@@ -60,6 +104,12 @@ export async function createAgent(data: CreateAgentData): Promise<AgentWithPermi
     }
   }
 
+  // Valider les données AMO si le rôle est AMO
+  await validateAmoData(data.role, data.entrepriseAmoId);
+
+  // Déterminer l'entrepriseAmoId (null si le rôle n'est pas AMO)
+  const entrepriseAmoId = data.role === UserRole.AMO ? data.entrepriseAmoId : null;
+
   // Créer l'agent (sans sub pour l'instant, sera mis à jour lors de la première connexion ProConnect)
   const agent = await agentsRepository.create({
     sub: `pending_${Date.now()}_${Math.random().toString(36).substring(7)}`, // Sub temporaire
@@ -67,6 +117,7 @@ export async function createAgent(data: CreateAgentData): Promise<AgentWithPermi
     givenName: data.givenName,
     usualName: data.usualName,
     role: data.role,
+    entrepriseAmoId: entrepriseAmoId ?? null,
   });
 
   // Ajouter les permissions si spécifiées
@@ -76,9 +127,26 @@ export async function createAgent(data: CreateAgentData): Promise<AgentWithPermi
     departements = data.departements;
   }
 
+  // Récupérer les infos de l'entreprise AMO si présente
+  let entrepriseAmo = null;
+  if (entrepriseAmoId) {
+    const amo = await entreprisesAmoRepo.findById(entrepriseAmoId);
+    if (amo) {
+      entrepriseAmo = {
+        id: amo.id,
+        nom: amo.nom,
+        siret: amo.siret,
+      };
+    }
+  }
+
   return {
-    agent,
+    agent: {
+      ...agent,
+      entrepriseAmoId: agent.entrepriseAmoId,
+    },
     departements,
+    entrepriseAmo,
   };
 }
 
@@ -108,12 +176,39 @@ export async function updateAgent(agentId: string, data: UpdateAgentData): Promi
     }
   }
 
+  // Déterminer le rôle effectif (nouveau ou existant)
+  const effectiveRole = data.role ?? existingAgent.role;
+
+  // Valider les données AMO si le rôle est AMO
+  // Si on change vers AMO, entrepriseAmoId doit être fourni
+  // Si on change depuis AMO vers autre chose, on met à null
+  let entrepriseAmoId: string | null = existingAgent.entrepriseAmoId;
+
+  if (effectiveRole === UserRole.AMO) {
+    // Si on passe en AMO ou si on est déjà AMO
+    if (data.entrepriseAmoId !== undefined) {
+      // Une nouvelle valeur est fournie
+      await validateAmoData(effectiveRole, data.entrepriseAmoId ?? undefined);
+      entrepriseAmoId = data.entrepriseAmoId;
+    } else if (!existingAgent.entrepriseAmoId) {
+      // On passe en AMO mais pas d'entreprise fournie et pas d'entreprise existante
+      throw new Error("Une entreprise AMO doit être sélectionnée pour un agent avec le rôle AMO");
+    }
+    // Sinon on garde l'entreprise existante
+  } else {
+    // Le rôle n'est pas AMO, on met l'entreprise à null
+    entrepriseAmoId = null;
+  }
+
   // Mettre à jour l'agent
   const updateData: Partial<Agent> = {};
   if (data.email) updateData.email = data.email;
   if (data.givenName) updateData.givenName = data.givenName;
   if (data.usualName !== undefined) updateData.usualName = data.usualName;
   if (data.role) updateData.role = data.role;
+
+  // Toujours mettre à jour l'entrepriseAmoId (peut passer de valeur à null)
+  updateData.entrepriseAmoId = entrepriseAmoId;
 
   let updatedAgent = existingAgent;
   if (Object.keys(updateData).length > 0) {
@@ -129,9 +224,26 @@ export async function updateAgent(agentId: string, data: UpdateAgentData): Promi
     departements = await agentPermissionsRepository.getDepartementsByAgentId(agentId);
   }
 
+  // Récupérer les infos de l'entreprise AMO si présente
+  let entrepriseAmo = null;
+  if (entrepriseAmoId) {
+    const amo = await entreprisesAmoRepo.findById(entrepriseAmoId);
+    if (amo) {
+      entrepriseAmo = {
+        id: amo.id,
+        nom: amo.nom,
+        siret: amo.siret,
+      };
+    }
+  }
+
   return {
-    agent: updatedAgent,
+    agent: {
+      ...updatedAgent,
+      entrepriseAmoId: updatedAgent.entrepriseAmoId,
+    },
     departements,
+    entrepriseAmo,
   };
 }
 

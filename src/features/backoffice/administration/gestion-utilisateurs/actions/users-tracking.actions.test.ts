@@ -12,6 +12,10 @@ vi.mock("@/features/auth/permissions/services/permissions.service", () => ({
   checkBackofficePermission: vi.fn(),
 }));
 
+vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
+  getScopeFilters: vi.fn(),
+}));
+
 vi.mock("../services/users-tracking.service", () => ({
   getUsersWithParcours: vi.fn(),
 }));
@@ -24,6 +28,7 @@ import { getUsersWithParcours } from "./users-tracking.actions";
 
 // Import des mocks
 import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
+import { getScopeFilters } from "@/features/auth/permissions/services/agent-scope.service";
 import { getUsersWithParcours as getUsersWithParcoursService } from "../services/users-tracking.service";
 
 describe("users-tracking.actions", () => {
@@ -205,6 +210,8 @@ describe("users-tracking.actions", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Par défaut, pas de filtre de scope (accès national)
+    vi.mocked(getScopeFilters).mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -240,7 +247,8 @@ describe("users-tracking.actions", () => {
         expect(result.data).toHaveLength(2);
       }
       expect(checkBackofficePermission).toHaveBeenCalledWith(BackofficePermission.USERS_READ);
-      expect(getUsersWithParcoursService).toHaveBeenCalled();
+      expect(getScopeFilters).toHaveBeenCalled();
+      expect(getUsersWithParcoursService).toHaveBeenCalledWith(null);
     });
 
     it("devrait autoriser l'accès pour ADMINISTRATEUR", async () => {
@@ -257,6 +265,7 @@ describe("users-tracking.actions", () => {
 
       expect(result.success).toBe(true);
       expect(checkBackofficePermission).toHaveBeenCalled();
+      expect(getScopeFilters).toHaveBeenCalled();
     });
 
     it("devrait refuser l'accès pour ANALYSTE (pas de permission USERS_READ)", async () => {
@@ -272,6 +281,7 @@ describe("users-tracking.actions", () => {
       if (!result.success) {
         expect(result.error).toBe("Permission insuffisante pour consulter les utilisateurs");
       }
+      expect(getScopeFilters).not.toHaveBeenCalled();
       expect(getUsersWithParcoursService).not.toHaveBeenCalled();
     });
 
@@ -285,6 +295,7 @@ describe("users-tracking.actions", () => {
       const result = await getUsersWithParcours();
 
       expect(result.success).toBe(false);
+      expect(getScopeFilters).not.toHaveBeenCalled();
       expect(getUsersWithParcoursService).not.toHaveBeenCalled();
     });
 
@@ -299,6 +310,24 @@ describe("users-tracking.actions", () => {
 
       expect(result.success).toBe(false);
       expect(getUsersWithParcoursService).not.toHaveBeenCalled();
+    });
+
+    it("devrait passer les filtres de scope au service", async () => {
+      const mockUser = createMockAuthUser(UserRole.ADMINISTRATEUR);
+      vi.mocked(checkBackofficePermission).mockResolvedValue({
+        hasAccess: true,
+        user: mockUser,
+      });
+
+      const scopeFilters = { entrepriseAmoIds: ["entreprise-123"] };
+      vi.mocked(getScopeFilters).mockResolvedValue(scopeFilters);
+
+      const mockUsers = [createMockUserWithParcours()];
+      vi.mocked(getUsersWithParcoursService).mockResolvedValue(mockUsers);
+
+      await getUsersWithParcours();
+
+      expect(getUsersWithParcoursService).toHaveBeenCalledWith(scopeFilters);
     });
 
     it("devrait retourner une liste vide si aucun utilisateur", async () => {
@@ -398,6 +427,7 @@ describe("users-tracking.actions", () => {
       const result = await getUsersWithParcours();
 
       expect(result.success).toBe(false);
+      expect(getScopeFilters).not.toHaveBeenCalled();
       expect(getUsersWithParcoursService).not.toHaveBeenCalled();
     });
 

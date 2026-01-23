@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Loading from "../../(main)/loading";
 import AdminDashboard from "./components/AdminDashboard";
+import { UserRole } from "@/shared/domain/value-objects";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -59,6 +60,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   // Si connecté mais pas agent : afficher erreur 403
   if (!access.hasAccess) {
     return <AccesNonAutoriseAdmin />;
+  }
+
+  // Si AMO : rediriger vers l'espace dédié (évite une boucle de redirection)
+  // Les AMO n'ont pas les permissions pour accéder aux onglets de /administration
+  if (access.user?.role === UserRole.AMO) {
+    redirect(ROUTES.backoffice.espaceAmo.root);
   }
 
   // Vérifier l'accès à l'onglet spécifique

@@ -3,7 +3,7 @@
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { getSession } from "@/features/auth/services/session.service";
 import { AUTH_METHODS } from "@/features/auth/domain/value-objects/constants";
-import { getAgentBySub, getAgentByEmail } from "../services/agent.service";
+import { getAgentById } from "../services/agent.service";
 import type { Agent } from "@/shared/database/schema/agents";
 import type { ActionResult } from "@/shared/types";
 
@@ -12,7 +12,7 @@ import type { ActionResult } from "@/shared/types";
  *
  * Logique :
  * 1. Vérifie que l'utilisateur est connecté via ProConnect
- * 2. Récupère l'agent en BDD via son sub (priorité) ou email
+ * 2. Récupère l'agent en BDD via son ID (stocké dans session.userId)
  * 3. Retourne l'agent ou une erreur
  */
 export async function getCurrentAgent(): Promise<ActionResult<Agent>> {
@@ -33,7 +33,7 @@ export async function getCurrentAgent(): Promise<ActionResult<Agent>> {
       };
     }
 
-    // Récupérer la session pour avoir accès au sub (userId dans notre cas)
+    // Récupérer la session pour avoir accès à l'ID de l'agent
     const session = await getSession();
 
     if (!session) {
@@ -43,13 +43,8 @@ export async function getCurrentAgent(): Promise<ActionResult<Agent>> {
       };
     }
 
-    // Essayer de trouver l'agent par sub (userId = sub ProConnect)
-    let agent = await getAgentBySub(session.userId);
-
-    // Fallback : chercher par email si disponible
-    if (!agent && user.email) {
-      agent = await getAgentByEmail(user.email);
-    }
+    // Récupérer l'agent par son ID (session.userId = agent.id)
+    const agent = await getAgentById(session.userId);
 
     if (!agent) {
       return {

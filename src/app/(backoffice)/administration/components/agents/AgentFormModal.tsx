@@ -6,11 +6,21 @@ import type { AgentRole } from "@/shared/domain/value-objects";
 import DepartementsSelect from "./DepartementsSelect";
 import { AgentWithPermissions } from "@/features/backoffice";
 
+/**
+ * Entreprise AMO simplifiée pour le select
+ */
+export interface EntrepriseAmoOption {
+  id: string;
+  nom: string;
+  siret: string;
+}
+
 interface AgentFormModalProps {
   modalId: string;
   onSubmit: (data: AgentFormData) => Promise<void>;
   agent?: AgentWithPermissions | null;
   isLoading?: boolean;
+  entreprisesAmo: EntrepriseAmoOption[];
 }
 
 export interface AgentFormData {
@@ -19,6 +29,7 @@ export interface AgentFormData {
   usualName?: string;
   role: AgentRole;
   departements: string[];
+  entrepriseAmoId?: string;
 }
 
 const ROLE_OPTIONS: { value: AgentRole; label: string }[] = [
@@ -28,7 +39,13 @@ const ROLE_OPTIONS: { value: AgentRole; label: string }[] = [
   { value: UserRole.ANALYSTE, label: "Analyste" },
 ];
 
-export default function AgentFormModal({ modalId, onSubmit, agent, isLoading = false }: AgentFormModalProps) {
+export default function AgentFormModal({
+  modalId,
+  onSubmit,
+  agent,
+  isLoading = false,
+  entreprisesAmo,
+}: AgentFormModalProps) {
   const isEditing = !!agent;
 
   const [formData, setFormData] = useState<AgentFormData>({
@@ -37,6 +54,7 @@ export default function AgentFormModal({ modalId, onSubmit, agent, isLoading = f
     usualName: "",
     role: UserRole.ADMINISTRATEUR,
     departements: [],
+    entrepriseAmoId: undefined,
   });
 
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +68,7 @@ export default function AgentFormModal({ modalId, onSubmit, agent, isLoading = f
         usualName: agent.agent.usualName || "",
         role: agent.agent.role as AgentRole,
         departements: agent.departements,
+        entrepriseAmoId: agent.agent.entrepriseAmoId || undefined,
       });
     } else {
       setFormData({
@@ -58,23 +77,43 @@ export default function AgentFormModal({ modalId, onSubmit, agent, isLoading = f
         usualName: "",
         role: UserRole.ADMINISTRATEUR,
         departements: [],
+        entrepriseAmoId: undefined,
       });
     }
     setError(null);
   }, [agent]);
 
+  // Reset entrepriseAmoId quand on change de rôle (sauf vers AMO)
+  const handleRoleChange = (newRole: AgentRole) => {
+    setFormData((prev) => ({
+      ...prev,
+      role: newRole,
+      // Reset l'entreprise AMO si on quitte le rôle AMO
+      entrepriseAmoId: newRole === UserRole.AMO ? prev.entrepriseAmoId : undefined,
+      // Reset les départements si on quitte le rôle Administrateur
+      departements: newRole === UserRole.ADMINISTRATEUR ? prev.departements : [],
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Validation
+    // Validation email
     if (!formData.email || !formData.email.includes("@")) {
       setError("Email invalide");
       return;
     }
 
+    // Validation prénom
     if (!formData.givenName.trim()) {
       setError("Le prénom est requis");
+      return;
+    }
+
+    // Validation entreprise AMO si rôle = AMO
+    if (formData.role === UserRole.AMO && !formData.entrepriseAmoId) {
+      setError("Une entreprise AMO doit être sélectionnée pour un agent AMO");
       return;
     }
 
@@ -94,6 +133,7 @@ export default function AgentFormModal({ modalId, onSubmit, agent, isLoading = f
         usualName: "",
         role: UserRole.ADMINISTRATEUR,
         departements: [],
+        entrepriseAmoId: undefined,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -145,7 +185,7 @@ export default function AgentFormModal({ modalId, onSubmit, agent, isLoading = f
                       disabled={isLoading}
                       required
                     />
-                    <p className="fr-hint-text">L'agent pourra se connecter avec cet email via ProConnect</p>
+                    <p className="fr-hint-text">L&apos;agent pourra se connecter avec cet email via ProConnect</p>
                   </div>
 
                   {/* Prénom */}
@@ -188,7 +228,7 @@ export default function AgentFormModal({ modalId, onSubmit, agent, isLoading = f
                       id={`${modalId}-role`}
                       className="fr-select"
                       value={formData.role}
-                      onChange={(e) => setFormData({ ...formData, role: e.target.value as AgentRole })}
+                      onChange={(e) => handleRoleChange(e.target.value as AgentRole)}
                       disabled={isLoading}
                       required>
                       {ROLE_OPTIONS.map((option) => (
@@ -198,6 +238,37 @@ export default function AgentFormModal({ modalId, onSubmit, agent, isLoading = f
                       ))}
                     </select>
                   </div>
+
+                  {/* Entreprise AMO (uniquement pour le rôle AMO) */}
+                  {formData.role === UserRole.AMO && (
+                    <div className="fr-select-group">
+                      <label className="fr-label" htmlFor={`${modalId}-entrepriseAmo`}>
+                        Entreprise AMO *
+                      </label>
+                      <select
+                        id={`${modalId}-entrepriseAmo`}
+                        className="fr-select"
+                        value={formData.entrepriseAmoId || ""}
+                        onChange={(e) => setFormData({ ...formData, entrepriseAmoId: e.target.value || undefined })}
+                        disabled={isLoading}
+                        required>
+                        <option value="">Sélectionner une entreprise AMO</option>
+                        {entreprisesAmo.map((entreprise) => (
+                          <option key={entreprise.id} value={entreprise.id}>
+                            {entreprise.nom} ({entreprise.siret})
+                          </option>
+                        ))}
+                      </select>
+                      <p className="fr-hint-text">
+                        L&apos;agent AMO aura accès uniquement aux dossiers associés à cette entreprise
+                      </p>
+                      {entreprisesAmo.length === 0 && (
+                        <p className="fr-error-text">
+                          Aucune entreprise AMO disponible. Veuillez d&apos;abord créer une entreprise AMO.
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Départements (uniquement pour Administrateur) */}
                   {formData.role === UserRole.ADMINISTRATEUR && (
@@ -210,8 +281,8 @@ export default function AgentFormModal({ modalId, onSubmit, agent, isLoading = f
                         placeholder="Sélectionner les départements..."
                       />
                       <p className="fr-hint-text">
-                        L'administrateur n'aura accès qu'aux données de ces départements. Laissez vide pour un accès à
-                        tous les départements.
+                        L&apos;administrateur n&apos;aura accès qu&apos;aux données de ces départements. Laissez vide
+                        pour un accès à tous les départements.
                       </p>
                     </div>
                   )}

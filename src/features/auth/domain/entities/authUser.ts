@@ -9,4 +9,6 @@ export interface AuthUser {
   lastName?: string;
   email?: string;
   loginTime: string;
+  agentId?: string;
+  entrepriseAmoId?: string;
 }

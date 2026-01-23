@@ -3,6 +3,7 @@
 import { useState, useEffect, useId } from "react";
 import type { BuildingData } from "@/shared/services/bdnb";
 import { getRgaRiskLevel } from "@/shared/services/bdnb";
+import { ALEA_COLORS } from "@/features/rga-map";
 
 /**
  * Données éditables du formulaire
@@ -40,10 +41,10 @@ const NIVEAUX_OPTIONS = [
 
 /** Configuration des badges d'aléa */
 const ALEA_CONFIG = {
-  fort: { label: "ALÉA FORT", bgColor: "#CE614A", textColor: "#fff" },
-  moyen: { label: "ALÉA MOYEN", bgColor: "#E4794A", textColor: "#fff" },
-  faible: { label: "ALÉA FAIBLE", bgColor: "#E4CC5E", textColor: "#000" },
-  nul: { label: "HORS ZONE", bgColor: "#e0e0e0", textColor: "#000" },
+  fort: { label: "ALÉA FORT", bgColor: ALEA_COLORS.fort, textColor: "#2a2a2a" },
+  moyen: { label: "ALÉA MOYEN", bgColor: ALEA_COLORS.moyen, textColor: "#2a2a2a" },
+  faible: { label: "ALÉA FAIBLE", bgColor: ALEA_COLORS.faible, textColor: "#2a2a2a" },
+  nul: { label: "HORS ZONE", bgColor: "#e0e0e0", textColor: "#2a2a2a" },
 } as const;
 
 /**
@@ -102,7 +103,11 @@ export function BuildingDataForm({ address, buildingData, onChange }: BuildingDa
     <div className="fr-p-2w border-solid border border-gray-200">
       <div className="fr-mb-4v" style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
         <span className="fr-badge fr-badge--success">{buildingData?.adresse || address}</span>
-        <span className="fr-badge fr-badge--error fr-badge--no-icon">{aleaConfig.label}</span>
+        <span
+          className="fr-badge fr-badge--no-icon"
+          style={{ backgroundColor: aleaConfig.bgColor, color: aleaConfig.textColor }}>
+          {aleaConfig.label}
+        </span>
       </div>
 
       {/* Titre */}

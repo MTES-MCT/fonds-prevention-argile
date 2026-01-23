@@ -1,7 +1,7 @@
 "use server";
 
 import { getSession } from "@/features/auth/server";
-import { isSuperAdminRole } from "@/shared/domain/value-objects";
+import { isSuperAdminRole, UserRole } from "@/shared/domain/value-objects";
 import type { ActionResult } from "@/shared/types";
 import type { AgentRole } from "@/shared/domain/value-objects";
 import {
@@ -87,6 +87,7 @@ export async function createAgentAction(data: {
   usualName?: string;
   role: AgentRole;
   departements?: string[];
+  entrepriseAmoId?: string;
 }): Promise<ActionResult<AgentWithPermissions>> {
   try {
     const session = await getSession();
@@ -120,12 +121,21 @@ export async function createAgentAction(data: {
       };
     }
 
+    // Validation spécifique pour le rôle AMO
+    if (data.role === UserRole.AMO && !data.entrepriseAmoId) {
+      return {
+        success: false,
+        error: "Une entreprise AMO doit être sélectionnée pour un agent AMO",
+      };
+    }
+
     const agent = await createAgent({
       email: data.email.toLowerCase().trim(),
       givenName: data.givenName.trim(),
       usualName: data.usualName?.trim(),
       role: data.role,
       departements: data.departements,
+      entrepriseAmoId: data.entrepriseAmoId,
     });
 
     return {
@@ -152,6 +162,7 @@ export async function updateAgentAction(
     usualName?: string;
     role?: AgentRole;
     departements?: string[];
+    entrepriseAmoId?: string | null;
   }
 ): Promise<ActionResult<AgentWithPermissions>> {
   try {
@@ -179,12 +190,21 @@ export async function updateAgentAction(
       };
     }
 
+    // Validation spécifique pour le rôle AMO
+    if (data.role === UserRole.AMO && data.entrepriseAmoId === null) {
+      return {
+        success: false,
+        error: "Une entreprise AMO doit être sélectionnée pour un agent AMO",
+      };
+    }
+
     const updateData: UpdateAgentData = {};
     if (data.email) updateData.email = data.email.toLowerCase().trim();
     if (data.givenName) updateData.givenName = data.givenName.trim();
     if (data.usualName !== undefined) updateData.usualName = data.usualName?.trim();
     if (data.role) updateData.role = data.role;
     if (data.departements !== undefined) updateData.departements = data.departements;
+    if (data.entrepriseAmoId !== undefined) updateData.entrepriseAmoId = data.entrepriseAmoId;
 
     const agent = await updateAgent(agentId, updateData);
 
@@ -223,9 +243,6 @@ export async function deleteAgentAction(agentId: string): Promise<ActionResult<v
     }
 
     // Empêcher la suppression de son propre compte
-    // Note: session.userId est le sub ProConnect, pas l'id agent
-    // On pourrait ajouter une vérification ici si nécessaire
-
     const deleted = await deleteAgent(agentId);
 
     if (!deleted) {

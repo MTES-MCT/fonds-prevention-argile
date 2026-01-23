@@ -12,6 +12,8 @@ describe("rbac.service", () => {
         expect(hasPermission(UserRole.SUPER_ADMINISTRATEUR, BackofficePermission.AMO_WRITE)).toBe(true);
         expect(hasPermission(UserRole.SUPER_ADMINISTRATEUR, BackofficePermission.AGENTS_DELETE)).toBe(true);
         expect(hasPermission(UserRole.SUPER_ADMINISTRATEUR, BackofficePermission.ELIGIBILITE_WRITE)).toBe(true);
+        expect(hasPermission(UserRole.SUPER_ADMINISTRATEUR, BackofficePermission.DOSSIERS_AMO_READ)).toBe(true);
+        expect(hasPermission(UserRole.SUPER_ADMINISTRATEUR, BackofficePermission.DOSSIERS_AMO_STATS_READ)).toBe(true);
       });
 
       it("devrait avoir accès à toutes les permissions définies", () => {
@@ -59,6 +61,11 @@ describe("rbac.service", () => {
         expect(hasPermission(UserRole.ADMINISTRATEUR, BackofficePermission.DIAGNOSTIC_READ)).toBe(true);
         expect(hasPermission(UserRole.ADMINISTRATEUR, BackofficePermission.DEVIS_READ)).toBe(true);
         expect(hasPermission(UserRole.ADMINISTRATEUR, BackofficePermission.FACTURES_READ)).toBe(true);
+      });
+
+      it("devrait avoir accès aux dossiers AMO", () => {
+        expect(hasPermission(UserRole.ADMINISTRATEUR, BackofficePermission.DOSSIERS_AMO_READ)).toBe(true);
+        expect(hasPermission(UserRole.ADMINISTRATEUR, BackofficePermission.DOSSIERS_AMO_STATS_READ)).toBe(true);
       });
     });
 
@@ -109,16 +116,52 @@ describe("rbac.service", () => {
         expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.DEVIS_READ)).toBe(false);
         expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.FACTURES_READ)).toBe(false);
       });
+
+      it("ne devrait PAS avoir accès aux dossiers AMO", () => {
+        expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.DOSSIERS_AMO_READ)).toBe(false);
+        expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.DOSSIERS_AMO_STATS_READ)).toBe(false);
+      });
     });
 
     describe("AMO", () => {
-      it("ne devrait avoir aucune permission backoffice", () => {
-        // L'AMO n'a pas de permissions backoffice définies
+      it("devrait avoir accès uniquement aux dossiers de son entreprise AMO", () => {
+        expect(hasPermission(UserRole.AMO, BackofficePermission.DOSSIERS_AMO_READ)).toBe(true);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.DOSSIERS_AMO_STATS_READ)).toBe(true);
+      });
+
+      it("ne devrait PAS avoir accès aux statistiques globales", () => {
         expect(hasPermission(UserRole.AMO, BackofficePermission.STATS_READ)).toBe(false);
+      });
+
+      it("ne devrait PAS avoir accès aux users", () => {
         expect(hasPermission(UserRole.AMO, BackofficePermission.USERS_READ)).toBe(false);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.USERS_STATS_READ)).toBe(false);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.USERS_DETAIL_READ)).toBe(false);
+      });
+
+      it("ne devrait PAS avoir accès à la gestion des AMO", () => {
         expect(hasPermission(UserRole.AMO, BackofficePermission.AMO_READ)).toBe(false);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.AMO_WRITE)).toBe(false);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.AMO_DELETE)).toBe(false);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.AMO_IMPORT)).toBe(false);
+      });
+
+      it("ne devrait PAS avoir accès aux Allers Vers", () => {
         expect(hasPermission(UserRole.AMO, BackofficePermission.ALLERS_VERS_READ)).toBe(false);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.ALLERS_VERS_WRITE)).toBe(false);
+      });
+
+      it("ne devrait PAS avoir accès aux agents", () => {
         expect(hasPermission(UserRole.AMO, BackofficePermission.AGENTS_READ)).toBe(false);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.AGENTS_WRITE)).toBe(false);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.AGENTS_DELETE)).toBe(false);
+      });
+
+      it("ne devrait PAS avoir accès aux autres dossiers", () => {
+        expect(hasPermission(UserRole.AMO, BackofficePermission.ELIGIBILITE_READ)).toBe(false);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.DIAGNOSTIC_READ)).toBe(false);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.DEVIS_READ)).toBe(false);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.FACTURES_READ)).toBe(false);
       });
     });
 
@@ -127,6 +170,7 @@ describe("rbac.service", () => {
         expect(hasPermission(UserRole.PARTICULIER, BackofficePermission.STATS_READ)).toBe(false);
         expect(hasPermission(UserRole.PARTICULIER, BackofficePermission.USERS_READ)).toBe(false);
         expect(hasPermission(UserRole.PARTICULIER, BackofficePermission.AMO_READ)).toBe(false);
+        expect(hasPermission(UserRole.PARTICULIER, BackofficePermission.DOSSIERS_AMO_READ)).toBe(false);
       });
     });
   });
@@ -161,6 +205,13 @@ describe("rbac.service", () => {
       expect(hasAllPermissions(UserRole.SUPER_ADMINISTRATEUR, requiredPermissions)).toBe(true);
       expect(hasAllPermissions(UserRole.ADMINISTRATEUR, requiredPermissions)).toBe(false);
     });
+
+    it("devrait vérifier les permissions AMO", () => {
+      const amoPermissions = [BackofficePermission.DOSSIERS_AMO_READ, BackofficePermission.DOSSIERS_AMO_STATS_READ];
+
+      expect(hasAllPermissions(UserRole.AMO, amoPermissions)).toBe(true);
+      expect(hasAllPermissions(UserRole.ANALYSTE, amoPermissions)).toBe(false);
+    });
   });
 
   describe("hasAnyPermission", () => {
@@ -185,6 +236,13 @@ describe("rbac.service", () => {
 
       expect(hasAnyPermission(UserRole.SUPER_ADMINISTRATEUR, requiredPermissions)).toBe(true);
     });
+
+    it("devrait fonctionner pour les permissions AMO", () => {
+      const requiredPermissions = [BackofficePermission.DOSSIERS_AMO_READ, BackofficePermission.STATS_READ];
+
+      expect(hasAnyPermission(UserRole.AMO, requiredPermissions)).toBe(true); // A DOSSIERS_AMO_READ
+      expect(hasAnyPermission(UserRole.ANALYSTE, requiredPermissions)).toBe(true); // A STATS_READ
+    });
   });
 
   describe("getRolePermissions", () => {
@@ -195,6 +253,8 @@ describe("rbac.service", () => {
       expect(permissions.length).toBeGreaterThan(15); // On sait qu'il y a plus de 15 permissions
       expect(permissions).toContain(BackofficePermission.STATS_READ);
       expect(permissions).toContain(BackofficePermission.AGENTS_DELETE);
+      expect(permissions).toContain(BackofficePermission.DOSSIERS_AMO_READ);
+      expect(permissions).toContain(BackofficePermission.DOSSIERS_AMO_STATS_READ);
     });
 
     it("devrait retourner les bonnes permissions pour ADMINISTRATEUR", () => {
@@ -205,6 +265,8 @@ describe("rbac.service", () => {
       expect(permissions).toContain(BackofficePermission.AMO_WRITE);
       expect(permissions).toContain(BackofficePermission.USERS_READ);
       expect(permissions).toContain(BackofficePermission.USERS_DETAIL_READ);
+      expect(permissions).toContain(BackofficePermission.DOSSIERS_AMO_READ);
+      expect(permissions).toContain(BackofficePermission.DOSSIERS_AMO_STATS_READ);
 
       // Ne doit PAS contenir
       expect(permissions).not.toContain(BackofficePermission.AGENTS_READ);
@@ -228,11 +290,15 @@ describe("rbac.service", () => {
       expect(permissions).not.toContain(BackofficePermission.AMO_WRITE);
       expect(permissions).not.toContain(BackofficePermission.ALLERS_VERS_WRITE);
       expect(permissions).not.toContain(BackofficePermission.AGENTS_READ);
+      expect(permissions).not.toContain(BackofficePermission.DOSSIERS_AMO_READ);
     });
 
-    it("devrait retourner un tableau vide pour AMO", () => {
+    it("devrait retourner les permissions dossiers AMO pour le rôle AMO", () => {
       const permissions = getRolePermissions(UserRole.AMO);
-      expect(permissions).toEqual([]);
+
+      expect(permissions.length).toBe(2);
+      expect(permissions).toContain(BackofficePermission.DOSSIERS_AMO_READ);
+      expect(permissions).toContain(BackofficePermission.DOSSIERS_AMO_STATS_READ);
     });
 
     it("devrait retourner un tableau vide pour un rôle inconnu", () => {
@@ -306,6 +372,22 @@ describe("rbac.service", () => {
 
       it("ne devrait PAS être accessible par AMO", () => {
         expect(canAccessTab(UserRole.AMO, "agents")).toBe(false);
+      });
+    });
+
+    describe("Onglet dossiers-amo", () => {
+      it("devrait être accessible par SUPER_ADMIN, ADMIN et AMO", () => {
+        expect(canAccessTab(UserRole.SUPER_ADMINISTRATEUR, "dossiers-amo")).toBe(true);
+        expect(canAccessTab(UserRole.ADMINISTRATEUR, "dossiers-amo")).toBe(true);
+        expect(canAccessTab(UserRole.AMO, "dossiers-amo")).toBe(true);
+      });
+
+      it("ne devrait PAS être accessible par ANALYSTE", () => {
+        expect(canAccessTab(UserRole.ANALYSTE, "dossiers-amo")).toBe(false);
+      });
+
+      it("ne devrait PAS être accessible par PARTICULIER", () => {
+        expect(canAccessTab(UserRole.PARTICULIER, "dossiers-amo")).toBe(false);
       });
     });
 

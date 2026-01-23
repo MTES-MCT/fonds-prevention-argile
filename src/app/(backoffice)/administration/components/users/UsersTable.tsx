@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { formatDate } from "@/shared/utils/date.utils";
+import { formatDate, formatNomComplet } from "@/shared/utils";
 import { UserDetailRow } from "./UserDetailRow";
 import { UserWithParcoursDetails, EmailTrackingStatus } from "@/features/backoffice";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
@@ -10,22 +10,6 @@ import { DSStatus } from "@/shared/domain/value-objects";
 
 interface UsersTableProps {
   users: UserWithParcoursDetails[];
-}
-
-/**
- * Récupère le nom complet de l'utilisateur
- */
-function getUserFullName(user: UserWithParcoursDetails): string {
-  const prenom = user.user.firstName;
-  const nom = user.user.name;
-
-  if (prenom && nom) {
-    return `${prenom} ${nom}`;
-  }
-  if (prenom) return prenom;
-  if (nom) return nom;
-
-  return "Non renseigné";
 }
 
 /**
@@ -261,7 +245,7 @@ export function UsersTable({ users }: UsersTableProps) {
                     <React.Fragment key={user.user.id}>
                       <tr>
                         {/* Prénom Nom */}
-                        <td>{getUserFullName(user)}</td>
+                        <td>{formatNomComplet(user.user.firstName, user.user.name)}</td>
 
                         {/* Commune (Dpt) */}
                         <td className="fr-text--sm">{getCommuneInfo(user)}</td>

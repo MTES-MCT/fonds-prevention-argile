@@ -6,6 +6,7 @@ import * as amoMutationsService from "../../../../parcours/amo/services/amo-muta
 import { ActionResult } from "@/shared/types";
 import { importAmosFromExcel } from "@/features/backoffice/administration/gestion-amo/services/amo-import.service";
 import { Amo } from "@/features/parcours/amo";
+import { entreprisesAmoRepo } from "@/shared/database";
 
 interface SeedResult {
   success: boolean;
@@ -17,6 +18,51 @@ interface SeedResult {
     epciCreated: number;
   };
   errors?: string[];
+}
+
+/**
+ * Entreprise AMO simplifiée pour les selects
+ */
+export interface EntrepriseAmoOption {
+  id: string;
+  nom: string;
+  siret: string;
+}
+
+/**
+ * Récupère la liste des entreprises AMO pour les selects
+ * Accessible aux agents ayant la permission AGENTS_READ (pour le formulaire agent)
+ */
+export async function getEntreprisesAmoOptions(): Promise<ActionResult<EntrepriseAmoOption[]>> {
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.AGENTS_READ);
+
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante",
+    };
+  }
+
+  try {
+    const entreprises = await entreprisesAmoRepo.findAll();
+
+    const options: EntrepriseAmoOption[] = entreprises.map((e) => ({
+      id: e.id,
+      nom: e.nom,
+      siret: e.siret,
+    }));
+
+    return {
+      success: true,
+      data: options,
+    };
+  } catch (error) {
+    console.error("Erreur getEntreprisesAmoOptions:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    };
+  }
 }
 
 export async function importAmoFromExcel(formData: FormData, clearExisting: boolean = false): Promise<SeedResult> {

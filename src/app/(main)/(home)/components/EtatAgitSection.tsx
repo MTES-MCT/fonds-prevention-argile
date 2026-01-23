@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function EtatAgitSection() {
   return (
-    <section className="fr-container-fluid fr-py-10w bg-[var(--background-alt-blue-france)]">
+    <section className="fr-container-fluid fr-py-10w bg-(--background-alt-blue-france)">
       <div className="fr-container">
         <div className="fr-grid-row items-center gap-6 md:gap-0">
           {/* Zone texte */}
@@ -11,21 +11,12 @@ export default function EtatAgitSection() {
             <h2>{content.etat_agit_section.title}</h2>
             <p>{content.etat_agit_section.description_1}</p>
             <div className="fr-callout">
-              <h3 className="fr-callout__title">
-                {content.etat_agit_section.callout_title}
-              </h3>
-              <p className="fr-callout__text">
-                {content.etat_agit_section.callout_text}
-              </p>
+              <h3 className="fr-callout__title">{content.etat_agit_section.callout_title}</h3>
+              <p className="fr-callout__text">{content.etat_agit_section.callout_text}</p>
             </div>
-            <h6 className="fr-mt-4v">
-              {content.etat_agit_section.description_2_title}
-            </h6>
+            <h6 className="fr-mt-4v">{content.etat_agit_section.description_2_title}</h6>
             <p>{content.etat_agit_section.description_2_text}</p>
-            <Link
-              className="fr-mt-4v fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
-              href="/simulateur"
-            >
+            <Link className="fr-mt-4v fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right" href="/simulateur">
               {content.etat_agit_section.cta_label}
             </Link>
           </div>
@@ -43,16 +34,10 @@ export default function EtatAgitSection() {
                   },
                   index: number
                 ) => (
-                  <div
-                    key={index}
-                    className="fr-tile fr-tile--horizontal fr-enlarge-link"
-                    id="tile-6"
-                  >
+                  <div key={index} className="fr-tile fr-tile--horizontal fr-enlarge-link" id="tile-6">
                     <div className="fr-tile__body">
                       <div className="fr-tile__content">
-                        <div
-                          className={`${tile.icon} fr-icon--sm mb-2 ${tile.iconColor}`}
-                        ></div>
+                        <div className={`${tile.icon} fr-icon--sm mb-2 ${tile.iconColor}`}></div>
                         <h3 className="fr-tile__title">{tile.title}</h3>
                         <p className="fr-tile__desc">{tile.description}</p>
                       </div>

@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { AuthProvider } from "@/features/auth/client";
 import { Footer, Header, Matomo } from "@/shared/components";
+import { AmoGuard } from "./components/AmoGuard";
 
 interface BackofficeLayoutProps {
   children: ReactNode;
@@ -15,7 +16,9 @@ export default async function BackofficeLayout({ children }: BackofficeLayoutPro
     <AuthProvider>
       <Matomo />
       <Header />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <AmoGuard>{children}</AmoGuard>
+      </main>
       <Footer />
     </AuthProvider>
   );

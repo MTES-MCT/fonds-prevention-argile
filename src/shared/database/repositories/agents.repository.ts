@@ -1,6 +1,7 @@
 import { eq, sql, SQL, desc } from "drizzle-orm";
 import { db } from "../client";
 import { agents, type Agent, type NewAgent } from "../schema/agents";
+import { entreprisesAmo } from "../schema/entreprises-amo";
 import { BaseRepository } from "./base.repository";
 import { AgentRole } from "@/shared/domain/value-objects";
 
@@ -18,6 +19,17 @@ export interface ProConnectAgentData {
   organizational_unit?: string;
 }
 
+/**
+ * Agent avec les informations de son entreprise AMO
+ */
+export interface AgentWithEntrepriseAmo extends Agent {
+  entrepriseAmo: {
+    id: string;
+    nom: string;
+    siret: string;
+  } | null;
+}
+
 export class AgentsRepository extends BaseRepository<Agent> {
   /**
    * Trouve un agent par son ID
@@ -28,10 +40,117 @@ export class AgentsRepository extends BaseRepository<Agent> {
   }
 
   /**
+   * Trouve un agent par son ID avec son entreprise AMO
+   */
+  async findByIdWithEntrepriseAmo(id: string): Promise<AgentWithEntrepriseAmo | null> {
+    const result = await db
+      .select({
+        id: agents.id,
+        sub: agents.sub,
+        email: agents.email,
+        givenName: agents.givenName,
+        usualName: agents.usualName,
+        uid: agents.uid,
+        siret: agents.siret,
+        phone: agents.phone,
+        organizationalUnit: agents.organizationalUnit,
+        role: agents.role,
+        entrepriseAmoId: agents.entrepriseAmoId,
+        createdAt: agents.createdAt,
+        updatedAt: agents.updatedAt,
+        entrepriseAmoDbId: entreprisesAmo.id,
+        entrepriseAmoNom: entreprisesAmo.nom,
+        entrepriseAmoSiret: entreprisesAmo.siret,
+      })
+      .from(agents)
+      .leftJoin(entreprisesAmo, eq(agents.entrepriseAmoId, entreprisesAmo.id))
+      .where(eq(agents.id, id));
+
+    if (!result[0]) return null;
+
+    const row = result[0];
+    return {
+      id: row.id,
+      sub: row.sub,
+      email: row.email,
+      givenName: row.givenName,
+      usualName: row.usualName,
+      uid: row.uid,
+      siret: row.siret,
+      phone: row.phone,
+      organizationalUnit: row.organizationalUnit,
+      role: row.role,
+      entrepriseAmoId: row.entrepriseAmoId,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      entrepriseAmo:
+        row.entrepriseAmoDbId && row.entrepriseAmoNom && row.entrepriseAmoSiret
+          ? {
+              id: row.entrepriseAmoDbId,
+              nom: row.entrepriseAmoNom,
+              siret: row.entrepriseAmoSiret,
+            }
+          : null,
+    };
+  }
+
+  /**
    * Récupère tous les agents
    */
   async findAll(): Promise<Agent[]> {
     return await db.select().from(agents).orderBy(desc(agents.createdAt));
+  }
+
+  /**
+   * Récupère tous les agents avec leur entreprise AMO
+   */
+  async findAllWithEntrepriseAmo(): Promise<AgentWithEntrepriseAmo[]> {
+    const result = await db
+      .select({
+        id: agents.id,
+        sub: agents.sub,
+        email: agents.email,
+        givenName: agents.givenName,
+        usualName: agents.usualName,
+        uid: agents.uid,
+        siret: agents.siret,
+        phone: agents.phone,
+        organizationalUnit: agents.organizationalUnit,
+        role: agents.role,
+        entrepriseAmoId: agents.entrepriseAmoId,
+        createdAt: agents.createdAt,
+        updatedAt: agents.updatedAt,
+        entrepriseAmoDbId: entreprisesAmo.id,
+        entrepriseAmoNom: entreprisesAmo.nom,
+        entrepriseAmoSiret: entreprisesAmo.siret,
+      })
+      .from(agents)
+      .leftJoin(entreprisesAmo, eq(agents.entrepriseAmoId, entreprisesAmo.id))
+      .orderBy(desc(agents.createdAt));
+
+    return result.map((row) => ({
+      id: row.id,
+      sub: row.sub,
+      email: row.email,
+      givenName: row.givenName,
+      usualName: row.usualName,
+      uid: row.uid,
+      siret: row.siret,
+      phone: row.phone,
+      organizationalUnit: row.organizationalUnit,
+      role: row.role,
+      entrepriseAmoId: row.entrepriseAmoId,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      entrepriseAmo:
+        row.entrepriseAmoDbId && row.entrepriseAmoNom && row.entrepriseAmoSiret
+          ? {
+              id: row.entrepriseAmoDbId,
+              nom: row.entrepriseAmoNom,
+              siret: row.entrepriseAmoSiret,
+            }
+          : null,
+    }));
   }
 
   /**
@@ -171,6 +290,22 @@ export class AgentsRepository extends BaseRepository<Agent> {
       .update(agents)
       .set({
         role,
+        updatedAt: new Date(),
+      })
+      .where(eq(agents.id, agentId))
+      .returning();
+
+    return updatedAgent || null;
+  }
+
+  /**
+   * Met à jour l'entreprise AMO d'un agent
+   */
+  async updateEntrepriseAmo(agentId: string, entrepriseAmoId: string | null): Promise<Agent | null> {
+    const [updatedAgent] = await db
+      .update(agents)
+      .set({
+        entrepriseAmoId,
         updatedAt: new Date(),
       })
       .where(eq(agents.id, agentId))
