@@ -13,6 +13,7 @@ import {
 } from "@/features/parcours/amo/services/amo-validation.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import { db } from "@/shared/database/client";
 
 // Mock des modules
@@ -78,6 +79,8 @@ describe("demande-detail.actions", () => {
         statut: "EN_ATTENTE",
         dateCreation: new Date(),
         commentaire: null,
+        currentStep: Step.CHOIX_AMO,
+        parcoursCreatedAt: new Date(),
       };
 
       vi.mocked(getDemandeDetail).mockResolvedValue({

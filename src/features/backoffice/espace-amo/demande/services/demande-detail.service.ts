@@ -5,6 +5,7 @@ import type { DemandeDetail, InfoDemandeur, InfoLogement } from "../domain/types
 import type { ActionResult } from "@/shared/types/action-result.types";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 
 /**
  * Récupérer le détail d'une demande d'accompagnement par son ID
@@ -82,6 +83,8 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       statut: demande.validation.statut,
       dateCreation: demande.validation.choisieAt,
       commentaire: demande.validation.commentaire,
+      currentStep: demande.parcours.currentStep as Step,
+      parcoursCreatedAt: demande.parcours.createdAt,
     };
 
     return { success: true, data: demandeDetail };

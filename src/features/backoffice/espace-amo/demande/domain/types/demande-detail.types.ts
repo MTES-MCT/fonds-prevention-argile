@@ -1,3 +1,5 @@
+import { Step } from "@/shared/domain/value-objects/step.enum";
+
 /**
  * Types pour la page détail d'une demande d'accompagnement
  */
@@ -55,4 +57,8 @@ export interface DemandeDetail {
   dateCreation: Date;
   /** Commentaire éventuel de l'AMO */
   commentaire: string | null;
+  /** Étape actuelle du parcours */
+  currentStep: Step;
+  /** Date de création du parcours */
+  parcoursCreatedAt: Date;
 }

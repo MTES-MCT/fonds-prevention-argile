@@ -9,6 +9,7 @@ import { InfoLogement } from "./components/InfoLogement";
 import { AFaire } from "./components/AFaire";
 import { LocalisationLogement } from "./components/LocalisationLogement";
 import { getCurrentUser } from "@/features/auth/services/user.service";
+import { ParcoursDemandeur } from "./components/ParcoursDemandeur";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -68,7 +69,12 @@ export default async function DemandeDetailPage({ params }: PageProps) {
         {/* Titre de la page */}
         <div className="fr-mb-4w">
           <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
-          <p className="fr-badge fr-badge--new">Nouvelle demande du {formatDate(demande.dateCreation.toISOString())}</p>
+          <div className="fr-badges-group">
+            <p className="fr-badge fr-badge--new">
+              Nouvelle demande du {formatDate(demande.dateCreation.toISOString())}
+            </p>
+            <p className="fr-badge">1. Choix de l'AMO</p>
+          </div>
         </div>
 
         {/* Section en-tête : Réponse + InfoDemandeur */}
@@ -100,7 +106,14 @@ export default async function DemandeDetailPage({ params }: PageProps) {
 
             {/* Colonne droite : À faire */}
             <div className="fr-col-12 fr-col-md-4">
-              <div style={{ alignSelf: "flex-start" }}>
+              <div
+                style={{
+                  alignSelf: "flex-start",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "2rem",
+                }}>
+                <ParcoursDemandeur currentStep={demande.currentStep} parcoursCreatedAt={demande.parcoursCreatedAt} />
                 <AFaire />
               </div>
             </div>
