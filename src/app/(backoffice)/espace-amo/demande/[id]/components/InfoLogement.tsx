@@ -12,76 +12,74 @@ export function InfoLogement({ logement }: InfoLogementProps) {
     <div className="fr-card">
       <div className="fr-card__body">
         <div className="fr-card__content">
-          <h3 className="fr-card__title">
-            <span className="fr-icon-home-4-line fr-mr-2v" aria-hidden="true"></span>
-            Logement & éligibilité
-          </h3>
-          <div className="fr-card__desc">
+          <div className="fr-mb-1w">
+            <h3 className="fr-card__title fr-mb-1v">
+              <span className="fr-icon-home-4-line fr-mr-2v" aria-hidden="true"></span>
+              Logement & éligibilité
+            </h3>
+            <p className="fr-text--sm fr-text-mention--grey fr-mb-0 fr-ml-4w">
+              Informations fournies en partie par le demandeur
+            </p>
+          </div>
+          <ul className="fr-card__desc fr-ml-3w">
             {logement.anneeConstruction && (
-              <li className="fr-mb-2v fr-text-xl">
-                <strong>Année de construction :</strong>{" "}
-                <span className="fr-badge fr-badge-xs fr-badge--info">{logement.anneeConstruction}</span>
+              <li className="fr-mb-2v">
+                Année de construction{" "}
+                <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+                  {logement.anneeConstruction}
+                </span>
               </li>
             )}
 
             {logement.nombreNiveaux && (
               <li className="fr-mb-2v">
-                <strong>Nombre de niveaux :</strong> {logement.nombreNiveaux}
+                Nombre de niveau{" "}
+                <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+                  {logement.nombreNiveaux} {Number(logement.nombreNiveaux) > 1 ? "NIVEAUX" : "NIVEAU"}
+                </span>
               </li>
             )}
 
             {logement.etatMaison && (
               <li className="fr-mb-2v">
-                <strong>État de la maison :</strong>{" "}
-                <span
-                  className={
-                    logement.etatMaison === "saine"
-                      ? "fr-badge fr-badge--success"
-                      : logement.etatMaison === "très peu endommagée"
-                        ? "fr-badge fr-badge--info"
-                        : "fr-badge fr-badge--warning"
-                  }>
-                  {logement.etatMaison}
+                État de la maison{" "}
+                <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+                  {logement.etatMaison.toUpperCase()}
                 </span>
               </li>
             )}
 
             {logement.indemnisationPasseeRGA !== null && (
               <li className="fr-mb-2v">
-                <strong>Indemnisation passée RGA :</strong>{" "}
-                {logement.indemnisationPasseeRGA ? (
-                  <span className="fr-badge fr-badge-xs fr-badge--info">Oui</span>
-                ) : (
-                  <span className="fr-badge fr-badge-xs fr-badge--info">Non</span>
-                )}
+                Indemnisation passée liée au RGA ?{" "}
+                <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+                  {logement.indemnisationPasseeRGA ? "OUI" : "NON"}
+                </span>
               </li>
             )}
 
             {logement.nombreHabitants && (
               <li className="fr-mb-2v">
-                <strong>Habitants du logement :</strong> {logement.nombreHabitants}{" "}
-                {logement.nombreHabitants > 1 ? "personnes" : "personne"}
+                Habitants du logement{" "}
+                <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+                  {logement.nombreHabitants} {logement.nombreHabitants > 1 ? "HABITANTS" : "HABITANT"}
+                </span>
               </li>
             )}
 
             {logement.niveauRevenu && (
               <li className="fr-mb-2v">
-                <strong>Niveau de revenu :</strong>{" "}
-                <span
-                  className={
-                    logement.niveauRevenu === "Très modeste"
-                      ? "fr-badge fr-badge--success"
-                      : logement.niveauRevenu === "Modeste"
-                        ? "fr-badge fr-badge--info"
-                        : logement.niveauRevenu === "Intermédiaire"
-                          ? "fr-badge fr-badge--warning"
-                          : "fr-badge"
-                  }>
-                  {logement.niveauRevenu}
+                Revenus du foyer{" "}
+                <span className="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">
+                  {logement.niveauRevenu === "Très modeste"
+                    ? "MÉNAGE TRÈS MODESTE"
+                    : logement.niveauRevenu === "Modeste"
+                      ? "MÉNAGE MODESTE"
+                      : logement.niveauRevenu.toUpperCase()}
                 </span>
               </li>
             )}
-          </div>
+          </ul>
         </div>
       </div>
     </div>

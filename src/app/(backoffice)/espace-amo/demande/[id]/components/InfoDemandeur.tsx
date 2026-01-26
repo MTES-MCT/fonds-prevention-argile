@@ -37,32 +37,32 @@ export function InfoDemandeur({ demandeur }: InfoDemandeurProps) {
           </h3>
           <dl
             className="fr-card__desc fr-mt-4w fr-m-0"
-            style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.5rem 1rem" }}>
+            style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.5rem 1rem", alignItems: "baseline" }}>
             {demandeur.adresse && (
               <>
-                <dt className="fr-text--lg">adresse :</dt>
-                <dd className="fr-m-0 fr-text--lg">{demandeur.adresse}</dd>
+                <dt className="fr-text">adresse :</dt>
+                <dd className="fr-m-0">{demandeur.adresse}</dd>
               </>
             )}
             {demandeur.telephone && (
               <>
-                <dt className="fr-text--lg">tél. :</dt>
-                <dd className="fr-m-0 fr-text--lg">{demandeur.telephone}</dd>
+                <dt className="fr-text">tél. :</dt>
+                <dd className="fr-m-0">{demandeur.telephone}</dd>
               </>
             )}
             {demandeur.email && (
               <>
-                <dt className="fr-text--lg">mail :</dt>
-                <dd className="fr-m-0 fr-text--lg">
+                <dt className="fr-text">mail :</dt>
+                <dd className="fr-m-0">
                   <Link
                     href="#"
                     id="link-13"
                     target="_self"
                     onClick={handleCopyEmail}
-                    className="fr-link fr-icon-clipboard-line fr-link--icon-right">
+                    className="fr-link fr-link--sm fr-icon-clipboard-line fr-link--icon-right">
                     {demandeur.email}
                   </Link>
-                  {emailCopied && <span className="fr-ml-2w">Copié !</span>}
+                  {emailCopied && <span className="fr-ml-2w fr-text--sm">Copié !</span>}
                 </dd>
               </>
             )}
