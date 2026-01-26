@@ -69,6 +69,7 @@ export function LocalisationLogement({ logement, adresse }: CarteLogementProps) 
                 showMarker={true}
                 locked={true}
                 readOnly={false}
+                initialRnbId={logement.rnbId ?? undefined}
                 height="400px"
                 padding="0"
               />

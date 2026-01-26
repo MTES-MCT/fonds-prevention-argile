@@ -70,7 +70,14 @@ export function InfoLogement({ logement }: InfoLogementProps) {
             {logement.niveauRevenu && (
               <li className="fr-mb-2v">
                 Revenus du foyer{" "}
-                <span className="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">
+                <span
+                  className={`fr-badge fr-badge--sm fr-badge--no-icon ${
+                    logement.niveauRevenu === "Très modeste"
+                      ? "fr-badge--info fr-badge--no-icon"
+                      : logement.niveauRevenu === "Modeste"
+                        ? "fr-badge--yellow-tournesol"
+                        : "fr-badge--purple-glycine"
+                  }`}>
                   {logement.niveauRevenu === "Très modeste"
                     ? "MÉNAGE TRÈS MODESTE"
                     : logement.niveauRevenu === "Modeste"

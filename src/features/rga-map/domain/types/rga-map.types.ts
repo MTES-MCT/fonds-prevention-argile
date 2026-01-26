@@ -33,6 +33,12 @@ export interface RgaMapProps {
   locked?: boolean;
 
   /**
+   * ID RNB du bâtiment à pré-sélectionner
+   * Permet de sélectionner automatiquement un bâtiment au chargement
+   */
+  initialRnbId?: string;
+
+  /**
    * Afficher un marqueur au centre
    * @default false
    */
