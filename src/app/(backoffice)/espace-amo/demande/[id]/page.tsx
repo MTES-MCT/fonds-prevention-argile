@@ -7,7 +7,7 @@ import { ReponseAccompagnement } from "./components/ReponseAccompagnement";
 import { InfoDemandeur } from "./components/InfoDemandeur";
 import { InfoLogement } from "./components/InfoLogement";
 import { AFaire } from "./components/AFaire";
-import { CarteLogement } from "./components/CarteLogement";
+import { LocalisationLogement } from "./components/LocalisationLogement";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 
 interface PageProps {
@@ -94,7 +94,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                 <InfoLogement logement={demande.logement} />
               </div>
               <div>
-                <CarteLogement logement={demande.logement} adresse={demande.demandeur.adresse} />
+                <LocalisationLogement logement={demande.logement} adresse={demande.demandeur.adresse} />
               </div>
             </div>
 

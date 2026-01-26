@@ -128,6 +128,7 @@ describe("demande-detail.actions", () => {
             limit: vi.fn().mockResolvedValue([{ entrepriseAmoId: "amo-123" }]),
           }),
         }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       vi.mocked(approveValidation).mockResolvedValue({
@@ -174,6 +175,7 @@ describe("demande-detail.actions", () => {
             limit: vi.fn().mockResolvedValue([{ entrepriseAmoId: "amo-123" }]),
           }),
         }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       vi.mocked(rejectEligibility).mockResolvedValue({
@@ -213,6 +215,7 @@ describe("demande-detail.actions", () => {
             limit: vi.fn().mockResolvedValue([{ entrepriseAmoId: "amo-123" }]),
           }),
         }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       const result = await refuserDemandeNonEligible("demande-123", "Court");

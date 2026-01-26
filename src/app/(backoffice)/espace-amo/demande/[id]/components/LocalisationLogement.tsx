@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import type { InfoLogement } from "@/features/backoffice/espace-amo/demande/domain/types";
 import { useMemo } from "react";
+import { RgaMapLegend } from "@/features/rga-map/components/RgaMapLegend";
 
 // Import dynamique pour éviter les problèmes SSR avec MapLibre
 const RgaMap = dynamic(() => import("@/features/rga-map/components/RgaMap").then((mod) => ({ default: mod.RgaMap })), {
@@ -26,7 +27,7 @@ interface CarteLogementProps {
 /**
  * Composant affichant la carte du logement avec zoom et sélection verrouillée
  */
-export function CarteLogement({ logement, adresse }: CarteLogementProps) {
+export function LocalisationLogement({ logement, adresse }: CarteLogementProps) {
   const coordinates = useMemo(() => {
     if (logement.lat && logement.lon) {
       return { lat: logement.lat, lon: logement.lon };
@@ -60,7 +61,8 @@ export function CarteLogement({ logement, adresse }: CarteLogementProps) {
           </h3>
 
           <div className="fr-card__desc">
-            <div className="fr-mt-2w">
+            {/* Carte */}
+            <div className="fr-mt-2w fr-mb-2w">
               <RgaMap
                 center={coordinates}
                 zoom={17}
@@ -71,7 +73,16 @@ export function CarteLogement({ logement, adresse }: CarteLogementProps) {
                 padding="0"
               />
             </div>
-            {adresse && <p className="fr-text--sm fr-mb-2w">{adresse}</p>}
+
+            {/* Adresse et légende */}
+            <div className="flex justify-between items-start fr-mt-2w">
+              {adresse && (
+                <p className="fr-badge fr-badge--sm fr-badge--blue-cumulus fr-icon-home-4-fill fr-badge--icon-left fr-m-0">
+                  {adresse}
+                </p>
+              )}
+              <RgaMapLegend />
+            </div>
           </div>
         </div>
       </div>
