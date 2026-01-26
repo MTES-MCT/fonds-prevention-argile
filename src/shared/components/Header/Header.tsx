@@ -58,7 +58,7 @@ const Header = () => {
   const isAgent = useIsAgent();
 
   return (
-    <header role="banner" className="fr-header" id="header-3">
+    <header role="banner" className="fr-header sticky" id="header-3">
       {/* Menu desktop */}
       <div className="fr-header__body">
         <div className="fr-container">
