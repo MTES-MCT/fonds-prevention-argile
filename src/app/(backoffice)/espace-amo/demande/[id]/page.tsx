@@ -72,7 +72,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
         </div>
 
         {/* Section en-tête : Réponse + InfoDemandeur */}
-        <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
+        <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
             <ReponseAccompagnement demandeId={demande.id} statutActuel={demande.statut} />
           </div>
