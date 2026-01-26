@@ -34,13 +34,18 @@ export async function getAllersVersByEpci(codeEpci: string): Promise<AllersVers[
 }
 
 /**
- * Récupère les Allers Vers pour un département et/ou un EPCI
+ * Récupère les Allers Vers avec priorité EPCI, fallback département
+ *
+ * Logique :
+ * 1. Si l'EPCI est fourni et a des AV → retourne uniquement ceux de l'EPCI
+ * 2. Sinon → retourne les AV du département
+ * 3. Si aucun → retourne un tableau vide
  */
-export async function getAllersVersByDepartementOrEpci(
+export async function getAllersVersByEpciWithFallback(
   codeDepartement: string,
   codeEpci?: string
 ): Promise<AllersVers[]> {
-  return await allersVersRepository.findByDepartementOrEpci(codeDepartement, codeEpci);
+  return await allersVersRepository.findByEpciWithDepartementFallback(codeDepartement, codeEpci);
 }
 
 /**
