@@ -35,42 +35,38 @@ export function InfoDemandeur({ demandeur }: InfoDemandeurProps) {
             <span className="fr-icon-user-line fr-mr-2v" aria-hidden="true"></span>
             {formatNomComplet(demandeur.prenom, demandeur.nom)}
           </h3>
-          <div className="fr-card__desc">
-            <ul className="fr-raw-list">
-              {demandeur.adresse && (
-                <li className="fr-mb-2v">
-                  <span className="fr-text--lg">
-                    adresse : <strong>{demandeur.adresse}</strong>
-                  </span>
-                </li>
-              )}
-              {demandeur.telephone && (
-                <li className="fr-mb-2v">
-                  <span className="fr-text--lg">
-                    tél : <strong>{demandeur.telephone}</strong>
-                  </span>
-                </li>
-              )}
-              {demandeur.email && (
-                <li className="fr-mb-2v">
-                  <span className="fr-text--lg">
-                    mail :{" "}
-                    <strong>
-                      <Link
-                        href="#"
-                        id="link-13"
-                        target="_self"
-                        onClick={handleCopyEmail}
-                        className="fr-link fr-icon-clipboard-line fr-link--icon-right">
-                        {demandeur.email}
-                      </Link>
-                    </strong>
-                  </span>
+          <dl
+            className="fr-card__desc fr-mt-4w fr-m-0"
+            style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.5rem 1rem" }}>
+            {demandeur.adresse && (
+              <>
+                <dt className="fr-text--lg">adresse :</dt>
+                <dd className="fr-m-0 fr-text--lg">{demandeur.adresse}</dd>
+              </>
+            )}
+            {demandeur.telephone && (
+              <>
+                <dt className="fr-text--lg">tél. :</dt>
+                <dd className="fr-m-0 fr-text--lg">{demandeur.telephone}</dd>
+              </>
+            )}
+            {demandeur.email && (
+              <>
+                <dt className="fr-text--lg">mail :</dt>
+                <dd className="fr-m-0 fr-text--lg">
+                  <Link
+                    href="#"
+                    id="link-13"
+                    target="_self"
+                    onClick={handleCopyEmail}
+                    className="fr-link fr-icon-clipboard-line fr-link--icon-right">
+                    {demandeur.email}
+                  </Link>
                   {emailCopied && <span className="fr-ml-2w">Copié !</span>}
-                </li>
-              )}
-            </ul>
-          </div>
+                </dd>
+              </>
+            )}
+          </dl>
         </div>
       </div>
     </div>
