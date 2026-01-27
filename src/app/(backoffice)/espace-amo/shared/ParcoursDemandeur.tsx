@@ -1,9 +1,11 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
-import { formatDate } from "@/shared/utils";
+import { formatDate, daysBetween } from "@/shared/utils";
 
 interface ParcoursDemandeurProps {
   currentStep: Step;
   parcoursCreatedAt: Date;
+  /** Date de dernière mise à jour pour afficher le nombre de jours depuis dernière action */
+  lastUpdatedAt?: Date;
 }
 
 interface StepConfig {
@@ -14,7 +16,7 @@ interface StepConfig {
 
 const STEPS_CONFIG: StepConfig[] = [
   { step: null, label: "Dossier créé", showDate: true },
-  { step: Step.CHOIX_AMO, label: "Choisir un AMO" },
+  { step: Step.CHOIX_AMO, label: "AMO validé" },
   { step: Step.ELIGIBILITE, label: "Soumettre le formulaire d'éligibilité" },
   { step: Step.DIAGNOSTIC, label: "Soumettre le diagnostic" },
   { step: Step.DEVIS, label: "Soumettre les devis" },
@@ -28,8 +30,11 @@ function getStepIndex(step: Step): number {
 /**
  * Composant affichant le parcours du demandeur
  */
-export function ParcoursDemandeur({ currentStep, parcoursCreatedAt }: ParcoursDemandeurProps) {
+export function ParcoursDemandeur({ currentStep, parcoursCreatedAt, lastUpdatedAt }: ParcoursDemandeurProps) {
   const currentStepIndex = getStepIndex(currentStep);
+
+  // Calcul du nombre de jours depuis dernière action
+  const daysSinceLastAction = lastUpdatedAt ? daysBetween(lastUpdatedAt, new Date()) : null;
 
   return (
     <div className="fr-card">
@@ -39,6 +44,17 @@ export function ParcoursDemandeur({ currentStep, parcoursCreatedAt }: ParcoursDe
             <span className="fr-icon-list-ordered fr-mr-2v" aria-hidden="true"></span>
             Parcours du demandeur
           </h3>
+
+          {/* Badge nombre de jours depuis dernière action */}
+          {daysSinceLastAction !== null && daysSinceLastAction > 0 && (
+            <div className="fr-mt-2w fr-mb-2w">
+              <p className="fr-badge fr-badge--warning fr-badge--no-icon">
+                <span className="fr-icon-warning-fill fr-icon--sm fr-mr-1v" aria-hidden="true"></span>
+                {daysSinceLastAction} jour{daysSinceLastAction > 1 ? "s" : ""} depuis dernière action
+              </p>
+            </div>
+          )}
+
           <div className="fr-card__desc">
             <ul className="fr-raw-list fr-mt-2w">
               {STEPS_CONFIG.map((stepConfig, index) => {

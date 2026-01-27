@@ -2,17 +2,19 @@
 
 import { useState } from "react";
 import type { InfoDemandeur as InfoDemandeurType } from "@/features/backoffice/espace-amo/demande/domain/types";
-import { formatNomComplet } from "@/shared/utils";
+import { formatNomComplet, formatDate } from "@/shared/utils";
 import Link from "next/dist/client/link";
 
 interface InfoDemandeurProps {
   demandeur: InfoDemandeurType;
+  /** Date depuis laquelle le dossier est suivi (optionnel, affiché sous le titre) */
+  suiviDepuis?: Date;
 }
 
 /**
  * Composant affichant les informations du demandeur
  */
-export function InfoDemandeur({ demandeur }: InfoDemandeurProps) {
+export function InfoDemandeur({ demandeur, suiviDepuis }: InfoDemandeurProps) {
   const [emailCopied, setEmailCopied] = useState(false);
 
   const handleCopyEmail = async () => {
@@ -35,6 +37,9 @@ export function InfoDemandeur({ demandeur }: InfoDemandeurProps) {
             <span className="fr-icon-user-line fr-mr-2v" aria-hidden="true"></span>
             {formatNomComplet(demandeur.prenom, demandeur.nom)}
           </h3>
+          {suiviDepuis && (
+            <p className="fr-card__desc fr-text--sm">Suivi depuis le {formatDate(suiviDepuis.toISOString())}</p>
+          )}
           <dl
             className="fr-card__desc fr-mt-4w fr-m-0"
             style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.5rem 1rem", alignItems: "baseline" }}>

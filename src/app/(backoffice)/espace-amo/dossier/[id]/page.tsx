@@ -1,22 +1,24 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { getDemandeDetail } from "@/features/backoffice/espace-amo/demande/services/demande-detail.service";
+import { getDossierDetail } from "@/features/backoffice/espace-amo/dossier/services/dossier-detail.service";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
-import { formatNomComplet, formatDate } from "@/shared/utils";
+import { formatNomComplet } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
+import { STEP_LABELS } from "@/features/backoffice/espace-amo/dossiers/domain/types";
 import { InfoDemandeur, InfoLogement, LocalisationLogement, ParcoursDemandeur } from "../../shared";
-import { ReponseAccompagnement } from "./components/ReponseAccompagnement";
-import { AFaireDemande } from "./components/AFaireDemande";
-import { GagnezDuTemps } from "./components/GagnezDuTemps";
+import { InfoDossierCallout } from "./components/InfoDossierCallout";
+import { PiecesJustificatives } from "./components/PiecesJustificatives";
+import { AFaireDossier } from "./components/AFaireDossier";
+import { GagnezDuTempsTravaux } from "./components/GagnezDuTempsTravaux";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 /**
- * Page détail d'une demande d'accompagnement (Espace AMO)
+ * Page détail d'un dossier suivi (Espace AMO)
  */
-export default async function DemandeDetailPage({ params }: PageProps) {
+export default async function DossierDetailPage({ params }: PageProps) {
   // Vérifier l'authentification
   const user = await getCurrentUser();
   if (!user) {
@@ -25,15 +27,15 @@ export default async function DemandeDetailPage({ params }: PageProps) {
 
   const { id } = await params;
 
-  // Récupérer les données de la demande
-  const result = await getDemandeDetail(id);
+  // Récupérer les données du dossier
+  const result = await getDossierDetail(id);
 
   if (!result.success || !result.data) {
     notFound();
   }
 
-  const demande = result.data;
-  const nomComplet = formatNomComplet(demande.demandeur.prenom, demande.demandeur.nom);
+  const dossier = result.data;
+  const nomComplet = formatNomComplet(dossier.demandeur.prenom, dossier.demandeur.nom);
 
   return (
     <>
@@ -51,8 +53,8 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                 </Link>
               </li>
               <li>
-                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.root}>
-                  Demandes d&apos;accompagnement
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.dossiers}>
+                  Vos dossiers
                 </Link>
               </li>
               <li>
@@ -68,21 +70,19 @@ export default async function DemandeDetailPage({ params }: PageProps) {
         <div className="fr-mb-4w">
           <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
           <div className="fr-badges-group">
-            <p className="fr-badge fr-badge--new">
-              Nouvelle demande du {formatDate(demande.dateCreation.toISOString())}
-            </p>
-            <p className="fr-badge">1. Choix de l'AMO</p>
+            <p className="fr-badge fr-badge--new">EN CONSTRUCTION</p>
+            <p className="fr-badge">{STEP_LABELS[dossier.currentStep]}</p>
           </div>
         </div>
 
-        {/* Section en-tête : Réponse + InfoDemandeur */}
+        {/* Section en-tête : Callout + InfoDemandeur */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
-            <ReponseAccompagnement demandeId={demande.id} statutActuel={demande.statut} />
+            <InfoDossierCallout currentStep={dossier.currentStep} />
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <div style={{ alignSelf: "flex-start" }}>
-              <InfoDemandeur demandeur={demande.demandeur} />
+              <InfoDemandeur demandeur={dossier.demandeur} suiviDepuis={dossier.suiviDepuis} />
             </div>
           </div>
         </div>
@@ -92,20 +92,23 @@ export default async function DemandeDetailPage({ params }: PageProps) {
       <section className="fr-background-alt--blue-france fr-py-4w">
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
-            {/* Colonne gauche : InfoLogement + LocalisationLogement + GagnezDuTemps */}
+            {/* Colonne gauche : PiecesJustificatives + InfoLogement + LocalisationLogement + GagnezDuTempsTravaux */}
             <div className="fr-col-12 fr-col-md-8">
               <div className="fr-mb-4w">
-                <InfoLogement logement={demande.logement} />
+                <PiecesJustificatives />
               </div>
               <div className="fr-mb-4w">
-                <LocalisationLogement logement={demande.logement} adresse={demande.demandeur.adresse} />
+                <InfoLogement logement={dossier.logement} dateIndemnisation={dossier.dateIndemnisation} />
+              </div>
+              <div className="fr-mb-4w">
+                <LocalisationLogement logement={dossier.logement} adresse={dossier.demandeur.adresse} />
               </div>
               <div>
-                <GagnezDuTemps />
+                <GagnezDuTempsTravaux />
               </div>
             </div>
 
-            {/* Colonne droite : À faire */}
+            {/* Colonne droite : ParcoursDemandeur + AFaireDossier */}
             <div className="fr-col-12 fr-col-md-4">
               <div
                 style={{
@@ -114,8 +117,12 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                   flexDirection: "column",
                   gap: "2rem",
                 }}>
-                <ParcoursDemandeur currentStep={demande.currentStep} parcoursCreatedAt={demande.parcoursCreatedAt} />
-                <AFaireDemande />
+                <ParcoursDemandeur
+                  currentStep={dossier.currentStep}
+                  parcoursCreatedAt={dossier.parcoursCreatedAt}
+                  lastUpdatedAt={dossier.lastUpdatedAt}
+                />
+                <AFaireDossier />
               </div>
             </div>
           </div>
@@ -130,18 +137,18 @@ export default async function DemandeDetailPage({ params }: PageProps) {
  */
 export async function generateMetadata({ params }: PageProps) {
   const { id } = await params;
-  const result = await getDemandeDetail(id);
+  const result = await getDossierDetail(id);
 
   if (!result.success || !result.data) {
     return {
-      title: "Demande non trouvée",
+      title: "Dossier non trouvé",
     };
   }
 
   const nomComplet = formatNomComplet(result.data.demandeur.prenom, result.data.demandeur.nom);
 
   return {
-    title: `Demande de ${nomComplet} | Espace AMO`,
-    description: `Détails de la demande d'accompagnement de ${nomComplet}`,
+    title: `Dossier de ${nomComplet} | Espace AMO`,
+    description: `Détails du dossier suivi de ${nomComplet}`,
   };
 }

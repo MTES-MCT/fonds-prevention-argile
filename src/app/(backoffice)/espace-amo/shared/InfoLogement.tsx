@@ -1,13 +1,34 @@
 import type { InfoLogement as InfoLogementType } from "@/features/backoffice/espace-amo/demande/domain/types";
+import { formatDate } from "@/shared/utils";
+
+interface DateIndemnisation {
+  debut: Date;
+  fin: Date;
+  montant: number;
+}
 
 interface InfoLogementProps {
   logement: InfoLogementType;
+  /** Informations sur l'indemnisation passée (optionnel, enrichit l'affichage) */
+  dateIndemnisation?: DateIndemnisation;
 }
 
 /**
  * Composant affichant les informations sur le logement et l'éligibilité
  */
-export function InfoLogement({ logement }: InfoLogementProps) {
+export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps) {
+  // Formater le texte d'indemnisation si disponible
+  const formatIndemnisationText = (indemnisation: DateIndemnisation) => {
+    const debutStr = formatDate(indemnisation.debut.toISOString());
+    const finStr = formatDate(indemnisation.fin.toISOString());
+    const montantStr = new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+      maximumFractionDigits: 0,
+    }).format(indemnisation.montant);
+    return `INDEMNISÉ ENTRE ${debutStr} ET ${finStr} (${montantStr})`;
+  };
+
   return (
     <div className="fr-card">
       <div className="fr-card__body">
@@ -52,9 +73,15 @@ export function InfoLogement({ logement }: InfoLogementProps) {
             {logement.indemnisationPasseeRGA !== null && (
               <li className="fr-mb-2v">
                 Indemnisation passée liée au RGA ?{" "}
-                <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
-                  {logement.indemnisationPasseeRGA ? "OUI" : "NON"}
-                </span>
+                {dateIndemnisation ? (
+                  <span className="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">
+                    {formatIndemnisationText(dateIndemnisation)}
+                  </span>
+                ) : (
+                  <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+                    {logement.indemnisationPasseeRGA ? "OUI" : "NON"}
+                  </span>
+                )}
               </li>
             )}
 

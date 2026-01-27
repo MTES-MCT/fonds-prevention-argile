@@ -1,12 +1,30 @@
-import content from "../content/content.json";
-import contentTravauxEligiblesCommon from "../../travaux-eligibles/content/common.json";
-import Image from "next/image";
+"use client";
 
-export default function QuelsSontTravauxEligiblesSection() {
+import Image from "next/image";
+import contentTravauxEligiblesCommon from "../../../../../(main)/travaux-eligibles/content/common.json";
+
+/**
+ * Composant affichant les travaux éligibles au Fonds RGA avec onglets par catégorie
+ */
+export function GagnezDuTempsTravaux() {
   return (
-    <section className="fr-container-fluid fr-py-10w">
-      <div className="fr-container">
-        <h2>{content.quels_sont_travaux_eligibles_section.title}</h2>
+    <div
+      className="fr-card"
+      style={{
+        backgroundColor: "#e8edff",
+      }}>
+      <div className="fr-p-4w">
+        <div className="fr-mb-4w">
+          <h3 className="fr-h5 fr-mb-1v">
+            <span className="fr-icon-time-line fr-mr-2v" aria-hidden="true"></span>
+            Gagnez du temps pour la prochaine étape !
+          </h3>
+          <p className="fr-text--sm fr-mb-0">
+            Vérifiez que les travaux de votre demandeur sont éligibles au Fonds RGA.
+          </p>
+        </div>
+
+        {/* Onglets */}
         <div className="fr-tabs">
           <ul className="fr-tabs__list" role="tablist" aria-label="">
             {contentTravauxEligiblesCommon.autres_travaux_section.travaux_tabs.map((tab, index) => (
@@ -35,12 +53,14 @@ export default function QuelsSontTravauxEligiblesSection() {
               {/* Grille pour organiser les cartes */}
               <div className="fr-grid-row fr-grid-row--gutters">
                 {tab.travaux.map((item, textIndex) => (
-                  <div key={textIndex} className="fr-col-12 fr-col-md-6 fr-col-lg-4">
+                  <div key={textIndex} className="fr-col-6 fr-col-md-6 fr-col-lg-6">
                     <div className="fr-card fr-enlarge-link fr-card--horizontal">
                       <div className="fr-card__body">
                         <div className="fr-card__content">
                           <h3 className="fr-card__title">
-                            <a href={item.pageUrl}>{item.name}</a>
+                            <a href={item.pageUrl} target="_blank">
+                              {item.name}
+                            </a>
                           </h3>
                           <div className="fr-card__start"></div>
                         </div>
@@ -64,6 +84,6 @@ export default function QuelsSontTravauxEligiblesSection() {
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 }

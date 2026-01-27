@@ -19,7 +19,7 @@ const RgaMap = dynamic(() => import("@/features/rga-map/components/RgaMap").then
   ),
 });
 
-interface CarteLogementProps {
+interface LocalisationLogementProps {
   logement: InfoLogement;
   adresse: string | null;
 }
@@ -27,7 +27,7 @@ interface CarteLogementProps {
 /**
  * Composant affichant la carte du logement avec zoom et sélection verrouillée
  */
-export function LocalisationLogement({ logement, adresse }: CarteLogementProps) {
+export function LocalisationLogement({ logement, adresse }: LocalisationLogementProps) {
   const coordinates = useMemo(() => {
     if (logement.lat && logement.lon) {
       return { lat: logement.lat, lon: logement.lon };

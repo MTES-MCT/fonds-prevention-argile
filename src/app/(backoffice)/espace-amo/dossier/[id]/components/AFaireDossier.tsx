@@ -1,7 +1,7 @@
 /**
- * Composant affichant la liste des actions à effectuer
+ * Composant affichant la liste des actions à effectuer pour un dossier suivi
  */
-export function AFaire() {
+export function AFaireDossier() {
   return (
     <div className="fr-card">
       <div className="fr-card__body">
@@ -13,23 +13,19 @@ export function AFaire() {
             <ul className="fr-raw-list">
               <li className="fr-mb-2w fr-mt-2w">
                 <span className="fr-icon-arrow-right-line fr-mr-1v" aria-hidden="true"></span>
-                Contacter le demandeur
+                Aider le ménage à compléter son dossier sur Démarche numérique.
               </li>
               <li className="fr-mb-2w">
                 <span className="fr-icon-arrow-right-line fr-mr-1v" aria-hidden="true"></span>
-                Vérifier s&apos;il y a des fissures
+                L&apos;aider à récupérer ses pièces justificatives
               </li>
               <li className="fr-mb-2w">
                 <span className="fr-icon-arrow-right-line fr-mr-1v" aria-hidden="true"></span>
-                Contrôler la conformité des informations fournies par le demandeur
+                S&apos;assurer de la bonne complétion et des relances si le ménage n&apos;avance pas sur le dépôt.
               </li>
               <li className="fr-mb-2w">
                 <span className="fr-icon-arrow-right-line fr-mr-1v" aria-hidden="true"></span>
-                Répondre à l&apos;accompagnement pour informer le demandeur de votre prise en charge
-              </li>
-              <li className="fr-mb-2w">
-                <span className="fr-icon-arrow-right-line fr-mr-1v" aria-hidden="true"></span>
-                Informer et préparer le demandeur pour les étapes suivantes
+                Préparer la suite pour effectuer le diagnostic si l&apos;éligibilité est validée par la DDT.
               </li>
             </ul>
           </div>
