@@ -10,6 +10,8 @@ import { getBuildingDataByRnbId, type BuildingData } from "@/shared/services/bdn
 interface UseRgaBuildingSelectionOptions {
   map: maplibregl.Map | null;
   enabled?: boolean;
+  initialRnbId?: string;
+  initialCoordinates?: { lat: number; lon: number };
   onBuildingSelect?: (data: BuildingData | null) => void;
   onError?: (error: Error) => void;
 }
@@ -26,7 +28,7 @@ interface UseRgaBuildingSelectionReturn {
  * Hook pour gérer la sélection et le survol des bâtiments sur la carte
  */
 export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions): UseRgaBuildingSelectionReturn {
-  const { map, enabled = true, onBuildingSelect, onError } = options;
+  const { map, enabled = true, initialRnbId, initialCoordinates, onBuildingSelect, onError } = options;
 
   const [selectedBuilding, setSelectedBuilding] = useState<SelectedBuilding | null>(null);
   const [buildingData, setBuildingData] = useState<BuildingData | null>(null);
@@ -35,6 +37,91 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
 
   const hoveredIdRef = useRef<string | null>(null);
   const selectedIdRef = useRef<string | null>(null);
+  const initialSelectionAppliedRef = useRef(false);
+
+  // Pré-sélectionner un bâtiment par son ID RNB au chargement
+  useEffect(() => {
+    if (!map || !initialRnbId || !initialCoordinates || initialSelectionAppliedRef.current) return;
+
+    const applyInitialSelection = () => {
+      // Vérifier si les sources sont prêtes et chargées
+      const pointsSource = map.getSource(SOURCE_IDS.rnbPoints);
+      const formesSource = map.getSource(SOURCE_IDS.rnbFormes);
+
+      if (!pointsSource || !formesSource) {
+        return false;
+      }
+
+      // Vérifier si les sources sont complètement chargées
+      if (!map.isSourceLoaded(SOURCE_IDS.rnbPoints) || !map.isSourceLoaded(SOURCE_IDS.rnbFormes)) {
+        return false;
+      }
+
+      try {
+        // Vérifier si la feature existe dans les tuiles chargées
+        const pointFeatures = map.querySourceFeatures(SOURCE_IDS.rnbPoints, {
+          sourceLayer: RNB_SOURCE_LAYER,
+          filter: ["==", ["id"], initialRnbId],
+        });
+        const formeFeatures = map.querySourceFeatures(SOURCE_IDS.rnbFormes, {
+          sourceLayer: RNB_SOURCE_LAYER,
+          filter: ["==", ["id"], initialRnbId],
+        });
+
+        if (pointFeatures.length === 0 && formeFeatures.length === 0) {
+          return false;
+        }
+
+        // Appliquer l'état de sélection visuelle
+        setFeatureState(map, initialRnbId, "selected", true);
+        selectedIdRef.current = initialRnbId;
+
+        // Mettre à jour l'état React
+        setSelectedBuilding({
+          rnbId: initialRnbId,
+          coordinates: initialCoordinates,
+        });
+
+        initialSelectionAppliedRef.current = true;
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    // Handler pour l'événement sourcedata
+    const handleSourceData = (e: maplibregl.MapSourceDataEvent) => {
+      if (initialSelectionAppliedRef.current) return;
+
+      // Vérifier si c'est une de nos sources qui vient d'être chargée
+      if (e.sourceId === SOURCE_IDS.rnbPoints || e.sourceId === SOURCE_IDS.rnbFormes) {
+        if (e.isSourceLoaded) {
+          applyInitialSelection();
+        }
+      }
+    };
+
+    // Essayer d'appliquer immédiatement si tout est prêt
+    if (map.isStyleLoaded() && applyInitialSelection()) {
+      return;
+    }
+
+    // Sinon, écouter les événements de chargement des sources
+    map.on("sourcedata", handleSourceData);
+
+    // Aussi écouter idle qui est déclenché quand la carte est complètement rendue
+    const handleIdle = () => {
+      if (!initialSelectionAppliedRef.current) {
+        applyInitialSelection();
+      }
+    };
+    map.once("idle", handleIdle);
+
+    return () => {
+      map.off("sourcedata", handleSourceData);
+      map.off("idle", handleIdle);
+    };
+  }, [map, initialRnbId, initialCoordinates]);
 
   // Effacer la sélection
   const clearSelection = useCallback(() => {

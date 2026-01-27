@@ -236,30 +236,27 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
   }
 
   /**
-   * Récupère les Allers Vers pour un département ET/OU un EPCI
+   * Récupère les Allers Vers avec priorité EPCI, fallback département
+   *
+   * Logique :
+   * 1. Si l'EPCI est fourni et a des AV → retourne uniquement ceux de l'EPCI
+   * 2. Sinon → retourne les AV du département
+   * 3. Si aucun → retourne un tableau vide
    */
-  async findByDepartementOrEpci(
+  async findByEpciWithDepartementFallback(
     codeDepartement: string,
     codeEpci?: string
   ): Promise<Array<typeof allersVers.$inferSelect>> {
-    const avParDepartement = await this.findByDepartement(codeDepartement);
-
-    if (!codeEpci) {
-      return avParDepartement;
-    }
-
-    const avParEpci = await this.findByEpci(codeEpci);
-
-    // Fusionner et dédupliquer
-    const avMap = new Map<string, typeof allersVers.$inferSelect>();
-
-    for (const av of [...avParDepartement, ...avParEpci]) {
-      if (!avMap.has(av.id)) {
-        avMap.set(av.id, av);
+    // 1. Si EPCI fourni, chercher d'abord par EPCI
+    if (codeEpci) {
+      const avParEpci = await this.findByEpci(codeEpci);
+      if (avParEpci.length > 0) {
+        return avParEpci; // Priorité EPCI
       }
     }
 
-    return Array.from(avMap.values());
+    // 2. Fallback département
+    return await this.findByDepartement(codeDepartement);
   }
 }
 

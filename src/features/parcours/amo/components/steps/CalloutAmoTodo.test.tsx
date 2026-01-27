@@ -15,7 +15,7 @@ vi.mock("@/features/parcours/amo/actions", () => ({
 }));
 
 vi.mock("@/features/seo/allers-vers/actions", () => ({
-  getAllersVersByDepartementOrEpciAction: vi.fn(),
+  getAllersVersByEpciWithFallbackAction: vi.fn(),
 }));
 
 vi.mock("@/features/auth/client", () => ({
@@ -162,7 +162,7 @@ describe("CalloutAmoTodo", () => {
         data: [],
       });
 
-      vi.mocked(allersVersActions.getAllersVersByDepartementOrEpciAction).mockResolvedValue({
+      vi.mocked(allersVersActions.getAllersVersByEpciWithFallbackAction).mockResolvedValue({
         success: true,
         data: [],
       });
@@ -187,7 +187,7 @@ describe("CalloutAmoTodo", () => {
         data: [],
       });
 
-      vi.mocked(allersVersActions.getAllersVersByDepartementOrEpciAction).mockResolvedValue({
+      vi.mocked(allersVersActions.getAllersVersByEpciWithFallbackAction).mockResolvedValue({
         success: true,
         data: [createMockAllersVers("av-1", "Caue Tarn-et-Garonne")],
       });
@@ -211,7 +211,7 @@ describe("CalloutAmoTodo", () => {
         data: [],
       });
 
-      vi.mocked(allersVersActions.getAllersVersByDepartementOrEpciAction).mockResolvedValue({
+      vi.mocked(allersVersActions.getAllersVersByEpciWithFallbackAction).mockResolvedValue({
         success: true,
         data: [createMockAllersVers("av-1", "Adil 36"), createMockAllersVers("av-2", "Soliha 36")],
       });
@@ -331,8 +331,8 @@ describe("CalloutAmoTodo", () => {
         expect(screen.getByText("AMO Test")).toBeInTheDocument();
       });
 
-      // getAllersVersByDepartementOrEpciAction ne doit PAS être appelé
-      expect(allersVersActions.getAllersVersByDepartementOrEpciAction).not.toHaveBeenCalled();
+      // getAllersVersByEpciWithFallbackAction ne doit PAS être appelé
+      expect(allersVersActions.getAllersVersByEpciWithFallbackAction).not.toHaveBeenCalled();
     });
   });
 });

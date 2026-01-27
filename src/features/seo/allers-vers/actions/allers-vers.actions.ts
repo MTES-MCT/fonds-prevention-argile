@@ -4,7 +4,7 @@ import {
   getAllAllersVersWithRelations,
   getAllersVersByDepartement,
   getAllersVersByEpci,
-  getAllersVersByDepartementOrEpci,
+  getAllersVersByEpciWithFallback,
 } from "../services";
 import type { ActionResult } from "@/shared/types";
 import type { AllersVers } from "../domain/entities";
@@ -79,14 +79,19 @@ export async function getAllersVersByEpciAction(codeEpci: string): Promise<Actio
 }
 
 /**
- * Action pour récupérer les Allers Vers par département ou EPCI
+ * Action pour récupérer les Allers Vers avec priorité EPCI, fallback département
+ *
+ * Logique :
+ * 1. Si l'EPCI est fourni et a des AV → retourne uniquement ceux de l'EPCI
+ * 2. Sinon → retourne les AV du département
+ * 3. Si aucun → retourne un tableau vide
  */
-export async function getAllersVersByDepartementOrEpciAction(
+export async function getAllersVersByEpciWithFallbackAction(
   codeDepartement: string,
   codeEpci?: string
 ): Promise<ActionResult<AllersVers[]>> {
   try {
-    const allersVers = await getAllersVersByDepartementOrEpci(codeDepartement, codeEpci);
+    const allersVers = await getAllersVersByEpciWithFallback(codeDepartement, codeEpci);
 
     return {
       success: true,

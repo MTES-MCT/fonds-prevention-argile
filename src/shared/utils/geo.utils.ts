@@ -56,3 +56,16 @@ export function calculateDistance(from: Coordinates, to: Coordinates): number {
 function toRad(deg: number): number {
   return deg * (Math.PI / 180);
 }
+
+/**
+ * Parse une chaîne de coordonnées "lat,lon" vers un objet Coordinates
+ */
+export function parseCoordinatesString(coordonnees: string | undefined): Coordinates | undefined {
+  if (!coordonnees) return undefined;
+  const parts = coordonnees.split(",");
+  if (parts.length < 2) return undefined;
+  const lat = parseFloat(parts[0]);
+  const lon = parseFloat(parts[1]);
+  if (isNaN(lat) || isNaN(lon)) return undefined;
+  return { lat, lon };
+}

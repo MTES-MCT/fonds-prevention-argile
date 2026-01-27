@@ -26,6 +26,19 @@ export interface RgaMapProps {
   readOnly?: boolean;
 
   /**
+   * Verrouiller la sélection
+   * Empêche la sélection d'un autre bâtiment
+   * @default false
+   */
+  locked?: boolean;
+
+  /**
+   * ID RNB du bâtiment à pré-sélectionner
+   * Permet de sélectionner automatiquement un bâtiment au chargement
+   */
+  initialRnbId?: string;
+
+  /**
    * Afficher un marqueur au centre
    * @default false
    */

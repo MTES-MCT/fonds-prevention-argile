@@ -171,8 +171,12 @@ export default async function CommunePage({ params }: PageProps) {
       {/* L'État vous accompagne */}
       <SectionEtatAccompagne conclusionLocale={content.etatAccompagne.conclusionLocale} />
 
-      {/* Allers Vers - Conseillers locaux */}
-      <DisplayAllersVers codeDepartement={departement.code} nomDepartement={departement.nom} />
+      {/* Allers Vers - Conseillers locaux (priorité EPCI, fallback département) */}
+      <DisplayAllersVers
+        codeDepartement={departement.code}
+        nomDepartement={departement.nom}
+        codeEpci={commune.codeEpci}
+      />
 
       {/* CTA Full Width */}
       <SavoirSiConcerneSection />

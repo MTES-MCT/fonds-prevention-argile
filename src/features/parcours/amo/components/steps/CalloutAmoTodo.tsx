@@ -5,7 +5,7 @@ import type { Amo } from "@/features/parcours/amo";
 import { choisirAmo, getAmoRefusee, getAmosDisponibles } from "@/features/parcours/amo/actions";
 import { useSimulateurRga } from "@/features/simulateur";
 import { useEffect, useState } from "react";
-import { getAllersVersByDepartementOrEpciAction } from "@/features/seo/allers-vers/actions";
+import { getAllersVersByEpciWithFallbackAction } from "@/features/seo/allers-vers/actions";
 import type { AllersVers } from "@/features/seo/allers-vers";
 import { getCodeDepartementFromCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { ContactCard } from "@/shared/components";
@@ -90,7 +90,7 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
 
         const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
 
-        const result = await getAllersVersByDepartementOrEpciAction(codeDepartement, codeEpci);
+        const result = await getAllersVersByEpciWithFallbackAction(codeDepartement, codeEpci);
 
         if (result.success && result.data) {
           setAllersVersList(result.data);

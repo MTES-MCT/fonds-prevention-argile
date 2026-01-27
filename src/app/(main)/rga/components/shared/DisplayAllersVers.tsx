@@ -1,17 +1,24 @@
-import { getAllersVersByDepartementAction } from "@/features/seo/allers-vers";
+import { getAllersVersByEpciWithFallbackAction } from "@/features/seo/allers-vers";
 import { formatDepartementAvecArticle } from "@/shared/utils";
 import Link from "next/link";
 
 interface DisplayAllersVersProps {
   codeDepartement: string;
   nomDepartement: string;
+  /** Code EPCI optionnel pour afficher les AV spécifiques à l'EPCI (priorité sur département) */
+  codeEpci?: string;
 }
 
 /**
- * Composant serveur pour afficher les structures "Allers Vers" d'un département
+ * Composant serveur pour afficher les structures "Allers Vers"
+ *
+ * Logique de priorité :
+ * 1. Si codeEpci fourni et des AV existent pour cet EPCI → affiche uniquement ceux de l'EPCI
+ * 2. Sinon → affiche les AV du département (fallback)
+ * 3. Si aucun AV → n'affiche rien
  */
-export async function DisplayAllersVers({ codeDepartement, nomDepartement }: DisplayAllersVersProps) {
-  const result = await getAllersVersByDepartementAction(codeDepartement);
+export async function DisplayAllersVers({ codeDepartement, nomDepartement, codeEpci }: DisplayAllersVersProps) {
+  const result = await getAllersVersByEpciWithFallbackAction(codeDepartement, codeEpci);
 
   // Si erreur ou pas de données, ne rien afficher
   if (!result.success || !result.data || result.data.length === 0) {

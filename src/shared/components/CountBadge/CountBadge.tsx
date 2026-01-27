@@ -9,7 +9,7 @@ interface CountBadgeProps {
  *
  * Utilisé pour afficher des notifications ou des compteurs dans la navigation
  */
-export function CountBadge({ count, backgroundColor = "#FEE7FC", color = "#6E445A" }: CountBadgeProps) {
+export function CountBadge({ count, backgroundColor = "#FEECC2", color = "#716043" }: CountBadgeProps) {
   if (count <= 0) {
     return null;
   }

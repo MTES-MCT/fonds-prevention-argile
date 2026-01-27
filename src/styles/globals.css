@@ -30,6 +30,16 @@
   padding-left: 4.375em !important;
 }
 
+/* ===================================
+   Sticky Header for Backoffice
+   =================================== */
+.fr-header.sticky {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  background-color: var(--background-default-grey) !important;
+}
+
 .pc-connect:before {
   width: 3.375em !important;
   background-size: 3.375em 3em !important;

@@ -59,25 +59,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  // Pages signes-a-surveiller
-  const signesASurveiller = [
-    "affaissement-ou-soulevement-de-dallages",
-    "decollement-entre-la-cloison-et-le-plafond",
-    "fissures-dans-les-cloisons-interieures",
-    "fissures-en-escalier",
-    "fissures-horizontales-plancher",
-    "fissures-verticales-angles-batiment",
-    "microfissures-horizontales-verticales",
-    "portes-et-fenetres-qui-ferment-mal",
-  ];
-
-  const signesPages: MetadataRoute.Sitemap = signesASurveiller.map((slug) => ({
-    url: `${BASE_URL}/signes-a-surveiller/${slug}`,
-    lastModified: now,
-    changeFrequency: "monthly",
-    priority: 0.6,
-  }));
-
   // Pages travaux-eligibles
   const travauxEligibles = [
     "dispositif-infiltration-eaux",
@@ -137,7 +118,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...staticPages,
-    ...signesPages,
     ...travauxPages,
     ...rgaIndex,
     ...departementsPages,

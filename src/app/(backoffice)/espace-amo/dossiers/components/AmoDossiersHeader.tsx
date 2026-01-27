@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 
-export function AmoDossiersHeader() {
+interface AmoDossiersHeaderProps {
+  nombreDossiers: number;
+}
+
+export function AmoDossiersHeader({ nombreDossiers }: AmoDossiersHeaderProps) {
   return (
     <div className="fr-container fr-py-4w">
       <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
@@ -24,7 +28,7 @@ export function AmoDossiersHeader() {
           </ol>
         </div>
       </nav>
-      <h1 className="fr-h1 fr-mb-0">Vos dossiers (X)</h1>
+      <h1 className="fr-h1 fr-mb-0">Vos dossiers ({nombreDossiers})</h1>
       <p className="fr-mt-2w fr-text--xl text-gray-500">Retrouvez le détail de vos dossiers suivis</p>
     </div>
   );

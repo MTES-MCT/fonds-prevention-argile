@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getValidationDataByToken } from "@/features/parcours/amo/actions";
-import ValidationAmoForm from "./components/ValidationAmoForm";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 
 interface ValidationAmoPageProps {
   params: Promise<{
@@ -8,14 +10,20 @@ interface ValidationAmoPageProps {
   }>;
 }
 
+/**
+ * Page de validation AMO (lien envoyé par email)
+ *
+ * Cette page redirige vers la page de détail de demande dans l'espace AMO.
+ * Si le token est invalide ou expiré, affiche un message d'erreur.
+ * Si le token a déjà été utilisé, affiche un résumé et un lien vers l'espace AMO.
+ */
 export default async function ValidationAmoPage({ params }: ValidationAmoPageProps) {
-  // Await params pour Next.js 15
   const { token } = await params;
 
   // Récupérer et vérifier le token côté serveur
   const result = await getValidationDataByToken(token);
 
-  // Si le token est invalide ou expiré
+  // Si le token est invalide ou expiré, afficher un message d'erreur
   if (!result.success) {
     return (
       <section className="fr-container fr-py-10w">
@@ -24,14 +32,14 @@ export default async function ValidationAmoPage({ params }: ValidationAmoPagePro
             <div className="fr-alert fr-alert--error">
               <h3 className="fr-alert__title">Lien invalide</h3>
               <p>{result.error}</p>
-              <p className="fr-mt-2w">Ce lien de validation n'est plus valide. Les raisons possibles :</p>
+              <p className="fr-mt-2w">Ce lien de validation n&apos;est plus valide. Les raisons possibles :</p>
               <ul>
-                <li>Le lien a expiré (validité de 7 jours)</li>
+                <li>Le lien a expiré (validité de 90 jours)</li>
                 <li>Le lien est incorrect</li>
               </ul>
               <p className="fr-mt-4w">
-                Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le demandeur pour qu'il vous envoie un
-                nouveau lien.
+                Si vous pensez qu&apos;il s&apos;agit d&apos;une erreur, veuillez contacter le demandeur pour
+                qu&apos;il vous envoie un nouveau lien.
               </p>
             </div>
           </div>
@@ -40,7 +48,7 @@ export default async function ValidationAmoPage({ params }: ValidationAmoPagePro
     );
   }
 
-  // Si le token a déjà été utilisé
+  // Si le token a déjà été utilisé, afficher un résumé et proposer d'aller sur l'espace AMO
   if (result.data.isUsed) {
     let choixMessage = "";
 
@@ -77,79 +85,33 @@ export default async function ValidationAmoPage({ params }: ValidationAmoPagePro
                       })
                     : "date inconnue"}
                 </strong>{" "}
-                et le demandeur a été notifié. .
+                et le demandeur a été notifié.
               </p>
               <p className="fr-mt-2w">
                 <strong>Votre choix :</strong> {choixMessage}
               </p>
-              <p className="fr-mt-2w">
-                Si vous constatez un problème, n'hésitez pas à nous contacter à{" "}
-                <a href="mailto:contact@fonds-prevention-argile.beta.gouv.fr">
-                  contact@fonds-prevention-argile.beta.gouv.fr
-                </a>
-                .
-              </p>
             </div>
+
+            <div className="fr-mt-4w">
+              <Link href={ROUTES.backoffice.espaceAmo.demande(result.data.validationId)} className="fr-btn">
+                Voir le détail de la demande
+              </Link>
+            </div>
+
+            <p className="fr-mt-4w fr-text--sm">
+              Si vous constatez un problème, n&apos;hésitez pas à nous contacter à{" "}
+              <a href="mailto:contact@fonds-prevention-argile.beta.gouv.fr">
+                contact@fonds-prevention-argile.beta.gouv.fr
+              </a>
+              .
+            </p>
           </div>
         </div>
       </section>
     );
   }
 
-  // Si le token est valide et pas encore utilisé, afficher le formulaire
-  return (
-    <section className="fr-container fr-py-10w">
-      <div className="fr-grid-row fr-grid-row--center">
-        <div className="fr-col-12 fr-col-md-10">
-          <h1 className="fr-mb-2w">{result.data.entrepriseAmo.nom}</h1>
-
-          <div className="fr-alert fr-alert--info fr-mb-4w">
-            <h3 className="fr-alert__title">Nouvelle demande d'accompagnement</h3>
-            <p>
-              Ce demandeur sollicite votre confirmation en tant qu'AMO certifié pour son dossier d'aide au Fonds de
-              Prévention Argile. Cette étape est essentielle pour qu'il puisse avancer dans le processus.
-            </p>
-          </div>
-
-          <div className="container fr-background-alt--blue-cumulus fr-p-4w">
-            <h3>
-              <span className="fr-icon-account-circle-line fr-mr-1w"></span>
-              Informations du demandeur
-            </h3>
-
-            {/* Infos demandeur */}
-            <div className="fr-mb-4w">
-              <p className="fr-mb-1v">
-                <span className="fr-text--regular">Identité : </span>
-                <strong>
-                  {result.data.demandeur.prenom} {result.data.demandeur.nom}
-                </strong>
-              </p>
-
-              <p className="fr-mb-1v">
-                <span className="fr-text--regular">Adresse : </span>
-                <strong>{result.data.demandeur.adresseLogement}</strong>
-              </p>
-
-              {result.data.demandeur.email && (
-                <p className="fr-mb-1v">
-                  <span className="fr-text--regular">Email : </span>
-                  <strong>{result.data.demandeur.email}</strong>
-                </p>
-              )}
-
-              {result.data.demandeur.telephone && (
-                <p className="fr-mb-0">
-                  <span className="fr-text--regular">Téléphone : </span>
-                  <strong>{result.data.demandeur.telephone}</strong>
-                </p>
-              )}
-            </div>
-
-            <ValidationAmoForm validationId={result.data.validationId} token={token} />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+  // Si le token est valide et pas encore utilisé, rediriger vers la page de détail
+  // L'authentification sera gérée par le layout de l'espace AMO
+  redirect(ROUTES.backoffice.espaceAmo.demande(result.data.validationId));
 }

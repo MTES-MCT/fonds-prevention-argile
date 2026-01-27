@@ -138,12 +138,18 @@ async function getDemandesAccompagnement(
 /**
  * Récupère la répartition des dossiers par étape du parcours
  *
- * Compte uniquement les dossiers en cours d'accompagnement (LOGEMENT_ELIGIBLE)
+ * - Pour l'étape "Choix AMO" : compte les demandes EN_ATTENTE (en cours de traitement)
+ * - Pour les autres étapes : compte les dossiers LOGEMENT_ELIGIBLE (en cours d'accompagnement)
  */
 async function getRepartitionParEtape(entrepriseAmoId: string): Promise<RepartitionParEtape[]> {
   // Récupérer le count par étape pour les dossiers de cette entreprise AMO
   const results = await Promise.all(
     STEPS_ORDER.map(async (step) => {
+      // Pour l'étape "Choix AMO", compter les demandes en attente
+      // Pour les autres étapes, compter les dossiers en cours d'accompagnement
+      const statutFilter =
+        step === Step.CHOIX_AMO ? StatutValidationAmo.EN_ATTENTE : StatutValidationAmo.LOGEMENT_ELIGIBLE;
+
       const result = await db
         .select({ count: count() })
         .from(parcoursPrevention)
@@ -151,7 +157,7 @@ async function getRepartitionParEtape(entrepriseAmoId: string): Promise<Repartit
         .where(
           and(
             eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
-            eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
+            eq(parcoursAmoValidations.statut, statutFilter),
             eq(parcoursPrevention.currentStep, step)
           )
         );
