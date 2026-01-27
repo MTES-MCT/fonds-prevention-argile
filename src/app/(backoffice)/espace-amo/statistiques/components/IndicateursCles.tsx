@@ -14,7 +14,6 @@ export function IndicateursCles({ indicateurs }: IndicateursClesProps) {
   return (
     <div className="fr-mb-6w">
       <h2 className="fr-h4 fr-mb-1w">Indicateurs clés</h2>
-      <p className="fr-text-mention--grey fr-mb-3w">Sur la période</p>
 
       <div className="fr-grid-row fr-grid-row--gutters">
         <div className="fr-col-12 fr-col-md-6">
