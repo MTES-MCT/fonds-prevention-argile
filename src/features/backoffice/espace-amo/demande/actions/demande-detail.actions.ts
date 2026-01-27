@@ -11,7 +11,7 @@ import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations } from "@/shared/database/schema";
-import { eq } from "drizzle-orm";
+import { eq, ne, asc, and as drizzleAnd } from "drizzle-orm";
 import type { DemandeDetail } from "../domain/types";
 
 /**
@@ -151,6 +151,60 @@ export async function refuserDemandeAccompagnement(
     return {
       success: false,
       error: "Erreur lors du refus de l'accompagnement",
+    };
+  }
+}
+
+/**
+ * Récupère l'ID du prochain demandeur en attente (différent de celui actuel)
+ * Retourne null s'il n'y a plus de demandes en attente
+ */
+export async function getNextDemandeurEnAttente(
+  currentDemandeId: string
+): Promise<ActionResult<{ nextDemandeId: string | null }>> {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return { success: false, error: "Non authentifié" };
+    }
+
+    // Pour les admins, on ne filtre pas par entreprise
+    const isAdmin = user.role === UserRole.SUPER_ADMINISTRATEUR || user.role === UserRole.ADMINISTRATEUR;
+
+    if (!isAdmin && !user.entrepriseAmoId) {
+      return { success: false, error: "Votre compte AMO n'est pas configuré" };
+    }
+
+    const { StatutValidationAmo } = await import("@/shared/domain/value-objects/statut-validation-amo.enum");
+
+    // Construire la requête pour récupérer la prochaine demande en attente
+    const conditions = [
+      eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE),
+      ne(parcoursAmoValidations.id, currentDemandeId),
+    ];
+
+    // Filtrer par entreprise AMO si ce n'est pas un admin
+    if (!isAdmin && user.entrepriseAmoId) {
+      conditions.push(eq(parcoursAmoValidations.entrepriseAmoId, user.entrepriseAmoId));
+    }
+
+    const [nextDemande] = await db
+      .select({ id: parcoursAmoValidations.id })
+      .from(parcoursAmoValidations)
+      .where(drizzleAnd(...conditions))
+      .orderBy(asc(parcoursAmoValidations.createdAt))
+      .limit(1);
+
+    return {
+      success: true,
+      data: { nextDemandeId: nextDemande?.id ?? null },
+    };
+  } catch (error) {
+    console.error("Erreur getNextDemandeurEnAttente:", error);
+    return {
+      success: false,
+      error: "Erreur lors de la récupération du prochain demandeur",
     };
   }
 }
