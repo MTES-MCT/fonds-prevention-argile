@@ -10,6 +10,7 @@ import { AFaire } from "./components/AFaire";
 import { LocalisationLogement } from "./components/LocalisationLogement";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { ParcoursDemandeur } from "./components/ParcoursDemandeur";
+import { GagnezDuTemps } from "./components/GagnezDuTemps";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -94,13 +95,16 @@ export default async function DemandeDetailPage({ params }: PageProps) {
       <section className="fr-background-alt--blue-france fr-py-4w">
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
-            {/* Colonne gauche : InfoLogement + CarteLogement */}
+            {/* Colonne gauche : InfoLogement + LocalisationLogement + GagnezDuTemps */}
             <div className="fr-col-12 fr-col-md-8">
               <div className="fr-mb-4w">
                 <InfoLogement logement={demande.logement} />
               </div>
-              <div>
+              <div className="fr-mb-4w">
                 <LocalisationLogement logement={demande.logement} adresse={demande.demandeur.adresse} />
+              </div>
+              <div>
+                <GagnezDuTemps />
               </div>
             </div>
 
