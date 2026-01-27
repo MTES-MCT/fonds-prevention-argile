@@ -51,28 +51,30 @@ GROUP BY tranche_revenus ORDER BY nombre DESC;
 
 -- Vérification des updated_at pour le badge "jours depuis dernière action"
 SELECT 'VÉRIFICATION UPDATED_AT (badge jours inactivité)' as info;
-SELECT
-  CASE
-    WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) = 0 THEN 'Aujourd''hui'
-    WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) <= 7 THEN '1-7 jours'
-    WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) <= 14 THEN '8-14 jours'
-    WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) <= 30 THEN '15-30 jours'
-    ELSE '> 30 jours'
-  END as inactivite,
-  COUNT(*) as nombre
-FROM parcours_amo_validations pav
-INNER JOIN parcours_prevention pp ON pp.id = pav.parcours_id
-WHERE pav.id::text LIKE '33333333-3333-3333-3333-3333333333%'
-  AND pav.statut = 'logement_eligible'
-GROUP BY inactivite
-ORDER BY
-  CASE inactivite
-    WHEN 'Aujourd''hui' THEN 1
-    WHEN '1-7 jours' THEN 2
-    WHEN '8-14 jours' THEN 3
-    WHEN '15-30 jours' THEN 4
-    ELSE 5
-  END;
+SELECT inactivite, nombre FROM (
+  SELECT
+    CASE
+      WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) = 0 THEN 'Aujourd''hui'
+      WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) <= 7 THEN '1-7 jours'
+      WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) <= 14 THEN '8-14 jours'
+      WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) <= 30 THEN '15-30 jours'
+      ELSE '> 30 jours'
+    END as inactivite,
+    COUNT(*) as nombre,
+    CASE
+      WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) = 0 THEN 1
+      WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) <= 7 THEN 2
+      WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) <= 14 THEN 3
+      WHEN EXTRACT(DAY FROM NOW() - pp.updated_at) <= 30 THEN 4
+      ELSE 5
+    END as ordre
+  FROM parcours_amo_validations pav
+  INNER JOIN parcours_prevention pp ON pp.id = pav.parcours_id
+  WHERE pav.id::text LIKE '33333333-3333-3333-3333-3333333333%'
+    AND pav.statut = 'logement_eligible'
+  GROUP BY 1, 3
+) sub
+ORDER BY ordre;
 
 -- Exemple de demande complète
 SELECT 'EXEMPLE DE DEMANDE COMPLÈTE' as info;

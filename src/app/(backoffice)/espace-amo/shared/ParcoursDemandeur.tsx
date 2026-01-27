@@ -47,16 +47,15 @@ export function ParcoursDemandeur({ currentStep, parcoursCreatedAt, lastUpdatedA
 
           {/* Badge nombre de jours depuis dernière action */}
           {daysSinceLastAction !== null && daysSinceLastAction > 0 && (
-            <div className="fr-mt-2w fr-mb-2w">
-              <p className="fr-badge fr-badge--warning fr-badge--no-icon">
-                <span className="fr-icon-warning-fill fr-icon--sm fr-mr-1v" aria-hidden="true"></span>
+            <div className="fr-card__desc fr-mt-2w">
+              <p className="fr-badge fr-badge--yellow-tournesol fr-icon-warning-fill fr-badge--icon-left">
                 {daysSinceLastAction} jour{daysSinceLastAction > 1 ? "s" : ""} depuis dernière action
               </p>
             </div>
           )}
 
           <div className="fr-card__desc">
-            <ul className="fr-raw-list fr-mt-2w">
+            <ul className="fr-raw-list">
               {STEPS_CONFIG.map((stepConfig, index) => {
                 const isCompleted = index < currentStepIndex;
                 const isCurrent = index === currentStepIndex;

@@ -43,7 +43,7 @@ export function PiecesJustificatives() {
                 <li className="fr-mb-0">
                   Si mandataire : sa pièce d&apos;identité ET le{" "}
                   <a
-                    href="https://www.service-public.fr/particuliers/vosdroits/R46121"
+                    href="https://www.formulaires.service-public.gouv.fr/gf/cerfa_17596.do"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="fr-link">
