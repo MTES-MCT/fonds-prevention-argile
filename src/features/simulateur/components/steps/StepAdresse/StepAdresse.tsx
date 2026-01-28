@@ -169,7 +169,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
 
     onSubmit({
       logement: {
-        adresse: addressData.label,
+        adresse: buildingData.adresse || addressData.label,
         commune: addressData.codeCommune,
         commune_nom: addressData.nomCommune,
         code_departement: addressData.codeDepartement,
