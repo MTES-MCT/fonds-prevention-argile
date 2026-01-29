@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { DemandeAccompagnement } from "@/features/backoffice/espace-amo/accueil/domain/types";
 import { ROUTES } from "@/features/auth/domain/value-objects";
-import { formatDate, formatNomComplet, formatCommune } from "@/shared/utils";
+import { formatDaysAgoSplit, formatNomComplet, formatCommune } from "@/shared/utils";
 
 interface DemandesAccompagnementTableProps {
   demandes: DemandeAccompagnement[];
@@ -47,24 +47,36 @@ export function DemandesAccompagnementTable({ demandes }: DemandesAccompagnement
                     </td>
                   </tr>
                 ) : (
-                  demandes.map((demande) => (
-                    <tr key={demande.id}>
-                      <td>
-                        <Link href={ROUTES.backoffice.espaceAmo.demande(demande.id)} className="fr-link">
-                          {formatNomComplet(demande.prenom, demande.nom)}
-                        </Link>
-                      </td>
-                      <td>{formatCommune(demande.commune, demande.codePostal)}</td>
-                      <td>{formatDate(demande.dateCreation.toISOString())}</td>
-                      <td>
-                        <Link
-                          href={ROUTES.backoffice.espaceAmo.demande(demande.id)}
-                          className="fr-btn fr-btn--sm fr-btn--icon-right fr-icon-arrow-right-line">
-                          Traiter
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
+                  demandes.map((demande) => {
+                    const daysAgo = formatDaysAgoSplit(demande.dateCreation.toISOString());
+                    return (
+                      <tr key={demande.id}>
+                        <td>
+                          <Link href={ROUTES.backoffice.espaceAmo.demande(demande.id)} className="fr-link">
+                            {formatNomComplet(demande.prenom, demande.nom)}
+                          </Link>
+                        </td>
+                        <td>{formatCommune(demande.commune, demande.codePostal)}</td>
+                        <td>
+                          {daysAgo ? (
+                            <>
+                              <div>{daysAgo.text}</div>
+                              <div className="fr-text--xs fr-text-mention--grey">Le {daysAgo.date}</div>
+                            </>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td>
+                          <Link
+                            href={ROUTES.backoffice.espaceAmo.demande(demande.id)}
+                            className="fr-btn fr-btn--sm fr-btn--icon-right fr-icon-arrow-right-line">
+                            Traiter
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

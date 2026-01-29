@@ -129,3 +129,68 @@ export function parseFrenchDateToSql(frenchDate: string): string {
   const [day, month, year] = frenchDate.split("/");
   return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 }
+
+/**
+ * Calcule le nombre de jours depuis une date et retourne un texte formaté
+ * @param dateString - String de date ou null
+ * @returns Texte formaté "Il y a X jours (JJ/MM/AAAA)" ou "Aujourd'hui (JJ/MM/AAAA)"
+ *
+ * @example
+ * formatDaysAgo("2026-01-20") // "Il y a 9 jours (20/01/2026)"
+ * formatDaysAgo("2026-01-29") // "Aujourd'hui (29/01/2026)"
+ */
+export function formatDaysAgo(dateString: string | null | undefined): string {
+  if (!dateString) return DEFAULT_VALUE;
+
+  try {
+    const date = new Date(dateString);
+    // Vérifie si la date est valide
+    if (isNaN(date.getTime())) return DEFAULT_VALUE;
+
+    const now = new Date(); 
+    const days = daysBetween(date, now);
+    const formattedDate = formatDate(dateString);
+
+    if (days === 0) {
+      return `Aujourd'hui (${formattedDate})`;
+    }
+
+    return `Il y a ${days} jour${days > 1 ? "s" : ""} (${formattedDate})`;
+  } catch {
+    return DEFAULT_VALUE;
+  }
+}
+
+/**
+ * Calcule le nombre de jours depuis une date et retourne un objet séparé pour l'affichage
+ * @param dateString - String de date ou null
+ * @returns Objet avec le texte et la date formatée séparément
+ *
+ * @example
+ * formatDaysAgoSplit("2026-01-20") // { text: "Il y a 9 jours", date: "20/01/2026" }
+ * formatDaysAgoSplit("2026-01-29") // { text: "Aujourd'hui", date: "29/01/2026" }
+ */
+export function formatDaysAgoSplit(dateString: string | null | undefined): { text: string; date: string } | null {
+  if (!dateString) return null;
+
+  try {
+    const date = new Date(dateString);
+    // Vérifie si la date est valide
+    if (isNaN(date.getTime())) return null;
+
+    const now = new Date();
+    const days = daysBetween(date, now);
+    const formattedDate = formatDate(dateString);
+
+    if (days === 0) {
+      return { text: "Aujourd'hui", date: formattedDate };
+    }
+
+    return {
+      text: `Il y a ${days} jour${days > 1 ? "s" : ""}`,
+      date: formattedDate,
+    };
+  } catch {
+    return null;
+  }
+}

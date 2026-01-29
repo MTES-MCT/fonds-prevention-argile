@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { DossierSuivi } from "@/features/backoffice/espace-amo/dossiers/domain/types";
 import { STEP_LABELS, getPrecisionText } from "@/features/backoffice/espace-amo/dossiers/domain/types";
 import { ROUTES } from "@/features/auth/domain/value-objects";
-import { formatNomComplet, formatCommune, formatDate } from "@/shared/utils";
+import { formatNomComplet, formatCommune, formatDaysAgoSplit } from "@/shared/utils";
 
 interface DossiersSuivisTableProps {
   dossiers: DossierSuivi[];
@@ -52,37 +52,39 @@ export function DossiersSuivisTable({ dossiers }: DossiersSuivisTableProps) {
                     </td>
                   </tr>
                 ) : (
-                  dossiers.map((dossier) => (
-                    <tr key={dossier.id}>
-                      <td>
-                        <Link href={ROUTES.backoffice.espaceAmo.dossier(dossier.id)} className="fr-link">
-                          {formatNomComplet(dossier.prenom, dossier.nom)}
-                        </Link>
-                      </td>
-                      <td>{formatCommune(dossier.commune, dossier.codeDepartement)}</td>
-                      <td>
-                        <a href="#" className="fr-tag">
-                          {STEP_LABELS[dossier.etape]}
-                        </a>
-                      </td>
-                      <td style={{ maxWidth: "350px", wordWrap: "break-word", whiteSpace: "normal" }}>
-                        <span className="fr-text--sm">
-                          {getPrecisionText(dossier.etape, dossier.statut, dossier.dsStatus)}
-                        </span>
-                        <br />
-                        <span className="fr-text--xs" style={{ color: "var(--text-mention-grey)" }}>
-                          Depuis le {formatDate(dossier.dateDernierStatut.toISOString())}
-                        </span>
-                      </td>
-                      <td>
-                        <Link
-                          href={ROUTES.backoffice.espaceAmo.dossier(dossier.id)}
-                          className="fr-btn fr-btn--sm fr-btn--secondary fr-btn--icon-right fr-icon-eye-line">
-                          Voir détails
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
+                  dossiers.map((dossier) => {
+                    const daysAgo = formatDaysAgoSplit(dossier.dateDernierStatut.toISOString());
+                    return (
+                      <tr key={dossier.id}>
+                        <td>
+                          <Link href={ROUTES.backoffice.espaceAmo.dossier(dossier.id)} className="fr-link">
+                            {formatNomComplet(dossier.prenom, dossier.nom)}
+                          </Link>
+                        </td>
+                        <td>{formatCommune(dossier.commune, dossier.codeDepartement)}</td>
+                        <td>
+                          <a href="#" className="fr-tag">
+                            {STEP_LABELS[dossier.etape]}
+                          </a>
+                        </td>
+                        <td style={{ maxWidth: "350px", wordWrap: "break-word", whiteSpace: "normal" }}>
+                          <div>{getPrecisionText(dossier.etape, dossier.statut, dossier.dsStatus)}</div>
+                          {daysAgo && (
+                            <div className="fr-text--xs fr-text-mention--grey">
+                              {daysAgo.text} (le {daysAgo.date})
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <Link
+                            href={ROUTES.backoffice.espaceAmo.dossier(dossier.id)}
+                            className="fr-btn fr-btn--sm fr-btn--secondary fr-btn--icon-right fr-icon-eye-line">
+                            Voir détails
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

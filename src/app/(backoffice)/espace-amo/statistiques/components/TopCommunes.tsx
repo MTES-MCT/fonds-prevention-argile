@@ -14,7 +14,7 @@ export function TopCommunes({ communes }: TopCommunesProps) {
   return (
     <div className="fr-mb-6w">
       <h2 className="fr-h4 fr-mb-1w">Top 5 des communes</h2>
-      <p className="fr-text-mention--grey fr-mb-3w">Nombre de demandeurs par commune</p>
+      <p className="fr-text-mention--grey fr-mb-3w">Nombre de demandeurs suivis par commune</p>
 
       <div className="fr-table fr-table--bordered">
         <div className="fr-table__wrapper">
