@@ -112,7 +112,8 @@ function calculateNiveauRevenuFromRga(
   const personnes = rgaData?.menage?.personnes;
   const codeRegion = rgaData?.logement?.code_region;
 
-  if (!revenu || !personnes || !codeRegion) return null;
+  // Vérification explicite pour éviter le bug avec revenu = 0 (qui est une valeur valide pour "très modeste")
+  if (revenu === null || revenu === undefined || !personnes || !codeRegion) return null;
 
   const estIDF = isRegionIDF(codeRegion);
   const tranche = calculerTrancheRevenu(revenu, personnes, estIDF);
