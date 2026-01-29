@@ -29,7 +29,7 @@ function generateTrancheOptions(seuils: SeuilsRevenuRga): Array<{ label: string;
   return [
     {
       label: `Inférieur à ${formatMontant(seuils.tresModeste + 1)}`,
-      value: 0, // Valeur représentative pour "très modeste"
+      value: Math.floor(seuils.tresModeste / 2), // Valeur représentative pour "très modeste" (milieu de la tranche)
     },
     {
       label: `Inférieur à ${formatMontant(seuils.modeste + 1)}`,
