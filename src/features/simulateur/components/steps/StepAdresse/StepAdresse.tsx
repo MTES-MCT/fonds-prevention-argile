@@ -175,7 +175,8 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
         code_departement: addressData.codeDepartement,
         code_region: addressData.codeRegion,
         epci: addressData.codeEpci,
-        coordonnees: formatCoordinatesString(addressData.coordinates),
+        // Utiliser les coordonnées du bâtiment sélectionné
+        coordonnees: formatCoordinatesString({ lat: buildingData.lat, lon: buildingData.lon }),
         clef_ban: addressData.clefBan,
         // Données du bâtiment (BDNB + potentiellement éditées)
         zone_dexposition: buildingData.aleaArgiles || undefined,

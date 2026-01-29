@@ -68,7 +68,7 @@ export function LocalisationLogement({ logement, adresse }: LocalisationLogement
                 zoom={17}
                 showMarker={true}
                 locked={true}
-                readOnly={false}
+                readOnly={true}
                 initialRnbId={logement.rnbId ?? undefined}
                 height="400px"
                 padding="0"
