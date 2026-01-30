@@ -104,7 +104,16 @@ export function SimulateurFormulaire() {
   // Gestion de la connexion FranceConnect
   const handleContinueToFC = () => {
     commitToRGAStore();
-    window.location.href = "/connexion?redirect=/parcours";
+
+    // Si on est dans une iframe, ouvrir dans une nouvelle fenêtre
+    // Sinon, naviguer normalement
+    const isInIframe = window !== window.parent;
+
+    if (isInIframe) {
+      window.open("/connexion?redirect=/parcours", "_blank");
+    } else {
+      window.location.href = "/connexion?redirect=/parcours";
+    }
   };
 
   // Switch sur l'étape courante
