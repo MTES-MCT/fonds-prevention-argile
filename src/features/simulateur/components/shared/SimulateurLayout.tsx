@@ -38,7 +38,8 @@ export function SimulateurLayout({
               <Link
                 id="link-help"
                 href="mailto:contact@fonds-prevention-argile.fr?subject=Besoin%20d'aide%20pour%20le%20simulateur%20d'éligibilité%20au%20Fonds%20Prévention%20Argile"
-                target="_self"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="fr-link fr-icon-question-fill fr-link--icon-left">
                 Besoin d'aide ?
               </Link>
