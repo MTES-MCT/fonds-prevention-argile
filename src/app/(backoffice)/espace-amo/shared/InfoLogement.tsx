@@ -29,6 +29,27 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
     return `INDEMNISÉ ENTRE ${debutStr} ET ${finStr} (${montantStr})`;
   };
 
+  // Formater le montant d'indemnisation
+  const formatMontant = (montant: number) => {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+      maximumFractionDigits: 0,
+    }).format(montant);
+  };
+
+  // Déterminer le badge de risque argile
+  const getRisqueArgileBadge = (zone: "faible" | "moyen" | "fort") => {
+    switch (zone) {
+      case "fort":
+        return "fr-badge--error";
+      case "moyen":
+        return "fr-badge--warning";
+      case "faible":
+        return "fr-badge--info";
+    }
+  };
+
   return (
     <div className="fr-card">
       <div className="fr-card__body">
@@ -43,6 +64,16 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
             </p>
           </div>
           <ul className="fr-card__desc fr-ml-3w">
+            {/* Risque argile (en premier) */}
+            {logement.zoneExposition && (
+              <li className="fr-mb-2v">
+                Risque argile{" "}
+                <span className={`fr-badge fr-badge--sm fr-badge--no-icon ${getRisqueArgileBadge(logement.zoneExposition)}`}>
+                  {logement.zoneExposition.toUpperCase()}
+                </span>
+              </li>
+            )}
+
             {logement.anneeConstruction && (
               <li className="fr-mb-2v">
                 Année de construction{" "}
@@ -84,6 +115,28 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
                 )}
               </li>
             )}
+
+            {/* Période d'indemnisation (si indemnisé avant juillet 2025) */}
+            {logement.indemnisationPasseeRGA && logement.indemnisationAvantJuillet2025 && (
+              <li className="fr-mb-2v">
+                <span className="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">
+                  INDEMNISÉ ENTRE 01/07/15 ET 01/07/25
+                </span>
+              </li>
+            )}
+
+            {/* Montant de l'indemnisation (si indemnisé entre 2015 et 2025 avec montant) */}
+            {logement.indemnisationPasseeRGA &&
+              logement.indemnisationAvantJuillet2025 &&
+              logement.indemnisationAvantJuillet2015 === false &&
+              logement.montantIndemnisation !== null && (
+                <li className="fr-mb-2v">
+                  Montant de l&apos;indemnité{" "}
+                  <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+                    {formatMontant(logement.montantIndemnisation)}
+                  </span>
+                </li>
+              )}
 
             {logement.nombreHabitants && (
               <li className="fr-mb-2v">

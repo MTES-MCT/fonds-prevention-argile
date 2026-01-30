@@ -25,8 +25,16 @@ export interface InfoLogement {
   nombreNiveaux: string | null;
   /** État de la maison */
   etatMaison: string | null;
+  /** Zone d'exposition au risque argile */
+  zoneExposition: "faible" | "moyen" | "fort" | null;
   /** Indemnisation passée liée au RGA */
   indemnisationPasseeRGA: boolean | null;
+  /** Indemnisation avant juillet 2025 */
+  indemnisationAvantJuillet2025: boolean | null;
+  /** Indemnisation avant juillet 2015 */
+  indemnisationAvantJuillet2015: boolean | null;
+  /** Montant de l'indemnisation */
+  montantIndemnisation: number | null;
   /** Nombre d'habitants */
   nombreHabitants: number | null;
   /** Niveau de revenu (modeste, très modeste, intermédiaire, supérieur) */
