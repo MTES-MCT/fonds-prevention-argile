@@ -1,5 +1,4 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
-import { STEP_LABELS } from "@/features/backoffice/espace-amo/dossiers/domain/types";
 
 interface InfoDossierCalloutProps {
   currentStep: Step;
