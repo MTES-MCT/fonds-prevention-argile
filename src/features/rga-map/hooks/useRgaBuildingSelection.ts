@@ -9,7 +9,10 @@ import { getBuildingDataByRnbId, type BuildingData } from "@/shared/services/bdn
 
 interface UseRgaBuildingSelectionOptions {
   map: maplibregl.Map | null;
+  /** Active le hook globalement (sélection initiale + chargement des données) */
   enabled?: boolean;
+  /** Active les interactions utilisateur (clics, survols) - peut être false même si enabled est true */
+  enableInteractions?: boolean;
   initialRnbId?: string;
   initialCoordinates?: { lat: number; lon: number };
   onBuildingSelect?: (data: BuildingData | null) => void;
@@ -28,7 +31,7 @@ interface UseRgaBuildingSelectionReturn {
  * Hook pour gérer la sélection et le survol des bâtiments sur la carte
  */
 export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions): UseRgaBuildingSelectionReturn {
-  const { map, enabled = true, initialRnbId, initialCoordinates, onBuildingSelect, onError } = options;
+  const { map, enabled = true, enableInteractions = true, initialRnbId, initialCoordinates, onBuildingSelect, onError } = options;
 
   const [selectedBuilding, setSelectedBuilding] = useState<SelectedBuilding | null>(null);
   const [buildingData, setBuildingData] = useState<BuildingData | null>(null);
@@ -38,10 +41,12 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
   const hoveredIdRef = useRef<string | null>(null);
   const selectedIdRef = useRef<string | null>(null);
   const initialSelectionAppliedRef = useRef(false);
+  const retryCountRef = useRef(0);
+  const maxRetries = 10; // Augmenter le nombre de tentatives
 
   // Pré-sélectionner un bâtiment par son ID RNB au chargement
   useEffect(() => {
-    if (!map || !initialRnbId || !initialCoordinates || initialSelectionAppliedRef.current) return;
+    if (!map || !enabled || !initialRnbId || !initialCoordinates || initialSelectionAppliedRef.current) return;
 
     const applyInitialSelection = () => {
       // Vérifier si les sources sont prêtes et chargées
@@ -58,27 +63,55 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
       }
 
       try {
-        // Vérifier si la feature existe dans les tuiles chargées
-        const pointFeatures = map.querySourceFeatures(SOURCE_IDS.rnbPoints, {
+        // Vérifier si la feature existe dans les tuiles chargées par ID exact
+        let pointFeatures = map.querySourceFeatures(SOURCE_IDS.rnbPoints, {
           sourceLayer: RNB_SOURCE_LAYER,
           filter: ["==", ["id"], initialRnbId],
         });
-        const formeFeatures = map.querySourceFeatures(SOURCE_IDS.rnbFormes, {
+        let formeFeatures = map.querySourceFeatures(SOURCE_IDS.rnbFormes, {
           sourceLayer: RNB_SOURCE_LAYER,
           filter: ["==", ["id"], initialRnbId],
         });
 
+        // Si pas trouvé par ID, chercher le bâtiment le plus proche des coordonnées
         if (pointFeatures.length === 0 && formeFeatures.length === 0) {
+          const centerPoint = map.project([initialCoordinates.lon, initialCoordinates.lat]);
+          const bbox: [maplibregl.PointLike, maplibregl.PointLike] = [
+            [centerPoint.x - 50, centerPoint.y - 50],
+            [centerPoint.x + 50, centerPoint.y + 50],
+          ];
+
+          const nearbyPoints = map.queryRenderedFeatures(bbox, {
+            layers: [LAYER_IDS.rnbPoints],
+          });
+          const nearbyFormes = map.queryRenderedFeatures(bbox, {
+            layers: [LAYER_IDS.rnbFormes],
+          });
+
+          // Prendre le premier bâtiment trouvé proche des coordonnées
+          if (nearbyPoints.length > 0) {
+            pointFeatures = [nearbyPoints[0]];
+          } else if (nearbyFormes.length > 0) {
+            formeFeatures = [nearbyFormes[0]];
+          }
+        }
+
+        if (pointFeatures.length === 0 && formeFeatures.length === 0) {
+          retryCountRef.current++;
           return false;
         }
 
-        // Appliquer l'état de sélection visuelle
-        setFeatureState(map, initialRnbId, "selected", true);
-        selectedIdRef.current = initialRnbId;
+        // Utiliser l'ID de la feature trouvée (qui peut être différent de initialRnbId si on a fait une recherche spatiale)
+        const foundFeature = pointFeatures[0] || formeFeatures[0];
+        const foundRnbId = foundFeature.id as string;
 
-        // Mettre à jour l'état React
+        // Appliquer l'état de sélection visuelle
+        setFeatureState(map, foundRnbId, "selected", true);
+        selectedIdRef.current = foundRnbId;
+
+        // Mettre à jour l'état React (utiliser l'ID trouvé ou l'ID initial si c'est le même)
         setSelectedBuilding({
-          rnbId: initialRnbId,
+          rnbId: foundRnbId,
           coordinates: initialCoordinates,
         });
 
@@ -109,19 +142,28 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
     // Sinon, écouter les événements de chargement des sources
     map.on("sourcedata", handleSourceData);
 
+    // Écouter l'événement data qui se déclenche après chaque chargement de tuiles
+    const handleData = () => {
+      if (!initialSelectionAppliedRef.current) {
+        applyInitialSelection();
+      }
+    };
+    map.on("data", handleData);
+
     // Aussi écouter idle qui est déclenché quand la carte est complètement rendue
     const handleIdle = () => {
       if (!initialSelectionAppliedRef.current) {
         applyInitialSelection();
       }
     };
-    map.once("idle", handleIdle);
+    map.on("idle", handleIdle);
 
     return () => {
       map.off("sourcedata", handleSourceData);
+      map.off("data", handleData);
       map.off("idle", handleIdle);
     };
-  }, [map, initialRnbId, initialCoordinates]);
+  }, [map, enabled, initialRnbId, initialCoordinates]);
 
   // Effacer la sélection
   const clearSelection = useCallback(() => {
@@ -161,7 +203,7 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
 
   // Gérer les événements de clic
   useEffect(() => {
-    if (!map || !enabled) return;
+    if (!map || !enabled || !enableInteractions) return;
 
     const handleClick = (e: maplibregl.MapLayerMouseEvent) => {
       const feature = e.features?.[0];
@@ -192,11 +234,11 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
       map.off("click", LAYER_IDS.rnbPoints, handleClick);
       map.off("click", LAYER_IDS.rnbFormes, handleClick);
     };
-  }, [map, enabled]);
+  }, [map, enabled, enableInteractions]);
 
   // Gérer les événements de survol
   useEffect(() => {
-    if (!map || !enabled) return;
+    if (!map || !enabled || !enableInteractions) return;
 
     const handleMouseMove = (e: maplibregl.MapLayerMouseEvent) => {
       const feature = e.features?.[0];
@@ -232,7 +274,7 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
       map.off("mousemove", LAYER_IDS.rnbPoints, handleMouseMove);
       map.off("mouseleave", LAYER_IDS.rnbPoints, handleMouseLeave);
     };
-  }, [map, enabled]);
+  }, [map, enabled, enableInteractions]);
 
   return {
     selectedBuilding,

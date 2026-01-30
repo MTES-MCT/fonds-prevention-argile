@@ -2,7 +2,7 @@
   "name": "fonds-prevention-argile",
   "version": "1.8.1",
   "private": true,
-  "packageManager": "pnpm@10.27.0",
+  "packageManager": "pnpm@10.28.2",
   "engines": {
     "node": "24.x"
   },
@@ -52,7 +52,7 @@
     "drizzle-orm": "0.44.7",
     "exceljs": "~4.4.0",
     "maplibre-gl": "5.1.1",
-    "next": "15.5.9",
+    "next": "15.5.10",
     "nodemailer": "7.0.11",
     "pmtiles": "4.3.0",
     "postgres": "3.4.7",

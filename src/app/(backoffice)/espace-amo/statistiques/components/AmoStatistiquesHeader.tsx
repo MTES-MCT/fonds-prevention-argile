@@ -25,7 +25,9 @@ export function AmoStatistiquesHeader() {
         </div>
       </nav>
       <h1 className="fr-h1 fr-mb-0">Statistiques</h1>
-      <p className="fr-mt-2w fr-text--xl text-gray-500">Retrouvez toutes les données liées à vos demandeurs suivis</p>
+      <p className="fr-mt-2w fr-text--xl text-gray-500">
+        Retrouvez toutes les données liées à vos demandeurs suivis depuis le début
+      </p>
     </div>
   );
 }

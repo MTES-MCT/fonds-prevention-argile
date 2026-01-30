@@ -1,5 +1,6 @@
 import type { InfoLogement as InfoLogementType } from "@/features/backoffice/espace-amo/demande/domain/types";
-import { formatDate } from "@/shared/utils";
+import { formatDate, formatMontant } from "@/shared/utils";
+import { ALEA_COLORS } from "@/features/rga-map/domain/config";
 
 interface DateIndemnisation {
   debut: Date;
@@ -21,12 +22,20 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
   const formatIndemnisationText = (indemnisation: DateIndemnisation) => {
     const debutStr = formatDate(indemnisation.debut.toISOString());
     const finStr = formatDate(indemnisation.fin.toISOString());
-    const montantStr = new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(indemnisation.montant);
+    const montantStr = formatMontant(indemnisation.montant);
     return `INDEMNISÉ ENTRE ${debutStr} ET ${finStr} (${montantStr})`;
+  };
+
+  // Déterminer la couleur du badge de risque argile (selon ALEA_COLORS)
+  const getRisqueArgileColor = (zone: "faible" | "moyen" | "fort"): string => {
+    switch (zone) {
+      case "fort":
+        return ALEA_COLORS.fort;
+      case "moyen":
+        return ALEA_COLORS.moyen;
+      case "faible":
+        return ALEA_COLORS.faible;
+    }
   };
 
   return (
@@ -43,6 +52,21 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
             </p>
           </div>
           <ul className="fr-card__desc fr-ml-3w">
+            {/* Risque argile */}
+            {logement.zoneExposition && (
+              <li className="fr-mb-2v">
+                Risque argile{" "}
+                <span
+                  className="fr-badge fr-badge--sm fr-badge--no-icon fr-text--bold"
+                  style={{
+                    backgroundColor: getRisqueArgileColor(logement.zoneExposition),
+                    color: "#2a2a2a",
+                  }}>
+                  {logement.zoneExposition.toUpperCase()}
+                </span>
+              </li>
+            )}
+
             {logement.anneeConstruction && (
               <li className="fr-mb-2v">
                 Année de construction{" "}
@@ -73,7 +97,12 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
             {logement.indemnisationPasseeRGA !== null && (
               <li className="fr-mb-2v">
                 Indemnisation passée liée au RGA ?{" "}
-                {dateIndemnisation ? (
+                {/* Si indemnisé entre 2015 et 2025, afficher le badge de période */}
+                {logement.indemnisationPasseeRGA && logement.indemnisationAvantJuillet2025 ? (
+                  <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+                    INDEMNISÉ ENTRE 01/07/15 ET 01/07/25
+                  </span>
+                ) : dateIndemnisation ? (
                   <span className="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">
                     {formatIndemnisationText(dateIndemnisation)}
                   </span>
@@ -84,6 +113,19 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
                 )}
               </li>
             )}
+
+            {/* Montant de l'indemnisation (si indemnisé entre 2015 et 2025 avec montant) */}
+            {logement.indemnisationPasseeRGA &&
+              logement.indemnisationAvantJuillet2025 &&
+              logement.indemnisationAvantJuillet2015 === false &&
+              logement.montantIndemnisation !== null && (
+                <li className="fr-mb-2v">
+                  Montant de l&apos;indemnité{" "}
+                  <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+                    {formatMontant(logement.montantIndemnisation)}
+                  </span>
+                </li>
+              )}
 
             {logement.nombreHabitants && (
               <li className="fr-mb-2v">

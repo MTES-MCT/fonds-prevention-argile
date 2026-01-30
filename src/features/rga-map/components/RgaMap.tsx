@@ -36,9 +36,15 @@ export function RgaMap({
     zoom,
   });
 
+  const selectionEnabled = isReady && (readOnly ? Boolean(initialRnbId) : !locked);
+  const interactionsEnabled = !readOnly && !locked;
+
   const { selectedBuilding, buildingData, isLoading } = useRgaBuildingSelection({
     map,
-    enabled: !readOnly && !locked && isReady,
+    // Activer le hook si readOnly ET qu'on a un initialRnbId, ou si pas readOnly/locked
+    enabled: selectionEnabled,
+    // Les interactions sont désactivées si readOnly ou locked
+    enableInteractions: interactionsEnabled,
     initialRnbId,
     initialCoordinates: center,
     onBuildingSelect,

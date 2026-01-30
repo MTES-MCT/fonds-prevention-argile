@@ -65,10 +65,10 @@ export function LocalisationLogement({ logement, adresse }: LocalisationLogement
             <div className="fr-mt-2w fr-mb-2w">
               <RgaMap
                 center={coordinates}
-                zoom={17}
+                zoom={18}
                 showMarker={true}
                 locked={true}
-                readOnly={false}
+                readOnly={true}
                 initialRnbId={logement.rnbId ?? undefined}
                 height="400px"
                 padding="0"
