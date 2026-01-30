@@ -13,6 +13,9 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+// Force Next.js à ne pas cacher cette page (mode dynamique)
+export const dynamic = "force-dynamic";
+
 /**
  * Page détail d'une demande d'accompagnement (Espace AMO)
  */

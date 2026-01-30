@@ -1,5 +1,6 @@
 import type { InfoLogement as InfoLogementType } from "@/features/backoffice/espace-amo/demande/domain/types";
 import { formatDate, formatMontant } from "@/shared/utils";
+import { ALEA_COLORS } from "@/features/rga-map/domain/config";
 
 interface DateIndemnisation {
   debut: Date;
@@ -25,15 +26,15 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
     return `INDEMNISÉ ENTRE ${debutStr} ET ${finStr} (${montantStr})`;
   };
 
-  // Déterminer le badge de risque argile
-  const getRisqueArgileBadge = (zone: "faible" | "moyen" | "fort") => {
+  // Déterminer la couleur du badge de risque argile (selon ALEA_COLORS)
+  const getRisqueArgileColor = (zone: "faible" | "moyen" | "fort"): string => {
     switch (zone) {
       case "fort":
-        return "fr-badge--error";
+        return ALEA_COLORS.fort;
       case "moyen":
-        return "fr-badge--warning";
+        return ALEA_COLORS.moyen;
       case "faible":
-        return "fr-badge--info";
+        return ALEA_COLORS.faible;
     }
   };
 
@@ -51,11 +52,16 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
             </p>
           </div>
           <ul className="fr-card__desc fr-ml-3w">
-            {/* Risque argile (en premier) */}
+            {/* Risque argile */}
             {logement.zoneExposition && (
               <li className="fr-mb-2v">
                 Risque argile{" "}
-                <span className={`fr-badge fr-badge--sm fr-badge--no-icon ${getRisqueArgileBadge(logement.zoneExposition)}`}>
+                <span
+                  className="fr-badge fr-badge--sm fr-badge--no-icon fr-text--bold"
+                  style={{
+                    backgroundColor: getRisqueArgileColor(logement.zoneExposition),
+                    color: "#2a2a2a",
+                  }}>
                   {logement.zoneExposition.toUpperCase()}
                 </span>
               </li>
@@ -91,7 +97,12 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
             {logement.indemnisationPasseeRGA !== null && (
               <li className="fr-mb-2v">
                 Indemnisation passée liée au RGA ?{" "}
-                {dateIndemnisation ? (
+                {/* Si indemnisé entre 2015 et 2025, afficher le badge de période */}
+                {logement.indemnisationPasseeRGA && logement.indemnisationAvantJuillet2025 ? (
+                  <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+                    INDEMNISÉ ENTRE 01/07/15 ET 01/07/25
+                  </span>
+                ) : dateIndemnisation ? (
                   <span className="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">
                     {formatIndemnisationText(dateIndemnisation)}
                   </span>
@@ -100,15 +111,6 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
                     {logement.indemnisationPasseeRGA ? "OUI" : "NON"}
                   </span>
                 )}
-              </li>
-            )}
-
-            {/* Période d'indemnisation (si indemnisé avant juillet 2025) */}
-            {logement.indemnisationPasseeRGA && logement.indemnisationAvantJuillet2025 && (
-              <li className="fr-mb-2v">
-                <span className="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">
-                  INDEMNISÉ ENTRE 01/07/15 ET 01/07/25
-                </span>
               </li>
             )}
 
