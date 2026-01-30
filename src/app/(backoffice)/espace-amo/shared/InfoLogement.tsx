@@ -1,5 +1,5 @@
 import type { InfoLogement as InfoLogementType } from "@/features/backoffice/espace-amo/demande/domain/types";
-import { formatDate } from "@/shared/utils";
+import { formatDate, formatMontant } from "@/shared/utils";
 
 interface DateIndemnisation {
   debut: Date;
@@ -21,21 +21,8 @@ export function InfoLogement({ logement, dateIndemnisation }: InfoLogementProps)
   const formatIndemnisationText = (indemnisation: DateIndemnisation) => {
     const debutStr = formatDate(indemnisation.debut.toISOString());
     const finStr = formatDate(indemnisation.fin.toISOString());
-    const montantStr = new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(indemnisation.montant);
+    const montantStr = formatMontant(indemnisation.montant);
     return `INDEMNISÉ ENTRE ${debutStr} ET ${finStr} (${montantStr})`;
-  };
-
-  // Formater le montant d'indemnisation
-  const formatMontant = (montant: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(montant);
   };
 
   // Déterminer le badge de risque argile

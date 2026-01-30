@@ -46,3 +46,21 @@ export function formatCommune(commune: string | null | undefined, codeDepartemen
   }
   return "—";
 }
+
+/**
+ * Formate un montant en devise euros
+ *
+ * @param montant - Montant numérique à formater
+ * @returns Le montant formaté en euros sans décimales (ex: "5 000 €")
+ *
+ * @example
+ * formatMontant(5000) // "5 000 €"
+ * formatMontant(1234567) // "1 234 567 €"
+ */
+export function formatMontant(montant: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(montant);
+}
