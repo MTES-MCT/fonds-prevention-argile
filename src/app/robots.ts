@@ -11,7 +11,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/api/",
           "/administration/",
-          "/espace-amo/",
+          "/espace-agent/",
           "/mon-compte/",
           "/connexion/agent/",
           "/deconnexion/",

@@ -44,12 +44,12 @@ export const ROUTES = {
 
     // Espace AMO (Agents AMO)
     espaceAmo: {
-      root: "/espace-amo",
-      dossiers: "/espace-amo/dossiers",
-      dossier: (id: string) => `/espace-amo/dossier/${id}` as const,
-      statistiques: "/espace-amo/statistiques",
-      demande: (id: string) => `/espace-amo/demande/${id}` as const,
-      validation: (token: string) => `/espace-amo/validation/${token}` as const,
+      root: "/espace-agent",
+      dossiers: "/espace-agent/dossiers",
+      dossier: (id: string) => `/espace-agent/dossier/${id}` as const,
+      statistiques: "/espace-agent/statistiques",
+      demande: (id: string) => `/espace-agent/demande/${id}` as const,
+      validation: (token: string) => `/espace-agent/validation/${token}` as const,
     },
   },
 

@@ -62,7 +62,7 @@ async function verifyAmoOwnership(
 /**
  * Valider que le logement est éligible (AMO)
  *
- * TODO: Déplacer la page de validation dans l'espace AMO (/administration/espace-amo/validations/[token])
+ * TODO: Déplacer la page de validation dans l'espace AMO (/administration/espace-agent/validations/[token])
  */
 export async function validerLogementEligible(
   validationId: string,

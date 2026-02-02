@@ -13,7 +13,7 @@ describe("redirects.service", () => {
       expect(getDefaultRedirect(ROLES.SUPER_ADMINISTRATEUR)).toBe(DEFAULT_REDIRECTS.super_administrateur);
     });
 
-    it("devrait retourner /espace-amo pour le rôle AMO", () => {
+    it("devrait retourner /espace-agent pour le rôle AMO", () => {
       expect(getDefaultRedirect(ROLES.AMO)).toBe(DEFAULT_REDIRECTS.amo);
     });
 
@@ -41,7 +41,7 @@ describe("redirects.service", () => {
       expect(getUnauthorizedRedirect(ROLES.SUPER_ADMINISTRATEUR)).toBe(DEFAULT_REDIRECTS.super_administrateur);
     });
 
-    it("devrait rediriger AMO vers /espace-amo", () => {
+    it("devrait rediriger AMO vers /espace-agent", () => {
       expect(getUnauthorizedRedirect(ROLES.AMO)).toBe(DEFAULT_REDIRECTS.amo);
     });
 
@@ -98,7 +98,7 @@ describe("redirects.service", () => {
         expect(getPostLoginRedirect(ROLES.SUPER_ADMINISTRATEUR)).toBe(DEFAULT_REDIRECTS.super_administrateur);
       });
 
-      it("devrait rediriger AMO vers /espace-amo par défaut", () => {
+      it("devrait rediriger AMO vers /espace-agent par défaut", () => {
         expect(getPostLoginRedirect(ROLES.AMO)).toBe(DEFAULT_REDIRECTS.amo);
       });
 

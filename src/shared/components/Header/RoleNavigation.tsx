@@ -5,9 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAgentRole } from "@/features/auth/hooks";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
-import { AMO_TABS } from "@/features/backoffice/espace-amo/shared/domain/value-objects/amo-tabs.config";
-import type { AmoTab } from "@/features/backoffice/espace-amo/shared/domain/types/amo-tab.types";
-import { getNombreDemandesEnAttenteAction } from "@/features/backoffice/espace-amo/accueil/actions";
+import { AMO_TABS } from "@/features/backoffice/espace-agent/shared/domain/value-objects/amo-tabs.config";
+import type { AmoTab } from "@/features/backoffice/espace-agent/shared/domain/types/amo-tab.types";
+import { getNombreDemandesEnAttenteAction } from "@/features/backoffice/espace-agent/accueil/actions";
 import { CountBadge } from "@/shared/components/CountBadge";
 
 /**
@@ -17,9 +17,9 @@ import { CountBadge } from "@/shared/components/CountBadge";
 function getActiveTab(pathname: string, tabs: AmoTab[]): string | null {
   // Chercher une correspondance exacte ou par préfixe
   for (const tab of tabs) {
-    if (tab.href === "/espace-amo") {
+    if (tab.href === "/espace-agent") {
       // Pour l'accueil, correspondance exacte ou validation
-      if (pathname === tab.href || pathname.startsWith("/espace-amo/validation")) {
+      if (pathname === tab.href || pathname.startsWith("/espace-agent/validation")) {
         return tab.id;
       }
     } else if (pathname.startsWith(tab.href)) {
