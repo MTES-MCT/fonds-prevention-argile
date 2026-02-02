@@ -39,6 +39,11 @@ export enum BackofficePermission {
   // Dossiers AMO (permissions spécifiques pour le scope AMO)
   DOSSIERS_AMO_READ = "dossiers-amo:read",
   DOSSIERS_AMO_STATS_READ = "dossiers-amo:stats:read",
+
+  // Espace Agent - Prospects (permissions pour les allers-vers dans l'espace agent)
+  PROSPECTS_VIEW = "prospects:view",
+  PROSPECTS_VIEW_DETAIL = "prospects:view-detail",
+  PROSPECTS_STATS = "prospects:stats",
 }
 
 /**
@@ -86,6 +91,22 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.DOSSIERS_AMO_READ,
     BackofficePermission.DOSSIERS_AMO_STATS_READ,
   ],
+
+  [UserRole.ALLERS_VERS]: [
+    // Accès aux prospects de son territoire uniquement
+    BackofficePermission.PROSPECTS_VIEW,
+    BackofficePermission.PROSPECTS_VIEW_DETAIL,
+    BackofficePermission.PROSPECTS_STATS,
+  ],
+
+  [UserRole.AMO_ET_ALLERS_VERS]: [
+    // Combinaison des permissions AMO + Allers-Vers
+    BackofficePermission.DOSSIERS_AMO_READ,
+    BackofficePermission.DOSSIERS_AMO_STATS_READ,
+    BackofficePermission.PROSPECTS_VIEW,
+    BackofficePermission.PROSPECTS_VIEW_DETAIL,
+    BackofficePermission.PROSPECTS_STATS,
+  ],
 };
 
 /**
@@ -101,6 +122,7 @@ export const TAB_PERMISSIONS: Record<string, BackofficePermission[]> = {
   diagnostic: [BackofficePermission.DIAGNOSTIC_READ],
   devis: [BackofficePermission.DEVIS_READ],
   factures: [BackofficePermission.FACTURES_READ],
-  // Onglet spécifique pour les AMO (espace-amo)
+  // Onglets spécifiques pour l'espace agent
   "dossiers-amo": [BackofficePermission.DOSSIERS_AMO_READ],
+  prospects: [BackofficePermission.PROSPECTS_VIEW],
 };
