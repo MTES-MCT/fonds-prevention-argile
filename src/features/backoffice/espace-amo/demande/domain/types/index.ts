@@ -1,1 +1,1 @@
-export type { DemandeDetail, InfoDemandeur, InfoLogement } from "./demande-detail.types";
+export type { DemandeDetail, InfoDemandeur, InfoLogement, ParcoursDateProgression } from "./demande-detail.types";

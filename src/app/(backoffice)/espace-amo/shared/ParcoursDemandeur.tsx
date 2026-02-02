@@ -1,9 +1,18 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { formatDate, daysBetween } from "@/shared/utils";
 
+interface ParcoursDateProgression {
+  compteCreatedAt: Date;
+  amoChoisieAt?: Date;
+  eligibiliteSubmittedAt?: Date;
+  diagnosticSubmittedAt?: Date;
+  devisSubmittedAt?: Date;
+  facturesSubmittedAt?: Date;
+}
+
 interface ParcoursDemandeurProps {
   currentStep: Step;
-  parcoursCreatedAt: Date;
+  dates: ParcoursDateProgression;
   /** Date de dernière mise à jour pour afficher le nombre de jours depuis dernière action */
   lastUpdatedAt?: Date;
 }
@@ -11,16 +20,16 @@ interface ParcoursDemandeurProps {
 interface StepConfig {
   step: Step | null;
   label: string;
-  showDate?: boolean;
+  dateKey: keyof ParcoursDateProgression;
 }
 
 const STEPS_CONFIG: StepConfig[] = [
-  { step: null, label: "Dossier créé", showDate: true },
-  { step: Step.CHOIX_AMO, label: "AMO validé" },
-  { step: Step.ELIGIBILITE, label: "Soumettre le formulaire d'éligibilité" },
-  { step: Step.DIAGNOSTIC, label: "Soumettre le diagnostic" },
-  { step: Step.DEVIS, label: "Soumettre les devis" },
-  { step: Step.FACTURES, label: "Transmettre les factures" },
+  { step: null, label: "Compte créé", dateKey: "compteCreatedAt" },
+  { step: Step.CHOIX_AMO, label: "Choisir un AMO", dateKey: "amoChoisieAt" },
+  { step: Step.ELIGIBILITE, label: "Soumettre le formulaire d'éligibilité", dateKey: "eligibiliteSubmittedAt" },
+  { step: Step.DIAGNOSTIC, label: "Soumettre le diagnostic", dateKey: "diagnosticSubmittedAt" },
+  { step: Step.DEVIS, label: "Soumettre les devis", dateKey: "devisSubmittedAt" },
+  { step: Step.FACTURES, label: "Transmettre les factures", dateKey: "facturesSubmittedAt" },
 ];
 
 function getStepIndex(step: Step): number {
@@ -30,7 +39,7 @@ function getStepIndex(step: Step): number {
 /**
  * Composant affichant le parcours du demandeur
  */
-export function ParcoursDemandeur({ currentStep, parcoursCreatedAt, lastUpdatedAt }: ParcoursDemandeurProps) {
+export function ParcoursDemandeur({ currentStep, dates, lastUpdatedAt }: ParcoursDemandeurProps) {
   const currentStepIndex = getStepIndex(currentStep);
 
   // Calcul du nombre de jours depuis dernière action
@@ -60,9 +69,11 @@ export function ParcoursDemandeur({ currentStep, parcoursCreatedAt, lastUpdatedA
                 const isCompleted = index < currentStepIndex;
                 const isCurrent = index === currentStepIndex;
                 const isPending = index > currentStepIndex;
+                const stepDate = dates[stepConfig.dateKey];
 
                 return (
                   <li key={index} className="fr-mb-2w">
+                    {/* Icône de statut */}
                     {isCompleted && (
                       <span className="fr-icon-success-fill fr-icon--sm fr-mr-1v text-green-600" aria-hidden="true" />
                     )}
@@ -72,10 +83,25 @@ export function ParcoursDemandeur({ currentStep, parcoursCreatedAt, lastUpdatedA
                       </span>
                     )}
                     {isPending && <span className="fr-mr-3v" aria-hidden="true" />}
+
+                    {/* Label de l'étape */}
                     <span className={isCurrent ? "fr-text--bold" : isCompleted ? "fr-text--regular" : "text-gray-400"}>
                       {index + 1}. {stepConfig.label}
-                      {stepConfig.showDate && ` (${formatDate(parcoursCreatedAt.toISOString())})`}
+
+                      {/* Date entre parenthèses pour les étapes complétées */}
+                      {isCompleted && stepDate && (
+                        <span> ({formatDate(stepDate.toISOString())})</span>
+                      )}
                     </span>
+
+                    {/* Badge pour l'étape en cours (si date disponible) */}
+                    {isCurrent && stepDate && (
+                      <span className="fr-ml-2v">
+                        <span className="fr-badge fr-badge--blue-ecume fr-badge--sm">
+                          DEMANDE ENVOYÉE LE {formatDate(stepDate.toISOString()).toUpperCase()}
+                        </span>
+                      </span>
+                    )}
                   </li>
                 );
               })}

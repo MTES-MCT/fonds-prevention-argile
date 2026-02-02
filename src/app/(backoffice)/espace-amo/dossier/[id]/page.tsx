@@ -119,7 +119,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                 }}>
                 <ParcoursDemandeur
                   currentStep={dossier.currentStep}
-                  parcoursCreatedAt={dossier.parcoursCreatedAt}
+                  dates={dossier.dates}
                   lastUpdatedAt={dossier.lastUpdatedAt}
                 />
                 <AFaireDossier />

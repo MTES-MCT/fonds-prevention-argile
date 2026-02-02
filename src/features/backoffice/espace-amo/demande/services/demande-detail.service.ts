@@ -1,13 +1,14 @@
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
 import { eq } from "drizzle-orm";
-import type { DemandeDetail, InfoDemandeur, InfoLogement } from "../domain/types";
+import type { DemandeDetail, InfoDemandeur, InfoLogement, ParcoursDateProgression } from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
 import { calculerTrancheRevenu, isRegionIDF } from "@/features/simulateur/domain/types/rga-revenus.types";
+import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 
 /**
  * Récupérer le détail d'une demande d'accompagnement par son ID
@@ -84,6 +85,19 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       rnbId: rgaData?.logement?.rnb || null,
     };
 
+    // Récupérer les dates de soumission des dossiers DS par step
+    const datesByStep = await dossierDemarchesSimplifieesRepository.getSubmittedDatesByStep(demande.parcours.id);
+
+    // Construire l'objet des dates de progression
+    const dates: ParcoursDateProgression = {
+      compteCreatedAt: demande.parcours.createdAt,
+      amoChoisieAt: demande.validation.choisieAt,
+      eligibiliteSubmittedAt: datesByStep.get(Step.ELIGIBILITE),
+      diagnosticSubmittedAt: datesByStep.get(Step.DIAGNOSTIC),
+      devisSubmittedAt: datesByStep.get(Step.DEVIS),
+      facturesSubmittedAt: datesByStep.get(Step.FACTURES),
+    };
+
     const demandeDetail: DemandeDetail = {
       id: demande.validation.id,
       demandeur,
@@ -93,6 +107,7 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       commentaire: demande.validation.commentaire,
       currentStep: demande.parcours.currentStep as Step,
       parcoursCreatedAt: demande.parcours.createdAt,
+      dates,
     };
 
     return { success: true, data: demandeDetail };

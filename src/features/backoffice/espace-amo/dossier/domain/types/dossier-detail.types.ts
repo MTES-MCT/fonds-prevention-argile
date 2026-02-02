@@ -4,6 +4,7 @@ import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import type {
   InfoDemandeur,
   InfoLogement,
+  ParcoursDateProgression,
 } from "@/features/backoffice/espace-amo/demande/domain/types/demande-detail.types";
 
 /**
@@ -43,7 +44,9 @@ export interface DossierDetail {
   suiviDepuis: Date;
   /** Informations sur l'indemnisation passée (optionnel) */
   dateIndemnisation?: DateIndemnisation;
+  /** Dates de progression du parcours par étape */
+  dates: ParcoursDateProgression;
 }
 
 // Ré-export des types partagés pour faciliter les imports
-export type { InfoDemandeur, InfoLogement };
+export type { InfoDemandeur, InfoLogement, ParcoursDateProgression };

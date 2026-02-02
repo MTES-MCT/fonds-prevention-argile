@@ -114,6 +114,32 @@ export class DossierDemarchesSimplifieesRepository extends BaseRepository<Dossie
       .where(eq(dossiersDemarchesSimplifiees.parcoursId, parcoursId))
       .orderBy(dossiersDemarchesSimplifiees.step);
   }
+
+  /**
+   * Récupère les dates de soumission des dossiers par step pour un parcours
+   * Retourne un Map avec step -> submittedAt
+   */
+  async getSubmittedDatesByStep(
+    parcoursId: string
+  ): Promise<Map<string, Date>> {
+    const dossiers = await db
+      .select({
+        step: dossiersDemarchesSimplifiees.step,
+        submittedAt: dossiersDemarchesSimplifiees.submittedAt,
+      })
+      .from(dossiersDemarchesSimplifiees)
+      .where(eq(dossiersDemarchesSimplifiees.parcoursId, parcoursId));
+
+    const datesByStep = new Map<string, Date>();
+
+    for (const dossier of dossiers) {
+      if (dossier.submittedAt) {
+        datesByStep.set(dossier.step, dossier.submittedAt);
+      }
+    }
+
+    return datesByStep;
+  }
 }
 
 // Export d'une instance singleton

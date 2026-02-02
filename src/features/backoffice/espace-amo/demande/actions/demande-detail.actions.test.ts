@@ -85,6 +85,14 @@ describe("demande-detail.actions", () => {
         commentaire: null,
         currentStep: Step.CHOIX_AMO,
         parcoursCreatedAt: new Date(),
+        dates: {
+          compteCreatedAt: new Date(),
+          amoChoisieAt: new Date(),
+          eligibiliteSubmittedAt: undefined,
+          diagnosticSubmittedAt: undefined,
+          devisSubmittedAt: undefined,
+          facturesSubmittedAt: undefined,
+        },
       };
 
       vi.mocked(getDemandeDetail).mockResolvedValue({

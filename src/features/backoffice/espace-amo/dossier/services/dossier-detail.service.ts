@@ -5,7 +5,7 @@ import {
   dossiersDemarchesSimplifiees,
 } from "@/shared/database/schema";
 import { eq, and } from "drizzle-orm";
-import type { DossierDetail, InfoDemandeur, InfoLogement } from "../domain/types";
+import type { DossierDetail, InfoDemandeur, InfoLogement, ParcoursDateProgression } from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
@@ -14,6 +14,7 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
 import { calculerTrancheRevenu, isRegionIDF } from "@/features/simulateur/domain/types/rga-revenus.types";
+import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 
 /**
  * Récupérer le détail d'un dossier suivi par son ID
@@ -108,6 +109,19 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       rnbId: rgaData?.logement?.rnb || null,
     };
 
+    // Récupérer les dates de soumission des dossiers DS par step
+    const datesByStep = await dossierDemarchesSimplifieesRepository.getSubmittedDatesByStep(dossier.parcours.id);
+
+    // Construire l'objet des dates de progression
+    const dates: ParcoursDateProgression = {
+      compteCreatedAt: dossier.parcours.createdAt,
+      amoChoisieAt: dossier.validation.choisieAt,
+      eligibiliteSubmittedAt: datesByStep.get(Step.ELIGIBILITE),
+      diagnosticSubmittedAt: datesByStep.get(Step.DIAGNOSTIC),
+      devisSubmittedAt: datesByStep.get(Step.DEVIS),
+      facturesSubmittedAt: datesByStep.get(Step.FACTURES),
+    };
+
     const dossierDetail: DossierDetail = {
       id: dossier.validation.id,
       demandeur,
@@ -118,6 +132,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       parcoursCreatedAt: dossier.parcours.createdAt,
       lastUpdatedAt: dossier.parcours.updatedAt,
       suiviDepuis: dossier.validation.valideeAt!,
+      dates,
     };
 
     return { success: true, data: dossierDetail };

@@ -117,7 +117,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                   flexDirection: "column",
                   gap: "2rem",
                 }}>
-                <ParcoursDemandeur currentStep={demande.currentStep} parcoursCreatedAt={demande.parcoursCreatedAt} />
+                <ParcoursDemandeur currentStep={demande.currentStep} dates={demande.dates} />
                 <AFaireDemande />
               </div>
             </div>

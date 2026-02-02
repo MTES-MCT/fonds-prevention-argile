@@ -50,6 +50,24 @@ export interface InfoLogement {
 }
 
 /**
+ * Dates de progression du parcours
+ */
+export interface ParcoursDateProgression {
+  /** Date de création du compte */
+  compteCreatedAt: Date;
+  /** Date où le demandeur a choisi l'AMO */
+  amoChoisieAt?: Date;
+  /** Date de soumission du formulaire d'éligibilité */
+  eligibiliteSubmittedAt?: Date;
+  /** Date de soumission du diagnostic */
+  diagnosticSubmittedAt?: Date;
+  /** Date de soumission des devis */
+  devisSubmittedAt?: Date;
+  /** Date de transmission des factures */
+  facturesSubmittedAt?: Date;
+}
+
+/**
  * Détail complet d'une demande d'accompagnement
  */
 export interface DemandeDetail {
@@ -69,4 +87,6 @@ export interface DemandeDetail {
   currentStep: Step;
   /** Date de création du parcours */
   parcoursCreatedAt: Date;
+  /** Dates de progression du parcours par étape */
+  dates: ParcoursDateProgression;
 }
