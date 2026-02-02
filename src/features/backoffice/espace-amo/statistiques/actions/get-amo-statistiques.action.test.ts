@@ -31,6 +31,7 @@ const createMockAgent = (override?: Partial<Agent>): Agent => ({
   organizationalUnit: null,
   role: UserRole.AMO,
   entrepriseAmoId: "entreprise-amo-456",
+  allersVersId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...override,

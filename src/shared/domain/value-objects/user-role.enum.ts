@@ -10,6 +10,8 @@ export enum UserRole {
   SUPER_ADMINISTRATEUR = "super_administrateur",
   AMO = "amo",
   ANALYSTE = "analyste",
+  ALLERS_VERS = "allers_vers",
+  AMO_ET_ALLERS_VERS = "amo_et_allers_vers",
 }
 
 /**
@@ -27,6 +29,8 @@ export const AGENT_ROLES = [
   UserRole.SUPER_ADMINISTRATEUR,
   UserRole.AMO,
   UserRole.ANALYSTE,
+  UserRole.ALLERS_VERS,
+  UserRole.AMO_ET_ALLERS_VERS,
 ] as const;
 
 export type AgentRole = (typeof AGENT_ROLES)[number];

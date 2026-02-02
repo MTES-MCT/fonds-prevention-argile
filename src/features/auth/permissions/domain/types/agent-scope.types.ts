@@ -32,6 +32,7 @@ export interface AgentScopeInput {
   id: string;
   role: string;
   entrepriseAmoId: string | null;
+  allersVersId?: string | null;
 }
 
 /**
