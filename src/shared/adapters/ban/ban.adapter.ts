@@ -1,9 +1,10 @@
 import type { BanSearchResponse, BanSearchOptions, BanFeature, BanAddressData, BanCoordinates } from "./ban.types";
 
 /**
- * URL de base de l'API BAN
+ * URL de base de l'API BAN (IGN Géoplateforme)
+ * Migration depuis l'ancienne API DINUM (mars 2025)
  */
-const BAN_API_BASE_URL = "https://api-adresse.data.gouv.fr";
+const BAN_API_BASE_URL = "https://data.geopf.fr/geocodage";
 
 /**
  * Nombre de résultats par défaut
@@ -48,7 +49,7 @@ export async function searchAddress(query: string, options: BanSearchOptions = {
   if (lat !== undefined) params.append("lat", String(lat));
   if (lon !== undefined) params.append("lon", String(lon));
 
-  const url = `${BAN_API_BASE_URL}/search/?${params.toString()}`;
+  const url = `${BAN_API_BASE_URL}/search?${params.toString()}`;
 
   const response = await fetch(url);
 
