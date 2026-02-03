@@ -334,7 +334,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         const logement = (r.rgaSimulationData as any)?.logement;
         if (!logement) return false;
 
-        const codeDepartement = logement.departement;
+        const codeDepartement = logement.code_departement;
         const codeEpci = logement.epci;
 
         // Au moins un match sur département ou EPCI

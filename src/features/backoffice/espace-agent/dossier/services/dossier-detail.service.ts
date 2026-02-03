@@ -54,7 +54,9 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
 
     // Vérifier que l'AMO est propriétaire du dossier (sauf admins)
     if (!isAdmin) {
-      if (user.role !== UserRole.AMO) {
+      const canAccessDossiers = user.role === UserRole.AMO || user.role === UserRole.AMO_ET_ALLERS_VERS;
+
+      if (!canAccessDossiers) {
         return { success: false, error: "Accès réservé aux AMO" };
       }
 

@@ -33,7 +33,8 @@ async function verifyAmoOwnership(
   }
 
   // Pour les AMO, vérifier que la validation leur appartient
-  if (user.role !== UserRole.AMO) {
+  const canAccessValidation = user.role === UserRole.AMO || user.role === UserRole.AMO_ET_ALLERS_VERS;
+  if (!canAccessValidation) {
     return { success: false, error: "Accès réservé aux AMO" };
   }
 

@@ -31,7 +31,8 @@ async function verifyAmoOwnership(demandeId: string): Promise<ActionResult<{ ent
   }
 
   // Pour les AMO, vérifier que la demande leur appartient
-  if (user.role !== UserRole.AMO) {
+  const canAccessDemandes = user.role === UserRole.AMO || user.role === UserRole.AMO_ET_ALLERS_VERS;
+  if (!canAccessDemandes) {
     return { success: false, error: "Accès réservé aux AMO" };
   }
 

@@ -21,12 +21,13 @@ export async function AmoGuard({ children }: AmoGuardProps) {
     return <>{children}</>;
   }
 
-  // Pas un AMO = pas de vérification nécessaire
-  if (user.role !== UserRole.AMO) {
+  // Pas un AMO ou AMO_ET_ALLERS_VERS = pas de vérification nécessaire
+  const needsEntrepriseAmo = user.role === UserRole.AMO || user.role === UserRole.AMO_ET_ALLERS_VERS;
+  if (!needsEntrepriseAmo) {
     return <>{children}</>;
   }
 
-  // AMO sans entreprise rattachée = bloquer l'accès
+  // AMO ou AMO_ET_ALLERS_VERS sans entreprise rattachée = bloquer l'accès
   if (!user.entrepriseAmoId) {
     return (
       <div className="fr-container fr-py-8w">

@@ -5,9 +5,9 @@ import type { AmoTab, AmoTabId } from "../types/amo-tab.types";
  */
 export const AMO_TABS: AmoTab[] = [
   {
-    id: "accueil",
-    label: "Accueil",
-    href: "/espace-agent",
+    id: "demandes",
+    label: "Demandes",
+    href: "/espace-agent/demandes",
   },
   {
     id: "dossiers",
@@ -42,9 +42,9 @@ export const ALLERS_VERS_TABS: AmoTab[] = [
  */
 export const AMO_ET_ALLERS_VERS_TABS: AmoTab[] = [
   {
-    id: "accueil",
-    label: "Accueil",
-    href: "/espace-agent",
+    id: "demandes",
+    label: "Demandes",
+    href: "/espace-agent/demandes",
   },
   {
     id: "dossiers",
@@ -66,4 +66,4 @@ export const AMO_ET_ALLERS_VERS_TABS: AmoTab[] = [
 /**
  * Onglet par défaut - Premier onglet
  */
-export const DEFAULT_AMO_TAB: AmoTabId = "accueil";
+export const DEFAULT_AMO_TAB: AmoTabId = "demandes";

@@ -42,7 +42,9 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
 
     // Vérifier que l'AMO est propriétaire de la demande (sauf admins)
     if (!isAdmin) {
-      if (user.role !== UserRole.AMO) {
+      const canAccessDemandes = user.role === UserRole.AMO || user.role === UserRole.AMO_ET_ALLERS_VERS;
+
+      if (!canAccessDemandes) {
         return { success: false, error: "Accès réservé aux AMO" };
       }
 

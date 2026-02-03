@@ -20,9 +20,13 @@ import { CountBadge } from "@/shared/components/CountBadge";
 function getActiveTab(pathname: string, tabs: AmoTab[]): string | null {
   // Chercher une correspondance exacte ou par préfixe
   for (const tab of tabs) {
-    if (tab.href === "/espace-agent") {
-      // Pour l'accueil, correspondance exacte ou validation
-      if (pathname === tab.href || pathname.startsWith("/espace-agent/validation")) {
+    if (tab.href === "/espace-agent/demandes") {
+      // Pour les demandes, inclure aussi /espace-agent/demande/[id] et /espace-agent/validation
+      if (
+        pathname === tab.href ||
+        pathname.startsWith("/espace-agent/demande/") ||
+        pathname.startsWith("/espace-agent/validation")
+      ) {
         return tab.id;
       }
     } else if (pathname.startsWith(tab.href)) {
@@ -59,7 +63,7 @@ function AgentNavigationTabs({ tabs, showDemandesBadge }: { tabs: AmoTab[]; show
           <li key={tab.id} className="fr-nav__item">
             <Link href={tab.href} className="fr-nav__link" aria-current={activeTab === tab.id ? "page" : undefined}>
               {tab.label}
-              {showDemandesBadge && tab.id === "accueil" && <CountBadge count={nombreDemandesEnAttente} />}
+              {showDemandesBadge && tab.id === "demandes" && <CountBadge count={nombreDemandesEnAttente} />}
             </Link>
           </li>
         ))}
