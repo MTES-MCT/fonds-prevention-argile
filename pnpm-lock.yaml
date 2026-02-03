@@ -29,6 +29,9 @@ importers:
       '@socialgouv/matomo-next':
         specifier: 1.10.0
         version: 1.10.0(next@15.5.10(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))
+      '@types/pg':
+        specifier: 8.15.6
+        version: 8.15.6
       argon2:
         specifier: 0.44.0
         version: 0.44.0
@@ -56,6 +59,9 @@ importers:
       postgres:
         specifier: 3.4.7
         version: 3.4.7
+      prettier:
+        specifier: 3.5.3
+        version: 3.5.3
       react:
         specifier: 19.2.1
         version: 19.2.1
@@ -99,9 +105,6 @@ importers:
       '@types/nodemailer':
         specifier: 7.0.3
         version: 7.0.3
-      '@types/pg':
-        specifier: 8.15.6
-        version: 8.15.6
       '@types/react':
         specifier: 19.2.2
         version: 19.2.2
@@ -132,9 +135,6 @@ importers:
       postcss:
         specifier: 8.5.3
         version: 8.5.3
-      prettier:
-        specifier: 3.5.3
-        version: 3.5.3
       tailwindcss:
         specifier: 4.1.16
         version: 4.1.16
