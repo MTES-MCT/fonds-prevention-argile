@@ -1,6 +1,7 @@
 /**
- * Types pour l'API BAN (Base Adresse Nationale)
- * Documentation : https://adresse.data.gouv.fr/api-doc/adresse
+ * Types pour l'API BAN (Base Adresse Nationale) - IGN Géoplateforme
+ * Documentation : https://geoservices.ign.fr/documentation/services/services-geoplateforme/geocodage
+ * Ancienne doc : https://adresse.data.gouv.fr/api-doc/adresse
  */
 
 /**

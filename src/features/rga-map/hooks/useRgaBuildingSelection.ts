@@ -31,7 +31,15 @@ interface UseRgaBuildingSelectionReturn {
  * Hook pour gérer la sélection et le survol des bâtiments sur la carte
  */
 export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions): UseRgaBuildingSelectionReturn {
-  const { map, enabled = true, enableInteractions = true, initialRnbId, initialCoordinates, onBuildingSelect, onError } = options;
+  const {
+    map,
+    enabled = true,
+    enableInteractions = true,
+    initialRnbId,
+    initialCoordinates,
+    onBuildingSelect,
+    onError,
+  } = options;
 
   const [selectedBuilding, setSelectedBuilding] = useState<SelectedBuilding | null>(null);
   const [buildingData, setBuildingData] = useState<BuildingData | null>(null);
@@ -42,7 +50,6 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
   const selectedIdRef = useRef<string | null>(null);
   const initialSelectionAppliedRef = useRef(false);
   const retryCountRef = useRef(0);
-  const maxRetries = 10; // Augmenter le nombre de tentatives
 
   // Pré-sélectionner un bâtiment par son ID RNB au chargement
   useEffect(() => {
