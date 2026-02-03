@@ -72,7 +72,7 @@ VALUES
    NOW() - INTERVAL '23 days', NOW() - INTERVAL '14 days'),
 
   ('55555555-5555-5555-5555-555555555515', '11111111-1111-1111-1111-111111111155', 'choix_amo', 'todo',
-   '{"logement": {"commune_nom": "Montgivray", "code_departement": "36", "adresse": "4 place de l\'Église", "commune": "36127", "code_region": "24", "epci": "200071991", "coordonnees": "46.6833,1.9000", "clef_ban": "36127_0001", "commune_denormandie": false, "annee_de_construction": "1976", "rnb": "", "niveaux": 2, "zone_dexposition": "fort", "type": "maison", "mitoyen": false, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": false, "sinistres": "très peu endommagée"}, "menage": {"revenu_rga": 29000, "personnes": 3}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2025-01-10T12:00:00Z"}',
+   '{"logement": {"commune_nom": "Montgivray", "code_departement": "36", "adresse": "4 place de l''Église", "commune": "36127", "code_region": "24", "epci": "200071991", "coordonnees": "46.6833,1.9000", "clef_ban": "36127_0001", "commune_denormandie": false, "annee_de_construction": "1976", "rnb": "", "niveaux": 2, "zone_dexposition": "fort", "type": "maison", "mitoyen": false, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": false, "sinistres": "très peu endommagée"}, "menage": {"revenu_rga": 29000, "personnes": 3}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2025-01-10T12:00:00Z"}',
    NOW() - INTERVAL '25 days', NOW() - INTERVAL '16 days'),
 
   ('55555555-5555-5555-5555-555555555516', '11111111-1111-1111-1111-111111111156', 'choix_amo', 'todo',
@@ -149,5 +149,5 @@ SELECT
   COUNT(CASE WHEN updated_at BETWEEN NOW() - INTERVAL '30 days' AND NOW() - INTERVAL '7 days' THEN 1 END) as moyens,
   COUNT(CASE WHEN updated_at < NOW() - INTERVAL '30 days' THEN 1 END) as anciens
 FROM parcours_prevention
-WHERE id LIKE '55555555%'
+WHERE id::text LIKE '55555555%'
   AND current_step = 'choix_amo';
