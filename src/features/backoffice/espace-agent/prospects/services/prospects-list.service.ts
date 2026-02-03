@@ -59,9 +59,9 @@ export class ProspectsListService {
       return {
         parcoursId: r.parcoursId,
         particulier: {
-          prenom: r.userPrenom,
-          nom: r.userNom,
-          email: r.userEmail,
+          prenom: r.userPrenom || "",
+          nom: r.userNom || "",
+          email: r.userEmail || "",
         },
         logement: {
           adresse: logement.adresse || "Adresse non renseignée",

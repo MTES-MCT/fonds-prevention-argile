@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AgentsList from "./AgentsList";
-import AgentFormModal, { type AgentFormData, type EntrepriseAmoOption } from "./AgentFormModal";
+import AgentFormModal, { type AgentFormData, type EntrepriseAmoOption, type AllersVersOption } from "./AgentFormModal";
 import AgentDeleteModal from "./AgentDeleteModal";
 import {
   AgentWithPermissions,
@@ -12,6 +12,7 @@ import {
   updateAgentAction,
 } from "@/features/backoffice";
 import { getEntreprisesAmoOptions } from "@/features/backoffice/administration/gestion-amo/actions";
+import { getAllersVersOptions } from "@/features/backoffice/administration/gestion-allers-vers/actions/allers-vers-admin.actions";
 import StatCard from "../shared/StatCard";
 
 const MODAL_DELETE_ID = "modal-delete-agent";
@@ -20,6 +21,7 @@ const MODAL_FORM_ID = "modal-form-agent";
 export default function AgentsPanel() {
   const [agents, setAgents] = useState<AgentWithPermissions[]>([]);
   const [entreprisesAmo, setEntreprisesAmo] = useState<EntrepriseAmoOption[]>([]);
+  const [allersVersList, setAllersVersList] = useState<AllersVersOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,12 +29,16 @@ export default function AgentsPanel() {
   const [selectedAgent, setSelectedAgent] = useState<AgentWithPermissions | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Charger les agents et les entreprises AMO
+  // Charger les agents, les entreprises AMO et les territoires Allers-Vers
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
-    const [agentsResult, entreprisesResult] = await Promise.all([getAgentsAction(), getEntreprisesAmoOptions()]);
+    const [agentsResult, entreprisesResult, allersVersResult] = await Promise.all([
+      getAgentsAction(),
+      getEntreprisesAmoOptions(),
+      getAllersVersOptions(),
+    ]);
 
     if (agentsResult.success) {
       setAgents(agentsResult.data);
@@ -42,6 +48,10 @@ export default function AgentsPanel() {
 
     if (entreprisesResult.success) {
       setEntreprisesAmo(entreprisesResult.data);
+    }
+
+    if (allersVersResult.success) {
+      setAllersVersList(allersVersResult.data);
     }
 
     setIsLoading(false);
@@ -82,6 +92,7 @@ export default function AgentsPanel() {
           role: data.role,
           departements: data.departements,
           entrepriseAmoId: data.entrepriseAmoId,
+          allersVersId: data.allersVersId,
         });
       } else {
         // Mode création
@@ -92,6 +103,7 @@ export default function AgentsPanel() {
           role: data.role,
           departements: data.departements,
           entrepriseAmoId: data.entrepriseAmoId,
+          allersVersId: data.allersVersId,
         });
       }
 
@@ -173,6 +185,10 @@ export default function AgentsPanel() {
             />
             <StatCard label="AMO" number={agents.filter((a) => a.agent.role === "amo").length.toString()} />
             <StatCard
+              label="Allers-Vers"
+              number={agents.filter((a) => a.agent.role === "allers_vers" || a.agent.role === "amo_et_allers_vers").length.toString()}
+            />
+            <StatCard
               label="En attente de connexion"
               number={agents.filter((a) => a.agent.sub.startsWith("pending_")).length.toString()}
             />
@@ -197,6 +213,7 @@ export default function AgentsPanel() {
         agent={selectedAgent}
         isLoading={isSubmitting}
         entreprisesAmo={entreprisesAmo}
+        allersVersList={allersVersList}
       />
 
       <AgentDeleteModal

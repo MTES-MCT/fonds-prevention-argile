@@ -8,6 +8,49 @@ import { revalidatePath } from "next/cache";
 import { AllersVersImportResult } from "../domain";
 import { importAllersVersFromExcel } from "../services/allers-vers-import.service";
 
+/**
+ * Allers-Vers simplifié pour les selects
+ */
+export interface AllersVersOption {
+  id: string;
+  nom: string;
+}
+
+/**
+ * Récupère la liste des Allers-Vers pour les selects
+ * Accessible aux agents ayant la permission AGENTS_READ (pour le formulaire agent)
+ */
+export async function getAllersVersOptions(): Promise<ActionResult<AllersVersOption[]>> {
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.AGENTS_READ);
+
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante",
+    };
+  }
+
+  try {
+    const allersVersList = await allersVersRepository.findAll();
+
+    const options: AllersVersOption[] = allersVersList.map((av) => ({
+      id: av.id,
+      nom: av.nom,
+    }));
+
+    return {
+      success: true,
+      data: options,
+    };
+  } catch (error) {
+    console.error("Erreur getAllersVersOptions:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    };
+  }
+}
+
 export async function importAllersVersAction(formData: FormData): Promise<ActionResult<AllersVersImportResult>> {
   // Vérifier la permission d'import
   const permissionCheck = await checkBackofficePermission(BackofficePermission.ALLERS_VERS_IMPORT);

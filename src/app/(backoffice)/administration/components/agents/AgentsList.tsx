@@ -26,6 +26,10 @@ function getRoleLabel(role: string): string {
       return "AMO";
     case UserRole.ANALYSTE:
       return "Analyste";
+    case UserRole.ALLERS_VERS:
+      return "Allers-Vers";
+    case UserRole.AMO_ET_ALLERS_VERS:
+      return "AMO & Allers-Vers";
     default:
       return role;
   }
@@ -44,6 +48,10 @@ function getRoleBadgeClass(role: string): string {
       return "fr-badge--blue-cumulus";
     case UserRole.ANALYSTE:
       return "fr-badge--orange-safran";
+    case UserRole.ALLERS_VERS:
+      return "fr-badge--yellow-tournesol";
+    case UserRole.AMO_ET_ALLERS_VERS:
+      return "fr-badge--blue-ecume";
     default:
       return "";
   }
@@ -73,14 +81,14 @@ export default function AgentsList({
             <th scope="col">Agent</th>
             <th scope="col">Email</th>
             <th scope="col">Rôle</th>
-            <th scope="col">Départements</th>
+            <th scope="col">Périmètre</th>
             <th scope="col">Créé le</th>
             <th scope="col">Actions</th>
           </tr>
         </thead>
         <tbody>
           {agents.map((agentData) => {
-            const { agent, departements } = agentData;
+            const { agent, departements, entrepriseAmo, allersVers } = agentData;
             const fullName = [agent.givenName, agent.usualName].filter(Boolean).join(" ");
             const isPending = agent.sub.startsWith("pending_");
 
@@ -108,31 +116,60 @@ export default function AgentsList({
                   </span>
                 </td>
 
-                {/* Départements */}
+                {/* Périmètre */}
                 <td>
-                  {agent.role === UserRole.SUPER_ADMINISTRATEUR ? (
-                    <span className="text-sm text-gray-500">Tous</span>
-                  ) : departements.length === 0 ? (
-                    <span className="text-sm text-gray-500">Tous</span>
-                  ) : (
-                    <div className="flex flex-wrap gap-1">
-                      {departements.slice(0, 3).map((code) => (
-                        <span key={code} className="fr-badge fr-badge--sm fr-badge--no-icon" title={DEPARTEMENTS[code]}>
-                          {code}
-                        </span>
-                      ))}
-                      {departements.length > 3 && (
-                        <span
-                          className="fr-badge fr-badge--sm fr-badge--no-icon"
-                          title={departements
-                            .slice(3)
-                            .map((c) => `${c} - ${DEPARTEMENTS[c]}`)
-                            .join(", ")}>
-                          +{departements.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex flex-col gap-1">
+                    {/* Entreprise AMO */}
+                    {[UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(agent.role as UserRole) && entrepriseAmo && (
+                      <div className="text-sm">
+                        <span className="font-medium">AMO:</span> {entrepriseAmo.nom}
+                      </div>
+                    )}
+
+                    {/* Territoire Allers-Vers */}
+                    {[UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(agent.role as UserRole) && allersVers && (
+                      <div className="text-sm">
+                        <span className="font-medium">Territoire:</span> {allersVers.nom}
+                      </div>
+                    )}
+
+                    {/* Départements (pour Administrateur) */}
+                    {agent.role === UserRole.ADMINISTRATEUR && (
+                      <>
+                        {departements.length === 0 ? (
+                          <span className="text-sm text-gray-500">Tous départements</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1">
+                            {departements.slice(0, 3).map((code) => (
+                              <span key={code} className="fr-badge fr-badge--sm fr-badge--no-icon" title={DEPARTEMENTS[code]}>
+                                {code}
+                              </span>
+                            ))}
+                            {departements.length > 3 && (
+                              <span
+                                className="fr-badge fr-badge--sm fr-badge--no-icon"
+                                title={departements
+                                  .slice(3)
+                                  .map((c) => `${c} - ${DEPARTEMENTS[c]}`)
+                                  .join(", ")}>
+                                +{departements.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Super Admin : tous les territoires */}
+                    {agent.role === UserRole.SUPER_ADMINISTRATEUR && (
+                      <span className="text-sm text-gray-500">Tous territoires</span>
+                    )}
+
+                    {/* Analyste : aucun périmètre spécifique */}
+                    {agent.role === UserRole.ANALYSTE && (
+                      <span className="text-sm text-gray-500">—</span>
+                    )}
+                  </div>
                 </td>
 
                 {/* Date création */}

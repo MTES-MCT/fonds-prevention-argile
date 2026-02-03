@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { Prospect } from "../domain/types";
-import { formatDate } from "@/shared/utils/format";
+import { formatNomComplet, formatCommune, formatDaysAgoSplit } from "@/shared/utils";
+import { ROUTES } from "@/features/auth/domain/value-objects";
 
 interface ProspectsTableProps {
   prospects: Prospect[];
@@ -20,66 +21,85 @@ const STEP_LABELS: Record<string, string> = {
  * Tableau des prospects (particuliers sans AMO)
  */
 export function ProspectsTable({ prospects }: ProspectsTableProps) {
-  if (prospects.length === 0) {
-    return (
-      <div className="fr-callout">
-        <p className="fr-callout__text">
-          Aucun prospect trouvé dans votre territoire.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="fr-table">
-      <table>
-        <thead>
-          <tr>
-            <th>Particulier</th>
-            <th>Commune</th>
-            <th>Département</th>
-            <th>Étape actuelle</th>
-            <th>Dernière action</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {prospects.map((prospect) => (
-            <tr key={prospect.parcoursId}>
-              <td>
-                <strong>
-                  {prospect.particulier.prenom} {prospect.particulier.nom}
-                </strong>
-                <br />
-                <small className="fr-text--sm">{prospect.particulier.email}</small>
-              </td>
-              <td>{prospect.logement.commune}</td>
-              <td>{prospect.logement.codeDepartement}</td>
-              <td>
-                <span className="fr-badge fr-badge--blue-ecume fr-badge--sm">
-                  {STEP_LABELS[prospect.currentStep] || prospect.currentStep}
-                </span>
-              </td>
-              <td>
-                {formatDate(prospect.updatedAt.toISOString())}
-                <br />
-                <small className="fr-text--sm fr-text--light">
-                  Il y a {prospect.daysSinceLastAction} jour
-                  {prospect.daysSinceLastAction > 1 ? "s" : ""}
-                </small>
-              </td>
-              <td>
-                <Link
-                  href={`/espace-agent/prospects/${prospect.parcoursId}`}
-                  className="fr-btn fr-btn--sm fr-btn--secondary"
-                >
-                  Voir le détail
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="fr-table fr-table--bordered">
+      <div className="fr-table__wrapper">
+        <div className="fr-table__container">
+          <div className="fr-table__content">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">
+                    <span className="fr-icon-user-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
+                    Particulier
+                  </th>
+                  <th scope="col">
+                    <span className="fr-icon-map-pin-2-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
+                    Commune (CP)
+                  </th>
+                  <th scope="col">
+                    <span className="fr-icon-list-ordered fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
+                    Étape actuelle
+                  </th>
+                  <th scope="col">
+                    <span className="fr-icon-calendar-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
+                    Dernière action
+                  </th>
+                  <th scope="col">
+                    <span className="fr-icon-settings-5-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {prospects.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
+                      Aucun prospect trouvé dans votre territoire
+                    </td>
+                  </tr>
+                ) : (
+                  prospects.map((prospect) => {
+                    const daysAgo = formatDaysAgoSplit(prospect.updatedAt.toISOString());
+                    return (
+                      <tr key={prospect.parcoursId}>
+                        <td>
+                          <Link href={ROUTES.backoffice.espaceAgent.prospect(prospect.parcoursId)} className="fr-link">
+                            {formatNomComplet(prospect.particulier.prenom, prospect.particulier.nom)}
+                          </Link>
+                        </td>
+                        <td>{formatCommune(prospect.logement.commune, prospect.logement.codePostal)}</td>
+                        <td>
+                          <a href="#" className="fr-tag">
+                            {STEP_LABELS[prospect.currentStep] || prospect.currentStep}
+                          </a>
+                        </td>
+                        <td>
+                          {daysAgo ? (
+                            <>
+                              <div>{daysAgo.text}</div>
+                              <div className="fr-text--xs fr-text-mention--grey">Le {daysAgo.date}</div>
+                            </>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td>
+                          <Link
+                            href={ROUTES.backoffice.espaceAgent.prospect(prospect.parcoursId)}
+                            className="fr-btn fr-btn--sm fr-btn--secondary fr-btn--icon-right fr-icon-eye-line">
+                            Voir détails
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
