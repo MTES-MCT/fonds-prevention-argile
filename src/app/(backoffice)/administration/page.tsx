@@ -62,10 +62,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     return <AccesNonAutoriseAdmin />;
   }
 
-  // Si AMO : rediriger vers l'espace dédié (évite une boucle de redirection)
-  // Les AMO n'ont pas les permissions pour accéder aux onglets de /administration
-  if (access.user?.role === UserRole.AMO) {
-    redirect(ROUTES.backoffice.espaceAmo.root);
+  // Si AMO ou AMO_ET_ALLERS_VERS : rediriger vers l'espace agent dédié (évite une boucle de redirection)
+  // Ces rôles n'ont pas les permissions pour accéder aux onglets de /administration
+  if (access.user?.role === UserRole.AMO || access.user?.role === UserRole.AMO_ET_ALLERS_VERS) {
+    redirect(ROUTES.backoffice.espaceAgent.root);
+  }
+
+  // Si ALLERS_VERS : rediriger vers l'espace agent dédié
+  if (access.user?.role === UserRole.ALLERS_VERS) {
+    redirect(ROUTES.backoffice.espaceAgent.root);
   }
 
   // Vérifier l'accès à l'onglet spécifique

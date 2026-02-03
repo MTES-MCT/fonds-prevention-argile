@@ -5,7 +5,7 @@ import { useAgentRole, useIsAgent } from "@/features/auth/hooks";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import Link from "next/link";
-import { RoleNavigation } from "./RoleNavigation";
+import { AgentNavigation } from "@/shared/components/AgentNavigation";
 
 /**
  * Liens de navigation pour les agents selon leur rôle
@@ -162,8 +162,8 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Navigation par rôle (AMO, etc.) */}
-      <RoleNavigation />
+      {/* Navigation agent (AMO, Allers-Vers, etc.) */}
+      <AgentNavigation />
 
       {/* Menu mobile */}
       <div className="fr-header__menu fr-modal" id="menu-modal-mobile" aria-labelledby="menu-mobile">

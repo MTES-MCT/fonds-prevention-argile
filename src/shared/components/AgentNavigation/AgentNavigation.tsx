@@ -5,14 +5,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAgentRole } from "@/features/auth/hooks";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
-import { AMO_TABS } from "@/features/backoffice/espace-agent/shared/domain/value-objects/amo-tabs.config";
+import {
+  AMO_TABS,
+  ALLERS_VERS_TABS,
+  AMO_ET_ALLERS_VERS_TABS,
+} from "@/features/backoffice/espace-agent/shared/domain/value-objects/amo-tabs.config";
 import type { AmoTab } from "@/features/backoffice/espace-agent/shared/domain/types/amo-tab.types";
 import { getNombreDemandesEnAttenteAction } from "@/features/backoffice/espace-agent/accueil/actions";
 import { CountBadge } from "@/shared/components/CountBadge";
 
 /**
  * Détermine l'onglet actif selon le pathname
- * TODO : Simplifier cette logique & mutualiser
  */
 function getActiveTab(pathname: string, tabs: AmoTab[]): string | null {
   // Chercher une correspondance exacte ou par préfixe
@@ -30,30 +33,33 @@ function getActiveTab(pathname: string, tabs: AmoTab[]): string | null {
 }
 
 /**
- * Navigation AMO
+ * Navigation Agent unifiée
+ * Affiche les onglets selon le rôle de l'agent
  */
-function AmoNavigation() {
+function AgentNavigationTabs({ tabs, showDemandesBadge }: { tabs: AmoTab[]; showDemandesBadge: boolean }) {
   const pathname = usePathname();
-  const activeTab = getActiveTab(pathname, AMO_TABS);
+  const activeTab = getActiveTab(pathname, tabs);
   const [nombreDemandesEnAttente, setNombreDemandesEnAttente] = useState<number>(0);
 
   useEffect(() => {
+    if (!showDemandesBadge) return;
+
     async function loadNombreDemandes() {
       const count = await getNombreDemandesEnAttenteAction();
       setNombreDemandesEnAttente(count);
     }
 
     loadNombreDemandes();
-  }, []);
+  }, [showDemandesBadge]);
 
   return (
-    <nav className="fr-nav" id="amo-navigation" role="navigation" aria-label="Menu espace AMO">
+    <nav className="fr-nav" id="agent-navigation" role="navigation" aria-label="Menu espace agent">
       <ul className="fr-nav__list">
-        {AMO_TABS.map((tab) => (
+        {tabs.map((tab) => (
           <li key={tab.id} className="fr-nav__item">
             <Link href={tab.href} className="fr-nav__link" aria-current={activeTab === tab.id ? "page" : undefined}>
               {tab.label}
-              {tab.id === "accueil" && <CountBadge count={nombreDemandesEnAttente} />}
+              {showDemandesBadge && tab.id === "accueil" && <CountBadge count={nombreDemandesEnAttente} />}
             </Link>
           </li>
         ))}
@@ -63,14 +69,12 @@ function AmoNavigation() {
 }
 
 /**
- * Navigation conditionnelle selon le rôle de l'utilisateur
+ * Navigation conditionnelle selon le rôle de l'agent
  *
  * Affiche une barre de navigation spécifique sous le header
- * selon le rôle de l'agent connecté.
- *
- * Extensible pour d'autres rôles à l'avenir.
+ * selon le rôle de l'agent connecté (AMO, Allers-Vers, AMO et Allers-Vers).
  */
-export function RoleNavigation() {
+export function AgentNavigation() {
   const agentRole = useAgentRole();
 
   // Pas de navigation spéciale si pas agent ou rôle non supporté
@@ -78,22 +82,36 @@ export function RoleNavigation() {
     return null;
   }
 
+  // Déterminer les onglets et options selon le rôle
+  let tabs: AmoTab[] = [];
+  let showDemandesBadge = false;
+
   switch (agentRole) {
     case UserRole.AMO:
-      return (
-        <div className="fr-header__menu">
-          <div className="fr-container">
-            <AmoNavigation />
-          </div>
-        </div>
-      );
+      tabs = AMO_TABS;
+      showDemandesBadge = true;
+      break;
 
-    // Prévu pour d'autres rôles à l'avenir
-    // case UserRole.ADMINISTRATEUR:
-    // case UserRole.SUPER_ADMINISTRATEUR:
-    //   return <AdminNavigation />;
+    case UserRole.ALLERS_VERS:
+      tabs = ALLERS_VERS_TABS;
+      showDemandesBadge = false;
+      break;
+
+    case UserRole.AMO_ET_ALLERS_VERS:
+      tabs = AMO_ET_ALLERS_VERS_TABS;
+      showDemandesBadge = true;
+      break;
 
     default:
+      // Pas de navigation pour les autres rôles (ADMIN, ANALYSTE, etc.)
       return null;
   }
+
+  return (
+    <div className="fr-header__menu">
+      <div className="fr-container">
+        <AgentNavigationTabs tabs={tabs} showDemandesBadge={showDemandesBadge} />
+      </div>
+    </div>
+  );
 }

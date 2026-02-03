@@ -1,8 +1,8 @@
 /**
- * Types pour les onglets de l'espace AMO
+ * Types pour les onglets de l'espace agent (AMO, Allers-Vers, etc.)
  */
 
-export type AmoTabId = "accueil" | "dossiers" | "statistiques";
+export type AmoTabId = "accueil" | "dossiers" | "statistiques" | "prospects";
 
 export interface AmoTab {
   id: AmoTabId;

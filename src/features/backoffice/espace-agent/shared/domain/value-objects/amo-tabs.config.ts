@@ -1,7 +1,7 @@
 import type { AmoTab, AmoTabId } from "../types/amo-tab.types";
 
 /**
- * Configuration des onglets de l'espace AMO
+ * Configuration des onglets pour les agents AMO
  */
 export const AMO_TABS: AmoTab[] = [
   {
@@ -13,6 +13,48 @@ export const AMO_TABS: AmoTab[] = [
     id: "dossiers",
     label: "Dossiers",
     href: "/espace-agent/dossiers",
+  },
+  {
+    id: "statistiques",
+    label: "Statistiques",
+    href: "/espace-agent/statistiques",
+  },
+];
+
+/**
+ * Configuration des onglets pour les agents Allers-Vers
+ */
+export const ALLERS_VERS_TABS: AmoTab[] = [
+  {
+    id: "prospects",
+    label: "Prospects",
+    href: "/espace-agent/prospects",
+  },
+  {
+    id: "statistiques",
+    label: "Statistiques",
+    href: "/espace-agent/statistiques",
+  },
+];
+
+/**
+ * Configuration des onglets pour les agents AMO et Allers-Vers (rôle double)
+ */
+export const AMO_ET_ALLERS_VERS_TABS: AmoTab[] = [
+  {
+    id: "accueil",
+    label: "Accueil",
+    href: "/espace-agent",
+  },
+  {
+    id: "dossiers",
+    label: "Dossiers",
+    href: "/espace-agent/dossiers",
+  },
+  {
+    id: "prospects",
+    label: "Prospects",
+    href: "/espace-agent/prospects",
   },
   {
     id: "statistiques",
