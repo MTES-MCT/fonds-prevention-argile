@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useSimulateurFormulaire } from "../hooks/useSimulateurFormulaire";
 import { SimulateurStep } from "../domain/value-objects/simulateur-step.enum";
 import { useMatomo } from "@/shared/components/Matomo/useMatomo";
+import { encryptRGAData } from "../actions/encrypt-rga-data.actions";
 
 // Steps
 import {
@@ -102,7 +103,7 @@ export function SimulateurFormulaire() {
   };
 
   // Gestion de la connexion FranceConnect
-  const handleContinueToFC = () => {
+  const handleContinueToFC = async () => {
     commitToRGAStore();
 
     // Si on est dans une iframe, ouvrir dans une nouvelle fenêtre
@@ -110,7 +111,16 @@ export function SimulateurFormulaire() {
     const isInIframe = window !== window.parent;
 
     if (isInIframe) {
-      window.open("/connexion?redirect=/parcours", "_blank");
+      // En mode iframe, chiffrer les données et les transmettre via URL hash
+      const result = await encryptRGAData(answers);
+
+      if (result.success) {
+        window.open(`/connexion?redirect=/parcours#d=${result.encrypted}`, "_blank");
+      } else {
+        console.error("[SimulateurFormulaire] Erreur chiffrement:", result.error);
+        // Fallback : ouvrir sans données (l'utilisateur devra refaire la simulation)
+        window.open("/connexion?redirect=/parcours", "_blank");
+      }
     } else {
       window.location.href = "/connexion?redirect=/parcours";
     }
