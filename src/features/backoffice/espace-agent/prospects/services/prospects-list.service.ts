@@ -65,6 +65,7 @@ export class ProspectsListService {
           prenom: r.userPrenom || "",
           nom: r.userNom || "",
           email: r.userEmail || "",
+          telephone: r.userTelephone || null,
         },
         logement: {
           adresse: logement.adresse || "Adresse non renseignée",

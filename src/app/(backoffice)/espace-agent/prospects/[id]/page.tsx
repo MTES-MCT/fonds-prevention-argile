@@ -41,7 +41,7 @@ export default async function ProspectDetailPage({ params }: PageProps) {
     prenom: prospect.particulier.prenom,
     nom: prospect.particulier.nom,
     email: prospect.particulier.email,
-    telephone: null,
+    telephone: prospect.particulier.telephone,
     adresse: prospect.logement.adresse,
   };
 

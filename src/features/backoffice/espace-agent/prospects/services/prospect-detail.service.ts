@@ -10,6 +10,24 @@ import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { daysSince } from "@/shared/utils/date-diff";
 
+function buildAdresseComplete(logement: Record<string, any>): string {
+  const parts = [logement.adresse, logement.commune].filter(Boolean);
+  if (parts.length === 0) return "Adresse non renseignée";
+
+  // commune est le code postal (ex: "36200"), commune_nom est le nom
+  const rue = logement.adresse || "";
+  const codePostal = logement.commune || "";
+  const ville = logement.commune_nom || "";
+
+  if (rue && codePostal && ville) {
+    return `${rue}, ${codePostal} ${ville}`;
+  }
+  if (rue && ville) {
+    return `${rue}, ${ville}`;
+  }
+  return rue || "Adresse non renseignée";
+}
+
 /**
  * Récupérer le détail d'un prospect par son ID de parcours
  * Vérifie que l'utilisateur connecté peut voir ce prospect (même territoire)
@@ -88,9 +106,10 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
         prenom: result.user.prenom || "",
         nom: result.user.nom || "",
         email: result.user.email || "",
+        telephone: result.user.telephone || null,
       },
       logement: {
-        adresse: logement.adresse || "Adresse non renseignée",
+        adresse: buildAdresseComplete(logement),
         commune: logement.commune_nom || logement.commune || "Commune non renseignée",
         codePostal: logement.code_postal || "",
         codeDepartement: logement.code_departement || "",

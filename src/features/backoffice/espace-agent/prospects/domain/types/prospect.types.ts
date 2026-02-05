@@ -13,6 +13,7 @@ export interface Prospect {
     prenom: string;
     nom: string;
     email: string;
+    telephone: string | null;
   };
 
   /** Informations du logement */

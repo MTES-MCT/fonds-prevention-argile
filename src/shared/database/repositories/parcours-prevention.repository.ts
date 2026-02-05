@@ -299,6 +299,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         userPrenom: users.prenom,
         userNom: users.nom,
         userEmail: users.email,
+        userTelephone: users.telephone,
       })
       .from(parcoursPrevention)
       .innerJoin(users, eq(parcoursPrevention.userId, users.id))
