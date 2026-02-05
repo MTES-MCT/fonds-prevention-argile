@@ -12,9 +12,10 @@ import { daysSince } from "@/shared/utils/date-diff";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
 import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
 import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/domain/types";
+import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
 
-function buildAdresseComplete(logement: Record<string, any>): string {
+function buildAdresseComplete(logement: Partial<RGASimulationData["logement"]>): string {
   const parts = [logement.adresse, logement.commune].filter(Boolean);
   if (parts.length === 0) return "Adresse non renseignée";
 
@@ -97,8 +98,8 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     }
 
     // Extraire les données de logement
-    const rgaData = result.parcours.rgaSimulationData as any;
-    const logement = rgaData?.logement || {};
+    const rgaData = result.parcours.rgaSimulationData;
+    const logement = rgaData?.logement;
 
     // Vérifier que le prospect est dans le territoire de l'agent (sauf admins)
     if (!isAdmin && user.allersVersId) {
@@ -111,8 +112,8 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
 
       const scope = await calculateAgentScope(agentInput);
 
-      const codeDepartement = logement.code_departement;
-      const codeEpci = logement.epci;
+      const codeDepartement = logement?.code_departement;
+      const codeEpci = logement?.epci;
 
       const matchesDepartement =
         scope.departements.length > 0 && codeDepartement && scope.departements.includes(codeDepartement);
@@ -145,8 +146,8 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
 
     // Déterminer le statut AMO du prospect
     const amoInfo = await resolveAmoInfo(
-      logement.commune || "",
-      logement.code_departement || ""
+      logement?.commune || "",
+      logement?.code_departement || ""
     );
 
     // Construire l'objet ProspectDetail
@@ -159,11 +160,11 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
         telephone: result.user.telephone || null,
       },
       logement: {
-        adresse: buildAdresseComplete(logement),
-        commune: logement.commune_nom || logement.commune || "Commune non renseignée",
-        codePostal: logement.code_postal || "",
-        codeDepartement: logement.code_departement || "",
-        codeEpci: logement.epci || undefined,
+        adresse: logement ? buildAdresseComplete(logement) : "Adresse non renseignée",
+        commune: logement?.commune_nom || logement?.commune || "Commune non renseignée",
+        codePostal: logement?.commune || "",
+        codeDepartement: logement?.code_departement || "",
+        codeEpci: logement?.epci || undefined,
       },
       currentStep: result.parcours.currentStep as Step,
       createdAt: result.parcours.createdAt,

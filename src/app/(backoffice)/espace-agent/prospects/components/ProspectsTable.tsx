@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Prospect } from "../../../../../features/backoffice/espace-agent/prospects/domain/types";
-import { formatNomComplet, formatCommune, formatDaysAgoSplit } from "@/shared/utils";
+import { formatNomComplet, formatDaysAgoSplit } from "@/shared/utils";
 import { ROUTES } from "@/features/auth/domain/value-objects";
 
 interface ProspectsTableProps {

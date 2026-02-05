@@ -56,8 +56,7 @@ export class ProspectsListService {
     // Transformer en Prospects
     const prospects: Prospect[] = results.map((r) => {
       // Extraire les données de logement depuis rgaSimulationData
-      const rgaData = r.rgaSimulationData as any;
-      const logement = rgaData?.logement || {};
+      const logement = r.rgaSimulationData?.logement;
 
       return {
         parcoursId: r.parcoursId,
@@ -68,11 +67,11 @@ export class ProspectsListService {
           telephone: r.userTelephone || null,
         },
         logement: {
-          adresse: logement.adresse || "Adresse non renseignée",
-          commune: logement.commune_nom || logement.commune || "Commune non renseignée",
-          codePostal: logement.code_postal || "",
-          codeDepartement: logement.code_departement || "",
-          codeEpci: logement.epci || undefined,
+          adresse: logement?.adresse || "Adresse non renseignée",
+          commune: logement?.commune_nom || logement?.commune || "Commune non renseignée",
+          codePostal: logement?.commune || "",
+          codeDepartement: logement?.code_departement || "",
+          codeEpci: logement?.epci || undefined,
         },
         currentStep: r.currentStep,
         createdAt: r.createdAt,

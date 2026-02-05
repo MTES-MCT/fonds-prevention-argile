@@ -1,4 +1,4 @@
-import { eq, sql, SQL, desc, and, isNull, like } from "drizzle-orm";
+import { eq, sql, SQL, desc, and, isNull } from "drizzle-orm";
 import { db } from "../client";
 import { parcoursPrevention } from "../schema/parcours-prevention";
 import { users } from "../schema/users";
@@ -332,7 +332,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
 
       // Filtrage territorial (si rgaSimulationData contient les infos)
       if (r.rgaSimulationData && (departements.length > 0 || epcis.length > 0)) {
-        const logement = (r.rgaSimulationData as any)?.logement;
+        const logement = r.rgaSimulationData?.logement;
         if (!logement) return false;
 
         const codeDepartement = logement.code_departement;

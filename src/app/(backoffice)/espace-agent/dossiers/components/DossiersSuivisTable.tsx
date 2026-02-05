@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { DossierSuivi } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import { STEP_LABELS, getPrecisionText } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import { ROUTES } from "@/features/auth/domain/value-objects";
-import { formatNomComplet, formatCommune, formatDaysAgoSplit } from "@/shared/utils";
+import { formatNomComplet, formatDaysAgoSplit } from "@/shared/utils";
 
 interface DossiersSuivisTableProps {
   dossiers: DossierSuivi[];
