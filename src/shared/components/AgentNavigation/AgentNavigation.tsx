@@ -11,7 +11,7 @@ import {
   AMO_ET_ALLERS_VERS_TABS,
 } from "@/features/backoffice/espace-agent/shared/domain/value-objects/amo-tabs.config";
 import type { AmoTab } from "@/features/backoffice/espace-agent/shared/domain/types/amo-tab.types";
-import { getNombreDemandesEnAttenteAction } from "@/features/backoffice/espace-agent/accueil/actions";
+import { getNombreDemandesEnAttenteAction } from "@/features/backoffice/espace-agent/demandes/actions";
 import { CountBadge } from "@/shared/components/CountBadge";
 
 /**
@@ -21,10 +21,10 @@ function getActiveTab(pathname: string, tabs: AmoTab[]): string | null {
   // Chercher une correspondance exacte ou par préfixe
   for (const tab of tabs) {
     if (tab.href === "/espace-agent/demandes") {
-      // Pour les demandes, inclure aussi /espace-agent/demande/[id] et /espace-agent/validation
+      // Pour les demandes, inclure aussi /espace-agent/demandes/[id] et /espace-agent/validation
       if (
         pathname === tab.href ||
-        pathname.startsWith("/espace-agent/demande/") ||
+        pathname.startsWith("/espace-agent/demandes/") ||
         pathname.startsWith("/espace-agent/validation")
       ) {
         return tab.id;

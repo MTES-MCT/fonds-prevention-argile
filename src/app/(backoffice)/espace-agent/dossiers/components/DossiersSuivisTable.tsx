@@ -28,7 +28,7 @@ export function DossiersSuivisTable({ dossiers }: DossiersSuivisTableProps) {
                   </th>
                   <th scope="col">
                     <span className="fr-icon-map-pin-2-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
-                    Commune (CP)
+                    Commune
                   </th>
                   <th scope="col">
                     <span className="fr-icon-list-ordered fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
@@ -61,7 +61,7 @@ export function DossiersSuivisTable({ dossiers }: DossiersSuivisTableProps) {
                             {formatNomComplet(dossier.prenom, dossier.nom)}
                           </Link>
                         </td>
-                        <td>{formatCommune(dossier.commune, dossier.codeDepartement)}</td>
+                        <td>{dossier.commune}</td>
                         <td>
                           <a href="#" className="fr-tag">
                             {STEP_LABELS[dossier.etape]}

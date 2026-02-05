@@ -65,8 +65,8 @@ export class ProspectsListService {
         },
         logement: {
           adresse: logement.adresse || "Adresse non renseignée",
-          commune: logement.commune || "Commune non renseignée",
-          codePostal: logement.codePostal || "",
+          commune: logement.commune_nom || logement.commune || "Commune non renseignée",
+          codePostal: logement.code_postal || "",
           codeDepartement: logement.code_departement || "",
           codeEpci: logement.epci || undefined,
         },

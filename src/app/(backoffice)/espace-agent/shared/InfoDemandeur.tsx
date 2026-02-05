@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { InfoDemandeur as InfoDemandeurType } from "@/features/backoffice/espace-agent/demande/domain/types";
+import type { InfoDemandeur as InfoDemandeurType } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import { formatNomComplet, formatDate } from "@/shared/utils";
 import Link from "next/dist/client/link";
 

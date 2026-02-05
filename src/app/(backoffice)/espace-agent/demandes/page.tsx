@@ -1,8 +1,8 @@
-import { AmoAccueilPanel } from "../accueil/components/AmoAccueilPanel";
+import { DemandesAccompagnementPanel } from "./components/DemandesAccompagnementPanel";
 
 /**
  * Espace Agent - Page des demandes AMO
  */
 export default function EspaceAgentDemandesPage() {
-  return <AmoAccueilPanel />;
+  return <DemandesAccompagnementPanel />;
 }

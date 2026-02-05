@@ -1,3 +1,3 @@
-export * from "./accueil";
+export * from "./demandes";
 export * from "./shared";
 export * from "./statistiques";

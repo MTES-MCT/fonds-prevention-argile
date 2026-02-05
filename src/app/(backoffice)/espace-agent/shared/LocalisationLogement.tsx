@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { InfoLogement } from "@/features/backoffice/espace-agent/demande/domain/types";
+import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import { useMemo } from "react";
 import { RgaMapLegend } from "@/features/rga-map/components/RgaMapLegend";
 

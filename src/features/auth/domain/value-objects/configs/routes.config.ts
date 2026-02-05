@@ -46,9 +46,9 @@ export const ROUTES = {
     espaceAmo: {
       root: "/espace-agent",
       dossiers: "/espace-agent/dossiers",
-      dossier: (id: string) => `/espace-agent/dossier/${id}` as const,
+      dossier: (id: string) => `/espace-agent/dossiers/${id}` as const,
       statistiques: "/espace-agent/statistiques",
-      demande: (id: string) => `/espace-agent/demande/${id}` as const,
+      demande: (id: string) => `/espace-agent/demandes/${id}` as const,
       validation: (token: string) => `/espace-agent/validation/${token}` as const,
       prospects: "/espace-agent/prospects",
       prospect: (id: string) => `/espace-agent/prospects/${id}` as const,
@@ -58,9 +58,9 @@ export const ROUTES = {
     espaceAgent: {
       root: "/espace-agent",
       dossiers: "/espace-agent/dossiers",
-      dossier: (id: string) => `/espace-agent/dossier/${id}` as const,
+      dossier: (id: string) => `/espace-agent/dossiers/${id}` as const,
       statistiques: "/espace-agent/statistiques",
-      demande: (id: string) => `/espace-agent/demande/${id}` as const,
+      demande: (id: string) => `/espace-agent/demandes/${id}` as const,
       validation: (token: string) => `/espace-agent/validation/${token}` as const,
       prospects: "/espace-agent/prospects",
       prospect: (id: string) => `/espace-agent/prospects/${id}` as const,

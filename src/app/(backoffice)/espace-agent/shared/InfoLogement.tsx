@@ -1,4 +1,4 @@
-import type { InfoLogement as InfoLogementType } from "@/features/backoffice/espace-agent/demande/domain/types";
+import type { InfoLogement as InfoLogementType } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import { formatDate, formatMontant } from "@/shared/utils";
 import { ALEA_COLORS } from "@/features/rga-map/domain/config";
 

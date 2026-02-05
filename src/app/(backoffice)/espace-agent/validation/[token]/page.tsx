@@ -12,7 +12,7 @@ interface ValidationAmoPageProps {
 /**
  * Espace AMO - Page de validation d'une demande (via token email)
  *
- * Cette page redirige vers la page de détail de demande /espace-agent/demande/[id]
+ * Cette page redirige vers la page de détail de demande /espace-agent/demandes/[id]
  * qui offre une meilleure expérience utilisateur avec carte et informations complètes.
  *
  * L'accès AMO est vérifié par le layout parent (layout.tsx)
