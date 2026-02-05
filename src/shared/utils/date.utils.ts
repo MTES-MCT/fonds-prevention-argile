@@ -7,6 +7,12 @@ const DATE_FORMAT: Intl.DateTimeFormatOptions = {
   year: "numeric",
 };
 
+const DATE_SHORT_FORMAT: Intl.DateTimeFormatOptions = {
+  day: "2-digit",
+  month: "2-digit",
+  year: "2-digit",
+};
+
 const DATETIME_FORMAT: Intl.DateTimeFormatOptions = {
   ...DATE_FORMAT,
   hour: "2-digit",
@@ -49,6 +55,15 @@ export function formatDateTime(dateString: string | null | undefined): string {
  */
 export function formatDate(dateString: string | null | undefined): string {
   return formatDateWithOptions(dateString, DATE_FORMAT);
+}
+
+/**
+ * Formate une date courte (JJ/MM/AA)
+ * @param dateString - String de date ou null
+ * @returns La date formatée en format court
+ */
+export function formatDateShort(dateString: string | null | undefined): string {
+  return formatDateWithOptions(dateString, DATE_SHORT_FORMAT);
 }
 
 /**

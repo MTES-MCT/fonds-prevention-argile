@@ -2,8 +2,9 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getProspectDetail } from "@/features/backoffice/espace-agent/prospects/services/prospect-detail.service";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
-import { formatNomComplet, formatDate } from "@/shared/utils";
+import { formatNomComplet, formatDateShort } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
+import { STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 import { InfoDemandeur, InfoLogement, LocalisationLogement, ParcoursDemandeur } from "../../shared";
 
 interface PageProps {
@@ -12,14 +13,6 @@ interface PageProps {
 
 // Force Next.js à ne pas cacher cette page (mode dynamique)
 export const dynamic = "force-dynamic";
-
-const STEP_LABELS: Record<string, string> = {
-  choix_amo: "Choix AMO",
-  eligibilite: "Éligibilité",
-  diagnostic: "Diagnostic",
-  devis: "Devis",
-  factures: "Factures",
-};
 
 /**
  * Page détail d'un prospect (Espace Allers-Vers)
@@ -102,12 +95,11 @@ export default async function ProspectDetailPage({ params }: PageProps) {
         <div className="fr-mb-4w">
           <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
           <div className="fr-badges-group">
-            <p className="fr-badge fr-badge--info">Prospect</p>
-            <p className="fr-badge">
-              {STEP_LABELS[prospect.currentStep] || prospect.currentStep}
-            </p>
             <p className="fr-badge fr-badge--new">
-              Dernière activité le {formatDate(prospect.updatedAt.toISOString())}
+              Nouveau prospect du {formatDateShort(prospect.createdAt.toISOString())}
+            </p>
+            <p className="fr-badge">
+              {STEP_LABELS_NUMBERED[prospect.currentStep] || prospect.currentStep}
             </p>
           </div>
         </div>

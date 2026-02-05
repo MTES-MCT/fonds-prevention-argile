@@ -9,14 +9,6 @@ interface ProspectsTableProps {
   prospects: Prospect[];
 }
 
-const STEP_LABELS: Record<string, string> = {
-  choix_amo: "Choix AMO",
-  eligibilite: "Éligibilité",
-  diagnostic: "Diagnostic",
-  devis: "Devis",
-  factures: "Factures",
-};
-
 /**
  * Tableau des prospects (particuliers sans AMO)
  */
