@@ -45,23 +45,6 @@ export default async function ProspectDetailPage({ params }: PageProps) {
     adresse: prospect.logement.adresse,
   };
 
-  const logement = {
-    anneeConstruction: null,
-    nombreNiveaux: null,
-    etatMaison: null,
-    zoneExposition: null,
-    indemnisationPasseeRGA: null,
-    indemnisationAvantJuillet2025: null,
-    indemnisationAvantJuillet2015: null,
-    montantIndemnisation: null,
-    nombreHabitants: null,
-    niveauRevenu: null,
-    codeInsee: prospect.logement.commune,
-    lat: null,
-    lon: null,
-    rnbId: null,
-  };
-
   return (
     <>
       <div className="fr-container fr-py-4w">
@@ -128,10 +111,10 @@ export default async function ProspectDetailPage({ params }: PageProps) {
             {/* Colonne gauche */}
             <div className="fr-col-12 fr-col-md-8">
               <div className="fr-mb-4w">
-                <InfoLogement logement={logement} />
+                <InfoLogement logement={prospect.infoLogement} />
               </div>
               <div>
-                <LocalisationLogement logement={logement} adresse={prospect.logement.adresse} />
+                <LocalisationLogement logement={prospect.infoLogement} adresse={prospect.logement.adresse} />
               </div>
             </div>
 

@@ -1,4 +1,5 @@
 import { Step } from "@/shared/domain/value-objects";
+import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/domain/types";
 
 /**
  * Un prospect = un particulier qui a créé un compte mais n'a PAS fait de demande à un AMO
@@ -73,6 +74,8 @@ export interface ProspectFilters {
  * Détail d'un prospect
  */
 export interface ProspectDetail extends Prospect {
+  /** Informations détaillées du logement pour l'affichage */
+  infoLogement: InfoLogement;
   /** Historique des étapes */
   stepsHistory: {
     step: Step;

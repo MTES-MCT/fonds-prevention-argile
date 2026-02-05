@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
-import { calculerTrancheRevenu, isRegionIDF } from "@/features/simulateur/domain/types/rga-revenus.types";
+import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 
 /**
@@ -122,23 +122,3 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
   }
 }
 
-/**
- * Calculer le niveau de revenu à partir des données RGA
- * Utilise les vrais barèmes France Rénov avec distinction IDF/hors IDF
- */
-function calculateNiveauRevenuFromRga(
-  rgaData: { menage?: { revenu_rga?: number; personnes?: number }; logement?: { code_region?: string } } | null | undefined
-): string | null {
-  const revenu = rgaData?.menage?.revenu_rga;
-  const personnes = rgaData?.menage?.personnes;
-  const codeRegion = rgaData?.logement?.code_region;
-
-  // Vérification explicite pour éviter le bug avec revenu = 0 (qui est une valeur valide pour "très modeste")
-  if (revenu === null || revenu === undefined || !personnes || !codeRegion) return null;
-
-  const estIDF = isRegionIDF(codeRegion);
-  const tranche = calculerTrancheRevenu(revenu, personnes, estIDF);
-
-  // Capitaliser pour l'affichage
-  return tranche.charAt(0).toUpperCase() + tranche.slice(1);
-}

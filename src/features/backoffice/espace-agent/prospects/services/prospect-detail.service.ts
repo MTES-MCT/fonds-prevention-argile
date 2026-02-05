@@ -9,6 +9,9 @@ import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { daysSince } from "@/shared/utils/date-diff";
+import { parseCoordinatesString } from "@/shared/utils/geo.utils";
+import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
+import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/domain/types";
 
 function buildAdresseComplete(logement: Record<string, any>): string {
   const parts = [logement.adresse, logement.commune].filter(Boolean);
@@ -99,6 +102,26 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       }
     }
 
+    // Construire l'objet InfoLogement à partir de RGASimulationData
+    const coords = parseCoordinatesString(rgaData?.logement?.coordonnees);
+    const niveauRevenu = calculateNiveauRevenuFromRga(rgaData);
+    const infoLogement: InfoLogement = {
+      anneeConstruction: rgaData?.logement?.annee_de_construction || null,
+      nombreNiveaux: rgaData?.logement?.niveaux?.toString() || null,
+      etatMaison: rgaData?.rga?.sinistres || null,
+      zoneExposition: rgaData?.logement?.zone_dexposition || null,
+      indemnisationPasseeRGA: rgaData?.rga?.indemnise_indemnise_rga ?? null,
+      indemnisationAvantJuillet2025: rgaData?.rga?.indemnise_avant_juillet_2025 ?? null,
+      indemnisationAvantJuillet2015: rgaData?.rga?.indemnise_avant_juillet_2015 ?? null,
+      montantIndemnisation: rgaData?.rga?.indemnise_montant_indemnite ?? null,
+      nombreHabitants: rgaData?.menage?.personnes || null,
+      niveauRevenu,
+      codeInsee: rgaData?.logement?.commune || null,
+      lat: coords?.lat ?? null,
+      lon: coords?.lon ?? null,
+      rnbId: rgaData?.logement?.rnb || null,
+    };
+
     // Construire l'objet ProspectDetail
     const prospectDetail: ProspectDetail = {
       parcoursId: result.parcours.id,
@@ -119,6 +142,7 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       createdAt: result.parcours.createdAt,
       updatedAt: result.parcours.updatedAt,
       daysSinceLastAction: daysSince(result.parcours.updatedAt),
+      infoLogement,
       stepsHistory: [], // TODO: implémenter l'historique si nécessaire
     };
 
@@ -131,3 +155,4 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     };
   }
 }
+

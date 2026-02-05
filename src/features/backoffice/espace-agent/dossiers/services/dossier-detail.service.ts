@@ -13,7 +13,7 @@ import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-valida
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
-import { calculerTrancheRevenu, isRegionIDF } from "@/features/simulateur/domain/types/rga-revenus.types";
+import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 
 /**
@@ -147,22 +147,3 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
   }
 }
 
-/**
- * Calculer le niveau de revenu à partir des données RGA
- * Utilise les vrais barèmes France Rénov avec distinction IDF/hors IDF
- */
-function calculateNiveauRevenuFromRga(
-  rgaData: { menage?: { revenu_rga?: number; personnes?: number }; logement?: { code_region?: string } } | null | undefined
-): string | null {
-  const revenu = rgaData?.menage?.revenu_rga;
-  const personnes = rgaData?.menage?.personnes;
-  const codeRegion = rgaData?.logement?.code_region;
-
-  if (!revenu || !personnes || !codeRegion) return null;
-
-  const estIDF = isRegionIDF(codeRegion);
-  const tranche = calculerTrancheRevenu(revenu, personnes, estIDF);
-
-  // Capitaliser pour l'affichage
-  return tranche.charAt(0).toUpperCase() + tranche.slice(1);
-}
