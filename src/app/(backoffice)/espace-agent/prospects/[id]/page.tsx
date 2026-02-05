@@ -125,6 +125,7 @@ export default async function ProspectDetailPage({ params }: PageProps) {
                 dates={{
                   compteCreatedAt: prospect.createdAt,
                 }}
+                lastUpdatedAt={prospect.updatedAt}
               />
             </div>
           </div>
