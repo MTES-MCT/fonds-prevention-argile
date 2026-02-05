@@ -1,12 +1,12 @@
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 import type { Agent } from "@/shared/database/schema/agents";
 import { DEPARTEMENTS } from "@/shared/constants/departements.constants";
-import { agentPermissionsRepository, entreprisesAmoRepo } from "@/shared/database";
+import { agentPermissionsRepository, entreprisesAmoRepo, allersVersRepository } from "@/shared/database";
 import { UserRole } from "@/shared/domain/value-objects";
 import { AgentWithPermissions, CreateAgentData, UpdateAgentData } from "../domain/types/agent-with-permissions.types";
 
 /**
- * Récupère tous les agents avec leurs permissions et entreprise AMO
+ * Récupère tous les agents avec leurs permissions, entreprise AMO et territoire Allers-Vers
  */
 export async function getAllAgentsWithPermissions(): Promise<AgentWithPermissions[]> {
   const agentsWithAmo = await agentsRepository.findAllWithEntrepriseAmo();
@@ -14,6 +14,19 @@ export async function getAllAgentsWithPermissions(): Promise<AgentWithPermission
   const agentsWithPermissions: AgentWithPermissions[] = await Promise.all(
     agentsWithAmo.map(async (agentWithAmo) => {
       const departements = await agentPermissionsRepository.getDepartementsByAgentId(agentWithAmo.id);
+
+      // Récupérer les infos du territoire Allers-Vers si présent
+      let allersVers = null;
+      if (agentWithAmo.allersVersId) {
+        const av = await allersVersRepository.findById(agentWithAmo.allersVersId);
+        if (av) {
+          allersVers = {
+            id: av.id,
+            nom: av.nom,
+          };
+        }
+      }
+
       return {
         agent: {
           id: agentWithAmo.id,
@@ -27,11 +40,13 @@ export async function getAllAgentsWithPermissions(): Promise<AgentWithPermission
           organizationalUnit: agentWithAmo.organizationalUnit,
           role: agentWithAmo.role,
           entrepriseAmoId: agentWithAmo.entrepriseAmoId,
+          allersVersId: agentWithAmo.allersVersId,
           createdAt: agentWithAmo.createdAt,
           updatedAt: agentWithAmo.updatedAt,
         },
         departements,
         entrepriseAmo: agentWithAmo.entrepriseAmo,
+        allersVers,
       };
     })
   );
@@ -48,6 +63,18 @@ export async function getAgentWithPermissions(agentId: string): Promise<AgentWit
 
   const departements = await agentPermissionsRepository.getDepartementsByAgentId(agentId);
 
+  // Récupérer les infos du territoire Allers-Vers si présent
+  let allersVers = null;
+  if (agentWithAmo.allersVersId) {
+    const av = await allersVersRepository.findById(agentWithAmo.allersVersId);
+    if (av) {
+      allersVers = {
+        id: av.id,
+        nom: av.nom,
+      };
+    }
+  }
+
   return {
     agent: {
       id: agentWithAmo.id,
@@ -61,27 +88,47 @@ export async function getAgentWithPermissions(agentId: string): Promise<AgentWit
       organizationalUnit: agentWithAmo.organizationalUnit,
       role: agentWithAmo.role,
       entrepriseAmoId: agentWithAmo.entrepriseAmoId,
+      allersVersId: agentWithAmo.allersVersId,
       createdAt: agentWithAmo.createdAt,
       updatedAt: agentWithAmo.updatedAt,
     },
     departements,
     entrepriseAmo: agentWithAmo.entrepriseAmo,
+    allersVers,
   };
 }
 
 /**
- * Valide les données spécifiques au rôle AMO
+ * Valide les données spécifiques aux rôles AMO et Allers-Vers
  */
-async function validateAmoData(role: string, entrepriseAmoId?: string): Promise<void> {
-  if (role === UserRole.AMO) {
+async function validateRoleSpecificData(
+  role: string,
+  entrepriseAmoId?: string,
+  allersVersId?: string
+): Promise<void> {
+  // Validation AMO pour les rôles AMO et AMO_ET_ALLERS_VERS
+  if ([UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(role as UserRole)) {
     if (!entrepriseAmoId) {
-      throw new Error("Une entreprise AMO doit être sélectionnée pour un agent avec le rôle AMO");
+      throw new Error("Une entreprise AMO doit être sélectionnée pour ce rôle");
     }
 
     // Vérifier que l'entreprise AMO existe
     const entrepriseExists = await entreprisesAmoRepo.exists(entrepriseAmoId);
     if (!entrepriseExists) {
       throw new Error("L'entreprise AMO sélectionnée n'existe pas");
+    }
+  }
+
+  // Validation Allers-Vers pour les rôles ALLERS_VERS et AMO_ET_ALLERS_VERS
+  if ([UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(role as UserRole)) {
+    if (!allersVersId) {
+      throw new Error("Un territoire Allers-Vers doit être sélectionné pour ce rôle");
+    }
+
+    // Vérifier que le territoire Allers-Vers existe
+    const allersVersExists = await allersVersRepository.findById(allersVersId);
+    if (!allersVersExists) {
+      throw new Error("Le territoire Allers-Vers sélectionné n'existe pas");
     }
   }
 }
@@ -104,11 +151,18 @@ export async function createAgent(data: CreateAgentData): Promise<AgentWithPermi
     }
   }
 
-  // Valider les données AMO si le rôle est AMO
-  await validateAmoData(data.role, data.entrepriseAmoId);
+  // Valider les données spécifiques au rôle (AMO et/ou Allers-Vers)
+  await validateRoleSpecificData(data.role, data.entrepriseAmoId, data.allersVersId);
 
-  // Déterminer l'entrepriseAmoId (null si le rôle n'est pas AMO)
-  const entrepriseAmoId = data.role === UserRole.AMO ? data.entrepriseAmoId : null;
+  // Déterminer l'entrepriseAmoId (null si le rôle ne nécessite pas d'AMO)
+  const entrepriseAmoId = [UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(data.role as UserRole)
+    ? data.entrepriseAmoId
+    : null;
+
+  // Déterminer l'allersVersId (null si le rôle ne nécessite pas d'Allers-Vers)
+  const allersVersId = [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(data.role as UserRole)
+    ? data.allersVersId
+    : null;
 
   // Créer l'agent (sans sub pour l'instant, sera mis à jour lors de la première connexion ProConnect)
   const agent = await agentsRepository.create({
@@ -118,6 +172,7 @@ export async function createAgent(data: CreateAgentData): Promise<AgentWithPermi
     usualName: data.usualName,
     role: data.role,
     entrepriseAmoId: entrepriseAmoId ?? null,
+    allersVersId: allersVersId ?? null,
   });
 
   // Ajouter les permissions si spécifiées
@@ -140,13 +195,27 @@ export async function createAgent(data: CreateAgentData): Promise<AgentWithPermi
     }
   }
 
+  // Récupérer les infos du territoire Allers-Vers si présent
+  let allersVers = null;
+  if (allersVersId) {
+    const av = await allersVersRepository.findById(allersVersId);
+    if (av) {
+      allersVers = {
+        id: av.id,
+        nom: av.nom,
+      };
+    }
+  }
+
   return {
     agent: {
       ...agent,
       entrepriseAmoId: agent.entrepriseAmoId,
+      allersVersId: agent.allersVersId,
     },
     departements,
     entrepriseAmo,
+    allersVers,
   };
 }
 
@@ -179,25 +248,50 @@ export async function updateAgent(agentId: string, data: UpdateAgentData): Promi
   // Déterminer le rôle effectif (nouveau ou existant)
   const effectiveRole = data.role ?? existingAgent.role;
 
-  // Valider les données AMO si le rôle est AMO
-  // Si on change vers AMO, entrepriseAmoId doit être fourni
-  // Si on change depuis AMO vers autre chose, on met à null
+  // Gestion de l'entrepriseAmoId selon le rôle
   let entrepriseAmoId: string | null = existingAgent.entrepriseAmoId;
 
-  if (effectiveRole === UserRole.AMO) {
-    // Si on passe en AMO ou si on est déjà AMO
+  if ([UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(effectiveRole as UserRole)) {
+    // Le rôle nécessite une entreprise AMO
     if (data.entrepriseAmoId !== undefined) {
       // Une nouvelle valeur est fournie
-      await validateAmoData(effectiveRole, data.entrepriseAmoId ?? undefined);
       entrepriseAmoId = data.entrepriseAmoId;
-    } else if (!existingAgent.entrepriseAmoId) {
-      // On passe en AMO mais pas d'entreprise fournie et pas d'entreprise existante
-      throw new Error("Une entreprise AMO doit être sélectionnée pour un agent avec le rôle AMO");
     }
-    // Sinon on garde l'entreprise existante
+    // Valider que l'entreprise AMO est présente
+    if (!entrepriseAmoId) {
+      throw new Error("Une entreprise AMO doit être sélectionnée pour ce rôle");
+    }
+    // Vérifier que l'entreprise existe
+    const entrepriseExists = await entreprisesAmoRepo.exists(entrepriseAmoId);
+    if (!entrepriseExists) {
+      throw new Error("L'entreprise AMO sélectionnée n'existe pas");
+    }
   } else {
-    // Le rôle n'est pas AMO, on met l'entreprise à null
+    // Le rôle ne nécessite pas d'AMO, on met l'entreprise à null
     entrepriseAmoId = null;
+  }
+
+  // Gestion de l'allersVersId selon le rôle
+  let allersVersId: string | null = existingAgent.allersVersId;
+
+  if ([UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(effectiveRole as UserRole)) {
+    // Le rôle nécessite un territoire Allers-Vers
+    if (data.allersVersId !== undefined) {
+      // Une nouvelle valeur est fournie
+      allersVersId = data.allersVersId;
+    }
+    // Valider que le territoire Allers-Vers est présent
+    if (!allersVersId) {
+      throw new Error("Un territoire Allers-Vers doit être sélectionné pour ce rôle");
+    }
+    // Vérifier que le territoire existe
+    const allersVersExists = await allersVersRepository.findById(allersVersId);
+    if (!allersVersExists) {
+      throw new Error("Le territoire Allers-Vers sélectionné n'existe pas");
+    }
+  } else {
+    // Le rôle ne nécessite pas d'Allers-Vers, on met le territoire à null
+    allersVersId = null;
   }
 
   // Mettre à jour l'agent
@@ -207,8 +301,9 @@ export async function updateAgent(agentId: string, data: UpdateAgentData): Promi
   if (data.usualName !== undefined) updateData.usualName = data.usualName;
   if (data.role) updateData.role = data.role;
 
-  // Toujours mettre à jour l'entrepriseAmoId (peut passer de valeur à null)
+  // Toujours mettre à jour l'entrepriseAmoId et l'allersVersId (peuvent passer de valeur à null)
   updateData.entrepriseAmoId = entrepriseAmoId;
+  updateData.allersVersId = allersVersId;
 
   let updatedAgent = existingAgent;
   if (Object.keys(updateData).length > 0) {
@@ -237,13 +332,27 @@ export async function updateAgent(agentId: string, data: UpdateAgentData): Promi
     }
   }
 
+  // Récupérer les infos du territoire Allers-Vers si présent
+  let allersVers = null;
+  if (allersVersId) {
+    const av = await allersVersRepository.findById(allersVersId);
+    if (av) {
+      allersVers = {
+        id: av.id,
+        nom: av.nom,
+      };
+    }
+  }
+
   return {
     agent: {
       ...updatedAgent,
       entrepriseAmoId: updatedAgent.entrepriseAmoId,
+      allersVersId: updatedAgent.allersVersId,
     },
     departements,
     entrepriseAmo,
+    allersVers,
   };
 }
 

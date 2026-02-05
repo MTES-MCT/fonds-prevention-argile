@@ -7,6 +7,14 @@ import * as authClient from "@/features/auth/client";
 import * as simulateurHooks from "@/features/simulateur";
 import * as parcoursContext from "@/features/parcours/core/context/useParcours";
 
+// Mock des clients DS (évite l'instanciation serveur qui appelle getServerEnv)
+vi.mock("@/features/parcours/dossiers-ds/adapters/graphql/client", () => ({
+  graphqlClient: {},
+}));
+vi.mock("@/features/parcours/dossiers-ds/adapters/rest/client", () => ({
+  prefillClient: {},
+}));
+
 // Mock des dépendances
 vi.mock("@/features/parcours/amo/actions", () => ({
   getAmosDisponibles: vi.fn(),

@@ -15,12 +15,21 @@ export interface EntrepriseAmoOption {
   siret: string;
 }
 
+/**
+ * Allers-Vers simplifié pour le select
+ */
+export interface AllersVersOption {
+  id: string;
+  nom: string;
+}
+
 interface AgentFormModalProps {
   modalId: string;
   onSubmit: (data: AgentFormData) => Promise<void>;
   agent?: AgentWithPermissions | null;
   isLoading?: boolean;
   entreprisesAmo: EntrepriseAmoOption[];
+  allersVersList: AllersVersOption[];
 }
 
 export interface AgentFormData {
@@ -30,6 +39,7 @@ export interface AgentFormData {
   role: AgentRole;
   departements: string[];
   entrepriseAmoId?: string;
+  allersVersId?: string;
 }
 
 const ROLE_OPTIONS: { value: AgentRole; label: string }[] = [
@@ -37,6 +47,8 @@ const ROLE_OPTIONS: { value: AgentRole; label: string }[] = [
   { value: UserRole.ADMINISTRATEUR, label: "Administrateur" },
   { value: UserRole.AMO, label: "AMO" },
   { value: UserRole.ANALYSTE, label: "Analyste" },
+  { value: UserRole.ALLERS_VERS, label: "Allers-Vers" },
+  { value: UserRole.AMO_ET_ALLERS_VERS, label: "AMO et Allers-Vers" },
 ];
 
 export default function AgentFormModal({
@@ -45,6 +57,7 @@ export default function AgentFormModal({
   agent,
   isLoading = false,
   entreprisesAmo,
+  allersVersList,
 }: AgentFormModalProps) {
   const isEditing = !!agent;
 
@@ -55,6 +68,7 @@ export default function AgentFormModal({
     role: UserRole.ADMINISTRATEUR,
     departements: [],
     entrepriseAmoId: undefined,
+    allersVersId: undefined,
   });
 
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +83,7 @@ export default function AgentFormModal({
         role: agent.agent.role as AgentRole,
         departements: agent.departements,
         entrepriseAmoId: agent.agent.entrepriseAmoId || undefined,
+        allersVersId: agent.agent.allersVersId || undefined,
       });
     } else {
       setFormData({
@@ -78,18 +93,21 @@ export default function AgentFormModal({
         role: UserRole.ADMINISTRATEUR,
         departements: [],
         entrepriseAmoId: undefined,
+        allersVersId: undefined,
       });
     }
     setError(null);
   }, [agent]);
 
-  // Reset entrepriseAmoId quand on change de rôle (sauf vers AMO)
+  // Reset des champs conditionnels quand on change de rôle
   const handleRoleChange = (newRole: AgentRole) => {
     setFormData((prev) => ({
       ...prev,
       role: newRole,
-      // Reset l'entreprise AMO si on quitte le rôle AMO
-      entrepriseAmoId: newRole === UserRole.AMO ? prev.entrepriseAmoId : undefined,
+      // Reset l'entreprise AMO si le nouveau rôle ne nécessite pas d'AMO
+      entrepriseAmoId: [UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(newRole) ? prev.entrepriseAmoId : undefined,
+      // Reset le territoire Allers-Vers si le nouveau rôle ne nécessite pas d'Allers-Vers
+      allersVersId: [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(newRole) ? prev.allersVersId : undefined,
       // Reset les départements si on quitte le rôle Administrateur
       departements: newRole === UserRole.ADMINISTRATEUR ? prev.departements : [],
     }));
@@ -111,9 +129,15 @@ export default function AgentFormModal({
       return;
     }
 
-    // Validation entreprise AMO si rôle = AMO
-    if (formData.role === UserRole.AMO && !formData.entrepriseAmoId) {
-      setError("Une entreprise AMO doit être sélectionnée pour un agent AMO");
+    // Validation entreprise AMO si rôle = AMO ou AMO_ET_ALLERS_VERS
+    if ([UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(formData.role) && !formData.entrepriseAmoId) {
+      setError("Une entreprise AMO doit être sélectionnée pour ce rôle");
+      return;
+    }
+
+    // Validation territoire Allers-Vers si rôle = ALLERS_VERS ou AMO_ET_ALLERS_VERS
+    if ([UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(formData.role) && !formData.allersVersId) {
+      setError("Un territoire Allers-Vers doit être sélectionné pour ce rôle");
       return;
     }
 
@@ -134,6 +158,7 @@ export default function AgentFormModal({
         role: UserRole.ADMINISTRATEUR,
         departements: [],
         entrepriseAmoId: undefined,
+        allersVersId: undefined,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -239,8 +264,8 @@ export default function AgentFormModal({
                     </select>
                   </div>
 
-                  {/* Entreprise AMO (uniquement pour le rôle AMO) */}
-                  {formData.role === UserRole.AMO && (
+                  {/* Entreprise AMO (pour les rôles AMO et AMO_ET_ALLERS_VERS) */}
+                  {[UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(formData.role) && (
                     <div className="fr-select-group">
                       <label className="fr-label" htmlFor={`${modalId}-entrepriseAmo`}>
                         Entreprise AMO *
@@ -265,6 +290,37 @@ export default function AgentFormModal({
                       {entreprisesAmo.length === 0 && (
                         <p className="fr-error-text">
                           Aucune entreprise AMO disponible. Veuillez d&apos;abord créer une entreprise AMO.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Territoire Allers-Vers (pour les rôles ALLERS_VERS et AMO_ET_ALLERS_VERS) */}
+                  {[UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(formData.role) && (
+                    <div className="fr-select-group">
+                      <label className="fr-label" htmlFor={`${modalId}-allersVers`}>
+                        Territoire Allers-Vers *
+                      </label>
+                      <select
+                        id={`${modalId}-allersVers`}
+                        className="fr-select"
+                        value={formData.allersVersId || ""}
+                        onChange={(e) => setFormData({ ...formData, allersVersId: e.target.value || undefined })}
+                        disabled={isLoading}
+                        required>
+                        <option value="">Sélectionner un territoire</option>
+                        {allersVersList.map((av) => (
+                          <option key={av.id} value={av.id}>
+                            {av.nom}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="fr-hint-text">
+                        L&apos;agent Allers-Vers aura accès aux prospects (particuliers sans AMO) de ce territoire
+                      </p>
+                      {allersVersList.length === 0 && (
+                        <p className="fr-error-text">
+                          Aucun territoire Allers-Vers disponible. Veuillez d&apos;abord créer un territoire.
                         </p>
                       )}
                     </div>

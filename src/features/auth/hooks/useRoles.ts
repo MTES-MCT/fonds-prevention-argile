@@ -11,7 +11,9 @@ export function useIsAgent() {
     user?.role === ROLES.ADMINISTRATEUR ||
     user?.role === ROLES.SUPER_ADMINISTRATEUR ||
     user?.role === ROLES.AMO ||
-    user?.role === ROLES.ANALYSTE
+    user?.role === ROLES.ANALYSTE ||
+    user?.role === ROLES.ALLERS_VERS ||
+    user?.role === ROLES.AMO_ET_ALLERS_VERS
   );
 }
 
@@ -44,7 +46,9 @@ export function useAgentRole(): AgentRole | null {
     user.role === ROLES.ADMINISTRATEUR ||
     user.role === ROLES.SUPER_ADMINISTRATEUR ||
     user.role === ROLES.AMO ||
-    user.role === ROLES.ANALYSTE
+    user.role === ROLES.ANALYSTE ||
+    user.role === ROLES.ALLERS_VERS ||
+    user.role === ROLES.AMO_ET_ALLERS_VERS
   ) {
     return user.role as AgentRole;
   }

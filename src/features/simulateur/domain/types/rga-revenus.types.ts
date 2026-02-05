@@ -108,6 +108,31 @@ export function calculerTrancheRevenu(
 /**
  * Retourne les seuils de revenus pour un nombre de personnes donné
  */
+/**
+ * Calculer le niveau de revenu à partir des données RGA
+ * Utilise les vrais barèmes France Rénov avec distinction IDF/hors IDF
+ * Retourne la tranche capitalisée pour l'affichage (ex: "Très modeste")
+ */
+export function calculateNiveauRevenuFromRga(
+  rgaData: { menage?: { revenu_rga?: number; personnes?: number }; logement?: { code_region?: string } } | null | undefined
+): string | null {
+  const revenu = rgaData?.menage?.revenu_rga;
+  const personnes = rgaData?.menage?.personnes;
+  const codeRegion = rgaData?.logement?.code_region;
+
+  // Vérification explicite pour éviter le bug avec revenu = 0 (qui est une valeur valide pour "très modeste")
+  if (revenu === null || revenu === undefined || !personnes || !codeRegion) return null;
+
+  const estIDF = isRegionIDF(codeRegion);
+  const tranche = calculerTrancheRevenu(revenu, personnes, estIDF);
+
+  // Capitaliser pour l'affichage
+  return tranche.charAt(0).toUpperCase() + tranche.slice(1);
+}
+
+/**
+ * Retourne les seuils de revenus pour un nombre de personnes donné
+ */
 export function getSeuilsRevenu(nombrePersonnes: number, estIDF: boolean): SeuilsRevenuRga {
   const seuils = estIDF ? SEUILS_IDF : SEUILS_HORS_IDF;
   const coefficients = estIDF ? COEFFICIENTS_IDF : COEFFICIENTS_HORS_IDF;

@@ -3,6 +3,7 @@ import { relations } from "drizzle-orm";
 import { agentRolePgEnum } from "../enums/enums";
 import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
 import { entreprisesAmo } from "./entreprises-amo";
+import { allersVers } from "./allers-vers";
 
 /**
  * Table des agents ProConnect
@@ -28,8 +29,13 @@ export const agents = pgTable("agents", {
   // Rôle de l'agent
   role: agentRolePgEnum("role").notNull().default(AGENT_ROLES.ADMINISTRATEUR),
 
-  // Liaison avec une entreprise AMO (obligatoire si rôle = AMO)
+  // Liaison avec une entreprise AMO (obligatoire si rôle = AMO ou AMO_ET_ALLERS_VERS)
   entrepriseAmoId: uuid("entreprise_amo_id").references(() => entreprisesAmo.id, {
+    onDelete: "set null",
+  }),
+
+  // Liaison avec une structure Allers-Vers (obligatoire si rôle = ALLERS_VERS ou AMO_ET_ALLERS_VERS)
+  allersVersId: uuid("allers_vers_id").references(() => allersVers.id, {
     onDelete: "set null",
   }),
 
@@ -46,6 +52,10 @@ export const agentsRelations = relations(agents, ({ one }) => ({
   entrepriseAmo: one(entreprisesAmo, {
     fields: [agents.entrepriseAmoId],
     references: [entreprisesAmo.id],
+  }),
+  allersVers: one(allersVers, {
+    fields: [agents.allersVersId],
+    references: [allersVers.id],
   }),
 }));
 

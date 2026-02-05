@@ -88,6 +88,7 @@ export async function createAgentAction(data: {
   role: AgentRole;
   departements?: string[];
   entrepriseAmoId?: string;
+  allersVersId?: string;
 }): Promise<ActionResult<AgentWithPermissions>> {
   try {
     const session = await getSession();
@@ -121,11 +122,19 @@ export async function createAgentAction(data: {
       };
     }
 
-    // Validation spécifique pour le rôle AMO
-    if (data.role === UserRole.AMO && !data.entrepriseAmoId) {
+    // Validation spécifique pour les rôles AMO et AMO_ET_ALLERS_VERS
+    if ([UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(data.role) && !data.entrepriseAmoId) {
       return {
         success: false,
-        error: "Une entreprise AMO doit être sélectionnée pour un agent AMO",
+        error: "Une entreprise AMO doit être sélectionnée pour ce rôle",
+      };
+    }
+
+    // Validation spécifique pour les rôles ALLERS_VERS et AMO_ET_ALLERS_VERS
+    if ([UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(data.role) && !data.allersVersId) {
+      return {
+        success: false,
+        error: "Un territoire Allers-Vers doit être sélectionné pour ce rôle",
       };
     }
 
@@ -136,6 +145,7 @@ export async function createAgentAction(data: {
       role: data.role,
       departements: data.departements,
       entrepriseAmoId: data.entrepriseAmoId,
+      allersVersId: data.allersVersId,
     });
 
     return {
@@ -163,6 +173,7 @@ export async function updateAgentAction(
     role?: AgentRole;
     departements?: string[];
     entrepriseAmoId?: string | null;
+    allersVersId?: string | null;
   }
 ): Promise<ActionResult<AgentWithPermissions>> {
   try {
@@ -190,11 +201,19 @@ export async function updateAgentAction(
       };
     }
 
-    // Validation spécifique pour le rôle AMO
-    if (data.role === UserRole.AMO && data.entrepriseAmoId === null) {
+    // Validation spécifique pour les rôles AMO et AMO_ET_ALLERS_VERS
+    if (data.role && [UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(data.role) && data.entrepriseAmoId === null) {
       return {
         success: false,
-        error: "Une entreprise AMO doit être sélectionnée pour un agent AMO",
+        error: "Une entreprise AMO doit être sélectionnée pour ce rôle",
+      };
+    }
+
+    // Validation spécifique pour les rôles ALLERS_VERS et AMO_ET_ALLERS_VERS
+    if (data.role && [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(data.role) && data.allersVersId === null) {
+      return {
+        success: false,
+        error: "Un territoire Allers-Vers doit être sélectionné pour ce rôle",
       };
     }
 
@@ -205,6 +224,7 @@ export async function updateAgentAction(
     if (data.role) updateData.role = data.role;
     if (data.departements !== undefined) updateData.departements = data.departements;
     if (data.entrepriseAmoId !== undefined) updateData.entrepriseAmoId = data.entrepriseAmoId;
+    if (data.allersVersId !== undefined) updateData.allersVersId = data.allersVersId;
 
     const agent = await updateAgent(agentId, updateData);
 

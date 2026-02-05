@@ -56,6 +56,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
         organizationalUnit: agents.organizationalUnit,
         role: agents.role,
         entrepriseAmoId: agents.entrepriseAmoId,
+        allersVersId: agents.allersVersId,
         createdAt: agents.createdAt,
         updatedAt: agents.updatedAt,
         entrepriseAmoDbId: entreprisesAmo.id,
@@ -81,6 +82,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
       organizationalUnit: row.organizationalUnit,
       role: row.role,
       entrepriseAmoId: row.entrepriseAmoId,
+      allersVersId: row.allersVersId,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       entrepriseAmo:
@@ -118,6 +120,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
         organizationalUnit: agents.organizationalUnit,
         role: agents.role,
         entrepriseAmoId: agents.entrepriseAmoId,
+        allersVersId: agents.allersVersId,
         createdAt: agents.createdAt,
         updatedAt: agents.updatedAt,
         entrepriseAmoDbId: entreprisesAmo.id,
@@ -140,6 +143,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
       organizationalUnit: row.organizationalUnit,
       role: row.role,
       entrepriseAmoId: row.entrepriseAmoId,
+      allersVersId: row.allersVersId,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       entrepriseAmo:

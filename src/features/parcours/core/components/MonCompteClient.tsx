@@ -5,7 +5,7 @@ import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
 import { useState } from "react";
 import { useParcours } from "../context/useParcours";
-import { Step } from "../domain";
+import { Step, STEP_LABELS_NUMBERED } from "../domain";
 import { StatutValidationAmo } from "../../amo/domain/value-objects";
 import { DSStatus } from "../../dossiers-ds/domain";
 import {
@@ -105,7 +105,7 @@ export default function MonCompteClient() {
             </li>
             <li>
               {/* Badge d'étape */}
-              {hasParcours && currentStep && <p className="fr-badge">{STEP_LABELS[currentStep]} </p>}
+              {hasParcours && currentStep && <p className="fr-badge">{STEP_LABELS_NUMBERED[currentStep]} </p>}
             </li>
           </ul>
 
@@ -329,13 +329,3 @@ function getStatusBadgeLabel(
   }
 }
 
-/**
- * Labels français des étapes
- */
-const STEP_LABELS: Record<Step, string> = {
-  [Step.CHOIX_AMO]: "1. Choix de l'AMO",
-  [Step.ELIGIBILITE]: "2. Éligibilité",
-  [Step.DIAGNOSTIC]: "3. Diagnostic",
-  [Step.DEVIS]: "4. Devis",
-  [Step.FACTURES]: "5. Factures",
-} as const;

@@ -10,7 +10,15 @@ export interface AgentEntrepriseAmoInfo {
 }
 
 /**
- * Agent avec ses permissions (départements) et son entreprise AMO
+ * Informations du territoire Allers-Vers lié à un agent
+ */
+export interface AgentAllersVersInfo {
+  id: string;
+  nom: string;
+}
+
+/**
+ * Agent avec ses permissions (départements), son entreprise AMO et son territoire Allers-Vers
  */
 export interface AgentWithPermissions {
   agent: {
@@ -25,11 +33,13 @@ export interface AgentWithPermissions {
     organizationalUnit: string | null;
     role: string;
     entrepriseAmoId: string | null;
+    allersVersId: string | null;
     createdAt: Date;
     updatedAt: Date;
   };
   departements: string[];
   entrepriseAmo: AgentEntrepriseAmoInfo | null;
+  allersVers: AgentAllersVersInfo | null;
 }
 
 /**
@@ -42,6 +52,7 @@ export interface CreateAgentData {
   role: AGENT_ROLES;
   departements?: string[];
   entrepriseAmoId?: string;
+  allersVersId?: string;
 }
 
 /**
@@ -54,4 +65,5 @@ export interface UpdateAgentData {
   role?: AGENT_ROLES;
   departements?: string[];
   entrepriseAmoId?: string | null;
+  allersVersId?: string | null;
 }

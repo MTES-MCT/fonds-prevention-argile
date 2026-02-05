@@ -1,6 +1,8 @@
-import { eq, sql, SQL, desc } from "drizzle-orm";
+import { eq, sql, SQL, desc, and, isNull } from "drizzle-orm";
 import { db } from "../client";
 import { parcoursPrevention } from "../schema/parcours-prevention";
+import { users } from "../schema/users";
+import { parcoursAmoValidations } from "../schema/parcours-amo-validations";
 import { BaseRepository, PaginationParams, PaginationResult } from "./base.repository";
 import type { ParcoursPrevention, NewParcoursPrevention } from "../schema/parcours-prevention";
 import { getNextStep, Status, Step } from "@/features/parcours/core";
@@ -248,6 +250,104 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   async hasRGAData(parcoursId: string): Promise<boolean> {
     const parcours = await this.findById(parcoursId);
     return parcours?.rgaSimulationData !== null && parcours?.rgaSimulationData !== undefined;
+  }
+
+  /**
+   * Récupère les parcours sans AMO pour un territoire donné (Allers-Vers)
+   * Note: Le filtrage territorial complet sera implémenté quand les données de logement
+   * seront disponibles dans une table dédiée ou enrichies dans rgaSimulationData
+   *
+   * @param departements - Codes des départements couverts (pour future implémentation)
+   * @param epcis - Codes des EPCIs couverts (pour future implémentation)
+   * @param filters - Filtres optionnels
+   * @returns Liste des parcours prospects avec informations utilisateur
+   */
+  async getParcoursWithoutAmoByTerritoire(
+    departements: string[],
+    epcis: string[] = [],
+    filters?: {
+      commune?: string;
+      step?: Step;
+      maxDaysSinceAction?: number;
+      search?: string;
+    }
+  ) {
+    // Construire les conditions de filtre
+    const conditions = [];
+
+    // Filtres optionnels
+    if (filters?.step) {
+      conditions.push(eq(parcoursPrevention.currentStep, filters.step));
+    }
+    if (filters?.search) {
+      // Recherche sur nom ou prénom (case insensitive avec ILIKE en PostgreSQL)
+      conditions.push(
+        sql`(LOWER(${users.prenom}) LIKE LOWER(${"%" + filters.search + "%"}) OR LOWER(${users.nom}) LIKE LOWER(${"%" + filters.search + "%"}))`
+      );
+    }
+
+    // Requête principale
+    const results = await db
+      .select({
+        // Parcours
+        parcoursId: parcoursPrevention.id,
+        currentStep: parcoursPrevention.currentStep,
+        createdAt: parcoursPrevention.createdAt,
+        updatedAt: parcoursPrevention.updatedAt,
+        rgaSimulationData: parcoursPrevention.rgaSimulationData,
+        // Utilisateur
+        userPrenom: users.prenom,
+        userNom: users.nom,
+        userEmail: users.email,
+        userTelephone: users.telephone,
+      })
+      .from(parcoursPrevention)
+      .innerJoin(users, eq(parcoursPrevention.userId, users.id))
+      .leftJoin(
+        parcoursAmoValidations,
+        eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId)
+      )
+      .where(
+        and(
+          // Pas de validation AMO (parcours sans AMO)
+          isNull(parcoursAmoValidations.id),
+          // Autres filtres
+          ...conditions
+        )
+      )
+      .orderBy(desc(parcoursPrevention.updatedAt));
+
+    // Filtrer par ancienneté et territoire côté application
+    return results.filter((r) => {
+      // Filtrage par ancienneté
+      if (filters?.maxDaysSinceAction !== undefined) {
+        const now = new Date();
+        const daysSince = Math.floor(
+          (now.getTime() - r.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        if (daysSince > filters.maxDaysSinceAction) {
+          return false;
+        }
+      }
+
+      // Filtrage territorial (si rgaSimulationData contient les infos)
+      if (r.rgaSimulationData && (departements.length > 0 || epcis.length > 0)) {
+        const logement = r.rgaSimulationData?.logement;
+        if (!logement) return false;
+
+        const codeDepartement = logement.code_departement;
+        const codeEpci = logement.epci;
+
+        // Au moins un match sur département ou EPCI
+        const matchesDepartement = departements.length > 0 && codeDepartement && departements.includes(codeDepartement);
+        const matchesEpci = epcis.length > 0 && codeEpci && epcis.includes(codeEpci);
+
+        return matchesDepartement || matchesEpci;
+      }
+
+      // Si pas de filtrage territorial ou pas de données, inclure
+      return departements.length === 0 && epcis.length === 0;
+    });
   }
 }
 

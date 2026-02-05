@@ -200,6 +200,30 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
   }
 
   /**
+   * Récupère les codes départements assignés à un Allers Vers
+   */
+  async getDepartementsByAllersVersId(allersVersId: string): Promise<string[]> {
+    const result = await db
+      .select({ codeDepartement: allersVersDepartements.codeDepartement })
+      .from(allersVersDepartements)
+      .where(eq(allersVersDepartements.allersVersId, allersVersId));
+
+    return result.map((row) => row.codeDepartement);
+  }
+
+  /**
+   * Récupère les codes EPCI assignés à un Allers Vers
+   */
+  async getEpcisByAllersVersId(allersVersId: string): Promise<string[]> {
+    const result = await db
+      .select({ codeEpci: allersVersEpci.codeEpci })
+      .from(allersVersEpci)
+      .where(eq(allersVersEpci.allersVersId, allersVersId));
+
+    return result.map((row) => row.codeEpci);
+  }
+
+  /**
    * Récupère les Allers Vers qui couvrent un département
    */
   async findByDepartement(codeDepartement: string): Promise<Array<typeof allersVers.$inferSelect>> {

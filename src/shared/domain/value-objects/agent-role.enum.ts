@@ -9,6 +9,8 @@ export const AGENT_ROLES = {
   SUPER_ADMINISTRATEUR: UserRole.SUPER_ADMINISTRATEUR,
   AMO: UserRole.AMO,
   ANALYSTE: UserRole.ANALYSTE,
+  ALLERS_VERS: UserRole.ALLERS_VERS,
+  AMO_ET_ALLERS_VERS: UserRole.AMO_ET_ALLERS_VERS,
 } as const;
 
 export type AGENT_ROLES = (typeof AGENT_ROLES)[keyof typeof AGENT_ROLES];

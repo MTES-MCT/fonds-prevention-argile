@@ -11,4 +11,5 @@ export interface AuthUser {
   loginTime: string;
   agentId?: string;
   entrepriseAmoId?: string;
+  allersVersId?: string;
 }

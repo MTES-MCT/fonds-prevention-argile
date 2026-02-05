@@ -1,13 +1,13 @@
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
-import { agentPermissionsRepository } from "@/shared/database";
+import { agentPermissionsRepository, allersVersRepository } from "@/shared/database";
 import type { AgentScope, AgentScopeInput, DossierAccessCheck, ScopeFilters } from "../domain/types/agent-scope.types";
 
 /**
  * Calcule le scope de données d'un agent en fonction de son rôle et ses permissions
  */
 export async function calculateAgentScope(agent: AgentScopeInput): Promise<AgentScope> {
-  const { role, entrepriseAmoId } = agent;
+  const { role, entrepriseAmoId, allersVersId } = agent;
 
   // Construire le scope selon le rôle
   switch (role) {
@@ -47,6 +47,46 @@ export async function calculateAgentScope(agent: AgentScopeInput): Promise<Agent
         canViewAllDossiers: false, // Les analystes n'ont pas accès aux dossiers individuels
         canViewDossiersByEntreprise: false,
         canViewDossiersWithoutAmo: false,
+      };
+    }
+
+    case UserRole.ALLERS_VERS: {
+      // Les Allers-Vers voient uniquement les dossiers sans AMO de leur territoire
+      if (!allersVersId) {
+        throw new Error("allersVersId is required for ALLERS_VERS role");
+      }
+
+      const departements = await allersVersRepository.getDepartementsByAllersVersId(allersVersId);
+      const epcis = await allersVersRepository.getEpcisByAllersVersId(allersVersId);
+
+      return {
+        isNational: false,
+        entrepriseAmoIds: [],
+        departements,
+        epcis,
+        canViewAllDossiers: false,
+        canViewDossiersByEntreprise: false,
+        canViewDossiersWithoutAmo: true, // Uniquement les prospects sans AMO
+      };
+    }
+
+    case UserRole.AMO_ET_ALLERS_VERS: {
+      // Rôle double : accès AMO + Allers-Vers
+      if (!entrepriseAmoId || !allersVersId) {
+        throw new Error("Both entrepriseAmoId and allersVersId are required for AMO_ET_ALLERS_VERS role");
+      }
+
+      const departements = await allersVersRepository.getDepartementsByAllersVersId(allersVersId);
+      const epcis = await allersVersRepository.getEpcisByAllersVersId(allersVersId);
+
+      return {
+        isNational: false,
+        entrepriseAmoIds: [entrepriseAmoId],
+        departements,
+        epcis,
+        canViewAllDossiers: false,
+        canViewDossiersByEntreprise: true, // Peut voir les dossiers AMO
+        canViewDossiersWithoutAmo: true, // Peut aussi voir les prospects sans AMO
       };
     }
 
@@ -216,6 +256,7 @@ export async function getScopeFilters(): Promise<ScopeFilters | null> {
     id: user.agentId ?? "",
     role: user.role,
     entrepriseAmoId: user.entrepriseAmoId ?? null,
+    allersVersId: user.allersVersId ?? null,
   };
 
   const scope = await calculateAgentScope(agentInput);

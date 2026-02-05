@@ -16,12 +16,14 @@ export const createMockAgentWithPermissions = (override?: Partial<AgentWithPermi
     organizationalUnit: null,
     role: "administrateur",
     entrepriseAmoId: null,
+    allersVersId: null,
     createdAt: new Date("2024-01-01T10:00:00Z"),
     updatedAt: new Date("2024-01-15T10:00:00Z"),
     ...override?.agent,
   },
   departements: override?.departements ?? [],
   entrepriseAmo: override?.entrepriseAmo ?? null,
+  allersVers: override?.allersVers ?? null,
 });
 
 /**
@@ -42,10 +44,12 @@ export const createMockAgentsWithPermissions = (roles: string[]): AgentWithPermi
         organizationalUnit: null,
         role,
         entrepriseAmoId: null,
+        allersVersId: null,
         createdAt: new Date("2024-01-01T10:00:00Z"),
         updatedAt: new Date("2024-01-15T10:00:00Z"),
       },
       entrepriseAmo: null,
+      allersVers: null,
     })
   );
 };
@@ -66,6 +70,7 @@ export const createMockAmoAgent = (override?: Partial<AgentWithPermissions>): Ag
     organizationalUnit: null,
     role: "amo",
     entrepriseAmoId: "entreprise-amo-123",
+    allersVersId: null,
     createdAt: new Date("2024-01-01T10:00:00Z"),
     updatedAt: new Date("2024-01-15T10:00:00Z"),
     ...override?.agent,
@@ -76,4 +81,5 @@ export const createMockAmoAgent = (override?: Partial<AgentWithPermissions>): Ag
     nom: "AMO Test SARL",
     siret: "12345678901234",
   },
+  allersVers: override?.allersVers ?? null,
 });

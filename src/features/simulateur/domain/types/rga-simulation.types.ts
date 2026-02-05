@@ -6,6 +6,7 @@ export {
   type TrancheRevenuRga,
   type SeuilsRevenuRga,
   calculerTrancheRevenu,
+  calculateNiveauRevenuFromRga,
   getSeuilsRevenu,
   isRegionIDF,
 } from "@/features/simulateur/domain/types/rga-revenus.types";

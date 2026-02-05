@@ -42,6 +42,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       lastName: session.lastName,
       agentId: agent?.id,
       entrepriseAmoId: agent?.entrepriseAmoId ?? undefined,
+      allersVersId: agent?.allersVersId ?? undefined,
     };
   }
 

@@ -1,5 +1,5 @@
 // Réexporter depuis le Shared Kernel
-export { Step } from "@/shared/domain/value-objects/step.enum";
+export { Step, STEP_LABELS, STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 
 // Importer pour utiliser dans les fonctions
 import { Step } from "@/shared/domain/value-objects/step.enum";
