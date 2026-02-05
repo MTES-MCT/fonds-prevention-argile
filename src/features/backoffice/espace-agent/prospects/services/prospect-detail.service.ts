@@ -3,7 +3,7 @@ import { parcoursPrevention, users } from "@/shared/database/schema";
 import { eq } from "drizzle-orm";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import type { AgentScopeInput } from "@/features/auth/permissions/domain/types/agent-scope.types";
-import type { ProspectDetail } from "../domain/types";
+import type { ProspectDetail, ProspectAmoInfo } from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
@@ -12,6 +12,7 @@ import { daysSince } from "@/shared/utils/date-diff";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
 import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
 import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/domain/types";
+import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
 
 function buildAdresseComplete(logement: Record<string, any>): string {
   const parts = [logement.adresse, logement.commune].filter(Boolean);
@@ -29,6 +30,26 @@ function buildAdresseComplete(logement: Record<string, any>): string {
     return `${rue}, ${ville}`;
   }
   return rue || "Adresse non renseignée";
+}
+
+/**
+ * Détermine le statut AMO d'un prospect :
+ * Un prospect n'a par définition pas de validation AMO,
+ * on cherche simplement les AMO disponibles dans le territoire du logement.
+ */
+async function resolveAmoInfo(
+  codeInsee: string,
+  codeDepartement: string
+): Promise<ProspectAmoInfo> {
+  if (codeInsee && codeDepartement) {
+    const amosDisponibles = await entreprisesAmoRepository.findByCodeInsee(codeInsee, codeDepartement);
+
+    if (amosDisponibles.length > 0) {
+      return { status: "amo_disponibles", amosDisponibles };
+    }
+  }
+
+  return { status: "aucun_amo_disponible" };
 }
 
 /**
@@ -122,6 +143,12 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       rnbId: rgaData?.logement?.rnb || null,
     };
 
+    // Déterminer le statut AMO du prospect
+    const amoInfo = await resolveAmoInfo(
+      logement.commune || "",
+      logement.code_departement || ""
+    );
+
     // Construire l'objet ProspectDetail
     const prospectDetail: ProspectDetail = {
       parcoursId: result.parcours.id,
@@ -143,6 +170,7 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       updatedAt: result.parcours.updatedAt,
       daysSinceLastAction: daysSince(result.parcours.updatedAt),
       infoLogement,
+      amoInfo,
       stepsHistory: [], // TODO: implémenter l'historique si nécessaire
     };
 

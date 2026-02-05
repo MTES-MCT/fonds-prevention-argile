@@ -1,5 +1,6 @@
 import { Step } from "@/shared/domain/value-objects";
 import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/domain/types";
+import type { Amo } from "@/features/parcours/amo/domain/entities";
 
 /**
  * Un prospect = un particulier qui a créé un compte mais n'a PAS fait de demande à un AMO
@@ -71,11 +72,20 @@ export interface ProspectFilters {
 }
 
 /**
+ * Informations sur le statut AMO d'un prospect
+ */
+export type ProspectAmoInfo =
+  | { status: "aucun_amo_disponible" }
+  | { status: "amo_disponibles"; amosDisponibles: Amo[] };
+
+/**
  * Détail d'un prospect
  */
 export interface ProspectDetail extends Prospect {
   /** Informations détaillées du logement pour l'affichage */
   infoLogement: InfoLogement;
+  /** Informations sur le statut AMO */
+  amoInfo: ProspectAmoInfo;
   /** Historique des étapes */
   stepsHistory: {
     step: Step;

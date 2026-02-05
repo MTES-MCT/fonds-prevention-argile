@@ -13,6 +13,8 @@ import {
   GagnezDuTemps,
   AFaire,
 } from "../../shared";
+import type { ProspectAmoInfo } from "@/features/backoffice/espace-agent/prospects/domain/types";
+import { ContactCard } from "@/shared/components/ContactCard/ContactCard";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -95,13 +97,7 @@ export default async function ProspectDetailPage({ params }: PageProps) {
         {/* Section informations */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
-            <div className="fr-callout fr-callout--blue-ecume">
-              <h3 className="fr-callout__title">Ce particulier n'a pas encore sollicité d'AMO</h3>
-              <p className="fr-callout__text">
-                Ce prospect a créé un compte et commencé son parcours, mais n'a pas encore fait de demande
-                d'accompagnement auprès d'un AMO. Vous pouvez le contacter pour lui proposer vos services.
-              </p>
-            </div>
+            <CalloutInfosProspect amoInfo={prospect.amoInfo} />
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <InfoDemandeur demandeur={demandeur} />
@@ -176,4 +172,40 @@ export async function generateMetadata({ params }: PageProps) {
     title: `Prospect ${nomComplet} | Espace Agent`,
     description: `Détails du prospect ${nomComplet}`,
   };
+}
+
+/**
+ * Callout dynamique affichant le statut AMO du prospect
+ */
+function CalloutInfosProspect({ amoInfo }: { amoInfo: ProspectAmoInfo }) {
+  switch (amoInfo.status) {
+    case "aucun_amo_disponible":
+      return (
+        <div className="fr-callout fr-callout--blue-cumulus">
+          <h3 className="fr-callout__title">Aucun AMO disponible</h3>
+          <p className="fr-callout__text">
+            À ce jour, aucun Assistant à Maîtrise d&apos;Ouvrage n&apos;est disponible dans votre département.
+            N&apos;hésitez pas à contacter les demandeurs pour les informer et les faire patienter.
+          </p>
+        </div>
+      );
+
+    case "amo_disponibles":
+      return (
+        <div className="fr-callout fr-callout--yellow-moutarde">
+          <h3 className="fr-callout__title">Le demandeur doit contacter un AMO</h3>
+          <p className="fr-callout__text">
+            Le recours à un AMO (Assistant à Maîtrise d&apos;Ouvrage) est obligatoire pour bénéficier du Fonds
+            Prévention Argile. Accompagnez le demandeur afin qu&apos;il contacte et confirme la structure choisie dans
+            les propositions ci-dessous afin de passer à l&apos;étape suivante.
+          </p>
+          <h4 className="fr-h6 fr-mt-3w fr-mb-2w">Liste des AMO locaux certifiés pour le demandeur</h4>
+          <div className="fr-grid-row fr-grid-row--gutters">
+            {amoInfo.amosDisponibles.map((amo) => (
+              <ContactCard key={amo.id} id={amo.id} nom={amo.nom} emails={amo.emails} telephone={amo.telephone} adresse={amo.adresse} selectable={false} />
+            ))}
+          </div>
+        </div>
+      );
+  }
 }
