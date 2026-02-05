@@ -62,7 +62,7 @@ export function ProspectsPanel() {
 
   return (
     <>
-      <ProspectsHeader nombreProspects={data.totalCount} />
+      <ProspectsHeader nombreProspects={data.totalCount} hasAmoDisponible={data.hasAmoDisponible} />
 
       <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
         <div className="fr-container">

@@ -2,6 +2,8 @@ import { parcoursRepo } from "@/shared/database";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import type { AgentScopeInput } from "@/features/auth/permissions/domain/types/agent-scope.types";
 import { daysSince } from "@/shared/utils/date-diff";
+import { db, entreprisesAmo } from "@/shared/database";
+import { like, or } from "drizzle-orm";
 import type {
   Prospect,
   ProspectsListResult,
@@ -35,6 +37,7 @@ export class ProspectsListService {
           departements: [],
           epcis: [],
         },
+        hasAmoDisponible: true,
       };
     }
 
@@ -77,6 +80,9 @@ export class ProspectsListService {
       };
     });
 
+    // Vérifier si au moins un AMO couvre les départements de l'agent
+    const hasAmoDisponible = await this.checkAmoDisponibleDansDepartements(scope.departements);
+
     return {
       prospects,
       totalCount: prospects.length,
@@ -84,7 +90,26 @@ export class ProspectsListService {
         departements: scope.departements,
         epcis: scope.epcis,
       },
+      hasAmoDisponible,
     };
+  }
+
+  /**
+   * Vérifie si au moins un AMO couvre l'un des départements donnés
+   */
+  private async checkAmoDisponibleDansDepartements(departements: string[]): Promise<boolean> {
+    if (departements.length === 0) return false;
+
+    // Construire les conditions LIKE pour chaque département
+    const conditions = departements.map((dept) => like(entreprisesAmo.departements, `%${dept}%`));
+
+    const result = await db
+      .select({ id: entreprisesAmo.id })
+      .from(entreprisesAmo)
+      .where(conditions.length === 1 ? conditions[0] : or(...conditions))
+      .limit(1);
+
+    return result.length > 0;
   }
 }
 

@@ -47,6 +47,8 @@ export interface ProspectsListResult {
     departements: string[];
     epcis: string[];
   };
+  /** Indique si au moins un AMO est disponible dans les départements couverts */
+  hasAmoDisponible: boolean;
 }
 
 /**
