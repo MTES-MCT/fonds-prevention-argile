@@ -5,10 +5,9 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { formatNomComplet } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain/types";
-import { InfoDemandeur, InfoLogement, LocalisationLogement, ParcoursDemandeur } from "../../shared";
+import { InfoDemandeur, InfoLogement, LocalisationLogement, ParcoursDemandeur, AFaire } from "../../shared";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
 import { PiecesJustificatives } from "./components/PiecesJustificatives";
-import { AFaireDossier } from "./components/AFaireDossier";
 import { GagnezDuTempsTravaux } from "./components/GagnezDuTempsTravaux";
 
 interface PageProps {
@@ -122,7 +121,14 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   dates={dossier.dates}
                   lastUpdatedAt={dossier.lastUpdatedAt}
                 />
-                <AFaireDossier />
+                <AFaire
+                  items={[
+                    "Aider le ménage à compléter son dossier sur Démarche numérique.",
+                    "L'aider à récupérer ses pièces justificatives",
+                    "S'assurer de la bonne complétion et des relances si le ménage n'avance pas sur le dépôt.",
+                    "Préparer la suite pour effectuer le diagnostic si l'éligibilité est validée par la DDT.",
+                  ]}
+                />
               </div>
             </div>
           </div>

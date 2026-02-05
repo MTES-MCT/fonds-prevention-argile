@@ -4,10 +4,8 @@ import { getDemandeDetail } from "@/features/backoffice/espace-agent/demandes/se
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet, formatDate } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
-import { InfoDemandeur, InfoLogement, LocalisationLogement, ParcoursDemandeur } from "../../shared";
+import { InfoDemandeur, InfoLogement, LocalisationLogement, ParcoursDemandeur, GagnezDuTemps, AFaire } from "../../shared";
 import { ReponseAccompagnement } from "./components/ReponseAccompagnement";
-import { AFaireDemande } from "./components/AFaireDemande";
-import { GagnezDuTemps } from "./components/GagnezDuTemps";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -118,7 +116,15 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                   gap: "2rem",
                 }}>
                 <ParcoursDemandeur currentStep={demande.currentStep} dates={demande.dates} />
-                <AFaireDemande />
+                <AFaire
+                  items={[
+                    "Contacter le demandeur",
+                    "Vérifier s'il y a des fissures",
+                    "Contrôler la conformité des informations fournies par le demandeur",
+                    "Répondre à l'accompagnement pour informer le demandeur de votre prise en charge",
+                    "Informer et préparer le demandeur pour les étapes suivantes",
+                  ]}
+                />
               </div>
             </div>
           </div>

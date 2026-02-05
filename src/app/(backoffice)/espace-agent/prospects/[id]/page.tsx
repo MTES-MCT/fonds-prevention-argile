@@ -5,7 +5,14 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { formatNomComplet, formatDateShort } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
-import { InfoDemandeur, InfoLogement, LocalisationLogement, ParcoursDemandeur } from "../../shared";
+import {
+  InfoDemandeur,
+  InfoLogement,
+  LocalisationLogement,
+  ParcoursDemandeur,
+  GagnezDuTemps,
+  AFaire,
+} from "../../shared";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -81,9 +88,7 @@ export default async function ProspectDetailPage({ params }: PageProps) {
             <p className="fr-badge fr-badge--new">
               Nouveau prospect du {formatDateShort(prospect.createdAt.toISOString())}
             </p>
-            <p className="fr-badge">
-              {STEP_LABELS_NUMBERED[prospect.currentStep] || prospect.currentStep}
-            </p>
+            <p className="fr-badge">{STEP_LABELS_NUMBERED[prospect.currentStep] || prospect.currentStep}</p>
           </div>
         </div>
 
@@ -113,20 +118,37 @@ export default async function ProspectDetailPage({ params }: PageProps) {
               <div className="fr-mb-4w">
                 <InfoLogement logement={prospect.infoLogement} />
               </div>
-              <div>
+              <div className="fr-mb-4w">
                 <LocalisationLogement logement={prospect.infoLogement} adresse={prospect.logement.adresse} />
+              </div>
+              <div>
+                <GagnezDuTemps />
               </div>
             </div>
 
             {/* Colonne droite */}
             <div className="fr-col-12 fr-col-md-4">
-              <ParcoursDemandeur
-                currentStep={prospect.currentStep}
-                dates={{
-                  compteCreatedAt: prospect.createdAt,
-                }}
-                lastUpdatedAt={prospect.updatedAt}
-              />
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "2rem",
+                }}>
+                <ParcoursDemandeur
+                  currentStep={prospect.currentStep}
+                  dates={{
+                    compteCreatedAt: prospect.createdAt,
+                  }}
+                  lastUpdatedAt={prospect.updatedAt}
+                />
+                <AFaire
+                  items={[
+                    "Contacter le demandeur",
+                    "L'informer et répondre à ses questions",
+                    "L'inciter à contacter et choisir un AMO",
+                  ]}
+                />
+              </div>
             </div>
           </div>
         </div>
