@@ -80,8 +80,13 @@ export default async function ProspectDetailPage({ params }: PageProps) {
           <div className="fr-collapse" id="breadcrumb-1">
             <ol className="fr-breadcrumb__list">
               <li>
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAgent.root}>
+                  Accueil
+                </Link>
+              </li>
+              <li>
                 <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAgent.prospects}>
-                  Prospects
+                  Nouveau prospect
                 </Link>
               </li>
               <li>
