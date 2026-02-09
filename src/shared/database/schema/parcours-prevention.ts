@@ -2,6 +2,7 @@ import { pgTable, uuid, timestamp, jsonb, text } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { users } from "./users";
 import { dossiersDemarchesSimplifiees } from "./dossiers-demarches-simplifiees";
+import { parcoursCommentaires } from "./parcours-commentaires";
 import { statusPgEnum, stepPgEnum } from "../enums/enums";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -38,6 +39,7 @@ export const parcoursPreventionRelations = relations(parcoursPrevention, ({ one,
     references: [users.id],
   }),
   dossiersDemarchesSimplifiees: many(dossiersDemarchesSimplifiees),
+  commentaires: many(parcoursCommentaires),
 }));
 
 export type ParcoursPrevention = typeof parcoursPrevention.$inferSelect;
