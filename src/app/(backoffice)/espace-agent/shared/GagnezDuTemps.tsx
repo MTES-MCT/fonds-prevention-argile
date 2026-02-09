@@ -4,12 +4,8 @@
  */
 export function GagnezDuTemps() {
   return (
-    <div
-      className="fr-card"
-      style={{
-        backgroundColor: "#e8edff",
-      }}>
-      <div className="fr-p-4w ">
+    <div className="fr-card fr-background-contrast--info">
+      <div className="fr-p-4w">
         <div className="fr-mb-2w">
           <h3 className="fr-h5 fr-mb-1v">
             <span className="fr-icon-time-line fr-mr-2v" aria-hidden="true"></span>

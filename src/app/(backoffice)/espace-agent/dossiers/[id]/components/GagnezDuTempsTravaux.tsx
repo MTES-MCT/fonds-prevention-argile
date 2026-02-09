@@ -8,11 +8,7 @@ import contentTravauxEligiblesCommon from "../../../../../(main)/travaux-eligibl
  */
 export function GagnezDuTempsTravaux() {
   return (
-    <div
-      className="fr-card"
-      style={{
-        backgroundColor: "#e8edff",
-      }}>
+    <div className="fr-card fr-background-contrast--info">
       <div className="fr-p-4w">
         <div className="fr-mb-4w">
           <h3 className="fr-h5 fr-mb-1v">
