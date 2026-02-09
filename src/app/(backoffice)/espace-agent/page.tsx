@@ -21,9 +21,12 @@ export default async function EspaceAgentHomePage() {
   const hasDemandesPermission = hasPermission(role, BackofficePermission.DOSSIERS_AMO_READ);
   const hasProspectsPermission = hasPermission(role, BackofficePermission.PROSPECTS_VIEW);
 
-  // Redirection selon les permissions
-  if (hasDemandesPermission) {
-    // AMO ou AMO_ET_ALLERS_VERS → rediriger vers Demandes
+  // Redirection selon les permissions et le rôle
+  if (role === UserRole.AMO_ET_ALLERS_VERS) {
+    // AMO_ET_ALLERS_VERS → rediriger vers Prospects (page par défaut)
+    redirect("/espace-agent/prospects");
+  } else if (hasDemandesPermission) {
+    // AMO → rediriger vers Demandes
     redirect("/espace-agent/demandes");
   } else if (hasProspectsPermission) {
     // ALLERS_VERS → rediriger vers Prospects

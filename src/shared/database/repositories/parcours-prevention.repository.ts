@@ -1,4 +1,4 @@
-import { eq, sql, SQL, desc, and, isNull } from "drizzle-orm";
+import { eq, sql, SQL, desc, asc, and, isNull } from "drizzle-orm";
 import { db } from "../client";
 import { parcoursPrevention } from "../schema/parcours-prevention";
 import { users } from "../schema/users";
@@ -315,7 +315,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
           ...conditions
         )
       )
-      .orderBy(desc(parcoursPrevention.updatedAt));
+      .orderBy(asc(parcoursPrevention.updatedAt));
 
     // Filtrer par ancienneté et territoire côté application
     return results.filter((r) => {
