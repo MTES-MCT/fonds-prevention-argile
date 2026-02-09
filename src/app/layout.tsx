@@ -61,7 +61,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html data-fr-scheme="system" lang="fr">
+    <html data-fr-scheme="light" lang="fr">
       <head>
         <meta content="telephone=no,date=no,address=no,email=no,url=no" name="format-detection" />
         <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport" />
