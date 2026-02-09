@@ -6,6 +6,7 @@ import { formatNomComplet } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import { InfoDemandeur, InfoLogement, LocalisationLogement, ParcoursDemandeur, AFaire } from "../../shared";
+import { NotesPartagees } from "../../shared";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
 import { PiecesJustificatives } from "./components/PiecesJustificatives";
 import { GagnezDuTempsTravaux } from "./components/GagnezDuTempsTravaux";
@@ -129,6 +130,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                     "Préparer la suite pour effectuer le diagnostic si l'éligibilité est validée par la DDT.",
                   ]}
                 />
+                <NotesPartagees parcoursId={dossier.parcoursId} />
               </div>
             </div>
           </div>

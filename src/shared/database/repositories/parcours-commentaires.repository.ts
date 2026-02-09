@@ -1,4 +1,4 @@
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and, type SQL } from "drizzle-orm";
 import { db } from "../client";
 import { parcoursCommentaires } from "../schema/parcours-commentaires";
 import { agents } from "../schema/agents";
@@ -44,19 +44,26 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
   }
 
   /**
-   * Met à jour un commentaire (message uniquement)
+   * Met à jour un commentaire avec des données partielles (interface BaseRepository)
    */
-  async update(id: string, message: string): Promise<ParcoursCommentaire | null> {
+  async update(id: string, data: Partial<ParcoursCommentaire>): Promise<ParcoursCommentaire | null> {
     const result = await db
       .update(parcoursCommentaires)
-      .set({
-        message,
-        editedAt: new Date(),
-      })
+      .set(data)
       .where(eq(parcoursCommentaires.id, id))
       .returning();
 
     return result[0] || null;
+  }
+
+  /**
+   * Met à jour le message d'un commentaire
+   */
+  async updateMessage(id: string, message: string): Promise<ParcoursCommentaire | null> {
+    return this.update(id, {
+      message,
+      editedAt: new Date(),
+    });
   }
 
   /**
@@ -87,7 +94,7 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
   /**
    * Compte le nombre de commentaires
    */
-  async count(where?: any): Promise<number> {
+  async count(where?: SQL): Promise<number> {
     const query = db
       .select({ count: sql<number>`cast(count(*) as integer)` })
       .from(parcoursCommentaires);

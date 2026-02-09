@@ -1,5 +1,3 @@
-import type { ParcoursCommentaire } from "@/shared/database/schema/parcours-commentaires";
-
 /**
  * Type de structure de l'agent auteur du commentaire
  */

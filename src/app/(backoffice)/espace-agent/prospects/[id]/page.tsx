@@ -13,6 +13,7 @@ import {
   GagnezDuTemps,
   AFaire,
 } from "../../shared";
+import { NotesPartagees } from "../../shared";
 import type { ProspectAmoInfo } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { ContactCard } from "@/shared/components/ContactCard/ContactCard";
 
@@ -144,6 +145,7 @@ export default async function ProspectDetailPage({ params }: PageProps) {
                     "L'inciter à contacter et choisir un AMO",
                   ]}
                 />
+                <NotesPartagees parcoursId={prospect.parcoursId} />
               </div>
             </div>
           </div>

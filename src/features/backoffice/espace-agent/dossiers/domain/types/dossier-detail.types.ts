@@ -26,6 +26,8 @@ export interface DateIndemnisation {
 export interface DossierDetail {
   /** ID de la validation AMO */
   id: string;
+  /** ID du parcours (pour les notes partagées) */
+  parcoursId: string;
   /** Informations sur le demandeur */
   demandeur: InfoDemandeur;
   /** Informations sur le logement */

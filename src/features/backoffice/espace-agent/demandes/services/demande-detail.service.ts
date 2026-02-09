@@ -102,6 +102,7 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
 
     const demandeDetail: DemandeDetail = {
       id: demande.validation.id,
+      parcoursId: demande.parcours.id,
       demandeur,
       logement,
       statut: demande.validation.statut,

@@ -126,6 +126,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
 
     const dossierDetail: DossierDetail = {
       id: dossier.validation.id,
+      parcoursId: dossier.parcours.id,
       demandeur,
       logement,
       currentStep: dossier.parcours.currentStep as Step,

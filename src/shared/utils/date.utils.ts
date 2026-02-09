@@ -209,3 +209,74 @@ export function formatDaysAgoSplit(dateString: string | null | undefined): { tex
     return null;
   }
 }
+
+/**
+ * Formate une date en texte relatif "il y a X jours" ou "À l'instant"
+ * @param date - Date à formater
+ * @returns Texte relatif
+ *
+ * @example
+ * formatRelativeTime(new Date()) // "À l'instant"
+ * formatRelativeTime(dateIlYa2Jours) // "il y a 2 j"
+ */
+export function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const days = daysBetween(date, now);
+
+  if (days === 0) {
+    // Vérifier si c'est vraiment récent (moins de 1 minute)
+    const secondsDiff = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (secondsDiff < 60) {
+      return "À l'instant";
+    }
+    // Moins d'une heure
+    const minutesDiff = Math.floor(secondsDiff / 60);
+    if (minutesDiff < 60) {
+      return `il y a ${minutesDiff} min`;
+    }
+    // Aujourd'hui mais il y a plus d'une heure
+    const hoursDiff = Math.floor(minutesDiff / 60);
+    return `il y a ${hoursDiff} h`;
+  }
+
+  return `il y a ${days} j`;
+}
+
+/**
+ * Formate un temps relatif sans le préfixe "il y a"
+ * Utilisé pour les affichages compacts
+ * Si > 7 jours : affiche la date absolue (format court DD/MM/YY)
+ * @param date - Date à formater
+ * @returns Temps relatif court (ex: "2 j", "5 min", "À l'instant") ou date absolue (ex: "15/01/26")
+ * @example
+ * formatRelativeTimeShort(new Date()) // "À l'instant"
+ * formatRelativeTimeShort(dateIlYa2Jours) // "2 j"
+ * formatRelativeTimeShort(dateIlYa10Jours) // "30/01/26"
+ */
+export function formatRelativeTimeShort(date: Date): string {
+  const now = new Date();
+  const days = daysBetween(date, now);
+
+  // Si plus de 7 jours : afficher la date absolue
+  if (days > 7) {
+    return date.toLocaleDateString(LOCALE, DATE_SHORT_FORMAT);
+  }
+
+  if (days === 0) {
+    // Vérifier si c'est vraiment récent (moins de 1 minute)
+    const secondsDiff = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (secondsDiff < 60) {
+      return "À l'instant";
+    }
+    // Moins d'une heure
+    const minutesDiff = Math.floor(secondsDiff / 60);
+    if (minutesDiff < 60) {
+      return `${minutesDiff} min`;
+    }
+    // Aujourd'hui mais il y a plus d'une heure
+    const hoursDiff = Math.floor(minutesDiff / 60);
+    return `${hoursDiff} h`;
+  }
+
+  return `${days} j`;
+}

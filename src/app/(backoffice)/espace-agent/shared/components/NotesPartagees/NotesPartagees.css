@@ -1,0 +1,21 @@
+.notes-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 transparent;
+}
+
+.notes-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notes-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notes-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.notes-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}

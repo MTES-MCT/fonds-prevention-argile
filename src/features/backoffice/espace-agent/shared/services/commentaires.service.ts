@@ -4,7 +4,6 @@ import { BackofficePermission } from "@/features/auth/permissions/domain/value-o
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import type { UserRole } from "@/shared/domain/value-objects";
 import type {
-  CommentaireDetail,
   CommentairesListResult,
   CreateCommentaireResult,
   UpdateCommentaireResult,
@@ -55,11 +54,12 @@ export class CommentairesService {
     }
 
     // Pour les agents AMO / Allers-Vers : vérifier l'accès au parcours via le scope
-    const scope = await calculateAgentScope({
-      agentId,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _scope = await calculateAgentScope({
+      id: agentId,
       role,
-      entrepriseAmoId,
-      allersVersId,
+      entrepriseAmoId: entrepriseAmoId ?? null,
+      allersVersId: allersVersId ?? null,
     });
 
     // TODO: Vérifier que le parcours est dans le scope de l'agent
@@ -189,7 +189,7 @@ export class CommentairesService {
 
     try {
       // Mettre à jour le commentaire
-      await parcoursCommentairesRepo.update(commentaireId, message.trim());
+      await parcoursCommentairesRepo.updateMessage(commentaireId, message.trim());
 
       // Récupérer les détails mis à jour
       const commentaireDetail = await parcoursCommentairesRepo.findByIdWithDetails(commentaireId);

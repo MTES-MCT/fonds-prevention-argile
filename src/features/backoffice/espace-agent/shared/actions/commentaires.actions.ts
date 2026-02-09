@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentAgent } from "@/features/auth/services/agent.service";
+import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { commentairesService } from "../services/commentaires.service";
 import type {
   CommentairesListResult,
@@ -20,13 +20,15 @@ export async function getCommentairesAction(
 ): Promise<CommentairesListResult> {
   try {
     // Récupérer l'agent connecté
-    const agent = await getCurrentAgent();
-    if (!agent) {
+    const agentResult = await getCurrentAgent();
+    if (!agentResult.success || !agentResult.data) {
       return {
         commentaires: [],
         totalCount: 0,
       };
     }
+
+    const agent = agentResult.data;
 
     // Appeler le service avec les infos de l'agent
     const result = await commentairesService.getCommentairesForParcours(
@@ -59,13 +61,15 @@ export async function createCommentaireAction(
 ): Promise<CreateCommentaireResult> {
   try {
     // Récupérer l'agent connecté
-    const agent = await getCurrentAgent();
-    if (!agent) {
+    const agentResult = await getCurrentAgent();
+    if (!agentResult.success || !agentResult.data) {
       return {
         success: false,
         error: "Vous devez être connecté pour créer un commentaire.",
       };
     }
+
+    const agent = agentResult.data;
 
     // Appeler le service
     const result = await commentairesService.createCommentaire(
@@ -97,13 +101,15 @@ export async function updateCommentaireAction(
 ): Promise<UpdateCommentaireResult> {
   try {
     // Récupérer l'agent connecté
-    const agent = await getCurrentAgent();
-    if (!agent) {
+    const agentResult = await getCurrentAgent();
+    if (!agentResult.success || !agentResult.data) {
       return {
         success: false,
         error: "Vous devez être connecté pour modifier un commentaire.",
       };
     }
+
+    const agent = agentResult.data;
 
     // Appeler le service
     const result = await commentairesService.updateCommentaire(
@@ -133,13 +139,15 @@ export async function deleteCommentaireAction(
 ): Promise<DeleteCommentaireResult> {
   try {
     // Récupérer l'agent connecté
-    const agent = await getCurrentAgent();
-    if (!agent) {
+    const agentResult = await getCurrentAgent();
+    if (!agentResult.success || !agentResult.data) {
       return {
         success: false,
         error: "Vous devez être connecté pour supprimer un commentaire.",
       };
     }
+
+    const agent = agentResult.data;
 
     // Appeler le service
     const result = await commentairesService.deleteCommentaire(
