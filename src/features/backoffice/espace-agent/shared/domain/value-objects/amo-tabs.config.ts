@@ -37,6 +37,11 @@ export const ALLERS_VERS_TABS: AmoTab[] = [
  */
 export const AMO_ET_ALLERS_VERS_TABS: AmoTab[] = [
   {
+    id: "prospects",
+    label: "Prospects",
+    href: "/espace-agent/prospects",
+  },
+  {
     id: "demandes",
     label: "Demandes",
     href: "/espace-agent/demandes",
@@ -45,11 +50,6 @@ export const AMO_ET_ALLERS_VERS_TABS: AmoTab[] = [
     id: "dossiers",
     label: "Dossiers",
     href: "/espace-agent/dossiers",
-  },
-  {
-    id: "prospects",
-    label: "Prospects",
-    href: "/espace-agent/prospects",
   },
   {
     id: "statistiques",
