@@ -44,6 +44,13 @@ export enum BackofficePermission {
   PROSPECTS_VIEW = "prospects:view",
   PROSPECTS_VIEW_DETAIL = "prospects:view-detail",
   PROSPECTS_STATS = "prospects:stats",
+
+  // Commentaires internes sur les parcours
+  COMMENTAIRES_CREATE = "commentaires:create",
+  COMMENTAIRES_READ = "commentaires:read",
+  COMMENTAIRES_UPDATE_OWN = "commentaires:update-own",
+  COMMENTAIRES_DELETE_OWN = "commentaires:delete-own",
+  COMMENTAIRES_READ_ALL = "commentaires:read-all", // Pour admins uniquement
 }
 
 /**
@@ -76,6 +83,8 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.FACTURES_READ,
     BackofficePermission.DOSSIERS_AMO_READ,
     BackofficePermission.DOSSIERS_AMO_STATS_READ,
+    // Commentaires : lecture seule pour tous les commentaires
+    BackofficePermission.COMMENTAIRES_READ_ALL,
   ],
 
   [UserRole.ANALYSTE]: [
@@ -90,6 +99,11 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     // Accès limité : dossiers de son entreprise AMO uniquement (lecture seule)
     BackofficePermission.DOSSIERS_AMO_READ,
     BackofficePermission.DOSSIERS_AMO_STATS_READ,
+    // Commentaires : lecture/écriture sur les dossiers accessibles
+    BackofficePermission.COMMENTAIRES_CREATE,
+    BackofficePermission.COMMENTAIRES_READ,
+    BackofficePermission.COMMENTAIRES_UPDATE_OWN,
+    BackofficePermission.COMMENTAIRES_DELETE_OWN,
   ],
 
   [UserRole.ALLERS_VERS]: [
@@ -97,6 +111,11 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.PROSPECTS_VIEW,
     BackofficePermission.PROSPECTS_VIEW_DETAIL,
     BackofficePermission.PROSPECTS_STATS,
+    // Commentaires : lecture/écriture sur les prospects accessibles
+    BackofficePermission.COMMENTAIRES_CREATE,
+    BackofficePermission.COMMENTAIRES_READ,
+    BackofficePermission.COMMENTAIRES_UPDATE_OWN,
+    BackofficePermission.COMMENTAIRES_DELETE_OWN,
   ],
 
   [UserRole.AMO_ET_ALLERS_VERS]: [
@@ -106,6 +125,11 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.PROSPECTS_VIEW,
     BackofficePermission.PROSPECTS_VIEW_DETAIL,
     BackofficePermission.PROSPECTS_STATS,
+    // Commentaires : lecture/écriture sur tous les dossiers/prospects accessibles
+    BackofficePermission.COMMENTAIRES_CREATE,
+    BackofficePermission.COMMENTAIRES_READ,
+    BackofficePermission.COMMENTAIRES_UPDATE_OWN,
+    BackofficePermission.COMMENTAIRES_DELETE_OWN,
   ],
 };
 
