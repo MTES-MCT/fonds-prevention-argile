@@ -25,6 +25,7 @@ psql -f 02-parcours.sql
 psql -f 03-validations-amo.sql
 psql -f 04-dossiers-ds.sql
 psql -f 05-prospects-sans-amo.sql  # Nouveaux prospects pour Allers-Vers
+psql -f 07-commentaires.sql       # Agents fictifs + commentaires de test
 psql -f 99-verification.sql
 ```
 
@@ -52,6 +53,8 @@ Ou via Drizzle Studio, copier-coller chaque script séquentiellement.
 | **Total parcours** | **70** |
 | Validations AMO | 30 |
 | Dossiers DS | 8 |
+| Agents fictifs (AMO + Allers-Vers) | 2 |
+| Commentaires sur parcours | 20 |
 
 ### Répartition des validations AMO
 
@@ -80,6 +83,8 @@ Les UUID utilisent des patterns reconnaissables :
 - Parcours (Prospects) : `55555555-5555-5555-5555-5555555555XX`
 - Validations : `33333333-3333-3333-3333-3333333333XX`
 - Dossiers DS : `44444444-4444-4444-4444-4444444444XX`
+- Commentaires : `77777777-7777-7777-7777-7777777777XX`
+- Agents fictifs : `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaN`
 
 ## Cas d'usage
 
@@ -97,3 +102,11 @@ Les prospects sont répartis par ancienneté pour tester les filtres :
 - Prospects récents (dernière action < 7 jours) : IDs `55555555-5555-5555-5555-555555555501` à `510`
 - Prospects moyens (7-30 jours) : IDs `55555555-5555-5555-5555-555555555511` à `520`
 - Prospects anciens (> 30 jours) : IDs `55555555-5555-5555-5555-555555555521` à `530`
+
+### Tester les commentaires (notes partagées)
+
+Le script `07-commentaires.sql` crée 2 agents fictifs non-connectables et 20 commentaires décalés :
+- **Géraldine Moulin** (AMO du Berry Profond)
+- **Jean-Patrick Duval** (Allers-Vers Centre Indre)
+
+Utile pour vérifier que le menu modifier/supprimer n'apparaît que sur ses propres commentaires.
