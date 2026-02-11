@@ -73,4 +73,5 @@ export interface DeleteCommentaireResult {
 export interface CommentairesListResult {
   commentaires: CommentaireDetail[];
   totalCount: number;
+  currentAgentId?: string;
 }

@@ -39,7 +39,10 @@ export async function getCommentairesAction(
       agent.allersVersId
     );
 
-    return result;
+    return {
+      ...result,
+      currentAgentId: agent.id,
+    };
   } catch (error) {
     console.error("Erreur lors de la récupération des commentaires:", error);
     return {

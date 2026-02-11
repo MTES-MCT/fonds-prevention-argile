@@ -163,6 +163,15 @@ export class CommentairesService {
       };
     }
 
+    // Vérifier que le commentaire existe
+    const commentaireExists = await parcoursCommentairesRepo.exists(commentaireId);
+    if (!commentaireExists) {
+      return {
+        success: false,
+        error: "Ce commentaire n'existe pas ou a déjà été supprimé.",
+      };
+    }
+
     // Vérifier que l'agent est l'auteur du commentaire
     const canEdit = await parcoursCommentairesRepo.canEditComment(commentaireId, agentId);
     if (!canEdit) {
@@ -232,6 +241,15 @@ export class CommentairesService {
       return {
         success: false,
         error: "Permission refusée : vous ne pouvez pas supprimer ce commentaire.",
+      };
+    }
+
+    // Vérifier que le commentaire existe
+    const commentaireExists = await parcoursCommentairesRepo.exists(commentaireId);
+    if (!commentaireExists) {
+      return {
+        success: false,
+        error: "Ce commentaire n'existe pas ou a déjà été supprimé.",
       };
     }
 

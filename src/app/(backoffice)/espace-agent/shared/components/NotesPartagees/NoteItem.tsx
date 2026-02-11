@@ -8,6 +8,7 @@ import { NoteForm } from "./NoteForm";
 
 interface NoteItemProps {
   commentaire: CommentaireDetail;
+  currentAgentId?: string;
   onUpdated: () => void;
   onDeleted: () => void;
 }
@@ -16,7 +17,7 @@ interface NoteItemProps {
  * Composant affichant une note individuelle
  * Avec menu d'actions (modifier/supprimer) si l'utilisateur est l'auteur
  */
-export function NoteItem({ commentaire, onUpdated, onDeleted }: NoteItemProps) {
+export function NoteItem({ commentaire, currentAgentId, onUpdated, onDeleted }: NoteItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -49,6 +50,9 @@ export function NoteItem({ commentaire, onUpdated, onDeleted }: NoteItemProps) {
 
   // Indicateur de modification
   const isEdited = commentaire.editedAt !== null;
+
+  // L'utilisateur courant est-il l'auteur de ce commentaire ?
+  const isOwnComment = currentAgentId === commentaire.agent.id;
 
   // Supprimer la note
   async function handleDelete() {
@@ -113,87 +117,89 @@ export function NoteItem({ commentaire, onUpdated, onDeleted }: NoteItemProps) {
 
       {/* Contenu de la note - Card avec fond gris */}
       <div className="fr-p-2w" style={{ backgroundColor: "#f6f6f6", borderRadius: "0.25rem", position: "relative" }}>
-        <p className="fr-text--sm fr-mb-0" style={{ whiteSpace: "pre-wrap", paddingRight: "1.15rem" }}>
+        <p className="fr-text--sm fr-mb-0" style={{ whiteSpace: "pre-wrap", paddingRight: isOwnComment ? "1.15rem" : undefined }}>
           {commentaire.message}
         </p>
 
         {/* Menu d'actions (uniquement visible pour l'auteur) - Dans la carte */}
-        <div style={{ position: "absolute", top: "0.5rem", right: "0.5rem", zIndex: 1 }} ref={menuRef}>
-          <button
-            className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-icon-more-line"
-            aria-label="Actions"
-            title="Actions"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            type="button"
-            style={{ padding: "0.25rem" }}
-          />
+        {isOwnComment && (
+          <div style={{ position: "absolute", top: "0.5rem", right: "0.5rem", zIndex: 1 }} ref={menuRef}>
+            <button
+              className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-icon-more-line"
+              aria-label="Actions"
+              title="Actions"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              type="button"
+              style={{ padding: "0.25rem" }}
+            />
 
-          {isMenuOpen && (
-            <div
-              style={{
-                position: "absolute",
-                right: 0,
-                top: "100%",
-                marginTop: "0.125rem",
-                zIndex: 1000,
-                backgroundColor: "white",
-                border: "1px solid var(--border-default-grey)",
-                borderRadius: "4px",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
-                overflow: "hidden",
-              }}>
-              <button
-                onClick={() => {
-                  setIsEditing(true);
-                  setIsMenuOpen(false);
-                }}
-                type="button"
-                className="fr-text--sm fr-mb-0"
+            {isMenuOpen && (
+              <div
                 style={{
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "0.375rem 0.75rem",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.375rem",
-                  color: "var(--text-action-high-blue-france)",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f6f6f6")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
-                <span className="fr-icon-edit-fill fr-icon--sm" aria-hidden="true"></span>
-                Modifier
-              </button>
-              <div style={{ borderTop: "1px solid var(--border-default-grey)" }} />
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                type="button"
-                className="fr-text--sm fr-mb-0"
-                style={{
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "0.375rem 0.75rem",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.375rem",
-                  color: "#ce0500",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f6f6f6")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
-                <span className="fr-icon-delete-fill fr-icon--sm" aria-hidden="true"></span>
-                {isDeleting ? "Suppression..." : "Supprimer"}
-              </button>
-            </div>
-          )}
-        </div>
+                  position: "absolute",
+                  right: 0,
+                  top: "100%",
+                  marginTop: "0.125rem",
+                  zIndex: 1000,
+                  backgroundColor: "white",
+                  border: "1px solid var(--border-default-grey)",
+                  borderRadius: "4px",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+                  overflow: "hidden",
+                }}>
+                <button
+                  onClick={() => {
+                    setIsEditing(true);
+                    setIsMenuOpen(false);
+                  }}
+                  type="button"
+                  className="fr-text--sm fr-mb-0"
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "0.375rem 0.75rem",
+                    border: "none",
+                    backgroundColor: "transparent",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.375rem",
+                    color: "var(--text-action-high-blue-france)",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f6f6f6")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
+                  <span className="fr-icon-edit-fill fr-icon--sm" aria-hidden="true"></span>
+                  Modifier
+                </button>
+                <div style={{ borderTop: "1px solid var(--border-default-grey)" }} />
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  type="button"
+                  className="fr-text--sm fr-mb-0"
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "0.375rem 0.75rem",
+                    border: "none",
+                    backgroundColor: "transparent",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.375rem",
+                    color: "#ce0500",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f6f6f6")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
+                  <span className="fr-icon-delete-fill fr-icon--sm" aria-hidden="true"></span>
+                  {isDeleting ? "Suppression..." : "Supprimer"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

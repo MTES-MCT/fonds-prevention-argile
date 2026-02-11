@@ -20,6 +20,7 @@ export function NotesPartagees({ parcoursId }: NotesPartageesProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [currentAgentId, setCurrentAgentId] = useState<string | undefined>();
 
   // Charger les commentaires
   const loadCommentaires = useCallback(async () => {
@@ -30,6 +31,7 @@ export function NotesPartagees({ parcoursId }: NotesPartageesProps) {
       const sortedCommentaires = [...result.commentaires].reverse();
       setCommentaires(sortedCommentaires);
       setTotalCount(result.totalCount);
+      setCurrentAgentId(result.currentAgentId);
     } catch (error) {
       console.error("Erreur lors du chargement des commentaires:", error);
     } finally {
@@ -128,6 +130,7 @@ export function NotesPartagees({ parcoursId }: NotesPartageesProps) {
                     <NoteItem
                       key={commentaire.id}
                       commentaire={commentaire}
+                      currentAgentId={currentAgentId}
                       onUpdated={handleNoteUpdated}
                       onDeleted={handleNoteDeleted}
                     />
