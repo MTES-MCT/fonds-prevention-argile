@@ -16,6 +16,7 @@ vi.mock("@/shared/database/repositories", () => ({
     update: vi.fn(),
     updateMessage: vi.fn(),
     canEditComment: vi.fn(),
+    exists: vi.fn(),
     delete: vi.fn(),
   },
 }));
@@ -303,9 +304,29 @@ describe("CommentairesService", () => {
       expect(result.error).toContain("Permission refusée");
     });
 
+    it("devrait refuser si le commentaire n'existe pas", async () => {
+      // Arrange
+      vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursCommentairesRepo.exists).mockResolvedValue(false);
+
+      // Act
+      const result = await service.updateCommentaire(
+        "comment-inexistant",
+        "agent-1",
+        UserRole.AMO,
+        "Updated message"
+      );
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("n'existe pas");
+      expect(parcoursCommentairesRepo.canEditComment).not.toHaveBeenCalled();
+    });
+
     it("devrait refuser si l'agent n'est pas l'auteur du commentaire", async () => {
       // Arrange
       vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursCommentairesRepo.exists).mockResolvedValue(true);
       vi.mocked(parcoursCommentairesRepo.canEditComment).mockResolvedValue(false);
 
       // Act
@@ -324,6 +345,7 @@ describe("CommentairesService", () => {
     it("devrait refuser un message vide", async () => {
       // Arrange
       vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursCommentairesRepo.exists).mockResolvedValue(true);
       vi.mocked(parcoursCommentairesRepo.canEditComment).mockResolvedValue(true);
 
       // Act
@@ -342,6 +364,7 @@ describe("CommentairesService", () => {
     it("devrait mettre à jour un commentaire valide", async () => {
       // Arrange
       vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursCommentairesRepo.exists).mockResolvedValue(true);
       vi.mocked(parcoursCommentairesRepo.canEditComment).mockResolvedValue(true);
       const updatedComment = { ...mockCommentaire, message: "Updated", editedAt: new Date() };
       vi.mocked(parcoursCommentairesRepo.updateMessage).mockResolvedValue({
@@ -389,9 +412,28 @@ describe("CommentairesService", () => {
       expect(result.error).toContain("Permission refusée");
     });
 
+    it("devrait refuser si le commentaire n'existe pas", async () => {
+      // Arrange
+      vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursCommentairesRepo.exists).mockResolvedValue(false);
+
+      // Act
+      const result = await service.deleteCommentaire(
+        "comment-inexistant",
+        "agent-1",
+        UserRole.AMO
+      );
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("n'existe pas");
+      expect(parcoursCommentairesRepo.canEditComment).not.toHaveBeenCalled();
+    });
+
     it("devrait refuser si l'agent n'est pas l'auteur", async () => {
       // Arrange
       vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursCommentairesRepo.exists).mockResolvedValue(true);
       vi.mocked(parcoursCommentairesRepo.canEditComment).mockResolvedValue(false);
 
       // Act
@@ -409,6 +451,7 @@ describe("CommentairesService", () => {
     it("devrait supprimer un commentaire valide", async () => {
       // Arrange
       vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursCommentairesRepo.exists).mockResolvedValue(true);
       vi.mocked(parcoursCommentairesRepo.canEditComment).mockResolvedValue(true);
       vi.mocked(parcoursCommentairesRepo.delete).mockResolvedValue(true);
 
@@ -427,6 +470,7 @@ describe("CommentairesService", () => {
     it("devrait retourner une erreur si la suppression échoue", async () => {
       // Arrange
       vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursCommentairesRepo.exists).mockResolvedValue(true);
       vi.mocked(parcoursCommentairesRepo.canEditComment).mockResolvedValue(true);
       vi.mocked(parcoursCommentairesRepo.delete).mockResolvedValue(false);
 

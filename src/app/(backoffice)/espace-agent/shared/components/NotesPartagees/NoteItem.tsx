@@ -48,9 +48,6 @@ export function NoteItem({ commentaire, currentAgentId, onUpdated, onDeleted }: 
   // Temps relatif
   const relativeTime = formatRelativeTimeShort(commentaire.createdAt);
 
-  // Indicateur de modification
-  const isEdited = commentaire.editedAt !== null;
-
   // L'utilisateur courant est-il l'auteur de ce commentaire ?
   const isOwnComment = currentAgentId === commentaire.agent.id;
 
