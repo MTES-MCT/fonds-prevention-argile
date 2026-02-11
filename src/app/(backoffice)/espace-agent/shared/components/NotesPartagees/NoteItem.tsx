@@ -117,7 +117,9 @@ export function NoteItem({ commentaire, currentAgentId, onUpdated, onDeleted }: 
 
       {/* Contenu de la note - Card avec fond gris */}
       <div className="fr-p-2w" style={{ backgroundColor: "#f6f6f6", borderRadius: "0.25rem", position: "relative" }}>
-        <p className="fr-text--sm fr-mb-0" style={{ whiteSpace: "pre-wrap", paddingRight: isOwnComment ? "1.15rem" : undefined }}>
+        <p
+          className="fr-text--sm fr-mb-0"
+          style={{ whiteSpace: "pre-wrap", paddingRight: isOwnComment ? "1.15rem" : undefined }}>
           {commentaire.message}
         </p>
 

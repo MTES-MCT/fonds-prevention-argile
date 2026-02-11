@@ -1,6 +1,8 @@
 .notes-scroll-container {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e0 transparent;
+  scrollbar-gutter: stable;
+  padding-right: 0.5rem;
 }
 
 .notes-scroll-container::-webkit-scrollbar {

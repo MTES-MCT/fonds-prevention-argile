@@ -63,18 +63,16 @@ export function NotesPartagees({ parcoursId }: NotesPartageesProps) {
   const displayedCommentaires = commentaires;
 
   return (
-    <div>
-      {/* Card supérieure - Sticky */}
-      <div
-        className="fr-card"
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          borderRadius: "0.25rem 0.25rem 0 0",
-          boxShadow: "0 6px 12px 0 rgba(0, 0, 0, 0.12)",
-        }}>
-        <div className="fr-card__body fr-p-3w">
+    <div className="fr-card">
+      <div className="fr-card__body fr-p-3w">
+        {/* En-tête - Sticky */}
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+            backgroundColor: "var(--background-default-grey)",
+          }}>
           <h3 className="fr-mb-1w" style={{ display: "flex", alignItems: "center" }}>
             <span className="fr-icon-draft-line fr-mr-2v" aria-hidden="true"></span>
             Notes partagées
@@ -85,7 +83,7 @@ export function NotesPartagees({ parcoursId }: NotesPartageesProps) {
             )}
           </h3>
           <p className="fr-text--sm fr-mb-0 text-gray-600">
-            Ce fil est partagé entre les professionnels du dossier (le demandeur n'a pas accès).
+            Ce fil est partagé entre les professionnels du dossier (le demandeur n&apos;a pas accès).
           </p>
 
           <div className="fr-mt-3w">
@@ -99,46 +97,37 @@ export function NotesPartagees({ parcoursId }: NotesPartageesProps) {
             )}
 
             {isAddingNote && (
-              <NoteForm
-                parcoursId={parcoursId}
-                onSuccess={handleNoteCreated}
-                onCancel={() => setIsAddingNote(false)}
-              />
+              <NoteForm parcoursId={parcoursId} onSuccess={handleNoteCreated} onCancel={() => setIsAddingNote(false)} />
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Card inférieure - Liste des notes */}
-      <div className="fr-card" style={{ borderRadius: "0 0 0.25rem 0.25rem", borderTop: "none" }}>
-        <div className="fr-card__body">
-          <div className="fr-card__content">
-            <div
-              style={{ maxHeight: "550px", overflowY: "auto" }}
-              className="notes-scroll-container">
-              {isLoading ? (
-                <div className="fr-p-4w text-center">
-                  <p className="fr-text--sm text-gray-600">Chargement des notes...</p>
-                </div>
-              ) : totalCount === 0 ? (
-                <div className="fr-p-4w text-center">
-                  <p className="fr-text--sm text-gray-600">Aucune note pour le moment.</p>
-                </div>
-              ) : (
-                <div className="fr-mb-2w">
-                  {displayedCommentaires.map((commentaire) => (
-                    <NoteItem
-                      key={commentaire.id}
-                      commentaire={commentaire}
-                      currentAgentId={currentAgentId}
-                      onUpdated={handleNoteUpdated}
-                      onDeleted={handleNoteDeleted}
-                    />
-                  ))}
-                </div>
-              )}
+          {/* Séparateur */}
+          <hr className="fr-hr fr-mt-3w" style={{ marginBottom: 0 }} />
+        </div>
+
+        {/* Liste des notes */}
+        <div style={{ maxHeight: "550px", overflowY: "auto" }} className="notes-scroll-container fr-pt-2w">
+          {isLoading ? (
+            <div className="fr-p-4w text-center">
+              <p className="fr-text--sm text-gray-600">Chargement des notes...</p>
             </div>
-          </div>
+          ) : totalCount === 0 ? (
+            <div className="fr-p-4w text-center">
+              <p className="fr-text--sm text-gray-600">Aucune note pour le moment.</p>
+            </div>
+          ) : (
+            <div>
+              {displayedCommentaires.map((commentaire) => (
+                <NoteItem
+                  key={commentaire.id}
+                  commentaire={commentaire}
+                  currentAgentId={currentAgentId}
+                  onUpdated={handleNoteUpdated}
+                  onDeleted={handleNoteDeleted}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
