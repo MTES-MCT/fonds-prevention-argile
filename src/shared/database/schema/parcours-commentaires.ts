@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, text } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, text, varchar } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { agents } from "./agents";
@@ -15,9 +15,12 @@ export const parcoursCommentaires = pgTable("parcours_commentaires", {
   parcoursId: uuid("parcours_id")
     .notNull()
     .references(() => parcoursPrevention.id, { onDelete: "cascade" }),
-  agentId: uuid("agent_id")
-    .notNull()
-    .references(() => agents.id, { onDelete: "cascade" }),
+  agentId: uuid("agent_id").references(() => agents.id, { onDelete: "set null" }),
+
+  // Snapshot auteur (dénormalisé, conservé même si l'agent est supprimé)
+  authorName: varchar("author_name", { length: 255 }).notNull(),
+  authorStructure: varchar("author_structure", { length: 255 }),
+  authorStructureType: varchar("author_structure_type", { length: 50 }),
 
   // Contenu
   message: text("message").notNull(),

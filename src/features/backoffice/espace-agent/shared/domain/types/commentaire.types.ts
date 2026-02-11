@@ -15,10 +15,10 @@ export interface CommentaireDetail {
   updatedAt: Date;
   editedAt: Date | null;
   agent: {
-    id: string;
+    id: string | null; // null si l'agent a été supprimé
     givenName: string;
     usualName: string | null;
-    role: string;
+    role: string | null; // null si l'agent a été supprimé
     structureType: StructureType; // Type de structure (AMO, Allers-Vers, DDT, Admin)
     structureName: string | null; // Nom de l'entreprise AMO, structure Allers-Vers, etc.
   };

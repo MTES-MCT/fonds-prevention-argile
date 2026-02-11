@@ -1,4 +1,4 @@
-import { parcoursCommentairesRepo } from "@/shared/database/repositories";
+import { parcoursCommentairesRepo, agentsRepo, entreprisesAmoRepo, allersVersRepository } from "@/shared/database/repositories";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
@@ -110,11 +110,43 @@ export class CommentairesService {
     }
 
     try {
-      // Créer le commentaire
+      // Récupérer les infos de l'agent pour le snapshot
+      const agent = await agentsRepo.findById(agentId);
+      if (!agent) {
+        return {
+          success: false,
+          error: "Agent introuvable.",
+        };
+      }
+
+      // Construire le snapshot auteur
+      const authorName = agent.usualName
+        ? `${agent.givenName} ${agent.usualName}`
+        : agent.givenName;
+
+      let authorStructure: string | null = null;
+      let authorStructureType: string | null = null;
+
+      if (agent.entrepriseAmoId) {
+        const entreprise = await entreprisesAmoRepo.findById(agent.entrepriseAmoId);
+        authorStructure = entreprise?.nom ?? null;
+        authorStructureType = "AMO";
+      } else if (agent.allersVersId) {
+        const av = await allersVersRepository.findById(agent.allersVersId);
+        authorStructure = av?.nom ?? null;
+        authorStructureType = "ALLERS_VERS";
+      } else {
+        authorStructureType = "ADMINISTRATION";
+      }
+
+      // Créer le commentaire avec le snapshot auteur
       const commentaire = await parcoursCommentairesRepo.create({
         parcoursId,
         agentId,
         message: message.trim(),
+        authorName,
+        authorStructure,
+        authorStructureType,
       });
 
       // Récupérer les détails complets avec les infos de l'agent

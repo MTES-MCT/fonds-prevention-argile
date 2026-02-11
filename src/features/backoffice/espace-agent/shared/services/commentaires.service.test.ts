@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommentairesService } from "./commentaires.service";
-import { parcoursCommentairesRepo } from "@/shared/database/repositories";
+import { parcoursCommentairesRepo, agentsRepo, entreprisesAmoRepo, allersVersRepository } from "@/shared/database/repositories";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
@@ -18,6 +18,15 @@ vi.mock("@/shared/database/repositories", () => ({
     canEditComment: vi.fn(),
     exists: vi.fn(),
     delete: vi.fn(),
+  },
+  agentsRepo: {
+    findById: vi.fn(),
+  },
+  entreprisesAmoRepo: {
+    findById: vi.fn(),
+  },
+  allersVersRepository: {
+    findById: vi.fn(),
   },
 }));
 
@@ -190,13 +199,41 @@ describe("CommentairesService", () => {
       expect(result.error).toContain("5000 caractères");
     });
 
-    it("devrait créer un commentaire valide", async () => {
+    it("devrait créer un commentaire valide avec snapshot auteur AMO", async () => {
       // Arrange
       vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(agentsRepo.findById).mockResolvedValue({
+        id: "agent-1",
+        sub: "sub-1",
+        email: "jean@test.fr",
+        givenName: "Jean",
+        usualName: "Dupont",
+        uid: null,
+        siret: null,
+        phone: null,
+        organizationalUnit: null,
+        role: UserRole.AMO,
+        entrepriseAmoId: "amo-1",
+        allersVersId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      vi.mocked(entreprisesAmoRepo.findById).mockResolvedValue({
+        id: "amo-1",
+        nom: "AMO Test",
+        siret: "12345678901234",
+        departements: "75",
+        emails: "test@amo.fr",
+        telephone: "0123456789",
+        adresse: "123 rue test",
+      });
       vi.mocked(parcoursCommentairesRepo.create).mockResolvedValue({
         id: "comment-1",
         parcoursId: "parcours-1",
         agentId: "agent-1",
+        authorName: "Jean Dupont",
+        authorStructure: "AMO Test",
+        authorStructureType: "AMO",
         message: "Test message",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -221,6 +258,9 @@ describe("CommentairesService", () => {
         parcoursId: "parcours-1",
         agentId: "agent-1",
         message: "Test message",
+        authorName: "Jean Dupont",
+        authorStructure: "AMO Test",
+        authorStructureType: "AMO",
       });
     });
 
@@ -228,10 +268,29 @@ describe("CommentairesService", () => {
       // Arrange
       vi.mocked(hasPermission).mockReturnValue(true);
       const maxMessage = "a".repeat(5000);
+      vi.mocked(agentsRepo.findById).mockResolvedValue({
+        id: "agent-1",
+        sub: "sub-1",
+        email: "jean@test.fr",
+        givenName: "Jean",
+        usualName: "Dupont",
+        uid: null,
+        siret: null,
+        phone: null,
+        organizationalUnit: null,
+        role: UserRole.AMO,
+        entrepriseAmoId: null,
+        allersVersId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
       vi.mocked(parcoursCommentairesRepo.create).mockResolvedValue({
         id: "comment-1",
         parcoursId: "parcours-1",
         agentId: "agent-1",
+        authorName: "Jean Dupont",
+        authorStructure: null,
+        authorStructureType: "ADMINISTRATION",
         message: maxMessage,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -256,10 +315,29 @@ describe("CommentairesService", () => {
     it("devrait trim le message avant de le sauvegarder", async () => {
       // Arrange
       vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(agentsRepo.findById).mockResolvedValue({
+        id: "agent-1",
+        sub: "sub-1",
+        email: "jean@test.fr",
+        givenName: "Jean",
+        usualName: "Dupont",
+        uid: null,
+        siret: null,
+        phone: null,
+        organizationalUnit: null,
+        role: UserRole.AMO,
+        entrepriseAmoId: null,
+        allersVersId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
       vi.mocked(parcoursCommentairesRepo.create).mockResolvedValue({
         id: "comment-1",
         parcoursId: "parcours-1",
         agentId: "agent-1",
+        authorName: "Jean Dupont",
+        authorStructure: null,
+        authorStructureType: "ADMINISTRATION",
         message: "Test message",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -283,6 +361,144 @@ describe("CommentairesService", () => {
           message: "Test message",
         })
       );
+    });
+
+    it("devrait créer un commentaire avec snapshot Allers-Vers", async () => {
+      // Arrange
+      vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(agentsRepo.findById).mockResolvedValue({
+        id: "agent-2",
+        sub: "sub-2",
+        email: "jp@av.fr",
+        givenName: "Jean-Patrick",
+        usualName: "Duval",
+        uid: null,
+        siret: null,
+        phone: null,
+        organizationalUnit: null,
+        role: UserRole.ALLERS_VERS,
+        entrepriseAmoId: null,
+        allersVersId: "av-1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      vi.mocked(allersVersRepository.findById).mockResolvedValue({
+        id: "av-1",
+        nom: "Allers-Vers Centre Indre",
+        emails: ["jp@av.fr"],
+        telephone: "0123456789",
+        adresse: "7 place du Marché",
+      });
+      vi.mocked(parcoursCommentairesRepo.create).mockResolvedValue({
+        id: "comment-2",
+        parcoursId: "parcours-1",
+        agentId: "agent-2",
+        authorName: "Jean-Patrick Duval",
+        authorStructure: "Allers-Vers Centre Indre",
+        authorStructureType: "ALLERS_VERS",
+        message: "Test AV",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        editedAt: null,
+      });
+      vi.mocked(parcoursCommentairesRepo.findByIdWithDetails).mockResolvedValue({
+        ...mockCommentaire,
+        id: "comment-2",
+      });
+
+      // Act
+      const result = await service.createCommentaire(
+        "parcours-1",
+        "agent-2",
+        UserRole.ALLERS_VERS,
+        "Test AV"
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(parcoursCommentairesRepo.create).toHaveBeenCalledWith({
+        parcoursId: "parcours-1",
+        agentId: "agent-2",
+        message: "Test AV",
+        authorName: "Jean-Patrick Duval",
+        authorStructure: "Allers-Vers Centre Indre",
+        authorStructureType: "ALLERS_VERS",
+      });
+    });
+
+    it("devrait créer un commentaire avec snapshot Administration (sans structure)", async () => {
+      // Arrange
+      vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(agentsRepo.findById).mockResolvedValue({
+        id: "agent-admin",
+        sub: "sub-admin",
+        email: "admin@test.fr",
+        givenName: "Marie",
+        usualName: null,
+        uid: null,
+        siret: null,
+        phone: null,
+        organizationalUnit: null,
+        role: UserRole.ADMINISTRATEUR,
+        entrepriseAmoId: null,
+        allersVersId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      vi.mocked(parcoursCommentairesRepo.create).mockResolvedValue({
+        id: "comment-3",
+        parcoursId: "parcours-1",
+        agentId: "agent-admin",
+        authorName: "Marie",
+        authorStructure: null,
+        authorStructureType: "ADMINISTRATION",
+        message: "Test admin",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        editedAt: null,
+      });
+      vi.mocked(parcoursCommentairesRepo.findByIdWithDetails).mockResolvedValue({
+        ...mockCommentaire,
+        id: "comment-3",
+      });
+
+      // Act
+      const result = await service.createCommentaire(
+        "parcours-1",
+        "agent-admin",
+        UserRole.ADMINISTRATEUR,
+        "Test admin"
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(parcoursCommentairesRepo.create).toHaveBeenCalledWith({
+        parcoursId: "parcours-1",
+        agentId: "agent-admin",
+        message: "Test admin",
+        authorName: "Marie",
+        authorStructure: null,
+        authorStructureType: "ADMINISTRATION",
+      });
+    });
+
+    it("devrait retourner une erreur si l'agent est introuvable", async () => {
+      // Arrange
+      vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(agentsRepo.findById).mockResolvedValue(null);
+
+      // Act
+      const result = await service.createCommentaire(
+        "parcours-1",
+        "agent-inexistant",
+        UserRole.AMO,
+        "Test message"
+      );
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Agent introuvable");
+      expect(parcoursCommentairesRepo.create).not.toHaveBeenCalled();
     });
   });
 
@@ -371,6 +587,9 @@ describe("CommentairesService", () => {
         id: "comment-1",
         parcoursId: "parcours-1",
         agentId: "agent-1",
+        authorName: "Jean Dupont",
+        authorStructure: "AMO Test",
+        authorStructureType: "AMO",
         message: "Updated",
         createdAt: new Date(),
         updatedAt: new Date(),

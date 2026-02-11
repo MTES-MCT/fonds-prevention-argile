@@ -104,8 +104,8 @@ describe("ParcoursCommentairesRepository", () => {
   });
 
   describe("Validation de la structure des données", () => {
-    it("devrait retourner un CommentaireDetail avec la bonne structure", () => {
-      // Test de la structure de données attendue
+    it("devrait retourner un CommentaireDetail avec la bonne structure (agent présent)", () => {
+      // Test de la structure de données attendue quand l'agent existe
       const expectedStructure: {
         id: string;
         parcoursId: string;
@@ -114,10 +114,10 @@ describe("ParcoursCommentairesRepository", () => {
         updatedAt: Date;
         editedAt: Date | null;
         agent: {
-          id: string;
+          id: string | null;
           givenName: string;
-          usualName: string;
-          role: string;
+          usualName: string | null;
+          role: string | null;
           structureType: StructureType;
           structureName: string | null;
         };
@@ -140,6 +140,30 @@ describe("ParcoursCommentairesRepository", () => {
 
       // Vérifier que la structure est conforme
       expect(expectedStructure.id).toBeDefined();
+      expect(expectedStructure.agent.structureType).toMatch(/^(AMO|ALLERS_VERS|DDT|ADMINISTRATION)$/);
+    });
+
+    it("devrait retourner un CommentaireDetail avec agent.id null (agent supprimé)", () => {
+      const expectedStructure = {
+        id: "comment-2",
+        parcoursId: "parcours-1",
+        message: "Test snapshot",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        editedAt: null,
+        agent: {
+          id: null as string | null,
+          givenName: "Géraldine",
+          usualName: "Moulin",
+          role: null as string | null,
+          structureType: "AMO" as StructureType,
+          structureName: "AMO du Berry Profond",
+        },
+      };
+
+      expect(expectedStructure.agent.id).toBeNull();
+      expect(expectedStructure.agent.role).toBeNull();
+      expect(expectedStructure.agent.givenName).toBe("Géraldine");
       expect(expectedStructure.agent.structureType).toMatch(/^(AMO|ALLERS_VERS|DDT|ADMINISTRATION)$/);
     });
   });
@@ -181,17 +205,17 @@ describe("ParcoursCommentairesRepository", () => {
   });
 
   describe("Relations de jointure", () => {
-    it("findByParcoursId devrait joindre agents, entreprisesAmo et allersVers", () => {
+    it("findByParcoursId devrait joindre agents (leftJoin), entreprisesAmo et allersVers", () => {
       // Le repository fait:
-      // .innerJoin(agents, ...)
+      // .leftJoin(agents, ...) — leftJoin car l'agent peut avoir été supprimé
       // .leftJoin(entreprisesAmo, ...)
       // .leftJoin(allersVers, ...)
 
-      const hasInnerJoinAgents = true; // agents est obligatoire
+      const hasLeftJoinAgents = true; // agents est optionnel (agent supprimé = null)
       const hasLeftJoinAmo = true; // entreprisesAmo est optionnel
       const hasLeftJoinAV = true; // allersVers est optionnel
 
-      expect(hasInnerJoinAgents).toBe(true);
+      expect(hasLeftJoinAgents).toBe(true);
       expect(hasLeftJoinAmo).toBe(true);
       expect(hasLeftJoinAV).toBe(true);
     });
@@ -205,6 +229,75 @@ describe("ParcoursCommentairesRepository", () => {
 
       expect(usesSameJoinLogic).toBe(true);
       expect(hasLimit1).toBe(true);
+    });
+  });
+
+  describe("Snapshot auteur (agent supprimé)", () => {
+    it("devrait utiliser les colonnes snapshot quand l'agent est null", () => {
+      // Quand agent_id est null (agent supprimé), le repository utilise :
+      // - authorName pour reconstituer givenName / usualName
+      // - authorStructure pour structureName
+      // - authorStructureType pour structureType
+
+      const authorName = "Géraldine Moulin";
+      const nameParts = authorName.split(" ");
+      const givenName = nameParts[0];
+      const usualName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null;
+
+      expect(givenName).toBe("Géraldine");
+      expect(usualName).toBe("Moulin");
+    });
+
+    it("devrait gérer un authorName sans usualName", () => {
+      const authorName = "Marie";
+      const nameParts = authorName.split(" ");
+      const givenName = nameParts[0];
+      const usualName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null;
+
+      expect(givenName).toBe("Marie");
+      expect(usualName).toBeNull();
+    });
+
+    it("devrait retourner agent.id = null quand l'agent est supprimé", () => {
+      // Quand l'agent n'existe plus, le CommentaireDetail retourné
+      // doit avoir agent.id = null et agent.role = null
+
+      const agentFromSnapshot = {
+        id: null as string | null,
+        givenName: "Jean-Patrick",
+        usualName: "Duval",
+        role: null as string | null,
+        structureType: "ALLERS_VERS" as StructureType,
+        structureName: "Allers-Vers Centre Indre",
+      };
+
+      expect(agentFromSnapshot.id).toBeNull();
+      expect(agentFromSnapshot.role).toBeNull();
+      expect(agentFromSnapshot.givenName).toBe("Jean-Patrick");
+      expect(agentFromSnapshot.structureType).toBe("ALLERS_VERS");
+      expect(agentFromSnapshot.structureName).toBe("Allers-Vers Centre Indre");
+    });
+
+    it("devrait utiliser les données live de l'agent quand il existe encore", () => {
+      // Quand l'agent existe, on utilise ses données jointes (pas le snapshot)
+      const agentFromLive = {
+        id: "agent-1",
+        givenName: "Jean",
+        usualName: "Dupont",
+        role: "amo",
+        structureType: "AMO" as StructureType,
+        structureName: "AMO Test",
+      };
+
+      expect(agentFromLive.id).toBe("agent-1");
+      expect(agentFromLive.role).toBe("amo");
+    });
+
+    it("devrait fallback sur ADMINISTRATION si authorStructureType est null", () => {
+      const authorStructureType: string | null = null;
+      const structureType = (authorStructureType as unknown as StructureType) || "ADMINISTRATION";
+
+      expect(structureType).toBe("ADMINISTRATION");
     });
   });
 

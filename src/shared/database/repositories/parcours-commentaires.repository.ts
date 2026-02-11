@@ -110,53 +110,33 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
   /**
    * Récupère tous les commentaires d'un parcours avec les détails de l'agent
    * Tri par date de création (du plus ancien au plus récent)
+   * Si l'agent a été supprimé, utilise les colonnes snapshot (authorName, authorStructure, authorStructureType)
    */
   async findByParcoursId(parcoursId: string): Promise<CommentaireDetail[]> {
     const results = await db
       .select({
         // Commentaire
         commentaire: parcoursCommentaires,
-        // Agent
+        // Agent (peut être null si supprimé)
         agent: agents,
         // Structures (optionnelles)
         entrepriseAmo: entreprisesAmo,
         allersVers: allersVers,
       })
       .from(parcoursCommentaires)
-      .innerJoin(agents, eq(parcoursCommentaires.agentId, agents.id))
+      .leftJoin(agents, eq(parcoursCommentaires.agentId, agents.id))
       .leftJoin(entreprisesAmo, eq(agents.entrepriseAmoId, entreprisesAmo.id))
       .leftJoin(allersVers, eq(agents.allersVersId, allersVers.id))
       .where(eq(parcoursCommentaires.parcoursId, parcoursId))
       .orderBy(parcoursCommentaires.createdAt); // Du plus ancien au plus récent
 
     // Transformer en CommentaireDetail
-    return results.map((row) => {
-      const { structureType, structureName } = this.determineStructure(
-        row.entrepriseAmo,
-        row.allersVers
-      );
-
-      return {
-        id: row.commentaire.id,
-        parcoursId: row.commentaire.parcoursId,
-        message: row.commentaire.message,
-        createdAt: row.commentaire.createdAt,
-        updatedAt: row.commentaire.updatedAt,
-        editedAt: row.commentaire.editedAt,
-        agent: {
-          id: row.agent.id,
-          givenName: row.agent.givenName,
-          usualName: row.agent.usualName,
-          role: row.agent.role,
-          structureType,
-          structureName,
-        },
-      };
-    });
+    return results.map((row) => this.mapRowToCommentaireDetail(row));
   }
 
   /**
    * Récupère un commentaire avec ses détails complets
+   * Si l'agent a été supprimé, utilise les colonnes snapshot
    */
   async findByIdWithDetails(id: string): Promise<CommentaireDetail | null> {
     const results = await db
@@ -167,7 +147,7 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
         allersVers: allersVers,
       })
       .from(parcoursCommentaires)
-      .innerJoin(agents, eq(parcoursCommentaires.agentId, agents.id))
+      .leftJoin(agents, eq(parcoursCommentaires.agentId, agents.id))
       .leftJoin(entreprisesAmo, eq(agents.entrepriseAmoId, entreprisesAmo.id))
       .leftJoin(allersVers, eq(agents.allersVersId, allersVers.id))
       .where(eq(parcoursCommentaires.id, id))
@@ -175,28 +155,7 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
 
     if (results.length === 0) return null;
 
-    const row = results[0];
-    const { structureType, structureName } = this.determineStructure(
-      row.entrepriseAmo,
-      row.allersVers
-    );
-
-    return {
-      id: row.commentaire.id,
-      parcoursId: row.commentaire.parcoursId,
-      message: row.commentaire.message,
-      createdAt: row.commentaire.createdAt,
-      updatedAt: row.commentaire.updatedAt,
-      editedAt: row.commentaire.editedAt,
-      agent: {
-        id: row.agent.id,
-        givenName: row.agent.givenName,
-        usualName: row.agent.usualName,
-        role: row.agent.role,
-        structureType,
-        structureName,
-      },
-    };
+    return this.mapRowToCommentaireDetail(results[0]);
   }
 
   /**
@@ -230,7 +189,67 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
   }
 
   /**
-   * Détermine le type de structure et son nom à partir des données
+   * Transforme une ligne de résultat SQL en CommentaireDetail
+   * Gère le cas où l'agent a été supprimé (fallback sur les colonnes snapshot)
+   */
+  private mapRowToCommentaireDetail(row: {
+    commentaire: typeof parcoursCommentaires.$inferSelect;
+    agent: typeof agents.$inferSelect | null;
+    entrepriseAmo: typeof entreprisesAmo.$inferSelect | null;
+    allersVers: typeof allersVers.$inferSelect | null;
+  }): CommentaireDetail {
+    // Si l'agent existe encore, utiliser ses données live
+    if (row.agent) {
+      const { structureType, structureName } = this.determineStructure(
+        row.entrepriseAmo,
+        row.allersVers
+      );
+
+      return {
+        id: row.commentaire.id,
+        parcoursId: row.commentaire.parcoursId,
+        message: row.commentaire.message,
+        createdAt: row.commentaire.createdAt,
+        updatedAt: row.commentaire.updatedAt,
+        editedAt: row.commentaire.editedAt,
+        agent: {
+          id: row.agent.id,
+          givenName: row.agent.givenName,
+          usualName: row.agent.usualName,
+          role: row.agent.role,
+          structureType,
+          structureName,
+        },
+      };
+    }
+
+    // Agent supprimé → utiliser les colonnes snapshot
+    const snapshotName = row.commentaire.authorName;
+    // Extraire givenName / usualName depuis authorName
+    const nameParts = snapshotName.split(" ");
+    const givenName = nameParts[0];
+    const usualName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null;
+
+    return {
+      id: row.commentaire.id,
+      parcoursId: row.commentaire.parcoursId,
+      message: row.commentaire.message,
+      createdAt: row.commentaire.createdAt,
+      updatedAt: row.commentaire.updatedAt,
+      editedAt: row.commentaire.editedAt,
+      agent: {
+        id: null,
+        givenName,
+        usualName,
+        role: null,
+        structureType: (row.commentaire.authorStructureType as StructureType) || "ADMINISTRATION",
+        structureName: row.commentaire.authorStructure || null,
+      },
+    };
+  }
+
+  /**
+   * Détermine le type de structure et son nom à partir des données jointes
    */
   private determineStructure(
     entrepriseAmo: typeof entreprisesAmo.$inferSelect | null,
