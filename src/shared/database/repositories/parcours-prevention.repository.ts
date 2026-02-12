@@ -254,11 +254,11 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
 
   /**
    * Récupère les parcours sans AMO pour un territoire donné (Allers-Vers)
-   * Note: Le filtrage territorial complet sera implémenté quand les données de logement
-   * seront disponibles dans une table dédiée ou enrichies dans rgaSimulationData
+   * Le filtrage territorial est effectué côté application à partir des données
+   * de logement présentes dans rgaSimulationData.
    *
-   * @param departements - Codes des départements couverts (pour future implémentation)
-   * @param epcis - Codes des EPCIs couverts (pour future implémentation)
+   * @param departements - Codes des départements couverts
+   * @param epcis - Codes des EPCIs couverts
    * @param filters - Filtres optionnels
    * @returns Liste des parcours prospects avec informations utilisateur
    */
