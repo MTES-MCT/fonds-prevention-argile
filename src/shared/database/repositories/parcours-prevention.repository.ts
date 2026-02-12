@@ -330,25 +330,48 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         }
       }
 
-      // Filtrage territorial (si rgaSimulationData contient les infos)
-      if (r.rgaSimulationData && (departements.length > 0 || epcis.length > 0)) {
-        const logement = r.rgaSimulationData?.logement;
-        if (!logement) return false;
-
-        const codeDepartement = logement.code_departement;
-        const codeEpci = logement.epci;
-
-        // Au moins un match sur département ou EPCI
-        const matchesDepartement = departements.length > 0 && codeDepartement && departements.includes(codeDepartement);
-        const matchesEpci = epcis.length > 0 && codeEpci && epcis.includes(codeEpci);
-
-        return matchesDepartement || matchesEpci;
-      }
-
-      // Si pas de filtrage territorial ou pas de données, inclure
-      return departements.length === 0 && epcis.length === 0;
+      return matchesTerritoire(r.rgaSimulationData, departements, epcis);
     });
   }
+}
+
+/**
+ * Vérifie si un parcours correspond au territoire d'un Allers-Vers.
+ *
+ * Logique de filtrage :
+ * - Si des EPCIs sont spécifiés dans le scope, ils sont prioritaires :
+ *   on filtre strictement par EPCI (plus précis qu'un département).
+ * - Sinon, on filtre par département.
+ * - Si le parcours n'a pas de données de localisation, il n'est inclus
+ *   que si aucun filtre territorial n'est spécifié.
+ */
+export function matchesTerritoire(
+  rgaSimulationData: RGASimulationData | null,
+  departements: string[],
+  epcis: string[]
+): boolean {
+  const hasFiltreTerritorial = departements.length > 0 || epcis.length > 0;
+
+  if (!rgaSimulationData) {
+    return !hasFiltreTerritorial;
+  }
+
+  const logement = rgaSimulationData.logement;
+  if (!logement) {
+    return !hasFiltreTerritorial;
+  }
+
+  if (!hasFiltreTerritorial) {
+    return true;
+  }
+
+  // Si des EPCIs sont spécifiés, ils sont le filtre prioritaire (plus précis)
+  if (epcis.length > 0) {
+    return !!logement.epci && epcis.includes(logement.epci);
+  }
+
+  // Sinon, filtrer par département
+  return !!logement.code_departement && departements.includes(logement.code_departement);
 }
 
 // Export d'une instance singleton
