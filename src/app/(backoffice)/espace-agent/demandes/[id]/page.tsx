@@ -5,6 +5,7 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { formatNomComplet, formatDate } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { InfoDemandeur, InfoLogement, LocalisationLogement, ParcoursDemandeur, GagnezDuTemps, AFaire } from "../../shared";
+import { NotesPartagees } from "../../shared";
 import { ReponseAccompagnement } from "./components/ReponseAccompagnement";
 
 interface PageProps {
@@ -125,6 +126,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                     "Informer et préparer le demandeur pour les étapes suivantes",
                   ]}
                 />
+                <NotesPartagees parcoursId={demande.parcoursId} />
               </div>
             </div>
           </div>

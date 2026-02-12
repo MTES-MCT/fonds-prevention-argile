@@ -57,6 +57,7 @@ describe("demande-detail.actions", () => {
     it("devrait récupérer les détails d'une demande", async () => {
       const mockDemande = {
         id: "demande-123",
+        parcoursId: "parcours-123",
         demandeur: {
           prenom: "Jean",
           nom: "Dupont",

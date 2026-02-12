@@ -4,6 +4,7 @@ import { agentRolePgEnum } from "../enums/enums";
 import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
 import { entreprisesAmo } from "./entreprises-amo";
 import { allersVers } from "./allers-vers";
+import { parcoursCommentaires } from "./parcours-commentaires";
 
 /**
  * Table des agents ProConnect
@@ -48,7 +49,7 @@ export const agents = pgTable("agents", {
 });
 
 // Relations
-export const agentsRelations = relations(agents, ({ one }) => ({
+export const agentsRelations = relations(agents, ({ one, many }) => ({
   entrepriseAmo: one(entreprisesAmo, {
     fields: [agents.entrepriseAmoId],
     references: [entreprisesAmo.id],
@@ -57,6 +58,7 @@ export const agentsRelations = relations(agents, ({ one }) => ({
     fields: [agents.allersVersId],
     references: [allersVers.id],
   }),
+  commentaires: many(parcoursCommentaires),
 }));
 
 export type Agent = typeof agents.$inferSelect;

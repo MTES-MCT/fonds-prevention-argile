@@ -296,9 +296,13 @@ describe("rbac.service", () => {
     it("devrait retourner les permissions dossiers AMO pour le rôle AMO", () => {
       const permissions = getRolePermissions(UserRole.AMO);
 
-      expect(permissions.length).toBe(2);
+      expect(permissions.length).toBe(6);
       expect(permissions).toContain(BackofficePermission.DOSSIERS_AMO_READ);
       expect(permissions).toContain(BackofficePermission.DOSSIERS_AMO_STATS_READ);
+      expect(permissions).toContain(BackofficePermission.COMMENTAIRES_READ);
+      expect(permissions).toContain(BackofficePermission.COMMENTAIRES_CREATE);
+      expect(permissions).toContain(BackofficePermission.COMMENTAIRES_UPDATE_OWN);
+      expect(permissions).toContain(BackofficePermission.COMMENTAIRES_DELETE_OWN);
     });
 
     it("devrait retourner un tableau vide pour un rôle inconnu", () => {

@@ -4,6 +4,7 @@ export { stepPgEnum, statusPgEnum, dsStatusPgEnum, statutValidationAmoPgEnum, ag
 // Exporter les tables
 export * from "./users";
 export * from "./parcours-prevention";
+export * from "./parcours-commentaires";
 export * from "./dossiers-demarches-simplifiees";
 export * from "./entreprises-amo";
 export * from "./entreprises-amo-communes";
