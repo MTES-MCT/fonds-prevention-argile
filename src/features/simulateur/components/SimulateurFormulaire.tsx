@@ -112,13 +112,19 @@ export function SimulateurFormulaire() {
 
     if (isInIframe) {
       // En mode iframe, chiffrer les données et les transmettre via URL hash
-      const result = await encryptRGAData(answers);
+      try {
+        const result = await encryptRGAData(answers);
 
-      if (result.success) {
-        window.open(`/connexion?redirect=/parcours#d=${result.encrypted}`, "_blank");
-      } else {
-        console.error("[SimulateurFormulaire] Erreur chiffrement:", result.error);
-        // Fallback : ouvrir sans données (l'utilisateur devra refaire la simulation)
+        if (result.success) {
+          window.open(`/connexion?redirect=/parcours#d=${result.encrypted}`, "_blank");
+        } else {
+          console.error("[SimulateurFormulaire] Erreur chiffrement:", result.error);
+          // Fallback : ouvrir sans données (l'utilisateur devra refaire la simulation)
+          window.open("/connexion?redirect=/parcours", "_blank");
+        }
+      } catch (error) {
+        console.error("[SimulateurFormulaire] Server action encryptRGAData échouée (possible redéploiement):", error);
+        // Fallback : ouvrir sans données chiffrées
         window.open("/connexion?redirect=/parcours", "_blank");
       }
     } else {
@@ -199,6 +205,13 @@ export function SimulateurFormulaire() {
       if (!isEligible && checks) {
         return <ResultNonEligible checks={checks} onRestart={reset} onBack={goBack} />;
       }
+
+      console.error("[SimulateurFormulaire] État incohérent à l'étape RESULTAT", {
+        isEligible,
+        checks,
+        answers,
+        hasResult: !!useSimulateurFormulaire,
+      });
 
       return (
         <div className="fr-container fr-py-4w">

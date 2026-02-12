@@ -73,6 +73,14 @@ export const useSimulateurStore = create<SimulateurState>()(
       partialize: (state) => ({ simulation: state.simulation }),
       onRehydrateStorage: () => (state) => {
         if (state) {
+          const sim = state.simulation;
+          if (sim.currentStep === "resultat" && sim.result && !sim.result.checks) {
+            console.warn("[SimulateurStore] Réhydratation : result présent mais checks manquants", {
+              currentStep: sim.currentStep,
+              resultEligible: sim.result.eligible,
+              resultKeys: Object.keys(sim.result),
+            });
+          }
           state.setHydrated();
         }
       },
