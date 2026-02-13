@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-01-26T13:57:01.599Z",
   "config": {
-    "communesParDepartement": 150,
+    "communesParDepartement": 300,
     "departementsEligibles": [
       "03",
       "04",
