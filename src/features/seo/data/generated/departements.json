@@ -4,7 +4,7 @@
     "nom": "Allier",
     "slug": "allier",
     "population": 333298,
-    "nombreCommunesRGA": 150,
+    "nombreCommunesRGA": 300,
     "nombreEpciRGA": 12,
     "centre": {
       "lat": 46.351768,
@@ -16,7 +16,7 @@
     "nom": "Alpes-de-Haute-Provence",
     "slug": "alpes-de-haute-provence",
     "population": 168054,
-    "nombreCommunesRGA": 150,
+    "nombreCommunesRGA": 300,
     "nombreEpciRGA": 11,
     "centre": {
       "lat": 44.075077,
@@ -28,7 +28,7 @@
     "nom": "Dordogne",
     "slug": "dordogne",
     "population": 417614,
-    "nombreCommunesRGA": 150,
+    "nombreCommunesRGA": 300,
     "nombreEpciRGA": 21,
     "centre": {
       "lat": 45.0635,
@@ -40,7 +40,7 @@
     "nom": "Gers",
     "slug": "gers",
     "population": 192645,
-    "nombreCommunesRGA": 150,
+    "nombreCommunesRGA": 300,
     "nombreEpciRGA": 16,
     "centre": {
       "lat": 43.662717,
@@ -52,7 +52,7 @@
     "nom": "Indre",
     "slug": "indre",
     "population": 216069,
-    "nombreCommunesRGA": 150,
+    "nombreCommunesRGA": 300,
     "nombreEpciRGA": 15,
     "centre": {
       "lat": 46.770515,
@@ -64,7 +64,7 @@
     "nom": "Lot-et-Garonne",
     "slug": "lot-et-garonne",
     "population": 333602,
-    "nombreCommunesRGA": 150,
+    "nombreCommunesRGA": 300,
     "nombreEpciRGA": 11,
     "centre": {
       "lat": 44.391563,
@@ -76,7 +76,7 @@
     "nom": "Meurthe-et-Moselle",
     "slug": "meurthe-et-moselle",
     "population": 732236,
-    "nombreCommunesRGA": 150,
+    "nombreCommunesRGA": 300,
     "nombreEpciRGA": 19,
     "centre": {
       "lat": 48.782274,
@@ -88,7 +88,7 @@
     "nom": "Nord",
     "slug": "nord",
     "population": 2615635,
-    "nombreCommunesRGA": 150,
+    "nombreCommunesRGA": 300,
     "nombreEpciRGA": 17,
     "centre": {
       "lat": 50.417262,
@@ -100,7 +100,7 @@
     "nom": "Puy-de-Dôme",
     "slug": "puy-de-dome",
     "population": 664453,
-    "nombreCommunesRGA": 150,
+    "nombreCommunesRGA": 300,
     "nombreEpciRGA": 14,
     "centre": {
       "lat": 45.731408,
@@ -112,7 +112,7 @@
     "nom": "Tarn",
     "slug": "tarn",
     "population": 397352,
-    "nombreCommunesRGA": 150,
+    "nombreCommunesRGA": 300,
     "nombreEpciRGA": 15,
     "centre": {
       "lat": 43.803455,
@@ -124,7 +124,7 @@
     "nom": "Tarn-et-Garonne",
     "slug": "tarn-et-garonne",
     "population": 265817,
-    "nombreCommunesRGA": 150,
+    "nombreCommunesRGA": 300,
     "nombreEpciRGA": 10,
     "centre": {
       "lat": 44.062754,
