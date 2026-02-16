@@ -40,12 +40,12 @@ export const parcoursPrevention = pgTable("parcours_prevention", {
   rgaDataDeletedAt: timestamp("rga_data_deleted_at", { mode: "date" }),
   rgaDataDeletionReason: text("rga_data_deletion_reason"),
 
-  // Données de simulation éditées par l'AMO (prioritaires sur les données initiales)
-  rgaSimulationDataAmo: jsonb("rga_simulation_data_amo").$type<RGASimulationData>(),
-  rgaSimulationAmoEditedAt: timestamp("rga_simulation_amo_edited_at", {
+  // Données de simulation éditées par un agent (AMO ou allers-vers), prioritaires sur les données initiales
+  rgaSimulationDataAgent: jsonb("rga_simulation_data_agent").$type<RGASimulationData>(),
+  rgaSimulationAgentEditedAt: timestamp("rga_simulation_agent_edited_at", {
     mode: "date",
   }),
-  rgaSimulationAmoEditedBy: uuid("rga_simulation_amo_edited_by").references(
+  rgaSimulationAgentEditedBy: uuid("rga_simulation_agent_edited_by").references(
     () => agents.id,
     { onDelete: "set null" },
   ),
@@ -60,8 +60,8 @@ export const parcoursPreventionRelations = relations(parcoursPrevention, ({ one,
     fields: [parcoursPrevention.userId],
     references: [users.id],
   }),
-  amoEditor: one(agents, {
-    fields: [parcoursPrevention.rgaSimulationAmoEditedBy],
+  agentEditor: one(agents, {
+    fields: [parcoursPrevention.rgaSimulationAgentEditedBy],
     references: [agents.id],
   }),
   dossiersDemarchesSimplifiees: many(dossiersDemarchesSimplifiees),

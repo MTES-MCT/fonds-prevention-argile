@@ -2,12 +2,12 @@ import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.typ
 
 /**
  * Retourne les données RGA effectives d'un parcours :
- * - Données AMO si elles existent (prioritaires)
+ * - Données agent si elles existent (prioritaires, éditées par AMO ou allers-vers)
  * - Sinon données initiales du simulateur
  */
 export function getEffectiveRGAData(parcours: {
   rgaSimulationData?: RGASimulationData | null;
-  rgaSimulationDataAmo?: RGASimulationData | null;
+  rgaSimulationDataAgent?: RGASimulationData | null;
 }): RGASimulationData | null {
-  return parcours.rgaSimulationDataAmo ?? parcours.rgaSimulationData ?? null;
+  return parcours.rgaSimulationDataAgent ?? parcours.rgaSimulationData ?? null;
 }

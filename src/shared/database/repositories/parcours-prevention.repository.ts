@@ -280,17 +280,17 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   /**
-   * Sauvegarde les données RGA éditées par l'AMO
+   * Sauvegarde les données RGA éditées par un agent (AMO ou allers-vers)
    */
-  async updateRGADataAmo(
+  async updateRGADataAgent(
     parcoursId: string,
     rgaData: RGASimulationData,
     agentId: string,
   ): Promise<ParcoursPrevention | null> {
     return await this.update(parcoursId, {
-      rgaSimulationDataAmo: rgaData,
-      rgaSimulationAmoEditedAt: new Date(),
-      rgaSimulationAmoEditedBy: agentId,
+      rgaSimulationDataAgent: rgaData,
+      rgaSimulationAgentEditedAt: new Date(),
+      rgaSimulationAgentEditedBy: agentId,
     });
   }
 

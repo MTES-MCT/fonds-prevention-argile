@@ -90,9 +90,9 @@ describe("amo-selection.service", () => {
       rgaDataDeletedAt: null,
       rgaDataDeletionReason: null,
       situationParticulier: SituationParticulier.PROSPECT,
-      rgaSimulationDataAmo: null,
-      rgaSimulationAmoEditedAt: null,
-      rgaSimulationAmoEditedBy: null,
+      rgaSimulationDataAgent: null,
+      rgaSimulationAgentEditedAt: null,
+      rgaSimulationAgentEditedBy: null,
       archivedAt: null,
       archiveReason: null,
     };
