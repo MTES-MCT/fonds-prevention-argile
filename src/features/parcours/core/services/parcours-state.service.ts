@@ -9,6 +9,7 @@ import {
 } from "./parcours-permissions.service";
 import type { DossierDS } from "../../dossiers-ds/domain/entities/dossier-ds";
 import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status";
+import { getDossierDsDemandeUrl } from "../../dossiers-ds/utils/ds-url.utils";
 
 /**
  * Service de gestion de l'état du parcours
@@ -55,7 +56,7 @@ export async function getParcoursComplet(
     demarcheId: d.dsDemarcheId,
     demarcheNom: "", // Pas dans la DB, pourrait être récupéré depuis une config
     demarcheEtape: d.step,
-    demarcheUrl: d.dsUrl || undefined,
+    demarcheUrl: d.dsNumber ? getDossierDsDemandeUrl(parseInt(d.dsNumber)) : (d.dsUrl || undefined),
     numeroDs: d.dsNumber ? parseInt(d.dsNumber) : null,
     etatDs: d.dsStatus as DSStatus,
     createdAt: d.createdAt,
