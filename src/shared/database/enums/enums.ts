@@ -1,5 +1,5 @@
 import { pgEnum } from "drizzle-orm/pg-core";
-import { Status, Step, DSStatus, StatutValidationAmo } from "@/shared/domain/value-objects";
+import { Status, Step, DSStatus, StatutValidationAmo, SituationParticulier } from "@/shared/domain/value-objects";
 import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
 
 /**
@@ -31,6 +31,12 @@ export const statutValidationAmoPgEnum = pgEnum("statut_validation_amo", [
   StatutValidationAmo.LOGEMENT_ELIGIBLE,
   StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
   StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
+]);
+
+export const situationParticulierPgEnum = pgEnum("situation_particulier", [
+  SituationParticulier.PROSPECT,
+  SituationParticulier.ELIGIBLE,
+  SituationParticulier.ARCHIVE,
 ]);
 
 export const agentRolePgEnum = pgEnum("agent_role", [
