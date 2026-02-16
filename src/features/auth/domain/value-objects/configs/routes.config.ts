@@ -53,7 +53,7 @@ export const ROUTES = {
       prospects: "/espace-agent/prospects",
       prospect: (id: string) => `/espace-agent/prospects/${id}` as const,
       editionDonneesSimulation: (dossierId: string) =>
-        `/espace-agent/dossiers/${dossierId}/edition-donnees-simulation` as const,
+        `/espace-agent/edition-donnees-simulation/${dossierId}` as const,
     },
 
     // Alias pour espaceAgent (pour compatibilité)
@@ -67,7 +67,7 @@ export const ROUTES = {
       prospects: "/espace-agent/prospects",
       prospect: (id: string) => `/espace-agent/prospects/${id}` as const,
       editionDonneesSimulation: (dossierId: string) =>
-        `/espace-agent/dossiers/${dossierId}/edition-donnees-simulation` as const,
+        `/espace-agent/edition-donnees-simulation/${dossierId}` as const,
     },
   },
 

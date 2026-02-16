@@ -158,6 +158,177 @@ describe("SimulationService", () => {
     });
   });
 
+  describe("submitAnswer avec skipEarlyExit (mode édition)", () => {
+    const SKIP_EARLY_EXIT = { skipEarlyExit: true };
+
+    it("ne déclenche pas d'early exit pour appartement", () => {
+      const state = SimulationService.start(SimulationService.create());
+      const newState = SimulationService.submitAnswer(state, { logement: { type: "appartement" } }, SKIP_EARLY_EXIT);
+
+      expect(newState.currentStep).toBe(SimulateurStep.ADRESSE);
+      expect(newState.result).toBeNull();
+    });
+
+    it("ne déclenche pas d'early exit pour zone non forte", () => {
+      let state = SimulationService.start(SimulationService.create());
+      state = SimulationService.submitAnswer(state, { logement: { type: "maison" } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(
+        state,
+        {
+          logement: {
+            code_departement: "47",
+            zone_dexposition: "faible",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+          },
+        },
+        SKIP_EARLY_EXIT,
+      );
+
+      expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
+      expect(state.result).toBeNull();
+    });
+
+    it("permet de parcourir toutes les étapes avec des données non éligibles", () => {
+      let state = SimulationService.start(SimulationService.create());
+
+      // Données volontairement non éligibles (zone moyen, maison endommagée)
+      state = SimulationService.submitAnswer(state, { logement: { type: "maison" } }, SKIP_EARLY_EXIT);
+      expect(state.currentStep).toBe(SimulateurStep.ADRESSE);
+
+      state = SimulationService.submitAnswer(
+        state,
+        {
+          logement: {
+            code_departement: "47",
+            zone_dexposition: "moyen",
+            code_region: "75",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+          },
+        },
+        SKIP_EARLY_EXIT,
+      );
+      expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
+
+      state = SimulationService.submitAnswer(state, { rga: { sinistres: "endommagée" } }, SKIP_EARLY_EXIT);
+      expect(state.currentStep).toBe(SimulateurStep.MITOYENNETE);
+
+      state = SimulationService.submitAnswer(state, { logement: { mitoyen: true } }, SKIP_EARLY_EXIT);
+      expect(state.currentStep).toBe(SimulateurStep.INDEMNISATION);
+
+      state = SimulationService.submitAnswer(state, { rga: { indemnise_indemnise_rga: false } }, SKIP_EARLY_EXIT);
+      expect(state.currentStep).toBe(SimulateurStep.ASSURANCE);
+
+      state = SimulationService.submitAnswer(state, { rga: { assure: false } }, SKIP_EARLY_EXIT);
+      expect(state.currentStep).toBe(SimulateurStep.PROPRIETAIRE);
+
+      state = SimulationService.submitAnswer(state, { logement: { proprietaire_occupant: false } }, SKIP_EARLY_EXIT);
+      expect(state.currentStep).toBe(SimulateurStep.REVENUS);
+
+      // Pas encore au résultat
+      expect(state.result).toBeNull();
+    });
+
+    it("évalue l'éligibilité à la dernière étape (REVENUS → RESULTAT)", () => {
+      let state = SimulationService.start(SimulationService.create());
+
+      // Parcours complet non éligible (zone moyen)
+      state = SimulationService.submitAnswer(state, { logement: { type: "maison" } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(
+        state,
+        {
+          logement: {
+            code_departement: "47",
+            zone_dexposition: "moyen",
+            code_region: "75",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+          },
+        },
+        SKIP_EARLY_EXIT,
+      );
+      state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(state, { logement: { mitoyen: false } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(state, { rga: { indemnise_indemnise_rga: false } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(state, { rga: { assure: true } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(state, { logement: { proprietaire_occupant: true } }, SKIP_EARLY_EXIT);
+
+      // Dernière étape : évaluation déclenchée
+      state = SimulationService.submitAnswer(state, { menage: { personnes: 2, revenu_rga: 25000 } }, SKIP_EARLY_EXIT);
+
+      expect(state.currentStep).toBe(SimulateurStep.RESULTAT);
+      expect(state.result).not.toBeNull();
+      expect(state.result?.eligible).toBe(false);
+    });
+
+    it("termine éligible à la dernière étape avec des données valides", () => {
+      let state = SimulationService.start(SimulationService.create());
+
+      state = SimulationService.submitAnswer(state, { logement: { type: "maison" } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(
+        state,
+        {
+          logement: {
+            code_departement: "47",
+            zone_dexposition: "fort",
+            code_region: "75",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+          },
+        },
+        SKIP_EARLY_EXIT,
+      );
+      state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(state, { logement: { mitoyen: false } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(state, { rga: { indemnise_indemnise_rga: false } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(state, { rga: { assure: true } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(state, { logement: { proprietaire_occupant: true } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(state, { menage: { personnes: 2, revenu_rga: 25000 } }, SKIP_EARLY_EXIT);
+
+      expect(state.currentStep).toBe(SimulateurStep.RESULTAT);
+      expect(state.result?.eligible).toBe(true);
+    });
+
+    it("conserve les réponses pré-remplies à chaque transition", () => {
+      let state = SimulationService.start(SimulationService.create());
+
+      // Pré-remplir l'état avec toutes les réponses (comme SimulateurEdition)
+      const prefilledAnswers = {
+        logement: {
+          type: "maison" as const,
+          code_departement: "47",
+          zone_dexposition: "moyen" as const,
+          code_region: "75",
+          annee_de_construction: anneeAncienne,
+          niveaux: 2,
+          mitoyen: false,
+          proprietaire_occupant: true,
+        },
+        rga: {
+          sinistres: "endommagée" as const,
+          indemnise_indemnise_rga: false,
+          assure: true,
+        },
+        menage: {
+          personnes: 2,
+          revenu_rga: 25000,
+        },
+      };
+
+      // Injecter les données (comme le ferait SimulateurEdition via setState)
+      state = { ...state, answers: prefilledAnswers };
+
+      // Soumettre étape 1 : les données des autres étapes doivent être conservées
+      state = SimulationService.submitAnswer(state, { logement: { type: "maison" } }, SKIP_EARLY_EXIT);
+
+      expect(state.currentStep).toBe(SimulateurStep.ADRESSE);
+      expect(state.answers.logement?.type).toBe("maison");
+      expect(state.answers.rga?.sinistres).toBe("endommagée");
+      expect(state.answers.menage?.personnes).toBe(2);
+    });
+  });
+
   describe("goBack", () => {
     it("revient à l'étape précédente", () => {
       let state = SimulationService.start(SimulationService.create());
@@ -202,6 +373,111 @@ describe("SimulationService", () => {
       const newState = SimulationService.goBack(state);
 
       expect(newState.answers.logement?.type).toBe("maison");
+    });
+  });
+
+  describe("goBack avec preserveAnswers (mode édition)", () => {
+    const PRESERVE = { preserveAnswers: true };
+
+    it("préserve les réponses de l'étape quittée", () => {
+      let state = SimulationService.start(SimulationService.create());
+
+      // Avancer à ADRESSE
+      state = SimulationService.submitAnswer(state, { logement: { type: "maison" } });
+      // Avancer à ETAT_MAISON
+      state = SimulationService.submitAnswer(state, {
+        logement: {
+          code_departement: "47",
+          zone_dexposition: "fort",
+          annee_de_construction: anneeAncienne,
+          niveaux: 2,
+        },
+      });
+
+      expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
+
+      // Retour avec preserveAnswers — les données adresse restent
+      const backed = SimulationService.goBack(state, PRESERVE);
+
+      expect(backed.currentStep).toBe(SimulateurStep.ADRESSE);
+      expect(backed.answers.logement?.code_departement).toBe("47");
+      expect(backed.answers.logement?.zone_dexposition).toBe("fort");
+      expect(backed.answers.logement?.annee_de_construction).toBe(anneeAncienne);
+      expect(backed.answers.logement?.niveaux).toBe(2);
+    });
+
+    it("sans preserveAnswers, efface les réponses de l'étape quittée", () => {
+      let state = SimulationService.start(SimulationService.create());
+
+      state = SimulationService.submitAnswer(state, { logement: { type: "maison" } });
+      state = SimulationService.submitAnswer(state, {
+        logement: {
+          code_departement: "47",
+          zone_dexposition: "fort",
+          annee_de_construction: anneeAncienne,
+          niveaux: 2,
+        },
+      });
+      state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } });
+
+      expect(state.currentStep).toBe(SimulateurStep.MITOYENNETE);
+
+      // Retour sans preserve — efface les clés de l'étape MITOYENNETE (mitoyen)
+      // puis un second retour depuis ETAT_MAISON efface sinistres
+      let backed = SimulationService.goBack(state);
+      expect(backed.currentStep).toBe(SimulateurStep.ETAT_MAISON);
+
+      backed = SimulationService.goBack(backed);
+      expect(backed.currentStep).toBe(SimulateurStep.ADRESSE);
+      expect(backed.answers.rga?.sinistres).toBeUndefined();
+    });
+
+    it("permet d'aller-retour sans perdre les données pré-remplies", () => {
+      let state = SimulationService.start(SimulationService.create());
+      const SKIP = { skipEarlyExit: true };
+
+      // Injecter des données pré-remplies
+      state = {
+        ...state,
+        answers: {
+          logement: {
+            type: "maison" as const,
+            code_departement: "47",
+            zone_dexposition: "moyen" as const,
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+            mitoyen: false,
+          },
+          rga: { sinistres: "endommagée" as const },
+        },
+      };
+
+      // Avancer
+      state = SimulationService.submitAnswer(state, { logement: { type: "maison" } }, SKIP);
+      expect(state.currentStep).toBe(SimulateurStep.ADRESSE);
+
+      state = SimulationService.submitAnswer(
+        state,
+        { logement: { code_departement: "47", zone_dexposition: "moyen", annee_de_construction: anneeAncienne, niveaux: 2 } },
+        SKIP,
+      );
+      expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
+
+      // Retour avec preserve
+      state = SimulationService.goBack(state, PRESERVE);
+      expect(state.currentStep).toBe(SimulateurStep.ADRESSE);
+      expect(state.answers.rga?.sinistres).toBe("endommagée");
+
+      // Re-avancer
+      state = SimulationService.submitAnswer(
+        state,
+        { logement: { code_departement: "47", zone_dexposition: "fort", annee_de_construction: anneeAncienne, niveaux: 2 } },
+        SKIP,
+      );
+      expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
+      expect(state.answers.logement?.zone_dexposition).toBe("fort");
+      // Les données des autres étapes sont toujours là
+      expect(state.answers.logement?.mitoyen).toBe(false);
     });
   });
 

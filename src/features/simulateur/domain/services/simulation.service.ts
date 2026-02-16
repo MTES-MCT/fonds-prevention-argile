@@ -37,28 +37,41 @@ export const SimulationService = {
 
   /**
    * Soumet une réponse et passe à l'étape suivante (ou early exit)
+   * @param options.skipEarlyExit - En mode édition, ne pas faire d'early exit.
+   *   L'éligibilité est évaluée seulement à la dernière étape (REVENUS → RESULTAT).
    */
-  submitAnswer(state: SimulationState, answerUpdates: PartialRGASimulationData): SimulationState {
+  submitAnswer(
+    state: SimulationState,
+    answerUpdates: PartialRGASimulationData,
+    options?: { skipEarlyExit?: boolean },
+  ): SimulationState {
     // Fusionner les réponses
     const newAnswers = mergeAnswers(state.answers, answerUpdates);
 
-    // Évaluer l'éligibilité
-    const { result } = EligibilityService.evaluate(newAnswers);
+    const nextStep = getNextStep(state.currentStep);
+    const isLastStep = nextStep === SimulateurStep.RESULTAT;
 
-    // Early exit ou simulation terminée
-    if (result) {
-      return {
-        ...state,
-        answers: newAnswers,
-        currentStep: SimulateurStep.RESULTAT,
-        history: [...state.history, state.currentStep],
-        result,
-        updatedAt: new Date().toISOString(),
-      };
+    // En mode édition, on n'évalue l'éligibilité qu'à la dernière étape
+    const shouldEvaluate = !options?.skipEarlyExit || isLastStep;
+
+    if (shouldEvaluate) {
+      // Évaluer l'éligibilité
+      const { result } = EligibilityService.evaluate(newAnswers);
+
+      // Early exit ou simulation terminée
+      if (result) {
+        return {
+          ...state,
+          answers: newAnswers,
+          currentStep: SimulateurStep.RESULTAT,
+          history: [...state.history, state.currentStep],
+          result,
+          updatedAt: new Date().toISOString(),
+        };
+      }
     }
 
     // Passer à l'étape suivante
-    const nextStep = getNextStep(state.currentStep);
     if (!nextStep) {
       return {
         ...state,
@@ -78,8 +91,9 @@ export const SimulationService = {
 
   /**
    * Revient à l'étape précédente
+   * @param options.preserveAnswers - En mode édition, ne pas effacer les réponses
    */
-  goBack(state: SimulationState): SimulationState {
+  goBack(state: SimulationState, options?: { preserveAnswers?: boolean }): SimulationState {
     if (state.history.length === 0) {
       return state;
     }
@@ -87,14 +101,16 @@ export const SimulationService = {
     const previousStep = state.history[state.history.length - 1];
     const newHistory = state.history.slice(0, -1);
 
-    // Effacer les réponses de l'étape qu'on quitte
-    const cleanedAnswers = clearAnswersForStep(state.currentStep, state.answers);
+    // En mode édition, on garde les réponses pré-remplies
+    const answers = options?.preserveAnswers
+      ? state.answers
+      : clearAnswersForStep(state.currentStep, state.answers);
 
     return {
       ...state,
       currentStep: previousStep,
       history: newHistory,
-      answers: cleanedAnswers,
+      answers,
       result: null,
       updatedAt: new Date().toISOString(),
     };

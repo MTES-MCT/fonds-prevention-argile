@@ -25,7 +25,7 @@ export function SimulateurEdition({ nomComplet, initialData }: SimulateurEdition
   const hasInitialized = useRef(false);
   const reset = useSimulateurStore((state) => state.reset);
   const start = useSimulateurStore((state) => state.start);
-  const submitAnswer = useSimulateurStore((state) => state.submitAnswer);
+  const setEditMode = useSimulateurStore((state) => state.setEditMode);
 
   useEffect(() => {
     if (hasInitialized.current) return;
@@ -34,11 +34,13 @@ export function SimulateurEdition({ nomComplet, initialData }: SimulateurEdition
     // Reset d'abord pour partir d'un état propre
     reset();
 
+    // Activer le mode édition (désactive les early exits, préserve les réponses au retour arrière)
+    setEditMode(true);
+
     // Démarrer (passe de intro → étape 1)
     start();
 
     // Si on a des données existantes, les injecter dans le store
-    // en soumettant toutes les réponses d'un coup (ça fera avancer le simulateur)
     if (initialData) {
       // Injecter les données dans le store via la simulation state directement
       // On utilise setState pour éviter de déclencher les transitions step-by-step
@@ -55,7 +57,14 @@ export function SimulateurEdition({ nomComplet, initialData }: SimulateurEdition
         },
       }));
     }
-  }, [initialData, reset, start, submitAnswer]);
+  }, [initialData, reset, start, setEditMode]);
+
+  // Nettoyer le mode édition au démontage
+  useEffect(() => {
+    return () => {
+      setEditMode(false);
+    };
+  }, [setEditMode]);
 
   const formTitle = `${nomComplet} - Données de simulation d\u2019\u00e9ligibilit\u00e9`;
 
