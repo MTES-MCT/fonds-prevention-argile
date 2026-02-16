@@ -148,13 +148,6 @@
       "when": 1771249230582,
       "tag": "0020_peaceful_wolfpack",
       "breakpoints": true
-    },
-    {
-      "idx": 21,
-      "version": "7",
-      "when": 1771253000000,
-      "tag": "0021_rename_amo_to_agent",
-      "breakpoints": true
     }
   ]
 }
