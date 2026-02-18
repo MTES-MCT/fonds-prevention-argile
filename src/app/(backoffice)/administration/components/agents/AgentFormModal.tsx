@@ -21,6 +21,7 @@ export interface EntrepriseAmoOption {
 export interface AllersVersOption {
   id: string;
   nom: string;
+  departements: string[];
 }
 
 interface AgentFormModalProps {
@@ -311,7 +312,7 @@ export default function AgentFormModal({
                         <option value="">Sélectionner un territoire</option>
                         {allersVersList.map((av) => (
                           <option key={av.id} value={av.id}>
-                            {av.nom}
+                            {av.nom}{av.departements.length > 0 ? ` (${av.departements.join(", ")})` : ""}
                           </option>
                         ))}
                       </select>
