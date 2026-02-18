@@ -14,6 +14,7 @@ import { importAllersVersFromExcel } from "../services/allers-vers-import.servic
 export interface AllersVersOption {
   id: string;
   nom: string;
+  departements: string[];
 }
 
 /**
@@ -31,11 +32,12 @@ export async function getAllersVersOptions(): Promise<ActionResult<AllersVersOpt
   }
 
   try {
-    const allersVersList = await allersVersRepository.findAll();
+    const allersVersList = await allersVersRepository.findAllWithRelations();
 
     const options: AllersVersOption[] = allersVersList.map((av) => ({
       id: av.id,
       nom: av.nom,
+      departements: av.departements.map((d) => d.codeDepartement),
     }));
 
     return {
