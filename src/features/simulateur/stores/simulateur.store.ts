@@ -123,3 +123,5 @@ export const selectIsEligible = (state: SimulateurState) => SimulationService.is
 export const selectIsIntro = (state: SimulateurState) => state.simulation.currentStep === SimulateurStep.INTRO;
 
 export const selectIsResultat = (state: SimulateurState) => state.simulation.currentStep === SimulateurStep.RESULTAT;
+
+export const selectEditMode = (state: SimulateurState) => state.editMode;

@@ -19,6 +19,7 @@ import "@gouvfr/dsfr/dist/utility/icons/icons-system/icons-system.min.css";
 import "@gouvfr/dsfr/dist/utility/icons/icons-weather/icons-weather.min.css";
 import "@gouvfr/dsfr/dist/utility/icons/icons-editor/icons-editor.min.css";
 import "@gouvfr/dsfr/dist/utility/icons/icons-development/icons-development.min.css";
+import "@gouvfr/dsfr/dist/utility/icons/icons-device/icons-device.min.css";
 import "@gouvfr/dsfr/dist/utility/icons/icons-user/icons-user.min.css";
 import "@gouvfr/dsfr/dist/utility/icons/icons-buildings/icons-buildings.min.css";
 

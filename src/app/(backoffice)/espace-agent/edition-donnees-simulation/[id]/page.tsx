@@ -5,6 +5,7 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { formatNomComplet } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { SimulateurEdition } from "@/features/simulateur/components/SimulateurEdition";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -28,8 +29,15 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
     notFound();
   }
 
-  const { prenom, nom, rgaData } = result.data;
+  const { prenom, nom, rgaData, statut } = result.data;
   const nomComplet = formatNomComplet(prenom, nom);
+
+  const isDossier = statut === StatutValidationAmo.LOGEMENT_ELIGIBLE;
+  const sectionLabel = isDossier ? "Vos dossiers" : "Demandes d\u2019accompagnement";
+  const sectionHref = isDossier ? ROUTES.backoffice.espaceAmo.dossiers : ROUTES.backoffice.espaceAmo.root;
+  const detailHref = isDossier
+    ? ROUTES.backoffice.espaceAmo.dossier(id)
+    : ROUTES.backoffice.espaceAmo.demande(id);
 
   return (
     <>
@@ -48,7 +56,7 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
         </div>
       </div>
 
-      <div className="fr-container fr-py-4w">
+      <div className="fr-container fr-py-1w">
         {/* Fil d'Ariane */}
         <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
           <button className="fr-breadcrumb__button" aria-expanded="false" aria-controls="breadcrumb-edition">
@@ -62,7 +70,14 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
                 </Link>
               </li>
               <li>
-                <a className="fr-breadcrumb__link">{nomComplet}</a>
+                <Link className="fr-breadcrumb__link" href={sectionHref}>
+                  {sectionLabel}
+                </Link>
+              </li>
+              <li>
+                <Link className="fr-breadcrumb__link" href={detailHref}>
+                  {nomComplet}
+                </Link>
               </li>
               <li>
                 <a className="fr-breadcrumb__link" aria-current="page">
@@ -74,7 +89,7 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
         </nav>
 
         {/* Simulateur en mode édition */}
-        <SimulateurEdition nomComplet={nomComplet} initialData={rgaData} />
+        <SimulateurEdition nomComplet={nomComplet} initialData={rgaData} dossierId={id} />
       </div>
     </>
   );

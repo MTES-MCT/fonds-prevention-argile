@@ -55,7 +55,20 @@ export const SimulationService = {
     const shouldEvaluate = !options?.skipEarlyExit || isLastStep;
 
     if (shouldEvaluate) {
-      // Évaluer l'éligibilité
+      // En mode édition, utiliser evaluateForEdition (sans early-exit, critères null non-bloquants)
+      if (options?.skipEarlyExit && isLastStep) {
+        const { result } = EligibilityService.evaluateForEdition(newAnswers);
+        return {
+          ...state,
+          answers: newAnswers,
+          currentStep: SimulateurStep.RESULTAT,
+          history: [...state.history, state.currentStep],
+          result,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+
+      // Mode normal : évaluer l'éligibilité avec early-exit
       const { result } = EligibilityService.evaluate(newAnswers);
 
       // Early exit ou simulation terminée

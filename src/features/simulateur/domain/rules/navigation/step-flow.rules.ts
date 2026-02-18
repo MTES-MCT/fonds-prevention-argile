@@ -189,6 +189,85 @@ export function evaluateEligibility(answers: PartialRGASimulationData): {
 }
 
 /**
+ * Évalue toutes les règles d'éligibilité SANS early-exit.
+ * Utile en mode édition pour comparer les checks avant/après modification.
+ */
+export function evaluateAllChecks(answers: PartialRGASimulationData): EligibilityChecks {
+  const checks: EligibilityChecks = {
+    maison: null,
+    departementEligible: null,
+    zoneForte: null,
+    anneeConstruction: null,
+    niveaux: null,
+    etatMaison: null,
+    nonMitoyen: null,
+    indemnisation: null,
+    assurance: null,
+    proprietaireOccupant: null,
+    revenusEligibles: null,
+  };
+
+  if (answers.logement?.type !== undefined) {
+    checks.maison = checkMaison(answers.logement.type).passed;
+  }
+
+  if (answers.logement?.code_departement !== undefined) {
+    checks.departementEligible = checkDepartementEligible(answers.logement.code_departement).passed;
+  }
+
+  if (answers.logement?.zone_dexposition !== undefined) {
+    checks.zoneForte = checkZoneForte(answers.logement.zone_dexposition).passed;
+  }
+
+  if (answers.logement?.annee_de_construction !== undefined) {
+    checks.anneeConstruction = checkAnneeConstruction(answers.logement.annee_de_construction).passed;
+  }
+
+  if (answers.logement?.niveaux !== undefined) {
+    checks.niveaux = checkNiveaux(answers.logement.niveaux).passed;
+  }
+
+  if (answers.rga?.sinistres !== undefined) {
+    checks.etatMaison = checkEtatMaison(answers.rga.sinistres).passed;
+  }
+
+  if (answers.logement?.mitoyen !== undefined) {
+    checks.nonMitoyen = checkNonMitoyen(answers.logement.mitoyen).passed;
+  }
+
+  if (answers.rga?.indemnise_indemnise_rga !== undefined) {
+    checks.indemnisation = checkIndemnisation({
+      dejaIndemnise: answers.rga.indemnise_indemnise_rga,
+      avantJuillet2025: answers.rga.indemnise_avant_juillet_2025,
+      avantJuillet2015: answers.rga.indemnise_avant_juillet_2015,
+      montant: answers.rga.indemnise_montant_indemnite,
+    }).passed;
+  }
+
+  if (answers.rga?.assure !== undefined) {
+    checks.assurance = checkAssurance(answers.rga.assure).passed;
+  }
+
+  if (answers.logement?.proprietaire_occupant !== undefined) {
+    checks.proprietaireOccupant = checkProprietaireOccupant(answers.logement.proprietaire_occupant).passed;
+  }
+
+  if (
+    answers.menage?.personnes !== undefined &&
+    answers.menage?.revenu_rga !== undefined &&
+    answers.logement?.code_region !== undefined
+  ) {
+    checks.revenusEligibles = checkRevenus({
+      nombrePersonnes: answers.menage.personnes,
+      revenuFiscalReference: answers.menage.revenu_rga,
+      codeRegion: answers.logement.code_region,
+    }).passed;
+  }
+
+  return checks;
+}
+
+/**
  * Détermine si la simulation est complète (toutes les étapes remplies)
  */
 export function isSimulationComplete(answers: PartialRGASimulationData): boolean {

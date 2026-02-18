@@ -2,7 +2,7 @@ import type { PartialRGASimulationData, RGASimulationData } from "@/shared/domai
 import type { EligibilityResult, EligibilityChecks } from "../entities/eligibility-result.entity";
 import { createEligibleResult, createNonEligibleResult } from "../entities/eligibility-result.entity";
 import { EligibilityReason, ELIGIBILITY_REASON_MESSAGES } from "../value-objects/eligibility-reason.enum";
-import { evaluateEligibility, isSimulationComplete } from "../rules/navigation";
+import { evaluateEligibility, evaluateAllChecks, isSimulationComplete } from "../rules/navigation";
 
 /**
  * Service d'éligibilité - orchestre les vérifications
@@ -45,6 +45,36 @@ export const EligibilityService = {
       result: null,
       checks,
       isComplete,
+    };
+  },
+
+  /**
+   * Évalue l'éligibilité en mode édition agent.
+   * Utilise evaluateAllChecks (sans early-exit) et considère les critères null comme non-bloquants.
+   * Cela permet de gérer le cas où certaines données (ex: zone_dexposition) ne sont pas
+   * re-saisies par l'agent lors de l'édition.
+   */
+  evaluateForEdition(answers: PartialRGASimulationData): {
+    result: EligibilityResult;
+    checks: EligibilityChecks;
+  } {
+    const checks = evaluateAllChecks(answers);
+
+    // En mode édition, un critère est bloquant seulement s'il est explicitement false
+    // Les critères null (non évalués) sont ignorés
+    const hasAnyFailed = Object.values(checks).some((v) => v === false);
+
+    if (hasAnyFailed) {
+      const reason = getReasonFromChecks(checks);
+      return {
+        result: createNonEligibleResult("resultat", reason ?? EligibilityReason.APPARTEMENT, checks),
+        checks,
+      };
+    }
+
+    return {
+      result: createEligibleResult("resultat", checks),
+      checks,
     };
   },
 

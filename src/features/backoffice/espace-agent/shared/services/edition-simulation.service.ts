@@ -19,6 +19,8 @@ export interface DossierSimulationData {
   nom: string | null;
   /** Données RGA effectives (agent si éditées, sinon originales) */
   rgaData: RGASimulationData | null;
+  /** Statut de la validation AMO (pour distinguer demande vs dossier) */
+  statut: string;
 }
 
 /**
@@ -88,6 +90,7 @@ export async function getDossierSimulationData(dossierId: string): Promise<Actio
         prenom: dossier.validation.userPrenom,
         nom: dossier.validation.userNom,
         rgaData,
+        statut: dossier.validation.statut,
       },
     };
   } catch (error) {

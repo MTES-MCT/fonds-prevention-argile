@@ -11,6 +11,7 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { daysSince } from "@/shared/utils/date-diff";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
 import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
+import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
@@ -98,7 +99,8 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     }
 
     // Extraire les données de logement
-    const rgaData = result.parcours.rgaSimulationData;
+    // Utiliser les données agent si disponibles, sinon les données initiales
+    const rgaData = getEffectiveRGAData(result.parcours);
     const logement = rgaData?.logement;
 
     // Vérifier que le prospect est dans le territoire de l'agent (sauf admins)
