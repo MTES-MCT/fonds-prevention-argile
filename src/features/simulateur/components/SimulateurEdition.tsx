@@ -11,8 +11,10 @@ interface SimulateurEditionProps {
   nomComplet: string;
   /** Données RGA existantes à pré-remplir dans le simulateur */
   initialData: RGASimulationData | null;
-  /** ID du dossier (pour la sauvegarde) */
+  /** ID du dossier ou parcours (pour la sauvegarde) */
   dossierId: string;
+  /** URL de redirection après sauvegarde */
+  redirectAfterSave?: string;
 }
 
 /**
@@ -23,7 +25,7 @@ interface SimulateurEditionProps {
  * - Pré-remplit le store avec les données existantes
  * - Démarre directement à l'étape 1 (skip intro)
  */
-export function SimulateurEdition({ nomComplet, initialData, dossierId }: SimulateurEditionProps) {
+export function SimulateurEdition({ nomComplet, initialData, dossierId, redirectAfterSave }: SimulateurEditionProps) {
   const hasInitialized = useRef(false);
   const reset = useSimulateurStore((state) => state.reset);
   const start = useSimulateurStore((state) => state.start);
@@ -71,7 +73,7 @@ export function SimulateurEdition({ nomComplet, initialData, dossierId }: Simula
   const formTitle = `${nomComplet} - Données de simulation d\u2019\u00e9ligibilit\u00e9`;
 
   return (
-    <SimulateurProvider formTitle={formTitle} showHelpLink={false} initialData={initialData} dossierId={dossierId}>
+    <SimulateurProvider formTitle={formTitle} showHelpLink={false} initialData={initialData} dossierId={dossierId} redirectAfterSave={redirectAfterSave}>
       <SimulateurFormulaire />
     </SimulateurProvider>
   );

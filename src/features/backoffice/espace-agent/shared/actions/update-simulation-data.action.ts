@@ -12,15 +12,16 @@ import type { ActionResult } from "@/shared/types";
 
 /**
  * Server action pour sauvegarder les données de simulation éditées par un agent.
+ * Accepte un ID de validation AMO (dossier/demande) ou un ID de parcours (prospect).
  *
  * Sécurité :
  * 1. Vérifie l'authentification ProConnect
  * 2. Vérifie le rôle agent (AMO, ALLERS_VERS ou AMO_ET_ALLERS_VERS)
- * 3. Vérifie l'ownership du dossier (même entreprise AMO)
- * 4. Vérifie que le dossier est en statut LOGEMENT_ELIGIBLE
+ * 3. Vérifie l'ownership du dossier (même entreprise AMO) si c'est un dossier/demande
+ * 4. Vérifie que le dossier est en statut éditable (EN_ATTENTE ou LOGEMENT_ELIGIBLE)
  */
 export async function updateSimulationDataAction(
-  dossierId: string,
+  id: string,
   rgaData: RGASimulationData,
 ): Promise<ActionResult<{ parcoursId: string }>> {
   try {
@@ -44,7 +45,7 @@ export async function updateSimulationDataAction(
       return { success: false, error: "Seuls les agents peuvent modifier les données de simulation" };
     }
 
-    // 3. Récupérer le dossier et vérifier l'ownership
+    // 3. Essayer d'abord par ID de validation AMO (dossier/demande)
     const [dossier] = await db
       .select({
         validation: parcoursAmoValidations,
@@ -52,33 +53,58 @@ export async function updateSimulationDataAction(
       })
       .from(parcoursAmoValidations)
       .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
-      .where(eq(parcoursAmoValidations.id, dossierId))
+      .where(eq(parcoursAmoValidations.id, id))
       .limit(1);
 
-    if (!dossier) {
+    if (dossier) {
+      // Vérifier que le statut permet l'édition (en attente ou validé)
+      const editableStatuts = [StatutValidationAmo.EN_ATTENTE, StatutValidationAmo.LOGEMENT_ELIGIBLE];
+      if (!editableStatuts.includes(dossier.validation.statut as StatutValidationAmo)) {
+        return { success: false, error: "Ce dossier ne permet pas l'édition des données de simulation" };
+      }
+
+      // Vérifier ownership entreprise (sauf admins)
+      if (!isAdmin) {
+        if (!agent.entrepriseAmoId) {
+          return { success: false, error: "Votre compte agent n'est pas configuré" };
+        }
+
+        if (dossier.validation.entrepriseAmoId !== agent.entrepriseAmoId) {
+          return { success: false, error: "Ce dossier ne vous est pas destiné" };
+        }
+      }
+
+      // Sauvegarde
+      const updated = await parcoursPreventionRepository.updateRGADataAgent(
+        dossier.parcours.id,
+        rgaData,
+        agent.id,
+      );
+
+      if (!updated) {
+        return { success: false, error: "Erreur lors de la mise à jour" };
+      }
+
+      return {
+        success: true,
+        data: { parcoursId: dossier.parcours.id },
+      };
+    }
+
+    // 4. Fallback : essayer par ID de parcours (prospect)
+    const [parcours] = await db
+      .select()
+      .from(parcoursPrevention)
+      .where(eq(parcoursPrevention.id, id))
+      .limit(1);
+
+    if (!parcours) {
       return { success: false, error: "Dossier non trouvé" };
     }
 
-    // 4. Vérifier que le statut permet l'édition (en attente ou validé)
-    const editableStatuts = [StatutValidationAmo.EN_ATTENTE, StatutValidationAmo.LOGEMENT_ELIGIBLE];
-    if (!editableStatuts.includes(dossier.validation.statut as StatutValidationAmo)) {
-      return { success: false, error: "Ce dossier ne permet pas l'édition des données de simulation" };
-    }
-
-    // 5. Vérifier ownership entreprise (sauf admins)
-    if (!isAdmin) {
-      if (!agent.entrepriseAmoId) {
-        return { success: false, error: "Votre compte agent n'est pas configuré" };
-      }
-
-      if (dossier.validation.entrepriseAmoId !== agent.entrepriseAmoId) {
-        return { success: false, error: "Ce dossier ne vous est pas destiné" };
-      }
-    }
-
-    // 6. Sauvegarde
+    // Sauvegarde pour prospect
     const updated = await parcoursPreventionRepository.updateRGADataAgent(
-      dossier.parcours.id,
+      parcours.id,
       rgaData,
       agent.id,
     );
@@ -89,7 +115,7 @@ export async function updateSimulationDataAction(
 
     return {
       success: true,
-      data: { parcoursId: dossier.parcours.id },
+      data: { parcoursId: parcours.id },
     };
   } catch (error) {
     console.error("[updateSimulationDataAction] Erreur:", error);

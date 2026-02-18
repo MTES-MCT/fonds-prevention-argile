@@ -10,8 +10,10 @@ interface SimulateurContextValue {
   showHelpLink?: boolean;
   /** Données initiales du demandeur (mode édition, pour comparaison) */
   initialData?: RGASimulationData | null;
-  /** ID du dossier (mode édition, pour la sauvegarde) */
+  /** ID du dossier ou parcours (mode édition, pour la sauvegarde) */
   dossierId?: string;
+  /** URL de redirection après sauvegarde (mode édition) */
+  redirectAfterSave?: string;
 }
 
 const SimulateurContext = createContext<SimulateurContextValue>({});

@@ -12,8 +12,36 @@ interface PageProps {
 }
 
 /**
+ * Détermine les infos de navigation selon le type d'entrée (dossier, demande, prospect).
+ */
+function getBreadcrumbInfo(id: string, statut: string | null) {
+  if (statut === StatutValidationAmo.LOGEMENT_ELIGIBLE) {
+    return {
+      sectionLabel: "Vos dossiers",
+      sectionHref: ROUTES.backoffice.espaceAmo.dossiers,
+      detailHref: ROUTES.backoffice.espaceAmo.dossier(id),
+    };
+  }
+
+  if (statut === StatutValidationAmo.EN_ATTENTE) {
+    return {
+      sectionLabel: "Demandes d\u2019accompagnement",
+      sectionHref: ROUTES.backoffice.espaceAmo.root,
+      detailHref: ROUTES.backoffice.espaceAmo.demande(id),
+    };
+  }
+
+  // Prospect (statut === null)
+  return {
+    sectionLabel: "Nouveau prospect",
+    sectionHref: ROUTES.backoffice.espaceAgent.prospects,
+    detailHref: ROUTES.backoffice.espaceAgent.prospect(id),
+  };
+}
+
+/**
  * Page d'édition des données de simulation d'éligibilité par un agent (AMO ou allers-vers).
- * Utilisée depuis les pages demandes et dossiers.
+ * Utilisée depuis les pages demandes, dossiers et prospects.
  */
 export default async function EditionDonneesSimulationPage({ params }: PageProps) {
   const user = await getCurrentUser();
@@ -31,13 +59,7 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
 
   const { prenom, nom, rgaData, statut } = result.data;
   const nomComplet = formatNomComplet(prenom, nom);
-
-  const isDossier = statut === StatutValidationAmo.LOGEMENT_ELIGIBLE;
-  const sectionLabel = isDossier ? "Vos dossiers" : "Demandes d\u2019accompagnement";
-  const sectionHref = isDossier ? ROUTES.backoffice.espaceAmo.dossiers : ROUTES.backoffice.espaceAmo.root;
-  const detailHref = isDossier
-    ? ROUTES.backoffice.espaceAmo.dossier(id)
-    : ROUTES.backoffice.espaceAmo.demande(id);
+  const { sectionLabel, sectionHref, detailHref } = getBreadcrumbInfo(id, statut);
 
   return (
     <>
@@ -89,7 +111,7 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
         </nav>
 
         {/* Simulateur en mode édition */}
-        <SimulateurEdition nomComplet={nomComplet} initialData={rgaData} dossierId={id} />
+        <SimulateurEdition nomComplet={nomComplet} initialData={rgaData} dossierId={id} redirectAfterSave={detailHref} />
       </div>
     </>
   );

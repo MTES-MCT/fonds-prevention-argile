@@ -30,7 +30,7 @@ interface ResultEditionProps {
  */
 export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultEditionProps) {
   const router = useRouter();
-  const { formTitle, initialData, dossierId } = useSimulateurContext();
+  const { formTitle, initialData, dossierId, redirectAfterSave } = useSimulateurContext();
   const answers = useSimulateurStore(selectAnswers);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,8 +96,8 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
         return;
       }
 
-      // Rediriger vers la page du dossier
-      router.push(ROUTES.backoffice.espaceAmo.dossier(dossierId));
+      // Rediriger vers la page d'origine (dossier, demande ou prospect)
+      router.push(redirectAfterSave || ROUTES.backoffice.espaceAmo.dossier(dossierId));
     } catch {
       setError("Erreur lors de la sauvegarde");
       setIsSaving(false);
