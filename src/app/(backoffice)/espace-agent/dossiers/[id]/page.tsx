@@ -5,7 +5,7 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { formatNomComplet } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain/types";
-import { InfoDemandeur, InfoLogement, LocalisationLogement, ParcoursDemandeur, AFaire } from "../../shared";
+import { InfoDemandeur, InfoLogement, ParcoursDemandeur, AFaire } from "../../shared";
 import { NotesPartagees } from "../../shared";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
 import { PiecesJustificatives } from "./components/PiecesJustificatives";
@@ -96,16 +96,13 @@ export default async function DossierDetailPage({ params }: PageProps) {
       <section className="fr-background-alt--blue-france fr-py-4w">
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
-            {/* Colonne gauche : PiecesJustificatives + InfoLogement + LocalisationLogement + GagnezDuTempsTravaux */}
+            {/* Colonne gauche : PiecesJustificatives + InfoLogement + GagnezDuTempsTravaux */}
             <div className="fr-col-12 fr-col-md-8">
               <div className="fr-mb-4w">
                 <PiecesJustificatives />
               </div>
               <div className="fr-mb-4w">
-                <InfoLogement logement={dossier.logement} dateIndemnisation={dossier.dateIndemnisation} />
-              </div>
-              <div className="fr-mb-4w">
-                <LocalisationLogement logement={dossier.logement} adresse={dossier.demandeur.adresse} />
+                <InfoLogement logement={dossier.logement} adresse={dossier.demandeur.adresse} dateIndemnisation={dossier.dateIndemnisation} />
               </div>
               <div>
                 <GagnezDuTempsTravaux />
