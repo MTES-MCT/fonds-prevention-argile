@@ -25,6 +25,7 @@ export function ArchiveProspectButton({ parcoursId }: ArchiveProspectButtonProps
   return (
     <>
       <button type="button" className="fr-btn fr-btn--secondary" onClick={() => setIsOpen(true)}>
+        <span className="fr-icon-archive-line fr-icon--sm fr-mr-2v" aria-hidden="true" />
         Archiver
       </button>
 

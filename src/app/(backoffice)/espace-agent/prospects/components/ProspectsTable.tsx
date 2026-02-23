@@ -42,19 +42,30 @@ export function ProspectsTable({ prospects, variant, onRefresh }: ProspectsTable
   }
 
   function getActionMenuItems(prospect: Prospect) {
-    const items = [
-      {
-        label: "Voir détails",
-        icon: "fr-icon-eye-line",
-        onClick: () => {
-          window.location.href = ROUTES.backoffice.espaceAgent.prospect(prospect.parcoursId);
-        },
-      },
-    ];
+    const firstItem =
+      variant === "eligible"
+        ? {
+            label: "Voir sa simulation d\u2019\u00e9ligibilit\u00e9",
+            icon: "fr-icon-eye-line",
+            onClick: () => {
+              window.location.href = ROUTES.backoffice.espaceAgent.editionDonneesSimulation(
+                prospect.parcoursId,
+              );
+            },
+          }
+        : {
+            label: "Voir d\u00e9tails",
+            icon: "fr-icon-eye-line",
+            onClick: () => {
+              window.location.href = ROUTES.backoffice.espaceAgent.prospect(prospect.parcoursId);
+            },
+          };
+
+    const items = [firstItem];
 
     if (variant === "archive") {
       items.push({
-        label: "Désarchiver",
+        label: "D\u00e9sarchiver",
         icon: "fr-icon-inbox-archive-line",
         onClick: () => setUnarchiveParcoursId(prospect.parcoursId),
       });
