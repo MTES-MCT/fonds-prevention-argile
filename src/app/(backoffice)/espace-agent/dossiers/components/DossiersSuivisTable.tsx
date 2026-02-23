@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import type { DossierSuivi } from "@/features/backoffice/espace-agent/dossiers/domain/types";
-import { STEP_LABELS, getPrecisionText } from "@/features/backoffice/espace-agent/dossiers/domain/types";
+import { STEP_LABELS, getPrecisionText, getPrecisionStyle } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import { ROUTES } from "@/features/auth/domain/value-objects";
 import { formatNomComplet, formatDaysAgoSplit } from "@/shared/utils";
 
 interface DossiersSuivisTableProps {
   dossiers: DossierSuivi[];
+  /** Indique si les dossiers affichés sont archivés (change la couleur de la cellule Précisions) */
+  isArchived?: boolean;
 }
 
 /**
  * Tableau des dossiers suivis
  */
-export function DossiersSuivisTable({ dossiers }: DossiersSuivisTableProps) {
+export function DossiersSuivisTable({ dossiers, isArchived = false }: DossiersSuivisTableProps) {
   return (
     <div className="fr-table fr-table--bordered">
       <div className="fr-table__wrapper">
@@ -54,6 +56,7 @@ export function DossiersSuivisTable({ dossiers }: DossiersSuivisTableProps) {
                 ) : (
                   dossiers.map((dossier) => {
                     const daysAgo = formatDaysAgoSplit(dossier.dateDernierStatut.toISOString());
+                    const greyStyle = isArchived ? { color: "var(--text-mention-grey)" } : undefined;
                     return (
                       <tr key={dossier.id}>
                         <td>
@@ -61,13 +64,20 @@ export function DossiersSuivisTable({ dossiers }: DossiersSuivisTableProps) {
                             {formatNomComplet(dossier.prenom, dossier.nom)}
                           </Link>
                         </td>
-                        <td>{dossier.commune}</td>
+                        <td style={greyStyle}>{dossier.commune}</td>
                         <td>
-                          <a href="#" className="fr-tag">
+                          <p className={isArchived ? "fr-tag" : "fr-tag fr-tag--blue-cumulus"}>
                             {STEP_LABELS[dossier.etape]}
-                          </a>
+                          </p>
                         </td>
-                        <td style={{ maxWidth: "350px", wordWrap: "break-word", whiteSpace: "normal" }}>
+                        <td
+                          style={{
+                            maxWidth: "350px",
+                            wordWrap: "break-word",
+                            whiteSpace: "normal",
+                            ...getPrecisionStyle(dossier.statut, isArchived),
+                            ...greyStyle,
+                          }}>
                           <div>{getPrecisionText(dossier.etape, dossier.statut, dossier.dsStatus)}</div>
                           {daysAgo && (
                             <div className="fr-text--xs fr-text-mention--grey">

@@ -147,7 +147,7 @@ export function DossiersPanel() {
               role="tabpanel"
               aria-labelledby="tab-archives"
               tabIndex={0}>
-              <DossiersSuivisTable dossiers={paginatedArchives} />
+              <DossiersSuivisTable dossiers={paginatedArchives} isArchived />
               <Pagination
                 currentPage={pageArchives}
                 totalItems={data.nombreDossiersArchives}
