@@ -12,3 +12,4 @@ export * from "./Header/Header";
 export * from "./AccesNonAutorise/AccesNonAutorise";
 export * from "./AgentNavigation";
 export { ContactCard } from "./ContactCard/ContactCard";
+export { Pagination } from "./Pagination/Pagination";
