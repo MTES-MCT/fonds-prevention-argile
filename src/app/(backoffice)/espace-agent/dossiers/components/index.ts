@@ -1,2 +1,2 @@
-export { DossiersSuivisPanel as AmoDossiersPanel } from "./DossiersSuivisPanel";
+export { DossiersPanel as AmoDossiersPanel } from "./DossiersPanel";
 export { DossiersSuivisHeader as AmoDossiersHeader } from "./DossiersSuivisHeader";

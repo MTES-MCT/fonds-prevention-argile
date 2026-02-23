@@ -8,7 +8,6 @@ import { STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 import {
   InfoDemandeur,
   InfoLogement,
-  LocalisationLogement,
   ParcoursDemandeur,
   GagnezDuTemps,
   AFaire,
@@ -116,10 +115,7 @@ export default async function ProspectDetailPage({ params }: PageProps) {
             {/* Colonne gauche */}
             <div className="fr-col-12 fr-col-md-8">
               <div className="fr-mb-4w">
-                <InfoLogement logement={prospect.infoLogement} />
-              </div>
-              <div className="fr-mb-4w">
-                <LocalisationLogement logement={prospect.infoLogement} adresse={prospect.logement.adresse} />
+                <InfoLogement logement={prospect.infoLogement} adresse={prospect.logement.adresse} />
               </div>
               <div>
                 <GagnezDuTemps />

@@ -1,3 +1,4 @@
+import type React from "react";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
@@ -36,10 +37,14 @@ export interface DossierSuivi {
  * Données pour la page des dossiers de l'espace AMO
  */
 export interface AmoDossiersData {
-  /** Nombre total de dossiers suivis */
+  /** Nombre total de dossiers suivis (non archivés) */
   nombreDossiersSuivis: number;
-  /** Liste des dossiers suivis */
-  dossiers: DossierSuivi[];
+  /** Nombre total de dossiers archivés */
+  nombreDossiersArchives: number;
+  /** Liste des dossiers suivis (non archivés) */
+  dossiersSuivis: DossierSuivi[];
+  /** Liste des dossiers archivés */
+  dossiersArchives: DossierSuivi[];
 }
 
 /**
@@ -121,4 +126,35 @@ export function getPrecisionText(etape: Step, statut: Status, dsStatus: DSStatus
   }
 
   return "";
+}
+
+/**
+ * Variantes visuelles pour la cellule "Précisions"
+ */
+type PrecisionVariant = "en_construction" | "en_instruction" | "archive";
+
+const PRECISION_COLORS: Record<PrecisionVariant, string> = {
+  en_construction: "#feebd0",
+  en_instruction: "#dae6fd",
+  archive: "#dddddd",
+};
+
+/**
+ * Détermine la variante visuelle de la cellule Précisions
+ */
+function getPrecisionVariant(statut: Status, isArchived: boolean): PrecisionVariant {
+  if (isArchived) return "archive";
+  if (statut === Status.EN_INSTRUCTION) return "en_instruction";
+  return "en_construction";
+}
+
+/**
+ * Retourne le style inline pour la cellule Précisions
+ * (bordure gauche épaisse colorée selon le statut)
+ */
+export function getPrecisionStyle(statut: Status, isArchived: boolean): React.CSSProperties {
+  const color = PRECISION_COLORS[getPrecisionVariant(statut, isArchived)];
+  return {
+    boxShadow: `inset 8px 0 0 0 ${color}`,
+  };
 }

@@ -5,18 +5,23 @@ import { getAmoAccueilDataAction } from "@/features/backoffice/espace-agent/dema
 import type { AmoAccueilData } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import { DemandesAccompagnementHeader } from "./DemandesAccompagnementHeader";
 import { DemandesAccompagnementTable } from "./DemandesAccompagnementTable";
+import { Pagination } from "@/shared/components/Pagination/Pagination";
 
 /**
  * Panel d'accueil pour les demandes d'accompagnement AMO
  *
  * Charge les données et affiche :
  * - Header avec les 2 StatTiles (demandes en attente + dossiers suivis)
- * - Tableau des demandes d'accompagnement à traiter
+ * - Tableau des demandes d'accompagnement à traiter avec pagination
  */
 export function DemandesAccompagnementPanel() {
   const [data, setData] = useState<AmoAccueilData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   useEffect(() => {
     async function loadData() {
@@ -63,6 +68,13 @@ export function DemandesAccompagnementPanel() {
     return null;
   }
 
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setPage(1);
+  };
+
+  const paginatedDemandes = data.demandesATraiter.slice((page - 1) * pageSize, page * pageSize);
+
   return (
     <>
       <DemandesAccompagnementHeader
@@ -77,7 +89,16 @@ export function DemandesAccompagnementPanel() {
             traiter
           </h2>
 
-          <DemandesAccompagnementTable demandes={data.demandesATraiter} />
+          <DemandesAccompagnementTable demandes={paginatedDemandes} />
+          {data.nombreDemandesEnAttente > pageSize && (
+            <Pagination
+              currentPage={page}
+              totalItems={data.nombreDemandesEnAttente}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          )}
         </div>
       </section>
     </>

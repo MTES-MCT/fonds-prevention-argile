@@ -52,7 +52,12 @@ VALUES
   ('11111111-1111-1111-1111-111111111137', 'fc-test-137', 'lucky.luke@test.fr', 'Lucky', 'Luc', NOW(), NOW(), NOW()),
   ('11111111-1111-1111-1111-111111111138', 'fc-test-138', 'gaston.lagaffe@test.fr', 'Gaston', 'Lagaffe', NOW(), NOW(), NOW()),
   ('11111111-1111-1111-1111-111111111139', 'fc-test-139', 'mortadelle.jambon@test.fr', 'Mortadelle', 'Jambon', NOW(), NOW(), NOW()),
-  ('11111111-1111-1111-1111-111111111140', 'fc-test-140', 'idefix.chien@test.fr', 'Idéfix', 'Chien', NOW(), NOW(), NOW())
+  ('11111111-1111-1111-1111-111111111140', 'fc-test-140', 'idefix.chien@test.fr', 'Idéfix', 'Chien', NOW(), NOW(), NOW()),
+
+  -- Dossiers archivés (3 utilisateurs)
+  ('11111111-1111-1111-1111-111111111171', 'fc-test-171', 'bilbo.sacquet@test.fr', 'Bilbo', 'Sacquet', NOW(), NOW(), NOW()),
+  ('11111111-1111-1111-1111-111111111172', 'fc-test-172', 'frodon.sacquet@test.fr', 'Frodon', 'Sacquet', NOW(), NOW(), NOW()),
+  ('11111111-1111-1111-1111-111111111173', 'fc-test-173', 'aragorn.rodeur@test.fr', 'Aragorn', 'Rôdeur', NOW(), NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Vérification

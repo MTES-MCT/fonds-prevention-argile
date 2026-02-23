@@ -4,7 +4,7 @@ import { getDemandeDetail } from "@/features/backoffice/espace-agent/demandes/se
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet, formatDate } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
-import { InfoDemandeur, InfoLogement, LocalisationLogement, ParcoursDemandeur, GagnezDuTemps, AFaire } from "../../shared";
+import { InfoDemandeur, InfoLogement, ParcoursDemandeur, GagnezDuTemps, AFaire } from "../../shared";
 import { NotesPartagees } from "../../shared";
 import { ReponseAccompagnement } from "./components/ReponseAccompagnement";
 
@@ -97,13 +97,10 @@ export default async function DemandeDetailPage({ params }: PageProps) {
       <section className="fr-background-alt--blue-france fr-py-4w">
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
-            {/* Colonne gauche : InfoLogement + LocalisationLogement + GagnezDuTemps */}
+            {/* Colonne gauche : InfoLogement + GagnezDuTemps */}
             <div className="fr-col-12 fr-col-md-8">
               <div className="fr-mb-4w">
-                <InfoLogement logement={demande.logement} />
-              </div>
-              <div className="fr-mb-4w">
-                <LocalisationLogement logement={demande.logement} adresse={demande.demandeur.adresse} />
+                <InfoLogement logement={demande.logement} adresse={demande.demandeur.adresse} />
               </div>
               <div>
                 <GagnezDuTemps />
