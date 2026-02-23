@@ -74,9 +74,13 @@ export function DossiersSuivisTable({ dossiers, isArchived = false }: DossiersSu
                         </td>
                         <td style={greyStyle}>{dossier.commune}</td>
                         <td>
-                          <p className={isArchived ? "fr-tag" : "fr-tag fr-tag--blue-cumulus"}>
-                            {STEP_LABELS[dossier.etape]}
-                          </p>
+                          {isArchived ? (
+                            <p className="fr-tag">{STEP_LABELS[dossier.etape]}</p>
+                          ) : (
+                            <a href="#" className="fr-tag">
+                              {STEP_LABELS[dossier.etape]}
+                            </a>
+                          )}
                         </td>
                         <td
                           style={{

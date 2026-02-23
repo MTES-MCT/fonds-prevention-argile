@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { getAmoDossiersDataAction } from "@/features/backoffice/espace-agent/dossiers/actions";
 import type { AmoDossiersData } from "@/features/backoffice/espace-agent/dossiers/domain/types";
+import { STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain/types";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DossiersSuivisHeader } from "./DossiersSuivisHeader";
 import { DossiersSuivisTable } from "./DossiersSuivisTable";
 import { Pagination } from "@/shared/components/Pagination/Pagination";
@@ -21,6 +23,10 @@ export function DossiersPanel() {
   const [pageSizeSuivis, setPageSizeSuivis] = useState(20);
   const [pageArchives, setPageArchives] = useState(1);
   const [pageSizeArchives, setPageSizeArchives] = useState(20);
+
+  // Filtre par étape par onglet
+  const [filterEtapeSuivis, setFilterEtapeSuivis] = useState<Step | "">("");
+  const [filterEtapeArchives, setFilterEtapeArchives] = useState<Step | "">("");
 
   useEffect(() => {
     async function loadData() {
@@ -85,11 +91,28 @@ export function DossiersPanel() {
     setPageArchives(1);
   };
 
-  const paginatedSuivis = data.dossiersSuivis.slice((pageSuivis - 1) * pageSizeSuivis, pageSuivis * pageSizeSuivis);
+  const handleFilterEtapeSuivisChange = (value: string) => {
+    setFilterEtapeSuivis(value as Step | "");
+    setPageSuivis(1);
+  };
 
-  const paginatedArchives = data.dossiersArchives.slice(
+  const handleFilterEtapeArchivesChange = (value: string) => {
+    setFilterEtapeArchives(value as Step | "");
+    setPageArchives(1);
+  };
+
+  // Filtre → puis pagination
+  const filteredSuivis = filterEtapeSuivis
+    ? data.dossiersSuivis.filter((d) => d.etape === filterEtapeSuivis)
+    : data.dossiersSuivis;
+  const paginatedSuivis = filteredSuivis.slice((pageSuivis - 1) * pageSizeSuivis, pageSuivis * pageSizeSuivis);
+
+  const filteredArchives = filterEtapeArchives
+    ? data.dossiersArchives.filter((d) => d.etape === filterEtapeArchives)
+    : data.dossiersArchives;
+  const paginatedArchives = filteredArchives.slice(
     (pageArchives - 1) * pageSizeArchives,
-    pageArchives * pageSizeArchives
+    pageArchives * pageSizeArchives,
   );
 
   return (
@@ -132,10 +155,28 @@ export function DossiersPanel() {
               role="tabpanel"
               aria-labelledby="tab-suivis"
               tabIndex={0}>
+              <div className="fr-select-group" style={{ maxWidth: "300px", marginLeft: "auto" }}>
+                <label className="fr-label" htmlFor="filtre-etape-suivis">
+                  Étape
+                </label>
+                <select
+                  className="fr-select"
+                  id="filtre-etape-suivis"
+                  name="filtre-etape-suivis"
+                  value={filterEtapeSuivis}
+                  onChange={(e) => handleFilterEtapeSuivisChange(e.target.value)}>
+                  <option value="">Toutes les étapes</option>
+                  {Object.entries(STEP_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <DossiersSuivisTable dossiers={paginatedSuivis} />
               <Pagination
                 currentPage={pageSuivis}
-                totalItems={data.nombreDossiersSuivis}
+                totalItems={filteredSuivis.length}
                 pageSize={pageSizeSuivis}
                 onPageChange={setPageSuivis}
                 onPageSizeChange={handlePageSizeSuivisChange}
@@ -147,10 +188,28 @@ export function DossiersPanel() {
               role="tabpanel"
               aria-labelledby="tab-archives"
               tabIndex={0}>
+              <div className="fr-select-group" style={{ maxWidth: "300px", marginLeft: "auto" }}>
+                <label className="fr-label" htmlFor="filtre-etape-archives">
+                  Étape
+                </label>
+                <select
+                  className="fr-select"
+                  id="filtre-etape-archives"
+                  name="filtre-etape-archives"
+                  value={filterEtapeArchives}
+                  onChange={(e) => handleFilterEtapeArchivesChange(e.target.value)}>
+                  <option value="">Toutes les étapes</option>
+                  {Object.entries(STEP_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <DossiersSuivisTable dossiers={paginatedArchives} isArchived />
               <Pagination
                 currentPage={pageArchives}
-                totalItems={data.nombreDossiersArchives}
+                totalItems={filteredArchives.length}
                 pageSize={pageSizeArchives}
                 onPageChange={setPageArchives}
                 onPageSizeChange={handlePageSizeArchivesChange}
