@@ -101,7 +101,10 @@ export default async function ProspectDetailPage({ params }: PageProps) {
             <CalloutInfosProspect amoInfo={prospect.amoInfo} />
           </div>
           <div className="fr-col-12 fr-col-md-4">
-            <InfoDemandeur demandeur={demandeur} />
+            <InfoDemandeur
+              demandeur={demandeur}
+              editSimulationHref={ROUTES.backoffice.espaceAgent.editionDonneesSimulation(prospect.parcoursId)}
+            />
           </div>
         </div>
       </div>

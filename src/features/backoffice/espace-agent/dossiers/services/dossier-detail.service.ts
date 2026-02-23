@@ -14,6 +14,7 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
 import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
+import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 
 /**
@@ -91,7 +92,8 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
     };
 
     // Construire l'objet InfoLogement à partir de RGASimulationData
-    const rgaData = dossier.parcours.rgaSimulationData;
+    // Utiliser les données agent si disponibles, sinon les données initiales
+    const rgaData = getEffectiveRGAData(dossier.parcours);
     const coords = parseCoordinatesString(rgaData?.logement?.coordonnees);
     const niveauRevenu = calculateNiveauRevenuFromRga(rgaData);
     const logement: InfoLogement = {

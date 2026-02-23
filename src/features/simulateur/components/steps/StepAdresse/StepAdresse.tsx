@@ -48,7 +48,14 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   const radioGroupId = useId();
 
   // État de la recherche d'adresse
-  const [addressInput, setAddressInput] = useState<string>((initialValue?.adresse as string) || "");
+  const [addressInput, setAddressInput] = useState<string>(() => {
+    const adresse = initialValue?.adresse as string | undefined;
+    const communeNom = initialValue?.commune_nom as string | undefined;
+    if (adresse && communeNom && !adresse.includes(communeNom)) {
+      return `${adresse}, ${communeNom}`;
+    }
+    return adresse || "";
+  });
   const [addressResults, setAddressResults] = useState<BanFeature[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);

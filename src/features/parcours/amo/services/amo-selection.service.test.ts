@@ -4,6 +4,7 @@ import { db } from "@/shared/database/client";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { Status, Step } from "../../core";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { StatutValidationAmo } from "../domain/value-objects";
 
 // Mock des dépendances
@@ -88,6 +89,12 @@ describe("amo-selection.service", () => {
       rgaSimulationCompletedAt: new Date(),
       rgaDataDeletedAt: null,
       rgaDataDeletionReason: null,
+      situationParticulier: SituationParticulier.PROSPECT,
+      rgaSimulationDataAgent: null,
+      rgaSimulationAgentEditedAt: null,
+      rgaSimulationAgentEditedBy: null,
+      archivedAt: null,
+      archiveReason: null,
     };
 
     const mockAmo = {

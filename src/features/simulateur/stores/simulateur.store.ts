@@ -14,6 +14,9 @@ interface SimulateurState {
   // État de la simulation
   simulation: SimulationState;
 
+  // Mode édition (agent AMO/allers-vers) — désactive les early exits
+  editMode: boolean;
+
   // Hydratation SSR
   isHydrated: boolean;
 
@@ -22,6 +25,7 @@ interface SimulateurState {
   submitAnswer: (answers: PartialRGASimulationData) => void;
   goBack: () => void;
   reset: () => void;
+  setEditMode: (editMode: boolean) => void;
   setHydrated: () => void;
 }
 
@@ -31,9 +35,10 @@ interface SimulateurState {
  */
 export const useSimulateurStore = create<SimulateurState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // État initial
       simulation: SimulationService.create(),
+      editMode: false,
       isHydrated: false,
 
       // Démarre la simulation (intro → première étape)
@@ -45,21 +50,32 @@ export const useSimulateurStore = create<SimulateurState>()(
 
       // Soumet une réponse et passe à l'étape suivante
       submitAnswer: (answers: PartialRGASimulationData) => {
+        const { editMode } = get();
         set((state) => ({
-          simulation: SimulationService.submitAnswer(state.simulation, answers),
+          simulation: SimulationService.submitAnswer(state.simulation, answers, {
+            skipEarlyExit: editMode,
+          }),
         }));
       },
 
       // Revient à l'étape précédente
       goBack: () => {
+        const { editMode } = get();
         set((state) => ({
-          simulation: SimulationService.goBack(state.simulation),
+          simulation: SimulationService.goBack(state.simulation, {
+            preserveAnswers: editMode,
+          }),
         }));
       },
 
       // Réinitialise la simulation
       reset: () => {
-        set({ simulation: SimulationService.reset() });
+        set({ simulation: SimulationService.reset(), editMode: false });
+      },
+
+      // Active/désactive le mode édition
+      setEditMode: (editMode: boolean) => {
+        set({ editMode });
       },
 
       // Marque comme hydraté
@@ -107,3 +123,5 @@ export const selectIsEligible = (state: SimulateurState) => SimulationService.is
 export const selectIsIntro = (state: SimulateurState) => state.simulation.currentStep === SimulateurStep.INTRO;
 
 export const selectIsResultat = (state: SimulateurState) => state.simulation.currentStep === SimulateurStep.RESULTAT;
+
+export const selectEditMode = (state: SimulateurState) => state.editMode;

@@ -47,6 +47,25 @@ function generateTrancheOptions(seuils: SeuilsRevenuRga): Array<{ label: string;
 }
 
 /**
+ * Retrouve la valeur d'option correspondante à un revenu stocké.
+ * Le revenu stocké peut ne pas correspondre exactement aux valeurs représentatives
+ * des options (ex: données pré-remplies en mode édition), on détermine la tranche
+ * par les seuils puis retourne la valeur représentative correspondante.
+ */
+function findMatchingOptionValue(revenu: number, seuils: SeuilsRevenuRga): number {
+  const options = generateTrancheOptions(seuils);
+  // Correspondance exacte (cas normal après sélection)
+  const exact = options.find((o) => o.value === revenu);
+  if (exact) return exact.value;
+
+  // Déterminer la tranche par les seuils et retourner la valeur représentative
+  if (revenu < seuils.tresModeste + 1) return options[0].value;
+  if (revenu < seuils.modeste + 1) return options[1].value;
+  if (revenu < seuils.intermediaire + 1) return options[2].value;
+  return options[3].value;
+}
+
+/**
  * Étape 8 : Revenus du ménage
  *
  * Flux :
@@ -56,7 +75,14 @@ function generateTrancheOptions(seuils: SeuilsRevenuRga): Array<{ label: string;
  */
 export function StepRevenus({ initialValue, numeroEtape, totalEtapes, canGoBack, onSubmit, onBack }: StepRevenusProps) {
   const [nombrePersonnes, setNombrePersonnes] = useState<number | null>(initialValue?.nombrePersonnes ?? null);
-  const [selectedTranche, setSelectedTranche] = useState<number | null>(initialValue?.revenuFiscalReference ?? null);
+  const [selectedTranche, setSelectedTranche] = useState<number | null>(() => {
+    const revenu = initialValue?.revenuFiscalReference;
+    const personnes = initialValue?.nombrePersonnes;
+    if (revenu == null || !personnes) return revenu ?? null;
+    // Résoudre la valeur représentative correspondant à la tranche du revenu stocké
+    const seuils = getSeuilsRevenu(personnes, false);
+    return findMatchingOptionValue(revenu, seuils);
+  });
 
   const isLastStep = numeroEtape === totalEtapes;
 

@@ -10,6 +10,7 @@ import { parcoursRepo } from "@/shared/database/repositories";
 import { getAmoById } from "./amo-query.service";
 import { moveToNextStep } from "../../core/services";
 import { Status, Step } from "../../core";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { StatutValidationAmo } from "../domain/value-objects";
 
 // Mock des dépendances
@@ -264,6 +265,12 @@ describe("amo-validation.service", () => {
       rgaSimulationCompletedAt: null,
       rgaDataDeletedAt: null,
       rgaDataDeletionReason: null,
+      situationParticulier: SituationParticulier.PROSPECT,
+      rgaSimulationDataAgent: null,
+      rgaSimulationAgentEditedAt: null,
+      rgaSimulationAgentEditedBy: null,
+      archivedAt: null,
+      archiveReason: null,
     };
 
     beforeEach(() => {
@@ -424,6 +431,12 @@ describe("amo-validation.service", () => {
       rgaSimulationCompletedAt: null,
       rgaDataDeletedAt: null,
       rgaDataDeletionReason: null,
+      situationParticulier: SituationParticulier.PROSPECT,
+      rgaSimulationDataAgent: null,
+      rgaSimulationAgentEditedAt: null,
+      rgaSimulationAgentEditedBy: null,
+      archivedAt: null,
+      archiveReason: null,
     };
 
     beforeEach(() => {
@@ -519,6 +532,12 @@ describe("amo-validation.service", () => {
       rgaSimulationCompletedAt: null,
       rgaDataDeletedAt: null,
       rgaDataDeletionReason: null,
+      situationParticulier: SituationParticulier.PROSPECT,
+      rgaSimulationDataAgent: null,
+      rgaSimulationAgentEditedAt: null,
+      rgaSimulationAgentEditedBy: null,
+      archivedAt: null,
+      archiveReason: null,
     };
 
     beforeEach(() => {

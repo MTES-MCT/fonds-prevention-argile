@@ -84,7 +84,10 @@ export default async function DemandeDetailPage({ params }: PageProps) {
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <div style={{ alignSelf: "flex-start" }}>
-              <InfoDemandeur demandeur={demande.demandeur} />
+              <InfoDemandeur
+                demandeur={demande.demandeur}
+                editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(demande.id)}
+              />
             </div>
           </div>
         </div>

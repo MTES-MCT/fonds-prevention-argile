@@ -20,9 +20,10 @@ import {
 } from "./steps";
 
 // Results
-import { ResultEligible, ResultNonEligible } from "./results";
+import { ResultEdition, ResultEligible, ResultNonEligible } from "./results";
 import { MATOMO_EVENTS } from "@/shared/constants";
 import { SIMULATEUR_STEP_EVENTS } from "../domain";
+import { useSimulateurStore, selectEditMode } from "../stores/simulateur.store";
 
 /**
  * Composant orchestrateur du simulateur d'éligibilité
@@ -44,6 +45,7 @@ export function SimulateurFormulaire() {
     commitToRGAStore,
   } = useSimulateurFormulaire();
 
+  const editMode = useSimulateurStore(selectEditMode);
   const { trackEvent } = useMatomo();
   const previousStepRef = useRef<SimulateurStep | null>(null);
 
@@ -198,6 +200,11 @@ export function SimulateurFormulaire() {
       );
 
     case SimulateurStep.RESULTAT:
+      // Mode édition agent : vue résultat dédiée
+      if (editMode && checks) {
+        return <ResultEdition checks={checks} isEligible={isEligible} onBack={goBack} onRestart={reset} />;
+      }
+
       if (isEligible && checks) {
         return <ResultEligible checks={checks} onContinue={handleContinueToFC} onRestart={reset} onBack={goBack} />;
       }

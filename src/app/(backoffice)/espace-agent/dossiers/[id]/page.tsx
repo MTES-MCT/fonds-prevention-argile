@@ -82,7 +82,11 @@ export default async function DossierDetailPage({ params }: PageProps) {
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <div style={{ alignSelf: "flex-start" }}>
-              <InfoDemandeur demandeur={dossier.demandeur} suiviDepuis={dossier.suiviDepuis} />
+              <InfoDemandeur
+                demandeur={dossier.demandeur}
+                suiviDepuis={dossier.suiviDepuis}
+                editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)}
+              />
             </div>
           </div>
         </div>

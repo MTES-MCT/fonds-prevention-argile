@@ -7,6 +7,7 @@ import { BaseRepository, PaginationParams, PaginationResult } from "./base.repos
 import type { ParcoursPrevention, NewParcoursPrevention } from "../schema/parcours-prevention";
 import { getNextStep, Status, Step } from "@/features/parcours/core";
 import { RGASimulationData } from "@/shared/domain/types";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 
 export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevention> {
   /**
@@ -250,6 +251,47 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   async hasRGAData(parcoursId: string): Promise<boolean> {
     const parcours = await this.findById(parcoursId);
     return parcours?.rgaSimulationData !== null && parcours?.rgaSimulationData !== undefined;
+  }
+
+  /**
+   * Met à jour la situation du particulier
+   */
+  async updateSituationParticulier(
+    id: string,
+    situation: SituationParticulier,
+    archiveReason?: string,
+  ): Promise<ParcoursPrevention | null> {
+    const updateData: Partial<NewParcoursPrevention> = {
+      situationParticulier: situation,
+    };
+
+    if (situation === SituationParticulier.ARCHIVE) {
+      updateData.archivedAt = new Date();
+      if (archiveReason) {
+        updateData.archiveReason = archiveReason;
+      }
+    } else {
+      // Réactivation : nettoyer les champs d'archivage
+      updateData.archivedAt = null;
+      updateData.archiveReason = null;
+    }
+
+    return await this.update(id, updateData);
+  }
+
+  /**
+   * Sauvegarde les données RGA éditées par un agent (AMO ou allers-vers)
+   */
+  async updateRGADataAgent(
+    parcoursId: string,
+    rgaData: RGASimulationData,
+    agentId: string,
+  ): Promise<ParcoursPrevention | null> {
+    return await this.update(parcoursId, {
+      rgaSimulationDataAgent: rgaData,
+      rgaSimulationAgentEditedAt: new Date(),
+      rgaSimulationAgentEditedBy: agentId,
+    });
   }
 
   /**
