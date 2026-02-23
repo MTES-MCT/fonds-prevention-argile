@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeModifications, type Modification } from "./modifications-comparison.service";
+import { computeModifications } from "./modifications-comparison.service";
 import type { RGASimulationData, PartialRGASimulationData } from "@/shared/domain/types";
 import type { EligibilityChecks } from "../entities/eligibility-result.entity";
 
