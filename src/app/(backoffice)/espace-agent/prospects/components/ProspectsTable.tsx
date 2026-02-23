@@ -6,8 +6,8 @@ import type { Prospect } from "../../../../../features/backoffice/espace-agent/p
 import { formatNomComplet, formatDaysAgoSplit } from "@/shared/utils";
 import { ROUTES } from "@/features/auth/domain/value-objects";
 import { ActionMenu } from "../../shared/components/ActionMenu";
-import { ArchiveDossierModal } from "../../dossiers/components/ArchiveDossierModal";
-import { UnarchiveDossierModal } from "../../dossiers/components/UnarchiveDossierModal";
+import { ArchiveModal } from "../../shared/components/ArchiveModal";
+import { UnarchiveModal } from "../../shared/components/UnarchiveModal";
 import {
   archiveProspectAction,
   unarchiveProspectAction,
@@ -130,7 +130,15 @@ export function ProspectsTable({ prospects, variant, onRefresh }: ProspectsTable
                             )}
                           </td>
                           <td>
-                            <ActionMenu items={getActionMenuItems(prospect)} />
+                            {variant === "prospect" ? (
+                              <Link
+                                href={ROUTES.backoffice.espaceAgent.prospect(prospect.parcoursId)}
+                                className="fr-btn fr-btn--sm fr-btn--icon-right fr-icon-arrow-right-line">
+                                Qualifier
+                              </Link>
+                            ) : (
+                              <ActionMenu items={getActionMenuItems(prospect)} />
+                            )}
                           </td>
                         </tr>
                       );
@@ -144,21 +152,23 @@ export function ProspectsTable({ prospects, variant, onRefresh }: ProspectsTable
       </div>
 
       {/* Modale d'archivage (toujours montée pour que le DSFR l'initialise) */}
-      <ArchiveDossierModal
+      <ArchiveModal
         isOpen={!!archiveParcoursId}
         onClose={() => setArchiveParcoursId(null)}
         parcoursId={archiveParcoursId ?? ""}
         onSuccess={handleArchiveSuccess}
         archiveAction={archiveProspectAction}
+        entityLabel="prospect"
       />
 
       {/* Modale de désarchivage (toujours montée pour que le DSFR l'initialise) */}
-      <UnarchiveDossierModal
+      <UnarchiveModal
         isOpen={!!unarchiveParcoursId}
         onClose={() => setUnarchiveParcoursId(null)}
         parcoursId={unarchiveParcoursId ?? ""}
         onSuccess={handleUnarchiveSuccess}
         unarchiveAction={unarchiveProspectAction}
+        entityLabel="prospect"
       />
     </>
   );

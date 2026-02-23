@@ -15,6 +15,8 @@ import {
 import { NotesPartagees } from "../../shared";
 import type { ProspectAmoInfo } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { ContactCard } from "@/shared/components/ContactCard/ContactCard";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { ArchiveProspectButton } from "./components/ArchiveProspectButton";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -85,7 +87,12 @@ export default async function ProspectDetailPage({ params }: PageProps) {
 
         {/* Titre de la page */}
         <div className="fr-mb-4w">
-          <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
+            {prospect.situationParticulier !== SituationParticulier.ARCHIVE && (
+              <ArchiveProspectButton parcoursId={prospect.parcoursId} />
+            )}
+          </div>
           <div className="fr-badges-group">
             <p className="fr-badge fr-badge--new">
               Nouveau prospect du {formatDateShort(prospect.createdAt.toISOString())}

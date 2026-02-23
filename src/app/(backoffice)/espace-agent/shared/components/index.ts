@@ -1,4 +1,6 @@
 export * from "./ActionMenu";
+export * from "./ArchiveModal";
+export * from "./UnarchiveModal";
 export * from "./StatTile";
 export * from "./RepartitionCardTile";
 export * from "./InfoDemandeur";

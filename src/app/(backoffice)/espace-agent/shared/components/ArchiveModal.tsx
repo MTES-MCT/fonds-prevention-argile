@@ -13,33 +13,45 @@ const ARCHIVE_REASONS = [
   "Autre",
 ] as const;
 
-interface ArchiveDossierModalProps {
+interface ArchiveModalProps {
   isOpen: boolean;
   onClose: () => void;
   parcoursId: string;
   onSuccess: () => void;
   /** Action serveur d'archivage (défaut : archiveDossierAction) */
   archiveAction?: (parcoursId: string, reason: string) => Promise<ActionResult<void>>;
+  /** Label de l'entité ("dossier" ou "prospect") — défaut : "dossier" */
+  entityLabel?: string;
+  /** Description personnalisée (override le texte par défaut) */
+  description?: string;
 }
 
 /**
- * Modale d'archivage générique
- * Permet de sélectionner une raison avant d'archiver
+ * Modale d'archivage générique (dossiers AMO et prospects)
  */
-export function ArchiveDossierModal({
+export function ArchiveModal({
   isOpen,
   onClose,
   parcoursId,
   onSuccess,
   archiveAction = archiveDossierAction,
-}: ArchiveDossierModalProps) {
+  entityLabel = "dossier",
+  description,
+}: ArchiveModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const uniqueId = useId();
-  const modalId = `modal-archive-dossier-${uniqueId}`;
+  const modalId = `modal-archive-${uniqueId}`;
   const selectId = `archive-reason-${uniqueId}`;
+
+  const defaultDescription =
+    entityLabel === "prospect"
+      ? 'Le prospect passera en statut "Archivé". Vous pourrez le désarchiver à tout moment depuis la liste des prospects archivés.'
+      : 'Le dossier passera en statut "Archivé". Vous pourrez toujours le mettre à jour tant qu\'il n\'est pas transféré à l\'AMO ou supprimé par le demandeur.';
+
+  const displayDescription = description ?? defaultDescription;
 
   // Ouvrir/fermer via l'API DSFR
   useEffect(() => {
@@ -116,13 +128,9 @@ export function ArchiveDossierModal({
               </div>
               <div className="fr-modal__content">
                 <h1 id={`${modalId}-title`} className="fr-modal__title">
-                  Archiver le dossier ?
+                  Archiver le {entityLabel}&nbsp;?
                 </h1>
-                <p>
-                  Le dossier passera en statut &quot;<strong>Archiv&eacute;</strong>&quot;. Vous pourrez toujours le
-                  mettre &agrave; jour tant qu&apos;il n&apos;est pas transf&eacute;r&eacute; &agrave; l&apos;AMO ou
-                  supprim&eacute; par le demandeur.
-                </p>
+                <p>{displayDescription}</p>
 
                 {error && (
                   <div className="fr-alert fr-alert--error fr-alert--sm fr-mb-2w">
@@ -132,7 +140,7 @@ export function ArchiveDossierModal({
 
                 <div className="fr-select-group">
                   <label className="fr-label" htmlFor={selectId}>
-                    Pour quelles raisons souhaitez-vous archiver le dossier ?
+                    Pour quelles raisons souhaitez-vous archiver le {entityLabel}&nbsp;?
                   </label>
                   <select
                     className="fr-select"

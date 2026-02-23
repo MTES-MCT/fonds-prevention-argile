@@ -4,30 +4,43 @@ import { useEffect, useRef, useState, useId } from "react";
 import { unarchiveDossierAction } from "@/features/backoffice/espace-agent/dossiers/actions";
 import type { ActionResult } from "@/shared/types";
 
-interface UnarchiveDossierModalProps {
+interface UnarchiveModalProps {
   isOpen: boolean;
   onClose: () => void;
   parcoursId: string;
   onSuccess: () => void;
   /** Action serveur de désarchivage (défaut : unarchiveDossierAction) */
   unarchiveAction?: (parcoursId: string) => Promise<ActionResult<void>>;
+  /** Label de l'entité ("dossier" ou "prospect") — défaut : "dossier" */
+  entityLabel?: string;
+  /** Description personnalisée (override le texte par défaut) */
+  description?: string;
 }
 
 /**
- * Modale de confirmation de désarchivage générique
+ * Modale de confirmation de désarchivage générique (dossiers AMO et prospects)
  */
-export function UnarchiveDossierModal({
+export function UnarchiveModal({
   isOpen,
   onClose,
   parcoursId,
   onSuccess,
   unarchiveAction = unarchiveDossierAction,
-}: UnarchiveDossierModalProps) {
+  entityLabel = "dossier",
+  description,
+}: UnarchiveModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const uniqueId = useId();
-  const modalId = `modal-unarchive-dossier-${uniqueId}`;
+  const modalId = `modal-unarchive-${uniqueId}`;
+
+  const defaultDescription =
+    entityLabel === "prospect"
+      ? "Le prospect sera de nouveau visible dans la liste des prospects."
+      : "Le dossier sera de nouveau visible dans vos dossiers suivis.";
+
+  const displayDescription = description ?? defaultDescription;
 
   // Ouvrir/fermer via l'API DSFR
   useEffect(() => {
@@ -100,9 +113,9 @@ export function UnarchiveDossierModal({
               </div>
               <div className="fr-modal__content">
                 <h1 id={`${modalId}-title`} className="fr-modal__title">
-                  D&eacute;sarchiver le dossier ?
+                  D&eacute;sarchiver le {entityLabel}&nbsp;?
                 </h1>
-                <p>Le dossier sera de nouveau visible dans vos dossiers suivis.</p>
+                <p>{displayDescription}</p>
 
                 {error && (
                   <div className="fr-alert fr-alert--error fr-alert--sm fr-mb-2w">

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/features/auth/domain/value-objects";
-import { ArchiveDossierModal } from "../../components/ArchiveDossierModal";
+import { ArchiveModal } from "../../../shared/components/ArchiveModal";
 
 interface ArchiveDossierButtonProps {
   parcoursId: string;
@@ -29,7 +29,7 @@ export function ArchiveDossierButton({ parcoursId }: ArchiveDossierButtonProps) 
         Archiver
       </button>
 
-      <ArchiveDossierModal
+      <ArchiveModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         parcoursId={parcoursId}
