@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getAmoDossiersDataAction } from "@/features/backoffice/espace-agent/dossiers/actions";
 import type { AmoDossiersData } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import { STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain/types";
@@ -28,25 +28,25 @@ export function DossiersPanel() {
   const [filterEtapeSuivis, setFilterEtapeSuivis] = useState<Step | "">("");
   const [filterEtapeArchives, setFilterEtapeArchives] = useState<Step | "">("");
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const result = await getAmoDossiersDataAction();
-        if (result.success) {
-          setData(result.data);
-        } else {
-          setError(result.error);
-        }
-      } catch (e) {
-        setError("Erreur lors du chargement des données");
-        console.error(e);
-      } finally {
-        setIsLoading(false);
+  const loadData = useCallback(async () => {
+    try {
+      const result = await getAmoDossiersDataAction();
+      if (result.success) {
+        setData(result.data);
+      } else {
+        setError(result.error);
       }
+    } catch (e) {
+      setError("Erreur lors du chargement des données");
+      console.error(e);
+    } finally {
+      setIsLoading(false);
     }
-
-    loadData();
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   if (isLoading) {
     return (
@@ -173,7 +173,7 @@ export function DossiersPanel() {
                   ))}
                 </select>
               </div>
-              <DossiersSuivisTable dossiers={paginatedSuivis} />
+              <DossiersSuivisTable dossiers={paginatedSuivis} onRefresh={loadData} />
               <Pagination
                 currentPage={pageSuivis}
                 totalItems={filteredSuivis.length}
@@ -206,7 +206,7 @@ export function DossiersPanel() {
                   ))}
                 </select>
               </div>
-              <DossiersSuivisTable dossiers={paginatedArchives} isArchived />
+              <DossiersSuivisTable dossiers={paginatedArchives} isArchived onRefresh={loadData} />
               <Pagination
                 currentPage={pageArchives}
                 totalItems={filteredArchives.length}
