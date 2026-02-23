@@ -312,10 +312,16 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       step?: Step;
       maxDaysSinceAction?: number;
       search?: string;
+      situationParticulier?: SituationParticulier;
     }
   ) {
     // Construire les conditions de filtre
     const conditions = [];
+
+    // Filtre par situation particulier
+    if (filters?.situationParticulier) {
+      conditions.push(eq(parcoursPrevention.situationParticulier, filters.situationParticulier));
+    }
 
     // Filtres optionnels
     if (filters?.step) {
@@ -333,6 +339,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       .select({
         // Parcours
         parcoursId: parcoursPrevention.id,
+        situationParticulier: parcoursPrevention.situationParticulier,
         currentStep: parcoursPrevention.currentStep,
         createdAt: parcoursPrevention.createdAt,
         updatedAt: parcoursPrevention.updatedAt,

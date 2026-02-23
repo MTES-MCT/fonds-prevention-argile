@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useId } from "react";
 import { archiveDossierAction } from "@/features/backoffice/espace-agent/dossiers/actions";
+import type { ActionResult } from "@/shared/types";
 
 const ARCHIVE_REASONS = [
   "Le demandeur n'est pas éligible",
@@ -17,13 +18,21 @@ interface ArchiveDossierModalProps {
   onClose: () => void;
   parcoursId: string;
   onSuccess: () => void;
+  /** Action serveur d'archivage (défaut : archiveDossierAction) */
+  archiveAction?: (parcoursId: string, reason: string) => Promise<ActionResult<void>>;
 }
 
 /**
- * Modale d'archivage d'un dossier AMO
+ * Modale d'archivage générique
  * Permet de sélectionner une raison avant d'archiver
  */
-export function ArchiveDossierModal({ isOpen, onClose, parcoursId, onSuccess }: ArchiveDossierModalProps) {
+export function ArchiveDossierModal({
+  isOpen,
+  onClose,
+  parcoursId,
+  onSuccess,
+  archiveAction = archiveDossierAction,
+}: ArchiveDossierModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,7 +81,7 @@ export function ArchiveDossierModal({ isOpen, onClose, parcoursId, onSuccess }: 
     setError(null);
 
     try {
-      const result = await archiveDossierAction(parcoursId, reason);
+      const result = await archiveAction(parcoursId, reason);
 
       if (result.success) {
         setReason("");

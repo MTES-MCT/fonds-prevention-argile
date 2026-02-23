@@ -2,18 +2,27 @@
 
 import { useEffect, useRef, useState, useId } from "react";
 import { unarchiveDossierAction } from "@/features/backoffice/espace-agent/dossiers/actions";
+import type { ActionResult } from "@/shared/types";
 
 interface UnarchiveDossierModalProps {
   isOpen: boolean;
   onClose: () => void;
   parcoursId: string;
   onSuccess: () => void;
+  /** Action serveur de désarchivage (défaut : unarchiveDossierAction) */
+  unarchiveAction?: (parcoursId: string) => Promise<ActionResult<void>>;
 }
 
 /**
- * Modale de confirmation de désarchivage d'un dossier AMO
+ * Modale de confirmation de désarchivage générique
  */
-export function UnarchiveDossierModal({ isOpen, onClose, parcoursId, onSuccess }: UnarchiveDossierModalProps) {
+export function UnarchiveDossierModal({
+  isOpen,
+  onClose,
+  parcoursId,
+  onSuccess,
+  unarchiveAction = unarchiveDossierAction,
+}: UnarchiveDossierModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +66,7 @@ export function UnarchiveDossierModal({ isOpen, onClose, parcoursId, onSuccess }
     setError(null);
 
     try {
-      const result = await unarchiveDossierAction(parcoursId);
+      const result = await unarchiveAction(parcoursId);
 
       if (result.success) {
         // Fermer la modale via DSFR

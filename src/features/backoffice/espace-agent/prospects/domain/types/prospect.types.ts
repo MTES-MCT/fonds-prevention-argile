@@ -1,4 +1,5 @@
 import { Step } from "@/shared/domain/value-objects";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import type { Amo } from "@/features/parcours/amo/domain/entities";
 
@@ -9,6 +10,9 @@ import type { Amo } from "@/features/parcours/amo/domain/entities";
 export interface Prospect {
   /** ID du parcours */
   parcoursId: string;
+
+  /** Situation du particulier (prospect, éligible, archivé) */
+  situationParticulier: SituationParticulier;
 
   /** Informations du particulier */
   particulier: {
@@ -41,11 +45,15 @@ export interface Prospect {
 }
 
 /**
- * Résultat de la liste des prospects
+ * Résultat de la liste des prospects avec les 3 catégories
  */
 export interface ProspectsListResult {
   prospects: Prospect[];
-  totalCount: number;
+  prospectsEligibles: Prospect[];
+  prospectsArchives: Prospect[];
+  totalProspects: number;
+  totalEligibles: number;
+  totalArchives: number;
   territoriesCovered: {
     departements: string[];
     epcis: string[];

@@ -155,6 +155,7 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     // Construire l'objet ProspectDetail
     const prospectDetail: ProspectDetail = {
       parcoursId: result.parcours.id,
+      situationParticulier: result.parcours.situationParticulier,
       particulier: {
         prenom: result.user.prenom || "",
         nom: result.user.nom || "",
