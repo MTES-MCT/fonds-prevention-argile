@@ -36,10 +36,14 @@ export interface DossierSuivi {
  * Données pour la page des dossiers de l'espace AMO
  */
 export interface AmoDossiersData {
-  /** Nombre total de dossiers suivis */
+  /** Nombre total de dossiers suivis (non archivés) */
   nombreDossiersSuivis: number;
-  /** Liste des dossiers suivis */
-  dossiers: DossierSuivi[];
+  /** Nombre total de dossiers archivés */
+  nombreDossiersArchives: number;
+  /** Liste des dossiers suivis (non archivés) */
+  dossiersSuivis: DossierSuivi[];
+  /** Liste des dossiers archivés */
+  dossiersArchives: DossierSuivi[];
 }
 
 /**

@@ -12,11 +12,14 @@ vi.mock("@/shared/database/client", () => ({
   },
 }));
 
-// Helper pour mocker les chaînes Drizzle - count
-const mockDbSelectCount = (countValue: number) => {
+// Helper pour mocker les chaînes Drizzle - count avec innerJoin
+const mockDbSelectCountWithJoin = (countValue: number) => {
   const mockWhere = vi.fn().mockResolvedValue([{ count: countValue }]);
-  const mockFrom = vi.fn().mockReturnValue({
+  const mockInnerJoin = vi.fn().mockReturnValue({
     where: mockWhere,
+  });
+  const mockFrom = vi.fn().mockReturnValue({
+    innerJoin: mockInnerJoin,
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,7 +65,7 @@ const createMockDossier = (
   currentStep: Step = Step.ELIGIBILITE,
   currentStatus: Status = Status.TODO,
   communeNom?: string,
-  codeDepartement?: string
+  codeDepartement?: string,
 ) => ({
   id,
   prenom,
@@ -88,25 +91,34 @@ describe("AmoDossiersService", () => {
 
   describe("getAmoDossiersData", () => {
     it("devrait retourner les données des dossiers complètes", async () => {
-      // Arrange - Mock des requêtes DB
+      // Arrange - Mock des 4 requêtes DB parallèles + DS status pour chaque dossier
       vi.mocked(db.select)
-        .mockReturnValueOnce(mockDbSelectCount(12)) // nombre dossiers suivis
+        .mockReturnValueOnce(mockDbSelectCountWithJoin(12)) // nombre dossiers suivis
+        .mockReturnValueOnce(mockDbSelectCountWithJoin(3)) // nombre dossiers archivés
         .mockReturnValueOnce(
           mockDbSelectList([
             createMockDossier("1", "Sophie", "Dubois", Step.DIAGNOSTIC, Status.TODO, "Le Poinçonnet", "36"),
             createMockDossier("2", "Marc", "Lefèvre", Step.DEVIS, Status.EN_INSTRUCTION, "Déols", "36"),
-          ])
-        ) // liste des dossiers
+          ]),
+        ) // liste des dossiers suivis
+        .mockReturnValueOnce(
+          mockDbSelectList([
+            createMockDossier("3", "Bilbo", "Sacquet", Step.DIAGNOSTIC, Status.TODO, "Châteauroux", "36"),
+          ]),
+        ) // liste des dossiers archivés
         .mockReturnValueOnce(mockDbSelectDsStatus(null)) // DS status dossier 1
-        .mockReturnValueOnce(mockDbSelectDsStatus(DSStatus.EN_INSTRUCTION)); // DS status dossier 2
+        .mockReturnValueOnce(mockDbSelectDsStatus(DSStatus.EN_INSTRUCTION)) // DS status dossier 2
+        .mockReturnValueOnce(mockDbSelectDsStatus(null)); // DS status dossier 3
 
       // Act
       const result = await getAmoDossiersData(entrepriseAmoId);
 
       // Assert
       expect(result.nombreDossiersSuivis).toBe(12);
-      expect(result.dossiers).toHaveLength(2);
-      expect(result.dossiers[0]).toEqual({
+      expect(result.nombreDossiersArchives).toBe(3);
+      expect(result.dossiersSuivis).toHaveLength(2);
+      expect(result.dossiersArchives).toHaveLength(1);
+      expect(result.dossiersSuivis[0]).toEqual({
         id: "1",
         prenom: "Sophie",
         nom: "Dubois",
@@ -116,28 +128,35 @@ describe("AmoDossiersService", () => {
         statut: Status.TODO,
         dsStatus: null,
         dateValidation: new Date("2024-01-15"),
+        dateDernierStatut: undefined,
       });
-      expect(result.dossiers[1].dsStatus).toBe(DSStatus.EN_INSTRUCTION);
+      expect(result.dossiersSuivis[1].dsStatus).toBe(DSStatus.EN_INSTRUCTION);
+      expect(result.dossiersArchives[0].prenom).toBe("Bilbo");
     });
 
-    it("devrait retourner 0 et tableau vide si aucun dossier", async () => {
+    it("devrait retourner 0 et tableaux vides si aucun dossier", async () => {
       // Arrange
       vi.mocked(db.select)
-        .mockReturnValueOnce(mockDbSelectCount(0)) // nombre dossiers
-        .mockReturnValueOnce(mockDbSelectList([])); // liste vide
+        .mockReturnValueOnce(mockDbSelectCountWithJoin(0)) // nombre suivis
+        .mockReturnValueOnce(mockDbSelectCountWithJoin(0)) // nombre archivés
+        .mockReturnValueOnce(mockDbSelectList([])) // liste suivis vide
+        .mockReturnValueOnce(mockDbSelectList([])); // liste archivés vide
 
       // Act
       const result = await getAmoDossiersData(entrepriseAmoId);
 
       // Assert
       expect(result.nombreDossiersSuivis).toBe(0);
-      expect(result.dossiers).toEqual([]);
+      expect(result.nombreDossiersArchives).toBe(0);
+      expect(result.dossiersSuivis).toEqual([]);
+      expect(result.dossiersArchives).toEqual([]);
     });
 
     it("devrait gérer les dossiers sans données de commune", async () => {
       // Arrange
       vi.mocked(db.select)
-        .mockReturnValueOnce(mockDbSelectCount(1))
+        .mockReturnValueOnce(mockDbSelectCountWithJoin(1))
+        .mockReturnValueOnce(mockDbSelectCountWithJoin(0))
         .mockReturnValueOnce(
           mockDbSelectList([
             {
@@ -150,22 +169,25 @@ describe("AmoDossiersService", () => {
               currentStatus: Status.TODO,
               rgaSimulationData: null,
             },
-          ])
+          ]),
         )
+        .mockReturnValueOnce(mockDbSelectList([]))
         .mockReturnValueOnce(mockDbSelectDsStatus(null));
 
       // Act
       const result = await getAmoDossiersData(entrepriseAmoId);
 
       // Assert
-      expect(result.dossiers[0].commune).toBeNull();
-      expect(result.dossiers[0].codeDepartement).toBeNull();
+      expect(result.dossiersSuivis[0].commune).toBeNull();
+      expect(result.dossiersSuivis[0].codeDepartement).toBeNull();
     });
 
     it("devrait retourner la structure complète des données", async () => {
       // Arrange
       vi.mocked(db.select)
-        .mockReturnValueOnce(mockDbSelectCount(5))
+        .mockReturnValueOnce(mockDbSelectCountWithJoin(5))
+        .mockReturnValueOnce(mockDbSelectCountWithJoin(2))
+        .mockReturnValueOnce(mockDbSelectList([]))
         .mockReturnValueOnce(mockDbSelectList([]));
 
       // Act
@@ -173,25 +195,33 @@ describe("AmoDossiersService", () => {
 
       // Assert
       expect(result).toHaveProperty("nombreDossiersSuivis");
-      expect(result).toHaveProperty("dossiers");
+      expect(result).toHaveProperty("nombreDossiersArchives");
+      expect(result).toHaveProperty("dossiersSuivis");
+      expect(result).toHaveProperty("dossiersArchives");
       expect(typeof result.nombreDossiersSuivis).toBe("number");
-      expect(Array.isArray(result.dossiers)).toBe(true);
+      expect(typeof result.nombreDossiersArchives).toBe("number");
+      expect(Array.isArray(result.dossiersSuivis)).toBe(true);
+      expect(Array.isArray(result.dossiersArchives)).toBe(true);
     });
 
     it("devrait retourner les dossiers avec la bonne structure", async () => {
       // Arrange
       vi.mocked(db.select)
-        .mockReturnValueOnce(mockDbSelectCount(1))
+        .mockReturnValueOnce(mockDbSelectCountWithJoin(1))
+        .mockReturnValueOnce(mockDbSelectCountWithJoin(0))
         .mockReturnValueOnce(
-          mockDbSelectList([createMockDossier("abc-123", "Claire", "Moreau", Step.FACTURES, Status.VALIDE, "Issoudun", "36")])
+          mockDbSelectList([
+            createMockDossier("abc-123", "Claire", "Moreau", Step.FACTURES, Status.VALIDE, "Issoudun", "36"),
+          ]),
         )
+        .mockReturnValueOnce(mockDbSelectList([]))
         .mockReturnValueOnce(mockDbSelectDsStatus(DSStatus.ACCEPTE));
 
       // Act
       const result = await getAmoDossiersData(entrepriseAmoId);
 
       // Assert
-      const dossier = result.dossiers[0];
+      const dossier = result.dossiersSuivis[0];
       expect(dossier).toHaveProperty("id");
       expect(dossier).toHaveProperty("prenom");
       expect(dossier).toHaveProperty("nom");
@@ -213,13 +243,16 @@ describe("AmoDossiersService", () => {
       // Arrange - Tableaux vides pour les counts
       const mockEmptyCount = () => {
         const mockWhere = vi.fn().mockResolvedValue([]);
-        const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+        const mockInnerJoin = vi.fn().mockReturnValue({ where: mockWhere });
+        const mockFrom = vi.fn().mockReturnValue({ innerJoin: mockInnerJoin });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return { from: mockFrom } as any;
       };
 
       vi.mocked(db.select)
         .mockReturnValueOnce(mockEmptyCount())
+        .mockReturnValueOnce(mockEmptyCount())
+        .mockReturnValueOnce(mockDbSelectList([]))
         .mockReturnValueOnce(mockDbSelectList([]));
 
       // Act
@@ -227,6 +260,7 @@ describe("AmoDossiersService", () => {
 
       // Assert
       expect(result.nombreDossiersSuivis).toBe(0);
+      expect(result.nombreDossiersArchives).toBe(0);
     });
   });
 });

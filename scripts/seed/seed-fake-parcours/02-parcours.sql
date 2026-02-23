@@ -181,5 +181,27 @@ VALUES
    NOW() - INTERVAL '38 days', NOW() - INTERVAL '36 days')
 ON CONFLICT (id) DO NOTHING;
 
+-- ===== DOSSIERS ARCHIVÉS (3 parcours) =====
+INSERT INTO parcours_prevention (id, user_id, current_step, current_status, rga_simulation_data, created_at, updated_at, archived_at, archive_reason)
+VALUES
+  -- Archivé à l'étape diagnostic (Châteauroux)
+  ('22222222-2222-2222-2222-222222222241', '11111111-1111-1111-1111-111111111171', 'diagnostic', 'todo',
+   '{"logement": {"commune_nom": "Châteauroux", "code_departement": "36", "adresse": "5 rue des Peupliers", "commune": "36044", "code_region": "24", "epci": "243600327", "coordonnees": "46.8190,1.6870", "clef_ban": "36044_0008", "commune_denormandie": false, "annee_de_construction": "1971", "rnb": "", "niveaux": 1, "zone_dexposition": "moyen", "type": "maison", "mitoyen": false, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": false, "sinistres": "endommagée"}, "menage": {"revenu_rga": 19000, "personnes": 2}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2024-09-15T10:00:00Z"}',
+   NOW() - INTERVAL '90 days', NOW() - INTERVAL '60 days',
+   NOW() - INTERVAL '10 days', 'Le demandeur ne souhaite plus poursuivre les travaux'),
+
+  -- Archivé à l'étape devis (Issoudun)
+  ('22222222-2222-2222-2222-222222222242', '11111111-1111-1111-1111-111111111172', 'devis', 'en_instruction',
+   '{"logement": {"commune_nom": "Issoudun", "code_departement": "36", "adresse": "30 rue du Pont", "commune": "36088", "code_region": "24", "epci": "243600319", "coordonnees": "46.9490,1.9810", "clef_ban": "36088_0007", "commune_denormandie": false, "annee_de_construction": "1966", "rnb": "", "niveaux": 2, "zone_dexposition": "fort", "type": "maison", "mitoyen": true, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": true, "indemnise_avant_juillet_2025": true, "indemnise_avant_juillet_2015": false, "indemnise_montant_indemnite": 8000, "sinistres": "très peu endommagée"}, "menage": {"revenu_rga": 25000, "personnes": 3}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2024-08-20T14:00:00Z"}',
+   NOW() - INTERVAL '120 days', NOW() - INTERVAL '45 days',
+   NOW() - INTERVAL '5 days', 'Dossier inactif depuis plus de 3 mois'),
+
+  -- Archivé à l'étape factures (Le Blanc)
+  ('22222222-2222-2222-2222-222222222243', '11111111-1111-1111-1111-111111111173', 'factures', 'todo',
+   '{"logement": {"commune_nom": "Le Blanc", "code_departement": "36", "adresse": "18 rue de la Paix", "commune": "36018", "code_region": "24", "epci": "243600343", "coordonnees": "46.6340,1.0690", "clef_ban": "36018_0006", "commune_denormandie": false, "annee_de_construction": "1959", "rnb": "", "niveaux": 1, "zone_dexposition": "fort", "type": "maison", "mitoyen": false, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": true, "indemnise_avant_juillet_2025": true, "indemnise_avant_juillet_2015": false, "indemnise_montant_indemnite": 11000, "sinistres": "endommagée"}, "menage": {"revenu_rga": 16500, "personnes": 2}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2024-07-10T09:00:00Z"}',
+   NOW() - INTERVAL '150 days', NOW() - INTERVAL '30 days',
+   NOW() - INTERVAL '2 days', 'Vente du logement en cours')
+ON CONFLICT (id) DO NOTHING;
+
 -- Vérification
 SELECT COUNT(*) as parcours_crees FROM parcours_prevention WHERE id::text LIKE '22222222-2222-2222-2222-2222222222%';

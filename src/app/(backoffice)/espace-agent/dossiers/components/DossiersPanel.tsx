@@ -8,9 +8,9 @@ import { DossiersSuivisTable } from "./DossiersSuivisTable";
 import Link from "next/link";
 
 /**
- * Panel des dossiers suivis pour l'espace AMO
+ * Panel des dossiers pour l'espace AMO avec onglets Suivis / Archivés
  */
-export function DossiersSuivisPanel() {
+export function DossiersPanel() {
   const [data, setData] = useState<AmoDossiersData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,16 +73,57 @@ export function DossiersSuivisPanel() {
       <DossiersSuivisHeader nombreDossiers={data.nombreDossiersSuivis} />
       <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
         <div className="fr-container">
-          <h2>
-            {data.nombreDossiersSuivis} dossier{data.nombreDossiersSuivis > 1 ? "s" : ""} suivi
-            {data.nombreDossiersSuivis > 1 ? "s" : ""}
-          </h2>
-          <DossiersSuivisTable dossiers={data.dossiers} />
+          <div className="fr-tabs">
+            <ul className="fr-tabs__list" role="tablist" aria-label="Dossiers">
+              <li role="presentation">
+                <button
+                  type="button"
+                  id="tab-suivis"
+                  className="fr-tabs__tab"
+                  tabIndex={0}
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="tab-suivis-panel">
+                  <p className="fr-badge fr-badge--sm fr-mr-2v fr-badge--blue-cumulus">{data.nombreDossiersSuivis}</p>
+                  👁️ Suivis
+                </button>
+              </li>
+              <li role="presentation">
+                <button
+                  type="button"
+                  id="tab-archives"
+                  className="fr-tabs__tab"
+                  tabIndex={-1}
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="tab-archives-panel">
+                  <p className="fr-badge fr-badge--sm fr-mr-2v fr-badge--blue-cumulus">{data.nombreDossiersArchives}</p>
+                  🗂️ Archivés
+                </button>
+              </li>
+            </ul>
+            <div
+              id="tab-suivis-panel"
+              className="fr-tabs__panel fr-tabs__panel--selected"
+              role="tabpanel"
+              aria-labelledby="tab-suivis"
+              tabIndex={0}>
+              <DossiersSuivisTable dossiers={data.dossiersSuivis} />
+            </div>
+            <div
+              id="tab-archives-panel"
+              className="fr-tabs__panel"
+              role="tabpanel"
+              aria-labelledby="tab-archives"
+              tabIndex={0}>
+              <DossiersSuivisTable dossiers={data.dossiersArchives} />
+            </div>
+          </div>
 
           <div className="fr-callout">
             <h3 className="fr-callout__title">Le saviez-vous ?</h3>
             <p className="fr-callout__text">
-              Un demandeur peut vous inviter à consulter et remplir ses formulaires. Les options d’accès sont
+              Un demandeur peut vous inviter à consulter et remplir ses formulaires. Les options d&apos;accès sont
               disponibles sur son compte{" "}
               <Link href="https://demarche.numerique.gouv.fr" target="_blank" rel="noopener noreferrer">
                 demarche.numerique.gouv.fr
