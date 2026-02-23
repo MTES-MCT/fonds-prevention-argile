@@ -13,6 +13,8 @@ import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 export interface DossierSuivi {
   /** ID de la validation AMO (pour le lien vers la page détail) */
   id: string;
+  /** ID du parcours prévention (pour les actions archiver/désarchiver) */
+  parcoursId: string;
   /** Prénom du demandeur */
   prenom: string | null;
   /** Nom du demandeur */

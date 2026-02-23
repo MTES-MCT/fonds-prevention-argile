@@ -144,6 +144,7 @@ async function getDossiersWithArchiveFilter(
 
       return {
         id: row.id,
+        parcoursId: row.parcoursId,
         prenom: row.prenom,
         nom: row.nom,
         commune: row.rgaSimulationData?.logement?.commune_nom ?? null,

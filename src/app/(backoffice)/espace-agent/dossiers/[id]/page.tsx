@@ -10,6 +10,7 @@ import { NotesPartagees } from "../../shared";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
 import { PiecesJustificatives } from "./components/PiecesJustificatives";
 import { GagnezDuTempsTravaux } from "./components/GagnezDuTempsTravaux";
+import { ArchiveDossierButton } from "./components/ArchiveDossierButton";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -66,12 +67,19 @@ export default async function DossierDetailPage({ params }: PageProps) {
           </div>
         </nav>
 
-        {/* Titre de la page */}
+        {/* Titre de la page & bouton archiver */}
         <div className="fr-mb-4w">
-          <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
-          <div className="fr-badges-group">
-            <p className="fr-badge fr-badge--new">EN CONSTRUCTION</p>
-            <p className="fr-badge">{STEP_LABELS[dossier.currentStep]}</p>
+          <div className="fr-grid-row fr-grid-row--middle fr-grid-row--gutters">
+            <div className="fr-col">
+              <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
+              <div className="fr-badges-group">
+                <p className="fr-badge fr-badge--new">EN CONSTRUCTION</p>
+                <p className="fr-badge">{STEP_LABELS[dossier.currentStep]}</p>
+              </div>
+            </div>
+            <div className="fr-col-auto">
+              <ArchiveDossierButton parcoursId={dossier.parcoursId} />
+            </div>
           </div>
         </div>
 

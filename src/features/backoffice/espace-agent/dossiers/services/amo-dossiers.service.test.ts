@@ -120,6 +120,7 @@ describe("AmoDossiersService", () => {
       expect(result.dossiersArchives).toHaveLength(1);
       expect(result.dossiersSuivis[0]).toEqual({
         id: "1",
+        parcoursId: "parcours-1",
         prenom: "Sophie",
         nom: "Dubois",
         commune: "Le Poinçonnet",
