@@ -1,3 +1,4 @@
+export * from "./ActionMenu";
 export * from "./StatTile";
 export * from "./RepartitionCardTile";
 export * from "./InfoDemandeur";

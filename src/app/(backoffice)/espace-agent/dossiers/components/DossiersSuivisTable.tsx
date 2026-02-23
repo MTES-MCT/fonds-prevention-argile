@@ -1,10 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { DossierSuivi } from "@/features/backoffice/espace-agent/dossiers/domain/types";
-import { STEP_LABELS, getPrecisionText, getPrecisionStyle } from "@/features/backoffice/espace-agent/dossiers/domain/types";
+import {
+  STEP_LABELS,
+  getPrecisionText,
+  getPrecisionStyle,
+} from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import { ROUTES } from "@/features/auth/domain/value-objects";
 import { formatNomComplet, formatDaysAgoSplit } from "@/shared/utils";
+import { ActionMenu } from "../../shared/components/ActionMenu";
 
 interface DossiersSuivisTableProps {
   dossiers: DossierSuivi[];
@@ -16,6 +22,8 @@ interface DossiersSuivisTableProps {
  * Tableau des dossiers suivis
  */
 export function DossiersSuivisTable({ dossiers, isArchived = false }: DossiersSuivisTableProps) {
+  const router = useRouter();
+
   return (
     <div className="fr-table fr-table--bordered">
       <div className="fr-table__wrapper">
@@ -41,7 +49,7 @@ export function DossiersSuivisTable({ dossiers, isArchived = false }: DossiersSu
                     Précisions
                   </th>
                   <th scope="col">
-                    <span className="fr-icon-info-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
+                    <span className="fr-icon-flashlight-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
                     Action
                   </th>
                 </tr>
@@ -86,11 +94,27 @@ export function DossiersSuivisTable({ dossiers, isArchived = false }: DossiersSu
                           )}
                         </td>
                         <td>
-                          <Link
-                            href={ROUTES.backoffice.espaceAmo.dossier(dossier.id)}
-                            className="fr-btn fr-btn--sm fr-btn--secondary fr-btn--icon-right fr-icon-eye-line">
-                            Voir détails
-                          </Link>
+                          <ActionMenu
+                            items={[
+                              {
+                                label: "Voir sa simulation d'éligibilité",
+                                icon: "fr-icon-eye-line",
+                                onClick: () =>
+                                  router.push(ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)),
+                              },
+                              isArchived
+                                ? {
+                                    label: "Désarchiver",
+                                    icon: "fr-icon-inbox-archive-line",
+                                    onClick: () => console.log("TODO: désarchiver dossier", dossier.id),
+                                  }
+                                : {
+                                    label: "Archiver",
+                                    icon: "fr-icon-archive-line",
+                                    onClick: () => console.log("TODO: archiver dossier", dossier.id),
+                                  },
+                            ]}
+                          />
                         </td>
                       </tr>
                     );
