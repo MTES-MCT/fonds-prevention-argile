@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import type { EligibilityChecks } from "../../domain/entities/eligibility-result.entity";
 import { EligibilityChecksList } from "./EligibilityChecksList";
 import { ModificationsSummary } from "./ModificationsSummary";
@@ -29,8 +28,7 @@ interface ResultEditionProps {
  * et un bouton pour enregistrer les changements.
  */
 export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultEditionProps) {
-  const router = useRouter();
-  const { formTitle, initialData, dossierId, redirectAfterSave } = useSimulateurContext();
+  const { formTitle, initialData, dossierId, redirectAfterSave, redirectAfterSaveList } = useSimulateurContext();
   const answers = useSimulateurStore(selectAnswers);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,8 +94,15 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
         return;
       }
 
-      // Rediriger vers la page d'origine (dossier, demande ou prospect)
-      router.push(redirectAfterSave || ROUTES.backoffice.espaceAmo.dossier(dossierId));
+      // Rediriger selon l'éligibilité :
+      // - Éligible → page de détail (dossier, demande ou prospect)
+      // - Non éligible → page de liste (le détail peut ne plus être accessible)
+      // Utiliser window.location.href pour un rechargement complet de la page
+      // (router.push peut causer des 404 avec les server components + modale DSFR ouverte)
+      const redirectUrl = isEligible
+        ? (redirectAfterSave || ROUTES.backoffice.espaceAmo.dossier(dossierId))
+        : (redirectAfterSaveList || redirectAfterSave || ROUTES.backoffice.espaceAmo.dossiers);
+      window.location.href = redirectUrl;
     } catch {
       setError("Erreur lors de la sauvegarde");
       setIsSaving(false);

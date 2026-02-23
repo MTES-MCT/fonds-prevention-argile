@@ -111,7 +111,7 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
         </nav>
 
         {/* Simulateur en mode édition */}
-        <SimulateurEdition nomComplet={nomComplet} initialData={rgaData} dossierId={id} redirectAfterSave={detailHref} />
+        <SimulateurEdition nomComplet={nomComplet} initialData={rgaData} dossierId={id} redirectAfterSave={detailHref} redirectAfterSaveList={sectionHref} />
       </div>
     </>
   );

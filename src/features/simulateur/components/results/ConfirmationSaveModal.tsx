@@ -75,26 +75,21 @@ export function ConfirmationSaveModal({ isOpen, onClose, onConfirm, isLoading }:
                   <span className="fr-icon-arrow-right-line fr-icon--lg fr-mr-2v" aria-hidden="true"></span>
                   Confirmer la mise à jour des données ?
                 </h1>
-                <p>Attention, cette action est irréversible.</p>
-                <p>Pensez à informer le demandeur de la mise à jour de sa demande.</p>
+                <p>
+                  Attention, cette action est irréversible.
+                  <br />
+                  Pensez à informer le demandeur de la mise à jour de sa demande.
+                </p>
               </div>
               <div className="fr-modal__footer">
                 <ul className="fr-btns-group fr-btns-group--right fr-btns-group--inline-reverse fr-btns-group--inline-lg">
                   <li>
-                    <button
-                      type="button"
-                      className="fr-btn"
-                      onClick={onConfirm}
-                      disabled={isLoading}>
+                    <button type="button" className="fr-btn" onClick={onConfirm} disabled={isLoading}>
                       {isLoading ? "Enregistrement..." : "Confirmer"}
                     </button>
                   </li>
                   <li>
-                    <button
-                      type="button"
-                      className="fr-btn fr-btn--secondary"
-                      onClick={onClose}
-                      disabled={isLoading}>
+                    <button type="button" className="fr-btn fr-btn--secondary" onClick={onClose} disabled={isLoading}>
                       Annuler
                     </button>
                   </li>

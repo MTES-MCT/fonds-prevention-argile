@@ -12,8 +12,10 @@ interface SimulateurContextValue {
   initialData?: RGASimulationData | null;
   /** ID du dossier ou parcours (mode édition, pour la sauvegarde) */
   dossierId?: string;
-  /** URL de redirection après sauvegarde (mode édition) */
+  /** URL de redirection après sauvegarde si éligible (page de détail) */
   redirectAfterSave?: string;
+  /** URL de redirection après sauvegarde si non éligible (page de liste) */
+  redirectAfterSaveList?: string;
 }
 
 const SimulateurContext = createContext<SimulateurContextValue>({});

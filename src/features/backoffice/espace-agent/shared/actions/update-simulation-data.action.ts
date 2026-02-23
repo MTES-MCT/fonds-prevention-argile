@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
 import { eq } from "drizzle-orm";
@@ -85,6 +86,9 @@ export async function updateSimulationDataAction(
         return { success: false, error: "Erreur lors de la mise à jour" };
       }
 
+      // Invalider le cache de toutes les pages de l'espace agent
+      revalidatePath("/espace-agent", "layout");
+
       return {
         success: true,
         data: { parcoursId: dossier.parcours.id },
@@ -112,6 +116,9 @@ export async function updateSimulationDataAction(
     if (!updated) {
       return { success: false, error: "Erreur lors de la mise à jour" };
     }
+
+    // Invalider le cache de toutes les pages de l'espace agent
+    revalidatePath("/espace-agent", "layout");
 
     return {
       success: true,
