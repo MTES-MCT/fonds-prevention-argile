@@ -155,32 +155,43 @@ export function DossiersPanel() {
               role="tabpanel"
               aria-labelledby="tab-suivis"
               tabIndex={0}>
-              <div className="fr-select-group" style={{ maxWidth: "300px", marginLeft: "auto" }}>
-                <label className="fr-label" htmlFor="filtre-etape-suivis">
-                  Étape
-                </label>
-                <select
-                  className="fr-select"
-                  id="filtre-etape-suivis"
-                  name="filtre-etape-suivis"
-                  value={filterEtapeSuivis}
-                  onChange={(e) => handleFilterEtapeSuivisChange(e.target.value)}>
-                  <option value="">Toutes les étapes</option>
-                  {Object.entries(STEP_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <DossiersSuivisTable dossiers={paginatedSuivis} onRefresh={loadData} />
-              <Pagination
-                currentPage={pageSuivis}
-                totalItems={filteredSuivis.length}
-                pageSize={pageSizeSuivis}
-                onPageChange={setPageSuivis}
-                onPageSizeChange={handlePageSizeSuivisChange}
-              />
+              {data.nombreDossiersSuivis === 0 ? (
+                <div className="fr-alert fr-alert--info">
+                  <h3 className="fr-alert__title">Vous n&apos;avez pas de dossier suivi</h3>
+                  <p>
+                    Recevez et acceptez des demandes d&apos;accompagnement. Les dossiers liés apparaîtront ensuite.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="fr-select-group" style={{ maxWidth: "300px", marginLeft: "auto" }}>
+                    <label className="fr-label" htmlFor="filtre-etape-suivis">
+                      Étape
+                    </label>
+                    <select
+                      className="fr-select"
+                      id="filtre-etape-suivis"
+                      name="filtre-etape-suivis"
+                      value={filterEtapeSuivis}
+                      onChange={(e) => handleFilterEtapeSuivisChange(e.target.value)}>
+                      <option value="">Toutes les étapes</option>
+                      {Object.entries(STEP_LABELS).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <DossiersSuivisTable dossiers={paginatedSuivis} onRefresh={loadData} />
+                  <Pagination
+                    currentPage={pageSuivis}
+                    totalItems={filteredSuivis.length}
+                    pageSize={pageSizeSuivis}
+                    onPageChange={setPageSuivis}
+                    onPageSizeChange={handlePageSizeSuivisChange}
+                  />
+                </>
+              )}
             </div>
             <div
               id="tab-archives-panel"
