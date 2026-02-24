@@ -18,9 +18,9 @@ export type QualificationAction = (typeof QUALIFICATION_ACTIONS)[number]["value"
 
 /** Décisions possibles */
 export const QUALIFICATION_DECISIONS = [
-  { value: "eligible", label: "Éligible et peut passer à l'étape AMO" },
-  { value: "a_qualifier", label: "À qualifier (infos manquantes)" },
-  { value: "non_eligible", label: "Non éligible" },
+  { value: "eligible", label: "\u2705 Éligible et peut passer à l'étape AMO" },
+  { value: "a_qualifier", label: "\u23F3 À qualifier" },
+  { value: "non_eligible", label: "\u26D4 Non éligible" },
 ] as const;
 
 /** Raisons d'inéligibilité (utilisées uniquement si decision = "non_eligible") */

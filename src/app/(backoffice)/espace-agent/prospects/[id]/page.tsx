@@ -5,18 +5,17 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { formatNomComplet, formatDateShort } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
-import {
-  InfoDemandeur,
-  InfoLogement,
-  ParcoursDemandeur,
-  GagnezDuTemps,
-  AFaire,
-} from "../../shared";
+import { InfoDemandeur, InfoLogement, ParcoursDemandeur, GagnezDuTemps, AFaire } from "../../shared";
 import { NotesPartagees } from "../../shared";
 import type { ProspectAmoInfo } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { ContactCard } from "@/shared/components/ContactCard/ContactCard";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { ArchiveProspectButton } from "./components/ArchiveProspectButton";
+import { QualificationSection } from "./components/qualification/QualificationSection";
+import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
+import { agentsRepository } from "@/shared/database/repositories/agents.repository";
+import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
+import type { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -46,6 +45,23 @@ export default async function ProspectDetailPage({ params }: PageProps) {
 
   const prospect = result.data;
   const nomComplet = formatNomComplet(prospect.particulier.prenom, prospect.particulier.nom);
+
+  // Récupérer la dernière qualification
+  const latestQualification = await qualificationService.getLatestQualification(prospect.parcoursId);
+
+  // Récupérer les infos agent/structure pour le callout qualification
+  let qualificationAgentNom = "";
+  let qualificationStructureNom = "";
+  if (latestQualification) {
+    const agent = await agentsRepository.findById(latestQualification.agentId);
+    if (agent) {
+      qualificationAgentNom = formatNomComplet(agent.givenName, agent.usualName);
+      if (agent.allersVersId) {
+        const structure = await allersVersRepository.findById(agent.allersVersId);
+        qualificationStructureNom = structure?.nom ?? "";
+      }
+    }
+  }
 
   // Construire les objets pour les composants partagés
   const demandeur = {
@@ -104,7 +120,23 @@ export default async function ProspectDetailPage({ params }: PageProps) {
         {/* Section informations */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
-            <CalloutInfosProspect amoInfo={prospect.amoInfo} />
+            {/* <CalloutInfosProspect amoInfo={prospect.amoInfo} /> */}
+            <QualificationSection
+              parcoursId={prospect.parcoursId}
+              qualification={
+                latestQualification
+                  ? {
+                      decision: latestQualification.decision as QualificationDecision,
+                      actionsRealisees: latestQualification.actionsRealisees,
+                      raisonsIneligibilite: latestQualification.raisonsIneligibilite,
+                      note: latestQualification.note,
+                      createdAt: latestQualification.createdAt.toISOString(),
+                    }
+                  : null
+              }
+              agentNom={qualificationAgentNom}
+              structureNom={qualificationStructureNom}
+            />
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <InfoDemandeur
@@ -210,7 +242,15 @@ function CalloutInfosProspect({ amoInfo }: { amoInfo: ProspectAmoInfo }) {
           <h4 className="fr-h6 fr-mt-3w fr-mb-2w">Liste des AMO locaux certifiés pour le demandeur</h4>
           <div className="fr-grid-row fr-grid-row--gutters">
             {amoInfo.amosDisponibles.map((amo) => (
-              <ContactCard key={amo.id} id={amo.id} nom={amo.nom} emails={amo.emails} telephone={amo.telephone} adresse={amo.adresse} selectable={false} />
+              <ContactCard
+                key={amo.id}
+                id={amo.id}
+                nom={amo.nom}
+                emails={amo.emails}
+                telephone={amo.telephone}
+                adresse={amo.adresse}
+                selectable={false}
+              />
             ))}
           </div>
         </div>
