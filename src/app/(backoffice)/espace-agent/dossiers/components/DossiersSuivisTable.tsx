@@ -12,8 +12,8 @@ import {
 import { ROUTES } from "@/features/auth/domain/value-objects";
 import { formatNomComplet, formatDaysAgoSplit } from "@/shared/utils";
 import { ActionMenu } from "../../shared/components/ActionMenu";
-import { ArchiveDossierModal } from "./ArchiveDossierModal";
-import { UnarchiveDossierModal } from "./UnarchiveDossierModal";
+import { ArchiveModal } from "../../shared/components/ArchiveModal";
+import { UnarchiveModal } from "../../shared/components/UnarchiveModal";
 
 interface DossiersSuivisTableProps {
   dossiers: DossierSuivi[];
@@ -152,7 +152,7 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
       </div>
 
       {/* Modale d'archivage (toujours montée pour que le DSFR l'initialise) */}
-      <ArchiveDossierModal
+      <ArchiveModal
         isOpen={!!archiveParcoursId}
         onClose={() => setArchiveParcoursId(null)}
         parcoursId={archiveParcoursId ?? ""}
@@ -160,7 +160,7 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
       />
 
       {/* Modale de désarchivage (toujours montée pour que le DSFR l'initialise) */}
-      <UnarchiveDossierModal
+      <UnarchiveModal
         isOpen={!!unarchiveParcoursId}
         onClose={() => setUnarchiveParcoursId(null)}
         parcoursId={unarchiveParcoursId ?? ""}

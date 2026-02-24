@@ -39,7 +39,19 @@ VALUES
   ('11111111-1111-1111-1111-111111111167', 'fc-test-167', 'daniel.garcia@test.fr', 'Daniel', 'Garcia', '06 11 22 33 67', NOW(), NOW(), NOW()),
   ('11111111-1111-1111-1111-111111111168', 'fc-test-168', 'michele.rodriguez@test.fr', 'Michèle', 'Rodriguez', '06 11 22 33 68', NOW(), NOW(), NOW()),
   ('11111111-1111-1111-1111-111111111169', 'fc-test-169', 'marc.perez@test.fr', 'Marc', 'Perez', '06 11 22 33 69', NOW(), NOW(), NOW()),
-  ('11111111-1111-1111-1111-111111111170', 'fc-test-170', 'brigitte.sanchez@test.fr', 'Brigitte', 'Sanchez', '06 11 22 33 70', NOW(), NOW(), NOW());
+  ('11111111-1111-1111-1111-111111111170', 'fc-test-170', 'brigitte.sanchez@test.fr', 'Brigitte', 'Sanchez', '06 11 22 33 70', NOW(), NOW(), NOW()),
+
+  -- Utilisateurs supplémentaires pour prospects éligibles et archivés (IDs 181-188)
+  -- NB: 171-173 déjà pris dans 01-users.sql (dossiers archivés AMO)
+  ('11111111-1111-1111-1111-111111111181', 'fc-test-181', 'rene.faure@test.fr', 'René', 'Faure', '06 11 22 33 81', NOW(), NOW(), NOW()),
+  ('11111111-1111-1111-1111-111111111182', 'fc-test-182', 'monique.mercier@test.fr', 'Monique', 'Mercier', '06 11 22 33 82', NOW(), NOW(), NOW()),
+  ('11111111-1111-1111-1111-111111111183', 'fc-test-183', 'yves.lecomte@test.fr', 'Yves', 'Lecomte', '06 11 22 33 83', NOW(), NOW(), NOW()),
+  ('11111111-1111-1111-1111-111111111184', 'fc-test-184', 'colette.duval@test.fr', 'Colette', 'Duval', '06 11 22 33 84', NOW(), NOW(), NOW()),
+  ('11111111-1111-1111-1111-111111111185', 'fc-test-185', 'gerard.masson@test.fr', 'Gérard', 'Masson', '06 11 22 33 85', NOW(), NOW(), NOW()),
+  ('11111111-1111-1111-1111-111111111186', 'fc-test-186', 'helene.chevalier@test.fr', 'Hélène', 'Chevalier', '06 11 22 33 86', NOW(), NOW(), NOW()),
+  ('11111111-1111-1111-1111-111111111187', 'fc-test-187', 'jacques.fleury@test.fr', 'Jacques', 'Fleury', '06 11 22 33 87', NOW(), NOW(), NOW()),
+  ('11111111-1111-1111-1111-111111111188', 'fc-test-188', 'denise.barbier@test.fr', 'Denise', 'Barbier', '06 11 22 33 88', NOW(), NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
 -- VÉRIFICATION
@@ -51,4 +63,4 @@ FROM users
 WHERE id::text LIKE '11111111-1111-1111-1111-11111111114%'
    OR id::text LIKE '11111111-1111-1111-1111-11111111115%'
    OR id::text LIKE '11111111-1111-1111-1111-11111111116%'
-   OR id::text LIKE '11111111-1111-1111-1111-11111111117%';
+   OR id::text LIKE '11111111-1111-1111-1111-11111111118%';

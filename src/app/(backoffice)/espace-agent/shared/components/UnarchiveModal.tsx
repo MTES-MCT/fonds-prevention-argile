@@ -1,36 +1,46 @@
 "use client";
 
 import { useEffect, useRef, useState, useId } from "react";
-import { archiveDossierAction } from "@/features/backoffice/espace-agent/dossiers/actions";
+import { unarchiveDossierAction } from "@/features/backoffice/espace-agent/dossiers/actions";
+import type { ActionResult } from "@/shared/types";
 
-const ARCHIVE_REASONS = [
-  "Le demandeur n'est pas éligible",
-  "Reste à charge trop élevé",
-  "Le demandeur a abandonné le projet",
-  "Le demandeur ne donne pas de réponse",
-  "Fausse déclaration / documents falsifiés",
-  "Autre",
-] as const;
-
-interface ArchiveDossierModalProps {
+interface UnarchiveModalProps {
   isOpen: boolean;
   onClose: () => void;
   parcoursId: string;
   onSuccess: () => void;
+  /** Action serveur de désarchivage (défaut : unarchiveDossierAction) */
+  unarchiveAction?: (parcoursId: string) => Promise<ActionResult<void>>;
+  /** Label de l'entité ("dossier" ou "prospect") — défaut : "dossier" */
+  entityLabel?: string;
+  /** Description personnalisée (override le texte par défaut) */
+  description?: string;
 }
 
 /**
- * Modale d'archivage d'un dossier AMO
- * Permet de sélectionner une raison avant d'archiver
+ * Modale de confirmation de désarchivage générique (dossiers AMO et prospects)
  */
-export function ArchiveDossierModal({ isOpen, onClose, parcoursId, onSuccess }: ArchiveDossierModalProps) {
+export function UnarchiveModal({
+  isOpen,
+  onClose,
+  parcoursId,
+  onSuccess,
+  unarchiveAction = unarchiveDossierAction,
+  entityLabel = "dossier",
+  description,
+}: UnarchiveModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const uniqueId = useId();
-  const modalId = `modal-archive-dossier-${uniqueId}`;
-  const selectId = `archive-reason-${uniqueId}`;
+  const modalId = `modal-unarchive-${uniqueId}`;
+
+  const defaultDescription =
+    entityLabel === "prospect"
+      ? "Le prospect sera de nouveau visible dans la liste des prospects."
+      : "Le dossier sera de nouveau visible dans vos dossiers suivis.";
+
+  const displayDescription = description ?? defaultDescription;
 
   // Ouvrir/fermer via l'API DSFR
   useEffect(() => {
@@ -54,7 +64,6 @@ export function ArchiveDossierModal({ isOpen, onClose, parcoursId, onSuccess }: 
     if (!dialog) return;
 
     const handleConceal = () => {
-      setReason("");
       setError(null);
       onClose();
     };
@@ -66,16 +75,13 @@ export function ArchiveDossierModal({ isOpen, onClose, parcoursId, onSuccess }: 
   }, [onClose]);
 
   async function handleSubmit() {
-    if (!reason) return;
-
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const result = await archiveDossierAction(parcoursId, reason);
+      const result = await unarchiveAction(parcoursId);
 
       if (result.success) {
-        setReason("");
         // Fermer la modale via DSFR
         const dialog = dialogRef.current;
         if (dialog) {
@@ -85,7 +91,7 @@ export function ArchiveDossierModal({ isOpen, onClose, parcoursId, onSuccess }: 
         }
         onSuccess();
       } else {
-        setError(result.error || "Erreur lors de l'archivage");
+        setError(result.error || "Erreur lors du désarchivage");
       }
     } catch {
       setError("Une erreur est survenue");
@@ -107,50 +113,21 @@ export function ArchiveDossierModal({ isOpen, onClose, parcoursId, onSuccess }: 
               </div>
               <div className="fr-modal__content">
                 <h1 id={`${modalId}-title`} className="fr-modal__title">
-                  Archiver le dossier ?
+                  D&eacute;sarchiver le {entityLabel}&nbsp;?
                 </h1>
-                <p>
-                  Le dossier passera en statut &quot;<strong>Archiv&eacute;</strong>&quot;. Vous pourrez toujours le
-                  mettre &agrave; jour tant qu&apos;il n&apos;est pas transf&eacute;r&eacute; &agrave; l&apos;AMO ou
-                  supprim&eacute; par le demandeur.
-                </p>
+                <p>{displayDescription}</p>
 
                 {error && (
                   <div className="fr-alert fr-alert--error fr-alert--sm fr-mb-2w">
                     <p>{error}</p>
                   </div>
                 )}
-
-                <div className="fr-select-group">
-                  <label className="fr-label" htmlFor={selectId}>
-                    Pour quelles raisons souhaitez-vous archiver le dossier ?
-                  </label>
-                  <select
-                    className="fr-select"
-                    id={selectId}
-                    name="archive-reason"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}>
-                    <option value="" disabled>
-                      S&eacute;lectionnez une raison
-                    </option>
-                    {ARCHIVE_REASONS.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
               <div className="fr-modal__footer">
                 <ul className="fr-btns-group fr-btns-group--right fr-btns-group--inline-reverse fr-btns-group--inline-lg">
                   <li>
-                    <button
-                      type="button"
-                      className="fr-btn"
-                      disabled={!reason || isSubmitting}
-                      onClick={handleSubmit}>
-                      {isSubmitting ? "Archivage..." : "Archiver"}
+                    <button type="button" className="fr-btn" disabled={isSubmitting} onClick={handleSubmit}>
+                      {isSubmitting ? "D\u00e9sarchivage..." : "D\u00e9sarchiver"}
                     </button>
                   </li>
                   <li>

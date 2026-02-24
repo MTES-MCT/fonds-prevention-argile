@@ -5,10 +5,17 @@ import { StatTile } from "@/app/(backoffice)/espace-agent/shared";
 
 interface ProspectsHeaderProps {
   nombreProspects: number;
+  nombreEligibles: number;
+  nombreArchives: number;
   hasAmoDisponible: boolean;
 }
 
-export function ProspectsHeader({ nombreProspects, hasAmoDisponible }: ProspectsHeaderProps) {
+export function ProspectsHeader({
+  nombreProspects,
+  nombreEligibles,
+  nombreArchives,
+  hasAmoDisponible,
+}: ProspectsHeaderProps) {
   const { user } = useAuth();
 
   return (
@@ -27,11 +34,25 @@ export function ProspectsHeader({ nombreProspects, hasAmoDisponible }: Prospects
       )}
 
       <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
-        <div className="fr-col-12 fr-col-md-6">
+        <div className="fr-col-12 fr-col-md-4">
           <StatTile
             number={nombreProspects.toLocaleString("fr-FR")}
-            label={`Nouveaux prospect${nombreProspects > 1 ? "s" : ""}`}
-            description="🔥 À contacter en priorité"
+            label={`Nouveau${nombreProspects > 1 ? "x" : ""} prospect${nombreProspects > 1 ? "s" : ""}`}
+            description="À contacter en priorité"
+          />
+        </div>
+        <div className="fr-col-12 fr-col-md-4">
+          <StatTile
+            number={nombreEligibles.toLocaleString("fr-FR")}
+            label={`Éligible${nombreEligibles > 1 ? "s" : ""}`}
+            description="Éligibilité confirmée"
+          />
+        </div>
+        <div className="fr-col-12 fr-col-md-4">
+          <StatTile
+            number={nombreArchives.toLocaleString("fr-FR")}
+            label={`Archivé${nombreArchives > 1 ? "s" : ""}`}
+            description="Dossiers classés"
           />
         </div>
       </div>

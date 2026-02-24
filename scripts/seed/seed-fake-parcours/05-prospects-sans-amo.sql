@@ -138,16 +138,60 @@ VALUES
    '{"logement": {"commune_nom": "Mers-sur-Indre", "code_departement": "36", "adresse": "14 rue de la Rivière", "commune": "36120", "code_region": "24", "epci": "243600285", "coordonnees": "47.0167,1.5167", "clef_ban": "36120_0001", "commune_denormanisme": false, "annee_de_construction": "1969", "rnb": "", "niveaux": 1, "zone_dexposition": "moyen", "type": "maison", "mitoyen": true, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": false, "sinistres": "saine"}, "menage": {"revenu_rga": 21500, "personnes": 2}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2024-10-10T12:00:00Z"}',
    NOW() - INTERVAL '117 days', NOW() - INTERVAL '95 days');
 
+-- ===== PROSPECTS ÉLIGIBLES (5 prospects) =====
+
+INSERT INTO parcours_prevention (id, user_id, current_step, current_status, situation_particulier, rga_simulation_data, created_at, updated_at)
+VALUES
+  ('55555555-5555-5555-5555-555555555531', '11111111-1111-1111-1111-111111111181', 'choix_amo', 'todo', 'eligible',
+   '{"logement": {"commune_nom": "Argenton-sur-Creuse", "code_departement": "36", "adresse": "30 rue Victor Hugo", "commune": "36006", "code_region": "24", "epci": "243600285", "coordonnees": "46.5833,1.5167", "clef_ban": "36006_0002", "commune_denormandie": false, "annee_de_construction": "1974", "rnb": "", "niveaux": 1, "zone_dexposition": "moyen", "type": "maison", "mitoyen": false, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": false, "sinistres": "endommagée"}, "menage": {"revenu_rga": 22000, "personnes": 2}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2025-02-10T10:00:00Z"}',
+   NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days'),
+
+  ('55555555-5555-5555-5555-555555555532', '11111111-1111-1111-1111-111111111182', 'choix_amo', 'todo', 'eligible',
+   '{"logement": {"commune_nom": "Déols", "code_departement": "36", "adresse": "25 rue de la Paix", "commune": "36063", "code_region": "24", "epci": "243600327", "coordonnees": "46.8333,1.7000", "clef_ban": "36063_0002", "commune_denormandie": false, "annee_de_construction": "1980", "rnb": "", "niveaux": 2, "zone_dexposition": "fort", "type": "maison", "mitoyen": true, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": false, "sinistres": "très peu endommagée"}, "menage": {"revenu_rga": 28000, "personnes": 3}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2025-02-08T14:30:00Z"}',
+   NOW() - INTERVAL '8 days', NOW() - INTERVAL '3 days'),
+
+  ('55555555-5555-5555-5555-555555555533', '11111111-1111-1111-1111-111111111183', 'choix_amo', 'todo', 'eligible',
+   '{"logement": {"commune_nom": "Buzançais", "code_departement": "36", "adresse": "7 allée des Roses", "commune": "36031", "code_region": "24", "epci": "243600285", "coordonnees": "46.8833,1.4167", "clef_ban": "36031_0002", "commune_denormandie": false, "annee_de_construction": "1968", "rnb": "", "niveaux": 1, "zone_dexposition": "faible", "type": "maison", "mitoyen": false, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": false, "sinistres": "saine"}, "menage": {"revenu_rga": 19000, "personnes": 1}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2025-02-05T09:00:00Z"}',
+   NOW() - INTERVAL '12 days', NOW() - INTERVAL '6 days'),
+
+  ('55555555-5555-5555-5555-555555555534', '11111111-1111-1111-1111-111111111184', 'choix_amo', 'todo', 'eligible',
+   '{"logement": {"commune_nom": "Levroux", "code_departement": "36", "adresse": "18 boulevard du Nord", "commune": "36091", "code_region": "24", "epci": "200071991", "coordonnees": "46.9833,1.6167", "clef_ban": "36091_0002", "commune_denormandie": false, "annee_de_construction": "1983", "rnb": "", "niveaux": 1, "zone_dexposition": "moyen", "type": "maison", "mitoyen": true, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": true, "indemnise_avant_juillet_2025": true, "indemnise_avant_juillet_2015": false, "indemnise_montant_indemnite": 3500, "sinistres": "endommagée"}, "menage": {"revenu_rga": 34000, "personnes": 4}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2025-01-28T16:00:00Z"}',
+   NOW() - INTERVAL '18 days', NOW() - INTERVAL '10 days'),
+
+  ('55555555-5555-5555-5555-555555555535', '11111111-1111-1111-1111-111111111185', 'choix_amo', 'todo', 'eligible',
+   '{"logement": {"commune_nom": "La Châtre", "code_departement": "36", "adresse": "5 rue George Sand", "commune": "36046", "code_region": "24", "epci": "243600327", "coordonnees": "46.5833,1.9833", "clef_ban": "36046_0002", "commune_denormandie": false, "annee_de_construction": "1991", "rnb": "", "niveaux": 2, "zone_dexposition": "fort", "type": "maison", "mitoyen": false, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": false, "sinistres": "très peu endommagée"}, "menage": {"revenu_rga": 25000, "personnes": 2}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2025-01-25T11:30:00Z"}',
+   NOW() - INTERVAL '22 days', NOW() - INTERVAL '14 days');
+
+
+-- ===== PROSPECTS ARCHIVÉS (3 prospects) =====
+
+INSERT INTO parcours_prevention (id, user_id, current_step, current_status, situation_particulier, archived_at, archive_reason, rga_simulation_data, created_at, updated_at)
+VALUES
+  ('55555555-5555-5555-5555-555555555536', '11111111-1111-1111-1111-111111111186', 'choix_amo', 'todo', 'archive',
+   NOW() - INTERVAL '10 days', 'Hors zone éligible',
+   '{"logement": {"commune_nom": "Vatan", "code_departement": "36", "adresse": "21 rue de la Liberté", "commune": "36230", "code_region": "24", "epci": "200071991", "coordonnees": "47.0667,1.8000", "clef_ban": "36230_0002", "commune_denormandie": false, "annee_de_construction": "1977", "rnb": "", "niveaux": 1, "zone_dexposition": "moyen", "type": "maison", "mitoyen": true, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": false, "sinistres": "saine"}, "menage": {"revenu_rga": 20000, "personnes": 2}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2025-01-20T09:00:00Z"}',
+   NOW() - INTERVAL '30 days', NOW() - INTERVAL '10 days'),
+
+  ('55555555-5555-5555-5555-555555555537', '11111111-1111-1111-1111-111111111187', 'choix_amo', 'todo', 'archive',
+   NOW() - INTERVAL '15 days', 'Le demandeur ne donne pas de réponse',
+   '{"logement": {"commune_nom": "Écueillé", "code_departement": "36", "adresse": "9 place de la Halle", "commune": "36070", "code_region": "24", "epci": "243600285", "coordonnees": "46.9833,1.4333", "clef_ban": "36070_0002", "commune_denormandie": false, "annee_de_construction": "1986", "rnb": "", "niveaux": 2, "zone_dexposition": "faible", "type": "maison", "mitoyen": false, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": false, "sinistres": "très peu endommagée"}, "menage": {"revenu_rga": 31000, "personnes": 3}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2025-01-15T14:00:00Z"}',
+   NOW() - INTERVAL '40 days', NOW() - INTERVAL '15 days'),
+
+  ('55555555-5555-5555-5555-555555555538', '11111111-1111-1111-1111-111111111188', 'choix_amo', 'todo', 'archive',
+   NOW() - INTERVAL '20 days', 'Le demandeur a abandonné le projet',
+   '{"logement": {"commune_nom": "Ardentes", "code_departement": "36", "adresse": "13 rue du Moulin", "commune": "36005", "code_region": "24", "epci": "243600327", "coordonnees": "46.7333,1.8333", "clef_ban": "36005_0002", "commune_denormandie": false, "annee_de_construction": "1970", "rnb": "", "niveaux": 1, "zone_dexposition": "moyen", "type": "maison", "mitoyen": true, "proprietaire_occupant": true}, "taxeFonciere": {"commune_eligible": true}, "rga": {"assure": true, "indemnise_indemnise_rga": false, "sinistres": "endommagée"}, "menage": {"revenu_rga": 17500, "personnes": 1}, "vous": {"proprietaire_condition": true, "proprietaire_occupant_rga": true}, "simulatedAt": "2025-01-10T10:30:00Z"}',
+   NOW() - INTERVAL '50 days', NOW() - INTERVAL '20 days');
+
+
 -- =============================================================================
 -- VÉRIFICATION
 -- =============================================================================
--- Compter les prospects créés
+-- Compter les prospects créés par situation
 SELECT
   'Prospects sans AMO' as type,
   COUNT(*) as total,
-  COUNT(CASE WHEN updated_at > NOW() - INTERVAL '7 days' THEN 1 END) as recents,
-  COUNT(CASE WHEN updated_at BETWEEN NOW() - INTERVAL '30 days' AND NOW() - INTERVAL '7 days' THEN 1 END) as moyens,
-  COUNT(CASE WHEN updated_at < NOW() - INTERVAL '30 days' THEN 1 END) as anciens
+  COUNT(CASE WHEN situation_particulier = 'prospect' THEN 1 END) as prospects,
+  COUNT(CASE WHEN situation_particulier = 'eligible' THEN 1 END) as eligibles,
+  COUNT(CASE WHEN situation_particulier = 'archive' THEN 1 END) as archives
 FROM parcours_prevention
-WHERE id::text LIKE '55555555%'
-  AND current_step = 'choix_amo';
+WHERE id::text LIKE '55555555%';

@@ -5,16 +5,17 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { formatNomComplet, formatDateShort } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
-import {
-  InfoDemandeur,
-  InfoLogement,
-  ParcoursDemandeur,
-  GagnezDuTemps,
-  AFaire,
-} from "../../shared";
+import { InfoDemandeur, InfoLogement, ParcoursDemandeur, GagnezDuTemps, AFaire } from "../../shared";
 import { NotesPartagees } from "../../shared";
 import type { ProspectAmoInfo } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { ContactCard } from "@/shared/components/ContactCard/ContactCard";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { ArchiveProspectButton } from "./components/ArchiveProspectButton";
+import { QualificationSection } from "./components/qualification/QualificationSection";
+import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
+import { agentsRepository } from "@/shared/database/repositories/agents.repository";
+import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
+import type { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -44,6 +45,23 @@ export default async function ProspectDetailPage({ params }: PageProps) {
 
   const prospect = result.data;
   const nomComplet = formatNomComplet(prospect.particulier.prenom, prospect.particulier.nom);
+
+  // Récupérer la dernière qualification
+  const latestQualification = await qualificationService.getLatestQualification(prospect.parcoursId);
+
+  // Récupérer les infos agent/structure pour le callout qualification
+  let qualificationAgentNom = "";
+  let qualificationStructureNom = "";
+  if (latestQualification) {
+    const agent = await agentsRepository.findById(latestQualification.agentId);
+    if (agent) {
+      qualificationAgentNom = formatNomComplet(agent.givenName, agent.usualName);
+      if (agent.allersVersId) {
+        const structure = await allersVersRepository.findById(agent.allersVersId);
+        qualificationStructureNom = structure?.nom ?? "";
+      }
+    }
+  }
 
   // Construire les objets pour les composants partagés
   const demandeur = {
@@ -85,7 +103,12 @@ export default async function ProspectDetailPage({ params }: PageProps) {
 
         {/* Titre de la page */}
         <div className="fr-mb-4w">
-          <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
+            {prospect.situationParticulier !== SituationParticulier.ARCHIVE && (
+              <ArchiveProspectButton parcoursId={prospect.parcoursId} />
+            )}
+          </div>
           <div className="fr-badges-group">
             <p className="fr-badge fr-badge--new">
               Nouveau prospect du {formatDateShort(prospect.createdAt.toISOString())}
@@ -97,7 +120,23 @@ export default async function ProspectDetailPage({ params }: PageProps) {
         {/* Section informations */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
-            <CalloutInfosProspect amoInfo={prospect.amoInfo} />
+            {/* <CalloutInfosProspect amoInfo={prospect.amoInfo} /> */}
+            <QualificationSection
+              parcoursId={prospect.parcoursId}
+              qualification={
+                latestQualification
+                  ? {
+                      decision: latestQualification.decision as QualificationDecision,
+                      actionsRealisees: latestQualification.actionsRealisees,
+                      raisonsIneligibilite: latestQualification.raisonsIneligibilite,
+                      note: latestQualification.note,
+                      createdAt: latestQualification.createdAt.toISOString(),
+                    }
+                  : null
+              }
+              agentNom={qualificationAgentNom}
+              structureNom={qualificationStructureNom}
+            />
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <InfoDemandeur
@@ -177,36 +216,46 @@ export async function generateMetadata({ params }: PageProps) {
 
 /**
  * Callout dynamique affichant le statut AMO du prospect
+ * Désactivé pour le moment, à réactiver si nécessaire (voir avec l'équipe)
  */
-function CalloutInfosProspect({ amoInfo }: { amoInfo: ProspectAmoInfo }) {
-  switch (amoInfo.status) {
-    case "aucun_amo_disponible":
-      return (
-        <div className="fr-callout fr-callout--blue-cumulus">
-          <h3 className="fr-callout__title">Aucun AMO disponible</h3>
-          <p className="fr-callout__text">
-            À ce jour, aucun Assistant à Maîtrise d&apos;Ouvrage n&apos;est disponible dans votre département.
-            N&apos;hésitez pas à contacter les demandeurs pour les informer et les faire patienter.
-          </p>
-        </div>
-      );
 
-    case "amo_disponibles":
-      return (
-        <div className="fr-callout fr-callout--yellow-moutarde">
-          <h3 className="fr-callout__title">Le demandeur doit contacter un AMO</h3>
-          <p className="fr-callout__text">
-            Le recours à un AMO (Assistant à Maîtrise d&apos;Ouvrage) est obligatoire pour bénéficier du Fonds
-            Prévention Argile. Accompagnez le demandeur afin qu&apos;il contacte et confirme la structure choisie dans
-            les propositions ci-dessous afin de passer à l&apos;étape suivante.
-          </p>
-          <h4 className="fr-h6 fr-mt-3w fr-mb-2w">Liste des AMO locaux certifiés pour le demandeur</h4>
-          <div className="fr-grid-row fr-grid-row--gutters">
-            {amoInfo.amosDisponibles.map((amo) => (
-              <ContactCard key={amo.id} id={amo.id} nom={amo.nom} emails={amo.emails} telephone={amo.telephone} adresse={amo.adresse} selectable={false} />
-            ))}
-          </div>
-        </div>
-      );
-  }
-}
+// function CalloutInfosProspect({ amoInfo }: { amoInfo: ProspectAmoInfo }) {
+//   switch (amoInfo.status) {
+//     case "aucun_amo_disponible":
+//       return (
+//         <div className="fr-callout fr-callout--blue-cumulus">
+//           <h3 className="fr-callout__title">Aucun AMO disponible</h3>
+//           <p className="fr-callout__text">
+//             À ce jour, aucun Assistant à Maîtrise d&apos;Ouvrage n&apos;est disponible dans votre département.
+//             N&apos;hésitez pas à contacter les demandeurs pour les informer et les faire patienter.
+//           </p>
+//         </div>
+//       );
+
+//     case "amo_disponibles":
+//       return (
+//         <div className="fr-callout fr-callout--yellow-moutarde">
+//           <h3 className="fr-callout__title">Le demandeur doit contacter un AMO</h3>
+//           <p className="fr-callout__text">
+//             Le recours à un AMO (Assistant à Maîtrise d&apos;Ouvrage) est obligatoire pour bénéficier du Fonds
+//             Prévention Argile. Accompagnez le demandeur afin qu&apos;il contacte et confirme la structure choisie dans
+//             les propositions ci-dessous afin de passer à l&apos;étape suivante.
+//           </p>
+//           <h4 className="fr-h6 fr-mt-3w fr-mb-2w">Liste des AMO locaux certifiés pour le demandeur</h4>
+//           <div className="fr-grid-row fr-grid-row--gutters">
+//             {amoInfo.amosDisponibles.map((amo) => (
+//               <ContactCard
+//                 key={amo.id}
+//                 id={amo.id}
+//                 nom={amo.nom}
+//                 emails={amo.emails}
+//                 telephone={amo.telephone}
+//                 adresse={amo.adresse}
+//                 selectable={false}
+//               />
+//             ))}
+//           </div>
+//         </div>
+//       );
+//   }
+// }

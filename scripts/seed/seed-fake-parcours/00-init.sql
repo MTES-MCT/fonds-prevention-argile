@@ -10,6 +10,7 @@ SELECT id, nom FROM entreprises_amo;
 -- =============================================================================
 -- NETTOYAGE des anciennes données de test (si existantes)
 -- =============================================================================
+DELETE FROM prospect_qualifications WHERE id::text LIKE '66666666-6666-6666-6666-6666666666%';
 DELETE FROM parcours_commentaires WHERE id::text LIKE '77777777-7777-7777-7777-7777777777%';
 DELETE FROM dossiers_demarches_simplifiees WHERE id::text LIKE '44444444-4444-4444-4444-4444444444%';
 DELETE FROM parcours_amo_validations WHERE id::text LIKE '33333333-3333-3333-3333-3333333333%';
