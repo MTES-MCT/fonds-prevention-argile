@@ -4,9 +4,10 @@ import { useEffect, useState, useMemo } from "react";
 import { getStatistiquesAction, Statistiques } from "@/features/backoffice";
 import { useDsfrChart } from "@/shared/hooks/useDsfrChart";
 import StatistiquesFunnel from "./StatistiquesFunnel";
+import StatistiquesDepartement from "./StatistiquesDepartement";
 import StatCard from "../shared/StatCard";
 
-type ViewId = "globales" | "visites" | "funnel";
+type ViewId = "globales" | "visites" | "funnel" | "departement";
 
 export default function StatistiquesPanel() {
   const [stats, setStats] = useState<Statistiques | null>(null);
@@ -181,6 +182,19 @@ export default function StatistiquesPanel() {
               Funnel Simulateur
             </label>
           </div>
+          <div className="fr-segmented__element">
+            <input
+              value="departement"
+              checked={activeView === "departement"}
+              type="radio"
+              id="segmented-stats-4"
+              name="segmented-stats"
+              onChange={() => setActiveView("departement")}
+            />
+            <label className="fr-icon-map-pin-2-line fr-label" htmlFor="segmented-stats-4">
+              Par département
+            </label>
+          </div>
         </div>
       </fieldset>
 
@@ -229,6 +243,9 @@ export default function StatistiquesPanel() {
           <StatistiquesFunnel funnel={stats.funnelSimulateurRGA} />
         </div>
       )}
+
+      {/* Vue Par département */}
+      {activeView === "departement" && <StatistiquesDepartement />}
     </div>
   );
 }
