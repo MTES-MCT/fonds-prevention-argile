@@ -11,6 +11,11 @@ import { InfoDossierCallout } from "./components/InfoDossierCallout";
 import { PiecesJustificatives } from "./components/PiecesJustificatives";
 import { GagnezDuTempsTravaux } from "./components/GagnezDuTempsTravaux";
 import { ArchiveDossierButton } from "./components/ArchiveDossierButton";
+import { QualificationAllersVers } from "./components/QualificationAllersVers";
+import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
+import { agentsRepository } from "@/shared/database/repositories/agents.repository";
+import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
+import type { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -37,6 +42,22 @@ export default async function DossierDetailPage({ params }: PageProps) {
 
   const dossier = result.data;
   const nomComplet = formatNomComplet(dossier.demandeur.prenom, dossier.demandeur.nom);
+
+  // Récupérer la dernière qualification aller-vers
+  const latestQualification = await qualificationService.getLatestQualification(dossier.parcoursId);
+
+  let qualificationAgentNom = "";
+  let qualificationStructureNom = "";
+  if (latestQualification) {
+    const agent = await agentsRepository.findById(latestQualification.agentId);
+    if (agent) {
+      qualificationAgentNom = formatNomComplet(agent.givenName, agent.usualName);
+      if (agent.allersVersId) {
+        const structure = await allersVersRepository.findById(agent.allersVersId);
+        qualificationStructureNom = structure?.nom ?? "";
+      }
+    }
+  }
 
   return (
     <>
@@ -106,6 +127,19 @@ export default async function DossierDetailPage({ params }: PageProps) {
           <div className="fr-grid-row fr-grid-row--gutters">
             {/* Colonne gauche : PiecesJustificatives + InfoLogement + GagnezDuTempsTravaux */}
             <div className="fr-col-12 fr-col-md-8">
+              {latestQualification && (
+                <div className="fr-mb-4w">
+                  <QualificationAllersVers
+                    decision={latestQualification.decision as QualificationDecision}
+                    actionsRealisees={latestQualification.actionsRealisees}
+                    raisonsIneligibilite={latestQualification.raisonsIneligibilite}
+                    note={latestQualification.note}
+                    agentNom={qualificationAgentNom}
+                    structureNom={qualificationStructureNom}
+                    createdAt={latestQualification.createdAt}
+                  />
+                </div>
+              )}
               <div className="fr-mb-4w">
                 <PiecesJustificatives />
               </div>
