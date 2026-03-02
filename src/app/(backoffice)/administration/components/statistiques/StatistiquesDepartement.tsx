@@ -4,7 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import {
   getDepartementsDisponiblesAction,
   getStatistiquesDepartementAction,
+  getAgentDepartementsAction,
 } from "@/features/backoffice";
+import { useAuth } from "@/features/auth/client";
+import { UserRole } from "@/shared/domain/value-objects";
 import type {
   StatistiquesDepartement as StatsDepartement,
   DepartementDisponible,
@@ -13,6 +16,9 @@ import StatCard from "../shared/StatCard";
 import DepartementSelector from "./DepartementSelector";
 
 export default function StatistiquesDepartement() {
+  const { user } = useAuth();
+  const isAnalyseDdt = user?.role === UserRole.ANALYSTE_DDT;
+
   const [departements, setDepartements] = useState<DepartementDisponible[]>([]);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [stats, setStats] = useState<StatsDepartement | null>(null);
@@ -24,15 +30,38 @@ export default function StatistiquesDepartement() {
   useEffect(() => {
     async function loadDepartements() {
       const result = await getDepartementsDisponiblesAction();
-      if (result.success) {
-        setDepartements(result.data);
-      } else {
+      if (!result.success) {
         setError(result.error);
+        setLoadingDepts(false);
+        return;
       }
+
+      let availableDepts = result.data;
+
+      // Pour les agents DDT : filtrer les départements selon leurs permissions
+      if (isAnalyseDdt) {
+        const agentDeptsResult = await getAgentDepartementsAction();
+        if (agentDeptsResult.success && agentDeptsResult.data.length > 0) {
+          const allowedCodes = agentDeptsResult.data;
+          availableDepts = availableDepts.filter((d) => allowedCodes.includes(d.code));
+
+          // Auto-sélectionner si un seul département
+          if (availableDepts.length === 1) {
+            setDepartements(availableDepts);
+            setLoadingDepts(false);
+            // Charger directement les stats du département
+            handleSelectDepartement(availableDepts[0].code);
+            return;
+          }
+        }
+      }
+
+      setDepartements(availableDepts);
       setLoadingDepts(false);
     }
     loadDepartements();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAnalyseDdt]);
 
   // Charger les stats quand un département est sélectionné
   const handleSelectDepartement = useCallback(async (code: string) => {
@@ -53,23 +82,30 @@ export default function StatistiquesDepartement() {
     return <p>Chargement des départements...</p>;
   }
 
+  // Trouver le département sélectionné pour afficher son nom
+  const selectedDepartement = departements.find((d) => d.code === selectedCode);
+
   return (
     <div>
-      <h2 className="fr-h3 fr-mb-3w">Statistiques par département</h2>
+      <h2 className="fr-h3 fr-mb-3w">
+        Statistiques par département
+        {selectedDepartement && (
+          <span className="fr-text--regular fr-text-mention--grey">
+            {" "}
+            — {selectedDepartement.code} {selectedDepartement.nom}
+          </span>
+        )}
+      </h2>
 
-      <div className="fr-callout fr-callout--blue-ecume fr-mb-4w">
-        <p className="fr-callout__text fr-text--sm">
-          Les statistiques de visites (Matomo) ne sont pas disponibles par département. Seules les
-          données issues de la base de données sont affichées.
-        </p>
-      </div>
-
-      <DepartementSelector
-        departements={departements}
-        selectedCode={selectedCode}
-        onChange={handleSelectDepartement}
-        loading={loadingStats}
-      />
+      {/* Masquer le sélecteur pour les agents DDT avec un seul département */}
+      {!(isAnalyseDdt && departements.length <= 1) && (
+        <DepartementSelector
+          departements={departements}
+          selectedCode={selectedCode}
+          onChange={handleSelectDepartement}
+          loading={loadingStats}
+        />
+      )}
 
       {error && (
         <div className="fr-alert fr-alert--error fr-mb-4w">
@@ -126,9 +162,7 @@ export default function StatistiquesDepartement() {
           {/* Dossiers par étape */}
           <div className="fr-mb-6w">
             <h3 className="fr-h4 fr-mb-1w">Dossiers par étape</h3>
-            <p className="fr-text-mention--grey fr-mb-3w">
-              Répartition des dossiers selon leur étape actuelle
-            </p>
+            <p className="fr-text-mention--grey fr-mb-3w">Répartition des dossiers selon leur étape actuelle</p>
             <div className="fr-table fr-table--bordered">
               <div className="fr-table__wrapper">
                 <div className="fr-table__container">
@@ -161,9 +195,7 @@ export default function StatistiquesDepartement() {
             <div className="fr-col-12 fr-col-md-6">
               <div className="fr-mb-6w">
                 <h3 className="fr-h4 fr-mb-1w">Raisons d{"'"}inéligibilité</h3>
-                <p className="fr-text-mention--grey fr-mb-3w">
-                  Motifs de non-éligibilité les plus fréquents
-                </p>
+                <p className="fr-text-mention--grey fr-mb-3w">Motifs de non-éligibilité les plus fréquents</p>
                 <div className="fr-table fr-table--bordered">
                   <div className="fr-table__wrapper">
                     <div className="fr-table__container">
@@ -178,10 +210,7 @@ export default function StatistiquesDepartement() {
                           <tbody>
                             {stats.raisonsIneligibilite.length === 0 ? (
                               <tr>
-                                <td
-                                  colSpan={2}
-                                  style={{ textAlign: "center", color: "var(--text-mention-grey)" }}
-                                >
+                                <td colSpan={2} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
                                   Aucune donnée
                                 </td>
                               </tr>
@@ -206,9 +235,7 @@ export default function StatistiquesDepartement() {
             <div className="fr-col-12 fr-col-md-6">
               <div className="fr-mb-6w">
                 <h3 className="fr-h4 fr-mb-1w">Top communes</h3>
-                <p className="fr-text-mention--grey fr-mb-3w">
-                  Communes avec le plus de parcours
-                </p>
+                <p className="fr-text-mention--grey fr-mb-3w">Communes avec le plus de parcours</p>
                 <div className="fr-table fr-table--bordered">
                   <div className="fr-table__wrapper">
                     <div className="fr-table__container">
@@ -223,10 +250,7 @@ export default function StatistiquesDepartement() {
                           <tbody>
                             {stats.zonesDynamiques.length === 0 ? (
                               <tr>
-                                <td
-                                  colSpan={2}
-                                  style={{ textAlign: "center", color: "var(--text-mention-grey)" }}
-                                >
+                                <td colSpan={2} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
                                   Aucune donnée
                                 </td>
                               </tr>

@@ -4,7 +4,24 @@ import { useState, useEffect } from "react";
 import { UserRole } from "@/shared/domain/value-objects";
 import type { AgentRole } from "@/shared/domain/value-objects";
 import DepartementsSelect from "./DepartementsSelect";
+import { DEPARTEMENTS } from "@/shared/constants/departements.constants";
 import { AgentWithPermissions } from "@/features/backoffice";
+
+/**
+ * Liste des départements pour le select natif (Analyste DDT)
+ * Exclut "20" (Corse générique) car on a 2A et 2B
+ */
+const DEPARTEMENTS_OPTIONS = Object.entries(DEPARTEMENTS)
+  .filter(([code]) => code !== "20")
+  .map(([code, name]) => ({ code, name }))
+  .sort((a, b) => {
+    const aNum = parseInt(a.code, 10);
+    const bNum = parseInt(b.code, 10);
+    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+    if (!isNaN(aNum)) return -1;
+    if (!isNaN(bNum)) return 1;
+    return a.code.localeCompare(b.code);
+  });
 
 /**
  * Entreprise AMO simplifiée pour le select
@@ -50,6 +67,7 @@ const ROLE_OPTIONS: { value: AgentRole; label: string }[] = [
   { value: UserRole.ANALYSTE, label: "Analyste" },
   { value: UserRole.ALLERS_VERS, label: "Allers-Vers" },
   { value: UserRole.AMO_ET_ALLERS_VERS, label: "AMO et Allers-Vers" },
+  { value: UserRole.ANALYSTE_DDT, label: "Analyste DDT" },
 ];
 
 export default function AgentFormModal({
@@ -109,8 +127,8 @@ export default function AgentFormModal({
       entrepriseAmoId: [UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(newRole) ? prev.entrepriseAmoId : undefined,
       // Reset le territoire Allers-Vers si le nouveau rôle ne nécessite pas d'Allers-Vers
       allersVersId: [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(newRole) ? prev.allersVersId : undefined,
-      // Reset les départements si on quitte le rôle Administrateur
-      departements: newRole === UserRole.ADMINISTRATEUR ? prev.departements : [],
+      // Garder les départements pour Administrateur et Analyste DDT
+      departements: [UserRole.ADMINISTRATEUR, UserRole.ANALYSTE_DDT].includes(newRole) ? prev.departements : [],
     }));
   };
 
@@ -139,6 +157,12 @@ export default function AgentFormModal({
     // Validation territoire Allers-Vers si rôle = ALLERS_VERS ou AMO_ET_ALLERS_VERS
     if ([UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(formData.role) && !formData.allersVersId) {
       setError("Un territoire Allers-Vers doit être sélectionné pour ce rôle");
+      return;
+    }
+
+    // Validation département pour Analyste DDT
+    if (formData.role === UserRole.ANALYSTE_DDT && formData.departements.length === 0) {
+      setError("Au moins un département doit être sélectionné pour un Analyste DDT");
       return;
     }
 
@@ -327,7 +351,7 @@ export default function AgentFormModal({
                     </div>
                   )}
 
-                  {/* Départements (uniquement pour Administrateur) */}
+                  {/* Départements (pour Administrateur et Analyste DDT) */}
                   {formData.role === UserRole.ADMINISTRATEUR && (
                     <div className="fr-input-group">
                       <label className="fr-label">Départements autorisés</label>
@@ -340,6 +364,33 @@ export default function AgentFormModal({
                       <p className="fr-hint-text">
                         L&apos;administrateur n&apos;aura accès qu&apos;aux données de ces départements. Laissez vide
                         pour un accès à tous les départements.
+                      </p>
+                    </div>
+                  )}
+
+                  {formData.role === UserRole.ANALYSTE_DDT && (
+                    <div className="fr-select-group">
+                      <label className="fr-label" htmlFor={`${modalId}-departementDdt`}>
+                        Département DDT *
+                      </label>
+                      <select
+                        id={`${modalId}-departementDdt`}
+                        className="fr-select"
+                        value={formData.departements[0] || ""}
+                        onChange={(e) =>
+                          setFormData({ ...formData, departements: e.target.value ? [e.target.value] : [] })
+                        }
+                        disabled={isLoading}
+                        required>
+                        <option value="">Sélectionner un département</option>
+                        {DEPARTEMENTS_OPTIONS.map((dept) => (
+                          <option key={dept.code} value={dept.code}>
+                            {dept.code} - {dept.name}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="fr-hint-text">
+                        L&apos;analyste DDT n&apos;aura accès qu&apos;aux statistiques de ce département.
                       </p>
                     </div>
                   )}

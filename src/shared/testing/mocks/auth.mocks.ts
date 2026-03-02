@@ -92,6 +92,17 @@ export const createMockAnalyste = (override?: Partial<AuthUser>): AuthUser =>
   });
 
 /**
+ * Crée un agent Analyse DDT
+ */
+export const createMockAnalyseDdt = (override?: Partial<AuthUser>): AuthUser =>
+  createMockAuthUser(UserRole.ANALYSTE_DDT, {
+    email: "ddt@example.com",
+    firstName: "Agent",
+    lastName: "DDT",
+    ...override,
+  });
+
+/**
  * Crée un agent AMO
  */
 export const createMockAgentAmo = (override?: Partial<AuthUser>): AuthUser =>
