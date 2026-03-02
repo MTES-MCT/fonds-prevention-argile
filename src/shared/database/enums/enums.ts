@@ -46,4 +46,5 @@ export const agentRolePgEnum = pgEnum("agent_role", [
   AGENT_ROLES.ANALYSTE,
   AGENT_ROLES.ALLERS_VERS,
   AGENT_ROLES.AMO_ET_ALLERS_VERS,
+  AGENT_ROLES.ANALYSTE_DDT,
 ]);

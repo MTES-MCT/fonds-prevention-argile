@@ -11,6 +11,7 @@ export const AGENT_ROLES = {
   ANALYSTE: UserRole.ANALYSTE,
   ALLERS_VERS: UserRole.ALLERS_VERS,
   AMO_ET_ALLERS_VERS: UserRole.AMO_ET_ALLERS_VERS,
+  ANALYSTE_DDT: UserRole.ANALYSTE_DDT,
 } as const;
 
 export type AGENT_ROLES = (typeof AGENT_ROLES)[keyof typeof AGENT_ROLES];

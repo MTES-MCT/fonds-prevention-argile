@@ -50,6 +50,22 @@ export async function calculateAgentScope(agent: AgentScopeInput): Promise<Agent
       };
     }
 
+    case UserRole.ANALYSTE_DDT: {
+      // Les agents DDT ont accès uniquement aux stats de leur(s) département(s) assigné(s)
+      const departementsAnalyseDdt = agent.id
+        ? await agentPermissionsRepository.getDepartementsByAgentId(agent.id)
+        : [];
+      return {
+        isNational: false, // Jamais d'accès national pour les DDT
+        entrepriseAmoIds: [],
+        departements: departementsAnalyseDdt,
+        epcis: [],
+        canViewAllDossiers: false,
+        canViewDossiersByEntreprise: false,
+        canViewDossiersWithoutAmo: false,
+      };
+    }
+
     case UserRole.ALLERS_VERS: {
       // Les Allers-Vers voient uniquement les dossiers sans AMO de leur territoire
       if (!allersVersId) {

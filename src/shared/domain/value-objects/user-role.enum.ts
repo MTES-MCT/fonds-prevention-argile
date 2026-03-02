@@ -12,6 +12,7 @@ export enum UserRole {
   ANALYSTE = "analyste",
   ALLERS_VERS = "allers_vers",
   AMO_ET_ALLERS_VERS = "amo_et_allers_vers",
+  ANALYSTE_DDT = "analyste_ddt",
 }
 
 /**
@@ -31,6 +32,7 @@ export const AGENT_ROLES = [
   UserRole.ANALYSTE,
   UserRole.ALLERS_VERS,
   UserRole.AMO_ET_ALLERS_VERS,
+  UserRole.ANALYSTE_DDT,
 ] as const;
 
 export type AgentRole = (typeof AGENT_ROLES)[number];

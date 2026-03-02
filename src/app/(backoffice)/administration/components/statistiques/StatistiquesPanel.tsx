@@ -3,20 +3,31 @@
 import { useEffect, useState, useMemo } from "react";
 import { getStatistiquesAction, Statistiques } from "@/features/backoffice";
 import { useDsfrChart } from "@/shared/hooks/useDsfrChart";
+import { useAuth } from "@/features/auth/client";
+import { UserRole } from "@/shared/domain/value-objects";
 import StatistiquesFunnel from "./StatistiquesFunnel";
+import StatistiquesDepartement from "./StatistiquesDepartement";
 import StatCard from "../shared/StatCard";
 
-type ViewId = "globales" | "visites" | "funnel";
+type ViewId = "globales" | "visites" | "funnel" | "departement";
 
 export default function StatistiquesPanel() {
+  const { user } = useAuth();
+  const isAnalyseDdt = user?.role === UserRole.ANALYSTE_DDT;
   const [stats, setStats] = useState<Statistiques | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<ViewId>("globales");
+  const [activeView, setActiveView] = useState<ViewId>(isAnalyseDdt ? "departement" : "globales");
 
   const chartLoaded = useDsfrChart("LineChart");
 
   useEffect(() => {
+    // Les agents DDT n'ont pas besoin des stats globales
+    if (isAnalyseDdt) {
+      setLoading(false);
+      return;
+    }
+
     async function loadStats() {
       setLoading(true);
       setError(null);
@@ -33,7 +44,7 @@ export default function StatistiquesPanel() {
     }
 
     loadStats();
-  }, []);
+  }, [isAnalyseDdt]);
 
   useEffect(() => {
     if (chartLoaded) {
@@ -67,6 +78,21 @@ export default function StatistiquesPanel() {
       yData: `[[${visitesValues.join(", ")}]]`,
     };
   }, [visitesTriees]);
+
+  // Pour les agents DDT : afficher directement la vue département
+  if (isAnalyseDdt) {
+    return (
+      <div className="w-full">
+        <div className="fr-mb-6w">
+          <h1 className="fr-h2 fr-mb-2w">Statistiques</h1>
+          <p className="fr-text--lg fr-text-mention--grey">
+            Statistiques de votre département
+          </p>
+        </div>
+        <StatistiquesDepartement />
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -181,6 +207,19 @@ export default function StatistiquesPanel() {
               Funnel Simulateur
             </label>
           </div>
+          <div className="fr-segmented__element">
+            <input
+              value="departement"
+              checked={activeView === "departement"}
+              type="radio"
+              id="segmented-stats-4"
+              name="segmented-stats"
+              onChange={() => setActiveView("departement")}
+            />
+            <label className="fr-icon-map-pin-2-line fr-label" htmlFor="segmented-stats-4">
+              Par département
+            </label>
+          </div>
         </div>
       </fieldset>
 
@@ -229,6 +268,9 @@ export default function StatistiquesPanel() {
           <StatistiquesFunnel funnel={stats.funnelSimulateurRGA} />
         </div>
       )}
+
+      {/* Vue Par département */}
+      {activeView === "departement" && <StatistiquesDepartement />}
     </div>
   );
 }

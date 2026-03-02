@@ -118,6 +118,11 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.COMMENTAIRES_DELETE_OWN,
   ],
 
+  [UserRole.ANALYSTE_DDT]: [
+    // Lecture seule : stats département uniquement
+    BackofficePermission.STATS_READ,
+  ],
+
   [UserRole.AMO_ET_ALLERS_VERS]: [
     // Combinaison des permissions AMO + Allers-Vers
     BackofficePermission.DOSSIERS_AMO_READ,
