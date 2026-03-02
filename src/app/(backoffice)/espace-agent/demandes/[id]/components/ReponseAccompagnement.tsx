@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import {
   accepterAccompagnement,
   refuserDemandeNonEligible,
@@ -40,14 +41,10 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
       return;
     }
 
-    // Validation du commentaire pour le cas "non éligible"
+    // Validation de la raison pour le cas "non éligible"
     if (choix === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
-      if (!commentaire.trim()) {
-        setError("Veuillez préciser la raison de l'inéligibilité");
-        return;
-      }
-      if (commentaire.trim().length < 10) {
-        setError("Veuillez fournir une raison détaillée (minimum 10 caractères)");
+      if (!commentaire) {
+        setError("Veuillez sélectionner une raison d'inéligibilité");
         return;
       }
     }
@@ -134,20 +131,24 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
         </div>
 
         {choix === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && (
-          <div className="fr-input-group">
+          <div className="fr-select-group">
             <label className="fr-label" htmlFor="commentaire-input">
               Merci de préciser les raisons de l&apos;inéligibilité du demandeur
               <span className="fr-hint-text">Ceci nous permet de comprendre ce qui a pu bloquer</span>
             </label>
-            <textarea
-              className="fr-input"
+            <select
+              className="fr-select"
               id="commentaire-input"
-              name="commentaire"
-              rows={4}
               value={commentaire}
               onChange={(e) => setCommentaire(e.target.value)}
-              disabled={isSubmitting || alreadyProcessed}
-            />
+              disabled={isSubmitting || alreadyProcessed}>
+              <option value="">Sélectionner les raisons</option>
+              {RAISONS_INELIGIBILITE.map((raison) => (
+                <option key={raison.value} value={raison.value}>
+                  {raison.label}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
