@@ -7,8 +7,6 @@ import { getCurrentUser } from "@/features/auth/services/user.service";
 import { STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 import { InfoDemandeur, InfoLogement, ParcoursDemandeur, GagnezDuTemps, AFaire } from "../../shared";
 import { NotesPartagees } from "../../shared";
-import type { ProspectAmoInfo } from "@/features/backoffice/espace-agent/prospects/domain/types";
-import { ContactCard } from "@/shared/components/ContactCard/ContactCard";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { ArchiveProspectButton } from "./components/ArchiveProspectButton";
 import { QualificationSection } from "./components/qualification/QualificationSection";
