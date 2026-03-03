@@ -364,7 +364,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
           ...conditions
         )
       )
-      .orderBy(asc(parcoursPrevention.updatedAt));
+      .orderBy(asc(parcoursPrevention.createdAt));
 
     // Filtrer par ancienneté et territoire côté application
     return results.filter((r) => {
