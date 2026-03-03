@@ -144,7 +144,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                 <PiecesJustificatives />
               </div>
               <div className="fr-mb-4w">
-                <InfoLogement logement={dossier.logement} adresse={dossier.demandeur.adresse} dateIndemnisation={dossier.dateIndemnisation} />
+                <InfoLogement logement={dossier.logement} adresse={dossier.demandeur.adresse} dateIndemnisation={dossier.dateIndemnisation} editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)} />
               </div>
               <div>
                 <GagnezDuTempsTravaux />

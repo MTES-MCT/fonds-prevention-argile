@@ -100,7 +100,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
             {/* Colonne gauche : InfoLogement + GagnezDuTemps */}
             <div className="fr-col-12 fr-col-md-8">
               <div className="fr-mb-4w">
-                <InfoLogement logement={demande.logement} adresse={demande.demandeur.adresse} />
+                <InfoLogement logement={demande.logement} adresse={demande.demandeur.adresse} editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(demande.id)} />
               </div>
               <div>
                 <GagnezDuTemps />

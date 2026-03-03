@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
+import Link from "next/link";
 import type { InfoLogement as InfoLogementType } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import { formatDate, formatMontant } from "@/shared/utils";
 import { ALEA_COLORS } from "@/features/rga-map/domain/config";
@@ -29,12 +30,14 @@ interface InfoLogementProps {
   adresse?: string | null;
   /** Informations sur l'indemnisation passée (optionnel, enrichit l'affichage) */
   dateIndemnisation?: DateIndemnisation;
+  /** Lien vers l'édition des données de simulation */
+  editSimulationHref?: string;
 }
 
 /**
  * Composant affichant les informations sur le logement, l'éligibilité et la localisation sur carte.
  */
-export function InfoLogement({ logement, adresse, dateIndemnisation }: InfoLogementProps) {
+export function InfoLogement({ logement, adresse, dateIndemnisation, editSimulationHref }: InfoLogementProps) {
   // Formater le texte d'indemnisation si disponible
   const formatIndemnisationText = (indemnisation: DateIndemnisation) => {
     const debutStr = formatDate(indemnisation.debut.toISOString());
@@ -68,10 +71,19 @@ export function InfoLogement({ logement, adresse, dateIndemnisation }: InfoLogem
       className="bg-white p-6"
       style={{ background: "var(--background-default-grey)", border: "1px solid var(--border-default-grey)" }}>
       <div className="fr-mb-1w">
-        <h3 className="fr-h5 fr-mb-1v">
-          <span className="fr-icon-home-4-line fr-mr-2v" aria-hidden="true"></span>
-          Logement & éligibilité
-        </h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <h3 className="fr-h5 fr-mb-1v">
+            <span className="fr-icon-home-4-line fr-mr-2v" aria-hidden="true"></span>
+            Logement & éligibilité
+          </h3>
+          {editSimulationHref && (
+            <Link
+              href={editSimulationHref}
+              className="fr-link fr-icon-arrow-right-line fr-link--icon-right fr-text--sm">
+              Modifier les infos
+            </Link>
+          )}
+        </div>
         <p className="fr-text--sm fr-text-mention--grey fr-mb-0 fr-ml-4w">
           Informations fournies en partie par le demandeur
         </p>
