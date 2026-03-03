@@ -81,8 +81,8 @@ export function InfoDemandeur({ demandeur, suiviDepuis, editSimulationHref }: In
         <div className="fr-mt-3w">
           <Link
             href={editSimulationHref}
-            className="fr-btn fr-btn--secondary fr-btn--sm fr-icon-eye-line fr-btn--icon-left">
-            Simulation d&apos;éligibilité
+            className="fr-btn fr-btn--secondary fr-btn--sm fr-icon-pass-valid-line fr-btn--icon-left">
+            Vérifier son éligibilité
           </Link>
         </div>
       )}
