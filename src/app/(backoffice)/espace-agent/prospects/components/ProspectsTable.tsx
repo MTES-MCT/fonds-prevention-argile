@@ -118,7 +118,7 @@ export function ProspectsTable({ prospects, variant, onRefresh }: ProspectsTable
                     </tr>
                   ) : (
                     prospects.map((prospect) => {
-                      const daysAgo = formatDaysAgoSplit(prospect.updatedAt.toISOString());
+                      const daysAgo = formatDaysAgoSplit(prospect.createdAt.toISOString());
                       const greyStyle = isArchived ? { color: "var(--text-mention-grey)" } : undefined;
                       return (
                         <tr key={prospect.parcoursId}>
