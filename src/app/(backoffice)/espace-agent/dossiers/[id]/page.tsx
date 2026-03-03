@@ -5,13 +5,12 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { formatNomComplet } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain/types";
-import { InfoDemandeur, InfoLogement, ParcoursDemandeur, AFaire } from "../../shared";
+import { InfoDemandeur, InfoLogement, ParcoursDemandeur, AFaire, QualificationAllersVers } from "../../shared";
 import { NotesPartagees } from "../../shared";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
 import { PiecesJustificatives } from "./components/PiecesJustificatives";
 import { GagnezDuTempsTravaux } from "./components/GagnezDuTempsTravaux";
 import { ArchiveDossierButton } from "./components/ArchiveDossierButton";
-import { QualificationAllersVers } from "./components/QualificationAllersVers";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";

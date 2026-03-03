@@ -36,7 +36,7 @@ function getLabelForValue(list: ReadonlyArray<{ value: string; label: string }>,
 
 /**
  * Bloc lecture seule affichant la qualification Aller-vers d'un prospect,
- * visible sur la page dossier AMO.
+ * visible sur les pages demande et dossier AMO.
  */
 export function QualificationAllersVers({
   decision,
