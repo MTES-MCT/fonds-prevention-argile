@@ -16,6 +16,7 @@ import { parseCoordinatesString } from "@/shared/utils/geo.utils";
 import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
+import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 
 /**
  * Récupérer le détail d'un dossier suivi par son ID
@@ -126,6 +127,9 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       facturesSubmittedAt: datesByStep.get(Step.FACTURES),
     };
 
+    // Construire les informations de diff agent
+    const agentEditInfo = await buildAgentEditInfo(dossier.parcours);
+
     const dossierDetail: DossierDetail = {
       id: dossier.validation.id,
       parcoursId: dossier.parcours.id,
@@ -138,6 +142,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       lastUpdatedAt: dossier.parcours.updatedAt,
       suiviDepuis: dossier.validation.valideeAt!,
       dates,
+      agentEditInfo,
     };
 
     return { success: true, data: dossierDetail };

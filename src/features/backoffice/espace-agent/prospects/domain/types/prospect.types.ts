@@ -1,6 +1,6 @@
 import { Step } from "@/shared/domain/value-objects";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
-import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/domain/types";
+import type { InfoLogement, AgentEditInfo } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import type { Amo } from "@/features/parcours/amo/domain/entities";
 
 /**
@@ -99,4 +99,6 @@ export interface ProspectDetail extends Prospect {
     step: Step;
     completedAt?: Date;
   }[];
+  /** Informations sur les modifications agent (si données éditées) */
+  agentEditInfo?: AgentEditInfo | null;
 }

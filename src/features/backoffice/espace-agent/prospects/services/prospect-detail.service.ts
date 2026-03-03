@@ -15,6 +15,7 @@ import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.
 import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
+import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 
 function buildAdresseComplete(logement: Partial<RGASimulationData["logement"]>): string {
   const parts = [logement.adresse, logement.commune].filter(Boolean);
@@ -152,6 +153,9 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       logement?.code_departement || ""
     );
 
+    // Construire les informations de diff agent
+    const agentEditInfo = await buildAgentEditInfo(result.parcours);
+
     // Construire l'objet ProspectDetail
     const prospectDetail: ProspectDetail = {
       parcoursId: result.parcours.id,
@@ -176,6 +180,7 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       infoLogement,
       amoInfo,
       stepsHistory: [], // TODO: implémenter l'historique si nécessaire
+      agentEditInfo,
     };
 
     return { success: true, data: prospectDetail };

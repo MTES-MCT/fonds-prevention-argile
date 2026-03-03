@@ -68,6 +68,26 @@ export interface ParcoursDateProgression {
 }
 
 /**
+ * Informations sur les modifications agent de la simulation.
+ * Utilisé par InfoLogement pour afficher le diff original → modifié.
+ */
+export interface AgentEditInfo {
+  /** Prénom de l'agent qui a fait les modifications */
+  agentPrenom: string;
+  /** Nom de famille de l'agent qui a fait les modifications */
+  agentNom: string;
+  /** Date de la modification */
+  editedAt: Date;
+  /** Nombre de champs modifiés */
+  nombreModifications: number;
+  /**
+   * Valeurs originales (avant modification agent) pour chaque champ modifié.
+   * Clé = nom du champ InfoLogement, valeur = string formatée pour l'affichage.
+   */
+  originalDisplayValues: Record<string, string>;
+}
+
+/**
  * Détail complet d'une demande d'accompagnement
  */
 export interface DemandeDetail {
@@ -91,4 +111,6 @@ export interface DemandeDetail {
   parcoursCreatedAt: Date;
   /** Dates de progression du parcours par étape */
   dates: ParcoursDateProgression;
+  /** Informations sur les modifications agent (si données éditées) */
+  agentEditInfo?: AgentEditInfo | null;
 }

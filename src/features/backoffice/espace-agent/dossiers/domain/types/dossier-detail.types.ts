@@ -5,6 +5,7 @@ import type {
   InfoDemandeur,
   InfoLogement,
   ParcoursDateProgression,
+  AgentEditInfo,
 } from "@/features/backoffice/espace-agent/demandes/domain/types/demande-detail.types";
 
 /**
@@ -48,7 +49,9 @@ export interface DossierDetail {
   dateIndemnisation?: DateIndemnisation;
   /** Dates de progression du parcours par étape */
   dates: ParcoursDateProgression;
+  /** Informations sur les modifications agent (si données éditées) */
+  agentEditInfo?: AgentEditInfo | null;
 }
 
 // Ré-export des types partagés pour faciliter les imports
-export type { InfoDemandeur, InfoLogement, ParcoursDateProgression };
+export type { InfoDemandeur, InfoLogement, ParcoursDateProgression, AgentEditInfo };

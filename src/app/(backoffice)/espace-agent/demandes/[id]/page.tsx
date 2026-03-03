@@ -133,7 +133,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                 </div>
               )}
               <div className="fr-mb-4w">
-                <InfoLogement logement={demande.logement} adresse={demande.demandeur.adresse} editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(demande.id)} />
+                <InfoLogement logement={demande.logement} adresse={demande.demandeur.adresse} editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(demande.id)} agentEditInfo={demande.agentEditInfo} />
               </div>
               <div>
                 <GagnezDuTemps />
