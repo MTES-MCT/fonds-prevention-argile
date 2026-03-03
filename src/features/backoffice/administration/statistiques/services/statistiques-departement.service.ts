@@ -1,6 +1,7 @@
 import { count, eq, and, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/shared/database/client";
-import { parcoursPrevention, prospectQualifications } from "@/shared/database/schema";
+import { parcoursPrevention, prospectQualifications, parcoursAmoValidations } from "@/shared/database/schema";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step, STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { getDepartementName } from "@/shared/constants/departements.constants";
@@ -135,13 +136,26 @@ async function getFunnelDepartement(codeDept: string): Promise<FunnelDepartement
       )
       .then((r) => r[0]?.count ?? 0),
 
-    // Non éligibles = via prospect_qualifications decision = 'non_eligible'
-    db
-      .select({ count: count() })
-      .from(prospectQualifications)
-      .innerJoin(parcoursPrevention, eq(prospectQualifications.parcoursId, parcoursPrevention.id))
-      .where(and(eq(prospectQualifications.decision, "non_eligible"), whereDepartement(codeDept)))
-      .then((r) => r[0]?.count ?? 0),
+    // Non éligibles = prospect_qualifications (allers-vers) + parcours_amo_validations (AMO)
+    Promise.all([
+      db
+        .select({ count: count() })
+        .from(prospectQualifications)
+        .innerJoin(parcoursPrevention, eq(prospectQualifications.parcoursId, parcoursPrevention.id))
+        .where(and(eq(prospectQualifications.decision, "non_eligible"), whereDepartement(codeDept)))
+        .then((r) => r[0]?.count ?? 0),
+      db
+        .select({ count: count() })
+        .from(parcoursAmoValidations)
+        .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
+        .where(
+          and(
+            eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE),
+            whereDepartement(codeDept),
+          ),
+        )
+        .then((r) => r[0]?.count ?? 0),
+    ]).then(([allersVers, amo]) => allersVers + amo),
   ]);
 
   return { simulationsDemarrees, simulationsCompletees, eligibles, nonEligibles };
@@ -167,21 +181,42 @@ async function getDossiersParEtape(codeDept: string): Promise<DossierParEtape[]>
 }
 
 async function getRaisonsIneligibilite(codeDept: string): Promise<RaisonIneligibiliteStats[]> {
+  // 1. Raisons depuis les qualifications allers-vers (tableau de raisons)
   const qualifications = await db
     .select({ raisonsIneligibilite: prospectQualifications.raisonsIneligibilite })
     .from(prospectQualifications)
     .innerJoin(parcoursPrevention, eq(prospectQualifications.parcoursId, parcoursPrevention.id))
     .where(and(eq(prospectQualifications.decision, "non_eligible"), whereDepartement(codeDept)));
 
-  // Flatten et comptage des raisons
+  // 2. Raisons depuis les refus AMO (une seule raison par refus)
+  const amoRefusals = await db
+    .select({ commentaire: parcoursAmoValidations.commentaire })
+    .from(parcoursAmoValidations)
+    .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
+    .where(
+      and(
+        eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE),
+        whereDepartement(codeDept),
+      ),
+    );
+
+  // Flatten et comptage des raisons (les deux sources)
   const raisonMap = new Map<string, number>();
+
+  // Allers-vers : tableau de raisons
   for (const q of qualifications) {
     if (!q.raisonsIneligibilite) continue;
     for (const raison of q.raisonsIneligibilite) {
-      // Normaliser : "autre:xxx" → "autre"
       const key = raison.startsWith("autre:") ? "autre" : raison;
       raisonMap.set(key, (raisonMap.get(key) ?? 0) + 1);
     }
+  }
+
+  // AMO : une raison par refus (commentaire = valeur de l'enum RAISONS_INELIGIBILITE)
+  for (const a of amoRefusals) {
+    if (!a.commentaire) continue;
+    const key = a.commentaire.startsWith("autre:") ? "autre" : a.commentaire;
+    raisonMap.set(key, (raisonMap.get(key) ?? 0) + 1);
   }
 
   // Résoudre les labels
