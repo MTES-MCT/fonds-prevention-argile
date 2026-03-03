@@ -100,8 +100,8 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
       // Utiliser window.location.href pour un rechargement complet de la page
       // (router.push peut causer des 404 avec les server components + modale DSFR ouverte)
       const redirectUrl = isEligible
-        ? (redirectAfterSave || ROUTES.backoffice.espaceAmo.dossier(dossierId))
-        : (redirectAfterSaveList || redirectAfterSave || ROUTES.backoffice.espaceAmo.dossiers);
+        ? redirectAfterSave || ROUTES.backoffice.espaceAmo.dossier(dossierId)
+        : redirectAfterSaveList || redirectAfterSave || ROUTES.backoffice.espaceAmo.dossiers;
       window.location.href = redirectUrl;
     } catch {
       setError("Erreur lors de la sauvegarde");
@@ -119,7 +119,10 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
             <div className="flex justify-end fr-mb-2w px-4 pt-4 md:px-0 md:pt-0">
               <a
                 href="#"
-                onClick={(e) => { e.preventDefault(); onRestart(); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onRestart();
+                }}
                 className="fr-link fr-icon-arrow-go-back-line fr-link--icon-left">
                 Recommencer la simulation
               </a>
@@ -153,10 +156,10 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
 
               {/* Callout "Que se passe-t-il ensuite ?" */}
               <div className="fr-callout fr-mt-4w">
-                <h3 className="fr-callout__title">Que se passe-t-il ensuite ?</h3>
+                <h3 className="fr-callout__title">Important</h3>
                 <p className="fr-callout__text">
-                  Vous pouvez enregistrer les modifications ou fermer cette fenêtre si vous ne souhaitez pas les
-                  sauvegarder. Pensez à informer le demandeur de la mise à jour de sa demande.
+                  N’oubliez pas d’enregistrer vos modifications pour que vos changements soient pris en compte. Pensez
+                  également à tenir le demandeur informé de la mise à jour de sa demande.
                 </p>
               </div>
 
