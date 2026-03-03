@@ -383,6 +383,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
                   address={selectedAddress.properties.label}
                   buildingData={buildingData}
                   onChange={handleFormChange}
+                  editMode={isAddressLocked}
                 />
               </div>
             )}
