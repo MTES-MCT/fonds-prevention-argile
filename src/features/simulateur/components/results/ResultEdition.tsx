@@ -203,6 +203,7 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleConfirmSave}
         isLoading={isSaving}
+        isIneligible={!isEligible}
       />
 
       {/* Modale de confirmation de quitter sans enregistrer */}
