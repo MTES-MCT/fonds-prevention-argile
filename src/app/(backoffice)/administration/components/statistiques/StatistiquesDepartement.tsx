@@ -87,17 +87,7 @@ export default function StatistiquesDepartement() {
 
   return (
     <div>
-      <h2 className="fr-h3 fr-mb-3w">
-        Statistiques par département
-        {selectedDepartement && (
-          <span className="fr-text--regular fr-text-mention--grey">
-            {" "}
-            — {selectedDepartement.code} {selectedDepartement.nom}
-          </span>
-        )}
-      </h2>
-
-      {/* Masquer le sélecteur pour les agents DDT avec un seul département */}
+      {/* Sélecteur de département en premier */}
       {!(isAnalyseDdt && departements.length <= 1) && (
         <DepartementSelector
           departements={departements}
@@ -105,6 +95,13 @@ export default function StatistiquesDepartement() {
           onChange={handleSelectDepartement}
           loading={loadingStats}
         />
+      )}
+
+      {/* Titre avec le nom du département sélectionné */}
+      {selectedDepartement && (
+        <h2 className="fr-h3 fr-mt-3w fr-mb-3w">
+          Statistiques {selectedDepartement.nom}
+        </h2>
       )}
 
       {error && (
