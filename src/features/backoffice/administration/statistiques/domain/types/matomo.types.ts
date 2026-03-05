@@ -35,3 +35,16 @@ export interface VisiteParJour {
 export interface MatomoVisitsResponse {
   [date: string]: number;
 }
+
+/**
+ * Réponse de l'API Matomo Events.getAction
+ * Chaque entrée représente une action d'event avec ses compteurs
+ */
+export interface MatomoEventActionResponse {
+  /** Nom de l'action (= eventName envoyé via trackEvent) */
+  label: string;
+  /** Nombre total d'events */
+  nb_events: number;
+  /** Nombre de visites ayant déclenché cet event */
+  nb_visits: number;
+}

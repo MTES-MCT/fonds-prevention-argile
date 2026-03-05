@@ -3,13 +3,14 @@ import { db } from "@/shared/database/client";
 import { parcoursPrevention, prospectQualifications, parcoursAmoValidations } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step, STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
-import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { getDepartementName } from "@/shared/constants/departements.constants";
 import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types";
+import { MATOMO_EVENTS } from "@/shared/constants";
+import { getClientEnv } from "@/shared/config/env.config";
+import { fetchMatomoEventsByDepartment } from "../adapters/matomo-api.adapter";
 import type {
   StatistiquesDepartement,
   DepartementDisponible,
-  FunnelDepartement,
   DossierParEtape,
   RaisonIneligibiliteStats,
   ZoneDynamique,
@@ -63,103 +64,50 @@ export async function getAvailableDepartements(): Promise<DepartementDisponible[
 
 /**
  * Récupère les statistiques complètes pour un département donné.
+ * Combine données Matomo (simulations anonymes + connectées) et BDD (comptes, dossiers).
  */
 export async function getStatistiquesDepartement(codeDepartement: string): Promise<StatistiquesDepartement> {
-  const [funnelSimulateur, dossiersParEtape, raisonsIneligibilite, zonesDynamiques, nombreComptesCreés, totalParcours] =
+  const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
+  const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
+
+  const [matomoEvents, dossiersParEtape, raisonsIneligibilite, zonesDynamiques, nombreComptesCreés] =
     await Promise.all([
-      getFunnelDepartement(codeDepartement),
+      // Matomo : events par département (graceful fallback si indisponible)
+      dimensionId
+        ? fetchMatomoEventsByDepartment(codeDepartement, dimensionId).catch((err) => {
+            console.error("[Stats Département] Erreur Matomo events:", err);
+            return new Map<string, number>();
+          })
+        : Promise.resolve(new Map<string, number>()),
       getDossiersParEtape(codeDepartement),
       getRaisonsIneligibilite(codeDepartement),
       getZonesDynamiques(codeDepartement),
       getNombreComptesCreés(codeDepartement),
-      getTotalParcours(codeDepartement),
     ]);
 
-  const pourcentageEligibles =
-    funnelSimulateur.simulationsCompletees > 0
-      ? Math.round((funnelSimulateur.eligibles / funnelSimulateur.simulationsCompletees) * 100)
-      : 0;
+  const simulationsCommencees = matomoEvents.get(MATOMO_EVENTS.SIMULATEUR_STEP_ADRESSE) ?? 0;
+  const simulationsTerminees =
+    (matomoEvents.get(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE) ?? 0) +
+    (matomoEvents.get(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE) ?? 0);
+
+  const tauxConversionSimuCompte =
+    simulationsCommencees > 0 ? Math.round((nombreComptesCreés / simulationsCommencees) * 100) : 0;
 
   return {
     codeDepartement,
     nomDepartement: getDepartementName(codeDepartement),
-    totalParcours,
-    funnelSimulateur,
+    simulationsCommencees,
+    simulationsTerminees,
+    matomoDataAvailable: matomoEvents.size > 0,
+    nombreComptesCreés,
+    tauxConversionSimuCompte,
     dossiersParEtape,
     raisonsIneligibilite,
     zonesDynamiques,
-    nombreComptesCreés,
-    pourcentageEligibles,
   };
 }
 
-// --- Sous-requêtes ---
-
-async function getTotalParcours(codeDept: string): Promise<number> {
-  const result = await db
-    .select({ count: count() })
-    .from(parcoursPrevention)
-    .where(and(isNotNull(parcoursPrevention.rgaSimulationData), whereDepartement(codeDept)));
-  return result[0]?.count ?? 0;
-}
-
-async function getFunnelDepartement(codeDept: string): Promise<FunnelDepartement> {
-  const [simulationsDemarrees, simulationsCompletees, eligibles, nonEligibles] = await Promise.all([
-    // Simulations démarrées = parcours avec rgaSimulationData dans ce département
-    db
-      .select({ count: count() })
-      .from(parcoursPrevention)
-      .where(and(isNotNull(parcoursPrevention.rgaSimulationData), whereDepartement(codeDept)))
-      .then((r) => r[0]?.count ?? 0),
-
-    // Simulations complétées = rgaSimulationCompletedAt non null
-    db
-      .select({ count: count() })
-      .from(parcoursPrevention)
-      .where(
-        and(
-          isNotNull(parcoursPrevention.rgaSimulationCompletedAt),
-          whereDepartement(codeDept),
-        ),
-      )
-      .then((r) => r[0]?.count ?? 0),
-
-    // Éligibles = situationParticulier = 'eligible'
-    db
-      .select({ count: count() })
-      .from(parcoursPrevention)
-      .where(
-        and(
-          eq(parcoursPrevention.situationParticulier, SituationParticulier.ELIGIBLE),
-          whereDepartement(codeDept),
-        ),
-      )
-      .then((r) => r[0]?.count ?? 0),
-
-    // Non éligibles = prospect_qualifications (allers-vers) + parcours_amo_validations (AMO)
-    Promise.all([
-      db
-        .select({ count: count() })
-        .from(prospectQualifications)
-        .innerJoin(parcoursPrevention, eq(prospectQualifications.parcoursId, parcoursPrevention.id))
-        .where(and(eq(prospectQualifications.decision, "non_eligible"), whereDepartement(codeDept)))
-        .then((r) => r[0]?.count ?? 0),
-      db
-        .select({ count: count() })
-        .from(parcoursAmoValidations)
-        .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
-        .where(
-          and(
-            eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE),
-            whereDepartement(codeDept),
-          ),
-        )
-        .then((r) => r[0]?.count ?? 0),
-    ]).then(([allersVers, amo]) => allersVers + amo),
-  ]);
-
-  return { simulationsDemarrees, simulationsCompletees, eligibles, nonEligibles };
-}
+// --- Sous-requêtes BDD ---
 
 async function getDossiersParEtape(codeDept: string): Promise<DossierParEtape[]> {
   const results = await Promise.all(

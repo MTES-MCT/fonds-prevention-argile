@@ -2,8 +2,13 @@ import { isProduction, isDev } from "@/shared/config/env.config";
 import { MatomoEvent } from "@/shared/constants";
 import { push } from "@socialgouv/matomo-next";
 
+export interface MatomoCustomDimension {
+  id: number;
+  value: string;
+}
+
 interface UseMatomo {
-  trackEvent: (eventName: MatomoEvent, additionalData?: string) => void;
+  trackEvent: (eventName: MatomoEvent, additionalData?: string, customDimensions?: MatomoCustomDimension[]) => void;
   trackPageView: (customUrl?: string) => void;
   enableHeatmaps: () => void;
   isEnabled: boolean;
@@ -27,10 +32,11 @@ export function useMatomo(): UseMatomo {
     }
   };
 
-  const trackEvent = (eventName: MatomoEvent, additionalData?: string) => {
+  const trackEvent = (eventName: MatomoEvent, additionalData?: string, customDimensions?: MatomoCustomDimension[]) => {
     logDebug("trackEvent", {
       eventName,
       additionalData,
+      customDimensions,
       isEnabled,
       willSend: isEnabled,
     });
@@ -40,7 +46,22 @@ export function useMatomo(): UseMatomo {
     }
 
     try {
+      // Positionner les custom dimensions avant l'event
+      if (customDimensions) {
+        for (const dim of customDimensions) {
+          push(["setCustomDimension", dim.id, dim.value]);
+        }
+      }
+
       push(["trackEvent", "User Action", eventName, additionalData]);
+
+      // Nettoyer les custom dimensions pour ne pas polluer les events suivants
+      if (customDimensions) {
+        for (const dim of customDimensions) {
+          push(["deleteCustomDimension", dim.id]);
+        }
+      }
+
       logDebug(`Event envoyé: ${eventName}`);
     } catch (error) {
       console.warn("[Matomo] Erreur tracking:", error);

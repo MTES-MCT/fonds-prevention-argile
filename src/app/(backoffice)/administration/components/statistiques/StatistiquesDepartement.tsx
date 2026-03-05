@@ -117,45 +117,40 @@ export default function StatistiquesDepartement() {
 
       {stats && !loadingStats && (
         <>
+          {/* Bandeau info si données Matomo pas encore disponibles */}
+          {!stats.matomoDataAvailable && (
+            <div className="fr-alert fr-alert--info fr-mb-4w">
+              <p>
+                Les données de simulations (commencées / terminées) incluant les utilisateurs anonymes seront
+                disponibles progressivement après la mise en place du suivi par département.
+              </p>
+            </div>
+          )}
+
           {/* KPIs */}
           <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
             <StatCard
-              number={stats.funnelSimulateur.simulationsDemarrees.toLocaleString("fr-FR")}
-              label="Simulations démarrées"
+              number={stats.simulationsCommencees.toLocaleString("fr-FR")}
+              label="Simulations commencées"
+              description="Adresse saisie dans le simulateur (avec et sans compte)"
               icon="fr-icon-play-circle-line"
             />
             <StatCard
-              number={stats.funnelSimulateur.simulationsCompletees.toLocaleString("fr-FR")}
-              label="Simulations complétées"
+              number={stats.simulationsTerminees.toLocaleString("fr-FR")}
+              label="Simulations terminées"
+              description="Arrivées à l'étape finale d'éligibilité"
               icon="fr-icon-check-line"
             />
-            <StatCard
-              number={stats.funnelSimulateur.eligibles.toLocaleString("fr-FR")}
-              label="Éligibles"
-              icon="fr-icon-success-line"
-            />
-            <StatCard
-              number={stats.funnelSimulateur.nonEligibles.toLocaleString("fr-FR")}
-              label="Non éligibles"
-              icon="fr-icon-close-circle-line"
-            />
-          </div>
-
-          <div className="fr-grid-row fr-grid-row--gutters fr-mb-6w">
             <StatCard
               number={stats.nombreComptesCreés.toLocaleString("fr-FR")}
               label="Comptes créés"
               icon="fr-icon-user-line"
             />
             <StatCard
-              number={`${stats.pourcentageEligibles} %`}
-              label="Taux d'éligibilité"
+              number={`${stats.tauxConversionSimuCompte} %`}
+              label="Taux de conversion"
+              description="Simulation commencée → compte créé"
               icon="fr-icon-pie-chart-2-line"
-            />
-            <StatCard
-              number={stats.totalParcours.toLocaleString("fr-FR")}
-              label="Total parcours"
-              icon="fr-icon-road-map-line"
             />
           </div>
 

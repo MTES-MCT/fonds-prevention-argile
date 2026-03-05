@@ -1,5 +1,5 @@
 import { getServerEnv, getClientEnv } from "@/shared/config/env.config";
-import type { MatomoVisitsResponse } from "../domain/types/matomo.types";
+import type { MatomoVisitsResponse, MatomoEventActionResponse } from "../domain/types/matomo.types";
 import type { MatomoFunnelFlowTableResponse } from "../domain/types/matomo-funnels.types";
 
 /**
@@ -24,6 +24,9 @@ interface MatomoRequestParams {
   format: string;
   token_auth: string;
   idFunnel?: string;
+  segment?: string;
+  flat?: string;
+  [key: string]: string | undefined;
 }
 
 /**
@@ -150,4 +153,47 @@ export async function fetchMatomoFunnel(
     },
     config.apiUrl
   );
+}
+
+/**
+ * Récupère le nombre d'events Matomo par action, filtré par département via Custom Dimension.
+ * Retourne une Map<eventName, count> en un seul appel API.
+ *
+ * @param codeDepartement - Code département (ex: "36")
+ * @param dimensionId - ID de la Custom Dimension département configurée dans Matomo
+ * @param options - Période et date optionnelles
+ */
+export async function fetchMatomoEventsByDepartment(
+  codeDepartement: string,
+  dimensionId: number,
+  options?: { period?: string; date?: string },
+): Promise<Map<string, number>> {
+  const config = getMatomoConfig();
+  const segment = `dimension${dimensionId}==${codeDepartement}`;
+
+  const data = await fetchMatomoApi<MatomoEventActionResponse[]>(
+    {
+      module: "API",
+      method: "Events.getAction",
+      idSite: config.siteId,
+      period: options?.period ?? "range",
+      date: options?.date ?? "2025-01-01,today",
+      format: "JSON",
+      token_auth: config.apiToken,
+      segment,
+      flat: "1",
+    },
+    config.apiUrl,
+  );
+
+  const eventCounts = new Map<string, number>();
+
+  // Matomo peut retourner un tableau vide ou un objet vide si pas de données
+  if (Array.isArray(data)) {
+    for (const row of data) {
+      eventCounts.set(row.label, row.nb_events);
+    }
+  }
+
+  return eventCounts;
 }
