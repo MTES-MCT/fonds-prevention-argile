@@ -58,3 +58,6 @@ yarn-error.log*
 *.xlsx
 !public/templates/amo-exemple.xlsx
 !public/templates/allers-vers-exemple.xlsx
+
+# Settings vscode
+.vscode/*
