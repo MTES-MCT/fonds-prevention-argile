@@ -83,12 +83,6 @@ export default function StatistiquesPanel() {
   if (isAnalyseDdt) {
     return (
       <div className="w-full">
-        <div className="fr-mb-6w">
-          <h1 className="fr-h2 fr-mb-2w">Statistiques</h1>
-          <p className="fr-text--lg fr-text-mention--grey">
-            Statistiques de votre département
-          </p>
-        </div>
         <StatistiquesDepartement />
       </div>
     );
