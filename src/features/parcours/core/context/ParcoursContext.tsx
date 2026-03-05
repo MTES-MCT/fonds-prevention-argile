@@ -21,6 +21,9 @@ interface ParcoursContextType {
   statutAmo: StatutValidationAmo | null;
   validationAmoComplete: ValidationAmoComplete | null;
 
+  // Qualification allers-vers
+  isQualifiedNonEligible: boolean;
+
   // État de synchronisation DS
   lastDSStatus: DSStatus | null;
   isSyncing: boolean;
