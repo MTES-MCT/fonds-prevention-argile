@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/features/auth/services/user.service";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { UserRole } from "@/shared/domain/value-objects";
+import { QualificationDecision } from "../domain/types";
 import { qualificationService } from "../services/qualification.service";
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
 import type { ActionResult } from "@/shared/types";
@@ -15,14 +16,14 @@ import type { ActionResult } from "@/shared/types";
 const qualifyProspectSchema = z
   .object({
     parcoursId: z.string().uuid(),
-    decision: z.enum(["eligible", "a_qualifier", "non_eligible"]),
+    decision: z.enum([QualificationDecision.ELIGIBLE, QualificationDecision.A_QUALIFIER, QualificationDecision.NON_ELIGIBLE]),
     actionsRealisees: z.array(z.string()).min(1, "Au moins une action est requise"),
     raisonsIneligibilite: z.array(z.string()).optional(),
     note: z.string().optional(),
   })
   .refine(
     (data) => {
-      if (data.decision === "non_eligible") {
+      if (data.decision === QualificationDecision.NON_ELIGIBLE) {
         return data.raisonsIneligibilite && data.raisonsIneligibilite.length > 0;
       }
       return true;

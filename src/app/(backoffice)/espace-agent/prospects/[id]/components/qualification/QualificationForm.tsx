@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   QUALIFICATION_ACTIONS,
   QUALIFICATION_DECISIONS,
+  QualificationDecision,
   RAISONS_INELIGIBILITE,
 } from "@/features/backoffice/espace-agent/prospects/domain/types";
-import type { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { qualifyProspectAction } from "@/features/backoffice/espace-agent/prospects/actions/qualify-prospect.actions";
 
 interface QualificationInitialValues {
@@ -45,19 +45,19 @@ function parseValuesWithAutre(values: string[]): { normalized: string[]; precisi
 
 /** Textes de la modale de confirmation selon la décision */
 const CONFIRM_CONFIG: Record<QualificationDecision, { title: string; description: string; button: string }> = {
-  eligible: {
+  [QualificationDecision.ELIGIBLE]: {
     title: "Confirmer l\u2019\u00e9ligibilit\u00e9 du demandeur ?",
     description:
       "Le dossier passera en statut \u201c<strong>\u00e9ligible</strong>\u201d. Vous pourrez toujours le mettre \u00e0 jour tant qu\u2019il n\u2019est pas transf\u00e9r\u00e9 \u00e0 l\u2019AMO ou supprim\u00e9 par le demandeur.",
     button: "Confirmer l\u2019\u00e9ligibilit\u00e9",
   },
-  a_qualifier: {
+  [QualificationDecision.A_QUALIFIER]: {
     title: "Confirmer la mise en attente ?",
     description:
       "Le dossier passera en statut \u201c<strong>\u00e0 qualifier</strong>\u201d. Vous pourrez le requalifier \u00e0 tout moment.",
     button: "Confirmer",
   },
-  non_eligible: {
+  [QualificationDecision.NON_ELIGIBLE]: {
     title: "Confirmer la non-\u00e9ligibilit\u00e9 du demandeur ?",
     description:
       "Le prospect sera <strong>archiv\u00e9</strong>. Vous pourrez le d\u00e9sarchiver \u00e0 tout moment depuis la liste des prospects archiv\u00e9s.",
@@ -266,7 +266,7 @@ export function QualificationForm({
 
   function handleDecisionChange(value: string) {
     setDecision(value as QualificationDecision);
-    if (value !== "non_eligible") {
+    if (value !== QualificationDecision.NON_ELIGIBLE) {
       setRaisonsIneligibilite([]);
     }
   }
@@ -284,7 +284,7 @@ export function QualificationForm({
       setError("Veuillez sélectionner une décision.");
       return;
     }
-    if (decision === "non_eligible" && raisonsIneligibilite.length === 0) {
+    if (decision === QualificationDecision.NON_ELIGIBLE && raisonsIneligibilite.length === 0) {
       setError("Veuillez sélectionner au moins une raison d'inéligibilité.");
       return;
     }
@@ -309,7 +309,7 @@ export function QualificationForm({
         parcoursId,
         decision,
         actionsRealisees: finalActions,
-        raisonsIneligibilite: decision === "non_eligible" ? finalRaisons : undefined,
+        raisonsIneligibilite: decision === QualificationDecision.NON_ELIGIBLE ? finalRaisons : undefined,
         note: note.trim() || undefined,
       });
 
@@ -406,7 +406,7 @@ export function QualificationForm({
         </fieldset>
 
         {/* Raisons d'inéligibilité — liste déroulante multi-select (conditionnel) */}
-        {decision === "non_eligible" && (
+        {decision === QualificationDecision.NON_ELIGIBLE && (
           <RaisonsIneligibiliteSelect
             raisonsIneligibilite={raisonsIneligibilite}
             onRaisonChange={handleRaisonChange}

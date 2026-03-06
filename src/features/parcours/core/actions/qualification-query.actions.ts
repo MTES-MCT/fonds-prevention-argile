@@ -3,6 +3,7 @@
 import { getSession } from "@/features/auth/server";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { prospectQualificationsRepo } from "@/shared/database/repositories/prospect-qualifications.repository";
+import { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
 import { formatNomComplet } from "@/shared/utils";
@@ -37,7 +38,7 @@ export async function getMyIneligibiliteData(): Promise<ActionResult<MyIneligibi
 
     // 1. Essayer la qualification allers-vers (données les plus riches)
     const qualification = await prospectQualificationsRepo.findLatestByParcoursId(parcours.id);
-    if (qualification && qualification.decision === "non_eligible") {
+    if (qualification && qualification.decision === QualificationDecision.NON_ELIGIBLE) {
       let agentNom = "";
       let structureNom = "";
 

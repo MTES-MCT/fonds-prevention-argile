@@ -1,9 +1,9 @@
 import {
   QUALIFICATION_ACTIONS,
   QUALIFICATION_DECISIONS,
+  QualificationDecision,
   RAISONS_INELIGIBILITE,
 } from "@/features/backoffice/espace-agent/prospects/domain/types";
-import type { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { formatRelativeTimeShort } from "@/shared/utils/date.utils";
 
 interface QualificationAllersVersProps {
@@ -17,9 +17,9 @@ interface QualificationAllersVersProps {
 }
 
 const VARIANT_CONFIG: Record<QualificationDecision, { className: string }> = {
-  eligible: { className: "fr-callout--green-emeraude" },
-  non_eligible: { className: "fr-callout--pink-tuile" },
-  a_qualifier: { className: "" },
+  [QualificationDecision.ELIGIBLE]: { className: "fr-callout--green-emeraude" },
+  [QualificationDecision.NON_ELIGIBLE]: { className: "fr-callout--pink-tuile" },
+  [QualificationDecision.A_QUALIFIER]: { className: "" },
 };
 
 /**
@@ -97,7 +97,7 @@ export function QualificationAllersVers({
               </p>
 
               {/* Raisons d'inéligibilité (si non_eligible) */}
-              {decision === "non_eligible" && raisonsLabels && (
+              {decision === QualificationDecision.NON_ELIGIBLE && raisonsLabels && (
                 <p className="fr-mb-1w">
                   Raisons d&apos;inéligibilité : <strong>{raisonsLabels}</strong>
                 </p>

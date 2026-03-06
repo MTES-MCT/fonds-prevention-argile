@@ -4,7 +4,7 @@ import { parcoursPrevention, prospectQualifications, parcoursAmoValidations } fr
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step, STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
 import { getDepartementName } from "@/shared/constants/departements.constants";
-import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types";
+import { RAISONS_INELIGIBILITE, QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { MATOMO_EVENTS } from "@/shared/constants";
 import { getClientEnv } from "@/shared/config/env.config";
 import { fetchMatomoEventsByDepartment } from "../adapters/matomo-api.adapter";
@@ -134,7 +134,7 @@ async function getRaisonsIneligibilite(codeDept: string): Promise<RaisonIneligib
     .select({ raisonsIneligibilite: prospectQualifications.raisonsIneligibilite })
     .from(prospectQualifications)
     .innerJoin(parcoursPrevention, eq(prospectQualifications.parcoursId, parcoursPrevention.id))
-    .where(and(eq(prospectQualifications.decision, "non_eligible"), whereDepartement(codeDept)));
+    .where(and(eq(prospectQualifications.decision, QualificationDecision.NON_ELIGIBLE), whereDepartement(codeDept)));
 
   // 2. Raisons depuis les refus AMO (une seule raison par refus)
   const amoRefusals = await db
