@@ -37,7 +37,7 @@ export async function getMyIneligibiliteData(): Promise<ActionResult<MyIneligibi
 
     // 1. Essayer la qualification allers-vers (données les plus riches)
     const qualification = await prospectQualificationsRepo.findLatestByParcoursId(parcours.id);
-    if (qualification) {
+    if (qualification && qualification.decision === "non_eligible") {
       let agentNom = "";
       let structureNom = "";
 
