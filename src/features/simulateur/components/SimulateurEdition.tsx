@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { SimulateurProvider } from "./shared/SimulateurContext";
 import { SimulateurFormulaire } from "./SimulateurFormulaire";
 import { useSimulateurStore } from "../stores/simulateur.store";
@@ -28,15 +28,11 @@ interface SimulateurEditionProps {
  * - Démarre directement à l'étape 1 (skip intro)
  */
 export function SimulateurEdition({ nomComplet, initialData, dossierId, redirectAfterSave, redirectAfterSaveList }: SimulateurEditionProps) {
-  const hasInitialized = useRef(false);
   const reset = useSimulateurStore((state) => state.reset);
   const start = useSimulateurStore((state) => state.start);
   const setEditMode = useSimulateurStore((state) => state.setEditMode);
 
   useEffect(() => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
-
     // Reset d'abord pour partir d'un état propre
     reset();
 
@@ -63,14 +59,13 @@ export function SimulateurEdition({ nomComplet, initialData, dossierId, redirect
         },
       }));
     }
-  }, [initialData, reset, start, setEditMode]);
 
-  // Nettoyer le mode édition au démontage
-  useEffect(() => {
+    // Nettoyer le mode édition au démontage
     return () => {
       setEditMode(false);
     };
-  }, [setEditMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const formTitle = `${nomComplet} - Données de simulation d\u2019\u00e9ligibilit\u00e9`;
 

@@ -15,6 +15,9 @@ export function useParcours() {
     statutAmo: context.statutAmo,
     validationAmoComplete: context.validationAmoComplete,
 
+    // Qualification allers-vers
+    isQualifiedNonEligible: context.isQualifiedNonEligible,
+
     // État DS
     lastDSStatus: context.lastDSStatus,
     hasDossiers: context.dossiers && context.dossiers.length > 0,

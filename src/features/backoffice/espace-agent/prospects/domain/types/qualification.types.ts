@@ -3,7 +3,11 @@
  */
 
 /** Décision de qualification */
-export type QualificationDecision = "eligible" | "a_qualifier" | "non_eligible";
+export enum QualificationDecision {
+  ELIGIBLE = "eligible",
+  A_QUALIFIER = "a_qualifier",
+  NON_ELIGIBLE = "non_eligible",
+}
 
 /** Actions réalisées avec le demandeur */
 export const QUALIFICATION_ACTIONS = [
@@ -18,9 +22,9 @@ export type QualificationAction = (typeof QUALIFICATION_ACTIONS)[number]["value"
 
 /** Décisions possibles */
 export const QUALIFICATION_DECISIONS = [
-  { value: "eligible", label: "\u2705 Éligible et peut passer à l'étape AMO" },
-  { value: "a_qualifier", label: "\u23F3 À qualifier" },
-  { value: "non_eligible", label: "\u26D4 Non éligible" },
+  { value: QualificationDecision.ELIGIBLE, label: "\u2705 Éligible et peut passer à l'étape AMO" },
+  { value: QualificationDecision.A_QUALIFIER, label: "\u23F3 À qualifier" },
+  { value: QualificationDecision.NON_ELIGIBLE, label: "\u26D4 Non éligible" },
 ] as const;
 
 /** Raisons d'inéligibilité (utilisées uniquement si decision = "non_eligible") */

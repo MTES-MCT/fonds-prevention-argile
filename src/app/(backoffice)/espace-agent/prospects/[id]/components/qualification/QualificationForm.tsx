@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   QUALIFICATION_ACTIONS,
   QUALIFICATION_DECISIONS,
+  QualificationDecision,
   RAISONS_INELIGIBILITE,
 } from "@/features/backoffice/espace-agent/prospects/domain/types";
-import type { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { qualifyProspectAction } from "@/features/backoffice/espace-agent/prospects/actions/qualify-prospect.actions";
 
 interface QualificationInitialValues {
@@ -45,22 +45,22 @@ function parseValuesWithAutre(values: string[]): { normalized: string[]; precisi
 
 /** Textes de la modale de confirmation selon la décision */
 const CONFIRM_CONFIG: Record<QualificationDecision, { title: string; description: string; button: string }> = {
-  eligible: {
+  [QualificationDecision.ELIGIBLE]: {
     title: "Confirmer l\u2019\u00e9ligibilit\u00e9 du demandeur ?",
     description:
-      'Le dossier passera en statut \u201c<strong>\u00e9ligible</strong>\u201d. Vous pourrez toujours le mettre \u00e0 jour tant qu\u2019il n\u2019est pas transf\u00e9r\u00e9 \u00e0 l\u2019AMO ou supprim\u00e9 par le demandeur.',
+      "Le dossier passera en statut \u201c<strong>\u00e9ligible</strong>\u201d. Vous pourrez toujours le mettre \u00e0 jour tant qu\u2019il n\u2019est pas transf\u00e9r\u00e9 \u00e0 l\u2019AMO ou supprim\u00e9 par le demandeur.",
     button: "Confirmer l\u2019\u00e9ligibilit\u00e9",
   },
-  a_qualifier: {
+  [QualificationDecision.A_QUALIFIER]: {
     title: "Confirmer la mise en attente ?",
     description:
-      'Le dossier passera en statut \u201c<strong>\u00e0 qualifier</strong>\u201d. Vous pourrez le requalifier \u00e0 tout moment.',
+      "Le dossier passera en statut \u201c<strong>\u00e0 qualifier</strong>\u201d. Vous pourrez le requalifier \u00e0 tout moment.",
     button: "Confirmer",
   },
-  non_eligible: {
+  [QualificationDecision.NON_ELIGIBLE]: {
     title: "Confirmer la non-\u00e9ligibilit\u00e9 du demandeur ?",
     description:
-      'Le prospect sera <strong>archiv\u00e9</strong>. Vous pourrez le d\u00e9sarchiver \u00e0 tout moment depuis la liste des prospects archiv\u00e9s.',
+      "Le prospect sera <strong>archiv\u00e9</strong>. Vous pourrez le d\u00e9sarchiver \u00e0 tout moment depuis la liste des prospects archiv\u00e9s.",
     button: "Confirmer la non-\u00e9ligibilit\u00e9",
   },
 };
@@ -120,8 +120,7 @@ function RaisonsIneligibiliteSelect({
           textAlign: "left",
           cursor: "pointer",
           width: "100%",
-        }}
-      >
+        }}>
         {placeholder}
       </button>
 
@@ -139,8 +138,7 @@ function RaisonsIneligibiliteSelect({
             maxHeight: "300px",
             overflowY: "auto",
             padding: "0.5rem 0",
-          }}
-        >
+          }}>
           {RAISONS_INELIGIBILITE.map((raison) => (
             <div key={raison.value} style={{ padding: "0.25rem 1rem" }}>
               <div className="fr-checkbox-group fr-checkbox-group--sm">
@@ -186,7 +184,13 @@ function RaisonsIneligibiliteSelect({
  * - Textarea : note complémentaire
  * - Modale de confirmation avant soumission
  */
-export function QualificationForm({ parcoursId, onSuccess, onCancel, isUpdate, initialValues }: QualificationFormProps) {
+export function QualificationForm({
+  parcoursId,
+  onSuccess,
+  onCancel,
+  isUpdate,
+  initialValues,
+}: QualificationFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -262,7 +266,7 @@ export function QualificationForm({ parcoursId, onSuccess, onCancel, isUpdate, i
 
   function handleDecisionChange(value: string) {
     setDecision(value as QualificationDecision);
-    if (value !== "non_eligible") {
+    if (value !== QualificationDecision.NON_ELIGIBLE) {
       setRaisonsIneligibilite([]);
     }
   }
@@ -280,7 +284,7 @@ export function QualificationForm({ parcoursId, onSuccess, onCancel, isUpdate, i
       setError("Veuillez sélectionner une décision.");
       return;
     }
-    if (decision === "non_eligible" && raisonsIneligibilite.length === 0) {
+    if (decision === QualificationDecision.NON_ELIGIBLE && raisonsIneligibilite.length === 0) {
       setError("Veuillez sélectionner au moins une raison d'inéligibilité.");
       return;
     }
@@ -305,7 +309,7 @@ export function QualificationForm({ parcoursId, onSuccess, onCancel, isUpdate, i
         parcoursId,
         decision,
         actionsRealisees: finalActions,
-        raisonsIneligibilite: decision === "non_eligible" ? finalRaisons : undefined,
+        raisonsIneligibilite: decision === QualificationDecision.NON_ELIGIBLE ? finalRaisons : undefined,
         note: note.trim() || undefined,
       });
 
@@ -402,7 +406,7 @@ export function QualificationForm({ parcoursId, onSuccess, onCancel, isUpdate, i
         </fieldset>
 
         {/* Raisons d'inéligibilité — liste déroulante multi-select (conditionnel) */}
-        {decision === "non_eligible" && (
+        {decision === QualificationDecision.NON_ELIGIBLE && (
           <RaisonsIneligibiliteSelect
             raisonsIneligibilite={raisonsIneligibilite}
             onRaisonChange={handleRaisonChange}
@@ -415,10 +419,13 @@ export function QualificationForm({ parcoursId, onSuccess, onCancel, isUpdate, i
 
         {/* Note complémentaire */}
         <div className="fr-input-group fr-mt-3w">
-          <label className="fr-label" htmlFor="qualification-note">
+          <label className="fr-label fr-text--bold" htmlFor="qualification-note">
             3. Note complémentaire
-            <span className="fr-hint-text">Optionnel</span>
           </label>
+          <p className="fr-hint-text fr-mt-2w fr-mb-2w" id="actions-hint">
+            Peut aider le demandeur à saisir les raisons de son inéligibilité.
+          </p>
+
           <textarea
             className="fr-input"
             id="qualification-note"
@@ -429,6 +436,10 @@ export function QualificationForm({ parcoursId, onSuccess, onCancel, isUpdate, i
             disabled={isPending}
             placeholder="Ajoutez des informations complémentaires si nécessaires"
           />
+          <p className="fr-mt-2w fr-text--xs" style={{ color: "#0063CB", marginBottom: 0 }}>
+            <span className="fr-icon-info-fill fr-icon--sm fr-mr-1w" aria-hidden="true" />
+            Ces informations peuvent être transmises au demandeur
+          </p>
         </div>
 
         {/* Boutons */}
@@ -475,13 +486,8 @@ export function QualificationForm({ parcoursId, onSuccess, onCancel, isUpdate, i
                 <div className="fr-modal__footer">
                   <ul className="fr-btns-group fr-btns-group--right fr-btns-group--inline-reverse fr-btns-group--inline-lg">
                     <li>
-                      <button
-                        type="button"
-                        className="fr-btn"
-                        disabled={isPending}
-                        onClick={handleConfirm}
-                      >
-                        {isPending ? "Enregistrement..." : confirmConfig?.button ?? "Confirmer"}
+                      <button type="button" className="fr-btn" disabled={isPending} onClick={handleConfirm}>
+                        {isPending ? "Enregistrement..." : (confirmConfig?.button ?? "Confirmer")}
                       </button>
                     </li>
                     <li>

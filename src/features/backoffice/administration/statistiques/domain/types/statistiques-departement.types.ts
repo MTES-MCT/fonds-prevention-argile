@@ -6,10 +6,21 @@ import type { Step } from "@/shared/domain/value-objects";
 export interface StatistiquesDepartement {
   codeDepartement: string;
   nomDepartement: string;
-  totalParcours: number;
 
-  /** Funnel simulateur (basé sur les données DB, pas Matomo) */
-  funnelSimulateur: FunnelDepartement;
+  /** Matomo : nombre de simulations commencées (event simulateur_step_adresse) */
+  simulationsCommencees: number;
+
+  /** Matomo : nombre de simulations terminées (events result_eligible + result_non_eligible) */
+  simulationsTerminees: number;
+
+  /** Indique si les données Matomo sont disponibles (false = dimension pas encore configurée ou pas de données) */
+  matomoDataAvailable: boolean;
+
+  /** BDD : nombre de comptes créés dans ce département */
+  nombreComptesCreés: number;
+
+  /** Calculé : nombreComptesCreés / simulationsCommencées * 100 */
+  tauxConversionSimuCompte: number;
 
   /** Répartition des dossiers par étape du parcours */
   dossiersParEtape: DossierParEtape[];
@@ -19,23 +30,6 @@ export interface StatistiquesDepartement {
 
   /** Zones les plus dynamiques (top communes/EPCI) */
   zonesDynamiques: ZoneDynamique[];
-
-  /** Nombre de comptes créés dans ce département */
-  nombreComptesCreés: number;
-
-  /** Pourcentage de parcours éligibles */
-  pourcentageEligibles: number;
-}
-
-export interface FunnelDepartement {
-  /** Parcours avec simulation démarrée (rgaSimulationData présent) */
-  simulationsDemarrees: number;
-  /** Parcours avec simulation complétée (rgaSimulationCompletedAt non null) */
-  simulationsCompletees: number;
-  /** Parcours déclarés éligibles (situationParticulier = 'eligible') */
-  eligibles: number;
-  /** Parcours déclarés non éligibles (via prospect_qualifications) */
-  nonEligibles: number;
 }
 
 export interface DossierParEtape {

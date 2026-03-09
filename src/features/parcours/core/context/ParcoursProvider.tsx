@@ -9,6 +9,7 @@ import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status"
 import type { Parcours, Step } from "../domain";
 import { obtenirMonParcours } from "../actions";
 import { getValidationAmo } from "../../amo/actions";
+import { getMyIneligibiliteData } from "../actions/qualification-query.actions";
 import { syncAllUserDossiers, syncUserDossierStatus } from "../../dossiers-ds/actions/dossier-sync.actions";
 import { DossierDS } from "../../dossiers-ds";
 import { ROLES, useAuth } from "@/features/auth/client";
@@ -35,6 +36,9 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
   // État AMO
   const [statutAmo, setStatutAmo] = useState<StatutValidationAmo | null>(null);
   const [validationAmoComplete, setValidationAmoComplete] = useState<ValidationAmoComplete | null>(null);
+
+  // Qualification allers-vers
+  const [isQualifiedNonEligible, setIsQualifiedNonEligible] = useState(false);
 
   // État de synchronisation
   const [isSyncing, setIsSyncing] = useState(false);
@@ -105,6 +109,15 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
           setStatutAmo(null);
           setValidationAmoComplete(null);
           debug.log("[fetchParcours] No AMO validation data");
+        }
+
+        // Vérifier la qualification allers-vers (inéligibilité)
+        const qualifResult = await getMyIneligibiliteData();
+        if (qualifResult.success && qualifResult.data) {
+          setIsQualifiedNonEligible(true);
+          debug.log("[fetchParcours] Qualified non eligible");
+        } else {
+          setIsQualifiedNonEligible(false);
         }
 
         debug.log("[fetchParcours] Complete");
@@ -329,6 +342,9 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     // État AMO
     statutAmo,
     validationAmoComplete,
+
+    // Qualification allers-vers
+    isQualifiedNonEligible,
 
     // Sync DS
     lastDSStatus,

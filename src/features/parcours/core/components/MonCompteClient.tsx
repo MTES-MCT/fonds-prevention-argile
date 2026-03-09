@@ -42,6 +42,7 @@ export default function MonCompteClient() {
     currentStep,
     lastDSStatus,
     statutAmo,
+    isQualifiedNonEligible,
     refresh,
     parcours,
     isLoading: isLoadingParcours,
@@ -129,6 +130,7 @@ export default function MonCompteClient() {
                 dsStatus={lastDSStatus}
                 currentStep={currentStep}
                 statutAmo={statutAmo}
+                isQualifiedNonEligible={isQualifiedNonEligible}
                 onAmoSuccess={() => setShowAmoSuccessAlert(true)}
                 refresh={refresh}
               />
@@ -141,7 +143,9 @@ export default function MonCompteClient() {
         </div>
 
         {/* Section "Pour en savoir plus" si logement non éligible */}
-        {statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && <PourEnSavoirPlusSectionContent />}
+        {(statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE || isQualifiedNonEligible) && (
+          <PourEnSavoirPlusSectionContent />
+        )}
       </section>
 
       {/* Sections communes */}
@@ -156,6 +160,7 @@ function CalloutManager({
   hasParcours,
   dsStatus,
   statutAmo,
+  isQualifiedNonEligible,
   currentStep,
   onAmoSuccess,
   refresh,
@@ -164,6 +169,7 @@ function CalloutManager({
   hasParcours: boolean;
   dsStatus: DSStatus | null;
   statutAmo: StatutValidationAmo | null;
+  isQualifiedNonEligible: boolean;
   currentStep: Step | null;
   onAmoSuccess: () => void;
   refresh: () => Promise<void>;
@@ -176,7 +182,7 @@ function CalloutManager({
   // Gestion selon l'étape courante
   switch (currentStep) {
     case Step.CHOIX_AMO:
-      return renderChoixAmoCallout(statutAmo, onAmoSuccess, refresh);
+      return renderChoixAmoCallout(statutAmo, isQualifiedNonEligible, onAmoSuccess, refresh);
 
     case Step.ELIGIBILITE:
       return renderEligibiliteCallout(dsStatus);
@@ -198,9 +204,15 @@ function CalloutManager({
 // Helpers pour chaque étape
 function renderChoixAmoCallout(
   statutAmo: StatutValidationAmo | null,
+  isQualifiedNonEligible: boolean,
   onAmoSuccess: () => void,
   refresh: () => Promise<void>
 ) {
+  // Si qualifié non éligible par un allers-vers (avant même le choix AMO)
+  if (isQualifiedNonEligible && statutAmo === null) {
+    return <CalloutAmoLogementNonEligible />;
+  }
+
   if (statutAmo === null) {
     return <CalloutAmoTodo onSuccess={onAmoSuccess} refresh={refresh} />;
   }

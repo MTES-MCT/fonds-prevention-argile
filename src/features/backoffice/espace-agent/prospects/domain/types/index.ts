@@ -9,11 +9,11 @@ export type {
 export {
   QUALIFICATION_ACTIONS,
   QUALIFICATION_DECISIONS,
+  QualificationDecision,
   RAISONS_INELIGIBILITE,
 } from "./qualification.types";
 
 export type {
-  QualificationDecision,
   QualificationAction,
   RaisonIneligibilite,
 } from "./qualification.types";

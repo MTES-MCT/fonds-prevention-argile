@@ -2,7 +2,7 @@ import { parcoursPreventionRepository } from "@/shared/database/repositories/par
 import { prospectQualificationsRepo } from "@/shared/database/repositories/prospect-qualifications.repository";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
-import type { QualificationDecision } from "../domain/types";
+import { QualificationDecision } from "../domain/types";
 
 interface QualifyProspectParams {
   parcoursId: string;
@@ -44,12 +44,12 @@ export class QualificationService {
     });
 
     // 3. Mettre à jour situation_particulier selon la décision
-    if (decision === "eligible") {
+    if (decision === QualificationDecision.ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(
         parcoursId,
         SituationParticulier.ELIGIBLE,
       );
-    } else if (decision === "non_eligible") {
+    } else if (decision === QualificationDecision.NON_ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(
         parcoursId,
         SituationParticulier.ARCHIVE,

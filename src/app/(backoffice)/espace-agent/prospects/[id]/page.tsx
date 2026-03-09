@@ -152,7 +152,7 @@ export default async function ProspectDetailPage({ params }: PageProps) {
             {/* Colonne gauche */}
             <div className="fr-col-12 fr-col-md-8">
               <div className="fr-mb-4w">
-                <InfoLogement logement={prospect.infoLogement} adresse={prospect.logement.adresse} />
+                <InfoLogement logement={prospect.infoLogement} adresse={prospect.logement.adresse} editSimulationHref={ROUTES.backoffice.espaceAgent.editionDonneesSimulation(prospect.parcoursId)} agentEditInfo={prospect.agentEditInfo} />
               </div>
               <div>
                 <GagnezDuTemps />

@@ -18,6 +18,7 @@ import type { BuildingData } from "@/shared/services/bdnb";
 import { SimulateurLayout } from "../../shared/SimulateurLayout";
 import { NavigationButtons } from "../../shared/NavigationButtons";
 import { BuildingDataForm, type BuildingFormData } from "./BuildingDataForm";
+import { useSimulateurStore, selectEditMode } from "../../../stores/simulateur.store";
 
 interface StepAdresseProps {
   initialValue?: Record<string, unknown>;
@@ -43,6 +44,10 @@ const SEARCH_DEBOUNCE_DELAY = 300;
  * 6. Validation avec le bouton "Suivant"
  */
 export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack, onSubmit, onBack }: StepAdresseProps) {
+  // Mode édition agent : verrouiller l'adresse
+  const editMode = useSimulateurStore(selectEditMode);
+  const isAddressLocked = editMode && Boolean(initialValue?.coordonnees);
+
   // IDs uniques pour l'accessibilité
   const inputId = useId();
   const radioGroupId = useId();
@@ -61,18 +66,73 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   const [searchError, setSearchError] = useState<string | null>(null);
 
   // Adresse sélectionnée (après clic sur RadioButton)
-  const [selectedAddress, setSelectedAddress] = useState<BanFeature | null>(null);
+  // En mode édition, on reconstruit un BanFeature synthétique pour afficher la carte directement
+  const [selectedAddress, setSelectedAddress] = useState<BanFeature | null>(() => {
+    const coordonnees = initialValue?.coordonnees as string | undefined;
+    const clefBan = initialValue?.clef_ban as string | undefined;
+    const adresse = initialValue?.adresse as string | undefined;
+    const commune = initialValue?.commune as string | undefined;
+    const communeNom = initialValue?.commune_nom as string | undefined;
+    const codeDepartement = initialValue?.code_departement as string | undefined;
+
+    if (coordonnees && clefBan && adresse && commune) {
+      const [lat, lon] = coordonnees.split(",").map(Number);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        const label = communeNom && !adresse.includes(communeNom) ? `${adresse}, ${communeNom}` : adresse;
+        return {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [lon, lat] },
+          properties: {
+            label,
+            score: 1,
+            id: clefBan,
+            type: "housenumber" as const,
+            name: adresse,
+            postcode: "",
+            citycode: commune,
+            city: communeNom || "",
+            context: codeDepartement || "",
+          },
+        };
+      }
+    }
+    return null;
+  });
+
+  // RNB ID initial pour pré-sélectionner le bâtiment sur la carte en mode édition
+  const initialRnbId = initialValue?.rnb as string | undefined;
 
   // Code EPCI récupéré via API Geo
-  const [codeEpci, setCodeEpci] = useState<string | null>(null);
+  const [codeEpci, setCodeEpci] = useState<string | null>(
+    (initialValue?.epci as string) || null,
+  );
 
   // Bâtiment sélectionné sur la carte (après clic sur point bleu)
-  const [buildingData, setBuildingData] = useState<BuildingData | null>(null);
+  // En mode édition, on construit directement le buildingData depuis la simulation existante (pas d'appel BDNB)
+  const [buildingData, setBuildingData] = useState<BuildingData | null>(() => {
+    if (!isAddressLocked) return null;
+    const coordonnees = initialValue?.coordonnees as string | undefined;
+    if (!coordonnees) return null;
+    const [lat, lon] = coordonnees.split(",").map(Number);
+    if (isNaN(lat) || isNaN(lon)) return null;
+    return {
+      rnbId: (initialValue?.rnb as string) || "",
+      lat,
+      lon,
+      adresse: (initialValue?.adresse as string) || null,
+      aleaArgiles: (initialValue?.zone_dexposition as string) || null,
+      anneeConstruction: initialValue?.annee_de_construction ? Number(initialValue.annee_de_construction) : null,
+      nombreNiveaux: initialValue?.niveaux != null ? Number(initialValue.niveaux) : null,
+      surfaceHabitable: null,
+    } as BuildingData;
+  });
 
   // Données du formulaire (potentiellement éditées par l'utilisateur)
   const [formData, setFormData] = useState<BuildingFormData>({
-    anneeConstruction: null,
-    nombreNiveaux: null,
+    anneeConstruction: isAddressLocked && initialValue?.annee_de_construction
+      ? Number(initialValue.annee_de_construction) : null,
+    nombreNiveaux: isAddressLocked && initialValue?.niveaux != null
+      ? Number(initialValue.niveaux) : null,
   });
 
   // Debounce de l'input pour éviter trop d'appels API
@@ -242,7 +302,8 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
               name="adresse"
               placeholder="Ex: 97 rue de Notz, Châteauroux"
               autoComplete="street-address"
-              autoFocus
+              autoFocus={!isAddressLocked}
+              readOnly={isAddressLocked}
             />
             <div className="fr-messages-group" id={`input-${inputId}-messages`} aria-live="polite">
               {searchError && <p className="fr-message fr-message--error">{searchError}</p>}
@@ -307,10 +368,12 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
             {/* Carte */}
             <RgaMapContainer
               center={mapCenter}
+              initialRnbId={isAddressLocked ? undefined : initialRnbId}
+              locked={isAddressLocked}
               showMarker={true}
               showLegend={true}
               variant="minimal"
-              onBuildingSelect={handleBuildingSelect}
+              onBuildingSelect={isAddressLocked ? undefined : handleBuildingSelect}
             />
 
             {/* Formulaire (visible après sélection d'un bâtiment) */}
@@ -320,6 +383,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
                   address={selectedAddress.properties.label}
                   buildingData={buildingData}
                   onChange={handleFormChange}
+                  editMode={isAddressLocked}
                 />
               </div>
             )}

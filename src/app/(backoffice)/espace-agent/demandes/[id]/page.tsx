@@ -4,9 +4,13 @@ import { getDemandeDetail } from "@/features/backoffice/espace-agent/demandes/se
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet, formatDate } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
-import { InfoDemandeur, InfoLogement, ParcoursDemandeur, GagnezDuTemps, AFaire } from "../../shared";
+import { InfoDemandeur, InfoLogement, ParcoursDemandeur, GagnezDuTemps, AFaire, QualificationAllersVers } from "../../shared";
 import { NotesPartagees } from "../../shared";
 import { ReponseAccompagnement } from "./components/ReponseAccompagnement";
+import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
+import { agentsRepository } from "@/shared/database/repositories/agents.repository";
+import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
+import type { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +40,22 @@ export default async function DemandeDetailPage({ params }: PageProps) {
 
   const demande = result.data;
   const nomComplet = formatNomComplet(demande.demandeur.prenom, demande.demandeur.nom);
+
+  // Récupérer la dernière qualification aller-vers
+  const latestQualification = await qualificationService.getLatestQualification(demande.parcoursId);
+
+  let qualificationAgentNom = "";
+  let qualificationStructureNom = "";
+  if (latestQualification) {
+    const agent = await agentsRepository.findById(latestQualification.agentId);
+    if (agent) {
+      qualificationAgentNom = formatNomComplet(agent.givenName, agent.usualName);
+      if (agent.allersVersId) {
+        const structure = await allersVersRepository.findById(agent.allersVersId);
+        qualificationStructureNom = structure?.nom ?? "";
+      }
+    }
+  }
 
   return (
     <>
@@ -97,10 +117,23 @@ export default async function DemandeDetailPage({ params }: PageProps) {
       <section className="fr-background-alt--blue-france fr-py-4w">
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
-            {/* Colonne gauche : InfoLogement + GagnezDuTemps */}
+            {/* Colonne gauche : QualificationAllersVers + InfoLogement + GagnezDuTemps */}
             <div className="fr-col-12 fr-col-md-8">
+              {latestQualification && (
+                <div className="fr-mb-4w">
+                  <QualificationAllersVers
+                    decision={latestQualification.decision as QualificationDecision}
+                    actionsRealisees={latestQualification.actionsRealisees}
+                    raisonsIneligibilite={latestQualification.raisonsIneligibilite}
+                    note={latestQualification.note}
+                    agentNom={qualificationAgentNom}
+                    structureNom={qualificationStructureNom}
+                    createdAt={latestQualification.createdAt}
+                  />
+                </div>
+              )}
               <div className="fr-mb-4w">
-                <InfoLogement logement={demande.logement} adresse={demande.demandeur.adresse} />
+                <InfoLogement logement={demande.logement} adresse={demande.demandeur.adresse} editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(demande.id)} agentEditInfo={demande.agentEditInfo} />
               </div>
               <div>
                 <GagnezDuTemps />

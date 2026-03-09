@@ -9,3 +9,4 @@ export * from "./ParcoursDemandeur";
 export * from "./GagnezDuTemps";
 export * from "./AFaire";
 export * from "./NotesPartagees";
+export * from "./QualificationAllersVers";

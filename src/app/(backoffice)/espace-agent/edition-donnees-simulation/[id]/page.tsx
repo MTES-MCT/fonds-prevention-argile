@@ -70,8 +70,8 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
             <p>
               <span className="fr-notice__title">Mode édition</span>
               <span className="fr-notice__desc">
-                Vous éditez le formulaire du demandeur, n&apos;oubliez pas de confirmer la mise à jour avant de fermer
-                cet onglet
+                Vous éditez le formulaire du demandeur. N’oubliez pas d’enregistrer les modifications avant de quitter
+                (dernière étape).
               </span>
             </p>
           </div>
@@ -111,7 +111,13 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
         </nav>
 
         {/* Simulateur en mode édition */}
-        <SimulateurEdition nomComplet={nomComplet} initialData={rgaData} dossierId={id} redirectAfterSave={detailHref} redirectAfterSaveList={sectionHref} />
+        <SimulateurEdition
+          nomComplet={nomComplet}
+          initialData={rgaData}
+          dossierId={id}
+          redirectAfterSave={detailHref}
+          redirectAfterSaveList={sectionHref}
+        />
       </div>
     </>
   );

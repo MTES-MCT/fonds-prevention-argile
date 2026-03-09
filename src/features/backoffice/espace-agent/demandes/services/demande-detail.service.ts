@@ -10,6 +10,7 @@ import { parseCoordinatesString } from "@/shared/utils/geo.utils";
 import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
+import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 
 /**
  * Récupérer le détail d'une demande d'accompagnement par son ID
@@ -102,6 +103,9 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       facturesSubmittedAt: datesByStep.get(Step.FACTURES),
     };
 
+    // Construire les informations de diff agent
+    const agentEditInfo = await buildAgentEditInfo(demande.parcours);
+
     const demandeDetail: DemandeDetail = {
       id: demande.validation.id,
       parcoursId: demande.parcours.id,
@@ -113,6 +117,7 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       currentStep: demande.parcours.currentStep as Step,
       parcoursCreatedAt: demande.parcours.createdAt,
       dates,
+      agentEditInfo,
     };
 
     return { success: true, data: demandeDetail };

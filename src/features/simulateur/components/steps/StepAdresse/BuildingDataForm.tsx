@@ -22,6 +22,9 @@ interface BuildingDataFormProps {
 
   /** Callback appelé quand les valeurs changent */
   onChange: (data: BuildingFormData) => void;
+
+  /** Mode édition : les champs pré-remplis restent clairement éditables (pas de fond gris) */
+  editMode?: boolean;
 }
 
 /** Options pour le select du nombre de niveaux */
@@ -54,7 +57,7 @@ const ALEA_CONFIG = {
  * - Données présentes → champs pré-remplis, mode "vérifier"
  * - Données absentes → champs éditables, mode "compléter"
  */
-export function BuildingDataForm({ address, buildingData, onChange }: BuildingDataFormProps) {
+export function BuildingDataForm({ address, buildingData, onChange, editMode }: BuildingDataFormProps) {
   const inputId = useId();
 
   // État local des valeurs éditables
@@ -112,7 +115,7 @@ export function BuildingDataForm({ address, buildingData, onChange }: BuildingDa
 
       {/* Titre */}
       <p className="fr-text--lg fr-text--bold fr-mb-3w">
-        Merci de {hasAllData ? "vérifier" : "compléter"} les informations :
+        Merci de {hasAllData && !editMode ? "vérifier" : "compléter"} les informations :
       </p>
 
       {/* Champ : Année de construction */}
@@ -128,8 +131,8 @@ export function BuildingDataForm({ address, buildingData, onChange }: BuildingDa
           name="anneeConstruction"
           value={anneeConstruction}
           onChange={handleAnneeChange}
-          placeholder={hasAnnee ? undefined : "Ajouter"}
-          style={hasAnnee ? { backgroundColor: "#f0f0f0" } : undefined}
+          placeholder={hasAnnee && !editMode ? undefined : "Ajouter"}
+          style={hasAnnee && !editMode ? { backgroundColor: "#f0f0f0" } : undefined}
         />
       </div>
 
@@ -144,7 +147,7 @@ export function BuildingDataForm({ address, buildingData, onChange }: BuildingDa
           name="nombreNiveaux"
           value={nombreNiveaux}
           onChange={handleNiveauxChange}
-          style={hasNiveaux ? { backgroundColor: "#f0f0f0" } : undefined}>
+          style={hasNiveaux && !editMode ? { backgroundColor: "#f0f0f0" } : undefined}>
           {NIVEAUX_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}

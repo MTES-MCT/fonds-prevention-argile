@@ -2,8 +2,12 @@
 
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
-import type { InfoLogement as InfoLogementType } from "@/features/backoffice/espace-agent/demandes/domain/types";
-import { formatDate, formatMontant } from "@/shared/utils";
+import Link from "next/link";
+import type {
+  InfoLogement as InfoLogementType,
+  AgentEditInfo,
+} from "@/features/backoffice/espace-agent/demandes/domain/types";
+import { formatDate, formatDateTime, formatMontant } from "@/shared/utils";
 import { ALEA_COLORS } from "@/features/rga-map/domain/config";
 import { RgaMapLegend } from "@/features/rga-map/components/RgaMapLegend";
 
@@ -29,12 +33,72 @@ interface InfoLogementProps {
   adresse?: string | null;
   /** Informations sur l'indemnisation passée (optionnel, enrichit l'affichage) */
   dateIndemnisation?: DateIndemnisation;
+  /** Lien vers l'édition des données de simulation */
+  editSimulationHref?: string;
+  /** Informations sur les modifications agent (pour afficher le diff) */
+  agentEditInfo?: AgentEditInfo | null;
+}
+
+/**
+ * Helper : affiche un badge de valeur avec diff si le champ a été modifié par un agent.
+ * - Si `originalValue` existe : badge gris (ancien) → badge bleu (nouveau)
+ * - Sinon : badge bleu simple (comportement actuel)
+ */
+function FieldValue({
+  fieldKey,
+  children,
+  className,
+  style,
+  agentEditInfo,
+}: {
+  fieldKey: string;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  agentEditInfo?: AgentEditInfo | null;
+}) {
+  const originalValue = agentEditInfo?.originalDisplayValues?.[fieldKey];
+
+  if (!originalValue) {
+    // Pas de modification → badge simple
+    return (
+      <span className={className} style={style}>
+        {children}
+      </span>
+    );
+  }
+
+  // Modification agent → ancien → nouveau
+  return (
+    <>
+      <span
+        className="fr-badge fr-badge--sm fr-badge--no-icon"
+        style={{
+          backgroundColor: "var(--background-contrast-grey)",
+          color: "var(--text-mention-grey)",
+        }}>
+        {originalValue}
+      </span>
+      <span className="fr-mx-1v" aria-hidden="true">
+        →
+      </span>
+      <span className={className} style={style}>
+        {children}
+      </span>
+    </>
+  );
 }
 
 /**
  * Composant affichant les informations sur le logement, l'éligibilité et la localisation sur carte.
  */
-export function InfoLogement({ logement, adresse, dateIndemnisation }: InfoLogementProps) {
+export function InfoLogement({
+  logement,
+  adresse,
+  dateIndemnisation,
+  editSimulationHref,
+  agentEditInfo,
+}: InfoLogementProps) {
   // Formater le texte d'indemnisation si disponible
   const formatIndemnisationText = (indemnisation: DateIndemnisation) => {
     const debutStr = formatDate(indemnisation.debut.toISOString());
@@ -68,70 +132,113 @@ export function InfoLogement({ logement, adresse, dateIndemnisation }: InfoLogem
       className="bg-white p-6"
       style={{ background: "var(--background-default-grey)", border: "1px solid var(--border-default-grey)" }}>
       <div className="fr-mb-1w">
-        <h3 className="fr-h5 fr-mb-1v">
-          <span className="fr-icon-home-4-line fr-mr-2v" aria-hidden="true"></span>
-          Logement & éligibilité
-        </h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <h3 className="fr-h5 fr-mb-1v">
+            <span className="fr-icon-home-4-line fr-mr-2v" aria-hidden="true"></span>
+            Logement & éligibilité
+          </h3>
+          {editSimulationHref && (
+            <Link
+              href={editSimulationHref}
+              className="fr-link fr-icon-arrow-right-line fr-link--icon-right fr-text--sm">
+              Modifier les infos
+            </Link>
+          )}
+        </div>
         <p className="fr-text--sm fr-text-mention--grey fr-mb-0 fr-ml-4w">
           Informations fournies en partie par le demandeur
         </p>
       </div>
+
+      {/* Bandeau de modification agent */}
+      {agentEditInfo && (
+        <div className="fr-alert fr-alert--info fr-mb-2w">
+          <p className="fr-text--sm fr-mb-0">
+            Données mises à jour : {formatDateTime(agentEditInfo.editedAt.toISOString())} • {agentEditInfo.agentPrenom}{" "}
+            {agentEditInfo.agentNom} • {agentEditInfo.nombreModifications}{" "}
+            {agentEditInfo.nombreModifications > 1 ? "modifications" : "modification"}
+          </p>
+        </div>
+      )}
+
       <ul className="fr-ml-3w fr-text--sm">
         {/* Risque argile */}
         {logement.zoneExposition && (
           <li className="fr-mb-2v">
             Risque argile{" "}
-            <span
+            <FieldValue
+              fieldKey="zoneExposition"
+              agentEditInfo={agentEditInfo}
               className="fr-badge fr-badge--sm fr-badge--no-icon fr-text--bold"
               style={{
                 backgroundColor: getRisqueArgileColor(logement.zoneExposition),
                 color: "#2a2a2a",
               }}>
               {logement.zoneExposition.toUpperCase()}
-            </span>
+            </FieldValue>
           </li>
         )}
 
         {logement.anneeConstruction && (
           <li className="fr-mb-2v">
             Année de construction{" "}
-            <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">{logement.anneeConstruction}</span>
+            <FieldValue
+              fieldKey="anneeConstruction"
+              agentEditInfo={agentEditInfo}
+              className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+              {logement.anneeConstruction}
+            </FieldValue>
           </li>
         )}
 
         {logement.nombreNiveaux && (
           <li className="fr-mb-2v">
             Nombre de niveau{" "}
-            <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+            <FieldValue
+              fieldKey="nombreNiveaux"
+              agentEditInfo={agentEditInfo}
+              className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
               {logement.nombreNiveaux} {Number(logement.nombreNiveaux) > 1 ? "NIVEAUX" : "NIVEAU"}
-            </span>
+            </FieldValue>
           </li>
         )}
 
         {logement.etatMaison && (
           <li className="fr-mb-2v">
             État de la maison{" "}
-            <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+            <FieldValue
+              fieldKey="etatMaison"
+              agentEditInfo={agentEditInfo}
+              className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
               {logement.etatMaison.toUpperCase()}
-            </span>
+            </FieldValue>
           </li>
         )}
 
         {logement.indemnisationPasseeRGA !== null && (
           <li className="fr-mb-2v">
-            Indemnisation passée liée au RGA ? {/* Si indemnisé entre 2015 et 2025, afficher le badge de période */}
+            Indemnisation passée liée au RGA ?{" "}
             {logement.indemnisationPasseeRGA && logement.indemnisationAvantJuillet2025 ? (
-              <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+              <FieldValue
+                fieldKey="indemnisationPasseeRGA"
+                agentEditInfo={agentEditInfo}
+                className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
                 INDEMNISÉ ENTRE 01/07/15 ET 01/07/25
-              </span>
+              </FieldValue>
             ) : dateIndemnisation ? (
-              <span className="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">
+              <FieldValue
+                fieldKey="indemnisationPasseeRGA"
+                agentEditInfo={agentEditInfo}
+                className="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">
                 {formatIndemnisationText(dateIndemnisation)}
-              </span>
+              </FieldValue>
             ) : (
-              <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+              <FieldValue
+                fieldKey="indemnisationPasseeRGA"
+                agentEditInfo={agentEditInfo}
+                className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
                 {logement.indemnisationPasseeRGA ? "OUI" : "NON"}
-              </span>
+              </FieldValue>
             )}
           </li>
         )}
@@ -143,25 +250,33 @@ export function InfoLogement({ logement, adresse, dateIndemnisation }: InfoLogem
           logement.montantIndemnisation !== null && (
             <li className="fr-mb-2v">
               Montant de l&apos;indemnité{" "}
-              <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+              <FieldValue
+                fieldKey="montantIndemnisation"
+                agentEditInfo={agentEditInfo}
+                className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
                 {formatMontant(logement.montantIndemnisation)}
-              </span>
+              </FieldValue>
             </li>
           )}
 
         {logement.nombreHabitants && (
           <li className="fr-mb-2v">
             Habitants du logement{" "}
-            <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+            <FieldValue
+              fieldKey="nombreHabitants"
+              agentEditInfo={agentEditInfo}
+              className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
               {logement.nombreHabitants} {logement.nombreHabitants > 1 ? "HABITANTS" : "HABITANT"}
-            </span>
+            </FieldValue>
           </li>
         )}
 
         {logement.niveauRevenu && (
           <li className="fr-mb-2v">
             Revenus du foyer{" "}
-            <span
+            <FieldValue
+              fieldKey="niveauRevenu"
+              agentEditInfo={agentEditInfo}
               className={`fr-badge fr-badge--sm fr-badge--no-icon ${
                 logement.niveauRevenu === "Très modeste"
                   ? "fr-badge--info fr-badge--no-icon"
@@ -174,7 +289,7 @@ export function InfoLogement({ logement, adresse, dateIndemnisation }: InfoLogem
                 : logement.niveauRevenu === "Modeste"
                   ? "MÉNAGE MODESTE"
                   : logement.niveauRevenu.toUpperCase()}
-            </span>
+            </FieldValue>
           </li>
         )}
       </ul>

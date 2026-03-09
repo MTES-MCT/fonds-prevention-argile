@@ -24,6 +24,8 @@ import { ResultEdition, ResultEligible, ResultNonEligible } from "./results";
 import { MATOMO_EVENTS } from "@/shared/constants";
 import { SIMULATEUR_STEP_EVENTS } from "../domain";
 import { useSimulateurStore, selectEditMode } from "../stores/simulateur.store";
+import { getClientEnv } from "@/shared/config/env.config";
+import type { MatomoCustomDimension } from "@/shared/components/Matomo/useMatomo";
 
 /**
  * Composant orchestrateur du simulateur d'éligibilité
@@ -60,21 +62,30 @@ export function SimulateurFormulaire() {
     if (previousStepRef.current === currentStep) return;
     previousStepRef.current = currentStep;
 
+    // Construire la custom dimension département si disponible
+    // Le département est connu à partir du step adresse (answers.logement.code_departement)
+    const codeDepartement = answers.logement?.code_departement;
+    const dimensionId = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
+    const deptDimensions: MatomoCustomDimension[] | undefined =
+      codeDepartement && dimensionId
+        ? [{ id: Number(dimensionId), value: codeDepartement }]
+        : undefined;
+
     // Tracker selon l'étape
     if (currentStep === SimulateurStep.RESULTAT) {
       // Tracker le résultat
       if (isEligible) {
-        trackEvent(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE);
+        trackEvent(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE, undefined, deptDimensions);
       } else {
-        trackEvent(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE);
+        trackEvent(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE, undefined, deptDimensions);
       }
     } else if (currentStep !== SimulateurStep.INTRO) {
       const eventName = SIMULATEUR_STEP_EVENTS[currentStep];
       if (eventName) {
-        trackEvent(eventName);
+        trackEvent(eventName, undefined, deptDimensions);
       }
     }
-  }, [currentStep, isEligible, trackEvent]);
+  }, [currentStep, isEligible, trackEvent, answers]);
 
   // Wrapper pour start avec tracking
   const handleStart = () => {
