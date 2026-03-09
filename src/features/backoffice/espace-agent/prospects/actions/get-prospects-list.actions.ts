@@ -38,17 +38,7 @@ export async function getProspectsListAction(
     }
 
     // Vérifier que l'agent a un allersVersId
-    console.log("[DEBUG-PROSPECTS] getCurrentUser() →", JSON.stringify({
-      id: user.id,
-      role: user.role,
-      authMethod: user.authMethod,
-      agentId: user.agentId,
-      allersVersId: user.allersVersId,
-      entrepriseAmoId: user.entrepriseAmoId,
-    }));
-
     if (!user.allersVersId) {
-      console.log("[DEBUG-PROSPECTS] ❌ allersVersId is falsy, returning error");
       return {
         success: false,
         error: "Agent non lié à une structure Allers-Vers",
@@ -56,33 +46,22 @@ export async function getProspectsListAction(
     }
 
     // Récupérer les prospects
-    const agentInput = {
-      id: user.agentId ?? "",
-      role: user.role,
-      entrepriseAmoId: user.entrepriseAmoId ?? null,
-      allersVersId: user.allersVersId,
-    };
-    console.log("[DEBUG-PROSPECTS] agentInput →", JSON.stringify(agentInput));
-
     const result = await prospectsListService.getProspectsForAgent(
-      agentInput,
+      {
+        id: user.agentId ?? "",
+        role: user.role,
+        entrepriseAmoId: user.entrepriseAmoId ?? null,
+        allersVersId: user.allersVersId,
+      },
       filters
     );
-
-    console.log("[DEBUG-PROSPECTS] result totals →", JSON.stringify({
-      totalProspects: result.totalProspects,
-      totalEligibles: result.totalEligibles,
-      totalArchives: result.totalArchives,
-      territoriesCovered: result.territoriesCovered,
-      hasAmoDisponible: result.hasAmoDisponible,
-    }));
 
     return {
       success: true,
       data: result,
     };
   } catch (error) {
-    console.error("[DEBUG-PROSPECTS] ❌ CATCH error in getProspectsListAction:", error);
+    console.error("Erreur getProspectsListAction:", error);
     return {
       success: false,
       error: "Erreur lors de la récupération des prospects",

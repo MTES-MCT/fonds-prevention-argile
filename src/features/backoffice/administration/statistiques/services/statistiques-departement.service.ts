@@ -50,7 +50,9 @@ export async function getAvailableDepartements(): Promise<DepartementDisponible[
     const data = p.rgaSimulationDataAgent ?? p.rgaSimulationData;
     const codeDept = data?.logement?.code_departement;
     if (!codeDept) continue;
-    deptMap.set(codeDept, (deptMap.get(codeDept) ?? 0) + 1);
+    // Conversion en String() car le JSONB peut retourner un number au lieu d'un string
+    const codeDeptStr = String(codeDept);
+    deptMap.set(codeDeptStr, (deptMap.get(codeDeptStr) ?? 0) + 1);
   }
 
   return Array.from(deptMap.entries())
