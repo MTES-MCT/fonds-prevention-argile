@@ -191,7 +191,8 @@ const DEPARTEMENT_TO_REGION: Record<string, string> = {
  * @returns Code département (ex: "36")
  */
 export function extractDepartementFromContext(context: string): string {
-  const match = context.match(/^(\d{2,3}[AB]?)/);
+  const str = String(context ?? "");
+  const match = str.match(/^(\d{1,3}[AB]?)/);
   return match ? match[1] : "";
 }
 

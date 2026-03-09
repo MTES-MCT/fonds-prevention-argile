@@ -55,3 +55,14 @@ export function deepClone<T>(obj: T): T {
 export function isEmpty(obj: Record<string, unknown>): boolean {
   return Object.keys(obj).length === 0;
 }
+
+/**
+ * Convertit une valeur JSONB en string.
+ * Les nombres sont convertis via String(), null/undefined retournent undefined.
+ * Utile pour lire des champs JSONB typés Record<string, unknown> où les valeurs
+ * peuvent être des nombres au lieu de chaînes (ex: code_departement stocké comme 3 au lieu de "03").
+ */
+export function asString(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  return String(value);
+}
