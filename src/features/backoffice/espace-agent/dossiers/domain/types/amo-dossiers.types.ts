@@ -2,13 +2,14 @@ import type React from "react";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
 /**
  * Types pour la page des dossiers suivis de l'espace AMO
  */
 
 /**
- * Dossier suivi (demande acceptée avec statut LOGEMENT_ELIGIBLE)
+ * Dossier suivi ou archivé (demande acceptée ou refusée)
  */
 export interface DossierSuivi {
   /** ID de la validation AMO (pour le lien vers la page détail) */
@@ -27,9 +28,11 @@ export interface DossierSuivi {
   etape: Step;
   /** Statut actuel du parcours */
   statut: Status;
+  /** Statut de la validation AMO (pour distinguer accepté / refusé) */
+  statutValidation: StatutValidationAmo;
   /** Statut DS du dossier de l'étape courante (si existe) */
   dsStatus: DSStatus | null;
-  /** Date de validation de la demande (acceptation par l'AMO) */
+  /** Date de validation de la demande (acceptation ou refus par l'AMO) */
   dateValidation: Date;
   /** Date du dernier changement de statut */
   dateDernierStatut: Date;
@@ -47,6 +50,16 @@ export interface AmoDossiersData {
   dossiersSuivis: DossierSuivi[];
   /** Liste des dossiers archivés */
   dossiersArchives: DossierSuivi[];
+}
+
+/**
+ * Vérifie si un dossier a été refusé par l'AMO
+ */
+export function isDossierRefuse(dossier: DossierSuivi): boolean {
+  return (
+    dossier.statutValidation === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE ||
+    dossier.statutValidation === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
+  );
 }
 
 /**
