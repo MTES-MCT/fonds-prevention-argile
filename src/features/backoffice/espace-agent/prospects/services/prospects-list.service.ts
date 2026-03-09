@@ -28,10 +28,13 @@ export class ProspectsListService {
     filters?: ProspectFilters
   ): Promise<ProspectsListResult> {
     // Calculer le scope de l'agent
+    console.log("[DEBUG-PROSPECTS] Service: calculating scope for", JSON.stringify(agentInput));
     const scope = await calculateAgentScope(agentInput);
+    console.log("[DEBUG-PROSPECTS] Service: scope →", JSON.stringify(scope));
 
     // Vérifier que l'agent peut voir les dossiers sans AMO
     if (!scope.canViewDossiersWithoutAmo) {
+      console.log("[DEBUG-PROSPECTS] Service: ❌ canViewDossiersWithoutAmo is false, returning empty");
       return {
         prospects: [],
         prospectsEligibles: [],
@@ -55,6 +58,7 @@ export class ProspectsListService {
     };
 
     // Récupérer les 3 catégories en parallèle
+    console.log("[DEBUG-PROSPECTS] Service: fetching 3 categories with departements=", scope.departements, "epcis=", scope.epcis);
     const [prospectsRaw, eligiblesRaw, archivesRaw] = await Promise.all([
       parcoursRepo.getParcoursWithoutAmoByTerritoire(scope.departements, scope.epcis, {
         ...filterBase,
@@ -69,6 +73,24 @@ export class ProspectsListService {
         situationParticulier: SituationParticulier.ARCHIVE,
       }),
     ]);
+
+    console.log("[DEBUG-PROSPECTS] Service: raw counts →", {
+      prospectsRaw: prospectsRaw.length,
+      eligiblesRaw: eligiblesRaw.length,
+      archivesRaw: archivesRaw.length,
+    });
+
+    // Log les 3 premiers prospects raw pour debug
+    if (prospectsRaw.length > 0) {
+      console.log("[DEBUG-PROSPECTS] Service: first prospect →", JSON.stringify({
+        parcoursId: prospectsRaw[0].parcoursId,
+        situationParticulier: prospectsRaw[0].situationParticulier,
+        dept: prospectsRaw[0].rgaSimulationData?.logement?.code_departement,
+        epci: prospectsRaw[0].rgaSimulationData?.logement?.epci,
+      }));
+    } else {
+      console.log("[DEBUG-PROSPECTS] Service: ⚠️ prospectsRaw is EMPTY");
+    }
 
     // Transformer en Prospects
     const mapToProspect = (r: (typeof prospectsRaw)[number]): Prospect => {

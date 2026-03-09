@@ -366,8 +366,11 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       )
       .orderBy(asc(parcoursPrevention.createdAt));
 
+    console.log("[DEBUG-PROSPECTS] Repo: SQL returned", results.length, "rows for situationParticulier=", filters?.situationParticulier);
+    console.log("[DEBUG-PROSPECTS] Repo: filtering with departements=", departements, "epcis=", epcis);
+
     // Filtrer par ancienneté et territoire côté application
-    return results.filter((r) => {
+    const filtered = results.filter((r) => {
       // Filtrage par ancienneté
       if (filters?.maxDaysSinceAction !== undefined) {
         const now = new Date();
@@ -379,8 +382,20 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         }
       }
 
-      return matchesTerritoire(r.rgaSimulationData, departements, epcis);
+      const matches = matchesTerritoire(r.rgaSimulationData, departements, epcis);
+      if (!matches && results.length <= 10) {
+        // Log détaillé pour les petits jeux de données
+        console.log("[DEBUG-PROSPECTS] Repo: EXCLUDED parcours", r.parcoursId,
+          "dept=", r.rgaSimulationData?.logement?.code_departement,
+          "epci=", r.rgaSimulationData?.logement?.epci,
+          "rgaSimulationData is null?", r.rgaSimulationData === null,
+          "typeof rgaSimulationData=", typeof r.rgaSimulationData);
+      }
+      return matches;
     });
+
+    console.log("[DEBUG-PROSPECTS] Repo: after matchesTerritoire filter →", filtered.length, "rows");
+    return filtered;
   }
 }
 
@@ -402,11 +417,14 @@ export function matchesTerritoire(
   const hasFiltreTerritorial = departements.length > 0 || epcis.length > 0;
 
   if (!rgaSimulationData) {
+    console.log("[DEBUG-PROSPECTS] matchesTerritoire: rgaSimulationData is NULL, hasFiltre=", hasFiltreTerritorial);
     return !hasFiltreTerritorial;
   }
 
   const logement = rgaSimulationData.logement;
   if (!logement) {
+    console.log("[DEBUG-PROSPECTS] matchesTerritoire: logement is NULL/undefined, hasFiltre=", hasFiltreTerritorial,
+      "keys in rgaSimulationData=", Object.keys(rgaSimulationData));
     return !hasFiltreTerritorial;
   }
 
@@ -420,7 +438,14 @@ export function matchesTerritoire(
   }
 
   // Sinon, filtrer par département
-  return !!logement.code_departement && departements.includes(logement.code_departement);
+  const result = !!logement.code_departement && departements.includes(logement.code_departement);
+  if (!result) {
+    console.log("[DEBUG-PROSPECTS] matchesTerritoire: MISMATCH dept",
+      "logement.code_departement=", JSON.stringify(logement.code_departement),
+      "departements=", departements,
+      "typeof code_departement=", typeof logement.code_departement);
+  }
+  return result;
 }
 
 // Export d'une instance singleton

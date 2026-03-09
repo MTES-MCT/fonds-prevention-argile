@@ -69,11 +69,14 @@ export async function calculateAgentScope(agent: AgentScopeInput): Promise<Agent
     case UserRole.ALLERS_VERS: {
       // Les Allers-Vers voient uniquement les dossiers sans AMO de leur territoire
       if (!allersVersId) {
+        console.log("[DEBUG-PROSPECTS] AgentScope: ❌ allersVersId is falsy for ALLERS_VERS!");
         throw new Error("allersVersId is required for ALLERS_VERS role");
       }
 
+      console.log("[DEBUG-PROSPECTS] AgentScope: fetching territoires for allersVersId=", allersVersId);
       const departements = await allersVersRepository.getDepartementsByAllersVersId(allersVersId);
       const epcis = await allersVersRepository.getEpcisByAllersVersId(allersVersId);
+      console.log("[DEBUG-PROSPECTS] AgentScope: ALLERS_VERS departements=", departements, "epcis=", epcis);
 
       return {
         isNational: false,
