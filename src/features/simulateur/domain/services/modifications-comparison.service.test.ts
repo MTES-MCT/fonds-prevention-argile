@@ -311,6 +311,84 @@ describe("computeModifications", () => {
     expect(revenuMod!.isEligible).toBe(false);
   });
 
+  it("détecte les changements sur les champs conditionnels d'indemnisation (non indemnisé → indemnisé)", () => {
+    const initialData = createBaseRGAData(); // indemnise_indemnise_rga: false
+    const currentAnswers: PartialRGASimulationData = {
+      logement: { ...initialData.logement },
+      rga: {
+        ...initialData.rga,
+        indemnise_indemnise_rga: true,
+        indemnise_avant_juillet_2025: true,
+        indemnise_avant_juillet_2015: false,
+        indemnise_montant_indemnite: 5000,
+      },
+      menage: { ...initialData.menage },
+    };
+    const initialChecks = createAllEligibleChecks();
+    const currentChecks: EligibilityChecks = {
+      ...createAllEligibleChecks(),
+      indemnisation: false,
+    };
+
+    const result = computeModifications(initialData, currentAnswers, initialChecks, currentChecks);
+
+    expect(result.map((m) => m.label)).toContain("Indemnisation RGA");
+    expect(result.map((m) => m.label)).toContain("Indemnisé avant juillet 2025");
+    expect(result.map((m) => m.label)).toContain("Indemnisé avant juillet 2015");
+    expect(result.map((m) => m.label)).toContain("Montant de l'indemnisation");
+
+    const montantMod = result.find((m) => m.label === "Montant de l'indemnisation");
+    expect(montantMod).toBeDefined();
+    expect(montantMod!.beforeDisplay).toBe("-");
+    expect(montantMod!.afterDisplay).toContain("5");
+    expect(montantMod!.afterDisplay).toContain("€");
+  });
+
+  it("détecte le changement du montant d'indemnisation", () => {
+    const initialData = createBaseRGAData();
+    initialData.rga.indemnise_indemnise_rga = true;
+    initialData.rga.indemnise_avant_juillet_2025 = true;
+    initialData.rga.indemnise_avant_juillet_2015 = false;
+    initialData.rga.indemnise_montant_indemnite = 3000;
+
+    const currentAnswers: PartialRGASimulationData = {
+      logement: { ...initialData.logement },
+      rga: {
+        ...initialData.rga,
+        indemnise_montant_indemnite: 8000,
+      },
+      menage: { ...initialData.menage },
+    };
+    const initialChecks = createAllEligibleChecks();
+    const currentChecks = createAllEligibleChecks();
+
+    const result = computeModifications(initialData, currentAnswers, initialChecks, currentChecks);
+
+    const montantMod = result.find((m) => m.label === "Montant de l'indemnisation");
+    expect(montantMod).toBeDefined();
+    expect(montantMod!.beforeDisplay).toContain("3");
+    expect(montantMod!.beforeDisplay).toContain("€");
+    expect(montantMod!.afterDisplay).toContain("8");
+    expect(montantMod!.afterDisplay).toContain("€");
+  });
+
+  it("n'affiche pas les champs conditionnels quand ils restent undefined", () => {
+    const initialData = createBaseRGAData(); // indemnise_indemnise_rga: false, pas de champs conditionnels
+    const currentAnswers: PartialRGASimulationData = {
+      logement: { ...initialData.logement },
+      rga: { ...initialData.rga }, // toujours false, pas de champs conditionnels
+      menage: { ...initialData.menage },
+    };
+    const initialChecks = createAllEligibleChecks();
+    const currentChecks = createAllEligibleChecks();
+
+    const result = computeModifications(initialData, currentAnswers, initialChecks, currentChecks);
+
+    expect(result.find((m) => m.label === "Indemnisé avant juillet 2025")).toBeUndefined();
+    expect(result.find((m) => m.label === "Indemnisé avant juillet 2015")).toBeUndefined();
+    expect(result.find((m) => m.label === "Montant de l'indemnisation")).toBeUndefined();
+  });
+
   it("formate correctement un seul habitant (singulier)", () => {
     const initialData = createBaseRGAData();
     initialData.menage.personnes = 2;
