@@ -26,6 +26,16 @@ export default function CalloutEligibiliteTodo() {
 
     setIsLoading(true);
 
+    // Ouvrir la fenêtre AVANT l'appel async pour éviter le blocage popup Safari.
+    // Safari n'autorise window.open() qu'en contexte synchrone d'un geste utilisateur.
+    const dsWindow = window.open("about:blank", "_blank");
+    if (dsWindow) {
+      dsWindow.document.title = "Chargement…";
+      dsWindow.document.body.innerHTML =
+        '<p style="font-family:system-ui,sans-serif;text-align:center;margin-top:40vh;font-size:1.2rem">' +
+        "Création de votre dossier en cours…</p>";
+    }
+
     try {
       const result = await envoyerDossierEligibiliteAvecDonnees(rgaData);
 
@@ -36,19 +46,23 @@ export default function CalloutEligibiliteTodo() {
         // Rafraîchir le parcours dans le context
         await refresh();
 
-        // Ouvrir le formulaire DS
-        window.open(result.data.dossierUrl, "_blank", "noopener,noreferrer");
+        // Rediriger la fenêtre pré-ouverte vers le dossier DS
+        if (dsWindow && !dsWindow.closed) {
+          dsWindow.location.href = result.data.dossierUrl;
+        }
 
         // Redirection après délai
         setTimeout(() => {
           router.push(ROUTES.particulier.monCompte);
         }, 5000);
-      } else if (!result.success) {
-        setError(result.error || "Une erreur est survenue lors de l'envoi du dossier");
       } else {
-        setError("Une erreur inattendue s'est produite. Veuillez réessayer.");
+        dsWindow?.close();
+        setError(
+          (!result.success && result.error) || "Une erreur est survenue lors de l'envoi du dossier",
+        );
       }
     } catch (err) {
+      dsWindow?.close();
       console.error("Erreur lors de l'envoi:", err);
       setError("Une erreur inattendue s'est produite. Veuillez réessayer.");
     } finally {
