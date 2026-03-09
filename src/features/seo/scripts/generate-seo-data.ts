@@ -24,7 +24,8 @@ import { generateDepartementSlug, generateCommuneSlug, generateEpciSlug } from "
 
 import { fetchCommunesByDepartement, fetchEpci, logger } from "./fetch-territoires";
 import { Coordinates } from "@/shared/types";
-import { calculateCentroid, delay, extractCoordinates, getDepartementNom } from "@/shared/utils";
+import { calculateCentroid, delay, extractCoordinates } from "@/shared/utils";
+import { getDepartementName } from "@/shared/constants/departements.constants";
 
 // ============================================================================
 // Types internes
@@ -51,8 +52,9 @@ async function processDepartement(
   communes: CommuneSEO[];
   epciCodes: string[];
 }> {
-  const nomDepartement = getDepartementNom(codeDepartement);
-  if (!nomDepartement) {
+  const nomDepartement = getDepartementName(codeDepartement);
+  if (nomDepartement === codeDepartement) {
+    // getDepartementName retourne le code si le département n'est pas dans le référentiel
     throw new Error(`Nom de département introuvable pour le code ${codeDepartement}`);
   }
   logger.progress(`Traitement du département ${codeDepartement} - ${nomDepartement}`);

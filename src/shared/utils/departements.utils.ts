@@ -3,10 +3,10 @@
  * Gestion des articles grammaticaux (du, de la, de l', des)
  */
 
-import { DEPARTEMENTS } from "../constants/departements.constants";
+import { toOfficialCodeDepartement } from "../constants/departements.constants";
 
 /**
- * Articles grammaticaux par code département
+ * Articles grammaticaux par code département (format officiel : "03", "24")
  * Utilisé pour construire des phrases comme "RGA dans le département du Tarn"
  */
 export const ARTICLES_DEPARTEMENTS: Record<string, string> = {
@@ -107,10 +107,11 @@ export const ARTICLES_DEPARTEMENTS: Record<string, string> = {
 };
 
 /**
- * Récupère l'article grammatical d'un département
+ * Récupère l'article grammatical d'un département.
+ * Normalise le code en format officiel ("3" → "03") pour correspondre aux clés.
  */
 export function getArticleDepartement(code: string): string {
-  return ARTICLES_DEPARTEMENTS[code] ?? "du ";
+  return ARTICLES_DEPARTEMENTS[toOfficialCodeDepartement(code)] ?? "du ";
 }
 
 /**
@@ -119,13 +120,4 @@ export function getArticleDepartement(code: string): string {
  */
 export function formatDepartementAvecArticle(code: string, nom: string): string {
   return `${getArticleDepartement(code)}${nom}`;
-}
-
-/**
- * Récupère le nom d'un département à partir de son code
- */
-export function getDepartementNom(code: string): string | undefined {
-  // Normaliser le code (supprimer le zéro initial si présent)
-  const normalizedCode = /^0\d$/.test(code) ? code.replace(/^0/, "") : code;
-  return DEPARTEMENTS[normalizedCode] ?? DEPARTEMENTS[code];
 }

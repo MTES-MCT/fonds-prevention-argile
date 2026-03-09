@@ -1,4 +1,5 @@
 import { UserWithParcoursDetails } from "@/features/backoffice";
+import { normalizeCodeDepartement } from "@/shared/constants/departements.constants";
 
 /**
  * Constante représentant l'absence de département
@@ -56,21 +57,6 @@ export function extractDepartement(user: UserWithParcoursDetails): string | null
 }
 
 /**
- * Normalise un code département (enlève les 0 initiaux, gère les cas spéciaux)
- */
-export function normalizeDepartement(dept: string | number): string {
-  // Convertir en string si c'est un nombre
-  const deptStr = String(dept);
-
-  // Enlever les zéros initiaux : "081" → "81"
-  const normalized = deptStr.replace(/^0+/, "");
-
-  // Garder les cas spéciaux
-  if (normalized === "") return "0"; // Edge case
-  return normalized;
-}
-
-/**
  * Extrait tous les départements uniques d'une liste d'utilisateurs
  */
 export function extractUniqueDepartements(users: UserWithParcoursDetails[]): string[] {
@@ -79,7 +65,7 @@ export function extractUniqueDepartements(users: UserWithParcoursDetails[]): str
       users
         .map((u) => {
           const dept = extractDepartement(u);
-          return dept ? normalizeDepartement(dept) : null;
+          return dept ? normalizeCodeDepartement(dept) : null;
         })
         .filter((dept): dept is string => dept !== null && dept !== "")
     )
@@ -106,7 +92,7 @@ export function filterUsersByDepartement(
 
   return users.filter((u) => {
     const dept = extractDepartement(u);
-    return dept ? normalizeDepartement(dept) === departementCode : false;
+    return dept ? normalizeCodeDepartement(dept) === departementCode : false;
   });
 }
 

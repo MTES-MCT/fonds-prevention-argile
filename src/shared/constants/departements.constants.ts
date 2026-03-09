@@ -113,8 +113,31 @@ export const DEPARTEMENTS: Record<string, string> = {
 };
 
 /**
- * Récupère le nom complet d'un département
+ * Normalise un code département pour correspondre aux clés du référentiel DEPARTEMENTS.
+ * Gère les variantes issues du JSONB (number 3, string "03", string "3") :
+ *   "03" → "3", "081" → "81", number 3 → "3"
+ * Préserve les codes non numériques (2A, 2B) et les DOM-TOM (971+).
+ */
+export function normalizeCodeDepartement(code: string | number): string {
+  const codeStr = String(code);
+  const normalized = codeStr.replace(/^0+/, "");
+  return normalized || "0";
+}
+
+/**
+ * Convertit un code département normalisé vers le format officiel à 2 chiffres (avec zéro initial).
+ * Utilisé pour les API externes (BAN, Matomo) qui stockent les codes au format officiel.
+ *   "3" → "03", "24" → "24", "971" → "971", "2A" → "2A"
+ */
+export function toOfficialCodeDepartement(code: string | number): string {
+  const normalized = normalizeCodeDepartement(code);
+  return normalized.padStart(2, "0");
+}
+
+/**
+ * Récupère le nom complet d'un département.
+ * Normalise le code en entrée pour gérer les variantes ("03" → "3").
  */
 export function getDepartementName(code: string): string {
-  return DEPARTEMENTS[code] || code;
+  return DEPARTEMENTS[normalizeCodeDepartement(code)] || code;
 }

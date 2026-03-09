@@ -1,5 +1,5 @@
 import { getAllDepartementsEligibles } from "@/shared/constants/rga.constants";
-import { getDepartementNom } from "@/shared/utils";
+import { getDepartementName } from "@/shared/constants/departements.constants";
 
 interface DepartementSelectProps {
   value: string;
@@ -35,7 +35,7 @@ export function DepartementSelect({
         <option value="">{placeholder}</option>
         {departements.map((dept) => (
           <option key={dept.code} value={dept.code}>
-            {dept.code} - {getDepartementNom(dept.code)}
+            {dept.code} - {getDepartementName(dept.code)}
           </option>
         ))}
       </select>
