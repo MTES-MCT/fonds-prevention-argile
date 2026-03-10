@@ -4,24 +4,15 @@ import { useState, useEffect } from "react";
 import { UserRole } from "@/shared/domain/value-objects";
 import type { AgentRole } from "@/shared/domain/value-objects";
 import DepartementsSelect from "./DepartementsSelect";
-import { DEPARTEMENTS } from "@/shared/constants/departements.constants";
 import { AgentWithPermissions } from "@/features/backoffice";
+import { getAllDepartementsEligibles } from "@/shared/constants/rga.constants";
 
 /**
- * Liste des départements pour le select natif (Analyste DDT)
- * Exclut "20" (Corse générique) car on a 2A et 2B
+ * Liste des départements éligibles RGA pour le select Analyste DDT
+ * Seuls les 11 départements du dispositif sont proposés
  */
-const DEPARTEMENTS_OPTIONS = Object.entries(DEPARTEMENTS)
-  .filter(([code]) => code !== "20")
-  .map(([code, name]) => ({ code, name }))
-  .sort((a, b) => {
-    const aNum = parseInt(a.code, 10);
-    const bNum = parseInt(b.code, 10);
-    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
-    if (!isNaN(aNum)) return -1;
-    if (!isNaN(bNum)) return 1;
-    return a.code.localeCompare(b.code);
-  });
+const DEPARTEMENTS_DDT_OPTIONS = getAllDepartementsEligibles()
+  .map(({ code, nom }) => ({ code, name: nom }));
 
 /**
  * Entreprise AMO simplifiée pour le select
@@ -383,7 +374,7 @@ export default function AgentFormModal({
                         disabled={isLoading}
                         required>
                         <option value="">Sélectionner un département</option>
-                        {DEPARTEMENTS_OPTIONS.map((dept) => (
+                        {DEPARTEMENTS_DDT_OPTIONS.map((dept) => (
                           <option key={dept.code} value={dept.code}>
                             {dept.code} - {dept.name}
                           </option>
