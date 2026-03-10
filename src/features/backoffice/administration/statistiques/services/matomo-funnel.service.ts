@@ -80,7 +80,7 @@ function transformMatomoFunnelData(data: MatomoFunnelFlowTableResponse): FunnelS
 
   // Calculer les métriques globales
   const visiteursInitiaux = etapes[0]?.visiteurs || 0;
-  const conversionsFinales = etapes[etapes.length - 1]?.visiteurs || 0;
+  const conversionsFinales = etapes[etapes.length - 1]?.conversions || 0;
   const tauxConversionGlobal =
     visiteursInitiaux > 0 ? Math.round((conversionsFinales / visiteursInitiaux) * 100 * 100) / 100 : 0;
 
