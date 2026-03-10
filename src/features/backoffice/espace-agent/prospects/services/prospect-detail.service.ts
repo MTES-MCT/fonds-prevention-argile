@@ -118,9 +118,10 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       const codeDepartement = logement?.code_departement;
       const codeEpci = logement?.epci;
 
+      // Conversion en String() car le JSONB peut retourner un number au lieu d'un string
       const matchesDepartement =
-        scope.departements.length > 0 && codeDepartement && scope.departements.includes(codeDepartement);
-      const matchesEpci = scope.epcis.length > 0 && codeEpci && scope.epcis.includes(codeEpci);
+        scope.departements.length > 0 && codeDepartement && scope.departements.includes(String(codeDepartement));
+      const matchesEpci = scope.epcis.length > 0 && codeEpci && scope.epcis.includes(String(codeEpci));
 
       if (!matchesDepartement && !matchesEpci) {
         return { success: false, error: "Ce prospect n'est pas dans votre territoire" };

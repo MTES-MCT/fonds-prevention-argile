@@ -416,11 +416,13 @@ export function matchesTerritoire(
 
   // Si des EPCIs sont spécifiés, ils sont le filtre prioritaire (plus précis)
   if (epcis.length > 0) {
-    return !!logement.epci && epcis.includes(logement.epci);
+    // Conversion en string pour gérer les cas où le JSONB retourne un number
+    return !!logement.epci && epcis.includes(String(logement.epci));
   }
 
   // Sinon, filtrer par département
-  return !!logement.code_departement && departements.includes(logement.code_departement);
+  // Conversion en string : le JSONB peut retourner un number (ex: 59 au lieu de "59")
+  return !!logement.code_departement && departements.includes(String(logement.code_departement));
 }
 
 // Export d'une instance singleton
