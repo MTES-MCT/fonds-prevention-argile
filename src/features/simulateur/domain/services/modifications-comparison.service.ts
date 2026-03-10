@@ -76,6 +76,27 @@ const COMPARISON_FIELDS: ComparisonField[] = [
     checkKey: "indemnisation",
   },
   {
+    label: "Indemnisé avant juillet 2025",
+    getOldValue: (d) => d.rga.indemnise_avant_juillet_2025,
+    getNewValue: (d) => d.rga?.indemnise_avant_juillet_2025,
+    formatValue: (v) => (v === undefined || v === null ? "-" : v ? "Oui" : "Non"),
+    checkKey: "indemnisation",
+  },
+  {
+    label: "Indemnisé avant juillet 2015",
+    getOldValue: (d) => d.rga.indemnise_avant_juillet_2015,
+    getNewValue: (d) => d.rga?.indemnise_avant_juillet_2015,
+    formatValue: (v) => (v === undefined || v === null ? "-" : v ? "Oui" : "Non"),
+    checkKey: "indemnisation",
+  },
+  {
+    label: "Montant de l'indemnisation",
+    getOldValue: (d) => d.rga.indemnise_montant_indemnite,
+    getNewValue: (d) => d.rga?.indemnise_montant_indemnite,
+    formatValue: (v) => (v === undefined || v === null ? "-" : `${Number(v).toLocaleString("fr-FR")} €`),
+    checkKey: "indemnisation",
+  },
+  {
     label: "Assurance",
     getOldValue: (d) => d.rga.assure,
     getNewValue: (d) => d.rga?.assure,
