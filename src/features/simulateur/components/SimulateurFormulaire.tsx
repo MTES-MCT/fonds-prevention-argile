@@ -124,21 +124,21 @@ export function SimulateurFormulaire() {
     const isInIframe = window !== window.parent;
 
     if (isInIframe) {
-      // En mode iframe, chiffrer les données et les transmettre via URL hash
+      // En mode iframe, ouvrir la fenêtre AVANT l'appel async pour éviter le blocage popup Safari.
+      // Safari n'autorise window.open() qu'en contexte synchrone d'un geste utilisateur.
+      const fcWindow = window.open("/connexion?redirect=/parcours", "_blank");
+
       try {
         const result = await encryptRGAData(answers);
 
-        if (result.success) {
-          window.open(`/connexion?redirect=/parcours#d=${result.encrypted}`, "_blank");
-        } else {
-          console.error("[SimulateurFormulaire] Erreur chiffrement:", result.error);
-          // Fallback : ouvrir sans données (l'utilisateur devra refaire la simulation)
-          window.open("/connexion?redirect=/parcours", "_blank");
+        if (result.success && fcWindow && !fcWindow.closed) {
+          // Rediriger la fenêtre pré-ouverte avec les données chiffrées
+          fcWindow.location.href = `/connexion?redirect=/parcours#d=${result.encrypted}`;
         }
+        // Si chiffrement échoué, la fenêtre est déjà sur /connexion?redirect=/parcours (fallback OK)
       } catch (error) {
         console.error("[SimulateurFormulaire] Server action encryptRGAData échouée (possible redéploiement):", error);
-        // Fallback : ouvrir sans données chiffrées
-        window.open("/connexion?redirect=/parcours", "_blank");
+        // La fenêtre est déjà ouverte sur le fallback, rien à faire
       }
     } else {
       window.location.href = "/connexion?redirect=/parcours";
