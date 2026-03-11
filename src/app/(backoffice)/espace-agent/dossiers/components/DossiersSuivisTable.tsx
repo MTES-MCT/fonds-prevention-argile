@@ -8,7 +8,9 @@ import {
   STEP_LABELS,
   getPrecisionText,
   getPrecisionStyle,
+  isDossierRefuse,
 } from "@/features/backoffice/espace-agent/dossiers/domain/types";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { ROUTES } from "@/features/auth/domain/value-objects";
 import { formatNomComplet, formatDaysAgoSplit } from "@/shared/utils";
 import { ActionMenu } from "../../shared/components/ActionMenu";
@@ -82,13 +84,55 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                   ) : (
                     dossiers.map((dossier) => {
                       const daysAgo = formatDaysAgoSplit(dossier.dateDernierStatut.toISOString());
+                      const isRefuse = isDossierRefuse(dossier);
                       const greyStyle = isArchived ? { color: "var(--text-mention-grey)" } : undefined;
+
+                      // Texte de précision : spécifique pour les dossiers refusés
+                      const precisionText = isRefuse
+                        ? dossier.statutValidation === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE
+                          ? "Logement non éligible."
+                          : "Accompagnement refusé."
+                        : getPrecisionText(dossier.etape, dossier.statut, dossier.dsStatus);
+
+                      // Actions du menu contextuel
+                      const actionItems = [
+                        {
+                          label: "Voir sa simulation d'éligibilité",
+                          icon: "fr-icon-eye-line",
+                          onClick: () =>
+                            router.push(
+                              ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id),
+                            ),
+                        },
+                        // Pas d'archivage/désarchivage pour les dossiers refusés
+                        ...(!isRefuse
+                          ? [
+                              isArchived
+                                ? {
+                                    label: "Désarchiver",
+                                    icon: "fr-icon-inbox-archive-line",
+                                    onClick: () => setUnarchiveParcoursId(dossier.parcoursId),
+                                  }
+                                : {
+                                    label: "Archiver",
+                                    icon: "fr-icon-archive-line",
+                                    onClick: () => setArchiveParcoursId(dossier.parcoursId),
+                                  },
+                            ]
+                          : []),
+                      ];
+
                       return (
                         <tr key={dossier.id}>
                           <td>
                             <Link href={ROUTES.backoffice.espaceAmo.dossier(dossier.id)} className="fr-link">
                               {formatNomComplet(dossier.prenom, dossier.nom)}
                             </Link>
+                            {isRefuse && (
+                              <p className="fr-badge fr-badge--sm fr-badge--error fr-badge--no-icon fr-ml-1w">
+                                Refusé
+                              </p>
+                            )}
                           </td>
                           <td style={greyStyle}>{dossier.commune}</td>
                           <td>
@@ -105,10 +149,10 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                               maxWidth: "350px",
                               wordWrap: "break-word",
                               whiteSpace: "normal",
-                              ...getPrecisionStyle(dossier.statut, isArchived),
+                              ...getPrecisionStyle(dossier.statut, isArchived || isRefuse),
                               ...greyStyle,
                             }}>
-                            <div>{getPrecisionText(dossier.etape, dossier.statut, dossier.dsStatus)}</div>
+                            <div>{precisionText}</div>
                             {daysAgo && (
                               <div className="fr-text--xs fr-text-mention--grey">
                                 {daysAgo.text} (le {daysAgo.date})
@@ -116,29 +160,7 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                             )}
                           </td>
                           <td>
-                            <ActionMenu
-                              items={[
-                                {
-                                  label: "Voir sa simulation d'éligibilité",
-                                  icon: "fr-icon-eye-line",
-                                  onClick: () =>
-                                    router.push(
-                                      ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id),
-                                    ),
-                                },
-                                isArchived
-                                  ? {
-                                      label: "Désarchiver",
-                                      icon: "fr-icon-inbox-archive-line",
-                                      onClick: () => setUnarchiveParcoursId(dossier.parcoursId),
-                                    }
-                                  : {
-                                      label: "Archiver",
-                                      icon: "fr-icon-archive-line",
-                                      onClick: () => setArchiveParcoursId(dossier.parcoursId),
-                                    },
-                              ]}
-                            />
+                            <ActionMenu items={actionItems} />
                           </td>
                         </tr>
                       );

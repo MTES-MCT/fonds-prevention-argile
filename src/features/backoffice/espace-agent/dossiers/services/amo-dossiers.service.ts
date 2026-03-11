@@ -1,4 +1,4 @@
-import { count, eq, and, asc, isNull, isNotNull } from "drizzle-orm";
+import { count, eq, and, or, asc, isNull, isNotNull, inArray } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import {
   parcoursAmoValidations,
@@ -7,6 +7,9 @@ import {
 } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { AmoDossiersData, DossierSuivi } from "../domain/types";
+
+/** Statuts de validation AMO considérés comme refusés */
+const STATUTS_REFUSES = [StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, StatutValidationAmo.ACCOMPAGNEMENT_REFUSE];
 
 /**
  * Service pour la page des dossiers de l'espace AMO
@@ -57,7 +60,9 @@ async function getNombreDossiersSuivis(entrepriseAmoId: string): Promise<number>
 }
 
 /**
- * Compte le nombre de dossiers archivés (demandes acceptées, archivées)
+ * Compte le nombre de dossiers archivés :
+ * - Demandes acceptées puis archivées manuellement par l'AMO
+ * - Demandes refusées (logement non éligible ou accompagnement refusé)
  */
 async function getNombreDossiersArchives(entrepriseAmoId: string): Promise<number> {
   const result = await db
@@ -67,8 +72,15 @@ async function getNombreDossiersArchives(entrepriseAmoId: string): Promise<numbe
     .where(
       and(
         eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
-        eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
-        isNotNull(parcoursPrevention.archivedAt),
+        or(
+          // Acceptées + archivées manuellement
+          and(
+            eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
+            isNotNull(parcoursPrevention.archivedAt),
+          ),
+          // Refusées (toujours considérées comme archivées)
+          inArray(parcoursAmoValidations.statut, STATUTS_REFUSES),
+        ),
       ),
     );
 
@@ -96,14 +108,30 @@ async function getDossiersArchives(entrepriseAmoId: string): Promise<DossierSuiv
 }
 
 /**
- * Récupère les dossiers suivis ou archivés selon le filtre
+ * Récupère les dossiers suivis ou archivés selon le filtre.
+ *
+ * - "active" : demandes acceptées (LOGEMENT_ELIGIBLE) non archivées
+ * - "archived" : demandes acceptées puis archivées + demandes refusées
  */
 async function getDossiersWithArchiveFilter(
   entrepriseAmoId: string,
   filter: "active" | "archived",
 ): Promise<DossierSuivi[]> {
-  const archiveCondition =
-    filter === "active" ? isNull(parcoursPrevention.archivedAt) : isNotNull(parcoursPrevention.archivedAt);
+  const statusCondition =
+    filter === "active"
+      ? and(
+          eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
+          isNull(parcoursPrevention.archivedAt),
+        )
+      : or(
+          // Acceptées + archivées manuellement
+          and(
+            eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
+            isNotNull(parcoursPrevention.archivedAt),
+          ),
+          // Refusées (toujours considérées comme archivées)
+          inArray(parcoursAmoValidations.statut, STATUTS_REFUSES),
+        );
 
   const results = await db
     .select({
@@ -111,6 +139,7 @@ async function getDossiersWithArchiveFilter(
       prenom: parcoursAmoValidations.userPrenom,
       nom: parcoursAmoValidations.userNom,
       valideeAt: parcoursAmoValidations.valideeAt,
+      statutValidation: parcoursAmoValidations.statut,
       parcoursId: parcoursAmoValidations.parcoursId,
       rgaSimulationData: parcoursPrevention.rgaSimulationData,
       currentStep: parcoursPrevention.currentStep,
@@ -122,8 +151,7 @@ async function getDossiersWithArchiveFilter(
     .where(
       and(
         eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
-        eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
-        archiveCondition,
+        statusCondition,
       ),
     )
     .orderBy(asc(parcoursAmoValidations.valideeAt));
@@ -151,6 +179,7 @@ async function getDossiersWithArchiveFilter(
         codeDepartement: row.rgaSimulationData?.logement?.code_departement ?? null,
         etape: row.currentStep,
         statut: row.currentStatus,
+        statutValidation: row.statutValidation,
         dsStatus: dossierDS[0]?.dsStatus ?? null,
         dateValidation: row.valideeAt!,
         dateDernierStatut: row.parcoursUpdatedAt!,
