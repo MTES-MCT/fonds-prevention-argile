@@ -11,11 +11,17 @@ interface UsersRepartitionStatsProps {
 
 export function UsersAmoStats({ users, selectedDepartement }: UsersRepartitionStatsProps) {
   // Calcul des statistiques AMO
+  // Les deux statuts de refus (LOGEMENT_NON_ELIGIBLE + ACCOMPAGNEMENT_REFUSE) sont
+  // affichés comme "AMO REFUSÉ" dans le tableau, donc comptés ensemble ici.
   const stats = {
     total: users.length,
     amoValidee: users.filter((u) => u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_ELIGIBLE).length,
     amoEnAttente: users.filter((u) => u.amoValidation?.statut === StatutValidationAmo.EN_ATTENTE).length,
-    amoRefusee: users.filter((u) => u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE).length,
+    amoRefusee: users.filter(
+      (u) =>
+        u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE ||
+        u.amoValidation?.statut === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
+    ).length,
   };
 
   return (
