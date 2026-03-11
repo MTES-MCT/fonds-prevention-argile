@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import type { AllersVers } from "@/features/seo/allers-vers";
 import { DepartementSelect } from "./DepartementSelect";
-import { getDepartementNom } from "@/shared/utils";
+import { getDepartementName } from "@/shared/constants/departements.constants";
 import { ContactCard } from "@/shared/components";
 
 interface AllersVersWithRelations extends AllersVers {
@@ -153,7 +153,7 @@ export function ConseillersClient({ initialConseillers, content }: ConseillersCl
 
                   return (
                     <div key={deptCode} className="fr-mb-8w">
-                      <h3 className="fr-mb-3w">{`${deptCode} - ${getDepartementNom(deptCode)}`}</h3>
+                      <h3 className="fr-mb-3w">{`${deptCode} - ${getDepartementName(deptCode)}`}</h3>
 
                       {alohe.length > 0 && (
                         <div className="fr-mb-4w">
@@ -202,7 +202,7 @@ export function ConseillersClient({ initialConseillers, content }: ConseillersCl
                 return (
                   <div key={deptCode} className="fr-mb-8w">
                     <h3 className="fr-mb-3w">
-                      {deptCode === "autres" ? "Autres" : `${deptCode} - ${getDepartementNom(deptCode)}`}
+                      {deptCode === "autres" ? "Autres" : `${deptCode} - ${getDepartementName(deptCode)}`}
                     </h3>
                     <div className="fr-grid-row fr-grid-row--gutters">
                       {conseillers.map((conseiller) => (

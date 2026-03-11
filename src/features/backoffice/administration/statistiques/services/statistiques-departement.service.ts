@@ -3,7 +3,7 @@ import { db } from "@/shared/database/client";
 import { parcoursPrevention, prospectQualifications, parcoursAmoValidations } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step, STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
-import { getDepartementName } from "@/shared/constants/departements.constants";
+import { getDepartementName, normalizeCodeDepartement, toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
 import { RAISONS_INELIGIBILITE, QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { MATOMO_EVENTS } from "@/shared/constants";
 import { getClientEnv } from "@/shared/config/env.config";
@@ -22,12 +22,20 @@ const STEPS_ORDER: Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, 
 /**
  * Filtre SQL pour isoler un département dans les données JSONB de simulation.
  * Utilise COALESCE pour prioriser les données agent sur les données particulier.
+ *
+ * Normalise les codes département des deux côtés (SQL et paramètre) en enlevant les zéros
+ * initiaux, car le JSONB peut contenir "03" (string), "3" (string via number) ou 3 (number → "3" via ->>).
+ * regexp_replace('03', '^0+', '') → '3' = regexp_replace('3', '^0+', '') → '3'
  */
 function whereDepartement(codeDept: string) {
-  return sql`coalesce(
-    ${parcoursPrevention.rgaSimulationDataAgent}->'logement'->>'code_departement',
-    ${parcoursPrevention.rgaSimulationData}->'logement'->>'code_departement'
-  ) = ${codeDept}`;
+  const normalizedCode = normalizeCodeDepartement(codeDept);
+  return sql`regexp_replace(
+    coalesce(
+      ${parcoursPrevention.rgaSimulationDataAgent}->'logement'->>'code_departement',
+      ${parcoursPrevention.rgaSimulationData}->'logement'->>'code_departement'
+    ),
+    '^0+', ''
+  ) = ${normalizedCode}`;
 }
 
 /**
@@ -43,16 +51,16 @@ export async function getAvailableDepartements(): Promise<DepartementDisponible[
     .from(parcoursPrevention)
     .where(isNotNull(parcoursPrevention.rgaSimulationData));
 
-  // Group by code_departement en JS
+  // Group by code_departement en JS, normalisé pour éviter les doublons
+  // Le JSONB peut contenir : number 3, string "03", string "3" → tous normalisés en "3"
   const deptMap = new Map<string, number>();
 
   for (const p of parcours) {
     const data = p.rgaSimulationDataAgent ?? p.rgaSimulationData;
     const codeDept = data?.logement?.code_departement;
     if (!codeDept) continue;
-    // Conversion en String() car le JSONB peut retourner un number au lieu d'un string
-    const codeDeptStr = String(codeDept);
-    deptMap.set(codeDeptStr, (deptMap.get(codeDeptStr) ?? 0) + 1);
+    const codeDeptNormalized = normalizeCodeDepartement(codeDept);
+    deptMap.set(codeDeptNormalized, (deptMap.get(codeDeptNormalized) ?? 0) + 1);
   }
 
   return Array.from(deptMap.entries())
@@ -72,11 +80,15 @@ export async function getStatistiquesDepartement(codeDepartement: string): Promi
   const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
   const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
 
+  // Matomo stocke les codes département au format officiel (avec zéro initial : "03", "24")
+  // car ils viennent du BAN adapter. On reconvertit depuis le format normalisé.
+  const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
+
   const [matomoEvents, dossiersParEtape, raisonsIneligibilite, zonesDynamiques, nombreComptesCreés] =
     await Promise.all([
       // Matomo : events par département (graceful fallback si indisponible)
       dimensionId
-        ? fetchMatomoEventsByDepartment(codeDepartement, dimensionId).catch((err) => {
+        ? fetchMatomoEventsByDepartment(codeDeptMatomo, dimensionId).catch((err) => {
             console.error("[Stats Département] Erreur Matomo events:", err);
             return new Map<string, number>();
           })
