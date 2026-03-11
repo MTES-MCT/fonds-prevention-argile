@@ -14,6 +14,7 @@ import {
 import { getEpciByCommune } from "@/shared/adapters/geo";
 import { RgaMapContainer } from "@/features/rga-map";
 import type { BuildingData } from "@/shared/services/bdnb";
+import { asString } from "@/shared/utils";
 
 import { SimulateurLayout } from "../../shared/SimulateurLayout";
 import { NavigationButtons } from "../../shared/NavigationButtons";
@@ -54,8 +55,8 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
 
   // État de la recherche d'adresse
   const [addressInput, setAddressInput] = useState<string>(() => {
-    const adresse = initialValue?.adresse as string | undefined;
-    const communeNom = initialValue?.commune_nom as string | undefined;
+    const adresse = asString(initialValue?.adresse);
+    const communeNom = asString(initialValue?.commune_nom);
     if (adresse && communeNom && !adresse.includes(communeNom)) {
       return `${adresse}, ${communeNom}`;
     }
@@ -68,12 +69,12 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   // Adresse sélectionnée (après clic sur RadioButton)
   // En mode édition, on reconstruit un BanFeature synthétique pour afficher la carte directement
   const [selectedAddress, setSelectedAddress] = useState<BanFeature | null>(() => {
-    const coordonnees = initialValue?.coordonnees as string | undefined;
-    const clefBan = initialValue?.clef_ban as string | undefined;
-    const adresse = initialValue?.adresse as string | undefined;
-    const commune = initialValue?.commune as string | undefined;
-    const communeNom = initialValue?.commune_nom as string | undefined;
-    const codeDepartement = initialValue?.code_departement as string | undefined;
+    const coordonnees = asString(initialValue?.coordonnees);
+    const clefBan = asString(initialValue?.clef_ban);
+    const adresse = asString(initialValue?.adresse);
+    const commune = asString(initialValue?.commune);
+    const communeNom = asString(initialValue?.commune_nom);
+    const codeDepartement = asString(initialValue?.code_departement);
 
     if (coordonnees && clefBan && adresse && commune) {
       const [lat, lon] = coordonnees.split(",").map(Number);
@@ -100,27 +101,27 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   });
 
   // RNB ID initial pour pré-sélectionner le bâtiment sur la carte en mode édition
-  const initialRnbId = initialValue?.rnb as string | undefined;
+  const initialRnbId = asString(initialValue?.rnb);
 
   // Code EPCI récupéré via API Geo
   const [codeEpci, setCodeEpci] = useState<string | null>(
-    (initialValue?.epci as string) || null,
+    asString(initialValue?.epci) || null,
   );
 
   // Bâtiment sélectionné sur la carte (après clic sur point bleu)
   // En mode édition, on construit directement le buildingData depuis la simulation existante (pas d'appel BDNB)
   const [buildingData, setBuildingData] = useState<BuildingData | null>(() => {
     if (!isAddressLocked) return null;
-    const coordonnees = initialValue?.coordonnees as string | undefined;
+    const coordonnees = asString(initialValue?.coordonnees);
     if (!coordonnees) return null;
     const [lat, lon] = coordonnees.split(",").map(Number);
     if (isNaN(lat) || isNaN(lon)) return null;
     return {
-      rnbId: (initialValue?.rnb as string) || "",
+      rnbId: asString(initialValue?.rnb) || "",
       lat,
       lon,
-      adresse: (initialValue?.adresse as string) || null,
-      aleaArgiles: (initialValue?.zone_dexposition as string) || null,
+      adresse: asString(initialValue?.adresse) || null,
+      aleaArgiles: asString(initialValue?.zone_dexposition) || null,
       anneeConstruction: initialValue?.annee_de_construction ? Number(initialValue.annee_de_construction) : null,
       nombreNiveaux: initialValue?.niveaux != null ? Number(initialValue.niveaux) : null,
       surfaceHabitable: null,
