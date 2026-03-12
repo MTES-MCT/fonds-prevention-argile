@@ -90,8 +90,10 @@ export const createMockFunnelStatistiques = (override?: Partial<FunnelStatistiqu
   return {
     etapes,
     visiteursInitiaux: 1000,
-    conversionsFinales: 400,
-    tauxConversionGlobal: 40.0,
+    conversionsEligibles: 400,
+    conversionsNonEligibles: 200,
+    tauxConversionEligibles: 40.0,
+    tauxConversionNonEligibles: 20.0,
     ...override,
   };
 };
@@ -102,8 +104,10 @@ export const createMockFunnelStatistiques = (override?: Partial<FunnelStatistiqu
 export const createEmptyFunnelStatistiques = (): FunnelStatistiques => ({
   etapes: [],
   visiteursInitiaux: 0,
-  conversionsFinales: 0,
-  tauxConversionGlobal: 0,
+  conversionsEligibles: 0,
+  conversionsNonEligibles: 0,
+  tauxConversionEligibles: 0,
+  tauxConversionNonEligibles: 0,
 });
 
 /**
@@ -163,8 +167,8 @@ export const createMockStatistiquesElevees = (): Statistiques => ({
   })),
   funnelSimulateurRGA: createMockFunnelStatistiques({
     visiteursInitiaux: 10000,
-    conversionsFinales: 3500,
-    tauxConversionGlobal: 35.0,
+    conversionsEligibles: 3500,
+    tauxConversionEligibles: 35.0,
     etapes: [
       createMockFunnelStep({
         nom: "Démarrage simulateur",
@@ -213,8 +217,8 @@ export const createMockStatistiquesFaibleConversion = (): Statistiques => ({
   ...createMockStatistiques(),
   funnelSimulateurRGA: createMockFunnelStatistiques({
     visiteursInitiaux: 1000,
-    conversionsFinales: 50,
-    tauxConversionGlobal: 5.0,
+    conversionsEligibles: 50,
+    tauxConversionEligibles: 5.0,
     etapes: [
       createMockFunnelStep({
         nom: "Démarrage simulateur",

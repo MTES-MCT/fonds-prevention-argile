@@ -76,7 +76,7 @@ export interface FunnelStep {
 }
 
 /**
- * Statistiques du funnel de conversion 
+ * Statistiques du funnel de conversion
  */
 export interface FunnelStatistiques {
   /**
@@ -90,12 +90,22 @@ export interface FunnelStatistiques {
   visiteursInitiaux: number;
 
   /**
-   * Nombre de visiteurs ayant complété tout le funnel
+   * Nombre de visiteurs ayant atteint le résultat éligible
    */
-  conversionsFinales: number;
+  conversionsEligibles: number;
 
   /**
-   * Taux de conversion global de bout en bout (en pourcentage)
+   * Nombre de visiteurs ayant atteint le résultat non éligible
    */
-  tauxConversionGlobal: number;
+  conversionsNonEligibles: number;
+
+  /**
+   * Taux de conversion vers éligible (en pourcentage)
+   */
+  tauxConversionEligibles: number;
+
+  /**
+   * Taux de conversion vers non éligible (en pourcentage)
+   */
+  tauxConversionNonEligibles: number;
 }

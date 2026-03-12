@@ -33,8 +33,10 @@ export async function getFunnelSimulateurRGA(): Promise<FunnelStatistiques> {
     return {
       etapes: [],
       visiteursInitiaux: 0,
-      conversionsFinales: 0,
-      tauxConversionGlobal: 0,
+      conversionsEligibles: 0,
+      conversionsNonEligibles: 0,
+      tauxConversionEligibles: 0,
+      tauxConversionNonEligibles: 0,
     };
   }
 }
@@ -47,8 +49,10 @@ function transformMatomoFunnelData(data: MatomoFunnelFlowTableResponse): FunnelS
     return {
       etapes: [],
       visiteursInitiaux: 0,
-      conversionsFinales: 0,
-      tauxConversionGlobal: 0,
+      conversionsEligibles: 0,
+      conversionsNonEligibles: 0,
+      tauxConversionEligibles: 0,
+      tauxConversionNonEligibles: 0,
     };
   }
 
@@ -80,14 +84,33 @@ function transformMatomoFunnelData(data: MatomoFunnelFlowTableResponse): FunnelS
 
   // Calculer les métriques globales
   const visiteursInitiaux = etapes[0]?.visiteurs || 0;
-  const conversionsFinales = etapes[etapes.length - 1]?.conversions || 0;
-  const tauxConversionGlobal =
-    visiteursInitiaux > 0 ? Math.round((conversionsFinales / visiteursInitiaux) * 100 * 100) / 100 : 0;
+
+  // Identifier les étapes éligible et non éligible par leur label
+  // Les labels Matomo peuvent être les noms d'events (simulateur_result_eligible)
+  // ou les labels personnalisés du funnel (Résultat éligible)
+  const etapeNonEligible = etapes.find((e) => {
+    const nom = e.nom.toLowerCase();
+    return nom.includes("non_eligible") || nom.includes("non éligible");
+  });
+  const etapeEligible = etapes.find((e) => {
+    const nom = e.nom.toLowerCase();
+    return (nom.includes("eligible") || nom.includes("éligible")) && e !== etapeNonEligible;
+  });
+
+  const conversionsEligibles = etapeEligible?.visiteurs || 0;
+  const conversionsNonEligibles = etapeNonEligible?.visiteurs || 0;
+
+  const tauxConversionEligibles =
+    visiteursInitiaux > 0 ? Math.round((conversionsEligibles / visiteursInitiaux) * 100 * 100) / 100 : 0;
+  const tauxConversionNonEligibles =
+    visiteursInitiaux > 0 ? Math.round((conversionsNonEligibles / visiteursInitiaux) * 100 * 100) / 100 : 0;
 
   return {
     etapes,
     visiteursInitiaux,
-    conversionsFinales,
-    tauxConversionGlobal,
+    conversionsEligibles,
+    conversionsNonEligibles,
+    tauxConversionEligibles,
+    tauxConversionNonEligibles,
   };
 }
