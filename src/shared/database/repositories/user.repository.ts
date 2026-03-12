@@ -125,6 +125,22 @@ export class UserRepository extends BaseRepository<User> {
   }
 
   /**
+   * Met à jour les coordonnées de contact
+   */
+  async updateContactInfo(
+    id: string,
+    data: { emailContact?: string; telephone?: string }
+  ): Promise<User | null> {
+    const result = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+
+    return result[0] || null;
+  }
+
+  /**
    * Met à jour la date de dernière connexion
    */
   async updateLastLogin(id: string): Promise<User | null> {

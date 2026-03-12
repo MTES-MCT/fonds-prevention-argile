@@ -3,8 +3,10 @@
 import { useAuth } from "@/features/auth/client";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
-import { useState } from "react";
+import ContactInfoModal from "./ContactInfoModal";
+import { useState, useEffect } from "react";
 import { useParcours } from "../context/useParcours";
+import { getContactInfo } from "../actions/contact-info.actions";
 import { Step, STEP_LABELS_NUMBERED } from "../domain";
 import { StatutValidationAmo } from "../../amo/domain/value-objects";
 import { DSStatus } from "../../dossiers-ds/domain";
@@ -34,6 +36,9 @@ export default function MonCompteClient() {
   const { hasData: hasTempRGAData, isLoading: isLoadingRGA } = useSimulateurRga();
 
   const [showAmoSuccessAlert, setShowAmoSuccessAlert] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactInfoChecked, setContactInfoChecked] = useState(false);
+  const [contactInfoVersion, setContactInfoVersion] = useState(0);
 
   // Utilisation du hook parcours simplifié
   const {
@@ -49,6 +54,17 @@ export default function MonCompteClient() {
   } = useParcours();
 
   const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
+
+  // Vérifier si les coordonnées de contact sont déjà renseignées
+  useEffect(() => {
+    if (!user || contactInfoChecked) return;
+    getContactInfo().then((result) => {
+      if (result.success && !result.data.emailContact && !result.data.telephone) {
+        setShowContactModal(true);
+      }
+      setContactInfoChecked(true);
+    });
+  }, [user, contactInfoChecked]);
 
   // État de chargement global
   const isLoading = isAuthLoading || isLoadingRGA || isLoadingParcours;
@@ -80,16 +96,30 @@ export default function MonCompteClient() {
 
   if (needsSimulation) {
     return (
-      <section className="fr-container-fluid fr-py-10w">
-        <div className="fr-container">
-          <SimulationNeededAlert />
-        </div>
-      </section>
+      <>
+        <ContactInfoModal
+          isOpen={showContactModal}
+          defaultEmail={user.email}
+          onClose={() => setShowContactModal(false)}
+          onSuccess={() => { setShowContactModal(false); setContactInfoVersion((v) => v + 1); }}
+        />
+        <section className="fr-container-fluid fr-py-10w">
+          <div className="fr-container">
+            <SimulationNeededAlert />
+          </div>
+        </section>
+      </>
     );
   }
 
   return (
     <>
+      <ContactInfoModal
+        isOpen={showContactModal}
+        defaultEmail={user.email}
+        onClose={() => setShowContactModal(false)}
+        onSuccess={() => { setShowContactModal(false); setContactInfoVersion((v) => v + 1); }}
+      />
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
           <h1>Bonjour {user.firstName}</h1>
@@ -133,6 +163,7 @@ export default function MonCompteClient() {
                 isQualifiedNonEligible={isQualifiedNonEligible}
                 onAmoSuccess={() => setShowAmoSuccessAlert(true)}
                 refresh={refresh}
+                contactInfoVersion={contactInfoVersion}
               />
             </div>
 
@@ -164,6 +195,7 @@ function CalloutManager({
   currentStep,
   onAmoSuccess,
   refresh,
+  contactInfoVersion,
 }: {
   hasDossiers: boolean;
   hasParcours: boolean;
@@ -173,6 +205,7 @@ function CalloutManager({
   currentStep: Step | null;
   onAmoSuccess: () => void;
   refresh: () => Promise<void>;
+  contactInfoVersion: number;
 }) {
   // Si pas de parcours, rien à afficher
   if (!hasParcours || !currentStep) {
@@ -182,7 +215,7 @@ function CalloutManager({
   // Gestion selon l'étape courante
   switch (currentStep) {
     case Step.CHOIX_AMO:
-      return renderChoixAmoCallout(statutAmo, isQualifiedNonEligible, onAmoSuccess, refresh);
+      return renderChoixAmoCallout(statutAmo, isQualifiedNonEligible, onAmoSuccess, refresh, contactInfoVersion);
 
     case Step.ELIGIBILITE:
       return renderEligibiliteCallout(dsStatus);
@@ -206,7 +239,8 @@ function renderChoixAmoCallout(
   statutAmo: StatutValidationAmo | null,
   isQualifiedNonEligible: boolean,
   onAmoSuccess: () => void,
-  refresh: () => Promise<void>
+  refresh: () => Promise<void>,
+  contactInfoVersion: number
 ) {
   // Si qualifié non éligible par un allers-vers (avant même le choix AMO)
   if (isQualifiedNonEligible && statutAmo === null) {
@@ -214,7 +248,7 @@ function renderChoixAmoCallout(
   }
 
   if (statutAmo === null) {
-    return <CalloutAmoTodo onSuccess={onAmoSuccess} refresh={refresh} />;
+    return <CalloutAmoTodo onSuccess={onAmoSuccess} refresh={refresh} contactInfoVersion={contactInfoVersion} />;
   }
 
   if (statutAmo === StatutValidationAmo.EN_ATTENTE) {
@@ -226,7 +260,7 @@ function renderChoixAmoCallout(
   }
 
   if (statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE) {
-    return <CalloutAmoTodo accompagnementRefuse onSuccess={onAmoSuccess} refresh={refresh} />;
+    return <CalloutAmoTodo accompagnementRefuse onSuccess={onAmoSuccess} refresh={refresh} contactInfoVersion={contactInfoVersion} />;
   }
 
   return undefined;

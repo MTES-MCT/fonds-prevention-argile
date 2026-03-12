@@ -121,13 +121,15 @@ export async function createFranceConnectSession(
   userId: string,
   idToken?: string,
   firstName?: string,
-  lastName?: string
+  lastName?: string,
+  email?: string
 ): Promise<void> {
   const payload: JWTPayload = {
     userId,
     role: ROLES.PARTICULIER,
     firstName,
     lastName,
+    email,
     authMethod: AUTH_METHODS.FRANCECONNECT,
     idToken: idToken,
     exp: Date.now() + SESSION_DURATION.particulier * 1000,
@@ -199,7 +201,7 @@ export async function handleFranceConnectCallback(
     await getOrCreateParcours(user.id);
 
     // 7. Créer la session avec l'userId
-    await createFranceConnectSession(user.id, tokens.id_token, userInfo.given_name, userInfo.family_name);
+    await createFranceConnectSession(user.id, tokens.id_token, userInfo.given_name, userInfo.family_name, userInfo.email);
 
     return { success: true };
   } catch (error) {
