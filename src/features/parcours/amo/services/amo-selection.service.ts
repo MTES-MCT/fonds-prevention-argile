@@ -152,11 +152,11 @@ export async function selectAmoForUser(
     };
   }
 
-  // Mettre à jour l'email et le téléphone de l'utilisateur
+  // Mettre à jour l'email de contact et le téléphone de l'utilisateur
   await db
     .update(users)
     .set({
-      email: userEmail.trim(),
+      emailContact: userEmail.trim(),
       telephone: userTelephone.trim(),
     })
     .where(eq(users.id, userId));

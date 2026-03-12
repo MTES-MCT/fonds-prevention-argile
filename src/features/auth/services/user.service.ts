@@ -55,6 +55,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       loginTime: new Date().toISOString(),
       firstName: session.firstName,
       lastName: session.lastName,
+      email: session.email,
     };
   }
 

@@ -162,6 +162,13 @@
       "when": 1772444677989,
       "tag": "0022_bouncy_felicia_hardy",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1773304820244,
+      "tag": "0023_luxuriant_wraith",
+      "breakpoints": true
     }
   ]
 }

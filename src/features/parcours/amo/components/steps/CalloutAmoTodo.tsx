@@ -5,6 +5,7 @@ import type { Amo } from "@/features/parcours/amo";
 import { choisirAmo, getAmoRefusee, getAmosDisponibles } from "@/features/parcours/amo/actions";
 import { useSimulateurRga } from "@/features/simulateur";
 import { useEffect, useState } from "react";
+import { getContactInfo } from "@/features/parcours/core/actions/contact-info.actions";
 import { getAllersVersByEpciWithFallbackAction } from "@/features/seo/allers-vers/actions";
 import type { AllersVers } from "@/features/seo/allers-vers";
 import { getCodeDepartementFromCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
@@ -15,9 +16,10 @@ interface CalloutAmoTodoProps {
   accompagnementRefuse?: boolean;
   onSuccess?: () => void;
   refresh?: () => Promise<void>;
+  contactInfoVersion?: number;
 }
 
-export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess, refresh }: CalloutAmoTodoProps) {
+export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess, refresh, contactInfoVersion = 0 }: CalloutAmoTodoProps) {
   const { user } = useAuth();
   const { data: rgaData, isLoading: isLoadingRga } = useSimulateurRga();
   const { parcours, isLoading: isLoadingParcours } = useParcours();
@@ -110,12 +112,23 @@ export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess
     rgaData?.logement?.epci,
   ]);
 
-  // Mettre à jour l'email quand user change
+  // Charger les coordonnées de contact sauvegardées, sinon fallback sur l'email FC
   useEffect(() => {
-    if (user?.email) {
-      setEmail(user.email);
-    }
-  }, [user?.email]);
+    getContactInfo().then((result) => {
+      if (result.success) {
+        if (result.data.emailContact) {
+          setEmail(result.data.emailContact);
+        } else if (user?.email) {
+          setEmail(user.email);
+        }
+        if (result.data.telephone) {
+          setTelephone(result.data.telephone);
+        }
+      } else if (user?.email) {
+        setEmail(user.email);
+      }
+    });
+  }, [user?.email, contactInfoVersion]);
 
   const handleAmoSelection = (amoId: string) => {
     setSelectedAmoId(amoId);
