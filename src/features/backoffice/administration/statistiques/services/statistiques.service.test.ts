@@ -100,8 +100,10 @@ describe("StatistiquesService", () => {
         },
       ],
       visiteursInitiaux: 100,
-      conversionsFinales: 60,
-      tauxConversionGlobal: 60,
+      conversionsEligibles: 60,
+      conversionsNonEligibles: 20,
+      tauxConversionEligibles: 60,
+      tauxConversionNonEligibles: 20,
     });
   });
 
@@ -163,8 +165,10 @@ describe("StatistiquesService", () => {
             },
           ],
           visiteursInitiaux: 100,
-          conversionsFinales: 60,
-          tauxConversionGlobal: 60,
+          conversionsEligibles: 60,
+          conversionsNonEligibles: 20,
+          tauxConversionEligibles: 60,
+          tauxConversionNonEligibles: 20,
         },
       });
     });
@@ -189,8 +193,10 @@ describe("StatistiquesService", () => {
       vi.mocked(matomoFunnelService.getFunnelSimulateurRGA).mockResolvedValue({
         etapes: [],
         visiteursInitiaux: 0,
-        conversionsFinales: 0,
-        tauxConversionGlobal: 0,
+        conversionsEligibles: 0,
+        conversionsNonEligibles: 0,
+        tauxConversionEligibles: 0,
+        tauxConversionNonEligibles: 0,
       });
 
       // Act
@@ -209,8 +215,10 @@ describe("StatistiquesService", () => {
         funnelSimulateurRGA: {
           etapes: [],
           visiteursInitiaux: 0,
-          conversionsFinales: 0,
-          tauxConversionGlobal: 0,
+          conversionsEligibles: 0,
+          conversionsNonEligibles: 0,
+          tauxConversionEligibles: 0,
+          tauxConversionNonEligibles: 0,
         },
       });
     });

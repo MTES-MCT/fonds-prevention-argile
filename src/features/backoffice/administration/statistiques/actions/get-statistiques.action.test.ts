@@ -234,8 +234,8 @@ describe("statistiques.actions", () => {
       if (result.success && result.data.funnelSimulateurRGA) {
         expect(result.data.funnelSimulateurRGA).toHaveProperty("etapes");
         expect(result.data.funnelSimulateurRGA).toHaveProperty("visiteursInitiaux");
-        expect(result.data.funnelSimulateurRGA).toHaveProperty("conversionsFinales");
-        expect(result.data.funnelSimulateurRGA).toHaveProperty("tauxConversionGlobal");
+        expect(result.data.funnelSimulateurRGA).toHaveProperty("conversionsEligibles");
+        expect(result.data.funnelSimulateurRGA).toHaveProperty("tauxConversionEligibles");
         expect(Array.isArray(result.data.funnelSimulateurRGA.etapes)).toBe(true);
       }
     });
