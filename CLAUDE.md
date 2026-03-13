@@ -81,9 +81,28 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 - Dans le même dossier que le fichier testé ou dans `__tests__/`
 - Utiliser Vitest avec `describe`, `it`, `expect`
 
+## Conventions de code
+
+- TypeScript strict : typage explicite, jamais de `any` non casté
+- Accents français obligatoires dans le texte user-facing (é, è, ê, à, ô, ç, î)
+- Nommage fichiers : `*.actions.ts` (Server Actions), `*.service.ts`, `*.repository.ts`, `*.adapter.ts`
+- Respecter le DSFR pour les composants UI
+- Pas d'emojis dans le code ou les messages de sortie
+
+## Workflow
+
+- Après implémentation, lancer `pnpm validate` (typecheck + lint + test)
+- Préférer lancer un test ciblé (`pnpm test -- path/to/file.test.ts`) plutôt que toute la suite
+- Lint avant commit : `pnpm format && pnpm lint`
+- Produire du code, pas des plans (sauf si demandé explicitement)
+
 ## Notes importantes
 
-- Le projet utilise TypeScript strict
-- Respecter le DSFR pour les composants UI
-- Les Server Actions sont dans les fichiers `*.actions.ts`
 - Configuration email: Brevo (production) / Mailhog (dev)
+- FranceConnect retourne un email non modifiable — le mail de contact est dans `emailContact` (champ séparé)
+
+## Gotchas
+
+- Les valeurs JSONB (`rgaSimulationData`) peuvent être des nombres au lieu de strings — toujours utiliser `asString()` de `@/shared/utils` pour lire les champs
+- Les modales DSFR ne s'ouvrent pas avec l'attribut HTML `open` — utiliser `window.dsfr(modal).modal.disclose()`
+- L'API Matomo Funnels timeout sur les périodes longues — limiter à 7 jours

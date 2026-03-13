@@ -1,19 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm build)",
-      "Bash(pnpm build:*)",
-      "Bash(pnpm lint)",
-      "Bash(pnpm lint:*)",
-      "Bash(pnpm format)",
-      "Bash(pnpm format:*)",
-      "Bash(pnpm typecheck)",
-      "Bash(pnpm test)",
-      "Bash(pnpm test:*)",
-      "Bash(pnpm validate)",
-      "Bash(pnpm clean)",
+      "Bash(pnpm:*)",
       "Bash(git status)",
-      "Bash(git diff)"
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(ls:*)"
     ],
     "deny": [
       "Read(.env)",
@@ -28,6 +22,19 @@
       "Write(.env.*)",
       "Write(**/.env)",
       "Write(**/.env.*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/format-on-write.sh"
+          }
+        ]
+      }
     ]
   }
 }

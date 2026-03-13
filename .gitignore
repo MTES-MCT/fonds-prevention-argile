@@ -59,3 +59,7 @@ yarn-error.log*
 
 # Settings vscode
 .vscode/*
+
+# Claude Code local
+CLAUDE.local.md
+.claude/settings.local.json
