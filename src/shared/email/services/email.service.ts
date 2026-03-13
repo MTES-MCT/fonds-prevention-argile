@@ -1,4 +1,4 @@
-import { TransactionalEmailsApi, SendSmtpEmail } from "@getbrevo/brevo";
+import { BrevoClient } from "@getbrevo/brevo";
 import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
 import { emailConfig, isEmailEnabled, isLocalDevelopment } from "../config/email.config";
@@ -29,7 +29,7 @@ const debug = createDebugLogger("EMAIL_SERVICE");
  * - Staging/Prod : utilise Brevo (API)
  */
 export class EmailService {
-  private brevoApi?: TransactionalEmailsApi;
+  private brevoClient?: BrevoClient;
   private smtpTransporter?: Transporter;
   private initialized = false;
 
@@ -57,8 +57,7 @@ export class EmailService {
         console.error("BREVO_API_KEY manquante");
       }
 
-      this.brevoApi = new TransactionalEmailsApi();
-      this.brevoApi.setApiKey(0, emailConfig.apiKey);
+      this.brevoClient = new BrevoClient({ apiKey: emailConfig.apiKey });
     }
 
     this.initialized = true;
@@ -119,7 +118,7 @@ export class EmailService {
    * Envoi via Brevo (staging/production)
    */
   private async sendViaBrevo(params: SendEmailParams): Promise<SendEmailResult> {
-    if (!this.brevoApi || !isEmailEnabled()) {
+    if (!this.brevoClient || !isEmailEnabled()) {
       console.warn("Brevo non configuré (BREVO_API_KEY manquante)");
       return {
         success: false,
@@ -130,7 +129,7 @@ export class EmailService {
     try {
       const recipients = Array.isArray(params.to) ? params.to.map((email) => ({ email })) : [{ email: params.to }];
 
-      const sendSmtpEmail: SendSmtpEmail = {
+      const result = await this.brevoClient.transactionalEmails.sendTransacEmail({
         sender: {
           email: emailConfig.from.email,
           name: emailConfig.from.name,
@@ -140,33 +139,14 @@ export class EmailService {
         htmlContent: params.html,
         textContent: params.text,
         replyTo: params.replyTo || emailConfig.replyTo,
-      };
-
-      const result = await this.brevoApi.sendTransacEmail(sendSmtpEmail);
+      });
 
       return {
         success: true,
-        messageId: result.body.messageId,
+        messageId: result.messageId,
       };
     } catch (error) {
       console.error("Erreur Brevo:", error);
-
-      // Gestion spécifique des erreurs Axios (réseau/API)
-      if (error && typeof error === "object" && "response" in error) {
-        const axiosError = error as {
-          response?: {
-            status: number;
-            data: unknown;
-          };
-        };
-
-        if (axiosError.response) {
-          console.error("Response error:", {
-            status: axiosError.response.status,
-            data: axiosError.response.data,
-          });
-        }
-      }
 
       return {
         success: false,

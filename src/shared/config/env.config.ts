@@ -138,10 +138,6 @@ const clientSchema = z.object({
   NEXT_PUBLIC_MATOMO_URL: z.string().url().optional(),
   NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_CRISP_WEBSITE_ID: z.string().min(1).optional(),
-  NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
-  NEXT_PUBLIC_SENTRY_ORG: z.string().min(1).optional(),
-  NEXT_PUBLIC_SENTRY_PROJECT: z.string().min(1).optional(),
-  NEXT_PUBLIC_SENTRY_URL: z.string().url().optional(),
 });
 
 // Schéma de validation des variables d'environnement partagées
@@ -186,10 +182,6 @@ export function getClientEnv() {
       NEXT_PUBLIC_MATOMO_URL: process.env.NEXT_PUBLIC_MATOMO_URL,
       NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID: process.env.NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID,
       NEXT_PUBLIC_CRISP_WEBSITE_ID: process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID,
-      NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      NEXT_PUBLIC_SENTRY_ORG: process.env.NEXT_PUBLIC_SENTRY_ORG,
-      NEXT_PUBLIC_SENTRY_PROJECT: process.env.NEXT_PUBLIC_SENTRY_PROJECT,
-      NEXT_PUBLIC_SENTRY_URL: process.env.NEXT_PUBLIC_SENTRY_URL,
     };
 
     const result = clientSchema.safeParse(envObject);

@@ -31,7 +31,6 @@ Configurez les variables selon votre environnement. Les principales variables in
 - `NODE_ENV` : Environnement d'exécution (`development` ou `production`)
 - `NEXT_PUBLIC_MATOMO_SITE_ID` : ID Matomo pour l'analytics
 - `NEXT_PUBLIC_MATOMO_URL` : URL de l'instance Matomo
-- `NEXT_PUBLIC_SENTRY_DSN` : DSN Sentry pour le monitoring d'erreurs
 - `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY` : Clé d'API pour récupérer les informations de la plateforme Démarches Simplifiées via GraphQL
 - `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL` : URL de l'API GRAPHQL de la plateforme Démarches Simplifiées
 - `DEMARCHES_SIMPLIFIEES_REST_API_URL` : URL de l'API Rest de la plateforme Démarches Simplifiées
@@ -193,7 +192,6 @@ Pour modifier un texte de l'application :
 - **[Tailwind CSS](https://tailwindcss.com/)** 4.x - Framework CSS utilitaire
 - **[DSFR](https://www.systeme-de-design.gouv.fr/)** 1.14.x - Design System de l'État
 - **[Vitest](https://vitest.dev/)** - Tests unitaires
-- **[Sentry](https://sentry.io/)** - Monitoring d'erreurs
 - **[Matomo](https://matomo.org/)** - Analytics
 
 ## Déploiement
