@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { FiltresTableauDeBord } from "./FiltresTableauDeBord";
 import { DashboardStatCard } from "./DashboardStatCard";
+import { AlertesTendances } from "./AlertesTendances";
 import {
   getTableauDeBordStatsAction,
   getDepartementsDisponiblesAction,
@@ -84,6 +85,9 @@ export function TableauDeBord() {
           )}
         </div>
       </section>
+
+      {/* Alerte tendances */}
+      {stats && stats.alertes.length > 0 && <AlertesTendances alertes={stats.alertes} />}
 
       {/* Cartes de statistiques — fond bleu */}
       <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">

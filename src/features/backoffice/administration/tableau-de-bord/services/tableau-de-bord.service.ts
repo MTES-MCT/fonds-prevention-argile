@@ -6,7 +6,7 @@ import {
   dossiersDemarchesSimplifiees,
 } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
-import type { TableauDeBordStats, PeriodeId } from "../domain/types/tableau-de-bord.types";
+import type { TableauDeBordStats, PeriodeId, AlerteTendance } from "../domain/types/tableau-de-bord.types";
 import { PERIODES, SERVICE_START_DATE } from "../domain/types/tableau-de-bord.types";
 import { normalizeCodeDepartement } from "@/shared/constants/departements.constants";
 
@@ -228,7 +228,98 @@ function calculerVariation(valeurActuelle: number, valeurPrecedente: number): nu
 }
 
 /**
- * Recupere les statistiques du tableau de bord avec variations
+ * Seuil de variation (%) au-delà duquel un motif est considéré "en hausse".
+ * Modifiable pour ajuster la sensibilité de l'alerte.
+ */
+const SEUIL_HAUSSE_MOTIFS = 10;
+
+/**
+ * Récupère le nombre d'archivages par motif sur une période donnée
+ */
+async function getArchiveReasonsDistribution(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+): Promise<Map<string, number>> {
+  const conditions = [
+    isNotNull(parcoursPrevention.archivedAt),
+    isNotNull(parcoursPrevention.archiveReason),
+    gte(parcoursPrevention.archivedAt, debut),
+    lt(parcoursPrevention.archivedAt, fin),
+  ];
+
+  if (codeDepartement) {
+    conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+    conditions.push(whereDepartement(codeDepartement));
+  }
+
+  const rows = await db
+    .select({
+      reason: parcoursPrevention.archiveReason,
+      count: count(),
+    })
+    .from(parcoursPrevention)
+    .where(and(...conditions))
+    .groupBy(parcoursPrevention.archiveReason);
+
+  const distribution = new Map<string, number>();
+  for (const row of rows) {
+    if (row.reason) {
+      distribution.set(row.reason, row.count);
+    }
+  }
+  return distribution;
+}
+
+/**
+ * Détecte les motifs d'archivage dont la variation dépasse le seuil
+ * entre la période courante et la période précédente.
+ *
+ * Règle de gestion par défaut : un motif est signalé si sa variation > SEUIL_HAUSSE_MOTIFS %.
+ */
+async function detecterMotifsEnHausse(
+  debut: Date,
+  fin: Date,
+  previousRange: { debut: Date; fin: Date } | null,
+  codeDepartement?: string,
+): Promise<AlerteTendance[]> {
+  if (!previousRange) {
+    return [];
+  }
+
+  const [distributionActuelle, distributionPrecedente] = await Promise.all([
+    getArchiveReasonsDistribution(debut, fin, codeDepartement),
+    getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement),
+  ]);
+
+  const motifsEnHausse: string[] = [];
+
+  for (const [motif, countActuel] of distributionActuelle) {
+    const countPrecedent = distributionPrecedente.get(motif) ?? 0;
+    const variation = calculerVariation(countActuel, countPrecedent);
+
+    if (variation !== null && variation > SEUIL_HAUSSE_MOTIFS) {
+      motifsEnHausse.push(motif);
+    }
+  }
+
+  if (motifsEnHausse.length === 0) {
+    return [];
+  }
+
+  const motifsFormates = motifsEnHausse.map((m) => `\u00AB${m}\u00BB`).join(" - ");
+
+  return [
+    {
+      type: "hausse",
+      motifs: motifsEnHausse,
+      message: `Les motifs suivants sont en hausse : ${motifsFormates}`,
+    },
+  ];
+}
+
+/**
+ * Récupère les statistiques du tableau de bord avec variations
  */
 export async function getTableauDeBordStats(
   periodeId: PeriodeId,
@@ -237,8 +328,8 @@ export async function getTableauDeBordStats(
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 
-  // Stats de la periode courante
-  const [simulations, comptes, demandesAmo, reponsesAttente, dossiersDN, archivees] =
+  // Stats de la période courante + alertes en parallèle
+  const [simulations, comptes, demandesAmo, reponsesAttente, dossiersDN, archivees, alertes] =
     await Promise.all([
       countSimulations(debut, fin, codeDepartement),
       countComptesCrees(debut, fin, codeDepartement),
@@ -246,6 +337,7 @@ export async function getTableauDeBordStats(
       countReponsesAmoEnAttente(codeDepartement),
       countDossiersDN(debut, fin, codeDepartement),
       countDemandesArchivees(debut, fin, codeDepartement),
+      detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement),
     ]);
 
   const tauxTransformation = simulations > 0 ? Math.round((comptes / simulations) * 1000) / 10 : 0;
@@ -304,5 +396,6 @@ export async function getTableauDeBordStats(
     reponsesAmoEnAttente: { valeur: reponsesAttente, variation: variations.reponsesAttente },
     dossiersDemarcheNumerique: { valeur: dossiersDN, variation: variations.dossiersDN },
     demandesArchivees: { valeur: archivees, variation: variations.archivees },
+    alertes,
   };
 }

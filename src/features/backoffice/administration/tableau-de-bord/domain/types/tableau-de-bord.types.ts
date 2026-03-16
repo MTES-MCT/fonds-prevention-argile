@@ -3,6 +3,15 @@ export interface StatAvecVariation {
   variation: number | null;
 }
 
+export interface AlerteTendance {
+  /** Texte complet à afficher dans l'alerte */
+  message: string;
+  /** Liste des motifs individuels détectés */
+  motifs: string[];
+  /** Type de tendance (extensible) */
+  type: "hausse";
+}
+
 export interface TableauDeBordStats {
   simulationsLancees: StatAvecVariation;
   comptesCrees: StatAvecVariation;
@@ -11,6 +20,7 @@ export interface TableauDeBordStats {
   reponsesAmoEnAttente: StatAvecVariation;
   dossiersDemarcheNumerique: StatAvecVariation;
   demandesArchivees: StatAvecVariation;
+  alertes: AlerteTendance[];
 }
 
 export type PeriodeId = "7j" | "30j" | "90j" | "6m" | "12m" | "tout";
