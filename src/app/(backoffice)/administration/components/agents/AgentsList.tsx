@@ -83,6 +83,7 @@ export default function AgentsList({
             <th scope="col">Rôle</th>
             <th scope="col">Périmètre</th>
             <th scope="col">Créé le</th>
+            <th scope="col">Dernière connexion</th>
             <th scope="col">Actions</th>
           </tr>
         </thead>
@@ -175,6 +176,13 @@ export default function AgentsList({
                 {/* Date création */}
                 <td>
                   <span className="text-sm">{new Date(agent.createdAt).toLocaleDateString("fr-FR")}</span>
+                </td>
+
+                {/* Dernière connexion */}
+                <td>
+                  <span className="text-sm">
+                    {agent.lastLogin ? new Date(agent.lastLogin).toLocaleDateString("fr-FR") : "Jamais"}
+                  </span>
                 </td>
 
                 {/* Actions */}

@@ -57,6 +57,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
         role: agents.role,
         entrepriseAmoId: agents.entrepriseAmoId,
         allersVersId: agents.allersVersId,
+        lastLogin: agents.lastLogin,
         createdAt: agents.createdAt,
         updatedAt: agents.updatedAt,
         entrepriseAmoDbId: entreprisesAmo.id,
@@ -83,6 +84,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
       role: row.role,
       entrepriseAmoId: row.entrepriseAmoId,
       allersVersId: row.allersVersId,
+      lastLogin: row.lastLogin,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       entrepriseAmo:
@@ -121,6 +123,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
         role: agents.role,
         entrepriseAmoId: agents.entrepriseAmoId,
         allersVersId: agents.allersVersId,
+        lastLogin: agents.lastLogin,
         createdAt: agents.createdAt,
         updatedAt: agents.updatedAt,
         entrepriseAmoDbId: entreprisesAmo.id,
@@ -144,6 +147,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
       role: row.role,
       entrepriseAmoId: row.entrepriseAmoId,
       allersVersId: row.allersVersId,
+      lastLogin: row.lastLogin,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       entrepriseAmo:
@@ -251,6 +255,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
           siret: proConnectData.siret,
           phone: proConnectData.phone,
           organizationalUnit: proConnectData.organizational_unit,
+          lastLogin: new Date(),
           updatedAt: new Date(),
         })
         .where(eq(agents.sub, proConnectData.sub))
@@ -274,6 +279,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
           siret: proConnectData.siret,
           phone: proConnectData.phone,
           organizationalUnit: proConnectData.organizational_unit,
+          lastLogin: new Date(),
           updatedAt: new Date(),
         })
         .where(eq(agents.email, proConnectData.email))

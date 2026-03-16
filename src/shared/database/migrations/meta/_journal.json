@@ -169,6 +169,13 @@
       "when": 1773304820244,
       "tag": "0023_luxuriant_wraith",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1773658371914,
+      "tag": "0024_living_mordo",
+      "breakpoints": true
     }
   ]
 }

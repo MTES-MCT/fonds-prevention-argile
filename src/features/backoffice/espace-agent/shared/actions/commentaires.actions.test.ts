@@ -37,6 +37,7 @@ describe("commentaires.actions", () => {
     role: UserRole.AMO as typeof UserRole.AMO,
     entrepriseAmoId: "amo-1",
     allersVersId: null,
+    lastLogin: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

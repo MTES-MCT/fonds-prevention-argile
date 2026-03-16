@@ -34,6 +34,7 @@ export interface AgentWithPermissions {
     role: string;
     entrepriseAmoId: string | null;
     allersVersId: string | null;
+    lastLogin: Date | null;
     createdAt: Date;
     updatedAt: Date;
   };
