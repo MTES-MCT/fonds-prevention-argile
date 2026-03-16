@@ -215,6 +215,7 @@ describe("CommentairesService", () => {
         role: UserRole.AMO,
         entrepriseAmoId: "amo-1",
         allersVersId: null,
+        lastLogin: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -281,6 +282,7 @@ describe("CommentairesService", () => {
         role: UserRole.AMO,
         entrepriseAmoId: null,
         allersVersId: null,
+        lastLogin: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -328,6 +330,7 @@ describe("CommentairesService", () => {
         role: UserRole.AMO,
         entrepriseAmoId: null,
         allersVersId: null,
+        lastLogin: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -379,6 +382,7 @@ describe("CommentairesService", () => {
         role: UserRole.ALLERS_VERS,
         entrepriseAmoId: null,
         allersVersId: "av-1",
+        lastLogin: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -442,6 +446,7 @@ describe("CommentairesService", () => {
         role: UserRole.ADMINISTRATEUR,
         entrepriseAmoId: null,
         allersVersId: null,
+        lastLogin: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });

@@ -41,6 +41,7 @@ export const agents = pgTable("agents", {
   }),
 
   // Timestamps
+  lastLogin: timestamp("last_login", { mode: "date" }),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" })
     .notNull()
