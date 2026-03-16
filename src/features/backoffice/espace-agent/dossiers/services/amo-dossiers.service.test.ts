@@ -65,7 +65,7 @@ const createMockDossier = (
   currentStep: Step = Step.ELIGIBILITE,
   currentStatus: Status = Status.TODO,
   communeNom?: string,
-  codeDepartement?: string,
+  codeDepartement?: string
 ) => ({
   id,
   prenom,
@@ -99,12 +99,12 @@ describe("AmoDossiersService", () => {
           mockDbSelectList([
             createMockDossier("1", "Sophie", "Dubois", Step.DIAGNOSTIC, Status.TODO, "Le Poinçonnet", "36"),
             createMockDossier("2", "Marc", "Lefèvre", Step.DEVIS, Status.EN_INSTRUCTION, "Déols", "36"),
-          ]),
+          ])
         ) // liste des dossiers suivis
         .mockReturnValueOnce(
           mockDbSelectList([
             createMockDossier("3", "Bilbo", "Sacquet", Step.DIAGNOSTIC, Status.TODO, "Châteauroux", "36"),
-          ]),
+          ])
         ) // liste des dossiers archivés
         .mockReturnValueOnce(mockDbSelectDsStatus(null)) // DS status dossier 1
         .mockReturnValueOnce(mockDbSelectDsStatus(DSStatus.EN_INSTRUCTION)) // DS status dossier 2
@@ -170,7 +170,7 @@ describe("AmoDossiersService", () => {
               currentStatus: Status.TODO,
               rgaSimulationData: null,
             },
-          ]),
+          ])
         )
         .mockReturnValueOnce(mockDbSelectList([]))
         .mockReturnValueOnce(mockDbSelectDsStatus(null));
@@ -213,7 +213,7 @@ describe("AmoDossiersService", () => {
         .mockReturnValueOnce(
           mockDbSelectList([
             createMockDossier("abc-123", "Claire", "Moreau", Step.FACTURES, Status.VALIDE, "Issoudun", "36"),
-          ]),
+          ])
         )
         .mockReturnValueOnce(mockDbSelectList([]))
         .mockReturnValueOnce(mockDbSelectDsStatus(DSStatus.ACCEPTE));

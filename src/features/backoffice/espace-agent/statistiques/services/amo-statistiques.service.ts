@@ -3,10 +3,7 @@ import { db } from "@/shared/database/client";
 import { parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
-import {
-  calculerTrancheRevenu,
-  isRegionIDF,
-} from "@/features/simulateur/domain/types/rga-revenus.types";
+import { calculerTrancheRevenu, isRegionIDF } from "@/features/simulateur/domain/types/rga-revenus.types";
 import type {
   AmoIndicateursCles,
   AmoStatistiques,

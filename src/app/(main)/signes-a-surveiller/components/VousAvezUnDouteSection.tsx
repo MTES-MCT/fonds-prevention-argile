@@ -11,13 +11,10 @@ export default function VousAvezUnDouteSection() {
           <div className="fr-col-12 fr-col-md-6">
             <h2 className="text-left">{contentDouteSection.title}</h2>
             <h2 className="text-left">{contentDouteSection.title2}</h2>
-            <h2 className="text-left text-blue-900 ">
-              {contentDouteSection.title3}
-            </h2>
+            <h2 className="text-left text-blue-900 ">{contentDouteSection.title3}</h2>
             <Link
               className="fr-mt-4v fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
-              href={contentDouteSection.cta_link}
-            >
+              href={contentDouteSection.cta_link}>
               {contentDouteSection.cta_label}
             </Link>
           </div>

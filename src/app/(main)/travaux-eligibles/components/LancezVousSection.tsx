@@ -14,8 +14,7 @@ export default function LancezVousSection() {
 
             <Link
               className="fr-mt-4v fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
-              href={contentLancezVous.cta_link}
-            >
+              href={contentLancezVous.cta_link}>
               {contentLancezVous.cta_label}
             </Link>
           </div>

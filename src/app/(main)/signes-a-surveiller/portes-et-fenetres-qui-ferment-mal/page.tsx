@@ -9,9 +9,7 @@ export default function PortesEtFenetreQuiFermentMal() {
       pageLink="/signes-a-surveiller/portes-et-fenetres-qui-ferment-mal"
       tag={
         commonContent.signes_a_surveiller_section.signes.find(
-          (item) =>
-            item.pageLink ===
-            "/signes-a-surveiller/portes-et-fenetres-qui-ferment-mal"
+          (item) => item.pageLink === "/signes-a-surveiller/portes-et-fenetres-qui-ferment-mal"
         )?.tag
       }
       image={content.image}

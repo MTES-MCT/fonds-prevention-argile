@@ -43,7 +43,7 @@ export const SimulationService = {
   submitAnswer(
     state: SimulationState,
     answerUpdates: PartialRGASimulationData,
-    options?: { skipEarlyExit?: boolean },
+    options?: { skipEarlyExit?: boolean }
   ): SimulationState {
     // Fusionner les réponses
     const newAnswers = mergeAnswers(state.answers, answerUpdates);
@@ -115,9 +115,7 @@ export const SimulationService = {
     const newHistory = state.history.slice(0, -1);
 
     // En mode édition, on garde les réponses pré-remplies
-    const answers = options?.preserveAnswers
-      ? state.answers
-      : clearAnswersForStep(state.currentStep, state.answers);
+    const answers = options?.preserveAnswers ? state.answers : clearAnswersForStep(state.currentStep, state.answers);
 
     return {
       ...state,

@@ -3,8 +3,7 @@ import { describe, it, expect, vi, beforeEach, MockedFunction } from "vitest";
 // Mock getServerEnv AVANT l'import du client
 vi.mock("@/shared/config/env.config", () => ({
   getServerEnv: vi.fn(() => ({
-    DEMARCHES_SIMPLIFIEES_REST_API_URL:
-      "https://www.demarches-simplifiees.fr/api/public/v1",
+    DEMARCHES_SIMPLIFIEES_REST_API_URL: "https://www.demarches-simplifiees.fr/api/public/v1",
     DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE: "123456",
     DEMARCHES_SIMPLIFIEES_NOM_ELIGIBILITE: "test-eligibilite",
     DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC: "123457",
@@ -91,10 +90,7 @@ describe("DemarchesSimplifieesPrefillClient", () => {
         champ_2: 42,
       };
 
-      const result = await client.createPrefillDossier(
-        prefillData,
-        Step.ELIGIBILITE
-      );
+      const result = await client.createPrefillDossier(prefillData, Step.ELIGIBILITE);
 
       expect(fetch).toHaveBeenCalledWith(
         "https://www.demarches-simplifiees.fr/api/public/v1/demarches/123456/dossiers",
@@ -120,9 +116,7 @@ describe("DemarchesSimplifieesPrefillClient", () => {
 
       const errors = client.validatePrefillData(data);
 
-      expect(errors).toContain(
-        "Clé invalide: invalid_key. Les clés doivent commencer par 'champ_'"
-      );
+      expect(errors).toContain("Clé invalide: invalid_key. Les clés doivent commencer par 'champ_'");
     });
   });
 

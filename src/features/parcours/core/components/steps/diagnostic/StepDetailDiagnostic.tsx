@@ -12,9 +12,7 @@ export default function StepDetailDiagnostic() {
   // Vérifier si l'étape est active (on est à l'étape diagnostic)
   const isStepActive = currentStep === Step.DIAGNOSTIC;
 
-  const isStepBeforeCurrent = currentStep
-    ? isStepBefore(currentStep, Step.DIAGNOSTIC)
-    : false;
+  const isStepBeforeCurrent = currentStep ? isStepBefore(currentStep, Step.DIAGNOSTIC) : false;
 
   return (
     <div className="fr-card">
@@ -23,46 +21,29 @@ export default function StepDetailDiagnostic() {
         {isStepBeforeCurrent && (
           <p
             className="fr-badge fr-mb-2w fr-icon-arrow-right-s-line-double fr-text--disabled-grey fr-badge--icon-left"
-            style={{ color: "var(--text-disabled-grey)" }}
-          >
+            style={{ color: "var(--text-disabled-grey)" }}>
             A Venir
           </p>
         )}
 
-        {isStepActive &&
-          (lastDSStatus === DSStatus.NON_ACCESSIBLE ||
-            lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
-            <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">
-              A faire
-            </span>
-          )}
+        {isStepActive && (lastDSStatus === DSStatus.NON_ACCESSIBLE || lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
+          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">A faire</span>
+        )}
         {/* Titre avec couleur conditionnelle */}
         <h5
-          className={
-            isStepActive
-              ? "text-left fr-text-label--blue-france"
-              : "text-left fr-text--disabled"
-          }
-          style={
-            isStepActive ? undefined : { color: "var(--text-disabled-grey)" }
-          }
-        >
+          className={isStepActive ? "text-left fr-text-label--blue-france" : "text-left fr-text--disabled"}
+          style={isStepActive ? undefined : { color: "var(--text-disabled-grey)" }}>
           3. Diagnostic
         </h5>
 
         {/* Texte si etape précédente */}
         {isStepBeforeCurrent && (
           <>
-            <p style={{ color: "var(--text-disabled-grey)" }}>
-              Démarrer le diagnostic et communiquer les résultats.
-            </p>
+            <p style={{ color: "var(--text-disabled-grey)" }}>Démarrer le diagnostic et communiquer les résultats.</p>
             <div style={{ color: "var(--text-disabled-grey)" }}>
               <p className="fr-text--xs">
                 Préparez les pièces nécessaires{" "}
-                <span
-                  className="fr-icon-arrow-right-line fr-icon--sm"
-                  aria-hidden="true"
-                />
+                <span className="fr-icon-arrow-right-line fr-icon--sm" aria-hidden="true" />
               </p>
             </div>
           </>
@@ -76,8 +57,7 @@ export default function StepDetailDiagnostic() {
               href={dsUrl ?? "#"}
               rel="noopener noreferrer"
               target="_blank"
-              className="fr-btn text-white fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line"
-            >
+              className="fr-btn text-white fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line">
               Transmettre mon diagnostic
             </Link>
           </>

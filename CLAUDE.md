@@ -60,6 +60,7 @@ src/
 ## Alias d'import
 
 Utiliser `@/*` pour les imports depuis `src/`:
+
 ```typescript
 import { ... } from "@/features/auth"
 import { ... } from "@/shared/database/client"
@@ -68,6 +69,7 @@ import { ... } from "@/shared/database/client"
 ## Architecture
 
 Le projet suit une architecture orientée domaine (DDD-lite):
+
 - `domain/entities/` - Entités métier
 - `domain/types/` - Types du domaine
 - `domain/value-objects/` - Objets valeurs

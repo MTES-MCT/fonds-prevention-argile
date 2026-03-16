@@ -99,7 +99,10 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
         <p className="fr-callout__text">
           Attention, en confirmant votre accompagnement, vous attestez que le demandeur est éligible selon les critères
           définis par{" "}
-          <a href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052201370" target="_blank" rel="noopener noreferrer">
+          <a
+            href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052201370"
+            target="_blank"
+            rel="noopener noreferrer">
             l&apos;arrêté du 6 septembre 2025
           </a>
           .

@@ -6,60 +6,38 @@ import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-object
 export default function StepDetailAmo() {
   const { currentStep, statutAmo, validationAmoComplete } = useParcours();
 
-  const isDisabled =
-    currentStep !== Step.CHOIX_AMO ||
-    statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
+  const isDisabled = currentStep !== Step.CHOIX_AMO || statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
 
-  const isChooseAmoLinkDisabled =
-    isDisabled || statutAmo === StatutValidationAmo.EN_ATTENTE;
+  const isChooseAmoLinkDisabled = isDisabled || statutAmo === StatutValidationAmo.EN_ATTENTE;
 
   return (
     <div className="fr-card">
       <div className="fr-card__body fr-py-4w">
         {/* Badge conditionnel */}
-        {!statutAmo && (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">
-            A faire
-          </span>
-        )}
+        {!statutAmo && <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>}
 
         {statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE && (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">
-            A faire
-          </span>
+          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>
         )}
 
         {statutAmo === StatutValidationAmo.EN_ATTENTE && (
-          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">
-            En attente
+          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">En attente</span>
+        )}
+
+        {statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE && validationAmoComplete?.choisieAt && (
+          <span className="fr-badge fr-text--sm fr-badge--success fr-mb-2w">
+            Validé le {validationAmoComplete?.choisieAt.toLocaleDateString("fr-FR")}
           </span>
         )}
 
-        {statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE &&
-          validationAmoComplete?.choisieAt && (
-            <span className="fr-badge fr-text--sm fr-badge--success fr-mb-2w">
-              Validé le{" "}
-              {validationAmoComplete?.choisieAt.toLocaleDateString("fr-FR")}
-            </span>
-          )}
-
         {statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && (
-          <span className="fr-badge fr-text--sm fr-badge--error fr-mb-2w">
-            Non éligible
-          </span>
+          <span className="fr-badge fr-text--sm fr-badge--error fr-mb-2w">Non éligible</span>
         )}
 
         {/* Titre avec couleur conditionnelle */}
         <h5
-          className={
-            isDisabled
-              ? "text-left fr-text--disabled"
-              : "text-left fr-text-label--blue-france"
-          }
-          style={
-            isDisabled ? { color: "var(--text-disabled-grey)" } : undefined
-          }
-        >
+          className={isDisabled ? "text-left fr-text--disabled" : "text-left fr-text-label--blue-france"}
+          style={isDisabled ? { color: "var(--text-disabled-grey)" } : undefined}>
           1. Contacter un AMO
         </h5>
 
@@ -85,10 +63,7 @@ export default function StepDetailAmo() {
           <>
             <p
               className={isDisabled ? "fr-text--disabled" : undefined}
-              style={
-                isDisabled ? { color: "var(--text-mention-grey)" } : undefined
-              }
-            >
+              style={isDisabled ? { color: "var(--text-mention-grey)" } : undefined}>
               Contactez puis indiquez votre AMO parmi les choix ci-dessus.
             </p>
 
@@ -100,8 +75,7 @@ export default function StepDetailAmo() {
                 display: "inline-flex !important",
                 alignItems: "center",
                 width: "fit-content",
-              }}
-            >
+              }}>
               Contacter un AMO
             </Link>
           </>

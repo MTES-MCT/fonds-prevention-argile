@@ -6,9 +6,7 @@ export default function PolitiqueConfidentialite() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-10!">
-        <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
-          {content.title}
-        </h1>
+        <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">{content.title}</h1>
 
         <h2>{content.responsable}</h2>
         {content.responsable_descriptions.map((par: string, index: number) => (
@@ -41,14 +39,12 @@ export default function PolitiqueConfidentialite() {
             </tr>
           </thead>
           <tbody>
-            {content.duree_descriptions.map(
-              (row: { categorie: string; duree: string }, rowIndex: number) => (
-                <tr key={rowIndex} id={`table-5-row-key-${rowIndex}`}>
-                  <td>{row.categorie}</td>
-                  <td>{row.duree}</td>
-                </tr>
-              )
-            )}
+            {content.duree_descriptions.map((row: { categorie: string; duree: string }, rowIndex: number) => (
+              <tr key={rowIndex} id={`table-5-row-key-${rowIndex}`}>
+                <td>{row.categorie}</td>
+                <td>{row.duree}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
 
@@ -80,11 +76,9 @@ export default function PolitiqueConfidentialite() {
         <table id="table-6">
           <thead>
             <tr>
-              {content.sous_traitant_heading.map(
-                (header: string, index: number) => (
-                  <th key={index}>{header}</th>
-                )
-              )}
+              {content.sous_traitant_heading.map((header: string, index: number) => (
+                <th key={index}>{header}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -103,12 +97,7 @@ export default function PolitiqueConfidentialite() {
                   <td>{row.traitement}</td>
                   <td>{row.pays}</td>
                   <td>
-                    <Link
-                      href={row.lien}
-                      className="text-blue-600 underline"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <Link href={row.lien} className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">
                       {richTextParser(row.lien)}
                     </Link>
                   </td>

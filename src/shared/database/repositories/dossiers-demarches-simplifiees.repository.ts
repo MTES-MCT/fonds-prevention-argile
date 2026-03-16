@@ -25,22 +25,14 @@ export class DossierDemarchesSimplifieesRepository extends BaseRepository<Dossie
    * Récupère tous les dossiers
    */
   async findAll(): Promise<DossierDemarchesSimplifiees[]> {
-    return await db
-      .select()
-      .from(dossiersDemarchesSimplifiees)
-      .orderBy(desc(dossiersDemarchesSimplifiees.createdAt));
+    return await db.select().from(dossiersDemarchesSimplifiees).orderBy(desc(dossiersDemarchesSimplifiees.createdAt));
   }
 
   /**
    * Crée un nouveau dossier
    */
-  async create(
-    data: NewDossierDemarchesSimplifiees
-  ): Promise<DossierDemarchesSimplifiees> {
-    const result = await db
-      .insert(dossiersDemarchesSimplifiees)
-      .values(data)
-      .returning();
+  async create(data: NewDossierDemarchesSimplifiees): Promise<DossierDemarchesSimplifiees> {
+    const result = await db.insert(dossiersDemarchesSimplifiees).values(data).returning();
 
     return result[0];
   }
@@ -48,10 +40,7 @@ export class DossierDemarchesSimplifieesRepository extends BaseRepository<Dossie
   /**
    * Met à jour un dossier
    */
-  async update(
-    id: string,
-    data: Partial<NewDossierDemarchesSimplifiees>
-  ): Promise<DossierDemarchesSimplifiees | null> {
+  async update(id: string, data: Partial<NewDossierDemarchesSimplifiees>): Promise<DossierDemarchesSimplifiees | null> {
     const result = await db
       .update(dossiersDemarchesSimplifiees)
       .set(data)
@@ -90,9 +79,7 @@ export class DossierDemarchesSimplifieesRepository extends BaseRepository<Dossie
    * Compte le nombre de dossiers
    */
   async count(where?: SQL): Promise<number> {
-    const query = db
-      .select({ count: sql<number>`cast(count(*) as integer)` })
-      .from(dossiersDemarchesSimplifiees);
+    const query = db.select({ count: sql<number>`cast(count(*) as integer)` }).from(dossiersDemarchesSimplifiees);
 
     if (where) {
       query.where(where);
@@ -105,9 +92,7 @@ export class DossierDemarchesSimplifieesRepository extends BaseRepository<Dossie
   /**
    * Trouve les dossiers d'un parcours
    */
-  async findByParcoursId(
-    parcoursId: string
-  ): Promise<DossierDemarchesSimplifiees[]> {
+  async findByParcoursId(parcoursId: string): Promise<DossierDemarchesSimplifiees[]> {
     return await db
       .select()
       .from(dossiersDemarchesSimplifiees)
@@ -119,9 +104,7 @@ export class DossierDemarchesSimplifieesRepository extends BaseRepository<Dossie
    * Récupère les dates de soumission des dossiers par step pour un parcours
    * Retourne un Map avec step -> submittedAt
    */
-  async getSubmittedDatesByStep(
-    parcoursId: string
-  ): Promise<Map<string, Date>> {
+  async getSubmittedDatesByStep(parcoursId: string): Promise<Map<string, Date>> {
     const dossiers = await db
       .select({
         step: dossiersDemarchesSimplifiees.step,
@@ -143,5 +126,4 @@ export class DossierDemarchesSimplifieesRepository extends BaseRepository<Dossie
 }
 
 // Export d'une instance singleton
-export const dossierDemarchesSimplifieesRepository =
-  new DossierDemarchesSimplifieesRepository();
+export const dossierDemarchesSimplifieesRepository = new DossierDemarchesSimplifieesRepository();

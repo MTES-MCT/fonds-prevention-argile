@@ -166,7 +166,7 @@ export async function fetchMatomoFunnel(
 export async function fetchMatomoEventsByDepartment(
   codeDepartement: string,
   dimensionId: number,
-  options?: { period?: string; date?: string },
+  options?: { period?: string; date?: string }
 ): Promise<Map<string, number>> {
   const config = getMatomoConfig();
   const segment = `dimension${dimensionId}==${codeDepartement}`;
@@ -183,7 +183,7 @@ export async function fetchMatomoEventsByDepartment(
       segment,
       flat: "1",
     },
-    config.apiUrl,
+    config.apiUrl
   );
 
   const eventCounts = new Map<string, number>();

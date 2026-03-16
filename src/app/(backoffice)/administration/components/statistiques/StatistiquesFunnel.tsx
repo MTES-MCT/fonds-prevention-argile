@@ -30,10 +30,7 @@ export default function StatistiquesFunnel({ funnel }: StatistiquesFunnelProps) 
       <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
         <StatCard label="Visiteurs initiaux" number={funnel.visiteursInitiaux.toLocaleString("fr-FR")} />
         <StatCard label="Conversions éligibles" number={funnel.conversionsEligibles.toLocaleString("fr-FR")} />
-        <StatCard
-          label="Taux vers éligibles"
-          number={`${funnel.tauxConversionEligibles.toLocaleString("fr-FR")} %`}
-        />
+        <StatCard label="Taux vers éligibles" number={`${funnel.tauxConversionEligibles.toLocaleString("fr-FR")} %`} />
         <StatCard
           label="Taux vers non éligibles"
           number={`${funnel.tauxConversionNonEligibles.toLocaleString("fr-FR")} %`}

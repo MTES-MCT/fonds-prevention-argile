@@ -162,7 +162,7 @@ export function formatDaysAgo(dateString: string | null | undefined): string {
     // Vérifie si la date est valide
     if (isNaN(date.getTime())) return DEFAULT_VALUE;
 
-    const now = new Date(); 
+    const now = new Date();
     const days = daysBetween(date, now);
     const formattedDate = formatDate(dateString);
 

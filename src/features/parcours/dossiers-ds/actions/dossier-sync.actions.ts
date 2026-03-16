@@ -1,14 +1,8 @@
 "use server";
 
 import { getSession } from "@/features/auth/server";
-import {
-  syncDossierStatus,
-  syncAllDossiers,
-} from "../services/ds-sync.service";
-import {
-  getDossierByStep,
-  getAllDossiersByParcours,
-} from "../services/dossier-ds.service";
+import { syncDossierStatus, syncAllDossiers } from "../services/ds-sync.service";
+import { getDossierByStep, getAllDossiersByParcours } from "../services/dossier-ds.service";
 import { DSStatus } from "../domain/value-objects/ds-status";
 import type { Step } from "../../core/domain/value-objects/step";
 import type { ActionResult } from "@/shared/types";
@@ -27,9 +21,7 @@ interface SyncResult {
 /**
  * Synchronise le statut du dossier pour une étape donnée
  */
-export async function syncUserDossierStatus(
-  step: Step
-): Promise<ActionResult<SyncResult>> {
+export async function syncUserDossierStatus(step: Step): Promise<ActionResult<SyncResult>> {
   try {
     const session = await getSession();
     if (!session?.userId) {
@@ -73,11 +65,7 @@ export async function syncUserDossierStatus(
     }
 
     // Synchroniser
-    const syncResult = await syncDossierStatus(
-      parcours.parcours.id,
-      step,
-      dossier.dsNumber
-    );
+    const syncResult = await syncDossierStatus(parcours.parcours.id, step, dossier.dsNumber);
 
     return syncResult;
   } catch (error) {
@@ -92,9 +80,7 @@ export async function syncUserDossierStatus(
 /**
  * Synchronise tous les dossiers de l'utilisateur
  */
-export async function syncAllUserDossiers(): Promise<
-  ActionResult<{ totalUpdated: number }>
-> {
+export async function syncAllUserDossiers(): Promise<ActionResult<{ totalUpdated: number }>> {
   try {
     const session = await getSession();
     if (!session?.userId) {

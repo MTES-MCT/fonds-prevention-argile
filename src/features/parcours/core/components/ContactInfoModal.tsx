@@ -87,11 +87,7 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
   };
 
   return (
-    <dialog
-      ref={dialogRef}
-      id="modal-contact-info"
-      className="fr-modal"
-      aria-labelledby="modal-contact-info-title">
+    <dialog ref={dialogRef} id="modal-contact-info" className="fr-modal" aria-labelledby="modal-contact-info-title">
       <div className="fr-container fr-container--fluid fr-container-md">
         <div className="fr-grid-row fr-grid-row--center">
           <div className="fr-col-12 fr-col-md-10 fr-col-lg-8">
@@ -118,8 +114,8 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
                 </h2>
 
                 <p>
-                  Ces informations sont confidentielles et destinées à votre conseiller local mandaté par l&apos;État. Il
-                  pourra vous contacter pour faciliter la complétion de votre dossier.
+                  Ces informations sont confidentielles et destinées à votre conseiller local mandaté par l&apos;État.
+                  Il pourra vous contacter pour faciliter la complétion de votre dossier.
                 </p>
 
                 <div className="fr-form-group">
@@ -161,7 +157,11 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
                     </button>
                   </li>
                   <li>
-                    <button type="button" className="fr-btn fr-btn--secondary" onClick={onClose} disabled={isSubmitting}>
+                    <button
+                      type="button"
+                      className="fr-btn fr-btn--secondary"
+                      onClick={onClose}
+                      disabled={isSubmitting}>
                       Ignorer
                     </button>
                   </li>

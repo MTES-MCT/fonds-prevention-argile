@@ -24,10 +24,8 @@ export function EmailLayout({ children, preheader }: EmailLayoutProps) {
           margin: 0,
           padding: 0,
           backgroundColor: "#f6f6f6",
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        }}
-      >
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        }}>
         {/* Preheader (texte visible dans la preview de l'email) */}
         {preheader && (
           <div
@@ -38,8 +36,7 @@ export function EmailLayout({ children, preheader }: EmailLayoutProps) {
               fontSize: "1px",
               lineHeight: "1px",
               color: "#f6f6f6",
-            }}
-          >
+            }}>
             {preheader}
           </div>
         )}
@@ -53,14 +50,12 @@ export function EmailLayout({ children, preheader }: EmailLayoutProps) {
             width: "100%",
             margin: 0,
             padding: 0,
-          }}
-        >
+          }}>
           <tr>
             <td
               style={{
                 padding: "40px 20px",
-              }}
-            >
+              }}>
               {/* Carte centrale */}
               <table
                 role="presentation"
@@ -72,24 +67,21 @@ export function EmailLayout({ children, preheader }: EmailLayoutProps) {
                   backgroundColor: "#ffffff",
                   borderRadius: "8px",
                   boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                }}
-              >
+                }}>
                 {/* Header */}
                 <tr>
                   <td
                     style={{
                       padding: "32px 40px",
                       borderBottom: "3px solid #000091",
-                    }}
-                  >
+                    }}>
                     <h1
                       style={{
                         margin: 0,
                         fontSize: "24px",
                         fontWeight: 700,
                         color: "#000091",
-                      }}
-                    >
+                      }}>
                       Fonds prévention argile
                     </h1>
                   </td>
@@ -100,8 +92,7 @@ export function EmailLayout({ children, preheader }: EmailLayoutProps) {
                   <td
                     style={{
                       padding: "40px",
-                    }}
-                  >
+                    }}>
                     {children}
                   </td>
                 </tr>
@@ -115,31 +106,26 @@ export function EmailLayout({ children, preheader }: EmailLayoutProps) {
                       backgroundColor: "#f6f6f6",
                       borderBottomLeftRadius: "8px",
                       borderBottomRightRadius: "8px",
-                    }}
-                  >
+                    }}>
                     <p
                       style={{
                         margin: 0,
                         fontSize: "12px",
                         color: "#666666",
                         lineHeight: "1.5",
-                      }}
-                    >
-                      Ceci est un message automatique, merci de ne pas y
-                      répondre.
+                      }}>
+                      Ceci est un message automatique, merci de ne pas y répondre.
                     </p>
                     <p
                       style={{
                         margin: "8px 0 0 0",
                         fontSize: "12px",
                         color: "#666666",
-                      }}
-                    >
+                      }}>
                       Pour toute question :{" "}
                       <a
                         href="mailto:contact@fonds-prevention-argile.beta.gouv.fr"
-                        style={{ color: "#000091", textDecoration: "none" }}
-                      >
+                        style={{ color: "#000091", textDecoration: "none" }}>
                         contact@fonds-prevention-argile.beta.gouv.fr
                       </a>
                     </p>
@@ -168,8 +154,7 @@ export const EmailComponents = {
           style={{
             borderRadius: "4px",
             backgroundColor: "#000091",
-          }}
-        >
+          }}>
           <a
             href={href}
             target="_blank"
@@ -181,8 +166,7 @@ export const EmailComponents = {
               textDecoration: "none",
               fontWeight: 600,
               fontSize: "16px",
-            }}
-          >
+            }}>
             {children}
           </a>
         </td>
@@ -200,8 +184,7 @@ export const EmailComponents = {
         fontSize: "16px",
         lineHeight: "1.6",
         color: "#333333",
-      }}
-    >
+      }}>
       {children}
     </p>
   ),
@@ -216,8 +199,7 @@ export const EmailComponents = {
         fontSize: "20px",
         fontWeight: 600,
         color: "#000091",
-      }}
-    >
+      }}>
       {children}
     </h2>
   ),
@@ -225,13 +207,7 @@ export const EmailComponents = {
   /**
    * Alerte / Callout
    */
-  Alert: ({
-    children,
-    type = "info",
-  }: {
-    children: React.ReactNode;
-    type?: "info" | "warning" | "success";
-  }) => {
+  Alert: ({ children, type = "info" }: { children: React.ReactNode; type?: "info" | "warning" | "success" }) => {
     const colors = {
       info: { bg: "#e8edff", border: "#000091" },
       warning: { bg: "#fff4e8", border: "#ff9940" },
@@ -246,16 +222,14 @@ export const EmailComponents = {
           borderLeft: `4px solid ${colors[type].border}`,
           borderRadius: "4px",
           margin: "16px 0",
-        }}
-      >
+        }}>
         <p
           style={{
             margin: 0,
             fontSize: "14px",
             lineHeight: "1.5",
             color: "#333333",
-          }}
-        >
+          }}>
           {children}
         </p>
       </div>

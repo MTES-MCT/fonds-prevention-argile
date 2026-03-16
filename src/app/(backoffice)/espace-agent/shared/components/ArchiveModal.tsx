@@ -49,7 +49,7 @@ export function ArchiveModal({
   const defaultDescription =
     entityLabel === "prospect"
       ? 'Le prospect passera en statut "Archivé". Vous pourrez le désarchiver à tout moment depuis la liste des prospects archivés.'
-      : 'Le dossier passera en statut "Archivé". Vous pourrez toujours le mettre à jour tant qu\'il n\'est pas transféré à l\'AMO ou supprimé par le demandeur.';
+      : "Le dossier passera en statut \"Archivé\". Vous pourrez toujours le mettre à jour tant qu'il n'est pas transféré à l'AMO ou supprimé par le demandeur.";
 
   const displayDescription = description ?? defaultDescription;
 
@@ -162,11 +162,7 @@ export function ArchiveModal({
               <div className="fr-modal__footer">
                 <ul className="fr-btns-group fr-btns-group--right fr-btns-group--inline-reverse fr-btns-group--inline-lg">
                   <li>
-                    <button
-                      type="button"
-                      className="fr-btn"
-                      disabled={!reason || isSubmitting}
-                      onClick={handleSubmit}>
+                    <button type="button" className="fr-btn" disabled={!reason || isSubmitting} onClick={handleSubmit}>
                       {isSubmitting ? "Archivage..." : "Archiver"}
                     </button>
                   </li>

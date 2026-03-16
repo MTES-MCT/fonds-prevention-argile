@@ -20,11 +20,7 @@ const MatomoContent = () => {
     // Ne pas initialiser Matomo en dehors de la production
     if (!isProduction()) return;
 
-    if (
-      clientEnv.NEXT_PUBLIC_MATOMO_URL &&
-      clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID &&
-      !initialised
-    ) {
+    if (clientEnv.NEXT_PUBLIC_MATOMO_URL && clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID && !initialised) {
       init({
         siteId: clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID,
         url: clientEnv.NEXT_PUBLIC_MATOMO_URL,
@@ -47,9 +43,7 @@ const MatomoContent = () => {
     if (!isProduction()) return;
     if (!pathname) return;
 
-    const url = decodeURIComponent(
-      pathname + (searchParamsString ? "?" + searchParamsString : "")
-    );
+    const url = decodeURIComponent(pathname + (searchParamsString ? "?" + searchParamsString : ""));
 
     push(["setCustomUrl", url]);
     push(["trackPageView"]);

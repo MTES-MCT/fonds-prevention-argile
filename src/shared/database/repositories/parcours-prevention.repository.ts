@@ -259,7 +259,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   async updateSituationParticulier(
     id: string,
     situation: SituationParticulier,
-    archiveReason?: string,
+    archiveReason?: string
   ): Promise<ParcoursPrevention | null> {
     const updateData: Partial<NewParcoursPrevention> = {
       situationParticulier: situation,
@@ -285,7 +285,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   async updateRGADataAgent(
     parcoursId: string,
     rgaData: RGASimulationData,
-    agentId: string,
+    agentId: string
   ): Promise<ParcoursPrevention | null> {
     return await this.update(parcoursId, {
       rgaSimulationDataAgent: rgaData,
@@ -352,10 +352,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       })
       .from(parcoursPrevention)
       .innerJoin(users, eq(parcoursPrevention.userId, users.id))
-      .leftJoin(
-        parcoursAmoValidations,
-        eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId)
-      )
+      .leftJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
       .where(
         and(
           // Pas de validation AMO (parcours sans AMO)
@@ -371,9 +368,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       // Filtrage par ancienneté
       if (filters?.maxDaysSinceAction !== undefined) {
         const now = new Date();
-        const daysSince = Math.floor(
-          (now.getTime() - r.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
-        );
+        const daysSince = Math.floor((now.getTime() - r.updatedAt.getTime()) / (1000 * 60 * 60 * 24));
         if (daysSince > filters.maxDaysSinceAction) {
           return false;
         }

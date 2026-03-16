@@ -10,9 +10,7 @@ import { DS_FIELDS_ELIGIBILITE } from "../domain/value-objects/ds-fields-eligibi
  * Récupère les champs par section
  */
 export function getFieldsBySection(section: DSSection): DSField[] {
-  return Object.values(DS_FIELDS_ELIGIBILITE).filter(
-    (field) => field.section === section
-  );
+  return Object.values(DS_FIELDS_ELIGIBILITE).filter((field) => field.section === section);
 }
 
 /**
@@ -26,12 +24,7 @@ export function getFieldIdsBySection(section: DSSection): string[] {
  * Récupère un mapping simple ID -> Label
  */
 export function getFieldLabelsMap(): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(DS_FIELDS_ELIGIBILITE).map(([id, field]) => [
-      id,
-      field.label,
-    ])
-  );
+  return Object.fromEntries(Object.entries(DS_FIELDS_ELIGIBILITE).map(([id, field]) => [id, field.label]));
 }
 
 /**
@@ -51,22 +44,15 @@ export function getSectionsWithFields(): Record<string, string[]> {
  * Récupère uniquement les champs mappables depuis RGA
  */
 export function getMappableFields(): DSField[] {
-  return Object.values(DS_FIELDS_ELIGIBILITE).filter(
-    (field) => field.rgaPath !== undefined
-  );
+  return Object.values(DS_FIELDS_ELIGIBILITE).filter((field) => field.rgaPath !== undefined);
 }
 
 /**
  * Helper pour obtenir la valeur d'un chemin dans un objet
  * Ex: getValueByPath({a: {b: 1}}, "a.b") => 1
  */
-export function getValueByPath(
-  obj: Record<string, unknown>,
-  path: string
-): unknown {
+export function getValueByPath(obj: Record<string, unknown>, path: string): unknown {
   return path.split(".").reduce((current: unknown, key: string) => {
-    return current && typeof current === "object"
-      ? (current as Record<string, unknown>)[key]
-      : undefined;
+    return current && typeof current === "object" ? (current as Record<string, unknown>)[key] : undefined;
   }, obj);
 }

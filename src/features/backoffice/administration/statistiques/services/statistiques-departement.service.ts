@@ -3,8 +3,15 @@ import { db } from "@/shared/database/client";
 import { parcoursPrevention, prospectQualifications, parcoursAmoValidations } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step, STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
-import { getDepartementName, normalizeCodeDepartement, toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
-import { RAISONS_INELIGIBILITE, QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
+import {
+  getDepartementName,
+  normalizeCodeDepartement,
+  toOfficialCodeDepartement,
+} from "@/shared/constants/departements.constants";
+import {
+  RAISONS_INELIGIBILITE,
+  QualificationDecision,
+} from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { MATOMO_EVENTS } from "@/shared/constants";
 import { getClientEnv } from "@/shared/config/env.config";
 import { fetchMatomoEventsByDepartment } from "../adapters/matomo-api.adapter";
@@ -84,8 +91,8 @@ export async function getStatistiquesDepartement(codeDepartement: string): Promi
   // car ils viennent du BAN adapter. On reconvertit depuis le format normalisé.
   const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
 
-  const [matomoEvents, dossiersParEtape, raisonsIneligibilite, zonesDynamiques, nombreComptesCreés] =
-    await Promise.all([
+  const [matomoEvents, dossiersParEtape, raisonsIneligibilite, zonesDynamiques, nombreComptesCreés] = await Promise.all(
+    [
       // Matomo : events par département (graceful fallback si indisponible)
       dimensionId
         ? fetchMatomoEventsByDepartment(codeDeptMatomo, dimensionId).catch((err) => {
@@ -97,7 +104,8 @@ export async function getStatistiquesDepartement(codeDepartement: string): Promi
       getRaisonsIneligibilite(codeDepartement),
       getZonesDynamiques(codeDepartement),
       getNombreComptesCreés(codeDepartement),
-    ]);
+    ]
+  );
 
   const simulationsCommencees = matomoEvents.get(MATOMO_EVENTS.SIMULATEUR_STEP_ADRESSE) ?? 0;
   const simulationsTerminees =
@@ -133,11 +141,11 @@ async function getDossiersParEtape(codeDept: string): Promise<DossierParEtape[]>
           and(
             eq(parcoursPrevention.currentStep, step),
             isNotNull(parcoursPrevention.rgaSimulationData),
-            whereDepartement(codeDept),
-          ),
+            whereDepartement(codeDept)
+          )
         );
       return { etape: step, label: STEP_LABELS[step], count: result[0]?.count ?? 0 };
-    }),
+    })
   );
   return results;
 }
@@ -156,10 +164,7 @@ async function getRaisonsIneligibilite(codeDept: string): Promise<RaisonIneligib
     .from(parcoursAmoValidations)
     .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
     .where(
-      and(
-        eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE),
-        whereDepartement(codeDept),
-      ),
+      and(eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE), whereDepartement(codeDept))
     );
 
   // Flatten et comptage des raisons (les deux sources)
@@ -229,8 +234,8 @@ async function getNombreComptesCreés(codeDept: string): Promise<number> {
       and(
         isNotNull(parcoursPrevention.userId),
         isNotNull(parcoursPrevention.rgaSimulationData),
-        whereDepartement(codeDept),
-      ),
+        whereDepartement(codeDept)
+      )
     );
   return result[0]?.count ?? 0;
 }

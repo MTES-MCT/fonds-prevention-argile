@@ -27,12 +27,7 @@ export default function CommentCaMarcheSection() {
                   </div>
                   <div className="fr-tile__header">
                     <div className="fr-tile__pictogram">
-                      <Image
-                        alt={step.imageAlt}
-                        src={step.imageSrc}
-                        height={64}
-                        width={64}
-                      />
+                      <Image alt={step.imageAlt} src={step.imageSrc} height={64} width={64} />
                     </div>
                   </div>
                 </div>

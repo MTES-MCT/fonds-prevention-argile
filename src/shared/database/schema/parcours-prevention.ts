@@ -45,10 +45,9 @@ export const parcoursPrevention = pgTable("parcours_prevention", {
   rgaSimulationAgentEditedAt: timestamp("rga_simulation_agent_edited_at", {
     mode: "date",
   }),
-  rgaSimulationAgentEditedBy: uuid("rga_simulation_agent_edited_by").references(
-    () => agents.id,
-    { onDelete: "set null" },
-  ),
+  rgaSimulationAgentEditedBy: uuid("rga_simulation_agent_edited_by").references(() => agents.id, {
+    onDelete: "set null",
+  }),
 
   // Archivage
   archivedAt: timestamp("archived_at", { mode: "date" }),

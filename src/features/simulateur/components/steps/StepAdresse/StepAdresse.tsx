@@ -104,9 +104,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   const initialRnbId = asString(initialValue?.rnb);
 
   // Code EPCI récupéré via API Geo
-  const [codeEpci, setCodeEpci] = useState<string | null>(
-    asString(initialValue?.epci) || null,
-  );
+  const [codeEpci, setCodeEpci] = useState<string | null>(asString(initialValue?.epci) || null);
 
   // Bâtiment sélectionné sur la carte (après clic sur point bleu)
   // En mode édition, on construit directement le buildingData depuis la simulation existante (pas d'appel BDNB)
@@ -130,10 +128,9 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
 
   // Données du formulaire (potentiellement éditées par l'utilisateur)
   const [formData, setFormData] = useState<BuildingFormData>({
-    anneeConstruction: isAddressLocked && initialValue?.annee_de_construction
-      ? Number(initialValue.annee_de_construction) : null,
-    nombreNiveaux: isAddressLocked && initialValue?.niveaux != null
-      ? Number(initialValue.niveaux) : null,
+    anneeConstruction:
+      isAddressLocked && initialValue?.annee_de_construction ? Number(initialValue.annee_de_construction) : null,
+    nombreNiveaux: isAddressLocked && initialValue?.niveaux != null ? Number(initialValue.niveaux) : null,
   });
 
   // Debounce de l'input pour éviter trop d'appels API

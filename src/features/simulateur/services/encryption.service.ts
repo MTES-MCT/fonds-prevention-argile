@@ -59,11 +59,7 @@ export function encryptData(data: string): string {
     const authTag = cipher.getAuthTag();
 
     // Format : iv:authTag:encrypted
-    const result = [
-      iv.toString("hex"),
-      authTag.toString("hex"),
-      encrypted,
-    ].join(":");
+    const result = [iv.toString("hex"), authTag.toString("hex"), encrypted].join(":");
 
     return result;
   } catch (error) {
@@ -87,9 +83,7 @@ export function decryptData(encrypted: string): string {
   const parts = encrypted.split(":");
 
   if (parts.length !== 3) {
-    throw new Error(
-      'Invalid encrypted format, expected "iv:authTag:encrypted"'
-    );
+    throw new Error('Invalid encrypted format, expected "iv:authTag:encrypted"');
   }
 
   const [ivHex, authTagHex, encryptedData] = parts;
@@ -102,15 +96,11 @@ export function decryptData(encrypted: string): string {
 
     // Validation des tailles
     if (iv.length !== IV_LENGTH) {
-      throw new Error(
-        `Invalid IV length: expected ${IV_LENGTH}, got ${iv.length}`
-      );
+      throw new Error(`Invalid IV length: expected ${IV_LENGTH}, got ${iv.length}`);
     }
 
     if (authTag.length !== AUTH_TAG_LENGTH) {
-      throw new Error(
-        `Invalid auth tag length: expected ${AUTH_TAG_LENGTH}, got ${authTag.length}`
-      );
+      throw new Error(`Invalid auth tag length: expected ${AUTH_TAG_LENGTH}, got ${authTag.length}`);
     }
 
     const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
@@ -123,13 +113,8 @@ export function decryptData(encrypted: string): string {
   } catch (error) {
     console.error("[Encryption Service] Decryption failed:", error);
 
-    if (
-      error instanceof Error &&
-      error.message.includes("Unsupported state or unable to authenticate data")
-    ) {
-      throw new Error(
-        "Authentication failed: data may have been tampered with"
-      );
+    if (error instanceof Error && error.message.includes("Unsupported state or unable to authenticate data")) {
+      throw new Error("Authentication failed: data may have been tampered with");
     }
 
     if (error instanceof Error && error.message.startsWith("Invalid")) {

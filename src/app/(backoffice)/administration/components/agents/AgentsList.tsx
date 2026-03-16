@@ -128,11 +128,12 @@ export default function AgentsList({
                     )}
 
                     {/* Territoire Allers-Vers */}
-                    {[UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(agent.role as UserRole) && allersVers && (
-                      <div className="text-sm">
-                        <span className="font-medium">Territoire:</span> {allersVers.nom}
-                      </div>
-                    )}
+                    {[UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(agent.role as UserRole) &&
+                      allersVers && (
+                        <div className="text-sm">
+                          <span className="font-medium">Territoire:</span> {allersVers.nom}
+                        </div>
+                      )}
 
                     {/* Départements (pour Administrateur) */}
                     {agent.role === UserRole.ADMINISTRATEUR && (
@@ -142,7 +143,10 @@ export default function AgentsList({
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {departements.slice(0, 3).map((code) => (
-                              <span key={code} className="fr-badge fr-badge--sm fr-badge--no-icon" title={DEPARTEMENTS[code]}>
+                              <span
+                                key={code}
+                                className="fr-badge fr-badge--sm fr-badge--no-icon"
+                                title={DEPARTEMENTS[code]}>
                                 {code}
                               </span>
                             ))}
@@ -167,9 +171,7 @@ export default function AgentsList({
                     )}
 
                     {/* Analyste : aucun périmètre spécifique */}
-                    {agent.role === UserRole.ANALYSTE && (
-                      <span className="text-sm text-gray-500">—</span>
-                    )}
+                    {agent.role === UserRole.ANALYSTE && <span className="text-sm text-gray-500">—</span>}
                   </div>
                 </td>
 

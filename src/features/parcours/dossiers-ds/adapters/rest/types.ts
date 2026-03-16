@@ -2,7 +2,6 @@ export interface PrefillData {
   [key: string]: string | number | boolean | (string | number)[] | null;
 }
 
-
 export interface CreateDossierRequest {
   [champId: string]: string | number | boolean | null;
 }

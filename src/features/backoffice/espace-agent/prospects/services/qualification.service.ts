@@ -45,15 +45,12 @@ export class QualificationService {
 
     // 3. Mettre à jour situation_particulier selon la décision
     if (decision === QualificationDecision.ELIGIBLE) {
-      await parcoursPreventionRepository.updateSituationParticulier(
-        parcoursId,
-        SituationParticulier.ELIGIBLE,
-      );
+      await parcoursPreventionRepository.updateSituationParticulier(parcoursId, SituationParticulier.ELIGIBLE);
     } else if (decision === QualificationDecision.NON_ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(
         parcoursId,
         SituationParticulier.ARCHIVE,
-        "Non éligible au dispositif",
+        "Non éligible au dispositif"
       );
     }
     // "a_qualifier" → pas de changement de situation_particulier

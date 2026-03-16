@@ -186,7 +186,9 @@ export default function AgentsPanel() {
             <StatCard label="AMO" number={agents.filter((a) => a.agent.role === "amo").length.toString()} />
             <StatCard
               label="Allers-Vers"
-              number={agents.filter((a) => a.agent.role === "allers_vers" || a.agent.role === "amo_et_allers_vers").length.toString()}
+              number={agents
+                .filter((a) => a.agent.role === "allers_vers" || a.agent.role === "amo_et_allers_vers")
+                .length.toString()}
             />
             <StatCard
               label="En attente de connexion"

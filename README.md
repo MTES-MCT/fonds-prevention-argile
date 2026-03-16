@@ -49,20 +49,20 @@ L'application sera disponible sur [http://localhost:3000](http://localhost:3000)
 
 ### Scripts disponibles
 
-| Commande | Description |
-|----------|-------------|
-| `pnpm start:dev` | Lance le serveur de développement |
-| `pnpm build` | Construit l'application pour la production |
-| `pnpm start` | Démarre le serveur de production |
-| `pnpm lint` | Vérifie le code avec ESLint |
-| `pnpm typecheck` | Vérifie les types TypeScript |
-| `pnpm test` | Lance les tests unitaires |
-| `pnpm test:watch` | Lance les tests en mode watch |
-| `pnpm test:coverage` | Lance les tests avec couverture |
-| `pnpm format` | Formate le code avec Prettier |
-| `pnpm validate` | Lance toutes les vérifications (types, lint, tests) |
-| `pnpm clean` | Nettoie le cache Next.js |
-| `pnpm fresh` | Réinstallation complète des dépendances |
+| Commande             | Description                                         |
+| -------------------- | --------------------------------------------------- |
+| `pnpm start:dev`     | Lance le serveur de développement                   |
+| `pnpm build`         | Construit l'application pour la production          |
+| `pnpm start`         | Démarre le serveur de production                    |
+| `pnpm lint`          | Vérifie le code avec ESLint                         |
+| `pnpm typecheck`     | Vérifie les types TypeScript                        |
+| `pnpm test`          | Lance les tests unitaires                           |
+| `pnpm test:watch`    | Lance les tests en mode watch                       |
+| `pnpm test:coverage` | Lance les tests avec couverture                     |
+| `pnpm format`        | Formate le code avec Prettier                       |
+| `pnpm validate`      | Lance toutes les vérifications (types, lint, tests) |
+| `pnpm clean`         | Nettoie le cache Next.js                            |
+| `pnpm fresh`         | Réinstallation complète des dépendances             |
 
 ## Tests
 
@@ -329,19 +329,19 @@ Ce projet applique des mesures de protection contre les attaques de type supply 
 
 ### Configuration `.npmrc`
 
-| Option | Valeur | Protection |
-|--------|--------|------------|
-| `ignore-scripts` | `true` | Bloque l'exécution automatique des scripts `postinstall`, `preinstall`, etc. Empêche l'exécution de code malveillant lors de l'installation |
-| `auto-install-peers` | `false` | Désactive l'installation automatique des peer dependencies, évitant l'ajout silencieux de packages non audités |
+| Option               | Valeur  | Protection                                                                                                                                  |
+| -------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ignore-scripts`     | `true`  | Bloque l'exécution automatique des scripts `postinstall`, `preinstall`, etc. Empêche l'exécution de code malveillant lors de l'installation |
+| `auto-install-peers` | `false` | Désactive l'installation automatique des peer dependencies, évitant l'ajout silencieux de packages non audités                              |
 
 ### Configuration `pnpm-workspace.yaml`
 
-| Option | Valeur | Protection |
-|--------|--------|------------|
-| `savePrefix` | `~` | Limite les mises à jour automatiques aux versions patch uniquement (ex: `5.1.x`). Évite les breaking changes inattendus |
-| `minimumReleaseAge` | `10080` | Refuse les packages publiés depuis moins de 7 jours. Laisse le temps à la communauté de détecter des versions compromises |
-| `trustPolicy` | `no-downgrade` | Empêche la republication d'une version existante avec un contenu différent (attaque par remplacement) |
-| `onlyBuiltDependencies` | whitelist | Seuls les packages listés peuvent exécuter des scripts de build natifs. Tous les autres sont bloqués |
+| Option                  | Valeur         | Protection                                                                                                                |
+| ----------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `savePrefix`            | `~`            | Limite les mises à jour automatiques aux versions patch uniquement (ex: `5.1.x`). Évite les breaking changes inattendus   |
+| `minimumReleaseAge`     | `10080`        | Refuse les packages publiés depuis moins de 7 jours. Laisse le temps à la communauté de détecter des versions compromises |
+| `trustPolicy`           | `no-downgrade` | Empêche la republication d'une version existante avec un contenu différent (attaque par remplacement)                     |
+| `onlyBuiltDependencies` | whitelist      | Seuls les packages listés peuvent exécuter des scripts de build natifs. Tous les autres sont bloqués                      |
 
 ### Packages autorisés pour les builds natifs
 

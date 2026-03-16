@@ -3,8 +3,7 @@ import { isLocal } from "@/shared/config/env.config";
 export const emailConfig = {
   apiKey: process.env.BREVO_API_KEY || "",
   from: {
-    email:
-      process.env.EMAIL_FROM || "noreply@fonds-prevention-argile.beta.gouv.fr",
+    email: process.env.EMAIL_FROM || "noreply@fonds-prevention-argile.beta.gouv.fr",
     name: "Fonds prévention argile",
   },
   replyTo: {

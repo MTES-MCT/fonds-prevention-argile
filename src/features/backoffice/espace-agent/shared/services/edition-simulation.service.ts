@@ -41,9 +41,7 @@ export async function getDossierSimulationData(id: string): Promise<ActionResult
     // Vérifier les droits d'accès agent
     if (!isAdmin) {
       const canAccess =
-        user.role === UserRole.AMO ||
-        user.role === UserRole.ALLERS_VERS ||
-        user.role === UserRole.AMO_ET_ALLERS_VERS;
+        user.role === UserRole.AMO || user.role === UserRole.ALLERS_VERS || user.role === UserRole.AMO_ET_ALLERS_VERS;
 
       if (!canAccess) {
         return { success: false, error: "Accès réservé aux agents" };

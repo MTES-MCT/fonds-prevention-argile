@@ -25,7 +25,9 @@
     "**/*.d.ts",
     ".next/types/**/*.ts",
     "src/features/parcours/core/domain/types",
-    "src/shared/types/**/*.d.ts"
-, "src/shared/constants/c", "src/app/(backoffice)/administration/components/agents/AgentDeleteModal.tsx"  ],
+    "src/shared/types/**/*.d.ts",
+    "src/shared/constants/c",
+    "src/app/(backoffice)/administration/components/agents/AgentDeleteModal.tsx"
+  ],
   "exclude": ["node_modules"]
 }

@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  getCodeDepartementFromCodeInsee,
-  isValidSiret,
-  normalizeCodeInsee,
-  validateEmailsList,
-} from "./amo.utils";
+import { getCodeDepartementFromCodeInsee, isValidSiret, normalizeCodeInsee, validateEmailsList } from "./amo.utils";
 
 describe("amo.utils", () => {
   describe("getCodeDepartementFromCodeInsee", () => {
@@ -85,27 +80,19 @@ describe("amo.utils", () => {
 
     describe("Validation et erreurs", () => {
       it("devrait lancer une erreur si le code INSEE est vide", () => {
-        expect(() => getCodeDepartementFromCodeInsee("")).toThrow(
-          "Code INSEE invalide : doit contenir 5 chiffres"
-        );
+        expect(() => getCodeDepartementFromCodeInsee("")).toThrow("Code INSEE invalide : doit contenir 5 chiffres");
       });
 
       it("devrait lancer une erreur si le code INSEE est null/undefined", () => {
-        expect(() => getCodeDepartementFromCodeInsee(null)).toThrow(
-          "Code INSEE invalide : doit contenir 5 chiffres"
-        );
+        expect(() => getCodeDepartementFromCodeInsee(null)).toThrow("Code INSEE invalide : doit contenir 5 chiffres");
         expect(() => getCodeDepartementFromCodeInsee(undefined)).toThrow(
           "Code INSEE invalide : doit contenir 5 chiffres"
         );
       });
 
       it("devrait lancer une erreur si le code INSEE n'a pas 5 chiffres", () => {
-        expect(() => getCodeDepartementFromCodeInsee("750")).toThrow(
-          "Code INSEE invalide : doit contenir 5 chiffres"
-        );
-        expect(() => getCodeDepartementFromCodeInsee("7501")).toThrow(
-          "Code INSEE invalide : doit contenir 5 chiffres"
-        );
+        expect(() => getCodeDepartementFromCodeInsee("750")).toThrow("Code INSEE invalide : doit contenir 5 chiffres");
+        expect(() => getCodeDepartementFromCodeInsee("7501")).toThrow("Code INSEE invalide : doit contenir 5 chiffres");
         expect(() => getCodeDepartementFromCodeInsee("750012")).toThrow(
           "Code INSEE invalide : doit contenir 5 chiffres"
         );
@@ -211,72 +198,46 @@ describe("amo.utils", () => {
       });
 
       it("devrait valider plusieurs emails séparés par des points-virgules", () => {
-        const result = validateEmailsList(
-          "contact@example.com;info@example.com;support@example.com"
-        );
-        expect(result).toEqual([
-          "contact@example.com",
-          "info@example.com",
-          "support@example.com",
-        ]);
+        const result = validateEmailsList("contact@example.com;info@example.com;support@example.com");
+        expect(result).toEqual(["contact@example.com", "info@example.com", "support@example.com"]);
       });
 
       it("devrait valider des emails avec des domaines complexes", () => {
-        const result = validateEmailsList(
-          "user@sub.example.com;contact@example.co.uk"
-        );
-        expect(result).toEqual([
-          "user@sub.example.com",
-          "contact@example.co.uk",
-        ]);
+        const result = validateEmailsList("user@sub.example.com;contact@example.co.uk");
+        expect(result).toEqual(["user@sub.example.com", "contact@example.co.uk"]);
       });
 
       it("devrait valider des emails avec des chiffres et underscores", () => {
-        const result = validateEmailsList(
-          "user_123@example.com;test.user@example123.com"
-        );
-        expect(result).toEqual([
-          "user_123@example.com",
-          "test.user@example123.com",
-        ]);
+        const result = validateEmailsList("user_123@example.com;test.user@example123.com");
+        expect(result).toEqual(["user_123@example.com", "test.user@example123.com"]);
       });
     });
 
     describe("Trimming et nettoyage", () => {
       it("devrait trimmer les espaces autour des emails", () => {
-        const result = validateEmailsList(
-          " contact@example.com ; info@example.com "
-        );
+        const result = validateEmailsList(" contact@example.com ; info@example.com ");
         expect(result).toEqual(["contact@example.com", "info@example.com"]);
       });
 
       it("devrait trimmer les espaces multiples", () => {
-        const result = validateEmailsList(
-          "  contact@example.com  ;  info@example.com  "
-        );
+        const result = validateEmailsList("  contact@example.com  ;  info@example.com  ");
         expect(result).toEqual(["contact@example.com", "info@example.com"]);
       });
 
       it("devrait gérer les points-virgules multiples", () => {
-        const result = validateEmailsList(
-          "contact@example.com;;info@example.com"
-        );
+        const result = validateEmailsList("contact@example.com;;info@example.com");
         expect(result).toEqual(["contact@example.com", "info@example.com"]);
       });
 
       it("devrait gérer les points-virgules en début et fin", () => {
-        const result = validateEmailsList(
-          ";contact@example.com;info@example.com;"
-        );
+        const result = validateEmailsList(";contact@example.com;info@example.com;");
         expect(result).toEqual(["contact@example.com", "info@example.com"]);
       });
     });
 
     describe("Filtrage des emails invalides", () => {
       it("devrait rejeter les emails sans @", () => {
-        const result = validateEmailsList(
-          "contact@example.com;invalidemailexample.com"
-        );
+        const result = validateEmailsList("contact@example.com;invalidemailexample.com");
         expect(result).toEqual(["contact@example.com"]);
       });
 
@@ -286,28 +247,18 @@ describe("amo.utils", () => {
       });
 
       it("devrait rejeter les emails vides", () => {
-        const result = validateEmailsList(
-          "contact@example.com;;info@example.com"
-        );
+        const result = validateEmailsList("contact@example.com;;info@example.com");
         expect(result).toEqual(["contact@example.com", "info@example.com"]);
       });
 
       it("devrait rejeter les emails avec uniquement des espaces", () => {
-        const result = validateEmailsList(
-          "contact@example.com;   ;info@example.com"
-        );
+        const result = validateEmailsList("contact@example.com;   ;info@example.com");
         expect(result).toEqual(["contact@example.com", "info@example.com"]);
       });
 
       it("devrait filtrer un mix d'emails valides et invalides", () => {
-        const result = validateEmailsList(
-          "valid@example.com;invalid;another@test.com;no-at-sign;final@domain.org"
-        );
-        expect(result).toEqual([
-          "valid@example.com",
-          "another@test.com",
-          "final@domain.org",
-        ]);
+        const result = validateEmailsList("valid@example.com;invalid;another@test.com;no-at-sign;final@domain.org");
+        expect(result).toEqual(["valid@example.com", "another@test.com", "final@domain.org"]);
       });
     });
 
@@ -328,10 +279,7 @@ describe("amo.utils", () => {
       });
 
       it("devrait gérer une longue liste d'emails", () => {
-        const emails = Array.from(
-          { length: 10 },
-          (_, i) => `user${i}@example.com`
-        ).join(";");
+        const emails = Array.from({ length: 10 }, (_, i) => `user${i}@example.com`).join(";");
         const result = validateEmailsList(emails);
         expect(result).toHaveLength(10);
         expect(result[0]).toBe("user0@example.com");

@@ -19,7 +19,12 @@ interface CalloutAmoTodoProps {
   contactInfoVersion?: number;
 }
 
-export default function CalloutAmoTodo({ accompagnementRefuse = false, onSuccess, refresh, contactInfoVersion = 0 }: CalloutAmoTodoProps) {
+export default function CalloutAmoTodo({
+  accompagnementRefuse = false,
+  onSuccess,
+  refresh,
+  contactInfoVersion = 0,
+}: CalloutAmoTodoProps) {
   const { user } = useAuth();
   const { data: rgaData, isLoading: isLoadingRga } = useSimulateurRga();
   const { parcours, isLoading: isLoadingParcours } = useParcours();

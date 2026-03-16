@@ -25,8 +25,7 @@ export default function DepartementSelector({
         id="select-departement"
         value={selectedCode ?? ""}
         onChange={(e) => onChange(e.target.value)}
-        disabled={loading}
-      >
+        disabled={loading}>
         <option value="" disabled>
           Sélectionnez un département
         </option>

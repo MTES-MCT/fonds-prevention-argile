@@ -3,10 +3,7 @@ import { dossierDsRepo } from "@/shared/database";
 import type { Parcours, ParcoursState } from "../domain/entities/parcours";
 import type { ParcoursComplet } from "../domain/types/parcours-query.types";
 import { getNextStep } from "../domain/value-objects/step";
-import {
-  getParcoursPermissions,
-  isParcoursComplete,
-} from "./parcours-permissions.service";
+import { getParcoursPermissions, isParcoursComplete } from "./parcours-permissions.service";
 import type { DossierDS } from "../../dossiers-ds/domain/entities/dossier-ds";
 import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status";
 import { getDossierDsDemandeUrl } from "../../dossiers-ds/utils/ds-url.utils";
@@ -38,9 +35,7 @@ export async function getOrCreateParcours(userId: string): Promise<Parcours> {
 /**
  * Récupère le parcours complet avec dossiers et progression
  */
-export async function getParcoursComplet(
-  userId: string
-): Promise<ParcoursComplet | null> {
+export async function getParcoursComplet(userId: string): Promise<ParcoursComplet | null> {
   const parcours = await parcoursRepo.findByUserId(userId);
 
   if (!parcours) {
@@ -56,7 +51,7 @@ export async function getParcoursComplet(
     demarcheId: d.dsDemarcheId,
     demarcheNom: "", // Pas dans la DB, pourrait être récupéré depuis une config
     demarcheEtape: d.step,
-    demarcheUrl: d.dsNumber ? getDossierDsDemandeUrl(parseInt(d.dsNumber)) : (d.dsUrl || undefined),
+    demarcheUrl: d.dsNumber ? getDossierDsDemandeUrl(parseInt(d.dsNumber)) : d.dsUrl || undefined,
     numeroDs: d.dsNumber ? parseInt(d.dsNumber) : null,
     etatDs: d.dsStatus as DSStatus,
     createdAt: d.createdAt,
@@ -72,9 +67,7 @@ export async function getParcoursComplet(
     status: parcours.currentStatus,
   };
 
-  const prochainEtape = isParcoursComplete(currentState)
-    ? null
-    : getNextStep(parcours.currentStep);
+  const prochainEtape = isParcoursComplete(currentState) ? null : getNextStep(parcours.currentStep);
 
   return {
     parcours: {
@@ -150,9 +143,7 @@ export async function getParcoursStateWithPermissions(userId: string): Promise<{
 /**
  * Récupère le parcours complet avec dossiers
  */
-export async function getFullParcours(
-  userId: string
-): Promise<ParcoursComplet> {
+export async function getFullParcours(userId: string): Promise<ParcoursComplet> {
   const data = await getParcoursComplet(userId);
 
   if (!data) {

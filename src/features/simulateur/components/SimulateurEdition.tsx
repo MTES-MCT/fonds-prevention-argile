@@ -27,7 +27,13 @@ interface SimulateurEditionProps {
  * - Pré-remplit le store avec les données existantes
  * - Démarre directement à l'étape 1 (skip intro)
  */
-export function SimulateurEdition({ nomComplet, initialData, dossierId, redirectAfterSave, redirectAfterSaveList }: SimulateurEditionProps) {
+export function SimulateurEdition({
+  nomComplet,
+  initialData,
+  dossierId,
+  redirectAfterSave,
+  redirectAfterSaveList,
+}: SimulateurEditionProps) {
   const reset = useSimulateurStore((state) => state.reset);
   const start = useSimulateurStore((state) => state.start);
   const setEditMode = useSimulateurStore((state) => state.setEditMode);
@@ -70,7 +76,13 @@ export function SimulateurEdition({ nomComplet, initialData, dossierId, redirect
   const formTitle = `${nomComplet} - Données de simulation d\u2019\u00e9ligibilit\u00e9`;
 
   return (
-    <SimulateurProvider formTitle={formTitle} showHelpLink={false} initialData={initialData} dossierId={dossierId} redirectAfterSave={redirectAfterSave} redirectAfterSaveList={redirectAfterSaveList}>
+    <SimulateurProvider
+      formTitle={formTitle}
+      showHelpLink={false}
+      initialData={initialData}
+      dossierId={dossierId}
+      redirectAfterSave={redirectAfterSave}
+      redirectAfterSaveList={redirectAfterSaveList}>
       <SimulateurFormulaire />
     </SimulateurProvider>
   );

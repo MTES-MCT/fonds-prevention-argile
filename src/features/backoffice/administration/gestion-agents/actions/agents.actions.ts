@@ -210,7 +210,11 @@ export async function updateAgentAction(
     }
 
     // Validation spécifique pour les rôles ALLERS_VERS et AMO_ET_ALLERS_VERS
-    if (data.role && [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(data.role) && data.allersVersId === null) {
+    if (
+      data.role &&
+      [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(data.role) &&
+      data.allersVersId === null
+    ) {
       return {
         success: false,
         error: "Un territoire Allers-Vers doit être sélectionné pour ce rôle",

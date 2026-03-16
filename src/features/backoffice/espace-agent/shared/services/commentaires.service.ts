@@ -1,4 +1,9 @@
-import { parcoursCommentairesRepo, agentsRepo, entreprisesAmoRepo, allersVersRepository } from "@/shared/database/repositories";
+import {
+  parcoursCommentairesRepo,
+  agentsRepo,
+  entreprisesAmoRepo,
+  allersVersRepository,
+} from "@/shared/database/repositories";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
@@ -120,9 +125,7 @@ export class CommentairesService {
       }
 
       // Construire le snapshot auteur
-      const authorName = agent.usualName
-        ? `${agent.givenName} ${agent.usualName}`
-        : agent.givenName;
+      const authorName = agent.usualName ? `${agent.givenName} ${agent.usualName}` : agent.givenName;
 
       let authorStructure: string | null = null;
       let authorStructureType: string | null = null;
@@ -263,11 +266,7 @@ export class CommentairesService {
    * @param agentId - ID de l'agent demandant la suppression
    * @param role - Rôle de l'agent
    */
-  async deleteCommentaire(
-    commentaireId: string,
-    agentId: string,
-    role: UserRole
-  ): Promise<DeleteCommentaireResult> {
+  async deleteCommentaire(commentaireId: string, agentId: string, role: UserRole): Promise<DeleteCommentaireResult> {
     // Vérifier la permission de suppression
     if (!hasPermission(role, BackofficePermission.COMMENTAIRES_DELETE_OWN)) {
       return {

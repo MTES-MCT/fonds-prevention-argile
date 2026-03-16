@@ -8,8 +8,7 @@ export default function FaqAccountSection() {
           "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
       },
       {
-        question:
-          "Quels sont les délais entre la fin des travaux et le paiement ?",
+        question: "Quels sont les délais entre la fin des travaux et le paiement ?",
         answer:
           "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
       },
@@ -19,8 +18,7 @@ export default function FaqAccountSection() {
           "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       },
       {
-        question:
-          "Que faire si les informations de mon habitation sont erronées ?",
+        question: "Que faire si les informations de mon habitation sont erronées ?",
         answer:
           "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       },
@@ -61,8 +59,7 @@ export default function FaqAccountSection() {
                       type="button"
                       className="fr-accordion__btn"
                       aria-expanded="false"
-                      aria-controls={`accordion-id-${index + 1}`}
-                    >
+                      aria-controls={`accordion-id-${index + 1}`}>
                       {faq.question}
                     </button>
                   </h3>

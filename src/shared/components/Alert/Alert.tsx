@@ -35,12 +35,7 @@ export default function Alert({
       <h3 className="fr-alert__title">{title}</h3>
       {description && <p>{description}</p>}
       {closable && (
-        <button
-          title="Masquer le message"
-          onClick={handleClose}
-          type="button"
-          className="fr-btn--close fr-btn"
-        >
+        <button title="Masquer le message" onClick={handleClose} type="button" className="fr-btn--close fr-btn">
           Masquer le message
         </button>
       )}

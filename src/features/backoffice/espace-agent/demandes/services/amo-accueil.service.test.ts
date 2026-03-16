@@ -38,13 +38,7 @@ const mockDbSelectList = (data: unknown[]) => {
 };
 
 // Helper pour créer des données mock de demande
-const createMockDemande = (
-  id: string,
-  prenom: string,
-  nom: string,
-  communeNom?: string,
-  codeDepartement?: string
-) => ({
+const createMockDemande = (id: string, prenom: string, nom: string, communeNom?: string, codeDepartement?: string) => ({
   id,
   prenom,
   nom,
@@ -173,9 +167,7 @@ describe("AmoAccueilService", () => {
       vi.mocked(db.select)
         .mockReturnValueOnce(mockDbSelectCount(1))
         .mockReturnValueOnce(mockDbSelectCount(0))
-        .mockReturnValueOnce(
-          mockDbSelectList([createMockDemande("abc-123", "Claire", "Moreau", "Issoudun", "36")])
-        );
+        .mockReturnValueOnce(mockDbSelectList([createMockDemande("abc-123", "Claire", "Moreau", "Issoudun", "36")]));
 
       // Act
       const result = await getAmoAccueilData(entrepriseAmoId);

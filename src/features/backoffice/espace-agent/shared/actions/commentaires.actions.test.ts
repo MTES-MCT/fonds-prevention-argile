@@ -124,9 +124,7 @@ describe("commentaires.actions", () => {
     it("devrait gérer les erreurs et retourner une liste vide", async () => {
       // Arrange
       vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: mockAgent });
-      vi.mocked(commentairesService.getCommentairesForParcours).mockRejectedValue(
-        new Error("Database error")
-      );
+      vi.mocked(commentairesService.getCommentairesForParcours).mockRejectedValue(new Error("Database error"));
 
       // Act
       const result = await getCommentairesAction("parcours-1");
@@ -220,9 +218,7 @@ describe("commentaires.actions", () => {
     it("devrait gérer les erreurs", async () => {
       // Arrange
       vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: mockAgent });
-      vi.mocked(commentairesService.createCommentaire).mockRejectedValue(
-        new Error("Database error")
-      );
+      vi.mocked(commentairesService.createCommentaire).mockRejectedValue(new Error("Database error"));
 
       // Act
       const result = await createCommentaireAction("parcours-1", "Test message");
@@ -339,11 +335,7 @@ describe("commentaires.actions", () => {
       await deleteCommentaireAction("comment-1");
 
       // Assert
-      expect(commentairesService.deleteCommentaire).toHaveBeenCalledWith(
-        "comment-1",
-        "agent-1",
-        UserRole.AMO
-      );
+      expect(commentairesService.deleteCommentaire).toHaveBeenCalledWith("comment-1", "agent-1", UserRole.AMO);
     });
 
     it("devrait retourner le résultat du service", async () => {

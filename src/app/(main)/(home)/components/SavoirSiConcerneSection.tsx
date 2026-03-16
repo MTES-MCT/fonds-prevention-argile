@@ -16,8 +16,7 @@ export default function SavoirSiConcerneSection() {
             </h3>
             <Link
               className="fr-mt-4v fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
-              href={content.savoir_si_concerne_section.cta_url}
-            >
+              href={content.savoir_si_concerne_section.cta_url}>
               {content.savoir_si_concerne_section.cta_label}
             </Link>
           </div>

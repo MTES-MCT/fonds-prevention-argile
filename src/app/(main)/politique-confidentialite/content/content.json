@@ -73,12 +73,7 @@
 
   "sous_traitant": "VIII - Qui nous aide à traiter les données ?",
   "sous_traitant_header": "Certaines des données sont envoyées à d’autres acteurs, appelés « sous-traitants de données », pour qu’ils nous aident à les manipuler. Nous nous assurons qu’ils respectent strictement le RGPD et qu’ils apportent des garanties suffisantes en matière de sécurité.",
-  "sous_traitant_heading": [
-    "Sous-traitant",
-    "Traitement réalisé",
-    "Pays destinataire",
-    "Garanties"
-  ],
+  "sous_traitant_heading": ["Sous-traitant", "Traitement réalisé", "Pays destinataire", "Garanties"],
   "sous_traitant_valeurs": [
     {
       "title": "« Démarches Simplifiées » de la Direction Interministérielle du Numérique",

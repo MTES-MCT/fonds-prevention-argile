@@ -20,8 +20,7 @@ export default function FaqSection() {
                       type="button"
                       className="fr-accordion__btn"
                       aria-expanded="false"
-                      aria-controls={`accordion-id-${index + 1}`}
-                    >
+                      aria-controls={`accordion-id-${index + 1}`}>
                       {faq.question}
                     </button>
                   </h3>

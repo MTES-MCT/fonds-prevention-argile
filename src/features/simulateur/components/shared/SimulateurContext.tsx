@@ -20,10 +20,7 @@ interface SimulateurContextValue {
 
 const SimulateurContext = createContext<SimulateurContextValue>({});
 
-export function SimulateurProvider({
-  children,
-  ...value
-}: SimulateurContextValue & { children: ReactNode }) {
+export function SimulateurProvider({ children, ...value }: SimulateurContextValue & { children: ReactNode }) {
   return <SimulateurContext.Provider value={value}>{children}</SimulateurContext.Provider>;
 }
 

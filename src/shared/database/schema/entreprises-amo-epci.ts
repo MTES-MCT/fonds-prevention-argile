@@ -18,15 +18,12 @@ export const entreprisesAmoEpci = pgTable(
 );
 
 // Relations : une liaison appartient à une entreprise AMO
-export const entreprisesAmoEpciRelations = relations(
-  entreprisesAmoEpci,
-  ({ one }) => ({
-    entrepriseAmo: one(entreprisesAmo, {
-      fields: [entreprisesAmoEpci.entrepriseAmoId],
-      references: [entreprisesAmo.id],
-    }),
-  })
-);
+export const entreprisesAmoEpciRelations = relations(entreprisesAmoEpci, ({ one }) => ({
+  entrepriseAmo: one(entreprisesAmo, {
+    fields: [entreprisesAmoEpci.entrepriseAmoId],
+    references: [entreprisesAmo.id],
+  }),
+}));
 
 // Types TypeScript générés
 export type EntrepriseAmoEpci = typeof entreprisesAmoEpci.$inferSelect;

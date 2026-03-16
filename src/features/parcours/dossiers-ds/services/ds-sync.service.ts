@@ -1,10 +1,7 @@
 import { graphqlClient } from "../adapters/graphql/client";
 import { getDossierByStep, updateDossierStatus } from "./dossier-ds.service";
 import type { Step } from "../../core/domain/value-objects/step";
-import {
-  DS_TO_INTERNAL_STATUS,
-  DSStatus,
-} from "../domain/value-objects/ds-status";
+import { DS_TO_INTERNAL_STATUS, DSStatus } from "../domain/value-objects/ds-status";
 import { parcoursRepo } from "@/shared/database/repositories";
 import type { ActionResult } from "@/shared/types";
 
@@ -98,11 +95,7 @@ export async function syncAllDossiers(
     for (const dossier of dossiers) {
       if (!dossier.dsNumber) continue;
 
-      const result = await syncDossierStatus(
-        parcoursId,
-        dossier.step,
-        dossier.dsNumber
-      );
+      const result = await syncDossierStatus(parcoursId, dossier.step, dossier.dsNumber);
 
       if (result.success && result.data?.updated) {
         totalUpdated++;

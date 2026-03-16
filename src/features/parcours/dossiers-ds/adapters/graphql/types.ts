@@ -129,12 +129,7 @@ export interface PageInfo {
 
 export type DemarcheState = "brouillon" | "publiee" | "close" | "depubliee";
 
-export type DossierState =
-  | "en_construction"
-  | "en_instruction"
-  | "accepte"
-  | "refuse"
-  | "sans_suite";
+export type DossierState = "en_construction" | "en_instruction" | "accepte" | "refuse" | "sans_suite";
 
 export interface GraphQLError {
   message: string;

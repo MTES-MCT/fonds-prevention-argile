@@ -20,7 +20,7 @@ export function UsersAmoStats({ users, selectedDepartement }: UsersRepartitionSt
     amoRefusee: users.filter(
       (u) =>
         u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE ||
-        u.amoValidation?.statut === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
+        u.amoValidation?.statut === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
     ).length,
   };
 

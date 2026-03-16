@@ -114,7 +114,10 @@ export function calculerTrancheRevenu(
  * Retourne la tranche capitalisée pour l'affichage (ex: "Très modeste")
  */
 export function calculateNiveauRevenuFromRga(
-  rgaData: { menage?: { revenu_rga?: number; personnes?: number }; logement?: { code_region?: string } } | null | undefined
+  rgaData:
+    | { menage?: { revenu_rga?: number; personnes?: number }; logement?: { code_region?: string } }
+    | null
+    | undefined
 ): string | null {
   const revenu = rgaData?.menage?.revenu_rga;
   const personnes = rgaData?.menage?.personnes;

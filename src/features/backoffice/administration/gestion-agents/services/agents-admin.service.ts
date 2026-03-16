@@ -103,11 +103,7 @@ export async function getAgentWithPermissions(agentId: string): Promise<AgentWit
 /**
  * Valide les données spécifiques aux rôles AMO et Allers-Vers
  */
-async function validateRoleSpecificData(
-  role: string,
-  entrepriseAmoId?: string,
-  allersVersId?: string
-): Promise<void> {
+async function validateRoleSpecificData(role: string, entrepriseAmoId?: string, allersVersId?: string): Promise<void> {
   // Validation AMO pour les rôles AMO et AMO_ET_ALLERS_VERS
   if ([UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(role as UserRole)) {
     if (!entrepriseAmoId) {

@@ -49,10 +49,9 @@ export default function CalloutAmoEnAttente() {
       <div className="fr-callout fr-icon-info-line fr-callout--blue-ecume">
         <p className="fr-callout__title">Nous attendons la réponse de l’AMO</p>
         <p className="fr-callout__text fr-mb-4w">
-          Votre demande a été envoyée avec succès. Vous recevrez une
-          notification dès que l’AMO aura validé votre collaboration. Si vous ne
-          recevez pas de réponse rapidement, n’hésitez pas à le relancer pour
-          faire avancer votre dossier.
+          Votre demande a été envoyée avec succès. Vous recevrez une notification dès que l’AMO aura validé votre
+          collaboration. Si vous ne recevez pas de réponse rapidement, n’hésitez pas à le relancer pour faire avancer
+          votre dossier.
         </p>
 
         {amoChoisie && (
@@ -62,20 +61,10 @@ export default function CalloutAmoEnAttente() {
                 <div className="fr-card__desc">
                   <p className="fr-text--bold fr-mb-1v">{amoChoisie.nom}</p>
                   {amoChoisie.emails && (
-                    <p className="fr-text--sm fr-mb-1v">
-                      Emails : {amoChoisie.emails.split(";").join(", ")}
-                    </p>
+                    <p className="fr-text--sm fr-mb-1v">Emails : {amoChoisie.emails.split(";").join(", ")}</p>
                   )}
-                  {amoChoisie.telephone && (
-                    <p className="fr-text--sm fr-mb-1v">
-                      Téléphone : {amoChoisie.telephone}
-                    </p>
-                  )}
-                  {amoChoisie.adresse && (
-                    <p className="fr-text--sm text-gray-500">
-                      {amoChoisie.adresse}
-                    </p>
-                  )}
+                  {amoChoisie.telephone && <p className="fr-text--sm fr-mb-1v">Téléphone : {amoChoisie.telephone}</p>}
+                  {amoChoisie.adresse && <p className="fr-text--sm text-gray-500">{amoChoisie.adresse}</p>}
                 </div>
               </div>
             </div>

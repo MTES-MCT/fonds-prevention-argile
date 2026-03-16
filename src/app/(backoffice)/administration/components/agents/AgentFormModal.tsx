@@ -11,8 +11,7 @@ import { getAllDepartementsEligibles } from "@/shared/constants/rga.constants";
  * Liste des départements éligibles RGA pour le select Analyste DDT
  * Seuls les 11 départements du dispositif sont proposés
  */
-const DEPARTEMENTS_DDT_OPTIONS = getAllDepartementsEligibles()
-  .map(({ code, nom }) => ({ code, name: nom }));
+const DEPARTEMENTS_DDT_OPTIONS = getAllDepartementsEligibles().map(({ code, nom }) => ({ code, name: nom }));
 
 /**
  * Entreprise AMO simplifiée pour le select
@@ -117,7 +116,9 @@ export default function AgentFormModal({
       // Reset l'entreprise AMO si le nouveau rôle ne nécessite pas d'AMO
       entrepriseAmoId: [UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(newRole) ? prev.entrepriseAmoId : undefined,
       // Reset le territoire Allers-Vers si le nouveau rôle ne nécessite pas d'Allers-Vers
-      allersVersId: [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(newRole) ? prev.allersVersId : undefined,
+      allersVersId: [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(newRole)
+        ? prev.allersVersId
+        : undefined,
       // Garder les départements pour Administrateur et Analyste DDT
       departements: [UserRole.ADMINISTRATEUR, UserRole.ANALYSTE_DDT].includes(newRole) ? prev.departements : [],
     }));
@@ -327,7 +328,8 @@ export default function AgentFormModal({
                         <option value="">Sélectionner un territoire</option>
                         {allersVersList.map((av) => (
                           <option key={av.id} value={av.id}>
-                            {av.nom}{av.departements.length > 0 ? ` (${av.departements.join(", ")})` : ""}
+                            {av.nom}
+                            {av.departements.length > 0 ? ` (${av.departements.join(", ")})` : ""}
                           </option>
                         ))}
                       </select>

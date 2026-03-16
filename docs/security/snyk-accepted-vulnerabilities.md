@@ -14,15 +14,15 @@ Après upgrade des dépendances (mars 2026), les vulnérabilités restantes sont
 
 ## Vulnérabilités détaillées
 
-| Dépendance | Sous-dep vulnérable | Sévérité | Type | Justification |
-|---|---|---|---|---|
-| eslint@9.39.0 | minimatch@3.1.2, ajv@6.12.6, js-yaml | High/Medium | devDep | Non déployé en prod |
-| eslint-config-next@15.5.6 | minimatch@9.x | High | devDep | Non déployé en prod |
-| ts-node@10.9.2 | diff@4.0.2 | Medium | devDep | Non déployé en prod |
-| drizzle-kit@0.31.9 | esbuild (via @esbuild-kit) | Medium | devDep | Non déployé en prod |
-| exceljs@4.4.0 | minimatch@5.1.6 | High | runtime | Pas d'input utilisateur sur glob patterns |
-| @vitejs/plugin-react@5.1.4 | rollup@4.x | High | devDep | Non déployé en prod |
-| next@15.5.10 | (direct) | High | runtime | CWE-770 mitigé par les limites Scalingo |
+| Dépendance                 | Sous-dep vulnérable                  | Sévérité    | Type    | Justification                             |
+| -------------------------- | ------------------------------------ | ----------- | ------- | ----------------------------------------- |
+| eslint@9.39.0              | minimatch@3.1.2, ajv@6.12.6, js-yaml | High/Medium | devDep  | Non déployé en prod                       |
+| eslint-config-next@15.5.6  | minimatch@9.x                        | High        | devDep  | Non déployé en prod                       |
+| ts-node@10.9.2             | diff@4.0.2                           | Medium      | devDep  | Non déployé en prod                       |
+| drizzle-kit@0.31.9         | esbuild (via @esbuild-kit)           | Medium      | devDep  | Non déployé en prod                       |
+| exceljs@4.4.0              | minimatch@5.1.6                      | High        | runtime | Pas d'input utilisateur sur glob patterns |
+| @vitejs/plugin-react@5.1.4 | rollup@4.x                           | High        | devDep  | Non déployé en prod                       |
+| next@15.5.10               | (direct)                             | High        | runtime | CWE-770 mitigé par les limites Scalingo   |
 
 ## Upgrades effectués (mars 2026)
 

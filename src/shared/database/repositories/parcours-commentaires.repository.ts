@@ -6,7 +6,10 @@ import { entreprisesAmo } from "../schema/entreprises-amo";
 import { allersVers } from "../schema/allers-vers";
 import { BaseRepository } from "./base.repository";
 import type { ParcoursCommentaire, NewParcoursCommentaire } from "../schema/parcours-commentaires";
-import type { CommentaireDetail, StructureType } from "@/features/backoffice/espace-agent/shared/domain/types/commentaire.types";
+import type {
+  CommentaireDetail,
+  StructureType,
+} from "@/features/backoffice/espace-agent/shared/domain/types/commentaire.types";
 
 /**
  * Repository pour la gestion des commentaires internes sur les parcours
@@ -16,11 +19,7 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
    * Trouve un commentaire par ID
    */
   async findById(id: string): Promise<ParcoursCommentaire | null> {
-    const result = await db
-      .select()
-      .from(parcoursCommentaires)
-      .where(eq(parcoursCommentaires.id, id))
-      .limit(1);
+    const result = await db.select().from(parcoursCommentaires).where(eq(parcoursCommentaires.id, id)).limit(1);
 
     return result[0] || null;
   }
@@ -29,10 +28,7 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
    * Récupère tous les commentaires (rarement utilisé)
    */
   async findAll(): Promise<ParcoursCommentaire[]> {
-    return await db
-      .select()
-      .from(parcoursCommentaires)
-      .orderBy(desc(parcoursCommentaires.createdAt));
+    return await db.select().from(parcoursCommentaires).orderBy(desc(parcoursCommentaires.createdAt));
   }
 
   /**
@@ -47,11 +43,7 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
    * Met à jour un commentaire avec des données partielles (interface BaseRepository)
    */
   async update(id: string, data: Partial<ParcoursCommentaire>): Promise<ParcoursCommentaire | null> {
-    const result = await db
-      .update(parcoursCommentaires)
-      .set(data)
-      .where(eq(parcoursCommentaires.id, id))
-      .returning();
+    const result = await db.update(parcoursCommentaires).set(data).where(eq(parcoursCommentaires.id, id)).returning();
 
     return result[0] || null;
   }
@@ -70,10 +62,7 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
    * Supprime un commentaire
    */
   async delete(id: string): Promise<boolean> {
-    const result = await db
-      .delete(parcoursCommentaires)
-      .where(eq(parcoursCommentaires.id, id))
-      .returning();
+    const result = await db.delete(parcoursCommentaires).where(eq(parcoursCommentaires.id, id)).returning();
 
     return result.length > 0;
   }
@@ -95,9 +84,7 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
    * Compte le nombre de commentaires
    */
   async count(where?: SQL): Promise<number> {
-    const query = db
-      .select({ count: sql<number>`cast(count(*) as integer)` })
-      .from(parcoursCommentaires);
+    const query = db.select({ count: sql<number>`cast(count(*) as integer)` }).from(parcoursCommentaires);
 
     if (where) {
       query.where(where);
@@ -165,12 +152,7 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
     const result = await db
       .select({ id: parcoursCommentaires.id })
       .from(parcoursCommentaires)
-      .where(
-        and(
-          eq(parcoursCommentaires.id, commentaireId),
-          eq(parcoursCommentaires.agentId, agentId)
-        )
-      )
+      .where(and(eq(parcoursCommentaires.id, commentaireId), eq(parcoursCommentaires.agentId, agentId)))
       .limit(1);
 
     return result.length > 0;
@@ -200,10 +182,7 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
   }): CommentaireDetail {
     // Si l'agent existe encore, utiliser ses données live
     if (row.agent) {
-      const { structureType, structureName } = this.determineStructure(
-        row.entrepriseAmo,
-        row.allersVers
-      );
+      const { structureType, structureName } = this.determineStructure(row.entrepriseAmo, row.allersVers);
 
       return {
         id: row.commentaire.id,

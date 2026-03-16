@@ -201,7 +201,13 @@ export async function handleFranceConnectCallback(
     await getOrCreateParcours(user.id);
 
     // 7. Créer la session avec l'userId
-    await createFranceConnectSession(user.id, tokens.id_token, userInfo.given_name, userInfo.family_name, userInfo.email);
+    await createFranceConnectSession(
+      user.id,
+      tokens.id_token,
+      userInfo.given_name,
+      userInfo.family_name,
+      userInfo.email
+    );
 
     return { success: true };
   } catch (error) {

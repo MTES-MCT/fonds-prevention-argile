@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommentairesService } from "./commentaires.service";
-import { parcoursCommentairesRepo, agentsRepo, entreprisesAmoRepo, allersVersRepository } from "@/shared/database/repositories";
+import {
+  parcoursCommentairesRepo,
+  agentsRepo,
+  entreprisesAmoRepo,
+  allersVersRepository,
+} from "@/shared/database/repositories";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
@@ -69,13 +74,7 @@ describe("CommentairesService", () => {
       vi.mocked(hasPermission).mockReturnValue(false);
 
       // Act
-      const result = await service.getCommentairesForParcours(
-        "parcours-1",
-        "agent-1",
-        UserRole.ANALYSTE,
-        null,
-        null
-      );
+      const result = await service.getCommentairesForParcours("parcours-1", "agent-1", UserRole.ANALYSTE, null, null);
 
       // Assert
       expect(result.commentaires).toEqual([]);
@@ -88,9 +87,7 @@ describe("CommentairesService", () => {
       vi.mocked(hasPermission).mockImplementation((role, permission) => {
         return permission === BackofficePermission.COMMENTAIRES_READ_ALL;
       });
-      vi.mocked(parcoursCommentairesRepo.findByParcoursId).mockResolvedValue([
-        mockCommentaire,
-      ]);
+      vi.mocked(parcoursCommentairesRepo.findByParcoursId).mockResolvedValue([mockCommentaire]);
 
       // Act
       const result = await service.getCommentairesForParcours(
@@ -121,18 +118,10 @@ describe("CommentairesService", () => {
         canViewDossiersByEntreprise: true,
         canViewDossiersWithoutAmo: false,
       });
-      vi.mocked(parcoursCommentairesRepo.findByParcoursId).mockResolvedValue([
-        mockCommentaire,
-      ]);
+      vi.mocked(parcoursCommentairesRepo.findByParcoursId).mockResolvedValue([mockCommentaire]);
 
       // Act
-      const result = await service.getCommentairesForParcours(
-        "parcours-1",
-        "agent-1",
-        UserRole.AMO,
-        "amo-1",
-        null
-      );
+      const result = await service.getCommentairesForParcours("parcours-1", "agent-1", UserRole.AMO, "amo-1", null);
 
       // Assert
       expect(calculateAgentScope).toHaveBeenCalledWith({
@@ -151,12 +140,7 @@ describe("CommentairesService", () => {
       vi.mocked(hasPermission).mockReturnValue(false);
 
       // Act
-      const result = await service.createCommentaire(
-        "parcours-1",
-        "agent-1",
-        UserRole.ANALYSTE,
-        "Test message"
-      );
+      const result = await service.createCommentaire("parcours-1", "agent-1", UserRole.ANALYSTE, "Test message");
 
       // Assert
       expect(result.success).toBe(false);
@@ -169,12 +153,7 @@ describe("CommentairesService", () => {
       vi.mocked(hasPermission).mockReturnValue(true);
 
       // Act
-      const result = await service.createCommentaire(
-        "parcours-1",
-        "agent-1",
-        UserRole.AMO,
-        ""
-      );
+      const result = await service.createCommentaire("parcours-1", "agent-1", UserRole.AMO, "");
 
       // Assert
       expect(result.success).toBe(false);
@@ -187,12 +166,7 @@ describe("CommentairesService", () => {
       const longMessage = "a".repeat(5001);
 
       // Act
-      const result = await service.createCommentaire(
-        "parcours-1",
-        "agent-1",
-        UserRole.AMO,
-        longMessage
-      );
+      const result = await service.createCommentaire("parcours-1", "agent-1", UserRole.AMO, longMessage);
 
       // Assert
       expect(result.success).toBe(false);
@@ -240,17 +214,10 @@ describe("CommentairesService", () => {
         updatedAt: new Date(),
         editedAt: null,
       });
-      vi.mocked(parcoursCommentairesRepo.findByIdWithDetails).mockResolvedValue(
-        mockCommentaire
-      );
+      vi.mocked(parcoursCommentairesRepo.findByIdWithDetails).mockResolvedValue(mockCommentaire);
 
       // Act
-      const result = await service.createCommentaire(
-        "parcours-1",
-        "agent-1",
-        UserRole.AMO,
-        "Test message"
-      );
+      const result = await service.createCommentaire("parcours-1", "agent-1", UserRole.AMO, "Test message");
 
       // Assert
       expect(result.success).toBe(true);
@@ -298,17 +265,10 @@ describe("CommentairesService", () => {
         updatedAt: new Date(),
         editedAt: null,
       });
-      vi.mocked(parcoursCommentairesRepo.findByIdWithDetails).mockResolvedValue(
-        mockCommentaire
-      );
+      vi.mocked(parcoursCommentairesRepo.findByIdWithDetails).mockResolvedValue(mockCommentaire);
 
       // Act
-      const result = await service.createCommentaire(
-        "parcours-1",
-        "agent-1",
-        UserRole.AMO,
-        maxMessage
-      );
+      const result = await service.createCommentaire("parcours-1", "agent-1", UserRole.AMO, maxMessage);
 
       // Assert
       expect(result.success).toBe(true);
@@ -346,17 +306,10 @@ describe("CommentairesService", () => {
         updatedAt: new Date(),
         editedAt: null,
       });
-      vi.mocked(parcoursCommentairesRepo.findByIdWithDetails).mockResolvedValue(
-        mockCommentaire
-      );
+      vi.mocked(parcoursCommentairesRepo.findByIdWithDetails).mockResolvedValue(mockCommentaire);
 
       // Act
-      await service.createCommentaire(
-        "parcours-1",
-        "agent-1",
-        UserRole.AMO,
-        "  Test message  "
-      );
+      await service.createCommentaire("parcours-1", "agent-1", UserRole.AMO, "  Test message  ");
 
       // Assert
       expect(parcoursCommentairesRepo.create).toHaveBeenCalledWith(
@@ -411,12 +364,7 @@ describe("CommentairesService", () => {
       });
 
       // Act
-      const result = await service.createCommentaire(
-        "parcours-1",
-        "agent-2",
-        UserRole.ALLERS_VERS,
-        "Test AV"
-      );
+      const result = await service.createCommentaire("parcours-1", "agent-2", UserRole.ALLERS_VERS, "Test AV");
 
       // Assert
       expect(result.success).toBe(true);
@@ -493,12 +441,7 @@ describe("CommentairesService", () => {
       vi.mocked(agentsRepo.findById).mockResolvedValue(null);
 
       // Act
-      const result = await service.createCommentaire(
-        "parcours-1",
-        "agent-inexistant",
-        UserRole.AMO,
-        "Test message"
-      );
+      const result = await service.createCommentaire("parcours-1", "agent-inexistant", UserRole.AMO, "Test message");
 
       // Assert
       expect(result.success).toBe(false);
@@ -513,12 +456,7 @@ describe("CommentairesService", () => {
       vi.mocked(hasPermission).mockReturnValue(false);
 
       // Act
-      const result = await service.updateCommentaire(
-        "comment-1",
-        "agent-1",
-        UserRole.ANALYSTE,
-        "Updated message"
-      );
+      const result = await service.updateCommentaire("comment-1", "agent-1", UserRole.ANALYSTE, "Updated message");
 
       // Assert
       expect(result.success).toBe(false);
@@ -531,12 +469,7 @@ describe("CommentairesService", () => {
       vi.mocked(parcoursCommentairesRepo.exists).mockResolvedValue(false);
 
       // Act
-      const result = await service.updateCommentaire(
-        "comment-inexistant",
-        "agent-1",
-        UserRole.AMO,
-        "Updated message"
-      );
+      const result = await service.updateCommentaire("comment-inexistant", "agent-1", UserRole.AMO, "Updated message");
 
       // Assert
       expect(result.success).toBe(false);
@@ -551,12 +484,7 @@ describe("CommentairesService", () => {
       vi.mocked(parcoursCommentairesRepo.canEditComment).mockResolvedValue(false);
 
       // Act
-      const result = await service.updateCommentaire(
-        "comment-1",
-        "agent-2",
-        UserRole.AMO,
-        "Updated message"
-      );
+      const result = await service.updateCommentaire("comment-1", "agent-2", UserRole.AMO, "Updated message");
 
       // Assert
       expect(result.success).toBe(false);
@@ -570,12 +498,7 @@ describe("CommentairesService", () => {
       vi.mocked(parcoursCommentairesRepo.canEditComment).mockResolvedValue(true);
 
       // Act
-      const result = await service.updateCommentaire(
-        "comment-1",
-        "agent-1",
-        UserRole.AMO,
-        "   "
-      );
+      const result = await service.updateCommentaire("comment-1", "agent-1", UserRole.AMO, "   ");
 
       // Assert
       expect(result.success).toBe(false);
@@ -600,17 +523,10 @@ describe("CommentairesService", () => {
         updatedAt: new Date(),
         editedAt: new Date(),
       });
-      vi.mocked(parcoursCommentairesRepo.findByIdWithDetails).mockResolvedValue(
-        updatedComment
-      );
+      vi.mocked(parcoursCommentairesRepo.findByIdWithDetails).mockResolvedValue(updatedComment);
 
       // Act
-      const result = await service.updateCommentaire(
-        "comment-1",
-        "agent-1",
-        UserRole.AMO,
-        "Updated"
-      );
+      const result = await service.updateCommentaire("comment-1", "agent-1", UserRole.AMO, "Updated");
 
       // Assert
       expect(result.success).toBe(true);
@@ -625,11 +541,7 @@ describe("CommentairesService", () => {
       vi.mocked(hasPermission).mockReturnValue(false);
 
       // Act
-      const result = await service.deleteCommentaire(
-        "comment-1",
-        "agent-1",
-        UserRole.ANALYSTE
-      );
+      const result = await service.deleteCommentaire("comment-1", "agent-1", UserRole.ANALYSTE);
 
       // Assert
       expect(result.success).toBe(false);
@@ -642,11 +554,7 @@ describe("CommentairesService", () => {
       vi.mocked(parcoursCommentairesRepo.exists).mockResolvedValue(false);
 
       // Act
-      const result = await service.deleteCommentaire(
-        "comment-inexistant",
-        "agent-1",
-        UserRole.AMO
-      );
+      const result = await service.deleteCommentaire("comment-inexistant", "agent-1", UserRole.AMO);
 
       // Assert
       expect(result.success).toBe(false);
@@ -661,11 +569,7 @@ describe("CommentairesService", () => {
       vi.mocked(parcoursCommentairesRepo.canEditComment).mockResolvedValue(false);
 
       // Act
-      const result = await service.deleteCommentaire(
-        "comment-1",
-        "agent-2",
-        UserRole.AMO
-      );
+      const result = await service.deleteCommentaire("comment-1", "agent-2", UserRole.AMO);
 
       // Assert
       expect(result.success).toBe(false);
@@ -680,11 +584,7 @@ describe("CommentairesService", () => {
       vi.mocked(parcoursCommentairesRepo.delete).mockResolvedValue(true);
 
       // Act
-      const result = await service.deleteCommentaire(
-        "comment-1",
-        "agent-1",
-        UserRole.AMO
-      );
+      const result = await service.deleteCommentaire("comment-1", "agent-1", UserRole.AMO);
 
       // Assert
       expect(result.success).toBe(true);
@@ -699,11 +599,7 @@ describe("CommentairesService", () => {
       vi.mocked(parcoursCommentairesRepo.delete).mockResolvedValue(false);
 
       // Act
-      const result = await service.deleteCommentaire(
-        "comment-1",
-        "agent-1",
-        UserRole.AMO
-      );
+      const result = await service.deleteCommentaire("comment-1", "agent-1", UserRole.AMO);
 
       // Assert
       expect(result.success).toBe(false);

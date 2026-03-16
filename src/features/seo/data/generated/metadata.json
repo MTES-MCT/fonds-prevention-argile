@@ -2,18 +2,6 @@
   "generatedAt": "2026-01-26T13:57:01.599Z",
   "config": {
     "communesParDepartement": 300,
-    "departementsEligibles": [
-      "03",
-      "04",
-      "24",
-      "32",
-      "36",
-      "47",
-      "54",
-      "59",
-      "63",
-      "81",
-      "82"
-    ]
+    "departementsEligibles": ["03", "04", "24", "32", "36", "47", "54", "59", "63", "81", "82"]
   }
 }

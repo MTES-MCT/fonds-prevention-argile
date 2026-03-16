@@ -48,9 +48,7 @@ export function ProspectsTable({ prospects, variant, onRefresh }: ProspectsTable
             label: "Voir sa simulation d\u2019\u00e9ligibilit\u00e9",
             icon: "fr-icon-eye-line",
             onClick: () => {
-              window.location.href = ROUTES.backoffice.espaceAgent.editionDonneesSimulation(
-                prospect.parcoursId,
-              );
+              window.location.href = ROUTES.backoffice.espaceAgent.editionDonneesSimulation(prospect.parcoursId);
             },
           }
         : {

@@ -4,10 +4,7 @@ import { getSession } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types";
 import type { ParcoursState, Parcours } from "../domain/entities/parcours";
 import type { Step } from "../domain/value-objects/step";
-import {
-  getParcoursStateWithPermissions,
-  getFullParcours,
-} from "../services/parcours-state.service";
+import { getParcoursStateWithPermissions, getFullParcours } from "../services/parcours-state.service";
 import { DossierDS } from "../../dossiers-ds";
 
 /**

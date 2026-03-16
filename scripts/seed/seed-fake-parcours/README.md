@@ -5,6 +5,7 @@ Données de test pour l'espace AMO (Accueil, Demandes, Dossiers, Statistiques) e
 ## Configuration
 
 1. Récupérer l'ID de votre entreprise AMO :
+
    ```sql
    SELECT id, nom FROM entreprises_amo;
    ```
@@ -43,18 +44,18 @@ Ou via Drizzle Studio, copier-coller chaque script séquentiellement.
 
 ## Données créées
 
-| Type | Quantité |
-|------|----------|
-| Utilisateurs (AMO) | 40 |
-| Utilisateurs (Prospects) | 30 |
-| **Total utilisateurs** | **70** |
-| Parcours (avec AMO) | 40 |
-| Parcours (sans AMO / Prospects) | 30 |
-| **Total parcours** | **70** |
-| Validations AMO | 30 |
-| Dossiers DS | 8 |
-| Agents fictifs (AMO + Allers-Vers) | 2 |
-| Commentaires sur parcours | 20 |
+| Type                               | Quantité |
+| ---------------------------------- | -------- |
+| Utilisateurs (AMO)                 | 40       |
+| Utilisateurs (Prospects)           | 30       |
+| **Total utilisateurs**             | **70**   |
+| Parcours (avec AMO)                | 40       |
+| Parcours (sans AMO / Prospects)    | 30       |
+| **Total parcours**                 | **70**   |
+| Validations AMO                    | 30       |
+| Dossiers DS                        | 8        |
+| Agents fictifs (AMO + Allers-Vers) | 2        |
+| Commentaires sur parcours          | 20       |
 
 ### Répartition des validations AMO
 
@@ -77,6 +78,7 @@ Pour supprimer les données de test, exécuter le nettoyage dans `00-init.sql`.
 ## Identifiants
 
 Les UUID utilisent des patterns reconnaissables :
+
 - Users (AMO) : `11111111-1111-1111-1111-111111111101` à `140`
 - Users (Prospects) : `11111111-1111-1111-1111-111111111141` à `170`
 - Parcours (AMO) : `22222222-2222-2222-2222-2222222222XX`
@@ -99,6 +101,7 @@ Les UUID utilisent des patterns reconnaissables :
 ### Filtrer les prospects
 
 Les prospects sont répartis par ancienneté pour tester les filtres :
+
 - Prospects récents (dernière action < 7 jours) : IDs `55555555-5555-5555-5555-555555555501` à `510`
 - Prospects moyens (7-30 jours) : IDs `55555555-5555-5555-5555-555555555511` à `520`
 - Prospects anciens (> 30 jours) : IDs `55555555-5555-5555-5555-555555555521` à `530`
@@ -106,6 +109,7 @@ Les prospects sont répartis par ancienneté pour tester les filtres :
 ### Tester les commentaires (notes partagées)
 
 Le script `07-commentaires.sql` crée 2 agents fictifs non-connectables et 20 commentaires décalés :
+
 - **Géraldine Moulin** (AMO du Berry Profond)
 - **Jean-Patrick Duval** (Allers-Vers Centre Indre)
 

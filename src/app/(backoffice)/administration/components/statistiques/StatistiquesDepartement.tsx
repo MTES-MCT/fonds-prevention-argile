@@ -98,11 +98,7 @@ export default function StatistiquesDepartement() {
       )}
 
       {/* Titre avec le nom du département sélectionné */}
-      {selectedDepartement && (
-        <h1 className="fr-h3 fr-mt-3w fr-mb-3w">
-          Statistiques {selectedDepartement.nom}
-        </h1>
-      )}
+      {selectedDepartement && <h1 className="fr-h3 fr-mt-3w fr-mb-3w">Statistiques {selectedDepartement.nom}</h1>}
 
       {error && (
         <div className="fr-alert fr-alert--error fr-mb-4w">
