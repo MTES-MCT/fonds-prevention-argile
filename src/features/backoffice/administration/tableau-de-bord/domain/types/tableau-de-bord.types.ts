@@ -81,6 +81,8 @@ export type TopDepartementsTriColumn = "simulations" | "simulationsEligibles" | 
 
 export interface TableauDeBordStats {
   simulationsLancees: StatAvecVariation;
+  simulationsEligibles: StatAvecVariation;
+  simulationsNonEligibles: StatAvecVariation;
   comptesCrees: StatAvecVariation;
   tauxTransformation: StatAvecVariation;
   demandesAmoEnvoyees: StatAvecVariation;

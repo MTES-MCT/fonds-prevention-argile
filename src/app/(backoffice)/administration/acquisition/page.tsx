@@ -2,7 +2,7 @@ import { checkAgentAccess, ROUTES } from "@/features/auth";
 import { AccesNonAutoriseAdmin } from "@/shared/components";
 import { redirect } from "next/navigation";
 import { UserRole } from "@/shared/domain/value-objects";
-import StatistiquesPanel from "./components/StatistiquesPanel";
+import AcquisitionPanel from "./components/AcquisitionPanel";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -36,5 +36,5 @@ export default async function AcquisitionPage() {
     redirect(ROUTES.backoffice.espaceAgent.root);
   }
 
-  return <StatistiquesPanel />;
+  return <AcquisitionPanel />;
 }

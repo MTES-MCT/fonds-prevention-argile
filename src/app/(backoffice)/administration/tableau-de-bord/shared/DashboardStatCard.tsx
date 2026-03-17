@@ -7,6 +7,8 @@ interface DashboardStatCardProps {
   variationType?: "percent" | "points";
   loading?: boolean;
   compact?: boolean;
+  /** Classe CSS du conteneur externe (defaut: "fr-col-12 fr-col-md-6 fr-col-lg-3") */
+  className?: string;
 }
 
 function VariationBadge({
@@ -63,9 +65,10 @@ export function DashboardStatCard({
   variationType = "percent",
   loading = false,
   compact = false,
+  className = "fr-col-12 fr-col-md-6 fr-col-lg-3",
 }: DashboardStatCardProps) {
   return (
-    <div className="fr-col-12 fr-col-md-6 fr-col-lg-3" style={{ display: "flex" }}>
+    <div className={className} style={{ display: "flex" }}>
       <div
         className={compact ? "fr-p-2w" : "fr-p-3w"}
         style={{

@@ -1,7 +1,7 @@
 "use client";
 
 import type { FunnelStatistiques, FunnelStep } from "@/features/backoffice";
-import StatCard from "../../shared/StatCard";
+import StatCard from "../../../shared/StatCard";
 
 interface StatistiquesFunnelProps {
   funnel: FunnelStatistiques | null;

@@ -103,6 +103,50 @@ async function countSimulations(debut: Date, fin: Date, codeDepartement?: string
 }
 
 /**
+ * Compte les simulations eligibles et non éligibles sur une periode
+ * Utilise EligibilityService.evaluate() pour determiner l'eligibilite
+ */
+async function countSimulationsParEligibilite(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string
+): Promise<{ eligibles: number; nonEligibles: number }> {
+  const conditions = [
+    gte(parcoursPrevention.createdAt, debut),
+    lt(parcoursPrevention.createdAt, fin),
+    isNotNull(parcoursPrevention.rgaSimulationData),
+  ];
+
+  if (codeDepartement) {
+    conditions.push(whereDepartement(codeDepartement));
+  }
+
+  const parcours = await db
+    .select({
+      rgaSimulationData: parcoursPrevention.rgaSimulationData,
+      rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
+    })
+    .from(parcoursPrevention)
+    .where(and(...conditions));
+
+  let eligibles = 0;
+  let nonEligibles = 0;
+
+  for (const p of parcours) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const simData = (p.rgaSimulationDataAgent ?? p.rgaSimulationData) as any;
+    const evaluation = EligibilityService.evaluate(simData);
+    if (evaluation.result?.eligible) {
+      eligibles += 1;
+    } else {
+      nonEligibles += 1;
+    }
+  }
+
+  return { eligibles, nonEligibles };
+}
+
+/**
  * Compte les comptes crees (parcours avec userId) sur une periode et optionnellement un departement
  */
 async function countComptesCrees(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
@@ -679,9 +723,10 @@ export async function getTableauDeBordStats(
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 
-  // Stats de la période courante + alertes + détails archivées/inéligibles en parallèle
+  // Stats de la periode courante + alertes + details archivees/ineligibles en parallele
   const [
     simulations,
+    eligibilite,
     comptes,
     demandesAmo,
     reponsesAttente,
@@ -693,6 +738,7 @@ export async function getTableauDeBordStats(
     topDepartements,
   ] = await Promise.all([
     countSimulations(debut, fin, codeDepartement),
+    countSimulationsParEligibilite(debut, fin, codeDepartement),
     countComptesCrees(debut, fin, codeDepartement),
     countDemandesAmo(debut, fin, codeDepartement),
     countReponsesAmoEnAttente(codeDepartement),
@@ -709,6 +755,8 @@ export async function getTableauDeBordStats(
   // Stats de la periode precedente (pour les variations)
   let variations: {
     simulations: number | null;
+    eligibles: number | null;
+    nonEligibles: number | null;
     comptes: number | null;
     tauxTransformation: number | null;
     demandesAmo: number | null;
@@ -717,6 +765,8 @@ export async function getTableauDeBordStats(
     archivees: number | null;
   } = {
     simulations: null,
+    eligibles: null,
+    nonEligibles: null,
     comptes: null,
     tauxTransformation: null,
     demandesAmo: null,
@@ -726,18 +776,22 @@ export async function getTableauDeBordStats(
   };
 
   if (previousRange) {
-    const [prevSimulations, prevComptes, prevDemandesAmo, prevDossiersDN, prevArchivees] = await Promise.all([
-      countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
-      countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
-      countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
-      countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
-      countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
-    ]);
+    const [prevSimulations, prevEligibilite, prevComptes, prevDemandesAmo, prevDossiersDN, prevArchivees] =
+      await Promise.all([
+        countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
+        countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement),
+        countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
+        countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
+        countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
+        countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
+      ]);
 
     const prevTaux = prevSimulations > 0 ? Math.round((prevComptes / prevSimulations) * 1000) / 10 : 0;
 
     variations = {
       simulations: calculerVariation(simulations, prevSimulations),
+      eligibles: calculerVariation(eligibilite.eligibles, prevEligibilite.eligibles),
+      nonEligibles: calculerVariation(eligibilite.nonEligibles, prevEligibilite.nonEligibles),
       comptes: calculerVariation(comptes, prevComptes),
       tauxTransformation:
         tauxTransformation - prevTaux !== 0 ? Math.round((tauxTransformation - prevTaux) * 10) / 10 : 0,
@@ -750,6 +804,8 @@ export async function getTableauDeBordStats(
 
   return {
     simulationsLancees: { valeur: simulations, variation: variations.simulations },
+    simulationsEligibles: { valeur: eligibilite.eligibles, variation: variations.eligibles },
+    simulationsNonEligibles: { valeur: eligibilite.nonEligibles, variation: variations.nonEligibles },
     comptesCrees: { valeur: comptes, variation: variations.comptes },
     tauxTransformation: { valeur: tauxTransformation, variation: variations.tauxTransformation },
     demandesAmoEnvoyees: { valeur: demandesAmo, variation: variations.demandesAmo },
