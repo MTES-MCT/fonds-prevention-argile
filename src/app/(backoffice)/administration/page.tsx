@@ -1,7 +1,7 @@
 import { checkAgentAccess, ROUTES } from "@/features/auth";
 import { AccesNonAutoriseAdmin } from "@/shared/components";
 import { redirect } from "next/navigation";
-import { TableauDeBord } from "./components/tableau-de-bord/TableauDeBord";
+import { TableauDeBord } from "./tableau-de-bord/TableauDeBord";
 import { UserRole } from "@/shared/domain/value-objects";
 
 export const dynamic = "force-dynamic";
