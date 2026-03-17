@@ -79,6 +79,14 @@ export interface DepartementStats {
 
 export type TopDepartementsTriColumn = "simulations" | "simulationsEligibles" | "dossiersDN" | "transformationGlobale";
 
+export interface CommuneSimulationsStats {
+  /** Nom de la commune (ex: "Chateauroux") */
+  commune: string;
+  /** Code departement (ex: "36") */
+  codeDepartement: string;
+  simulations: number;
+}
+
 export interface TableauDeBordStats {
   simulationsLancees: StatAvecVariation;
   simulationsEligibles: StatAvecVariation;
@@ -93,6 +101,7 @@ export interface TableauDeBordStats {
   demandesArchiveesDetail: DemandesArchiveesStats;
   demandesIneligiblesDetail: DemandesIneligiblesStats;
   topDepartements: DepartementStats[];
+  topCommunes: CommuneSimulationsStats[];
 }
 
 export type PeriodeId = "7j" | "30j" | "90j" | "6m" | "12m" | "tout";

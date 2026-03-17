@@ -20,6 +20,7 @@ import type {
   DemandesIneligiblesStats,
   DemandeArchiveeDetail,
   DepartementStats,
+  CommuneSimulationsStats,
   MotifArchivage,
   MotifIneligibilite,
 } from "../domain/types/tableau-de-bord.types";
@@ -714,6 +715,56 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
 }
 
 /**
+ * Calcule le top 5 des communes par nombre de simulations.
+ */
+async function getTopCommunesStats(debut: Date, fin: Date, codeDepartement?: string): Promise<CommuneSimulationsStats[]> {
+  const conditions = [
+    gte(parcoursPrevention.createdAt, debut),
+    lt(parcoursPrevention.createdAt, fin),
+    isNotNull(parcoursPrevention.rgaSimulationData),
+  ];
+
+  if (codeDepartement) {
+    conditions.push(
+      sql`(${parcoursPrevention.rgaSimulationDataAgent}->>'logement'->>'code_departement' = ${codeDepartement}
+        OR ${parcoursPrevention.rgaSimulationData}->>'logement'->>'code_departement' = ${codeDepartement})`
+    );
+  }
+
+  const parcours = await db
+    .select({
+      rgaSimulationData: parcoursPrevention.rgaSimulationData,
+      rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
+    })
+    .from(parcoursPrevention)
+    .where(and(...conditions));
+
+  // Grouper par commune
+  const communeMap = new Map<string, { commune: string; codeDepartement: string; simulations: number }>();
+
+  for (const p of parcours) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const agentData = p.rgaSimulationDataAgent as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userData = p.rgaSimulationData as any;
+
+    const communeNom = asString(agentData?.logement?.commune_nom) ?? asString(userData?.logement?.commune_nom);
+    const codeDept = asString(agentData?.logement?.code_departement) ?? asString(userData?.logement?.code_departement);
+
+    if (!communeNom || !codeDept) continue;
+
+    const key = `${communeNom}_${codeDept}`;
+    const entry = communeMap.get(key) ?? { commune: communeNom, codeDepartement: codeDept, simulations: 0 };
+    entry.simulations += 1;
+    communeMap.set(key, entry);
+  }
+
+  return [...communeMap.values()]
+    .sort((a, b) => b.simulations - a.simulations)
+    .slice(0, 5);
+}
+
+/**
  * Récupère les statistiques du tableau de bord avec variations
  */
 export async function getTableauDeBordStats(
@@ -736,6 +787,7 @@ export async function getTableauDeBordStats(
     demandesArchiveesDetail,
     demandesIneligiblesDetail,
     topDepartements,
+    topCommunes,
   ] = await Promise.all([
     countSimulations(debut, fin, codeDepartement),
     countSimulationsParEligibilite(debut, fin, codeDepartement),
@@ -748,6 +800,7 @@ export async function getTableauDeBordStats(
     getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement),
     getDemandesIneligiblesDetail(debut, fin, previousRange, codeDepartement),
     getTopDepartementsStats(debut, fin),
+    getTopCommunesStats(debut, fin, codeDepartement),
   ]);
 
   const tauxTransformation = simulations > 0 ? Math.round((comptes / simulations) * 1000) / 10 : 0;
@@ -816,5 +869,6 @@ export async function getTableauDeBordStats(
     demandesArchiveesDetail,
     demandesIneligiblesDetail,
     topDepartements,
+    topCommunes,
   };
 }

@@ -19,6 +19,7 @@ import type { FunnelStatistiques } from "@/features/backoffice/administration/ac
 import EntonnoirEligibilite from "./simulateur/EntonnoirEligibilite";
 import DetailEtapesFunnel from "./simulateur/DetailEtapesFunnel";
 import MotifsIneligibiliteCard from "./simulateur/MotifsIneligibiliteCard";
+import TopSimulationsCard from "./simulateur/TopSimulationsCard";
 import SiteVitrineTab from "./site-vitrine/SiteVitrineTab";
 import StatistiquesDepartement from "./StatistiquesDepartement";
 
@@ -176,6 +177,39 @@ export default function AcquisitionPanel() {
                 <div className="fr-col-12 fr-col-lg-6">
                   <MotifsIneligibiliteCard
                     stats={stats?.demandesIneligiblesDetail ?? null}
+                    loading={loading}
+                  />
+                </div>
+              </div>
+
+              {/* Top 5 departements + communes */}
+              <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
+                <div className="fr-col-12 fr-col-lg-6">
+                  <TopSimulationsCard
+                    title="Top 5 simulations par departement"
+                    columnLabel="Departements"
+                    rows={
+                      stats?.topDepartements
+                        .sort((a, b) => b.simulations - a.simulations)
+                        .slice(0, 5)
+                        .map((d) => ({
+                          label: `${d.codeDepartement} ${d.nomDepartement}`,
+                          simulations: d.simulations,
+                        })) ?? []
+                    }
+                    loading={loading}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-lg-6">
+                  <TopSimulationsCard
+                    title="Top 5 simulations par communes"
+                    columnLabel="Communes"
+                    rows={
+                      stats?.topCommunes.map((c) => ({
+                        label: c.commune,
+                        simulations: c.simulations,
+                      })) ?? []
+                    }
                     loading={loading}
                   />
                 </div>
