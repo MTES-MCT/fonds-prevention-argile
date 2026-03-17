@@ -412,7 +412,133 @@ WHERE id IN (
   '88888888-8888-8888-8888-888888888833'
 );
 
--- Vérification
+-- ===== PROSPECT_QUALIFICATIONS pour les parcours "Le demandeur n'est pas éligible" =====
+-- Chaque parcours archivé avec ce motif obtient une qualification non_eligible
+-- avec des raisons_ineligibilite variées pour alimenter la carte "Demandes inéligibles".
+--
+-- Distribution cible (période courante, 18 parcours, ~30 raisons au total car multi-raisons) :
+--   maison_trop_endommagee     : ~12 (présent dans beaucoup de parcours)
+--   nombre_etages_sup_2        : ~6
+--   pas_zone_alea_fort         : ~4
+--   locataire_non_occupant     : ~3
+--   appartement                : ~2
+--   hors_zone_perimetre        : ~2
+--   maison_moins_15_ans        : ~1
+--
+-- Distribution cible (période précédente, 12 parcours, ~16 raisons au total) :
+--   maison_trop_endommagee     : ~8
+--   nombre_etages_sup_2        : ~3
+--   pas_zone_alea_fort         : ~3
+--   locataire_non_occupant     : ~1
+--   appartement                : ~1
+
+INSERT INTO prospect_qualifications (id, parcours_id, agent_id, decision, actions_realisees, raisons_ineligibilite, created_at)
+VALUES
+  -- === Période courante (parcours 01-18) ===
+  ('99999999-9999-9999-9999-999999999901', '88888888-8888-8888-8888-888888888801', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['maison_trop_endommagee'], NOW() - INTERVAL '26 days'),
+
+  ('99999999-9999-9999-9999-999999999902', '88888888-8888-8888-8888-888888888802', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique'], ARRAY['maison_trop_endommagee', 'nombre_etages_sup_2'], NOW() - INTERVAL '25 days'),
+
+  ('99999999-9999-9999-9999-999999999903', '88888888-8888-8888-8888-888888888803', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['maison_trop_endommagee'], NOW() - INTERVAL '23 days'),
+
+  ('99999999-9999-9999-9999-999999999904', '88888888-8888-8888-8888-888888888804', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique', 'email_envoye'], ARRAY['pas_zone_alea_fort'], NOW() - INTERVAL '21 days'),
+
+  ('99999999-9999-9999-9999-999999999905', '88888888-8888-8888-8888-888888888805', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['maison_trop_endommagee', 'locataire_non_occupant'], NOW() - INTERVAL '19 days'),
+
+  ('99999999-9999-9999-9999-999999999906', '88888888-8888-8888-8888-888888888806', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique'], ARRAY['nombre_etages_sup_2'], NOW() - INTERVAL '17 days'),
+
+  ('99999999-9999-9999-9999-999999999907', '88888888-8888-8888-8888-888888888807', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['maison_trop_endommagee'], NOW() - INTERVAL '15 days'),
+
+  ('99999999-9999-9999-9999-999999999908', '88888888-8888-8888-8888-888888888808', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique'], ARRAY['appartement'], NOW() - INTERVAL '13 days'),
+
+  ('99999999-9999-9999-9999-999999999909', '88888888-8888-8888-8888-888888888809', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['maison_trop_endommagee', 'nombre_etages_sup_2'], NOW() - INTERVAL '11 days'),
+
+  ('99999999-9999-9999-9999-999999999910', '88888888-8888-8888-8888-888888888810', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['email_envoye'], ARRAY['pas_zone_alea_fort', 'hors_zone_perimetre'], NOW() - INTERVAL '9 days'),
+
+  ('99999999-9999-9999-9999-999999999911', '88888888-8888-8888-8888-888888888811', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['maison_trop_endommagee'], NOW() - INTERVAL '7 days'),
+
+  ('99999999-9999-9999-9999-999999999912', '88888888-8888-8888-8888-888888888812', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique'], ARRAY['maison_trop_endommagee', 'nombre_etages_sup_2'], NOW() - INTERVAL '6 days'),
+
+  ('99999999-9999-9999-9999-999999999913', '88888888-8888-8888-8888-888888888813', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['locataire_non_occupant'], NOW() - INTERVAL '5 days'),
+
+  ('99999999-9999-9999-9999-999999999914', '88888888-8888-8888-8888-888888888814', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique'], ARRAY['maison_trop_endommagee'], NOW() - INTERVAL '4 days'),
+
+  ('99999999-9999-9999-9999-999999999915', '88888888-8888-8888-8888-888888888815', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['pas_zone_alea_fort', 'maison_trop_endommagee'], NOW() - INTERVAL '3 days'),
+
+  ('99999999-9999-9999-9999-999999999916', '88888888-8888-8888-8888-888888888816', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique'], ARRAY['nombre_etages_sup_2', 'hors_zone_perimetre'], NOW() - INTERVAL '2 days'),
+
+  ('99999999-9999-9999-9999-999999999917', '88888888-8888-8888-8888-888888888817', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['maison_trop_endommagee', 'locataire_non_occupant'], NOW() - INTERVAL '2 days'),
+
+  ('99999999-9999-9999-9999-999999999918', '88888888-8888-8888-8888-888888888818', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['email_envoye'], ARRAY['appartement', 'maison_moins_15_ans'], NOW() - INTERVAL '2 days'),
+
+  -- === Période précédente (parcours 34-45) ===
+  ('99999999-9999-9999-9999-999999999934', '88888888-8888-8888-8888-888888888834', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['maison_trop_endommagee'], NOW() - INTERVAL '56 days'),
+
+  ('99999999-9999-9999-9999-999999999935', '88888888-8888-8888-8888-888888888835', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique'], ARRAY['maison_trop_endommagee', 'nombre_etages_sup_2'], NOW() - INTERVAL '54 days'),
+
+  ('99999999-9999-9999-9999-999999999936', '88888888-8888-8888-8888-888888888836', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['pas_zone_alea_fort'], NOW() - INTERVAL '51 days'),
+
+  ('99999999-9999-9999-9999-999999999937', '88888888-8888-8888-8888-888888888837', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique'], ARRAY['maison_trop_endommagee'], NOW() - INTERVAL '49 days'),
+
+  ('99999999-9999-9999-9999-999999999938', '88888888-8888-8888-8888-888888888838', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['maison_trop_endommagee', 'locataire_non_occupant'], NOW() - INTERVAL '46 days'),
+
+  ('99999999-9999-9999-9999-999999999939', '88888888-8888-8888-8888-888888888839', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['email_envoye'], ARRAY['nombre_etages_sup_2'], NOW() - INTERVAL '43 days'),
+
+  ('99999999-9999-9999-9999-999999999940', '88888888-8888-8888-8888-888888888840', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique'], ARRAY['maison_trop_endommagee'], NOW() - INTERVAL '41 days'),
+
+  ('99999999-9999-9999-9999-999999999941', '88888888-8888-8888-8888-888888888841', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['maison_trop_endommagee', 'pas_zone_alea_fort'], NOW() - INTERVAL '39 days'),
+
+  ('99999999-9999-9999-9999-999999999942', '88888888-8888-8888-8888-888888888842', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique'], ARRAY['maison_trop_endommagee'], NOW() - INTERVAL '37 days'),
+
+  ('99999999-9999-9999-9999-999999999943', '88888888-8888-8888-8888-888888888843', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['visite_domicile'], ARRAY['pas_zone_alea_fort'], NOW() - INTERVAL '35 days'),
+
+  ('99999999-9999-9999-9999-999999999944', '88888888-8888-8888-8888-888888888844', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['appel_telephonique'], ARRAY['maison_trop_endommagee', 'nombre_etages_sup_2'], NOW() - INTERVAL '33 days'),
+
+  ('99999999-9999-9999-9999-999999999945', '88888888-8888-8888-8888-888888888845', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001', 'non_eligible',
+   ARRAY['email_envoye'], ARRAY['appartement'], NOW() - INTERVAL '32 days')
+ON CONFLICT (id) DO NOTHING;
+
+-- Vérification raisons d'inéligibilité
+SELECT
+  r.raison,
+  COUNT(*) as total
+FROM prospect_qualifications pq
+CROSS JOIN LATERAL unnest(pq.raisons_ineligibilite) AS r(raison)
+WHERE pq.id::text LIKE '99999999-9999-9999-9999-%'
+  AND pq.decision = 'non_eligible'
+GROUP BY r.raison
+ORDER BY total DESC;
+
+-- Vérification archivage
 SELECT
   archive_reason,
   COUNT(*) as total,

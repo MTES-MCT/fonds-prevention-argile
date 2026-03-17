@@ -50,8 +50,13 @@ export function DemandesArchiveesCard({
     return null;
   }
 
-  // Agréger les "autres" en une ligne résumée
-  const autresCount = stats.autresMotifs.reduce((acc, m) => acc + m.count, 0);
+  // Limiter à 4 motifs nommés + 1 ligne "Autre" = 5 lignes max
+  // On exclut aussi les motifs nommés "Autre" pour les fusionner dans la ligne récap
+  const motifsNommes = stats.motifs.filter((m) => m.raison !== "Autre");
+  const autresDansTop = stats.motifs.filter((m) => m.raison === "Autre");
+  const motifsAffiches = motifsNommes.slice(0, 4);
+  const motifsRestants = [...motifsNommes.slice(4), ...autresDansTop, ...stats.autresMotifs];
+  const autresCount = motifsRestants.reduce((acc, m) => acc + m.count, 0);
   const autresPourcentage = stats.total > 0 ? Math.round((autresCount / stats.total) * 100) : 0;
 
   return (
@@ -87,8 +92,8 @@ export function DemandesArchiveesCard({
 
         {/* Tableau DSFR */}
         <div className="fr-table fr-mb-0 fr-px-4v fr-mb-4w">
-          <div className="fr-table__wrapper">
-            <div className="fr-table__container">
+          <div className="fr-table__wrapper" style={{ overflow: "hidden" }}>
+            <div className="fr-table__container" style={{ overflow: "hidden" }}>
               <div className="fr-table__content">
                 <table>
                   <caption className="sr-only">Motifs d&apos;archivage les plus fréquents</caption>
@@ -96,15 +101,15 @@ export function DemandesArchiveesCard({
                     <tr>
                       <th scope="col">Raison</th>
                       <th scope="col" style={{ textAlign: "right" }}>
-                        Nb réponses
+                        Nb rép.
                       </th>
                       <th scope="col" style={{ textAlign: "right" }}>
-                        Variation
+                        Var.
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {stats.motifs.map((motif) => (
+                    {motifsAffiches.map((motif) => (
                       <tr
                         key={motif.raison}
                         style={{
@@ -113,8 +118,8 @@ export function DemandesArchiveesCard({
                               ? "4px solid var(--border-plain-warning)"
                               : "4px solid transparent",
                         }}>
-                        <td>{motif.raison}</td>
-                        <td style={{ textAlign: "right" }}>
+                        <td className="fr-text--xs">{motif.raison}</td>
+                        <td className="fr-text--xs" style={{ textAlign: "right" }}>
                           <strong>{motif.count.toLocaleString("fr-FR")}</strong> ({motif.pourcentage}%)
                         </td>
                         <td style={{ textAlign: "right" }}>
@@ -123,19 +128,19 @@ export function DemandesArchiveesCard({
                       </tr>
                     ))}
 
-                    {/* Ligne "Autre" agrégée */}
+                    {/* Ligne "Autre" avec lien vers le drawer */}
                     {autresCount > 0 && (
                       <tr style={{ borderLeft: "4px solid transparent" }}>
-                        <td>
+                        <td className="fr-text--xs">
                           Autre{" "}
-                          <a className="fr-link fr-ml-2v fr-link--sm" href="#" onClick={openDrawer}>
-                            Voir les reponses
+                          <a className="fr-link fr-text--xs" href="#" onClick={openDrawer}>
+                            Voir le détail
                           </a>
                         </td>
-                        <td style={{ textAlign: "right" }}>
+                        <td className="fr-text--xs" style={{ textAlign: "right" }}>
                           <strong>{autresCount.toLocaleString("fr-FR")}</strong> ({autresPourcentage}%)
                         </td>
-                        <td style={{ textAlign: "right" }} />
+                        <td />
                       </tr>
                     )}
                   </tbody>

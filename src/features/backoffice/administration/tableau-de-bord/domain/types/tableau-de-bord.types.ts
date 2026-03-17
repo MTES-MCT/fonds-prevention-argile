@@ -36,6 +36,25 @@ export interface DemandeArchiveeDetail {
   raison: string;
 }
 
+export interface MotifIneligibilite {
+  /** Clé technique (ex: "appartement", "maison_trop_endommagee") */
+  raison: string;
+  /** Label affiché (ex: "Appartement", "Maison trop endommagée") */
+  label: string;
+  count: number;
+  pourcentage: number;
+  variation: number | null;
+}
+
+export interface DemandesIneligiblesStats {
+  /** Total des raisons (>= nb parcours car un parcours peut avoir plusieurs raisons) */
+  total: number;
+  /** Top 5 raisons les plus fréquentes */
+  motifs: MotifIneligibilite[];
+  /** Raisons restantes hors top 5 */
+  autresMotifs: MotifIneligibilite[];
+}
+
 export interface DemandesArchiveesStats {
   total: number;
   /** Les 5 motifs les plus fréquents */
@@ -54,6 +73,7 @@ export interface TableauDeBordStats {
   demandesArchivees: StatAvecVariation;
   alertes: AlerteTendance[];
   demandesArchiveesDetail: DemandesArchiveesStats;
+  demandesIneligiblesDetail: DemandesIneligiblesStats;
 }
 
 export type PeriodeId = "7j" | "30j" | "90j" | "6m" | "12m" | "tout";

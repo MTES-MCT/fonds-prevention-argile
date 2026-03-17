@@ -8,14 +8,18 @@ import {
   entreprisesAmo,
   agents,
 } from "@/shared/database/schema";
+import { prospectQualifications } from "@/shared/database/schema/prospect-qualifications";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types/qualification.types";
 import type {
   TableauDeBordStats,
   PeriodeId,
   AlerteTendance,
   DemandesArchiveesStats,
+  DemandesIneligiblesStats,
   DemandeArchiveeDetail,
   MotifArchivage,
+  MotifIneligibilite,
 } from "../domain/types/tableau-de-bord.types";
 import { PERIODES, SERVICE_START_DATE } from "../domain/types/tableau-de-bord.types";
 import { normalizeCodeDepartement } from "@/shared/constants/departements.constants";
@@ -271,7 +275,7 @@ async function getArchiveReasonsDistribution(
   return distribution;
 }
 
-/** Nombre de motifs affichés dans le tableau principal */
+/** Nombre de motifs affichés dans le tableau principal (hors ligne "Autre") */
 const TOP_MOTIFS_COUNT = 5;
 
 /**
@@ -388,6 +392,126 @@ export async function getAutresDemandesArchiveesDetail(
 }
 
 /**
+ * Motifs d'archivage considérés comme "inéligible" (provenant de la qualification ou de l'archivage agent)
+ */
+const INELIGIBLE_ARCHIVE_REASONS = ["Le demandeur n'est pas éligible", "Non éligible au dispositif"];
+
+/**
+ * Récupère la distribution des raisons d'inéligibilité (issues de prospect_qualifications)
+ * sur une période donnée.
+ *
+ * Logique :
+ * 1. Sélectionne les parcours archivés sur la période avec un motif d'inéligibilité
+ * 2. Joint la dernière qualification non-éligible de chaque parcours (DISTINCT ON)
+ * 3. unnest(raisons_ineligibilite) + GROUP BY pour compter chaque sous-raison
+ */
+async function getIneligibiliteReasonsDistribution(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string
+): Promise<Map<string, number>> {
+  const conditions = [
+    isNotNull(parcoursPrevention.archivedAt),
+    gte(parcoursPrevention.archivedAt, debut),
+    lt(parcoursPrevention.archivedAt, fin),
+    inArray(parcoursPrevention.archiveReason, INELIGIBLE_ARCHIVE_REASONS),
+  ];
+
+  if (codeDepartement) {
+    conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+    conditions.push(whereDepartement(codeDepartement));
+  }
+
+  // Récupérer les parcours inéligibles avec la dernière qualification associée
+  const rows = await db
+    .select({
+      parcoursId: parcoursPrevention.id,
+      raisonsIneligibilite: prospectQualifications.raisonsIneligibilite,
+    })
+    .from(parcoursPrevention)
+    .innerJoin(
+      prospectQualifications,
+      and(
+        eq(prospectQualifications.parcoursId, parcoursPrevention.id),
+        eq(prospectQualifications.decision, "non_eligible"),
+        isNotNull(prospectQualifications.raisonsIneligibilite)
+      )
+    )
+    .where(and(...conditions))
+    .orderBy(desc(prospectQualifications.createdAt));
+
+  // Dédoublonner : garder uniquement la qualification la plus récente par parcours
+  const seenParcours = new Set<string>();
+  const distribution = new Map<string, number>();
+
+  for (const row of rows) {
+    if (seenParcours.has(row.parcoursId)) continue;
+    seenParcours.add(row.parcoursId);
+
+    // Compter chaque raison d'inéligibilité
+    if (row.raisonsIneligibilite) {
+      for (const raison of row.raisonsIneligibilite) {
+        distribution.set(raison, (distribution.get(raison) ?? 0) + 1);
+      }
+    }
+  }
+
+  return distribution;
+}
+
+/**
+ * Calcule le détail des demandes inéligibles : top 5 sous-raisons + reste
+ */
+async function getDemandesIneligiblesDetail(
+  debut: Date,
+  fin: Date,
+  previousRange: { debut: Date; fin: Date } | null,
+  codeDepartement?: string
+): Promise<DemandesIneligiblesStats> {
+  const distributionActuelle = await getIneligibiliteReasonsDistribution(debut, fin, codeDepartement);
+  const distributionPrecedente = previousRange
+    ? await getIneligibiliteReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement)
+    : new Map<string, number>();
+
+  // Total des occurrences de raisons (>= nb parcours car multi-raisons possibles)
+  let total = 0;
+  for (const c of distributionActuelle.values()) {
+    total += c;
+  }
+
+  if (total === 0) {
+    return { total: 0, motifs: [], autresMotifs: [] };
+  }
+
+  // Lookup clé → label
+  const labelMap = new Map<string, string>();
+  for (const r of RAISONS_INELIGIBILITE) {
+    labelMap.set(r.value, r.label);
+  }
+
+  // Construire la liste complète triée par count décroissant
+  const tousMotifs: MotifIneligibilite[] = [];
+  for (const [raison, countActuel] of distributionActuelle) {
+    const countPrecedent = distributionPrecedente.get(raison) ?? 0;
+    tousMotifs.push({
+      raison,
+      label: labelMap.get(raison) ?? raison,
+      count: countActuel,
+      pourcentage: Math.round((countActuel / total) * 100),
+      variation: previousRange ? calculerVariation(countActuel, countPrecedent) : null,
+    });
+  }
+
+  tousMotifs.sort((a, b) => b.count - a.count);
+
+  return {
+    total,
+    motifs: tousMotifs.slice(0, TOP_MOTIFS_COUNT),
+    autresMotifs: tousMotifs.slice(TOP_MOTIFS_COUNT),
+  };
+}
+
+/**
  * Détecte les motifs d'archivage dont la variation dépasse le seuil
  * entre la période courante et la période précédente.
  *
@@ -444,18 +568,28 @@ export async function getTableauDeBordStats(
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 
-  // Stats de la période courante + alertes + détail archivées en parallèle
-  const [simulations, comptes, demandesAmo, reponsesAttente, dossiersDN, archivees, alertes, demandesArchiveesDetail] =
-    await Promise.all([
-      countSimulations(debut, fin, codeDepartement),
-      countComptesCrees(debut, fin, codeDepartement),
-      countDemandesAmo(debut, fin, codeDepartement),
-      countReponsesAmoEnAttente(codeDepartement),
-      countDossiersDN(debut, fin, codeDepartement),
-      countDemandesArchivees(debut, fin, codeDepartement),
-      detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement),
-      getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement),
-    ]);
+  // Stats de la période courante + alertes + détails archivées/inéligibles en parallèle
+  const [
+    simulations,
+    comptes,
+    demandesAmo,
+    reponsesAttente,
+    dossiersDN,
+    archivees,
+    alertes,
+    demandesArchiveesDetail,
+    demandesIneligiblesDetail,
+  ] = await Promise.all([
+    countSimulations(debut, fin, codeDepartement),
+    countComptesCrees(debut, fin, codeDepartement),
+    countDemandesAmo(debut, fin, codeDepartement),
+    countReponsesAmoEnAttente(codeDepartement),
+    countDossiersDN(debut, fin, codeDepartement),
+    countDemandesArchivees(debut, fin, codeDepartement),
+    detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement),
+    getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement),
+    getDemandesIneligiblesDetail(debut, fin, previousRange, codeDepartement),
+  ]);
 
   const tauxTransformation = simulations > 0 ? Math.round((comptes / simulations) * 1000) / 10 : 0;
 
@@ -511,5 +645,6 @@ export async function getTableauDeBordStats(
     demandesArchivees: { valeur: archivees, variation: variations.archivees },
     alertes,
     demandesArchiveesDetail,
+    demandesIneligiblesDetail,
   };
 }

@@ -5,6 +5,7 @@ import { FiltresTableauDeBord } from "./FiltresTableauDeBord";
 import { DashboardStatCard } from "./shared/DashboardStatCard";
 import { AlertesTendances } from "./alertes/AlertesTendances";
 import { DemandesArchiveesCard } from "./demandes-archivees/DemandesArchiveesCard";
+import { DemandesIneligiblesCard } from "./demandes-ineligibles/DemandesIneligiblesCard";
 import {
   getTableauDeBordStatsAction,
   getDepartementsDisponiblesAction,
@@ -156,25 +157,35 @@ export function TableauDeBord() {
         </div>
       </section>
 
-      {/* Demandes archivées — fond blanc */}
-      {stats && stats.demandesArchiveesDetail.total > 0 && (
-        <section className="fr-container-fluid fr-py-4w">
-          <div className="fr-container">
-            <div className="fr-grid-row fr-grid-row--gutters">
-              <div className="fr-col-12 fr-col-lg-6">
-                <DemandesArchiveesCard
-                  stats={stats.demandesArchiveesDetail}
-                  loading={loading}
-                  periodeId={periodeId}
-                  codeDepartement={codeDepartement}
-                  departements={departements}
-                />
+      {/* Demandes archivées + inéligibles — fond blanc */}
+      {stats &&
+        (stats.demandesArchiveesDetail.total > 0 || stats.demandesIneligiblesDetail.total > 0) && (
+          <section className="fr-container-fluid fr-py-4w">
+            <div className="fr-container">
+              <div className="fr-grid-row fr-grid-row--gutters">
+                {stats.demandesArchiveesDetail.total > 0 && (
+                  <div className="fr-col-12 fr-col-lg-6">
+                    <DemandesArchiveesCard
+                      stats={stats.demandesArchiveesDetail}
+                      loading={loading}
+                      periodeId={periodeId}
+                      codeDepartement={codeDepartement}
+                      departements={departements}
+                    />
+                  </div>
+                )}
+                {stats.demandesIneligiblesDetail.total > 0 && (
+                  <div className="fr-col-12 fr-col-lg-6">
+                    <DemandesIneligiblesCard
+                      stats={stats.demandesIneligiblesDetail}
+                      loading={loading}
+                    />
+                  </div>
+                )}
               </div>
-              {/* Futur : colonne pour DemandesIneligiblesCard */}
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
     </>
   );
 }
