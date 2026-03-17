@@ -95,6 +95,7 @@ describe("amo-selection.service", () => {
       rgaSimulationAgentEditedBy: null,
       archivedAt: null,
       archiveReason: null,
+      archivedBy: null,
     };
 
     const mockAmo = {

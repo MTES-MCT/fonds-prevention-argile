@@ -52,6 +52,7 @@ export const parcoursPrevention = pgTable("parcours_prevention", {
   // Archivage
   archivedAt: timestamp("archived_at", { mode: "date" }),
   archiveReason: text("archive_reason"),
+  archivedBy: uuid("archived_by").references(() => agents.id, { onDelete: "set null" }),
 });
 
 export const parcoursPreventionRelations = relations(parcoursPrevention, ({ one, many }) => ({

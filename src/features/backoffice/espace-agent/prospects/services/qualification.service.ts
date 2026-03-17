@@ -50,7 +50,8 @@ export class QualificationService {
       await parcoursPreventionRepository.updateSituationParticulier(
         parcoursId,
         SituationParticulier.ARCHIVE,
-        "Non éligible au dispositif"
+        "Non éligible au dispositif",
+        agentId
       );
     }
     // "a_qualifier" → pas de changement de situation_particulier

@@ -2,10 +2,10 @@
 
 import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
-import { getTableauDeBordStats } from "../services/tableau-de-bord.service";
+import { getTableauDeBordStats, getAutresDemandesArchiveesDetail } from "../services/tableau-de-bord.service";
 import { getAvailableDepartements } from "@/features/backoffice/administration/statistiques/services/statistiques-departement.service";
 import type { ActionResult } from "@/shared/types";
-import type { TableauDeBordStats, PeriodeId } from "../domain/types/tableau-de-bord.types";
+import type { TableauDeBordStats, PeriodeId, DemandeArchiveeDetail } from "../domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/statistiques/domain/types";
 
 /**
@@ -13,7 +13,7 @@ import type { DepartementDisponible } from "@/features/backoffice/administration
  */
 export async function getTableauDeBordStatsAction(
   periodeId: PeriodeId,
-  codeDepartement?: string,
+  codeDepartement?: string
 ): Promise<ActionResult<TableauDeBordStats>> {
   const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
 
@@ -54,6 +54,34 @@ export async function getDepartementsDisponiblesAction(): Promise<ActionResult<D
     return { success: true, data: departements };
   } catch (error) {
     console.error("Erreur lors de la recuperation des departements:", error);
+    return {
+      success: false,
+      error: "Une erreur est survenue.",
+    };
+  }
+}
+
+/**
+ * Recupere le detail individuel des demandes archivees hors top 5 pour le drawer
+ */
+export async function getAutresDemandesArchiveesAction(
+  periodeId: PeriodeId,
+  codeDepartement?: string
+): Promise<ActionResult<{ total: number; demandes: DemandeArchiveeDetail[] }>> {
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
+
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante",
+    };
+  }
+
+  try {
+    const result = await getAutresDemandesArchiveesDetail(periodeId, codeDepartement);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Erreur lors de la recuperation des autres demandes archivees:", error);
     return {
       success: false,
       error: "Une erreur est survenue.",

@@ -1,12 +1,22 @@
-import { count, and, gte, lt, eq, isNotNull, sql } from "drizzle-orm";
+import { count, and, gte, lt, eq, isNotNull, inArray, desc, sql } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import {
   parcoursPrevention,
   parcoursAmoValidations,
   dossiersDemarchesSimplifiees,
+  users,
+  entreprisesAmo,
+  agents,
 } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
-import type { TableauDeBordStats, PeriodeId, AlerteTendance } from "../domain/types/tableau-de-bord.types";
+import type {
+  TableauDeBordStats,
+  PeriodeId,
+  AlerteTendance,
+  DemandesArchiveesStats,
+  DemandeArchiveeDetail,
+  MotifArchivage,
+} from "../domain/types/tableau-de-bord.types";
 import { PERIODES, SERVICE_START_DATE } from "../domain/types/tableau-de-bord.types";
 import { normalizeCodeDepartement } from "@/shared/constants/departements.constants";
 
@@ -118,8 +128,8 @@ async function countDemandesAmo(debut: Date, fin: Date, codeDepartement?: string
           gte(parcoursAmoValidations.choisieAt, debut),
           lt(parcoursAmoValidations.choisieAt, fin),
           isNotNull(parcoursPrevention.rgaSimulationData),
-          whereDepartement(codeDepartement),
-        ),
+          whereDepartement(codeDepartement)
+        )
       );
     return result[0]?.count ?? 0;
   }
@@ -127,12 +137,7 @@ async function countDemandesAmo(debut: Date, fin: Date, codeDepartement?: string
   const result = await db
     .select({ count: count() })
     .from(parcoursAmoValidations)
-    .where(
-      and(
-        gte(parcoursAmoValidations.choisieAt, debut),
-        lt(parcoursAmoValidations.choisieAt, fin),
-      ),
-    );
+    .where(and(gte(parcoursAmoValidations.choisieAt, debut), lt(parcoursAmoValidations.choisieAt, fin)));
   return result[0]?.count ?? 0;
 }
 
@@ -149,8 +154,8 @@ async function countReponsesAmoEnAttente(codeDepartement?: string): Promise<numb
         and(
           eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE),
           isNotNull(parcoursPrevention.rgaSimulationData),
-          whereDepartement(codeDepartement),
-        ),
+          whereDepartement(codeDepartement)
+        )
       );
     return result[0]?.count ?? 0;
   }
@@ -176,8 +181,8 @@ async function countDossiersDN(debut: Date, fin: Date, codeDepartement?: string)
           gte(dossiersDemarchesSimplifiees.createdAt, debut),
           lt(dossiersDemarchesSimplifiees.createdAt, fin),
           isNotNull(parcoursPrevention.rgaSimulationData),
-          whereDepartement(codeDepartement),
-        ),
+          whereDepartement(codeDepartement)
+        )
       );
     return result[0]?.count ?? 0;
   }
@@ -185,12 +190,7 @@ async function countDossiersDN(debut: Date, fin: Date, codeDepartement?: string)
   const result = await db
     .select({ count: count() })
     .from(dossiersDemarchesSimplifiees)
-    .where(
-      and(
-        gte(dossiersDemarchesSimplifiees.createdAt, debut),
-        lt(dossiersDemarchesSimplifiees.createdAt, fin),
-      ),
-    );
+    .where(and(gte(dossiersDemarchesSimplifiees.createdAt, debut), lt(dossiersDemarchesSimplifiees.createdAt, fin)));
   return result[0]?.count ?? 0;
 }
 
@@ -239,7 +239,7 @@ const SEUIL_HAUSSE_MOTIFS = 10;
 async function getArchiveReasonsDistribution(
   debut: Date,
   fin: Date,
-  codeDepartement?: string,
+  codeDepartement?: string
 ): Promise<Map<string, number>> {
   const conditions = [
     isNotNull(parcoursPrevention.archivedAt),
@@ -271,6 +271,122 @@ async function getArchiveReasonsDistribution(
   return distribution;
 }
 
+/** Nombre de motifs affichés dans le tableau principal */
+const TOP_MOTIFS_COUNT = 5;
+
+/**
+ * Calcule le détail des demandes archivées : top 5 motifs + "autres" pour le drawer
+ */
+async function getDemandesArchiveesDetail(
+  debut: Date,
+  fin: Date,
+  previousRange: { debut: Date; fin: Date } | null,
+  codeDepartement?: string
+): Promise<DemandesArchiveesStats> {
+  const distributionActuelle = await getArchiveReasonsDistribution(debut, fin, codeDepartement);
+  const distributionPrecedente = previousRange
+    ? await getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement)
+    : new Map<string, number>();
+
+  // Total archivées sur la période
+  let total = 0;
+  for (const c of distributionActuelle.values()) {
+    total += c;
+  }
+
+  if (total === 0) {
+    return { total: 0, motifs: [], autresMotifs: [] };
+  }
+
+  // Construire la liste complète triée par count décroissant
+  const tousMotifs: MotifArchivage[] = [];
+  for (const [raison, countActuel] of distributionActuelle) {
+    const countPrecedent = distributionPrecedente.get(raison) ?? 0;
+    tousMotifs.push({
+      raison,
+      count: countActuel,
+      pourcentage: Math.round((countActuel / total) * 100),
+      variation: previousRange ? calculerVariation(countActuel, countPrecedent) : null,
+    });
+  }
+
+  tousMotifs.sort((a, b) => b.count - a.count);
+
+  return {
+    total,
+    motifs: tousMotifs.slice(0, TOP_MOTIFS_COUNT),
+    autresMotifs: tousMotifs.slice(TOP_MOTIFS_COUNT),
+  };
+}
+
+/**
+ * Récupère le détail individuel des demandes archivées dont le motif
+ * n'est pas dans le top 5 (les "autres"), pour le drawer.
+ *
+ * Retourne la liste des parcours archivés avec info demandeur + structure AMO.
+ */
+export async function getAutresDemandesArchiveesDetail(
+  periodeId: PeriodeId,
+  codeDepartement?: string
+): Promise<{ total: number; demandes: DemandeArchiveeDetail[] }> {
+  const { debut, fin } = getDateRange(periodeId);
+  const previousRange = getPreviousDateRange(periodeId);
+
+  // Récupérer la distribution pour identifier les motifs hors top 5
+  const detail = await getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement);
+  const autresRaisons = detail.autresMotifs.map((m) => m.raison);
+
+  if (autresRaisons.length === 0) {
+    return { total: 0, demandes: [] };
+  }
+
+  // Récupérer les parcours individuels ayant ces motifs
+  const conditions = [
+    isNotNull(parcoursPrevention.archivedAt),
+    isNotNull(parcoursPrevention.archiveReason),
+    gte(parcoursPrevention.archivedAt, debut),
+    lt(parcoursPrevention.archivedAt, fin),
+    inArray(parcoursPrevention.archiveReason, autresRaisons),
+  ];
+
+  if (codeDepartement) {
+    conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+    conditions.push(whereDepartement(codeDepartement));
+  }
+
+  const rows = await db
+    .select({
+      parcoursId: parcoursPrevention.id,
+      archivedAt: parcoursPrevention.archivedAt,
+      archiveReason: parcoursPrevention.archiveReason,
+      userPrenom: users.prenom,
+      userNom: users.nom,
+      agentGivenName: agents.givenName,
+      agentUsualName: agents.usualName,
+      entrepriseAmoNom: entreprisesAmo.nom,
+    })
+    .from(parcoursPrevention)
+    .innerJoin(users, eq(parcoursPrevention.userId, users.id))
+    .leftJoin(agents, eq(parcoursPrevention.archivedBy, agents.id))
+    .leftJoin(parcoursAmoValidations, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
+    .leftJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
+    .where(and(...conditions))
+    .orderBy(desc(parcoursPrevention.archivedAt));
+
+  const demandes: DemandeArchiveeDetail[] = rows.map((row) => ({
+    parcoursId: row.parcoursId,
+    demandeur: [row.userPrenom, row.userNom].filter(Boolean).join(" ") || "Demandeur inconnu",
+    agent: row.agentGivenName
+      ? [row.agentGivenName, row.agentUsualName].filter(Boolean).join(" ")
+      : null,
+    structureAmo: row.entrepriseAmoNom ?? null,
+    archivedAt: row.archivedAt!,
+    raison: row.archiveReason!,
+  }));
+
+  return { total: demandes.length, demandes };
+}
+
 /**
  * Détecte les motifs d'archivage dont la variation dépasse le seuil
  * entre la période courante et la période précédente.
@@ -281,7 +397,7 @@ async function detecterMotifsEnHausse(
   debut: Date,
   fin: Date,
   previousRange: { debut: Date; fin: Date } | null,
-  codeDepartement?: string,
+  codeDepartement?: string
 ): Promise<AlerteTendance[]> {
   if (!previousRange) {
     return [];
@@ -323,13 +439,13 @@ async function detecterMotifsEnHausse(
  */
 export async function getTableauDeBordStats(
   periodeId: PeriodeId,
-  codeDepartement?: string,
+  codeDepartement?: string
 ): Promise<TableauDeBordStats> {
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 
-  // Stats de la période courante + alertes en parallèle
-  const [simulations, comptes, demandesAmo, reponsesAttente, dossiersDN, archivees, alertes] =
+  // Stats de la période courante + alertes + détail archivées en parallèle
+  const [simulations, comptes, demandesAmo, reponsesAttente, dossiersDN, archivees, alertes, demandesArchiveesDetail] =
     await Promise.all([
       countSimulations(debut, fin, codeDepartement),
       countComptesCrees(debut, fin, codeDepartement),
@@ -338,6 +454,7 @@ export async function getTableauDeBordStats(
       countDossiersDN(debut, fin, codeDepartement),
       countDemandesArchivees(debut, fin, codeDepartement),
       detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement),
+      getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement),
     ]);
 
   const tauxTransformation = simulations > 0 ? Math.round((comptes / simulations) * 1000) / 10 : 0;
@@ -362,25 +479,21 @@ export async function getTableauDeBordStats(
   };
 
   if (previousRange) {
-    const [prevSimulations, prevComptes, prevDemandesAmo, prevDossiersDN, prevArchivees] =
-      await Promise.all([
-        countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
-        countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
-        countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
-        countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
-        countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
-      ]);
+    const [prevSimulations, prevComptes, prevDemandesAmo, prevDossiersDN, prevArchivees] = await Promise.all([
+      countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
+      countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
+      countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
+      countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
+      countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
+    ]);
 
-    const prevTaux = prevSimulations > 0
-      ? Math.round((prevComptes / prevSimulations) * 1000) / 10
-      : 0;
+    const prevTaux = prevSimulations > 0 ? Math.round((prevComptes / prevSimulations) * 1000) / 10 : 0;
 
     variations = {
       simulations: calculerVariation(simulations, prevSimulations),
       comptes: calculerVariation(comptes, prevComptes),
-      tauxTransformation: tauxTransformation - prevTaux !== 0
-        ? Math.round((tauxTransformation - prevTaux) * 10) / 10
-        : 0,
+      tauxTransformation:
+        tauxTransformation - prevTaux !== 0 ? Math.round((tauxTransformation - prevTaux) * 10) / 10 : 0,
       demandesAmo: calculerVariation(demandesAmo, prevDemandesAmo),
       reponsesAttente: null, // Pas de variation pour un snapshot
       dossiersDN: calculerVariation(dossiersDN, prevDossiersDN),
@@ -397,5 +510,6 @@ export async function getTableauDeBordStats(
     dossiersDemarcheNumerique: { valeur: dossiersDN, variation: variations.dossiersDN },
     demandesArchivees: { valeur: archivees, variation: variations.archivees },
     alertes,
+    demandesArchiveesDetail,
   };
 }

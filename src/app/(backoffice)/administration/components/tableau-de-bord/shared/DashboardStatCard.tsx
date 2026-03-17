@@ -50,11 +50,7 @@ function VariationBadge({
         color: textColor,
         marginBottom: "0.75rem",
       }}
-      aria-label={
-        isNeutral
-          ? "Stable"
-          : `${isPositive ? "Hausse" : "Baisse"} de ${Math.abs(variation)}${suffix}`
-      }>
+      aria-label={isNeutral ? "Stable" : `${isPositive ? "Hausse" : "Baisse"} de ${Math.abs(variation)}${suffix}`}>
       {text}
     </span>
   );

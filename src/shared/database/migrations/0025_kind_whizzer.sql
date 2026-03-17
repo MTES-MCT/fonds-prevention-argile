@@ -1,0 +1,2 @@
+ALTER TABLE "parcours_prevention" ADD COLUMN "archived_by" uuid;--> statement-breakpoint
+ALTER TABLE "parcours_prevention" ADD CONSTRAINT "parcours_prevention_archived_by_agents_id_fk" FOREIGN KEY ("archived_by") REFERENCES "public"."agents"("id") ON DELETE set null ON UPDATE no action;

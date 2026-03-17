@@ -46,7 +46,8 @@ export async function archiveDossierAction(parcoursId: string, archiveReason: st
     await parcoursPreventionRepository.updateSituationParticulier(
       parcoursId,
       SituationParticulier.ARCHIVE,
-      archiveReason
+      archiveReason,
+      agent.id
     );
 
     revalidatePath("/espace-agent", "layout");

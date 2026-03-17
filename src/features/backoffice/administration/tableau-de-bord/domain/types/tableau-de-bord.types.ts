@@ -12,6 +12,38 @@ export interface AlerteTendance {
   type: "hausse";
 }
 
+export interface MotifArchivage {
+  raison: string;
+  count: number;
+  /** Pourcentage par rapport au total (ex: 60 pour 60%) */
+  pourcentage: number;
+  /** Variation en % par rapport à la période précédente */
+  variation: number | null;
+}
+
+/** Détail d'une demande archivée individuelle (pour le drawer) */
+export interface DemandeArchiveeDetail {
+  parcoursId: string;
+  /** Prénom + nom du demandeur */
+  demandeur: string;
+  /** Prénom + nom de l'agent qui a archivé (null si inconnu) */
+  agent: string | null;
+  /** Nom de la structure AMO (null si pas d'AMO) */
+  structureAmo: string | null;
+  /** Date d'archivage */
+  archivedAt: Date;
+  /** Motif d'archivage */
+  raison: string;
+}
+
+export interface DemandesArchiveesStats {
+  total: number;
+  /** Les 5 motifs les plus fréquents */
+  motifs: MotifArchivage[];
+  /** Tous les motifs restants (pour le drawer "Autres") */
+  autresMotifs: MotifArchivage[];
+}
+
 export interface TableauDeBordStats {
   simulationsLancees: StatAvecVariation;
   comptesCrees: StatAvecVariation;
@@ -21,6 +53,7 @@ export interface TableauDeBordStats {
   dossiersDemarcheNumerique: StatAvecVariation;
   demandesArchivees: StatAvecVariation;
   alertes: AlerteTendance[];
+  demandesArchiveesDetail: DemandesArchiveesStats;
 }
 
 export type PeriodeId = "7j" | "30j" | "90j" | "6m" | "12m" | "tout";

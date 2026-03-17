@@ -259,7 +259,8 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   async updateSituationParticulier(
     id: string,
     situation: SituationParticulier,
-    archiveReason?: string
+    archiveReason?: string,
+    archivedByAgentId?: string
   ): Promise<ParcoursPrevention | null> {
     const updateData: Partial<NewParcoursPrevention> = {
       situationParticulier: situation,
@@ -270,10 +271,14 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       if (archiveReason) {
         updateData.archiveReason = archiveReason;
       }
+      if (archivedByAgentId) {
+        updateData.archivedBy = archivedByAgentId;
+      }
     } else {
       // Réactivation : nettoyer les champs d'archivage
       updateData.archivedAt = null;
       updateData.archiveReason = null;
+      updateData.archivedBy = null;
     }
 
     return await this.update(id, updateData);

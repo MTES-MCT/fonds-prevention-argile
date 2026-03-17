@@ -271,6 +271,7 @@ describe("amo-validation.service", () => {
       rgaSimulationAgentEditedBy: null,
       archivedAt: null,
       archiveReason: null,
+      archivedBy: null,
     };
 
     beforeEach(() => {
@@ -437,6 +438,7 @@ describe("amo-validation.service", () => {
       rgaSimulationAgentEditedBy: null,
       archivedAt: null,
       archiveReason: null,
+      archivedBy: null,
     };
 
     beforeEach(() => {
@@ -538,6 +540,7 @@ describe("amo-validation.service", () => {
       rgaSimulationAgentEditedBy: null,
       archivedAt: null,
       archiveReason: null,
+      archivedBy: null,
     };
 
     beforeEach(() => {

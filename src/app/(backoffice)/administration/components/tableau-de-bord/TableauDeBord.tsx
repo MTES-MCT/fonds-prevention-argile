@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { FiltresTableauDeBord } from "./FiltresTableauDeBord";
-import { DashboardStatCard } from "./DashboardStatCard";
-import { AlertesTendances } from "./AlertesTendances";
+import { DashboardStatCard } from "./shared/DashboardStatCard";
+import { AlertesTendances } from "./alertes/AlertesTendances";
+import { DemandesArchiveesCard } from "./demandes-archivees/DemandesArchiveesCard";
 import {
   getTableauDeBordStatsAction,
   getDepartementsDisponiblesAction,
@@ -154,6 +155,26 @@ export function TableauDeBord() {
           </p>
         </div>
       </section>
+
+      {/* Demandes archivées — fond blanc */}
+      {stats && stats.demandesArchiveesDetail.total > 0 && (
+        <section className="fr-container-fluid fr-py-4w">
+          <div className="fr-container">
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12 fr-col-lg-6">
+                <DemandesArchiveesCard
+                  stats={stats.demandesArchiveesDetail}
+                  loading={loading}
+                  periodeId={periodeId}
+                  codeDepartement={codeDepartement}
+                  departements={departements}
+                />
+              </div>
+              {/* Futur : colonne pour DemandesIneligiblesCard */}
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }

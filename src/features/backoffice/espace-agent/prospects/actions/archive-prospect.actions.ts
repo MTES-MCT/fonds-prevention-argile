@@ -39,7 +39,8 @@ export async function archiveProspectAction(parcoursId: string, archiveReason: s
     await parcoursPreventionRepository.updateSituationParticulier(
       parcoursId,
       SituationParticulier.ARCHIVE,
-      archiveReason
+      archiveReason,
+      user.id
     );
 
     revalidatePath("/espace-agent", "layout");
