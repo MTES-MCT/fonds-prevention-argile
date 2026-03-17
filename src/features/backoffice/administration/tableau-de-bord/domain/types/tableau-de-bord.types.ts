@@ -63,6 +63,26 @@ export interface DemandesArchiveesStats {
   autresMotifs: MotifArchivage[];
 }
 
+export interface DepartementStats {
+  /** Code officiel (ex: "03") */
+  codeDepartement: string;
+  /** Nom du département (ex: "Allier") */
+  nomDepartement: string;
+  simulations: number;
+  simulationsEligibles: number;
+  /** Pourcentage éligibles / simulations (ex: 42) */
+  pourcentageEligibles: number;
+  dossiersDN: number;
+  /** Dossiers DN / Simulations * 100 (ex: 31.25) */
+  transformationGlobale: number;
+}
+
+export type TopDepartementsTriColumn =
+  | "simulations"
+  | "simulationsEligibles"
+  | "dossiersDN"
+  | "transformationGlobale";
+
 export interface TableauDeBordStats {
   simulationsLancees: StatAvecVariation;
   comptesCrees: StatAvecVariation;
@@ -74,6 +94,7 @@ export interface TableauDeBordStats {
   alertes: AlerteTendance[];
   demandesArchiveesDetail: DemandesArchiveesStats;
   demandesIneligiblesDetail: DemandesIneligiblesStats;
+  topDepartements: DepartementStats[];
 }
 
 export type PeriodeId = "7j" | "30j" | "90j" | "6m" | "12m" | "tout";

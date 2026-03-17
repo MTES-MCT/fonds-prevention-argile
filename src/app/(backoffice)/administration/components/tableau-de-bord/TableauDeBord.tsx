@@ -6,6 +6,7 @@ import { DashboardStatCard } from "./shared/DashboardStatCard";
 import { AlertesTendances } from "./alertes/AlertesTendances";
 import { DemandesArchiveesCard } from "./demandes-archivees/DemandesArchiveesCard";
 import { DemandesIneligiblesCard } from "./demandes-ineligibles/DemandesIneligiblesCard";
+import { TopDepartementsCard } from "./top-departements/TopDepartementsCard";
 import {
   getTableauDeBordStatsAction,
   getDepartementsDisponiblesAction,
@@ -186,6 +187,19 @@ export function TableauDeBord() {
             </div>
           </section>
         )}
+
+      {/* Top 5 départements — fond blanc */}
+      {stats && stats.topDepartements.length > 0 && (
+        <section className="fr-container-fluid fr-py-4w">
+          <div className="fr-container">
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12">
+                <TopDepartementsCard departements={stats.topDepartements} loading={loading} />
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }

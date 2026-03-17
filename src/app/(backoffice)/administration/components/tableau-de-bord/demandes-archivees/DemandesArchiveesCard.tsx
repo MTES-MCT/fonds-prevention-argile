@@ -118,8 +118,8 @@ export function DemandesArchiveesCard({
                               ? "4px solid var(--border-plain-warning)"
                               : "4px solid transparent",
                         }}>
-                        <td className="fr-text--xs">{motif.raison}</td>
-                        <td className="fr-text--xs" style={{ textAlign: "right" }}>
+                        <td className="fr-text--sm">{motif.raison}</td>
+                        <td className="fr-text--sm" style={{ textAlign: "right" }}>
                           <strong>{motif.count.toLocaleString("fr-FR")}</strong> ({motif.pourcentage}%)
                         </td>
                         <td style={{ textAlign: "right" }}>
@@ -131,13 +131,13 @@ export function DemandesArchiveesCard({
                     {/* Ligne "Autre" avec lien vers le drawer */}
                     {autresCount > 0 && (
                       <tr style={{ borderLeft: "4px solid transparent" }}>
-                        <td className="fr-text--xs">
+                        <td className="fr-text--sm">
                           Autre{" "}
-                          <a className="fr-link fr-text--xs" href="#" onClick={openDrawer}>
+                          <a className="fr-link fr-text--sm" href="#" onClick={openDrawer}>
                             Voir le détail
                           </a>
                         </td>
-                        <td className="fr-text--xs" style={{ textAlign: "right" }}>
+                        <td className="fr-text--sm" style={{ textAlign: "right" }}>
                           <strong>{autresCount.toLocaleString("fr-FR")}</strong> ({autresPourcentage}%)
                         </td>
                         <td />

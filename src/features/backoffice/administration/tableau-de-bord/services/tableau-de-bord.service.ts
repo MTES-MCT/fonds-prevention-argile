@@ -11,6 +11,7 @@ import {
 import { prospectQualifications } from "@/shared/database/schema/prospect-qualifications";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types/qualification.types";
+import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
 import type {
   TableauDeBordStats,
   PeriodeId,
@@ -18,11 +19,17 @@ import type {
   DemandesArchiveesStats,
   DemandesIneligiblesStats,
   DemandeArchiveeDetail,
+  DepartementStats,
   MotifArchivage,
   MotifIneligibilite,
 } from "../domain/types/tableau-de-bord.types";
 import { PERIODES, SERVICE_START_DATE } from "../domain/types/tableau-de-bord.types";
-import { normalizeCodeDepartement } from "@/shared/constants/departements.constants";
+import {
+  normalizeCodeDepartement,
+  toOfficialCodeDepartement,
+  getDepartementName,
+} from "@/shared/constants/departements.constants";
+import { asString } from "@/shared/utils/object.utils";
 
 /**
  * Calcule les dates de debut/fin pour une periode donnee
@@ -559,6 +566,109 @@ async function detecterMotifsEnHausse(
 }
 
 /**
+ * Extrait le code département normalisé depuis les données JSONB d'un parcours.
+ * Priorité aux données agent si disponibles.
+ */
+function extractCodeDepartement(
+  rgaSimulationData: unknown,
+  rgaSimulationDataAgent: unknown
+): string | undefined {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const agentData = rgaSimulationDataAgent as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const userData = rgaSimulationData as any;
+
+  const rawCode = asString(agentData?.logement?.code_departement) ?? asString(userData?.logement?.code_departement);
+  if (!rawCode) return undefined;
+  return normalizeCodeDepartement(rawCode);
+}
+
+/**
+ * Calcule les statistiques par département : simulations, éligibilité, dossiers DN, transformation.
+ * Toujours global (pas de filtre département) pour permettre le classement.
+ */
+async function getTopDepartementsStats(debut: Date, fin: Date): Promise<DepartementStats[]> {
+  // Requête 1 : tous les parcours avec simulation sur la période
+  const parcours = await db
+    .select({
+      id: parcoursPrevention.id,
+      rgaSimulationData: parcoursPrevention.rgaSimulationData,
+      rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
+    })
+    .from(parcoursPrevention)
+    .where(and(gte(parcoursPrevention.createdAt, debut), lt(parcoursPrevention.createdAt, fin), isNotNull(parcoursPrevention.rgaSimulationData)));
+
+  // Requête 2 : dossiers DN avec données département du parcours
+  const dossiers = await db
+    .select({
+      rgaSimulationData: parcoursPrevention.rgaSimulationData,
+      rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
+    })
+    .from(dossiersDemarchesSimplifiees)
+    .innerJoin(parcoursPrevention, eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id))
+    .where(
+      and(
+        gte(dossiersDemarchesSimplifiees.createdAt, debut),
+        lt(dossiersDemarchesSimplifiees.createdAt, fin),
+        isNotNull(parcoursPrevention.rgaSimulationData)
+      )
+    );
+
+  // Grouper les simulations par département + évaluer l'éligibilité
+  const deptSimulations = new Map<string, { total: number; eligibles: number }>();
+
+  for (const p of parcours) {
+    const code = extractCodeDepartement(p.rgaSimulationData, p.rgaSimulationDataAgent);
+    if (!code) continue;
+
+    const entry = deptSimulations.get(code) ?? { total: 0, eligibles: 0 };
+    entry.total += 1;
+
+    // Évaluer l'éligibilité avec les données les plus récentes
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const simData = (p.rgaSimulationDataAgent ?? p.rgaSimulationData) as any;
+    const evaluation = EligibilityService.evaluate(simData);
+    if (evaluation.result?.eligible) {
+      entry.eligibles += 1;
+    }
+
+    deptSimulations.set(code, entry);
+  }
+
+  // Grouper les dossiers DN par département
+  const deptDossiersDN = new Map<string, number>();
+
+  for (const d of dossiers) {
+    const code = extractCodeDepartement(d.rgaSimulationData, d.rgaSimulationDataAgent);
+    if (!code) continue;
+    deptDossiersDN.set(code, (deptDossiersDN.get(code) ?? 0) + 1);
+  }
+
+  // Assembler les statistiques par département
+  const allCodes = new Set([...deptSimulations.keys(), ...deptDossiersDN.keys()]);
+  const result: DepartementStats[] = [];
+
+  for (const code of allCodes) {
+    const sims = deptSimulations.get(code) ?? { total: 0, eligibles: 0 };
+    const dn = deptDossiersDN.get(code) ?? 0;
+    const officialCode = toOfficialCodeDepartement(code);
+    const nom = getDepartementName(code);
+
+    result.push({
+      codeDepartement: officialCode,
+      nomDepartement: nom ?? code,
+      simulations: sims.total,
+      simulationsEligibles: sims.eligibles,
+      pourcentageEligibles: sims.total > 0 ? Math.round((sims.eligibles / sims.total) * 100) : 0,
+      dossiersDN: dn,
+      transformationGlobale: sims.total > 0 ? Math.round((dn / sims.total) * 10000) / 100 : 0,
+    });
+  }
+
+  return result;
+}
+
+/**
  * Récupère les statistiques du tableau de bord avec variations
  */
 export async function getTableauDeBordStats(
@@ -579,6 +689,7 @@ export async function getTableauDeBordStats(
     alertes,
     demandesArchiveesDetail,
     demandesIneligiblesDetail,
+    topDepartements,
   ] = await Promise.all([
     countSimulations(debut, fin, codeDepartement),
     countComptesCrees(debut, fin, codeDepartement),
@@ -589,6 +700,7 @@ export async function getTableauDeBordStats(
     detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement),
     getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement),
     getDemandesIneligiblesDetail(debut, fin, previousRange, codeDepartement),
+    getTopDepartementsStats(debut, fin),
   ]);
 
   const tauxTransformation = simulations > 0 ? Math.round((comptes / simulations) * 1000) / 10 : 0;
@@ -646,5 +758,6 @@ export async function getTableauDeBordStats(
     alertes,
     demandesArchiveesDetail,
     demandesIneligiblesDetail,
+    topDepartements,
   };
 }

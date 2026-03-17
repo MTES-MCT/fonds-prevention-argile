@@ -98,10 +98,10 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
                             ? "4px solid var(--border-plain-warning)"
                             : "4px solid transparent",
                       }}>
-                      <td className="fr-text--xs" style={{ color: "var(--text-label-warning)" }}>
+                      <td className="fr-text--sm" style={{ color: "var(--text-label-warning)" }}>
                         {motif.label}
                       </td>
-                      <td className="fr-text--xs" style={{ textAlign: "right" }}>
+                      <td className="fr-text--sm" style={{ textAlign: "right" }}>
                         <strong>{motif.count.toLocaleString("fr-FR")}</strong> ({motif.pourcentage}%)
                       </td>
                       <td style={{ textAlign: "right" }}>
@@ -113,8 +113,8 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
                   {/* Ligne "Autre" pour les motifs restants */}
                   {autresCount > 0 && (
                     <tr style={{ borderLeft: "4px solid transparent" }}>
-                      <td className="fr-text--xs">Autre</td>
-                      <td className="fr-text--xs" style={{ textAlign: "right" }}>
+                      <td className="fr-text--sm">Autre</td>
+                      <td className="fr-text--sm" style={{ textAlign: "right" }}>
                         <strong>{autresCount.toLocaleString("fr-FR")}</strong> ({autresPourcentage}%)
                       </td>
                       <td />
