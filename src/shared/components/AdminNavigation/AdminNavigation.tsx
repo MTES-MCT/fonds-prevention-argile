@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAgentRole } from "@/features/auth/hooks";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
-import { SUPER_ADMIN_NAV_TABS } from "@/features/backoffice/administration/shared/domain/value-objects/admin-nav.config";
+import { ADMIN_NAV_TABS } from "@/features/backoffice/administration/shared/domain/value-objects/admin-nav.config";
 import type { AdminNavTab } from "@/features/backoffice/administration/shared/domain/value-objects/admin-nav.config";
 
 /** Rôles ayant accès au menu horizontal d'administration */
@@ -43,14 +43,15 @@ export function AdminNavigation() {
     return null;
   }
 
-  const activeTab = getActiveTab(pathname, SUPER_ADMIN_NAV_TABS);
+  const visibleTabs = ADMIN_NAV_TABS.filter((tab) => !tab.minRoles || tab.minRoles.includes(agentRole as UserRole));
+  const activeTab = getActiveTab(pathname, visibleTabs);
 
   return (
     <div className="fr-header__menu">
       <div className="fr-container">
         <nav className="fr-nav" id="admin-navigation" role="navigation" aria-label="Menu administration">
           <ul className="fr-nav__list">
-            {SUPER_ADMIN_NAV_TABS.map((tab) => (
+            {visibleTabs.map((tab) => (
               <li key={tab.id} className="fr-nav__item">
                 <Link href={tab.href} className="fr-nav__link" aria-current={activeTab === tab.id ? "page" : undefined}>
                   <span className={`${tab.icon} fr-mr-1v`} aria-hidden="true" />

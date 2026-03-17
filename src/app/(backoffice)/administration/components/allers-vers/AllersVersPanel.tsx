@@ -13,19 +13,16 @@ interface AllersVersWithRelations extends AllersVers {
   epci?: { codeEpci: string }[];
 }
 
-type ViewId = "liste" | "import";
-
 export default function AllersVersPanel() {
   const [editingAllersVers, setEditingAllersVers] = useState<AllersVersWithRelations | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [activeView, setActiveView] = useState<ViewId>("liste");
 
   // Vérifier les permissions
   const canWrite = useHasPermission(BackofficePermission.ALLERS_VERS_WRITE);
   const canImport = useHasPermission(BackofficePermission.ALLERS_VERS_IMPORT);
 
   const handleEdit = (allersVers: AllersVersWithRelations) => {
-    if (!canWrite) return; // Sécurité supplémentaire
+    if (!canWrite) return;
     setEditingAllersVers(allersVers);
   };
 
@@ -48,73 +45,78 @@ export default function AllersVersPanel() {
   const handleSuccess = useCallback(() => {
     setRefreshTrigger((prev) => prev + 1);
     setEditingAllersVers(null);
-    setActiveView("liste");
   }, []);
 
   return (
     <>
-      <div className="w-full">
-        {/* En-tête */}
-        <div className="fr-mb-6w">
+      {/* En-tête */}
+      <section className="fr-container-fluid fr-py-4w">
+        <div className="fr-container">
           <h1 className="fr-h2 fr-mb-2w">Gestion des Allers Vers</h1>
-          <p className="fr-text--lg fr-text-mention--grey">
+          <p className="fr-text--lg" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
             Gérez les structures publiques ou privées qui font connaître le fonds prévention argile.
           </p>
         </div>
+      </section>
 
-        {/* Contrôle segmenté - masquer l'onglet import si pas de permission */}
-        <fieldset className="fr-segmented fr-mb-6w">
-          <legend className="fr-segmented__legend fr-sr-only">Sélection de la vue Allers Vers</legend>
-          <div className="fr-segmented__elements">
-            <div className="fr-segmented__element">
-              <input
-                value="liste"
-                checked={activeView === "liste"}
-                type="radio"
-                id="segmented-allers-vers-1"
-                name="segmented-allers-vers"
-                onChange={() => setActiveView("liste")}
-              />
-              <label className="fr-icon-building-fill fr-label" htmlFor="segmented-allers-vers-1">
-                Liste des structures
-              </label>
+      {/* Onglets + contenu — fond bleu */}
+      <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
+        <div className="fr-container">
+          <div className="fr-tabs">
+            <ul className="fr-tabs__list" role="tablist" aria-label="Vues Allers Vers">
+              <li role="presentation">
+                <button
+                  type="button"
+                  id="tab-allers-vers-liste"
+                  className="fr-tabs__tab fr-icon-building-fill fr-tabs__tab--icon-left"
+                  tabIndex={0}
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="tab-allers-vers-liste-panel">
+                  Liste des structures
+                </button>
+              </li>
+              {canImport && (
+                <li role="presentation">
+                  <button
+                    type="button"
+                    id="tab-allers-vers-import"
+                    className="fr-tabs__tab fr-icon-upload-line fr-tabs__tab--icon-left"
+                    tabIndex={-1}
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="tab-allers-vers-import-panel">
+                    Import
+                  </button>
+                </li>
+              )}
+            </ul>
+
+            <div
+              id="tab-allers-vers-liste-panel"
+              className="fr-tabs__panel fr-tabs__panel--selected"
+              role="tabpanel"
+              aria-labelledby="tab-allers-vers-liste"
+              tabIndex={0}>
+              <AllerVersList onEdit={handleEdit} refreshTrigger={refreshTrigger} canEdit={canWrite} />
             </div>
+
             {canImport && (
-              <div className="fr-segmented__element">
-                <input
-                  value="import"
-                  checked={activeView === "import"}
-                  type="radio"
-                  id="segmented-allers-vers-2"
-                  name="segmented-allers-vers"
-                  onChange={() => setActiveView("import")}
-                />
-                <label className="fr-icon-upload-line fr-label" htmlFor="segmented-allers-vers-2">
-                  Import
-                </label>
+              <div
+                id="tab-allers-vers-import-panel"
+                className="fr-tabs__panel"
+                role="tabpanel"
+                aria-labelledby="tab-allers-vers-import"
+                tabIndex={0}>
+                <h2 className="fr-h3 fr-mb-3w">Import des structures Allers Vers</h2>
+                <AllersVersSeedUpload onImportSuccess={handleSuccess} />
               </div>
             )}
           </div>
-        </fieldset>
+        </div>
+      </section>
 
-        {/* Vue Liste */}
-        {activeView === "liste" && (
-          <div>
-            <h2 className="fr-h3 fr-mb-3w">Liste des structures Allers Vers</h2>
-            <AllerVersList onEdit={handleEdit} refreshTrigger={refreshTrigger} canEdit={canWrite} />
-          </div>
-        )}
-
-        {/* Vue Import - seulement si permission */}
-        {activeView === "import" && canImport && (
-          <div>
-            <h2 className="fr-h3 fr-mb-3w">Import des structures Allers Vers</h2>
-            <AllersVersSeedUpload onImportSuccess={handleSuccess} />
-          </div>
-        )}
-      </div>
-
-      {/* Modale toujours présente dans le DOM - seulement si permission d'écriture */}
+      {/* Modale d'édition */}
       {editingAllersVers && canWrite && (
         <AllersVersEditModal allersVers={editingAllersVers} onClose={handleCloseModal} onSuccess={handleSuccess} />
       )}

@@ -3,7 +3,10 @@
 import { useId } from "react";
 import { VariationBadge } from "../shared/VariationBadge";
 import { AutresMotifsDrawer } from "./AutresMotifsDrawer";
-import type { DemandesArchiveesStats, PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import type {
+  DemandesArchiveesStats,
+  PeriodeId,
+} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/statistiques/domain/types";
 
 interface DemandesArchiveesCardProps {

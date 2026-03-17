@@ -123,8 +123,7 @@ export function TopDepartementsCard({ departements, loading = false }: TopDepart
                         {dept.simulations.toLocaleString("fr-FR")}
                       </td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
-                        {dept.simulationsEligibles.toLocaleString("fr-FR")}{" "}
-                        ({dept.pourcentageEligibles}%)
+                        {dept.simulationsEligibles.toLocaleString("fr-FR")} ({dept.pourcentageEligibles}%)
                       </td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
                         {dept.dossiersDN.toLocaleString("fr-FR")}

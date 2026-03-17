@@ -13,19 +13,16 @@ interface AmoWithRelations extends Amo {
   epci?: { codeEpci: string }[];
 }
 
-type ViewId = "liste" | "import";
-
 export default function AmoPanel() {
   const [editingAmo, setEditingAmo] = useState<AmoWithRelations | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [activeView, setActiveView] = useState<ViewId>("liste");
 
   // Vérifier les permissions
   const canWrite = useHasPermission(BackofficePermission.AMO_WRITE);
   const canImport = useHasPermission(BackofficePermission.AMO_IMPORT);
 
   const handleEdit = (amo: AmoWithRelations) => {
-    if (!canWrite) return; // Sécurité supplémentaire
+    if (!canWrite) return;
     setEditingAmo(amo);
   };
 
@@ -52,68 +49,74 @@ export default function AmoPanel() {
 
   return (
     <>
-      <div className="w-full">
-        {/* En-tête */}
-        <div className="fr-mb-6w">
+      {/* En-tête */}
+      <section className="fr-container-fluid fr-py-4w">
+        <div className="fr-container">
           <h1 className="fr-h2 fr-mb-2w">Gestion des AMO</h1>
-          <p className="fr-text--lg fr-text-mention--grey">
+          <p className="fr-text--lg" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
             Gérez les Assistants à Maîtrise d'Ouvrage (AMO) et importez de nouvelles entreprises.
           </p>
         </div>
+      </section>
 
-        {/* Contrôle segmenté - masquer l'onglet import si pas de permission */}
-        <fieldset className="fr-segmented fr-mb-6w">
-          <legend className="fr-segmented__legend fr-sr-only">Sélection de la vue AMO</legend>
-          <div className="fr-segmented__elements">
-            <div className="fr-segmented__element">
-              <input
-                value="liste"
-                checked={activeView === "liste"}
-                type="radio"
-                id="segmented-amo-1"
-                name="segmented-amo"
-                onChange={() => setActiveView("liste")}
-              />
-              <label className="fr-icon-building-fill fr-label" htmlFor="segmented-amo-1">
-                Liste des entreprises
-              </label>
+      {/* Onglets + contenu — fond bleu */}
+      <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
+        <div className="fr-container">
+          <div className="fr-tabs">
+            <ul className="fr-tabs__list" role="tablist" aria-label="Vues AMO">
+              <li role="presentation">
+                <button
+                  type="button"
+                  id="tab-amo-liste"
+                  className="fr-tabs__tab fr-icon-building-fill fr-tabs__tab--icon-left"
+                  tabIndex={0}
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="tab-amo-liste-panel">
+                  Liste des entreprises
+                </button>
+              </li>
+              {canImport && (
+                <li role="presentation">
+                  <button
+                    type="button"
+                    id="tab-amo-import"
+                    className="fr-tabs__tab fr-icon-upload-line fr-tabs__tab--icon-left"
+                    tabIndex={-1}
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="tab-amo-import-panel">
+                    Import
+                  </button>
+                </li>
+              )}
+            </ul>
+
+            <div
+              id="tab-amo-liste-panel"
+              className="fr-tabs__panel fr-tabs__panel--selected"
+              role="tabpanel"
+              aria-labelledby="tab-amo-liste"
+              tabIndex={0}>
+              <AmoList onEdit={handleEdit} refreshTrigger={refreshTrigger} canEdit={canWrite} />
             </div>
+
             {canImport && (
-              <div className="fr-segmented__element">
-                <input
-                  value="import"
-                  checked={activeView === "import"}
-                  type="radio"
-                  id="segmented-amo-2"
-                  name="segmented-amo"
-                  onChange={() => setActiveView("import")}
-                />
-                <label className="fr-icon-upload-line fr-label" htmlFor="segmented-amo-2">
-                  Import
-                </label>
+              <div
+                id="tab-amo-import-panel"
+                className="fr-tabs__panel"
+                role="tabpanel"
+                aria-labelledby="tab-amo-import"
+                tabIndex={0}>
+                <h2 className="fr-h3 fr-mb-3w">Import des entreprises AMO</h2>
+                <AmoSeedUpload onImportSuccess={handleSuccess} />
               </div>
             )}
           </div>
-        </fieldset>
+        </div>
+      </section>
 
-        {/* Vue Liste */}
-        {activeView === "liste" && (
-          <div>
-            <h2 className="fr-h3 fr-mb-3w">Liste des entreprises AMO</h2>
-            <AmoList onEdit={handleEdit} refreshTrigger={refreshTrigger} canEdit={canWrite} />
-          </div>
-        )}
-
-        {/* Vue Import - seulement si permission */}
-        {activeView === "import" && canImport && (
-          <div>
-            <h2 className="fr-h3 fr-mb-3w">Import des entreprises AMO</h2>
-            <AmoSeedUpload onImportSuccess={handleSuccess} />
-          </div>
-        )}
-      </div>
-
-      {/* Modale toujours présente dans le DOM - seulement si permission d'écriture */}
+      {/* Modale d'édition */}
       {editingAmo && canWrite && <AmoEditModal amo={editingAmo} onClose={handleCloseModal} onSuccess={handleSuccess} />}
     </>
   );

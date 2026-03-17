@@ -41,12 +41,8 @@
           "name": "agent_permissions_agent_id_agents_id_fk",
           "tableFrom": "agent_permissions",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -163,12 +159,8 @@
           "name": "agents_entreprise_amo_id_entreprises_amo_id_fk",
           "tableFrom": "agents",
           "tableTo": "entreprises_amo",
-          "columnsFrom": [
-            "entreprise_amo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["entreprise_amo_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -176,12 +168,8 @@
           "name": "agents_allers_vers_id_allers_vers_id_fk",
           "tableFrom": "agents",
           "tableTo": "allers_vers",
-          "columnsFrom": [
-            "allers_vers_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["allers_vers_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -191,16 +179,12 @@
         "agents_sub_unique": {
           "name": "agents_sub_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "sub"
-          ]
+          "columns": ["sub"]
         },
         "agents_email_unique": {
           "name": "agents_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -230,12 +214,8 @@
           "name": "allers_vers_departements_allers_vers_id_allers_vers_id_fk",
           "tableFrom": "allers_vers_departements",
           "tableTo": "allers_vers",
-          "columnsFrom": [
-            "allers_vers_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["allers_vers_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -243,10 +223,7 @@
       "compositePrimaryKeys": {
         "allers_vers_departements_allers_vers_id_code_departement_pk": {
           "name": "allers_vers_departements_allers_vers_id_code_departement_pk",
-          "columns": [
-            "allers_vers_id",
-            "code_departement"
-          ]
+          "columns": ["allers_vers_id", "code_departement"]
         }
       },
       "uniqueConstraints": {},
@@ -277,12 +254,8 @@
           "name": "allers_vers_epci_allers_vers_id_allers_vers_id_fk",
           "tableFrom": "allers_vers_epci",
           "tableTo": "allers_vers",
-          "columnsFrom": [
-            "allers_vers_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["allers_vers_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -290,10 +263,7 @@
       "compositePrimaryKeys": {
         "allers_vers_epci_allers_vers_id_code_epci_pk": {
           "name": "allers_vers_epci_allers_vers_id_code_epci_pk",
-          "columns": [
-            "allers_vers_id",
-            "code_epci"
-          ]
+          "columns": ["allers_vers_id", "code_epci"]
         }
       },
       "uniqueConstraints": {},
@@ -427,12 +397,8 @@
           "name": "amo_validation_tokens_parcours_amo_validation_id_parcours_amo_validations_id_fk",
           "tableFrom": "amo_validation_tokens",
           "tableTo": "parcours_amo_validations",
-          "columnsFrom": [
-            "parcours_amo_validation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parcours_amo_validation_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -442,9 +408,7 @@
         "amo_validation_tokens_token_unique": {
           "name": "amo_validation_tokens_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -605,10 +569,7 @@
       "compositePrimaryKeys": {
         "catastrophes_naturelles_code_national_catnat_code_insee_pk": {
           "name": "catastrophes_naturelles_code_national_catnat_code_insee_pk",
-          "columns": [
-            "code_national_catnat",
-            "code_insee"
-          ]
+          "columns": ["code_national_catnat", "code_insee"]
         }
       },
       "uniqueConstraints": {},
@@ -711,12 +672,8 @@
           "name": "dossiers_demarches_simplifiees_parcours_id_parcours_prevention_id_fk",
           "tableFrom": "dossiers_demarches_simplifiees",
           "tableTo": "parcours_prevention",
-          "columnsFrom": [
-            "parcours_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parcours_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -726,9 +683,7 @@
         "dossiers_demarches_simplifiees_ds_number_unique": {
           "name": "dossiers_demarches_simplifiees_ds_number_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "ds_number"
-          ]
+          "columns": ["ds_number"]
         }
       },
       "policies": {},
@@ -758,12 +713,8 @@
           "name": "entreprises_amo_communes_entreprise_amo_id_entreprises_amo_id_fk",
           "tableFrom": "entreprises_amo_communes",
           "tableTo": "entreprises_amo",
-          "columnsFrom": [
-            "entreprise_amo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["entreprise_amo_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -771,10 +722,7 @@
       "compositePrimaryKeys": {
         "entreprises_amo_communes_entreprise_amo_id_code_insee_pk": {
           "name": "entreprises_amo_communes_entreprise_amo_id_code_insee_pk",
-          "columns": [
-            "entreprise_amo_id",
-            "code_insee"
-          ]
+          "columns": ["entreprise_amo_id", "code_insee"]
         }
       },
       "uniqueConstraints": {},
@@ -805,12 +753,8 @@
           "name": "entreprises_amo_epci_entreprise_amo_id_entreprises_amo_id_fk",
           "tableFrom": "entreprises_amo_epci",
           "tableTo": "entreprises_amo",
-          "columnsFrom": [
-            "entreprise_amo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["entreprise_amo_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -818,10 +762,7 @@
       "compositePrimaryKeys": {
         "entreprises_amo_epci_entreprise_amo_id_code_epci_pk": {
           "name": "entreprises_amo_epci_entreprise_amo_id_code_epci_pk",
-          "columns": [
-            "entreprise_amo_id",
-            "code_epci"
-          ]
+          "columns": ["entreprise_amo_id", "code_epci"]
         }
       },
       "uniqueConstraints": {},
@@ -898,9 +839,7 @@
         "entreprises_amo_siret_unique": {
           "name": "entreprises_amo_siret_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "siret"
-          ]
+          "columns": ["siret"]
         }
       },
       "policies": {},
@@ -983,9 +922,7 @@
         "users_fc_id_unique": {
           "name": "users_fc_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "fc_id"
-          ]
+          "columns": ["fc_id"]
         }
       },
       "policies": {},
@@ -1120,12 +1057,8 @@
           "name": "parcours_prevention_user_id_users_id_fk",
           "tableFrom": "parcours_prevention",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1133,12 +1066,8 @@
           "name": "parcours_prevention_rga_simulation_agent_edited_by_agents_id_fk",
           "tableFrom": "parcours_prevention",
           "tableTo": "agents",
-          "columnsFrom": [
-            "rga_simulation_agent_edited_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["rga_simulation_agent_edited_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1146,12 +1075,8 @@
           "name": "parcours_prevention_archived_by_agents_id_fk",
           "tableFrom": "parcours_prevention",
           "tableTo": "agents",
-          "columnsFrom": [
-            "archived_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["archived_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1161,9 +1086,7 @@
         "parcours_prevention_user_id_unique": {
           "name": "parcours_prevention_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         }
       },
       "policies": {},
@@ -1244,12 +1167,8 @@
           "name": "parcours_commentaires_parcours_id_parcours_prevention_id_fk",
           "tableFrom": "parcours_commentaires",
           "tableTo": "parcours_prevention",
-          "columnsFrom": [
-            "parcours_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parcours_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1257,12 +1176,8 @@
           "name": "parcours_commentaires_agent_id_agents_id_fk",
           "tableFrom": "parcours_commentaires",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1432,12 +1347,8 @@
           "name": "parcours_amo_validations_parcours_id_parcours_prevention_id_fk",
           "tableFrom": "parcours_amo_validations",
           "tableTo": "parcours_prevention",
-          "columnsFrom": [
-            "parcours_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parcours_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1445,12 +1356,8 @@
           "name": "parcours_amo_validations_entreprise_amo_id_entreprises_amo_id_fk",
           "tableFrom": "parcours_amo_validations",
           "tableTo": "entreprises_amo",
-          "columnsFrom": [
-            "entreprise_amo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["entreprise_amo_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -1460,9 +1367,7 @@
         "parcours_amo_validations_parcours_id_unique": {
           "name": "parcours_amo_validations_parcours_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "parcours_id"
-          ]
+          "columns": ["parcours_id"]
         }
       },
       "policies": {},
@@ -1553,12 +1458,8 @@
           "name": "prospect_qualifications_parcours_id_parcours_prevention_id_fk",
           "tableFrom": "prospect_qualifications",
           "tableTo": "parcours_prevention",
-          "columnsFrom": [
-            "parcours_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parcours_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1566,12 +1467,8 @@
           "name": "prospect_qualifications_agent_id_agents_id_fk",
           "tableFrom": "prospect_qualifications",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1600,44 +1497,22 @@
     "public.ds_status": {
       "name": "ds_status",
       "schema": "public",
-      "values": [
-        "en_construction",
-        "en_instruction",
-        "accepte",
-        "refuse",
-        "classe_sans_suite",
-        "non_accessible"
-      ]
+      "values": ["en_construction", "en_instruction", "accepte", "refuse", "classe_sans_suite", "non_accessible"]
     },
     "public.status": {
       "name": "status",
       "schema": "public",
-      "values": [
-        "todo",
-        "en_instruction",
-        "valide"
-      ]
+      "values": ["todo", "en_instruction", "valide"]
     },
     "public.statut_validation_amo": {
       "name": "statut_validation_amo",
       "schema": "public",
-      "values": [
-        "en_attente",
-        "logement_eligible",
-        "logement_non_eligible",
-        "accompagnement_refuse"
-      ]
+      "values": ["en_attente", "logement_eligible", "logement_non_eligible", "accompagnement_refuse"]
     },
     "public.step": {
       "name": "step",
       "schema": "public",
-      "values": [
-        "choix_amo",
-        "eligibilite",
-        "diagnostic",
-        "devis",
-        "factures"
-      ]
+      "values": ["choix_amo", "eligibilite", "diagnostic", "devis", "factures"]
     }
   },
   "schemas": {},

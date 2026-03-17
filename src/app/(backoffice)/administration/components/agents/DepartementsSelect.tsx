@@ -80,12 +80,20 @@ export default function DepartementsSelect({
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef}>
       {/* Chips des départements sélectionnés + input */}
       <div
-        className={`fr-input-wrap flex flex-wrap gap-1 p-2 min-h-[42px] border rounded cursor-text ${
-          disabled ? "bg-gray-100" : "bg-white"
-        } ${isOpen ? "border-blue-500" : "border-gray-300"}`}
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.25rem",
+          padding: "0.5rem",
+          minHeight: "42px",
+          border: `1px solid ${isOpen ? "var(--border-active-blue-france)" : "var(--border-default-grey)"}`,
+          borderRadius: "0.25rem 0.25rem 0 0",
+          backgroundColor: disabled ? "var(--background-disabled-grey)" : "var(--background-default-grey)",
+          cursor: disabled ? "default" : "text",
+        }}
         onClick={() => {
           if (!disabled) {
             setIsOpen(true);
@@ -96,20 +104,14 @@ export default function DepartementsSelect({
         {value.map((code) => (
           <span
             key={code}
-            className="inline-flex items-center gap-1 px-2 py-1 text-sm bg-blue-100 text-blue-800 rounded">
-            <span className="font-medium">{code}</span>
-            <span className="text-xs text-blue-600">{DEPARTEMENTS[code]}</span>
-            {!disabled && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeDepartement(code);
-                }}
-                className="ml-1 text-blue-600 hover:text-blue-800">
-                ×
-              </button>
-            )}
+            className="fr-tag fr-tag--sm fr-tag--dismiss"
+            style={{ margin: 0 }}
+            aria-label={`Retirer ${code} ${DEPARTEMENTS[code]}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!disabled) removeDepartement(code);
+            }}>
+            {code} - {DEPARTEMENTS[code]}
           </span>
         ))}
 
@@ -121,37 +123,74 @@ export default function DepartementsSelect({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onFocus={() => setIsOpen(true)}
-            placeholder={value.length === 0 ? placeholder : ""}
-            className="flex-1 min-w-[120px] outline-none border-none bg-transparent text-sm"
+            placeholder={value.length === 0 ? placeholder : "Rechercher..."}
+            style={{
+              flex: 1,
+              minWidth: "120px",
+              outline: "none",
+              border: "none",
+              backgroundColor: "transparent",
+              fontSize: "0.875rem",
+              padding: "0.25rem",
+            }}
           />
         )}
       </div>
 
-      {/* Dropdown */}
+      {/* Liste des départements (inline, pas absolute) */}
       {isOpen && !disabled && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-y-auto">
+        <div
+          style={{
+            maxHeight: "200px",
+            overflowY: "auto",
+            border: "1px solid var(--border-active-blue-france)",
+            borderTop: "none",
+            borderRadius: "0 0 0.25rem 0.25rem",
+            backgroundColor: "var(--background-default-grey)",
+          }}>
           {filteredDepartements.length === 0 ? (
-            <div className="p-3 text-sm text-gray-500">Aucun département trouvé</div>
+            <div style={{ padding: "0.75rem", fontSize: "0.875rem", color: "var(--text-mention-grey)" }}>
+              Aucun département trouvé
+            </div>
           ) : (
-            <ul className="py-1">
-              {filteredDepartements.map((dept) => {
-                const isSelected = value.includes(dept.code);
-                return (
-                  <li key={dept.code}>
-                    <button
-                      type="button"
-                      onClick={() => toggleDepartement(dept.code)}
-                      className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2 ${
-                        isSelected ? "bg-blue-50" : ""
-                      }`}>
-                      <input type="checkbox" checked={isSelected} onChange={() => {}} className="pointer-events-none" />
-                      <span className="font-medium">{dept.code}</span>
-                      <span className="text-gray-600">{dept.name}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+            filteredDepartements.map((dept) => {
+              const isSelected = value.includes(dept.code);
+              return (
+                <button
+                  key={dept.code}
+                  type="button"
+                  onClick={() => toggleDepartement(dept.code)}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.5rem 0.75rem",
+                    fontSize: "0.875rem",
+                    textAlign: "left",
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor: isSelected ? "var(--background-alt-blue-france)" : "transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) e.currentTarget.style.backgroundColor = "var(--background-default-grey-hover)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = isSelected
+                      ? "var(--background-alt-blue-france)"
+                      : "transparent";
+                  }}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => {}}
+                    style={{ pointerEvents: "none", accentColor: "var(--border-active-blue-france)" }}
+                  />
+                  <span style={{ fontWeight: 500 }}>{dept.code}</span>
+                  <span style={{ color: "var(--text-mention-grey)" }}>{dept.name}</span>
+                </button>
+              );
+            })
           )}
         </div>
       )}

@@ -92,7 +92,7 @@ export function TableauDeBord() {
       {/* Alerte tendances */}
       {stats && stats.alertes.length > 0 && <AlertesTendances alertes={stats.alertes} />}
 
-      {/* Cartes de statistiques — fond bleu */}
+      {/* Stats + détails + top départements — fond bleu */}
       <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
@@ -155,51 +155,39 @@ export function TableauDeBord() {
             <span className="fr-icon-info-fill fr-icon--sm fr-mr-1w" aria-hidden="true" />
             Les variations sont par rapport à la période précédente sélectionnée
           </p>
-        </div>
-      </section>
 
-      {/* Demandes archivées + inéligibles — fond blanc */}
-      {stats &&
-        (stats.demandesArchiveesDetail.total > 0 || stats.demandesIneligiblesDetail.total > 0) && (
-          <section className="fr-container-fluid fr-py-4w">
-            <div className="fr-container">
-              <div className="fr-grid-row fr-grid-row--gutters">
-                {stats.demandesArchiveesDetail.total > 0 && (
-                  <div className="fr-col-12 fr-col-lg-6">
-                    <DemandesArchiveesCard
-                      stats={stats.demandesArchiveesDetail}
-                      loading={loading}
-                      periodeId={periodeId}
-                      codeDepartement={codeDepartement}
-                      departements={departements}
-                    />
-                  </div>
-                )}
-                {stats.demandesIneligiblesDetail.total > 0 && (
-                  <div className="fr-col-12 fr-col-lg-6">
-                    <DemandesIneligiblesCard
-                      stats={stats.demandesIneligiblesDetail}
-                      loading={loading}
-                    />
-                  </div>
-                )}
-              </div>
+          {/* Demandes archivées + inéligibles */}
+          {stats && (stats.demandesArchiveesDetail.total > 0 || stats.demandesIneligiblesDetail.total > 0) && (
+            <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
+              {stats.demandesArchiveesDetail.total > 0 && (
+                <div className="fr-col-12 fr-col-lg-6">
+                  <DemandesArchiveesCard
+                    stats={stats.demandesArchiveesDetail}
+                    loading={loading}
+                    periodeId={periodeId}
+                    codeDepartement={codeDepartement}
+                    departements={departements}
+                  />
+                </div>
+              )}
+              {stats.demandesIneligiblesDetail.total > 0 && (
+                <div className="fr-col-12 fr-col-lg-6">
+                  <DemandesIneligiblesCard stats={stats.demandesIneligiblesDetail} loading={loading} />
+                </div>
+              )}
             </div>
-          </section>
-        )}
+          )}
 
-      {/* Top 5 départements — fond blanc */}
-      {stats && stats.topDepartements.length > 0 && (
-        <section className="fr-container-fluid fr-py-4w">
-          <div className="fr-container">
-            <div className="fr-grid-row fr-grid-row--gutters">
+          {/* Top 5 départements */}
+          {stats && stats.topDepartements.length > 0 && (
+            <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
               <div className="fr-col-12">
                 <TopDepartementsCard departements={stats.topDepartements} loading={loading} />
               </div>
             </div>
-          </div>
-        </section>
-      )}
+          )}
+        </div>
+      </section>
     </>
   );
 }

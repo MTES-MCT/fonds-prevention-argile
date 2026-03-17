@@ -387,9 +387,7 @@ export async function getAutresDemandesArchiveesDetail(
   const demandes: DemandeArchiveeDetail[] = rows.map((row) => ({
     parcoursId: row.parcoursId,
     demandeur: [row.userPrenom, row.userNom].filter(Boolean).join(" ") || "Demandeur inconnu",
-    agent: row.agentGivenName
-      ? [row.agentGivenName, row.agentUsualName].filter(Boolean).join(" ")
-      : null,
+    agent: row.agentGivenName ? [row.agentGivenName, row.agentUsualName].filter(Boolean).join(" ") : null,
     structureAmo: row.entrepriseAmoNom ?? null,
     archivedAt: row.archivedAt!,
     raison: row.archiveReason!,
@@ -569,10 +567,7 @@ async function detecterMotifsEnHausse(
  * Extrait le code département normalisé depuis les données JSONB d'un parcours.
  * Priorité aux données agent si disponibles.
  */
-function extractCodeDepartement(
-  rgaSimulationData: unknown,
-  rgaSimulationDataAgent: unknown
-): string | undefined {
+function extractCodeDepartement(rgaSimulationData: unknown, rgaSimulationDataAgent: unknown): string | undefined {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const agentData = rgaSimulationDataAgent as any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -596,7 +591,13 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
       rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
     })
     .from(parcoursPrevention)
-    .where(and(gte(parcoursPrevention.createdAt, debut), lt(parcoursPrevention.createdAt, fin), isNotNull(parcoursPrevention.rgaSimulationData)));
+    .where(
+      and(
+        gte(parcoursPrevention.createdAt, debut),
+        lt(parcoursPrevention.createdAt, fin),
+        isNotNull(parcoursPrevention.rgaSimulationData)
+      )
+    );
 
   // Requête 2 : dossiers DN avec données département du parcours
   const dossiers = await db

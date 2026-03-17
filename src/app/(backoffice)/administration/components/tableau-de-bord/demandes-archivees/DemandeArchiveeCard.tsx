@@ -37,12 +37,9 @@ export function DemandeArchiveeCard({ demande }: DemandeArchiveeCardProps) {
         <div className="fr-grid-row fr-grid-row--middle fr-mt-1v">
           <div className="fr-col">
             <span className="fr-text--xs" style={{ color: "var(--text-mention-grey)" }}>
-              Par{" "}
-              {demande.agent && <strong>{demande.agent}</strong>}
+              Par {demande.agent && <strong>{demande.agent}</strong>}
               {demande.agent && demande.structureAmo && " "}
-              {demande.structureAmo && (
-                <span style={{ fontStyle: "italic" }}>{demande.structureAmo}</span>
-              )}
+              {demande.structureAmo && <span style={{ fontStyle: "italic" }}>{demande.structureAmo}</span>}
               {!demande.agent && !demande.structureAmo && "Agent inconnu"}
               <span className="fr-mx-1v" aria-hidden="true">
                 &bull;

@@ -77,11 +77,7 @@ export interface DepartementStats {
   transformationGlobale: number;
 }
 
-export type TopDepartementsTriColumn =
-  | "simulations"
-  | "simulationsEligibles"
-  | "dossiersDN"
-  | "transformationGlobale";
+export type TopDepartementsTriColumn = "simulations" | "simulationsEligibles" | "dossiersDN" | "transformationGlobale";
 
 export interface TableauDeBordStats {
   simulationsLancees: StatAvecVariation;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import AgentsList from "./AgentsList";
 import AgentFormModal, { type AgentFormData, type EntrepriseAmoOption, type AllersVersOption } from "./AgentFormModal";
 import AgentDeleteModal from "./AgentDeleteModal";
@@ -14,9 +14,64 @@ import {
 import { getEntreprisesAmoOptions } from "@/features/backoffice/administration/gestion-amo/actions";
 import { getAllersVersOptions } from "@/features/backoffice/administration/gestion-allers-vers/actions/allers-vers-admin.actions";
 import StatCard from "../shared/StatCard";
+import { UserRole } from "@/shared/domain/value-objects";
 
 const MODAL_DELETE_ID = "modal-delete-agent";
 const MODAL_FORM_ID = "modal-form-agent";
+
+/** Definition d'un onglet de role */
+interface RoleTab {
+  id: string;
+  label: string;
+  /** Roles inclus dans cet onglet */
+  roles: string[];
+  badgeClass: string;
+}
+
+const ROLE_TABS: RoleTab[] = [
+  {
+    id: "tous",
+    label: "Tous",
+    roles: [],
+    badgeClass: "fr-badge--blue-cumulus",
+  },
+  {
+    id: "super-admin",
+    label: "Super Admin",
+    roles: [UserRole.SUPER_ADMINISTRATEUR],
+    badgeClass: "fr-badge--purple-glycine",
+  },
+  {
+    id: "administrateur",
+    label: "Administrateur",
+    roles: [UserRole.ADMINISTRATEUR],
+    badgeClass: "fr-badge--green-emeraude",
+  },
+  {
+    id: "amo",
+    label: "AMO",
+    roles: [UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS],
+    badgeClass: "fr-badge--blue-cumulus",
+  },
+  {
+    id: "allers-vers",
+    label: "Allers-Vers",
+    roles: [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS],
+    badgeClass: "fr-badge--yellow-tournesol",
+  },
+  {
+    id: "analyste",
+    label: "Analyste",
+    roles: [UserRole.ANALYSTE],
+    badgeClass: "fr-badge--orange-safran",
+  },
+  {
+    id: "analyste-ddt",
+    label: "Analyste DDT",
+    roles: [UserRole.ANALYSTE_DDT],
+    badgeClass: "fr-badge--orange-safran",
+  },
+];
 
 export default function AgentsPanel() {
   const [agents, setAgents] = useState<AgentWithPermissions[]>([]);
@@ -28,6 +83,19 @@ export default function AgentsPanel() {
   // Modal states
   const [selectedAgent, setSelectedAgent] = useState<AgentWithPermissions | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Compter les agents par onglet
+  const agentsByTab = useMemo(() => {
+    const counts: Record<string, AgentWithPermissions[]> = {};
+    for (const tab of ROLE_TABS) {
+      if (tab.roles.length === 0) {
+        counts[tab.id] = agents;
+      } else {
+        counts[tab.id] = agents.filter((a) => tab.roles.includes(a.agent.role));
+      }
+    }
+    return counts;
+  }, [agents]);
 
   // Charger les agents, les entreprises AMO et les territoires Allers-Vers
   const loadData = useCallback(async () => {
@@ -84,7 +152,6 @@ export default function AgentsPanel() {
       let result;
 
       if (selectedAgent) {
-        // Mode édition
         result = await updateAgentAction(selectedAgent.agent.id, {
           email: data.email,
           givenName: data.givenName,
@@ -95,7 +162,6 @@ export default function AgentsPanel() {
           allersVersId: data.allersVersId,
         });
       } else {
-        // Mode création
         result = await createAgentAction({
           email: data.email,
           givenName: data.givenName,
@@ -111,7 +177,6 @@ export default function AgentsPanel() {
         throw new Error(result.error);
       }
 
-      // Recharger la liste
       await loadData();
     } finally {
       setIsSubmitting(false);
@@ -131,7 +196,6 @@ export default function AgentsPanel() {
         throw new Error(result.error);
       }
 
-      // Recharger la liste
       await loadData();
     } finally {
       setIsSubmitting(false);
@@ -139,74 +203,111 @@ export default function AgentsPanel() {
   };
 
   return (
-    <div className="w-full">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          {/* En-tête */}
-          <div className="fr-mb-6w">
-            <h1 className="fr-h2 fr-mb-2w">Gestion des agents</h1>
-            <p className="fr-text--lg fr-text-mention--grey">
-              Gérez les agents ayant accès au backoffice et leurs permissions.
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="fr-btn"
-          aria-controls={MODAL_FORM_ID}
-          data-fr-opened="false"
-          onClick={handleAdd}>
-          <span className="fr-icon-add-line fr-icon--sm mr-2" aria-hidden="true" />
-          Ajouter un agent
-        </button>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="fr-alert fr-alert--error mb-4">
-          <p>{error}</p>
-        </div>
-      )}
-
-      {/* Loading */}
-      {isLoading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="text-gray-500">Chargement des agents...</div>
-        </div>
-      ) : (
-        <>
-          {/* Stats */}
-          <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
-            <StatCard label="Agents total" number={agents.length.toString()} />
-            <StatCard
-              label="Super Admins"
-              number={agents.filter((a) => a.agent.role === "super_administrateur").length.toString()}
-            />
-            <StatCard label="AMO" number={agents.filter((a) => a.agent.role === "amo").length.toString()} />
-            <StatCard
-              label="Allers-Vers"
-              number={agents
-                .filter((a) => a.agent.role === "allers_vers" || a.agent.role === "amo_et_allers_vers")
-                .length.toString()}
-            />
-            <StatCard
-              label="En attente de connexion"
-              number={agents.filter((a) => a.agent.sub.startsWith("pending_")).length.toString()}
-            />
+    <>
+      {/* En-tete + bouton ajout */}
+      <section className="fr-container-fluid fr-py-4w">
+        <div className="fr-container">
+          <div className="fr-grid-row fr-grid-row--middle fr-mb-2w">
+            <div className="fr-col">
+              <h1 className="fr-h2 fr-mb-1v">Gestion des agents</h1>
+              <p className="fr-text--lg" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
+                Gérez les agents ayant accès au backoffice et leurs permissions.
+              </p>
+            </div>
+            <div className="fr-col-auto">
+              <button
+                type="button"
+                className="fr-btn"
+                aria-controls={MODAL_FORM_ID}
+                data-fr-opened="false"
+                onClick={handleAdd}>
+                <span className="fr-icon-add-line fr-icon--sm mr-2" aria-hidden="true" />
+                Ajouter un agent
+              </button>
+            </div>
           </div>
 
-          {/* Liste */}
-          <AgentsList
-            agents={agents}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            isLoading={isSubmitting}
-            modalDeleteId={MODAL_DELETE_ID}
-            modalFormId={MODAL_FORM_ID}
-          />
-        </>
-      )}
+          {/* Erreur */}
+          {error && (
+            <div className="fr-alert fr-alert--error">
+              <p>{error}</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Stats + onglets + tableau — fond bleu */}
+      <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
+        <div className="fr-container">
+          {isLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="text-gray-500">Chargement des agents...</div>
+            </div>
+          ) : (
+            <>
+              <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
+                <StatCard label="Agents total" number={agents.length.toString()} />
+                <StatCard
+                  label="Super Admins"
+                  number={agents.filter((a) => a.agent.role === "super_administrateur").length.toString()}
+                />
+                <StatCard label="AMO" number={agents.filter((a) => a.agent.role === "amo").length.toString()} />
+                <StatCard
+                  label="Allers-Vers"
+                  number={agents
+                    .filter((a) => a.agent.role === "allers_vers" || a.agent.role === "amo_et_allers_vers")
+                    .length.toString()}
+                />
+                <StatCard
+                  label="En attente de connexion"
+                  number={agents.filter((a) => a.agent.sub.startsWith("pending_")).length.toString()}
+                />
+              </div>
+
+              <div className="fr-tabs">
+                <ul className="fr-tabs__list" role="tablist" aria-label="Agents par rôle">
+                  {ROLE_TABS.map((tab, index) => (
+                    <li key={tab.id} role="presentation">
+                      <button
+                        type="button"
+                        id={`tab-agents-${tab.id}`}
+                        className="fr-tabs__tab"
+                        tabIndex={index === 0 ? 0 : -1}
+                        role="tab"
+                        aria-selected={index === 0 ? "true" : "false"}
+                        aria-controls={`tab-agents-${tab.id}-panel`}>
+                        <p className={`fr-badge fr-badge--sm fr-badge--no-icon fr-mr-2v ${tab.badgeClass}`}>
+                          {agentsByTab[tab.id]?.length ?? 0}
+                        </p>
+                        {tab.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                {ROLE_TABS.map((tab, index) => (
+                  <div
+                    key={tab.id}
+                    id={`tab-agents-${tab.id}-panel`}
+                    className={`fr-tabs__panel${index === 0 ? " fr-tabs__panel--selected" : ""}`}
+                    role="tabpanel"
+                    aria-labelledby={`tab-agents-${tab.id}`}
+                    tabIndex={0}>
+                    <AgentsList
+                      agents={agentsByTab[tab.id] ?? []}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      isLoading={isSubmitting}
+                      modalDeleteId={MODAL_DELETE_ID}
+                      modalFormId={MODAL_FORM_ID}
+                    />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </section>
 
       {/* Modals */}
       <AgentFormModal
@@ -224,6 +325,6 @@ export default function AgentsPanel() {
         agent={selectedAgent}
         isLoading={isSubmitting}
       />
-    </div>
+    </>
   );
 }
