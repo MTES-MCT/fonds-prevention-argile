@@ -8,9 +8,24 @@ export interface MatomoStatistiques {
   nombreVisitesTotales: number;
 
   /**
+   * Variation du nombre de visites vs période précédente (en %, null si non calculable)
+   */
+  variationVisites: number | null;
+
+  /**
    * Nombre de visites par jour (30 derniers jours)
    */
   visitesParJour: VisiteParJour[];
+
+  /**
+   * Taux de rebond global (en pourcentage, ex: 45 pour 45%)
+   */
+  tauxRebond: number;
+
+  /**
+   * Variation du taux de rebond vs période précédente (en points, null si non calculable)
+   */
+  variationTauxRebond: number | null;
 }
 
 /**

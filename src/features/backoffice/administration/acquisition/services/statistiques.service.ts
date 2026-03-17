@@ -11,6 +11,7 @@ import { getMatomoStatistiques } from "./matomo.service";
 import { getFunnelSimulateurRGA } from "./matomo-funnel.service";
 import type { Statistiques } from "../domain/types/statistiques.types";
 import type { ScopeFilters } from "@/features/auth/permissions/domain/types/agent-scope.types";
+import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
 /**
  * Récupère toutes les statistiques globales (DB + Matomo + Funnel)
@@ -18,8 +19,9 @@ import type { ScopeFilters } from "@/features/auth/permissions/domain/types/agen
  * @param scopeFilters - Filtres optionnels selon le scope de l'agent
  *   - entrepriseAmoIds: Filtre par entreprises AMO (pour les agents AMO)
  *   - noAccess: Si true, retourne des stats à zéro
+ * @param periodeId - Période pour les stats Matomo (visites + taux de rebond)
  */
-export async function getStatistiques(scopeFilters?: ScopeFilters | null): Promise<Statistiques> {
+export async function getStatistiques(scopeFilters?: ScopeFilters | null, periodeId?: PeriodeId): Promise<Statistiques> {
   // Si noAccess, retourner des stats à zéro
   if (scopeFilters?.noAccess) {
     return getEmptyStatistiques();
@@ -31,7 +33,7 @@ export async function getStatistiques(scopeFilters?: ScopeFilters | null): Promi
   const [dbStats, matomoStats, funnelStats] = await Promise.all([
     getStatistiquesDB(scopeFilters),
     // Stats Matomo uniquement si accès global (pas de filtre entreprise)
-    hasEntrepriseFilter ? Promise.resolve(null) : getMatomoStatistiques(),
+    hasEntrepriseFilter ? Promise.resolve(null) : getMatomoStatistiques(periodeId),
     hasEntrepriseFilter ? Promise.resolve(null) : getFunnelSimulateurRGA(),
   ]);
 
@@ -39,7 +41,10 @@ export async function getStatistiques(scopeFilters?: ScopeFilters | null): Promi
     ...dbStats,
     // Stats Matomo (0 et tableau vide si filtrées par entreprise car non disponibles)
     nombreVisitesTotales: matomoStats?.nombreVisitesTotales ?? 0,
+    variationVisites: matomoStats?.variationVisites ?? null,
     visitesParJour: matomoStats?.visitesParJour ?? [],
+    tauxRebond: matomoStats?.tauxRebond ?? 0,
+    variationTauxRebond: matomoStats?.variationTauxRebond ?? null,
     funnelSimulateurRGA: funnelStats,
   };
 }
@@ -56,7 +61,10 @@ function getEmptyStatistiques(): Statistiques {
     nombreDossiersDSBrouillon: 0,
     nombreDossiersDSEnvoyés: 0,
     nombreVisitesTotales: 0,
+    variationVisites: null,
     visitesParJour: [],
+    tauxRebond: 0,
+    variationTauxRebond: null,
     funnelSimulateurRGA: null,
   };
 }

@@ -71,10 +71,13 @@ describe("StatistiquesService", () => {
     // Mock par défaut pour Matomo
     vi.mocked(matomoService.getMatomoStatistiques).mockResolvedValue({
       nombreVisitesTotales: 1500,
+      variationVisites: 10,
       visitesParJour: [
         { date: "2025-01-01", visites: 50 },
         { date: "2025-01-02", visites: 60 },
       ],
+      tauxRebond: 45,
+      variationTauxRebond: -3,
     });
 
     // Mock par défaut pour le Funnel
@@ -138,10 +141,13 @@ describe("StatistiquesService", () => {
         nombreDossiersDSEnvoyés: 40,
         // Stats Matomo
         nombreVisitesTotales: 1500,
+        variationVisites: 10,
         visitesParJour: [
           { date: "2025-01-01", visites: 50 },
           { date: "2025-01-02", visites: 60 },
         ],
+        tauxRebond: 45,
+        variationTauxRebond: -3,
         // Stats Funnel
         funnelSimulateurRGA: {
           etapes: [
@@ -186,7 +192,10 @@ describe("StatistiquesService", () => {
       // Mock Matomo avec 0 visites
       vi.mocked(matomoService.getMatomoStatistiques).mockResolvedValue({
         nombreVisitesTotales: 0,
+        variationVisites: null,
         visitesParJour: [],
+        tauxRebond: 0,
+        variationTauxRebond: null,
       });
 
       // Mock Funnel vide
@@ -211,7 +220,10 @@ describe("StatistiquesService", () => {
         nombreDossiersDSBrouillon: 0,
         nombreDossiersDSEnvoyés: 0,
         nombreVisitesTotales: 0,
+        variationVisites: null,
         visitesParJour: [],
+        tauxRebond: 0,
+        variationTauxRebond: null,
         funnelSimulateurRGA: {
           etapes: [],
           visiteursInitiaux: 0,
@@ -274,7 +286,10 @@ describe("StatistiquesService", () => {
       // Mock Matomo qui retourne des valeurs par défaut (gestion d'erreur dans le service)
       vi.mocked(matomoService.getMatomoStatistiques).mockResolvedValue({
         nombreVisitesTotales: 0,
+        variationVisites: null,
         visitesParJour: [],
+        tauxRebond: 0,
+        variationTauxRebond: null,
       });
 
       // Act

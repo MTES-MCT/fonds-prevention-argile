@@ -15,7 +15,7 @@ import type {
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 import { getStatistiquesAction } from "@/features/backoffice/administration/acquisition/actions/get-statistiques.action";
-import type { FunnelStatistiques } from "@/features/backoffice/administration/acquisition/domain/types/matomo-funnels.types";
+import type { Statistiques } from "@/features/backoffice/administration/acquisition/domain/types/statistiques.types";
 import EntonnoirEligibilite from "./simulateur/EntonnoirEligibilite";
 import DetailEtapesFunnel from "./simulateur/DetailEtapesFunnel";
 import MotifsIneligibiliteCard from "./simulateur/MotifsIneligibiliteCard";
@@ -31,7 +31,7 @@ export default function AcquisitionPanel() {
   const [codeDepartement, setCodeDepartement] = useState<string>("");
   const [departements, setDepartements] = useState<DepartementDisponible[]>([]);
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
-  const [funnel, setFunnel] = useState<FunnelStatistiques | null>(null);
+  const [matomoStats, setMatomoStats] = useState<Statistiques | null>(null);
   const [loading, setLoading] = useState(true);
   const [funnelLoading, setFunnelLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,18 +48,18 @@ export default function AcquisitionPanel() {
     loadDepartements();
   }, []);
 
-  // Charger les donnees funnel Matomo au montage
+  // Charger les donnees Matomo (funnel + visites + taux rebond) quand la periode change
   useEffect(() => {
-    async function loadFunnel() {
+    async function loadMatomoStats() {
       setFunnelLoading(true);
-      const result = await getStatistiquesAction();
+      const result = await getStatistiquesAction(periodeId);
       if (result.success) {
-        setFunnel(result.data.funnelSimulateurRGA);
+        setMatomoStats(result.data);
       }
       setFunnelLoading(false);
     }
-    loadFunnel();
-  }, []);
+    loadMatomoStats();
+  }, [periodeId]);
 
   // Charger les stats quand les filtres changent
   const loadStats = useCallback(async () => {
@@ -121,6 +121,7 @@ export default function AcquisitionPanel() {
                 departements={departements}
                 onPeriodeChange={setPeriodeId}
                 onDepartementChange={setCodeDepartement}
+                departementDisabled={activeTab === "vitrine"}
               />
             </div>
           </div>
@@ -172,7 +173,7 @@ export default function AcquisitionPanel() {
               <EntonnoirEligibilite stats={stats} loading={loading} />
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
                 <div className="fr-col-12 fr-col-lg-6">
-                  <DetailEtapesFunnel funnel={funnel} loading={funnelLoading} />
+                  <DetailEtapesFunnel funnel={matomoStats?.funnelSimulateurRGA ?? null} loading={funnelLoading} />
                 </div>
                 <div className="fr-col-12 fr-col-lg-6">
                   <MotifsIneligibiliteCard
@@ -219,7 +220,7 @@ export default function AcquisitionPanel() {
 
           {activeTab === "vitrine" && (
             <div id="tab-acquisition-vitrine-panel" role="tabpanel">
-              <SiteVitrineTab />
+              <SiteVitrineTab stats={matomoStats} loading={funnelLoading} />
             </div>
           )}
         </div>

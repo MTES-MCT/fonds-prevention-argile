@@ -10,6 +10,7 @@ interface FiltresTableauDeBordProps {
   departements: DepartementDisponible[];
   onPeriodeChange: (periodeId: PeriodeId) => void;
   onDepartementChange: (codeDepartement: string) => void;
+  departementDisabled?: boolean;
 }
 
 export function FiltresTableauDeBord({
@@ -18,6 +19,7 @@ export function FiltresTableauDeBord({
   departements,
   onPeriodeChange,
   onDepartementChange,
+  departementDisabled = false,
 }: FiltresTableauDeBordProps) {
   return (
     <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--right">
@@ -46,6 +48,7 @@ export function FiltresTableauDeBord({
             name="departement"
             value={codeDepartement}
             onChange={(e) => onDepartementChange(e.target.value)}
+            disabled={departementDisabled}
             aria-label="Filtre par département">
             <option value="">Tous les départements</option>
             {departements.map((d) => (

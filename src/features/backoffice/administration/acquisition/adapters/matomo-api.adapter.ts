@@ -122,6 +122,44 @@ export async function fetchMatomoVisits(
 }
 
 /**
+ * Reponse de l'API Matomo VisitsSummary.get (resume des visites)
+ */
+interface MatomoVisitsSummaryResponse {
+  nb_visits: number;
+  bounce_rate: string; // ex: "45%"
+  [key: string]: unknown;
+}
+
+/**
+ * Recupere le taux de rebond depuis l'API Matomo
+ * @param period - Periode : 'range', 'day', etc.
+ * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
+ */
+export async function fetchMatomoBounceRate(
+  period: string = "range",
+  date: string = "last30"
+): Promise<number> {
+  const config = getMatomoConfig();
+
+  const data = await fetchMatomoApi<MatomoVisitsSummaryResponse>(
+    {
+      module: "API",
+      method: "VisitsSummary.get",
+      idSite: config.siteId,
+      period,
+      date,
+      format: "JSON",
+      token_auth: config.apiToken,
+    },
+    config.apiUrl
+  );
+
+  // bounce_rate est une string comme "45%" — on extrait le nombre
+  const bounceStr = data.bounce_rate ?? "0%";
+  return parseFloat(bounceStr.replace("%", "")) || 0;
+}
+
+/**
  * Récupère les statistiques d'un funnel depuis l'API Matomo
  * @param funnelId - ID du funnel à récupérer (optionnel, utilise NEXT_PUBLIC_MATOMO_FUNNEL_ID par défaut)
  * @param period - Période : 'day', 'week', 'month', 'year', 'range'
