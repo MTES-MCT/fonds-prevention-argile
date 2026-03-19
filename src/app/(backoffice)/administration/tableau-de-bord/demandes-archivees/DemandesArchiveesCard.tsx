@@ -82,8 +82,7 @@ export function DemandesArchiveesCard({
                 Demandes archivées ({stats.total.toLocaleString("fr-FR")})
               </h2>
             </div>
-            {/* TODO : lier vers la page de detail des demandes archivées */}
-            <a className="fr-link fr-link--sm" href="#" onClick={(e) => e.preventDefault()}>
+            <a className="fr-link fr-link--sm" href="/administration/demandeurs?tab=archivage">
               Voir tout
               <span className="fr-icon-arrow-right-s-line fr-icon--sm fr-ml-1v" aria-hidden="true" />
             </a>

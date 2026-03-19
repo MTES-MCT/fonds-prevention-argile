@@ -25,6 +25,13 @@ import type {
   MotifIneligibilite,
 } from "../domain/types/tableau-de-bord.types";
 import { PERIODES, SERVICE_START_DATE } from "../domain/types/tableau-de-bord.types";
+import type { EligibiliteStats } from "../domain/types/eligibilite-stats.types";
+import {
+  calculerTrancheRevenu,
+  isRegionIDF,
+  TRANCHES_REVENU,
+} from "@/features/simulateur/domain/types/rga-revenus.types";
+import type { TrancheRevenuRga } from "@/features/simulateur/domain/types/rga-revenus.types";
 import {
   normalizeCodeDepartement,
   toOfficialCodeDepartement,
@@ -869,6 +876,185 @@ export async function getTableauDeBordStats(
     demandesArchiveesDetail,
     demandesIneligiblesDetail,
     topDepartements,
+    topCommunes,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Données d'éligibilité
+// ---------------------------------------------------------------------------
+
+interface EligibiliteCounts {
+  avecMicroFissures: number;
+  sansMicroFissures: number;
+  dejaIndemnisees: number;
+  nonIndemnisees: number;
+  tranches: Record<TrancheRevenuRga, number>;
+}
+
+function createEmptyEligibiliteCounts(): EligibiliteCounts {
+  return {
+    avecMicroFissures: 0,
+    sansMicroFissures: 0,
+    dejaIndemnisees: 0,
+    nonIndemnisees: 0,
+    tranches: {
+      "très modeste": 0,
+      "modeste": 0,
+      "intermédiaire": 0,
+      "supérieure": 0,
+    },
+  };
+}
+
+/**
+ * Calcule les compteurs d'éligibilité en un seul passage sur les parcours.
+ * Micro-fissures et indemnisation : sur simulations éligibles uniquement.
+ * Tranches de revenus : sur toutes les simulations.
+ */
+function computeEligibiliteCounts(
+  parcours: { rgaSimulationData: unknown; rgaSimulationDataAgent: unknown }[]
+): EligibiliteCounts {
+  const counts = createEmptyEligibiliteCounts();
+
+  for (const p of parcours) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const agentData = p.rgaSimulationDataAgent as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userData = p.rgaSimulationData as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const simData = (agentData ?? userData) as any;
+
+    // Tranches de revenus (sur TOUTES les simulations)
+    const revenu = simData?.menage?.revenu_rga;
+    const personnes = simData?.menage?.personnes;
+    const codeRegion = asString(simData?.logement?.code_region);
+
+    if (revenu !== null && revenu !== undefined && personnes && codeRegion) {
+      const estIDF = isRegionIDF(codeRegion);
+      const tranche = calculerTrancheRevenu(Number(revenu), Number(personnes), estIDF);
+      counts.tranches[tranche] += 1;
+    }
+
+    // Éligibilité
+    const evaluation = EligibilityService.evaluate(simData);
+    if (!evaluation.result?.eligible) continue;
+
+    // Micro-fissures (sur éligibles)
+    const sinistres = asString(simData?.rga?.sinistres);
+    if (sinistres === "saine") {
+      counts.sansMicroFissures += 1;
+    } else if (sinistres === "très peu endommagée" || sinistres === "endommagée") {
+      counts.avecMicroFissures += 1;
+    }
+
+    // Indemnisation antérieure (sur éligibles)
+    const indemnise = simData?.rga?.indemnise_indemnise_rga;
+    if (indemnise === true) {
+      counts.dejaIndemnisees += 1;
+    } else {
+      counts.nonIndemnisees += 1;
+    }
+  }
+
+  return counts;
+}
+
+/**
+ * Récupère les statistiques d'éligibilité avec variations.
+ */
+export async function getEligibiliteStats(
+  periodeId: PeriodeId,
+  codeDepartement?: string
+): Promise<EligibiliteStats> {
+  const { debut, fin } = getDateRange(periodeId);
+  const previousRange = getPreviousDateRange(periodeId);
+
+  // Requête : tous les parcours avec simulation sur la période
+  const conditions = [
+    gte(parcoursPrevention.createdAt, debut),
+    lt(parcoursPrevention.createdAt, fin),
+    isNotNull(parcoursPrevention.rgaSimulationData),
+  ];
+  if (codeDepartement) {
+    conditions.push(whereDepartement(codeDepartement));
+  }
+
+  const parcoursResult = await db
+    .select({
+      rgaSimulationData: parcoursPrevention.rgaSimulationData,
+      rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
+    })
+    .from(parcoursPrevention)
+    .where(and(...conditions));
+
+  const current = computeEligibiliteCounts(parcoursResult);
+
+  // Période précédente pour les variations
+  let prev: EligibiliteCounts | null = null;
+  if (previousRange) {
+    const prevConditions = [
+      gte(parcoursPrevention.createdAt, previousRange.debut),
+      lt(parcoursPrevention.createdAt, previousRange.fin),
+      isNotNull(parcoursPrevention.rgaSimulationData),
+    ];
+    if (codeDepartement) {
+      prevConditions.push(whereDepartement(codeDepartement));
+    }
+
+    const prevResult = await db
+      .select({
+        rgaSimulationData: parcoursPrevention.rgaSimulationData,
+        rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
+      })
+      .from(parcoursPrevention)
+      .where(and(...prevConditions));
+
+    prev = computeEligibiliteCounts(prevResult);
+  }
+
+  // Top 5 départements (réutilise la fonction existante)
+  const allDepts = await getTopDepartementsStats(debut, fin);
+  const top5Depts = allDepts
+    .sort((a, b) => b.simulations - a.simulations)
+    .slice(0, 5)
+    .map((d) => ({
+      codeDepartement: d.codeDepartement,
+      nomDepartement: d.nomDepartement,
+      simulations: d.simulations,
+    }));
+
+  // Top 5 communes (réutilise la fonction existante)
+  const topCommunes = await getTopCommunesStats(debut, fin, codeDepartement);
+
+  // Assembler les résultats avec variations
+  const tranchesRevenus = {} as Record<TrancheRevenuRga, { valeur: number; variation: number | null }>;
+  for (const tranche of TRANCHES_REVENU) {
+    tranchesRevenus[tranche] = {
+      valeur: current.tranches[tranche],
+      variation: prev ? calculerVariation(current.tranches[tranche], prev.tranches[tranche]) : null,
+    };
+  }
+
+  return {
+    avecMicroFissures: {
+      valeur: current.avecMicroFissures,
+      variation: prev ? calculerVariation(current.avecMicroFissures, prev.avecMicroFissures) : null,
+    },
+    sansMicroFissures: {
+      valeur: current.sansMicroFissures,
+      variation: prev ? calculerVariation(current.sansMicroFissures, prev.sansMicroFissures) : null,
+    },
+    dejaIndemnisees: {
+      valeur: current.dejaIndemnisees,
+      variation: prev ? calculerVariation(current.dejaIndemnisees, prev.dejaIndemnisees) : null,
+    },
+    nonIndemnisees: {
+      valeur: current.nonIndemnisees,
+      variation: prev ? calculerVariation(current.nonIndemnisees, prev.nonIndemnisees) : null,
+    },
+    tranchesRevenus,
+    topDepartements: top5Depts,
     topCommunes,
   };
 }

@@ -105,12 +105,12 @@ export default function AcquisitionPanel() {
   return (
     <>
       {/* En-tete + onglets — fond blanc */}
-      <section className="fr-container-fluid fr-py-4w">
+      <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
-          <div className="fr-grid-row fr-grid-row--middle fr-mb-2w">
+          <div className="fr-grid-row fr-grid-row--middle fr-mb-6w">
             <div className="fr-col">
               <h1 className="fr-h2 fr-mb-1v">Acquisition</h1>
-              <p className="fr-text--lg" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
+              <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
                 Données du site et du simulateur (non éligibles et demandeurs)
               </p>
             </div>
@@ -134,7 +134,7 @@ export default function AcquisitionPanel() {
           )}
 
           {/* Barre d'onglets geree par React */}
-          <div className="fr-tabs">
+          <div className="fr-tabs" style={{ borderBottom: "none" }}>
             <ul className="fr-tabs__list" role="tablist" aria-label="Statistiques d'acquisition">
               <li role="presentation">
                 <button
@@ -176,10 +176,7 @@ export default function AcquisitionPanel() {
                   <DetailEtapesFunnel funnel={matomoStats?.funnelSimulateurRGA ?? null} loading={funnelLoading} />
                 </div>
                 <div className="fr-col-12 fr-col-lg-6">
-                  <MotifsIneligibiliteCard
-                    stats={stats?.demandesIneligiblesDetail ?? null}
-                    loading={loading}
-                  />
+                  <MotifsIneligibiliteCard stats={stats?.demandesIneligiblesDetail ?? null} loading={loading} />
                 </div>
               </div>
 

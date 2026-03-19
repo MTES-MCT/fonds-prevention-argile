@@ -13,7 +13,6 @@ import {
 } from "@/features/backoffice";
 import { getEntreprisesAmoOptions } from "@/features/backoffice/administration/amo/actions";
 import { getAllersVersOptions } from "@/features/backoffice/administration/allers-vers/actions/allers-vers-admin.actions";
-import StatCard from "../../shared/StatCard";
 import { UserRole } from "@/shared/domain/value-objects";
 
 const MODAL_DELETE_ID = "modal-delete-agent";
@@ -79,6 +78,7 @@ export default function AgentsPanel() {
   const [allersVersList, setAllersVersList] = useState<AllersVersOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("tous");
 
   // Modal states
   const [selectedAgent, setSelectedAgent] = useState<AgentWithPermissions | null>(null);
@@ -204,13 +204,13 @@ export default function AgentsPanel() {
 
   return (
     <>
-      {/* En-tete + bouton ajout */}
-      <section className="fr-container-fluid fr-py-4w">
+      {/* En-tete + onglets — fond blanc */}
+      <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
-          <div className="fr-grid-row fr-grid-row--middle fr-mb-2w">
+          <div className="fr-grid-row fr-grid-row--middle fr-mb-6w">
             <div className="fr-col">
               <h1 className="fr-h2 fr-mb-1v">Gestion des agents</h1>
-              <p className="fr-text--lg" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
+              <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
                 Gérez les agents ayant accès au backoffice et leurs permissions.
               </p>
             </div>
@@ -233,10 +233,33 @@ export default function AgentsPanel() {
               <p>{error}</p>
             </div>
           )}
+
+          {/* Onglets par rôle */}
+          <div className="fr-tabs" style={{ borderBottom: "none" }}>
+            <ul className="fr-tabs__list" role="tablist" aria-label="Agents par rôle">
+              {ROLE_TABS.map((tab) => (
+                <li key={tab.id} role="presentation">
+                  <button
+                    type="button"
+                    className="fr-tabs__tab"
+                    tabIndex={activeTab === tab.id ? 0 : -1}
+                    role="tab"
+                    aria-selected={activeTab === tab.id}
+                    aria-controls={`tab-agents-${tab.id}-panel`}
+                    onClick={() => setActiveTab(tab.id)}>
+                    <p className={`fr-badge fr-badge--sm fr-badge--no-icon fr-mr-2v ${tab.badgeClass}`}>
+                      {agentsByTab[tab.id]?.length ?? 0}
+                    </p>
+                    {tab.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
-      {/* Stats + onglets + tableau — fond bleu */}
+      {/* Contenu — fond bleu */}
       <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
         <div className="fr-container">
           {isLoading ? (
@@ -244,67 +267,16 @@ export default function AgentsPanel() {
               <div className="text-gray-500">Chargement des agents...</div>
             </div>
           ) : (
-            <>
-              <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
-                <StatCard label="Agents total" number={agents.length.toString()} />
-                <StatCard
-                  label="Super Admins"
-                  number={agents.filter((a) => a.agent.role === "super_administrateur").length.toString()}
-                />
-                <StatCard label="AMO" number={agents.filter((a) => a.agent.role === "amo").length.toString()} />
-                <StatCard
-                  label="Allers-Vers"
-                  number={agents
-                    .filter((a) => a.agent.role === "allers_vers" || a.agent.role === "amo_et_allers_vers")
-                    .length.toString()}
-                />
-                <StatCard
-                  label="En attente de connexion"
-                  number={agents.filter((a) => a.agent.sub.startsWith("pending_")).length.toString()}
-                />
-              </div>
-
-              <div className="fr-tabs">
-                <ul className="fr-tabs__list" role="tablist" aria-label="Agents par rôle">
-                  {ROLE_TABS.map((tab, index) => (
-                    <li key={tab.id} role="presentation">
-                      <button
-                        type="button"
-                        id={`tab-agents-${tab.id}`}
-                        className="fr-tabs__tab"
-                        tabIndex={index === 0 ? 0 : -1}
-                        role="tab"
-                        aria-selected={index === 0 ? "true" : "false"}
-                        aria-controls={`tab-agents-${tab.id}-panel`}>
-                        <p className={`fr-badge fr-badge--sm fr-badge--no-icon fr-mr-2v ${tab.badgeClass}`}>
-                          {agentsByTab[tab.id]?.length ?? 0}
-                        </p>
-                        {tab.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-
-                {ROLE_TABS.map((tab, index) => (
-                  <div
-                    key={tab.id}
-                    id={`tab-agents-${tab.id}-panel`}
-                    className={`fr-tabs__panel${index === 0 ? " fr-tabs__panel--selected" : ""}`}
-                    role="tabpanel"
-                    aria-labelledby={`tab-agents-${tab.id}`}
-                    tabIndex={0}>
-                    <AgentsList
-                      agents={agentsByTab[tab.id] ?? []}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      isLoading={isSubmitting}
-                      modalDeleteId={MODAL_DELETE_ID}
-                      modalFormId={MODAL_FORM_ID}
-                    />
-                  </div>
-                ))}
-              </div>
-            </>
+            <div id={`tab-agents-${activeTab}-panel`} role="tabpanel">
+              <AgentsList
+                agents={agentsByTab[activeTab] ?? []}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                isLoading={isSubmitting}
+                modalDeleteId={MODAL_DELETE_ID}
+                modalFormId={MODAL_FORM_ID}
+              />
+            </div>
           )}
         </div>
       </section>

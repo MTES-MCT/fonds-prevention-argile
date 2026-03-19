@@ -8,6 +8,8 @@ import { useHasPermission } from "@/features/auth/hooks/usePermissions";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import type { AllersVers } from "@/features/seo/allers-vers";
 
+type AllersVersTab = "liste" | "import";
+
 interface AllersVersWithRelations extends AllersVers {
   departements?: { codeDepartement: string }[];
   epci?: { codeEpci: string }[];
@@ -16,6 +18,7 @@ interface AllersVersWithRelations extends AllersVers {
 export default function AllersVersPanel() {
   const [editingAllersVers, setEditingAllersVers] = useState<AllersVersWithRelations | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [activeTab, setActiveTab] = useState<AllersVersTab>("liste");
 
   // Vérifier les permissions
   const canWrite = useHasPermission(BackofficePermission.ALLERS_VERS_WRITE);
@@ -49,30 +52,27 @@ export default function AllersVersPanel() {
 
   return (
     <>
-      {/* En-tête */}
-      <section className="fr-container-fluid fr-py-4w">
+      {/* En-tête + onglets — fond blanc */}
+      <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
-          <h1 className="fr-h2 fr-mb-2w">Gestion des Allers Vers</h1>
-          <p className="fr-text--lg" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
-            Gérez les structures publiques ou privées qui font connaître le fonds prévention argile.
-          </p>
-        </div>
-      </section>
+          <div className="fr-mb-6w">
+            <h1 className="fr-h2 fr-mb-1v">Gestion des Allers Vers</h1>
+            <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
+              Gérez les structures publiques ou privées qui font connaître le fonds prévention argile.
+            </p>
+          </div>
 
-      {/* Onglets + contenu — fond bleu */}
-      <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
-        <div className="fr-container">
-          <div className="fr-tabs">
+          <div className="fr-tabs" style={{ borderBottom: "none" }}>
             <ul className="fr-tabs__list" role="tablist" aria-label="Vues Allers Vers">
               <li role="presentation">
                 <button
                   type="button"
-                  id="tab-allers-vers-liste"
                   className="fr-tabs__tab fr-icon-building-fill fr-tabs__tab--icon-left"
-                  tabIndex={0}
+                  tabIndex={activeTab === "liste" ? 0 : -1}
                   role="tab"
-                  aria-selected="true"
-                  aria-controls="tab-allers-vers-liste-panel">
+                  aria-selected={activeTab === "liste"}
+                  aria-controls="tab-allers-vers-liste-panel"
+                  onClick={() => setActiveTab("liste")}>
                   Liste des structures
                 </button>
               </li>
@@ -80,39 +80,36 @@ export default function AllersVersPanel() {
                 <li role="presentation">
                   <button
                     type="button"
-                    id="tab-allers-vers-import"
                     className="fr-tabs__tab fr-icon-upload-line fr-tabs__tab--icon-left"
-                    tabIndex={-1}
+                    tabIndex={activeTab === "import" ? 0 : -1}
                     role="tab"
-                    aria-selected="false"
-                    aria-controls="tab-allers-vers-import-panel">
+                    aria-selected={activeTab === "import"}
+                    aria-controls="tab-allers-vers-import-panel"
+                    onClick={() => setActiveTab("import")}>
                     Import
                   </button>
                 </li>
               )}
             </ul>
+          </div>
+        </div>
+      </section>
 
-            <div
-              id="tab-allers-vers-liste-panel"
-              className="fr-tabs__panel fr-tabs__panel--selected"
-              role="tabpanel"
-              aria-labelledby="tab-allers-vers-liste"
-              tabIndex={0}>
+      {/* Contenu — fond bleu */}
+      <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
+        <div className="fr-container">
+          {activeTab === "liste" && (
+            <div id="tab-allers-vers-liste-panel" role="tabpanel">
               <AllerVersList onEdit={handleEdit} refreshTrigger={refreshTrigger} canEdit={canWrite} />
             </div>
+          )}
 
-            {canImport && (
-              <div
-                id="tab-allers-vers-import-panel"
-                className="fr-tabs__panel"
-                role="tabpanel"
-                aria-labelledby="tab-allers-vers-import"
-                tabIndex={0}>
-                <h2 className="fr-h3 fr-mb-3w">Import des structures Allers Vers</h2>
-                <AllersVersSeedUpload onImportSuccess={handleSuccess} />
-              </div>
-            )}
-          </div>
+          {activeTab === "import" && canImport && (
+            <div id="tab-allers-vers-import-panel" role="tabpanel">
+              <h2 className="fr-h3 fr-mb-3w">Import des structures Allers Vers</h2>
+              <AllersVersSeedUpload onImportSuccess={handleSuccess} />
+            </div>
+          )}
         </div>
       </section>
 
