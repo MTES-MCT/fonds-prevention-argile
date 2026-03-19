@@ -3,6 +3,7 @@ import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import { AccessErrorCode } from "@/features/auth/permissions/domain";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { UserWithParcoursDetails } from "../domain/types/user-with-parcours.types";
 import { createMockAuthUser, createEnvConfigMock } from "@/shared/testing/mocks";
@@ -49,6 +50,7 @@ describe("users-tracking.actions", () => {
       id: "parcours-123",
       currentStep: Step.CHOIX_AMO,
       currentStatus: "in_progress",
+      situationParticulier: SituationParticulier.PROSPECT,
       createdAt: new Date("2024-01-01T10:00:00Z"),
       updatedAt: new Date("2024-01-15T10:00:00Z"),
       completedAt: null,

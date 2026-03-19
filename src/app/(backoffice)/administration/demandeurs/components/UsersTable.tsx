@@ -234,9 +234,9 @@ export function UsersTable({ users }: UsersTableProps) {
                   <th scope="col">Commune (Dpt)</th>
                   <th scope="col">Date d'inscription</th>
                   <th scope="col">Étape en cours</th>
-                  <th scope="col">Étape en cours</th>
-                  <th scope="col">Étape en cours</th>
-                  <th scope="col">Étape en cours</th>
+                  <th scope="col">Statut dossier</th>
+                  <th scope="col">Validation</th>
+                  <th scope="col"></th>
                 </tr>
               </thead>
               <tbody>

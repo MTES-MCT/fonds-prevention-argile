@@ -1,5 +1,6 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 
 /**
@@ -24,6 +25,7 @@ export interface UserWithParcoursDetails {
     id: string;
     currentStep: Step;
     currentStatus: string;
+    situationParticulier: SituationParticulier;
     createdAt: Date;
     updatedAt: Date;
     completedAt: Date | null;
