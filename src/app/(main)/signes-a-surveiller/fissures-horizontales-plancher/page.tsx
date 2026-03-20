@@ -9,9 +9,7 @@ export default function FissuresHorizontalesPlancher() {
       pageLink="/signes-a-surveiller/fissures-horizontales-plancher"
       tag={
         commonContent.signes_a_surveiller_section.signes.find(
-          (item) =>
-            item.pageLink ===
-            "/signes-a-surveiller/fissures-horizontales-plancher"
+          (item) => item.pageLink === "/signes-a-surveiller/fissures-horizontales-plancher"
         )?.tag
       }
       image={content.image}

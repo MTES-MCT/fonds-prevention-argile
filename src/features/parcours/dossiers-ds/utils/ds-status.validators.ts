@@ -8,10 +8,7 @@ import { DSStatus } from "../domain/value-objects/ds-status";
  * Vérifie si une valeur est un statut DS valide
  */
 export function isValidDSStatus(value: unknown): value is DSStatus {
-  return (
-    typeof value === "string" &&
-    Object.values(DSStatus).includes(value as DSStatus)
-  );
+  return typeof value === "string" && Object.values(DSStatus).includes(value as DSStatus);
 }
 
 /**

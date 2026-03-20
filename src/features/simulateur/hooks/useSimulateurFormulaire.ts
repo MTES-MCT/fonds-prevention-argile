@@ -84,10 +84,10 @@ export function useSimulateurFormulaire() {
   let checks = result?.checks ?? null;
   if (currentStep === SimulateurStep.RESULTAT && !checks) {
     if (Object.keys(answers).length > 0) {
-      console.warn(
-        "[Simulateur] Checks manquants à l'étape RESULTAT, re-évaluation...",
-        { result, answersKeys: Object.keys(answers) },
-      );
+      console.warn("[Simulateur] Checks manquants à l'étape RESULTAT, re-évaluation...", {
+        result,
+        answersKeys: Object.keys(answers),
+      });
       const reEval = EligibilityService.evaluate(answers);
       // Vérifier que la re-évaluation a produit un vrai résultat (au moins un check non-null)
       const hasAnyCheck = Object.values(reEval.checks).some((v) => v !== null);

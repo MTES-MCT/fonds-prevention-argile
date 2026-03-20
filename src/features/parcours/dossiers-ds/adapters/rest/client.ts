@@ -1,10 +1,5 @@
 import { getServerEnv } from "@/shared/config/env.config";
-import type {
-  PrefillData,
-  CreateDossierResponse,
-  DemarcheSchema,
-  DemarcheStats,
-} from "./types";
+import type { PrefillData, CreateDossierResponse, DemarcheSchema, DemarcheStats } from "./types";
 import { Step } from "@/features/parcours/core";
 
 export type DemarcheType = "ELIGIBILITE" | "DIAGNOSTIC" | "DEVIS" | "FACTURES";
@@ -112,10 +107,7 @@ export class DemarchesSimplifieesPrefillClient {
    * Crée un dossier prérempli via POST
    * Endpoint: /api/public/v1/demarches/{id}/dossiers
    */
-  async createPrefillDossier(
-    data: PrefillData,
-    demarcheType: DemarcheType | Step
-  ): Promise<CreateDossierResponse> {
+  async createPrefillDossier(data: PrefillData, demarcheType: DemarcheType | Step): Promise<CreateDossierResponse> {
     const config = this.getConfig(demarcheType);
     const url = `${this.baseUrl}/demarches/${config.id}/dossiers`;
 
@@ -144,9 +136,7 @@ export class DemarchesSimplifieesPrefillClient {
         }
       }
 
-      throw new Error(
-        `Erreur création dossier ${demarcheType}: ${errorMessage}`
-      );
+      throw new Error(`Erreur création dossier ${demarcheType}: ${errorMessage}`);
     }
 
     return response.json();
@@ -169,9 +159,7 @@ export class DemarchesSimplifieesPrefillClient {
     });
 
     if (!response.ok) {
-      throw new Error(
-        `Erreur récupération stats ${demarcheType}: ${response.status} ${response.statusText}`
-      );
+      throw new Error(`Erreur récupération stats ${demarcheType}: ${response.status} ${response.statusText}`);
     }
 
     return response.json();
@@ -186,25 +174,19 @@ export class DemarchesSimplifieesPrefillClient {
     // Validation basique
     Object.entries(data).forEach(([key]) => {
       if (!key.startsWith("champ_")) {
-        errors.push(
-          `Clé invalide: ${key}. Les clés doivent commencer par 'champ_'`
-        );
+        errors.push(`Clé invalide: ${key}. Les clés doivent commencer par 'champ_'`);
       }
     });
 
     // Validation avec le schéma si fourni
     if (schema) {
       const champIds = schema.revision.champDescriptors.map((c) => c.id);
-      const requiredChamps = schema.revision.champDescriptors
-        .filter((c) => c.required)
-        .map((c) => c.id);
+      const requiredChamps = schema.revision.champDescriptors.filter((c) => c.required).map((c) => c.id);
 
       // Vérifier les champs requis
       requiredChamps.forEach((id) => {
         if (!(id in data) || data[id] === null || data[id] === "") {
-          const champ = schema.revision.champDescriptors.find(
-            (c) => c.id === id
-          );
+          const champ = schema.revision.champDescriptors.find((c) => c.id === id);
           errors.push(`Champ requis manquant: ${champ?.label || id}`);
         }
       });

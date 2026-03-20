@@ -9,8 +9,7 @@ export default function FissuresEnEscalier() {
       pageLink="/signes-a-surveiller/fissures-en-escalier"
       tag={
         commonContent.signes_a_surveiller_section.signes.find(
-          (item) =>
-            item.pageLink === "/signes-a-surveiller/fissures-en-escalier"
+          (item) => item.pageLink === "/signes-a-surveiller/fissures-en-escalier"
         )?.tag
       }
       image={content.image}

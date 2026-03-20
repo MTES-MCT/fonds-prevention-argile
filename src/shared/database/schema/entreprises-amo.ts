@@ -1,11 +1,4 @@
-import {
-  pgTable,
-  uuid,
-  timestamp,
-  varchar,
-  text,
-  unique,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, varchar, text, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { entreprisesAmoCommunes } from "./entreprises-amo-communes";
 import { entreprisesAmoEpci } from "./entreprises-amo-epci";
@@ -33,13 +26,10 @@ export const entreprisesAmo = pgTable(
 );
 
 // Relations : une entreprise AMO peut couvrir plusieurs communes et EPCI spécifiques (optionnel)
-export const entreprisesAmoRelations = relations(
-  entreprisesAmo,
-  ({ many }) => ({
-    communes: many(entreprisesAmoCommunes),
-    epci: many(entreprisesAmoEpci),
-  })
-);
+export const entreprisesAmoRelations = relations(entreprisesAmo, ({ many }) => ({
+  communes: many(entreprisesAmoCommunes),
+  epci: many(entreprisesAmoEpci),
+}));
 
 // Types TypeScript générés
 export type EntrepriseAmo = typeof entreprisesAmo.$inferSelect;

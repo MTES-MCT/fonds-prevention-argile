@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  normalizeCodeDepartement,
-  toOfficialCodeDepartement,
-  getDepartementName,
-} from "./departements.constants";
+import { normalizeCodeDepartement, toOfficialCodeDepartement, getDepartementName } from "./departements.constants";
 
 describe("normalizeCodeDepartement", () => {
   it("doit convertir un number en string sans zéro initial", () => {

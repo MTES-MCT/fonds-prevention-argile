@@ -58,12 +58,7 @@ export async function getDossierByStep(parcoursId: string, step: Step) {
   const [dossier] = await db
     .select()
     .from(dossiersDemarchesSimplifiees)
-    .where(
-      and(
-        eq(dossiersDemarchesSimplifiees.parcoursId, parcoursId),
-        eq(dossiersDemarchesSimplifiees.step, step)
-      )
-    )
+    .where(and(eq(dossiersDemarchesSimplifiees.parcoursId, parcoursId), eq(dossiersDemarchesSimplifiees.step, step)))
     .limit(1);
 
   return dossier || null;
@@ -103,8 +98,5 @@ export async function updateDossierStatus(
  * Récupère tous les dossiers d'un parcours
  */
 export async function getAllDossiersByParcours(parcoursId: string) {
-  return db
-    .select()
-    .from(dossiersDemarchesSimplifiees)
-    .where(eq(dossiersDemarchesSimplifiees.parcoursId, parcoursId));
+  return db.select().from(dossiersDemarchesSimplifiees).where(eq(dossiersDemarchesSimplifiees.parcoursId, parcoursId));
 }

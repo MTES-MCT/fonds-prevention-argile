@@ -101,7 +101,10 @@ export default function MonCompteClient() {
           isOpen={showContactModal}
           defaultEmail={user.email}
           onClose={() => setShowContactModal(false)}
-          onSuccess={() => { setShowContactModal(false); setContactInfoVersion((v) => v + 1); }}
+          onSuccess={() => {
+            setShowContactModal(false);
+            setContactInfoVersion((v) => v + 1);
+          }}
         />
         <section className="fr-container-fluid fr-py-10w">
           <div className="fr-container">
@@ -118,7 +121,10 @@ export default function MonCompteClient() {
         isOpen={showContactModal}
         defaultEmail={user.email}
         onClose={() => setShowContactModal(false)}
-        onSuccess={() => { setShowContactModal(false); setContactInfoVersion((v) => v + 1); }}
+        onSuccess={() => {
+          setShowContactModal(false);
+          setContactInfoVersion((v) => v + 1);
+        }}
       />
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
@@ -260,7 +266,14 @@ function renderChoixAmoCallout(
   }
 
   if (statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE) {
-    return <CalloutAmoTodo accompagnementRefuse onSuccess={onAmoSuccess} refresh={refresh} contactInfoVersion={contactInfoVersion} />;
+    return (
+      <CalloutAmoTodo
+        accompagnementRefuse
+        onSuccess={onAmoSuccess}
+        refresh={refresh}
+        contactInfoVersion={contactInfoVersion}
+      />
+    );
   }
 
   return undefined;
@@ -374,4 +387,3 @@ function getStatusBadgeLabel(
       return "À faire";
   }
 }
-

@@ -13,12 +13,9 @@ export default function MaListe() {
 
   // Déterminer quels liens sont actifs selon l'étape courante
   const isDiagnosticActive =
-    currentStep === Step.DIAGNOSTIC ||
-    currentStep === Step.DEVIS ||
-    currentStep === Step.FACTURES;
+    currentStep === Step.DIAGNOSTIC || currentStep === Step.DEVIS || currentStep === Step.FACTURES;
 
-  const isDevisActive =
-    currentStep === Step.DEVIS || currentStep === Step.FACTURES;
+  const isDevisActive = currentStep === Step.DEVIS || currentStep === Step.FACTURES;
 
   const isFacturesActive = currentStep === Step.FACTURES;
 
@@ -62,10 +59,7 @@ export default function MaListe() {
                   return (
                     <span className="fr-link" style={status.style}>
                       Contacter et indiquer un AMO dans la liste{" "}
-                      <span
-                        className="fr-icon-checkbox-circle-fill text-green-800"
-                        aria-hidden="true"
-                      ></span>
+                      <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true"></span>
                     </span>
                   );
                 }
@@ -93,21 +87,13 @@ export default function MaListe() {
                   return (
                     <span className="fr-link" style={status.style}>
                       Remplir le formulaire d'éligibilité et avoir une réponse{" "}
-                      <span
-                        className="fr-icon-checkbox-circle-fill text-green-800"
-                        aria-hidden="true"
-                      ></span>
+                      <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true"></span>
                     </span>
                   );
                 }
 
                 return (
-                  <Link
-                    target="_blank"
-                    rel="noopener external"
-                    className="fr-link"
-                    href={eligibiliteUrl || "#"}
-                  >
+                  <Link target="_blank" rel="noopener external" className="fr-link" href={eligibiliteUrl || "#"}>
                     Remplir le formulaire d'éligibilité et avoir une réponse
                   </Link>
                 );
@@ -115,12 +101,7 @@ export default function MaListe() {
             </li>
             <li key="diagnostic">
               {isDiagnosticActive ? (
-                <Link
-                  target="_blank"
-                  rel="noopener external"
-                  className="fr-link"
-                  href={diagnosticUrl || "#"}
-                >
+                <Link target="_blank" rel="noopener external" className="fr-link" href={diagnosticUrl || "#"}>
                   Démarrer le diagnostic
                 </Link>
               ) : (
@@ -131,12 +112,7 @@ export default function MaListe() {
             </li>
             <li key="devis">
               {isDevisActive ? (
-                <Link
-                  target="_blank"
-                  rel="noopener external"
-                  className="fr-link"
-                  href={devisUrl || "#"}
-                >
+                <Link target="_blank" rel="noopener external" className="fr-link" href={devisUrl || "#"}>
                   Soumettre les devis
                 </Link>
               ) : (
@@ -147,12 +123,7 @@ export default function MaListe() {
             </li>
             <li key="factures">
               {isFacturesActive ? (
-                <Link
-                  target="_blank"
-                  rel="noopener external"
-                  className="fr-link"
-                  href={facturesUrl || "#"}
-                >
+                <Link target="_blank" rel="noopener external" className="fr-link" href={facturesUrl || "#"}>
                   Transmettre les factures
                 </Link>
               ) : (

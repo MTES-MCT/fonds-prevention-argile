@@ -60,6 +60,7 @@ src/
 ## Alias d'import
 
 Utiliser `@/*` pour les imports depuis `src/`:
+
 ```typescript
 import { ... } from "@/features/auth"
 import { ... } from "@/shared/database/client"
@@ -68,6 +69,7 @@ import { ... } from "@/shared/database/client"
 ## Architecture
 
 Le projet suit une architecture orientée domaine (DDD-lite):
+
 - `domain/entities/` - Entités métier
 - `domain/types/` - Types du domaine
 - `domain/value-objects/` - Objets valeurs
@@ -100,6 +102,15 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 
 - Configuration email: Brevo (production) / Mailhog (dev)
 - FranceConnect retourne un email non modifiable — le mail de contact est dans `emailContact` (champ séparé)
+
+## Requêtes base de données
+
+- **Toujours utiliser le query builder Drizzle** (`db.select().from().where()`, `db.insert()`, `db.update()`, etc.) — ne jamais utiliser `db.execute()` avec du SQL brut
+- Le query builder gère correctement la sérialisation des `Date`, arrays, et le nommage des tables/colonnes
+- Pour les jointures : `innerJoin()`, `leftJoin()` avec `eq()` sur les clés
+- Pour les filtres complexes : composer avec `and()`, `or()`, `gte()`, `lt()`, `inArray()`, `isNotNull()`, etc.
+- Si une logique nécessite du SQL avancé (ex: `unnest`, `DISTINCT ON`), préférer récupérer les données via le query builder puis traiter côté JS
+- Les repositories (`*.repository.ts`) encapsulent l'accès DB — les utiliser quand ils existent, sinon requêter directement dans les services
 
 ## Gotchas
 

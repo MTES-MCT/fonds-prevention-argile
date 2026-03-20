@@ -2,9 +2,7 @@ import { describe, it, expect } from "vitest";
 import { matchesTerritoire } from "./parcours-prevention.repository";
 import type { RGASimulationData } from "@/shared/domain/types";
 
-function makeRgaData(
-  overrides: Partial<RGASimulationData["logement"]> = {}
-): RGASimulationData {
+function makeRgaData(overrides: Partial<RGASimulationData["logement"]> = {}): RGASimulationData {
   return {
     logement: {
       adresse: "1 rue de la Paix",
@@ -102,9 +100,7 @@ describe("matchesTerritoire", () => {
         code_departement: "33",
         epci: "200003",
       });
-      expect(
-        matchesTerritoire(data, ["33"], ["200001", "200002", "200003"])
-      ).toBe(true);
+      expect(matchesTerritoire(data, ["33"], ["200001", "200002", "200003"])).toBe(true);
     });
 
     it("exclut un prospect sans EPCI dans ses données", () => {
@@ -133,23 +129,15 @@ describe("matchesTerritoire", () => {
     it("l'agent Aller-vers A ne voit que ses prospects", () => {
       const scopeA = { departements: ["33"], epcis: ["243300316"] };
 
-      expect(
-        matchesTerritoire(prospectEpciA, scopeA.departements, scopeA.epcis)
-      ).toBe(true);
-      expect(
-        matchesTerritoire(prospectEpciB, scopeA.departements, scopeA.epcis)
-      ).toBe(false);
+      expect(matchesTerritoire(prospectEpciA, scopeA.departements, scopeA.epcis)).toBe(true);
+      expect(matchesTerritoire(prospectEpciB, scopeA.departements, scopeA.epcis)).toBe(false);
     });
 
     it("l'agent Aller-vers B ne voit que ses prospects", () => {
       const scopeB = { departements: ["33"], epcis: ["243301033"] };
 
-      expect(
-        matchesTerritoire(prospectEpciA, scopeB.departements, scopeB.epcis)
-      ).toBe(false);
-      expect(
-        matchesTerritoire(prospectEpciB, scopeB.departements, scopeB.epcis)
-      ).toBe(true);
+      expect(matchesTerritoire(prospectEpciA, scopeB.departements, scopeB.epcis)).toBe(false);
+      expect(matchesTerritoire(prospectEpciB, scopeB.departements, scopeB.epcis)).toBe(true);
     });
   });
 

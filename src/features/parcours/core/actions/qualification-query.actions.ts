@@ -79,7 +79,10 @@ export async function getMyIneligibiliteData(): Promise<ActionResult<MyIneligibi
       // Le commentaire AMO peut contenir des raisons codées (ex: "maison_mitoyenne")
       // séparées par des virgules, ou du texte libre
       const commentaire = validation.commentaire ?? "";
-      const parts = commentaire.split(",").map((s) => s.trim()).filter(Boolean);
+      const parts = commentaire
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
 
       return {
         success: true,

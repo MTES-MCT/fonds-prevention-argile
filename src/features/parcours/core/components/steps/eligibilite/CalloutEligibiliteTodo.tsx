@@ -57,9 +57,7 @@ export default function CalloutEligibiliteTodo() {
         }, 5000);
       } else {
         dsWindow?.close();
-        setError(
-          (!result.success && result.error) || "Une erreur est survenue lors de l'envoi du dossier",
-        );
+        setError((!result.success && result.error) || "Une erreur est survenue lors de l'envoi du dossier");
       }
     } catch (err) {
       dsWindow?.close();

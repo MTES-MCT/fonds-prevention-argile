@@ -6,6 +6,7 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import Link from "next/link";
 import { AgentNavigation } from "@/shared/components/AgentNavigation";
+import { AdminNavigation } from "@/shared/components/AdminNavigation";
 
 /**
  * Liens de navigation pour les agents selon leur rôle
@@ -166,6 +167,9 @@ const Header = () => {
 
       {/* Navigation agent (AMO, Allers-Vers, etc.) */}
       <AgentNavigation />
+
+      {/* Navigation super-admin (menu horizontal) */}
+      <AdminNavigation />
 
       {/* Menu mobile */}
       <div className="fr-header__menu fr-modal" id="menu-modal-mobile" aria-labelledby="menu-mobile">

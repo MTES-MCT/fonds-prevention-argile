@@ -112,7 +112,7 @@ export function DossiersPanel() {
     : data.dossiersArchives;
   const paginatedArchives = filteredArchives.slice(
     (pageArchives - 1) * pageSizeArchives,
-    pageArchives * pageSizeArchives,
+    pageArchives * pageSizeArchives
   );
 
   return (
@@ -158,9 +158,7 @@ export function DossiersPanel() {
               {data.nombreDossiersSuivis === 0 ? (
                 <div className="fr-alert fr-alert--info">
                   <h3 className="fr-alert__title">Vous n&apos;avez pas de dossier suivi</h3>
-                  <p>
-                    Recevez et acceptez des demandes d&apos;accompagnement. Les dossiers liés apparaîtront ensuite.
-                  </p>
+                  <p>Recevez et acceptez des demandes d&apos;accompagnement. Les dossiers liés apparaîtront ensuite.</p>
                 </div>
               ) : (
                 <>

@@ -87,11 +87,8 @@ export function ParcoursDemandeur({ currentStep, dates, lastUpdatedAt }: Parcour
                     {/* Label de l'étape */}
                     <span className={isCurrent ? "fr-text--bold" : isCompleted ? "fr-text--regular" : "text-gray-400"}>
                       {index + 1}. {stepConfig.label}
-
                       {/* Date entre parenthèses pour les étapes complétées */}
-                      {isCompleted && stepDate && (
-                        <span> ({formatDate(stepDate.toISOString())})</span>
-                      )}
+                      {isCompleted && stepDate && <span> ({formatDate(stepDate.toISOString())})</span>}
                     </span>
 
                     {/* Badge pour l'étape en cours (si date disponible) */}

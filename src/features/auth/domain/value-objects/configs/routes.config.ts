@@ -52,8 +52,7 @@ export const ROUTES = {
       validation: (token: string) => `/espace-agent/validation/${token}` as const,
       prospects: "/espace-agent/prospects",
       prospect: (id: string) => `/espace-agent/prospects/${id}` as const,
-      editionDonneesSimulation: (dossierId: string) =>
-        `/espace-agent/edition-donnees-simulation/${dossierId}` as const,
+      editionDonneesSimulation: (dossierId: string) => `/espace-agent/edition-donnees-simulation/${dossierId}` as const,
     },
 
     // Alias pour espaceAgent (pour compatibilité)
@@ -66,8 +65,7 @@ export const ROUTES = {
       validation: (token: string) => `/espace-agent/validation/${token}` as const,
       prospects: "/espace-agent/prospects",
       prospect: (id: string) => `/espace-agent/prospects/${id}` as const,
-      editionDonneesSimulation: (dossierId: string) =>
-        `/espace-agent/edition-donnees-simulation/${dossierId}` as const,
+      editionDonneesSimulation: (dossierId: string) => `/espace-agent/edition-donnees-simulation/${dossierId}` as const,
     },
   },
 

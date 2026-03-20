@@ -15,13 +15,8 @@ export default function Feature({
 }: FeatureProps) {
   return (
     <div className="flex flex-col items-center gap-4">
-      <div
-        className={`${tileColor} rounded-lg w-16 h-16 flex items-center justify-center`}
-      >
-        <span
-          className={`${icon} ${iconColor} text-2xl`}
-          aria-hidden="true"
-        ></span>
+      <div className={`${tileColor} rounded-lg w-16 h-16 flex items-center justify-center`}>
+        <span className={`${icon} ${iconColor} text-2xl`} aria-hidden="true"></span>
       </div>
 
       <div className="font-bold text-xl leading-tight">{title}</div>

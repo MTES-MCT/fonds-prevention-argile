@@ -34,37 +34,19 @@ export default function TravauxEligiblesTemplate({
     <>
       <section className="fr-container-fluid fr-py-4w">
         <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-4!">
-          <nav
-            role="navigation"
-            className="fr-breadcrumb"
-            aria-label="vous êtes ici :"
-          >
-            <button
-              type="button"
-              className="fr-breadcrumb__button"
-              aria-expanded="false"
-              aria-controls="breadcrumb"
-            >
+          <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
+            <button type="button" className="fr-breadcrumb__button" aria-expanded="false" aria-controls="breadcrumb">
               Voir le fil d'ariane
             </button>
             <div className="fr-collapse" id="breadcrumb">
               <ol className="fr-breadcrumb__list">
                 <li>
-                  <Link
-                    className="fr-breadcrumb__link"
-                    id="segment-0"
-                    href="/#"
-                  >
+                  <Link className="fr-breadcrumb__link" id="segment-0" href="/#">
                     Accueil
                   </Link>
                 </li>
                 <li>
-                  <a
-                    className="fr-breadcrumb__link"
-                    id="segment-1"
-                    aria-current="page"
-                    href={pageLink}
-                  >
+                  <a className="fr-breadcrumb__link" id="segment-1" aria-current="page" href={pageLink}>
                     {title}
                   </a>
                 </li>
@@ -74,16 +56,10 @@ export default function TravauxEligiblesTemplate({
           <div className="container">
             <h1>{title}</h1>
 
-            <p className={`fr-badge ${tag.icon} fr-badge--icon-left`}>
-              {tag.title}
-            </p>
+            <p className={`fr-badge ${tag.icon} fr-badge--icon-left`}>{tag.title}</p>
 
             {/* Image */}
-            <figure
-              role="group"
-              className="fr-content-media"
-              aria-label="Description / Source"
-            >
+            <figure role="group" className="fr-content-media" aria-label="Description / Source">
               <div className="fr-content-media__img">
                 <Image
                   className="fr-responsive-img fr-ratio-32x9"
@@ -94,9 +70,7 @@ export default function TravauxEligiblesTemplate({
                   height={318}
                 />
               </div>
-              <figcaption className="fr-content-media__caption">
-                {image.description}
-              </figcaption>
+              <figcaption className="fr-content-media__caption">{image.description}</figcaption>
             </figure>
 
             {/* Une des solutions pour protéger votre maison */}
@@ -137,32 +111,24 @@ export default function TravauxEligiblesTemplate({
             <div className="fr-my-6w">
               <h1>{contentCommon.quand_mettre_en_oeuvre_title}</h1>
 
-              {quand_mettre_en_oeuvre.generalite && (
-                <p>{quand_mettre_en_oeuvre.generalite}</p>
-              )}
+              {quand_mettre_en_oeuvre.generalite && <p>{quand_mettre_en_oeuvre.generalite}</p>}
               <h4>{quand_mettre_en_oeuvre.prevention.title}</h4>
               <ul>
-                {quand_mettre_en_oeuvre.prevention.details.map(
-                  (detail, index) => (
-                    <li key={index}>{detail}</li>
-                  )
-                )}
+                {quand_mettre_en_oeuvre.prevention.details.map((detail, index) => (
+                  <li key={index}>{detail}</li>
+                ))}
               </ul>
               <h4>{quand_mettre_en_oeuvre.traitement.title}</h4>
               <ul>
-                {quand_mettre_en_oeuvre.traitement.details.map(
-                  (detail, index) => (
-                    <li key={index}>{detail}</li>
-                  )
-                )}
+                {quand_mettre_en_oeuvre.traitement.details.map((detail, index) => (
+                  <li key={index}>{detail}</li>
+                ))}
               </ul>
             </div>
 
             {/* A retenir */}
             <div className="fr-callout fr-icon-info-line">
-              <h3 className="fr-callout__title">
-                {contentCommon.a_retenir_title}
-              </h3>
+              <h3 className="fr-callout__title">{contentCommon.a_retenir_title}</h3>
               {a_retenir.map((retenir, index) => (
                 <p key={index} className="fr-callout__text">
                   {retenir}
@@ -182,69 +148,60 @@ export default function TravauxEligiblesTemplate({
           <h2>{contentCommon.autres_travaux_section.title}</h2>
           <div className="fr-tabs">
             <ul className="fr-tabs__list" role="tablist" aria-label="">
-              {contentCommon.autres_travaux_section.travaux_tabs.map(
-                (tab, index) => (
-                  <li key={index} role="presentation">
-                    <button
-                      type="button"
-                      id={`tab-${index}`}
-                      className={`fr-tabs__tab ${tab.icon} fr-tabs__tab--icon-left`}
-                      tabIndex={index === 0 ? 0 : -1}
-                      role="tab"
-                      aria-selected={index === 0 ? "true" : "false"}
-                      aria-controls={`tab-${index}-panel`}
-                    >
-                      {tab.title}
-                    </button>
-                  </li>
-                )
-              )}
+              {contentCommon.autres_travaux_section.travaux_tabs.map((tab, index) => (
+                <li key={index} role="presentation">
+                  <button
+                    type="button"
+                    id={`tab-${index}`}
+                    className={`fr-tabs__tab ${tab.icon} fr-tabs__tab--icon-left`}
+                    tabIndex={index === 0 ? 0 : -1}
+                    role="tab"
+                    aria-selected={index === 0 ? "true" : "false"}
+                    aria-controls={`tab-${index}-panel`}>
+                    {tab.title}
+                  </button>
+                </li>
+              ))}
             </ul>
-            {contentCommon.autres_travaux_section.travaux_tabs.map(
-              (tab, index) => (
-                <div
-                  id={`tab-${index}-panel`}
-                  key={index}
-                  className={`fr-tabs__panel ${index === 0 ? "fr-tabs__panel--selected" : ""}`}
-                  role="tabpanel"
-                  aria-labelledby={`tab-${index}`}
-                  tabIndex={0}
-                >
-                  <div className="fr-grid-row fr-grid-row--gutters">
-                    {tab.travaux.map((item, textIndex) =>
-                      item.name === title ? null : (
-                        <div
-                          key={textIndex}
-                          className="fr-col-12 fr-col-md-6 fr-col-lg-4"
-                        >
-                          <div className="fr-card fr-enlarge-link fr-card--horizontal">
-                            <div className="fr-card__body">
-                              <div className="fr-card__content">
-                                <h3 className="fr-card__title">
-                                  <a href={item.pageUrl}>{item.name}</a>
-                                </h3>
-                                <div className="fr-card__start"></div>
-                              </div>
+            {contentCommon.autres_travaux_section.travaux_tabs.map((tab, index) => (
+              <div
+                id={`tab-${index}-panel`}
+                key={index}
+                className={`fr-tabs__panel ${index === 0 ? "fr-tabs__panel--selected" : ""}`}
+                role="tabpanel"
+                aria-labelledby={`tab-${index}`}
+                tabIndex={0}>
+                <div className="fr-grid-row fr-grid-row--gutters">
+                  {tab.travaux.map((item, textIndex) =>
+                    item.name === title ? null : (
+                      <div key={textIndex} className="fr-col-12 fr-col-md-6 fr-col-lg-4">
+                        <div className="fr-card fr-enlarge-link fr-card--horizontal">
+                          <div className="fr-card__body">
+                            <div className="fr-card__content">
+                              <h3 className="fr-card__title">
+                                <a href={item.pageUrl}>{item.name}</a>
+                              </h3>
+                              <div className="fr-card__start"></div>
                             </div>
-                            <div className="fr-card__header">
-                              <div className="fr-card__img">
-                                <Image
-                                  className="fr-responsive-img"
-                                  src={item.image.src}
-                                  alt={item.image.alt}
-                                  width={300}
-                                  height={200}
-                                />
-                              </div>
+                          </div>
+                          <div className="fr-card__header">
+                            <div className="fr-card__img">
+                              <Image
+                                className="fr-responsive-img"
+                                src={item.image.src}
+                                alt={item.image.alt}
+                                width={300}
+                                height={200}
+                              />
                             </div>
                           </div>
                         </div>
-                      )
-                    )}
-                  </div>
+                      </div>
+                    )
+                  )}
                 </div>
-              )
-            )}
+              </div>
+            ))}
           </div>
         </div>
       </section>

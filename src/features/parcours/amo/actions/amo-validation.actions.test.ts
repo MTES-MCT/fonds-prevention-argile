@@ -20,11 +20,7 @@ vi.mock("../services/amo-validation.service", () => ({
 }));
 
 // Import des actions APRÈS les mocks
-import {
-  validerLogementEligible,
-  refuserLogementNonEligible,
-  refuserAccompagnement,
-} from "./amo-validation.actions";
+import { validerLogementEligible, refuserLogementNonEligible, refuserAccompagnement } from "./amo-validation.actions";
 
 // Import des mocks
 import { getCurrentUser } from "@/features/auth/services/user.service";
@@ -207,10 +203,7 @@ describe("amo-validation.actions - Sécurité", () => {
       mockUser(UserRole.AMO, "entreprise-123");
       mockValidationInDb("autre-entreprise");
 
-      const result = await refuserLogementNonEligible(
-        "validation-123",
-        "Le logement ne répond pas aux critères"
-      );
+      const result = await refuserLogementNonEligible("validation-123", "Le logement ne répond pas aux critères");
 
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -255,10 +248,7 @@ describe("amo-validation.actions - Sécurité", () => {
       mockUser(UserRole.AMO, "entreprise-123");
       mockValidationInDb("autre-entreprise");
 
-      const result = await refuserAccompagnement(
-        "validation-123",
-        "Nous ne pouvons pas accompagner ce dossier"
-      );
+      const result = await refuserAccompagnement("validation-123", "Nous ne pouvons pas accompagner ce dossier");
 
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -275,10 +265,7 @@ describe("amo-validation.actions - Sécurité", () => {
         data: { message: "Accompagnement refusé" },
       });
 
-      const result = await refuserAccompagnement(
-        "validation-123",
-        "Nous ne pouvons pas accompagner ce dossier"
-      );
+      const result = await refuserAccompagnement("validation-123", "Nous ne pouvons pas accompagner ce dossier");
 
       expect(result.success).toBe(true);
       expect(rejectAccompagnementService).toHaveBeenCalled();

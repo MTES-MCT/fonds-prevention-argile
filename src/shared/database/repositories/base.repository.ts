@@ -60,18 +60,14 @@ export abstract class BaseRepository<T> {
   /**
    * Exécute une transaction
    */
-  protected async transaction<R>(
-    callback: (tx: typeof db) => Promise<R>
-  ): Promise<R> {
+  protected async transaction<R>(callback: (tx: typeof db) => Promise<R>): Promise<R> {
     return await callback(db);
   }
 
   /**
    * Helper pour créer des conditions avec opérateur AND
    */
-  protected createAndConditions(
-    ...conditions: (SQL | undefined)[]
-  ): SQL | undefined {
+  protected createAndConditions(...conditions: (SQL | undefined)[]): SQL | undefined {
     const validConditions = conditions.filter((c): c is SQL => c !== undefined);
     if (validConditions.length === 0) return undefined;
     if (validConditions.length === 1) return validConditions[0];

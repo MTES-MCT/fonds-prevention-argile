@@ -72,6 +72,7 @@ Quand `locked={true}`, la sélection de bâtiment est désactivée, mais l'affic
 Fichier de tests : `src/features/backoffice/espace-amo/demande/actions/demande-detail.actions.test.ts`
 
 Tests couverts :
+
 - Récupération des détails d'une demande
 - Acceptation de l'accompagnement
 - Refus pour non-éligibilité (avec validation du commentaire)
@@ -81,6 +82,7 @@ Tests couverts :
 ## Migration depuis l'ancienne page validation
 
 L'ancienne page `/espace-amo/validation/[token]` reste fonctionnelle pour la compatibilité avec les liens email existants, mais la nouvelle interface offre :
+
 - Plus d'informations sur le logement
 - Une meilleure visualisation (carte verrouillée)
 - Une interface plus cohérente avec le reste de l'espace AMO

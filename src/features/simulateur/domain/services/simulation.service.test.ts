@@ -182,7 +182,7 @@ describe("SimulationService", () => {
             niveaux: 2,
           },
         },
-        SKIP_EARLY_EXIT,
+        SKIP_EARLY_EXIT
       );
 
       expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
@@ -207,7 +207,7 @@ describe("SimulationService", () => {
             niveaux: 2,
           },
         },
-        SKIP_EARLY_EXIT,
+        SKIP_EARLY_EXIT
       );
       expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
 
@@ -246,7 +246,7 @@ describe("SimulationService", () => {
             niveaux: 2,
           },
         },
-        SKIP_EARLY_EXIT,
+        SKIP_EARLY_EXIT
       );
       state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } }, SKIP_EARLY_EXIT);
       state = SimulationService.submitAnswer(state, { logement: { mitoyen: false } }, SKIP_EARLY_EXIT);
@@ -277,7 +277,7 @@ describe("SimulationService", () => {
             niveaux: 2,
           },
         },
-        SKIP_EARLY_EXIT,
+        SKIP_EARLY_EXIT
       );
       state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } }, SKIP_EARLY_EXIT);
       state = SimulationService.submitAnswer(state, { logement: { mitoyen: false } }, SKIP_EARLY_EXIT);
@@ -458,8 +458,15 @@ describe("SimulationService", () => {
 
       state = SimulationService.submitAnswer(
         state,
-        { logement: { code_departement: "47", zone_dexposition: "moyen", annee_de_construction: anneeAncienne, niveaux: 2 } },
-        SKIP,
+        {
+          logement: {
+            code_departement: "47",
+            zone_dexposition: "moyen",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+          },
+        },
+        SKIP
       );
       expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
 
@@ -471,8 +478,15 @@ describe("SimulationService", () => {
       // Re-avancer
       state = SimulationService.submitAnswer(
         state,
-        { logement: { code_departement: "47", zone_dexposition: "fort", annee_de_construction: anneeAncienne, niveaux: 2 } },
-        SKIP,
+        {
+          logement: {
+            code_departement: "47",
+            zone_dexposition: "fort",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+          },
+        },
+        SKIP
       );
       expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
       expect(state.answers.logement?.zone_dexposition).toBe("fort");

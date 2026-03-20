@@ -14,25 +14,18 @@ export class DemarchesSimplifieesClient {
 
   constructor() {
     const env = getServerEnv();
-    this.apiUrl =
-      env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL ||
-      "https://www.demarches-simplifiees.fr/api/v2/graphql";
+    this.apiUrl = env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL || "https://www.demarches-simplifiees.fr/api/v2/graphql";
     this.apiKey = env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY;
 
     if (!this.apiKey) {
-      throw new Error(
-        "DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY is not configured"
-      );
+      throw new Error("DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY is not configured");
     }
   }
 
   /**
    * Exécute une requête GraphQL
    */
-  private async executeQuery<T = unknown>(
-    query: string,
-    variables?: QueryVariables
-  ): Promise<T> {
+  private async executeQuery<T = unknown>(query: string, variables?: QueryVariables): Promise<T> {
     try {
       const response = await fetch(this.apiUrl, {
         method: "POST",
@@ -98,10 +91,7 @@ export class DemarchesSimplifieesClient {
   `;
 
     try {
-      const data = await this.executeQuery<{ demarche: DemarcheDetailed }>(
-        query,
-        { number }
-      );
+      const data = await this.executeQuery<{ demarche: DemarcheDetailed }>(query, { number });
       return data.demarche;
     } catch (error) {
       console.error(`Failed to fetch detailed demarche ${number}:`, error);
@@ -113,10 +103,7 @@ export class DemarchesSimplifieesClient {
    * Récupère les dossiers d'une démarche avec pagination
    * Gère les démarches en test en récupérant TOUS les dossiers
    */
-  async getDemarcheDossiers(
-    number: number,
-    filters?: DossiersFilters
-  ): Promise<DossiersConnection | null> {
+  async getDemarcheDossiers(number: number, filters?: DossiersFilters): Promise<DossiersConnection | null> {
     const query = `
       query GetDemarcheDossiers(
         $number: Int!
@@ -240,10 +227,7 @@ export class DemarchesSimplifieesClient {
   `;
 
     try {
-      const data = await this.executeQuery<{ demarche: DemarcheDetailed }>(
-        query,
-        { number }
-      );
+      const data = await this.executeQuery<{ demarche: DemarcheDetailed }>(query, { number });
       return data.demarche;
     } catch (error) {
       console.error(`Failed to fetch schema for demarche ${number}:`, error);
@@ -316,10 +300,7 @@ export class DemarchesSimplifieesClient {
   /**
    * Méthode générique pour exécuter des requêtes GraphQL personnalisées
    */
-  async customQuery<T = unknown>(
-    query: string,
-    variables?: QueryVariables
-  ): Promise<T> {
+  async customQuery<T = unknown>(query: string, variables?: QueryVariables): Promise<T> {
     return this.executeQuery<T>(query, variables);
   }
 }

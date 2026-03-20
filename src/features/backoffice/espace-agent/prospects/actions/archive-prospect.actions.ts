@@ -14,10 +14,7 @@ import type { ActionResult } from "@/shared/types";
  *
  * Vérifie que l'agent connecté est un agent Allers-Vers.
  */
-export async function archiveProspectAction(
-  parcoursId: string,
-  archiveReason: string,
-): Promise<ActionResult<void>> {
+export async function archiveProspectAction(parcoursId: string, archiveReason: string): Promise<ActionResult<void>> {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -43,6 +40,7 @@ export async function archiveProspectAction(
       parcoursId,
       SituationParticulier.ARCHIVE,
       archiveReason,
+      user.id
     );
 
     revalidatePath("/espace-agent", "layout");
@@ -59,9 +57,7 @@ export async function archiveProspectAction(
  *
  * Remet le parcours en statut PROSPECT et nettoie les champs d'archivage.
  */
-export async function unarchiveProspectAction(
-  parcoursId: string,
-): Promise<ActionResult<void>> {
+export async function unarchiveProspectAction(parcoursId: string): Promise<ActionResult<void>> {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -83,10 +79,7 @@ export async function unarchiveProspectAction(
     }
 
     // Retour à PROSPECT (workflow Allers-Vers, pas ELIGIBLE)
-    await parcoursPreventionRepository.updateSituationParticulier(
-      parcoursId,
-      SituationParticulier.PROSPECT,
-    );
+    await parcoursPreventionRepository.updateSituationParticulier(parcoursId, SituationParticulier.PROSPECT);
 
     revalidatePath("/espace-agent", "layout");
 

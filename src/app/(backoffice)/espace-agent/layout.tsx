@@ -38,11 +38,7 @@ export default async function EspaceAgentLayout({ children }: EspaceAgentLayoutP
   }
 
   // Vérifier que l'utilisateur a un rôle agent métier (AMO, ALLERS_VERS, ou AMO_ET_ALLERS_VERS)
-  const agentMetierCheck = await checkRoleAccess([
-    UserRole.AMO,
-    UserRole.ALLERS_VERS,
-    UserRole.AMO_ET_ALLERS_VERS,
-  ]);
+  const agentMetierCheck = await checkRoleAccess([UserRole.AMO, UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS]);
 
   if (!agentMetierCheck.hasAccess) {
     return <AccesNonAutoriseAmo />;

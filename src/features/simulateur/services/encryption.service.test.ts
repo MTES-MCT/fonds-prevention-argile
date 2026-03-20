@@ -9,8 +9,7 @@ vi.mock("@/shared/config/env.config", () => ({
 
 describe("encryption.service", () => {
   // Clé de test valide (32 bytes = 64 caractères hex)
-  const VALID_TEST_KEY =
-    "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2";
+  const VALID_TEST_KEY = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2";
 
   beforeEach(() => {
     // Reset tous les mocks avant chaque test
@@ -66,14 +65,10 @@ describe("encryption.service", () => {
 
     it("devrait lancer une erreur si les données ne sont pas une chaîne", () => {
       // @ts-expect-error - Test avec mauvais type
-      expect(() => encryptData(null)).toThrow(
-        "Data must be a non-empty string"
-      );
+      expect(() => encryptData(null)).toThrow("Data must be a non-empty string");
 
       // @ts-expect-error - Test avec mauvais type
-      expect(() => encryptData(undefined)).toThrow(
-        "Data must be a non-empty string"
-      );
+      expect(() => encryptData(undefined)).toThrow("Data must be a non-empty string");
 
       // @ts-expect-error - Test avec mauvais type
       expect(() => encryptData(123)).toThrow("Data must be a non-empty string");
@@ -84,9 +79,7 @@ describe("encryption.service", () => {
         RGA_ENCRYPTION_KEY: "",
       } as ReturnType<typeof envConfig.getServerEnv>);
 
-      expect(() => encryptData("test")).toThrow(
-        "RGA_ENCRYPTION_KEY not configured"
-      );
+      expect(() => encryptData("test")).toThrow("RGA_ENCRYPTION_KEY not configured");
     });
 
     it("devrait lancer une erreur si la clé a une taille invalide", () => {
@@ -94,20 +87,15 @@ describe("encryption.service", () => {
         RGA_ENCRYPTION_KEY: "trop_court",
       } as ReturnType<typeof envConfig.getServerEnv>);
 
-      expect(() => encryptData("test")).toThrow(
-        "RGA_ENCRYPTION_KEY must be 64 hex characters"
-      );
+      expect(() => encryptData("test")).toThrow("RGA_ENCRYPTION_KEY must be 64 hex characters");
     });
 
     it("devrait lancer une erreur si la clé n'est pas en hexadécimal", () => {
       vi.mocked(envConfig.getServerEnv).mockReturnValue({
-        RGA_ENCRYPTION_KEY:
-          "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+        RGA_ENCRYPTION_KEY: "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
       } as ReturnType<typeof envConfig.getServerEnv>);
 
-      expect(() => encryptData("test")).toThrow(
-        "RGA_ENCRYPTION_KEY must be a valid hex string"
-      );
+      expect(() => encryptData("test")).toThrow("RGA_ENCRYPTION_KEY must be a valid hex string");
     });
   });
 
@@ -150,21 +138,15 @@ describe("encryption.service", () => {
     });
 
     it("devrait lancer une erreur si les données chiffrées sont vides", () => {
-      expect(() => decryptData("")).toThrow(
-        "Encrypted data must be a non-empty string"
-      );
+      expect(() => decryptData("")).toThrow("Encrypted data must be a non-empty string");
     });
 
     it("devrait lancer une erreur si les données chiffrées ne sont pas une chaîne", () => {
       // @ts-expect-error - Test avec mauvais type
-      expect(() => decryptData(null)).toThrow(
-        "Encrypted data must be a non-empty string"
-      );
+      expect(() => decryptData(null)).toThrow("Encrypted data must be a non-empty string");
 
       // @ts-expect-error - Test avec mauvais type
-      expect(() => decryptData(undefined)).toThrow(
-        "Encrypted data must be a non-empty string"
-      );
+      expect(() => decryptData(undefined)).toThrow("Encrypted data must be a non-empty string");
     });
 
     it("devrait lancer une erreur si le format est invalide", () => {
@@ -188,9 +170,7 @@ describe("encryption.service", () => {
       const [, authTag, data] = encryptData("test").split(":");
       const invalidIV = "a".repeat(30); // IV trop court (15 bytes au lieu de 16)
 
-      expect(() => decryptData(`${invalidIV}:${authTag}:${data}`)).toThrow(
-        "Invalid IV length"
-      );
+      expect(() => decryptData(`${invalidIV}:${authTag}:${data}`)).toThrow("Invalid IV length");
     });
 
     it("devrait lancer une erreur avec une clé différente", () => {
@@ -198,8 +178,7 @@ describe("encryption.service", () => {
       const encrypted = encryptData(plainText);
 
       // Changer la clé
-      const DIFFERENT_KEY =
-        "b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2";
+      const DIFFERENT_KEY = "b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2";
       vi.mocked(envConfig.getServerEnv).mockReturnValue({
         RGA_ENCRYPTION_KEY: DIFFERENT_KEY,
       } as ReturnType<typeof envConfig.getServerEnv>);
@@ -240,8 +219,7 @@ describe("encryption.service", () => {
     });
 
     it("devrait préserver les caractères spéciaux et accents", () => {
-      const textWithSpecialChars =
-        "Données avec accents: é, è, ê, à, ç et caractères spéciaux: €, @, #";
+      const textWithSpecialChars = "Données avec accents: é, è, ê, à, ç et caractères spéciaux: €, @, #";
 
       const encrypted = encryptData(textWithSpecialChars);
       const decrypted = decryptData(encrypted);

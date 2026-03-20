@@ -1,9 +1,5 @@
 import { db } from "@/shared/database/client";
-import {
-  parcoursAmoValidations,
-  parcoursPrevention,
-  dossiersDemarchesSimplifiees,
-} from "@/shared/database/schema";
+import { parcoursAmoValidations, parcoursPrevention, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { eq, and } from "drizzle-orm";
 import type { DossierDetail, InfoDemandeur, InfoLogement, ParcoursDateProgression } from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
@@ -154,4 +150,3 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
     };
   }
 }
-

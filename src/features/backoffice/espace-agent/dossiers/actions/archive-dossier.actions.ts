@@ -14,10 +14,7 @@ import type { ActionResult } from "@/shared/types";
  *
  * Vérifie que l'agent connecté est bien rattaché à l'entreprise AMO du dossier.
  */
-export async function archiveDossierAction(
-  parcoursId: string,
-  archiveReason: string,
-): Promise<ActionResult<void>> {
+export async function archiveDossierAction(parcoursId: string, archiveReason: string): Promise<ActionResult<void>> {
   try {
     const agentResult = await getCurrentAgent();
     if (!agentResult.success) {
@@ -37,8 +34,8 @@ export async function archiveDossierAction(
       .where(
         and(
           eq(parcoursAmoValidations.parcoursId, parcoursId),
-          eq(parcoursAmoValidations.entrepriseAmoId, agent.entrepriseAmoId),
-        ),
+          eq(parcoursAmoValidations.entrepriseAmoId, agent.entrepriseAmoId)
+        )
       )
       .limit(1);
 
@@ -50,6 +47,7 @@ export async function archiveDossierAction(
       parcoursId,
       SituationParticulier.ARCHIVE,
       archiveReason,
+      agent.id
     );
 
     revalidatePath("/espace-agent", "layout");
@@ -86,8 +84,8 @@ export async function unarchiveDossierAction(parcoursId: string): Promise<Action
       .where(
         and(
           eq(parcoursAmoValidations.parcoursId, parcoursId),
-          eq(parcoursAmoValidations.entrepriseAmoId, agent.entrepriseAmoId),
-        ),
+          eq(parcoursAmoValidations.entrepriseAmoId, agent.entrepriseAmoId)
+        )
       )
       .limit(1);
 
@@ -96,10 +94,7 @@ export async function unarchiveDossierAction(parcoursId: string): Promise<Action
     }
 
     // ELIGIBLE remet le parcours actif (le repository nettoie archivedAt/archiveReason)
-    await parcoursPreventionRepository.updateSituationParticulier(
-      parcoursId,
-      SituationParticulier.ELIGIBLE,
-    );
+    await parcoursPreventionRepository.updateSituationParticulier(parcoursId, SituationParticulier.ELIGIBLE);
 
     revalidatePath("/espace-agent", "layout");
 

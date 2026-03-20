@@ -52,7 +52,7 @@ const COMPARISON_FIELDS: ComparisonField[] = [
     formatValue: (v) => {
       if (v === null || v === undefined) return "—";
       return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(
-        Number(v),
+        Number(v)
       );
     },
   },

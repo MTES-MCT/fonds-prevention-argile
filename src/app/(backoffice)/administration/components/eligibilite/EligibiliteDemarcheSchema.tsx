@@ -9,9 +9,7 @@ interface EligibiliteDemarcheSchemaProps {
 
 type GroupBy = "none" | "type" | "required";
 
-export default function EligibiliteDemarcheSchema({
-  champDescriptors,
-}: EligibiliteDemarcheSchemaProps) {
+export default function EligibiliteDemarcheSchema({ champDescriptors }: EligibiliteDemarcheSchemaProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isJsonExpanded, setIsJsonExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,9 +18,7 @@ export default function EligibiliteDemarcheSchema({
 
   const handleCopyJson = async () => {
     try {
-      await navigator.clipboard.writeText(
-        JSON.stringify(champDescriptors, null, 2)
-      );
+      await navigator.clipboard.writeText(JSON.stringify(champDescriptors, null, 2));
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
@@ -78,15 +74,11 @@ export default function EligibiliteDemarcheSchema({
             className="fr-accordion__btn"
             aria-expanded={isExpanded}
             aria-controls="schema-content"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
+            onClick={() => setIsExpanded(!isExpanded)}>
             Schéma de la démarche ({champDescriptors.length} champs)
           </button>
         </h3>
-        <div
-          className={`fr-collapse ${isExpanded ? "fr-collapse--expanded" : ""}`}
-          id="schema-content"
-        >
+        <div className={`fr-collapse ${isExpanded ? "fr-collapse--expanded" : ""}`} id="schema-content">
           <div className="fr-py-3w">
             {/* Barre de recherche */}
             <div className="fr-search-bar fr-mb-3w" role="search">
@@ -106,9 +98,7 @@ export default function EligibiliteDemarcheSchema({
             {/* Options de groupement */}
             <div className="fr-mb-3w">
               <fieldset className="fr-fieldset">
-                <legend className="fr-fieldset__legend fr-text--regular">
-                  Grouper par
-                </legend>
+                <legend className="fr-fieldset__legend fr-text--regular">Grouper par</legend>
                 <div className="fr-fieldset__content">
                   <div className="fr-radio-group fr-radio-group--inline">
                     <input
@@ -168,9 +158,7 @@ export default function EligibiliteDemarcheSchema({
                       <div className="fr-card fr-card--no-border fr-card--shadow">
                         <div className="fr-card__body">
                           <div className="fr-card__content">
-                            <h5 className="fr-card__title fr-mb-1w">
-                              {champ.label}
-                            </h5>
+                            <h5 className="fr-card__title fr-mb-1w">{champ.label}</h5>
 
                             <div className="fr-mb-2w">
                               <code className="fr-text--xs">{champ.id}</code>
@@ -178,27 +166,16 @@ export default function EligibiliteDemarcheSchema({
 
                             <div className="fr-mb-2w">
                               <span className="fr-badge fr-badge--sm fr-badge--purple-glycine fr-mr-1w">
-                                {champ.__typename?.replace(
-                                  "ChampDescriptor",
-                                  ""
-                                )}
+                                {champ.__typename?.replace("ChampDescriptor", "")}
                               </span>
                               {champ.required ? (
-                                <span className="fr-badge fr-badge--sm fr-badge--error">
-                                  Requis
-                                </span>
+                                <span className="fr-badge fr-badge--sm fr-badge--error">Requis</span>
                               ) : (
-                                <span className="fr-badge fr-badge--sm fr-badge--no-icon">
-                                  Optionnel
-                                </span>
+                                <span className="fr-badge fr-badge--sm fr-badge--no-icon">Optionnel</span>
                               )}
                             </div>
 
-                            {champ.description && (
-                              <p className="fr-text--sm fr-mb-0">
-                                {champ.description}
-                              </p>
-                            )}
+                            {champ.description && <p className="fr-text--sm fr-mb-0">{champ.description}</p>}
                           </div>
                         </div>
                       </div>
@@ -218,14 +195,8 @@ export default function EligibiliteDemarcheSchema({
             <div className="fr-mt-3w">
               <h4 className="fr-h6">Résumé</h4>
               <div className="fr-tags-group">
-                <span className="fr-tag">
-                  {champDescriptors.filter((c) => c.required).length} champs
-                  requis
-                </span>
-                <span className="fr-tag">
-                  {champDescriptors.filter((c) => !c.required).length} champs
-                  optionnels
-                </span>
+                <span className="fr-tag">{champDescriptors.filter((c) => c.required).length} champs requis</span>
+                <span className="fr-tag">{champDescriptors.filter((c) => !c.required).length} champs optionnels</span>
               </div>
             </div>
           </div>
@@ -239,22 +210,14 @@ export default function EligibiliteDemarcheSchema({
             className="fr-accordion__btn"
             aria-expanded={isJsonExpanded}
             aria-controls="schema-json-content"
-            onClick={() => setIsJsonExpanded(!isJsonExpanded)}
-          >
+            onClick={() => setIsJsonExpanded(!isJsonExpanded)}>
             Schéma au format JSON
           </button>
         </h3>
-        <div
-          className={`fr-collapse ${isJsonExpanded ? "fr-collapse--expanded" : ""}`}
-          id="schema-json-content"
-        >
+        <div className={`fr-collapse ${isJsonExpanded ? "fr-collapse--expanded" : ""}`} id="schema-json-content">
           <div className="fr-py-3w">
             <div className="fr-mb-2w">
-              <button
-                className="fr-btn fr-btn--secondary fr-btn--sm"
-                onClick={handleCopyJson}
-                type="button"
-              >
+              <button className="fr-btn fr-btn--secondary fr-btn--sm" onClick={handleCopyJson} type="button">
                 {copySuccess ? "Copié !" : "Copier le JSON"}
               </button>
             </div>
@@ -265,8 +228,7 @@ export default function EligibiliteDemarcheSchema({
                 borderRadius: "0.25rem",
                 overflow: "auto",
                 maxHeight: "500px",
-              }}
-            >
+              }}>
               <code>{JSON.stringify(champDescriptors, null, 2)}</code>
             </pre>
           </div>

@@ -5,9 +5,7 @@ export default function Cgu() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-10!">
-        <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
-          {content.title}
-        </h1>
+        <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">{content.title}</h1>
         <p>{content.header}</p>
 
         <h2>{content.presentation}</h2>
@@ -15,13 +13,11 @@ export default function Cgu() {
           <p key={index}>{par}</p>
         ))}
         <ul className="">
-          {content.presentation_fonctionnalites.map(
-            (fonctionnalite: string, index: number) => (
-              <li key={index} className="">
-                {fonctionnalite}
-              </li>
-            )
-          )}
+          {content.presentation_fonctionnalites.map((fonctionnalite: string, index: number) => (
+            <li key={index} className="">
+              {fonctionnalite}
+            </li>
+          ))}
         </ul>
 
         <h2>{content.definition}</h2>
@@ -34,13 +30,11 @@ export default function Cgu() {
         <p>{content.fonctionnalites_sans_compte_p1}</p>
         <p>{content.fonctionnalites_sans_compte_p2}</p>
         <ul className="">
-          {content.fonctionnalites_sans_compte_fonctionnalites.map(
-            (fonctionnalite: string, index: number) => (
-              <li key={index} className="">
-                {fonctionnalite}
-              </li>
-            )
-          )}
+          {content.fonctionnalites_sans_compte_fonctionnalites.map((fonctionnalite: string, index: number) => (
+            <li key={index} className="">
+              {fonctionnalite}
+            </li>
+          ))}
         </ul>
         <h3>{content.fonctionnalites_avec_compte}</h3>
         <p>{content.fonctionnalites_avec_compte_p1}</p>
@@ -59,28 +53,21 @@ export default function Cgu() {
             )
           )}
         </ul>
-        {content.fonctionnalites_avec_compte_dossier_paragraphes.map(
-          (par: string, index: number) => (
-            <p key={index}>{par}</p>
-          )
-        )}
+        {content.fonctionnalites_avec_compte_dossier_paragraphes.map((par: string, index: number) => (
+          <p key={index}>{par}</p>
+        ))}
 
         <h2>{content.traitement_donnee}</h2>
         <p>{richTextParser(content.traitement_donnee_description)}</p>
 
         <h2>{content.engagements}</h2>
         {content.engagements_descriptions.map(
-          (
-            engagement: { title: string; descriptions: string[] },
-            index: number
-          ) => (
+          (engagement: { title: string; descriptions: string[] }, index: number) => (
             <div key={index}>
               <h3>{engagement.title}</h3>
-              {engagement.descriptions.map(
-                (descr: string, descrIndex: number) => (
-                  <p key={descrIndex}>{descr}</p>
-                )
-              )}
+              {engagement.descriptions.map((descr: string, descrIndex: number) => (
+                <p key={descrIndex}>{descr}</p>
+              ))}
             </div>
           )
         )}

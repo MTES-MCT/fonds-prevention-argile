@@ -23,7 +23,7 @@ import type { ActionResult } from "@/shared/types";
  */
 export async function updateSimulationDataAction(
   id: string,
-  rgaData: RGASimulationData,
+  rgaData: RGASimulationData
 ): Promise<ActionResult<{ parcoursId: string }>> {
   try {
     // 1. Authentification ProConnect + agent enregistré
@@ -38,9 +38,7 @@ export async function updateSimulationDataAction(
     // 2. Vérification du rôle agent (AMO, ALLERS_VERS ou AMO_ET_ALLERS_VERS)
     const isAdmin = agent.role === UserRole.SUPER_ADMINISTRATEUR || agent.role === UserRole.ADMINISTRATEUR;
     const isAgent =
-      agent.role === UserRole.AMO ||
-      agent.role === UserRole.ALLERS_VERS ||
-      agent.role === UserRole.AMO_ET_ALLERS_VERS;
+      agent.role === UserRole.AMO || agent.role === UserRole.ALLERS_VERS || agent.role === UserRole.AMO_ET_ALLERS_VERS;
 
     if (!isAdmin && !isAgent) {
       return { success: false, error: "Seuls les agents peuvent modifier les données de simulation" };
@@ -76,11 +74,7 @@ export async function updateSimulationDataAction(
       }
 
       // Sauvegarde
-      const updated = await parcoursPreventionRepository.updateRGADataAgent(
-        dossier.parcours.id,
-        rgaData,
-        agent.id,
-      );
+      const updated = await parcoursPreventionRepository.updateRGADataAgent(dossier.parcours.id, rgaData, agent.id);
 
       if (!updated) {
         return { success: false, error: "Erreur lors de la mise à jour" };
@@ -96,22 +90,14 @@ export async function updateSimulationDataAction(
     }
 
     // 4. Fallback : essayer par ID de parcours (prospect)
-    const [parcours] = await db
-      .select()
-      .from(parcoursPrevention)
-      .where(eq(parcoursPrevention.id, id))
-      .limit(1);
+    const [parcours] = await db.select().from(parcoursPrevention).where(eq(parcoursPrevention.id, id)).limit(1);
 
     if (!parcours) {
       return { success: false, error: "Dossier non trouvé" };
     }
 
     // Sauvegarde pour prospect
-    const updated = await parcoursPreventionRepository.updateRGADataAgent(
-      parcours.id,
-      rgaData,
-      agent.id,
-    );
+    const updated = await parcoursPreventionRepository.updateRGADataAgent(parcours.id, rgaData, agent.id);
 
     if (!updated) {
       return { success: false, error: "Erreur lors de la mise à jour" };

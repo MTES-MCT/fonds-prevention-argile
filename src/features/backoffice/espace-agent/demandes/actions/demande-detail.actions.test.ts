@@ -199,17 +199,11 @@ describe("demande-detail.actions", () => {
         data: { message: "Demande refusée" },
       });
 
-      const result = await refuserDemandeNonEligible(
-        "demande-123",
-        "Le logement n'est pas dans une zone RGA"
-      );
+      const result = await refuserDemandeNonEligible("demande-123", "Le logement n'est pas dans une zone RGA");
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(rejectEligibility).toHaveBeenCalledWith(
-          "demande-123",
-          "Le logement n'est pas dans une zone RGA"
-        );
+        expect(rejectEligibility).toHaveBeenCalledWith("demande-123", "Le logement n'est pas dans une zone RGA");
       }
     });
 

@@ -4,7 +4,14 @@ import { getDemandeDetail } from "@/features/backoffice/espace-agent/demandes/se
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet, formatDate } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
-import { InfoDemandeur, InfoLogement, ParcoursDemandeur, GagnezDuTemps, AFaire, QualificationAllersVers } from "../../shared";
+import {
+  InfoDemandeur,
+  InfoLogement,
+  ParcoursDemandeur,
+  GagnezDuTemps,
+  AFaire,
+  QualificationAllersVers,
+} from "../../shared";
 import { NotesPartagees } from "../../shared";
 import { ReponseAccompagnement } from "./components/ReponseAccompagnement";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
@@ -133,7 +140,12 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                 </div>
               )}
               <div className="fr-mb-4w">
-                <InfoLogement logement={demande.logement} adresse={demande.demandeur.adresse} editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(demande.id)} agentEditInfo={demande.agentEditInfo} />
+                <InfoLogement
+                  logement={demande.logement}
+                  adresse={demande.demandeur.adresse}
+                  editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(demande.id)}
+                  agentEditInfo={demande.agentEditInfo}
+                />
               </div>
               <div>
                 <GagnezDuTemps />

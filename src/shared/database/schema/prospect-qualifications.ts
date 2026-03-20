@@ -42,7 +42,7 @@ export const prospectQualifications = pgTable(
   },
   (table) => ({
     parcoursIdIdx: index("prospect_qualifications_parcours_id_idx").on(table.parcoursId),
-  }),
+  })
 );
 
 /**

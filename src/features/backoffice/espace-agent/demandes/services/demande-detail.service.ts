@@ -129,4 +129,3 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
     };
   }
 }
-

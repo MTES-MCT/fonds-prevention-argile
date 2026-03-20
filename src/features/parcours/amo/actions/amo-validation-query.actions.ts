@@ -4,19 +4,14 @@ import { getSession } from "@/features/auth/server";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { db } from "@/shared/database/client";
 import { eq } from "drizzle-orm";
-import {
-  parcoursAmoValidations,
-  entreprisesAmo,
-} from "@/shared/database/schema";
+import { parcoursAmoValidations, entreprisesAmo } from "@/shared/database/schema";
 import { ValidationAmoComplete } from "../domain/entities";
 import { ActionResult } from "@/shared/types";
 
 /**
  * Récupère la validation AMO complète pour le parcours de l'utilisateur
  */
-export async function getValidationAmo(): Promise<
-  ActionResult<ValidationAmoComplete | null>
-> {
+export async function getValidationAmo(): Promise<ActionResult<ValidationAmoComplete | null>> {
   try {
     const session = await getSession();
     if (!session?.userId) {
@@ -47,10 +42,7 @@ export async function getValidationAmo(): Promise<
         },
       })
       .from(parcoursAmoValidations)
-      .innerJoin(
-        entreprisesAmo,
-        eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id)
-      )
+      .innerJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
       .where(eq(parcoursAmoValidations.parcoursId, parcours.id))
       .limit(1);
 

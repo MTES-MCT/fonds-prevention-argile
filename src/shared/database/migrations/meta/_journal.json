@@ -176,6 +176,13 @@
       "when": 1773658371914,
       "tag": "0024_living_mordo",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1773734407269,
+      "tag": "0025_kind_whizzer",
+      "breakpoints": true
     }
   ]
 }

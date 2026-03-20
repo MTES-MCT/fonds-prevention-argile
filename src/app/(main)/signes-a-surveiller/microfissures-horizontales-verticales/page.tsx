@@ -9,9 +9,7 @@ export default function MicrofissuresHorizontalesVerticales() {
       pageLink="/signes-a-surveiller/microfissures-horizontales-verticales"
       tag={
         commonContent.signes_a_surveiller_section.signes.find(
-          (item) =>
-            item.pageLink ===
-            "/signes-a-surveiller/microfissures-horizontales-verticales"
+          (item) => item.pageLink === "/signes-a-surveiller/microfissures-horizontales-verticales"
         )?.tag
       }
       image={content.image}

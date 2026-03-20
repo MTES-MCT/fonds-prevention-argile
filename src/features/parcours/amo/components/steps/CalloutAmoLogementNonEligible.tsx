@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getMyIneligibiliteData, type MyIneligibiliteData } from "@/features/parcours/core/actions/qualification-query.actions";
+import {
+  getMyIneligibiliteData,
+  type MyIneligibiliteData,
+} from "@/features/parcours/core/actions/qualification-query.actions";
 import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { formatRelativeTimeShort } from "@/shared/utils/date.utils";
 

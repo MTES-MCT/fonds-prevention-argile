@@ -72,11 +72,7 @@ describe("ParcoursCommentairesRepository", () => {
       // Le repository utilise orderBy(parcoursCommentaires.createdAt)
       // ce qui trie du plus ancien au plus récent (ASC par défaut)
 
-      const dates = [
-        new Date("2024-01-03"),
-        new Date("2024-01-01"),
-        new Date("2024-01-02"),
-      ];
+      const dates = [new Date("2024-01-03"), new Date("2024-01-01"), new Date("2024-01-02")];
 
       const sorted = [...dates].sort((a, b) => a.getTime() - b.getTime());
 

@@ -67,9 +67,7 @@ export function SimulateurFormulaire() {
     const codeDepartement = answers.logement?.code_departement;
     const dimensionId = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
     const deptDimensions: MatomoCustomDimension[] | undefined =
-      codeDepartement && dimensionId
-        ? [{ id: Number(dimensionId), value: codeDepartement }]
-        : undefined;
+      codeDepartement && dimensionId ? [{ id: Number(dimensionId), value: codeDepartement }] : undefined;
 
     // Tracker selon l'étape
     if (currentStep === SimulateurStep.RESULTAT) {

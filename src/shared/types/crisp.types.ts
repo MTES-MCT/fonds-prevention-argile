@@ -1,11 +1,7 @@
 // Interface API Crisp
 interface CrispAPI {
   push: (
-    command:
-      | ["safe", boolean]
-      | [string, string]
-      | [string, string, [string, string]]
-      | [string, string, [string]]
+    command: ["safe", boolean] | [string, string] | [string, string, [string, string]] | [string, string, [string]]
   ) => void;
 }
 

@@ -127,7 +127,10 @@ export const createMockStatistiques = (override?: Partial<Statistiques>): Statis
 
   // Statistiques Matomo
   nombreVisitesTotales: 5420,
+  variationVisites: 12,
   visitesParJour: createMockVisitesParJour(),
+  tauxRebond: 45,
+  variationTauxRebond: -2,
 
   // Funnel Simulateur RGA
   funnelSimulateurRGA: createMockFunnelStatistiques(),
@@ -146,7 +149,10 @@ export const createEmptyStatistiques = (): Statistiques => ({
   nombreDossiersDSBrouillon: 0,
   nombreDossiersDSEnvoyés: 0,
   nombreVisitesTotales: 0,
+  variationVisites: null,
   visitesParJour: [],
+  tauxRebond: 0,
+  variationTauxRebond: null,
   funnelSimulateurRGA: createEmptyFunnelStatistiques(),
 });
 
@@ -161,6 +167,9 @@ export const createMockStatistiquesElevees = (): Statistiques => ({
   nombreDossiersDSBrouillon: 555,
   nombreDossiersDSEnvoyés: 6111,
   nombreVisitesTotales: 125000,
+  variationVisites: 25,
+  tauxRebond: 65,
+  variationTauxRebond: 5,
   visitesParJour: createMockVisitesParJour().map((v) => ({
     ...v,
     visites: Math.floor(Math.random() * 500) + 200,

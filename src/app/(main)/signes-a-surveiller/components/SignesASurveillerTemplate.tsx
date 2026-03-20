@@ -30,37 +30,19 @@ export default function SignesASurveillerTemplate({
     <>
       <section className="fr-container-fluid fr-py-4w">
         <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-10!">
-          <nav
-            role="navigation"
-            className="fr-breadcrumb"
-            aria-label="vous êtes ici :"
-          >
-            <button
-              type="button"
-              className="fr-breadcrumb__button"
-              aria-expanded="false"
-              aria-controls="breadcrumb"
-            >
+          <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
+            <button type="button" className="fr-breadcrumb__button" aria-expanded="false" aria-controls="breadcrumb">
               Voir le fil d'ariane
             </button>
             <div className="fr-collapse" id="breadcrumb">
               <ol className="fr-breadcrumb__list">
                 <li>
-                  <Link
-                    className="fr-breadcrumb__link"
-                    id="segment-0"
-                    href="/#"
-                  >
+                  <Link className="fr-breadcrumb__link" id="segment-0" href="/#">
                     Accueil
                   </Link>
                 </li>
                 <li>
-                  <a
-                    className="fr-breadcrumb__link"
-                    id="segment-1"
-                    aria-current="page"
-                    href={pageLink}
-                  >
+                  <a className="fr-breadcrumb__link" id="segment-1" aria-current="page" href={pageLink}>
                     {title}
                   </a>
                 </li>
@@ -71,17 +53,12 @@ export default function SignesASurveillerTemplate({
             <h1>{title}</h1>
 
             <p
-              className={`fr-badge ${tag.eligible ? "fr-icon-checkbox-line" : "fr-icon-warning-line"} fr-badge--icon-left ${tag.className}`}
-            >
+              className={`fr-badge ${tag.eligible ? "fr-icon-checkbox-line" : "fr-icon-warning-line"} fr-badge--icon-left ${tag.className}`}>
               {tag.title}
             </p>
 
             {/* Image */}
-            <figure
-              role="group"
-              className="fr-content-media"
-              aria-label="Description / Source"
-            >
+            <figure role="group" className="fr-content-media" aria-label="Description / Source">
               <div className="fr-content-media__img">
                 <Image
                   className="fr-responsive-img fr-ratio-32x9"
@@ -92,9 +69,7 @@ export default function SignesASurveillerTemplate({
                   height={318}
                 />
               </div>
-              <figcaption className="fr-content-media__caption">
-                {image.description}
-              </figcaption>
+              <figcaption className="fr-content-media__caption">{image.description}</figcaption>
             </figure>
 
             {tag.eligible ? <CalloutEligible /> : <CalloutNonEligible />}
@@ -127,9 +102,7 @@ export default function SignesASurveillerTemplate({
 
             {/* Bon à savoir */}
             <div className="fr-callout fr-icon-info-line">
-              <h3 className="fr-callout__title">
-                {commonContent.bon_a_savoir_title}
-              </h3>
+              <h3 className="fr-callout__title">{commonContent.bon_a_savoir_title}</h3>
               <p className="fr-callout__text">{bon_a_savoir}</p>
             </div>
           </div>
@@ -144,45 +117,34 @@ export default function SignesASurveillerTemplate({
         <div className="fr-container">
           <h1>{commonContent.signes_a_surveiller_section.title}</h1>
           <div className="fr-grid-row fr-grid-row--gutters">
-            {commonContent.signes_a_surveiller_section.signes.map(
-              (signe, index) =>
-                signe.titre === title ? null : (
-                  <div
-                    key={index}
-                    className="fr-col-12 fr-col-md-3 fr-col-lg-3"
-                  >
-                    <div className="fr-card fr-enlarge-link">
-                      <div className="fr-card__body">
-                        <div className="fr-card__content">
-                          <h3 className="fr-card__title">
-                            <a href={signe.pageLink}>{signe.titre}</a>
-                          </h3>
-                          <p className="fr-card__desc">{signe.description}</p>
-                        </div>
-                      </div>
-                      <div className="fr-card__header">
-                        <div className="fr-card__img">
-                          <Image
-                            className="fr-responsive-img"
-                            alt=""
-                            src={signe.imageSrc}
-                            width={300}
-                            height={300}
-                          />
-                        </div>
-                        <ul className="fr-badges-group">
-                          <li>
-                            <p
-                              className={`fr-badge ${signe.tag.eligible ? "fr-icon-checkbox-line" : "fr-icon-warning-line"} fr-badge--icon-left ${signe.tag.className}`}
-                            >
-                              {signe.tag.title}
-                            </p>
-                          </li>
-                        </ul>
+            {commonContent.signes_a_surveiller_section.signes.map((signe, index) =>
+              signe.titre === title ? null : (
+                <div key={index} className="fr-col-12 fr-col-md-3 fr-col-lg-3">
+                  <div className="fr-card fr-enlarge-link">
+                    <div className="fr-card__body">
+                      <div className="fr-card__content">
+                        <h3 className="fr-card__title">
+                          <a href={signe.pageLink}>{signe.titre}</a>
+                        </h3>
+                        <p className="fr-card__desc">{signe.description}</p>
                       </div>
                     </div>
+                    <div className="fr-card__header">
+                      <div className="fr-card__img">
+                        <Image className="fr-responsive-img" alt="" src={signe.imageSrc} width={300} height={300} />
+                      </div>
+                      <ul className="fr-badges-group">
+                        <li>
+                          <p
+                            className={`fr-badge ${signe.tag.eligible ? "fr-icon-checkbox-line" : "fr-icon-warning-line"} fr-badge--icon-left ${signe.tag.className}`}>
+                            {signe.tag.title}
+                          </p>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
-                )
+                </div>
+              )
             )}
           </div>
         </div>

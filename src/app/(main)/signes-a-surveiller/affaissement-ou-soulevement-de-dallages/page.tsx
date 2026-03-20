@@ -9,9 +9,7 @@ export default function AffaissementOuSoulevementDeDallages() {
       pageLink="/signes-a-surveiller/affaissement-ou-soulevement-de-dallages"
       tag={
         commonContent.signes_a_surveiller_section.signes.find(
-          (item) =>
-            item.pageLink ===
-            "/signes-a-surveiller/affaissement-ou-soulevement-de-dallages"
+          (item) => item.pageLink === "/signes-a-surveiller/affaissement-ou-soulevement-de-dallages"
         )?.tag
       }
       image={content.image}

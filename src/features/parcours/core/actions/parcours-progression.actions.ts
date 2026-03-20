@@ -3,10 +3,7 @@
 import { getSession } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types";
 import type { ParcoursState } from "../domain/entities/parcours";
-import {
-  validateCurrentStep,
-  moveToNextStep,
-} from "../services/parcours-progression.service";
+import { validateCurrentStep, moveToNextStep } from "../services/parcours-progression.service";
 
 /**
  * Valide le dossier de l'étape courante
@@ -14,9 +11,7 @@ import {
  *
  * Généralement appelé par webhook ou synchronisation périodique
  */
-export async function validerDossier(): Promise<
-  ActionResult<{ state: ParcoursState }>
-> {
+export async function validerDossier(): Promise<ActionResult<{ state: ParcoursState }>> {
   try {
     const session = await getSession();
     if (!session?.userId) {

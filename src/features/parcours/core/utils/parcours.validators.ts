@@ -9,18 +9,14 @@ import { Status } from "../domain/value-objects/status";
  * Vérifie si une valeur est une étape valide
  */
 export function isValidStep(value: unknown): value is Step {
-  return (
-    typeof value === "string" && Object.values(Step).includes(value as Step)
-  );
+  return typeof value === "string" && Object.values(Step).includes(value as Step);
 }
 
 /**
  * Vérifie si une valeur est un statut valide
  */
 export function isValidStatus(value: unknown): value is Status {
-  return (
-    typeof value === "string" && Object.values(Status).includes(value as Status)
-  );
+  return typeof value === "string" && Object.values(Status).includes(value as Status);
 }
 
 /**

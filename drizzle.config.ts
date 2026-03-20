@@ -5,13 +5,7 @@ import { defineConfig } from "drizzle-kit";
 if (!process.env.SCALINGO_POSTGRESQL_URL) {
   config();
 
-  const requiredEnvVars = [
-    "DB_HOST",
-    "DB_PORT",
-    "DB_USER",
-    "DB_PASSWORD",
-    "DB_NAME",
-  ];
+  const requiredEnvVars = ["DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME"];
   const missing = requiredEnvVars.filter((varName) => !process.env[varName]);
 
   if (missing.length > 0) {

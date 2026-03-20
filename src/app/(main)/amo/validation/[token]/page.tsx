@@ -38,8 +38,8 @@ export default async function ValidationAmoPage({ params }: ValidationAmoPagePro
                 <li>Le lien est incorrect</li>
               </ul>
               <p className="fr-mt-4w">
-                Si vous pensez qu&apos;il s&apos;agit d&apos;une erreur, veuillez contacter le demandeur pour
-                qu&apos;il vous envoie un nouveau lien.
+                Si vous pensez qu&apos;il s&apos;agit d&apos;une erreur, veuillez contacter le demandeur pour qu&apos;il
+                vous envoie un nouveau lien.
               </p>
             </div>
           </div>

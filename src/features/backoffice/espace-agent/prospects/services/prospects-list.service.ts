@@ -5,11 +5,7 @@ import { daysSince } from "@/shared/utils/date-diff";
 import { db, entreprisesAmo } from "@/shared/database";
 import { like, or } from "drizzle-orm";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
-import type {
-  Prospect,
-  ProspectsListResult,
-  ProspectFilters,
-} from "../domain/types";
+import type { Prospect, ProspectsListResult, ProspectFilters } from "../domain/types";
 
 /**
  * Service pour récupérer la liste des prospects d'un agent Allers-Vers
@@ -23,10 +19,7 @@ export class ProspectsListService {
    * @param filters - Filtres optionnels
    * @returns Liste des prospects du territoire par catégorie
    */
-  async getProspectsForAgent(
-    agentInput: AgentScopeInput,
-    filters?: ProspectFilters
-  ): Promise<ProspectsListResult> {
+  async getProspectsForAgent(agentInput: AgentScopeInput, filters?: ProspectFilters): Promise<ProspectsListResult> {
     // Calculer le scope de l'agent
     const scope = await calculateAgentScope(agentInput);
 

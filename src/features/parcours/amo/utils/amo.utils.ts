@@ -11,9 +11,7 @@
  * getCodeDepartementFromCodeInsee("75001") // "75"
  * getCodeDepartementFromCodeInsee("97411") // "974" (Réunion)
  */
-export function getCodeDepartementFromCodeInsee(
-  codeInsee: string | null | undefined
-): string {
+export function getCodeDepartementFromCodeInsee(codeInsee: string | null | undefined): string {
   if (!codeInsee || codeInsee.length !== 5) {
     throw new Error("Code INSEE invalide : doit contenir 5 chiffres");
   }
@@ -58,9 +56,7 @@ export function validateEmailsList(emails: string): string[] {
  * normalizeCodeInsee("75001") // "75001"
  * normalizeCodeInsee(null) // null
  */
-export function normalizeCodeInsee(
-  commune: string | number | null | undefined
-): string | null {
+export function normalizeCodeInsee(commune: string | number | null | undefined): string | null {
   if (commune === null || commune === undefined) {
     return null;
   }

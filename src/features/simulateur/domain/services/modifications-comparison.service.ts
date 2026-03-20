@@ -150,7 +150,7 @@ export function computeModifications(
   initialData: RGASimulationData,
   currentAnswers: PartialRGASimulationData,
   initialChecks: EligibilityChecks,
-  currentChecks: EligibilityChecks,
+  currentChecks: EligibilityChecks
 ): Modification[] {
   const modifications: Modification[] = [];
 

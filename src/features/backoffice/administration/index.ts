@@ -1,11 +1,10 @@
-export * from "./statistiques";
-export * from "./gestion-agents";
-export * from "./gestion-amo";
-export * from "./gestion-allers-vers";
-export * from "./gestion-utilisateurs";
+export * from "./acquisition";
+export * from "./agents";
+export * from "./amo";
+export * from "./allers-vers";
+export * from "./demandeurs";
 
-// Context & Domain partagés
-export * from "./shared/context/AdminContext";
+// Domain partagé
 export * from "./shared/domain";
 
 // Note: Les services ne sont pas exportés directement ils sont utilisés en interne par les actions

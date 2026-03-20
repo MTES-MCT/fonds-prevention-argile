@@ -15,9 +15,7 @@ import type {
  *
  * @param parcoursId - ID du parcours
  */
-export async function getCommentairesAction(
-  parcoursId: string
-): Promise<CommentairesListResult> {
+export async function getCommentairesAction(parcoursId: string): Promise<CommentairesListResult> {
   try {
     // Récupérer l'agent connecté
     const agentResult = await getCurrentAgent();
@@ -58,10 +56,7 @@ export async function getCommentairesAction(
  * @param parcoursId - ID du parcours
  * @param message - Contenu du commentaire
  */
-export async function createCommentaireAction(
-  parcoursId: string,
-  message: string
-): Promise<CreateCommentaireResult> {
+export async function createCommentaireAction(parcoursId: string, message: string): Promise<CreateCommentaireResult> {
   try {
     // Récupérer l'agent connecté
     const agentResult = await getCurrentAgent();
@@ -75,12 +70,7 @@ export async function createCommentaireAction(
     const agent = agentResult.data;
 
     // Appeler le service
-    const result = await commentairesService.createCommentaire(
-      parcoursId,
-      agent.id,
-      agent.role,
-      message
-    );
+    const result = await commentairesService.createCommentaire(parcoursId, agent.id, agent.role, message);
 
     return result;
   } catch (error) {
@@ -115,12 +105,7 @@ export async function updateCommentaireAction(
     const agent = agentResult.data;
 
     // Appeler le service
-    const result = await commentairesService.updateCommentaire(
-      commentaireId,
-      agent.id,
-      agent.role,
-      message
-    );
+    const result = await commentairesService.updateCommentaire(commentaireId, agent.id, agent.role, message);
 
     return result;
   } catch (error) {
@@ -137,9 +122,7 @@ export async function updateCommentaireAction(
  *
  * @param commentaireId - ID du commentaire à supprimer
  */
-export async function deleteCommentaireAction(
-  commentaireId: string
-): Promise<DeleteCommentaireResult> {
+export async function deleteCommentaireAction(commentaireId: string): Promise<DeleteCommentaireResult> {
   try {
     // Récupérer l'agent connecté
     const agentResult = await getCurrentAgent();
@@ -153,11 +136,7 @@ export async function deleteCommentaireAction(
     const agent = agentResult.data;
 
     // Appeler le service
-    const result = await commentairesService.deleteCommentaire(
-      commentaireId,
-      agent.id,
-      agent.role
-    );
+    const result = await commentairesService.deleteCommentaire(commentaireId, agent.id, agent.role);
 
     return result;
   } catch (error) {

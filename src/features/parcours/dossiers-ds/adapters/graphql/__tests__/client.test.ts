@@ -134,10 +134,7 @@ describe("DemarchesSimplifieesClient", () => {
   describe("error handling", () => {
     it("devrait gérer les erreurs GraphQL", async () => {
       const mockResponse = {
-        errors: [
-          { message: "Démarche non trouvée" },
-          { message: "Accès refusé" },
-        ],
+        errors: [{ message: "Démarche non trouvée" }, { message: "Accès refusé" }],
         data: null,
       };
 

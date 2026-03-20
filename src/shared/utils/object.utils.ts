@@ -1,10 +1,7 @@
 /**
  * Merge profond de deux objets de type T
  */
-export function mergeDeep<T extends Record<string, unknown>>(
-  target: T,
-  source: Partial<T>
-): T {
+export function mergeDeep<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
   const result = { ...target };
 
   for (const key in source) {

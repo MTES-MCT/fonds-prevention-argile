@@ -19,9 +19,7 @@ export default function Crisp() {
       }
 
       if (!websiteId || websiteId.trim() === "") {
-        console.error(
-          "[Crisp] NEXT_PUBLIC_CRISP_WEBSITE_ID non configuré - Crisp désactivé"
-        );
+        console.error("[Crisp] NEXT_PUBLIC_CRISP_WEBSITE_ID non configuré - Crisp désactivé");
         return;
       }
 

@@ -21,8 +21,7 @@ export default function Notice({
   more,
   more_link,
 }: NoticeProps) {
-  const [isCloseButtonVisible, setIsCloseButtonVisible] =
-    useState<boolean>(true);
+  const [isCloseButtonVisible, setIsCloseButtonVisible] = useState<boolean>(true);
 
   if (!isCloseButtonVisible) return null;
 
@@ -33,22 +32,12 @@ export default function Notice({
       <div className="fr-container">
         <div className="fr-notice__body">
           <span>
-            <span
-              className={`fr-notice__title ${
-                isWarning ? "fr-icon-edit-box-fill" : ""
-              }`}
-              data-testid="warning-icon"
-            >
+            <span className={`fr-notice__title ${isWarning ? "fr-icon-edit-box-fill" : ""}`} data-testid="warning-icon">
               {title}
             </span>
-            <span className="ml-0 md:ml-2 text-sm md:text-base">
-              {description}
-            </span>
+            <span className="ml-0 md:ml-2 text-sm md:text-base">{description}</span>
             {more && (
-              <a
-                href={more_link ? more_link : "#"}
-                className="ml-2 underline text-sm md:text-base"
-              >
+              <a href={more_link ? more_link : "#"} className="ml-2 underline text-sm md:text-base">
                 {more}
               </a>
             )}
@@ -58,8 +47,7 @@ export default function Notice({
               className="fr-btn--close fr-btn"
               onClick={() => setIsCloseButtonVisible(false)}
               title="Masquer le message"
-              type="button"
-            >
+              type="button">
               Masquer le message
             </button>
           )}

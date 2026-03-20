@@ -5,9 +5,7 @@ export default function MentionsLegales() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container [&_h2]:text-[var(--text-title-grey)]! [&_h2]:mt-10!">
-        <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">
-          {content.title}
-        </h1>
+        <h1 className="fr-mb-6w text-[var(--text-title-grey)]!">{content.title}</h1>
         <h2>{content.editor}</h2>
         <p>{content.editor_description}</p>
         <p>{content.editor_description_2}</p>

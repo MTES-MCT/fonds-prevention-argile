@@ -99,10 +99,7 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                         {
                           label: "Voir sa simulation d'éligibilité",
                           icon: "fr-icon-eye-line",
-                          onClick: () =>
-                            router.push(
-                              ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id),
-                            ),
+                          onClick: () => router.push(ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)),
                         },
                         // Pas d'archivage/désarchivage pour les dossiers refusés
                         ...(!isRefuse
@@ -129,9 +126,7 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                               {formatNomComplet(dossier.prenom, dossier.nom)}
                             </Link>
                             {isRefuse && (
-                              <p className="fr-badge fr-badge--sm fr-badge--error fr-badge--no-icon fr-ml-1w">
-                                Refusé
-                              </p>
+                              <p className="fr-badge fr-badge--sm fr-badge--error fr-badge--no-icon fr-ml-1w">Refusé</p>
                             )}
                           </td>
                           <td style={greyStyle}>{dossier.commune}</td>

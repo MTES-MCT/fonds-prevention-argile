@@ -9,9 +9,7 @@ export default function FissuresDansLesCloisonsInterieures() {
       pageLink="/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
       tag={
         commonContent.signes_a_surveiller_section.signes.find(
-          (item) =>
-            item.pageLink ===
-            "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
+          (item) => item.pageLink === "/signes-a-surveiller/fissures-dans-les-cloisons-interieures"
         )?.tag
       }
       image={content.image}

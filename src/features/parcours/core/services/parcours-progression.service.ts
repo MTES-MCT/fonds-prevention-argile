@@ -3,11 +3,7 @@ import type { ActionResult } from "@/shared/types";
 import type { ParcoursState } from "../domain/entities/parcours";
 import { Status } from "../domain/value-objects/status";
 import { getNextStep } from "../domain/value-objects/step";
-import {
-  canValidateDossier,
-  canPassToNextStep,
-  isParcoursComplete,
-} from "./parcours-permissions.service";
+import { canValidateDossier, canPassToNextStep, isParcoursComplete } from "./parcours-permissions.service";
 import { getParcoursComplet } from "./parcours-state.service";
 
 /**
@@ -18,9 +14,7 @@ import { getParcoursComplet } from "./parcours-state.service";
  * Valide le dossier de l'étape courante
  * (passe de EN_INSTRUCTION à VALIDE)
  */
-export async function validateCurrentStep(
-  userId: string
-): Promise<ActionResult<{ state: ParcoursState }>> {
+export async function validateCurrentStep(userId: string): Promise<ActionResult<{ state: ParcoursState }>> {
   const data = await getParcoursComplet(userId);
 
   if (!data) {

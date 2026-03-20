@@ -14,9 +14,7 @@ import type { ActionResult } from "@/shared/types";
  * @param filters - Filtres optionnels
  * @returns Liste des prospects du territoire de l'agent
  */
-export async function getProspectsListAction(
-  filters?: ProspectFilters
-): Promise<ActionResult<ProspectsListResult>> {
+export async function getProspectsListAction(filters?: ProspectFilters): Promise<ActionResult<ProspectsListResult>> {
   try {
     // Vérifier l'authentification
     const user = await getCurrentUser();

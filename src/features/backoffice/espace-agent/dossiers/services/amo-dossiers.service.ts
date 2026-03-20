@@ -1,10 +1,6 @@
 import { count, eq, and, or, asc, isNull, isNotNull, inArray } from "drizzle-orm";
 import { db } from "@/shared/database/client";
-import {
-  parcoursAmoValidations,
-  parcoursPrevention,
-  dossiersDemarchesSimplifiees,
-} from "@/shared/database/schema";
+import { parcoursAmoValidations, parcoursPrevention, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { AmoDossiersData, DossierSuivi } from "../domain/types";
 
@@ -52,8 +48,8 @@ async function getNombreDossiersSuivis(entrepriseAmoId: string): Promise<number>
       and(
         eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
         eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
-        isNull(parcoursPrevention.archivedAt),
-      ),
+        isNull(parcoursPrevention.archivedAt)
+      )
     );
 
   return result[0]?.count ?? 0;
@@ -76,12 +72,12 @@ async function getNombreDossiersArchives(entrepriseAmoId: string): Promise<numbe
           // Acceptées + archivées manuellement
           and(
             eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
-            isNotNull(parcoursPrevention.archivedAt),
+            isNotNull(parcoursPrevention.archivedAt)
           ),
           // Refusées (toujours considérées comme archivées)
-          inArray(parcoursAmoValidations.statut, STATUTS_REFUSES),
-        ),
-      ),
+          inArray(parcoursAmoValidations.statut, STATUTS_REFUSES)
+        )
+      )
     );
 
   return result[0]?.count ?? 0;
@@ -115,22 +111,22 @@ async function getDossiersArchives(entrepriseAmoId: string): Promise<DossierSuiv
  */
 async function getDossiersWithArchiveFilter(
   entrepriseAmoId: string,
-  filter: "active" | "archived",
+  filter: "active" | "archived"
 ): Promise<DossierSuivi[]> {
   const statusCondition =
     filter === "active"
       ? and(
           eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
-          isNull(parcoursPrevention.archivedAt),
+          isNull(parcoursPrevention.archivedAt)
         )
       : or(
           // Acceptées + archivées manuellement
           and(
             eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
-            isNotNull(parcoursPrevention.archivedAt),
+            isNotNull(parcoursPrevention.archivedAt)
           ),
           // Refusées (toujours considérées comme archivées)
-          inArray(parcoursAmoValidations.statut, STATUTS_REFUSES),
+          inArray(parcoursAmoValidations.statut, STATUTS_REFUSES)
         );
 
   const results = await db
@@ -148,12 +144,7 @@ async function getDossiersWithArchiveFilter(
     })
     .from(parcoursAmoValidations)
     .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
-    .where(
-      and(
-        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
-        statusCondition,
-      ),
-    )
+    .where(and(eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId), statusCondition))
     .orderBy(asc(parcoursAmoValidations.valideeAt));
 
   // Pour chaque dossier, récupère le dsStatus de l'étape courante
@@ -165,8 +156,8 @@ async function getDossiersWithArchiveFilter(
         .where(
           and(
             eq(dossiersDemarchesSimplifiees.parcoursId, row.parcoursId),
-            eq(dossiersDemarchesSimplifiees.step, row.currentStep),
-          ),
+            eq(dossiersDemarchesSimplifiees.step, row.currentStep)
+          )
         )
         .limit(1);
 
@@ -184,7 +175,7 @@ async function getDossiersWithArchiveFilter(
         dateValidation: row.valideeAt!,
         dateDernierStatut: row.parcoursUpdatedAt!,
       };
-    }),
+    })
   );
 
   return dossiersWithDsStatus;

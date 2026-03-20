@@ -207,11 +207,7 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
       />
 
       {/* Modale de confirmation de quitter sans enregistrer */}
-      <ConfirmationQuitModal
-        isOpen={isQuitModalOpen}
-        onClose={() => setIsQuitModalOpen(false)}
-        onConfirm={onRestart}
-      />
+      <ConfirmationQuitModal isOpen={isQuitModalOpen} onClose={() => setIsQuitModalOpen(false)} onConfirm={onRestart} />
     </div>
   );
 }

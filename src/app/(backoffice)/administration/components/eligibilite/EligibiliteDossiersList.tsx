@@ -31,9 +31,7 @@ function getStateBadgeClass(state: string): string {
   return `fr-badge ${stateClasses[state] || ""}`;
 }
 
-export default function EligibiliteDossiersList({
-  dossiersConnection,
-}: EligibiliteDossiersListProps) {
+export default function EligibiliteDossiersList({ dossiersConnection }: EligibiliteDossiersListProps) {
   const [selectedDossier, setSelectedDossier] = useState<number | null>(null);
   const [filterState, setFilterState] = useState<string>("all");
 
@@ -41,10 +39,7 @@ export default function EligibiliteDossiersList({
   const hasMore = dossiersConnection?.pageInfo?.hasNextPage || false;
 
   // Filtrer les dossiers selon l'état sélectionné
-  const filteredDossiers =
-    filterState === "all"
-      ? dossiers
-      : dossiers.filter((d) => d.state === filterState);
+  const filteredDossiers = filterState === "all" ? dossiers : dossiers.filter((d) => d.state === filterState);
 
   // Calculer les statistiques
   const stats = dossiers.reduce(
@@ -77,9 +72,7 @@ export default function EligibiliteDossiersList({
           <div className="fr-tile fr-tile--sm">
             <div className="fr-tile__body">
               <h4 className="fr-tile__title">En construction</h4>
-              <p className="fr-display-xs fr-mb-0">
-                {stats.byState.en_construction || 0}
-              </p>
+              <p className="fr-display-xs fr-mb-0">{stats.byState.en_construction || 0}</p>
             </div>
           </div>
         </div>
@@ -87,9 +80,7 @@ export default function EligibiliteDossiersList({
           <div className="fr-tile fr-tile--sm">
             <div className="fr-tile__body">
               <h4 className="fr-tile__title">En instruction</h4>
-              <p className="fr-display-xs fr-mb-0">
-                {stats.byState.en_instruction || 0}
-              </p>
+              <p className="fr-display-xs fr-mb-0">{stats.byState.en_instruction || 0}</p>
             </div>
           </div>
         </div>
@@ -97,9 +88,7 @@ export default function EligibiliteDossiersList({
           <div className="fr-tile fr-tile--sm">
             <div className="fr-tile__body">
               <h4 className="fr-tile__title">Acceptés</h4>
-              <p className="fr-display-xs fr-mb-0 fr-text--success">
-                {stats.byState.accepte || 0}
-              </p>
+              <p className="fr-display-xs fr-mb-0 fr-text--success">{stats.byState.accepte || 0}</p>
             </div>
           </div>
         </div>
@@ -111,26 +100,22 @@ export default function EligibiliteDossiersList({
           <div className="fr-segmented__elements">
             <button
               className={`fr-segmented__element ${filterState === "all" ? "fr-segmented__element--selected" : ""}`}
-              onClick={() => setFilterState("all")}
-            >
+              onClick={() => setFilterState("all")}>
               Tous ({stats.total})
             </button>
             <button
               className={`fr-segmented__element ${filterState === "en_construction" ? "fr-segmented__element--selected" : ""}`}
-              onClick={() => setFilterState("en_construction")}
-            >
+              onClick={() => setFilterState("en_construction")}>
               En construction ({stats.byState.en_construction || 0})
             </button>
             <button
               className={`fr-segmented__element ${filterState === "en_instruction" ? "fr-segmented__element--selected" : ""}`}
-              onClick={() => setFilterState("en_instruction")}
-            >
+              onClick={() => setFilterState("en_instruction")}>
               En instruction ({stats.byState.en_instruction || 0})
             </button>
             <button
               className={`fr-segmented__element ${filterState === "accepte" ? "fr-segmented__element--selected" : ""}`}
-              onClick={() => setFilterState("accepte")}
-            >
+              onClick={() => setFilterState("accepte")}>
               Acceptés ({stats.byState.accepte || 0})
             </button>
           </div>
@@ -172,37 +157,23 @@ export default function EligibiliteDossiersList({
                   <td>
                     <span className="fr-text--bold">{dossier.number}</span>
                   </td>
+                  <td>{dossier.usager?.email || <span className="fr-text--mention-grey">—</span>}</td>
                   <td>
-                    {dossier.usager?.email || (
-                      <span className="fr-text--mention-grey">—</span>
-                    )}
-                  </td>
-                  <td>
-                    <p
-                      className={`${getStateBadgeClass(dossier.state)} fr-badge--sm fr-mb-0`}
-                    >
+                    <p className={`${getStateBadgeClass(dossier.state)} fr-badge--sm fr-mb-0`}>
                       {getStateLabel(dossier.state)}
                     </p>
-                    {dossier.archived && (
-                      <p className="fr-badge fr-badge--sm fr-badge--no-icon fr-mt-1v">
-                        Archivé
-                      </p>
-                    )}
+                    {dossier.archived && <p className="fr-badge fr-badge--sm fr-badge--no-icon fr-mt-1v">Archivé</p>}
                   </td>
                   <td>
                     {dossier.datePassageEnConstruction ? (
-                      new Date(
-                        dossier.datePassageEnConstruction
-                      ).toLocaleDateString("fr-FR")
+                      new Date(dossier.datePassageEnConstruction).toLocaleDateString("fr-FR")
                     ) : (
                       <span className="fr-text--mention-grey">—</span>
                     )}
                   </td>
                   <td>
                     {dossier.dateTraitement ? (
-                      new Date(dossier.dateTraitement).toLocaleDateString(
-                        "fr-FR"
-                      )
+                      new Date(dossier.dateTraitement).toLocaleDateString("fr-FR")
                     ) : (
                       <span className="fr-text--mention-grey">En cours</span>
                     )}
@@ -210,8 +181,7 @@ export default function EligibiliteDossiersList({
                   <td>
                     <button
                       className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm"
-                      onClick={() => setSelectedDossier(dossier.number)}
-                    >
+                      onClick={() => setSelectedDossier(dossier.number)}>
                       Détails
                     </button>
                   </td>
@@ -223,12 +193,7 @@ export default function EligibiliteDossiersList({
       )}
 
       {/* Modal de détail du dossier */}
-      {selectedDossier && (
-        <DossierDetail
-          dossierNumber={selectedDossier}
-          onClose={() => setSelectedDossier(null)}
-        />
-      )}
+      {selectedDossier && <DossierDetail dossierNumber={selectedDossier} onClose={() => setSelectedDossier(null)} />}
     </>
   );
 }

@@ -44,16 +44,11 @@ export async function creerDossier(
     }
 
     // Créer le dossier DS
-    await createDossierForCurrentStep(
-      session.userId,
-      data.parcours.id,
-      currentState.step,
-      {
-        dsNumber,
-        dsDemarcheId,
-        dsUrl,
-      }
-    );
+    await createDossierForCurrentStep(session.userId, data.parcours.id, currentState.step, {
+      dsNumber,
+      dsDemarcheId,
+      dsUrl,
+    });
 
     // Passer en instruction
     await parcoursRepo.updateStatus(data.parcours.id, Status.EN_INSTRUCTION);

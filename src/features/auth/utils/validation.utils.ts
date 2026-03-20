@@ -5,20 +5,14 @@ import { AUTH_METHODS, ROLES } from "../domain/value-objects";
  * Vérifie si une valeur est un rôle valide
  */
 export function isValidRole(value: unknown): value is UserRole {
-  return (
-    typeof value === "string" &&
-    Object.values(ROLES).includes(value as UserRole)
-  );
+  return typeof value === "string" && Object.values(ROLES).includes(value as UserRole);
 }
 
 /**
  * Vérifie si une valeur est une méthode d'auth valide
  */
 export function isValidAuthMethod(value: unknown): value is AuthMethod {
-  return (
-    typeof value === "string" &&
-    Object.values(AUTH_METHODS).includes(value as AuthMethod)
-  );
+  return typeof value === "string" && Object.values(AUTH_METHODS).includes(value as AuthMethod);
 }
 
 /**

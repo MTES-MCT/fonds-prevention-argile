@@ -12,11 +12,7 @@ export class ProspectQualificationsRepository extends BaseRepository<ProspectQua
    * Trouve une qualification par ID
    */
   async findById(id: string): Promise<ProspectQualification | null> {
-    const result = await db
-      .select()
-      .from(prospectQualifications)
-      .where(eq(prospectQualifications.id, id))
-      .limit(1);
+    const result = await db.select().from(prospectQualifications).where(eq(prospectQualifications.id, id)).limit(1);
 
     return result[0] || null;
   }
@@ -25,10 +21,7 @@ export class ProspectQualificationsRepository extends BaseRepository<ProspectQua
    * Récupère toutes les qualifications
    */
   async findAll(): Promise<ProspectQualification[]> {
-    return await db
-      .select()
-      .from(prospectQualifications)
-      .orderBy(desc(prospectQualifications.createdAt));
+    return await db.select().from(prospectQualifications).orderBy(desc(prospectQualifications.createdAt));
   }
 
   /**
@@ -56,10 +49,7 @@ export class ProspectQualificationsRepository extends BaseRepository<ProspectQua
    * Supprime une qualification
    */
   async delete(id: string): Promise<boolean> {
-    const result = await db
-      .delete(prospectQualifications)
-      .where(eq(prospectQualifications.id, id))
-      .returning();
+    const result = await db.delete(prospectQualifications).where(eq(prospectQualifications.id, id)).returning();
 
     return result.length > 0;
   }
@@ -81,9 +71,7 @@ export class ProspectQualificationsRepository extends BaseRepository<ProspectQua
    * Compte le nombre de qualifications
    */
   async count(where?: SQL): Promise<number> {
-    const query = db
-      .select({ count: sql<number>`cast(count(*) as integer)` })
-      .from(prospectQualifications);
+    const query = db.select({ count: sql<number>`cast(count(*) as integer)` }).from(prospectQualifications);
 
     if (where) {
       query.where(where);

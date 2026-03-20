@@ -35,9 +35,7 @@ export const useCrisp = () => {
 
     const interval = setInterval(() => {
       attempts++;
-      console.log(
-        `[Crisp] Tentative ${attempts}/${maxAttempts} - Vérification...`
-      );
+      console.log(`[Crisp] Tentative ${attempts}/${maxAttempts} - Vérification...`);
 
       if (checkCrisp() || attempts >= maxAttempts) {
         clearInterval(interval);
@@ -106,9 +104,7 @@ export const useCrisp = () => {
         crisp.push(["do", "message:send", ["text", message]]);
         crisp.push(["do", "chat:open"]);
       } else {
-        console.log(
-          "[Crisp] Impossible de prompter l'utilisateur - Non disponible"
-        );
+        console.log("[Crisp] Impossible de prompter l'utilisateur - Non disponible");
       }
     }
   };
@@ -129,9 +125,7 @@ export const useCrisp = () => {
         console.log(`[Crisp] Déclenchement de l'événement: ${eventName}`);
         crisp.push(["do", "trigger:run", [eventName]]);
       } else {
-        console.log(
-          `[Crisp] Impossible de déclencher l'événement ${eventName} - Non disponible`
-        );
+        console.log(`[Crisp] Impossible de déclencher l'événement ${eventName} - Non disponible`);
       }
     }
   };

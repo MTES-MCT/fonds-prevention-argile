@@ -3,11 +3,7 @@
 import { DsfrGlobal } from "@/shared/types";
 import { useEffect } from "react";
 
-export default function DsfrProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DsfrProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initDsfr = async () => {
       // Seulement côté client

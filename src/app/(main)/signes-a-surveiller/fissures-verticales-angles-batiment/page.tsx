@@ -9,9 +9,7 @@ export default function FissuresVerticalesAnglesBatiment() {
       pageLink="/signes-a-surveiller/fissures-verticales-angles-batiment"
       tag={
         commonContent.signes_a_surveiller_section.signes.find(
-          (item) =>
-            item.pageLink ===
-            "/signes-a-surveiller/fissures-verticales-angles-batiment"
+          (item) => item.pageLink === "/signes-a-surveiller/fissures-verticales-angles-batiment"
         )?.tag
       }
       image={content.image}

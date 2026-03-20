@@ -16,7 +16,11 @@ import type { ActionResult } from "@/shared/types";
 const qualifyProspectSchema = z
   .object({
     parcoursId: z.string().uuid(),
-    decision: z.enum([QualificationDecision.ELIGIBLE, QualificationDecision.A_QUALIFIER, QualificationDecision.NON_ELIGIBLE]),
+    decision: z.enum([
+      QualificationDecision.ELIGIBLE,
+      QualificationDecision.A_QUALIFIER,
+      QualificationDecision.NON_ELIGIBLE,
+    ]),
     actionsRealisees: z.array(z.string()).min(1, "Au moins une action est requise"),
     raisonsIneligibilite: z.array(z.string()).optional(),
     note: z.string().optional(),
@@ -31,7 +35,7 @@ const qualifyProspectSchema = z
     {
       message: "Au moins une raison d'inéligibilité est requise",
       path: ["raisonsIneligibilite"],
-    },
+    }
   );
 
 type QualifyProspectInput = z.infer<typeof qualifyProspectSchema>;
@@ -43,9 +47,7 @@ type QualifyProspectInput = z.infer<typeof qualifyProspectSchema>;
  *
  * Vérifie que l'agent connecté est un agent Allers-Vers.
  */
-export async function qualifyProspectAction(
-  input: QualifyProspectInput,
-): Promise<ActionResult<ProspectQualification>> {
+export async function qualifyProspectAction(input: QualifyProspectInput): Promise<ActionResult<ProspectQualification>> {
   try {
     // 1. Authentification
     const user = await getCurrentUser();
@@ -101,7 +103,7 @@ export async function qualifyProspectAction(
  * Récupère la dernière qualification d'un prospect
  */
 export async function getProspectQualificationAction(
-  parcoursId: string,
+  parcoursId: string
 ): Promise<ActionResult<ProspectQualification | null>> {
   try {
     // 1. Authentification

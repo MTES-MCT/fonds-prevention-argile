@@ -18,9 +18,7 @@ import { eq } from "drizzle-orm";
  * Vérifie que l'agent AMO connecté est bien propriétaire de la validation
  * Les admins peuvent tout valider, les AMO seulement leurs propres validations
  */
-async function verifyAmoOwnership(
-  validationId: string
-): Promise<ActionResult<{ entrepriseAmoId: string }>> {
+async function verifyAmoOwnership(validationId: string): Promise<ActionResult<{ entrepriseAmoId: string }>> {
   const user = await getCurrentUser();
 
   if (!user) {

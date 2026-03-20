@@ -32,9 +32,7 @@ export async function GET(request: NextRequest) {
       const result = handleFranceConnectError(error, errorDescription || "");
 
       // Redirection vers accueil en cas d'erreur (comme demandé par FC)
-      return redirectTo(
-        `/?error=${result.code}&message=${encodeURIComponent(result.error)}`
-      );
+      return redirectTo(`/?error=${result.code}&message=${encodeURIComponent(result.error)}`);
     }
 
     // Vérification des paramètres requis

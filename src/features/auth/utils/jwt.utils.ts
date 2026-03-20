@@ -12,18 +12,11 @@ const JWT_SECRET = process.env.JWT_SECRET || "change-this-secret";
  */
 export function createToken(payload: JWTPayload): string {
   const header = { alg: "HS256", typ: "JWT" };
-  const encodedHeader = Buffer.from(JSON.stringify(header)).toString(
-    "base64url"
-  );
-  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString(
-    "base64url"
-  );
+  const encodedHeader = Buffer.from(JSON.stringify(header)).toString("base64url");
+  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64url");
 
   const dataToSign = `${encodedHeader}.${encodedPayload}`;
-  const signature = crypto
-    .createHmac("sha256", JWT_SECRET)
-    .update(dataToSign)
-    .digest("base64url");
+  const signature = crypto.createHmac("sha256", JWT_SECRET).update(dataToSign).digest("base64url");
 
   return `${dataToSign}.${signature}`;
 }
@@ -43,9 +36,7 @@ export function verifyToken(token: string): JWTPayload | null {
 
     if (signature !== expectedSignature) return null;
 
-    const decoded = JSON.parse(
-      Buffer.from(payload, "base64url").toString()
-    ) as JWTPayload;
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString()) as JWTPayload;
     if (decoded.exp && decoded.exp < Date.now()) return null;
 
     return decoded;
@@ -58,9 +49,7 @@ export function verifyToken(token: string): JWTPayload | null {
  * Décode un token JWT sans vérifier la signature
  * Utile pour lire les claims d'un token externe (ex: FranceConnect)
  */
-export function decodeToken<T = Record<string, unknown>>(
-  token: string
-): T | null {
+export function decodeToken<T = Record<string, unknown>>(token: string): T | null {
   try {
     const [, payload] = token.split(".");
     if (!payload) return null;

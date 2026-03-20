@@ -40,10 +40,7 @@ function buildAdresseComplete(logement: Partial<RGASimulationData["logement"]>):
  * Un prospect n'a par définition pas de validation AMO,
  * on cherche simplement les AMO disponibles dans le territoire du logement.
  */
-async function resolveAmoInfo(
-  codeInsee: string,
-  codeDepartement: string
-): Promise<ProspectAmoInfo> {
+async function resolveAmoInfo(codeInsee: string, codeDepartement: string): Promise<ProspectAmoInfo> {
   if (codeInsee && codeDepartement) {
     const amosDisponibles = await entreprisesAmoRepository.findByCodeInsee(codeInsee, codeDepartement);
 
@@ -72,8 +69,7 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
 
     // Vérifier les permissions pour les non-admins
     if (!isAdmin) {
-      const canViewProspects =
-        user.role === UserRole.ALLERS_VERS || user.role === UserRole.AMO_ET_ALLERS_VERS;
+      const canViewProspects = user.role === UserRole.ALLERS_VERS || user.role === UserRole.AMO_ET_ALLERS_VERS;
 
       if (!canViewProspects) {
         return { success: false, error: "Accès réservé aux agents Allers-Vers" };
@@ -149,10 +145,7 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     };
 
     // Déterminer le statut AMO du prospect
-    const amoInfo = await resolveAmoInfo(
-      logement?.commune || "",
-      logement?.code_departement || ""
-    );
+    const amoInfo = await resolveAmoInfo(logement?.commune || "", logement?.code_departement || "");
 
     // Construire les informations de diff agent
     const agentEditInfo = await buildAgentEditInfo(result.parcours);
@@ -193,4 +186,3 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     };
   }
 }
-

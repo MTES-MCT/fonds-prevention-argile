@@ -27,12 +27,7 @@ interface QualificationSectionProps {
  * - Si qualification existante : affiche le callout résultat avec bouton "Requalifier"
  * - "Requalifier" bascule vers le formulaire
  */
-export function QualificationSection({
-  parcoursId,
-  qualification,
-  agentNom,
-  structureNom,
-}: QualificationSectionProps) {
+export function QualificationSection({ parcoursId, qualification, agentNom, structureNom }: QualificationSectionProps) {
   const [mode, setMode] = useState<"view" | "form">(qualification ? "view" : "form");
 
   function handleRequalifier() {
@@ -64,9 +59,7 @@ export function QualificationSection({
 
   return (
     <div className={`fr-callout${isUpdate ? "" : " fr-callout--yellow-moutarde"}`}>
-      <h3 className="fr-callout__title">
-        {isUpdate ? "Mise à jour de la qualification" : "Qualification requise"}
-      </h3>
+      <h3 className="fr-callout__title">{isUpdate ? "Mise à jour de la qualification" : "Qualification requise"}</h3>
       <p className="fr-callout__text fr-mb-3w">
         {isUpdate
           ? "Ceci entraînera le remplacement de la qualification actuelle."
