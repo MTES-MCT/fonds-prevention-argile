@@ -90,15 +90,8 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
                 </thead>
                 <tbody>
                   {motifsAffiches.map((motif) => (
-                    <tr
-                      key={motif.raison}
-                      style={{
-                        borderLeft:
-                          motif.variation !== null && motif.variation > 0
-                            ? "4px solid var(--border-plain-warning)"
-                            : "4px solid transparent",
-                      }}>
-                      <td className="fr-text--sm" style={{ color: "var(--text-label-warning)" }}>
+                    <tr key={motif.raison}>
+                      <td className="fr-text--sm">
                         {motif.label}
                       </td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>

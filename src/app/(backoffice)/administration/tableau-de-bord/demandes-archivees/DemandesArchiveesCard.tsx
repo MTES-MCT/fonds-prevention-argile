@@ -113,14 +113,7 @@ export function DemandesArchiveesCard({
                   </thead>
                   <tbody>
                     {motifsAffiches.map((motif) => (
-                      <tr
-                        key={motif.raison}
-                        style={{
-                          borderLeft:
-                            motif.variation !== null && motif.variation > 0
-                              ? "4px solid var(--border-plain-warning)"
-                              : "4px solid transparent",
-                        }}>
+                      <tr key={motif.raison}>
                         <td className="fr-text--sm">{motif.raison}</td>
                         <td className="fr-text--sm" style={{ textAlign: "right" }}>
                           <strong>{motif.count.toLocaleString("fr-FR")}</strong> ({motif.pourcentage}%)
