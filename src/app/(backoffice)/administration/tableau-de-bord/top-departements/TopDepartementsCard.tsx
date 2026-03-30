@@ -55,11 +55,7 @@ export function TopDepartementsCard({ departements, loading = false }: TopDepart
       <div className="fr-px-2w fr-pt-2w">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <span
-              className="fr-icon-map-pin-2-line"
-              style={{ color: "var(--text-default-error)" }}
-              aria-hidden="true"
-            />
+            <span className="fr-icon-map-pin-2-line" aria-hidden="true" />
             <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
               Top 5 départements
             </h2>
