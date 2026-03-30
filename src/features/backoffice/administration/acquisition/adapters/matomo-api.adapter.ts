@@ -135,10 +135,7 @@ interface MatomoVisitsSummaryResponse {
  * @param period - Periode : 'range', 'day', etc.
  * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
  */
-export async function fetchMatomoBounceRate(
-  period: string = "range",
-  date: string = "last30"
-): Promise<number> {
+export async function fetchMatomoBounceRate(period: string = "range", date: string = "last30"): Promise<number> {
   const config = getMatomoConfig();
 
   const data = await fetchMatomoApi<MatomoVisitsSummaryResponse>(

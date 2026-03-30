@@ -8,11 +8,7 @@ import {
   getTableauDeBordStatsAction,
   getDepartementsDisponiblesAction,
 } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
-import { DEFAULT_PERIODE } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
-import type {
-  PeriodeId,
-  TableauDeBordStats,
-} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import type { TableauDeBordStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 import { getStatistiquesAction } from "@/features/backoffice/administration/acquisition/actions/get-statistiques.action";
 import type { Statistiques } from "@/features/backoffice/administration/acquisition/domain/types/statistiques.types";
@@ -22,13 +18,20 @@ import MotifsIneligibiliteCard from "./simulateur/MotifsIneligibiliteCard";
 import TopSimulationsCard from "./simulateur/TopSimulationsCard";
 import SiteVitrineTab from "./site-vitrine/SiteVitrineTab";
 import StatistiquesDepartement from "./StatistiquesDepartement";
+import {
+  useAdministrationFiltersStore,
+  selectPeriodeId,
+  selectCodeDepartement,
+} from "@/features/backoffice/administration/stores/administration-filters.store";
 
 export default function AcquisitionPanel() {
   const { user } = useAuth();
   const isAnalyseDdt = user?.role === UserRole.ANALYSTE_DDT;
 
-  const [periodeId, setPeriodeId] = useState<PeriodeId>(DEFAULT_PERIODE);
-  const [codeDepartement, setCodeDepartement] = useState<string>("");
+  const periodeId = useAdministrationFiltersStore(selectPeriodeId);
+  const codeDepartement = useAdministrationFiltersStore(selectCodeDepartement);
+  const setPeriodeId = useAdministrationFiltersStore((s) => s.setPeriodeId);
+  const setCodeDepartement = useAdministrationFiltersStore((s) => s.setCodeDepartement);
   const [departements, setDepartements] = useState<DepartementDisponible[]>([]);
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
   const [matomoStats, setMatomoStats] = useState<Statistiques | null>(null);

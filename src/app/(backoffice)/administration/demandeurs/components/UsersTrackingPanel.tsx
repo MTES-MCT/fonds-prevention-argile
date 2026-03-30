@@ -22,13 +22,15 @@ import { SituationParticulier } from "@/shared/domain/value-objects/situation-pa
 import { Pagination } from "@/shared/components/Pagination/Pagination";
 import { formatNomComplet } from "@/shared/utils";
 import { getDepartementName, toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
-import {
-  PERIODES,
-  DEFAULT_PERIODE,
-} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import { getDepartementsDisponiblesAction } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
+import {
+  useAdministrationFiltersStore,
+  selectPeriodeId,
+  selectCodeDepartement,
+} from "@/features/backoffice/administration/stores/administration-filters.store";
 
 type DemandeursTab = "tous" | "archivage" | "statistiques" | "eligibilite";
 
@@ -65,9 +67,11 @@ export default function UsersTrackingPanel() {
   const [selectedDepartement, setSelectedDepartement] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filtres "Archivage & inéligibilité"
-  const [periodeId, setPeriodeId] = useState<PeriodeId>(DEFAULT_PERIODE);
-  const [codeDepartementArchivage, setCodeDepartementArchivage] = useState<string>("");
+  // Filtres "Archivage & inéligibilité" — partagés via le store administration
+  const periodeId = useAdministrationFiltersStore(selectPeriodeId);
+  const setPeriodeId = useAdministrationFiltersStore((s) => s.setPeriodeId);
+  const codeDepartementArchivage = useAdministrationFiltersStore(selectCodeDepartement);
+  const setCodeDepartementArchivage = useAdministrationFiltersStore((s) => s.setCodeDepartement);
   const [departementsDisponibles, setDepartementsDisponibles] = useState<DepartementDisponible[]>([]);
 
   // Pagination par onglet
@@ -466,11 +470,7 @@ export default function UsersTrackingPanel() {
             )}
             {activeTab === "eligibilite" && (
               <div id="tab-eligibilite-panel" role="tabpanel">
-                <DonneesEligibiliteTab
-                  users={users}
-                  periodeId={periodeId}
-                  codeDepartement={codeDepartementArchivage}
-                />
+                <DonneesEligibiliteTab users={users} periodeId={periodeId} codeDepartement={codeDepartementArchivage} />
               </div>
             )}
           </div>

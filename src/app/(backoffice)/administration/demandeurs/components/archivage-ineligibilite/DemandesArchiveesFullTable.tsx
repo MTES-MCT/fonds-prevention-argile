@@ -25,11 +25,7 @@ export function DemandesArchiveesFullTable({ stats }: DemandesArchiveesFullTable
       <div className="fr-px-2w fr-pt-2w">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <span
-              className="fr-icon-folder-2-line"
-              style={{ color: "var(--text-label-warning)" }}
-              aria-hidden="true"
-            />
+            <span className="fr-icon-folder-2-line" style={{ color: "var(--text-label-warning)" }} aria-hidden="true" />
             <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
               Demandes archivées ({stats.total.toLocaleString("fr-FR")})
             </h2>

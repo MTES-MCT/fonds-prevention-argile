@@ -724,7 +724,11 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
 /**
  * Calcule le top 5 des communes par nombre de simulations.
  */
-async function getTopCommunesStats(debut: Date, fin: Date, codeDepartement?: string): Promise<CommuneSimulationsStats[]> {
+async function getTopCommunesStats(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string
+): Promise<CommuneSimulationsStats[]> {
   const conditions = [
     gte(parcoursPrevention.createdAt, debut),
     lt(parcoursPrevention.createdAt, fin),
@@ -766,9 +770,7 @@ async function getTopCommunesStats(debut: Date, fin: Date, codeDepartement?: str
     communeMap.set(key, entry);
   }
 
-  return [...communeMap.values()]
-    .sort((a, b) => b.simulations - a.simulations)
-    .slice(0, 5);
+  return [...communeMap.values()].sort((a, b) => b.simulations - a.simulations).slice(0, 5);
 }
 
 /**
@@ -900,9 +902,9 @@ function createEmptyEligibiliteCounts(): EligibiliteCounts {
     nonIndemnisees: 0,
     tranches: {
       "très modeste": 0,
-      "modeste": 0,
-      "intermédiaire": 0,
-      "supérieure": 0,
+      modeste: 0,
+      intermédiaire: 0,
+      supérieure: 0,
     },
   };
 }
@@ -963,10 +965,7 @@ function computeEligibiliteCounts(
 /**
  * Récupère les statistiques d'éligibilité avec variations.
  */
-export async function getEligibiliteStats(
-  periodeId: PeriodeId,
-  codeDepartement?: string
-): Promise<EligibiliteStats> {
+export async function getEligibiliteStats(periodeId: PeriodeId, codeDepartement?: string): Promise<EligibiliteStats> {
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 

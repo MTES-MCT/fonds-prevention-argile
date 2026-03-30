@@ -84,9 +84,7 @@ export function TranchesRevenusSection({ stats, loading }: TranchesRevenusSectio
                   }}>
                   {loading ? "..." : (data?.valeur ?? 0).toLocaleString("fr-FR")}
                 </p>
-                <span className={`fr-badge fr-badge--sm fr-badge--no-icon ${badgeClass}`}>
-                  {label}
-                </span>
+                <span className={`fr-badge fr-badge--sm fr-badge--no-icon ${badgeClass}`}>{label}</span>
                 {data?.variation !== null && data?.variation !== undefined && (
                   <div className="fr-mt-1w">
                     <VariationBadge variation={data.variation} />

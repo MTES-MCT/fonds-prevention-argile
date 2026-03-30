@@ -1,6 +1,9 @@
 "use client";
 
-import type { FunnelStatistiques, FunnelStep } from "@/features/backoffice/administration/acquisition/domain/types/matomo-funnels.types";
+import type {
+  FunnelStatistiques,
+  FunnelStep,
+} from "@/features/backoffice/administration/acquisition/domain/types/matomo-funnels.types";
 
 interface DetailEtapesFunnelProps {
   funnel: FunnelStatistiques | null;
