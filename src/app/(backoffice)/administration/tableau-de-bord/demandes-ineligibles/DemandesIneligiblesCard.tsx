@@ -75,15 +75,15 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
         <div className="fr-table__wrapper" style={{ overflow: "hidden" }}>
           <div className="fr-table__container" style={{ overflow: "hidden" }}>
             <div className="fr-table__content">
-              <table>
+              <table style={{ tableLayout: "fixed", width: "100%" }}>
                 <caption className="sr-only">Détail des raisons d&apos;inéligibilité</caption>
                 <thead>
                   <tr>
                     <th scope="col">Raison</th>
-                    <th scope="col" style={{ textAlign: "right" }}>
+                    <th scope="col" style={{ textAlign: "right", whiteSpace: "nowrap", width: "6rem" }}>
                       Nb rép.
                     </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
+                    <th scope="col" style={{ textAlign: "right", whiteSpace: "nowrap", width: "5rem" }}>
                       Var.
                     </th>
                   </tr>
@@ -91,7 +91,10 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
                 <tbody>
                   {motifsAffiches.map((motif) => (
                     <tr key={motif.raison}>
-                      <td className="fr-text--sm">
+                      <td
+                        className="fr-text--sm"
+                        title={motif.label}
+                        style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 0 }}>
                         {motif.label}
                       </td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
@@ -105,7 +108,7 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
 
                   {/* Ligne "Autre" pour les motifs restants */}
                   {autresCount > 0 && (
-                    <tr style={{ borderLeft: "4px solid transparent" }}>
+                    <tr>
                       <td className="fr-text--sm">Autre</td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
                         <strong>{autresCount.toLocaleString("fr-FR")}</strong> ({autresPourcentage}%)

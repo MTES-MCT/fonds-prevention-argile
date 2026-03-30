@@ -98,15 +98,15 @@ export function DemandesArchiveesCard({
           <div className="fr-table__wrapper" style={{ overflow: "hidden" }}>
             <div className="fr-table__container" style={{ overflow: "hidden" }}>
               <div className="fr-table__content">
-                <table>
+                <table style={{ tableLayout: "fixed", width: "100%" }}>
                   <caption className="sr-only">Motifs d&apos;archivage les plus fréquents</caption>
                   <thead>
                     <tr>
                       <th scope="col">Raison</th>
-                      <th scope="col" style={{ textAlign: "right" }}>
+                      <th scope="col" style={{ textAlign: "right", whiteSpace: "nowrap", width: "6rem" }}>
                         Nb rép.
                       </th>
-                      <th scope="col" style={{ textAlign: "right" }}>
+                      <th scope="col" style={{ textAlign: "right", whiteSpace: "nowrap", width: "5rem" }}>
                         Var.
                       </th>
                     </tr>
@@ -114,7 +114,12 @@ export function DemandesArchiveesCard({
                   <tbody>
                     {motifsAffiches.map((motif) => (
                       <tr key={motif.raison}>
-                        <td className="fr-text--sm">{motif.raison}</td>
+                        <td
+                          className="fr-text--sm"
+                          title={motif.raison}
+                          style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 0 }}>
+                          {motif.raison}
+                        </td>
                         <td className="fr-text--sm" style={{ textAlign: "right" }}>
                           <strong>{motif.count.toLocaleString("fr-FR")}</strong> ({motif.pourcentage}%)
                         </td>
@@ -126,7 +131,7 @@ export function DemandesArchiveesCard({
 
                     {/* Ligne "Autre" avec lien vers le drawer */}
                     {autresCount > 0 && (
-                      <tr style={{ borderLeft: "4px solid transparent" }}>
+                      <tr>
                         <td className="fr-text--sm">
                           Autre{" "}
                           <button type="button" className="fr-link fr-text--sm" onClick={openDrawer}>
