@@ -61,7 +61,7 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
           Detail des etapes du funnel
         </h2>
         <p className="fr-text--sm fr-mb-0 fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
-          Tous utilisateurs confondus
+          Tous utilisateurs confondus — 7 derniers jours
         </p>
       </div>
 
