@@ -1,18 +1,29 @@
 "use client";
 
 import { DashboardStatCard } from "../../../tableau-de-bord/shared/DashboardStatCard";
-import type { TableauDeBordStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import type { TableauDeBordStats, MatomoSimulationsStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
 interface EntonnoirEligibiliteProps {
   stats: TableauDeBordStats | null;
+  /** Stats Matomo chargees en asynchrone — surcharge les valeurs BDD quand disponibles */
+  matomoSimuStats: MatomoSimulationsStats | null;
   loading: boolean;
 }
 
 /**
  * Entonnoir d'eligibilite : visualisation des etapes de conversion
- * simulateur → eligibilite → compte cree → taux de transformation
+ * simulateur → eligibilite → sans inscription → compte cree → taux de transformation
+ *
+ * Les stats BDD s'affichent immediatement, puis les valeurs Matomo les remplacent quand elles arrivent.
  */
-export default function EntonnoirEligibilite({ stats, loading }: EntonnoirEligibiliteProps) {
+export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }: EntonnoirEligibiliteProps) {
+  // Utiliser Matomo si disponible, sinon BDD
+  const simulationsTerminees = matomoSimuStats?.simulationsMatomo ?? stats?.simulationsLancees ?? null;
+  const eligibles = matomoSimuStats?.simulationsEligibles ?? stats?.simulationsEligibles ?? null;
+  const nonEligibles = matomoSimuStats?.simulationsNonEligibles ?? stats?.simulationsNonEligibles ?? null;
+  const sansInscription = matomoSimuStats?.simulationsSansInscription ?? stats?.simulationsSansInscription ?? null;
+  const taux = matomoSimuStats?.tauxTransformation ?? stats?.tauxTransformation ?? null;
+
   return (
     <div>
       <h2 className="fr-h4 fr-mb-3w">Entonnoir d'eligibilite</h2>
@@ -24,13 +35,13 @@ export default function EntonnoirEligibilite({ stats, loading }: EntonnoirEligib
           gap: "0.5rem",
           flexWrap: "wrap",
         }}>
-        {/* Etape 1 : Simulations terminees (Matomo) */}
+        {/* Etape 1 : Simulations terminees */}
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={stats?.simulationsMatomo.valeur.toLocaleString("fr-FR") ?? "..."}
+            value={simulationsTerminees?.valeur.toLocaleString("fr-FR") ?? "..."}
             label="Simulations terminees"
-            variation={stats?.simulationsMatomo.variation ?? null}
+            variation={simulationsTerminees?.variation ?? null}
             loading={loading}
             compact
           />
@@ -39,7 +50,7 @@ export default function EntonnoirEligibilite({ stats, loading }: EntonnoirEligib
         {/* Fleche */}
         <FunnelArrow />
 
-        {/* Etape 2 : Eligibles + Non eligibles empilees (BDD) */}
+        {/* Etape 2 : Eligibles + Non eligibles empilees */}
         <div
           style={{
             flex: "1 1 180px",
@@ -50,17 +61,17 @@ export default function EntonnoirEligibilite({ stats, loading }: EntonnoirEligib
           }}>
           <DashboardStatCard
             className=""
-            value={stats?.simulationsEligibles.valeur.toLocaleString("fr-FR") ?? "..."}
+            value={eligibles?.valeur.toLocaleString("fr-FR") ?? "..."}
             label="Simulations eligibles"
-            variation={stats?.simulationsEligibles.variation ?? null}
+            variation={eligibles?.variation ?? null}
             loading={loading}
             compact
           />
           <DashboardStatCard
             className=""
-            value={stats?.simulationsNonEligibles.valeur.toLocaleString("fr-FR") ?? "..."}
+            value={nonEligibles?.valeur.toLocaleString("fr-FR") ?? "..."}
             label="Simulations non eligibles"
-            variation={stats?.simulationsNonEligibles.variation ?? null}
+            variation={nonEligibles?.variation ?? null}
             loading={loading}
             compact
           />
@@ -73,9 +84,9 @@ export default function EntonnoirEligibilite({ stats, loading }: EntonnoirEligib
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={stats?.simulationsSansInscription.valeur.toLocaleString("fr-FR") ?? "..."}
+            value={sansInscription?.valeur.toLocaleString("fr-FR") ?? "..."}
             label="Sans inscription FC"
-            variation={stats?.simulationsSansInscription.variation ?? null}
+            variation={sansInscription?.variation ?? null}
             loading={loading}
             compact
           />
@@ -104,9 +115,9 @@ export default function EntonnoirEligibilite({ stats, loading }: EntonnoirEligib
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={stats ? `${stats.tauxTransformation.valeur.toLocaleString("fr-FR")}%` : "..."}
+            value={taux ? `${taux.valeur.toLocaleString("fr-FR")}%` : "..."}
             label="Transfo. simu. &rarr; comptes"
-            variation={stats?.tauxTransformation.variation ?? null}
+            variation={taux?.variation ?? null}
             variationType="points"
             loading={loading}
             compact

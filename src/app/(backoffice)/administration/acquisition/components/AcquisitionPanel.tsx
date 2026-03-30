@@ -6,9 +6,13 @@ import { UserRole } from "@/shared/domain/value-objects";
 import { FiltresTableauDeBord } from "../../tableau-de-bord/FiltresTableauDeBord";
 import {
   getTableauDeBordStatsAction,
+  getMatomoSimulationsStatsAction,
   getDepartementsDisponiblesAction,
 } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
-import type { TableauDeBordStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import type {
+  TableauDeBordStats,
+  MatomoSimulationsStats,
+} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 import { getStatistiquesAction } from "@/features/backoffice/administration/acquisition/actions/get-statistiques.action";
 import type { Statistiques } from "@/features/backoffice/administration/acquisition/domain/types/statistiques.types";
@@ -35,6 +39,7 @@ export default function AcquisitionPanel() {
   const setCodeDepartement = useAdministrationFiltersStore((s) => s.setCodeDepartement);
   const [departements, setDepartements] = useState<DepartementDisponible[]>([]);
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
+  const [matomoSimuStats, setMatomoSimuStats] = useState<MatomoSimulationsStats | null>(null);
   const [matomoStats, setMatomoStats] = useState<Statistiques | null>(null);
   const [loading, setLoading] = useState(true);
   const [funnelLoading, setFunnelLoading] = useState(true);
@@ -65,7 +70,7 @@ export default function AcquisitionPanel() {
     loadMatomoStats();
   }, [periodeId]);
 
-  // Charger les stats quand les filtres changent
+  // Charger les stats BDD (rapide) quand les filtres changent
   const loadStats = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -84,6 +89,22 @@ export default function AcquisitionPanel() {
   useEffect(() => {
     loadStats();
   }, [loadStats]);
+
+  // Charger les stats Matomo simulations (lent, asynchrone) quand les filtres changent
+  useEffect(() => {
+    let cancelled = false;
+    setMatomoSimuStats(null);
+
+    async function loadMatomoSimu() {
+      const result = await getMatomoSimulationsStatsAction(periodeId, codeDepartement || undefined);
+      if (!cancelled && result.success && result.data.simulationsMatomo.valeur > 0) {
+        setMatomoSimuStats(result.data);
+      }
+    }
+
+    loadMatomoSimu();
+    return () => { cancelled = true; };
+  }, [periodeId, codeDepartement]);
 
   // Agents DDT : vue departement uniquement
   if (isAnalyseDdt) {
@@ -176,7 +197,11 @@ export default function AcquisitionPanel() {
         <div className="fr-container">
           {activeTab === "simulateur" && (
             <div id="tab-acquisition-simulateur-panel" role="tabpanel">
-              <EntonnoirEligibilite stats={stats} loading={loading} />
+              <EntonnoirEligibilite
+                stats={stats}
+                matomoSimuStats={matomoSimuStats}
+                loading={loading}
+              />
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
                 <div className="fr-col-12 fr-col-lg-6">
                   <DetailEtapesFunnel funnel={matomoStats?.funnelSimulateurRGA ?? null} loading={funnelLoading} />

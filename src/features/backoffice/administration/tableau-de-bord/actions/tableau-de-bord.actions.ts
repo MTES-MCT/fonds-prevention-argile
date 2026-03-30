@@ -4,12 +4,13 @@ import { checkBackofficePermission } from "@/features/auth/permissions/services/
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import {
   getTableauDeBordStats,
+  getMatomoSimulationsStats,
   getAutresDemandesArchiveesDetail,
   getEligibiliteStats,
 } from "../services/tableau-de-bord.service";
 import { getAvailableDepartements } from "@/features/backoffice/administration/acquisition/services/statistiques-departement.service";
 import type { ActionResult } from "@/shared/types";
-import type { TableauDeBordStats, PeriodeId, DemandeArchiveeDetail } from "../domain/types/tableau-de-bord.types";
+import type { TableauDeBordStats, MatomoSimulationsStats, PeriodeId, DemandeArchiveeDetail } from "../domain/types/tableau-de-bord.types";
 import type { EligibiliteStats } from "../domain/types/eligibilite-stats.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 
@@ -37,6 +38,34 @@ export async function getTableauDeBordStatsAction(
     return {
       success: false,
       error: "Une erreur est survenue lors de la recuperation des statistiques.",
+    };
+  }
+}
+
+/**
+ * Recupere les statistiques Matomo des simulations (chargement asynchrone, separe des stats BDD)
+ */
+export async function getMatomoSimulationsStatsAction(
+  periodeId: PeriodeId,
+  codeDepartement?: string
+): Promise<ActionResult<MatomoSimulationsStats>> {
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
+
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante pour consulter les statistiques",
+    };
+  }
+
+  try {
+    const stats = await getMatomoSimulationsStats(periodeId, codeDepartement);
+    return { success: true, data: stats };
+  } catch (error) {
+    console.error("Erreur lors de la recuperation des statistiques Matomo:", error);
+    return {
+      success: false,
+      error: "Une erreur est survenue lors de la recuperation des statistiques Matomo.",
     };
   }
 }

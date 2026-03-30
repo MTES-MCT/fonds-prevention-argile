@@ -108,6 +108,15 @@ export interface TableauDeBordStats {
   topCommunes: CommuneSimulationsStats[];
 }
 
+/** Stats Matomo chargees de facon asynchrone (separement des stats BDD) */
+export interface MatomoSimulationsStats {
+  simulationsMatomo: StatAvecVariation;
+  simulationsEligibles: StatAvecVariation;
+  simulationsNonEligibles: StatAvecVariation;
+  simulationsSansInscription: StatAvecVariation;
+  tauxTransformation: StatAvecVariation;
+}
+
 export type PeriodeId = "7j" | "30j" | "90j" | "6m" | "12m" | "tout";
 
 export interface PeriodeOption {
