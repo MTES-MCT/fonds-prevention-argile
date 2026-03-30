@@ -24,13 +24,13 @@ export default function EntonnoirEligibilite({ stats, loading }: EntonnoirEligib
           gap: "0.5rem",
           flexWrap: "wrap",
         }}>
-        {/* Etape 1 : Simulations lancees */}
-        <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+        {/* Etape 1 : Simulations terminees (Matomo) */}
+        <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={stats?.simulationsLancees.valeur.toLocaleString("fr-FR") ?? "..."}
-            label="Simulations lancees"
-            variation={stats?.simulationsLancees.variation ?? null}
+            value={stats?.simulationsMatomo.valeur.toLocaleString("fr-FR") ?? "..."}
+            label="Simulations terminees"
+            variation={stats?.simulationsMatomo.variation ?? null}
             loading={loading}
             compact
           />
@@ -39,10 +39,10 @@ export default function EntonnoirEligibilite({ stats, loading }: EntonnoirEligib
         {/* Fleche */}
         <FunnelArrow />
 
-        {/* Etape 2 : Eligibles + Non éligibles empilees */}
+        {/* Etape 2 : Eligibles + Non eligibles empilees (BDD) */}
         <div
           style={{
-            flex: "1 1 200px",
+            flex: "1 1 180px",
             minWidth: 0,
             display: "flex",
             flexDirection: "column",
@@ -59,7 +59,7 @@ export default function EntonnoirEligibilite({ stats, loading }: EntonnoirEligib
           <DashboardStatCard
             className=""
             value={stats?.simulationsNonEligibles.valeur.toLocaleString("fr-FR") ?? "..."}
-            label="Simulations non éligibles"
+            label="Simulations non eligibles"
             variation={stats?.simulationsNonEligibles.variation ?? null}
             loading={loading}
             compact
@@ -69,8 +69,23 @@ export default function EntonnoirEligibilite({ stats, loading }: EntonnoirEligib
         {/* Fleche */}
         <FunnelArrow />
 
-        {/* Etape 3 : Comptes crees */}
-        <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+        {/* Etape 3 : Sans inscription FC */}
+        <div style={{ flex: "1 1 180px", minWidth: 0 }}>
+          <DashboardStatCard
+            className=""
+            value={stats?.simulationsSansInscription.valeur.toLocaleString("fr-FR") ?? "..."}
+            label="Sans inscription FC"
+            variation={stats?.simulationsSansInscription.variation ?? null}
+            loading={loading}
+            compact
+          />
+        </div>
+
+        {/* Fleche */}
+        <FunnelArrow />
+
+        {/* Etape 4 : Comptes crees */}
+        <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
             value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -85,12 +100,12 @@ export default function EntonnoirEligibilite({ stats, loading }: EntonnoirEligib
         {/* Fleche */}
         <FunnelArrow />
 
-        {/* Etape 4 : Taux de transformation */}
-        <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+        {/* Etape 5 : Taux de transformation */}
+        <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
             value={stats ? `${stats.tauxTransformation.valeur.toLocaleString("fr-FR")}%` : "..."}
-            label="Transfo. simu. &rarr; comptes crees"
+            label="Transfo. simu. &rarr; comptes"
             variation={stats?.tauxTransformation.variation ?? null}
             variationType="points"
             loading={loading}

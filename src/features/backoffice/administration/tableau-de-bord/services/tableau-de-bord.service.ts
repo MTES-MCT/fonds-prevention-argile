@@ -38,6 +38,12 @@ import {
   getDepartementName,
 } from "@/shared/constants/departements.constants";
 import { asString } from "@/shared/utils/object.utils";
+import {
+  fetchMatomoEvents,
+  fetchMatomoEventsByDepartment,
+} from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
+import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
+import { getClientEnv } from "@/shared/config/env.config";
 
 /**
  * Calcule les dates de debut/fin pour une periode donnee
@@ -72,6 +78,53 @@ function getPreviousDateRange(periodeId: PeriodeId): { debut: Date; fin: Date } 
   debut.setDate(debut.getDate() - periode.jours * 2);
 
   return { debut, fin };
+}
+
+/**
+ * Formate une plage de dates pour l'API Matomo (ex: "2025-01-01,2025-03-30")
+ */
+function formatMatomoDateRange(debut: Date, fin: Date): string {
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  return `${fmt(debut)},${fmt(fin)}`;
+}
+
+interface SimulationsMatomoResult {
+  eligible: number;
+  nonEligible: number;
+  total: number;
+}
+
+/**
+ * Récupère le nombre de simulations terminées depuis Matomo (eligible + non eligible).
+ * Utilise les events par département si un code département est spécifié.
+ */
+async function getSimulationsMatomo(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string
+): Promise<SimulationsMatomoResult> {
+  const dateRange = formatMatomoDateRange(debut, fin);
+
+  let events: Map<string, number>;
+
+  if (codeDepartement) {
+    const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
+    const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
+    if (!dimensionId) return { eligible: 0, nonEligible: 0, total: 0 };
+
+    const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
+    events = await fetchMatomoEventsByDepartment(codeDeptMatomo, dimensionId, {
+      period: "range",
+      date: dateRange,
+    });
+  } else {
+    events = await fetchMatomoEvents({ period: "range", date: dateRange });
+  }
+
+  const eligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE) ?? 0;
+  const nonEligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE) ?? 0;
+
+  return { eligible, nonEligible, total: eligible + nonEligible };
 }
 
 /**
@@ -785,7 +838,7 @@ export async function getTableauDeBordStats(
   // Stats de la periode courante + alertes + details archivees/ineligibles en parallele
   const [
     simulations,
-    eligibilite,
+    eligibiliteBDD,
     comptes,
     demandesAmo,
     reponsesAttente,
@@ -796,6 +849,7 @@ export async function getTableauDeBordStats(
     demandesIneligiblesDetail,
     topDepartements,
     topCommunes,
+    simulationsMatomo,
   ] = await Promise.all([
     countSimulations(debut, fin, codeDepartement),
     countSimulationsParEligibilite(debut, fin, codeDepartement),
@@ -809,9 +863,20 @@ export async function getTableauDeBordStats(
     getDemandesIneligiblesDetail(debut, fin, previousRange, codeDepartement),
     getTopDepartementsStats(debut, fin),
     getTopCommunesStats(debut, fin, codeDepartement),
+    getSimulationsMatomo(debut, fin, codeDepartement).catch((err) => {
+      console.error("[TableauDeBord] Erreur Matomo simulations:", err);
+      return { eligible: 0, nonEligible: 0, total: 0 } as SimulationsMatomoResult;
+    }),
   ]);
 
-  const tauxTransformation = simulations > 0 ? Math.round((comptes / simulations) * 1000) / 10 : 0;
+  // Utiliser Matomo si disponible, sinon fallback BDD
+  const matomoDisponible = simulationsMatomo.total > 0;
+  const eligibles = matomoDisponible ? simulationsMatomo.eligible : eligibiliteBDD.eligibles;
+  const nonEligibles = matomoDisponible ? simulationsMatomo.nonEligible : eligibiliteBDD.nonEligibles;
+  const totalSimulations = matomoDisponible ? simulationsMatomo.total : simulations;
+
+  const sansInscription = Math.max(0, totalSimulations - comptes);
+  const tauxTransformation = totalSimulations > 0 ? Math.round((comptes / totalSimulations) * 1000) / 10 : 0;
 
   // Stats de la periode precedente (pour les variations)
   let variations: {
@@ -824,6 +889,8 @@ export async function getTableauDeBordStats(
     reponsesAttente: number | null;
     dossiersDN: number | null;
     archivees: number | null;
+    simulationsMatomo: number | null;
+    sansInscription: number | null;
   } = {
     simulations: null,
     eligibles: null,
@@ -834,25 +901,43 @@ export async function getTableauDeBordStats(
     reponsesAttente: null,
     dossiersDN: null,
     archivees: null,
+    simulationsMatomo: null,
+    sansInscription: null,
   };
 
   if (previousRange) {
-    const [prevSimulations, prevEligibilite, prevComptes, prevDemandesAmo, prevDossiersDN, prevArchivees] =
-      await Promise.all([
-        countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
-        countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement),
-        countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
-        countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
-        countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
-        countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
-      ]);
+    const [
+      prevSimulations,
+      prevEligibiliteBDD,
+      prevComptes,
+      prevDemandesAmo,
+      prevDossiersDN,
+      prevArchivees,
+      prevSimulationsMatomo,
+    ] = await Promise.all([
+      countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
+      countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement),
+      countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
+      countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
+      countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
+      countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
+      getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement).catch(
+        () => ({ eligible: 0, nonEligible: 0, total: 0 }) as SimulationsMatomoResult
+      ),
+    ]);
 
-    const prevTaux = prevSimulations > 0 ? Math.round((prevComptes / prevSimulations) * 1000) / 10 : 0;
+    const prevMatomoDisponible = prevSimulationsMatomo.total > 0;
+    const prevEligibles = prevMatomoDisponible ? prevSimulationsMatomo.eligible : prevEligibiliteBDD.eligibles;
+    const prevNonEligibles = prevMatomoDisponible ? prevSimulationsMatomo.nonEligible : prevEligibiliteBDD.nonEligibles;
+    const prevTotalSimulations = prevMatomoDisponible ? prevSimulationsMatomo.total : prevSimulations;
+
+    const prevTaux = prevTotalSimulations > 0 ? Math.round((prevComptes / prevTotalSimulations) * 1000) / 10 : 0;
+    const prevSansInscription = Math.max(0, prevTotalSimulations - prevComptes);
 
     variations = {
-      simulations: calculerVariation(simulations, prevSimulations),
-      eligibles: calculerVariation(eligibilite.eligibles, prevEligibilite.eligibles),
-      nonEligibles: calculerVariation(eligibilite.nonEligibles, prevEligibilite.nonEligibles),
+      simulations: calculerVariation(totalSimulations, prevTotalSimulations),
+      eligibles: calculerVariation(eligibles, prevEligibles),
+      nonEligibles: calculerVariation(nonEligibles, prevNonEligibles),
       comptes: calculerVariation(comptes, prevComptes),
       tauxTransformation:
         tauxTransformation - prevTaux !== 0 ? Math.round((tauxTransformation - prevTaux) * 10) / 10 : 0,
@@ -860,13 +945,17 @@ export async function getTableauDeBordStats(
       reponsesAttente: null, // Pas de variation pour un snapshot
       dossiersDN: calculerVariation(dossiersDN, prevDossiersDN),
       archivees: calculerVariation(archivees, prevArchivees),
+      simulationsMatomo: calculerVariation(totalSimulations, prevTotalSimulations),
+      sansInscription: calculerVariation(sansInscription, prevSansInscription),
     };
   }
 
   return {
-    simulationsLancees: { valeur: simulations, variation: variations.simulations },
-    simulationsEligibles: { valeur: eligibilite.eligibles, variation: variations.eligibles },
-    simulationsNonEligibles: { valeur: eligibilite.nonEligibles, variation: variations.nonEligibles },
+    simulationsLancees: { valeur: totalSimulations, variation: variations.simulations },
+    simulationsEligibles: { valeur: eligibles, variation: variations.eligibles },
+    simulationsNonEligibles: { valeur: nonEligibles, variation: variations.nonEligibles },
+    simulationsMatomo: { valeur: totalSimulations, variation: variations.simulationsMatomo },
+    simulationsSansInscription: { valeur: sansInscription, variation: variations.sansInscription },
     comptesCrees: { valeur: comptes, variation: variations.comptes },
     tauxTransformation: { valeur: tauxTransformation, variation: variations.tauxTransformation },
     demandesAmoEnvoyees: { valeur: demandesAmo, variation: variations.demandesAmo },
