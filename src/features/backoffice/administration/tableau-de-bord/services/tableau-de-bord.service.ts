@@ -466,7 +466,7 @@ async function getIneligibiliteReasonsDistribution(
   debut: Date,
   fin: Date,
   codeDepartement?: string
-): Promise<Map<string, number>> {
+): Promise<{ distribution: Map<string, number>; totalParcours: number }> {
   const conditions = [
     isNotNull(parcoursPrevention.archivedAt),
     gte(parcoursPrevention.archivedAt, debut),
@@ -513,7 +513,7 @@ async function getIneligibiliteReasonsDistribution(
     }
   }
 
-  return distribution;
+  return { distribution, totalParcours: seenParcours.size };
 }
 
 /**
@@ -525,19 +525,23 @@ async function getDemandesIneligiblesDetail(
   previousRange: { debut: Date; fin: Date } | null,
   codeDepartement?: string
 ): Promise<DemandesIneligiblesStats> {
-  const distributionActuelle = await getIneligibiliteReasonsDistribution(debut, fin, codeDepartement);
-  const distributionPrecedente = previousRange
+  const { distribution: distributionActuelle, totalParcours } = await getIneligibiliteReasonsDistribution(
+    debut,
+    fin,
+    codeDepartement
+  );
+  const { distribution: distributionPrecedente } = previousRange
     ? await getIneligibiliteReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement)
-    : new Map<string, number>();
+    : { distribution: new Map<string, number>() };
 
-  // Total des occurrences de raisons (>= nb parcours car multi-raisons possibles)
-  let total = 0;
-  for (const c of distributionActuelle.values()) {
-    total += c;
+  if (totalParcours === 0) {
+    return { total: 0, motifs: [], autresMotifs: [] };
   }
 
-  if (total === 0) {
-    return { total: 0, motifs: [], autresMotifs: [] };
+  // Total des occurrences de raisons pour le calcul des pourcentages
+  let totalRaisons = 0;
+  for (const c of distributionActuelle.values()) {
+    totalRaisons += c;
   }
 
   // Lookup clé → label
@@ -554,15 +558,16 @@ async function getDemandesIneligiblesDetail(
       raison,
       label: labelMap.get(raison) ?? raison,
       count: countActuel,
-      pourcentage: Math.round((countActuel / total) * 100),
+      pourcentage: totalRaisons > 0 ? Math.round((countActuel / totalRaisons) * 100) : 0,
       variation: previousRange ? calculerVariation(countActuel, countPrecedent) : null,
     });
   }
 
   tousMotifs.sort((a, b) => b.count - a.count);
 
+  // total = nombre de parcours distincts (pas la somme des raisons)
   return {
-    total,
+    total: totalParcours,
     motifs: tousMotifs.slice(0, TOP_MOTIFS_COUNT),
     autresMotifs: tousMotifs.slice(TOP_MOTIFS_COUNT),
   };
