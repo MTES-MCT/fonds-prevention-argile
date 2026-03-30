@@ -54,13 +54,11 @@ export function DemandesArchiveesCard({
     return null;
   }
 
-  // Limiter à 4 motifs nommés + 1 ligne "Autre" = 5 lignes max
-  // On exclut aussi les motifs nommés "Autre" pour les fusionner dans la ligne récap
+  // Afficher tous les motifs du top 5 (sauf "Autre" fusionne dans la ligne recap)
   const motifsNommes = stats.motifs.filter((m) => m.raison !== "Autre");
   const autresDansTop = stats.motifs.filter((m) => m.raison === "Autre");
-  const motifsAffiches = motifsNommes.slice(0, 4);
-  const motifsRestants = [...motifsNommes.slice(4), ...autresDansTop, ...stats.autresMotifs];
-  const autresCount = motifsRestants.reduce((acc, m) => acc + m.count, 0);
+  const motifsAffiches = motifsNommes;
+  const autresCount = [...autresDansTop, ...stats.autresMotifs].reduce((acc, m) => acc + m.count, 0);
   const autresPourcentage = stats.total > 0 ? Math.round((autresCount / stats.total) * 100) : 0;
 
   return (

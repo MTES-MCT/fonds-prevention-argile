@@ -28,11 +28,9 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
     return null;
   }
 
-  // Si des motifs "autres" existent, on limite le tableau à 4 lignes + 1 ligne "Autre"
-  const hasAutres = stats.autresMotifs.length > 0;
-  const motifsAffiches = hasAutres ? stats.motifs.slice(0, 4) : stats.motifs;
-  const motifsRestants = hasAutres ? [...stats.motifs.slice(4), ...stats.autresMotifs] : [];
-  const autresCount = motifsRestants.reduce((acc, m) => acc + m.count, 0);
+  // Afficher tous les motifs du top 5, ligne "Autre" uniquement pour les motifs hors top 5
+  const motifsAffiches = stats.motifs;
+  const autresCount = stats.autresMotifs.reduce((acc, m) => acc + m.count, 0);
   const autresPourcentage = stats.total > 0 ? Math.round((autresCount / stats.total) * 100) : 0;
 
   return (
