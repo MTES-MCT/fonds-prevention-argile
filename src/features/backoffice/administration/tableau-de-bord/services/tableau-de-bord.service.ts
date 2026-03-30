@@ -735,13 +735,6 @@ async function getTopCommunesStats(
     isNotNull(parcoursPrevention.rgaSimulationData),
   ];
 
-  if (codeDepartement) {
-    conditions.push(
-      sql`(${parcoursPrevention.rgaSimulationDataAgent}->>'logement'->>'code_departement' = ${codeDepartement}
-        OR ${parcoursPrevention.rgaSimulationData}->>'logement'->>'code_departement' = ${codeDepartement})`
-    );
-  }
-
   const parcours = await db
     .select({
       rgaSimulationData: parcoursPrevention.rgaSimulationData,
@@ -763,6 +756,7 @@ async function getTopCommunesStats(
     const codeDept = asString(agentData?.logement?.code_departement) ?? asString(userData?.logement?.code_departement);
 
     if (!communeNom || !codeDept) continue;
+    if (codeDepartement && codeDept !== codeDepartement) continue;
 
     const key = `${communeNom}_${codeDept}`;
     const entry = communeMap.get(key) ?? { commune: communeNom, codeDepartement: codeDept, simulations: 0 };
