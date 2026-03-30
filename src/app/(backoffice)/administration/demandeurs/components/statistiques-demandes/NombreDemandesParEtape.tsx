@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { StepStatCard } from "./StepStatCard";
+import { StepperStats } from "./StepStatCard";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 
@@ -36,18 +36,15 @@ export function NombreDemandesParEtape({ users }: NombreDemandesParEtapeProps) {
         style={{
           backgroundColor: "var(--background-default-grey)",
           border: "1px solid var(--border-default-grey)",
-          display: "flex",
-          gap: "1.5rem",
         }}>
-        {counts.map((item) => (
-          <StepStatCard
-            key={item.step}
-            value={item.count.toLocaleString("fr-FR")}
-            label={item.label}
-            fillPercent={(item.count / max) * 100}
-            barColor={item.color}
-          />
-        ))}
+        <StepperStats
+          items={counts.map((item) => ({
+            label: item.label,
+            value: item.count.toLocaleString("fr-FR"),
+            fillPercent: (item.count / max) * 100,
+            color: item.color,
+          }))}
+        />
       </div>
     </div>
   );

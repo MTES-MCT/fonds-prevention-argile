@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { StepStatCard } from "./StepStatCard";
+import { StepperStats } from "./StepStatCard";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 
 /** Calcule la différence en jours entre deux dates */
@@ -94,19 +94,16 @@ export function DelaisMoyensParEtape({ users }: DelaisMoyensParEtapeProps) {
         style={{
           backgroundColor: "var(--background-default-grey)",
           border: "1px solid var(--border-default-grey)",
-          display: "flex",
-          gap: "1.5rem",
         }}>
-        {delais.map((item, index) => (
-          <StepStatCard
-            key={item.label}
-            value={item.jours.toLocaleString("fr-FR")}
-            suffix="j"
-            label={item.label}
-            fillPercent={(item.jours / max) * 100}
-            barColor={BAR_COLORS[index]}
-          />
-        ))}
+        <StepperStats
+          items={delais.map((item, index) => ({
+            label: item.label,
+            value: item.jours.toLocaleString("fr-FR"),
+            suffix: "j",
+            fillPercent: (item.jours / max) * 100,
+            color: BAR_COLORS[index],
+          }))}
+        />
       </div>
     </div>
   );

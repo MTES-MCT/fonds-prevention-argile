@@ -1,56 +1,56 @@
 "use client";
 
-interface StepStatCardProps {
-  value: string;
+interface StepperStatsItem {
   label: string;
-  /** Pourcentage de remplissage de la barre (0-100) */
-  fillPercent: number;
-  /** Couleur de la barre */
-  barColor?: string;
+  value: string;
   suffix?: string;
+  fillPercent: number;
+  color: string;
 }
 
-export function StepStatCard({
-  value,
-  label,
-  fillPercent,
-  barColor = "var(--background-flat-info)",
-  suffix,
-}: StepStatCardProps) {
+interface StepperStatsProps {
+  items: StepperStatsItem[];
+}
+
+export function StepperStats({ items }: StepperStatsProps) {
   return (
-    <div
-      style={{
-        minWidth: 0,
-        flex: 1,
-      }}>
-      {/* Barre de progression */}
-      <div
-        style={{
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: "var(--background-contrast-grey)",
-          marginBottom: "0.75rem",
-          overflow: "hidden",
-        }}>
-        <div
-          style={{
-            height: "100%",
-            width: `${Math.min(fillPercent, 100)}%`,
-            borderRadius: 3,
-            backgroundColor: barColor,
-            transition: "width 0.3s ease",
-          }}
-        />
+    <div>
+      {/* Barre segmentee type stepper — remplissage horizontal */}
+      <div style={{ display: "flex", gap: "4px", height: 8, marginBottom: "1rem" }}>
+        {items.map((item, i) => (
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              backgroundColor: "var(--background-contrast-grey)",
+              borderRadius: i === 0 ? "4px 0 0 4px" : i === items.length - 1 ? "0 4px 4px 0" : 0,
+              overflow: "hidden",
+            }}>
+            <div
+              style={{
+                height: "100%",
+                width: `${Math.max(item.fillPercent, 5)}%`,
+                backgroundColor: item.color,
+                borderRadius: "inherit",
+                transition: "width 0.3s ease",
+              }}
+            />
+          </div>
+        ))}
       </div>
 
-      {/* Valeur */}
-      <p className="fr-mb-0" style={{ fontSize: "1.75rem", fontWeight: 700, lineHeight: 1.2 }}>
-        {value}
-        {suffix && <span style={{ fontSize: "0.875rem", fontWeight: 400 }}>{suffix}</span>}
-      </p>
-
-      {/* Label */}
-      <p className="fr-text--sm fr-text-mention--grey fr-mb-0">{label}</p>
+      {/* Labels et valeurs sous chaque segment */}
+      <div style={{ display: "flex", gap: "4px" }}>
+        {items.map((item, i) => (
+          <div key={i} style={{ flex: 1, textAlign: "center" }}>
+            <p className="fr-mb-0" style={{ fontSize: "1.5rem", fontWeight: 700, lineHeight: 1.2 }}>
+              {item.value}
+              {item.suffix && <span style={{ fontSize: "0.75rem", fontWeight: 400 }}>{item.suffix}</span>}
+            </p>
+            <p className="fr-text--xs fr-text-mention--grey fr-mb-0">{item.label}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
