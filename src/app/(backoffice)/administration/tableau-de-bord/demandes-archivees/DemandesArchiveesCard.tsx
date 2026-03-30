@@ -24,7 +24,8 @@ export function DemandesArchiveesCard({
   codeDepartement,
   departements,
 }: DemandesArchiveesCardProps) {
-  const drawerId = `drawer-autres-motifs-${useId()}`;
+  const rawId = useId();
+  const drawerId = `drawer-autres-motifs-${rawId.replace(/:/g, "-")}`;
 
   function openDrawer() {
     const dialog = document.getElementById(drawerId);
@@ -135,9 +136,9 @@ export function DemandesArchiveesCard({
                       <tr style={{ borderLeft: "4px solid transparent" }}>
                         <td className="fr-text--sm">
                           Autre{" "}
-                          <a className="fr-link fr-text--sm" href="#" onClick={openDrawer}>
+                          <button type="button" className="fr-link fr-text--sm" onClick={openDrawer}>
                             Voir le détail
-                          </a>
+                          </button>
                         </td>
                         <td className="fr-text--sm" style={{ textAlign: "right" }}>
                           <strong>{autresCount.toLocaleString("fr-FR")}</strong> ({autresPourcentage}%)
@@ -154,7 +155,7 @@ export function DemandesArchiveesCard({
       </div>
 
       {/* Drawer des autres motifs */}
-      {stats.autresMotifs.length > 0 && (
+      {autresCount > 0 && (
         <AutresMotifsDrawer
           drawerId={drawerId}
           periodeId={periodeId}
