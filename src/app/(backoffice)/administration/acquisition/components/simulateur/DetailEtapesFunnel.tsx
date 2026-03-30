@@ -87,28 +87,43 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
                   </tr>
                 </thead>
                 <tbody>
-                  {funnel.etapes.map((etape: FunnelStep) => (
-                    <tr key={etape.position}>
-                      <td className="fr-text--sm">
-                        <strong>{etape.position}.</strong> {etape.nom}
-                      </td>
-                      <td className="fr-text--sm" style={{ textAlign: "right" }}>
-                        {etape.visiteurs.toLocaleString("fr-FR")}
-                      </td>
-                      <td className="fr-text--sm" style={{ textAlign: "right" }}>
-                        {etape.conversions.toLocaleString("fr-FR")}{" "}
-                        <span style={{ color: "var(--text-default-success)" }}>
-                          ({etape.tauxConversion.toLocaleString("fr-FR")} %)
-                        </span>
-                      </td>
-                      <td className="fr-text--sm" style={{ textAlign: "right" }}>
-                        {etape.abandons.toLocaleString("fr-FR")}{" "}
-                        <span style={{ color: "var(--text-default-error)" }}>
-                          ({etape.tauxAbandon.toLocaleString("fr-FR")} %)
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {funnel.etapes.map((etape: FunnelStep, index: number) => {
+                    const isDerniereEtape = index >= funnel.etapes.length - 2;
+                    return (
+                      <tr key={etape.position}>
+                        <td className="fr-text--sm">
+                          <strong>{etape.position}.</strong> {etape.nom}
+                        </td>
+                        <td className="fr-text--sm" style={{ textAlign: "right" }}>
+                          {etape.visiteurs.toLocaleString("fr-FR")}
+                        </td>
+                        <td className="fr-text--sm" style={{ textAlign: "right" }}>
+                          {isDerniereEtape ? (
+                            "—"
+                          ) : (
+                            <>
+                              {etape.conversions.toLocaleString("fr-FR")}{" "}
+                              <span style={{ color: "var(--text-default-success)" }}>
+                                ({etape.tauxConversion.toLocaleString("fr-FR")} %)
+                              </span>
+                            </>
+                          )}
+                        </td>
+                        <td className="fr-text--sm" style={{ textAlign: "right" }}>
+                          {isDerniereEtape ? (
+                            "—"
+                          ) : (
+                            <>
+                              {etape.abandons.toLocaleString("fr-FR")}{" "}
+                              <span style={{ color: "var(--text-default-error)" }}>
+                                ({etape.tauxAbandon.toLocaleString("fr-FR")} %)
+                              </span>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
