@@ -54,7 +54,7 @@ export function AdminNavigation() {
             {visibleTabs.map((tab) => (
               <li key={tab.id} className="fr-nav__item">
                 <Link href={tab.href} className="fr-nav__link" aria-current={activeTab === tab.id ? "page" : undefined}>
-                  <span className={`${tab.icon} fr-mr-1v`} aria-hidden="true" />
+                  <span className={`${tab.icon} fr-icon--sm fr-mr-1v`} aria-hidden="true" />
                   {tab.label}
                 </Link>
               </li>
