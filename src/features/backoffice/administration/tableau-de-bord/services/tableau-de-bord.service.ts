@@ -845,8 +845,9 @@ export async function getTableauDeBordStats(
   }
 
   const globalStart = performance.now();
+  const matomoFallback = { eligible: 0, nonEligible: 0, total: 0 } as SimulationsMatomoResult;
 
-  // Stats de la periode courante + alertes + details archivees/ineligibles en parallele
+  // Toutes les requetes en un seul Promise.all (BDD + Matomo current + prev en parallele)
   const [
     simulations,
     eligibiliteBDD,
@@ -861,7 +862,17 @@ export async function getTableauDeBordStats(
     topDepartements,
     topCommunes,
     simulationsMatomo,
+    // Periode precedente (BDD)
+    prevSimulations,
+    prevEligibiliteBDD,
+    prevComptes,
+    prevDemandesAmo,
+    prevDossiersDN,
+    prevArchivees,
+    // Periode precedente (Matomo)
+    prevSimulationsMatomo,
   ] = await Promise.all([
+    // --- Periode courante ---
     timed("countSimulations", countSimulations(debut, fin, codeDepartement)),
     timed("countSimulationsParEligibilite", countSimulationsParEligibilite(debut, fin, codeDepartement)),
     timed("countComptesCrees", countComptesCrees(debut, fin, codeDepartement)),
@@ -874,27 +885,48 @@ export async function getTableauDeBordStats(
     timed("getDemandesIneligiblesDetail", getDemandesIneligiblesDetail(debut, fin, previousRange, codeDepartement)),
     timed("getTopDepartementsStats", getTopDepartementsStats(debut, fin)),
     timed("getTopCommunesStats", getTopCommunesStats(debut, fin, codeDepartement)),
-    timed(
-      "getSimulationsMatomo",
-      getSimulationsMatomo(debut, fin, codeDepartement).catch((err) => {
-        console.error("[TableauDeBord] Erreur Matomo simulations:", err);
-        return { eligible: 0, nonEligible: 0, total: 0 } as SimulationsMatomoResult;
-      })
-    ),
+    timed("getSimulationsMatomo", getSimulationsMatomo(debut, fin, codeDepartement).catch((err) => {
+      console.error("[TableauDeBord] Erreur Matomo simulations:", err);
+      return matomoFallback;
+    })),
+    // --- Periode precedente (BDD) ---
+    ...(previousRange
+      ? [
+          timed("prev:countSimulations", countSimulations(previousRange.debut, previousRange.fin, codeDepartement)),
+          timed("prev:countSimulationsParEligibilite", countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement)),
+          timed("prev:countComptesCrees", countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement)),
+          timed("prev:countDemandesAmo", countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement)),
+          timed("prev:countDossiersDN", countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement)),
+          timed("prev:countDemandesArchivees", countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement)),
+        ]
+      : [
+          Promise.resolve(0),
+          Promise.resolve({ eligibles: 0, nonEligibles: 0 }),
+          Promise.resolve(0),
+          Promise.resolve(0),
+          Promise.resolve(0),
+          Promise.resolve(0),
+        ]),
+    // Matomo periode precedente
+    ...(previousRange
+      ? [
+          timed("prev:getSimulationsMatomo", getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement).catch(() => matomoFallback)),
+        ]
+      : [Promise.resolve(matomoFallback)]),
   ]);
 
-  console.log(`[TableauDeBord] Periode courante (total): ${Math.round(performance.now() - globalStart)}ms`);
+  console.log(`[TableauDeBord] Total (tout en parallele): ${Math.round(performance.now() - globalStart)}ms`);
 
   // Utiliser Matomo si disponible, sinon fallback BDD
-  const matomoDisponible = simulationsMatomo.total > 0;
-  const eligibles = matomoDisponible ? simulationsMatomo.eligible : eligibiliteBDD.eligibles;
-  const nonEligibles = matomoDisponible ? simulationsMatomo.nonEligible : eligibiliteBDD.nonEligibles;
-  const totalSimulations = matomoDisponible ? simulationsMatomo.total : simulations;
+  const matomoDisponible = (simulationsMatomo as SimulationsMatomoResult).total > 0;
+  const eligibles = matomoDisponible ? (simulationsMatomo as SimulationsMatomoResult).eligible : (eligibiliteBDD as { eligibles: number; nonEligibles: number }).eligibles;
+  const nonEligibles = matomoDisponible ? (simulationsMatomo as SimulationsMatomoResult).nonEligible : (eligibiliteBDD as { eligibles: number; nonEligibles: number }).nonEligibles;
+  const totalSimulations = matomoDisponible ? (simulationsMatomo as SimulationsMatomoResult).total : (simulations as number);
 
-  const sansInscription = Math.max(0, totalSimulations - comptes);
-  const tauxTransformation = totalSimulations > 0 ? Math.round((comptes / totalSimulations) * 1000) / 10 : 0;
+  const sansInscription = Math.max(0, totalSimulations - (comptes as number));
+  const tauxTransformation = totalSimulations > 0 ? Math.round(((comptes as number) / totalSimulations) * 1000) / 10 : 0;
 
-  // Stats de la periode precedente (pour les variations)
+  // Variations
   let variations: {
     simulations: number | null;
     eligibles: number | null;
@@ -922,51 +954,27 @@ export async function getTableauDeBordStats(
   };
 
   if (previousRange) {
-    const prevStart = performance.now();
-    const [
-      prevSimulations,
-      prevEligibiliteBDD,
-      prevComptes,
-      prevDemandesAmo,
-      prevDossiersDN,
-      prevArchivees,
-      prevSimulationsMatomo,
-    ] = await Promise.all([
-      timed("prev:countSimulations", countSimulations(previousRange.debut, previousRange.fin, codeDepartement)),
-      timed("prev:countSimulationsParEligibilite", countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement)),
-      timed("prev:countComptesCrees", countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement)),
-      timed("prev:countDemandesAmo", countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement)),
-      timed("prev:countDossiersDN", countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement)),
-      timed("prev:countDemandesArchivees", countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement)),
-      timed(
-        "prev:getSimulationsMatomo",
-        getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement).catch(
-          () => ({ eligible: 0, nonEligible: 0, total: 0 }) as SimulationsMatomoResult
-        )
-      ),
-    ]);
+    const prevMatomoResult = prevSimulationsMatomo as SimulationsMatomoResult;
+    const prevEligResult = prevEligibiliteBDD as { eligibles: number; nonEligibles: number };
+    const prevMatomoDisponible = prevMatomoResult.total > 0;
+    const prevEligibles = prevMatomoDisponible ? prevMatomoResult.eligible : prevEligResult.eligibles;
+    const prevNonEligibles = prevMatomoDisponible ? prevMatomoResult.nonEligible : prevEligResult.nonEligibles;
+    const prevTotalSimulations = prevMatomoDisponible ? prevMatomoResult.total : (prevSimulations as number);
 
-    console.log(`[TableauDeBord] Periode precedente (total): ${Math.round(performance.now() - prevStart)}ms`);
-
-    const prevMatomoDisponible = prevSimulationsMatomo.total > 0;
-    const prevEligibles = prevMatomoDisponible ? prevSimulationsMatomo.eligible : prevEligibiliteBDD.eligibles;
-    const prevNonEligibles = prevMatomoDisponible ? prevSimulationsMatomo.nonEligible : prevEligibiliteBDD.nonEligibles;
-    const prevTotalSimulations = prevMatomoDisponible ? prevSimulationsMatomo.total : prevSimulations;
-
-    const prevTaux = prevTotalSimulations > 0 ? Math.round((prevComptes / prevTotalSimulations) * 1000) / 10 : 0;
-    const prevSansInscription = Math.max(0, prevTotalSimulations - prevComptes);
+    const prevTaux = prevTotalSimulations > 0 ? Math.round(((prevComptes as number) / prevTotalSimulations) * 1000) / 10 : 0;
+    const prevSansInscription = Math.max(0, prevTotalSimulations - (prevComptes as number));
 
     variations = {
       simulations: calculerVariation(totalSimulations, prevTotalSimulations),
       eligibles: calculerVariation(eligibles, prevEligibles),
       nonEligibles: calculerVariation(nonEligibles, prevNonEligibles),
-      comptes: calculerVariation(comptes, prevComptes),
+      comptes: calculerVariation((comptes as number), (prevComptes as number)),
       tauxTransformation:
         tauxTransformation - prevTaux !== 0 ? Math.round((tauxTransformation - prevTaux) * 10) / 10 : 0,
-      demandesAmo: calculerVariation(demandesAmo, prevDemandesAmo),
+      demandesAmo: calculerVariation((demandesAmo as number), (prevDemandesAmo as number)),
       reponsesAttente: null, // Pas de variation pour un snapshot
-      dossiersDN: calculerVariation(dossiersDN, prevDossiersDN),
-      archivees: calculerVariation(archivees, prevArchivees),
+      dossiersDN: calculerVariation((dossiersDN as number), (prevDossiersDN as number)),
+      archivees: calculerVariation((archivees as number), (prevArchivees as number)),
       simulationsMatomo: calculerVariation(totalSimulations, prevTotalSimulations),
       sansInscription: calculerVariation(sansInscription, prevSansInscription),
     };
