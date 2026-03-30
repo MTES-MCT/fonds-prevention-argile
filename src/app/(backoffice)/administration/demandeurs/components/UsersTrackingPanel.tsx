@@ -26,6 +26,7 @@ import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/d
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import { getDepartementsDisponiblesAction } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
+import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 import {
   useAdministrationFiltersStore,
   selectPeriodeId,
@@ -214,6 +215,7 @@ export default function UsersTrackingPanel() {
       {/* En-tete + sous-onglets — fond blanc */}
       <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
+          <AdminBreadcrumb currentPageLabel="Demandeurs" />
           <div className="fr-grid-row fr-grid-row--middle fr-mb-6w">
             <div className="fr-col">
               <h1 className="fr-h2 fr-mb-1v">Demandeurs</h1>

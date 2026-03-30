@@ -18,6 +18,7 @@ import MotifsIneligibiliteCard from "./simulateur/MotifsIneligibiliteCard";
 import TopSimulationsCard from "./simulateur/TopSimulationsCard";
 import SiteVitrineTab from "./site-vitrine/SiteVitrineTab";
 import StatistiquesDepartement from "./StatistiquesDepartement";
+import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 import {
   useAdministrationFiltersStore,
   selectPeriodeId,
@@ -90,6 +91,7 @@ export default function AcquisitionPanel() {
       <>
         <section className="fr-container-fluid fr-py-4w">
           <div className="fr-container">
+            <AdminBreadcrumb currentPageLabel="Acquisition" />
             <h1 className="fr-h2 fr-mb-1v">Acquisition</h1>
             <p className="fr-text--lg" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
               Statistiques par departement
@@ -110,6 +112,7 @@ export default function AcquisitionPanel() {
       {/* En-tete + onglets — fond blanc */}
       <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
+          <AdminBreadcrumb currentPageLabel="Acquisition" />
           <div className="fr-grid-row fr-grid-row--middle fr-mb-6w">
             <div className="fr-col">
               <h1 className="fr-h2 fr-mb-1v">Acquisition</h1>

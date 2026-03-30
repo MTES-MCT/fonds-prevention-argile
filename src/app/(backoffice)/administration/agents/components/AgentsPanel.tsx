@@ -14,6 +14,7 @@ import {
 import { getEntreprisesAmoOptions } from "@/features/backoffice/administration/amo/actions";
 import { getAllersVersOptions } from "@/features/backoffice/administration/allers-vers/actions/allers-vers-admin.actions";
 import { UserRole } from "@/shared/domain/value-objects";
+import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 
 const MODAL_DELETE_ID = "modal-delete-agent";
 const MODAL_FORM_ID = "modal-form-agent";
@@ -207,6 +208,7 @@ export default function AgentsPanel() {
       {/* En-tete + onglets — fond blanc */}
       <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
+          <AdminBreadcrumb currentPageLabel="Gestion des agents" />
           <div className="fr-grid-row fr-grid-row--middle fr-mb-6w">
             <div className="fr-col">
               <h1 className="fr-h2 fr-mb-1v">Gestion des agents</h1>

@@ -7,6 +7,7 @@ import { AllersVersEditModal } from "./AllersVersEditModal";
 import { useHasPermission } from "@/features/auth/hooks/usePermissions";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import type { AllersVers } from "@/features/seo/allers-vers";
+import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 
 type AllersVersTab = "liste" | "import";
 
@@ -55,6 +56,7 @@ export default function AllersVersPanel() {
       {/* En-tête + onglets — fond blanc */}
       <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
+          <AdminBreadcrumb currentPageLabel="Gestion des Allers Vers" />
           <div className="fr-mb-6w">
             <h1 className="fr-h2 fr-mb-1v">Gestion des Allers Vers</h1>
             <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
