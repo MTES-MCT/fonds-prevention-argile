@@ -835,6 +835,17 @@ export async function getTableauDeBordStats(
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 
+  // Helper pour mesurer le temps d'execution de chaque requete
+  async function timed<T>(label: string, fn: Promise<T>): Promise<T> {
+    const start = performance.now();
+    const result = await fn;
+    const duration = Math.round(performance.now() - start);
+    console.log(`[TableauDeBord] ${label}: ${duration}ms`);
+    return result;
+  }
+
+  const globalStart = performance.now();
+
   // Stats de la periode courante + alertes + details archivees/ineligibles en parallele
   const [
     simulations,
@@ -851,23 +862,28 @@ export async function getTableauDeBordStats(
     topCommunes,
     simulationsMatomo,
   ] = await Promise.all([
-    countSimulations(debut, fin, codeDepartement),
-    countSimulationsParEligibilite(debut, fin, codeDepartement),
-    countComptesCrees(debut, fin, codeDepartement),
-    countDemandesAmo(debut, fin, codeDepartement),
-    countReponsesAmoEnAttente(codeDepartement),
-    countDossiersDN(debut, fin, codeDepartement),
-    countDemandesArchivees(debut, fin, codeDepartement),
-    detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement),
-    getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement),
-    getDemandesIneligiblesDetail(debut, fin, previousRange, codeDepartement),
-    getTopDepartementsStats(debut, fin),
-    getTopCommunesStats(debut, fin, codeDepartement),
-    getSimulationsMatomo(debut, fin, codeDepartement).catch((err) => {
-      console.error("[TableauDeBord] Erreur Matomo simulations:", err);
-      return { eligible: 0, nonEligible: 0, total: 0 } as SimulationsMatomoResult;
-    }),
+    timed("countSimulations", countSimulations(debut, fin, codeDepartement)),
+    timed("countSimulationsParEligibilite", countSimulationsParEligibilite(debut, fin, codeDepartement)),
+    timed("countComptesCrees", countComptesCrees(debut, fin, codeDepartement)),
+    timed("countDemandesAmo", countDemandesAmo(debut, fin, codeDepartement)),
+    timed("countReponsesAmoEnAttente", countReponsesAmoEnAttente(codeDepartement)),
+    timed("countDossiersDN", countDossiersDN(debut, fin, codeDepartement)),
+    timed("countDemandesArchivees", countDemandesArchivees(debut, fin, codeDepartement)),
+    timed("detecterMotifsEnHausse", detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement)),
+    timed("getDemandesArchiveesDetail", getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement)),
+    timed("getDemandesIneligiblesDetail", getDemandesIneligiblesDetail(debut, fin, previousRange, codeDepartement)),
+    timed("getTopDepartementsStats", getTopDepartementsStats(debut, fin)),
+    timed("getTopCommunesStats", getTopCommunesStats(debut, fin, codeDepartement)),
+    timed(
+      "getSimulationsMatomo",
+      getSimulationsMatomo(debut, fin, codeDepartement).catch((err) => {
+        console.error("[TableauDeBord] Erreur Matomo simulations:", err);
+        return { eligible: 0, nonEligible: 0, total: 0 } as SimulationsMatomoResult;
+      })
+    ),
   ]);
+
+  console.log(`[TableauDeBord] Periode courante (total): ${Math.round(performance.now() - globalStart)}ms`);
 
   // Utiliser Matomo si disponible, sinon fallback BDD
   const matomoDisponible = simulationsMatomo.total > 0;
@@ -906,6 +922,7 @@ export async function getTableauDeBordStats(
   };
 
   if (previousRange) {
+    const prevStart = performance.now();
     const [
       prevSimulations,
       prevEligibiliteBDD,
@@ -915,16 +932,21 @@ export async function getTableauDeBordStats(
       prevArchivees,
       prevSimulationsMatomo,
     ] = await Promise.all([
-      countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
-      countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement),
-      countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
-      countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
-      countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
-      countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
-      getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement).catch(
-        () => ({ eligible: 0, nonEligible: 0, total: 0 }) as SimulationsMatomoResult
+      timed("prev:countSimulations", countSimulations(previousRange.debut, previousRange.fin, codeDepartement)),
+      timed("prev:countSimulationsParEligibilite", countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement)),
+      timed("prev:countComptesCrees", countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement)),
+      timed("prev:countDemandesAmo", countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement)),
+      timed("prev:countDossiersDN", countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement)),
+      timed("prev:countDemandesArchivees", countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement)),
+      timed(
+        "prev:getSimulationsMatomo",
+        getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement).catch(
+          () => ({ eligible: 0, nonEligible: 0, total: 0 }) as SimulationsMatomoResult
+        )
       ),
     ]);
+
+    console.log(`[TableauDeBord] Periode precedente (total): ${Math.round(performance.now() - prevStart)}ms`);
 
     const prevMatomoDisponible = prevSimulationsMatomo.total > 0;
     const prevEligibles = prevMatomoDisponible ? prevSimulationsMatomo.eligible : prevEligibiliteBDD.eligibles;
