@@ -76,6 +76,7 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
             label="Taux de rebond"
             variation={stats?.variationTauxRebond ?? null}
             variationType="points"
+            invertColors
             loading={loading}
             compact
           />

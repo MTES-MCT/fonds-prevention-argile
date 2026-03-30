@@ -5,6 +5,8 @@ interface DashboardStatCardProps {
   label: string;
   variation: number | null;
   variationType?: "percent" | "points";
+  /** Inverser les couleurs (hausse = rouge, baisse = vert). Utile pour le taux de rebond. */
+  invertColors?: boolean;
   loading?: boolean;
   compact?: boolean;
   /** Classe CSS du conteneur externe (defaut: "fr-col-12 fr-col-md-6 fr-col-lg-3") */
@@ -14,9 +16,11 @@ interface DashboardStatCardProps {
 function VariationBadge({
   variation,
   variationType = "percent",
+  invertColors = false,
 }: {
   variation: number | null;
   variationType: "percent" | "points";
+  invertColors?: boolean;
 }) {
   if (variation === null) return null;
 
@@ -32,10 +36,13 @@ function VariationBadge({
   let bgColor = "var(--background-contrast-grey)";
   let textColor = "var(--text-default-grey)";
 
-  if (isPositive) {
+  const isGood = invertColors ? isNegative : isPositive;
+  const isBad = invertColors ? isPositive : isNegative;
+
+  if (isGood) {
     bgColor = "var(--background-contrast-success)";
     textColor = "var(--text-default-success)";
-  } else if (isNegative) {
+  } else if (isBad) {
     bgColor = "var(--background-contrast-error)";
     textColor = "var(--text-default-error)";
   }
@@ -63,6 +70,7 @@ export function DashboardStatCard({
   label,
   variation,
   variationType = "percent",
+  invertColors = false,
   loading = false,
   compact = false,
   className = "fr-col-12 fr-col-md-6 fr-col-lg-3",
@@ -78,7 +86,7 @@ export function DashboardStatCard({
           width: "100%",
           height: "100%",
         }}>
-        <VariationBadge variation={variation} variationType={variationType} />
+        <VariationBadge variation={variation} variationType={variationType} invertColors={invertColors} />
         <p
           className="fr-mb-1w"
           style={{
