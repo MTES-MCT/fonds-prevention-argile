@@ -124,6 +124,9 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }
           />
         </div>
       </div>
+      <p className="fr-text--xs fr-mt-1w" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
+        Simulations : donnees Matomo (tous utilisateurs) | Comptes : donnees application
+      </p>
     </div>
   );
 }

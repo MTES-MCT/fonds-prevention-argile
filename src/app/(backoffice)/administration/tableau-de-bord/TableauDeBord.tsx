@@ -9,9 +9,13 @@ import { DemandesIneligiblesCard } from "./demandes-ineligibles/DemandesIneligib
 import { TopDepartementsCard } from "./top-departements/TopDepartementsCard";
 import {
   getTableauDeBordStatsAction,
+  getMatomoSimulationsStatsAction,
   getDepartementsDisponiblesAction,
 } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
-import type { TableauDeBordStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import type {
+  TableauDeBordStats,
+  MatomoSimulationsStats,
+} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 import {
   useAdministrationFiltersStore,
@@ -26,6 +30,7 @@ export function TableauDeBord() {
   const setCodeDepartement = useAdministrationFiltersStore((s) => s.setCodeDepartement);
   const [departements, setDepartements] = useState<DepartementDisponible[]>([]);
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
+  const [matomoSimuStats, setMatomoSimuStats] = useState<MatomoSimulationsStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +64,26 @@ export function TableauDeBord() {
   useEffect(() => {
     loadStats();
   }, [loadStats]);
+
+  // Charger les stats Matomo simulations (lent, asynchrone)
+  useEffect(() => {
+    let cancelled = false;
+    setMatomoSimuStats(null);
+
+    async function loadMatomoSimu() {
+      const result = await getMatomoSimulationsStatsAction(periodeId, codeDepartement || undefined);
+      if (!cancelled && result.success && result.data.simulationsMatomo.valeur > 0) {
+        setMatomoSimuStats(result.data);
+      }
+    }
+
+    loadMatomoSimu();
+    return () => { cancelled = true; };
+  }, [periodeId, codeDepartement]);
+
+  // Utiliser Matomo si disponible, sinon BDD
+  const simulationsValue = matomoSimuStats?.simulationsMatomo ?? stats?.simulationsLancees;
+  const tauxValue = matomoSimuStats?.tauxTransformation ?? stats?.tauxTransformation;
 
   return (
     <>
@@ -100,9 +125,9 @@ export function TableauDeBord() {
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
             <DashboardStatCard
-              value={stats?.simulationsLancees.valeur.toLocaleString("fr-FR") ?? "..."}
-              label="Simulations lancées"
-              variation={stats?.simulationsLancees.variation ?? null}
+              value={simulationsValue?.valeur.toLocaleString("fr-FR") ?? "..."}
+              label="Simulations terminees"
+              variation={simulationsValue?.variation ?? null}
               loading={loading}
               compact
             />
@@ -114,9 +139,9 @@ export function TableauDeBord() {
               compact
             />
             <DashboardStatCard
-              value={stats ? `${stats.tauxTransformation.valeur.toLocaleString("fr-FR")}%` : "..."}
+              value={tauxValue ? `${tauxValue.valeur.toLocaleString("fr-FR")}%` : "..."}
               label="Transfo. simu. → comptes créés"
-              variation={stats?.tauxTransformation.variation ?? null}
+              variation={tauxValue?.variation ?? null}
               variationType="points"
               loading={loading}
               compact
