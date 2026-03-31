@@ -60,7 +60,15 @@ export const useSimulateurStore = create<SimulateurState>()(
 
       // Revient à l'étape précédente
       goBack: () => {
-        const { editMode } = get();
+        const { editMode, simulation } = get();
+        // Diagnostic doublons Matomo — à retirer après analyse
+        console.log("[Matomo Diag]", {
+          action: "GO_BACK",
+          fromStep: simulation.currentStep,
+          historyLength: simulation.history.length,
+          editMode,
+          timestamp: Date.now(),
+        });
         set((state) => ({
           simulation: SimulationService.goBack(state.simulation, {
             preserveAnswers: editMode,
