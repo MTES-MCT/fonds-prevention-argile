@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 interface DashboardStatCardProps {
   value: string;
   label: string;
@@ -11,6 +13,8 @@ interface DashboardStatCardProps {
   compact?: boolean;
   /** Classe CSS du conteneur externe (defaut: "fr-col-12 fr-col-md-6 fr-col-lg-3") */
   className?: string;
+  /** Texte du tooltip DSFR affiche a cote du label (source des donnees) */
+  tooltip?: string;
 }
 
 function VariationBadge({
@@ -74,7 +78,10 @@ export function DashboardStatCard({
   loading = false,
   compact = false,
   className = "fr-col-12 fr-col-md-6 fr-col-lg-3",
+  tooltip,
 }: DashboardStatCardProps) {
+  const tooltipId = useId();
+
   return (
     <div className={className} style={{ display: "flex" }}>
       <div
@@ -96,7 +103,20 @@ export function DashboardStatCard({
           }}>
           {loading ? "..." : value}
         </p>
-        <p className={`fr-text-mention--grey fr-mb-0 ${compact ? "fr-text--sm" : ""}`}>{label}</p>
+        <p className={`fr-text-mention--grey fr-mb-0 ${compact ? "fr-text--sm" : ""}`}>
+          {label}
+          {tooltip && (
+            <>
+              {" "}
+              <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+                Information
+              </button>
+              <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+                {tooltip}
+              </span>
+            </>
+          )}
+        </p>
       </div>
     </div>
   );

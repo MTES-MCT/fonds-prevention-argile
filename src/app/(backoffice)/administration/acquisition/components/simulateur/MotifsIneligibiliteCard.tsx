@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import type { DemandesIneligiblesStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
 interface MotifsIneligibiliteCardProps {
@@ -12,6 +13,8 @@ interface MotifsIneligibiliteCardProps {
  * Affiche les motifs les plus frequents avec leur nombre de reponses.
  */
 export default function MotifsIneligibiliteCard({ stats, loading }: MotifsIneligibiliteCardProps) {
+  const tooltipId = useId();
+
   if (loading) {
     return (
       <div
@@ -36,7 +39,13 @@ export default function MotifsIneligibiliteCard({ stats, loading }: MotifsInelig
           border: "1px solid var(--border-default-grey)",
         }}>
         <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-          Motifs d&apos;ineligibilite
+          Motifs d&apos;inéligibilité{" "}
+          <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+            Information
+          </button>
+          <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+            Données base de données
+          </span>
         </h2>
         <p className="fr-mt-2w fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
           Aucune donnee disponible.
@@ -57,7 +66,13 @@ export default function MotifsIneligibiliteCard({ stats, loading }: MotifsInelig
       {/* Header */}
       <div className="fr-px-2w fr-pt-2w">
         <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-          Motifs d&apos;ineligibilite ({stats.total.toLocaleString("fr-FR")})
+          Motifs d&apos;inéligibilité ({stats.total.toLocaleString("fr-FR")}){" "}
+          <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+            Information
+          </button>
+          <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+            Données base de données
+          </span>
         </h2>
         <p className="fr-text--sm fr-mb-0 fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
           Les plus frequents

@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { VariationBadge } from "../shared/VariationBadge";
 import type { DemandesIneligiblesStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
@@ -9,6 +10,8 @@ interface DemandesIneligiblesCardProps {
 }
 
 export function DemandesIneligiblesCard({ stats, loading = false }: DemandesIneligiblesCardProps) {
+  const tooltipId = useId();
+
   if (loading) {
     return (
       <div
@@ -49,7 +52,13 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
               aria-hidden="true"
             />
             <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-              Demandes inéligibles ({stats.total.toLocaleString("fr-FR")})
+              Demandes inéligibles ({stats.total.toLocaleString("fr-FR")}){" "}
+              <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+                Information
+              </button>
+              <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+                Données base de données
+              </span>
             </h2>
           </div>
           <a className="fr-link fr-link--sm" href="/administration/demandeurs?tab=archivage">

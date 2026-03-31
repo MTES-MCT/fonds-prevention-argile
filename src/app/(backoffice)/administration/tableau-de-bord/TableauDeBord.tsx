@@ -130,6 +130,7 @@ export function TableauDeBord() {
               variation={simulationsValue?.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données Matomo, fallback base de données"
             />
             <DashboardStatCard
               value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -137,6 +138,7 @@ export function TableauDeBord() {
               variation={stats?.comptesCrees.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données base de données"
             />
             <DashboardStatCard
               value={tauxValue ? `${tauxValue.valeur.toLocaleString("fr-FR")}%` : "..."}
@@ -145,6 +147,7 @@ export function TableauDeBord() {
               variationType="points"
               loading={loading}
               compact
+              tooltip="Calculé : comptes créés / simulations terminées (Matomo)"
             />
             <DashboardStatCard
               value={stats?.demandesAmoEnvoyees.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -152,6 +155,7 @@ export function TableauDeBord() {
               variation={stats?.demandesAmoEnvoyees.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données base de données"
             />
           </div>
           <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
@@ -161,6 +165,7 @@ export function TableauDeBord() {
               variation={stats?.reponsesAmoEnAttente.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données base de données"
             />
             <DashboardStatCard
               value={stats?.dossiersDemarcheNumerique.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -168,6 +173,7 @@ export function TableauDeBord() {
               variation={stats?.dossiersDemarcheNumerique.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données base de données"
             />
             <DashboardStatCard
               value={stats?.demandesArchivees.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -175,6 +181,7 @@ export function TableauDeBord() {
               variation={stats?.demandesArchivees.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données base de données"
             />
           </div>
 

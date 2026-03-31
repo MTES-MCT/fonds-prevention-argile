@@ -78,7 +78,13 @@ export function DemandesArchiveesCard({
                 aria-hidden="true"
               />
               <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-                Demandes archivées ({stats.total.toLocaleString("fr-FR")})
+                Demandes archivées ({stats.total.toLocaleString("fr-FR")}){" "}
+                <button aria-describedby={`${drawerId}-tooltip`} type="button" className="fr-btn--tooltip fr-btn">
+                  Information
+                </button>
+                <span className="fr-tooltip fr-placement" id={`${drawerId}-tooltip`} role="tooltip">
+                  Données base de données
+                </span>
               </h2>
             </div>
             <a className="fr-link fr-link--sm" href="/administration/demandeurs?tab=archivage">

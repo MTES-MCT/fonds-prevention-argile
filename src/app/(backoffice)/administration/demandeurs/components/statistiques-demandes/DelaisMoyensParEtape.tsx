@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { StepperStats } from "./StepStatCard";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 
@@ -29,6 +29,7 @@ interface DelaisMoyensParEtapeProps {
 }
 
 export function DelaisMoyensParEtape({ users }: DelaisMoyensParEtapeProps) {
+  const tooltipId = useId();
   const delais = useMemo(() => {
     const delaisAmo: number[] = [];
     const delaisEligibilite: number[] = [];
@@ -88,7 +89,15 @@ export function DelaisMoyensParEtape({ users }: DelaisMoyensParEtapeProps) {
 
   return (
     <div>
-      <h3 className="fr-h6 fr-mb-2w">Délais moyens par étape</h3>
+      <h3 className="fr-h6 fr-mb-2w">
+        Délais moyens par étape{" "}
+        <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+          Information
+        </button>
+        <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+          Données base de données, calculé à partir des dates de chaque étape
+        </span>
+      </h3>
       <div
         className="fr-p-3w"
         style={{

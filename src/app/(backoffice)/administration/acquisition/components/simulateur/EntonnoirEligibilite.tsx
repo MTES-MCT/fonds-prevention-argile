@@ -44,6 +44,7 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }
             variation={simulationsTerminees?.variation ?? null}
             loading={loading}
             compact
+            tooltip="Données Matomo, fallback base de données"
           />
         </div>
 
@@ -66,6 +67,7 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }
             variation={eligibles?.variation ?? null}
             loading={loading}
             compact
+            tooltip="Données Matomo, fallback base de données"
           />
           <DashboardStatCard
             className=""
@@ -74,6 +76,7 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }
             variation={nonEligibles?.variation ?? null}
             loading={loading}
             compact
+            tooltip="Données Matomo, fallback base de données"
           />
         </div>
 
@@ -89,6 +92,7 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }
             variation={sansInscription?.variation ?? null}
             loading={loading}
             compact
+            tooltip="Données Matomo, fallback base de données"
           />
         </div>
 
@@ -105,6 +109,7 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }
             variationType="points"
             loading={loading}
             compact
+            tooltip="Données base de données"
           />
         </div>
 
@@ -121,6 +126,7 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }
             variationType="points"
             loading={loading}
             compact
+            tooltip="Calculé : comptes créés / simulations terminées (Matomo)"
           />
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { StepperStats } from "./StepStatCard";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
@@ -18,6 +18,7 @@ interface NombreDemandesParEtapeProps {
 }
 
 export function NombreDemandesParEtape({ users }: NombreDemandesParEtapeProps) {
+  const tooltipId = useId();
   const counts = useMemo(() => {
     const result = ETAPES.map((e) => ({
       ...e,
@@ -30,7 +31,15 @@ export function NombreDemandesParEtape({ users }: NombreDemandesParEtapeProps) {
 
   return (
     <div>
-      <h3 className="fr-h6 fr-mb-2w">Nombre de demandes par étape</h3>
+      <h3 className="fr-h6 fr-mb-2w">
+        Nombre de demandes par étape{" "}
+        <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+          Information
+        </button>
+        <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+          Données base de données
+        </span>
+      </h3>
       <div
         className="fr-p-3w"
         style={{

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useId, useMemo } from "react";
 import { DashboardStatCard } from "../../../tableau-de-bord/shared/DashboardStatCard";
 import { useDsfrChart } from "@/shared/hooks/useDsfrChart";
 import type { Statistiques } from "@/features/backoffice/administration/acquisition/domain/types/statistiques.types";
@@ -11,6 +11,7 @@ interface SiteVitrineTabProps {
 }
 
 export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) {
+  const tooltipGraphId = useId();
   const chartLoaded = useDsfrChart("LineChart");
 
   // Masquer la legende et les tooltips du graphique apres chargement
@@ -67,6 +68,7 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
             variation={stats?.variationVisites ?? null}
             loading={loading}
             compact
+            tooltip="Données Matomo"
           />
         </div>
         <div style={{ flex: "1 1 200px", minWidth: 0 }}>
@@ -79,6 +81,7 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
             invertColors
             loading={loading}
             compact
+            tooltip="Données Matomo"
           />
         </div>
       </div>
@@ -92,7 +95,13 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
         }}>
         <div className="fr-px-2w fr-pt-2w">
           <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-            Évolution des visites sur le site vitrine
+            Évolution des visites sur le site vitrine{" "}
+            <button aria-describedby={tooltipGraphId} type="button" className="fr-btn--tooltip fr-btn">
+              Information
+            </button>
+            <span className="fr-tooltip fr-placement" id={tooltipGraphId} role="tooltip">
+              Données Matomo
+            </span>
           </h2>
           <p className="fr-text--sm fr-mb-0 fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
             Visiteurs uniques du site vitrine, par jour

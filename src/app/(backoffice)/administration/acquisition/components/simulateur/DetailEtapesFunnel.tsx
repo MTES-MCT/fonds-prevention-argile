@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import type {
   FunnelStatistiques,
   FunnelStep,
@@ -15,6 +16,8 @@ interface DetailEtapesFunnelProps {
  * Colonnes : Raison, VU, Conv., Abandons.
  */
 export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunnelProps) {
+  const tooltipId = useId();
+
   if (loading) {
     return (
       <div
@@ -39,7 +42,13 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
           border: "1px solid var(--border-default-grey)",
         }}>
         <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-          Detail des etapes du funnel
+          Détail des étapes du funnel{" "}
+          <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+            Information
+          </button>
+          <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+            Données Matomo Funnels (7 derniers jours)
+          </span>
         </h2>
         <p className="fr-mt-2w fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
           Les donnees du funnel ne sont pas disponibles.
@@ -58,7 +67,13 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
       {/* Header */}
       <div className="fr-px-2w fr-pt-2w">
         <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-          Detail des etapes du funnel
+          Détail des étapes du funnel{" "}
+          <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+            Information
+          </button>
+          <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+            Données Matomo Funnels (7 derniers jours)
+          </span>
         </h2>
         <p className="fr-text--sm fr-mb-0 fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
           Tous utilisateurs confondus — 7 derniers jours

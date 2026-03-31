@@ -217,6 +217,7 @@ export default function AcquisitionPanel() {
                   <TopSimulationsCard
                     title="Top 5 simulations par departement"
                     columnLabel="Departements"
+                    tooltip="Données base de données"
                     rows={
                       stats?.topDepartements
                         .sort((a, b) => b.simulations - a.simulations)
@@ -233,6 +234,7 @@ export default function AcquisitionPanel() {
                   <TopSimulationsCard
                     title="Top 5 simulations par communes"
                     columnLabel="Communes"
+                    tooltip="Données base de données"
                     rows={
                       stats?.topCommunes.map((c) => ({
                         label: c.commune,

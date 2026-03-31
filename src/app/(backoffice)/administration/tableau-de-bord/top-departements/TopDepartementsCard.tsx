@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import type {
   DepartementStats,
   TopDepartementsTriColumn,
@@ -19,6 +19,7 @@ interface TopDepartementsCardProps {
 }
 
 export function TopDepartementsCard({ departements, loading = false }: TopDepartementsCardProps) {
+  const tooltipId = useId();
   const [triColonne, setTriColonne] = useState<TopDepartementsTriColumn>("transformationGlobale");
 
   const top5 = useMemo(() => {
@@ -57,7 +58,13 @@ export function TopDepartementsCard({ departements, loading = false }: TopDepart
           <div className="flex items-center gap-2">
             <span className="fr-icon-map-pin-2-line" aria-hidden="true" />
             <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-              Top 5 départements
+              Top 5 départements{" "}
+              <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+                Information
+              </button>
+              <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+                Données base de données
+              </span>
             </h2>
           </div>
           <div className="fr-select-group fr-mb-0">
