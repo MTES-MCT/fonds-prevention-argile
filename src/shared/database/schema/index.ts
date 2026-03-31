@@ -18,3 +18,4 @@ export * from "./allers-vers-departements";
 export * from "./allers-vers-epci";
 export * from "./catastrophes-naturelles";
 export * from "./prospect-qualifications";
+export * from "./rga-zones";

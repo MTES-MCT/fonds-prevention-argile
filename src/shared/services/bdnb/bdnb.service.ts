@@ -56,8 +56,11 @@ export async function getBuildingDataByRnbId(
 
   const { batiment_groupe_id } = correspondances[0];
 
-  // Étape 2 : Récupérer les données complètes du bâtiment
-  const batiments = await fetchBatimentGroupeComplet(batiment_groupe_id);
+  // Étape 2 : Récupérer les données BDNB + alea RGA 2026 en parallèle
+  const [batiments, rga2026Alea] = await Promise.all([
+    fetchBatimentGroupeComplet(batiment_groupe_id),
+    fetchRga2026Alea(coordinates.lat, coordinates.lon),
+  ]);
 
   if (batiments.length === 0) {
     throw new Error(`Aucune donnée trouvée pour le batiment_groupe_id: ${batiment_groupe_id}`);
@@ -66,7 +69,14 @@ export async function getBuildingDataByRnbId(
   const batiment = batiments[0];
 
   // Transformer en format application
-  return transformBdnbToBuilding(batiment, rnbId, coordinates);
+  const buildingData = transformBdnbToBuilding(batiment, rnbId, coordinates);
+
+  // Override alea avec les données RGA 2026 (PostGIS) si disponibles
+  if (rga2026Alea !== null) {
+    buildingData.aleaArgiles = rga2026Alea;
+  }
+
+  return buildingData;
 }
 
 /**
@@ -110,6 +120,21 @@ function transformBdnbToBuilding(
     etiquetteGes: batiment.dpe_etiquette_ges ?? null,
     raw: batiment,
   };
+}
+
+/**
+ * Appel client-side à l'API PostGIS pour obtenir l'aléa RGA 2026.
+ * Retourne null si l'API n'est pas disponible ou en cas d'erreur (fallback BDNB).
+ */
+async function fetchRga2026Alea(lat: number, lon: number): Promise<BdnbAleaArgile> {
+  try {
+    const response = await fetch(`/api/rga/alea?lat=${lat}&lon=${lon}`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.alea ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
