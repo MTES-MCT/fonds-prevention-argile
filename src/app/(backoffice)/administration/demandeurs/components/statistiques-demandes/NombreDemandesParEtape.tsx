@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { StepStatCard } from "./StepStatCard";
+import { useId, useMemo } from "react";
+import { StepperStats } from "./StepStatCard";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 
@@ -18,6 +18,7 @@ interface NombreDemandesParEtapeProps {
 }
 
 export function NombreDemandesParEtape({ users }: NombreDemandesParEtapeProps) {
+  const tooltipId = useId();
   const counts = useMemo(() => {
     const result = ETAPES.map((e) => ({
       ...e,
@@ -30,24 +31,29 @@ export function NombreDemandesParEtape({ users }: NombreDemandesParEtapeProps) {
 
   return (
     <div>
-      <h3 className="fr-h6 fr-mb-2w">Nombre de demandes par étape</h3>
+      <h3 className="fr-h6 fr-mb-2w">
+        Nombre de demandes par étape{" "}
+        <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+          Information
+        </button>
+        <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+          Données base de données
+        </span>
+      </h3>
       <div
         className="fr-p-3w"
         style={{
           backgroundColor: "var(--background-default-grey)",
           border: "1px solid var(--border-default-grey)",
-          display: "flex",
-          gap: "1.5rem",
         }}>
-        {counts.map((item) => (
-          <StepStatCard
-            key={item.step}
-            value={item.count.toLocaleString("fr-FR")}
-            label={item.label}
-            fillPercent={(item.count / max) * 100}
-            barColor={item.color}
-          />
-        ))}
+        <StepperStats
+          items={counts.map((item) => ({
+            label: item.label,
+            value: item.count.toLocaleString("fr-FR"),
+            fillPercent: (item.count / max) * 100,
+            color: item.color,
+          }))}
+        />
       </div>
     </div>
   );

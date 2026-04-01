@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { VariationBadge } from "../shared/VariationBadge";
 import type { DemandesIneligiblesStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
@@ -9,6 +10,8 @@ interface DemandesIneligiblesCardProps {
 }
 
 export function DemandesIneligiblesCard({ stats, loading = false }: DemandesIneligiblesCardProps) {
+  const tooltipId = useId();
+
   if (loading) {
     return (
       <div
@@ -28,11 +31,9 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
     return null;
   }
 
-  // Si des motifs "autres" existent, on limite le tableau à 4 lignes + 1 ligne "Autre"
-  const hasAutres = stats.autresMotifs.length > 0;
-  const motifsAffiches = hasAutres ? stats.motifs.slice(0, 4) : stats.motifs;
-  const motifsRestants = hasAutres ? [...stats.motifs.slice(4), ...stats.autresMotifs] : [];
-  const autresCount = motifsRestants.reduce((acc, m) => acc + m.count, 0);
+  // Afficher tous les motifs du top 5, ligne "Autre" uniquement pour les motifs hors top 5
+  const motifsAffiches = stats.motifs;
+  const autresCount = stats.autresMotifs.reduce((acc, m) => acc + m.count, 0);
   const autresPourcentage = stats.total > 0 ? Math.round((autresCount / stats.total) * 100) : 0;
 
   return (
@@ -51,7 +52,13 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
               aria-hidden="true"
             />
             <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-              Demandes inéligibles ({stats.total.toLocaleString("fr-FR")})
+              Demandes inéligibles ({stats.total.toLocaleString("fr-FR")}){" "}
+              <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+                Information
+              </button>
+              <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+                Données base de données
+              </span>
             </h2>
           </div>
           <a className="fr-link fr-link--sm" href="/administration/demandeurs?tab=archivage">
@@ -75,30 +82,26 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
         <div className="fr-table__wrapper" style={{ overflow: "hidden" }}>
           <div className="fr-table__container" style={{ overflow: "hidden" }}>
             <div className="fr-table__content">
-              <table>
+              <table style={{ tableLayout: "fixed", width: "100%" }}>
                 <caption className="sr-only">Détail des raisons d&apos;inéligibilité</caption>
                 <thead>
                   <tr>
                     <th scope="col">Raison</th>
-                    <th scope="col" style={{ textAlign: "right" }}>
+                    <th scope="col" style={{ textAlign: "right", whiteSpace: "nowrap", width: "6rem" }}>
                       Nb rép.
                     </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
+                    <th scope="col" style={{ textAlign: "right", whiteSpace: "nowrap", width: "5rem" }}>
                       Var.
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {motifsAffiches.map((motif) => (
-                    <tr
-                      key={motif.raison}
-                      style={{
-                        borderLeft:
-                          motif.variation !== null && motif.variation > 0
-                            ? "4px solid var(--border-plain-warning)"
-                            : "4px solid transparent",
-                      }}>
-                      <td className="fr-text--sm" style={{ color: "var(--text-label-warning)" }}>
+                    <tr key={motif.raison}>
+                      <td
+                        className="fr-text--sm"
+                        title={motif.label}
+                        style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 0 }}>
                         {motif.label}
                       </td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
@@ -112,7 +115,7 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
 
                   {/* Ligne "Autre" pour les motifs restants */}
                   {autresCount > 0 && (
-                    <tr style={{ borderLeft: "4px solid transparent" }}>
+                    <tr>
                       <td className="fr-text--sm">Autre</td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
                         <strong>{autresCount.toLocaleString("fr-FR")}</strong> ({autresPourcentage}%)

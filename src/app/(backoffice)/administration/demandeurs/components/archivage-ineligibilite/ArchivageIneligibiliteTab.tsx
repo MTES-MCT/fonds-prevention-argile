@@ -43,13 +43,9 @@ export function ArchivageIneligibiliteTab({ periodeId, codeDepartement }: Archiv
   }
 
   return (
-    <div className="fr-grid-row fr-grid-row--gutters">
-      <div className="fr-col-12">
-        {archiveesStats && <DemandesArchiveesFullTable stats={archiveesStats} />}
-      </div>
-      <div className="fr-col-12">
-        {ineligiblesStats && <DemandesIneligiblesFullTable stats={ineligiblesStats} />}
-      </div>
+    <div className="fr-grid-row fr-grid-row--gutters" style={{ maxWidth: "800px" }}>
+      <div className="fr-col-12">{archiveesStats && <DemandesArchiveesFullTable stats={archiveesStats} />}</div>
+      <div className="fr-col-12">{ineligiblesStats && <DemandesIneligiblesFullTable stats={ineligiblesStats} />}</div>
     </div>
   );
 }

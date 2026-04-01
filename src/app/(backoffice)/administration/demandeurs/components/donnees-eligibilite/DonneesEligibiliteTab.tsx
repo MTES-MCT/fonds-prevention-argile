@@ -68,9 +68,7 @@ export function DonneesEligibiliteTab({ users, periodeId, codeDepartement }: Don
 
   return (
     <div>
-      <h2 className="fr-h4 fr-mb-4w">
-        Données des {filteredUsers.length.toLocaleString("fr-FR")} demandeurs
-      </h2>
+      <h2 className="fr-h4 fr-mb-4w">Données des {filteredUsers.length.toLocaleString("fr-FR")} demandeurs</h2>
 
       <MicroFissuresSection stats={stats} loading={loading} />
       <IndemnisationSection stats={stats} loading={loading} />

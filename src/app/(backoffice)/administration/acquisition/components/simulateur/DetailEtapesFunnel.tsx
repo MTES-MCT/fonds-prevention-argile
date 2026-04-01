@@ -1,6 +1,10 @@
 "use client";
 
-import type { FunnelStatistiques, FunnelStep } from "@/features/backoffice/administration/acquisition/domain/types/matomo-funnels.types";
+import { useId } from "react";
+import type {
+  FunnelStatistiques,
+  FunnelStep,
+} from "@/features/backoffice/administration/acquisition/domain/types/matomo-funnels.types";
 
 interface DetailEtapesFunnelProps {
   funnel: FunnelStatistiques | null;
@@ -12,6 +16,8 @@ interface DetailEtapesFunnelProps {
  * Colonnes : Raison, VU, Conv., Abandons.
  */
 export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunnelProps) {
+  const tooltipId = useId();
+
   if (loading) {
     return (
       <div
@@ -36,7 +42,13 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
           border: "1px solid var(--border-default-grey)",
         }}>
         <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-          Detail des etapes du funnel
+          Détail des étapes du funnel{" "}
+          <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+            Information
+          </button>
+          <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+            Données Matomo Funnels (7 derniers jours)
+          </span>
         </h2>
         <p className="fr-mt-2w fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
           Les donnees du funnel ne sont pas disponibles.
@@ -55,10 +67,16 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
       {/* Header */}
       <div className="fr-px-2w fr-pt-2w">
         <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-          Detail des etapes du funnel
+          Détail des étapes du funnel{" "}
+          <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+            Information
+          </button>
+          <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+            Données Matomo Funnels (7 derniers jours)
+          </span>
         </h2>
         <p className="fr-text--sm fr-mb-0 fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
-          Tous utilisateurs confondus
+          Tous utilisateurs confondus — 7 derniers jours
         </p>
       </div>
 
@@ -84,28 +102,43 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
                   </tr>
                 </thead>
                 <tbody>
-                  {funnel.etapes.map((etape: FunnelStep) => (
-                    <tr key={etape.position}>
-                      <td className="fr-text--sm">
-                        <strong>{etape.position}.</strong> {etape.nom}
-                      </td>
-                      <td className="fr-text--sm" style={{ textAlign: "right" }}>
-                        {etape.visiteurs.toLocaleString("fr-FR")}
-                      </td>
-                      <td className="fr-text--sm" style={{ textAlign: "right" }}>
-                        {etape.conversions.toLocaleString("fr-FR")}{" "}
-                        <span style={{ color: "var(--text-default-success)" }}>
-                          ({etape.tauxConversion.toLocaleString("fr-FR")} %)
-                        </span>
-                      </td>
-                      <td className="fr-text--sm" style={{ textAlign: "right" }}>
-                        {etape.abandons.toLocaleString("fr-FR")}{" "}
-                        <span style={{ color: "var(--text-default-error)" }}>
-                          ({etape.tauxAbandon.toLocaleString("fr-FR")} %)
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {funnel.etapes.map((etape: FunnelStep, index: number) => {
+                    const isDerniereEtape = index >= funnel.etapes.length - 2;
+                    return (
+                      <tr key={etape.position}>
+                        <td className="fr-text--sm">
+                          <strong>{etape.position}.</strong> {etape.nom}
+                        </td>
+                        <td className="fr-text--sm" style={{ textAlign: "right" }}>
+                          {etape.visiteurs.toLocaleString("fr-FR")}
+                        </td>
+                        <td className="fr-text--sm" style={{ textAlign: "right" }}>
+                          {isDerniereEtape ? (
+                            "—"
+                          ) : (
+                            <>
+                              {etape.conversions.toLocaleString("fr-FR")}{" "}
+                              <span style={{ color: "var(--text-default-success)" }}>
+                                ({etape.tauxConversion.toLocaleString("fr-FR")} %)
+                              </span>
+                            </>
+                          )}
+                        </td>
+                        <td className="fr-text--sm" style={{ textAlign: "right" }}>
+                          {isDerniereEtape ? (
+                            "—"
+                          ) : (
+                            <>
+                              {etape.abandons.toLocaleString("fr-FR")}{" "}
+                              <span style={{ color: "var(--text-default-error)" }}>
+                                ({etape.tauxAbandon.toLocaleString("fr-FR")} %)
+                              </span>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

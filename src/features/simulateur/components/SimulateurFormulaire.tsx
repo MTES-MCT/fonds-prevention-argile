@@ -58,8 +58,20 @@ export function SimulateurFormulaire() {
 
   // Tracking Matomo à chaque changement d'étape
   useEffect(() => {
+    // Diagnostic doublons Matomo — à retirer après analyse
+    const skipped = previousStepRef.current === currentStep;
+    console.log("[Matomo Diag]", {
+      action: skipped ? "SKIPPED" : "TRACK",
+      currentStep,
+      previousStep: previousStepRef.current,
+      isEligible,
+      answersKeys: Object.keys(answers),
+      trigger: "useEffect",
+      timestamp: Date.now(),
+    });
+
     // Éviter le double tracking au premier render
-    if (previousStepRef.current === currentStep) return;
+    if (skipped) return;
     previousStepRef.current = currentStep;
 
     // Construire la custom dimension département si disponible
@@ -87,6 +99,12 @@ export function SimulateurFormulaire() {
 
   // Wrapper pour start avec tracking
   const handleStart = () => {
+    // Diagnostic doublons Matomo — à retirer après analyse
+    console.log("[Matomo Diag]", {
+      action: "START",
+      currentStep,
+      timestamp: Date.now(),
+    });
     trackEvent(MATOMO_EVENTS.SIMULATEUR_START);
     start();
   };

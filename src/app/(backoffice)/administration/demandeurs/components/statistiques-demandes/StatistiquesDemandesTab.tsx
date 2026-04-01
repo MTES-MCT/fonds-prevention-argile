@@ -71,9 +71,7 @@ export function StatistiquesDemandesTab({ users, periodeId, codeDepartement }: S
 
   return (
     <div>
-      <h2 className="fr-h4 fr-mb-4w">
-        Données des {filteredUsers.length.toLocaleString("fr-FR")} demandeurs
-      </h2>
+      <h2 className="fr-h4 fr-mb-4w">Données des {filteredUsers.length.toLocaleString("fr-FR")} demandeurs</h2>
 
       {/* Nombre de demandes par etape + Delais moyens */}
       <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">

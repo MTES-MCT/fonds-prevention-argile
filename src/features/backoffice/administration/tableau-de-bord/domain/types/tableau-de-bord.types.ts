@@ -91,6 +91,10 @@ export interface TableauDeBordStats {
   simulationsLancees: StatAvecVariation;
   simulationsEligibles: StatAvecVariation;
   simulationsNonEligibles: StatAvecVariation;
+  /** Total simulations terminees (Matomo, inclut celles sans inscription FC) */
+  simulationsMatomo: StatAvecVariation;
+  /** Simulations terminees sans inscription FC = simulationsMatomo - comptesCrees */
+  simulationsSansInscription: StatAvecVariation;
   comptesCrees: StatAvecVariation;
   tauxTransformation: StatAvecVariation;
   demandesAmoEnvoyees: StatAvecVariation;
@@ -102,6 +106,15 @@ export interface TableauDeBordStats {
   demandesIneligiblesDetail: DemandesIneligiblesStats;
   topDepartements: DepartementStats[];
   topCommunes: CommuneSimulationsStats[];
+}
+
+/** Stats Matomo chargees de facon asynchrone (separement des stats BDD) */
+export interface MatomoSimulationsStats {
+  simulationsMatomo: StatAvecVariation;
+  simulationsEligibles: StatAvecVariation;
+  simulationsNonEligibles: StatAvecVariation;
+  simulationsSansInscription: StatAvecVariation;
+  tauxTransformation: StatAvecVariation;
 }
 
 export type PeriodeId = "7j" | "30j" | "90j" | "6m" | "12m" | "tout";

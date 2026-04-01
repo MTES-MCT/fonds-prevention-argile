@@ -135,10 +135,7 @@ interface MatomoVisitsSummaryResponse {
  * @param period - Periode : 'range', 'day', etc.
  * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
  */
-export async function fetchMatomoBounceRate(
-  period: string = "range",
-  date: string = "last30"
-): Promise<number> {
+export async function fetchMatomoBounceRate(period: string = "range", date: string = "last30"): Promise<number> {
   const config = getMatomoConfig();
 
   const data = await fetchMatomoApi<MatomoVisitsSummaryResponse>(
@@ -191,6 +188,38 @@ export async function fetchMatomoFunnel(
     },
     config.apiUrl
   );
+}
+
+/**
+ * Récupère le nombre d'events Matomo par action (tous départements confondus).
+ * Retourne une Map<eventName, count> en un seul appel API.
+ *
+ * @param options - Période et date optionnelles
+ */
+export async function fetchMatomoEvents(options?: { period?: string; date?: string }): Promise<Map<string, number>> {
+  const config = getMatomoConfig();
+
+  const data = await fetchMatomoApi<MatomoEventActionResponse[]>(
+    {
+      module: "API",
+      method: "Events.getAction",
+      idSite: config.siteId,
+      period: options?.period ?? "range",
+      date: options?.date ?? "2025-01-01,today",
+      format: "JSON",
+      token_auth: config.apiToken,
+      flat: "1",
+    },
+    config.apiUrl
+  );
+
+  const eventCounts = new Map<string, number>();
+  if (Array.isArray(data)) {
+    for (const row of data) {
+      eventCounts.set(row.label, row.nb_events);
+    }
+  }
+  return eventCounts;
 }
 
 /**

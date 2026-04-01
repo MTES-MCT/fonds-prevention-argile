@@ -21,7 +21,10 @@ import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-
  *   - noAccess: Si true, retourne des stats à zéro
  * @param periodeId - Période pour les stats Matomo (visites + taux de rebond)
  */
-export async function getStatistiques(scopeFilters?: ScopeFilters | null, periodeId?: PeriodeId): Promise<Statistiques> {
+export async function getStatistiques(
+  scopeFilters?: ScopeFilters | null,
+  periodeId?: PeriodeId
+): Promise<Statistiques> {
   // Si noAccess, retourner des stats à zéro
   if (scopeFilters?.noAccess) {
     return getEmptyStatistiques();

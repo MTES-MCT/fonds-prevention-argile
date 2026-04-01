@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { StepStatCard } from "./StepStatCard";
+import { useId, useMemo } from "react";
+import { StepperStats } from "./StepStatCard";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 
 /** Calcule la différence en jours entre deux dates */
@@ -29,6 +29,7 @@ interface DelaisMoyensParEtapeProps {
 }
 
 export function DelaisMoyensParEtape({ users }: DelaisMoyensParEtapeProps) {
+  const tooltipId = useId();
   const delais = useMemo(() => {
     const delaisAmo: number[] = [];
     const delaisEligibilite: number[] = [];
@@ -88,25 +89,30 @@ export function DelaisMoyensParEtape({ users }: DelaisMoyensParEtapeProps) {
 
   return (
     <div>
-      <h3 className="fr-h6 fr-mb-2w">Délais moyens par étape</h3>
+      <h3 className="fr-h6 fr-mb-2w">
+        Délais moyens par étape{" "}
+        <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+          Information
+        </button>
+        <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+          Données base de données, calculé à partir des dates de chaque étape
+        </span>
+      </h3>
       <div
         className="fr-p-3w"
         style={{
           backgroundColor: "var(--background-default-grey)",
           border: "1px solid var(--border-default-grey)",
-          display: "flex",
-          gap: "1.5rem",
         }}>
-        {delais.map((item, index) => (
-          <StepStatCard
-            key={item.label}
-            value={item.jours.toLocaleString("fr-FR")}
-            suffix="j"
-            label={item.label}
-            fillPercent={(item.jours / max) * 100}
-            barColor={BAR_COLORS[index]}
-          />
-        ))}
+        <StepperStats
+          items={delais.map((item, index) => ({
+            label: item.label,
+            value: item.jours.toLocaleString("fr-FR"),
+            suffix: "j",
+            fillPercent: (item.jours / max) * 100,
+            color: BAR_COLORS[index],
+          }))}
+        />
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 interface TopSimulationsRow {
   label: string;
   simulations: number;
@@ -10,12 +12,15 @@ interface TopSimulationsCardProps {
   columnLabel: string;
   rows: TopSimulationsRow[];
   loading: boolean;
+  tooltip?: string;
 }
 
 /**
  * Carte generique "Top 5 simulations par X" — utilisee pour departements et communes.
  */
-export default function TopSimulationsCard({ title, columnLabel, rows, loading }: TopSimulationsCardProps) {
+export default function TopSimulationsCard({ title, columnLabel, rows, loading, tooltip }: TopSimulationsCardProps) {
+  const tooltipId = useId();
+
   if (loading) {
     return (
       <div
@@ -41,6 +46,17 @@ export default function TopSimulationsCard({ title, columnLabel, rows, loading }
         }}>
         <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
           {title}
+          {tooltip && (
+            <>
+              {" "}
+              <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+                Information
+              </button>
+              <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+                {tooltip}
+              </span>
+            </>
+          )}
         </h2>
         <p className="fr-mt-2w fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
           Aucune donnee disponible.
@@ -59,6 +75,17 @@ export default function TopSimulationsCard({ title, columnLabel, rows, loading }
       <div className="fr-px-2w fr-pt-2w">
         <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
           {title}
+          {tooltip && (
+            <>
+              {" "}
+              <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+                Information
+              </button>
+              <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+                {tooltip}
+              </span>
+            </>
+          )}
         </h2>
       </div>
 

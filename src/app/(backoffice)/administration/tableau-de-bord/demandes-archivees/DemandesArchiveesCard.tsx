@@ -24,7 +24,8 @@ export function DemandesArchiveesCard({
   codeDepartement,
   departements,
 }: DemandesArchiveesCardProps) {
-  const drawerId = `drawer-autres-motifs-${useId()}`;
+  const rawId = useId();
+  const drawerId = `drawer-autres-motifs-${rawId.replace(/:/g, "-")}`;
 
   function openDrawer() {
     const dialog = document.getElementById(drawerId);
@@ -53,13 +54,11 @@ export function DemandesArchiveesCard({
     return null;
   }
 
-  // Limiter à 4 motifs nommés + 1 ligne "Autre" = 5 lignes max
-  // On exclut aussi les motifs nommés "Autre" pour les fusionner dans la ligne récap
+  // Afficher tous les motifs du top 5 (sauf "Autre" fusionne dans la ligne recap)
   const motifsNommes = stats.motifs.filter((m) => m.raison !== "Autre");
   const autresDansTop = stats.motifs.filter((m) => m.raison === "Autre");
-  const motifsAffiches = motifsNommes.slice(0, 4);
-  const motifsRestants = [...motifsNommes.slice(4), ...autresDansTop, ...stats.autresMotifs];
-  const autresCount = motifsRestants.reduce((acc, m) => acc + m.count, 0);
+  const motifsAffiches = motifsNommes;
+  const autresCount = [...autresDansTop, ...stats.autresMotifs].reduce((acc, m) => acc + m.count, 0);
   const autresPourcentage = stats.total > 0 ? Math.round((autresCount / stats.total) * 100) : 0;
 
   return (
@@ -79,7 +78,13 @@ export function DemandesArchiveesCard({
                 aria-hidden="true"
               />
               <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-                Demandes archivées ({stats.total.toLocaleString("fr-FR")})
+                Demandes archivées ({stats.total.toLocaleString("fr-FR")}){" "}
+                <button aria-describedby={`${drawerId}-tooltip`} type="button" className="fr-btn--tooltip fr-btn">
+                  Information
+                </button>
+                <span className="fr-tooltip fr-placement" id={`${drawerId}-tooltip`} role="tooltip">
+                  Données base de données
+                </span>
               </h2>
             </div>
             <a className="fr-link fr-link--sm" href="/administration/demandeurs?tab=archivage">
@@ -97,30 +102,28 @@ export function DemandesArchiveesCard({
           <div className="fr-table__wrapper" style={{ overflow: "hidden" }}>
             <div className="fr-table__container" style={{ overflow: "hidden" }}>
               <div className="fr-table__content">
-                <table>
+                <table style={{ tableLayout: "fixed", width: "100%" }}>
                   <caption className="sr-only">Motifs d&apos;archivage les plus fréquents</caption>
                   <thead>
                     <tr>
                       <th scope="col">Raison</th>
-                      <th scope="col" style={{ textAlign: "right" }}>
+                      <th scope="col" style={{ textAlign: "right", whiteSpace: "nowrap", width: "6rem" }}>
                         Nb rép.
                       </th>
-                      <th scope="col" style={{ textAlign: "right" }}>
+                      <th scope="col" style={{ textAlign: "right", whiteSpace: "nowrap", width: "5rem" }}>
                         Var.
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {motifsAffiches.map((motif) => (
-                      <tr
-                        key={motif.raison}
-                        style={{
-                          borderLeft:
-                            motif.variation !== null && motif.variation > 0
-                              ? "4px solid var(--border-plain-warning)"
-                              : "4px solid transparent",
-                        }}>
-                        <td className="fr-text--sm">{motif.raison}</td>
+                      <tr key={motif.raison}>
+                        <td
+                          className="fr-text--sm"
+                          title={motif.raison}
+                          style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 0 }}>
+                          {motif.raison}
+                        </td>
                         <td className="fr-text--sm" style={{ textAlign: "right" }}>
                           <strong>{motif.count.toLocaleString("fr-FR")}</strong> ({motif.pourcentage}%)
                         </td>
@@ -132,12 +135,12 @@ export function DemandesArchiveesCard({
 
                     {/* Ligne "Autre" avec lien vers le drawer */}
                     {autresCount > 0 && (
-                      <tr style={{ borderLeft: "4px solid transparent" }}>
+                      <tr>
                         <td className="fr-text--sm">
                           Autre{" "}
-                          <a className="fr-link fr-text--sm" href="#" onClick={openDrawer}>
+                          <button type="button" className="fr-link fr-text--sm" onClick={openDrawer}>
                             Voir le détail
-                          </a>
+                          </button>
                         </td>
                         <td className="fr-text--sm" style={{ textAlign: "right" }}>
                           <strong>{autresCount.toLocaleString("fr-FR")}</strong> ({autresPourcentage}%)
@@ -154,7 +157,7 @@ export function DemandesArchiveesCard({
       </div>
 
       {/* Drawer des autres motifs */}
-      {stats.autresMotifs.length > 0 && (
+      {autresCount > 0 && (
         <AutresMotifsDrawer
           drawerId={drawerId}
           periodeId={periodeId}

@@ -6,12 +6,12 @@ import { UserRole } from "@/shared/domain/value-objects";
 import { FiltresTableauDeBord } from "../../tableau-de-bord/FiltresTableauDeBord";
 import {
   getTableauDeBordStatsAction,
+  getMatomoSimulationsStatsAction,
   getDepartementsDisponiblesAction,
 } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
-import { DEFAULT_PERIODE } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type {
-  PeriodeId,
   TableauDeBordStats,
+  MatomoSimulationsStats,
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 import { getStatistiquesAction } from "@/features/backoffice/administration/acquisition/actions/get-statistiques.action";
@@ -22,15 +22,24 @@ import MotifsIneligibiliteCard from "./simulateur/MotifsIneligibiliteCard";
 import TopSimulationsCard from "./simulateur/TopSimulationsCard";
 import SiteVitrineTab from "./site-vitrine/SiteVitrineTab";
 import StatistiquesDepartement from "./StatistiquesDepartement";
+import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
+import {
+  useAdministrationFiltersStore,
+  selectPeriodeId,
+  selectCodeDepartement,
+} from "@/features/backoffice/administration/stores/administration-filters.store";
 
 export default function AcquisitionPanel() {
   const { user } = useAuth();
   const isAnalyseDdt = user?.role === UserRole.ANALYSTE_DDT;
 
-  const [periodeId, setPeriodeId] = useState<PeriodeId>(DEFAULT_PERIODE);
-  const [codeDepartement, setCodeDepartement] = useState<string>("");
+  const periodeId = useAdministrationFiltersStore(selectPeriodeId);
+  const codeDepartement = useAdministrationFiltersStore(selectCodeDepartement);
+  const setPeriodeId = useAdministrationFiltersStore((s) => s.setPeriodeId);
+  const setCodeDepartement = useAdministrationFiltersStore((s) => s.setCodeDepartement);
   const [departements, setDepartements] = useState<DepartementDisponible[]>([]);
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
+  const [matomoSimuStats, setMatomoSimuStats] = useState<MatomoSimulationsStats | null>(null);
   const [matomoStats, setMatomoStats] = useState<Statistiques | null>(null);
   const [loading, setLoading] = useState(true);
   const [funnelLoading, setFunnelLoading] = useState(true);
@@ -61,7 +70,7 @@ export default function AcquisitionPanel() {
     loadMatomoStats();
   }, [periodeId]);
 
-  // Charger les stats quand les filtres changent
+  // Charger les stats BDD (rapide) quand les filtres changent
   const loadStats = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -81,12 +90,29 @@ export default function AcquisitionPanel() {
     loadStats();
   }, [loadStats]);
 
+  // Charger les stats Matomo simulations (lent, asynchrone) quand les filtres changent
+  useEffect(() => {
+    let cancelled = false;
+    setMatomoSimuStats(null);
+
+    async function loadMatomoSimu() {
+      const result = await getMatomoSimulationsStatsAction(periodeId, codeDepartement || undefined);
+      if (!cancelled && result.success && result.data.simulationsMatomo.valeur > 0) {
+        setMatomoSimuStats(result.data);
+      }
+    }
+
+    loadMatomoSimu();
+    return () => { cancelled = true; };
+  }, [periodeId, codeDepartement]);
+
   // Agents DDT : vue departement uniquement
   if (isAnalyseDdt) {
     return (
       <>
         <section className="fr-container-fluid fr-py-4w">
           <div className="fr-container">
+            <AdminBreadcrumb currentPageLabel="Acquisition" />
             <h1 className="fr-h2 fr-mb-1v">Acquisition</h1>
             <p className="fr-text--lg" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
               Statistiques par departement
@@ -107,6 +133,7 @@ export default function AcquisitionPanel() {
       {/* En-tete + onglets — fond blanc */}
       <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
+          <AdminBreadcrumb currentPageLabel="Acquisition" />
           <div className="fr-grid-row fr-grid-row--middle fr-mb-6w">
             <div className="fr-col">
               <h1 className="fr-h2 fr-mb-1v">Acquisition</h1>
@@ -170,7 +197,11 @@ export default function AcquisitionPanel() {
         <div className="fr-container">
           {activeTab === "simulateur" && (
             <div id="tab-acquisition-simulateur-panel" role="tabpanel">
-              <EntonnoirEligibilite stats={stats} loading={loading} />
+              <EntonnoirEligibilite
+                stats={stats}
+                matomoSimuStats={matomoSimuStats}
+                loading={loading}
+              />
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
                 <div className="fr-col-12 fr-col-lg-6">
                   <DetailEtapesFunnel funnel={matomoStats?.funnelSimulateurRGA ?? null} loading={funnelLoading} />
@@ -186,6 +217,7 @@ export default function AcquisitionPanel() {
                   <TopSimulationsCard
                     title="Top 5 simulations par departement"
                     columnLabel="Departements"
+                    tooltip="Données base de données"
                     rows={
                       stats?.topDepartements
                         .sort((a, b) => b.simulations - a.simulations)
@@ -202,6 +234,7 @@ export default function AcquisitionPanel() {
                   <TopSimulationsCard
                     title="Top 5 simulations par communes"
                     columnLabel="Communes"
+                    tooltip="Données base de données"
                     rows={
                       stats?.topCommunes.map((c) => ({
                         label: c.commune,

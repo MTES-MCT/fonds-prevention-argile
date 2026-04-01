@@ -1,22 +1,30 @@
 "use client";
 
+import { useId } from "react";
+
 interface DashboardStatCardProps {
   value: string;
   label: string;
   variation: number | null;
   variationType?: "percent" | "points";
+  /** Inverser les couleurs (hausse = rouge, baisse = vert). Utile pour le taux de rebond. */
+  invertColors?: boolean;
   loading?: boolean;
   compact?: boolean;
   /** Classe CSS du conteneur externe (defaut: "fr-col-12 fr-col-md-6 fr-col-lg-3") */
   className?: string;
+  /** Texte du tooltip DSFR affiche a cote du label (source des donnees) */
+  tooltip?: string;
 }
 
 function VariationBadge({
   variation,
   variationType = "percent",
+  invertColors = false,
 }: {
   variation: number | null;
   variationType: "percent" | "points";
+  invertColors?: boolean;
 }) {
   if (variation === null) return null;
 
@@ -32,10 +40,13 @@ function VariationBadge({
   let bgColor = "var(--background-contrast-grey)";
   let textColor = "var(--text-default-grey)";
 
-  if (isPositive) {
+  const isGood = invertColors ? isNegative : isPositive;
+  const isBad = invertColors ? isPositive : isNegative;
+
+  if (isGood) {
     bgColor = "var(--background-contrast-success)";
     textColor = "var(--text-default-success)";
-  } else if (isNegative) {
+  } else if (isBad) {
     bgColor = "var(--background-contrast-error)";
     textColor = "var(--text-default-error)";
   }
@@ -63,10 +74,14 @@ export function DashboardStatCard({
   label,
   variation,
   variationType = "percent",
+  invertColors = false,
   loading = false,
   compact = false,
   className = "fr-col-12 fr-col-md-6 fr-col-lg-3",
+  tooltip,
 }: DashboardStatCardProps) {
+  const tooltipId = useId();
+
   return (
     <div className={className} style={{ display: "flex" }}>
       <div
@@ -78,7 +93,7 @@ export function DashboardStatCard({
           width: "100%",
           height: "100%",
         }}>
-        <VariationBadge variation={variation} variationType={variationType} />
+        <VariationBadge variation={variation} variationType={variationType} invertColors={invertColors} />
         <p
           className="fr-mb-1w"
           style={{
@@ -88,7 +103,20 @@ export function DashboardStatCard({
           }}>
           {loading ? "..." : value}
         </p>
-        <p className={`fr-text-mention--grey fr-mb-0 ${compact ? "fr-text--sm" : ""}`}>{label}</p>
+        <p className={`fr-text-mention--grey fr-mb-0 ${compact ? "fr-text--sm" : ""}`}>
+          {label}
+          {tooltip && (
+            <>
+              {" "}
+              <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
+                Information
+              </button>
+              <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
+                {tooltip}
+              </span>
+            </>
+          )}
+        </p>
       </div>
     </div>
   );

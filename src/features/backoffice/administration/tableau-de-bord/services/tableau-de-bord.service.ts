@@ -14,6 +14,7 @@ import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospe
 import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
 import type {
   TableauDeBordStats,
+  MatomoSimulationsStats,
   PeriodeId,
   AlerteTendance,
   DemandesArchiveesStats,
@@ -38,6 +39,12 @@ import {
   getDepartementName,
 } from "@/shared/constants/departements.constants";
 import { asString } from "@/shared/utils/object.utils";
+import {
+  fetchMatomoEvents,
+  fetchMatomoEventsByDepartment,
+} from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
+import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
+import { getClientEnv } from "@/shared/config/env.config";
 
 /**
  * Calcule les dates de debut/fin pour une periode donnee
@@ -72,6 +79,53 @@ function getPreviousDateRange(periodeId: PeriodeId): { debut: Date; fin: Date } 
   debut.setDate(debut.getDate() - periode.jours * 2);
 
   return { debut, fin };
+}
+
+/**
+ * Formate une plage de dates pour l'API Matomo (ex: "2025-01-01,2025-03-30")
+ */
+function formatMatomoDateRange(debut: Date, fin: Date): string {
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  return `${fmt(debut)},${fmt(fin)}`;
+}
+
+interface SimulationsMatomoResult {
+  eligible: number;
+  nonEligible: number;
+  total: number;
+}
+
+/**
+ * Récupère le nombre de simulations terminées depuis Matomo (eligible + non eligible).
+ * Utilise les events par département si un code département est spécifié.
+ */
+async function getSimulationsMatomo(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string
+): Promise<SimulationsMatomoResult> {
+  const dateRange = formatMatomoDateRange(debut, fin);
+
+  let events: Map<string, number>;
+
+  if (codeDepartement) {
+    const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
+    const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
+    if (!dimensionId) return { eligible: 0, nonEligible: 0, total: 0 };
+
+    const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
+    events = await fetchMatomoEventsByDepartment(codeDeptMatomo, dimensionId, {
+      period: "range",
+      date: dateRange,
+    });
+  } else {
+    events = await fetchMatomoEvents({ period: "range", date: dateRange });
+  }
+
+  const eligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE) ?? 0;
+  const nonEligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE) ?? 0;
+
+  return { eligible, nonEligible, total: eligible + nonEligible };
 }
 
 /**
@@ -466,7 +520,7 @@ async function getIneligibiliteReasonsDistribution(
   debut: Date,
   fin: Date,
   codeDepartement?: string
-): Promise<Map<string, number>> {
+): Promise<{ distribution: Map<string, number>; totalParcours: number }> {
   const conditions = [
     isNotNull(parcoursPrevention.archivedAt),
     gte(parcoursPrevention.archivedAt, debut),
@@ -513,7 +567,7 @@ async function getIneligibiliteReasonsDistribution(
     }
   }
 
-  return distribution;
+  return { distribution, totalParcours: seenParcours.size };
 }
 
 /**
@@ -525,19 +579,23 @@ async function getDemandesIneligiblesDetail(
   previousRange: { debut: Date; fin: Date } | null,
   codeDepartement?: string
 ): Promise<DemandesIneligiblesStats> {
-  const distributionActuelle = await getIneligibiliteReasonsDistribution(debut, fin, codeDepartement);
-  const distributionPrecedente = previousRange
+  const { distribution: distributionActuelle, totalParcours } = await getIneligibiliteReasonsDistribution(
+    debut,
+    fin,
+    codeDepartement
+  );
+  const { distribution: distributionPrecedente } = previousRange
     ? await getIneligibiliteReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement)
-    : new Map<string, number>();
+    : { distribution: new Map<string, number>() };
 
-  // Total des occurrences de raisons (>= nb parcours car multi-raisons possibles)
-  let total = 0;
-  for (const c of distributionActuelle.values()) {
-    total += c;
+  if (totalParcours === 0) {
+    return { total: 0, motifs: [], autresMotifs: [] };
   }
 
-  if (total === 0) {
-    return { total: 0, motifs: [], autresMotifs: [] };
+  // Total des occurrences de raisons pour le calcul des pourcentages
+  let totalRaisons = 0;
+  for (const c of distributionActuelle.values()) {
+    totalRaisons += c;
   }
 
   // Lookup clé → label
@@ -554,15 +612,16 @@ async function getDemandesIneligiblesDetail(
       raison,
       label: labelMap.get(raison) ?? raison,
       count: countActuel,
-      pourcentage: Math.round((countActuel / total) * 100),
+      pourcentage: totalRaisons > 0 ? Math.round((countActuel / totalRaisons) * 100) : 0,
       variation: previousRange ? calculerVariation(countActuel, countPrecedent) : null,
     });
   }
 
   tousMotifs.sort((a, b) => b.count - a.count);
 
+  // total = nombre de parcours distincts (pas la somme des raisons)
   return {
-    total,
+    total: totalParcours,
     motifs: tousMotifs.slice(0, TOP_MOTIFS_COUNT),
     autresMotifs: tousMotifs.slice(TOP_MOTIFS_COUNT),
   };
@@ -724,19 +783,16 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
 /**
  * Calcule le top 5 des communes par nombre de simulations.
  */
-async function getTopCommunesStats(debut: Date, fin: Date, codeDepartement?: string): Promise<CommuneSimulationsStats[]> {
+async function getTopCommunesStats(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string
+): Promise<CommuneSimulationsStats[]> {
   const conditions = [
     gte(parcoursPrevention.createdAt, debut),
     lt(parcoursPrevention.createdAt, fin),
     isNotNull(parcoursPrevention.rgaSimulationData),
   ];
-
-  if (codeDepartement) {
-    conditions.push(
-      sql`(${parcoursPrevention.rgaSimulationDataAgent}->>'logement'->>'code_departement' = ${codeDepartement}
-        OR ${parcoursPrevention.rgaSimulationData}->>'logement'->>'code_departement' = ${codeDepartement})`
-    );
-  }
 
   const parcours = await db
     .select({
@@ -759,6 +815,7 @@ async function getTopCommunesStats(debut: Date, fin: Date, codeDepartement?: str
     const codeDept = asString(agentData?.logement?.code_departement) ?? asString(userData?.logement?.code_departement);
 
     if (!communeNom || !codeDept) continue;
+    if (codeDepartement && codeDept !== codeDepartement) continue;
 
     const key = `${communeNom}_${codeDept}`;
     const entry = communeMap.get(key) ?? { commune: communeNom, codeDepartement: codeDept, simulations: 0 };
@@ -766,9 +823,7 @@ async function getTopCommunesStats(debut: Date, fin: Date, codeDepartement?: str
     communeMap.set(key, entry);
   }
 
-  return [...communeMap.values()]
-    .sort((a, b) => b.simulations - a.simulations)
-    .slice(0, 5);
+  return [...communeMap.values()].sort((a, b) => b.simulations - a.simulations).slice(0, 5);
 }
 
 /**
@@ -781,7 +836,7 @@ export async function getTableauDeBordStats(
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 
-  // Stats de la periode courante + alertes + details archivees/ineligibles en parallele
+  // Stats BDD uniquement — pas d'appel Matomo (charge en async cote client)
   const [
     simulations,
     eligibilite,
@@ -812,27 +867,17 @@ export async function getTableauDeBordStats(
 
   const tauxTransformation = simulations > 0 ? Math.round((comptes / simulations) * 1000) / 10 : 0;
 
-  // Stats de la periode precedente (pour les variations)
-  let variations: {
-    simulations: number | null;
-    eligibles: number | null;
-    nonEligibles: number | null;
-    comptes: number | null;
-    tauxTransformation: number | null;
-    demandesAmo: number | null;
-    reponsesAttente: number | null;
-    dossiersDN: number | null;
-    archivees: number | null;
-  } = {
-    simulations: null,
-    eligibles: null,
-    nonEligibles: null,
-    comptes: null,
-    tauxTransformation: null,
-    demandesAmo: null,
-    reponsesAttente: null,
-    dossiersDN: null,
-    archivees: null,
+  // Variations BDD
+  let variations = {
+    simulations: null as number | null,
+    eligibles: null as number | null,
+    nonEligibles: null as number | null,
+    comptes: null as number | null,
+    tauxTransformation: null as number | null,
+    demandesAmo: null as number | null,
+    reponsesAttente: null as number | null,
+    dossiersDN: null as number | null,
+    archivees: null as number | null,
   };
 
   if (previousRange) {
@@ -856,7 +901,7 @@ export async function getTableauDeBordStats(
       tauxTransformation:
         tauxTransformation - prevTaux !== 0 ? Math.round((tauxTransformation - prevTaux) * 10) / 10 : 0,
       demandesAmo: calculerVariation(demandesAmo, prevDemandesAmo),
-      reponsesAttente: null, // Pas de variation pour un snapshot
+      reponsesAttente: null,
       dossiersDN: calculerVariation(dossiersDN, prevDossiersDN),
       archivees: calculerVariation(archivees, prevArchivees),
     };
@@ -866,6 +911,9 @@ export async function getTableauDeBordStats(
     simulationsLancees: { valeur: simulations, variation: variations.simulations },
     simulationsEligibles: { valeur: eligibilite.eligibles, variation: variations.eligibles },
     simulationsNonEligibles: { valeur: eligibilite.nonEligibles, variation: variations.nonEligibles },
+    // Valeurs par defaut pour Matomo — seront ecrasees cote client par getMatomoSimulationsStats
+    simulationsMatomo: { valeur: simulations, variation: variations.simulations },
+    simulationsSansInscription: { valeur: 0, variation: null },
     comptesCrees: { valeur: comptes, variation: variations.comptes },
     tauxTransformation: { valeur: tauxTransformation, variation: variations.tauxTransformation },
     demandesAmoEnvoyees: { valeur: demandesAmo, variation: variations.demandesAmo },
@@ -877,6 +925,72 @@ export async function getTableauDeBordStats(
     demandesIneligiblesDetail,
     topDepartements,
     topCommunes,
+  };
+}
+
+/**
+ * Recupere les stats Matomo de simulations (appel separe, chargement asynchrone).
+ * Retourne eligible/non eligible/total/sans inscription/taux de transformation.
+ */
+export async function getMatomoSimulationsStats(
+  periodeId: PeriodeId,
+  codeDepartement?: string
+): Promise<MatomoSimulationsStats> {
+  const { debut, fin } = getDateRange(periodeId);
+  const previousRange = getPreviousDateRange(periodeId);
+
+  const matomoFallback: SimulationsMatomoResult = { eligible: 0, nonEligible: 0, total: 0 };
+
+  // Comptes crees BDD (necessaire pour calcul sans inscription et taux)
+  const [currentMatomo, comptes, prevMatomo, prevComptes] = await Promise.all([
+    getSimulationsMatomo(debut, fin, codeDepartement).catch(() => matomoFallback),
+    countComptesCrees(debut, fin, codeDepartement),
+    previousRange
+      ? getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement).catch(() => matomoFallback)
+      : Promise.resolve(matomoFallback),
+    previousRange
+      ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement)
+      : Promise.resolve(0),
+  ]);
+
+  if (currentMatomo.total === 0) {
+    // Matomo indisponible — pas de donnees a surcharger
+    return {
+      simulationsMatomo: { valeur: 0, variation: null },
+      simulationsEligibles: { valeur: 0, variation: null },
+      simulationsNonEligibles: { valeur: 0, variation: null },
+      simulationsSansInscription: { valeur: 0, variation: null },
+      tauxTransformation: { valeur: 0, variation: null },
+    };
+  }
+
+  const sansInscription = Math.max(0, currentMatomo.total - comptes);
+  const taux = currentMatomo.total > 0 ? Math.round((comptes / currentMatomo.total) * 1000) / 10 : 0;
+
+  let variationEligibles: number | null = null;
+  let variationNonEligibles: number | null = null;
+  let variationTotal: number | null = null;
+  let variationSansInscription: number | null = null;
+  let variationTaux: number | null = null;
+
+  if (previousRange && prevMatomo.total > 0) {
+    variationEligibles = calculerVariation(currentMatomo.eligible, prevMatomo.eligible);
+    variationNonEligibles = calculerVariation(currentMatomo.nonEligible, prevMatomo.nonEligible);
+    variationTotal = calculerVariation(currentMatomo.total, prevMatomo.total);
+
+    const prevSansInscription = Math.max(0, prevMatomo.total - prevComptes);
+    variationSansInscription = calculerVariation(sansInscription, prevSansInscription);
+
+    const prevTaux = prevMatomo.total > 0 ? Math.round((prevComptes / prevMatomo.total) * 1000) / 10 : 0;
+    variationTaux = taux - prevTaux !== 0 ? Math.round((taux - prevTaux) * 10) / 10 : 0;
+  }
+
+  return {
+    simulationsMatomo: { valeur: currentMatomo.total, variation: variationTotal },
+    simulationsEligibles: { valeur: currentMatomo.eligible, variation: variationEligibles },
+    simulationsNonEligibles: { valeur: currentMatomo.nonEligible, variation: variationNonEligibles },
+    simulationsSansInscription: { valeur: sansInscription, variation: variationSansInscription },
+    tauxTransformation: { valeur: taux, variation: variationTaux },
   };
 }
 
@@ -900,9 +1014,9 @@ function createEmptyEligibiliteCounts(): EligibiliteCounts {
     nonIndemnisees: 0,
     tranches: {
       "très modeste": 0,
-      "modeste": 0,
-      "intermédiaire": 0,
-      "supérieure": 0,
+      modeste: 0,
+      intermédiaire: 0,
+      supérieure: 0,
     },
   };
 }
@@ -963,10 +1077,7 @@ function computeEligibiliteCounts(
 /**
  * Récupère les statistiques d'éligibilité avec variations.
  */
-export async function getEligibiliteStats(
-  periodeId: PeriodeId,
-  codeDepartement?: string
-): Promise<EligibiliteStats> {
+export async function getEligibiliteStats(periodeId: PeriodeId, codeDepartement?: string): Promise<EligibiliteStats> {
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 

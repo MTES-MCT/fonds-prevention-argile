@@ -64,21 +64,8 @@ export function DemandesIneligiblesFullTable({ stats }: DemandesIneligiblesFullT
                 </thead>
                 <tbody>
                   {tousMotifs.map((motif) => (
-                    <tr
-                      key={motif.raison}
-                      style={{
-                        borderLeft:
-                          motif.variation !== null && motif.variation > 0
-                            ? "4px solid var(--border-plain-warning)"
-                            : "4px solid transparent",
-                      }}>
-                      <td
-                        className="fr-text--sm"
-                        style={
-                          motif.variation !== null && motif.variation > 0
-                            ? { color: "var(--text-label-warning)" }
-                            : undefined
-                        }>
+                    <tr key={motif.raison}>
+                      <td className="fr-text--sm">
                         {motif.label}
                       </td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>

@@ -9,20 +9,28 @@ import { DemandesIneligiblesCard } from "./demandes-ineligibles/DemandesIneligib
 import { TopDepartementsCard } from "./top-departements/TopDepartementsCard";
 import {
   getTableauDeBordStatsAction,
+  getMatomoSimulationsStatsAction,
   getDepartementsDisponiblesAction,
 } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
-import { DEFAULT_PERIODE } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type {
-  PeriodeId,
   TableauDeBordStats,
+  MatomoSimulationsStats,
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
+import {
+  useAdministrationFiltersStore,
+  selectPeriodeId,
+  selectCodeDepartement,
+} from "@/features/backoffice/administration/stores/administration-filters.store";
 
 export function TableauDeBord() {
-  const [periodeId, setPeriodeId] = useState<PeriodeId>(DEFAULT_PERIODE);
-  const [codeDepartement, setCodeDepartement] = useState<string>("");
+  const periodeId = useAdministrationFiltersStore(selectPeriodeId);
+  const codeDepartement = useAdministrationFiltersStore(selectCodeDepartement);
+  const setPeriodeId = useAdministrationFiltersStore((s) => s.setPeriodeId);
+  const setCodeDepartement = useAdministrationFiltersStore((s) => s.setCodeDepartement);
   const [departements, setDepartements] = useState<DepartementDisponible[]>([]);
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
+  const [matomoSimuStats, setMatomoSimuStats] = useState<MatomoSimulationsStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +64,26 @@ export function TableauDeBord() {
   useEffect(() => {
     loadStats();
   }, [loadStats]);
+
+  // Charger les stats Matomo simulations (lent, asynchrone)
+  useEffect(() => {
+    let cancelled = false;
+    setMatomoSimuStats(null);
+
+    async function loadMatomoSimu() {
+      const result = await getMatomoSimulationsStatsAction(periodeId, codeDepartement || undefined);
+      if (!cancelled && result.success && result.data.simulationsMatomo.valeur > 0) {
+        setMatomoSimuStats(result.data);
+      }
+    }
+
+    loadMatomoSimu();
+    return () => { cancelled = true; };
+  }, [periodeId, codeDepartement]);
+
+  // Utiliser Matomo si disponible, sinon BDD
+  const simulationsValue = matomoSimuStats?.simulationsMatomo ?? stats?.simulationsLancees;
+  const tauxValue = matomoSimuStats?.tauxTransformation ?? stats?.tauxTransformation;
 
   return (
     <>
@@ -97,11 +125,12 @@ export function TableauDeBord() {
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
             <DashboardStatCard
-              value={stats?.simulationsLancees.valeur.toLocaleString("fr-FR") ?? "..."}
-              label="Simulations lancées"
-              variation={stats?.simulationsLancees.variation ?? null}
+              value={simulationsValue?.valeur.toLocaleString("fr-FR") ?? "..."}
+              label="Simulations terminees"
+              variation={simulationsValue?.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données Matomo, fallback base de données"
             />
             <DashboardStatCard
               value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -109,14 +138,16 @@ export function TableauDeBord() {
               variation={stats?.comptesCrees.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données base de données"
             />
             <DashboardStatCard
-              value={stats ? `${stats.tauxTransformation.valeur.toLocaleString("fr-FR")}%` : "..."}
+              value={tauxValue ? `${tauxValue.valeur.toLocaleString("fr-FR")}%` : "..."}
               label="Transfo. simu. → comptes créés"
-              variation={stats?.tauxTransformation.variation ?? null}
+              variation={tauxValue?.variation ?? null}
               variationType="points"
               loading={loading}
               compact
+              tooltip="Calculé : comptes créés / simulations terminées (Matomo)"
             />
             <DashboardStatCard
               value={stats?.demandesAmoEnvoyees.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -124,6 +155,7 @@ export function TableauDeBord() {
               variation={stats?.demandesAmoEnvoyees.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données base de données"
             />
           </div>
           <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
@@ -133,6 +165,7 @@ export function TableauDeBord() {
               variation={stats?.reponsesAmoEnAttente.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données base de données"
             />
             <DashboardStatCard
               value={stats?.dossiersDemarcheNumerique.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -140,6 +173,7 @@ export function TableauDeBord() {
               variation={stats?.dossiersDemarcheNumerique.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données base de données"
             />
             <DashboardStatCard
               value={stats?.demandesArchivees.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -147,6 +181,7 @@ export function TableauDeBord() {
               variation={stats?.demandesArchivees.variation ?? null}
               loading={loading}
               compact
+              tooltip="Données base de données"
             />
           </div>
 
