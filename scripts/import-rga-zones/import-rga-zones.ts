@@ -9,13 +9,22 @@
  *   - Migration 0026_postgis_rga_zones.sql appliquee
  *   - ogr2ogr installe (brew install gdal / apt install gdal-bin)
  *
- * Le shapefile doit etre en Lambert 93 (EPSG:2154), il sera reprojete en WGS84 (EPSG:4326).
- * Le champ ALEA sera normalise en minuscules (fort, moyen, faible).
+ * Le shapefile (Georisques 2025/2026) est en Lambert 93 (EPSG:2154) avec un champ
+ * `niveau` numerique (1=Faible, 2=Moyen, 3=Fort). Le script reprojette en WGS84
+ * et convertit en texte (fort, moyen, faible) pour la table rga_zones.
  */
 
 import { execSync } from "child_process";
 import { existsSync } from "fs";
 import { rawClient } from "@/shared/database/client";
+
+// Mapping du champ numerique "niveau" vers le texte "alea"
+// Source: shapefile Georisques AleaRG_2025_Fxx_L93
+const NIVEAU_TO_ALEA: Record<number, string> = {
+  1: "faible",
+  2: "moyen",
+  3: "fort",
+};
 
 async function main() {
   const shapefilePath = process.argv[2];
@@ -36,50 +45,64 @@ async function main() {
   console.log("=== Import des zones RGA ===");
   console.log(`Shapefile: ${shapefilePath}`);
 
-  // Etape 1: Vider la table existante
-  console.log("\n1/4 - Vidage de la table rga_zones...");
+  // Etape 1: Vider les tables
+  console.log("\n1/5 - Vidage des tables...");
+  await rawClient`DROP TABLE IF EXISTS rga_zones_import`;
   await rawClient`TRUNCATE TABLE rga_zones RESTART IDENTITY`;
-  console.log("   Table videe.");
+  console.log("   Tables videes.");
 
-  // Etape 2: Importer le shapefile avec ogr2ogr
-  console.log("\n2/4 - Import du shapefile via ogr2ogr...");
-  console.log("   (reprojection Lambert 93 -> WGS84)");
+  // Etape 2: Importer le shapefile dans une table temporaire
+  // ogr2ogr cree ses propres colonnes (gid, insee_dep, niveau, surf_m2, wkb_geometry)
+  console.log("\n2/5 - Import du shapefile via ogr2ogr (table temporaire)...");
+  console.log("   (reprojection Lambert 93 -> WGS84, 121k polygones)");
 
   const ogr2ogrCmd = [
     "ogr2ogr",
-    "-f",
-    "PostgreSQL",
-    `PG:${pgConnection}`,
-    shapefilePath,
-    "-nln",
-    "rga_zones",
-    "-nlt",
-    "PROMOTE_TO_MULTI",
-    "-s_srs",
-    "EPSG:2154",
-    "-t_srs",
-    "EPSG:4326",
-    "-lco",
-    "GEOMETRY_NAME=geom",
-    "-append",
+    "-f", "PostgreSQL",
+    `"PG:${pgConnection}"`,
+    `"${shapefilePath}"`,
+    "-nln", "rga_zones_import",
+    "-nlt", "PROMOTE_TO_MULTI",
+    "-t_srs", "EPSG:4326",
+    "-lco", "GEOMETRY_NAME=geom",
+    "-select", "niveau",
+    "-overwrite",
     "-progress",
   ].join(" ");
 
   try {
-    execSync(ogr2ogrCmd, { stdio: "inherit" });
+    execSync(ogr2ogrCmd, { stdio: "inherit", shell: "/bin/bash" });
   } catch {
     console.error("Erreur lors de l'import ogr2ogr. Verifiez que gdal/ogr2ogr est installe.");
     console.error("Installation: brew install gdal (macOS) ou apt install gdal-bin (Linux)");
     process.exit(1);
   }
 
-  // Etape 3: Normaliser les valeurs d'alea en minuscules
-  console.log("\n3/4 - Normalisation des valeurs d'alea...");
-  await rawClient`UPDATE rga_zones SET alea = LOWER(alea)`;
-  console.log("   Valeurs normalisees (fort, moyen, faible).");
+  // Etape 3: Transferer vers rga_zones avec mapping niveau -> alea
+  console.log("\n3/5 - Mapping niveau -> alea...");
+  console.log(`   Mapping: ${Object.entries(NIVEAU_TO_ALEA).map(([k, v]) => `${k}=${v}`).join(", ")}`);
 
-  // Etape 4: Statistiques
-  console.log("\n4/4 - Statistiques...");
+  await rawClient`
+    INSERT INTO rga_zones (alea, geom)
+    SELECT
+      CASE niveau
+        WHEN 3 THEN 'fort'
+        WHEN 2 THEN 'moyen'
+        WHEN 1 THEN 'faible'
+        ELSE 'faible'
+      END,
+      geom
+    FROM rga_zones_import
+  `;
+  console.log("   Mapping termine.");
+
+  // Etape 4: Nettoyage table temporaire
+  console.log("\n4/5 - Nettoyage...");
+  await rawClient`DROP TABLE IF EXISTS rga_zones_import`;
+  console.log("   Table temporaire supprimee.");
+
+  // Etape 5: Statistiques
+  console.log("\n5/5 - Statistiques...");
   const countResult = await rawClient`SELECT COUNT(*) as total FROM rga_zones`;
   const total = countResult[0].total;
 

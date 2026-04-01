@@ -23,7 +23,7 @@ services:
       - mailhog
 
   postgres:
-    image: postgis/postgis:16-3.4-alpine
+    image: postgis/postgis:16-3.4
     container_name: fonds-argile-postgres
     environment:
       POSTGRES_DB: ${DB_NAME:-fonds_argile}
