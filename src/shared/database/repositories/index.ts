@@ -11,3 +11,4 @@ export { agentPermissionsRepository } from "./agent-permissions.repository";
 export { allersVersRepository } from "./allers-vers.repository";
 export { catastrophesNaturellesRepository } from "./catastrophes-naturelles.repository";
 export { prospectQualificationsRepo } from "./prospect-qualifications.repository";
+export { rgaZonesRepository } from "./rga-zones.repository";

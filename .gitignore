@@ -63,3 +63,6 @@ yarn-error.log*
 # Claude Code local
 CLAUDE.local.md
 .claude/settings.local.json
+
+# PMTiles locaux (trop volumineux pour git, heberges sur data.gouv.fr)
+*.pmtiles

@@ -183,6 +183,13 @@
       "when": 1773734407269,
       "tag": "0025_kind_whizzer",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1775000000000,
+      "tag": "0026_postgis_rga_zones",
+      "breakpoints": true
     }
   ]
 }

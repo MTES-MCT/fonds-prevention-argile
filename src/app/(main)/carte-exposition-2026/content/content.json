@@ -1,0 +1,56 @@
+{
+  "breadcrumb": {
+    "home": "Accueil",
+    "current": "Mise à jour 20/03/26 - Évolution de la zone d'aléa"
+  },
+  "hero": {
+    "title": "L'arrêté du 9 janvier 2026 étend le nombre de logements éligibles.",
+    "source": "Source : Géorisques / BRGM - Mise à jour du 20 mars 2026",
+    "image": {
+      "src": "/images/carte-exposition-2026/carte-france-alea.png",
+      "alt": "Carte d'exposition des formations argileuses au phénomène RGA",
+      "caption": "Carte d'exposition des formations argileuses au phénomène RGA"
+    },
+    "info_card": {
+      "title": "Qu'est-ce que cela change pour vous ?",
+      "paragraphs": [
+        "Cette mise à jour permet d'intégrer la forte sinistralité de ces dernières années. 61,5% des maisons individuelles sont désormais en zones d'exposition moyenne et forte (soit 12,1 Millions).",
+        "Cette nouvelle carte étend notamment les zones d'exposition forte et de nombreuses maisons pourraient désormais être éligibles aux aides du Fonds de prévention argile."
+      ],
+      "cta_label": "Vérifier mon éligibilité",
+      "cta_url": "/simulateur"
+    },
+    "links": {
+      "title": "Pour en savoir plus",
+      "items": [
+        {
+          "label": "L'arrêté du 9 janvier 2026 modifiant l'arrêté du 22 juillet 2020 définissant les zones RGA",
+          "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000053422640",
+          "external": true
+        },
+        {
+          "label": "La nouvelle carte des zones RGA (dernière page du document)",
+          "url": "https://www.legifrance.gouv.fr/download/pdf?id=YW9XvMEhn_0kPoh_Wtm5c-mnznRWseQCeDltxJUlX6o=&_ope=eyJndWlkIjoiY2FkODkyNTlhMWU5MjAyYmYwNzM5Yjk2YWY1NDAwYTA2YTYxZmJiYzY1Nzk1NWIxNTE3NDYwZWM4MjM3NWExZiJ9",
+          "external": true
+        }
+      ]
+    }
+  },
+  "faq_section": {
+    "title": "Questions fréquentes",
+    "faqs": [
+      {
+        "question": "Pourquoi la carte a-t-elle évolué ?",
+        "answer": "<p>La carte d'exposition au RGA évolue en 2026 pour intégrer les effets du changement climatique. Cela permet notamment de prendre en compte la forte sinistralité de ces dernières années (environ 240.000 sinistres RGA entre 2018 et 2022, soit 58% de la totalité des sinistres RGA depuis 1989).</p><p>Cette mise à jour intègre les effets du réchauffement climatique et 55% du territoire se trouve désormais en zone d'exposition moyenne et forte (contre 48% en 2020). Cela représente 61,5% des maisons individuelles (soit 12,1 millions) contre 52,5% en 2020.</p>"
+      },
+      {
+        "question": "Mon logement était éligible, est-ce que cela change quelque chose ?",
+        "answer": "<p>Non. Si votre logement était déjà situé dans une zone d'aléa fort, votre éligibilité et votre dossier en cours ne sont pas affectés par cette mise à jour.</p>"
+      },
+      {
+        "question": "Cela impacte-t-il d'autres conditions d'éligibilité ?",
+        "answer": "<p>Non, cette mise à jour de la carte a pour seule conséquence pour les demandeurs d'augmenter le nombre de logements éligibles car en zone d'aléa fort.</p>"
+      }
+    ]
+  }
+}

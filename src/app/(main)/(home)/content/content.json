@@ -1,14 +1,14 @@
 {
   "notice": {
-    "description": "Dispositif ouvert uniquement dans les départements suivants : ",
-    "title": "Phase pilote",
+    "description": "La carte des zones à risque fort évolue, de nouveaux logements sont éligibles",
+    "title": "Mise à jour importante du 20 mars 2026",
     "more": "En savoir plus",
-    "more_link": "#qui-peut-beneficier-aides"
+    "more_link": "/carte-exposition-2026"
   },
   "logement_concerne_section": {
     "image": {
       "alt": "Fonds prévention argile - Un service de l'État",
-      "src": "/images/home/logement-concerne.webp"
+      "src": "/images/home/logement-concerne.png"
     },
     "title": "Bénéficiez d'un accompagnement technique et financier pour vous prémunir du phénomène de retrait-gonflement des argiles.",
     "subtitle": "Vérifiez votre éligibilité en quelques secondes, soyez accompagné et déposez votre demande en ligne. Recevez une réponse de l’administration dans quelques jours.",
