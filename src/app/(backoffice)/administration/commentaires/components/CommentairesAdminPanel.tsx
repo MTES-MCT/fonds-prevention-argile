@@ -26,13 +26,6 @@ const STRUCTURE_LABELS: Record<string, string> = {
   DDT: "DDT",
 };
 
-const MESSAGE_TRUNCATE_LENGTH = 150;
-
-function truncateMessage(message: string): string {
-  if (message.length <= MESSAGE_TRUNCATE_LENGTH) return message;
-  return message.slice(0, MESSAGE_TRUNCATE_LENGTH) + "...";
-}
-
 export default function CommentairesAdminPanel() {
   const [commentaires, setCommentaires] = useState<CommentaireAdminDetail[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -209,7 +202,7 @@ export default function CommentairesAdminPanel() {
             </div>
           ) : (
             <>
-              <div className="fr-table fr-table--bordered">
+              <div className="fr-table fr-table--lg fr-table--bordered">
                 <div className="fr-table__wrapper">
                   <div className="fr-table__container">
                     <div className="fr-table__content">
@@ -227,7 +220,7 @@ export default function CommentairesAdminPanel() {
                         <tbody>
                           {commentaires.map((commentaire) => (
                             <tr key={commentaire.id}>
-                              <td style={{ whiteSpace: "nowrap" }}>
+                              <td className="fr-text--sm">
                                 {formatDateTime(commentaire.createdAt.toString())}
                                 {commentaire.editedAt && (
                                   <span
@@ -237,7 +230,7 @@ export default function CommentairesAdminPanel() {
                                   </span>
                                 )}
                               </td>
-                              <td>{commentaire.authorName}</td>
+                              <td className="fr-text--sm">{commentaire.authorName}</td>
                               <td>
                                 {commentaire.authorStructureType && (
                                   <span className="fr-badge fr-badge--sm fr-badge--no-icon">
@@ -253,10 +246,10 @@ export default function CommentairesAdminPanel() {
                                   </span>
                                 )}
                               </td>
-                              <td style={{ maxWidth: "300px" }}>
-                                <span title={commentaire.message}>{truncateMessage(commentaire.message)}</span>
+                              <td className="fr-text--sm" style={{ minWidth: "300px" }}>
+                                {commentaire.message}
                               </td>
-                              <td>
+                              <td className="fr-text--sm">
                                 {commentaire.demandeur.prenom || commentaire.demandeur.nom
                                   ? `${commentaire.demandeur.prenom ?? ""} ${commentaire.demandeur.nom ?? ""}`.trim()
                                   : "-"}
