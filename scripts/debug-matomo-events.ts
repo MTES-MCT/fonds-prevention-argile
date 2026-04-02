@@ -377,12 +377,7 @@ async function analyseEventCategory() {
     return;
   }
 
-  console.log(
-    "Catégorie".padEnd(40),
-    "Events".padStart(8),
-    "Visits".padStart(8),
-    "Ratio".padStart(7)
-  );
+  console.log("Catégorie".padEnd(40), "Events".padStart(8), "Visits".padStart(8), "Ratio".padStart(7));
   console.log("-".repeat(65));
   for (const cat of categories.slice(0, 15)) {
     const ratio = cat.nb_visits > 0 ? (cat.nb_events / cat.nb_visits).toFixed(2) : "-";

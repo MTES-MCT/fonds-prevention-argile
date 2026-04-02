@@ -103,7 +103,9 @@ export default function AcquisitionPanel() {
     }
 
     loadMatomoSimu();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [periodeId, codeDepartement]);
 
   // Agents DDT : vue departement uniquement
@@ -197,11 +199,7 @@ export default function AcquisitionPanel() {
         <div className="fr-container">
           {activeTab === "simulateur" && (
             <div id="tab-acquisition-simulateur-panel" role="tabpanel">
-              <EntonnoirEligibilite
-                stats={stats}
-                matomoSimuStats={matomoSimuStats}
-                loading={loading}
-              />
+              <EntonnoirEligibilite stats={stats} matomoSimuStats={matomoSimuStats} loading={loading} />
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
                 <div className="fr-col-12 fr-col-lg-6">
                   <DetailEtapesFunnel funnel={matomoStats?.funnelSimulateurRGA ?? null} loading={funnelLoading} />

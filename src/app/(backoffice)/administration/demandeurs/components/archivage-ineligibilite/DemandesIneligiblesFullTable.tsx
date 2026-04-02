@@ -65,9 +65,7 @@ export function DemandesIneligiblesFullTable({ stats }: DemandesIneligiblesFullT
                 <tbody>
                   {tousMotifs.map((motif) => (
                     <tr key={motif.raison}>
-                      <td className="fr-text--sm">
-                        {motif.label}
-                      </td>
+                      <td className="fr-text--sm">{motif.label}</td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
                         <strong>{motif.count.toLocaleString("fr-FR")}</strong> ({motif.pourcentage}%)
                       </td>
