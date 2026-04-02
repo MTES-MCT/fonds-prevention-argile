@@ -25,7 +25,7 @@ export default function Home() {
     <>
       <Notice
         className="fr-notice--info"
-        description={`${content.notice.description} ${DEPARTEMENTS_ELIGIBLES_RGA.join(" • ")}`}
+        description={`${content.notice.description}`}
         title={content.notice.title}
         more={content.notice.more}
         more_link={content.notice.more_link}
