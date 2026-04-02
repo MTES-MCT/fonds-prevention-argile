@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     siteName: "Fonds prévention argile",
     images: [
       {
-        url: "/images/home/logement-concerne.webp",
+        url: "/images/home/logement-concerne.png",
         width: 1200,
         height: 630,
         alt: "Vérifier mon éligibilité",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Fonds préventions argile",
     description: "Plateforme pour le fonds de prévention contre le phénomène du retrait-gonflement des argiles",
-    images: ["/images/home/logement-concerne.webp"],
+    images: ["/images/home/logement-concerne.png"],
   },
 };
 
