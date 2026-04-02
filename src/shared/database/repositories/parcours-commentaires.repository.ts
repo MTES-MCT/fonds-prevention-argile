@@ -1,15 +1,18 @@
-import { eq, desc, sql, and, type SQL } from "drizzle-orm";
+import { eq, desc, sql, and, gte, lte, type SQL } from "drizzle-orm";
 import { db } from "../client";
 import { parcoursCommentaires } from "../schema/parcours-commentaires";
 import { agents } from "../schema/agents";
 import { entreprisesAmo } from "../schema/entreprises-amo";
 import { allersVers } from "../schema/allers-vers";
+import { parcoursPrevention } from "../schema/parcours-prevention";
+import { users } from "../schema/users";
 import { BaseRepository } from "./base.repository";
 import type { ParcoursCommentaire, NewParcoursCommentaire } from "../schema/parcours-commentaires";
 import type {
   CommentaireDetail,
   StructureType,
 } from "@/features/backoffice/espace-agent/shared/domain/types/commentaire.types";
+import type { CommentaireAdminDetail } from "@/features/backoffice/administration/commentaires/domain/types/commentaire-admin.types";
 
 /**
  * Repository pour la gestion des commentaires internes sur les parcours
@@ -168,6 +171,96 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
       .where(eq(parcoursCommentaires.parcoursId, parcoursId));
 
     return result[0]?.count ?? 0;
+  }
+
+  /**
+   * Recupere tous les commentaires avec details demandeur, filtres et pagines
+   * Utilise les colonnes snapshot (authorName, authorStructure, authorStructureType)
+   */
+  async findAllWithDetails(params: {
+    limit: number;
+    offset: number;
+    dateDebut?: Date;
+    dateFin?: Date;
+    authorStructureType?: string;
+    searchQuery?: string;
+  }): Promise<{ items: CommentaireAdminDetail[]; totalCount: number }> {
+    const conditions: SQL[] = [];
+
+    if (params.dateDebut) {
+      conditions.push(gte(parcoursCommentaires.createdAt, params.dateDebut));
+    }
+    if (params.dateFin) {
+      conditions.push(lte(parcoursCommentaires.createdAt, params.dateFin));
+    }
+    if (params.authorStructureType) {
+      conditions.push(eq(parcoursCommentaires.authorStructureType, params.authorStructureType));
+    }
+    if (params.searchQuery) {
+      conditions.push(
+        sql`(LOWER(${parcoursCommentaires.authorName}) LIKE LOWER(${"%" + params.searchQuery + "%"}) OR LOWER(${users.nom}) LIKE LOWER(${"%" + params.searchQuery + "%"}) OR LOWER(${users.prenom}) LIKE LOWER(${"%" + params.searchQuery + "%"}))`
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Count
+    const countQuery = db
+      .select({ count: sql<number>`cast(count(*) as integer)` })
+      .from(parcoursCommentaires)
+      .innerJoin(parcoursPrevention, eq(parcoursCommentaires.parcoursId, parcoursPrevention.id))
+      .leftJoin(users, eq(parcoursPrevention.userId, users.id));
+
+    if (whereClause) {
+      countQuery.where(whereClause);
+    }
+
+    const countResult = await countQuery;
+    const totalCount = countResult[0]?.count ?? 0;
+
+    // Items
+    const itemsQuery = db
+      .select({
+        id: parcoursCommentaires.id,
+        parcoursId: parcoursCommentaires.parcoursId,
+        message: parcoursCommentaires.message,
+        createdAt: parcoursCommentaires.createdAt,
+        editedAt: parcoursCommentaires.editedAt,
+        authorName: parcoursCommentaires.authorName,
+        authorStructure: parcoursCommentaires.authorStructure,
+        authorStructureType: parcoursCommentaires.authorStructureType,
+        demandeurNom: users.nom,
+        demandeurPrenom: users.prenom,
+      })
+      .from(parcoursCommentaires)
+      .innerJoin(parcoursPrevention, eq(parcoursCommentaires.parcoursId, parcoursPrevention.id))
+      .leftJoin(users, eq(parcoursPrevention.userId, users.id))
+      .orderBy(desc(parcoursCommentaires.createdAt))
+      .limit(params.limit)
+      .offset(params.offset);
+
+    if (whereClause) {
+      itemsQuery.where(whereClause);
+    }
+
+    const rows = await itemsQuery;
+
+    const items: CommentaireAdminDetail[] = rows.map((row) => ({
+      id: row.id,
+      parcoursId: row.parcoursId,
+      message: row.message,
+      createdAt: row.createdAt,
+      editedAt: row.editedAt,
+      authorName: row.authorName,
+      authorStructure: row.authorStructure,
+      authorStructureType: row.authorStructureType as StructureType | null,
+      demandeur: {
+        nom: row.demandeurNom,
+        prenom: row.demandeurPrenom,
+      },
+    }));
+
+    return { items, totalCount };
   }
 
   /**

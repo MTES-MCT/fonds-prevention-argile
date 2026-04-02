@@ -52,4 +52,11 @@ export const ADMIN_NAV_TABS: AdminNavTab[] = [
     icon: "fr-icon-road-map-line",
     minRoles: [UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR],
   },
+  {
+    id: "commentaires",
+    label: "Notes",
+    href: "/administration/commentaires",
+    icon: "fr-icon-chat-3-line",
+    minRoles: [UserRole.SUPER_ADMINISTRATEUR],
+  },
 ];

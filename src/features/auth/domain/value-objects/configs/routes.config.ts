@@ -34,6 +34,7 @@ export const ROUTES = {
       root: "/administration",
       utilisateurs: "/administration/utilisateurs",
       agents: "/administration/agents", // Gestion des agents (super admin only)
+      commentaires: "/administration/commentaires",
       statistiques: "/administration/statistiques",
       amos: "/administration/amos",
       eligibilite: "/administration/eligibilite",
