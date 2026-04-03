@@ -40,6 +40,62 @@ function isAlohe(conseiller: AllersVersWithRelations): boolean {
   return normalizeNom(conseiller.nom || "") === "ALOHE";
 }
 
+// Composant de grille réutilisable
+function ConseillersGrid({ conseillers }: { conseillers: AllersVersWithRelations[] }) {
+  return (
+    <div className="fr-grid-row fr-grid-row--gutters">
+      {conseillers.map((conseiller) => (
+        <ContactCard
+          key={conseiller.id}
+          id={conseiller.id}
+          nom={conseiller.nom}
+          emails={conseiller.emails}
+          telephone={conseiller.telephone}
+          adresse={conseiller.adresse}
+          selectable={false}
+          colSize="third"
+        />
+      ))}
+    </div>
+  );
+}
+
+// Configuration déclarative des sous-groupes par département
+const SUBGROUPS_BY_DEPT: Record<string, { label: string; match: (c: AllersVersWithRelations) => boolean }[]> = {
+  "54": [
+    {
+      label: "Pour la métropole de Nancy",
+      match: isAlohe,
+    },
+    {
+      label: "Pour toute autre localisation",
+      match: (c) => !isAlohe(c),
+    },
+  ],
+  "59": [
+    {
+      label: "Pour la métropole Européenne de Lille",
+      match: (c) => normalizeNom(c.nom ?? "") === "SOLIHA METROPOLE NORD",
+    },
+    {
+      label: "Pour les arrondissements de Dunkerque",
+      match: (c) => normalizeNom(c.nom ?? "") === "SOLIHA HAUTS-DE-FRANCE",
+    },
+    {
+      label: "Pour la CC Pévèle-Carembault et les CA du Douaisis et Coeur d'Ostrevent",
+      match: (c) => normalizeNom(c.nom ?? "") === "SOLIHA DOUAISIS",
+    },
+    {
+      label: "Pour les arrondissements de Valenciennes et de Cambrai",
+      match: (c) => normalizeNom(c.nom ?? "") === "SOLIHA HAINAUT CAMBRESIS",
+    },
+    {
+      label: "Pour l'arrondissement d'Avesnes-sur-Helpe",
+      match: (c) => normalizeNom(c.nom ?? "") === "SOLIHA SAMBRE AVESNOIS",
+    },
+  ],
+};
+
 export function ConseillersClient({ initialConseillers, content }: ConseillersClientProps) {
   const [selectedDepartement, setSelectedDepartement] = useState<string>("");
 
@@ -146,78 +202,30 @@ export function ConseillersClient({ initialConseillers, content }: ConseillersCl
           ) : (
             <div>
               {Array.from(conseillersGroupedByDepartement.entries()).map(([deptCode, conseillers]) => {
-                // Cas spécial département 54 : sous-groupes Métropole Nancy / Autres
-                if (deptCode === "54") {
-                  const alohe = conseillers.filter(isAlohe);
-                  const autres = conseillers.filter((c) => !isAlohe(c));
+                
+                const title = deptCode === "autres" ? "Autres" : `${deptCode} - ${getDepartementName(deptCode)}`;
+                const subgroups = SUBGROUPS_BY_DEPT[deptCode];
 
-                  return (
-                    <div key={deptCode} className="fr-mb-8w">
-                      <h3 className="fr-mb-3w">{`${deptCode} - ${getDepartementName(deptCode)}`}</h3>
-
-                      {alohe.length > 0 && (
-                        <div className="fr-mb-4w">
-                          <p className="fr-mb-2w">Pour la métropole de Nancy</p>
-                          <div className="fr-grid-row fr-grid-row--gutters">
-                            {alohe.map((conseiller) => (
-                              <ContactCard
-                                key={conseiller.id}
-                                id={conseiller.id}
-                                nom={conseiller.nom}
-                                emails={conseiller.emails}
-                                telephone={conseiller.telephone}
-                                adresse={conseiller.adresse}
-                                selectable={false}
-                                colSize="third"
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {autres.length > 0 && (
-                        <div className="fr-mb-4w">
-                          <p className="fr-mb-2w">Pour toute autre localisation</p>
-                          <div className="fr-grid-row fr-grid-row--gutters">
-                            {autres.map((conseiller) => (
-                              <ContactCard
-                                key={conseiller.id}
-                                id={conseiller.id}
-                                nom={conseiller.nom}
-                                emails={conseiller.emails}
-                                telephone={conseiller.telephone}
-                                adresse={conseiller.adresse}
-                                selectable={false}
-                                colSize="third"
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-
-                // Cas standard
                 return (
                   <div key={deptCode} className="fr-mb-8w">
-                    <h3 className="fr-mb-3w">
-                      {deptCode === "autres" ? "Autres" : `${deptCode} - ${getDepartementName(deptCode)}`}
-                    </h3>
-                    <div className="fr-grid-row fr-grid-row--gutters">
-                      {conseillers.map((conseiller) => (
-                        <ContactCard
-                          key={conseiller.id}
-                          id={conseiller.id}
-                          nom={conseiller.nom}
-                          emails={conseiller.emails}
-                          telephone={conseiller.telephone}
-                          adresse={conseiller.adresse}
-                          selectable={false}
-                          colSize="third"
-                        />
-                      ))}
-                    </div>
+                    <h3 className="fr-mb-3w">{title}</h3>
+
+                    {subgroups ? (
+                      // Département avec sous-groupes
+                      subgroups.map(({ label, match }) => {
+                        const subset = conseillers.filter(match);
+                        if (subset.length === 0) return null;
+                        return (
+                          <div key={label} className="fr-mb-4w">
+                            <p className="fr-mb-2w">{label}</p>
+                            <ConseillersGrid conseillers={subset} />
+                          </div>
+                        );
+                      })
+                    ) : (
+                      // Cas standard
+                      <ConseillersGrid conseillers={conseillers} />
+                    )}
                   </div>
                 );
               })}
