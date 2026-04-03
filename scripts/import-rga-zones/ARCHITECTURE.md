@@ -40,6 +40,7 @@ des tuiles vectorielles pre-generees, hebergees sur data.gouv.fr.
 MapLibre telecharge ces tuiles et colorie les zones en rouge/orange/jaune.
 
 La carte et PostGIS sont **independantes** :
+
 - La carte = ce que l'utilisateur **voit**
 - PostGIS = ce que le simulateur **utilise** pour determiner l'alea d'un batiment
 
@@ -72,12 +73,12 @@ suffisante pour determiner si un batiment est en zone fort, moyen ou faible.
 
 ## 5. Les fichiers cles dans le code
 
-| Fichier | Role |
-|---------|------|
-| `src/app/api/rga/alea/route.ts` | Route API publique `/api/rga/alea?lat=X&lon=Y` |
-| `src/shared/services/rga/rga-alea.service.ts` | Valide les coordonnees et appelle le repository |
-| `src/shared/database/repositories/rga-zones.repository.ts` | Requete spatiale PostGIS (`ST_Intersects`) |
-| `src/shared/services/bdnb/bdnb.service.ts` | Appel BDNB + override avec le resultat PostGIS |
-| `scripts/import-rga-zones/import-rga-zones.ts` | Script d'import du shapefile en local |
-| `scripts/import-rga-zones/README.md` | Procedures d'import local et Scalingo |
-| `public/map/style-carte-argile.json` | Style MapLibre avec URL du PMTiles |
+| Fichier                                                    | Role                                            |
+| ---------------------------------------------------------- | ----------------------------------------------- |
+| `src/app/api/rga/alea/route.ts`                            | Route API publique `/api/rga/alea?lat=X&lon=Y`  |
+| `src/shared/services/rga/rga-alea.service.ts`              | Valide les coordonnees et appelle le repository |
+| `src/shared/database/repositories/rga-zones.repository.ts` | Requete spatiale PostGIS (`ST_Intersects`)      |
+| `src/shared/services/bdnb/bdnb.service.ts`                 | Appel BDNB + override avec le resultat PostGIS  |
+| `scripts/import-rga-zones/import-rga-zones.ts`             | Script d'import du shapefile en local           |
+| `scripts/import-rga-zones/README.md`                       | Procedures d'import local et Scalingo           |
+| `public/map/style-carte-argile.json`                       | Style MapLibre avec URL du PMTiles              |

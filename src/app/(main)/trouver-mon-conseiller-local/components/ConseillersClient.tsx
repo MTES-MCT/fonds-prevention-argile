@@ -210,22 +210,27 @@ export function ConseillersClient({ initialConseillers, content }: ConseillersCl
                   <div key={deptCode} className="fr-mb-8w">
                     <h3 className="fr-mb-3w">{title}</h3>
 
-                    {subgroups ? (
-                      // Département avec sous-groupes
-                      subgroups.map(({ label, match }) => {
-                        const subset = conseillers.filter(match);
-                        if (subset.length === 0) return null;
-                        return (
-                          <div key={label} className="fr-mb-4w">
-                            <p className="fr-mb-2w">{label}</p>
-                            <ConseillersGrid conseillers={subset} />
-                          </div>
-                        );
-                      })
-                    ) : (
-                      // Cas standard
-                      <ConseillersGrid conseillers={conseillers} />
-                    )}
+                    {(() => {
+                      if (!subgroups) {
+                        return <ConseillersGrid conseillers={conseillers} />;
+                      }
+
+                      const matched = subgroups
+                        .map(({ label, match }) => ({ label, subset: conseillers.filter(match) }))
+                        .filter(({ subset }) => subset.length > 0);
+
+                      // Fallback : si aucun sous-groupe ne matche, afficher tous les conseillers
+                      if (matched.length === 0) {
+                        return <ConseillersGrid conseillers={conseillers} />;
+                      }
+
+                      return matched.map(({ label, subset }) => (
+                        <div key={label} className="fr-mb-4w">
+                          <p className="fr-mb-2w">{label}</p>
+                          <ConseillersGrid conseillers={subset} />
+                        </div>
+                      ));
+                    })()}
                   </div>
                 );
               })}

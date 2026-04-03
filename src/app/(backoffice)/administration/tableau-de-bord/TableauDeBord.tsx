@@ -78,7 +78,9 @@ export function TableauDeBord() {
     }
 
     loadMatomoSimu();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [periodeId, codeDepartement]);
 
   // Utiliser Matomo si disponible, sinon BDD

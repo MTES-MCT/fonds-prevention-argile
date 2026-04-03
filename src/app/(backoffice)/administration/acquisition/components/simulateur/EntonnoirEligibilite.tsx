@@ -1,7 +1,10 @@
 "use client";
 
 import { DashboardStatCard } from "../../../tableau-de-bord/shared/DashboardStatCard";
-import type { TableauDeBordStats, MatomoSimulationsStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import type {
+  TableauDeBordStats,
+  MatomoSimulationsStats,
+} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
 interface EntonnoirEligibiliteProps {
   stats: TableauDeBordStats | null;

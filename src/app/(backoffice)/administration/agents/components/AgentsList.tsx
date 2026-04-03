@@ -83,7 +83,7 @@ export default function AgentsList({
             <th scope="col">Rôle</th>
             <th scope="col">Périmètre</th>
             <th scope="col">Créé le</th>
-            <th scope="col">Dernière connexion</th>
+            <th scope="col" title="Suivi disponible depuis le 01/04/2026">Dernière connexion*</th>
             <th scope="col">Actions</th>
           </tr>
         </thead>
@@ -217,6 +217,7 @@ export default function AgentsList({
           })}
         </tbody>
       </table>
+      <p className="text-xs text-gray-500 mt-2">* Suivi des connexions disponible depuis le 01/04/2026</p>
     </div>
   );
 }

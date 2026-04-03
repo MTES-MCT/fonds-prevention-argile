@@ -2,6 +2,7 @@ export * from "./acquisition";
 export * from "./agents";
 export * from "./amo";
 export * from "./allers-vers";
+export * from "./commentaires";
 export * from "./demandeurs";
 
 // Domain partagé

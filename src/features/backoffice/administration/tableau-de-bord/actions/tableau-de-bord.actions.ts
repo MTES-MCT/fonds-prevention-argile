@@ -10,7 +10,12 @@ import {
 } from "../services/tableau-de-bord.service";
 import { getAvailableDepartements } from "@/features/backoffice/administration/acquisition/services/statistiques-departement.service";
 import type { ActionResult } from "@/shared/types";
-import type { TableauDeBordStats, MatomoSimulationsStats, PeriodeId, DemandeArchiveeDetail } from "../domain/types/tableau-de-bord.types";
+import type {
+  TableauDeBordStats,
+  MatomoSimulationsStats,
+  PeriodeId,
+  DemandeArchiveeDetail,
+} from "../domain/types/tableau-de-bord.types";
 import type { EligibiliteStats } from "../domain/types/eligibilite-stats.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 

@@ -57,9 +57,7 @@ export function DemandesArchiveesFullTable({ stats }: DemandesArchiveesFullTable
                 <tbody>
                   {tousMotifs.map((motif) => (
                     <tr key={motif.raison}>
-                      <td className="fr-text--sm">
-                        {motif.raison}
-                      </td>
+                      <td className="fr-text--sm">{motif.raison}</td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
                         <strong>{motif.count.toLocaleString("fr-FR")}</strong> ({motif.pourcentage}%)
                       </td>

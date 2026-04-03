@@ -26,10 +26,7 @@ export default function CarteExposition2026Page() {
         <div className="fr-container">
           {/* Fil d'Ariane */}
           <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
-            <button
-              className="fr-breadcrumb__button"
-              aria-expanded="false"
-              aria-controls="breadcrumb-carte-expo">
+            <button className="fr-breadcrumb__button" aria-expanded="false" aria-controls="breadcrumb-carte-expo">
               Voir le fil d'Ariane
             </button>
             <div className="fr-collapse" id="breadcrumb-carte-expo">

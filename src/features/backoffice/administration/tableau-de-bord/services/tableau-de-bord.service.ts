@@ -948,9 +948,7 @@ export async function getMatomoSimulationsStats(
     previousRange
       ? getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement).catch(() => matomoFallback)
       : Promise.resolve(matomoFallback),
-    previousRange
-      ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement)
-      : Promise.resolve(0),
+    previousRange ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement) : Promise.resolve(0),
   ]);
 
   if (currentMatomo.total === 0) {

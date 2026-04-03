@@ -58,14 +58,20 @@ async function main() {
 
   const ogr2ogrCmd = [
     "ogr2ogr",
-    "-f", "PostgreSQL",
+    "-f",
+    "PostgreSQL",
     `"PG:${pgConnection}"`,
     `"${shapefilePath}"`,
-    "-nln", "rga_zones_import",
-    "-nlt", "PROMOTE_TO_MULTI",
-    "-t_srs", "EPSG:4326",
-    "-lco", "GEOMETRY_NAME=geom",
-    "-select", "niveau",
+    "-nln",
+    "rga_zones_import",
+    "-nlt",
+    "PROMOTE_TO_MULTI",
+    "-t_srs",
+    "EPSG:4326",
+    "-lco",
+    "GEOMETRY_NAME=geom",
+    "-select",
+    "niveau",
     "-overwrite",
     "-progress",
   ].join(" ");
@@ -80,7 +86,11 @@ async function main() {
 
   // Etape 3: Transferer vers rga_zones avec mapping niveau -> alea
   console.log("\n3/5 - Mapping niveau -> alea...");
-  console.log(`   Mapping: ${Object.entries(NIVEAU_TO_ALEA).map(([k, v]) => `${k}=${v}`).join(", ")}`);
+  console.log(
+    `   Mapping: ${Object.entries(NIVEAU_TO_ALEA)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(", ")}`
+  );
 
   await rawClient`
     INSERT INTO rga_zones (alea, geom)
@@ -106,8 +116,7 @@ async function main() {
   const countResult = await rawClient`SELECT COUNT(*) as total FROM rga_zones`;
   const total = countResult[0].total;
 
-  const statsResult =
-    await rawClient`SELECT alea, COUNT(*) as count FROM rga_zones GROUP BY alea ORDER BY alea`;
+  const statsResult = await rawClient`SELECT alea, COUNT(*) as count FROM rga_zones GROUP BY alea ORDER BY alea`;
 
   console.log(`   Total: ${total} polygones importes`);
   for (const row of statsResult) {
