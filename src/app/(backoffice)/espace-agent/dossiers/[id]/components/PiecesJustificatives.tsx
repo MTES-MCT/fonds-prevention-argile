@@ -22,20 +22,22 @@ export function PiecesJustificatives() {
                 <li className="fr-mb-2v">
                   Dernier avis d&apos;imposition de TOUS les foyers fiscaux de l&apos;habitation
                 </li>
+                <li className="fr-mb-2v">Justificatif de propriété (Taxe foncière)</li>
                 <li className="fr-mb-2v">RIB du demandeur</li>
                 <li className="fr-mb-2v">Devis de l&apos;AMO</li>
                 <li className="fr-mb-2v">Devis de l&apos;Expert</li>
-                <li className="fr-mb-2v">Attestation Assurance habitation</li>
-                <li className="fr-mb-0">
-                  Attestation d&apos;indemnisation de l&apos;assureur au titre de la garantie Catastrophe Naturelle (si
-                  indemnisation précédente)
-                </li>
+                <li className="fr-mb-0">Attestation Assurance habitation</li>
+                
               </ul>
             </div>
 
             {/* Colonne droite */}
             <div className="fr-col-12 fr-col-md-6">
               <ul className="fr-pl-3w fr-mb-0">
+                <li className="fr-mb-2v">
+                  Attestation d&apos;indemnisation de l&apos;assureur au titre de la garantie Catastrophe Naturelle (si
+                  indemnisation précédente)
+                </li>
                 <li className="fr-mb-2v">
                   Attestation de non indemnisation de l&apos;assureur au titre de la garantie Catastrophe Naturelle (si
                   aucune indemnisation précédente)
