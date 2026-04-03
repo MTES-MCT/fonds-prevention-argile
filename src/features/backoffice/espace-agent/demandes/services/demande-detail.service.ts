@@ -59,18 +59,18 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       }
     }
 
+    // Construire l'objet InfoLogement à partir de RGASimulationData
+    // Utiliser les données agent si disponibles, sinon les données initiales
+    const rgaData = getEffectiveRGAData(demande.parcours);
+
     // Construire l'objet InfoDemandeur
     const demandeur: InfoDemandeur = {
       prenom: demande.validation.userPrenom,
       nom: demande.validation.userNom,
       email: demande.validation.userEmail,
       telephone: demande.validation.userTelephone,
-      adresse: demande.validation.adresseLogement,
+      adresse: rgaData?.logement?.adresse ?? demande.validation.adresseLogement,
     };
-
-    // Construire l'objet InfoLogement à partir de RGASimulationData
-    // Utiliser les données agent si disponibles, sinon les données initiales
-    const rgaData = getEffectiveRGAData(demande.parcours);
     const coords = parseCoordinatesString(rgaData?.logement?.coordonnees);
     const niveauRevenu = calculateNiveauRevenuFromRga(rgaData);
     const logement: InfoLogement = {

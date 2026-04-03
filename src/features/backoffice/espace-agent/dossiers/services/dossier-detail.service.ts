@@ -79,18 +79,18 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       )
       .limit(1);
 
+    // Construire l'objet InfoLogement à partir de RGASimulationData
+    // Utiliser les données agent si disponibles, sinon les données initiales
+    const rgaData = getEffectiveRGAData(dossier.parcours);
+
     // Construire l'objet InfoDemandeur
     const demandeur: InfoDemandeur = {
       prenom: dossier.validation.userPrenom,
       nom: dossier.validation.userNom,
       email: dossier.validation.userEmail,
       telephone: dossier.validation.userTelephone,
-      adresse: dossier.validation.adresseLogement,
+      adresse: rgaData?.logement?.adresse ?? dossier.validation.adresseLogement,
     };
-
-    // Construire l'objet InfoLogement à partir de RGASimulationData
-    // Utiliser les données agent si disponibles, sinon les données initiales
-    const rgaData = getEffectiveRGAData(dossier.parcours);
     const coords = parseCoordinatesString(rgaData?.logement?.coordonnees);
     const niveauRevenu = calculateNiveauRevenuFromRga(rgaData);
     const logement: InfoLogement = {
