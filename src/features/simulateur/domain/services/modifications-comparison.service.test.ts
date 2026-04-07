@@ -53,7 +53,6 @@ function createAllEligibleChecks(): EligibilityChecks {
     zoneForte: true,
     anneeConstruction: true,
     niveaux: true,
-    etatMaison: true,
     nonMitoyen: true,
     indemnisation: true,
     assurance: true,
@@ -209,31 +208,6 @@ describe("computeModifications", () => {
       label: "Mitoyenneté",
       beforeDisplay: "Non",
       afterDisplay: "Oui",
-      wasEligible: true,
-      isEligible: false,
-    });
-  });
-
-  it("détecte une modification de l'état de la maison", () => {
-    const initialData = createBaseRGAData();
-    const currentAnswers: PartialRGASimulationData = {
-      logement: { ...initialData.logement },
-      rga: { ...initialData.rga, sinistres: "endommagée" },
-      menage: { ...initialData.menage },
-    };
-    const initialChecks = createAllEligibleChecks();
-    const currentChecks: EligibilityChecks = {
-      ...createAllEligibleChecks(),
-      etatMaison: false,
-    };
-
-    const result = computeModifications(initialData, currentAnswers, initialChecks, currentChecks);
-
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
-      label: "État de la maison",
-      beforeDisplay: "Saine",
-      afterDisplay: "Endommagée",
       wasEligible: true,
       isEligible: false,
     });

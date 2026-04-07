@@ -174,28 +174,6 @@ describe("step-flow.rules", () => {
       });
     });
 
-    describe("early exit - ETAT_MAISON", () => {
-      it("déclenche early exit pour maison endommagée", () => {
-        const anneeAncienne = (new Date().getFullYear() - 20).toString();
-        const answers: PartialRGASimulationData = {
-          logement: {
-            type: "maison",
-            code_departement: "47",
-            zone_dexposition: "fort",
-            annee_de_construction: anneeAncienne,
-            niveaux: 2,
-          },
-          rga: {
-            sinistres: "endommagée",
-          },
-        };
-        const result = evaluateEligibility(answers);
-        expect(result.shouldExit).toBe(true);
-        expect(result.failedAtStep).toBe(SimulateurStep.ETAT_MAISON);
-        expect(result.checks.etatMaison).toBe(false);
-      });
-    });
-
     describe("early exit - MITOYENNETE", () => {
       it("déclenche early exit pour maison mitoyenne", () => {
         const anneeAncienne = (new Date().getFullYear() - 20).toString();
@@ -431,7 +409,6 @@ describe("step-flow.rules", () => {
         expect(result.checks.zoneForte).toBe(true);
         expect(result.checks.anneeConstruction).toBe(true);
         expect(result.checks.niveaux).toBe(true);
-        expect(result.checks.etatMaison).toBe(true);
         expect(result.checks.nonMitoyen).toBe(true);
         expect(result.checks.indemnisation).toBe(true);
         expect(result.checks.assurance).toBe(true);

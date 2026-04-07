@@ -48,20 +48,6 @@ const COMPARISON_FIELDS: ComparisonField[] = [
     checkKey: "niveaux",
   },
   {
-    label: "État de la maison",
-    getOldValue: (d) => d.rga.sinistres,
-    getNewValue: (d) => d.rga?.sinistres,
-    formatValue: (v) => {
-      const labels: Record<string, string> = {
-        saine: "Saine",
-        "très peu endommagée": "Très peu endommagée",
-        endommagée: "Endommagée",
-      };
-      return labels[String(v)] ?? String(v);
-    },
-    checkKey: "etatMaison",
-  },
-  {
     label: "Mitoyenneté",
     getOldValue: (d) => d.logement.mitoyen,
     getNewValue: (d) => d.logement?.mitoyen,

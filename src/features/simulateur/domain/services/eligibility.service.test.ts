@@ -130,25 +130,6 @@ describe("EligibilityService", () => {
       expect(result?.reason).toBe(EligibilityReason.TROP_DE_NIVEAUX);
     });
 
-    it("retourne non éligible avec raison MAISON_ENDOMMAGEE", () => {
-      const answers: PartialRGASimulationData = {
-        logement: {
-          type: "maison",
-          code_departement: "47",
-          zone_dexposition: "fort",
-          annee_de_construction: anneeAncienne,
-          niveaux: 2,
-        },
-        rga: {
-          sinistres: "endommagée",
-        },
-      };
-      const { result } = EligibilityService.evaluate(answers);
-
-      expect(result?.eligible).toBe(false);
-      expect(result?.reason).toBe(EligibilityReason.MAISON_ENDOMMAGEE);
-    });
-
     it("retourne non éligible avec raison MAISON_MITOYENNE", () => {
       const answers: PartialRGASimulationData = {
         logement: {
