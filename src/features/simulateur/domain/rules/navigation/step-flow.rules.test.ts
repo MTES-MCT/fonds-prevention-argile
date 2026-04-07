@@ -31,8 +31,12 @@ describe("step-flow.rules", () => {
       expect(getNextStep(SimulateurStep.MITOYENNETE)).toBe(SimulateurStep.INDEMNISATION);
     });
 
-    it("retourne ASSURANCE après INDEMNISATION", () => {
-      expect(getNextStep(SimulateurStep.INDEMNISATION)).toBe(SimulateurStep.ASSURANCE);
+    it("retourne CATASTROPHES_NATURELLES après INDEMNISATION", () => {
+      expect(getNextStep(SimulateurStep.INDEMNISATION)).toBe(SimulateurStep.CATASTROPHES_NATURELLES);
+    });
+
+    it("retourne ASSURANCE après CATASTROPHES_NATURELLES", () => {
+      expect(getNextStep(SimulateurStep.CATASTROPHES_NATURELLES)).toBe(SimulateurStep.ASSURANCE);
     });
 
     it("retourne PROPRIETAIRE après ASSURANCE", () => {
@@ -295,6 +299,31 @@ describe("step-flow.rules", () => {
       });
     });
 
+    describe("early exit - CATASTROPHES_NATURELLES", () => {
+      it("déclenche early exit si demande catnat en cours", () => {
+        const anneeAncienne = (new Date().getFullYear() - 20).toString();
+        const answers: PartialRGASimulationData = {
+          logement: {
+            type: "maison",
+            code_departement: "47",
+            zone_dexposition: "fort",
+            annee_de_construction: anneeAncienne,
+            niveaux: 2,
+            mitoyen: false,
+          },
+          rga: {
+            sinistres: "saine",
+            indemnise_indemnise_rga: false,
+            demande_catnat_en_cours: true,
+          },
+        };
+        const result = evaluateEligibility(answers);
+        expect(result.shouldExit).toBe(true);
+        expect(result.failedAtStep).toBe(SimulateurStep.CATASTROPHES_NATURELLES);
+        expect(result.checks.catnatEnCours).toBe(false);
+      });
+    });
+
     describe("early exit - ASSURANCE", () => {
       it("déclenche early exit si non assuré", () => {
         const anneeAncienne = (new Date().getFullYear() - 20).toString();
@@ -310,6 +339,7 @@ describe("step-flow.rules", () => {
           rga: {
             sinistres: "saine",
             indemnise_indemnise_rga: false,
+            demande_catnat_en_cours: false,
             assure: false,
           },
         };
@@ -336,6 +366,7 @@ describe("step-flow.rules", () => {
           rga: {
             sinistres: "saine",
             indemnise_indemnise_rga: false,
+            demande_catnat_en_cours: false,
             assure: true,
           },
         };
@@ -363,6 +394,7 @@ describe("step-flow.rules", () => {
           rga: {
             sinistres: "saine",
             indemnise_indemnise_rga: false,
+            demande_catnat_en_cours: false,
             assure: true,
           },
           menage: {
@@ -394,6 +426,7 @@ describe("step-flow.rules", () => {
           rga: {
             sinistres: "saine",
             indemnise_indemnise_rga: false,
+            demande_catnat_en_cours: false,
             assure: true,
           },
           menage: {
@@ -411,6 +444,7 @@ describe("step-flow.rules", () => {
         expect(result.checks.niveaux).toBe(true);
         expect(result.checks.nonMitoyen).toBe(true);
         expect(result.checks.indemnisation).toBe(true);
+        expect(result.checks.catnatEnCours).toBe(true);
         expect(result.checks.assurance).toBe(true);
         expect(result.checks.proprietaireOccupant).toBe(true);
         expect(result.checks.revenusEligibles).toBe(true);
@@ -435,6 +469,7 @@ describe("step-flow.rules", () => {
             indemnise_avant_juillet_2025: true,
             indemnise_avant_juillet_2015: true,
             indemnise_montant_indemnite: 50000,
+            demande_catnat_en_cours: false,
             assure: true,
           },
           menage: {
@@ -467,6 +502,7 @@ describe("step-flow.rules", () => {
             indemnise_avant_juillet_2025: true,
             indemnise_avant_juillet_2015: false,
             indemnise_montant_indemnite: 5000,
+            demande_catnat_en_cours: false,
             assure: true,
           },
           menage: {
@@ -509,6 +545,7 @@ describe("step-flow.rules", () => {
         rga: {
           sinistres: "saine",
           indemnise_indemnise_rga: false,
+          demande_catnat_en_cours: false,
           assure: true,
         },
         menage: {

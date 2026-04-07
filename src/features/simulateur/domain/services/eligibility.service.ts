@@ -111,6 +111,7 @@ function getReasonFromChecks(checks: EligibilityChecks): EligibilityReason | nul
   if (checks.niveaux === false) return EligibilityReason.TROP_DE_NIVEAUX;
   if (checks.nonMitoyen === false) return EligibilityReason.MAISON_MITOYENNE;
   if (checks.indemnisation === false) return EligibilityReason.DEJA_INDEMNISE;
+  if (checks.catnatEnCours === false) return EligibilityReason.DEMANDE_CATNAT_EN_COURS;
   if (checks.assurance === false) return EligibilityReason.NON_ASSURE;
   if (checks.proprietaireOccupant === false) return EligibilityReason.NON_PROPRIETAIRE_OCCUPANT;
   if (checks.revenusEligibles === false) return EligibilityReason.REVENUS_TROP_ELEVES;

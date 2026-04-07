@@ -33,7 +33,10 @@ export interface EligibilityChecks {
   /** 8. Peu ou pas indemnisé RGA ? */
   indemnisation: RuleStatus;
 
-  /** 9. Couverte par assurance ? */
+  /** 9. Pas de demande catnat en cours ? */
+  catnatEnCours: RuleStatus;
+
+  /** 10. Couverte par assurance ? */
   assurance: RuleStatus;
 
   /** 10. Propriétaire occupant ? */
@@ -75,6 +78,7 @@ export function createInitialChecks(): EligibilityChecks {
     niveaux: null,
     nonMitoyen: null,
     indemnisation: null,
+    catnatEnCours: null,
     assurance: null,
     proprietaireOccupant: null,
     revenusEligibles: null,

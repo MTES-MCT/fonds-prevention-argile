@@ -25,6 +25,9 @@ export const EligibilityReason = {
 
   // Étape 8 - Indemnisation
   DEJA_INDEMNISE: "deja_indemnise",
+
+  // Catastrophes naturelles
+  DEMANDE_CATNAT_EN_COURS: "demande_catnat_en_cours",
 } as const;
 
 export type EligibilityReason = (typeof EligibilityReason)[keyof typeof EligibilityReason];
@@ -44,4 +47,6 @@ export const ELIGIBILITY_REASON_MESSAGES: Record<EligibilityReason, string> = {
   [EligibilityReason.NON_PROPRIETAIRE_OCCUPANT]: "Vous devez être propriétaire occupant de votre résidence principale.",
   [EligibilityReason.DEJA_INDEMNISE]:
     "Vous avez déjà été indemnisé au titre du RGA dans des conditions non compatibles.",
+  [EligibilityReason.DEMANDE_CATNAT_EN_COURS]:
+    "Vous ne pouvez pas cumuler l'aide du Fonds Prévention Argile avec une aide liée aux catastrophes naturelles.",
 };

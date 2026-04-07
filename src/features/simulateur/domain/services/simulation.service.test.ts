@@ -137,17 +137,22 @@ describe("SimulationService", () => {
         rga: { indemnise_indemnise_rga: false },
       });
 
-      // Étape 6 - Assurance
+      // Étape 6 - Catastrophes naturelles
+      state = SimulationService.submitAnswer(state, {
+        rga: { demande_catnat_en_cours: false },
+      });
+
+      // Étape 7 - Assurance
       state = SimulationService.submitAnswer(state, {
         rga: { assure: true },
       });
 
-      // Étape 7 - Propriétaire
+      // Étape 8 - Propriétaire
       state = SimulationService.submitAnswer(state, {
         logement: { proprietaire_occupant: true },
       });
 
-      // Étape 8 - Revenus
+      // Étape 9 - Revenus
       state = SimulationService.submitAnswer(state, {
         menage: { personnes: 2, revenu_rga: 25000 },
       });
@@ -218,6 +223,9 @@ describe("SimulationService", () => {
       expect(state.currentStep).toBe(SimulateurStep.INDEMNISATION);
 
       state = SimulationService.submitAnswer(state, { rga: { indemnise_indemnise_rga: false } }, SKIP_EARLY_EXIT);
+      expect(state.currentStep).toBe(SimulateurStep.CATASTROPHES_NATURELLES);
+
+      state = SimulationService.submitAnswer(state, { rga: { demande_catnat_en_cours: true } }, SKIP_EARLY_EXIT);
       expect(state.currentStep).toBe(SimulateurStep.ASSURANCE);
 
       state = SimulationService.submitAnswer(state, { rga: { assure: false } }, SKIP_EARLY_EXIT);
@@ -251,6 +259,7 @@ describe("SimulationService", () => {
       state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } }, SKIP_EARLY_EXIT);
       state = SimulationService.submitAnswer(state, { logement: { mitoyen: false } }, SKIP_EARLY_EXIT);
       state = SimulationService.submitAnswer(state, { rga: { indemnise_indemnise_rga: false } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(state, { rga: { demande_catnat_en_cours: false } }, SKIP_EARLY_EXIT);
       state = SimulationService.submitAnswer(state, { rga: { assure: true } }, SKIP_EARLY_EXIT);
       state = SimulationService.submitAnswer(state, { logement: { proprietaire_occupant: true } }, SKIP_EARLY_EXIT);
 
@@ -282,6 +291,7 @@ describe("SimulationService", () => {
       state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } }, SKIP_EARLY_EXIT);
       state = SimulationService.submitAnswer(state, { logement: { mitoyen: false } }, SKIP_EARLY_EXIT);
       state = SimulationService.submitAnswer(state, { rga: { indemnise_indemnise_rga: false } }, SKIP_EARLY_EXIT);
+      state = SimulationService.submitAnswer(state, { rga: { demande_catnat_en_cours: false } }, SKIP_EARLY_EXIT);
       state = SimulationService.submitAnswer(state, { rga: { assure: true } }, SKIP_EARLY_EXIT);
       state = SimulationService.submitAnswer(state, { logement: { proprietaire_occupant: true } }, SKIP_EARLY_EXIT);
       state = SimulationService.submitAnswer(state, { menage: { personnes: 2, revenu_rga: 25000 } }, SKIP_EARLY_EXIT);
@@ -308,6 +318,7 @@ describe("SimulationService", () => {
         rga: {
           sinistres: "endommagée" as const,
           indemnise_indemnise_rga: false,
+          demande_catnat_en_cours: false,
           assure: true,
         },
         menage: {
@@ -576,6 +587,7 @@ describe("SimulationService", () => {
       state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } });
       state = SimulationService.submitAnswer(state, { logement: { mitoyen: false } });
       state = SimulationService.submitAnswer(state, { rga: { indemnise_indemnise_rga: false } });
+      state = SimulationService.submitAnswer(state, { rga: { demande_catnat_en_cours: false } });
       state = SimulationService.submitAnswer(state, { rga: { assure: true } });
       state = SimulationService.submitAnswer(state, { logement: { proprietaire_occupant: true } });
       state = SimulationService.submitAnswer(state, { menage: { personnes: 2, revenu_rga: 25000 } });

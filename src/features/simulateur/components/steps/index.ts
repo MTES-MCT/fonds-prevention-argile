@@ -4,6 +4,7 @@ export { StepAdresse } from "./StepAdresse/StepAdresse";
 export { StepEtatMaison } from "./StepEtatMaison";
 export { StepMitoyennete } from "./StepMitoyennete";
 export { StepIndemnisation } from "./StepIndemnisation";
+export { StepCatastrophesNaturelles } from "./StepCatastrophesNaturelles";
 export { StepAssurance } from "./StepAssurance";
 export { StepProprietaire } from "./StepProprietaire";
 export { StepRevenus } from "./StepRevenus";

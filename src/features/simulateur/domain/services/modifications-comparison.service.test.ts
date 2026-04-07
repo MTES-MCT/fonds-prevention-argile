@@ -55,6 +55,7 @@ function createAllEligibleChecks(): EligibilityChecks {
     niveaux: true,
     nonMitoyen: true,
     indemnisation: true,
+    catnatEnCours: true,
     assurance: true,
     proprietaireOccupant: true,
     revenusEligibles: true,

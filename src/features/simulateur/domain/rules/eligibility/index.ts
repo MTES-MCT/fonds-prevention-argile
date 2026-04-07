@@ -2,6 +2,7 @@ export { checkMaison, checkNiveaux, checkAnneeConstruction } from "./logement.ru
 export { checkDepartementEligible, checkZoneForte } from "./zone-argile.rules";
 export { checkNonMitoyen } from "./mitoyennete.rules";
 export { checkIndemnisation } from "./indemnisation.rules";
+export { checkCatastrophesNaturelles } from "./catastrophes-naturelles.rules";
 export { checkAssurance } from "./assurance.rules";
 export { checkProprietaireOccupant } from "./proprietaire.rules";
 export { checkRevenus, getTrancheRevenus } from "./revenus.rules";
