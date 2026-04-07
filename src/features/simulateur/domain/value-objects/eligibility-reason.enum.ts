@@ -40,7 +40,7 @@ export const ELIGIBILITY_REASON_MESSAGES: Record<EligibilityReason, string> = {
   [EligibilityReason.ZONE_NON_FORTE]: "Votre logement n'est pas situé dans une zone d'aléa argile fort.",
   [EligibilityReason.DEPARTEMENT_NON_ELIGIBLE]: "Votre département ne fait pas partie des 11 départements pilotes.",
   [EligibilityReason.CONSTRUCTION_RECENTE]: "Votre maison doit avoir été construite il y a au moins 15 ans.",
-  [EligibilityReason.TROP_DE_NIVEAUX]: "Votre maison ne doit pas avoir plus de 2 niveaux.",
+  [EligibilityReason.TROP_DE_NIVEAUX]: "Votre maison ne doit pas avoir plus de 3 niveaux.",
   [EligibilityReason.MAISON_MITOYENNE]: "Le dispositif concerne uniquement les maisons non mitoyennes.",
   [EligibilityReason.REVENUS_TROP_ELEVES]: "Vos revenus dépassent les plafonds du dispositif.",
   [EligibilityReason.NON_ASSURE]: "Votre maison doit être couverte par une assurance habitation.",

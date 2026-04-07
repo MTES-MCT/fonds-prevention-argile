@@ -10,7 +10,7 @@ const CHECK_LABELS: Record<keyof EligibilityChecks, string> = {
   departementEligible: "Département éligible (03-04-24-32-36-47-54-59-63-81-82) ?",
   zoneForte: "Zone d'exposition forte ?",
   anneeConstruction: "Condition année de construction respectée ?",
-  niveaux: "Pas plus de 2 niveaux ?",
+  niveaux: "Pas plus de 3 niveaux ?",
   nonMitoyen: "Non mitoyenne ?",
   indemnisation: "Peu ou pas indemnisé au titre du RGA (dans le passé) ?",
   catnatEnCours: "Pas de demande d'aide catastrophe naturelle en cours ?",
