@@ -107,6 +107,9 @@ export function getPrecisionText(etape: Step, statut: Status, dsStatus: DSStatus
       if (statut === Status.EN_INSTRUCTION) {
         return "En instruction par la DDT.";
       }
+      if (statut === Status.VALIDE) {
+        return "Éligibilité acceptée par la DDT. Le demandeur peut passer au diagnostic.";
+      }
       break;
 
     case Step.DIAGNOSTIC:
@@ -116,6 +119,9 @@ export function getPrecisionText(etape: Step, statut: Status, dsStatus: DSStatus
       if (statut === Status.EN_INSTRUCTION) {
         return "En instruction par la DDT.";
       }
+      if (statut === Status.VALIDE) {
+        return "Diagnostic accepté par la DDT. Le demandeur peut passer aux devis.";
+      }
       break;
 
     case Step.DEVIS:
@@ -124,6 +130,9 @@ export function getPrecisionText(etape: Step, statut: Status, dsStatus: DSStatus
       }
       if (statut === Status.EN_INSTRUCTION) {
         return "En instruction par la DDT.";
+      }
+      if (statut === Status.VALIDE) {
+        return "Devis acceptés par la DDT. Les travaux peuvent commencer.";
       }
       break;
 

@@ -110,8 +110,11 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       rnbId: rgaData?.logement?.rnb || null,
     };
 
-    // Récupérer les dates de soumission des dossiers DS par step
-    const datesByStep = await dossierDemarchesSimplifieesRepository.getSubmittedDatesByStep(dossier.parcours.id);
+    // Récupérer les dates de soumission et de traitement des dossiers DS par step
+    const [datesByStep, processedDatesByStep] = await Promise.all([
+      dossierDemarchesSimplifieesRepository.getSubmittedDatesByStep(dossier.parcours.id),
+      dossierDemarchesSimplifieesRepository.getProcessedDatesByStep(dossier.parcours.id),
+    ]);
 
     // Construire l'objet des dates de progression
     const dates: ParcoursDateProgression = {
@@ -121,6 +124,10 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       diagnosticSubmittedAt: datesByStep.get(Step.DIAGNOSTIC),
       devisSubmittedAt: datesByStep.get(Step.DEVIS),
       facturesSubmittedAt: datesByStep.get(Step.FACTURES),
+      eligibiliteProcessedAt: processedDatesByStep.get(Step.ELIGIBILITE),
+      diagnosticProcessedAt: processedDatesByStep.get(Step.DIAGNOSTIC),
+      devisProcessedAt: processedDatesByStep.get(Step.DEVIS),
+      facturesProcessedAt: processedDatesByStep.get(Step.FACTURES),
     };
 
     // Construire les informations de diff agent

@@ -4,6 +4,7 @@ import { getDemandeDetail } from "@/features/backoffice/espace-agent/demandes/se
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet, formatDate } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
+import { Status } from "@/shared/domain/value-objects/status.enum";
 import {
   InfoDemandeur,
   InfoLogement,
@@ -161,7 +162,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                   flexDirection: "column",
                   gap: "2rem",
                 }}>
-                <ParcoursDemandeur currentStep={demande.currentStep} dates={demande.dates} />
+                <ParcoursDemandeur currentStep={demande.currentStep} currentStatus={Status.TODO} dsStatus={null} dates={demande.dates} />
                 <AFaire
                   items={[
                     "Contacter le demandeur",

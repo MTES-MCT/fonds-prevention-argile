@@ -8,6 +8,7 @@ import { STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain/
 import { InfoDemandeur, InfoLogement, ParcoursDemandeur, AFaire, QualificationAllersVers } from "../../shared";
 import { NotesPartagees } from "../../shared";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
+import { DossierStatusBadge } from "./components/DossierStatusBadge";
 import { PiecesJustificatives } from "./components/PiecesJustificatives";
 import { GagnezDuTempsTravaux } from "./components/GagnezDuTempsTravaux";
 import { ArchiveDossierButton } from "./components/ArchiveDossierButton";
@@ -93,7 +94,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
             <div className="fr-col">
               <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
               <div className="fr-badges-group">
-                <p className="fr-badge fr-badge--new">EN CONSTRUCTION</p>
+                <DossierStatusBadge dsStatus={dossier.dsStatus} />
                 <p className="fr-badge">{STEP_LABELS[dossier.currentStep]}</p>
               </div>
             </div>
@@ -106,7 +107,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
         {/* Section en-tête : Callout + InfoDemandeur */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
-            <InfoDossierCallout currentStep={dossier.currentStep} />
+            <InfoDossierCallout currentStep={dossier.currentStep} currentStatus={dossier.currentStatus} dsStatus={dossier.dsStatus} />
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <div style={{ alignSelf: "flex-start" }}>
@@ -167,6 +168,8 @@ export default async function DossierDetailPage({ params }: PageProps) {
                 }}>
                 <ParcoursDemandeur
                   currentStep={dossier.currentStep}
+                  currentStatus={dossier.currentStatus}
+                  dsStatus={dossier.dsStatus}
                   dates={dossier.dates}
                   lastUpdatedAt={dossier.lastUpdatedAt}
                 />

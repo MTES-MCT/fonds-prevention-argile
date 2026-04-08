@@ -1,4 +1,6 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import { Status } from "@/shared/domain/value-objects/status.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { formatDate, daysBetween } from "@/shared/utils";
 
 interface ParcoursDateProgression {
@@ -8,10 +10,16 @@ interface ParcoursDateProgression {
   diagnosticSubmittedAt?: Date;
   devisSubmittedAt?: Date;
   facturesSubmittedAt?: Date;
+  eligibiliteProcessedAt?: Date;
+  diagnosticProcessedAt?: Date;
+  devisProcessedAt?: Date;
+  facturesProcessedAt?: Date;
 }
 
 interface ParcoursDemandeurProps {
   currentStep: Step;
+  currentStatus: Status;
+  dsStatus: DSStatus | null;
   dates: ParcoursDateProgression;
   /** Date de dernière mise à jour pour afficher le nombre de jours depuis dernière action */
   lastUpdatedAt?: Date;
@@ -21,15 +29,36 @@ interface StepConfig {
   step: Step | null;
   label: string;
   dateKey: keyof ParcoursDateProgression;
+  processedDateKey?: keyof ParcoursDateProgression;
 }
 
 const STEPS_CONFIG: StepConfig[] = [
   { step: null, label: "Compte créé", dateKey: "compteCreatedAt" },
   { step: Step.CHOIX_AMO, label: "Choisir un AMO", dateKey: "amoChoisieAt" },
-  { step: Step.ELIGIBILITE, label: "Soumettre le formulaire d'éligibilité", dateKey: "eligibiliteSubmittedAt" },
-  { step: Step.DIAGNOSTIC, label: "Soumettre le diagnostic", dateKey: "diagnosticSubmittedAt" },
-  { step: Step.DEVIS, label: "Soumettre les devis", dateKey: "devisSubmittedAt" },
-  { step: Step.FACTURES, label: "Transmettre les factures", dateKey: "facturesSubmittedAt" },
+  {
+    step: Step.ELIGIBILITE,
+    label: "Soumettre le formulaire d'éligibilité",
+    dateKey: "eligibiliteSubmittedAt",
+    processedDateKey: "eligibiliteProcessedAt",
+  },
+  {
+    step: Step.DIAGNOSTIC,
+    label: "Soumettre le diagnostic",
+    dateKey: "diagnosticSubmittedAt",
+    processedDateKey: "diagnosticProcessedAt",
+  },
+  {
+    step: Step.DEVIS,
+    label: "Soumettre les devis",
+    dateKey: "devisSubmittedAt",
+    processedDateKey: "devisProcessedAt",
+  },
+  {
+    step: Step.FACTURES,
+    label: "Transmettre les factures",
+    dateKey: "facturesSubmittedAt",
+    processedDateKey: "facturesProcessedAt",
+  },
 ];
 
 function getStepIndex(step: Step): number {
@@ -37,9 +66,62 @@ function getStepIndex(step: Step): number {
 }
 
 /**
+ * Badge de statut pour l'étape courante du parcours
+ */
+function CurrentStepBadge({
+  dsStatus,
+  currentStatus,
+  submittedAt,
+  processedAt,
+}: {
+  dsStatus: DSStatus | null;
+  currentStatus: Status;
+  submittedAt?: Date;
+  processedAt?: Date;
+}) {
+  // Accepté
+  if (dsStatus === DSStatus.ACCEPTE || currentStatus === Status.VALIDE) {
+    return (
+      <span className="fr-badge fr-badge--success fr-badge--sm">
+        ACCEPTÉE{processedAt ? ` LE ${formatDate(processedAt.toISOString()).toUpperCase()}` : ""}
+      </span>
+    );
+  }
+
+  // Refusé
+  if (dsStatus === DSStatus.REFUSE || dsStatus === DSStatus.CLASSE_SANS_SUITE) {
+    return (
+      <span className="fr-badge fr-badge--error fr-badge--sm">
+        REFUSÉE{processedAt ? ` LE ${formatDate(processedAt.toISOString()).toUpperCase()}` : ""}
+      </span>
+    );
+  }
+
+  // En instruction
+  if (dsStatus === DSStatus.EN_INSTRUCTION || currentStatus === Status.EN_INSTRUCTION) {
+    return (
+      <span className="fr-badge fr-badge--info fr-badge--sm">
+        EN INSTRUCTION{submittedAt ? ` DEPUIS LE ${formatDate(submittedAt.toISOString()).toUpperCase()}` : ""}
+      </span>
+    );
+  }
+
+  // Demande envoyée (en construction ou soumise)
+  if (submittedAt) {
+    return (
+      <span className="fr-badge fr-badge--blue-ecume fr-badge--sm">
+        DEMANDE ENVOYÉE LE {formatDate(submittedAt.toISOString()).toUpperCase()}
+      </span>
+    );
+  }
+
+  return null;
+}
+
+/**
  * Composant affichant le parcours du demandeur
  */
-export function ParcoursDemandeur({ currentStep, dates, lastUpdatedAt }: ParcoursDemandeurProps) {
+export function ParcoursDemandeur({ currentStep, currentStatus, dsStatus, dates, lastUpdatedAt }: ParcoursDemandeurProps) {
   const currentStepIndex = getStepIndex(currentStep);
 
   // Calcul du nombre de jours depuis dernière action
@@ -70,6 +152,7 @@ export function ParcoursDemandeur({ currentStep, dates, lastUpdatedAt }: Parcour
                 const isCurrent = index === currentStepIndex;
                 const isPending = index > currentStepIndex;
                 const stepDate = dates[stepConfig.dateKey];
+                const processedDate = stepConfig.processedDateKey ? dates[stepConfig.processedDateKey] : undefined;
 
                 return (
                   <li key={index} className="fr-mb-2w">
@@ -91,12 +174,15 @@ export function ParcoursDemandeur({ currentStep, dates, lastUpdatedAt }: Parcour
                       {isCompleted && stepDate && <span> ({formatDate(stepDate.toISOString())})</span>}
                     </span>
 
-                    {/* Badge pour l'étape en cours (si date disponible) */}
-                    {isCurrent && stepDate && (
+                    {/* Badge pour l'étape en cours */}
+                    {isCurrent && (stepDate || dsStatus) && (
                       <span className="fr-ml-2v">
-                        <span className="fr-badge fr-badge--blue-ecume fr-badge--sm">
-                          DEMANDE ENVOYÉE LE {formatDate(stepDate.toISOString()).toUpperCase()}
-                        </span>
+                        <CurrentStepBadge
+                          dsStatus={dsStatus}
+                          currentStatus={currentStatus}
+                          submittedAt={stepDate}
+                          processedAt={processedDate}
+                        />
                       </span>
                     )}
                   </li>

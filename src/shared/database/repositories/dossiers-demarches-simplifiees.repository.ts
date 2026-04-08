@@ -123,6 +123,30 @@ export class DossierDemarchesSimplifieesRepository extends BaseRepository<Dossie
 
     return datesByStep;
   }
+
+  /**
+   * Récupère les dates de traitement (acceptation/refus) des dossiers par step pour un parcours
+   * Retourne un Map avec step -> processedAt
+   */
+  async getProcessedDatesByStep(parcoursId: string): Promise<Map<string, Date>> {
+    const dossiers = await db
+      .select({
+        step: dossiersDemarchesSimplifiees.step,
+        processedAt: dossiersDemarchesSimplifiees.processedAt,
+      })
+      .from(dossiersDemarchesSimplifiees)
+      .where(eq(dossiersDemarchesSimplifiees.parcoursId, parcoursId));
+
+    const datesByStep = new Map<string, Date>();
+
+    for (const dossier of dossiers) {
+      if (dossier.processedAt) {
+        datesByStep.set(dossier.step, dossier.processedAt);
+      }
+    }
+
+    return datesByStep;
+  }
 }
 
 // Export d'une instance singleton
