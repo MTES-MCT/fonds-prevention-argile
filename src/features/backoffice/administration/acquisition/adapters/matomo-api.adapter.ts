@@ -216,7 +216,7 @@ export async function fetchMatomoEvents(options?: { period?: string; date?: stri
   const eventCounts = new Map<string, number>();
   if (Array.isArray(data)) {
     for (const row of data) {
-      eventCounts.set(row.label, row.nb_events);
+      eventCounts.set(row.label, row.nb_visits);
     }
   }
   return eventCounts;
@@ -258,7 +258,7 @@ export async function fetchMatomoEventsByDepartment(
   // Matomo peut retourner un tableau vide ou un objet vide si pas de données
   if (Array.isArray(data)) {
     for (const row of data) {
-      eventCounts.set(row.label, row.nb_events);
+      eventCounts.set(row.label, row.nb_visits);
     }
   }
 

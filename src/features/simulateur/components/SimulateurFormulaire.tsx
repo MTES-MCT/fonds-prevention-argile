@@ -58,32 +58,18 @@ export function SimulateurFormulaire() {
 
   // Tracking Matomo à chaque changement d'étape
   useEffect(() => {
-    // Diagnostic doublons Matomo — à retirer après analyse
-    const skipped = previousStepRef.current === currentStep;
-    console.log("[Matomo Diag]", {
-      action: skipped ? "SKIPPED" : "TRACK",
-      currentStep,
-      previousStep: previousStepRef.current,
-      isEligible,
-      answersKeys: Object.keys(answers),
-      trigger: "useEffect",
-      timestamp: Date.now(),
-    });
-
-    // Éviter le double tracking au premier render
-    if (skipped) return;
+    if (previousStepRef.current === currentStep) return;
     previousStepRef.current = currentStep;
 
-    // Construire la custom dimension département si disponible
-    // Le département est connu à partir du step adresse (answers.logement.code_departement)
-    const codeDepartement = answers.logement?.code_departement;
+    // Lire answers depuis le store (pas via closure pour éviter les re-fires)
+    const currentAnswers = useSimulateurStore.getState().simulation.answers;
+    const codeDepartement = currentAnswers.logement?.code_departement;
     const dimensionId = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
     const deptDimensions: MatomoCustomDimension[] | undefined =
       codeDepartement && dimensionId ? [{ id: Number(dimensionId), value: codeDepartement }] : undefined;
 
     // Tracker selon l'étape
     if (currentStep === SimulateurStep.RESULTAT) {
-      // Tracker le résultat
       if (isEligible) {
         trackEvent(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE, undefined, deptDimensions);
       } else {
@@ -95,16 +81,10 @@ export function SimulateurFormulaire() {
         trackEvent(eventName, undefined, deptDimensions);
       }
     }
-  }, [currentStep, isEligible, trackEvent, answers]);
+  }, [currentStep, isEligible, trackEvent]);
 
   // Wrapper pour start avec tracking
   const handleStart = () => {
-    // Diagnostic doublons Matomo — à retirer après analyse
-    console.log("[Matomo Diag]", {
-      action: "START",
-      currentStep,
-      timestamp: Date.now(),
-    });
     trackEvent(MATOMO_EVENTS.SIMULATEUR_START);
     start();
   };
