@@ -297,37 +297,35 @@ export async function fetchMatomoEventsByDepartment(
 }
 
 // ---------------------------------------------------------------------------
-// Simulations groupées par département via CustomDimensions
+// Simulations groupées par Custom Dimension via CustomDimensions API
 // ---------------------------------------------------------------------------
 
 interface MatomoCustomDimensionRow {
-  label: string; // valeur de la dimension (ex: "36", "75")
+  label: string; // valeur composite "valeur - url" pour dimensions de scope action
   nb_visits: number;
 }
 
 /**
- * Extrait le code département depuis un label Matomo CustomDimension.
- * La dimension de scope "action" retourne des labels comme "63 - fonds-prevention-argile.beta.gouv.fr/simulateur".
- * On extrait la partie avant " - " qui est la valeur de la dimension (le code département).
+ * Extrait la valeur de dimension depuis un label Matomo CustomDimension.
+ * Les dimensions de scope "action" retournent des labels comme "63 - fonds-prevention-argile.beta.gouv.fr/simulateur".
+ * On extrait la partie avant " - " qui est la valeur de la dimension.
  */
-function extractDeptCodeFromLabel(label: string): string | null {
+function extractDimensionValueFromLabel(label: string): string | null {
   if (!label || label === "-") return null;
   const dashIndex = label.indexOf(" - ");
-  const code = dashIndex > 0 ? label.substring(0, dashIndex).trim() : label.trim();
-  // Vérifier que c'est bien un code département (1 à 3 caractères alphanumériques)
-  if (/^[0-9]{1,3}[A-B]?$/i.test(code)) return code;
-  return null;
+  const value = dashIndex > 0 ? label.substring(0, dashIndex).trim() : label.trim();
+  return value || null;
 }
 
 /**
- * Récupère les simulations Matomo ventilées par département via `CustomDimensions.getCustomDimension`.
+ * Récupère les simulations Matomo ventilées par une Custom Dimension (département, commune, etc.).
  * Fait 2 appels segmentés (éligible + non éligible) et fusionne les résultats.
  *
- * @param dimensionId - ID de la Custom Dimension département dans Matomo
+ * @param dimensionId - ID de la Custom Dimension dans Matomo
  * @param options - Période et date optionnelles
- * @returns Map<codeDepartement, { total, eligible, nonEligible }>
+ * @returns Map<dimensionValue, { total, eligible, nonEligible }>
  */
-export async function fetchMatomoSimulationsGroupedByDepartment(
+export async function fetchMatomoSimulationsGroupedByDimension(
   dimensionId: number,
   options?: { period?: string; date?: string }
 ): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
@@ -359,22 +357,32 @@ export async function fetchMatomoSimulationsGroupedByDepartment(
   const result = new Map<string, { total: number; eligible: number; nonEligible: number }>();
 
   for (const row of Array.isArray(eligibleData) ? eligibleData : []) {
-    const code = extractDeptCodeFromLabel(row.label);
-    if (!code) continue;
-    const entry = result.get(code) ?? { total: 0, eligible: 0, nonEligible: 0 };
+    const value = extractDimensionValueFromLabel(row.label);
+    if (!value) continue;
+    const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
     entry.eligible += row.nb_visits;
     entry.total += row.nb_visits;
-    result.set(code, entry);
+    result.set(value, entry);
   }
 
   for (const row of Array.isArray(nonEligibleData) ? nonEligibleData : []) {
-    const code = extractDeptCodeFromLabel(row.label);
-    if (!code) continue;
-    const entry = result.get(code) ?? { total: 0, eligible: 0, nonEligible: 0 };
+    const value = extractDimensionValueFromLabel(row.label);
+    if (!value) continue;
+    const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
     entry.nonEligible += row.nb_visits;
     entry.total += row.nb_visits;
-    result.set(code, entry);
+    result.set(value, entry);
   }
 
   return result;
+}
+
+/**
+ * Alias pour la rétrocompatibilité — récupère les simulations groupées par département.
+ */
+export async function fetchMatomoSimulationsGroupedByDepartment(
+  dimensionId: number,
+  options?: { period?: string; date?: string }
+): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
+  return fetchMatomoSimulationsGroupedByDimension(dimensionId, options);
 }

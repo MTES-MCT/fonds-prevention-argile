@@ -9,11 +9,13 @@ import {
   getMatomoSimulationsStatsAction,
   getDepartementsDisponiblesAction,
   getTopDepartementsMatomoAction,
+  getTopCommunesMatomoAction,
 } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
 import type {
   TableauDeBordStats,
   MatomoSimulationsStats,
   DepartementStats,
+  CommuneSimulationsStats,
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 import { getStatistiquesAction } from "@/features/backoffice/administration/acquisition/actions/get-statistiques.action";
@@ -45,6 +47,8 @@ export default function AcquisitionPanel() {
   const [matomoLoaded, setMatomoLoaded] = useState(false);
   const [topDepartementsMatomo, setTopDepartementsMatomo] = useState<DepartementStats[] | null>(null);
   const [topDeptsLoading, setTopDeptsLoading] = useState(true);
+  const [topCommunesMatomo, setTopCommunesMatomo] = useState<CommuneSimulationsStats[] | null>(null);
+  const [topCommunesLoading, setTopCommunesLoading] = useState(true);
   const [matomoStats, setMatomoStats] = useState<Statistiques | null>(null);
   const [loading, setLoading] = useState(true);
   const [funnelLoading, setFunnelLoading] = useState(true);
@@ -134,6 +138,28 @@ export default function AcquisitionPanel() {
     }
 
     loadTopDepts();
+    return () => {
+      cancelled = true;
+    };
+  }, [periodeId, codeDepartement]);
+
+  // Charger le top communes Matomo quand les filtres changent
+  useEffect(() => {
+    let cancelled = false;
+    setTopCommunesMatomo(null);
+    setTopCommunesLoading(true);
+
+    async function loadTopCommunes() {
+      const result = await getTopCommunesMatomoAction(periodeId, codeDepartement || undefined);
+      if (!cancelled) {
+        if (result.success) {
+          setTopCommunesMatomo(result.data);
+        }
+        setTopCommunesLoading(false);
+      }
+    }
+
+    loadTopCommunes();
     return () => {
       cancelled = true;
     };
@@ -263,14 +289,14 @@ export default function AcquisitionPanel() {
                   <TopSimulationsCard
                     title="Top 5 simulations par communes"
                     columnLabel="Communes"
-                    tooltip="Données base de données (comptes créés uniquement)"
+                    tooltip="Données Matomo (toutes simulations, y compris anonymes)"
                     rows={
-                      stats?.topCommunes.map((c) => ({
+                      topCommunesMatomo?.map((c) => ({
                         label: c.commune,
                         simulations: c.simulations,
                       })) ?? []
                     }
-                    loading={loading}
+                    loading={topCommunesLoading}
                   />
                 </div>
               </div>

@@ -44,6 +44,7 @@ import {
   fetchMatomoEventsByDepartment,
   fetchMatomoUniqueVisitors,
   fetchMatomoSimulationsGroupedByDepartment,
+  fetchMatomoSimulationsGroupedByDimension,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getClientEnv } from "@/shared/config/env.config";
@@ -921,6 +922,51 @@ async function getTopCommunesStats(
   }
 
   return [...communeMap.values()].sort((a, b) => b.simulations - a.simulations).slice(0, 5);
+}
+
+/**
+ * Récupère les simulations par commune depuis Matomo (toutes simulations, y compris anonymes).
+ * Fallback sur la BDD si la dimension commune n'est pas configurée ou si Matomo ne retourne rien.
+ */
+export async function getTopCommunesMatomo(
+  periodeId: PeriodeId,
+  codeDepartement?: string
+): Promise<CommuneSimulationsStats[]> {
+  const { debut, fin } = getDateRange(periodeId);
+  const dateRange = formatMatomoDateRange(debut, fin);
+
+  const communeDimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID;
+  const communeDimensionId = communeDimensionIdStr ? Number(communeDimensionIdStr) : null;
+
+  if (!communeDimensionId) {
+    return getTopCommunesStats(debut, fin, codeDepartement);
+  }
+
+  try {
+    const matomoByCommune = await fetchMatomoSimulationsGroupedByDimension(communeDimensionId, {
+      period: "range",
+      date: dateRange,
+    });
+
+    if (matomoByCommune.size === 0) {
+      return getTopCommunesStats(debut, fin, codeDepartement);
+    }
+
+    const result: CommuneSimulationsStats[] = [];
+
+    for (const [communeNom, counts] of matomoByCommune) {
+      result.push({
+        commune: communeNom,
+        codeDepartement: "",
+        simulations: counts.total,
+      });
+    }
+
+    // Trier et garder le top 5
+    return result.sort((a, b) => b.simulations - a.simulations).slice(0, 5);
+  } catch {
+    return getTopCommunesStats(debut, fin, codeDepartement);
+  }
 }
 
 /**
