@@ -616,12 +616,6 @@ async function getDemandesIneligiblesDetail(
     return { total: 0, motifs: [], autresMotifs: [] };
   }
 
-  // Total des occurrences de raisons pour le calcul des pourcentages
-  let totalRaisons = 0;
-  for (const c of distributionActuelle.values()) {
-    totalRaisons += c;
-  }
-
   // Lookup clé → label
   const labelMap = new Map<string, string>();
   for (const r of RAISONS_INELIGIBILITE) {
@@ -629,6 +623,8 @@ async function getDemandesIneligiblesDetail(
   }
 
   // Construire la liste complète triée par count décroissant
+  // Pourcentage = nb occurrences raison / nb dossiers inéligibles distincts
+  // Un dossier peut avoir plusieurs raisons, donc la somme des % peut dépasser 100%
   const tousMotifs: MotifIneligibilite[] = [];
   for (const [raison, countActuel] of distributionActuelle) {
     const countPrecedent = distributionPrecedente.get(raison) ?? 0;
@@ -636,7 +632,7 @@ async function getDemandesIneligiblesDetail(
       raison,
       label: labelMap.get(raison) ?? raison,
       count: countActuel,
-      pourcentage: totalRaisons > 0 ? Math.round((countActuel / totalRaisons) * 100) : 0,
+      pourcentage: Math.round((countActuel / totalParcours) * 100),
       variation: previousRange ? calculerVariation(countActuel, countPrecedent) : null,
     });
   }
