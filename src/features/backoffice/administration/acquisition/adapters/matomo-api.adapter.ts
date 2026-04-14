@@ -295,3 +295,86 @@ export async function fetchMatomoEventsByDepartment(
 
   return eventCounts;
 }
+
+// ---------------------------------------------------------------------------
+// Simulations groupées par département via CustomDimensions
+// ---------------------------------------------------------------------------
+
+interface MatomoCustomDimensionRow {
+  label: string; // valeur de la dimension (ex: "36", "75")
+  nb_visits: number;
+}
+
+/**
+ * Extrait le code département depuis un label Matomo CustomDimension.
+ * La dimension de scope "action" retourne des labels comme "63 - fonds-prevention-argile.beta.gouv.fr/simulateur".
+ * On extrait la partie avant " - " qui est la valeur de la dimension (le code département).
+ */
+function extractDeptCodeFromLabel(label: string): string | null {
+  if (!label || label === "-") return null;
+  const dashIndex = label.indexOf(" - ");
+  const code = dashIndex > 0 ? label.substring(0, dashIndex).trim() : label.trim();
+  // Vérifier que c'est bien un code département (1 à 3 caractères alphanumériques)
+  if (/^[0-9]{1,3}[A-B]?$/i.test(code)) return code;
+  return null;
+}
+
+/**
+ * Récupère les simulations Matomo ventilées par département via `CustomDimensions.getCustomDimension`.
+ * Fait 2 appels segmentés (éligible + non éligible) et fusionne les résultats.
+ *
+ * @param dimensionId - ID de la Custom Dimension département dans Matomo
+ * @param options - Période et date optionnelles
+ * @returns Map<codeDepartement, { total, eligible, nonEligible }>
+ */
+export async function fetchMatomoSimulationsGroupedByDepartment(
+  dimensionId: number,
+  options?: { period?: string; date?: string }
+): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
+  const config = getMatomoConfig();
+
+  const baseParams = {
+    module: "API",
+    method: "CustomDimensions.getCustomDimension",
+    idDimension: String(dimensionId),
+    idSite: config.siteId,
+    period: options?.period ?? "range",
+    date: options?.date ?? "2025-01-01,today",
+    format: "JSON",
+    token_auth: config.apiToken,
+    flat: "1",
+  };
+
+  const [eligibleData, nonEligibleData] = await Promise.all([
+    fetchMatomoApi<MatomoCustomDimensionRow[]>(
+      { ...baseParams, segment: "eventAction==simulateur_result_eligible" },
+      config.apiUrl
+    ),
+    fetchMatomoApi<MatomoCustomDimensionRow[]>(
+      { ...baseParams, segment: "eventAction==simulateur_result_non_eligible" },
+      config.apiUrl
+    ),
+  ]);
+
+  const result = new Map<string, { total: number; eligible: number; nonEligible: number }>();
+
+  for (const row of Array.isArray(eligibleData) ? eligibleData : []) {
+    const code = extractDeptCodeFromLabel(row.label);
+    if (!code) continue;
+    const entry = result.get(code) ?? { total: 0, eligible: 0, nonEligible: 0 };
+    entry.eligible += row.nb_visits;
+    entry.total += row.nb_visits;
+    result.set(code, entry);
+  }
+
+  for (const row of Array.isArray(nonEligibleData) ? nonEligibleData : []) {
+    const code = extractDeptCodeFromLabel(row.label);
+    if (!code) continue;
+    const entry = result.get(code) ?? { total: 0, eligible: 0, nonEligible: 0 };
+    entry.nonEligible += row.nb_visits;
+    entry.total += row.nb_visits;
+    result.set(code, entry);
+  }
+
+  return result;
+}

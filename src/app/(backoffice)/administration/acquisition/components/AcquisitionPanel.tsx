@@ -8,10 +8,12 @@ import {
   getTableauDeBordStatsAction,
   getMatomoSimulationsStatsAction,
   getDepartementsDisponiblesAction,
+  getTopDepartementsMatomoAction,
 } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
 import type {
   TableauDeBordStats,
   MatomoSimulationsStats,
+  DepartementStats,
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 import { getStatistiquesAction } from "@/features/backoffice/administration/acquisition/actions/get-statistiques.action";
@@ -41,6 +43,8 @@ export default function AcquisitionPanel() {
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
   const [matomoSimuStats, setMatomoSimuStats] = useState<MatomoSimulationsStats | null>(null);
   const [matomoLoaded, setMatomoLoaded] = useState(false);
+  const [topDepartementsMatomo, setTopDepartementsMatomo] = useState<DepartementStats[] | null>(null);
+  const [topDeptsLoading, setTopDeptsLoading] = useState(true);
   const [matomoStats, setMatomoStats] = useState<Statistiques | null>(null);
   const [loading, setLoading] = useState(true);
   const [funnelLoading, setFunnelLoading] = useState(true);
@@ -108,6 +112,28 @@ export default function AcquisitionPanel() {
     }
 
     loadMatomoSimu();
+    return () => {
+      cancelled = true;
+    };
+  }, [periodeId, codeDepartement]);
+
+  // Charger le top departements Matomo (simulations toutes sources) quand les filtres changent
+  useEffect(() => {
+    let cancelled = false;
+    setTopDepartementsMatomo(null);
+    setTopDeptsLoading(true);
+
+    async function loadTopDepts() {
+      const result = await getTopDepartementsMatomoAction(periodeId, codeDepartement || undefined);
+      if (!cancelled) {
+        if (result.success) {
+          setTopDepartementsMatomo(result.data);
+        }
+        setTopDeptsLoading(false);
+      }
+    }
+
+    loadTopDepts();
     return () => {
       cancelled = true;
     };
@@ -220,24 +246,24 @@ export default function AcquisitionPanel() {
                   <TopSimulationsCard
                     title="Top 5 simulations par departement"
                     columnLabel="Departements"
-                    tooltip="Données base de données"
+                    tooltip="Données Matomo (toutes simulations, y compris anonymes)"
                     rows={
-                      stats?.topDepartements
-                        .sort((a, b) => b.simulations - a.simulations)
+                      topDepartementsMatomo
+                        ?.sort((a, b) => b.simulations - a.simulations)
                         .slice(0, 5)
                         .map((d) => ({
                           label: `${d.codeDepartement} ${d.nomDepartement}`,
                           simulations: d.simulations,
                         })) ?? []
                     }
-                    loading={loading}
+                    loading={topDeptsLoading}
                   />
                 </div>
                 <div className="fr-col-12 fr-col-lg-6">
                   <TopSimulationsCard
                     title="Top 5 simulations par communes"
                     columnLabel="Communes"
-                    tooltip="Données base de données"
+                    tooltip="Données base de données (comptes créés uniquement)"
                     rows={
                       stats?.topCommunes.map((c) => ({
                         label: c.commune,

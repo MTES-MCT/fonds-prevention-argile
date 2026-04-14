@@ -43,6 +43,7 @@ import {
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
   fetchMatomoUniqueVisitors,
+  fetchMatomoSimulationsGroupedByDepartment,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getClientEnv } from "@/shared/config/env.config";
@@ -802,6 +803,75 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
       dossiersDN: dn,
       transformationGlobale: sims.total > 0 ? Math.round((dn / sims.total) * 10000) / 100 : 0,
     });
+  }
+
+  return result;
+}
+
+/**
+ * Récupère les simulations par département depuis Matomo (toutes simulations, y compris anonymes).
+ * Fusionne avec les données BDD pour comptes créés et dossiers DN.
+ */
+export async function getTopDepartementsMatomo(
+  periodeId: PeriodeId,
+  codeDepartement?: string
+): Promise<DepartementStats[]> {
+  const { debut, fin } = getDateRange(periodeId);
+  const dateRange = formatMatomoDateRange(debut, fin);
+
+  const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
+  const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
+
+  if (!dimensionId) {
+    console.warn("[getTopDepartementsMatomo] NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID non configuré, fallback BDD");
+    return getTopDepartementsStats(debut, fin);
+  }
+
+  // Récupérer simulations Matomo par département + données BDD en parallèle
+  const [matomoByDept, bddStats] = await Promise.all([
+    fetchMatomoSimulationsGroupedByDepartment(dimensionId, { period: "range", date: dateRange }),
+    getTopDepartementsStats(debut, fin),
+  ]);
+
+  if (matomoByDept.size === 0) {
+    console.warn("[getTopDepartementsMatomo] Matomo n'a retourné aucune donnée, fallback BDD");
+    return bddStats;
+  }
+
+  // Indexer les données BDD par code département pour fusion rapide
+  const bddByDept = new Map(bddStats.map((d) => [d.codeDepartement, d]));
+
+  // Fusionner : simulations Matomo + comptes/DN BDD
+  const allCodes = new Set([...matomoByDept.keys(), ...bddByDept.keys()]);
+  const result: DepartementStats[] = [];
+
+  for (const code of allCodes) {
+    const matomo = matomoByDept.get(code);
+    const bdd = bddByDept.get(code);
+    const officialCode = toOfficialCodeDepartement(code);
+    const nom = getDepartementName(code) ?? bdd?.nomDepartement ?? code;
+
+    const simulations = matomo?.total ?? bdd?.simulations ?? 0;
+    const simulationsEligibles = matomo?.eligible ?? bdd?.simulationsEligibles ?? 0;
+    const comptesCrees = bdd?.comptesCrees ?? 0;
+    const dossiersDN = bdd?.dossiersDN ?? 0;
+
+    result.push({
+      codeDepartement: officialCode,
+      nomDepartement: nom,
+      simulations,
+      simulationsEligibles,
+      pourcentageEligibles: simulations > 0 ? Math.round((simulationsEligibles / simulations) * 100) : 0,
+      comptesCrees,
+      dossiersDN,
+      transformationGlobale: simulations > 0 ? Math.round((dossiersDN / simulations) * 10000) / 100 : 0,
+    });
+  }
+
+  // Filtrer par département si demandé
+  if (codeDepartement) {
+    const normalizedFilter = normalizeCodeDepartement(codeDepartement);
+    return result.filter((d) => normalizeCodeDepartement(d.codeDepartement) === normalizedFilter);
   }
 
   return result;
