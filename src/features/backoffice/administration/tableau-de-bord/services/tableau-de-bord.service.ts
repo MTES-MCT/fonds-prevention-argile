@@ -279,28 +279,32 @@ async function countDemandesAmo(debut: Date, fin: Date, codeDepartement?: string
 }
 
 /**
- * Compte les reponses AMO en attente (snapshot actuel, pas filtre par date)
+ * Compte les demandes AMO envoyees sur la periode et encore en attente de reponse.
+ * Permet de savoir si les demandes sont gerees assez rapidement.
  */
-async function countReponsesAmoEnAttente(codeDepartement?: string): Promise<number> {
+async function countReponsesAmoEnAttente(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
+  const conditions = [
+    gte(parcoursAmoValidations.choisieAt, debut),
+    lt(parcoursAmoValidations.choisieAt, fin),
+    eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE),
+  ];
+
   if (codeDepartement) {
+    conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+    conditions.push(whereDepartement(codeDepartement));
+
     const result = await db
       .select({ count: count() })
       .from(parcoursAmoValidations)
       .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
-      .where(
-        and(
-          eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE),
-          isNotNull(parcoursPrevention.rgaSimulationData),
-          whereDepartement(codeDepartement)
-        )
-      );
+      .where(and(...conditions));
     return result[0]?.count ?? 0;
   }
 
   const result = await db
     .select({ count: count() })
     .from(parcoursAmoValidations)
-    .where(eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE));
+    .where(and(...conditions));
   return result[0]?.count ?? 0;
 }
 
@@ -875,7 +879,7 @@ export async function getTableauDeBordStats(
     countSimulationsParEligibilite(debut, fin, codeDepartement),
     countComptesCrees(debut, fin, codeDepartement),
     countDemandesAmo(debut, fin, codeDepartement),
-    countReponsesAmoEnAttente(codeDepartement),
+    countReponsesAmoEnAttente(debut, fin, codeDepartement),
     countDossiersDN(debut, fin, codeDepartement),
     countDemandesArchivees(debut, fin, codeDepartement),
     detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement),
@@ -901,15 +905,23 @@ export async function getTableauDeBordStats(
   };
 
   if (previousRange) {
-    const [prevSimulations, prevEligibilite, prevComptes, prevDemandesAmo, prevDossiersDN, prevArchivees] =
-      await Promise.all([
-        countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
-        countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement),
-        countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
-        countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
-        countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
-        countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
-      ]);
+    const [
+      prevSimulations,
+      prevEligibilite,
+      prevComptes,
+      prevDemandesAmo,
+      prevReponsesAttente,
+      prevDossiersDN,
+      prevArchivees,
+    ] = await Promise.all([
+      countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
+      countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement),
+      countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
+      countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
+      countReponsesAmoEnAttente(previousRange.debut, previousRange.fin, codeDepartement),
+      countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
+      countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
+    ]);
 
     const prevTaux = prevSimulations > 0 ? Math.round((prevComptes / prevSimulations) * 1000) / 10 : 0;
 
@@ -921,7 +933,7 @@ export async function getTableauDeBordStats(
       tauxTransformation:
         tauxTransformation - prevTaux !== 0 ? Math.round((tauxTransformation - prevTaux) * 10) / 10 : 0,
       demandesAmo: calculerVariation(demandesAmo, prevDemandesAmo),
-      reponsesAttente: null,
+      reponsesAttente: calculerVariation(reponsesAttente, prevReponsesAttente),
       dossiersDN: calculerVariation(dossiersDN, prevDossiersDN),
       archivees: calculerVariation(archivees, prevArchivees),
     };
