@@ -72,12 +72,18 @@ export interface DepartementStats {
   simulationsEligibles: number;
   /** Pourcentage éligibles / simulations (ex: 42) */
   pourcentageEligibles: number;
+  comptesCrees: number;
   dossiersDN: number;
   /** Dossiers DN / Simulations * 100 (ex: 31.25) */
   transformationGlobale: number;
 }
 
-export type TopDepartementsTriColumn = "simulations" | "simulationsEligibles" | "dossiersDN" | "transformationGlobale";
+export type TopDepartementsTriColumn =
+  | "simulations"
+  | "simulationsEligibles"
+  | "comptesCrees"
+  | "dossiersDN"
+  | "transformationGlobale";
 
 export interface CommuneSimulationsStats {
   /** Nom de la commune (ex: "Chateauroux") */

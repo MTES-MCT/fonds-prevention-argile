@@ -10,7 +10,8 @@ const TRI_OPTIONS: { value: TopDepartementsTriColumn; label: string }[] = [
   { value: "transformationGlobale", label: "Transfo. globale" },
   { value: "simulations", label: "Simulations" },
   { value: "simulationsEligibles", label: "Simu. éligibles" },
-  { value: "dossiersDN", label: "Dossiers DN" },
+  { value: "comptesCrees", label: "Comptes créés" },
+  { value: "dossiersDN", label: "Dossiers DN créés" },
 ];
 
 interface TopDepartementsCardProps {
@@ -97,20 +98,29 @@ export function TopDepartementsCard({ departements, loading = false }: TopDepart
                   <tr>
                     <th scope="col">Dpt</th>
                     <th scope="col" style={{ textAlign: "right" }}>
-                      Simu.
+                      Simulations
                     </th>
                     <th scope="col" style={{ textAlign: "right" }}>
-                      Simu. éligibles
+                      Simu. éligibles{" "}
+                      <span
+                        className="fr-icon-information-line fr-icon--sm"
+                        aria-hidden="true"
+                        title="Pourcentage par rapport aux simulations"
+                        style={{ cursor: "help" }}
+                      />
                     </th>
                     <th scope="col" style={{ textAlign: "right" }}>
-                      Dossiers DN
+                      Comptes créés
+                    </th>
+                    <th scope="col" style={{ textAlign: "right" }}>
+                      Dossiers DN créés
                     </th>
                     <th scope="col" style={{ textAlign: "right" }}>
                       Transfo. globale{" "}
                       <span
                         className="fr-icon-information-line fr-icon--sm"
                         aria-hidden="true"
-                        title="Dossiers DN / Simulations"
+                        title="Dossiers DN créés / Simulations"
                         style={{ cursor: "help" }}
                       />
                     </th>
@@ -127,6 +137,9 @@ export function TopDepartementsCard({ departements, loading = false }: TopDepart
                       </td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
                         {dept.simulationsEligibles.toLocaleString("fr-FR")} ({dept.pourcentageEligibles}%)
+                      </td>
+                      <td className="fr-text--sm" style={{ textAlign: "right" }}>
+                        {dept.comptesCrees.toLocaleString("fr-FR")}
                       </td>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
                         {dept.dossiersDN.toLocaleString("fr-FR")}

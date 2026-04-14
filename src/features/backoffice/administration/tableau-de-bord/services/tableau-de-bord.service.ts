@@ -718,6 +718,7 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
   const parcours = await db
     .select({
       id: parcoursPrevention.id,
+      userId: parcoursPrevention.userId,
       rgaSimulationData: parcoursPrevention.rgaSimulationData,
       rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
     })
@@ -746,15 +747,20 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
       )
     );
 
-  // Grouper les simulations par département + évaluer l'éligibilité
-  const deptSimulations = new Map<string, { total: number; eligibles: number }>();
+  // Grouper les simulations par département + évaluer l'éligibilité + compter les comptes
+  const deptSimulations = new Map<string, { total: number; eligibles: number; comptes: number }>();
 
   for (const p of parcours) {
     const code = extractCodeDepartement(p.rgaSimulationData, p.rgaSimulationDataAgent);
     if (!code) continue;
 
-    const entry = deptSimulations.get(code) ?? { total: 0, eligibles: 0 };
+    const entry = deptSimulations.get(code) ?? { total: 0, eligibles: 0, comptes: 0 };
     entry.total += 1;
+
+    // Compter les comptes créés (parcours avec userId)
+    if (p.userId) {
+      entry.comptes += 1;
+    }
 
     // Évaluer l'éligibilité avec les données les plus récentes
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -781,7 +787,7 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
   const result: DepartementStats[] = [];
 
   for (const code of allCodes) {
-    const sims = deptSimulations.get(code) ?? { total: 0, eligibles: 0 };
+    const sims = deptSimulations.get(code) ?? { total: 0, eligibles: 0, comptes: 0 };
     const dn = deptDossiersDN.get(code) ?? 0;
     const officialCode = toOfficialCodeDepartement(code);
     const nom = getDepartementName(code);
@@ -792,6 +798,7 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
       simulations: sims.total,
       simulationsEligibles: sims.eligibles,
       pourcentageEligibles: sims.total > 0 ? Math.round((sims.eligibles / sims.total) * 100) : 0,
+      comptesCrees: sims.comptes,
       dossiersDN: dn,
       transformationGlobale: sims.total > 0 ? Math.round((dn / sims.total) * 10000) / 100 : 0,
     });
