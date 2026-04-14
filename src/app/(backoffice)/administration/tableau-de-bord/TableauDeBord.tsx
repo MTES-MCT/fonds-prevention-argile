@@ -186,7 +186,7 @@ export function TableauDeBord() {
             />
             <DashboardStatCard
               value={stats?.dossiersDemarcheNumerique.valeur.toLocaleString("fr-FR") ?? "..."}
-              label="Dossier Démarche Numérique"
+              label="Dossiers Démarche Numérique"
               variation={stats?.dossiersDemarcheNumerique.variation ?? null}
               loading={loading}
               compact
