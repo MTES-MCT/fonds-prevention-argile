@@ -194,11 +194,11 @@ export function TableauDeBord() {
             />
             <DashboardStatCard
               value={stats?.demandesArchivees.valeur.toLocaleString("fr-FR") ?? "..."}
-              label="Demandes archivées"
+              label="Dossiers sortis du parcours"
               variation={stats?.demandesArchivees.variation ?? null}
               loading={loading}
               compact
-              tooltip="Données base de données"
+              tooltip="Archives manuelles + non eligibles"
             />
           </div>
 
