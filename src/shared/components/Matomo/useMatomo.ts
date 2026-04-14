@@ -67,7 +67,7 @@ export function useMatomo(): UseMatomo {
         console.warn("[Matomo] Erreur tracking:", error);
       }
     },
-    [],
+    []
   );
 
   const trackPageView = useCallback((customUrl?: string) => {

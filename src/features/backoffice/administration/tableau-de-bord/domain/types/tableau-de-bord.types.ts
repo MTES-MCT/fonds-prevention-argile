@@ -115,6 +115,7 @@ export interface MatomoSimulationsStats {
   simulationsNonEligibles: StatAvecVariation;
   simulationsSansInscription: StatAvecVariation;
   tauxTransformation: StatAvecVariation;
+  visiteursUniques: StatAvecVariation;
 }
 
 export type PeriodeId = "7j" | "30j" | "90j" | "6m" | "12m" | "tout";

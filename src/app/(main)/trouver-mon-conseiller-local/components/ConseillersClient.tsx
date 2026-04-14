@@ -202,7 +202,6 @@ export function ConseillersClient({ initialConseillers, content }: ConseillersCl
           ) : (
             <div>
               {Array.from(conseillersGroupedByDepartement.entries()).map(([deptCode, conseillers]) => {
-                
                 const title = deptCode === "autres" ? "Autres" : `${deptCode} - ${getDepartementName(deptCode)}`;
                 const subgroups = SUBGROUPS_BY_DEPT[deptCode];
 

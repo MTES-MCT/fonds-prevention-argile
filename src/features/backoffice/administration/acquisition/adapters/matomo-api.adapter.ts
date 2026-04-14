@@ -126,6 +126,7 @@ export async function fetchMatomoVisits(
  */
 interface MatomoVisitsSummaryResponse {
   nb_visits: number;
+  nb_uniq_visitors: number;
   bounce_rate: string; // ex: "45%"
   [key: string]: unknown;
 }
@@ -188,6 +189,36 @@ export async function fetchMatomoFunnel(
     },
     config.apiUrl
   );
+}
+
+/**
+ * Recupere le nombre de visiteurs uniques depuis l'API Matomo (VisitsSummary.get).
+ * @param period - Periode : 'range', 'day', etc.
+ * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
+ * @param segment - Segment Matomo optionnel (ex: "dimension1==36") pour filtrer par departement
+ */
+export async function fetchMatomoUniqueVisitors(
+  period: string = "range",
+  date: string = "last30",
+  segment?: string
+): Promise<number> {
+  const config = getMatomoConfig();
+
+  const data = await fetchMatomoApi<MatomoVisitsSummaryResponse>(
+    {
+      module: "API",
+      method: "VisitsSummary.get",
+      idSite: config.siteId,
+      period,
+      date,
+      format: "JSON",
+      token_auth: config.apiToken,
+      segment,
+    },
+    config.apiUrl
+  );
+
+  return data.nb_uniq_visitors ?? 0;
 }
 
 /**

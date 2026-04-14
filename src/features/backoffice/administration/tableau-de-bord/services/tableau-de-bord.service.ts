@@ -42,6 +42,7 @@ import { asString } from "@/shared/utils/object.utils";
 import {
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
+  fetchMatomoUniqueVisitors,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getClientEnv } from "@/shared/config/env.config";
@@ -126,6 +127,25 @@ async function getSimulationsMatomo(
   const nonEligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE) ?? 0;
 
   return { eligible, nonEligible, total: eligible + nonEligible };
+}
+
+/**
+ * Recupere le nombre de visiteurs uniques depuis Matomo, avec filtrage departement optionnel.
+ */
+async function getUniqueVisitors(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
+  const dateRange = formatMatomoDateRange(debut, fin);
+  let segment: string | undefined;
+
+  if (codeDepartement) {
+    const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
+    const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
+    if (!dimensionId) return 0;
+
+    const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
+    segment = `dimension${dimensionId}==${codeDeptMatomo}`;
+  }
+
+  return fetchMatomoUniqueVisitors("range", dateRange, segment);
 }
 
 /**
@@ -941,24 +961,32 @@ export async function getMatomoSimulationsStats(
 
   const matomoFallback: SimulationsMatomoResult = { eligible: 0, nonEligible: 0, total: 0 };
 
-  // Comptes crees BDD (necessaire pour calcul sans inscription et taux)
-  const [currentMatomo, comptes, prevMatomo, prevComptes] = await Promise.all([
+  // Comptes crees BDD + visiteurs uniques Matomo (en parallele)
+  const [currentMatomo, comptes, prevMatomo, prevComptes, currentVisitors, prevVisitors] = await Promise.all([
     getSimulationsMatomo(debut, fin, codeDepartement).catch(() => matomoFallback),
     countComptesCrees(debut, fin, codeDepartement),
     previousRange
       ? getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement).catch(() => matomoFallback)
       : Promise.resolve(matomoFallback),
     previousRange ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement) : Promise.resolve(0),
+    getUniqueVisitors(debut, fin, codeDepartement).catch(() => 0),
+    previousRange
+      ? getUniqueVisitors(previousRange.debut, previousRange.fin, codeDepartement).catch(() => 0)
+      : Promise.resolve(0),
   ]);
 
+  const variationVisiteurs =
+    previousRange && prevVisitors > 0 ? calculerVariation(currentVisitors, prevVisitors) : null;
+
   if (currentMatomo.total === 0) {
-    // Matomo indisponible — pas de donnees a surcharger
+    // Matomo indisponible pour les simulations — on retourne quand meme les visiteurs uniques
     return {
       simulationsMatomo: { valeur: 0, variation: null },
       simulationsEligibles: { valeur: 0, variation: null },
       simulationsNonEligibles: { valeur: 0, variation: null },
       simulationsSansInscription: { valeur: 0, variation: null },
       tauxTransformation: { valeur: 0, variation: null },
+      visiteursUniques: { valeur: currentVisitors, variation: variationVisiteurs },
     };
   }
 
@@ -989,6 +1017,7 @@ export async function getMatomoSimulationsStats(
     simulationsNonEligibles: { valeur: currentMatomo.nonEligible, variation: variationNonEligibles },
     simulationsSansInscription: { valeur: sansInscription, variation: variationSansInscription },
     tauxTransformation: { valeur: taux, variation: variationTaux },
+    visiteursUniques: { valeur: currentVisitors, variation: variationVisiteurs },
   };
 }
 

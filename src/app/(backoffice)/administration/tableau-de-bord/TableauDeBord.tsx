@@ -72,7 +72,7 @@ export function TableauDeBord() {
 
     async function loadMatomoSimu() {
       const result = await getMatomoSimulationsStatsAction(periodeId, codeDepartement || undefined);
-      if (!cancelled && result.success && result.data.simulationsMatomo.valeur > 0) {
+      if (!cancelled && result.success && (result.data.simulationsMatomo.valeur > 0 || result.data.visiteursUniques.valeur > 0)) {
         setMatomoSimuStats(result.data);
       }
     }
@@ -127,6 +127,14 @@ export function TableauDeBord() {
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
             <DashboardStatCard
+              value={matomoSimuStats?.visiteursUniques.valeur.toLocaleString("fr-FR") ?? "..."}
+              label="Visiteurs uniques sur le site"
+              variation={matomoSimuStats?.visiteursUniques.variation ?? null}
+              loading={loading && !matomoSimuStats}
+              compact
+              tooltip="Donnees Matomo (VisitsSummary)"
+            />
+            <DashboardStatCard
               value={simulationsValue?.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Simulations terminees"
               variation={simulationsValue?.variation ?? null}
@@ -151,6 +159,8 @@ export function TableauDeBord() {
               compact
               tooltip="Calculé : comptes créés / simulations terminées (Matomo)"
             />
+          </div>
+          <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
             <DashboardStatCard
               value={stats?.demandesAmoEnvoyees.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Demandes AMO envoyées"
@@ -159,8 +169,6 @@ export function TableauDeBord() {
               compact
               tooltip="Données base de données"
             />
-          </div>
-          <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
             <DashboardStatCard
               value={stats?.reponsesAmoEnAttente.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Réponses d'AMO en attente"

@@ -27,7 +27,6 @@ export function PiecesJustificatives() {
                 <li className="fr-mb-2v">Devis de l&apos;AMO</li>
                 <li className="fr-mb-2v">Devis de l&apos;Expert</li>
                 <li className="fr-mb-0">Attestation Assurance habitation</li>
-                
               </ul>
             </div>
 
