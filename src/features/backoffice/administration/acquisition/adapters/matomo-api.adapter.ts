@@ -103,7 +103,8 @@ async function fetchMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): P
  */
 export async function fetchMatomoVisits(
   period: string = "day",
-  date: string = "last30"
+  date: string = "last30",
+  segment?: string
 ): Promise<MatomoVisitsResponse> {
   const config = getMatomoConfig();
 
@@ -116,6 +117,7 @@ export async function fetchMatomoVisits(
       date,
       format: "JSON",
       token_auth: config.apiToken,
+      segment,
     },
     config.apiUrl
   );
@@ -136,7 +138,11 @@ interface MatomoVisitsSummaryResponse {
  * @param period - Periode : 'range', 'day', etc.
  * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
  */
-export async function fetchMatomoBounceRate(period: string = "range", date: string = "last30"): Promise<number> {
+export async function fetchMatomoBounceRate(
+  period: string = "range",
+  date: string = "last30",
+  segment?: string
+): Promise<number> {
   const config = getMatomoConfig();
 
   const data = await fetchMatomoApi<MatomoVisitsSummaryResponse>(
@@ -148,6 +154,7 @@ export async function fetchMatomoBounceRate(period: string = "range", date: stri
       date,
       format: "JSON",
       token_auth: config.apiToken,
+      segment,
     },
     config.apiUrl
   );

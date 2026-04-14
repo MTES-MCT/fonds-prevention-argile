@@ -12,6 +12,19 @@ import { getFunnelSimulateurRGA } from "./matomo-funnel.service";
 import type { Statistiques } from "../domain/types/statistiques.types";
 import type { ScopeFilters } from "@/features/auth/permissions/domain/types/agent-scope.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import { toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
+import { getClientEnv } from "@/shared/config/env.config";
+
+/**
+ * Construit le segment Matomo pour filtrer par département via Custom Dimension.
+ */
+function buildDepartementSegment(codeDepartement?: string): string | undefined {
+  if (!codeDepartement) return undefined;
+  const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
+  if (!dimensionIdStr) return undefined;
+  const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
+  return `dimension${dimensionIdStr}==${codeDeptMatomo}`;
+}
 
 /**
  * Récupère toutes les statistiques globales (DB + Matomo + Funnel)
@@ -20,10 +33,12 @@ import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-
  *   - entrepriseAmoIds: Filtre par entreprises AMO (pour les agents AMO)
  *   - noAccess: Si true, retourne des stats à zéro
  * @param periodeId - Période pour les stats Matomo (visites + taux de rebond)
+ * @param codeDepartement - Code département pour filtrer les stats Matomo
  */
 export async function getStatistiques(
   scopeFilters?: ScopeFilters | null,
-  periodeId?: PeriodeId
+  periodeId?: PeriodeId,
+  codeDepartement?: string
 ): Promise<Statistiques> {
   // Si noAccess, retourner des stats à zéro
   if (scopeFilters?.noAccess) {
@@ -33,10 +48,12 @@ export async function getStatistiques(
   // Déterminer si on a un filtre par entreprise (= vue restreinte AMO)
   const hasEntrepriseFilter = scopeFilters?.entrepriseAmoIds && scopeFilters.entrepriseAmoIds.length > 0;
 
+  const segment = buildDepartementSegment(codeDepartement);
+
   const [dbStats, matomoStats, funnelStats] = await Promise.all([
     getStatistiquesDB(scopeFilters),
     // Stats Matomo uniquement si accès global (pas de filtre entreprise)
-    hasEntrepriseFilter ? Promise.resolve(null) : getMatomoStatistiques(periodeId),
+    hasEntrepriseFilter ? Promise.resolve(null) : getMatomoStatistiques(periodeId, segment),
     hasEntrepriseFilter ? Promise.resolve(null) : getFunnelSimulateurRGA(),
   ]);
 

@@ -18,7 +18,7 @@ function computeVariation(current: number, previous: number): number | null {
 /**
  * Récupère les statistiques Matomo pour une période donnée, avec variations
  */
-export async function getMatomoStatistiques(periodeId?: PeriodeId): Promise<MatomoStatistiques> {
+export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: string): Promise<MatomoStatistiques> {
   try {
     const fin = new Date();
     const periode = periodeId ? PERIODES.find((p) => p.id === periodeId) : null;
@@ -34,10 +34,10 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId): Promise<Mato
 
     // Récupérer les visites + taux de rebond en parallele (période courante + précédente)
     const [visitsData, tauxRebond, previousVisitsData, previousTauxRebond] = await Promise.all([
-      fetchMatomoVisits("day", period),
-      fetchMatomoBounceRate("range", period),
-      previousPeriod ? fetchMatomoVisits("day", previousPeriod) : Promise.resolve(null),
-      previousPeriod ? fetchMatomoBounceRate("range", previousPeriod) : Promise.resolve(null),
+      fetchMatomoVisits("day", period, segment),
+      fetchMatomoBounceRate("range", period, segment),
+      previousPeriod ? fetchMatomoVisits("day", previousPeriod, segment) : Promise.resolve(null),
+      previousPeriod ? fetchMatomoBounceRate("range", previousPeriod, segment) : Promise.resolve(null),
     ]);
 
     // Transformer les données - La structure est { "date": nombre }

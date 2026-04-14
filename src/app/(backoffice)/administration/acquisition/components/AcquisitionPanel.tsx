@@ -66,18 +66,18 @@ export default function AcquisitionPanel() {
     loadDepartements();
   }, []);
 
-  // Charger les donnees Matomo (funnel + visites + taux rebond) quand la periode change
+  // Charger les donnees Matomo (funnel + visites + taux rebond) quand les filtres changent
   useEffect(() => {
     async function loadMatomoStats() {
       setFunnelLoading(true);
-      const result = await getStatistiquesAction(periodeId);
+      const result = await getStatistiquesAction(periodeId, codeDepartement || undefined);
       if (result.success) {
         setMatomoStats(result.data);
       }
       setFunnelLoading(false);
     }
     loadMatomoStats();
-  }, [periodeId]);
+  }, [periodeId, codeDepartement]);
 
   // Charger les stats BDD (rapide) quand les filtres changent
   const loadStats = useCallback(async () => {
@@ -207,7 +207,6 @@ export default function AcquisitionPanel() {
                 departements={departements}
                 onPeriodeChange={setPeriodeId}
                 onDepartementChange={setCodeDepartement}
-                departementDisabled={activeTab === "vitrine"}
               />
             </div>
           </div>

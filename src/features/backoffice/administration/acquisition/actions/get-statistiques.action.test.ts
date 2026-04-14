@@ -62,7 +62,7 @@ describe("statistiques.actions", () => {
       }
       expect(checkBackofficePermission).toHaveBeenCalledWith(BackofficePermission.STATS_READ);
       expect(getScopeFilters).toHaveBeenCalled();
-      expect(getStatistiques).toHaveBeenCalledWith(null, undefined);
+      expect(getStatistiques).toHaveBeenCalledWith(null, undefined, undefined);
     });
 
     it("devrait autoriser l'accès pour ADMINISTRATEUR", async () => {
@@ -154,7 +154,7 @@ describe("statistiques.actions", () => {
 
       await getStatistiquesAction();
 
-      expect(getStatistiques).toHaveBeenCalledWith(scopeFilters, undefined);
+      expect(getStatistiques).toHaveBeenCalledWith(scopeFilters, undefined, undefined);
     });
 
     it("devrait gérer les erreurs de récupération", async () => {
