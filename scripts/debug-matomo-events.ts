@@ -8,11 +8,19 @@
  * 4. Segmentation par device (desktop vs mobile) — corrélé à un type d'appareil ?
  * 5. Comparaison 7j vs 30j vs 90j — le ratio est-il stable dans le temps ?
  *
- * Usage : npx tsx scripts/debug-matomo-events.ts
+ * Usage :
+ *   npx tsx scripts/matomo/debug-matomo-events.ts
+ *   npx tsx scripts/matomo/debug-matomo-events.ts --since=2026-04-09
  */
 
 import { config } from "dotenv";
 config({ path: ".env.local" });
+
+// Parsing des arguments CLI
+const args = process.argv.slice(2);
+const sinceArg = args.find((a) => a.startsWith("--since="))?.split("=")[1];
+// Date de merge du fix de mémoisation useMatomo (PR #168)
+const FIX_DEPLOY_DATE = "2026-04-09";
 
 const MATOMO_URL = process.env.NEXT_PUBLIC_MATOMO_URL!;
 const MATOMO_SITE_ID = process.env.NEXT_PUBLIC_MATOMO_SITE_ID!;
@@ -336,7 +344,71 @@ async function analyseMultiPeriodes() {
   }
 }
 
-// ─── ANALYSE 5 : Conclusion et recommandation ──────────────────────
+// ─── ANALYSE 5 : Tendance post-fix ─────────────────────────────────
+
+async function analysePostFixTrend() {
+  console.log("\n" + "=".repeat(75));
+  console.log(`ANALYSE 5 : Tendance post-fix (depuis ${sinceArg ?? FIX_DEPLOY_DATE})`);
+  console.log("=".repeat(75));
+
+  const threshold = sinceArg ?? FIX_DEPLOY_DATE;
+
+  const actions = await matomoQuery("Events.getAction", {
+    period: "day",
+    date: "last30",
+    flat: "1",
+  });
+
+  if (typeof actions !== "object" || actions === null) return;
+
+  const dates = Object.keys(actions)
+    .filter((d) => d >= threshold)
+    .sort();
+
+  if (dates.length === 0) {
+    console.log(`\n  Aucune donnée depuis ${threshold}.`);
+    return;
+  }
+
+  let totalStart = 0;
+  let totalTypeLgt = 0;
+  const dailyRatios: number[] = [];
+
+  for (const date of dates) {
+    const dayActions = actions[date];
+    if (!Array.isArray(dayActions)) continue;
+    const start = dayActions.find((a: EventRow) => a.label === "simulateur_start");
+    const typeLgt = dayActions.find((a: EventRow) => a.label === "simulateur_step_type_logement");
+    const startE = Number(start?.nb_events ?? 0);
+    const typeLgtE = Number(typeLgt?.nb_events ?? 0);
+    if (startE === 0) continue;
+    totalStart += startE;
+    totalTypeLgt += typeLgtE;
+    dailyRatios.push(typeLgtE / startE);
+  }
+
+  const avgDaily = dailyRatios.reduce((a, b) => a + b, 0) / dailyRatios.length;
+  const aggregateRatio = totalTypeLgt / totalStart;
+  const min = Math.min(...dailyRatios);
+  const max = Math.max(...dailyRatios);
+
+  console.log(`\n  Fenêtre         : ${dates[0]} → ${dates[dates.length - 1]} (${dates.length} jours)`);
+  console.log(`  Ratio agrégé    : ${aggregateRatio.toFixed(3)} (${totalTypeLgt} / ${totalStart})`);
+  console.log(`  Moyenne jour    : ${avgDaily.toFixed(3)}`);
+  console.log(`  Fourchette jour : ${min.toFixed(2)} → ${max.toFixed(2)}`);
+
+  console.log("\n  Interprétation :");
+  if (aggregateRatio <= 1.05) {
+    console.log("    >>> RATIO NORMAL (≤ 1.05). Pas de double-fire technique résiduel.");
+  } else if (aggregateRatio <= 1.15) {
+    console.log("    >>> RATIO ACCEPTABLE (1.05–1.15). Résidu probablement lié aux restarts");
+    console.log("    >>> et reprises de session (comportement utilisateur légitime).");
+  } else {
+    console.log("    >>> RATIO ÉLEVÉ (> 1.15). Investigation à poursuivre.");
+  }
+}
+
+// ─── ANALYSE 6 : Conclusion et recommandation ──────────────────────
 
 async function conclusion() {
   console.log("\n" + "=".repeat(75));
@@ -352,30 +424,18 @@ async function conclusion() {
   if (!Array.isArray(actions)) return;
   const map = getEventsMap(actions);
 
-  const start = map.get("simulateur_start");
-  const typeLgt = map.get("simulateur_step_type_logement");
   const elig = map.get("simulateur_result_eligible");
   const nonElig = map.get("simulateur_result_non_eligible");
 
-  console.log("\n  Si on bascule sur nb_visits (visiteurs uniques) au lieu de nb_events :");
+  console.log("\n  Métriques basées sur nb_visits (visiteurs uniques, utilisé par le back-office) :");
   if (elig && nonElig) {
-    console.log(
-      `    Simulations terminées : ${elig.nb_visits + nonElig.nb_visits} (au lieu de ${elig.nb_events + nonElig.nb_events})`
-    );
-    console.log(`    Éligibles             : ${elig.nb_visits} (au lieu de ${elig.nb_events})`);
-    console.log(`    Non éligibles         : ${nonElig.nb_visits} (au lieu de ${nonElig.nb_events})`);
+    console.log(`    Simulations terminées : ${elig.nb_visits + nonElig.nb_visits}`);
+    console.log(`    Éligibles             : ${elig.nb_visits}`);
+    console.log(`    Non éligibles         : ${nonElig.nb_visits}`);
   }
 
-  console.log("\n  Recommandation :");
-  if (start && typeLgt && typeLgt.nb_events > start.nb_events) {
-    console.log("    >>> Double-fire technique confirmé (type_logement > start).");
-    console.log("    >>> Correction recommandée : mémoiser trackEvent + retirer answers des deps useEffect.");
-    console.log("    >>> En attendant : utiliser nb_visits au lieu de nb_events dans le back-office.");
-  } else {
-    console.log("    Pas d'anomalie type_logement > start détectée.");
-    console.log("    Les doublons sont probablement des vrais retours utilisateur (goBack + re-soumission).");
-    console.log("    Recommandation : utiliser nb_visits pour les métriques de conversion.");
-  }
+  console.log("\n  Rappel : le back-office utilise déjà nb_visits (cf. matomo-api.adapter.ts).");
+  console.log("  Voir l'Analyse 5 pour le statut post-fix.");
 }
 
 async function main() {
@@ -388,6 +448,7 @@ async function main() {
   await analyseParJour();
   await analyseParDevice();
   await analyseMultiPeriodes();
+  await analysePostFixTrend();
   await conclusion();
 }
 

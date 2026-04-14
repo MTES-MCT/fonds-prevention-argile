@@ -59,8 +59,13 @@ export function SimulateurFormulaire() {
 
   // Tracking Matomo à chaque changement d'étape
   useEffect(() => {
+    // Sur le premier render (montage / réhydratation sessionStorage), on synchronise
+    // previousStepRef avec currentStep sans tracker : sinon un user qui reprend le
+    // parcours depuis TYPE_LOGEMENT re-tracke cette étape sans avoir refait start.
+    const isFirstRender = previousStepRef.current === null;
     if (previousStepRef.current === currentStep) return;
     previousStepRef.current = currentStep;
+    if (isFirstRender) return;
 
     // Lire answers depuis le store (pas via closure pour éviter les re-fires)
     const currentAnswers = useSimulateurStore.getState().simulation.answers;
