@@ -3,16 +3,17 @@
 interface VariationBadgeProps {
   variation: number | null;
   variationType?: "percent" | "points";
+  /** Inverser les couleurs (hausse = rouge, baisse = vert). Utile pour les metriques ou moins = mieux. */
+  invertColors?: boolean;
 }
 
 /**
- * Badge de variation avec couleur et flèche directionnelle.
+ * Badge de variation avec couleur et fleche directionnelle.
  *
- * - Vert (hausse) : ↑ +15 %
- * - Rouge (baisse) : ↓ -2 %
- * - Gris (stable) : → 0 %
+ * Par defaut : vert = hausse, rouge = baisse.
+ * Avec `invertColors` : vert = baisse, rouge = hausse.
  */
-export function VariationBadge({ variation, variationType = "percent" }: VariationBadgeProps) {
+export function VariationBadge({ variation, variationType = "percent", invertColors = false }: VariationBadgeProps) {
   if (variation === null) return null;
 
   const isPositive = variation > 0;
@@ -27,10 +28,13 @@ export function VariationBadge({ variation, variationType = "percent" }: Variati
   let bgColor = "var(--background-contrast-grey)";
   let textColor = "var(--text-default-grey)";
 
-  if (isPositive) {
+  const isGood = invertColors ? isNegative : isPositive;
+  const isBad = invertColors ? isPositive : isNegative;
+
+  if (isGood) {
     bgColor = "var(--background-contrast-success)";
     textColor = "var(--text-default-success)";
-  } else if (isNegative) {
+  } else if (isBad) {
     bgColor = "var(--background-contrast-error)";
     textColor = "var(--text-default-error)";
   }

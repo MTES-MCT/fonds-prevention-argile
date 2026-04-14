@@ -196,6 +196,7 @@ export function TableauDeBord() {
               value={stats?.demandesArchivees.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Dossiers sortis du parcours"
               variation={stats?.demandesArchivees.variation ?? null}
+              invertColors
               loading={loading}
               compact
               tooltip="Archives manuelles + non eligibles"
