@@ -11,6 +11,7 @@ export const MATOMO_EVENTS = {
   SIMULATEUR_STEP_ETAT_MAISON: "simulateur_step_etat_maison",
   SIMULATEUR_STEP_MITOYENNETE: "simulateur_step_mitoyennete",
   SIMULATEUR_STEP_INDEMNISATION: "simulateur_step_indemnisation",
+  SIMULATEUR_STEP_CATASTROPHES_NATURELLES: "simulateur_step_catastrophes_naturelles",
   SIMULATEUR_STEP_ASSURANCE: "simulateur_step_assurance",
   SIMULATEUR_STEP_PROPRIETAIRE: "simulateur_step_proprietaire",
   SIMULATEUR_STEP_REVENUS: "simulateur_step_revenus",
