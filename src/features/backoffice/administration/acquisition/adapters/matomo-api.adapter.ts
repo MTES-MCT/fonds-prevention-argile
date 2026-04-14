@@ -103,7 +103,8 @@ async function fetchMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): P
  */
 export async function fetchMatomoVisits(
   period: string = "day",
-  date: string = "last30"
+  date: string = "last30",
+  segment?: string
 ): Promise<MatomoVisitsResponse> {
   const config = getMatomoConfig();
 
@@ -116,6 +117,7 @@ export async function fetchMatomoVisits(
       date,
       format: "JSON",
       token_auth: config.apiToken,
+      segment,
     },
     config.apiUrl
   );
@@ -126,6 +128,7 @@ export async function fetchMatomoVisits(
  */
 interface MatomoVisitsSummaryResponse {
   nb_visits: number;
+  nb_uniq_visitors: number;
   bounce_rate: string; // ex: "45%"
   [key: string]: unknown;
 }
@@ -135,7 +138,11 @@ interface MatomoVisitsSummaryResponse {
  * @param period - Periode : 'range', 'day', etc.
  * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
  */
-export async function fetchMatomoBounceRate(period: string = "range", date: string = "last30"): Promise<number> {
+export async function fetchMatomoBounceRate(
+  period: string = "range",
+  date: string = "last30",
+  segment?: string
+): Promise<number> {
   const config = getMatomoConfig();
 
   const data = await fetchMatomoApi<MatomoVisitsSummaryResponse>(
@@ -147,6 +154,7 @@ export async function fetchMatomoBounceRate(period: string = "range", date: stri
       date,
       format: "JSON",
       token_auth: config.apiToken,
+      segment,
     },
     config.apiUrl
   );
@@ -188,6 +196,36 @@ export async function fetchMatomoFunnel(
     },
     config.apiUrl
   );
+}
+
+/**
+ * Recupere le nombre de visiteurs uniques depuis l'API Matomo (VisitsSummary.get).
+ * @param period - Periode : 'range', 'day', etc.
+ * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
+ * @param segment - Segment Matomo optionnel (ex: "dimension1==36") pour filtrer par departement
+ */
+export async function fetchMatomoUniqueVisitors(
+  period: string = "range",
+  date: string = "last30",
+  segment?: string
+): Promise<number> {
+  const config = getMatomoConfig();
+
+  const data = await fetchMatomoApi<MatomoVisitsSummaryResponse>(
+    {
+      module: "API",
+      method: "VisitsSummary.get",
+      idSite: config.siteId,
+      period,
+      date,
+      format: "JSON",
+      token_auth: config.apiToken,
+      segment,
+    },
+    config.apiUrl
+  );
+
+  return data.nb_uniq_visitors ?? 0;
 }
 
 /**
@@ -263,4 +301,95 @@ export async function fetchMatomoEventsByDepartment(
   }
 
   return eventCounts;
+}
+
+// ---------------------------------------------------------------------------
+// Simulations groupées par Custom Dimension via CustomDimensions API
+// ---------------------------------------------------------------------------
+
+interface MatomoCustomDimensionRow {
+  label: string; // valeur composite "valeur - url" pour dimensions de scope action
+  nb_visits: number;
+}
+
+/**
+ * Extrait la valeur de dimension depuis un label Matomo CustomDimension.
+ * Les dimensions de scope "action" retournent des labels comme "63 - fonds-prevention-argile.beta.gouv.fr/simulateur".
+ * On extrait la partie avant " - " qui est la valeur de la dimension.
+ */
+function extractDimensionValueFromLabel(label: string): string | null {
+  if (!label || label === "-") return null;
+  const dashIndex = label.indexOf(" - ");
+  const value = dashIndex > 0 ? label.substring(0, dashIndex).trim() : label.trim();
+  return value || null;
+}
+
+/**
+ * Récupère les simulations Matomo ventilées par une Custom Dimension (département, commune, etc.).
+ * Fait 2 appels segmentés (éligible + non éligible) et fusionne les résultats.
+ *
+ * @param dimensionId - ID de la Custom Dimension dans Matomo
+ * @param options - Période et date optionnelles
+ * @returns Map<dimensionValue, { total, eligible, nonEligible }>
+ */
+export async function fetchMatomoSimulationsGroupedByDimension(
+  dimensionId: number,
+  options?: { period?: string; date?: string }
+): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
+  const config = getMatomoConfig();
+
+  const baseParams = {
+    module: "API",
+    method: "CustomDimensions.getCustomDimension",
+    idDimension: String(dimensionId),
+    idSite: config.siteId,
+    period: options?.period ?? "range",
+    date: options?.date ?? "2025-01-01,today",
+    format: "JSON",
+    token_auth: config.apiToken,
+    flat: "1",
+  };
+
+  const [eligibleData, nonEligibleData] = await Promise.all([
+    fetchMatomoApi<MatomoCustomDimensionRow[]>(
+      { ...baseParams, segment: "eventAction==simulateur_result_eligible" },
+      config.apiUrl
+    ),
+    fetchMatomoApi<MatomoCustomDimensionRow[]>(
+      { ...baseParams, segment: "eventAction==simulateur_result_non_eligible" },
+      config.apiUrl
+    ),
+  ]);
+
+  const result = new Map<string, { total: number; eligible: number; nonEligible: number }>();
+
+  for (const row of Array.isArray(eligibleData) ? eligibleData : []) {
+    const value = extractDimensionValueFromLabel(row.label);
+    if (!value) continue;
+    const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
+    entry.eligible += row.nb_visits;
+    entry.total += row.nb_visits;
+    result.set(value, entry);
+  }
+
+  for (const row of Array.isArray(nonEligibleData) ? nonEligibleData : []) {
+    const value = extractDimensionValueFromLabel(row.label);
+    if (!value) continue;
+    const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
+    entry.nonEligible += row.nb_visits;
+    entry.total += row.nb_visits;
+    result.set(value, entry);
+  }
+
+  return result;
+}
+
+/**
+ * Alias pour la rétrocompatibilité — récupère les simulations groupées par département.
+ */
+export async function fetchMatomoSimulationsGroupedByDepartment(
+  dimensionId: number,
+  options?: { period?: string; date?: string }
+): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
+  return fetchMatomoSimulationsGroupedByDimension(dimensionId, options);
 }

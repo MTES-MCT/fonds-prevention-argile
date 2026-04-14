@@ -96,7 +96,7 @@ async function analyseRatioParEtape() {
     "Events".padStart(8),
     "Visits".padStart(8),
     "Ratio".padStart(7),
-    "Doub.%".padStart(8),
+    "Doub.%".padStart(8)
   );
   console.log("-".repeat(75));
 
@@ -110,7 +110,7 @@ async function analyseRatioParEtape() {
       String(e.nb_events).padStart(8),
       String(e.nb_visits).padStart(8),
       ratio.padStart(7),
-      `${doubPct}%`.padStart(8),
+      `${doubPct}%`.padStart(8)
     );
   }
 
@@ -128,12 +128,8 @@ async function analyseRatioParEtape() {
     console.log(`  Ratio type_logement / start          : ${ratio.toFixed(3)}`);
 
     if (typeLgt.nb_events > start.nb_events) {
-      console.log(
-        `  >>> ANOMALIE : type_logement > start. Impossible dans un parcours linéaire.`,
-      );
-      console.log(
-        `  >>> start est tracké via onClick (1x). type_logement via useEffect (peut double-fire).`,
-      );
+      console.log(`  >>> ANOMALIE : type_logement > start. Impossible dans un parcours linéaire.`);
+      console.log(`  >>> start est tracké via onClick (1x). type_logement via useEffect (peut double-fire).`);
       console.log(`  >>> Surplus : ${typeLgt.nb_events - start.nb_events} events parasites.`);
     }
   }
@@ -192,7 +188,7 @@ async function analyseParJour() {
     "elig(E/V)".padStart(14),
     "r".padStart(5),
     "non_elig(E/V)".padStart(16),
-    "r".padStart(5),
+    "r".padStart(5)
   );
   console.log("-".repeat(85));
 
@@ -213,8 +209,7 @@ async function analyseParJour() {
     const eligStr = elig ? `${elig.nb_events}/${elig.nb_visits}` : "0/0";
     const eligR = elig && elig.nb_visits > 0 ? (elig.nb_events / elig.nb_visits).toFixed(2) : "-";
     const nonEligStr = nonElig ? `${nonElig.nb_events}/${nonElig.nb_visits}` : "0/0";
-    const nonEligR =
-      nonElig && nonElig.nb_visits > 0 ? (nonElig.nb_events / nonElig.nb_visits).toFixed(2) : "-";
+    const nonEligR = nonElig && nonElig.nb_visits > 0 ? (nonElig.nb_events / nonElig.nb_visits).toFixed(2) : "-";
 
     console.log(
       date.padEnd(14),
@@ -224,7 +219,7 @@ async function analyseParJour() {
       eligStr.padStart(14),
       eligR.padStart(5),
       nonEligStr.padStart(16),
-      nonEligR.padStart(5),
+      nonEligR.padStart(5)
     );
   }
 }
@@ -260,12 +255,7 @@ async function analyseParDevice() {
 
     const map = getEventsMap(actions);
     console.log(`\n  --- ${device} ---`);
-    console.log(
-      "  " + "Étape".padEnd(42),
-      "Events".padStart(8),
-      "Visits".padStart(8),
-      "Ratio".padStart(7),
-    );
+    console.log("  " + "Étape".padEnd(42), "Events".padStart(8), "Visits".padStart(8), "Ratio".padStart(7));
 
     for (const name of eventNames) {
       const e = map.get(name);
@@ -275,7 +265,7 @@ async function analyseParDevice() {
         "  " + name.padEnd(42),
         String(e.nb_events).padStart(8),
         String(e.nb_visits).padStart(8),
-        ratio.padStart(7),
+        ratio.padStart(7)
       );
     }
 
@@ -312,12 +302,7 @@ async function analyseMultiPeriodes() {
     "simulateur_result_non_eligible",
   ];
 
-  console.log(
-    "\n" + "Étape".padEnd(42),
-    "7j ratio".padStart(10),
-    "30j ratio".padStart(11),
-    "90j ratio".padStart(11),
-  );
+  console.log("\n" + "Étape".padEnd(42), "7j ratio".padStart(10), "30j ratio".padStart(11), "90j ratio".padStart(11));
   console.log("-".repeat(75));
 
   const allMaps: Map<string, EventRow>[] = [];
@@ -374,7 +359,9 @@ async function conclusion() {
 
   console.log("\n  Si on bascule sur nb_visits (visiteurs uniques) au lieu de nb_events :");
   if (elig && nonElig) {
-    console.log(`    Simulations terminées : ${elig.nb_visits + nonElig.nb_visits} (au lieu de ${elig.nb_events + nonElig.nb_events})`);
+    console.log(
+      `    Simulations terminées : ${elig.nb_visits + nonElig.nb_visits} (au lieu de ${elig.nb_events + nonElig.nb_events})`
+    );
     console.log(`    Éligibles             : ${elig.nb_visits} (au lieu de ${elig.nb_events})`);
     console.log(`    Non éligibles         : ${nonElig.nb_visits} (au lieu de ${nonElig.nb_events})`);
   }

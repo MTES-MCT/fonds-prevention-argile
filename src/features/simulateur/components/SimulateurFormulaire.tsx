@@ -64,21 +64,30 @@ export function SimulateurFormulaire() {
     // Lire answers depuis le store (pas via closure pour éviter les re-fires)
     const currentAnswers = useSimulateurStore.getState().simulation.answers;
     const codeDepartement = currentAnswers.logement?.code_departement;
-    const dimensionId = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
-    const deptDimensions: MatomoCustomDimension[] | undefined =
-      codeDepartement && dimensionId ? [{ id: Number(dimensionId), value: codeDepartement }] : undefined;
+    const communeNom = currentAnswers.logement?.commune_nom;
+    const deptDimensionId = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
+    const communeDimensionId = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID;
+
+    const dimensions: MatomoCustomDimension[] = [];
+    if (codeDepartement && deptDimensionId) {
+      dimensions.push({ id: Number(deptDimensionId), value: String(codeDepartement) });
+    }
+    if (communeNom && communeDimensionId) {
+      dimensions.push({ id: Number(communeDimensionId), value: String(communeNom) });
+    }
+    const customDimensions = dimensions.length > 0 ? dimensions : undefined;
 
     // Tracker selon l'étape
     if (currentStep === SimulateurStep.RESULTAT) {
       if (isEligible) {
-        trackEvent(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE, undefined, deptDimensions);
+        trackEvent(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE, undefined, customDimensions);
       } else {
-        trackEvent(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE, undefined, deptDimensions);
+        trackEvent(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE, undefined, customDimensions);
       }
     } else if (currentStep !== SimulateurStep.INTRO) {
       const eventName = SIMULATEUR_STEP_EVENTS[currentStep];
       if (eventName) {
-        trackEvent(eventName, undefined, deptDimensions);
+        trackEvent(eventName, undefined, customDimensions);
       }
     }
   }, [currentStep, isEligible, trackEvent]);

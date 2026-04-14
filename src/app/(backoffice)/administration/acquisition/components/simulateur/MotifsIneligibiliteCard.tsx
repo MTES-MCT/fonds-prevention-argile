@@ -66,16 +66,17 @@ export default function MotifsIneligibiliteCard({ stats, loading }: MotifsInelig
       {/* Header */}
       <div className="fr-px-2w fr-pt-2w">
         <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-          Motifs d&apos;inéligibilité ({stats.total.toLocaleString("fr-FR")}){" "}
+          Motifs d&apos;inéligibilité ({stats.total.toLocaleString("fr-FR")} dossiers){" "}
           <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
             Information
           </button>
           <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
-            Données base de données
+            Nombre de dossiers inéligibles distincts — un dossier peut avoir plusieurs motifs, les pourcentages sont
+            calculés par rapport au total de dossiers
           </span>
         </h2>
         <p className="fr-text--sm fr-mb-0 fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
-          Les plus frequents
+          Motifs les plus fréquents — un dossier peut apparaître dans plusieurs motifs
         </p>
       </div>
 
@@ -90,7 +91,7 @@ export default function MotifsIneligibiliteCard({ stats, loading }: MotifsInelig
                   <tr>
                     <th scope="col">Raison</th>
                     <th scope="col" style={{ textAlign: "right" }}>
-                      Reponses
+                      Dossiers
                     </th>
                   </tr>
                 </thead>

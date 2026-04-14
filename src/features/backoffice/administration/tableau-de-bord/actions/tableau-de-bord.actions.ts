@@ -7,6 +7,8 @@ import {
   getMatomoSimulationsStats,
   getAutresDemandesArchiveesDetail,
   getEligibiliteStats,
+  getTopDepartementsMatomo,
+  getTopCommunesMatomo,
 } from "../services/tableau-de-bord.service";
 import { getAvailableDepartements } from "@/features/backoffice/administration/acquisition/services/statistiques-departement.service";
 import type { ActionResult } from "@/shared/types";
@@ -15,6 +17,8 @@ import type {
   MatomoSimulationsStats,
   PeriodeId,
   DemandeArchiveeDetail,
+  DepartementStats,
+  CommuneSimulationsStats,
 } from "../domain/types/tableau-de-bord.types";
 import type { EligibiliteStats } from "../domain/types/eligibilite-stats.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
@@ -121,6 +125,62 @@ export async function getAutresDemandesArchiveesAction(
     return { success: true, data: result };
   } catch (error) {
     console.error("Erreur lors de la recuperation des autres demandes archivees:", error);
+    return {
+      success: false,
+      error: "Une erreur est survenue.",
+    };
+  }
+}
+
+/**
+ * Recupere le top departements avec simulations Matomo (toutes simulations, pas seulement comptes crees)
+ */
+export async function getTopDepartementsMatomoAction(
+  periodeId: PeriodeId,
+  codeDepartement?: string
+): Promise<ActionResult<DepartementStats[]>> {
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
+
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante",
+    };
+  }
+
+  try {
+    const stats = await getTopDepartementsMatomo(periodeId, codeDepartement);
+    return { success: true, data: stats };
+  } catch (error) {
+    console.error("Erreur lors de la recuperation du top departements Matomo:", error);
+    return {
+      success: false,
+      error: "Une erreur est survenue.",
+    };
+  }
+}
+
+/**
+ * Recupere le top communes avec simulations Matomo (toutes simulations, pas seulement comptes crees)
+ */
+export async function getTopCommunesMatomoAction(
+  periodeId: PeriodeId,
+  codeDepartement?: string
+): Promise<ActionResult<CommuneSimulationsStats[]>> {
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
+
+  if (!permissionCheck.hasAccess) {
+    return {
+      success: false,
+      error: "Permission insuffisante",
+    };
+  }
+
+  try {
+    const stats = await getTopCommunesMatomo(periodeId, codeDepartement);
+    return { success: true, data: stats };
+  } catch (error) {
+    console.error("Erreur lors de la recuperation du top communes Matomo:", error);
     return {
       success: false,
       error: "Une erreur est survenue.",

@@ -42,6 +42,9 @@ import { asString } from "@/shared/utils/object.utils";
 import {
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
+  fetchMatomoUniqueVisitors,
+  fetchMatomoSimulationsGroupedByDepartment,
+  fetchMatomoSimulationsGroupedByDimension,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getClientEnv } from "@/shared/config/env.config";
@@ -126,6 +129,25 @@ async function getSimulationsMatomo(
   const nonEligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE) ?? 0;
 
   return { eligible, nonEligible, total: eligible + nonEligible };
+}
+
+/**
+ * Recupere le nombre de visiteurs uniques depuis Matomo, avec filtrage departement optionnel.
+ */
+async function getUniqueVisitors(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
+  const dateRange = formatMatomoDateRange(debut, fin);
+  let segment: string | undefined;
+
+  if (codeDepartement) {
+    const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
+    const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
+    if (!dimensionId) return 0;
+
+    const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
+    segment = `dimension${dimensionId}==${codeDeptMatomo}`;
+  }
+
+  return fetchMatomoUniqueVisitors("range", dateRange, segment);
 }
 
 /**
@@ -259,28 +281,32 @@ async function countDemandesAmo(debut: Date, fin: Date, codeDepartement?: string
 }
 
 /**
- * Compte les reponses AMO en attente (snapshot actuel, pas filtre par date)
+ * Compte les demandes AMO envoyees sur la periode et encore en attente de reponse.
+ * Permet de savoir si les demandes sont gerees assez rapidement.
  */
-async function countReponsesAmoEnAttente(codeDepartement?: string): Promise<number> {
+async function countReponsesAmoEnAttente(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
+  const conditions = [
+    gte(parcoursAmoValidations.choisieAt, debut),
+    lt(parcoursAmoValidations.choisieAt, fin),
+    eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE),
+  ];
+
   if (codeDepartement) {
+    conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+    conditions.push(whereDepartement(codeDepartement));
+
     const result = await db
       .select({ count: count() })
       .from(parcoursAmoValidations)
       .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
-      .where(
-        and(
-          eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE),
-          isNotNull(parcoursPrevention.rgaSimulationData),
-          whereDepartement(codeDepartement)
-        )
-      );
+      .where(and(...conditions));
     return result[0]?.count ?? 0;
   }
 
   const result = await db
     .select({ count: count() })
     .from(parcoursAmoValidations)
-    .where(eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE));
+    .where(and(...conditions));
   return result[0]?.count ?? 0;
 }
 
@@ -592,12 +618,6 @@ async function getDemandesIneligiblesDetail(
     return { total: 0, motifs: [], autresMotifs: [] };
   }
 
-  // Total des occurrences de raisons pour le calcul des pourcentages
-  let totalRaisons = 0;
-  for (const c of distributionActuelle.values()) {
-    totalRaisons += c;
-  }
-
   // Lookup clé → label
   const labelMap = new Map<string, string>();
   for (const r of RAISONS_INELIGIBILITE) {
@@ -605,6 +625,8 @@ async function getDemandesIneligiblesDetail(
   }
 
   // Construire la liste complète triée par count décroissant
+  // Pourcentage = nb occurrences raison / nb dossiers inéligibles distincts
+  // Un dossier peut avoir plusieurs raisons, donc la somme des % peut dépasser 100%
   const tousMotifs: MotifIneligibilite[] = [];
   for (const [raison, countActuel] of distributionActuelle) {
     const countPrecedent = distributionPrecedente.get(raison) ?? 0;
@@ -612,7 +634,7 @@ async function getDemandesIneligiblesDetail(
       raison,
       label: labelMap.get(raison) ?? raison,
       count: countActuel,
-      pourcentage: totalRaisons > 0 ? Math.round((countActuel / totalRaisons) * 100) : 0,
+      pourcentage: Math.round((countActuel / totalParcours) * 100),
       variation: previousRange ? calculerVariation(countActuel, countPrecedent) : null,
     });
   }
@@ -698,6 +720,7 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
   const parcours = await db
     .select({
       id: parcoursPrevention.id,
+      userId: parcoursPrevention.userId,
       rgaSimulationData: parcoursPrevention.rgaSimulationData,
       rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
     })
@@ -726,15 +749,20 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
       )
     );
 
-  // Grouper les simulations par département + évaluer l'éligibilité
-  const deptSimulations = new Map<string, { total: number; eligibles: number }>();
+  // Grouper les simulations par département + évaluer l'éligibilité + compter les comptes
+  const deptSimulations = new Map<string, { total: number; eligibles: number; comptes: number }>();
 
   for (const p of parcours) {
     const code = extractCodeDepartement(p.rgaSimulationData, p.rgaSimulationDataAgent);
     if (!code) continue;
 
-    const entry = deptSimulations.get(code) ?? { total: 0, eligibles: 0 };
+    const entry = deptSimulations.get(code) ?? { total: 0, eligibles: 0, comptes: 0 };
     entry.total += 1;
+
+    // Compter les comptes créés (parcours avec userId)
+    if (p.userId) {
+      entry.comptes += 1;
+    }
 
     // Évaluer l'éligibilité avec les données les plus récentes
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -761,7 +789,7 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
   const result: DepartementStats[] = [];
 
   for (const code of allCodes) {
-    const sims = deptSimulations.get(code) ?? { total: 0, eligibles: 0 };
+    const sims = deptSimulations.get(code) ?? { total: 0, eligibles: 0, comptes: 0 };
     const dn = deptDossiersDN.get(code) ?? 0;
     const officialCode = toOfficialCodeDepartement(code);
     const nom = getDepartementName(code);
@@ -772,9 +800,79 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
       simulations: sims.total,
       simulationsEligibles: sims.eligibles,
       pourcentageEligibles: sims.total > 0 ? Math.round((sims.eligibles / sims.total) * 100) : 0,
+      comptesCrees: sims.comptes,
       dossiersDN: dn,
       transformationGlobale: sims.total > 0 ? Math.round((dn / sims.total) * 10000) / 100 : 0,
     });
+  }
+
+  return result;
+}
+
+/**
+ * Récupère les simulations par département depuis Matomo (toutes simulations, y compris anonymes).
+ * Fusionne avec les données BDD pour comptes créés et dossiers DN.
+ */
+export async function getTopDepartementsMatomo(
+  periodeId: PeriodeId,
+  codeDepartement?: string
+): Promise<DepartementStats[]> {
+  const { debut, fin } = getDateRange(periodeId);
+  const dateRange = formatMatomoDateRange(debut, fin);
+
+  const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
+  const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
+
+  if (!dimensionId) {
+    console.warn("[getTopDepartementsMatomo] NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID non configuré, fallback BDD");
+    return getTopDepartementsStats(debut, fin);
+  }
+
+  // Récupérer simulations Matomo par département + données BDD en parallèle
+  const [matomoByDept, bddStats] = await Promise.all([
+    fetchMatomoSimulationsGroupedByDepartment(dimensionId, { period: "range", date: dateRange }),
+    getTopDepartementsStats(debut, fin),
+  ]);
+
+  if (matomoByDept.size === 0) {
+    console.warn("[getTopDepartementsMatomo] Matomo n'a retourné aucune donnée, fallback BDD");
+    return bddStats;
+  }
+
+  // Indexer les données BDD par code département pour fusion rapide
+  const bddByDept = new Map(bddStats.map((d) => [d.codeDepartement, d]));
+
+  // Fusionner : simulations Matomo + comptes/DN BDD
+  const allCodes = new Set([...matomoByDept.keys(), ...bddByDept.keys()]);
+  const result: DepartementStats[] = [];
+
+  for (const code of allCodes) {
+    const matomo = matomoByDept.get(code);
+    const bdd = bddByDept.get(code);
+    const officialCode = toOfficialCodeDepartement(code);
+    const nom = getDepartementName(code) ?? bdd?.nomDepartement ?? code;
+
+    const simulations = matomo?.total ?? bdd?.simulations ?? 0;
+    const simulationsEligibles = matomo?.eligible ?? bdd?.simulationsEligibles ?? 0;
+    const comptesCrees = bdd?.comptesCrees ?? 0;
+    const dossiersDN = bdd?.dossiersDN ?? 0;
+
+    result.push({
+      codeDepartement: officialCode,
+      nomDepartement: nom,
+      simulations,
+      simulationsEligibles,
+      pourcentageEligibles: simulations > 0 ? Math.round((simulationsEligibles / simulations) * 100) : 0,
+      comptesCrees,
+      dossiersDN,
+      transformationGlobale: simulations > 0 ? Math.round((dossiersDN / simulations) * 10000) / 100 : 0,
+    });
+  }
+
+  // Filtrer par département si demandé
+  if (codeDepartement) {
+    const normalizedFilter = normalizeCodeDepartement(codeDepartement);
+    return result.filter((d) => normalizeCodeDepartement(d.codeDepartement) === normalizedFilter);
   }
 
   return result;
@@ -827,6 +925,51 @@ async function getTopCommunesStats(
 }
 
 /**
+ * Récupère les simulations par commune depuis Matomo (toutes simulations, y compris anonymes).
+ * Fallback sur la BDD si la dimension commune n'est pas configurée ou si Matomo ne retourne rien.
+ */
+export async function getTopCommunesMatomo(
+  periodeId: PeriodeId,
+  codeDepartement?: string
+): Promise<CommuneSimulationsStats[]> {
+  const { debut, fin } = getDateRange(periodeId);
+  const dateRange = formatMatomoDateRange(debut, fin);
+
+  const communeDimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID;
+  const communeDimensionId = communeDimensionIdStr ? Number(communeDimensionIdStr) : null;
+
+  if (!communeDimensionId) {
+    return getTopCommunesStats(debut, fin, codeDepartement);
+  }
+
+  try {
+    const matomoByCommune = await fetchMatomoSimulationsGroupedByDimension(communeDimensionId, {
+      period: "range",
+      date: dateRange,
+    });
+
+    if (matomoByCommune.size === 0) {
+      return getTopCommunesStats(debut, fin, codeDepartement);
+    }
+
+    const result: CommuneSimulationsStats[] = [];
+
+    for (const [communeNom, counts] of matomoByCommune) {
+      result.push({
+        commune: communeNom,
+        codeDepartement: "",
+        simulations: counts.total,
+      });
+    }
+
+    // Trier et garder le top 5
+    return result.sort((a, b) => b.simulations - a.simulations).slice(0, 5);
+  } catch {
+    return getTopCommunesStats(debut, fin, codeDepartement);
+  }
+}
+
+/**
  * Récupère les statistiques du tableau de bord avec variations
  */
 export async function getTableauDeBordStats(
@@ -855,7 +998,7 @@ export async function getTableauDeBordStats(
     countSimulationsParEligibilite(debut, fin, codeDepartement),
     countComptesCrees(debut, fin, codeDepartement),
     countDemandesAmo(debut, fin, codeDepartement),
-    countReponsesAmoEnAttente(codeDepartement),
+    countReponsesAmoEnAttente(debut, fin, codeDepartement),
     countDossiersDN(debut, fin, codeDepartement),
     countDemandesArchivees(debut, fin, codeDepartement),
     detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement),
@@ -881,15 +1024,23 @@ export async function getTableauDeBordStats(
   };
 
   if (previousRange) {
-    const [prevSimulations, prevEligibilite, prevComptes, prevDemandesAmo, prevDossiersDN, prevArchivees] =
-      await Promise.all([
-        countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
-        countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement),
-        countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
-        countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
-        countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
-        countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
-      ]);
+    const [
+      prevSimulations,
+      prevEligibilite,
+      prevComptes,
+      prevDemandesAmo,
+      prevReponsesAttente,
+      prevDossiersDN,
+      prevArchivees,
+    ] = await Promise.all([
+      countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
+      countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement),
+      countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
+      countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
+      countReponsesAmoEnAttente(previousRange.debut, previousRange.fin, codeDepartement),
+      countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
+      countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
+    ]);
 
     const prevTaux = prevSimulations > 0 ? Math.round((prevComptes / prevSimulations) * 1000) / 10 : 0;
 
@@ -901,7 +1052,7 @@ export async function getTableauDeBordStats(
       tauxTransformation:
         tauxTransformation - prevTaux !== 0 ? Math.round((tauxTransformation - prevTaux) * 10) / 10 : 0,
       demandesAmo: calculerVariation(demandesAmo, prevDemandesAmo),
-      reponsesAttente: null,
+      reponsesAttente: calculerVariation(reponsesAttente, prevReponsesAttente),
       dossiersDN: calculerVariation(dossiersDN, prevDossiersDN),
       archivees: calculerVariation(archivees, prevArchivees),
     };
@@ -941,24 +1092,32 @@ export async function getMatomoSimulationsStats(
 
   const matomoFallback: SimulationsMatomoResult = { eligible: 0, nonEligible: 0, total: 0 };
 
-  // Comptes crees BDD (necessaire pour calcul sans inscription et taux)
-  const [currentMatomo, comptes, prevMatomo, prevComptes] = await Promise.all([
+  // Comptes crees BDD + visiteurs uniques Matomo (en parallele)
+  const [currentMatomo, comptes, prevMatomo, prevComptes, currentVisitors, prevVisitors] = await Promise.all([
     getSimulationsMatomo(debut, fin, codeDepartement).catch(() => matomoFallback),
     countComptesCrees(debut, fin, codeDepartement),
     previousRange
       ? getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement).catch(() => matomoFallback)
       : Promise.resolve(matomoFallback),
     previousRange ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement) : Promise.resolve(0),
+    getUniqueVisitors(debut, fin, codeDepartement).catch(() => 0),
+    previousRange
+      ? getUniqueVisitors(previousRange.debut, previousRange.fin, codeDepartement).catch(() => 0)
+      : Promise.resolve(0),
   ]);
 
+  const variationVisiteurs =
+    previousRange && prevVisitors > 0 ? calculerVariation(currentVisitors, prevVisitors) : null;
+
   if (currentMatomo.total === 0) {
-    // Matomo indisponible — pas de donnees a surcharger
+    // Matomo indisponible pour les simulations — on retourne quand meme les visiteurs uniques
     return {
       simulationsMatomo: { valeur: 0, variation: null },
       simulationsEligibles: { valeur: 0, variation: null },
       simulationsNonEligibles: { valeur: 0, variation: null },
       simulationsSansInscription: { valeur: 0, variation: null },
       tauxTransformation: { valeur: 0, variation: null },
+      visiteursUniques: { valeur: currentVisitors, variation: variationVisiteurs },
     };
   }
 
@@ -989,6 +1148,7 @@ export async function getMatomoSimulationsStats(
     simulationsNonEligibles: { valeur: currentMatomo.nonEligible, variation: variationNonEligibles },
     simulationsSansInscription: { valeur: sansInscription, variation: variationSansInscription },
     tauxTransformation: { valeur: taux, variation: variationTaux },
+    visiteursUniques: { valeur: currentVisitors, variation: variationVisiteurs },
   };
 }
 

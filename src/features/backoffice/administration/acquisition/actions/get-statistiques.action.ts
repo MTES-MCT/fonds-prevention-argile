@@ -16,7 +16,7 @@ import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-
  * Note : Pour les agents AMO, les statistiques Matomo (visiteurs, taux de rebond)
  * ne sont pas disponibles car elles sont globales au site.
  */
-export async function getStatistiquesAction(periodeId?: PeriodeId): Promise<ActionResult<Statistiques>> {
+export async function getStatistiquesAction(periodeId?: PeriodeId, codeDepartement?: string): Promise<ActionResult<Statistiques>> {
   // Vérifier la permission de lecture des stats
   const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
 
@@ -31,7 +31,7 @@ export async function getStatistiquesAction(periodeId?: PeriodeId): Promise<Acti
     // Récupérer les filtres selon le scope de l'utilisateur
     const scopeFilters = await getScopeFilters();
 
-    const stats = await getStatistiques(scopeFilters, periodeId);
+    const stats = await getStatistiques(scopeFilters, periodeId, codeDepartement);
 
     return {
       success: true,

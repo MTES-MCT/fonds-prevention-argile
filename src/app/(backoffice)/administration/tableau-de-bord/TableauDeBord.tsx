@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { FiltresTableauDeBord } from "./FiltresTableauDeBord";
 import { DashboardStatCard } from "./shared/DashboardStatCard";
+import { formatMatomoValue } from "./shared/format-matomo-value.utils";
 import { AlertesTendances } from "./alertes/AlertesTendances";
 import { DemandesArchiveesCard } from "./demandes-archivees/DemandesArchiveesCard";
 import { DemandesIneligiblesCard } from "./demandes-ineligibles/DemandesIneligiblesCard";
@@ -31,6 +32,7 @@ export function TableauDeBord() {
   const [departements, setDepartements] = useState<DepartementDisponible[]>([]);
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
   const [matomoSimuStats, setMatomoSimuStats] = useState<MatomoSimulationsStats | null>(null);
+  const [matomoLoaded, setMatomoLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,15 +67,19 @@ export function TableauDeBord() {
     loadStats();
   }, [loadStats]);
 
-  // Charger les stats Matomo simulations (lent, asynchrone)
+  // Charger les stats Matomo (lent, asynchrone)
   useEffect(() => {
     let cancelled = false;
     setMatomoSimuStats(null);
+    setMatomoLoaded(false);
 
     async function loadMatomoSimu() {
       const result = await getMatomoSimulationsStatsAction(periodeId, codeDepartement || undefined);
-      if (!cancelled && result.success && result.data.simulationsMatomo.valeur > 0) {
-        setMatomoSimuStats(result.data);
+      if (!cancelled) {
+        if (result.success) {
+          setMatomoSimuStats(result.data);
+        }
+        setMatomoLoaded(true);
       }
     }
 
@@ -83,9 +89,10 @@ export function TableauDeBord() {
     };
   }, [periodeId, codeDepartement]);
 
-  // Utiliser Matomo si disponible, sinon BDD
-  const simulationsValue = matomoSimuStats?.simulationsMatomo ?? stats?.simulationsLancees;
-  const tauxValue = matomoSimuStats?.tauxTransformation ?? stats?.tauxTransformation;
+  // Simulations et taux : Matomo uniquement (pas de fallback BDD pour eviter de sous-compter)
+  const simulationsValue = matomoSimuStats?.simulationsMatomo ?? null;
+  const tauxValue = matomoSimuStats?.tauxTransformation ?? null;
+
 
   return (
     <>
@@ -127,12 +134,20 @@ export function TableauDeBord() {
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
             <DashboardStatCard
-              value={simulationsValue?.valeur.toLocaleString("fr-FR") ?? "..."}
+              value={formatMatomoValue(matomoSimuStats?.visiteursUniques, matomoLoaded)}
+              label="Visiteurs uniques sur le site"
+              variation={matomoSimuStats?.visiteursUniques.variation ?? null}
+              loading={false}
+              compact
+              tooltip="Donnees Matomo (VisitsSummary)"
+            />
+            <DashboardStatCard
+              value={formatMatomoValue(simulationsValue, matomoLoaded)}
               label="Simulations terminees"
               variation={simulationsValue?.variation ?? null}
-              loading={loading}
+              loading={false}
               compact
-              tooltip="Données Matomo, fallback base de données"
+              tooltip="Donnees Matomo"
             />
             <DashboardStatCard
               value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -143,14 +158,16 @@ export function TableauDeBord() {
               tooltip="Données base de données"
             />
             <DashboardStatCard
-              value={tauxValue ? `${tauxValue.valeur.toLocaleString("fr-FR")}%` : "..."}
+              value={formatMatomoValue(tauxValue, matomoLoaded, "%")}
               label="Transfo. simu. → comptes créés"
               variation={tauxValue?.variation ?? null}
               variationType="points"
-              loading={loading}
+              loading={false}
               compact
-              tooltip="Calculé : comptes créés / simulations terminées (Matomo)"
+              tooltip="Calcule : comptes crees / simulations terminees (Matomo)"
             />
+          </div>
+          <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
             <DashboardStatCard
               value={stats?.demandesAmoEnvoyees.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Demandes AMO envoyées"
@@ -159,8 +176,6 @@ export function TableauDeBord() {
               compact
               tooltip="Données base de données"
             />
-          </div>
-          <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
             <DashboardStatCard
               value={stats?.reponsesAmoEnAttente.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Réponses d'AMO en attente"
@@ -171,7 +186,7 @@ export function TableauDeBord() {
             />
             <DashboardStatCard
               value={stats?.dossiersDemarcheNumerique.valeur.toLocaleString("fr-FR") ?? "..."}
-              label="Dossier Démarche Numérique"
+              label="Dossiers Démarche Numérique"
               variation={stats?.dossiersDemarcheNumerique.variation ?? null}
               loading={loading}
               compact
@@ -179,11 +194,12 @@ export function TableauDeBord() {
             />
             <DashboardStatCard
               value={stats?.demandesArchivees.valeur.toLocaleString("fr-FR") ?? "..."}
-              label="Demandes archivées"
+              label="Dossiers sortis du parcours"
               variation={stats?.demandesArchivees.variation ?? null}
+              invertColors
               loading={loading}
               compact
-              tooltip="Données base de données"
+              tooltip="Archives manuelles + non eligibles"
             />
           </div>
 
