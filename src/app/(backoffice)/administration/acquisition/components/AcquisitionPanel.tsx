@@ -40,6 +40,7 @@ export default function AcquisitionPanel() {
   const [departements, setDepartements] = useState<DepartementDisponible[]>([]);
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
   const [matomoSimuStats, setMatomoSimuStats] = useState<MatomoSimulationsStats | null>(null);
+  const [matomoLoaded, setMatomoLoaded] = useState(false);
   const [matomoStats, setMatomoStats] = useState<Statistiques | null>(null);
   const [loading, setLoading] = useState(true);
   const [funnelLoading, setFunnelLoading] = useState(true);
@@ -94,11 +95,15 @@ export default function AcquisitionPanel() {
   useEffect(() => {
     let cancelled = false;
     setMatomoSimuStats(null);
+    setMatomoLoaded(false);
 
     async function loadMatomoSimu() {
       const result = await getMatomoSimulationsStatsAction(periodeId, codeDepartement || undefined);
-      if (!cancelled && result.success && result.data.simulationsMatomo.valeur > 0) {
-        setMatomoSimuStats(result.data);
+      if (!cancelled) {
+        if (result.success) {
+          setMatomoSimuStats(result.data);
+        }
+        setMatomoLoaded(true);
       }
     }
 
@@ -199,7 +204,7 @@ export default function AcquisitionPanel() {
         <div className="fr-container">
           {activeTab === "simulateur" && (
             <div id="tab-acquisition-simulateur-panel" role="tabpanel">
-              <EntonnoirEligibilite stats={stats} matomoSimuStats={matomoSimuStats} loading={loading} />
+              <EntonnoirEligibilite stats={stats} matomoSimuStats={matomoSimuStats} matomoLoaded={matomoLoaded} loading={loading} />
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
                 <div className="fr-col-12 fr-col-lg-6">
                   <DetailEtapesFunnel funnel={matomoStats?.funnelSimulateurRGA ?? null} loading={funnelLoading} />

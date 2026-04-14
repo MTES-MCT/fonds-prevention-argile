@@ -1,6 +1,7 @@
 "use client";
 
 import { DashboardStatCard } from "../../../tableau-de-bord/shared/DashboardStatCard";
+import { formatMatomoValue } from "../../../tableau-de-bord/shared/format-matomo-value.utils";
 import type {
   TableauDeBordStats,
   MatomoSimulationsStats,
@@ -10,6 +11,8 @@ interface EntonnoirEligibiliteProps {
   stats: TableauDeBordStats | null;
   /** Stats Matomo chargees en asynchrone — surcharge les valeurs BDD quand disponibles */
   matomoSimuStats: MatomoSimulationsStats | null;
+  /** true quand l'appel Matomo est termine (succes ou echec) */
+  matomoLoaded: boolean;
   loading: boolean;
 }
 
@@ -17,15 +20,15 @@ interface EntonnoirEligibiliteProps {
  * Entonnoir d'eligibilite : visualisation des etapes de conversion
  * simulateur → eligibilite → sans inscription → compte cree → taux de transformation
  *
- * Les stats BDD s'affichent immediatement, puis les valeurs Matomo les remplacent quand elles arrivent.
+ * Les stats Matomo sont la source unique pour les simulations (pas de fallback BDD).
  */
-export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }: EntonnoirEligibiliteProps) {
-  // Utiliser Matomo si disponible, sinon BDD
-  const simulationsTerminees = matomoSimuStats?.simulationsMatomo ?? stats?.simulationsLancees ?? null;
-  const eligibles = matomoSimuStats?.simulationsEligibles ?? stats?.simulationsEligibles ?? null;
-  const nonEligibles = matomoSimuStats?.simulationsNonEligibles ?? stats?.simulationsNonEligibles ?? null;
-  const sansInscription = matomoSimuStats?.simulationsSansInscription ?? stats?.simulationsSansInscription ?? null;
-  const taux = matomoSimuStats?.tauxTransformation ?? stats?.tauxTransformation ?? null;
+export default function EntonnoirEligibilite({ stats, matomoSimuStats, matomoLoaded, loading }: EntonnoirEligibiliteProps) {
+  // Matomo uniquement pour les simulations (pas de fallback BDD)
+  const simulationsTerminees = matomoSimuStats?.simulationsMatomo ?? null;
+  const eligibles = matomoSimuStats?.simulationsEligibles ?? null;
+  const nonEligibles = matomoSimuStats?.simulationsNonEligibles ?? null;
+  const sansInscription = matomoSimuStats?.simulationsSansInscription ?? null;
+  const taux = matomoSimuStats?.tauxTransformation ?? null;
 
   return (
     <div>
@@ -42,12 +45,12 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={simulationsTerminees?.valeur.toLocaleString("fr-FR") ?? "..."}
+            value={formatMatomoValue(simulationsTerminees, matomoLoaded)}
             label="Simulations terminees"
             variation={simulationsTerminees?.variation ?? null}
-            loading={loading}
+            loading={false}
             compact
-            tooltip="Données Matomo, fallback base de données"
+            tooltip="Données Matomo"
           />
         </div>
 
@@ -65,21 +68,21 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }
           }}>
           <DashboardStatCard
             className=""
-            value={eligibles?.valeur.toLocaleString("fr-FR") ?? "..."}
+            value={formatMatomoValue(eligibles, matomoLoaded)}
             label="Simulations eligibles"
             variation={eligibles?.variation ?? null}
-            loading={loading}
+            loading={false}
             compact
-            tooltip="Données Matomo, fallback base de données"
+            tooltip="Données Matomo"
           />
           <DashboardStatCard
             className=""
-            value={nonEligibles?.valeur.toLocaleString("fr-FR") ?? "..."}
+            value={formatMatomoValue(nonEligibles, matomoLoaded)}
             label="Simulations non eligibles"
             variation={nonEligibles?.variation ?? null}
-            loading={loading}
+            loading={false}
             compact
-            tooltip="Données Matomo, fallback base de données"
+            tooltip="Données Matomo"
           />
         </div>
 
@@ -90,12 +93,12 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={sansInscription?.valeur.toLocaleString("fr-FR") ?? "..."}
+            value={formatMatomoValue(sansInscription, matomoLoaded)}
             label="Sans inscription FC"
             variation={sansInscription?.variation ?? null}
-            loading={loading}
+            loading={false}
             compact
-            tooltip="Données Matomo, fallback base de données"
+            tooltip="Données Matomo"
           />
         </div>
 
@@ -123,11 +126,11 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, loading }
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={taux ? `${taux.valeur.toLocaleString("fr-FR")}%` : "..."}
+            value={formatMatomoValue(taux, matomoLoaded, "%")}
             label="Transfo. simu. &rarr; comptes"
             variation={taux?.variation ?? null}
             variationType="points"
-            loading={loading}
+            loading={false}
             compact
             tooltip="Calculé : comptes créés / simulations terminées (Matomo)"
           />
