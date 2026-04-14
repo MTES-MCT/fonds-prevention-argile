@@ -12,8 +12,9 @@ interface DetailEtapesFunnelProps {
 }
 
 /**
- * Carte "Detail des etapes du funnel" — tableau des etapes du simulateur RGA.
- * Colonnes : Raison, VU, Conv., Abandons.
+ * Carte "Detail des etapes du tunnel" — tableau des etapes du simulateur RGA.
+ * Colonnes : Étape, VU (visiteurs uniques), Conv., Abandons.
+ * Fixé sur les 7 derniers jours (limite API Matomo Funnels).
  */
 export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunnelProps) {
   const tooltipId = useId();
@@ -42,16 +43,16 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
           border: "1px solid var(--border-default-grey)",
         }}>
         <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-          Détail des étapes du funnel{" "}
+          Détail des étapes du tunnel — 7 derniers jours{" "}
           <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
             Information
           </button>
           <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
-            Données Matomo Funnels (7 derniers jours)
+            Données Matomo Funnels — visiteurs uniques par étape
           </span>
         </h2>
         <p className="fr-mt-2w fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
-          Les donnees du funnel ne sont pas disponibles.
+          Les données du tunnel ne sont pas disponibles.
         </p>
       </div>
     );
@@ -67,16 +68,17 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
       {/* Header */}
       <div className="fr-px-2w fr-pt-2w">
         <h2 className="fr-text--lg fr-mb-0" style={{ fontWeight: 700 }}>
-          Détail des étapes du funnel{" "}
+          Détail des étapes du tunnel — 7 derniers jours{" "}
           <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
             Information
           </button>
           <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
-            Données Matomo Funnels (7 derniers jours)
+            Données Matomo Funnels — visiteurs uniques par étape (un visiteur qui fait plusieurs simulations n'est compté
+            qu'une fois)
           </span>
         </h2>
         <p className="fr-text--sm fr-mb-0 fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
-          Tous utilisateurs confondus — 7 derniers jours
+          Visiteurs uniques par étape du simulateur — non impacté par le filtre période
         </p>
       </div>
 
@@ -86,10 +88,10 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
           <div className="fr-table__container" style={{ overflow: "hidden" }}>
             <div className="fr-table__content">
               <table>
-                <caption className="sr-only">Detail des etapes du funnel simulateur</caption>
+                <caption className="sr-only">Détail des étapes du tunnel simulateur</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Raison</th>
+                    <th scope="col">Étape</th>
                     <th scope="col" style={{ textAlign: "right" }}>
                       VU
                     </th>
