@@ -18,7 +18,7 @@ interface EntonnoirEligibiliteProps {
 
 /**
  * Entonnoir d'eligibilite : visualisation des etapes de conversion
- * simulateur → eligibilite → sans inscription → compte cree → taux de transformation
+ * simulateur → eligibilite → compte cree → taux de transformation
  *
  * Les stats Matomo sont la source unique pour les simulations (pas de fallback BDD).
  */
@@ -27,7 +27,6 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, matomoLoa
   const simulationsTerminees = matomoSimuStats?.simulationsMatomo ?? null;
   const eligibles = matomoSimuStats?.simulationsEligibles ?? null;
   const nonEligibles = matomoSimuStats?.simulationsNonEligibles ?? null;
-  const sansInscription = matomoSimuStats?.simulationsSansInscription ?? null;
   const taux = matomoSimuStats?.tauxTransformation ?? null;
 
   return (
@@ -89,23 +88,7 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, matomoLoa
         {/* Fleche */}
         <FunnelArrow />
 
-        {/* Etape 3 : Sans inscription FC */}
-        <div style={{ flex: "1 1 180px", minWidth: 0 }}>
-          <DashboardStatCard
-            className=""
-            value={formatMatomoValue(sansInscription, matomoLoaded)}
-            label="Sans inscription FC"
-            variation={sansInscription?.variation ?? null}
-            loading={false}
-            compact
-            tooltip="Données Matomo"
-          />
-        </div>
-
-        {/* Fleche */}
-        <FunnelArrow />
-
-        {/* Etape 4 : Comptes crees */}
+        {/* Etape 3 : Comptes crees */}
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
@@ -122,7 +105,7 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, matomoLoa
         {/* Fleche */}
         <FunnelArrow />
 
-        {/* Etape 5 : Taux de transformation */}
+        {/* Etape 4 : Taux de transformation */}
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
