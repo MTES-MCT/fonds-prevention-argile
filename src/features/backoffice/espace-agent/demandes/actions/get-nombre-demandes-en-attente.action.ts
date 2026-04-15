@@ -4,18 +4,25 @@ import { count, eq, and } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
-import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
+import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
 
 /**
  * Récupère le nombre de demandes d'accompagnement en attente pour l'AMO connecté
  *
- * Utilisé pour afficher le badge dans la navigation
+ * Utilisé pour afficher le badge dans la navigation.
+ * SUPER_ADMIN : compte toutes les demandes EN_ATTENTE (vue globale).
  */
 export async function getNombreDemandesEnAttenteAction(): Promise<number> {
   try {
-    const agentResult = await getCurrentAgent();
+    const access = await resolveEspaceAgentAccess();
 
-    if (!agentResult.success || !agentResult.data.entrepriseAmoId) {
+    if (access.kind === "error") {
+      return 0;
+    }
+
+    const entrepriseAmoId = access.kind === "super-admin" ? null : access.agent.entrepriseAmoId;
+
+    if (access.kind === "agent" && !entrepriseAmoId) {
       return 0;
     }
 
@@ -24,7 +31,7 @@ export async function getNombreDemandesEnAttenteAction(): Promise<number> {
       .from(parcoursAmoValidations)
       .where(
         and(
-          eq(parcoursAmoValidations.entrepriseAmoId, agentResult.data.entrepriseAmoId),
+          entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
           eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE)
         )
       );

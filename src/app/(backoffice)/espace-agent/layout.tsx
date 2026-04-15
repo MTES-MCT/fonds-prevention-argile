@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { checkProConnectAccess, ROUTES, checkRoleAccess } from "@/features/auth";
-import { getCurrentAgent } from "@/features/backoffice";
+import { getCurrentAgent, isCurrentUserSuperAdmin } from "@/features/backoffice";
 import { AccesNonAutoriseAmo, AccesNonAutoriseAgentNonEnregistre } from "@/shared/components";
 import { UserRole } from "@/shared/domain/value-objects";
+import SuperAdminReadOnlyBanner from "./components/SuperAdminReadOnlyBanner";
 
 interface EspaceAgentLayoutProps {
   children: ReactNode;
@@ -37,13 +38,26 @@ export default async function EspaceAgentLayout({ children }: EspaceAgentLayoutP
     return <AccesNonAutoriseAgentNonEnregistre />;
   }
 
-  // Vérifier que l'utilisateur a un rôle agent métier (AMO, ALLERS_VERS, ou AMO_ET_ALLERS_VERS)
-  const agentMetierCheck = await checkRoleAccess([UserRole.AMO, UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS]);
+  // Vérifier que l'utilisateur a un rôle agent métier (AMO, ALLERS_VERS, AMO_ET_ALLERS_VERS)
+  // ou SUPER_ADMINISTRATEUR (lecture seule pour recette / validation)
+  const agentMetierCheck = await checkRoleAccess([
+    UserRole.AMO,
+    UserRole.ALLERS_VERS,
+    UserRole.AMO_ET_ALLERS_VERS,
+    UserRole.SUPER_ADMINISTRATEUR,
+  ]);
 
   if (!agentMetierCheck.hasAccess) {
     return <AccesNonAutoriseAmo />;
   }
 
+  const isSuperAdmin = await isCurrentUserSuperAdmin();
+
   // Accès autorisé
-  return <div>{children}</div>;
+  return (
+    <div>
+      {isSuperAdmin && <SuperAdminReadOnlyBanner />}
+      {children}
+    </div>
+  );
 }

@@ -8,6 +8,7 @@ import {
 } from "@/features/parcours/amo/services/amo-validation.service";
 import { getDemandeDetail } from "../services/demande-detail.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
+import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { UserRole } from "@/shared/domain/value-objects";
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations } from "@/shared/database/schema";
@@ -81,6 +82,9 @@ export async function accepterAccompagnement(
   commentaire?: string
 ): Promise<ActionResult<{ message: string }>> {
   try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     // Vérifier que l'agent AMO est propriétaire de cette demande
     const ownershipCheck = await verifyAmoOwnership(demandeId);
     if (!ownershipCheck.success) {
@@ -106,6 +110,9 @@ export async function refuserDemandeNonEligible(
   commentaire: string
 ): Promise<ActionResult<{ message: string }>> {
   try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     // Vérifier que l'agent AMO est propriétaire de cette demande
     const ownershipCheck = await verifyAmoOwnership(demandeId);
     if (!ownershipCheck.success) {
@@ -139,6 +146,9 @@ export async function refuserDemandeAccompagnement(
   commentaire: string
 ): Promise<ActionResult<{ message: string }>> {
   try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     // Vérifier que l'agent AMO est propriétaire de cette demande
     const ownershipCheck = await verifyAmoOwnership(demandeId);
     if (!ownershipCheck.success) {

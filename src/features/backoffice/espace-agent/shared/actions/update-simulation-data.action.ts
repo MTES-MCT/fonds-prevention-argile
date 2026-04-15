@@ -5,6 +5,7 @@ import { db } from "@/shared/database/client";
 import { parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
+import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { UserRole } from "@/shared/domain/value-objects";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
@@ -26,6 +27,10 @@ export async function updateSimulationDataAction(
   rgaData: RGASimulationData
 ): Promise<ActionResult<{ parcoursId: string }>> {
   try {
+    // SUPER_ADMIN : lecture seule dans /espace-agent
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     // 1. Authentification ProConnect + agent enregistré
     const agentResult = await getCurrentAgent();
 

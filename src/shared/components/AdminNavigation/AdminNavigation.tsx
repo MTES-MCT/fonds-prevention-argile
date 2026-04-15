@@ -43,6 +43,11 @@ export function AdminNavigation() {
     return null;
   }
 
+  // Sur /espace-agent/**, on affiche la navigation agent à la place (cas SUPER_ADMIN en vue lecture seule)
+  if (pathname.startsWith("/espace-agent")) {
+    return null;
+  }
+
   const visibleTabs = ADMIN_NAV_TABS.filter((tab) => !tab.minRoles || tab.minRoles.includes(agentRole as UserRole));
   const activeTab = getActiveTab(pathname, visibleTabs);
 

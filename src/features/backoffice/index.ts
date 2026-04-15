@@ -1,4 +1,9 @@
 // Shared - Actions uniquement
-export { getCurrentAgent } from "./shared/actions";
+export {
+  getCurrentAgent,
+  resolveEspaceAgentAccess,
+  assertNotSuperAdminReadOnly,
+  isCurrentUserSuperAdmin,
+} from "./shared/actions";
 
 export * from "./administration";

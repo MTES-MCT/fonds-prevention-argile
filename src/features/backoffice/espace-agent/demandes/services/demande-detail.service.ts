@@ -1,5 +1,5 @@
 import { db } from "@/shared/database/client";
-import { parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
+import { parcoursAmoValidations, parcoursPrevention, users } from "@/shared/database/schema";
 import { eq } from "drizzle-orm";
 import type { DemandeDetail, InfoDemandeur, InfoLogement, ParcoursDateProgression } from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
@@ -32,9 +32,11 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       .select({
         validation: parcoursAmoValidations,
         parcours: parcoursPrevention,
+        user: users,
       })
       .from(parcoursAmoValidations)
       .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
+      .innerJoin(users, eq(users.id, parcoursPrevention.userId))
       .where(eq(parcoursAmoValidations.id, demandeId))
       .limit(1);
 
@@ -65,10 +67,10 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
 
     // Construire l'objet InfoDemandeur
     const demandeur: InfoDemandeur = {
-      prenom: demande.validation.userPrenom,
-      nom: demande.validation.userNom,
-      email: demande.validation.userEmail,
-      telephone: demande.validation.userTelephone,
+      prenom: demande.validation.userPrenom || demande.user.prenom,
+      nom: demande.validation.userNom || demande.user.nom,
+      email: demande.validation.userEmail || demande.user.emailContact || demande.user.email,
+      telephone: demande.validation.userTelephone || demande.user.telephone,
       adresse: rgaData?.logement?.adresse ?? demande.validation.adresseLogement,
     };
     const coords = parseCoordinatesString(rgaData?.logement?.coordonnees);
