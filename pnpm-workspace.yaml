@@ -6,8 +6,37 @@ minimumReleaseAge: 10080 # one week in minutes
 minimumReleaseAgeExclude:
   - next
   - "@next/env"
+  - "@next/swc-darwin-arm64"
+  - "@next/swc-darwin-x64"
+  - "@next/swc-linux-x64-gnu"
+  - "@next/swc-linux-x64-musl"
+  - "@next/swc-linux-arm64-gnu"
+  - "@next/swc-linux-arm64-musl"
+  - "@next/swc-win32-x64-msvc"
+  - "@next/swc-win32-arm64-msvc"
 
 trustPolicy: no-downgrade
+
+overrides:
+  # Force vite patché pour CVE path traversal / fs.deny bypass
+  # (transitif via vitest + @vitejs/plugin-react)
+  vite: "^7.3.2"
+  # CVE path traversal arbitrary file write (transitif via vite)
+  rollup: "^4.59.0"
+  # ReDoS (transitif via eslint, drizzle-kit, etc.)
+  minimatch: "^9.0.7"
+  # Prototype pollution / unbounded recursion (transitif via eslint)
+  flatted: "^3.4.2"
+  # ReDoS / method injection (transitif via eslint-config-next et vite)
+  picomatch: "^4.0.4"
+  # Zero-step sequence ReDoS (transitif via minimatch)
+  brace-expansion: "^2.0.3"
+  # Prototype pollution via merge (transitif via eslint)
+  js-yaml: "^4.1.1"
+  # ReDoS $data (transitif via eslint)
+  ajv: "^6.14.0"
+  # Arbitrary requests via dev server (transitif via drizzle-kit)
+  esbuild: "^0.25.0"
 
 onlyBuiltDependencies:
   - "@next/swc-linux-x64-gnu"
@@ -20,3 +49,6 @@ onlyBuiltDependencies:
 trustPolicyExclude:
   # Types-only, runtime-safe. Voir https://github.com/nodejs/undici/issues/4666
   - undici-types
+  # semver@6.x n'a plus de provenance attestation ; transitif via @babel/core
+  # (dépendance dev-only de @vitejs/plugin-react) — pas de risque runtime
+  - semver

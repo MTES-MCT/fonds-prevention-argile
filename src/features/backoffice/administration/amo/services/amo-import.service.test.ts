@@ -22,7 +22,9 @@ vi.mock("exceljs", () => {
 
   return {
     default: {
-      Workbook: vi.fn(() => mockWorkbook),
+      Workbook: vi.fn(function () {
+        return mockWorkbook;
+      }),
     },
   };
 });
