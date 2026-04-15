@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { useParcours } from "../../context/useParcours";
 import { Step, STEP_ORDER } from "../../domain";
+import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 
 export default function MaListe() {
-  const { currentStep, getDossierUrl } = useParcours();
+  const { currentStep, getDossierUrl, lastDSStatus } = useParcours();
+
+  const isCurrentStepAccepte = lastDSStatus === DSStatus.ACCEPTE;
 
   // Récupérer les URLs pour chaque étape
   const eligibiliteUrl = getDossierUrl(Step.ELIGIBILITE);
@@ -23,17 +26,18 @@ export default function MaListe() {
     const currentIndex = STEP_ORDER.indexOf(currentStep || Step.CHOIX_AMO);
     const stepIndex = STEP_ORDER.indexOf(step);
 
+    const isCompleted = stepIndex < currentIndex || (stepIndex === currentIndex && isCurrentStepAccepte);
+
     return {
-      isCompleted: stepIndex < currentIndex,
+      isCompleted,
       isActive: stepIndex <= currentIndex,
-      style:
-        stepIndex < currentIndex
-          ? {
-              textDecoration: "line-through",
-              opacity: 0.7,
-              pointerEvents: "none" as const,
-            }
-          : {},
+      style: isCompleted
+        ? {
+            textDecoration: "line-through",
+            opacity: 0.7,
+            pointerEvents: "none" as const,
+          }
+        : {},
     };
   };
 
@@ -100,15 +104,32 @@ export default function MaListe() {
               })()}
             </li>
             <li key="diagnostic">
-              {isDiagnosticActive ? (
-                <Link target="_blank" rel="noopener external" className="fr-link" href={diagnosticUrl || "#"}>
-                  Démarrer le diagnostic
-                </Link>
-              ) : (
-                <a aria-disabled="true" role="link" className="fr-link">
-                  Démarrer le diagnostic
-                </a>
-              )}
+              {(() => {
+                const status = getStepStatus(Step.DIAGNOSTIC);
+
+                if (status.isCompleted) {
+                  return (
+                    <span className="fr-link" style={status.style}>
+                      Soumettre le diagnostic{" "}
+                      <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true"></span>
+                    </span>
+                  );
+                }
+
+                if (isDiagnosticActive) {
+                  return (
+                    <Link target="_blank" rel="noopener external" className="fr-link" href={diagnosticUrl || "#"}>
+                      Soumettre le diagnostic
+                    </Link>
+                  );
+                }
+
+                return (
+                  <a aria-disabled="true" role="link" className="fr-link">
+                    Soumettre le diagnostic
+                  </a>
+                );
+              })()}
             </li>
             <li key="devis">
               {isDevisActive ? (

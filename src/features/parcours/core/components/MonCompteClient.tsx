@@ -14,6 +14,8 @@ import {
   CalloutAmoEnAttente,
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
+  CalloutDiagnosticAccepte,
+  CalloutDiagnosticEnInstruction,
   CalloutDiagnosticTodo,
   CalloutEligibiliteAccepte,
   CalloutEligibiliteEnConstruction,
@@ -313,11 +315,11 @@ function renderDiagnosticCallout(dsStatus: DSStatus | null) {
   }
 
   if (dsStatus === DSStatus.EN_INSTRUCTION) {
-    // return <CalloutDiagnosticEnInstruction />;
+    return <CalloutDiagnosticEnInstruction />;
   }
 
   if (dsStatus === DSStatus.ACCEPTE) {
-    // return <CalloutDiagnosticAccepte />;
+    return <CalloutDiagnosticAccepte />;
   }
 
   return null;
