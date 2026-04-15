@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
+import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
 import { getAmoAccueilData } from "../services/amo-accueil.service";
 import type { AmoAccueilData } from "../domain/types";
 import type { ActionResult } from "@/shared/types";
@@ -8,23 +8,24 @@ import type { ActionResult } from "@/shared/types";
 /**
  * Récupère les données d'accueil pour l'AMO connecté
  *
- * Vérifie que l'agent est connecté et a une entreprise AMO associée
+ * - AMO : filtre par son entrepriseAmoId
+ * - SUPER_ADMIN : accès global (tous les AMO), lecture seule
  */
 export async function getAmoAccueilDataAction(): Promise<ActionResult<AmoAccueilData>> {
   try {
-    // Récupérer l'agent courant
-    const agentResult = await getCurrentAgent();
+    const access = await resolveEspaceAgentAccess();
 
-    if (!agentResult.success) {
-      return {
-        success: false,
-        error: agentResult.error,
-      };
+    if (access.kind === "error") {
+      return { success: false, error: access.error };
     }
 
-    const agent = agentResult.data;
+    if (access.kind === "super-admin") {
+      const data = await getAmoAccueilData(null);
+      return { success: true, data };
+    }
 
-    // Vérifier que l'agent a une entreprise AMO associée
+    const agent = access.agent;
+
     if (!agent.entrepriseAmoId) {
       return {
         success: false,
@@ -32,7 +33,6 @@ export async function getAmoAccueilDataAction(): Promise<ActionResult<AmoAccueil
       };
     }
 
-    // Récupérer les données d'accueil
     const data = await getAmoAccueilData(agent.entrepriseAmoId);
 
     return {

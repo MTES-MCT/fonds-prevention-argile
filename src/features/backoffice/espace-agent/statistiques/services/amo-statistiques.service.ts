@@ -35,7 +35,10 @@ const STEPS_ORDER: Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, 
  *
  * @param entrepriseAmoId - ID de l'entreprise AMO
  */
-export async function getAmoStatistiques(entrepriseAmoId: string): Promise<AmoStatistiques> {
+/**
+ * @param entrepriseAmoId - ID de l'entreprise AMO, ou `null` pour un accès global (SUPER_ADMIN)
+ */
+export async function getAmoStatistiques(entrepriseAmoId: string | null): Promise<AmoStatistiques> {
   const [indicateursCles, repartitionParEtape, repartitionParRevenu, topCommunes] = await Promise.all([
     getIndicateursCles(entrepriseAmoId),
     getRepartitionParEtape(entrepriseAmoId),
@@ -56,7 +59,7 @@ export async function getAmoStatistiques(entrepriseAmoId: string): Promise<AmoSt
  *
  * @param entrepriseAmoId - ID de l'entreprise AMO
  */
-async function getIndicateursCles(entrepriseAmoId: string): Promise<AmoIndicateursCles> {
+async function getIndicateursCles(entrepriseAmoId: string | null): Promise<AmoIndicateursCles> {
   const [nombreDossiersEnCoursAccompagnement, demandesAccompagnement] = await Promise.all([
     getNombreDossiersEnCoursAccompagnement(entrepriseAmoId),
     getDemandesAccompagnement(entrepriseAmoId),
@@ -74,13 +77,13 @@ async function getIndicateursCles(entrepriseAmoId: string): Promise<AmoIndicateu
  * Un dossier est "en cours d'accompagnement" si :
  * - Le statut est LOGEMENT_ELIGIBLE (l'AMO a accepté et validé l'éligibilité du logement)
  */
-async function getNombreDossiersEnCoursAccompagnement(entrepriseAmoId: string): Promise<number> {
+async function getNombreDossiersEnCoursAccompagnement(entrepriseAmoId: string | null): Promise<number> {
   const result = await db
     .select({ count: count() })
     .from(parcoursAmoValidations)
     .where(
       and(
-        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+        entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
         eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE)
       )
     );
@@ -95,7 +98,7 @@ async function getNombreDossiersEnCoursAccompagnement(entrepriseAmoId: string): 
  * Demandes refusées = LOGEMENT_NON_ELIGIBLE + ACCOMPAGNEMENT_REFUSE
  */
 async function getDemandesAccompagnement(
-  entrepriseAmoId: string
+  entrepriseAmoId: string | null
 ): Promise<{ total: number; acceptees: number; refusees: number }> {
   // Compter les demandes acceptées (LOGEMENT_ELIGIBLE)
   const accepteesResult = await db
@@ -103,7 +106,7 @@ async function getDemandesAccompagnement(
     .from(parcoursAmoValidations)
     .where(
       and(
-        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+        entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
         eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE)
       )
     );
@@ -114,7 +117,7 @@ async function getDemandesAccompagnement(
     .from(parcoursAmoValidations)
     .where(
       and(
-        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+        entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
         or(
           eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE),
           eq(parcoursAmoValidations.statut, StatutValidationAmo.ACCOMPAGNEMENT_REFUSE)
@@ -138,7 +141,7 @@ async function getDemandesAccompagnement(
  * - Pour l'étape "Choix AMO" : compte les demandes EN_ATTENTE (en cours de traitement)
  * - Pour les autres étapes : compte les dossiers LOGEMENT_ELIGIBLE (en cours d'accompagnement)
  */
-async function getRepartitionParEtape(entrepriseAmoId: string): Promise<RepartitionParEtape[]> {
+async function getRepartitionParEtape(entrepriseAmoId: string | null): Promise<RepartitionParEtape[]> {
   // Récupérer le count par étape pour les dossiers de cette entreprise AMO
   const results = await Promise.all(
     STEPS_ORDER.map(async (step) => {
@@ -153,7 +156,7 @@ async function getRepartitionParEtape(entrepriseAmoId: string): Promise<Repartit
         .innerJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
         .where(
           and(
-            eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+            entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
             eq(parcoursAmoValidations.statut, statutFilter),
             eq(parcoursPrevention.currentStep, step)
           )
@@ -176,7 +179,7 @@ async function getRepartitionParEtape(entrepriseAmoId: string): Promise<Repartit
  * Compte uniquement les dossiers en cours d'accompagnement (LOGEMENT_ELIGIBLE)
  * et dont les données RGA sont disponibles
  */
-async function getRepartitionParRevenu(entrepriseAmoId: string): Promise<RepartitionParRevenu> {
+async function getRepartitionParRevenu(entrepriseAmoId: string | null): Promise<RepartitionParRevenu> {
   // Récupérer tous les parcours avec leurs données RGA
   const parcours = await db
     .select({
@@ -186,7 +189,7 @@ async function getRepartitionParRevenu(entrepriseAmoId: string): Promise<Reparti
     .innerJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
     .where(
       and(
-        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+        entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
         eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE)
       )
     );
@@ -237,7 +240,7 @@ async function getRepartitionParRevenu(entrepriseAmoId: string): Promise<Reparti
  * Compte uniquement les dossiers en cours d'accompagnement (LOGEMENT_ELIGIBLE)
  * et dont les données de commune sont disponibles
  */
-async function getTopCommunes(entrepriseAmoId: string): Promise<CommuneStats[]> {
+async function getTopCommunes(entrepriseAmoId: string | null): Promise<CommuneStats[]> {
   // Récupérer tous les parcours avec leurs données de logement
   const parcours = await db
     .select({
@@ -247,7 +250,7 @@ async function getTopCommunes(entrepriseAmoId: string): Promise<CommuneStats[]> 
     .innerJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
     .where(
       and(
-        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+        entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
         eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE)
       )
     );

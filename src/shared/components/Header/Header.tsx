@@ -15,10 +15,25 @@ function AgentNavLinks() {
   const agentRole = useAgentRole();
 
   switch (agentRole) {
+    case UserRole.SUPER_ADMINISTRATEUR:
+      return (
+        <>
+          <li>
+            <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
+              Administration
+            </Link>
+          </li>
+          <li>
+            <Link href="/espace-agent" className="fr-icon-eye-line fr-btn">
+              Vue espace agent
+            </Link>
+          </li>
+        </>
+      );
+
     case UserRole.ANALYSTE:
     case UserRole.ANALYSTE_DDT:
     case UserRole.ADMINISTRATEUR:
-    case UserRole.SUPER_ADMINISTRATEUR:
       return (
         <li>
           <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
@@ -39,10 +54,25 @@ function AgentNavLinksMobile() {
   const agentRole = useAgentRole();
 
   switch (agentRole) {
+    case UserRole.SUPER_ADMINISTRATEUR:
+      return (
+        <>
+          <li>
+            <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
+              Administration
+            </Link>
+          </li>
+          <li>
+            <Link href="/espace-agent" className="fr-icon-eye-line fr-btn">
+              Vue espace agent
+            </Link>
+          </li>
+        </>
+      );
+
     case UserRole.ANALYSTE:
     case UserRole.ANALYSTE_DDT:
     case UserRole.ADMINISTRATEUR:
-    case UserRole.SUPER_ADMINISTRATEUR:
       return (
         <li>
           <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">

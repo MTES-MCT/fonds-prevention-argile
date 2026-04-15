@@ -1,6 +1,6 @@
 import { count, eq, and, asc } from "drizzle-orm";
 import { db } from "@/shared/database/client";
-import { parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
+import { parcoursAmoValidations, parcoursPrevention, users } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { AmoAccueilData, DemandeAccompagnement } from "../domain/types";
 
@@ -15,7 +15,10 @@ import type { AmoAccueilData, DemandeAccompagnement } from "../domain/types";
  *
  * @param entrepriseAmoId - ID de l'entreprise AMO
  */
-export async function getAmoAccueilData(entrepriseAmoId: string): Promise<AmoAccueilData> {
+/**
+ * @param entrepriseAmoId - ID de l'entreprise AMO, ou `null` pour un accès global (SUPER_ADMIN lecture seule)
+ */
+export async function getAmoAccueilData(entrepriseAmoId: string | null): Promise<AmoAccueilData> {
   const [nombreDemandesEnAttente, nombreDossiersSuivis, demandesATraiter] = await Promise.all([
     getNombreDemandesEnAttente(entrepriseAmoId),
     getNombreDossiersSuivis(entrepriseAmoId),
@@ -29,37 +32,28 @@ export async function getAmoAccueilData(entrepriseAmoId: string): Promise<AmoAcc
   };
 }
 
-/**
- * Compte le nombre de demandes d'accompagnement en attente
- *
- * Une demande est "en attente" si son statut est EN_ATTENTE
- */
-async function getNombreDemandesEnAttente(entrepriseAmoId: string): Promise<number> {
+function entrepriseAmoFilter(entrepriseAmoId: string | null) {
+  return entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined;
+}
+
+async function getNombreDemandesEnAttente(entrepriseAmoId: string | null): Promise<number> {
   const result = await db
     .select({ count: count() })
     .from(parcoursAmoValidations)
     .where(
-      and(
-        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
-        eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE)
-      )
+      and(entrepriseAmoFilter(entrepriseAmoId), eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE))
     );
 
   return result[0]?.count ?? 0;
 }
 
-/**
- * Compte le nombre de dossiers suivis (demandes acceptées)
- *
- * Un dossier est "suivi" si son statut est LOGEMENT_ELIGIBLE
- */
-async function getNombreDossiersSuivis(entrepriseAmoId: string): Promise<number> {
+async function getNombreDossiersSuivis(entrepriseAmoId: string | null): Promise<number> {
   const result = await db
     .select({ count: count() })
     .from(parcoursAmoValidations)
     .where(
       and(
-        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+        entrepriseAmoFilter(entrepriseAmoId),
         eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE)
       )
     );
@@ -67,35 +61,29 @@ async function getNombreDossiersSuivis(entrepriseAmoId: string): Promise<number>
   return result[0]?.count ?? 0;
 }
 
-/**
- * Récupère la liste des demandes d'accompagnement à traiter
- *
- * Retourne les demandes avec statut EN_ATTENTE, triées par date de création croissante
- * (les plus anciennes en premier pour inciter à les traiter en priorité)
- */
-async function getDemandesATraiter(entrepriseAmoId: string): Promise<DemandeAccompagnement[]> {
+async function getDemandesATraiter(entrepriseAmoId: string | null): Promise<DemandeAccompagnement[]> {
   const results = await db
     .select({
       id: parcoursAmoValidations.id,
       prenom: parcoursAmoValidations.userPrenom,
       nom: parcoursAmoValidations.userNom,
+      userPrenom: users.prenom,
+      userNom: users.nom,
       createdAt: parcoursAmoValidations.createdAt,
       rgaSimulationData: parcoursPrevention.rgaSimulationData,
     })
     .from(parcoursAmoValidations)
     .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
+    .innerJoin(users, eq(users.id, parcoursPrevention.userId))
     .where(
-      and(
-        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
-        eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE)
-      )
+      and(entrepriseAmoFilter(entrepriseAmoId), eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE))
     )
     .orderBy(asc(parcoursAmoValidations.createdAt));
 
   return results.map((row) => ({
     id: row.id,
-    prenom: row.prenom,
-    nom: row.nom,
+    prenom: row.prenom || row.userPrenom,
+    nom: row.nom || row.userNom,
     commune: row.rgaSimulationData?.logement?.commune_nom ?? null,
     codePostal: row.rgaSimulationData?.logement?.code_departement ?? null,
     dateCreation: row.createdAt,

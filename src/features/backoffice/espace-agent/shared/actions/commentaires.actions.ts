@@ -1,6 +1,7 @@
 "use server";
 
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
+import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { commentairesService } from "../services/commentaires.service";
 import type {
   CommentairesListResult,
@@ -58,6 +59,9 @@ export async function getCommentairesAction(parcoursId: string): Promise<Comment
  */
 export async function createCommentaireAction(parcoursId: string, message: string): Promise<CreateCommentaireResult> {
   try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     // Récupérer l'agent connecté
     const agentResult = await getCurrentAgent();
     if (!agentResult.success || !agentResult.data) {
@@ -93,6 +97,9 @@ export async function updateCommentaireAction(
   message: string
 ): Promise<UpdateCommentaireResult> {
   try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     // Récupérer l'agent connecté
     const agentResult = await getCurrentAgent();
     if (!agentResult.success || !agentResult.data) {
@@ -124,6 +131,9 @@ export async function updateCommentaireAction(
  */
 export async function deleteCommentaireAction(commentaireId: string): Promise<DeleteCommentaireResult> {
   try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     // Récupérer l'agent connecté
     const agentResult = await getCurrentAgent();
     if (!agentResult.success || !agentResult.data) {

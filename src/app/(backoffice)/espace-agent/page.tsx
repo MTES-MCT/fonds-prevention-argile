@@ -17,6 +17,12 @@ export default async function EspaceAgentHomePage() {
 
   const role = user.role as UserRole;
 
+  // SUPER_ADMINISTRATEUR : accès lecture seule à l'espace agent (recette / validation)
+  // Par défaut vers /demandes (vue AMO principale)
+  if (role === UserRole.SUPER_ADMINISTRATEUR) {
+    redirect("/espace-agent/demandes");
+  }
+
   // Vérifier les permissions pour déterminer la redirection
   const hasDemandesPermission = hasPermission(role, BackofficePermission.DOSSIERS_AMO_READ);
   const hasProspectsPermission = hasPermission(role, BackofficePermission.PROSPECTS_VIEW);

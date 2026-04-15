@@ -80,6 +80,7 @@ function AgentNavigationTabs({ tabs, showDemandesBadge }: { tabs: AmoTab[]; show
  */
 export function AgentNavigation() {
   const agentRole = useAgentRole();
+  const pathname = usePathname();
 
   // Pas de navigation spéciale si pas agent ou rôle non supporté
   if (!agentRole) {
@@ -102,6 +103,16 @@ export function AgentNavigation() {
       break;
 
     case UserRole.AMO_ET_ALLERS_VERS:
+      tabs = AMO_ET_ALLERS_VERS_TABS;
+      showDemandesBadge = true;
+      break;
+
+    case UserRole.SUPER_ADMINISTRATEUR:
+      // SUPER_ADMIN : vue lecture seule sur /espace-agent/**
+      // On n'affiche les onglets que sur les routes /espace-agent pour ne pas polluer /administration
+      if (!pathname.startsWith("/espace-agent")) {
+        return null;
+      }
       tabs = AMO_ET_ALLERS_VERS_TABS;
       showDemandesBadge = true;
       break;

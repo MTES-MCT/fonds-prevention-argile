@@ -8,6 +8,7 @@ import { BackofficePermission } from "@/features/auth/permissions/domain/value-o
 import { UserRole } from "@/shared/domain/value-objects";
 import { QualificationDecision } from "../domain/types";
 import { qualificationService } from "../services/qualification.service";
+import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
 import type { ActionResult } from "@/shared/types";
 
@@ -49,6 +50,9 @@ type QualifyProspectInput = z.infer<typeof qualifyProspectSchema>;
  */
 export async function qualifyProspectAction(input: QualifyProspectInput): Promise<ActionResult<ProspectQualification>> {
   try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     // 1. Authentification
     const user = await getCurrentUser();
     if (!user) {

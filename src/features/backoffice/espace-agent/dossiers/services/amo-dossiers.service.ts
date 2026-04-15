@@ -1,6 +1,6 @@
 import { count, eq, and, or, asc, isNull, isNotNull, inArray } from "drizzle-orm";
 import { db } from "@/shared/database/client";
-import { parcoursAmoValidations, parcoursPrevention, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
+import { parcoursAmoValidations, parcoursPrevention, dossiersDemarchesSimplifiees, users } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { AmoDossiersData, DossierSuivi } from "../domain/types";
 
@@ -18,7 +18,10 @@ const STATUTS_REFUSES = [StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, StatutValida
  *
  * @param entrepriseAmoId - ID de l'entreprise AMO
  */
-export async function getAmoDossiersData(entrepriseAmoId: string): Promise<AmoDossiersData> {
+/**
+ * @param entrepriseAmoId - ID de l'entreprise AMO, ou `null` pour un accès global (SUPER_ADMIN)
+ */
+export async function getAmoDossiersData(entrepriseAmoId: string | null): Promise<AmoDossiersData> {
   const [nombreDossiersSuivis, nombreDossiersArchives, dossiersSuivis, dossiersArchives] = await Promise.all([
     getNombreDossiersSuivis(entrepriseAmoId),
     getNombreDossiersArchives(entrepriseAmoId),
@@ -39,14 +42,14 @@ export async function getAmoDossiersData(entrepriseAmoId: string): Promise<AmoDo
  *
  * Un dossier est "suivi" si son statut est LOGEMENT_ELIGIBLE et son parcours n'est pas archivé
  */
-async function getNombreDossiersSuivis(entrepriseAmoId: string): Promise<number> {
+async function getNombreDossiersSuivis(entrepriseAmoId: string | null): Promise<number> {
   const result = await db
     .select({ count: count() })
     .from(parcoursAmoValidations)
     .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
     .where(
       and(
-        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+        entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
         eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
         isNull(parcoursPrevention.archivedAt)
       )
@@ -60,14 +63,14 @@ async function getNombreDossiersSuivis(entrepriseAmoId: string): Promise<number>
  * - Demandes acceptées puis archivées manuellement par l'AMO
  * - Demandes refusées (logement non éligible ou accompagnement refusé)
  */
-async function getNombreDossiersArchives(entrepriseAmoId: string): Promise<number> {
+async function getNombreDossiersArchives(entrepriseAmoId: string | null): Promise<number> {
   const result = await db
     .select({ count: count() })
     .from(parcoursAmoValidations)
     .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
     .where(
       and(
-        eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId),
+        entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
         or(
           // Acceptées + archivées manuellement
           and(
@@ -89,7 +92,7 @@ async function getNombreDossiersArchives(entrepriseAmoId: string): Promise<numbe
  * Retourne les dossiers avec statut LOGEMENT_ELIGIBLE et parcours non archivé,
  * triés par date de validation croissante (les plus anciens en premier)
  */
-async function getDossiersSuivis(entrepriseAmoId: string): Promise<DossierSuivi[]> {
+async function getDossiersSuivis(entrepriseAmoId: string | null): Promise<DossierSuivi[]> {
   return getDossiersWithArchiveFilter(entrepriseAmoId, "active");
 }
 
@@ -99,7 +102,7 @@ async function getDossiersSuivis(entrepriseAmoId: string): Promise<DossierSuivi[
  * Retourne les dossiers avec statut LOGEMENT_ELIGIBLE et parcours archivé,
  * triés par date de validation croissante (les plus anciens en premier)
  */
-async function getDossiersArchives(entrepriseAmoId: string): Promise<DossierSuivi[]> {
+async function getDossiersArchives(entrepriseAmoId: string | null): Promise<DossierSuivi[]> {
   return getDossiersWithArchiveFilter(entrepriseAmoId, "archived");
 }
 
@@ -110,7 +113,7 @@ async function getDossiersArchives(entrepriseAmoId: string): Promise<DossierSuiv
  * - "archived" : demandes acceptées puis archivées + demandes refusées
  */
 async function getDossiersWithArchiveFilter(
-  entrepriseAmoId: string,
+  entrepriseAmoId: string | null,
   filter: "active" | "archived"
 ): Promise<DossierSuivi[]> {
   const statusCondition =
@@ -134,6 +137,8 @@ async function getDossiersWithArchiveFilter(
       id: parcoursAmoValidations.id,
       prenom: parcoursAmoValidations.userPrenom,
       nom: parcoursAmoValidations.userNom,
+      userPrenom: users.prenom,
+      userNom: users.nom,
       valideeAt: parcoursAmoValidations.valideeAt,
       statutValidation: parcoursAmoValidations.statut,
       parcoursId: parcoursAmoValidations.parcoursId,
@@ -144,7 +149,8 @@ async function getDossiersWithArchiveFilter(
     })
     .from(parcoursAmoValidations)
     .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
-    .where(and(eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId), statusCondition))
+    .innerJoin(users, eq(users.id, parcoursPrevention.userId))
+    .where(and(entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined, statusCondition))
     .orderBy(asc(parcoursAmoValidations.valideeAt));
 
   // Pour chaque dossier, récupère le dsStatus de l'étape courante
@@ -164,8 +170,8 @@ async function getDossiersWithArchiveFilter(
       return {
         id: row.id,
         parcoursId: row.parcoursId,
-        prenom: row.prenom,
-        nom: row.nom,
+        prenom: row.prenom || row.userPrenom,
+        nom: row.nom || row.userNom,
         commune: row.rgaSimulationData?.logement?.commune_nom ?? null,
         codeDepartement: row.rgaSimulationData?.logement?.code_departement ?? null,
         etape: row.currentStep,

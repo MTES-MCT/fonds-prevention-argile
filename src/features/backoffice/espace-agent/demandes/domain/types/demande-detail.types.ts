@@ -65,6 +65,14 @@ export interface ParcoursDateProgression {
   devisSubmittedAt?: Date;
   /** Date de transmission des factures */
   facturesSubmittedAt?: Date;
+  /** Date d'acceptation de l'éligibilité par la DDT */
+  eligibiliteProcessedAt?: Date;
+  /** Date d'acceptation du diagnostic par la DDT */
+  diagnosticProcessedAt?: Date;
+  /** Date d'acceptation des devis par la DDT */
+  devisProcessedAt?: Date;
+  /** Date d'acceptation des factures par la DDT */
+  facturesProcessedAt?: Date;
 }
 
 /**

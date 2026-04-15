@@ -1,5 +1,5 @@
 import { db } from "@/shared/database/client";
-import { parcoursAmoValidations, parcoursPrevention, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
+import { parcoursAmoValidations, parcoursPrevention, dossiersDemarchesSimplifiees, users } from "@/shared/database/schema";
 import { eq, and } from "drizzle-orm";
 import type { DossierDetail, InfoDemandeur, InfoLogement, ParcoursDateProgression } from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
@@ -35,9 +35,11 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       .select({
         validation: parcoursAmoValidations,
         parcours: parcoursPrevention,
+        user: users,
       })
       .from(parcoursAmoValidations)
       .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
+      .innerJoin(users, eq(users.id, parcoursPrevention.userId))
       .where(eq(parcoursAmoValidations.id, dossierId))
       .limit(1);
 
@@ -85,10 +87,10 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
 
     // Construire l'objet InfoDemandeur
     const demandeur: InfoDemandeur = {
-      prenom: dossier.validation.userPrenom,
-      nom: dossier.validation.userNom,
-      email: dossier.validation.userEmail,
-      telephone: dossier.validation.userTelephone,
+      prenom: dossier.validation.userPrenom || dossier.user.prenom,
+      nom: dossier.validation.userNom || dossier.user.nom,
+      email: dossier.validation.userEmail || dossier.user.emailContact || dossier.user.email,
+      telephone: dossier.validation.userTelephone || dossier.user.telephone,
       adresse: rgaData?.logement?.adresse ?? dossier.validation.adresseLogement,
     };
     const coords = parseCoordinatesString(rgaData?.logement?.coordonnees);
@@ -110,8 +112,11 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       rnbId: rgaData?.logement?.rnb || null,
     };
 
-    // Récupérer les dates de soumission des dossiers DS par step
-    const datesByStep = await dossierDemarchesSimplifieesRepository.getSubmittedDatesByStep(dossier.parcours.id);
+    // Récupérer les dates de soumission et de traitement des dossiers DS par step
+    const [datesByStep, processedDatesByStep] = await Promise.all([
+      dossierDemarchesSimplifieesRepository.getSubmittedDatesByStep(dossier.parcours.id),
+      dossierDemarchesSimplifieesRepository.getProcessedDatesByStep(dossier.parcours.id),
+    ]);
 
     // Construire l'objet des dates de progression
     const dates: ParcoursDateProgression = {
@@ -121,6 +126,10 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       diagnosticSubmittedAt: datesByStep.get(Step.DIAGNOSTIC),
       devisSubmittedAt: datesByStep.get(Step.DEVIS),
       facturesSubmittedAt: datesByStep.get(Step.FACTURES),
+      eligibiliteProcessedAt: processedDatesByStep.get(Step.ELIGIBILITE),
+      diagnosticProcessedAt: processedDatesByStep.get(Step.DIAGNOSTIC),
+      devisProcessedAt: processedDatesByStep.get(Step.DEVIS),
+      facturesProcessedAt: processedDatesByStep.get(Step.FACTURES),
     };
 
     // Construire les informations de diff agent

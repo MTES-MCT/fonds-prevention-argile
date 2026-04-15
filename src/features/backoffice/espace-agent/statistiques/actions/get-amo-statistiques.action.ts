@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
+import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
 import { getAmoStatistiques } from "../services/amo-statistiques.service";
 import type { AmoStatistiques } from "../domain/types";
 import type { ActionResult } from "@/shared/types";
@@ -8,23 +8,24 @@ import type { ActionResult } from "@/shared/types";
 /**
  * Récupère les statistiques pour l'AMO connecté
  *
- * Vérifie que l'agent est connecté et a une entreprise AMO associée
+ * - AMO : filtre par son entrepriseAmoId
+ * - SUPER_ADMIN : statistiques globales (tous AMO), lecture seule
  */
 export async function getAmoStatistiquesAction(): Promise<ActionResult<AmoStatistiques>> {
   try {
-    // Récupérer l'agent courant
-    const agentResult = await getCurrentAgent();
+    const access = await resolveEspaceAgentAccess();
 
-    if (!agentResult.success) {
-      return {
-        success: false,
-        error: agentResult.error,
-      };
+    if (access.kind === "error") {
+      return { success: false, error: access.error };
     }
 
-    const agent = agentResult.data;
+    if (access.kind === "super-admin") {
+      const statistiques = await getAmoStatistiques(null);
+      return { success: true, data: statistiques };
+    }
 
-    // Vérifier que l'agent a une entreprise AMO associée
+    const agent = access.agent;
+
     if (!agent.entrepriseAmoId) {
       return {
         success: false,
@@ -32,7 +33,6 @@ export async function getAmoStatistiquesAction(): Promise<ActionResult<AmoStatis
       };
     }
 
-    // Récupérer les statistiques
     const statistiques = await getAmoStatistiques(agent.entrepriseAmoId);
 
     return {

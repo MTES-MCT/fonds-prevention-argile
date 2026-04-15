@@ -27,16 +27,18 @@ export async function getProspectsListAction(filters?: ProspectFilters): Promise
 
     const role = user.role as UserRole;
 
-    // Vérifier la permission
-    if (!hasPermission(role, BackofficePermission.PROSPECTS_VIEW)) {
+    const isSuperAdmin = role === UserRole.SUPER_ADMINISTRATEUR;
+
+    // Vérifier la permission (SUPER_ADMIN bypass : accès lecture seule global)
+    if (!isSuperAdmin && !hasPermission(role, BackofficePermission.PROSPECTS_VIEW)) {
       return {
         success: false,
         error: "Permission refusée",
       };
     }
 
-    // Vérifier que l'agent a un allersVersId
-    if (!user.allersVersId) {
+    // Vérifier que l'agent a un allersVersId (sauf SUPER_ADMIN)
+    if (!isSuperAdmin && !user.allersVersId) {
       return {
         success: false,
         error: "Agent non lié à une structure Allers-Vers",
@@ -49,7 +51,7 @@ export async function getProspectsListAction(filters?: ProspectFilters): Promise
         id: user.agentId ?? "",
         role: user.role,
         entrepriseAmoId: user.entrepriseAmoId ?? null,
-        allersVersId: user.allersVersId,
+        allersVersId: user.allersVersId ?? null,
       },
       filters
     );
