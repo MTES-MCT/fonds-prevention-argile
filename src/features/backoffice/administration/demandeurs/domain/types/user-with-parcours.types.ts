@@ -10,7 +10,7 @@ export interface UserWithParcoursDetails {
   // ===== Informations utilisateur =====
   user: {
     id: string;
-    fcId: string;
+    fcId: string | null;
     email: string | null;
     name: string | null; // Anonymisé : première lettre + "."
     firstName: string | null;

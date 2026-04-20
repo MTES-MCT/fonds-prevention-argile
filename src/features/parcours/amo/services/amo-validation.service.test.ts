@@ -272,6 +272,7 @@ describe("amo-validation.service", () => {
       archivedAt: null,
       archiveReason: null,
       archivedBy: null,
+      createdByAgentId: null,
     };
 
     beforeEach(() => {
@@ -439,6 +440,7 @@ describe("amo-validation.service", () => {
       archivedAt: null,
       archiveReason: null,
       archivedBy: null,
+      createdByAgentId: null,
     };
 
     beforeEach(() => {
@@ -541,6 +543,7 @@ describe("amo-validation.service", () => {
       archivedAt: null,
       archiveReason: null,
       archivedBy: null,
+      createdByAgentId: null,
     };
 
     beforeEach(() => {
