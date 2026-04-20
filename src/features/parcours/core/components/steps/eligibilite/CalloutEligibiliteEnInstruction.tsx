@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useParcours } from "../../../context/useParcours";
 import { Step } from "../../../domain";
-import { formatDate } from "@/shared/utils";
 import { getDossierDsDemandeUrl, getDossierDsMessagerieUrl } from "@/features/parcours/dossiers-ds/utils";
 
 export default function CalloutEligibiliteEnInstruction() {
@@ -11,9 +10,6 @@ export default function CalloutEligibiliteEnInstruction() {
 
   // Récupérer le dossier d'éligibilité
   const dossierEligilibilite = dossiers?.find((d) => d.demarcheEtape === Step.ELIGIBILITE);
-
-  // Date de soumission du dossier
-  const dossierSubmittedDate = dossierEligilibilite?.createdAt?.toISOString() || null;
 
   // URLs de la demande dans Démarches Simplifiées
   const demandeDsUrl = getDossierDsDemandeUrl(dossierEligilibilite?.numeroDs);
@@ -25,14 +21,8 @@ export default function CalloutEligibiliteEnInstruction() {
     <div className="fr-callout fr-callout--blue-cumulus fr-icon-time-line">
       <p className="fr-callout__title">Votre dossier est en instruction</p>
       <p className="fr-callout__text">
-        Un instructeur examine votre formulaire d'éligibilité. Vous serez informé ici et par e-mail dès que la décision
-        sera prise.
-        {dossierSubmittedDate && (
-          <>
-            {" "}
-            Votre dossier a été déposé le <strong>{formatDate(dossierSubmittedDate)}</strong>.
-          </>
-        )}
+        Un instructeur examine votre formulaire d&apos;éligibilité. Vous serez informé ici et par e-mail dès que la
+        décision sera prise.
       </p>
       <ul className="fr-btns-group fr-btns-group--inline fr-btns-group--icon-right">
         <li>

@@ -54,6 +54,7 @@ export async function getParcoursComplet(userId: string): Promise<ParcoursComple
     demarcheUrl: d.dsNumber ? getDossierDsDemandeUrl(parseInt(d.dsNumber)) : d.dsUrl || undefined,
     numeroDs: d.dsNumber ? parseInt(d.dsNumber) : null,
     etatDs: d.dsStatus as DSStatus,
+    submittedAt: d.submittedAt,
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
   }));

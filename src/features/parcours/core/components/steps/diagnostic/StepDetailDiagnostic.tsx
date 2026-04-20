@@ -6,11 +6,13 @@ import { isStepBefore, Step } from "../../../domain";
 import { useParcours } from "../../../context/useParcours";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 import { envoyerDossierDiagnostic } from "../../../actions/diagnostic.actions";
+import { formatDate } from "@/shared/utils";
 
 export default function StepDetailDiagnostic() {
-  const { currentStep, getDossierUrl, lastDSStatus, refresh } = useParcours();
+  const { currentStep, getDossierUrl, lastDSStatus, refresh, dossiers } = useParcours();
 
   const dsUrl = getDossierUrl(Step.DIAGNOSTIC);
+  const submittedAt = dossiers?.find((d) => d.demarcheEtape === Step.DIAGNOSTIC)?.submittedAt ?? null;
 
   const isStepActive = currentStep === Step.DIAGNOSTIC;
   const isStepBeforeCurrent = currentStep ? isStepBefore(currentStep, Step.DIAGNOSTIC) : false;
@@ -53,7 +55,9 @@ export default function StepDetailDiagnostic() {
         )}
 
         {isStepActive && lastDSStatus === DSStatus.EN_INSTRUCTION && (
-          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">En instruction</span>
+          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">
+            {submittedAt ? `En instruction le ${formatDate(submittedAt.toISOString())}` : "En instruction"}
+          </span>
         )}
 
         {((isStepActive && lastDSStatus === DSStatus.ACCEPTE) || isStepAfterCurrent) && (
@@ -118,14 +122,14 @@ export default function StepDetailDiagnostic() {
 
             {lastDSStatus === DSStatus.EN_INSTRUCTION && (
               <>
-                <p>L'instructeur analyse votre diagnostic.</p>
+                <p>L&apos;instructeur analyse vos réponses afin de vous donner son avis</p>
                 {dsUrl && (
                   <Link
                     href={dsUrl}
                     rel="noopener noreferrer"
                     target="_blank"
                     className="fr-btn fr-btn--secondary fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line">
-                    Voir mon diagnostic
+                    Voir mes réponses
                   </Link>
                 )}
               </>
