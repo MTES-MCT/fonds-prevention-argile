@@ -53,6 +53,10 @@ export const parcoursPrevention = pgTable("parcours_prevention", {
   archivedAt: timestamp("archived_at", { mode: "date" }),
   archiveReason: text("archive_reason"),
   archivedBy: uuid("archived_by").references(() => agents.id, { onDelete: "set null" }),
+
+  // Agent qui a créé le dossier (cas "Aller vers" : création proactive
+  // d'un dossier pour un demandeur avant son inscription FranceConnect).
+  createdByAgentId: uuid("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
 });
 
 export const parcoursPreventionRelations = relations(parcoursPrevention, ({ one, many }) => ({
@@ -62,6 +66,10 @@ export const parcoursPreventionRelations = relations(parcoursPrevention, ({ one,
   }),
   agentEditor: one(agents, {
     fields: [parcoursPrevention.rgaSimulationAgentEditedBy],
+    references: [agents.id],
+  }),
+  createdByAgent: one(agents, {
+    fields: [parcoursPrevention.createdByAgentId],
     references: [agents.id],
   }),
   dossiersDemarchesSimplifiees: many(dossiersDemarchesSimplifiees),
