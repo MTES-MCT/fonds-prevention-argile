@@ -3,7 +3,10 @@ import { sourceAcquisitionPgEnum } from "../enums/enums";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
-  fcId: varchar("fc_id", { length: 255 }).unique().notNull(),
+  // Nullable depuis l'ajout du parcours "Aller vers" : un user "stub" peut être créé
+  // par un agent AV avant que le demandeur ne se connecte via FranceConnect.
+  // Postgres autorise plusieurs NULL sur une contrainte UNIQUE.
+  fcId: varchar("fc_id", { length: 255 }).unique(),
   nom: varchar("nom", { length: 255 }),
   prenom: varchar("prenom", { length: 255 }),
   email: varchar("email", { length: 255 }),
@@ -12,6 +15,13 @@ export const users = pgTable("users", {
   sourceAcquisition: sourceAcquisitionPgEnum("source_acquisition"),
   sourceAcquisitionPrecision: text("source_acquisition_precision"),
   partnerSource: varchar("partner_source", { length: 50 }),
+
+  // Jeton unique pour rattacher un user stub créé par un AV au demandeur
+  // quand il se connectera via FranceConnect (lien dans l'email d'invitation).
+  claimToken: varchar("claim_token", { length: 128 }).unique(),
+  claimTokenExpiresAt: timestamp("claim_token_expires_at", { mode: "date" }),
+  claimedAt: timestamp("claimed_at", { mode: "date" }),
+
   lastLogin: timestamp("last_login", { mode: "date" }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" })
