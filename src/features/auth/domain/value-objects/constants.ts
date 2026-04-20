@@ -29,6 +29,9 @@ export const COOKIE_NAMES = {
   REDIRECT_TO: "redirectTo",
   FC_STATE: "fc_state",
   FC_NONCE: "fc_nonce",
+  // Claim token posé par /claim-dossier/[token] avant le redirect vers FC,
+  // lu et consommé dans le callback FC pour rattacher un user stub créé par un AV.
+  FC_CLAIM_TOKEN: "fc_claim_token",
   PC_STATE: "pc_state",
   PC_NONCE: "pc_nonce",
 } as const;

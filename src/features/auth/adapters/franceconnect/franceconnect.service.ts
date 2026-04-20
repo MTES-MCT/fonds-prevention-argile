@@ -115,6 +115,22 @@ export async function getStoredNonce(): Promise<string | null> {
 }
 
 /**
+ * Lit et supprime le cookie de claim token posé par /claim-dossier/[token].
+ * Retourne undefined si absent — la connexion FC suit alors le flux normal.
+ */
+export async function consumeClaimToken(): Promise<string | undefined> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAMES.FC_CLAIM_TOKEN)?.value;
+
+  if (token) {
+    cookieStore.delete(COOKIE_NAMES.FC_CLAIM_TOKEN);
+    return token;
+  }
+
+  return undefined;
+}
+
+/**
  * Crée une session FranceConnect
  */
 export async function createFranceConnectSession(
@@ -200,10 +216,15 @@ export async function handleFranceConnectCallback(
     // 4. Récupérer les infos utilisateur
     const userInfo = await getUserInfo(tokens.access_token);
 
+    // 4bis. Consommer le claim token s'il existe (dossier pré-créé par un AV)
+    const claimToken = await consumeClaimToken();
+
     // 5. Créer ou récupérer l'utilisateur en base
-    // Le partnerSource est sauvegardé à la création (et backfillé si absent), pas écrasé sur les login suivants.
+    // - partnerSource : sauvegardé à la création (et backfillé si absent), pas écrasé sur les login suivants.
+    // - claimToken : si présent, rattache le user stub pré-créé par un agent AV au compte FC.
     const user = await userRepo.upsertFromFranceConnect(userInfo, {
       partnerSource: options?.partnerSource ?? null,
+      claimToken,
     });
 
     // 6. Initialiser le parcours si première connexion
