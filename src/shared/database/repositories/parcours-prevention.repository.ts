@@ -223,9 +223,14 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   /**
-   * Crée ou récupère le parcours unique d'un utilisateur
+   * Crée ou récupère le parcours unique d'un utilisateur.
+   * `createdByAgentId` trace l'agent créateur (utile pour les dossiers
+   * pré-créés par un Aller-vers).
    */
-  async findOrCreateForUser(userId: string): Promise<ParcoursPrevention> {
+  async findOrCreateForUser(
+    userId: string,
+    opts?: { createdByAgentId?: string }
+  ): Promise<ParcoursPrevention> {
     const existing = await this.findByUserId(userId);
 
     if (existing) {
@@ -236,6 +241,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       userId,
       currentStep: Step.CHOIX_AMO,
       currentStatus: Status.TODO,
+      createdByAgentId: opts?.createdByAgentId ?? null,
     });
   }
 
@@ -371,6 +377,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         createdAt: parcoursPrevention.createdAt,
         updatedAt: parcoursPrevention.updatedAt,
         rgaSimulationData: parcoursPrevention.rgaSimulationData,
+        rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
         // Utilisateur
         userPrenom: users.prenom,
         userNom: users.nom,
@@ -403,7 +410,9 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         }
       }
 
-      return matchesTerritoire(r.rgaSimulationData, departements, epcis);
+      // Fallback sur les données éditées par l'agent (cas des dossiers pré-créés
+      // par un AV où rgaSimulationData n'est pas encore rempli par le demandeur).
+      return matchesTerritoire(r.rgaSimulationData ?? r.rgaSimulationDataAgent, departements, epcis);
     });
   }
 }
