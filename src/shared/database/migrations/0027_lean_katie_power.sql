@@ -1,4 +1,4 @@
-CREATE TABLE "rga_zones" (
+CREATE TABLE IF NOT EXISTS "rga_zones" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"alea" text NOT NULL
 );
