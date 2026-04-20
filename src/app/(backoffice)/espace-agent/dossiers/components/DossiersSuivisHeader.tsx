@@ -4,9 +4,10 @@ import Link from "next/link";
 
 interface DossiersSuivisHeaderProps {
   nombreDossiers: number;
+  canCreateDossier?: boolean;
 }
 
-export function DossiersSuivisHeader({ nombreDossiers }: DossiersSuivisHeaderProps) {
+export function DossiersSuivisHeader({ nombreDossiers, canCreateDossier = false }: DossiersSuivisHeaderProps) {
   return (
     <div className="fr-container fr-py-4w">
       <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
@@ -28,8 +29,19 @@ export function DossiersSuivisHeader({ nombreDossiers }: DossiersSuivisHeaderPro
           </ol>
         </div>
       </nav>
-      <h1 className="fr-h1 fr-mb-0">Vos dossiers ({nombreDossiers})</h1>
-      <p className="fr-mt-2w fr-text--xl text-gray-500">Retrouvez le détail de vos dossiers suivis</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="fr-h1 fr-mb-0">Vos dossiers ({nombreDossiers})</h1>
+          <p className="fr-mt-2w fr-text--xl text-gray-500">Retrouvez le détail de vos dossiers suivis</p>
+        </div>
+        {canCreateDossier && (
+          <Link
+            href="/espace-agent/dossiers/nouveau"
+            className="fr-btn fr-icon-add-line fr-btn--icon-left self-start md:self-center">
+            Nouveau dossier
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
