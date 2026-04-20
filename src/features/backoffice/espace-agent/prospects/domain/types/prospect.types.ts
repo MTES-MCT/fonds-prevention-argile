@@ -101,4 +101,8 @@ export interface ProspectDetail extends Prospect {
   }[];
   /** Informations sur les modifications agent (si données éditées) */
   agentEditInfo?: AgentEditInfo | null;
+  /** true si le demandeur s'est connecté via FranceConnect (fcId présent). */
+  hasUserClaimed: boolean;
+  /** true si une simulation (initiale ou agent) a été enregistrée. */
+  hasSimulation: boolean;
 }

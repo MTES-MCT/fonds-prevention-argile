@@ -150,6 +150,10 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     // Construire les informations de diff agent
     const agentEditInfo = await buildAgentEditInfo(result.parcours);
 
+    const hasUserClaimed = result.user.fcId !== null && result.user.fcId !== undefined;
+    const hasSimulation =
+      result.parcours.rgaSimulationData !== null || result.parcours.rgaSimulationDataAgent !== null;
+
     // Construire l'objet ProspectDetail
     const prospectDetail: ProspectDetail = {
       parcoursId: result.parcours.id,
@@ -175,6 +179,8 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       amoInfo,
       stepsHistory: [], // TODO: implémenter l'historique si nécessaire
       agentEditInfo,
+      hasUserClaimed,
+      hasSimulation,
     };
 
     return { success: true, data: prospectDetail };

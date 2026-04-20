@@ -10,6 +10,7 @@ import { Status } from "@/shared/domain/value-objects/status.enum";
 import { NotesPartagees } from "../../shared";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { ArchiveProspectButton } from "./components/ArchiveProspectButton";
+import { CalloutSimulationAEffectuer } from "./components/CalloutSimulationAEffectuer";
 import { QualificationSection } from "./components/qualification/QualificationSection";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
@@ -18,6 +19,7 @@ import type { QualificationDecision } from "@/features/backoffice/espace-agent/p
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ action?: string }>;
 }
 
 // Force Next.js à ne pas cacher cette page (mode dynamique)
@@ -26,7 +28,7 @@ export const dynamic = "force-dynamic";
 /**
  * Page détail d'un prospect (Espace Allers-Vers)
  */
-export default async function ProspectDetailPage({ params }: PageProps) {
+export default async function ProspectDetailPage({ params, searchParams }: PageProps) {
   // Vérifier l'authentification
   const user = await getCurrentUser();
   if (!user) {
@@ -34,12 +36,19 @@ export default async function ProspectDetailPage({ params }: PageProps) {
   }
 
   const { id } = await params;
+  const { action } = await searchParams;
 
   // Récupérer les données du prospect
   const result = await getProspectDetail(id);
 
   if (!result.success || !result.data) {
     notFound();
+  }
+
+  // Redirection automatique vers le simulateur quand l'AV vient de créer le
+  // dossier en ayant choisi "Faire une simulation d'éligibilité".
+  if (action === "simulation" && !result.data.hasSimulation) {
+    redirect(ROUTES.backoffice.espaceAgent.editionDonneesSimulation(id));
   }
 
   const prospect = result.data;
@@ -112,14 +121,23 @@ export default async function ProspectDetailPage({ params }: PageProps) {
             <p className="fr-badge fr-badge--new">
               Nouveau prospect du {formatDateShort(prospect.createdAt.toISOString())}
             </p>
-            <p className="fr-badge">{STEP_LABELS_NUMBERED[prospect.currentStep] || prospect.currentStep}</p>
+            <p className="fr-badge">
+              {prospect.hasSimulation
+                ? STEP_LABELS_NUMBERED[prospect.currentStep] || prospect.currentStep
+                : "Simulation à effectuer"}
+            </p>
           </div>
         </div>
 
         {/* Section informations */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
-            {/* <CalloutInfosProspect amoInfo={prospect.amoInfo} /> */}
+            {!prospect.hasSimulation && (
+              <CalloutSimulationAEffectuer
+                parcoursId={prospect.parcoursId}
+                hasUserClaimed={prospect.hasUserClaimed}
+              />
+            )}
             <QualificationSection
               parcoursId={prospect.parcoursId}
               qualification={
