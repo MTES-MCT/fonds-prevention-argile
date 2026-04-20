@@ -10,10 +10,15 @@ import { DossiersSuivisTable } from "./DossiersSuivisTable";
 import { Pagination } from "@/shared/components/Pagination/Pagination";
 import Link from "next/link";
 
+interface DossiersPanelProps {
+  /** Affiche le bouton "+ Nouveau dossier" (rôles Aller-vers uniquement). */
+  canCreateDossier?: boolean;
+}
+
 /**
  * Panel des dossiers pour l'espace AMO avec onglets Suivis / Archivés
  */
-export function DossiersPanel() {
+export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps = {}) {
   const [data, setData] = useState<AmoDossiersData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +56,7 @@ export function DossiersPanel() {
   if (isLoading) {
     return (
       <>
-        <DossiersSuivisHeader nombreDossiers={0} />
+        <DossiersSuivisHeader nombreDossiers={0} canCreateDossier={canCreateDossier} />
         <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
           <div className="fr-container">
             <p>Chargement...</p>
@@ -64,7 +69,7 @@ export function DossiersPanel() {
   if (error) {
     return (
       <>
-        <DossiersSuivisHeader nombreDossiers={0} />
+        <DossiersSuivisHeader nombreDossiers={0} canCreateDossier={canCreateDossier} />
         <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
           <div className="fr-container">
             <div className="fr-alert fr-alert--error">
@@ -117,7 +122,7 @@ export function DossiersPanel() {
 
   return (
     <>
-      <DossiersSuivisHeader nombreDossiers={data.nombreDossiersSuivis} />
+      <DossiersSuivisHeader nombreDossiers={data.nombreDossiersSuivis} canCreateDossier={canCreateDossier} />
       <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
         <div className="fr-container">
           <div className="fr-tabs">
