@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
+import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
 import { getAmoDossiersData } from "../services/amo-dossiers.service";
 import type { AmoDossiersData } from "../domain/types";
 import type { ActionResult } from "@/shared/types";
@@ -8,23 +8,24 @@ import type { ActionResult } from "@/shared/types";
 /**
  * Récupère les données des dossiers suivis pour l'AMO connecté
  *
- * Vérifie que l'agent est connecté et a une entreprise AMO associée
+ * - AMO : filtre par son entrepriseAmoId
+ * - SUPER_ADMIN : dossiers globaux (tous AMO), lecture seule
  */
 export async function getAmoDossiersDataAction(): Promise<ActionResult<AmoDossiersData>> {
   try {
-    // Récupérer l'agent courant
-    const agentResult = await getCurrentAgent();
+    const access = await resolveEspaceAgentAccess();
 
-    if (!agentResult.success) {
-      return {
-        success: false,
-        error: agentResult.error,
-      };
+    if (access.kind === "error") {
+      return { success: false, error: access.error };
     }
 
-    const agent = agentResult.data;
+    if (access.kind === "super-admin") {
+      const data = await getAmoDossiersData(null);
+      return { success: true, data };
+    }
 
-    // Vérifier que l'agent a une entreprise AMO associée
+    const agent = access.agent;
+
     if (!agent.entrepriseAmoId) {
       return {
         success: false,
@@ -32,7 +33,6 @@ export async function getAmoDossiersDataAction(): Promise<ActionResult<AmoDossie
       };
     }
 
-    // Récupérer les données des dossiers
     const data = await getAmoDossiersData(agent.entrepriseAmoId);
 
     return {

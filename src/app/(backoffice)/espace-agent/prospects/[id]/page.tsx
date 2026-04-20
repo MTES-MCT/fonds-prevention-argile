@@ -6,6 +6,7 @@ import { formatNomComplet, formatDateShort } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 import { InfoDemandeur, InfoLogement, ParcoursDemandeur, GagnezDuTemps, AFaire } from "../../shared";
+import { Status } from "@/shared/domain/value-objects/status.enum";
 import { NotesPartagees } from "../../shared";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { ArchiveProspectButton } from "./components/ArchiveProspectButton";
@@ -174,6 +175,8 @@ export default async function ProspectDetailPage({ params }: PageProps) {
                 }}>
                 <ParcoursDemandeur
                   currentStep={prospect.currentStep}
+                  currentStatus={Status.TODO}
+                  dsStatus={null}
                   dates={{
                     compteCreatedAt: prospect.createdAt,
                   }}

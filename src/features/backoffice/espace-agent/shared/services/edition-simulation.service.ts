@@ -53,9 +53,11 @@ export async function getDossierSimulationData(id: string): Promise<ActionResult
       .select({
         validation: parcoursAmoValidations,
         parcours: parcoursPrevention,
+        user: users,
       })
       .from(parcoursAmoValidations)
       .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
+      .innerJoin(users, eq(users.id, parcoursPrevention.userId))
       .where(eq(parcoursAmoValidations.id, id))
       .limit(1);
 
@@ -87,8 +89,8 @@ export async function getDossierSimulationData(id: string): Promise<ActionResult
         data: {
           dossierId: dossier.validation.id,
           parcoursId: dossier.parcours.id,
-          prenom: dossier.validation.userPrenom,
-          nom: dossier.validation.userNom,
+          prenom: dossier.validation.userPrenom || dossier.user.prenom,
+          nom: dossier.validation.userNom || dossier.user.nom,
           rgaData,
           statut: dossier.validation.statut,
         },

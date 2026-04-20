@@ -7,6 +7,7 @@ import { BackofficePermission } from "@/features/auth/permissions/domain/value-o
 import { UserRole } from "@/shared/domain/value-objects";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import type { ActionResult } from "@/shared/types";
 
 /**
@@ -16,6 +17,9 @@ import type { ActionResult } from "@/shared/types";
  */
 export async function archiveProspectAction(parcoursId: string, archiveReason: string): Promise<ActionResult<void>> {
   try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     const user = await getCurrentUser();
     if (!user) {
       return { success: false, error: "Non authentifié" };
@@ -59,6 +63,9 @@ export async function archiveProspectAction(parcoursId: string, archiveReason: s
  */
 export async function unarchiveProspectAction(parcoursId: string): Promise<ActionResult<void>> {
   try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     const user = await getCurrentUser();
     if (!user) {
       return { success: false, error: "Non authentifié" };

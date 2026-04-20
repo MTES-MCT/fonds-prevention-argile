@@ -14,6 +14,8 @@ import {
   CalloutAmoEnAttente,
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
+  CalloutDiagnosticAccepte,
+  CalloutDiagnosticEnInstruction,
   CalloutDiagnosticTodo,
   CalloutEligibiliteAccepte,
   CalloutEligibiliteEnConstruction,
@@ -27,6 +29,7 @@ import SimulationNeededAlert from "@/app/(main)/mon-compte/components/Simulation
 import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/PourEnSavoirPlusSection";
 import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
 import { useMigrateRGAToDB } from "../hooks";
+import { formatDate } from "@/shared/utils";
 
 export default function MonCompteClient() {
   // Migration RGA si nécessaire (après connexion FC)
@@ -50,8 +53,13 @@ export default function MonCompteClient() {
     isQualifiedNonEligible,
     refresh,
     parcours,
+    dossiers,
     isLoading: isLoadingParcours,
   } = useParcours();
+
+  const currentStepSubmittedAt = currentStep
+    ? (dossiers?.find((d) => d.demarcheEtape === currentStep)?.submittedAt ?? null)
+    : null;
 
   const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
 
@@ -136,7 +144,7 @@ export default function MonCompteClient() {
               {/* Badge de statut d'étape */}
               {hasParcours && (
                 <p className="fr-badge fr-badge--new fr-mr-2w">
-                  {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo) || "À faire"}
+                  {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo, currentStepSubmittedAt) || "À faire"}
                 </p>
               )}
             </li>
@@ -313,11 +321,11 @@ function renderDiagnosticCallout(dsStatus: DSStatus | null) {
   }
 
   if (dsStatus === DSStatus.EN_INSTRUCTION) {
-    // return <CalloutDiagnosticEnInstruction />;
+    return <CalloutDiagnosticEnInstruction />;
   }
 
   if (dsStatus === DSStatus.ACCEPTE) {
-    // return <CalloutDiagnosticAccepte />;
+    return <CalloutDiagnosticAccepte />;
   }
 
   return null;
@@ -347,7 +355,8 @@ function renderFacturesCallout(dsStatus: DSStatus | null) {
 function getStatusBadgeLabel(
   currentStep: Step | null,
   lastDSStatus: DSStatus | null,
-  statutAmo: StatutValidationAmo | null
+  statutAmo: StatutValidationAmo | null,
+  submittedAt: Date | null
 ): string | null {
   // Si on est à l'étape CHOIX_AMO, afficher le statut AMO
   if (currentStep === Step.CHOIX_AMO) {
@@ -376,7 +385,9 @@ function getStatusBadgeLabel(
     case DSStatus.ACCEPTE:
       return "Accepté";
     case DSStatus.EN_INSTRUCTION:
-      return "En instruction";
+      return submittedAt
+        ? `En instruction depuis le ${formatDate(submittedAt.toISOString())}`
+        : "En instruction";
     case DSStatus.EN_CONSTRUCTION:
       return "En construction";
     case DSStatus.REFUSE:

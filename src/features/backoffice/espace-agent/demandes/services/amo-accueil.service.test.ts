@@ -26,7 +26,9 @@ const mockDbSelectList = (data: unknown[]) => {
   const mockWhere = vi.fn().mockReturnValue({
     orderBy: mockOrderBy,
   });
-  const mockInnerJoin = vi.fn().mockReturnValue({
+  const mockInnerJoin = vi.fn();
+  mockInnerJoin.mockReturnValue({
+    innerJoin: mockInnerJoin,
     where: mockWhere,
   });
   const mockFrom = vi.fn().mockReturnValue({

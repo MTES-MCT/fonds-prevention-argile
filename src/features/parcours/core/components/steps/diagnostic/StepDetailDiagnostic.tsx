@@ -1,18 +1,42 @@
+"use client";
+
 import Link from "next/link";
+import { useTransition, useState } from "react";
 import { isStepBefore, Step } from "../../../domain";
 import { useParcours } from "../../../context/useParcours";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
+import { envoyerDossierDiagnostic } from "../../../actions/diagnostic.actions";
+import { formatDate } from "@/shared/utils";
 
 export default function StepDetailDiagnostic() {
-  const { currentStep, getDossierUrl, lastDSStatus } = useParcours();
+  const { currentStep, getDossierUrl, lastDSStatus, refresh, dossiers } = useParcours();
 
-  // URL du dossier de diagnostic
   const dsUrl = getDossierUrl(Step.DIAGNOSTIC);
+  const submittedAt = dossiers?.find((d) => d.demarcheEtape === Step.DIAGNOSTIC)?.submittedAt ?? null;
 
-  // Vérifier si l'étape est active (on est à l'étape diagnostic)
   const isStepActive = currentStep === Step.DIAGNOSTIC;
-
   const isStepBeforeCurrent = currentStep ? isStepBefore(currentStep, Step.DIAGNOSTIC) : false;
+  const isStepAfterCurrent = currentStep
+    ? !isStepBefore(currentStep, Step.DIAGNOSTIC) && currentStep !== Step.DIAGNOSTIC
+    : false;
+
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleClick = () => {
+    setError(null);
+    startTransition(async () => {
+      const result = await envoyerDossierDiagnostic();
+      if (!result.success) {
+        setError(result.error || "Erreur lors de la création du dossier");
+        return;
+      }
+      await refresh();
+      if (result.data.dossierUrl) {
+        window.open(result.data.dossierUrl, "_blank", "noopener,noreferrer");
+      }
+    });
+  };
 
   return (
     <div className="fr-card">
@@ -27,8 +51,23 @@ export default function StepDetailDiagnostic() {
         )}
 
         {isStepActive && (lastDSStatus === DSStatus.NON_ACCESSIBLE || lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-4w">A faire</span>
+          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>
         )}
+
+        {isStepActive && lastDSStatus === DSStatus.EN_INSTRUCTION && (
+          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">
+            {submittedAt ? `En instruction le ${formatDate(submittedAt.toISOString())}` : "En instruction"}
+          </span>
+        )}
+
+        {((isStepActive && lastDSStatus === DSStatus.ACCEPTE) || isStepAfterCurrent) && (
+          <span className="fr-badge fr-text--sm fr-badge--success fr-mb-2w">Diagnostic validé</span>
+        )}
+
+        {isStepActive && lastDSStatus === DSStatus.REFUSE && (
+          <span className="fr-badge fr-text--sm fr-badge--error fr-mb-2w">Diagnostic refusé</span>
+        )}
+
         {/* Titre avec couleur conditionnelle */}
         <h5
           className={isStepActive ? "text-left fr-text-label--blue-france" : "text-left fr-text--disabled"}
@@ -36,7 +75,7 @@ export default function StepDetailDiagnostic() {
           3. Diagnostic
         </h5>
 
-        {/* Texte si etape précédente */}
+        {/* Texte si étape précédente */}
         {isStepBeforeCurrent && (
           <>
             <p style={{ color: "var(--text-disabled-grey)" }}>Démarrer le diagnostic et communiquer les résultats.</p>
@@ -52,14 +91,95 @@ export default function StepDetailDiagnostic() {
         {/* Contenu si étape active */}
         {isStepActive && (
           <>
-            <p>Démarrer le diagnostic et communiquer les résultats</p>
-            <Link
-              href={dsUrl ?? "#"}
-              rel="noopener noreferrer"
-              target="_blank"
-              className="fr-btn text-white fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line">
-              Transmettre mon diagnostic
-            </Link>
+            {(lastDSStatus === DSStatus.NON_ACCESSIBLE || lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
+              <>
+                <p>Démarrer le diagnostic et communiquer les résultats</p>
+                {dsUrl ? (
+                  <Link
+                    href={dsUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="fr-btn fr-text--sm fr-btn--icon-right fr-icon-external-link-line">
+                    Transmettre mon diagnostic
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleClick}
+                    disabled={isPending}
+                    className="fr-btn fr-text--sm fr-btn--icon-right fr-icon-external-link-line">
+                    {isPending ? "Création en cours..." : "Transmettre mon diagnostic"}
+                  </button>
+                )}
+
+                {error && (
+                  <p className="fr-error-text fr-mt-2w" role="alert">
+                    {error}
+                  </p>
+                )}
+              </>
+            )}
+
+            {lastDSStatus === DSStatus.EN_INSTRUCTION && (
+              <>
+                <p>L&apos;instructeur analyse vos réponses afin de vous donner son avis</p>
+                {dsUrl && (
+                  <Link
+                    href={dsUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="fr-btn fr-btn--secondary fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line">
+                    Voir mes réponses
+                  </Link>
+                )}
+              </>
+            )}
+
+            {lastDSStatus === DSStatus.ACCEPTE && (
+              <>
+                <p>Votre diagnostic a été validé.</p>
+                {dsUrl && (
+                  <Link
+                    href={dsUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="fr-btn fr-btn--secondary fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line">
+                    Voir mon diagnostic
+                  </Link>
+                )}
+              </>
+            )}
+
+            {lastDSStatus === DSStatus.REFUSE && (
+              <>
+                <p>L'instructeur a émis un avis défavorable sur votre diagnostic.</p>
+                {dsUrl && (
+                  <Link
+                    href={dsUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="fr-btn fr-btn--secondary fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line">
+                    Voir ma demande
+                  </Link>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {/* Contenu si étape suivante */}
+        {isStepAfterCurrent && (
+          <>
+            <p>Votre diagnostic a été validé.</p>
+            {dsUrl && (
+              <Link
+                href={dsUrl}
+                rel="noopener noreferrer"
+                target="_blank"
+                className="fr-btn fr-btn--secondary fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line">
+                Voir mon diagnostic
+              </Link>
+            )}
           </>
         )}
       </div>

@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations } from "@/shared/database/schema";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
+import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { ActionResult } from "@/shared/types";
@@ -16,6 +17,9 @@ import type { ActionResult } from "@/shared/types";
  */
 export async function archiveDossierAction(parcoursId: string, archiveReason: string): Promise<ActionResult<void>> {
   try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     const agentResult = await getCurrentAgent();
     if (!agentResult.success) {
       return { success: false, error: agentResult.error };
@@ -66,6 +70,9 @@ export async function archiveDossierAction(parcoursId: string, archiveReason: st
  */
 export async function unarchiveDossierAction(parcoursId: string): Promise<ActionResult<void>> {
   try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
     const agentResult = await getCurrentAgent();
     if (!agentResult.success) {
       return { success: false, error: agentResult.error };

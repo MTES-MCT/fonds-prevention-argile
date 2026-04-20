@@ -13,6 +13,7 @@ export interface DossierDS {
   demarcheUrl?: string;
   numeroDs: number | null;
   etatDs: DSStatus;
+  submittedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

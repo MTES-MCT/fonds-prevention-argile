@@ -11,7 +11,11 @@ export const DS_FIELD_IDS = {
     NOMBRE_NIVEAUX: "Q2hhbXAtNTQxNzM0OA==",
   },
   // Autres démarches
-  DIAGNOSTIC: {},
+  DIAGNOSTIC: {
+    // Annotations privées (instructeur)
+    ANNOTATION_DOSSIER_ELIGIBILITE: "Q2hhbXAtNTY4MDc2NQ==",
+    ANNOTATION_LIEN_FPA: "Q2hhbXAtNjM1MjA4OQ==",
+  },
   DEVIS: {},
   FACTURES: {},
 } as const;

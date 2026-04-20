@@ -38,7 +38,7 @@ export default function StepDetailAmo() {
         <h5
           className={isDisabled ? "text-left fr-text--disabled" : "text-left fr-text-label--blue-france"}
           style={isDisabled ? { color: "var(--text-disabled-grey)" } : undefined}>
-          1. Contacter un AMO
+          1. Choisir mon AMO
         </h5>
 
         {/* Détail AMO */}
@@ -76,7 +76,7 @@ export default function StepDetailAmo() {
                 alignItems: "center",
                 width: "fit-content",
               }}>
-              Contacter un AMO
+              Choisir mon AMO
             </Link>
           </>
         )}
