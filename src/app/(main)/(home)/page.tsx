@@ -15,7 +15,6 @@ import QuelsSontTravauxEligiblesSection from "./components/QuelsSontTravauxEligi
 import PourEnSavoirPlusSection from "./components/PourEnSavoirPlusSection";
 import FaqSection from "./components/FaqSection";
 import QuiSommesNousSection from "./components/QuiSommesNousSection";
-import { DEPARTEMENTS_ELIGIBLES_RGA } from "@/features/seo";
 import ConseillersLocauxAllersVersSection from "./components/ConseillersLocauxAllersVersSection";
 
 export default function Home() {
