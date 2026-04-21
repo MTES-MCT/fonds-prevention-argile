@@ -36,8 +36,14 @@ describe("logement.rules", () => {
       expect(result.reason).toBeUndefined();
     });
 
-    it("retourne failed pour 3 niveaux", () => {
+    it("retourne passed pour 3 niveaux (R+2)", () => {
       const result = checkNiveaux(3);
+      expect(result.passed).toBe(true);
+      expect(result.reason).toBeUndefined();
+    });
+
+    it("retourne failed pour 4 niveaux", () => {
+      const result = checkNiveaux(4);
       expect(result.passed).toBe(false);
       expect(result.reason).toBe(EligibilityReason.TROP_DE_NIVEAUX);
     });

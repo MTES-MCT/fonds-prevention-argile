@@ -7,9 +7,9 @@ import {
   checkZoneForte,
   checkAnneeConstruction,
   checkNiveaux,
-  checkEtatMaison,
   checkNonMitoyen,
   checkIndemnisation,
+  checkCatastrophesNaturelles,
   checkAssurance,
   checkProprietaireOccupant,
   checkRevenus,
@@ -68,9 +68,9 @@ export function evaluateEligibility(answers: PartialRGASimulationData): {
     zoneForte: null,
     anneeConstruction: null,
     niveaux: null,
-    etatMaison: null,
     nonMitoyen: null,
     indemnisation: null,
+    catnatEnCours: null,
     assurance: null,
     proprietaireOccupant: null,
     revenusEligibles: null,
@@ -118,16 +118,7 @@ export function evaluateEligibility(answers: PartialRGASimulationData): {
     }
   }
 
-  // Étape 3 - État maison
-  if (answers.rga?.sinistres !== undefined) {
-    const etatResult = checkEtatMaison(answers.rga.sinistres);
-    checks.etatMaison = etatResult.passed;
-    if (!etatResult.passed) {
-      return { checks, shouldExit: true, failedAtStep: SimulateurStep.ETAT_MAISON };
-    }
-  }
-
-  // Étape 4 - Mitoyenneté
+  // Étape 3 - Mitoyenneté
   if (answers.logement?.mitoyen !== undefined) {
     const mitoyenResult = checkNonMitoyen(answers.logement.mitoyen);
     checks.nonMitoyen = mitoyenResult.passed;
@@ -150,7 +141,16 @@ export function evaluateEligibility(answers: PartialRGASimulationData): {
     }
   }
 
-  // Étape 6 - Assurance
+  // Étape 6 - Catastrophes naturelles
+  if (answers.rga?.demande_catnat_en_cours !== undefined) {
+    const catnatResult = checkCatastrophesNaturelles(answers.rga.demande_catnat_en_cours);
+    checks.catnatEnCours = catnatResult.passed;
+    if (!catnatResult.passed) {
+      return { checks, shouldExit: true, failedAtStep: SimulateurStep.CATASTROPHES_NATURELLES };
+    }
+  }
+
+  // Étape 7 - Assurance
   if (answers.rga?.assure !== undefined) {
     const assuranceResult = checkAssurance(answers.rga.assure);
     checks.assurance = assuranceResult.passed;
@@ -199,9 +199,9 @@ export function evaluateAllChecks(answers: PartialRGASimulationData): Eligibilit
     zoneForte: null,
     anneeConstruction: null,
     niveaux: null,
-    etatMaison: null,
     nonMitoyen: null,
     indemnisation: null,
+    catnatEnCours: null,
     assurance: null,
     proprietaireOccupant: null,
     revenusEligibles: null,
@@ -227,10 +227,6 @@ export function evaluateAllChecks(answers: PartialRGASimulationData): Eligibilit
     checks.niveaux = checkNiveaux(answers.logement.niveaux).passed;
   }
 
-  if (answers.rga?.sinistres !== undefined) {
-    checks.etatMaison = checkEtatMaison(answers.rga.sinistres).passed;
-  }
-
   if (answers.logement?.mitoyen !== undefined) {
     checks.nonMitoyen = checkNonMitoyen(answers.logement.mitoyen).passed;
   }
@@ -242,6 +238,10 @@ export function evaluateAllChecks(answers: PartialRGASimulationData): Eligibilit
       avantJuillet2015: answers.rga.indemnise_avant_juillet_2015,
       montant: answers.rga.indemnise_montant_indemnite,
     }).passed;
+  }
+
+  if (answers.rga?.demande_catnat_en_cours !== undefined) {
+    checks.catnatEnCours = checkCatastrophesNaturelles(answers.rga.demande_catnat_en_cours).passed;
   }
 
   if (answers.rga?.assure !== undefined) {
@@ -280,6 +280,7 @@ export function isSimulationComplete(answers: PartialRGASimulationData): boolean
     answers.rga?.sinistres !== undefined &&
     answers.logement?.mitoyen !== undefined &&
     answers.rga?.indemnise_indemnise_rga !== undefined &&
+    answers.rga?.demande_catnat_en_cours !== undefined &&
     answers.rga?.assure !== undefined &&
     answers.logement?.proprietaire_occupant !== undefined &&
     answers.menage?.personnes !== undefined &&

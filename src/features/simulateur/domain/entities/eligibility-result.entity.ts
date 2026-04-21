@@ -27,16 +27,16 @@ export interface EligibilityChecks {
   /** 5. Pas plus d'un étage ? */
   niveaux: RuleStatus;
 
-  /** 6. Maison saine ou très peu endommagée ? */
-  etatMaison: RuleStatus;
-
-  /** 7. Non mitoyenne ? */
+  /** 6. Non mitoyenne ? */
   nonMitoyen: RuleStatus;
 
   /** 8. Peu ou pas indemnisé RGA ? */
   indemnisation: RuleStatus;
 
-  /** 9. Couverte par assurance ? */
+  /** 9. Pas de demande catnat en cours ? */
+  catnatEnCours: RuleStatus;
+
+  /** 10. Couverte par assurance ? */
   assurance: RuleStatus;
 
   /** 10. Propriétaire occupant ? */
@@ -76,9 +76,9 @@ export function createInitialChecks(): EligibilityChecks {
     zoneForte: null,
     anneeConstruction: null,
     niveaux: null,
-    etatMaison: null,
     nonMitoyen: null,
     indemnisation: null,
+    catnatEnCours: null,
     assurance: null,
     proprietaireOccupant: null,
     revenusEligibles: null,
