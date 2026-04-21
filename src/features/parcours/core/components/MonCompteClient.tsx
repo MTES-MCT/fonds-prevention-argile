@@ -365,12 +365,12 @@ function renderDiagnosticCallout(dsStatus: DSStatus | null) {
   return null;
 }
 
+// TODO: décliner les callouts par dsStatus (todo / en_construction / en_instruction / accepte / refuse)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function renderDevisCallout(dsStatus: DSStatus | null) {
-  // TODO: Créer les callouts pour le devis
   return (
     <div>
-      Callout Devis (à créer)
-      <pre>{JSON.stringify(dsStatus, null, 2)}</pre>
+      <CalloutDevisTodo />
     </div>
   );
 }
