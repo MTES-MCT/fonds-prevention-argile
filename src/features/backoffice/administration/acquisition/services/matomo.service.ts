@@ -1,4 +1,4 @@
-import { fetchMatomoVisits, fetchMatomoBounceRate } from "../adapters/matomo-api.adapter";
+import { fetchMatomoVisits, fetchMatomoBounceRate, fetchMatomoUniqueVisitors } from "../adapters/matomo-api.adapter";
 import type { MatomoStatistiques, VisiteParJour } from "../domain/types/matomo.types";
 import {
   PERIODES,
@@ -32,13 +32,16 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
       ? `${formatDate(new Date(fin.getTime() - jours * 2 * 86400000))},${formatDate(debut)}`
       : null;
 
-    // Récupérer les visites + taux de rebond en parallele (période courante + précédente)
-    const [visitsData, tauxRebond, previousVisitsData, previousTauxRebond] = await Promise.all([
-      fetchMatomoVisits("day", period, segment),
-      fetchMatomoBounceRate("range", period, segment),
-      previousPeriod ? fetchMatomoVisits("day", previousPeriod, segment) : Promise.resolve(null),
-      previousPeriod ? fetchMatomoBounceRate("range", previousPeriod, segment) : Promise.resolve(null),
-    ]);
+    // Récupérer les visites + visiteurs uniques + taux de rebond en parallele (période courante + précédente)
+    const [visitsData, tauxRebond, uniqueVisitors, previousVisitsData, previousTauxRebond, previousUniqueVisitors] =
+      await Promise.all([
+        fetchMatomoVisits("day", period, segment),
+        fetchMatomoBounceRate("range", period, segment),
+        fetchMatomoUniqueVisitors("range", period, segment),
+        previousPeriod ? fetchMatomoVisits("day", previousPeriod, segment) : Promise.resolve(null),
+        previousPeriod ? fetchMatomoBounceRate("range", previousPeriod, segment) : Promise.resolve(null),
+        previousPeriod ? fetchMatomoUniqueVisitors("range", previousPeriod, segment) : Promise.resolve(0),
+      ]);
 
     // Transformer les données - La structure est { "date": nombre }
     const visitesParJour: VisiteParJour[] = Object.entries(visitsData).map(([date, visites]) => ({
@@ -52,6 +55,7 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
     // Calculer les variations
     let variationVisites: number | null = null;
     let variationTauxRebond: number | null = null;
+    let variationVisiteursUniques: number | null = null;
 
     if (previousVisitsData) {
       const previousTotal = Object.values(previousVisitsData).reduce(
@@ -65,9 +69,15 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
       variationTauxRebond = Math.round(tauxRebond - previousTauxRebond);
     }
 
+    if (previousUniqueVisitors && previousUniqueVisitors > 0) {
+      variationVisiteursUniques = computeVariation(uniqueVisitors, previousUniqueVisitors);
+    }
+
     return {
       nombreVisitesTotales,
       variationVisites,
+      visiteursUniques: uniqueVisitors,
+      variationVisiteursUniques,
       visitesParJour,
       tauxRebond,
       variationTauxRebond,
@@ -78,6 +88,8 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
     return {
       nombreVisitesTotales: 0,
       variationVisites: null,
+      visiteursUniques: 0,
+      variationVisiteursUniques: null,
       visitesParJour: [],
       tauxRebond: 0,
       variationTauxRebond: null,
