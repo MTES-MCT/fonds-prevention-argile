@@ -131,13 +131,21 @@ export function StepRevenus({ initialValue, numeroEtape, totalEtapes, canGoBack,
         <fieldset className="fr-fieldset fr-mt-4w" id="tranche-fieldset">
           <legend className="fr-fieldset__legend">
             <h2 className="fr-h6">Quel est votre revenu fiscal de référence ?</h2>
-            <span className="fr-hint-text">
-              Si vous avez plusieurs déclarations, additionnez les revenus. Le revenu fiscal de référence se trouve sur
-              la première page de{" "}
+            <span className='fr-hint-text'>
+              Le revenu du ménage pris en compte est le revenu fiscal de référence figurant sur la première
+              page de {" "}
               <a href="https://cfspart-idp.impots.gouv.fr/" target="_blank" rel="noopener noreferrer">
                 votre dernier avis d'impôt sur le revenu
-              </a>
+              </a>, rapporté au nombre d’occupants du logement.
+            </span> 
+            <span className="fr-hint-text">
+              Pour le cas d’un ménage avec plusieurs avis d’impôts (couple ni marié, ni pacsé ou enfant majeur vivant toujours
+              chez ses parents par exemple), c’est la somme des revenus fiscaux de référence qui est considérée.
             </span>
+            <span className="fr-hint-text">
+              Pour le cas d’un ménage avec des enfants en garde alternée, ceux-ci sont comptabilisés comme des occupants à part entière.
+            </span>
+
           </legend>
 
           {trancheOptions.map((option, index) => (

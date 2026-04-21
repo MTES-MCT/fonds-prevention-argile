@@ -6,7 +6,7 @@ import type { EligibilityChecks } from "../../domain/entities/eligibility-result
  * Labels pour chaque check
  */
 const CHECK_LABELS: Record<keyof EligibilityChecks, string> = {
-  maison: "Maison ?",
+  maison: "Maison individuelle  ?",
   departementEligible: "Département éligible (03-04-24-32-36-47-54-59-63-81-82) ?",
   zoneForte: "Zone d'exposition forte ?",
   anneeConstruction: "Condition année de construction respectée ?",

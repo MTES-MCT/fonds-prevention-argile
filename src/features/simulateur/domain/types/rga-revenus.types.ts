@@ -43,20 +43,20 @@ export const COEFFICIENTS_IDF = {
  * Source: https://france-renov.gouv.fr/bareme
  */
 export const SEUILS_HORS_IDF: Record<number, SeuilsRevenuRga> = {
-  1: { tresModeste: 17173, modeste: 22015, intermediaire: 29148 },
-  2: { tresModeste: 25115, modeste: 32197, intermediaire: 42848 },
-  3: { tresModeste: 30206, modeste: 38719, intermediaire: 51592 },
-  4: { tresModeste: 35285, modeste: 45234, intermediaire: 60336 },
-  5: { tresModeste: 40388, modeste: 51775, intermediaire: 69081 },
+  1: { tresModeste: 17363, modeste: 22259, intermediaire: 31185 },
+  2: { tresModeste: 25393, modeste: 32553, intermediaire: 45842 },
+  3: { tresModeste: 30540, modeste: 39148, intermediaire: 55196 },
+  4: { tresModeste: 35676, modeste: 45735, intermediaire: 64550 },
+  5: { tresModeste: 40835, modeste: 52348, intermediaire: 73907 },
 };
 
 /**
  * Coefficients par personne supplémentaire (au-delà de 5) hors IdF
  */
 export const COEFFICIENTS_HORS_IDF = {
-  tresModeste: 5094,
-  modeste: 6525,
-  intermediaire: 8744,
+  tresModeste: 5151,
+  modeste: 6598,
+  intermediaire: 9357,
 } as const;
 
 /**

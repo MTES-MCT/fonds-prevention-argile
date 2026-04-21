@@ -35,8 +35,9 @@ export function ResultEligible({ checks, onContinue, onRestart, onBack }: Result
               <div className="fr-callout fr-icon-checkbox-fill fr-callout--green-emeraude">
                 <h3 className="fr-callout__title">Vous êtes éligible au Fonds Argile</h3>
                 <p className="fr-callout__text">
-                  Félicitations ! Afin de soumettre votre demande, veuillez créer votre compte dès maintenant. Cela vous
-                  permettra d'accéder à toutes les informations nécessaires et de finaliser votre dossier.
+                  Félicitations ! Afin de soumettre votre demande d'aide, veuillez créer votre compte dès maintenant. Cela vous
+                  permettra d'accéder à toutes les informations nécessaires et de finaliser votre dossier de demandes d'aides
+                  qui sera à déposer ensuite sur le site de Démarches Numériques.
                 </p>
                 <button type="button" className="fr-btn !w-full md:!w-auto justify-center" onClick={onContinue}>
                   Faire la demande d'aides

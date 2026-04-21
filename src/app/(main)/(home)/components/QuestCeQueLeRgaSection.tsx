@@ -71,7 +71,7 @@ export default function QuestCeQueLeRgaSection() {
             <Feature
               icon="fr-icon-flood-line"
               title="Causes multiples"
-              description="Fuite des réseaux enterrés fuyards, défaut de drainage, Racines des arbres trop proches de la maison, absence de géomembrane, pièges à eaux."
+              description="Fuite des réseaux d'eau enterrés fuyards, défaut de drainage, racines des arbres trop proches de la maison, absence de géomembrane, pièges à eaux..."
               tileColor="fr-background-alt--brown-opera"
               iconColor="text-brown-500"
             />
