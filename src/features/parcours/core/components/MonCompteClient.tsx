@@ -186,7 +186,6 @@ export default function MonCompteClient() {
             </div>
           </div>
         </div>
-
       </section>
 
       {/* Sections communes */}
@@ -337,8 +336,7 @@ function renderDevisCallout(dsStatus: DSStatus | null) {
   // TODO: Créer les callouts pour le devis
   return (
     <div>
-      Callout Devis (à créer)
-      <pre>{JSON.stringify(dsStatus, null, 2)}</pre>
+      <CalloutDevisTodo />
     </div>
   );
 }
