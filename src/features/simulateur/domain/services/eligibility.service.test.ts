@@ -20,7 +20,6 @@ describe("EligibilityService", () => {
     rga: {
       sinistres: "saine",
       indemnise_indemnise_rga: false,
-      demande_catnat_en_cours: false,
       assure: true,
     },
     menage: {
@@ -131,6 +130,25 @@ describe("EligibilityService", () => {
       expect(result?.reason).toBe(EligibilityReason.TROP_DE_NIVEAUX);
     });
 
+    it("retourne non éligible avec raison MAISON_ENDOMMAGEE", () => {
+      const answers: PartialRGASimulationData = {
+        logement: {
+          type: "maison",
+          code_departement: "47",
+          zone_dexposition: "fort",
+          annee_de_construction: anneeAncienne,
+          niveaux: 2,
+        },
+        rga: {
+          sinistres: "endommagée",
+        },
+      };
+      const { result } = EligibilityService.evaluate(answers);
+
+      expect(result?.eligible).toBe(false);
+      expect(result?.reason).toBe(EligibilityReason.MAISON_ENDOMMAGEE);
+    });
+
     it("retourne non éligible avec raison MAISON_MITOYENNE", () => {
       const answers: PartialRGASimulationData = {
         logement: {
@@ -216,7 +234,6 @@ describe("EligibilityService", () => {
             indemnise_avant_juillet_2025: true,
             indemnise_avant_juillet_2015: true,
             indemnise_montant_indemnite: 50000, // Montant élevé mais OK car avant 2015
-            demande_catnat_en_cours: false,
             assure: true,
           },
           menage: {
@@ -248,7 +265,6 @@ describe("EligibilityService", () => {
             indemnise_avant_juillet_2025: true,
             indemnise_avant_juillet_2015: false,
             indemnise_montant_indemnite: 5000,
-            demande_catnat_en_cours: false,
             assure: true,
           },
           menage: {
@@ -261,28 +277,6 @@ describe("EligibilityService", () => {
         expect(result?.eligible).toBe(true);
         expect(checks.indemnisation).toBe(true);
       });
-    });
-
-    it("retourne non éligible avec raison DEMANDE_CATNAT_EN_COURS", () => {
-      const answers: PartialRGASimulationData = {
-        logement: {
-          type: "maison",
-          code_departement: "47",
-          zone_dexposition: "fort",
-          annee_de_construction: anneeAncienne,
-          niveaux: 2,
-          mitoyen: false,
-        },
-        rga: {
-          sinistres: "saine",
-          indemnise_indemnise_rga: false,
-          demande_catnat_en_cours: true,
-        },
-      };
-      const { result } = EligibilityService.evaluate(answers);
-
-      expect(result?.eligible).toBe(false);
-      expect(result?.reason).toBe(EligibilityReason.DEMANDE_CATNAT_EN_COURS);
     });
 
     it("retourne non éligible avec raison NON_ASSURE", () => {
@@ -298,7 +292,6 @@ describe("EligibilityService", () => {
         rga: {
           sinistres: "saine",
           indemnise_indemnise_rga: false,
-          demande_catnat_en_cours: false,
           assure: false,
         },
       };
@@ -322,7 +315,6 @@ describe("EligibilityService", () => {
         rga: {
           sinistres: "saine",
           indemnise_indemnise_rga: false,
-          demande_catnat_en_cours: false,
           assure: true,
         },
       };
@@ -347,7 +339,6 @@ describe("EligibilityService", () => {
         rga: {
           sinistres: "saine",
           indemnise_indemnise_rga: false,
-          demande_catnat_en_cours: false,
           assure: true,
         },
         menage: {

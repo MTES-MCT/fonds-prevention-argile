@@ -18,45 +18,45 @@ export const isTrancheRevenuRga = (value: unknown): value is TrancheRevenuRga =>
 };
 
 /**
- * Seuils de revenus pour l'Île-de-France (barèmes ANAH 2026)
- * Source: https://www.service-public.gouv.fr/particuliers/vosdroits/F1328
+ * Seuils de revenus pour l'Île-de-France
+ * Source: https://france-renov.gouv.fr/bareme#fr_idf-threshold
  */
 export const SEUILS_IDF: Record<number, SeuilsRevenuRga> = {
-  1: { tresModeste: 24031, modeste: 29253, intermediaire: 40851 },
-  2: { tresModeste: 35270, modeste: 42933, intermediaire: 60051 },
-  3: { tresModeste: 42357, modeste: 51564, intermediaire: 71846 },
-  4: { tresModeste: 49455, modeste: 60208, intermediaire: 84562 },
-  5: { tresModeste: 56580, modeste: 68877, intermediaire: 96817 },
+  1: { tresModeste: 23541, modeste: 28657, intermediaire: 40018 },
+  2: { tresModeste: 34551, modeste: 42058, intermediaire: 58827 },
+  3: { tresModeste: 41493, modeste: 50513, intermediaire: 70382 },
+  4: { tresModeste: 48447, modeste: 58981, intermediaire: 82839 },
+  5: { tresModeste: 55427, modeste: 67473, intermediaire: 94844 },
 };
 
 /**
  * Coefficients par personne supplémentaire (au-delà de 5) pour l'IdF
  */
 export const COEFFICIENTS_IDF = {
-  tresModeste: 7116,
-  modeste: 8663,
-  intermediaire: 12257,
+  tresModeste: 6970,
+  modeste: 8486,
+  intermediaire: 12006,
 } as const;
 
 /**
- * Seuils de revenus hors Île-de-France (barèmes ANAH 2026)
- * Source: https://www.service-public.gouv.fr/particuliers/vosdroits/F1328
+ * Seuils de revenus hors Île-de-France
+ * Source: https://france-renov.gouv.fr/bareme
  */
 export const SEUILS_HORS_IDF: Record<number, SeuilsRevenuRga> = {
-  1: { tresModeste: 17363, modeste: 22259, intermediaire: 31185 },
-  2: { tresModeste: 25393, modeste: 32553, intermediaire: 45842 },
-  3: { tresModeste: 30540, modeste: 39148, intermediaire: 55196 },
-  4: { tresModeste: 35676, modeste: 45735, intermediaire: 64550 },
-  5: { tresModeste: 40835, modeste: 52348, intermediaire: 73907 },
+  1: { tresModeste: 17173, modeste: 22015, intermediaire: 29148 },
+  2: { tresModeste: 25115, modeste: 32197, intermediaire: 42848 },
+  3: { tresModeste: 30206, modeste: 38719, intermediaire: 51592 },
+  4: { tresModeste: 35285, modeste: 45234, intermediaire: 60336 },
+  5: { tresModeste: 40388, modeste: 51775, intermediaire: 69081 },
 };
 
 /**
  * Coefficients par personne supplémentaire (au-delà de 5) hors IdF
  */
 export const COEFFICIENTS_HORS_IDF = {
-  tresModeste: 5151,
-  modeste: 6598,
-  intermediaire: 9357,
+  tresModeste: 5094,
+  modeste: 6525,
+  intermediaire: 8744,
 } as const;
 
 /**
