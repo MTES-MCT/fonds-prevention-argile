@@ -82,6 +82,47 @@ export async function syncDossierStatus(
   }
 }
 
+const SYNC_STALE_AFTER_MS = 5 * 60 * 1000;
+const SYNC_CONCURRENCY = 5;
+
+interface SyncListItem {
+  parcoursId: string;
+  step: Step;
+  dsNumber: string | null;
+  lastSyncAt: Date | null;
+}
+
+/**
+ * Synchronise en parallèle (concurrence limitée) une liste de dossiers
+ * en sautant ceux synchronisés récemment (throttling via lastSyncAt).
+ * Les erreurs par dossier sont logguées dans syncDossierStatus mais ne bloquent pas les autres.
+ */
+export async function syncDossiersList(
+  items: SyncListItem[],
+  options?: { staleAfterMs?: number; concurrency?: number }
+): Promise<{ totalSynced: number; totalUpdated: number; totalSkipped: number }> {
+  const staleAfterMs = options?.staleAfterMs ?? SYNC_STALE_AFTER_MS;
+  const concurrency = options?.concurrency ?? SYNC_CONCURRENCY;
+  const now = Date.now();
+
+  const toSync = items.filter(
+    (i): i is SyncListItem & { dsNumber: string } =>
+      !!i.dsNumber && (!i.lastSyncAt || now - i.lastSyncAt.getTime() > staleAfterMs)
+  );
+  const totalSkipped = items.length - toSync.length;
+
+  let totalUpdated = 0;
+  for (let i = 0; i < toSync.length; i += concurrency) {
+    const chunk = toSync.slice(i, i + concurrency);
+    const results = await Promise.all(
+      chunk.map((item) => syncDossierStatus(item.parcoursId, item.step, item.dsNumber))
+    );
+    totalUpdated += results.filter((r) => r.success && r.data?.updated).length;
+  }
+
+  return { totalSynced: toSync.length, totalUpdated, totalSkipped };
+}
+
 /**
  * Synchronise tous les dossiers d'un parcours
  */
