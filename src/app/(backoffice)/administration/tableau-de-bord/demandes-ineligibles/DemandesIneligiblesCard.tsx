@@ -108,7 +108,7 @@ export function DemandesIneligiblesCard({ stats, loading = false }: DemandesInel
                         <strong>{motif.count.toLocaleString("fr-FR")}</strong> ({motif.pourcentage}%)
                       </td>
                       <td style={{ textAlign: "right" }}>
-                        <VariationBadge variation={motif.variation} />
+                        <VariationBadge variation={motif.variation} invertColors />
                       </td>
                     </tr>
                   ))}
