@@ -62,6 +62,8 @@ export async function getStatistiques(
     // Stats Matomo (0 et tableau vide si filtrées par entreprise car non disponibles)
     nombreVisitesTotales: matomoStats?.nombreVisitesTotales ?? 0,
     variationVisites: matomoStats?.variationVisites ?? null,
+    visiteursUniques: matomoStats?.visiteursUniques ?? 0,
+    variationVisiteursUniques: matomoStats?.variationVisiteursUniques ?? null,
     visitesParJour: matomoStats?.visitesParJour ?? [],
     tauxRebond: matomoStats?.tauxRebond ?? 0,
     variationTauxRebond: matomoStats?.variationTauxRebond ?? null,
@@ -82,6 +84,8 @@ function getEmptyStatistiques(): Statistiques {
     nombreDossiersDSEnvoyés: 0,
     nombreVisitesTotales: 0,
     variationVisites: null,
+    visiteursUniques: 0,
+    variationVisiteursUniques: null,
     visitesParJour: [],
     tauxRebond: 0,
     variationTauxRebond: null,

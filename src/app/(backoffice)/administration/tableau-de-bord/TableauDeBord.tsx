@@ -12,10 +12,12 @@ import {
   getTableauDeBordStatsAction,
   getMatomoSimulationsStatsAction,
   getDepartementsDisponiblesAction,
+  getTopDepartementsMatomoAction,
 } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
 import type {
   TableauDeBordStats,
   MatomoSimulationsStats,
+  DepartementStats,
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 import {
@@ -33,6 +35,8 @@ export function TableauDeBord() {
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
   const [matomoSimuStats, setMatomoSimuStats] = useState<MatomoSimulationsStats | null>(null);
   const [matomoLoaded, setMatomoLoaded] = useState(false);
+  const [topDepartementsMatomo, setTopDepartementsMatomo] = useState<DepartementStats[]>([]);
+  const [topDeptsLoading, setTopDeptsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,6 +88,27 @@ export function TableauDeBord() {
     }
 
     loadMatomoSimu();
+    return () => {
+      cancelled = true;
+    };
+  }, [periodeId, codeDepartement]);
+
+  // Charger le top départements depuis Matomo (chargement séparé)
+  useEffect(() => {
+    let cancelled = false;
+    setTopDeptsLoading(true);
+
+    async function loadTopDepts() {
+      const result = await getTopDepartementsMatomoAction(periodeId, codeDepartement || undefined);
+      if (!cancelled) {
+        if (result.success) {
+          setTopDepartementsMatomo(result.data);
+        }
+        setTopDeptsLoading(false);
+      }
+    }
+
+    loadTopDepts();
     return () => {
       cancelled = true;
     };
@@ -231,11 +256,11 @@ export function TableauDeBord() {
             </div>
           )}
 
-          {/* Top 5 départements */}
-          {stats && stats.topDepartements.length > 0 && (
+          {/* Top 5 départements (Matomo) */}
+          {topDepartementsMatomo.length > 0 && (
             <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
               <div className="fr-col-12">
-                <TopDepartementsCard departements={stats.topDepartements} loading={loading} />
+                <TopDepartementsCard departements={topDepartementsMatomo} loading={topDeptsLoading} />
               </div>
             </div>
           )}

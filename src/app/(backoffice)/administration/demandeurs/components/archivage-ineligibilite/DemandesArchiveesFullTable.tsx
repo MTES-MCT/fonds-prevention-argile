@@ -62,7 +62,7 @@ export function DemandesArchiveesFullTable({ stats }: DemandesArchiveesFullTable
                         <strong>{motif.count.toLocaleString("fr-FR")}</strong> ({motif.pourcentage}%)
                       </td>
                       <td style={{ textAlign: "right" }}>
-                        <VariationBadge variation={motif.variation} />
+                        <VariationBadge variation={motif.variation} invertColors />
                       </td>
                     </tr>
                   ))}

@@ -72,6 +72,8 @@ describe("StatistiquesService", () => {
     vi.mocked(matomoService.getMatomoStatistiques).mockResolvedValue({
       nombreVisitesTotales: 1500,
       variationVisites: 10,
+      visiteursUniques: 1200,
+      variationVisiteursUniques: 8,
       visitesParJour: [
         { date: "2025-01-01", visites: 50 },
         { date: "2025-01-02", visites: 60 },
@@ -142,6 +144,8 @@ describe("StatistiquesService", () => {
         // Stats Matomo
         nombreVisitesTotales: 1500,
         variationVisites: 10,
+        visiteursUniques: 1200,
+        variationVisiteursUniques: 8,
         visitesParJour: [
           { date: "2025-01-01", visites: 50 },
           { date: "2025-01-02", visites: 60 },
@@ -193,6 +197,8 @@ describe("StatistiquesService", () => {
       vi.mocked(matomoService.getMatomoStatistiques).mockResolvedValue({
         nombreVisitesTotales: 0,
         variationVisites: null,
+        visiteursUniques: 0,
+        variationVisiteursUniques: null,
         visitesParJour: [],
         tauxRebond: 0,
         variationTauxRebond: null,
@@ -221,6 +227,8 @@ describe("StatistiquesService", () => {
         nombreDossiersDSEnvoyés: 0,
         nombreVisitesTotales: 0,
         variationVisites: null,
+        visiteursUniques: 0,
+        variationVisiteursUniques: null,
         visitesParJour: [],
         tauxRebond: 0,
         variationTauxRebond: null,
@@ -287,6 +295,8 @@ describe("StatistiquesService", () => {
       vi.mocked(matomoService.getMatomoStatistiques).mockResolvedValue({
         nombreVisitesTotales: 0,
         variationVisites: null,
+        visiteursUniques: 0,
+        variationVisiteursUniques: null,
         visitesParJour: [],
         tauxRebond: 0,
         variationTauxRebond: null,

@@ -64,7 +64,7 @@ export function TopDepartementsCard({ departements, loading = false }: TopDepart
                 Information
               </button>
               <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
-                Données base de données
+                Simulations : Matomo / Comptes et DN : base de données
               </span>
             </h2>
           </div>

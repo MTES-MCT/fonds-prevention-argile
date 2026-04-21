@@ -63,9 +63,9 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
         <div style={{ flex: "1 1 200px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={stats?.nombreVisitesTotales.toLocaleString("fr-FR") ?? "..."}
+            value={stats?.visiteursUniques.toLocaleString("fr-FR") ?? "..."}
             label="Visiteurs uniques"
-            variation={stats?.variationVisites ?? null}
+            variation={stats?.variationVisiteursUniques ?? null}
             loading={loading}
             compact
             tooltip="Données Matomo"

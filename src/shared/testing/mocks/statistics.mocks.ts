@@ -128,6 +128,8 @@ export const createMockStatistiques = (override?: Partial<Statistiques>): Statis
   // Statistiques Matomo
   nombreVisitesTotales: 5420,
   variationVisites: 12,
+  visiteursUniques: 4200,
+  variationVisiteursUniques: 10,
   visitesParJour: createMockVisitesParJour(),
   tauxRebond: 45,
   variationTauxRebond: -2,
@@ -150,6 +152,8 @@ export const createEmptyStatistiques = (): Statistiques => ({
   nombreDossiersDSEnvoyés: 0,
   nombreVisitesTotales: 0,
   variationVisites: null,
+  visiteursUniques: 0,
+  variationVisiteursUniques: null,
   visitesParJour: [],
   tauxRebond: 0,
   variationTauxRebond: null,
@@ -168,6 +172,8 @@ export const createMockStatistiquesElevees = (): Statistiques => ({
   nombreDossiersDSEnvoyés: 6111,
   nombreVisitesTotales: 125000,
   variationVisites: 25,
+  visiteursUniques: 98000,
+  variationVisiteursUniques: 20,
   tauxRebond: 65,
   variationTauxRebond: 5,
   visitesParJour: createMockVisitesParJour().map((v) => ({

@@ -37,7 +37,7 @@ export interface Statistiques {
   // === STATISTIQUES MATOMO (Analytics) ===
 
   /**
-   * Nombre total de visites
+   * Nombre total de visites (sessions)
    */
   nombreVisitesTotales: number;
 
@@ -45,6 +45,16 @@ export interface Statistiques {
    * Variation du nombre de visites vs période précédente (en %, null si non calculable)
    */
   variationVisites: number | null;
+
+  /**
+   * Nombre de visiteurs uniques (dédupliqués)
+   */
+  visiteursUniques: number;
+
+  /**
+   * Variation des visiteurs uniques vs période précédente (en %, null si non calculable)
+   */
+  variationVisiteursUniques: number | null;
 
   /**
    * Nombre de visites par jour
