@@ -293,7 +293,7 @@ describe("computeModifications", () => {
     const currentAnswers: PartialRGASimulationData = {
       logement: { ...initialData.logement },
       rga: { ...initialData.rga },
-      menage: { ...initialData.menage, revenu_rga: 55000 }, // > 51592 → tranche "supérieure"
+      menage: { ...initialData.menage, revenu_rga: 80000 }, // > 55196 → tranche "supérieure"
     };
     const initialChecks = createAllEligibleChecks();
     const currentChecks: EligibilityChecks = {
