@@ -14,7 +14,6 @@ import {
   StepEtatMaison,
   StepMitoyennete,
   StepIndemnisation,
-  StepCatastrophesNaturelles,
   StepAssurance,
   StepProprietaire,
   StepRevenus,
@@ -201,14 +200,6 @@ export function SimulateurFormulaire() {
             avantJuillet2015: answers.rga?.indemnise_avant_juillet_2015,
             montant: answers.rga?.indemnise_montant_indemnite,
           }}
-        />
-      );
-
-    case SimulateurStep.CATASTROPHES_NATURELLES:
-      return (
-        <StepCatastrophesNaturelles
-          {...stepProps}
-          initialValue={answers.rga?.demande_catnat_en_cours}
         />
       );
 
