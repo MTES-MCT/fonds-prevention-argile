@@ -2,12 +2,16 @@ import Link from "next/link";
 import { isStepBefore, Step } from "../../../domain";
 import { useParcours } from "../../../context/useParcours";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
+import { formatDate } from "@/shared/utils";
 
 export default function StepDetailEligibilite() {
-  const { currentStep, lastDSStatus, getDossierUrl } = useParcours();
+  const { currentStep, lastDSStatus, getDossierUrl, dossiers } = useParcours();
 
   // URL du dossier d'éligibilité
   const dsUrl = getDossierUrl(Step.ELIGIBILITE);
+
+  // Date de confirmation d'éligibilité (dossier DS passé à ACCEPTE)
+  const processedAt = dossiers?.find((d) => d.demarcheEtape === Step.ELIGIBILITE)?.processedAt ?? null;
 
   // Vérifier si l'étape est active (on est à l'étape éligibilité)
   const isStepActive = currentStep === Step.ELIGIBILITE;
@@ -39,7 +43,9 @@ export default function StepDetailEligibilite() {
         )}
 
         {((isStepActive && lastDSStatus === DSStatus.ACCEPTE) || isStepAfterCurrent) && (
-          <span className="fr-badge fr-text--sm fr-badge--success fr-mb-2w">Eligibilité confirmée</span>
+          <span className="fr-badge fr-text--sm fr-badge--success fr-mb-2w">
+            {processedAt ? `Confirmée le ${formatDate(processedAt.toISOString())}` : "Eligibilité confirmée"}
+          </span>
         )}
 
         {isStepActive && lastDSStatus === DSStatus.REFUSE && (

@@ -187,14 +187,16 @@ export default function MonCompteClient() {
           </div>
         </div>
 
-        {/* Section "Pour en savoir plus" si logement non éligible */}
-        {(statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE || isQualifiedNonEligible) && (
-          <PourEnSavoirPlusSectionContent />
-        )}
       </section>
 
       {/* Sections communes */}
       <StepDetailSection />
+
+      {/* Section "Pour en savoir plus" si logement non éligible */}
+      {(statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE || isQualifiedNonEligible) && (
+        <PourEnSavoirPlusSectionContent />
+      )}
+
       <FaqAccountSection />
     </>
   );

@@ -55,6 +55,19 @@ export async function syncDossierStatus(
       const internalStatus = DS_TO_INTERNAL_STATUS[newStatus];
       await parcoursRepo.updateStatus(parcoursId, internalStatus);
 
+      // Auto-progression : si le dossier DS vient de passer à ACCEPTE et concerne
+      // l'étape courante du parcours, enchaîner sur moveToNextStep pour débloquer
+      // automatiquement l'étape suivante (ex. ELIGIBILITE → DIAGNOSTIC).
+      if (newStatus === DSStatus.ACCEPTE) {
+        const parcours = await parcoursRepo.findById(parcoursId);
+        if (parcours && parcours.currentStep === step) {
+          // Import dynamique pour éviter une dépendance circulaire
+          // (dossiers-ds → core/services → dossiers-ds)
+          const { moveToNextStep } = await import("../../core/services/parcours-progression.service");
+          await moveToNextStep(parcours.userId);
+        }
+      }
+
       return {
         success: true,
         data: {

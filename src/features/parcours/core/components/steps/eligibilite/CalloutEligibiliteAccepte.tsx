@@ -1,8 +1,26 @@
 "use client";
 
-import Link from "next/link";
+import { useState, useTransition } from "react";
+import { passerEtapeSuivante } from "../../../actions/parcours-progression.actions";
+import { useParcours } from "../../../context/useParcours";
 
 export default function CalloutEligibiliteAccepte() {
+  const { refresh } = useParcours();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleClick = () => {
+    setError(null);
+    startTransition(async () => {
+      const result = await passerEtapeSuivante();
+      if (!result.success) {
+        setError(result.error || "Erreur lors du passage à l'étape suivante");
+        return;
+      }
+      await refresh();
+    });
+  };
+
   return (
     <div className="fr-callout fr-callout--yellow-moutarde fr-icon-time-line">
       <p className="fr-callout__title">Logement éligible ! Faites réaliser le diagnostic et soumettez-le.</p>
@@ -11,11 +29,18 @@ export default function CalloutEligibiliteAccepte() {
         instruction). Vous pouvez désormais contacter votre AMO pour trouver le bureau d’étude pour la réalisation de ce
         diagnostic. Lorsque c’est fait, n’oubliez pas de transmettre vos résultats.
       </p>
-      <Link
-        href={"#"} // TODO : lien vers la page de dépôt du diagnostic
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={isPending}
         className="fr-btn fr-btn--icon-right fr-icon-arrow-right-s-line">
-        Transmettre le résultat de mon diagnostic
-      </Link>
+        {isPending ? "Passage à l'étape suivante..." : "Passer au diagnostic"}
+      </button>
+      {error && (
+        <p className="fr-error-text fr-mt-2w" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

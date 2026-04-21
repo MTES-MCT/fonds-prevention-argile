@@ -55,6 +55,7 @@ export async function getParcoursComplet(userId: string): Promise<ParcoursComple
     numeroDs: d.dsNumber ? parseInt(d.dsNumber) : null,
     etatDs: d.dsStatus as DSStatus,
     submittedAt: d.submittedAt,
+    processedAt: d.processedAt,
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
   }));
