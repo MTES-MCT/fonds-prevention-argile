@@ -37,8 +37,7 @@ export function StepTypeLogement({
 
   return (
     <SimulateurLayout
-      title="Le logement est-il une maison ou un appartement ?"
-      subtitle="Par maison, nous entendons maison individuelle hors copropriété."
+      title="Le logement est-il une maison individuelle ou un appartement ?"
       currentStep={numeroEtape}
       totalSteps={totalEtapes}>
       <fieldset className="fr-fieldset md:w-1/2" id="type-logement-fieldset">
@@ -54,7 +53,7 @@ export function StepTypeLogement({
               onChange={() => setSelected("maison")}
             />
             <label className="fr-label" htmlFor="type-maison">
-              Une maison
+              Une maison individuelle
             </label>
           </div>
         </div>

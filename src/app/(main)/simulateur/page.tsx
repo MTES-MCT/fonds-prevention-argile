@@ -1,6 +1,5 @@
 import content from "../(home)/content/content.json";
 import { Notice } from "@/shared/components";
-import { DEPARTEMENTS_ELIGIBLES_RGA } from "@/features/seo/domain/config/seo.config";
 import { SimulateurFormulaire } from "@/features/simulateur";
 import Link from "next/link";
 

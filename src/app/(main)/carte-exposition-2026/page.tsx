@@ -10,10 +10,10 @@ import content from "./content/content.json";
 export const metadata: Metadata = {
   title: "Carte d'exposition RGA 2026 | Fonds Prévention Argile",
   description:
-    "L'arrêté du 9 janvier 2026 étend le nombre de logements éligibles. Découvrez les changements de la carte d'aléa retrait-gonflement des argiles.",
+    "L'arrêté du 9 janvier 2026 met à jour la carte des zones exposées aux RGA et étend le nombre de logements éligibles.",
   openGraph: {
     title: "Carte d'exposition RGA 2026 | Fonds Prévention Argile",
-    description: "L'arrêté du 9 janvier 2026 étend le nombre de logements éligibles.",
+    description: "L'arrêté du 9 janvier 2026 met à jour la carte des zones exposées aux RGA et étend le nombre de logments éligibles.",
     type: "website",
   },
 };

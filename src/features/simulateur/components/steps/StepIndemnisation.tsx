@@ -130,7 +130,7 @@ export function StepIndemnisation({
       {/* Question 2 : Avant juillet 2025 ? */}
       {dejaIndemnise && (
         <fieldset className="fr-fieldset fr-mt-4w" id="avant-2025-fieldset">
-          <h4>Avez-vous reçu cette indemnité au titre du retrait-gonflement des argiles avant le 1er juillet 2025 ?</h4>
+          <h4>Avez-vous reçu cette indemnisation au titre du retrait-gonflement des argiles avant le 1er juillet 2025 ?</h4>
 
           <div className="md:w-1/2">
             <div className="fr-fieldset__element ">
