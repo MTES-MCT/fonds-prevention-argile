@@ -19,7 +19,6 @@ import {
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
   CalloutChoixAccompagnement,
-  CalloutDiagnosticAccepte,
   CalloutDiagnosticEnInstruction,
   CalloutDiagnosticTodo,
   CalloutEligibiliteAccepte,
@@ -35,6 +34,7 @@ import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/P
 // import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
 import { useMigrateRGAToDB } from "../hooks";
 import { formatDate } from "@/shared/utils";
+import CalloutDevisTodo from "./steps/devis/CalloutDevisTodo";
 
 export default function MonCompteClient() {
   // Migration RGA si nécessaire (après connexion FC)
@@ -359,7 +359,7 @@ function renderDiagnosticCallout(dsStatus: DSStatus | null) {
   }
 
   if (dsStatus === DSStatus.ACCEPTE) {
-    return <CalloutDiagnosticAccepte />;
+    return <CalloutDevisTodo />;
   }
 
   return null;
@@ -419,9 +419,7 @@ function getStatusBadgeLabel(
     case DSStatus.ACCEPTE:
       return "Accepté";
     case DSStatus.EN_INSTRUCTION:
-      return submittedAt
-        ? `En instruction depuis le ${formatDate(submittedAt.toISOString())}`
-        : "En instruction";
+      return submittedAt ? `En instruction depuis le ${formatDate(submittedAt.toISOString())}` : "En instruction";
     case DSStatus.EN_CONSTRUCTION:
       return "En construction";
     case DSStatus.REFUSE:
