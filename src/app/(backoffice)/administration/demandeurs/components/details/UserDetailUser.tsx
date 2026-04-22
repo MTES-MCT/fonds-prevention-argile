@@ -1,6 +1,7 @@
 "use client";
 
 import { UserWithParcoursDetails } from "@/features/backoffice";
+import { SOURCE_ACQUISITION_LABELS } from "@/shared/domain/value-objects";
 import { formatDateTime } from "@/shared/utils/date.utils";
 
 interface UserDetailUserProps {
@@ -50,6 +51,21 @@ export function UserDetailUser({ user }: UserDetailUserProps) {
           </div>
           <div className="fr-col-12 fr-col-md-8">
             <dd className="fr-text--bold fr-mb-0">{user.user.telephone || "—"}</dd>
+          </div>
+        </div>
+
+        {/* Provenance */}
+        <div className="fr-grid-row fr-py-2w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
+          <div className="fr-col-12 fr-col-md-4">
+            <dt className="fr-text--regular fr-mb-0">Comment a-t-il connu le fonds ?</dt>
+          </div>
+          <div className="fr-col-12 fr-col-md-8">
+            <dd className="fr-text--bold fr-mb-0">
+              {user.user.sourceAcquisition ? SOURCE_ACQUISITION_LABELS[user.user.sourceAcquisition] : "—"}
+            </dd>
+            {user.user.sourceAcquisitionPrecision && (
+              <dd className="fr-text--sm fr-mb-0 fr-text--mention-grey">{user.user.sourceAcquisitionPrecision}</dd>
+            )}
           </div>
         </div>
 

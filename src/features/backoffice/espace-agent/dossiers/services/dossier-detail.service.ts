@@ -92,6 +92,8 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       email: dossier.validation.userEmail || dossier.user.emailContact || dossier.user.email,
       telephone: dossier.validation.userTelephone || dossier.user.telephone,
       adresse: rgaData?.logement?.adresse ?? dossier.validation.adresseLogement,
+      sourceAcquisition: dossier.user.sourceAcquisition,
+      sourceAcquisitionPrecision: dossier.user.sourceAcquisitionPrecision,
     };
     const coords = parseCoordinatesString(rgaData?.logement?.coordonnees);
     const niveauRevenu = calculateNiveauRevenuFromRga(rgaData);

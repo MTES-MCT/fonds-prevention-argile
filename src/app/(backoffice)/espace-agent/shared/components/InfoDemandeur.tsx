@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { InfoDemandeur as InfoDemandeurType } from "@/features/backoffice/espace-agent/demandes/domain/types";
+import { SOURCE_ACQUISITION_LABELS } from "@/shared/domain/value-objects";
 import { formatNomComplet, formatDate } from "@/shared/utils";
 import Link from "next/dist/client/link";
 
@@ -72,6 +73,19 @@ export function InfoDemandeur({ demandeur, suiviDepuis, editSimulationHref }: In
                 {demandeur.email}
               </Link>
               {emailCopied && <span className="fr-ml-2w fr-text--sm">Copié !</span>}
+            </dd>
+          </>
+        )}
+        {demandeur.sourceAcquisition && (
+          <>
+            <dt className="fr-text">découverte :</dt>
+            <dd className="fr-m-0">
+              {SOURCE_ACQUISITION_LABELS[demandeur.sourceAcquisition]}
+              {demandeur.sourceAcquisitionPrecision && (
+                <span className="fr-text--sm fr-text--mention-grey fr-ml-1w">
+                  ({demandeur.sourceAcquisitionPrecision})
+                </span>
+              )}
             </dd>
           </>
         )}

@@ -1,6 +1,7 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { SourceAcquisition } from "@/shared/domain/value-objects/source-acquisition.enum";
 import { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 
 /**
@@ -15,6 +16,8 @@ export interface UserWithParcoursDetails {
     name: string | null; // Anonymisé : première lettre + "."
     firstName: string | null;
     telephone: string | null;
+    sourceAcquisition: SourceAcquisition | null;
+    sourceAcquisitionPrecision: string | null;
     lastLogin: Date;
     createdAt: Date;
     updatedAt: Date;

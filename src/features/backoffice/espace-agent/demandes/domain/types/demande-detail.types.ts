@@ -1,4 +1,5 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import { SourceAcquisition } from "@/shared/domain/value-objects/source-acquisition.enum";
 
 /**
  * Types pour la page détail d'une demande d'accompagnement
@@ -13,6 +14,8 @@ export interface InfoDemandeur {
   email: string | null;
   telephone: string | null;
   adresse: string | null;
+  sourceAcquisition: SourceAcquisition | null;
+  sourceAcquisitionPrecision: string | null;
 }
 
 /**

@@ -69,6 +69,8 @@ export default async function ProspectDetailPage({ params }: PageProps) {
     email: prospect.particulier.email,
     telephone: prospect.particulier.telephone,
     adresse: prospect.logement.adresse,
+    sourceAcquisition: prospect.particulier.sourceAcquisition,
+    sourceAcquisitionPrecision: prospect.particulier.sourceAcquisitionPrecision,
   };
 
   return (
