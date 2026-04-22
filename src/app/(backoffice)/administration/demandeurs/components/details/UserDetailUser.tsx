@@ -53,19 +53,6 @@ export function UserDetailUser({ user }: UserDetailUserProps) {
           </div>
         </div>
 
-        {/* Connaissance du fonds */}
-        <div className="fr-grid-row fr-py-2w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
-          <div className="fr-col-12 fr-col-md-4">
-            <dt className="fr-text--regular fr-mb-0">Provenance</dt>
-          </div>
-          <div className="fr-col-12 fr-col-md-8">
-            <dd className="fr-text--bold fr-mb-0">{user.user.sourceAcquisition || "—"}</dd>
-            {user.user.sourceAcquisitionPrecision && (
-              <dd className="fr-text--bold fr-mb-0">{user.user.sourceAcquisitionPrecision || ""}</dd>
-            )}
-          </div>
-        </div>
-
         {/* Date d'inscription */}
         <div className="fr-grid-row fr-py-2w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
           <div className="fr-col-12 fr-col-md-4">
