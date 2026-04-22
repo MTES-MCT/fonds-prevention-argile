@@ -12,8 +12,7 @@ interface ContactInfoModalProps {
   onSuccess: () => void;
 }
 
-// Options communes (hors acteurs locaux nominatifs et ECFR générique).
-const SOURCE_OPTIONS_COMMUNES: SourceAcquisition[] = [
+const SOURCE_OPTIONS: SourceAcquisition[] = [
   SourceAcquisition.FLYERS,
   SourceAcquisition.MEDIAS,
   SourceAcquisition.BULLETIN_COMMUNAL,
@@ -22,9 +21,6 @@ const SOURCE_OPTIONS_COMMUNES: SourceAcquisition[] = [
   SourceAcquisition.MOTEUR_RECHERCHE,
   SourceAcquisition.AUTRE,
 ];
-
-// Quand le département est inconnu, ECFR remplace les acteurs locaux nominatifs.
-const SOURCE_OPTIONS_STATIQUES = [SourceAcquisition.ECFR, ...SOURCE_OPTIONS_COMMUNES];
 
 // Valeur encodée pour une option dynamique : "type::nom" (e.g. "amo::Association ABC")
 // permet de récupérer à la fois la valeur enum et le nom de la structure.
@@ -253,7 +249,7 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
                             ))}
                           </optgroup>
                         )}
-                        {SOURCE_OPTIONS_COMMUNES.map((value) => (
+                        {SOURCE_OPTIONS.map((value) => (
                           <option key={value} value={value}>
                             {SOURCE_ACQUISITION_LABELS[value]}
                           </option>
@@ -262,7 +258,7 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
                     )}
 
                     {!hasDynamicOptions &&
-                      SOURCE_OPTIONS_STATIQUES.map((value) => (
+                      SOURCE_OPTIONS.map((value) => (
                         <option key={value} value={value}>
                           {SOURCE_ACQUISITION_LABELS[value]}
                         </option>
