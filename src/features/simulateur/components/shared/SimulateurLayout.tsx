@@ -65,7 +65,7 @@ export function SimulateurLayout({
               <h5 className="fr-mb-4w">{formTitle}</h5>
               {showProgress && <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />}
               {title && <h4 className={titleMargin}>{title}</h4>}
-              {subtitle && <p className="fr-text--sm fr-mb-2w text-gray-500" dangerouslySetInnerHTML={{ __html: subtitle }} />
+              {subtitle && <p className="fr-text--sm fr-mb-2w text-gray-500" dangerouslySetInnerHTML={{ __html: subtitle }} />}
               {children}
             </div>
           </div>
