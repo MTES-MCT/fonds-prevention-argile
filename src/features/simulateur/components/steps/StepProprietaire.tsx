@@ -37,7 +37,16 @@ export function StepProprietaire({
   return (
     <SimulateurLayout
       title="Êtes-vous propriétaire occupant du logement concerné comme résidence principale ?"
-      subtitle="Les résidences secondaires et les maisons en location sont exclues du dispositif."
+      subtitle={
+        <>
+          <p>Les résidences secondaires et les maisons en location sont exclues du dispositif.</p>
+          <p>Les propriétaires en indivision sont éligibles à l&rsquo;aide.</p>
+          <p>
+            Les SCI, les nus-propriétaires, les usufruitiers et les particuliers en cours
+            d&rsquo;acquisition d&rsquo;une maison individuelle ne sont pas éligibles à l&rsquo;aide.
+          </p>
+        </>
+      }
       currentStep={numeroEtape}
       totalSteps={totalEtapes}>
       <fieldset className="fr-fieldset md:w-1/2" id="proprietaire-fieldset">

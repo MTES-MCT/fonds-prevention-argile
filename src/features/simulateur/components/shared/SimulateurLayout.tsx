@@ -7,7 +7,7 @@ import { useSimulateurContext } from "./SimulateurContext";
 interface SimulateurLayoutProps {
   children: ReactNode;
   title?: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   description?: string;
   currentStep: number | null;
   totalSteps: number;
@@ -65,7 +65,7 @@ export function SimulateurLayout({
               <h5 className="fr-mb-4w">{formTitle}</h5>
               {showProgress && <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />}
               {title && <h4 className={titleMargin}>{title}</h4>}
-              {subtitle && <p className="fr-text--sm fr-mb-2w text-gray-500">{subtitle}</p>}
+              {subtitle && <div className="fr-text--sm fr-mb-2w text-gray-500">{subtitle}</div>}
               {children}
             </div>
           </div>
