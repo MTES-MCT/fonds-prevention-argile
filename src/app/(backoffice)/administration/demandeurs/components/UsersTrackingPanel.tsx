@@ -16,6 +16,7 @@ import { DonneesEligibiliteTab } from "./donnees-eligibilite/DonneesEligibiliteT
 import Loading from "@/app/(main)/loading";
 import { getUsersForStats, getUsersWithParcours, UserWithParcoursDetails } from "@/features/backoffice";
 import { useHasPermission } from "@/features/auth/hooks/usePermissions";
+import { useAuth } from "@/features/auth/client";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
@@ -52,8 +53,22 @@ const STEP_LABELS: Record<Step, string> = {
 
 export default function UsersTrackingPanel() {
   const searchParams = useSearchParams();
-  const initialTab = SUB_TABS.some((t) => t.id === searchParams.get("tab"))
-    ? (searchParams.get("tab") as DemandeursTab)
+  const { isLoading: isAuthLoading } = useAuth();
+
+  // Permissions
+  const canViewUserDetails = useHasPermission(BackofficePermission.USERS_DETAIL_READ);
+  const canViewStats = useHasPermission(BackofficePermission.USERS_STATS_READ);
+  const canReadUsers = useHasPermission(BackofficePermission.USERS_READ);
+
+  // Onglets visibles selon les permissions : "Tous les demandeurs" nécessite USERS_DETAIL_READ
+  const visibleSubTabs = useMemo(
+    () => SUB_TABS.filter((tab) => (tab.id === "tous" ? canViewUserDetails : true)),
+    [canViewUserDetails]
+  );
+
+  const requestedTab = searchParams.get("tab");
+  const initialTab: DemandeursTab = SUB_TABS.some((t) => t.id === requestedTab)
+    ? (requestedTab as DemandeursTab)
     : "tous";
 
   const [users, setUsers] = useState<UserWithParcoursDetails[]>([]);
@@ -62,6 +77,15 @@ export default function UsersTrackingPanel() {
 
   // Onglet actif
   const [activeTab, setActiveTab] = useState<DemandeursTab>(initialTab);
+
+  // Si l'onglet actif n'est plus visible après chargement de l'auth basculer sur le premier onglet visible
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (!visibleSubTabs.some((t) => t.id === activeTab)) {
+      const fallback = visibleSubTabs[0]?.id;
+      if (fallback) setActiveTab(fallback);
+    }
+  }, [isAuthLoading, visibleSubTabs, activeTab]);
 
   // Filtres "Tous les demandeurs"
   const [selectedStep, setSelectedStep] = useState<Step | "">("");
@@ -80,10 +104,6 @@ export default function UsersTrackingPanel() {
   const [pageSizeActifs, setPageSizeActifs] = useState(20);
   const [pageArchives, setPageArchives] = useState(1);
   const [pageSizeArchives, setPageSizeArchives] = useState(20);
-
-  // Permissions
-  const canViewUserDetails = useHasPermission(BackofficePermission.USERS_DETAIL_READ);
-  const canReadUsers = useHasPermission(BackofficePermission.USERS_READ);
 
   const loadUsers = useCallback(async () => {
     setIsLoading(true);
@@ -206,7 +226,7 @@ export default function UsersTrackingPanel() {
     setPageArchives(1);
   };
 
-  if (isLoading) {
+  if (isLoading || isAuthLoading) {
     return <Loading />;
   }
 
@@ -227,10 +247,10 @@ export default function UsersTrackingPanel() {
             </div>
 
             {/* Filtres contextuels selon l'onglet */}
-            {canViewUserDetails && (
+            {(canViewUserDetails || canViewStats) && (
               <div className="fr-col-auto">
                 <div className="flex items-end gap-4">
-                  {activeTab === "tous" && (
+                  {activeTab === "tous" && canViewUserDetails && (
                     <div className="fr-select-group fr-mb-0">
                       <select
                         className="fr-select"
@@ -265,7 +285,7 @@ export default function UsersTrackingPanel() {
                     </div>
                   )}
 
-                  {activeTab === "tous" && (
+                  {activeTab === "tous" && canViewUserDetails && (
                     <div className="fr-select-group fr-mb-0">
                       <select
                         className="fr-select"
@@ -324,10 +344,10 @@ export default function UsersTrackingPanel() {
           )}
 
           {/* Sous-onglets (pattern Acquisition) */}
-          {canViewUserDetails && (
+          {(canViewUserDetails || canViewStats) && (
             <div className="fr-tabs" style={{ borderBottom: "none" }}>
               <ul className="fr-tabs__list" role="tablist" aria-label="Sections demandeurs">
-                {SUB_TABS.map((tab) => (
+                {visibleSubTabs.map((tab) => (
                   <li key={tab.id} role="presentation">
                     <button
                       type="button"
@@ -348,10 +368,10 @@ export default function UsersTrackingPanel() {
       </section>
 
       {/* Contenu des onglets — fond bleu */}
-      {!error && canViewUserDetails && (
+      {!error && (canViewUserDetails || canViewStats) && (
         <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
           <div className="fr-container">
-            {activeTab === "tous" && (
+            {activeTab === "tous" && canViewUserDetails && (
               <div id="tab-tous-panel" role="tabpanel">
                 {/* Barre de recherche */}
                 <div className="fr-search-bar fr-mb-4w" role="search" style={{ maxWidth: "400px" }}>

@@ -42,6 +42,19 @@ export function ArchivageIneligibiliteTab({ periodeId, codeDepartement }: Archiv
     );
   }
 
+  const isEmpty = (archiveesStats?.total ?? 0) === 0 && (ineligiblesStats?.total ?? 0) === 0;
+
+  if (isEmpty) {
+    return (
+      <div className="fr-callout fr-mb-4v">
+        <p className="fr-callout__text">
+          Aucune demande archivée ou inéligible sur cette période. <br />
+          Essayez d&apos;élargir la période ou de changer de département.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="fr-grid-row fr-grid-row--gutters" style={{ maxWidth: "800px" }}>
       <div className="fr-col-12">{archiveesStats && <DemandesArchiveesFullTable stats={archiveesStats} />}</div>

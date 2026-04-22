@@ -447,6 +447,30 @@ describe("rbac.service", () => {
     });
   });
 
+  describe("Règles d'accès page /administration/demandeurs", () => {
+    it("ANALYSTE devrait accéder aux stats agrégées (USERS_STATS_READ) mais pas au détail (USERS_DETAIL_READ)", () => {
+      expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.USERS_STATS_READ)).toBe(true);
+      expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.USERS_DETAIL_READ)).toBe(false);
+    });
+
+    it("ADMINISTRATEUR devrait accéder aux stats agrégées ET au détail nominatif", () => {
+      expect(hasPermission(UserRole.ADMINISTRATEUR, BackofficePermission.USERS_STATS_READ)).toBe(true);
+      expect(hasPermission(UserRole.ADMINISTRATEUR, BackofficePermission.USERS_DETAIL_READ)).toBe(true);
+    });
+
+    it("SUPER_ADMINISTRATEUR devrait accéder aux stats agrégées ET au détail nominatif", () => {
+      expect(hasPermission(UserRole.SUPER_ADMINISTRATEUR, BackofficePermission.USERS_STATS_READ)).toBe(true);
+      expect(hasPermission(UserRole.SUPER_ADMINISTRATEUR, BackofficePermission.USERS_DETAIL_READ)).toBe(true);
+    });
+
+    it("AMO et PARTICULIER ne devraient accéder ni aux stats ni au détail", () => {
+      expect(hasPermission(UserRole.AMO, BackofficePermission.USERS_STATS_READ)).toBe(false);
+      expect(hasPermission(UserRole.AMO, BackofficePermission.USERS_DETAIL_READ)).toBe(false);
+      expect(hasPermission(UserRole.PARTICULIER, BackofficePermission.USERS_STATS_READ)).toBe(false);
+      expect(hasPermission(UserRole.PARTICULIER, BackofficePermission.USERS_DETAIL_READ)).toBe(false);
+    });
+  });
+
   describe("Cas limites et sécurité", () => {
     it("devrait gérer les rôles null/undefined de manière sécurisée", () => {
       expect(hasPermission(null as unknown as UserRole, BackofficePermission.STATS_READ)).toBe(false);
