@@ -100,6 +100,7 @@ export interface DossierInfo {
   id: string;
   dsNumber: string | null;
   dsId: string | null;
+  dsDemarcheId: string;
   dsStatus: string;
   submittedAt: Date | null;
   processedAt: Date | null;
