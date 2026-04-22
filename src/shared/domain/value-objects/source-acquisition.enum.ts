@@ -15,7 +15,7 @@ export enum SourceAcquisition {
 export const SOURCE_ACQUISITION_LABELS: Record<SourceAcquisition, string> = {
   [SourceAcquisition.DDT]: "DDT (Direction Départementale des Territoires)",
   [SourceAcquisition.AMO]: "AMO (Assistant à Maîtrise d'Ouvrage)",
-  [SourceAcquisition.ALLER_VERS]: "Équipe Aller-vers",
+  [SourceAcquisition.ALLER_VERS]: "Conseiller local",
   [SourceAcquisition.ECFR]: "Un acteur local (ECFR)",
   [SourceAcquisition.FLYERS]: "Flyers",
   [SourceAcquisition.MEDIAS]: "Médias",
