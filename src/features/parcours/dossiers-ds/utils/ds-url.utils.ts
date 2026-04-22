@@ -19,3 +19,16 @@ export function getDossierDsMessagerieUrl(dsNumber?: number | null | undefined):
   const baseDsUrl = env?.NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL || "https://www.demarches-simplifiees.fr";
   return `${baseDsUrl}/dossiers/${dsNumber}/messagerie`;
 }
+
+// Helper pour générer l'URL instructeur (back-office DS) d'un dossier
+export function getDossierDsInstructeurUrl(
+  dsDemarcheId?: string | null | undefined,
+  dsNumber?: number | string | null | undefined
+): string {
+  if (!dsDemarcheId || !dsNumber) {
+    return "#";
+  }
+  const env = getSharedEnv();
+  const baseDsUrl = env?.NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL || "https://www.demarches-simplifiees.fr";
+  return `${baseDsUrl}/procedures/${dsDemarcheId}/dossiers/${dsNumber}`;
+}
