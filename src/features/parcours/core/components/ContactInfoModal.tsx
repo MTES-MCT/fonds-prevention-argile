@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { updateContactInfoAction } from "../actions/contact-info.actions";
+import { SourceAcquisition, SOURCE_ACQUISITION_LABELS } from "@/shared/domain/value-objects";
 
 interface ContactInfoModalProps {
   isOpen: boolean;
@@ -10,9 +11,26 @@ interface ContactInfoModalProps {
   onSuccess: () => void;
 }
 
+// À l'inscription, l'adresse du ménage n'est pas encore connue (la simulation RGA
+// n'a pas eu lieu). On propose donc l'option générique ECFR pour couvrir tous les
+// acteurs locaux (DDT, AMO, Aller-vers). Ces acteurs pourront être proposés
+// nominativement après la simulation, quand le département sera connu.
+const SOURCE_OPTIONS: SourceAcquisition[] = [
+  SourceAcquisition.ECFR,
+  SourceAcquisition.FLYERS,
+  SourceAcquisition.MEDIAS,
+  SourceAcquisition.BULLETIN_COMMUNAL,
+  SourceAcquisition.PROS_BATIMENT_IMMOBILIER,
+  SourceAcquisition.REUNION_PUBLIQUE_SALON,
+  SourceAcquisition.MOTEUR_RECHERCHE,
+  SourceAcquisition.AUTRE,
+];
+
 export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSuccess }: ContactInfoModalProps) {
   const [email, setEmail] = useState(defaultEmail || "");
   const [telephone, setTelephone] = useState("");
+  const [sourceAcquisition, setSourceAcquisition] = useState<string>("");
+  const [sourceAcquisitionPrecision, setSourceAcquisitionPrecision] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -70,11 +88,24 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
       return;
     }
 
+    if (!sourceAcquisition) {
+      setError("Merci d'indiquer comment vous avez connu le fonds");
+      return;
+    }
+
+    if (sourceAcquisition === SourceAcquisition.AUTRE && !sourceAcquisitionPrecision.trim()) {
+      setError("Merci de préciser comment vous avez connu le fonds");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const result = await updateContactInfoAction({
       emailContact: email.trim(),
       telephone: telephone.trim(),
+      sourceAcquisition,
+      sourceAcquisitionPrecision:
+        sourceAcquisition === SourceAcquisition.AUTRE ? sourceAcquisitionPrecision.trim() : null,
     });
 
     setIsSubmitting(false);
@@ -148,6 +179,45 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
+
+                <div className="fr-select-group fr-mt-2w">
+                  <label className="fr-label" htmlFor="contact-source-acquisition">
+                    <strong>Comment avez-vous connu le fonds de prévention argile ?</strong>
+                    <span className="fr-hint-text">
+                      Cela nous aide à mieux faire connaître le dispositif sur votre territoire.
+                    </span>
+                  </label>
+                  <select
+                    className="fr-select"
+                    id="contact-source-acquisition"
+                    name="sourceAcquisition"
+                    value={sourceAcquisition}
+                    onChange={(e) => setSourceAcquisition(e.target.value)}>
+                    <option value="">Sélectionnez une option</option>
+                    {SOURCE_OPTIONS.map((value) => (
+                      <option key={value} value={value}>
+                        {SOURCE_ACQUISITION_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {sourceAcquisition === SourceAcquisition.AUTRE && (
+                  <div className="fr-form-group fr-mt-2w">
+                    <label className="fr-label" htmlFor="contact-source-acquisition-precision">
+                      <strong>Pouvez-vous préciser ?</strong>
+                    </label>
+                    <input
+                      className="fr-input"
+                      type="text"
+                      id="contact-source-acquisition-precision"
+                      name="sourceAcquisitionPrecision"
+                      maxLength={500}
+                      value={sourceAcquisitionPrecision}
+                      onChange={(e) => setSourceAcquisitionPrecision(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
               <div className="fr-modal__footer">
                 <ul className="fr-btns-group fr-btns-group--right fr-btns-group--inline-reverse fr-btns-group--inline-lg">
