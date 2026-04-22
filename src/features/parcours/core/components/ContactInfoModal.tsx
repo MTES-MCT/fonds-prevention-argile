@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { updateContactInfoAction } from "../actions/contact-info.actions";
+import { getActeursLocauxDisponibles, type ActeursLocaux } from "../actions/acteurs-locaux.actions";
 import { SourceAcquisition, SOURCE_ACQUISITION_LABELS } from "@/shared/domain/value-objects";
 
 interface ContactInfoModalProps {
@@ -11,11 +12,9 @@ interface ContactInfoModalProps {
   onSuccess: () => void;
 }
 
-// À l'inscription, l'adresse du ménage n'est pas encore connue (la simulation RGA
-// n'a pas eu lieu). On propose donc l'option générique ECFR pour couvrir tous les
-// acteurs locaux (DDT, AMO, Aller-vers). Ces acteurs pourront être proposés
-// nominativement après la simulation, quand le département sera connu.
-const SOURCE_OPTIONS: SourceAcquisition[] = [
+// Options statiques affichées quand aucun acteur local n'est identifié (adresse inconnue).
+// ECFR remplace nominativement AMO/Aller-vers quand le département n'est pas encore connu.
+const SOURCE_OPTIONS_STATIQUES: SourceAcquisition[] = [
   SourceAcquisition.ECFR,
   SourceAcquisition.FLYERS,
   SourceAcquisition.MEDIAS,
@@ -26,14 +25,54 @@ const SOURCE_OPTIONS: SourceAcquisition[] = [
   SourceAcquisition.AUTRE,
 ];
 
+// Options statiques affichées après ECFR quand les acteurs locaux sont connus.
+const SOURCE_OPTIONS_COMPLEMENTAIRES: SourceAcquisition[] = [
+  SourceAcquisition.FLYERS,
+  SourceAcquisition.MEDIAS,
+  SourceAcquisition.BULLETIN_COMMUNAL,
+  SourceAcquisition.PROS_BATIMENT_IMMOBILIER,
+  SourceAcquisition.REUNION_PUBLIQUE_SALON,
+  SourceAcquisition.MOTEUR_RECHERCHE,
+  SourceAcquisition.AUTRE,
+];
+
+// Valeur encodée pour une option dynamique : "type::nom" (e.g. "amo::Association ABC")
+// permet de récupérer à la fois la valeur enum et le nom de la structure.
+function encodeOptionDynamique(type: "amo" | "aller_vers", nom: string): string {
+  return `${type}::${nom}`;
+}
+
+function decodeOptionDynamique(encoded: string): { type: SourceAcquisition; precision: string } | null {
+  const sep = encoded.indexOf("::");
+  if (sep === -1) return null;
+  const type = encoded.substring(0, sep);
+  const precision = encoded.substring(sep + 2);
+  if (type === "amo") return { type: SourceAcquisition.AMO, precision };
+  if (type === "aller_vers") return { type: SourceAcquisition.ALLER_VERS, precision };
+  return null;
+}
+
 export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSuccess }: ContactInfoModalProps) {
   const [email, setEmail] = useState(defaultEmail || "");
   const [telephone, setTelephone] = useState("");
-  const [sourceAcquisition, setSourceAcquisition] = useState<string>("");
+  const [selectValue, setSelectValue] = useState<string>("");
   const [sourceAcquisitionPrecision, setSourceAcquisitionPrecision] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [acteursLocaux, setActeursLocaux] = useState<ActeursLocaux | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+
+  const hasDynamicOptions =
+    acteursLocaux !== null && (acteursLocaux.amos.length > 0 || acteursLocaux.allersVers.length > 0);
+
+  // Charger les acteurs locaux au montage
+  useEffect(() => {
+    getActeursLocauxDisponibles().then((result) => {
+      if (result.success) {
+        setActeursLocaux(result.data);
+      }
+    });
+  }, []);
 
   // Gérer l'ouverture/fermeture via le DSFR
   useEffect(() => {
@@ -88,12 +127,17 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
       return;
     }
 
-    if (!sourceAcquisition) {
+    if (!selectValue) {
       setError("Merci d'indiquer comment vous avez connu le fonds");
       return;
     }
 
-    if (sourceAcquisition === SourceAcquisition.AUTRE && !sourceAcquisitionPrecision.trim()) {
+    // Décoder la valeur sélectionnée (option dynamique ou statique)
+    const decoded = decodeOptionDynamique(selectValue);
+    const sourceAcquisition = decoded ? decoded.type : (selectValue as SourceAcquisition);
+    const precision = decoded ? decoded.precision : sourceAcquisitionPrecision.trim();
+
+    if (sourceAcquisition === SourceAcquisition.AUTRE && !precision) {
       setError("Merci de préciser comment vous avez connu le fonds");
       return;
     }
@@ -104,8 +148,7 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
       emailContact: email.trim(),
       telephone: telephone.trim(),
       sourceAcquisition,
-      sourceAcquisitionPrecision:
-        sourceAcquisition === SourceAcquisition.AUTRE ? sourceAcquisitionPrecision.trim() : null,
+      sourceAcquisitionPrecision: precision || null,
     });
 
     setIsSubmitting(false);
@@ -116,6 +159,8 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
       setError(result.error || "Erreur lors de la sauvegarde");
     }
   };
+
+  const showPrecisionField = selectValue === SourceAcquisition.AUTRE && !decodeOptionDynamique(selectValue);
 
   return (
     <dialog ref={dialogRef} id="modal-contact-info" className="fr-modal" aria-labelledby="modal-contact-info-title">
@@ -191,18 +236,53 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
                     className="fr-select"
                     id="contact-source-acquisition"
                     name="sourceAcquisition"
-                    value={sourceAcquisition}
-                    onChange={(e) => setSourceAcquisition(e.target.value)}>
+                    value={selectValue}
+                    onChange={(e) => {
+                      setSelectValue(e.target.value);
+                      setSourceAcquisitionPrecision("");
+                    }}>
                     <option value="">Sélectionnez une option</option>
-                    {SOURCE_OPTIONS.map((value) => (
-                      <option key={value} value={value}>
-                        {SOURCE_ACQUISITION_LABELS[value]}
-                      </option>
-                    ))}
+
+                    {hasDynamicOptions && (
+                      <>
+                        {acteursLocaux!.amos.length > 0 && (
+                          <optgroup label="AMO (Assistant à Maîtrise d'Ouvrage)">
+                            {acteursLocaux!.amos.map((amo) => (
+                              <option key={amo.id} value={encodeOptionDynamique("amo", amo.nom)}>
+                                {amo.nom}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {acteursLocaux!.allersVers.length > 0 && (
+                          <optgroup label="Équipe Aller-vers">
+                            {acteursLocaux!.allersVers.map((av) => (
+                              <option key={av.id} value={encodeOptionDynamique("aller_vers", av.nom)}>
+                                {av.nom}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        <optgroup label="Autre canal">
+                          {SOURCE_OPTIONS_COMPLEMENTAIRES.map((value) => (
+                            <option key={value} value={value}>
+                              {SOURCE_ACQUISITION_LABELS[value]}
+                            </option>
+                          ))}
+                        </optgroup>
+                      </>
+                    )}
+
+                    {!hasDynamicOptions &&
+                      SOURCE_OPTIONS_STATIQUES.map((value) => (
+                        <option key={value} value={value}>
+                          {SOURCE_ACQUISITION_LABELS[value]}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
-                {sourceAcquisition === SourceAcquisition.AUTRE && (
+                {showPrecisionField && (
                   <div className="fr-form-group fr-mt-2w">
                     <label className="fr-label" htmlFor="contact-source-acquisition-precision">
                       <strong>Pouvez-vous préciser ?</strong>

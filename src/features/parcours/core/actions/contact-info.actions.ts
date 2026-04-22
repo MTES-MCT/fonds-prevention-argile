@@ -72,8 +72,10 @@ export async function updateContactInfoAction(params: {
       return { success: false, error: "Veuillez préciser la source d'acquisition" };
     }
 
-    const sourceAcquisitionPrecision =
-      sourceAcquisition === SourceAcquisition.AUTRE ? precisionTrimmed.slice(0, 500) : null;
+    const SOURCES_AVEC_PRECISION = [SourceAcquisition.AUTRE, SourceAcquisition.AMO, SourceAcquisition.ALLER_VERS];
+    const sourceAcquisitionPrecision = sourceAcquisition && SOURCES_AVEC_PRECISION.includes(sourceAcquisition)
+      ? precisionTrimmed.slice(0, 500) || null
+      : null;
 
     const updated = await userRepo.updateContactInfo(session.userId, {
       emailContact: params.emailContact.trim(),
