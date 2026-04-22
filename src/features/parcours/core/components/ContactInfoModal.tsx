@@ -12,10 +12,8 @@ interface ContactInfoModalProps {
   onSuccess: () => void;
 }
 
-// Options statiques affichées quand aucun acteur local n'est identifié (adresse inconnue).
-// ECFR remplace nominativement AMO/Aller-vers quand le département n'est pas encore connu.
-const SOURCE_OPTIONS_STATIQUES: SourceAcquisition[] = [
-  SourceAcquisition.ECFR,
+// Options communes (hors acteurs locaux nominatifs et ECFR générique).
+const SOURCE_OPTIONS_COMMUNES: SourceAcquisition[] = [
   SourceAcquisition.FLYERS,
   SourceAcquisition.MEDIAS,
   SourceAcquisition.BULLETIN_COMMUNAL,
@@ -25,16 +23,8 @@ const SOURCE_OPTIONS_STATIQUES: SourceAcquisition[] = [
   SourceAcquisition.AUTRE,
 ];
 
-// Options statiques affichées après ECFR quand les acteurs locaux sont connus.
-const SOURCE_OPTIONS_COMPLEMENTAIRES: SourceAcquisition[] = [
-  SourceAcquisition.FLYERS,
-  SourceAcquisition.MEDIAS,
-  SourceAcquisition.BULLETIN_COMMUNAL,
-  SourceAcquisition.PROS_BATIMENT_IMMOBILIER,
-  SourceAcquisition.REUNION_PUBLIQUE_SALON,
-  SourceAcquisition.MOTEUR_RECHERCHE,
-  SourceAcquisition.AUTRE,
-];
+// Quand le département est inconnu, ECFR remplace les acteurs locaux nominatifs.
+const SOURCE_OPTIONS_STATIQUES = [SourceAcquisition.ECFR, ...SOURCE_OPTIONS_COMMUNES];
 
 // Valeur encodée pour une option dynamique : "type::nom" (e.g. "amo::Association ABC")
 // permet de récupérer à la fois la valeur enum et le nom de la structure.
@@ -246,7 +236,7 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
                     {hasDynamicOptions && (
                       <>
                         {acteursLocaux!.amos.length > 0 && (
-                          <optgroup label="AMO (Assistant à Maîtrise d'Ouvrage)">
+                          <optgroup label={SOURCE_ACQUISITION_LABELS[SourceAcquisition.AMO]}>
                             {acteursLocaux!.amos.map((amo) => (
                               <option key={amo.id} value={encodeOptionDynamique("amo", amo.nom)}>
                                 {amo.nom}
@@ -255,7 +245,7 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
                           </optgroup>
                         )}
                         {acteursLocaux!.allersVers.length > 0 && (
-                          <optgroup label="Équipe Aller-vers">
+                          <optgroup label={SOURCE_ACQUISITION_LABELS[SourceAcquisition.ALLER_VERS]}>
                             {acteursLocaux!.allersVers.map((av) => (
                               <option key={av.id} value={encodeOptionDynamique("aller_vers", av.nom)}>
                                 {av.nom}
@@ -263,13 +253,11 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
                             ))}
                           </optgroup>
                         )}
-                        <optgroup label="Autre canal">
-                          {SOURCE_OPTIONS_COMPLEMENTAIRES.map((value) => (
-                            <option key={value} value={value}>
-                              {SOURCE_ACQUISITION_LABELS[value]}
-                            </option>
-                          ))}
-                        </optgroup>
+                        {SOURCE_OPTIONS_COMMUNES.map((value) => (
+                          <option key={value} value={value}>
+                            {SOURCE_ACQUISITION_LABELS[value]}
+                          </option>
+                        ))}
                       </>
                     )}
 
