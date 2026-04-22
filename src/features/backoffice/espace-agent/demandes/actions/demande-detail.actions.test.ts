@@ -64,6 +64,8 @@ describe("demande-detail.actions", () => {
           email: "jean.dupont@example.com",
           telephone: "0123456789",
           adresse: "1 rue de la Paix",
+          sourceAcquisition: null,
+          sourceAcquisitionPrecision: null,
         },
         logement: {
           anneeConstruction: "2000",
