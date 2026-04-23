@@ -30,7 +30,7 @@ interface SourcesAcquisitionTableProps {
 }
 
 function computeVariation(current: number, previous: number): number | null {
-  if (previous === 0) return null;
+  if (previous === 0) return current > 0 ? 100 : 0;
   return Math.round(((current - previous) / previous) * 100);
 }
 
@@ -98,6 +98,7 @@ export function SourcesAcquisitionTable({
           Données base de données
         </span>
       </h3>
+      <p className="fr-text--sm fr-text-mention--grey fr-mb-2w">Données disponibles pour les demandeurs inscrits après le 27 Avril 2026</p>
       <div
         style={{
           backgroundColor: "var(--background-default-grey)",
