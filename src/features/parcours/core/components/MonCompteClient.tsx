@@ -141,23 +141,29 @@ export default function MonCompteClient() {
       />
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
-          <h1>Bonjour {user.firstName}</h1>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start fr-mb-4w gap-4">
+            <div>
+              <h1>Bonjour {user.firstName}</h1>
 
-          {/* Badges de statut */}
-          <ul className="fr-badges-group fr-mb-4w">
-            <li>
-              {/* Badge de statut d'étape */}
-              {hasParcours && (
-                <p className="fr-badge fr-badge--new fr-mr-2w">
-                  {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo, currentStepSubmittedAt) || "À faire"}
-                </p>
-              )}
-            </li>
-            <li>
-              {/* Badge d'étape */}
-              {hasParcours && currentStep && <p className="fr-badge">{getStepBadgeLabel(currentStep)} </p>}
-            </li>
-          </ul>
+              {/* Badges de statut */}
+              <ul className="fr-badges-group">
+                <li>
+                  {/* Badge de statut d'étape */}
+                  {hasParcours && (
+                    <p className="fr-badge fr-badge--new fr-mr-2w">
+                      {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo, currentStepSubmittedAt) || "À faire"}
+                    </p>
+                  )}
+                </li>
+                <li>
+                  {/* Badge d'étape */}
+                  {hasParcours && currentStep && <p className="fr-badge">{getStepBadgeLabel(currentStep)} </p>}
+                </li>
+              </ul>
+            </div>
+
+            <AllerVersLocal />
+          </div>
 
           {/* Alerte de succès AMO */}
           {showAmoSuccessAlert && (
@@ -186,8 +192,7 @@ export default function MonCompteClient() {
               />
             </div>
 
-            <div className="fr-col-12 fr-col-md-4 flex flex-col justify-center md:justify-start self-start">
-              <AllerVersLocal />
+            <div className="fr-col-12 fr-col-md-4 flex justify-center md:justify-start self-start">
               <MaListe />
             </div>
           </div>
@@ -402,7 +407,7 @@ function getStatusBadgeLabel(
 
     switch (statutAmo) {
       case StatutValidationAmo.EN_ATTENTE:
-        return "Attente de l'AMO";
+        return "En attente de l'AMO";
       case StatutValidationAmo.LOGEMENT_ELIGIBLE:
         return "Validé";
       case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:

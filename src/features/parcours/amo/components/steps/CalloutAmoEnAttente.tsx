@@ -8,6 +8,7 @@ import { assignAmoAutomatique, getAmoChoisie } from "@/features/parcours/amo/act
 import { StatutValidationAmo } from "../../domain/value-objects";
 import { useAmoMode } from "../../hooks";
 import { AmoMode } from "../../domain/value-objects/departements-amo";
+import { ContactCard } from "@/shared/components";
 
 interface CalloutAmoEnAttenteProps {
   /** Disponible uniquement en modes OBLIGATOIRE / AV_AMO_FUSIONNES pour déclencher
@@ -115,23 +116,16 @@ export default function CalloutAmoEnAttente({ refresh }: CalloutAmoEnAttenteProp
         {amoChoisie && (
           <>
             <p className="fr-text--bold fr-mb-2w">Votre AMO dédié</p>
-            <div className="fr-card">
-              <div className="fr-card__body">
-                <div className="fr-card__content">
-                  <div className="fr-card__desc">
-                    <p className="fr-text--bold fr-mb-1v">{amoChoisie.nom}</p>
-                    {amoChoisie.emails && (
-                      <p className="fr-text--sm fr-mb-1v">
-                        <a className="fr-link" href={`mailto:${amoChoisie.emails.split(";")[0].trim()}`}>
-                          {amoChoisie.emails.split(";").join(", ")}
-                        </a>
-                      </p>
-                    )}
-                    {amoChoisie.telephone && <p className="fr-text--sm fr-mb-1v">{amoChoisie.telephone}</p>}
-                    {amoChoisie.adresse && <p className="fr-text--sm">{amoChoisie.adresse}</p>}
-                  </div>
-                </div>
-              </div>
+            <div className="fr-grid-row">
+              <ContactCard
+                id={amoChoisie.id}
+                nom={amoChoisie.nom}
+                emails={amoChoisie.emails}
+                telephone={amoChoisie.telephone}
+                adresse={amoChoisie.adresse}
+                selectable={false}
+                colSize="half"
+              />
             </div>
           </>
         )}

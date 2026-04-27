@@ -8,10 +8,11 @@ import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "@/features/
 
 /**
  * Sidebar "MON CONSEILLER LOCAL"
+ * Affiche au plus un seul aller-vers (le 1er) ; silencieuse si aucun AV pour le département.
  */
 export default function AllerVersLocal() {
   const { parcours } = useParcours();
-  const [allersVers, setAllersVers] = useState<AllersVers[]>([]);
+  const [av, setAv] = useState<AllersVers | null>(null);
 
   useEffect(() => {
     const codeInsee = normalizeCodeInsee(parcours?.rgaSimulationData?.logement?.commune);
@@ -23,32 +24,37 @@ export default function AllerVersLocal() {
       : undefined;
 
     getAllersVersByEpciWithFallbackAction(codeDepartement, codeEpci).then((result) => {
-      if (result.success && result.data) {
-        setAllersVers(result.data);
+      if (result.success && result.data && result.data.length > 0) {
+        setAv(result.data[0]);
       }
     });
   }, [parcours?.rgaSimulationData?.logement?.commune, parcours?.rgaSimulationData?.logement?.epci]);
 
-  if (allersVers.length === 0) return null;
+  if (!av) return null;
+
+  const greyStyle: React.CSSProperties = { color: "var(--text-mention-grey)" };
 
   return (
-    <div className="fr-mb-3w">
-      <p className="fr-text--xs fr-text--bold fr-text--uppercase fr-mb-1w">
-        <span className="fr-icon-question-line fr-icon--sm" aria-hidden="true" /> Mon conseiller local
+    <div className="text-left md:text-right">
+      <p className="fr-text--xs fr-text--bold uppercase fr-mb-1w">
+        <span className="fr-icon-question-line fr-icon--sm fr-mr-1v" aria-hidden="true" />
+        Mon conseiller local
       </p>
-      {allersVers.map((av) => (
-        <div key={av.id} className="fr-mb-2w">
-          <p className="fr-mb-0">{av.nom}</p>
-          {av.emails.length > 0 && (
-            <p className="fr-mb-0">
-              <a className="fr-link fr-text--sm" href={`mailto:${av.emails[0]}`}>
-                {av.emails[0]}
-              </a>
-            </p>
-          )}
-          {av.telephone && <p className="fr-text--sm fr-mb-0">{av.telephone}</p>}
-        </div>
-      ))}
+      <p className="fr-mb-1v fr-text--xs" style={greyStyle}>
+        {av.nom}
+      </p>
+      {av.emails.length > 0 && (
+        <p className="fr-mb-1v fr-text--xs">
+          <a className="fr-link fr-text--xs" href={`mailto:${av.emails[0]}`}>
+            {av.emails[0]}
+          </a>
+        </p>
+      )}
+      {av.telephone && (
+        <p className="fr-text--xs fr-mb-0" style={greyStyle}>
+          {av.telephone}
+        </p>
+      )}
     </div>
   );
 }
