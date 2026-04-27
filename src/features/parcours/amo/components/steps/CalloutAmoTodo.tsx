@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/features/auth/client";
 import type { Amo } from "@/features/parcours/amo";
-import { choisirAmo, getAmoRefusee, getAmosDisponibles } from "@/features/parcours/amo/actions";
+import { choisirAmo, getAmoRefusee, getAmosDisponibles, skipAmoStep } from "@/features/parcours/amo/actions";
 import { useSimulateurRga } from "@/features/simulateur";
 import { useEffect, useState } from "react";
 import { getContactInfo } from "@/features/parcours/core/actions/contact-info.actions";
@@ -11,6 +11,8 @@ import type { AllersVers } from "@/features/seo/allers-vers";
 import { getCodeDepartementFromCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { ContactCard } from "@/shared/components";
 import { useParcours } from "@/features/parcours/core/context/useParcours";
+import { useAmoMode } from "@/features/parcours/amo/hooks";
+import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 
 interface CalloutAmoTodoProps {
   accompagnementRefuse?: boolean;
@@ -28,6 +30,8 @@ export default function CalloutAmoTodo({
   const { user } = useAuth();
   const { data: rgaData, isLoading: isLoadingRga } = useSimulateurRga();
   const { parcours, isLoading: isLoadingParcours } = useParcours();
+  const amoMode = useAmoMode();
+  const isFacultatif = amoMode === AmoMode.FACULTATIF;
 
   const [amoList, setAmoList] = useState<Amo[]>([]);
   const [allersVersList, setAllersVersList] = useState<AllersVers[]>([]);
@@ -137,6 +141,16 @@ export default function CalloutAmoTodo({
 
   const handleAmoSelection = (amoId: string) => {
     setSelectedAmoId(amoId);
+  };
+
+  const handleSkipAmo = async () => {
+    setError(null);
+    const result = await skipAmoStep();
+    if (!result.success) {
+      setError(result.error || "Erreur lors de l'enregistrement de votre choix");
+      return;
+    }
+    if (refresh) await refresh();
   };
 
   const handleConfirm = async () => {
@@ -259,11 +273,21 @@ export default function CalloutAmoTodo({
       <div id="choix-amo">
         <div className="fr-callout fr-callout--blue-cumulus">
           <p className="fr-callout__title">AMO pas encore disponible dans votre département</p>
-          <p className="fr-callout__text">
-            Pour bénéficier du Fonds Prévention Argile, il est impératif de faire appel à un AMO (Assistant à Maîtrise
-            d'Ouvrage). Nous sommes actuellement en train de finaliser des contrats avec des AMO de votre département.
-            Nous vous contacterons par e-mail dès que vous pourrez contacter les professionnels certifiés.
+          <p className="fr-callout__text fr-mb-2w">
+            Nous sommes en train de finaliser des contrats avec des AMO de votre département. Vous serez notifié par
+            e-mail dès qu'un professionnel certifié sera disponible.
           </p>
+          {isFacultatif && (
+            <>
+              <p className="fr-callout__text fr-mb-2w">
+                L'accompagnement par un AMO étant facultatif dans votre département, vous pouvez aussi continuer vos
+                démarches seul dès maintenant.
+              </p>
+              <button type="button" className="fr-btn fr-btn--secondary" onClick={handleSkipAmo}>
+                Continuer sans AMO
+              </button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -277,9 +301,9 @@ export default function CalloutAmoTodo({
           <>
             <p className="fr-callout__title">Contactez un AMO</p>
             <p className="fr-callout__text fr-mb-4w">
-              Le recours à un AMO (Assistant à Maîtrise d'ouvrage) est obligatoire pour bénéficier du Fonds prévention
-              argile. Contactez puis confirmez la structure choisie dans les propositions ci-dessous afin de passer à
-              l'étape suivante.
+              {isFacultatif
+                ? "Vous avez choisi d'être accompagné par un AMO (Assistant à Maîtrise d'ouvrage). Contactez puis confirmez la structure choisie dans les propositions ci-dessous afin de passer à l'étape suivante."
+                : "Le recours à un AMO (Assistant à Maîtrise d'ouvrage) est obligatoire pour bénéficier du Fonds prévention argile. Contactez puis confirmez la structure choisie dans les propositions ci-dessous afin de passer à l'étape suivante."}
             </p>
           </>
         ) : (

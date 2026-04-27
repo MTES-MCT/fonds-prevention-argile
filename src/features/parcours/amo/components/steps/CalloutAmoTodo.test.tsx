@@ -181,7 +181,7 @@ describe("CalloutAmoTodo", () => {
         expect(screen.getByText("AMO pas encore disponible dans votre département")).toBeInTheDocument();
       });
 
-      expect(screen.getByText(/Nous sommes actuellement en train de finaliser des contrats/)).toBeInTheDocument();
+      expect(screen.getByText(/Nous sommes en train de finaliser des contrats/)).toBeInTheDocument();
     });
   });
 
