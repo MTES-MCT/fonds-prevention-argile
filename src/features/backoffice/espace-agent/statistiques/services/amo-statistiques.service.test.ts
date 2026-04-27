@@ -38,7 +38,7 @@ describe("AmoStatistiquesService", () => {
 
   describe("getAmoStatistiques", () => {
     it("devrait retourner les indicateurs clés, la répartition par étape, par revenu et les top communes", async () => {
-      // Arrange - Mock des 10 requêtes DB (3 indicateurs + 5 étapes + 1 revenus + 1 communes)
+      // Arrange - Mock des 11 requêtes DB (3 indicateurs + 5 étapes + 1 revenus + 1 communes + 1 évolution)
       // Note: L'ordre peut varier car les requêtes sont en parallèle
       vi.mocked(db.select)
         .mockReturnValueOnce(mockDbSelect([{ count: 12 }])) // dossiers en cours
@@ -50,7 +50,8 @@ describe("AmoStatistiquesService", () => {
         .mockReturnValueOnce(mockDbSelect([])) // revenus (données RGA)
         .mockReturnValueOnce(mockDbSelect([])) // communes (données RGA)
         .mockReturnValueOnce(mockDbSelect([{ count: 12 }])) // acceptées
-        .mockReturnValueOnce(mockDbSelect([{ count: 4 }])); // refusées
+        .mockReturnValueOnce(mockDbSelect([{ count: 4 }])) // refusées
+        .mockReturnValueOnce(mockDbSelect([])); // évolution demandeurs
 
       // Act
       const stats = await getAmoStatistiques(entrepriseAmoId);
@@ -102,7 +103,7 @@ describe("AmoStatistiquesService", () => {
       expect(stats.repartitionParRevenu.intermediaire).toBe(0);
     });
 
-    it("devrait appeler db.select 10 fois (3 indicateurs + 5 étapes + 1 revenus + 1 communes)", async () => {
+    it("devrait appeler db.select 11 fois (3 indicateurs + 5 étapes + 1 revenus + 1 communes + 1 évolution)", async () => {
       // Arrange
       vi.mocked(db.select).mockReturnValue(mockDbSelect([{ count: 1 }]));
 
@@ -110,7 +111,7 @@ describe("AmoStatistiquesService", () => {
       await getAmoStatistiques(entrepriseAmoId);
 
       // Assert
-      expect(db.select).toHaveBeenCalledTimes(10);
+      expect(db.select).toHaveBeenCalledTimes(11);
     });
 
     it("devrait retourner les étapes dans le bon ordre avec les bons labels", async () => {

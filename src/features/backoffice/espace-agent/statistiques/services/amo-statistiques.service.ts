@@ -8,6 +8,8 @@ import type {
   AmoIndicateursCles,
   AmoStatistiques,
   CommuneStats,
+  EvolutionDemandeurs,
+  PointEvolution,
   RepartitionParEtape,
   RepartitionParRevenu,
 } from "../domain/types";
@@ -39,18 +41,21 @@ const STEPS_ORDER: Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, 
  * @param entrepriseAmoId - ID de l'entreprise AMO, ou `null` pour un accès global (SUPER_ADMIN)
  */
 export async function getAmoStatistiques(entrepriseAmoId: string | null): Promise<AmoStatistiques> {
-  const [indicateursCles, repartitionParEtape, repartitionParRevenu, topCommunes] = await Promise.all([
-    getIndicateursCles(entrepriseAmoId),
-    getRepartitionParEtape(entrepriseAmoId),
-    getRepartitionParRevenu(entrepriseAmoId),
-    getTopCommunes(entrepriseAmoId),
-  ]);
+  const [indicateursCles, repartitionParEtape, repartitionParRevenu, topCommunes, evolutionDemandeurs] =
+    await Promise.all([
+      getIndicateursCles(entrepriseAmoId),
+      getRepartitionParEtape(entrepriseAmoId),
+      getRepartitionParRevenu(entrepriseAmoId),
+      getTopCommunes(entrepriseAmoId),
+      getEvolutionDemandeurs(entrepriseAmoId),
+    ]);
 
   return {
     indicateursCles,
     repartitionParEtape,
     repartitionParRevenu,
     topCommunes,
+    evolutionDemandeurs,
   };
 }
 
@@ -290,4 +295,96 @@ async function getTopCommunes(entrepriseAmoId: string | null): Promise<CommuneSt
     codeDepartement: item.codeDepartement,
     nombreDemandeurs: item.count,
   }));
+}
+
+/**
+ * Récupère l'évolution du nombre de demandeurs créés dans le temps
+ *
+ * Granularité automatique :
+ * - <= 30 jours de données : 1 point par jour
+ * - > 30 jours : 1 point par semaine (lundi comme début de semaine)
+ */
+async function getEvolutionDemandeurs(entrepriseAmoId: string | null): Promise<EvolutionDemandeurs> {
+  const rows = await db
+    .select({ createdAt: parcoursPrevention.createdAt })
+    .from(parcoursPrevention)
+    .innerJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
+    .where(entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined);
+
+  const dates = rows.map((r) => r.createdAt).filter((d): d is Date => d instanceof Date);
+
+  if (dates.length === 0) {
+    return { points: [], granularite: "jour" };
+  }
+  const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
+  const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+
+  const diffJours = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+  const granularite: "jour" | "semaine" = diffJours <= 30 ? "jour" : "semaine";
+
+  if (granularite === "jour") {
+    const compteParJour = new Map<string, number>();
+
+    // Initialiser tous les jours à 0
+    const cursor = new Date(minDate);
+    cursor.setHours(0, 0, 0, 0);
+    const fin = new Date(maxDate);
+    fin.setHours(0, 0, 0, 0);
+    while (cursor <= fin) {
+      compteParJour.set(cursor.toISOString().slice(0, 10), 0);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    // Compter les demandeurs par jour
+    for (const date of dates) {
+      const cle = date.toISOString().slice(0, 10);
+      compteParJour.set(cle, (compteParJour.get(cle) ?? 0) + 1);
+    }
+
+    const points: PointEvolution[] = Array.from(compteParJour.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([cle, count]) => ({
+        label: new Date(cle).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
+        count,
+      }));
+
+    return { points, granularite };
+  } else {
+    const compteParSemaine = new Map<string, number>();
+
+    const debutSemaineMinDate = debutDeSemaine(minDate);
+    const debutSemaineMaxDate = debutDeSemaine(maxDate);
+
+    // Initialiser toutes les semaines à 0
+    const cursor = new Date(debutSemaineMinDate);
+    while (cursor <= debutSemaineMaxDate) {
+      compteParSemaine.set(cursor.toISOString().slice(0, 10), 0);
+      cursor.setDate(cursor.getDate() + 7);
+    }
+
+    // Compter les demandeurs par semaine
+    for (const date of dates) {
+      const cle = debutDeSemaine(date).toISOString().slice(0, 10);
+      compteParSemaine.set(cle, (compteParSemaine.get(cle) ?? 0) + 1);
+    }
+
+    const points: PointEvolution[] = Array.from(compteParSemaine.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([cle, count]) => ({
+        label: new Date(cle).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
+        count,
+      }));
+
+    return { points, granularite };
+  }
+}
+
+/** Retourne le lundi de la semaine contenant la date donnée */
+function debutDeSemaine(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const jour = d.getDay(); // 0 = dimanche
+  const diff = jour === 0 ? -6 : 1 - jour;
+  d.setDate(d.getDate() + diff);
+  return d;
 }

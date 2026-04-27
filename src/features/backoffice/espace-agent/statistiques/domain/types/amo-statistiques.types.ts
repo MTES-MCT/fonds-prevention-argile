@@ -52,6 +52,22 @@ export interface CommuneStats {
 }
 
 /**
+ * Un point de la courbe d'évolution (jour ou semaine)
+ */
+export interface PointEvolution {
+  label: string;
+  count: number;
+}
+
+/**
+ * Évolution du nombre de demandeurs créés dans le temps
+ */
+export interface EvolutionDemandeurs {
+  points: PointEvolution[];
+  granularite: "jour" | "semaine";
+}
+
+/**
  * Statistiques complètes de l'AMO
  */
 export interface AmoStatistiques {
@@ -59,4 +75,5 @@ export interface AmoStatistiques {
   repartitionParEtape: RepartitionParEtape[];
   repartitionParRevenu: RepartitionParRevenu;
   topCommunes: CommuneStats[];
+  evolutionDemandeurs: EvolutionDemandeurs;
 }
