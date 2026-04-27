@@ -10,11 +10,14 @@ import { useParcours } from "../context/useParcours";
 import { getContactInfo } from "../actions/contact-info.actions";
 import { Step, STEP_LABELS_NUMBERED } from "../domain";
 import { StatutValidationAmo } from "../../amo/domain/value-objects";
+import { AmoMode } from "../../amo/domain/value-objects/departements-amo";
+import { useAmoMode } from "../../amo/hooks";
 import { DSStatus } from "../../dossiers-ds/domain";
 import {
   CalloutAmoEnAttente,
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
+  CalloutChoixAccompagnement,
   CalloutDiagnosticAccepte,
   CalloutDiagnosticEnInstruction,
   CalloutDiagnosticTodo,
@@ -223,6 +226,8 @@ function CalloutManager({
   refresh: () => Promise<void>;
   contactInfoVersion: number;
 }) {
+  const amoMode = useAmoMode();
+
   // Si pas de parcours, rien à afficher
   if (!hasParcours || !currentStep) {
     return null;
@@ -231,7 +236,14 @@ function CalloutManager({
   // Gestion selon l'étape courante
   switch (currentStep) {
     case Step.CHOIX_AMO:
-      return renderChoixAmoCallout(statutAmo, isQualifiedNonEligible, onAmoSuccess, refresh, contactInfoVersion);
+      return renderChoixAmoCallout(
+        amoMode,
+        statutAmo,
+        isQualifiedNonEligible,
+        onAmoSuccess,
+        refresh,
+        contactInfoVersion
+      );
 
     case Step.ELIGIBILITE:
       return renderEligibiliteCallout(dsStatus);
@@ -252,6 +264,7 @@ function CalloutManager({
 
 // Helpers pour chaque étape
 function renderChoixAmoCallout(
+  amoMode: AmoMode | null,
   statutAmo: StatutValidationAmo | null,
   isQualifiedNonEligible: boolean,
   onAmoSuccess: () => void,
@@ -264,6 +277,16 @@ function renderChoixAmoCallout(
   }
 
   if (statutAmo === null) {
+    // Mode FACULTATIF (arrêté 2026) : choix initial entre AMO et démarches autonomes
+    if (amoMode === AmoMode.FACULTATIF) {
+      return (
+        <CalloutChoixAccompagnement
+          onSuccess={onAmoSuccess}
+          refresh={refresh}
+          contactInfoVersion={contactInfoVersion}
+        />
+      );
+    }
     return <CalloutAmoTodo onSuccess={onAmoSuccess} refresh={refresh} contactInfoVersion={contactInfoVersion} />;
   }
 
