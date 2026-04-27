@@ -16,6 +16,7 @@ import { DSStatus } from "../../dossiers-ds/domain";
 import {
   CalloutAmoEnAttente,
   CalloutAmoLogementNonEligible,
+  CalloutAmoObligatoire,
   CalloutAmoTodo,
   CalloutChoixAccompagnement,
   CalloutDiagnosticAccepte,
@@ -274,6 +275,19 @@ function renderChoixAmoCallout(
   // Si qualifié non éligible par un allers-vers (avant même le choix AMO)
   if (isQualifiedNonEligible && statutAmo === null) {
     return <CalloutAmoLogementNonEligible />;
+  }
+
+  // Modes OBLIGATOIRE et AV_AMO_FUSIONNES : auto-attribution + wording dédié.
+  // Le composant gère lui-même l'auto-trigger quand statutAmo est null, et reste affiché
+  // tant que la réponse de l'AMO (LOGEMENT_ELIGIBLE/NON_ELIGIBLE/REFUSE) n'arrive pas.
+  if (amoMode === AmoMode.OBLIGATOIRE || amoMode === AmoMode.AV_AMO_FUSIONNES) {
+    if (
+      statutAmo === null ||
+      statutAmo === StatutValidationAmo.EN_ATTENTE ||
+      statutAmo === StatutValidationAmo.SANS_AMO
+    ) {
+      return <CalloutAmoObligatoire refresh={refresh} />;
+    }
   }
 
   if (statutAmo === null) {
