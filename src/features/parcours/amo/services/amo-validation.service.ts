@@ -195,6 +195,13 @@ export async function getValidationByToken(token: string): Promise<ActionResult<
     };
   }
 
+  if (!tokenData.entrepriseAmoId) {
+    return {
+      success: false,
+      error: "Validation sans AMO : aucun token attendu",
+    };
+  }
+
   // Récupérer l'AMO
   const amo = await getAmoById(tokenData.entrepriseAmoId);
   if (!amo) {

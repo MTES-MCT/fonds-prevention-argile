@@ -1,13 +1,18 @@
 import type { StatutValidationAmo } from "../value-objects/statutValidation";
+import type { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
 import { Amo } from "./amo";
 
 /**
  * Validation AMO (base)
+ *
+ * `entrepriseAmoId` est null lorsque le demandeur a renoncé à un AMO
+ * (statut `SANS_AMO`, attributionMode `AUCUN`).
  */
 export interface ValidationAmo {
   id: string;
   parcoursId: string;
-  entrepriseAmoId: string;
+  entrepriseAmoId: string | null;
+  attributionMode: AttributionAmoMode;
   statut: StatutValidationAmo;
   commentaire: string | null;
   choisieAt: Date;
