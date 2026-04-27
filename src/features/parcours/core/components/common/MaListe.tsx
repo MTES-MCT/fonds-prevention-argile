@@ -1,45 +1,21 @@
 import Link from "next/link";
 import { useParcours } from "../../context/useParcours";
-import { Step, STEP_ORDER } from "../../domain";
+import { Step } from "../../domain";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
+import { useAmoMode } from "@/features/parcours/amo/hooks";
+import { getStepListItems, type StepListItem } from "@/features/parcours/amo/domain/value-objects";
+
+const COMPLETED_STYLE: React.CSSProperties = {
+  textDecoration: "line-through",
+  opacity: 0.7,
+  pointerEvents: "none",
+};
 
 export default function MaListe() {
-  const { currentStep, getDossierUrl, lastDSStatus } = useParcours();
+  const { currentStep, statutAmo, getDossierUrl, lastDSStatus } = useParcours();
+  const amoMode = useAmoMode();
 
-  const isCurrentStepAccepte = lastDSStatus === DSStatus.ACCEPTE;
-
-  // Récupérer les URLs pour chaque étape
-  const eligibiliteUrl = getDossierUrl(Step.ELIGIBILITE);
-  const diagnosticUrl = getDossierUrl(Step.DIAGNOSTIC);
-  const devisUrl = getDossierUrl(Step.DEVIS);
-  const facturesUrl = getDossierUrl(Step.FACTURES);
-
-  // Déterminer quels liens sont actifs selon l'étape courante
-  const isDiagnosticActive =
-    currentStep === Step.DIAGNOSTIC || currentStep === Step.DEVIS || currentStep === Step.FACTURES;
-
-  const isDevisActive = currentStep === Step.DEVIS || currentStep === Step.FACTURES;
-
-  const isFacturesActive = currentStep === Step.FACTURES;
-
-  const getStepStatus = (step: Step) => {
-    const currentIndex = STEP_ORDER.indexOf(currentStep || Step.CHOIX_AMO);
-    const stepIndex = STEP_ORDER.indexOf(step);
-
-    const isCompleted = stepIndex < currentIndex || (stepIndex === currentIndex && isCurrentStepAccepte);
-
-    return {
-      isCompleted,
-      isActive: stepIndex <= currentIndex,
-      style: isCompleted
-        ? {
-            textDecoration: "line-through",
-            opacity: 0.7,
-            pointerEvents: "none" as const,
-          }
-        : {},
-    };
-  };
+  const items = getStepListItems(amoMode, statutAmo, currentStep, lastDSStatus === DSStatus.ACCEPTE);
 
   return (
     <div className="fr-card">
@@ -47,115 +23,59 @@ export default function MaListe() {
         <h2 className="fr-card__title">Ma liste</h2>
         <div className="fr-card__desc">
           <ol type="1" className="fr-list space-y-2">
-            <li key="choix-amo">
-              {(() => {
-                const status = getStepStatus(Step.CHOIX_AMO);
-
-                if (!status.isActive) {
-                  return (
-                    <a aria-disabled="true" role="link" className="fr-link">
-                      Contacter et indiquer un AMO dans la liste
-                    </a>
-                  );
-                }
-
-                if (status.isCompleted) {
-                  return (
-                    <span className="fr-link" style={status.style}>
-                      Contacter et indiquer un AMO dans la liste{" "}
-                      <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true"></span>
-                    </span>
-                  );
-                }
-
-                return (
-                  <Link className="fr-link" href="#choix-amo">
-                    Contacter et indiquer un AMO dans la liste
-                  </Link>
-                );
-              })()}
-            </li>
-            <li key="eligibilite">
-              {(() => {
-                const status = getStepStatus(Step.ELIGIBILITE);
-
-                if (!status.isActive) {
-                  return (
-                    <a aria-disabled="true" role="link" className="fr-link">
-                      Remplir le formulaire d'éligibilité et avoir une réponse
-                    </a>
-                  );
-                }
-
-                if (status.isCompleted) {
-                  return (
-                    <span className="fr-link" style={status.style}>
-                      Remplir le formulaire d'éligibilité et avoir une réponse{" "}
-                      <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true"></span>
-                    </span>
-                  );
-                }
-
-                return (
-                  <Link target="_blank" rel="noopener external" className="fr-link" href={eligibiliteUrl || "#"}>
-                    Remplir le formulaire d'éligibilité et avoir une réponse
-                  </Link>
-                );
-              })()}
-            </li>
-            <li key="diagnostic">
-              {(() => {
-                const status = getStepStatus(Step.DIAGNOSTIC);
-
-                if (status.isCompleted) {
-                  return (
-                    <span className="fr-link" style={status.style}>
-                      Soumettre le diagnostic{" "}
-                      <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true"></span>
-                    </span>
-                  );
-                }
-
-                if (isDiagnosticActive) {
-                  return (
-                    <Link target="_blank" rel="noopener external" className="fr-link" href={diagnosticUrl || "#"}>
-                      Soumettre le diagnostic
-                    </Link>
-                  );
-                }
-
-                return (
-                  <a aria-disabled="true" role="link" className="fr-link">
-                    Soumettre le diagnostic
-                  </a>
-                );
-              })()}
-            </li>
-            <li key="devis">
-              {isDevisActive ? (
-                <Link target="_blank" rel="noopener external" className="fr-link" href={devisUrl || "#"}>
-                  Soumettre les devis
-                </Link>
-              ) : (
-                <a aria-disabled="true" role="link" className="fr-link">
-                  Soumettre les devis
-                </a>
-              )}
-            </li>
-            <li key="factures">
-              {isFacturesActive ? (
-                <Link target="_blank" rel="noopener external" className="fr-link" href={facturesUrl || "#"}>
-                  Transmettre les factures
-                </Link>
-              ) : (
-                <a aria-disabled="true" role="link" className="fr-link">
-                  Transmettre les factures
-                </a>
-              )}
-            </li>
+            {items.map((item) => (
+              <li key={item.key}>{renderItemLink(item, getDossierUrl)}</li>
+            ))}
           </ol>
         </div>
       </div>
     </div>
+  );
+}
+
+function renderItemLink(item: StepListItem, getDossierUrl: (step: Step) => string | null) {
+  // Item lié à l'étape AMO : ancre interne (#choix-amo)
+  if (item.isAmoAnchor) {
+    if (item.state === "completed") {
+      return (
+        <span className="fr-link" style={COMPLETED_STYLE}>
+          {item.label} <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true" />
+        </span>
+      );
+    }
+    if (item.state === "active") {
+      return (
+        <Link className="fr-link" href="#choix-amo">
+          {item.label}
+        </Link>
+      );
+    }
+    return (
+      <a aria-disabled="true" role="link" className="fr-link">
+        {item.label}
+      </a>
+    );
+  }
+
+  // Item lié à une étape DS (lien externe vers le dossier Démarches Simplifiées)
+  if (item.state === "completed") {
+    return (
+      <span className="fr-link" style={COMPLETED_STYLE}>
+        {item.label} <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true" />
+      </span>
+    );
+  }
+  if (item.state === "active" && item.step) {
+    const url = getDossierUrl(item.step);
+    return (
+      <Link target="_blank" rel="noopener external" className="fr-link" href={url || "#"}>
+        {item.label}
+      </Link>
+    );
+  }
+  return (
+    <a aria-disabled="true" role="link" className="fr-link">
+      {item.label}
+    </a>
   );
 }

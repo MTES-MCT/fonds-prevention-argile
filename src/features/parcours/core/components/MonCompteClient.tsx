@@ -8,9 +8,10 @@ import AllerVersLocal from "./AllerVersLocal";
 import { useState, useEffect } from "react";
 import { useParcours } from "../context/useParcours";
 import { getContactInfo } from "../actions/contact-info.actions";
-import { Step, STEP_LABELS_NUMBERED } from "../domain";
+import { Step } from "../domain";
 import { StatutValidationAmo } from "../../amo/domain/value-objects";
 import { AmoMode } from "../../amo/domain/value-objects/departements-amo";
+import { getStepBadgeLabel } from "../../amo/domain/value-objects/step-list";
 import { useAmoMode } from "../../amo/hooks";
 import { DSStatus } from "../../dossiers-ds/domain";
 import {
@@ -155,7 +156,7 @@ export default function MonCompteClient() {
             </li>
             <li>
               {/* Badge d'étape */}
-              {hasParcours && currentStep && <p className="fr-badge">{STEP_LABELS_NUMBERED[currentStep]} </p>}
+              {hasParcours && currentStep && <p className="fr-badge">{getStepBadgeLabel(currentStep)} </p>}
             </li>
           </ul>
 
