@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { assignAmoAutomatique, skipAmoStep } from "../../actions";
+import { useParcours } from "@/features/parcours/core/context/useParcours";
+import { getAllersVersByEpciWithFallbackAction } from "@/features/seo/allers-vers/actions";
+import type { AllersVers } from "@/features/seo/allers-vers";
+import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../../utils/amo.utils";
+import { ContactCard } from "@/shared/components";
 
 interface CalloutChoixAccompagnementProps {
   onSuccess?: () => void;
@@ -16,18 +21,32 @@ const NO_AMO_AVAILABLE_ERROR = "Aucun AMO disponible";
  *
  * - "Oui" → appelle `assignAmoAutomatique` (auto-attribution du 1er AMO du territoire,
  *   skip de l'étape de sélection manuelle puisqu'il n'y a qu'un AMO par département).
- *   Si aucun AMO n'est disponible pour le département → bascule vers une vue
- *   "AMO pas encore disponible" + bouton "Continuer sans AMO".
+ *   Si aucun AMO n'est disponible :
+ *     - et qu'un aller-vers existe → callout "Contactez votre conseiller dédié" + skip
+ *     - sinon → callout "AMO pas encore disponible" + skip
  * - "Non" → appelle `skipAmoStep` qui fait avancer le parcours à ELIGIBILITE.
  *
  * Dans les deux cas (Oui réussi, Non), le parent (`CalloutManager`) re-route vers le
  * bon callout après refresh.
  */
 export default function CalloutChoixAccompagnement({ onSuccess, refresh }: CalloutChoixAccompagnementProps) {
+  const { parcours } = useParcours();
   const [choix, setChoix] = useState<"oui" | "non" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [noAmoAvailable, setNoAmoAvailable] = useState(false);
+  const [allersVers, setAllersVers] = useState<AllersVers[]>([]);
+
+  const fetchAllersVersForFallback = async () => {
+    const codeInsee = normalizeCodeInsee(parcours?.rgaSimulationData?.logement?.commune);
+    if (!codeInsee) return [];
+    const codeDept = getCodeDepartementFromCodeInsee(codeInsee);
+    const codeEpci = parcours?.rgaSimulationData?.logement?.epci
+      ? String(parcours.rgaSimulationData.logement.epci).trim()
+      : undefined;
+    const result = await getAllersVersByEpciWithFallbackAction(codeDept, codeEpci);
+    return result.success && result.data ? result.data : [];
+  };
 
   const doSkip = async () => {
     setError(null);
@@ -56,24 +75,76 @@ export default function CalloutChoixAccompagnement({ onSuccess, refresh }: Callo
 
     setIsSubmitting(true);
     const result = await assignAmoAutomatique();
-    setIsSubmitting(false);
 
     if (result.success) {
+      setIsSubmitting(false);
       onSuccess?.();
       if (refresh) await refresh();
       return;
     }
 
-    // Cas spécial : aucun AMO seedé pour le département → bascule sur la vue de fallback
+    // Cas spécial : aucun AMO seedé pour le département → on récupère les aller-vers
+    // pour proposer le callout adapté (conseiller dédié si AV présent, sinon "pas encore dispo").
     if (result.error?.includes(NO_AMO_AVAILABLE_ERROR)) {
+      const avs = await fetchAllersVersForFallback();
+      setAllersVers(avs);
       setNoAmoAvailable(true);
+      setIsSubmitting(false);
       return;
     }
 
+    setIsSubmitting(false);
     setError(result.error || "Erreur lors de l'attribution de l'AMO");
   };
 
-  // Vue fallback : aucun AMO disponible pour le territoire (mode FACULTATIF uniquement)
+  // Vue fallback "no AMO + AV présent" : callout "Contactez votre conseiller dédié"
+  if (noAmoAvailable && allersVers.length > 0) {
+    return (
+      <div id="choix-amo">
+        <div className="fr-callout fr-callout--blue-cumulus">
+          <p className="fr-callout__title">Contactez votre conseiller dédié</p>
+          <p className="fr-callout__text fr-mb-4w">
+            En attendant que votre Assistant à Maîtrise d'Ouvrage soit désigné, n'hésitez pas à contacter votre
+            conseiller local mandaté par l'État. Il pourra répondre à vos questions afin d'être parfaitement prêt
+            lorsque l'AMO sera disponible.
+          </p>
+
+          <p className="fr-text--bold fr-mb-2w">
+            {allersVers.length === 1
+              ? "Votre conseiller local mandaté par l'État :"
+              : "Vos conseillers locaux mandatés par l'État :"}
+          </p>
+
+          <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
+            {allersVers.map((av) => (
+              <ContactCard
+                key={av.id}
+                id={av.id}
+                nom={av.nom}
+                emails={av.emails}
+                telephone={av.telephone}
+                adresse={av.adresse}
+                selectable={false}
+                colSize="half"
+              />
+            ))}
+          </div>
+
+          {error && (
+            <div className="fr-alert fr-alert--error fr-alert--sm fr-mb-2w">
+              <p>{error}</p>
+            </div>
+          )}
+
+          <button type="button" className="fr-btn fr-btn--secondary" onClick={doSkip} disabled={isSubmitting}>
+            {isSubmitting ? "Enregistrement..." : "Continuer sans AMO"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Vue fallback "no AMO + no AV" : callout "AMO pas encore disponible"
   if (noAmoAvailable) {
     return (
       <div id="choix-amo">
