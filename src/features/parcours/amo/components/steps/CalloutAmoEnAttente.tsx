@@ -14,6 +14,9 @@ interface CalloutAmoEnAttenteProps {
   /** Disponible uniquement en modes OBLIGATOIRE / AV_AMO_FUSIONNES pour déclencher
    *  l'auto-attribution puis recharger le parcours. */
   refresh?: () => Promise<void>;
+  /** Incrémenté à chaque sauvegarde du `ContactInfoModal`. Permet de retry l'auto-attribution
+   *  après que l'utilisateur a complété ses coordonnées (téléphone obligatoire). */
+  contactInfoVersion?: number;
 }
 
 /**
@@ -21,7 +24,7 @@ interface CalloutAmoEnAttenteProps {
  *  - Mode OBLIGATOIRE / AV_AMO_FUSIONNES) : Affiche ce callout dès le début du parcours, avec un message d'attente et les coordonnées de l'AMO une fois attribué
  *  - Mode FACULTATIF (après que l'utilisateur a choisi un AMO)
  */
-export default function CalloutAmoEnAttente({ refresh }: CalloutAmoEnAttenteProps = {}) {
+export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }: CalloutAmoEnAttenteProps = {}) {
   const { user } = useAuth();
   const { statutAmo } = useParcours();
   const amoMode = useAmoMode();
@@ -31,15 +34,18 @@ export default function CalloutAmoEnAttente({ refresh }: CalloutAmoEnAttenteProp
   const [amoChoisie, setAmoChoisie] = useState<Amo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isAssigning, setIsAssigning] = useState(isAutoAttributionMode && statutAmo === null);
-  const assignTriggeredRef = useRef(false);
+  // Garde idempotente par version de coordonnées : on retry l'attribution
+  // chaque fois que `contactInfoVersion` change (ex. après confirmation du modal).
+  const triedVersionRef = useRef<number | null>(null);
 
   // Auto-attribution silencieuse au montage (modes OBLIGATOIRE / AV_AMO_FUSIONNES uniquement)
   useEffect(() => {
     if (!isAutoAttributionMode) return;
     if (statutAmo !== null) return;
-    if (assignTriggeredRef.current) return;
-    assignTriggeredRef.current = true;
+    if (triedVersionRef.current === contactInfoVersion) return;
+    triedVersionRef.current = contactInfoVersion;
 
+    setError(null);
     setIsAssigning(true);
     assignAmoAutomatique()
       .then((result) => {
@@ -52,7 +58,7 @@ export default function CalloutAmoEnAttente({ refresh }: CalloutAmoEnAttenteProp
       .finally(() => {
         setIsAssigning(false);
       });
-  }, [isAutoAttributionMode, statutAmo, refresh]);
+  }, [isAutoAttributionMode, statutAmo, refresh, contactInfoVersion]);
 
   // Charge la fiche de l'AMO une fois la validation existante
   useEffect(() => {

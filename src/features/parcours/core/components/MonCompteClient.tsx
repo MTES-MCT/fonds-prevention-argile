@@ -68,11 +68,13 @@ export default function MonCompteClient() {
 
   const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
 
-  // Vérifier si les coordonnées de contact sont déjà renseignées
+  // Vérifier si les coordonnées de contact sont déjà renseignées.
+  // Le téléphone et l'email_contact sont tous deux requis (l'auto-attribution AMO
+  // en mode OBLIGATOIRE/AV_AMO_FUSIONNES exige le téléphone, sinon elle échoue).
   useEffect(() => {
     if (!user || contactInfoChecked) return;
     getContactInfo().then((result) => {
-      if (result.success && !result.data.emailContact && !result.data.telephone) {
+      if (result.success && (!result.data.emailContact || !result.data.telephone)) {
         setShowContactModal(true);
       }
       setContactInfoChecked(true);
@@ -290,7 +292,7 @@ function renderChoixAmoCallout(
       statutAmo === StatutValidationAmo.EN_ATTENTE ||
       statutAmo === StatutValidationAmo.SANS_AMO
     ) {
-      return <CalloutAmoEnAttente refresh={refresh} />;
+      return <CalloutAmoEnAttente refresh={refresh} contactInfoVersion={contactInfoVersion} />;
     }
   }
 
