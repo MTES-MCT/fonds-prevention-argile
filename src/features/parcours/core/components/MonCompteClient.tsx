@@ -297,15 +297,10 @@ function renderChoixAmoCallout(
   }
 
   if (statutAmo === null) {
-    // Mode FACULTATIF (arrêté 2026) : choix initial entre AMO et démarches autonomes
+    // Mode FACULTATIF (arrêté 2026) : choix initial entre AMO et démarches autonomes.
+    // "Oui" → assignAmoAutomatique (1er AMO du territoire), "Non" → skipAmoStep.
     if (amoMode === AmoMode.FACULTATIF) {
-      return (
-        <CalloutChoixAccompagnement
-          onSuccess={onAmoSuccess}
-          refresh={refresh}
-          contactInfoVersion={contactInfoVersion}
-        />
-      );
+      return <CalloutChoixAccompagnement onSuccess={onAmoSuccess} refresh={refresh} />;
     }
     return <CalloutAmoTodo onSuccess={onAmoSuccess} refresh={refresh} contactInfoVersion={contactInfoVersion} />;
   }

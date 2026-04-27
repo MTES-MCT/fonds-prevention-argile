@@ -1,36 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { skipAmoStep } from "../../actions";
-import CalloutAmoTodo from "./CalloutAmoTodo";
+import { assignAmoAutomatique, skipAmoStep } from "../../actions";
 
 interface CalloutChoixAccompagnementProps {
   onSuccess?: () => void;
   refresh?: () => Promise<void>;
-  contactInfoVersion?: number;
 }
 
 /**
  * Étape 1 (mode FACULTATIF) : le demandeur choisit s'il souhaite être accompagné
  * par un AMO ou gérer ses démarches seul.
  *
- * - "Oui" → bascule vers la liste d'AMO existante (CalloutAmoTodo).
+ * - "Oui" → appelle `assignAmoAutomatique` (auto-attribution du 1er AMO du territoire,
+ *   skip de l'étape de sélection manuelle puisqu'il n'y a qu'un AMO par département).
  * - "Non" → appelle `skipAmoStep` qui fait avancer le parcours à ELIGIBILITE.
+ *
+ * Dans les deux cas, le parent (`CalloutManager`) re-route vers le bon callout après refresh.
  */
-export default function CalloutChoixAccompagnement({
-  onSuccess,
-  refresh,
-  contactInfoVersion = 0,
-}: CalloutChoixAccompagnementProps) {
+export default function CalloutChoixAccompagnement({ onSuccess, refresh }: CalloutChoixAccompagnementProps) {
   const [choix, setChoix] = useState<"oui" | "non" | null>(null);
-  const [showAmoList, setShowAmoList] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Une fois "Oui" confirmé, on délègue à la liste d'AMO existante
-  if (showAmoList) {
-    return <CalloutAmoTodo onSuccess={onSuccess} refresh={refresh} contactInfoVersion={contactInfoVersion} />;
-  }
 
   const handleSubmit = async () => {
     if (!choix) {
@@ -38,19 +29,18 @@ export default function CalloutChoixAccompagnement({
       return;
     }
     setError(null);
-
-    if (choix === "oui") {
-      setShowAmoList(true);
-      return;
-    }
-
     setIsSubmitting(true);
-    const result = await skipAmoStep();
+
+    const result = choix === "oui" ? await assignAmoAutomatique() : await skipAmoStep();
     setIsSubmitting(false);
 
     if (!result.success) {
       setError(result.error || "Erreur lors de l'enregistrement de votre choix");
       return;
+    }
+
+    if (choix === "oui") {
+      onSuccess?.();
     }
 
     if (refresh) {

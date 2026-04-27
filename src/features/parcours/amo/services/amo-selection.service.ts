@@ -349,14 +349,17 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
   const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
   const mode = getAmoMode(codeDepartement);
 
-  // L'auto-attribution ne s'applique qu'aux modes OBLIGATOIRE et AV_AMO_FUSIONNES
+  // Détermine le mode d'attribution :
+  //   - OBLIGATOIRE / AV_AMO_FUSIONNES : auto-attribué silencieusement à l'arrivée sur /mon-compte
+  //   - FACULTATIF : appelée après que l'utilisateur a explicitement choisi "Oui" dans
+  //     CalloutChoixAccompagnement → on prend le 1er AMO du territoire (skip de l'étape liste).
   let attributionMode: AttributionAmoMode;
   if (mode === AmoMode.OBLIGATOIRE) {
     attributionMode = AttributionAmoMode.AUTO_OBLIGATOIRE;
   } else if (mode === AmoMode.AV_AMO_FUSIONNES) {
     attributionMode = AttributionAmoMode.AUTO_AV_AMO;
   } else {
-    return { success: false, error: "Le département du demandeur n'impose pas d'AMO automatique" };
+    attributionMode = AttributionAmoMode.MANUEL;
   }
 
   const codeEpci = parcours.rgaSimulationData?.logement?.epci

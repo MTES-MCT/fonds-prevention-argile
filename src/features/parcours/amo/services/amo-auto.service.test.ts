@@ -121,23 +121,35 @@ describe("assignAmoAutomatiqueForUser", () => {
     expect(sendValidationAmoEmail).not.toHaveBeenCalled();
   });
 
-  it("refuse en mode FACULTATIF (ex. dept 82)", async () => {
+  it("auto-attribue aussi en mode FACULTATIF (utilisé par CalloutChoixAccompagnement après 'Oui')", async () => {
+    // En mode FACULTATIF, la fonction est appelée explicitement après que l'utilisateur a
+    // confirmé "Oui" dans le callout de choix. On prend le 1er AMO du territoire (skip de
+    // l'étape liste de sélection manuelle).
+    // Ici le dept 82 n'a aucun AMO → on doit sortir avec l'erreur générique "aucun AMO disponible"
+    // (et PAS avec une erreur de mode).
     vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("82001"));
-    // Pas de validation existante
-    vi.mocked(db.select).mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue([]),
+
+    let selectCallCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      selectCallCount++;
+      // 1er select : validation existante → aucune
+      // 2e select : recherche AMO par département → aucun
+      return {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]),
+          }),
         }),
-      }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
+    });
 
     const result = await assignAmoAutomatiqueForUser(userId);
     expect(result).toEqual({
       success: false,
-      error: "Le département du demandeur n'impose pas d'AMO automatique",
+      error: "Aucun AMO disponible pour le territoire du demandeur",
     });
+    expect(selectCallCount).toBeGreaterThan(1); // ne sort plus au check de mode
   });
 
   it("refuse si aucun AMO ne couvre le territoire (dept obligatoire 36)", async () => {
