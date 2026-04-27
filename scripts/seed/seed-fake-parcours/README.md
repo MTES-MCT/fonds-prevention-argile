@@ -27,6 +27,7 @@ psql -f 03-validations-amo.sql
 psql -f 04-dossiers-ds.sql
 psql -f 05-prospects-sans-amo.sql  # Nouveaux prospects pour Allers-Vers
 psql -f 07-commentaires.sql       # Agents fictifs + commentaires de test
+psql -f 13-amo-av-arrete-2026.sql # AMO/AV pour tester les modes de l'arrêté 2026
 psql -f 99-verification.sql
 ```
 
@@ -114,3 +115,16 @@ Le script `07-commentaires.sql` crée 2 agents fictifs non-connectables et 20 co
 - **Jean-Patrick Duval** (Allers-Vers Centre Indre)
 
 Utile pour vérifier que le menu modifier/supprimer n'apparaît que sur ses propres commentaires.
+
+### Tester l'arrêté 2026 (AMO facultatif/obligatoire) côté `/mon-compte`
+
+Le script `13-amo-av-arrete-2026.sql` crée les structures nécessaires pour couvrir les 3 modes :
+
+| Dept | Mode (`getAmoMode`) | Ce qui est créé |
+| ---- | ------------------- | --------------- |
+| `36` | OBLIGATOIRE         | AMO existant (07-commentaires.sql) + lien AV → dept 36 (pour `AllerVersLocal`) |
+| `54` | AV_AMO_FUSIONNES    | Soliha 54 (AMO + AV liés au dept) |
+| `82` | FACULTATIF + AMO    | "AMO Tarn-et-Garonne" |
+| `75` | FACULTATIF SANS AMO | Aucun seed (l'absence d'AMO est ce qu'on teste) |
+
+Le script est idempotent (DELETE préalable + ON CONFLICT DO NOTHING).
