@@ -4,6 +4,7 @@ import { useAuth } from "@/features/auth/client";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
 import ContactInfoModal from "./ContactInfoModal";
+import AllerVersLocal from "./AllerVersLocal";
 import { useState, useEffect } from "react";
 import { useParcours } from "../context/useParcours";
 import { getContactInfo } from "../actions/contact-info.actions";
@@ -181,7 +182,8 @@ export default function MonCompteClient() {
               />
             </div>
 
-            <div className="fr-col-12 fr-col-md-4 flex justify-center md:justify-start self-start">
+            <div className="fr-col-12 fr-col-md-4 flex flex-col justify-center md:justify-start self-start">
+              <AllerVersLocal />
               <MaListe />
             </div>
           </div>
