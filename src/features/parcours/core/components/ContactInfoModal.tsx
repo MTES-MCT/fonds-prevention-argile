@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { updateContactInfoAction } from "../actions/contact-info.actions";
 import { getActeursLocauxDisponibles, type ActeursLocaux } from "../actions/acteurs-locaux.actions";
 import { SourceAcquisition, SOURCE_ACQUISITION_LABELS } from "@/shared/domain/value-objects";
@@ -22,20 +22,9 @@ const SOURCE_OPTIONS: SourceAcquisition[] = [
   SourceAcquisition.AUTRE,
 ];
 
-// Valeur encodée pour une option dynamique : "type::nom" (e.g. "amo::Association ABC")
-// permet de récupérer à la fois la valeur enum et le nom de la structure.
-function encodeOptionDynamique(type: "amo" | "aller_vers", nom: string): string {
-  return `${type}::${nom}`;
-}
-
-function decodeOptionDynamique(encoded: string): { type: SourceAcquisition; precision: string } | null {
-  const sep = encoded.indexOf("::");
-  if (sep === -1) return null;
-  const type = encoded.substring(0, sep);
-  const precision = encoded.substring(sep + 2);
-  if (type === "amo") return { type: SourceAcquisition.AMO, precision };
-  if (type === "aller_vers") return { type: SourceAcquisition.ALLER_VERS, precision };
-  return null;
+interface DynamicOption {
+  type: SourceAcquisition;
+  nom: string;
 }
 
 export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSuccess }: ContactInfoModalProps) {
@@ -48,8 +37,20 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
   const [acteursLocaux, setActeursLocaux] = useState<ActeursLocaux | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  const hasDynamicOptions =
-    acteursLocaux !== null && (acteursLocaux.amos.length > 0 || acteursLocaux.allersVers.length > 0);
+  // Map indexée par identifiant stable (`dyn-amo-<id>` ou `dyn-av-<id>`)
+  const dynamicOptions = useMemo(() => {
+    const map = new Map<string, DynamicOption>();
+    if (!acteursLocaux) return map;
+    for (const amo of acteursLocaux.amos) {
+      map.set(`dyn-amo-${amo.id}`, { type: SourceAcquisition.AMO, nom: amo.nom });
+    }
+    for (const av of acteursLocaux.allersVers) {
+      map.set(`dyn-av-${av.id}`, { type: SourceAcquisition.ALLER_VERS, nom: av.nom });
+    }
+    return map;
+  }, [acteursLocaux]);
+
+  const hasDynamicOptions = dynamicOptions.size > 0;
 
   // Charger les acteurs locaux au montage
   useEffect(() => {
@@ -118,10 +119,10 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
       return;
     }
 
-    // Décoder la valeur sélectionnée (option dynamique ou statique)
-    const decoded = decodeOptionDynamique(selectValue);
-    const sourceAcquisition = decoded ? decoded.type : (selectValue as SourceAcquisition);
-    const precision = decoded ? decoded.precision : sourceAcquisitionPrecision.trim();
+    // Résoudre la valeur sélectionnée (option dynamique ou statique)
+    const dynamic = dynamicOptions.get(selectValue);
+    const sourceAcquisition = dynamic ? dynamic.type : (selectValue as SourceAcquisition);
+    const precision = dynamic ? dynamic.nom : sourceAcquisitionPrecision.trim();
 
     if (sourceAcquisition === SourceAcquisition.AUTRE && !precision) {
       setError("Merci de préciser comment vous avez connu le fonds");
@@ -146,7 +147,7 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
     }
   };
 
-  const showPrecisionField = selectValue === SourceAcquisition.AUTRE && !decodeOptionDynamique(selectValue);
+  const showPrecisionField = selectValue === SourceAcquisition.AUTRE && !dynamicOptions.has(selectValue);
 
   return (
     <dialog ref={dialogRef} id="modal-contact-info" className="fr-modal" aria-labelledby="modal-contact-info-title">
@@ -229,40 +230,29 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
                     }}>
                     <option value="">Sélectionnez une option</option>
 
-                    {hasDynamicOptions && (
-                      <>
-                        {acteursLocaux!.amos.length > 0 && (
-                          <optgroup label={SOURCE_ACQUISITION_LABELS[SourceAcquisition.AMO]}>
-                            {acteursLocaux!.amos.map((amo) => (
-                              <option key={amo.id} value={encodeOptionDynamique("amo", amo.nom)}>
-                                {amo.nom}
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-                        {acteursLocaux!.allersVers.length > 0 && (
-                          <optgroup label={SOURCE_ACQUISITION_LABELS[SourceAcquisition.ALLER_VERS]}>
-                            {acteursLocaux!.allersVers.map((av) => (
-                              <option key={av.id} value={encodeOptionDynamique("aller_vers", av.nom)}>
-                                {av.nom}
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-                        {SOURCE_OPTIONS.map((value) => (
-                          <option key={value} value={value}>
-                            {SOURCE_ACQUISITION_LABELS[value]}
+                    {hasDynamicOptions && acteursLocaux!.amos.length > 0 && (
+                      <optgroup label={SOURCE_ACQUISITION_LABELS[SourceAcquisition.AMO]}>
+                        {acteursLocaux!.amos.map((amo) => (
+                          <option key={amo.id} value={`dyn-amo-${amo.id}`}>
+                            {amo.nom}
                           </option>
                         ))}
-                      </>
+                      </optgroup>
                     )}
-
-                    {!hasDynamicOptions &&
-                      SOURCE_OPTIONS.map((value) => (
-                        <option key={value} value={value}>
-                          {SOURCE_ACQUISITION_LABELS[value]}
-                        </option>
-                      ))}
+                    {hasDynamicOptions && acteursLocaux!.allersVers.length > 0 && (
+                      <optgroup label={SOURCE_ACQUISITION_LABELS[SourceAcquisition.ALLER_VERS]}>
+                        {acteursLocaux!.allersVers.map((av) => (
+                          <option key={av.id} value={`dyn-av-${av.id}`}>
+                            {av.nom}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {SOURCE_OPTIONS.map((value) => (
+                      <option key={value} value={value}>
+                        {SOURCE_ACQUISITION_LABELS[value]}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

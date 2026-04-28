@@ -8,6 +8,7 @@ import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/d
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
+// Libellés volontairement distincts de SOURCE_ACQUISITION_LABELS : version "métier" pour l'admin
 const SOURCE_LABELS_STATS: Record<SourceAcquisition, string> = {
   [SourceAcquisition.DDT]: "DDT (Direction Départementale des Territoires)",
   [SourceAcquisition.AMO]: "AMO (Assistant à Maîtrise d'Ouvrage)",
@@ -98,7 +99,9 @@ export function SourcesAcquisitionTable({
           Données base de données
         </span>
       </h3>
-      <p className="fr-text--sm fr-text-mention--grey fr-mb-2w">Données disponibles pour les demandeurs inscrits après le 27 Avril 2026</p>
+      <p className="fr-text--sm fr-text-mention--grey fr-mb-2w">
+        Données disponibles pour les demandeurs inscrits après le 27 Avril 2026
+      </p>
       <div
         style={{
           backgroundColor: "var(--background-default-grey)",
