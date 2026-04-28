@@ -13,8 +13,7 @@
     "title": "Bénéficiez d'un accompagnement technique et financier pour vous prémunir du phénomène de retrait-gonflement des argiles.",
     "subtitle": "Vérifiez votre éligibilité en répondant à quelques questions, et déposez votre dossier de demande d'aides en ligne.",
     "cta_label": "Vérifier mon éligibilité",
-    "cta_url": "/simulateur",
-    "voir_critere_label": "Voir les critères d'éligibilité"
+    "cta_url": "/simulateur"
   },
   "what_is_rga_section": {
     "image": {
@@ -56,30 +55,32 @@
     }
   },
   "etat_agit_section": {
-    "title": "Face à cette problématique, l’État expérimente un fonds de prévention retrait-gonflement des argiles",
-    "description_1": "Pour prévenir l'apparition de désordres et protéger durablement les maisons individuelles face au phénomène RGA, l’Etat met en oeuvre une expérimentation d'un fonds de prévention RGA, pour accompagner les ménages, réaliser le diagnostic de vulnérabilité de leur maison et faire réaliser les travaux de prévention par des professionnels compétents.",
-    "callout_title": "Une phase pilote dans 11 départements :",
-    "callout_text": "Ce dispositif est actuellement en phase d'expérimentation et est limité aux départements suivants : Allier (03), Alpes-de-Haute-Provence (04), Dordogne (24), Gers (32), Indre (36), Lot-et-Garonne (47), Meurthe-et-Moselle (54), Nord (59), Puy-de-Dôme (63), Tarn (81) et Tarn-et-Garonne (82).",
+    "title": "Face à cette problématique, l’État expérimente avec le fonds de prévention Argile",
+    "description_1": "Pour protéger durablement les habitations face au phénomène RGA, l’Etat engage une expérimentation de prévention dans 11 départements, pour accompagner les ménages, réaliser le diagnostic de vulnérabilité et faire réaliser les travaux de prévention avant les premiers sinistres.",
     "description_2_title": "Il est crucial d'agir rapidement",
-    "description_2_text": "Vérifiez dès maintenant votre éligibilité en ligne et déposez votre dossier de demande d'aide dans les plus brefs délais. Le coût moyen d'un sinistre lié au RGA sur une maison individuelle est de 16 500€.",
+    "description_2_text": "Vérifiez dès maintenant votre éligibilité en ligne et déposez votre dossier dans les plus brefs délais. Le coût moyen d'un sinistre lié au RGA est de 16 500€ pouvant aller jusqu'à 75 000€ et 12 à 24 mois de relogement.",
+    "image": {
+      "alt": "Carte de France des 11 départements pilotes éligibles au fonds de prévention argile",
+      "src": "/images/home/carte-departements-pilotes.png"
+    },
     "infos_tiles": [
       {
         "icon": "fr-icon-government-fill",
         "iconColor": "fr-text-label--blue-france",
         "title": "Un service de l’État",
-        "description": "Sécurisé et opéré par l’État. Le traitement de vos données personnelles est uniquement mis en oeuvre par les services de l'Etat."
+        "description": "Sécurisé et opéré par l’État. Vos données ne sont utilisées que pour l'instruction de votre dossier par des agents publics."
       },
       {
         "icon": "fr-icon-shield-fill",
         "iconColor": "text-green-600",
-        "title": "Pour agir avant l'apparition des es sinistres",
-        "description": "Bénéficiez d'un accompagnement technique et éventuellement administratif pour financer des prestations de diagnostic de vulnérabilité de votre maison et de travaux préventifs."
+        "title": "Pour agir avant les sinistres",
+        "description": "Bénéficiez d'un accompagnement pour financer des prestations de diagnostic et de travaux préventifs."
       },
       {
         "icon": "fr-icon-user-heart-fill",
         "iconColor": "fr-text-label--red-marianne",
         "title": "Pour les propriétaires concernés",
-        "description": "Propriétaires occupants de leur résidence principale, sous conditions de ressources et de caractéristiques du logement."
+        "description": "Propriétaires occupants de leur résidence principale, sous conditions de ressources et d'ancienneté du logement."
       }
     ],
     "cta_label": "Vérifier mon éligibilité"
@@ -125,41 +126,6 @@
       "alt": "Fonds prévention argile - Un service de l'État",
       "src": "/images/home/conseillers-locaux-aller-vers.png"
     }
-  },
-  "qui_peut_beneficier_aides_section": {
-    "image": {
-      "alt": "Fonds prévention argile - Un service de l'État",
-      "src": "/images/home/qui-peut-beneficier-aides.png"
-    },
-    "title": "Qui peut bénéficier de ces aides de l'État ?",
-    "subtitle": "Vous pouvez faire une demande d’aide si vous remplissez les conditions suivantes :",
-    "text_items": [
-      {
-        "text": "Vous habitez dans <strong>une maison individuelle</strong> dans un des <strong>11 départements pilotes</strong>"
-      },
-      {
-        "text": "Vous habitez dans une zone <strong>d'exposition forte au RGA</strong>"
-      },
-      {
-        "text": "Votre <strong>maison est achevée depuis plus de 15 ans</strong>"
-      },
-      {
-        "text": "Votre maison<strong> n'est pas mitoyenne et a 2 niveaux max</strong>"
-      },
-      {
-        "text": "Votre maison <strong> n'a pas encore été sinistrée ou très peu</strong>"
-      },
-      {
-        "text": "Vous êtes <strong>propriétaire occupant</strong>"
-      },
-      {
-        "text": "C'est votre <strong>résidence principale</strong>"
-      },
-      {
-        "text": "Vous <strong>respectez les plafonds de ressources</strong>"
-      }
-    ],
-    "cta_label": "Vérifier mon éligibilité"
   },
   "quels_sont_travaux_eligibles_section": {
     "title": "Quels sont les travaux éligibles ?"
