@@ -178,7 +178,8 @@
     }
   },
   "quels_sont_travaux_eligibles_section": {
-    "title": "Quels sont les travaux éligibles ?"
+    "title": "Quelles sont les prestations éligibles ?",
+    "subtitle": "Le parcours de demande d'aides est découpé en deux phases : la phase étude, qui comprend le diagnostic, et la phase travaux qui, comme son nom l'indique, comprend les travaux."
   },
   "pour_en_savoir_plus_section": {
     "title": "Pour en savoir plus",
