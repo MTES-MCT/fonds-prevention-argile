@@ -51,7 +51,7 @@ export function EvolutionDemandeurs({ evolution }: EvolutionDemandeursProps) {
           )}
           {chartData && chartLoaded && (
             <line-chart
-              key="evolution-demandeurs-chart"
+              key={chartData.x}
               x={chartData.x}
               y={chartData.y}
               selected-palette="default"
