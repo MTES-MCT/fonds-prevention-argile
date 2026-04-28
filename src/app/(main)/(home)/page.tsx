@@ -7,6 +7,7 @@ import LogementConcerneRgaSection from "./components/LogementConcerneRgaSection"
 import QuestCeQueLeRgaSection from "./components/QuestCeQueLeRgaSection";
 import SignesASurveiller from "./components/SignesASurveiller";
 import EtatAgitSection from "./components/EtatAgitSection";
+import CommentBeneficierAideEtatSection from "./components/CommentBeneficierAideEtatSection";
 import MontantDesAidesSection from "./components/MontantDesAidesSection";
 import CommentCaMarcheSection from "./components/CommentCaMarcheSection";
 import SavoirSiConcerneSection from "./components/SavoirSiConcerneSection";
@@ -47,6 +48,7 @@ export default function Home() {
         <QuestCeQueLeRgaSection />
         <SignesASurveiller />
         <EtatAgitSection />
+        <CommentBeneficierAideEtatSection />
         <MontantDesAidesSection />
         <CommentCaMarcheSection />
         <ConseillersLocauxAllersVersSection />
