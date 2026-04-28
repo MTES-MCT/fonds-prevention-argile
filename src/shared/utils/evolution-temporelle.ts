@@ -10,13 +10,13 @@ export interface EvolutionDemandeurs {
   granularite: "jour" | "semaine";
 }
 
-/** Retourne le lundi de la semaine contenant la date donnée (heure mise à 00:00) */
+/** Retourne le lundi UTC de la semaine contenant la date donnée (heure mise à 00:00 UTC) */
 function debutDeSemaine(date: Date): Date {
   const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  const jour = d.getDay();
+  d.setUTCHours(0, 0, 0, 0);
+  const jour = d.getUTCDay();
   const diff = jour === 0 ? -6 : 1 - jour;
-  d.setDate(d.getDate() + diff);
+  d.setUTCDate(d.getUTCDate() + diff);
   return d;
 }
 
@@ -26,6 +26,8 @@ function debutDeSemaine(date: Date): Date {
  * Granularité automatique :
  * - <= 30 jours d'amplitude : 1 point par jour
  * - > 30 jours : 1 point par semaine (lundi comme début de semaine)
+ *
+ * Les buckets sont calculés en UTC pour cohérence avec les dates DB stockées en UTC.
  */
 export function aggregerEvolution(dates: Date[]): EvolutionDemandeurs {
   if (dates.length === 0) {
@@ -41,12 +43,12 @@ export function aggregerEvolution(dates: Date[]): EvolutionDemandeurs {
 
   if (granularite === "jour") {
     const cursor = new Date(minDate);
-    cursor.setHours(0, 0, 0, 0);
+    cursor.setUTCHours(0, 0, 0, 0);
     const fin = new Date(maxDate);
-    fin.setHours(0, 0, 0, 0);
+    fin.setUTCHours(0, 0, 0, 0);
     while (cursor <= fin) {
       compte.set(cursor.toISOString().slice(0, 10), 0);
-      cursor.setDate(cursor.getDate() + 1);
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
     for (const date of dates) {
       const cle = date.toISOString().slice(0, 10);
@@ -57,7 +59,7 @@ export function aggregerEvolution(dates: Date[]): EvolutionDemandeurs {
     const fin = debutDeSemaine(maxDate);
     while (cursor <= fin) {
       compte.set(cursor.toISOString().slice(0, 10), 0);
-      cursor.setDate(cursor.getDate() + 7);
+      cursor.setUTCDate(cursor.getUTCDate() + 7);
     }
     for (const date of dates) {
       const cle = debutDeSemaine(date).toISOString().slice(0, 10);
@@ -68,7 +70,7 @@ export function aggregerEvolution(dates: Date[]): EvolutionDemandeurs {
   const points: PointEvolution[] = Array.from(compte.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([cle, count]) => ({
-      label: new Date(cle).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
+      label: new Date(cle).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", timeZone: "UTC" }),
       count,
     }));
 
