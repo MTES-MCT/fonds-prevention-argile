@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/features/auth/client";
 import type { Amo } from "@/features/parcours/amo";
-import { choisirAmo, getAmoRefusee, getAmosDisponibles, skipAmoStep } from "@/features/parcours/amo/actions";
+import { choisirAmo, getAmosDisponibles, skipAmoStep } from "@/features/parcours/amo/actions";
 import { useSimulateurRga } from "@/features/simulateur";
 import { useEffect, useState } from "react";
 import { getContactInfo } from "@/features/parcours/core/actions/contact-info.actions";
@@ -15,18 +15,12 @@ import { useAmoMode } from "@/features/parcours/amo/hooks";
 import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 
 interface CalloutAmoTodoProps {
-  accompagnementRefuse?: boolean;
   onSuccess?: () => void;
   refresh?: () => Promise<void>;
   contactInfoVersion?: number;
 }
 
-export default function CalloutAmoTodo({
-  accompagnementRefuse = false,
-  onSuccess,
-  refresh,
-  contactInfoVersion = 0,
-}: CalloutAmoTodoProps) {
+export default function CalloutAmoTodo({ onSuccess, refresh, contactInfoVersion = 0 }: CalloutAmoTodoProps) {
   const { user } = useAuth();
   const { data: rgaData, isLoading: isLoadingRga } = useSimulateurRga();
   const { parcours, isLoading: isLoadingParcours } = useParcours();
@@ -41,10 +35,6 @@ export default function CalloutAmoTodo({
   const [modalError, setModalError] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [amoRefusee, setAmoRefusee] = useState<{
-    id: string;
-    nom: string;
-  } | null>(null);
 
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
@@ -58,28 +48,12 @@ export default function CalloutAmoTodo({
 
     async function loadData() {
       try {
-        let refuseeId: string | null = null;
-
-        // Charger l'AMO refusée si accompagnementRefuse
-        if (accompagnementRefuse) {
-          const refuseeResult = await getAmoRefusee();
-          if (refuseeResult.success && refuseeResult.data) {
-            setAmoRefusee(refuseeResult.data);
-            refuseeId = refuseeResult.data.id;
-          }
-        }
-
-        // Charger la liste des AMO disponibles
-        // TODO (à valider avec l'équipe produit) : la maquette prévoit que l'AMO refusé reste
-        // affiché grisé/désactivé dans la liste plutôt que d'être retiré (cf. maquette refus AMO).
-        // Aujourd'hui on le filtre.
         const result = await getAmosDisponibles();
         if (result.success) {
-          const filteredList = refuseeId ? result.data.filter((amo) => amo.id !== refuseeId) : result.data;
-          setAmoList(filteredList);
+          setAmoList(result.data);
 
           // Si aucun AMO disponible, charger les Allers Vers
-          if (filteredList.length === 0) {
+          if (result.data.length === 0) {
             await loadAllersVers();
           }
         } else {
@@ -115,14 +89,7 @@ export default function CalloutAmoTodo({
     }
 
     loadData();
-  }, [
-    accompagnementRefuse,
-    isLoadingRga,
-    isLoadingParcours,
-    parcours?.rgaSimulationData,
-    rgaData?.logement?.commune,
-    rgaData?.logement?.epci,
-  ]);
+  }, [isLoadingRga, isLoadingParcours, parcours?.rgaSimulationData, rgaData?.logement?.commune, rgaData?.logement?.epci]);
 
   // Charger les coordonnées de contact sauvegardées, sinon fallback sur l'email FC
   useEffect(() => {
@@ -235,10 +202,6 @@ export default function CalloutAmoTodo({
   }
 
   // Cas 1 : Aucun AMO mais des Allers Vers disponibles
-  // TODO (à valider avec l'équipe produit) : si `accompagnementRefuse=true` et amoList vide,
-  // la maquette prévoit le callout "L'AMO X a refusé la demande d'accompagnement" + liste
-  // d'AMO restants (avec l'AMO refusé grisé). Actuellement on tombe sur "Contactez votre
-  // conseiller dédié" sans aucun rappel du refus → UX dégradée pour les depts à 1 seul AMO.
   if (amoList.length === 0 && allersVersList.length > 0) {
     return (
       <div id="choix-amo">
@@ -275,10 +238,6 @@ export default function CalloutAmoTodo({
   }
 
   // Cas 2 : Ni AMO ni Allers Vers disponibles
-  // TODO (à valider avec l'équipe produit) : même remarque que cas 1 — si `accompagnementRefuse=true`,
-  // on devrait idéalement afficher le titre "L'AMO X a refusé..." avant le wording "AMO pas encore
-  // disponible". Aujourd'hui le user qui n'a qu'un AMO et qu'il a vu refuser ne sait plus pourquoi
-  // il revient sur cet écran.
   if (amoList.length === 0 && allersVersList.length === 0) {
     return (
       <div id="choix-amo">
@@ -308,25 +267,12 @@ export default function CalloutAmoTodo({
   return (
     <div id="choix-amo">
       <div className="fr-callout fr-callout--yellow-moutarde">
-        {!amoRefusee ? (
-          <>
-            <p className="fr-callout__title">Contactez un AMO</p>
-            <p className="fr-callout__text fr-mb-4w">
-              {isFacultatif
-                ? "Vous avez choisi d'être accompagné par un AMO (Assistant à Maîtrise d'ouvrage). Contactez puis confirmez la structure choisie dans les propositions ci-dessous afin de passer à l'étape suivante."
-                : "Le recours à un AMO (Assistant à Maîtrise d'ouvrage) est obligatoire pour bénéficier du Fonds prévention argile. Contactez puis confirmez la structure choisie dans les propositions ci-dessous afin de passer à l'étape suivante."}
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="fr-callout__title">L'AMO "{amoRefusee.nom}" a refusé la demande d'accompagnement</p>
-            <p className="fr-callout__text fr-mb-4w">
-              En réponse à votre demande, l'AMO a décliné votre requête d'accompagnement. Vous pouvez soumettre une
-              nouvelle demande à un autre AMO. Assurez-vous de le contacter au préalable pour confirmer votre
-              collaboration.
-            </p>
-          </>
-        )}
+        <p className="fr-callout__title">Contactez un AMO</p>
+        <p className="fr-callout__text fr-mb-4w">
+          {isFacultatif
+            ? "Vous avez choisi d'être accompagné par un AMO (Assistant à Maîtrise d'ouvrage). Contactez puis confirmez la structure choisie dans les propositions ci-dessous afin de passer à l'étape suivante."
+            : "Le recours à un AMO (Assistant à Maîtrise d'ouvrage) est obligatoire pour bénéficier du Fonds prévention argile. Contactez puis confirmez la structure choisie dans les propositions ci-dessous afin de passer à l'étape suivante."}
+        </p>
 
         <div className="fr-mt-4w">
           <p className="fr-text--bold fr-mb-2w">Indiquez l'AMO avec qui vous avez contractualisé.</p>

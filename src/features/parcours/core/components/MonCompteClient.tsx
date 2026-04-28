@@ -309,19 +309,13 @@ function renderChoixAmoCallout(
     return <CalloutAmoEnAttente />;
   }
 
-  if (statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
+  // Statut LOGEMENT_NON_ELIGIBLE et ACCOMPAGNEMENT_REFUSE (legacy, plus produit côté UI mais
+  // conservé pour rétrocompatibilité avec d'anciens records) → même UI : "logement non éligible".
+  if (
+    statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE ||
+    statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
+  ) {
     return <CalloutAmoLogementNonEligible />;
-  }
-
-  if (statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE) {
-    return (
-      <CalloutAmoTodo
-        accompagnementRefuse
-        onSuccess={onAmoSuccess}
-        refresh={refresh}
-        contactInfoVersion={contactInfoVersion}
-      />
-    );
   }
 
   return undefined;

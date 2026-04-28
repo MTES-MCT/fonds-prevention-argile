@@ -9,7 +9,12 @@ export default function StepDetailAmo() {
   const { currentStep, statutAmo, validationAmoComplete } = useParcours();
   const amoMode = useAmoMode();
 
-  const isDisabled = currentStep !== Step.CHOIX_AMO || statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
+  // ACCOMPAGNEMENT_REFUSE n'est plus produit côté UI (option retirée du backoffice AMO) mais
+  // peut subsister sur d'anciens records → on le traite comme LOGEMENT_NON_ELIGIBLE en lecture.
+  const isRefuse =
+    statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE || statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE;
+
+  const isDisabled = currentStep !== Step.CHOIX_AMO || isRefuse;
 
   const isChooseAmoLinkDisabled = isDisabled || statutAmo === StatutValidationAmo.EN_ATTENTE;
 
@@ -26,10 +31,6 @@ export default function StepDetailAmo() {
         {/* Badge conditionnel */}
         {!statutAmo && <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>}
 
-        {statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE && (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>
-        )}
-
         {statutAmo === StatutValidationAmo.EN_ATTENTE && (
           <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">En attente</span>
         )}
@@ -40,9 +41,7 @@ export default function StepDetailAmo() {
           </span>
         )}
 
-        {statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && (
-          <span className="fr-badge fr-text--sm fr-badge--error fr-mb-2w">Non éligible</span>
-        )}
+        {isRefuse && <span className="fr-badge fr-text--sm fr-badge--error fr-mb-2w">Non éligible</span>}
 
         {isSansAmo && <span className="fr-badge fr-text--sm fr-badge--success fr-mb-2w">Validé</span>}
 

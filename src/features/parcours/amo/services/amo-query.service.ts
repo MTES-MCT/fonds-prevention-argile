@@ -158,40 +158,6 @@ export async function getUserSelectedAmo(userId: string): Promise<Amo | null> {
 }
 
 /**
- * Récupère l'AMO qui a refusé l'accompagnement
- */
-export async function getUserRejectedAmo(userId: string): Promise<{ id: string; nom: string } | null> {
-  // Récupérer le parcours
-  const [parcours] = await db
-    .select({ id: parcoursPrevention.id })
-    .from(parcoursPrevention)
-    .where(eq(parcoursPrevention.userId, userId))
-    .limit(1);
-
-  if (!parcours) {
-    throw new Error("Parcours non trouvé");
-  }
-
-  // Récupérer l'AMO refusée
-  const [amoRefusee] = await db
-    .select({
-      id: entreprisesAmo.id,
-      nom: entreprisesAmo.nom,
-    })
-    .from(parcoursAmoValidations)
-    .innerJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
-    .where(
-      and(
-        eq(parcoursAmoValidations.parcoursId, parcours.id),
-        eq(parcoursAmoValidations.statut, StatutValidationAmo.ACCOMPAGNEMENT_REFUSE)
-      )
-    )
-    .limit(1);
-
-  return amoRefusee || null;
-}
-
-/**
  * Récupère une AMO par son ID
  */
 export async function getAmoById(amoId: string): Promise<Amo | null> {
