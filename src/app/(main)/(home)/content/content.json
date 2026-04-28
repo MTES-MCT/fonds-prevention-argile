@@ -101,14 +101,18 @@
       "title": "1. Critères d'éligibilité de la phase étude",
       "subtitle": "Cette étape comprend la réalisation d'un diagnostic de vulnérabilité de votre maison par un professionnel compétent sur le RGA.",
       "items": [
-        { "text": "Vous êtes <strong>propriétaire occupant</strong> d'une <strong>maison individuelle</strong> située dans l'un des <strong>11 départements pilotes</strong> (carte ci-dessus)." },
+        {
+          "text": "Vous êtes <strong>propriétaire occupant</strong> d'une <strong>maison individuelle</strong> située dans l'un des <strong>11 départements pilotes</strong> (carte ci-dessus)."
+        },
         { "text": "Votre maison individuelle est votre <strong>résidence principale</strong>" },
         { "text": "Vous habitez dans une zone d'<strong>exposition forte au RGA</strong>" },
         { "text": "Votre maison est achevée <strong>depuis au moins 15 ans</strong>" },
         { "text": "Vous êtes couvert par un contrat d'<strong>assurance habitation</strong>" },
         { "text": "Votre maison n'est <strong>pas mitoyenne</strong>" },
         { "text": "Votre maison a <strong>maximum 3 niveaux</strong> (le sous-sol est considéré comme un niveau)" },
-        { "text": "Vous respectez les <strong>plafonds de ressources</strong> en vigueur au 1er janvier de l'année du dépôt de votre dossier de demande d'aides (<a href='https://france-renov.gouv.fr/bareme' target='_blank' rel='noopener noreferrer'>voir les plafonds sur le site de l'ANAH</a>)." }
+        {
+          "text": "Vous respectez les <strong>plafonds de ressources</strong> en vigueur au 1er janvier de l'année du dépôt de votre dossier de demande d'aides (<a href='https://france-renov.gouv.fr/bareme' target='_blank' rel='noopener noreferrer'>voir les plafonds sur le site de l'ANAH</a>)."
+        }
       ]
     },
     "phase_travaux": {
@@ -138,25 +142,25 @@
         "imageSrc": "/illustrations/national-identity-card.svg",
         "imageAlt": "Vérifier mon éligibilité",
         "title": "1. Éligibilité",
-        "description": "Le simulateur et un AMO vous accompagnent pour vérifier votre éligibilité avec quelques questions sur votre logement, votre assurance et vos ressources financières."
+        "description": "Répondez à quelques questions sur votre logement, votre assurance et vos ressources afin de savoir si vous pouvez bénéficier de l’aide."
       },
       {
         "imageSrc": "/illustrations/house.svg",
         "imageAlt": "Effectuer un diagnostic",
-        "title": "2. Phase étude (diagnostic)",
-        "description": "Un professionel se déplace chez vous afin de réaliser les constats visuels de l'intérieur et de l'expérieur de votre maison, de son environnement proche et peut recommander des travaux de préventions à effectuer."
+        "title": "2. Diagnostic",
+        "description": "Un expert se déplace chez vous afin de réaliser les constats et analyses sur la maison et son environnement pour recommander les travaux de préventions à effectuer."
       },
       {
         "imageSrc": "/illustrations/in-progress.svg",
         "imageAlt": "Lancer les travaux",
-        "title": "3. Phase travaux",
-        "description": "Sur la base des recommandations de travaux priorisés par le diagnostic de vulnérabilité, faites réaliser les travaux de prévention par des entreprises sélectionnées pour vous par votre maître d’œuvre, pour vous prémunir du phénomène RGA."
+        "title": "3. Travaux",
+        "description": "Le diagnostic et les devis sont validés par le service instructeur? Lancez les travaux avec les entreprises sélectionnées pour vous prémunir du phénomène RGA."
       },
       {
         "imageSrc": "/illustrations/money.svg",
         "imageAlt": "Recevoir mes aides",
         "title": "4. Paiement",
-        "description": "Les prestations des phases études et travaux sont subventionnées à la fin de chaque phase. Votre maison est plus protégée face au phénomène du RGA."
+        "description": "Les travaux sont terminés et contrôlés, recevez votre aide financière. Votre maison est plus protégée face au phénomène du RGA."
       }
     ]
   },
