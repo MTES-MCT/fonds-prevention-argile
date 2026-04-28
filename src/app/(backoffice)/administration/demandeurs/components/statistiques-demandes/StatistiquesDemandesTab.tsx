@@ -5,8 +5,10 @@ import { NombreDemandesParEtape } from "./NombreDemandesParEtape";
 import { DelaisMoyensParEtape } from "./DelaisMoyensParEtape";
 import { RepartitionAmoCards } from "./RepartitionAmoCards";
 import { RepartitionDossiersCards } from "./RepartitionDossiersCards";
+import { EvolutionDemandeurs } from "@/shared/components/EvolutionDemandeurs";
 import { filterUsersByDepartement } from "../filters/departements/departementFilter.utils";
 import { getTableauDeBordStatsAction } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
+import { aggregerEvolution } from "@/shared/utils/evolution-temporelle";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 import type {
   PeriodeId,
@@ -69,9 +71,19 @@ export function StatistiquesDemandesTab({ users, periodeId, codeDepartement }: S
     return filtered;
   }, [users, periodeId, codeDepartement]);
 
+  const evolution = useMemo(() => {
+    const dates = filteredUsers
+      .map((u) => u.parcours?.createdAt ?? u.user.createdAt)
+      .filter((d): d is Date => d instanceof Date);
+    return aggregerEvolution(dates);
+  }, [filteredUsers]);
+
   return (
     <div>
       <h2 className="fr-h4 fr-mb-4w">Données des {filteredUsers.length.toLocaleString("fr-FR")} demandeurs</h2>
+
+      {/* Graphe d'evolution */}
+      <EvolutionDemandeurs evolution={evolution} />
 
       {/* Nombre de demandes par etape + Delais moyens */}
       <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">

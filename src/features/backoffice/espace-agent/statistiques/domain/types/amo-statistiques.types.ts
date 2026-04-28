@@ -1,4 +1,7 @@
 import { Step } from "@/shared/domain/value-objects";
+import type { EvolutionDemandeurs } from "@/shared/utils/evolution-temporelle";
+
+export type { PointEvolution, EvolutionDemandeurs } from "@/shared/utils/evolution-temporelle";
 
 /**
  * Types pour les statistiques de l'espace AMO
@@ -59,4 +62,5 @@ export interface AmoStatistiques {
   repartitionParEtape: RepartitionParEtape[];
   repartitionParRevenu: RepartitionParRevenu;
   topCommunes: CommuneStats[];
+  evolutionDemandeurs: EvolutionDemandeurs;
 }

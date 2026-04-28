@@ -4,10 +4,12 @@ import { parcoursAmoValidations, parcoursPrevention } from "@/shared/database/sc
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { calculerTrancheRevenu, isRegionIDF } from "@/features/simulateur/domain/types/rga-revenus.types";
+import { aggregerEvolution } from "@/shared/utils/evolution-temporelle";
 import type {
   AmoIndicateursCles,
   AmoStatistiques,
   CommuneStats,
+  EvolutionDemandeurs,
   RepartitionParEtape,
   RepartitionParRevenu,
 } from "../domain/types";
@@ -39,18 +41,21 @@ const STEPS_ORDER: Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, 
  * @param entrepriseAmoId - ID de l'entreprise AMO, ou `null` pour un accès global (SUPER_ADMIN)
  */
 export async function getAmoStatistiques(entrepriseAmoId: string | null): Promise<AmoStatistiques> {
-  const [indicateursCles, repartitionParEtape, repartitionParRevenu, topCommunes] = await Promise.all([
-    getIndicateursCles(entrepriseAmoId),
-    getRepartitionParEtape(entrepriseAmoId),
-    getRepartitionParRevenu(entrepriseAmoId),
-    getTopCommunes(entrepriseAmoId),
-  ]);
+  const [indicateursCles, repartitionParEtape, repartitionParRevenu, topCommunes, evolutionDemandeurs] =
+    await Promise.all([
+      getIndicateursCles(entrepriseAmoId),
+      getRepartitionParEtape(entrepriseAmoId),
+      getRepartitionParRevenu(entrepriseAmoId),
+      getTopCommunes(entrepriseAmoId),
+      getEvolutionDemandeurs(entrepriseAmoId),
+    ]);
 
   return {
     indicateursCles,
     repartitionParEtape,
     repartitionParRevenu,
     topCommunes,
+    evolutionDemandeurs,
   };
 }
 
@@ -290,4 +295,17 @@ async function getTopCommunes(entrepriseAmoId: string | null): Promise<CommuneSt
     codeDepartement: item.codeDepartement,
     nombreDemandeurs: item.count,
   }));
+}
+
+/** Récupère l'évolution du nombre de demandeurs créés dans le temps */
+async function getEvolutionDemandeurs(entrepriseAmoId: string | null): Promise<EvolutionDemandeurs> {
+  const rows = await db
+    .select({ createdAt: parcoursPrevention.createdAt })
+    .from(parcoursPrevention)
+    .innerJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
+    .where(entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined);
+
+  const dates = rows.map((r) => r.createdAt).filter((d): d is Date => d instanceof Date);
+
+  return aggregerEvolution(dates);
 }
