@@ -8,7 +8,6 @@ import {
 } from "@/shared/database/schema";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
 import { Amo } from "../domain/entities";
-import { StatutValidationAmo } from "../domain/value-objects";
 import { entreprisesAmoRepo } from "@/shared/database";
 
 /**

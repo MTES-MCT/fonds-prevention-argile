@@ -114,7 +114,7 @@ export function getStepListItems(
     ];
   }
 
-  // Cas 3 : AMO sélectionné (EN_ATTENTE / LOGEMENT_ELIGIBLE / NON_ELIGIBLE / ACCOMPAGNEMENT_REFUSE)
+  // Cas 3 : AMO sélectionné (EN_ATTENTE / LOGEMENT_ELIGIBLE / LOGEMENT_NON_ELIGIBLE)
   // → 2 items en tête : choix validé + attente de la réponse de l'AMO
   return [
     {
