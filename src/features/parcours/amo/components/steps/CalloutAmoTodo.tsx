@@ -70,6 +70,9 @@ export default function CalloutAmoTodo({
         }
 
         // Charger la liste des AMO disponibles
+        // TODO (à valider avec l'équipe produit) : la maquette prévoit que l'AMO refusé reste
+        // affiché grisé/désactivé dans la liste plutôt que d'être retiré (cf. maquette refus AMO).
+        // Aujourd'hui on le filtre.
         const result = await getAmosDisponibles();
         if (result.success) {
           const filteredList = refuseeId ? result.data.filter((amo) => amo.id !== refuseeId) : result.data;
@@ -232,6 +235,10 @@ export default function CalloutAmoTodo({
   }
 
   // Cas 1 : Aucun AMO mais des Allers Vers disponibles
+  // TODO (à valider avec l'équipe produit) : si `accompagnementRefuse=true` et amoList vide,
+  // la maquette prévoit le callout "L'AMO X a refusé la demande d'accompagnement" + liste
+  // d'AMO restants (avec l'AMO refusé grisé). Actuellement on tombe sur "Contactez votre
+  // conseiller dédié" sans aucun rappel du refus → UX dégradée pour les depts à 1 seul AMO.
   if (amoList.length === 0 && allersVersList.length > 0) {
     return (
       <div id="choix-amo">
@@ -268,6 +275,10 @@ export default function CalloutAmoTodo({
   }
 
   // Cas 2 : Ni AMO ni Allers Vers disponibles
+  // TODO (à valider avec l'équipe produit) : même remarque que cas 1 — si `accompagnementRefuse=true`,
+  // on devrait idéalement afficher le titre "L'AMO X a refusé..." avant le wording "AMO pas encore
+  // disponible". Aujourd'hui le user qui n'a qu'un AMO et qu'il a vu refuser ne sait plus pourquoi
+  // il revient sur cet écran.
   if (amoList.length === 0 && allersVersList.length === 0) {
     return (
       <div id="choix-amo">
