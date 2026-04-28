@@ -15,21 +15,16 @@ vi.mock("@/shared/database/client", () => ({
 vi.mock("../services/amo-validation.service", () => ({
   approveValidation: vi.fn(),
   rejectEligibility: vi.fn(),
-  rejectAccompagnement: vi.fn(),
   getValidationByToken: vi.fn(),
 }));
 
 // Import des actions APRÈS les mocks
-import { validerLogementEligible, refuserLogementNonEligible, refuserAccompagnement } from "./amo-validation.actions";
+import { validerLogementEligible, refuserLogementNonEligible } from "./amo-validation.actions";
 
 // Import des mocks
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { db } from "@/shared/database/client";
-import {
-  approveValidation,
-  rejectEligibility,
-  rejectAccompagnement as rejectAccompagnementService,
-} from "../services/amo-validation.service";
+import { approveValidation, rejectEligibility } from "../services/amo-validation.service";
 
 describe("amo-validation.actions - Sécurité", () => {
   beforeEach(() => {
@@ -240,48 +235,6 @@ describe("amo-validation.actions - Sécurité", () => {
         expect(result.error).toContain("minimum 10 caractères");
       }
       expect(rejectEligibility).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("refuserAccompagnement", () => {
-    it("devrait vérifier la propriété AMO avant de refuser l'accompagnement", async () => {
-      mockUser(UserRole.AMO, "entreprise-123");
-      mockValidationInDb("autre-entreprise");
-
-      const result = await refuserAccompagnement("validation-123", "Nous ne pouvons pas accompagner ce dossier");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Cette demande ne vous est pas destinée");
-      }
-      expect(rejectAccompagnementService).not.toHaveBeenCalled();
-    });
-
-    it("devrait autoriser le refus d'accompagnement pour son propre dossier", async () => {
-      mockUser(UserRole.AMO, "entreprise-123");
-      mockValidationInDb("entreprise-123");
-      vi.mocked(rejectAccompagnementService).mockResolvedValue({
-        success: true,
-        data: { message: "Accompagnement refusé" },
-      });
-
-      const result = await refuserAccompagnement("validation-123", "Nous ne pouvons pas accompagner ce dossier");
-
-      expect(result.success).toBe(true);
-      expect(rejectAccompagnementService).toHaveBeenCalled();
-    });
-
-    it("devrait autoriser les admins à refuser n'importe quel accompagnement", async () => {
-      mockUser(UserRole.ADMINISTRATEUR);
-      vi.mocked(rejectAccompagnementService).mockResolvedValue({
-        success: true,
-        data: { message: "Accompagnement refusé" },
-      });
-
-      const result = await refuserAccompagnement("validation-123", "Refus admin");
-
-      expect(result.success).toBe(true);
-      expect(rejectAccompagnementService).toHaveBeenCalled();
     });
   });
 

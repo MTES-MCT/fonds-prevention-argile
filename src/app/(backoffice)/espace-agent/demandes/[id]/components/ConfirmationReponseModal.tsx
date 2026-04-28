@@ -19,7 +19,6 @@ interface ConfirmationReponseModalProps {
  * Affiche un message différent selon le choix effectué :
  * - LOGEMENT_ELIGIBLE : Demande ajoutée aux dossiers suivis
  * - LOGEMENT_NON_ELIGIBLE : Demande archivée (inéligibilité)
- * - ACCOMPAGNEMENT_REFUSE : Demande archivée (refus)
  */
 export function ConfirmationReponseModal({
   isOpen,
@@ -104,20 +103,6 @@ export function ConfirmationReponseModal({
           title: "Demande archivée",
           description: "Merci de votre réponse ! Nous allons informer le demandeur par email.",
           hint: "N'hésitez pas à prendre le temps de l'appeler pour lui expliquer les raisons de l'inéligibilité.",
-          secondaryButton: {
-            label: "Retour à l'accueil",
-            href: ROUTES.backoffice.espaceAmo.root,
-            icon: "fr-icon-arrow-left-line",
-            isSecondary: true,
-          },
-        };
-
-      case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
-        return {
-          icon: "fr-icon-archive-line",
-          title: "Demande archivée",
-          description: "Merci de votre réponse ! Nous allons informer le demandeur par email.",
-          hint: "N'hésitez pas à prendre le temps de l'appeler pour lui expliquer les raisons de votre choix.",
           secondaryButton: {
             label: "Retour à l'accueil",
             href: ROUTES.backoffice.espaceAmo.root,

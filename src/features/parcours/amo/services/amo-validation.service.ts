@@ -115,42 +115,6 @@ export async function rejectEligibility(
 }
 
 /**
- * Refuse l'accompagnement
- */
-export async function rejectAccompagnement(
-  validationId: string,
-  commentaire: string
-): Promise<ActionResult<{ message: string }>> {
-  const [validation] = await db
-    .update(parcoursAmoValidations)
-    .set({
-      statut: StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
-      commentaire,
-      valideeAt: new Date(),
-    })
-    .where(eq(parcoursAmoValidations.id, validationId))
-    .returning();
-
-  if (!validation) {
-    return { success: false, error: "Validation non trouvée" };
-  }
-
-  // Marquer le token comme utilisé
-  await db
-    .update(amoValidationTokens)
-    .set({ usedAt: new Date() })
-    .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
-
-  // Repasser le parcours en TODO
-  await parcoursRepo.updateStatus(validation.parcoursId, Status.TODO);
-
-  return {
-    success: true,
-    data: { message: "Accompagnement refusé" },
-  };
-}
-
-/**
  * Récupère les données de validation par token
  */
 export async function getValidationByToken(token: string): Promise<ActionResult<ValidationAmoData>> {

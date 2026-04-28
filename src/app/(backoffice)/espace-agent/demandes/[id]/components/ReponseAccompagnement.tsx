@@ -6,7 +6,6 @@ import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospe
 import {
   accepterAccompagnement,
   refuserDemandeNonEligible,
-  refuserDemandeAccompagnement,
   getNextDemandeurEnAttente,
 } from "@/features/backoffice/espace-agent/demandes/actions";
 import { ConfirmationReponseModal } from "./ConfirmationReponseModal";
@@ -61,9 +60,6 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
           break;
         case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
           result = await refuserDemandeNonEligible(demandeId, commentaire.trim());
-          break;
-        case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
-          result = await refuserDemandeAccompagnement(demandeId, "Accompagnement refusé");
           break;
       }
 
@@ -129,7 +125,6 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
             <option value={StatutValidationAmo.LOGEMENT_NON_ELIGIBLE}>
               J&apos;ai pris contact avec ce demandeur, mais il n&apos;est pas éligible
             </option>
-            <option value={StatutValidationAmo.ACCOMPAGNEMENT_REFUSE}>Je n&apos;accompagne pas ce demandeur</option>
           </select>
         </div>
 
