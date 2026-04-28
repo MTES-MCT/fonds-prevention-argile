@@ -3,6 +3,7 @@ import Link from "next/link";
 import VousAvezUnDouteSection from "./VousAvezUnDouteSection";
 import CalloutEligible from "./CalloutEligible";
 import commonContent from "../content/common.json";
+import CalloutNonEligible from "./CalloutNonElligible";
 
 interface SignesASurveillerTemplateProps {
   title: string;
