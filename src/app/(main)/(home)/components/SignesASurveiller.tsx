@@ -1,4 +1,3 @@
-import CalloutNonEligible from "../../signes-a-surveiller/components/CalloutNonElligible";
 import content from "../content/content.json";
 
 export default function SignesASurveiller() {
