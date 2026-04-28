@@ -159,6 +159,8 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
         nom: result.user.nom || "",
         email: result.user.email || "",
         telephone: result.user.telephone || null,
+        sourceAcquisition: result.user.sourceAcquisition,
+        sourceAcquisitionPrecision: result.user.sourceAcquisitionPrecision,
       },
       logement: {
         adresse: logement ? buildAdresseComplete(logement) : "Adresse non renseignée",

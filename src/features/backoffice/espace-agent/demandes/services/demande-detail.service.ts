@@ -72,6 +72,8 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       email: demande.validation.userEmail || demande.user.emailContact || demande.user.email,
       telephone: demande.validation.userTelephone || demande.user.telephone,
       adresse: rgaData?.logement?.adresse ?? demande.validation.adresseLogement,
+      sourceAcquisition: demande.user.sourceAcquisition,
+      sourceAcquisitionPrecision: demande.user.sourceAcquisitionPrecision,
     };
     const coords = parseCoordinatesString(rgaData?.logement?.coordonnees);
     const niveauRevenu = calculateNiveauRevenuFromRga(rgaData);

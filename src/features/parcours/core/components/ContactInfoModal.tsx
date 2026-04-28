@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { updateContactInfoAction } from "../actions/contact-info.actions";
+import { getActeursLocauxDisponibles, type ActeursLocaux } from "../actions/acteurs-locaux.actions";
+import { SourceAcquisition, SOURCE_ACQUISITION_LABELS } from "@/shared/domain/value-objects";
 
 interface ContactInfoModalProps {
   isOpen: boolean;
@@ -10,12 +12,54 @@ interface ContactInfoModalProps {
   onSuccess: () => void;
 }
 
+const SOURCE_OPTIONS: SourceAcquisition[] = [
+  SourceAcquisition.FLYERS,
+  SourceAcquisition.MEDIAS,
+  SourceAcquisition.BULLETIN_COMMUNAL,
+  SourceAcquisition.PROS_BATIMENT_IMMOBILIER,
+  SourceAcquisition.REUNION_PUBLIQUE_SALON,
+  SourceAcquisition.MOTEUR_RECHERCHE,
+  SourceAcquisition.AUTRE,
+];
+
+interface DynamicOption {
+  type: SourceAcquisition;
+  nom: string;
+}
+
 export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSuccess }: ContactInfoModalProps) {
   const [email, setEmail] = useState(defaultEmail || "");
   const [telephone, setTelephone] = useState("");
+  const [selectValue, setSelectValue] = useState<string>("");
+  const [sourceAcquisitionPrecision, setSourceAcquisitionPrecision] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [acteursLocaux, setActeursLocaux] = useState<ActeursLocaux | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+
+  // Map indexée par identifiant stable (`dyn-amo-<id>` ou `dyn-av-<id>`)
+  const dynamicOptions = useMemo(() => {
+    const map = new Map<string, DynamicOption>();
+    if (!acteursLocaux) return map;
+    for (const amo of acteursLocaux.amos) {
+      map.set(`dyn-amo-${amo.id}`, { type: SourceAcquisition.AMO, nom: amo.nom });
+    }
+    for (const av of acteursLocaux.allersVers) {
+      map.set(`dyn-av-${av.id}`, { type: SourceAcquisition.ALLER_VERS, nom: av.nom });
+    }
+    return map;
+  }, [acteursLocaux]);
+
+  const hasDynamicOptions = dynamicOptions.size > 0;
+
+  // Charger les acteurs locaux au montage
+  useEffect(() => {
+    getActeursLocauxDisponibles().then((result) => {
+      if (result.success) {
+        setActeursLocaux(result.data);
+      }
+    });
+  }, []);
 
   // Gérer l'ouverture/fermeture via le DSFR
   useEffect(() => {
@@ -70,11 +114,28 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
       return;
     }
 
+    if (!selectValue) {
+      setError("Merci d'indiquer comment vous avez connu le fonds");
+      return;
+    }
+
+    // Résoudre la valeur sélectionnée (option dynamique ou statique)
+    const dynamic = dynamicOptions.get(selectValue);
+    const sourceAcquisition = dynamic ? dynamic.type : (selectValue as SourceAcquisition);
+    const precision = dynamic ? dynamic.nom : sourceAcquisitionPrecision.trim();
+
+    if (sourceAcquisition === SourceAcquisition.AUTRE && !precision) {
+      setError("Merci de préciser comment vous avez connu le fonds");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const result = await updateContactInfoAction({
       emailContact: email.trim(),
       telephone: telephone.trim(),
+      sourceAcquisition,
+      sourceAcquisitionPrecision: precision || null,
     });
 
     setIsSubmitting(false);
@@ -85,6 +146,8 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
       setError(result.error || "Erreur lors de la sauvegarde");
     }
   };
+
+  const showPrecisionField = selectValue === SourceAcquisition.AUTRE && !dynamicOptions.has(selectValue);
 
   return (
     <dialog ref={dialogRef} id="modal-contact-info" className="fr-modal" aria-labelledby="modal-contact-info-title">
@@ -148,6 +211,67 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
+
+                <div className="fr-select-group fr-mt-2w">
+                  <label className="fr-label" htmlFor="contact-source-acquisition">
+                    <strong>Comment avez-vous connu le fonds de prévention argile ?</strong>
+                    <span className="fr-hint-text">
+                      Cela nous aide à mieux faire connaître le dispositif sur votre territoire.
+                    </span>
+                  </label>
+                  <select
+                    className="fr-select"
+                    id="contact-source-acquisition"
+                    name="sourceAcquisition"
+                    value={selectValue}
+                    onChange={(e) => {
+                      setSelectValue(e.target.value);
+                      setSourceAcquisitionPrecision("");
+                    }}>
+                    <option value="">Sélectionnez une option</option>
+
+                    {hasDynamicOptions && acteursLocaux!.amos.length > 0 && (
+                      <optgroup label={SOURCE_ACQUISITION_LABELS[SourceAcquisition.AMO]}>
+                        {acteursLocaux!.amos.map((amo) => (
+                          <option key={amo.id} value={`dyn-amo-${amo.id}`}>
+                            {amo.nom}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {hasDynamicOptions && acteursLocaux!.allersVers.length > 0 && (
+                      <optgroup label={SOURCE_ACQUISITION_LABELS[SourceAcquisition.ALLER_VERS]}>
+                        {acteursLocaux!.allersVers.map((av) => (
+                          <option key={av.id} value={`dyn-av-${av.id}`}>
+                            {av.nom}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {SOURCE_OPTIONS.map((value) => (
+                      <option key={value} value={value}>
+                        {SOURCE_ACQUISITION_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {showPrecisionField && (
+                  <div className="fr-form-group fr-mt-2w">
+                    <label className="fr-label" htmlFor="contact-source-acquisition-precision">
+                      <strong>Pouvez-vous préciser ?</strong>
+                    </label>
+                    <input
+                      className="fr-input"
+                      type="text"
+                      id="contact-source-acquisition-precision"
+                      name="sourceAcquisitionPrecision"
+                      maxLength={500}
+                      value={sourceAcquisitionPrecision}
+                      onChange={(e) => setSourceAcquisitionPrecision(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
               <div className="fr-modal__footer">
                 <ul className="fr-btns-group fr-btns-group--right fr-btns-group--inline-reverse fr-btns-group--inline-lg">

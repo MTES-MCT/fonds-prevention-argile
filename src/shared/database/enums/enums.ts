@@ -1,5 +1,12 @@
 import { pgEnum } from "drizzle-orm/pg-core";
-import { Status, Step, DSStatus, StatutValidationAmo, SituationParticulier } from "@/shared/domain/value-objects";
+import {
+  Status,
+  Step,
+  DSStatus,
+  StatutValidationAmo,
+  SituationParticulier,
+  SourceAcquisition,
+} from "@/shared/domain/value-objects";
 import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
 
 /**
@@ -37,6 +44,20 @@ export const situationParticulierPgEnum = pgEnum("situation_particulier", [
   SituationParticulier.PROSPECT,
   SituationParticulier.ELIGIBLE,
   SituationParticulier.ARCHIVE,
+]);
+
+export const sourceAcquisitionPgEnum = pgEnum("source_acquisition", [
+  SourceAcquisition.DDT,
+  SourceAcquisition.AMO,
+  SourceAcquisition.ALLER_VERS,
+  SourceAcquisition.ECFR,
+  SourceAcquisition.FLYERS,
+  SourceAcquisition.MEDIAS,
+  SourceAcquisition.BULLETIN_COMMUNAL,
+  SourceAcquisition.PROS_BATIMENT_IMMOBILIER,
+  SourceAcquisition.REUNION_PUBLIQUE_SALON,
+  SourceAcquisition.MOTEUR_RECHERCHE,
+  SourceAcquisition.AUTRE,
 ]);
 
 export const agentRolePgEnum = pgEnum("agent_role", [

@@ -75,6 +75,8 @@ export class ProspectsListService {
           nom: r.userNom || "",
           email: r.userEmail || "",
           telephone: r.userTelephone || null,
+          sourceAcquisition: r.userSourceAcquisition,
+          sourceAcquisitionPrecision: r.userSourceAcquisitionPrecision,
         },
         logement: {
           adresse: logement?.adresse || "Adresse non renseignée",

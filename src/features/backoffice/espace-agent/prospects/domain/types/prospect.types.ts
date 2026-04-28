@@ -1,5 +1,6 @@
 import { Step } from "@/shared/domain/value-objects";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { SourceAcquisition } from "@/shared/domain/value-objects/source-acquisition.enum";
 import type { InfoLogement, AgentEditInfo } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import type { Amo } from "@/features/parcours/amo/domain/entities";
 
@@ -20,6 +21,8 @@ export interface Prospect {
     nom: string;
     email: string;
     telephone: string | null;
+    sourceAcquisition: SourceAcquisition | null;
+    sourceAcquisitionPrecision: string | null;
   };
 
   /** Informations du logement */

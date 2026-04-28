@@ -5,6 +5,7 @@ import { NombreDemandesParEtape } from "./NombreDemandesParEtape";
 import { DelaisMoyensParEtape } from "./DelaisMoyensParEtape";
 import { RepartitionAmoCards } from "./RepartitionAmoCards";
 import { RepartitionDossiersCards } from "./RepartitionDossiersCards";
+import { SourcesAcquisitionTable } from "./SourcesAcquisitionTable";
 import { EvolutionDemandeurs } from "@/shared/components/EvolutionDemandeurs";
 import { filterUsersByDepartement } from "../filters/departements/departementFilter.utils";
 import { getTableauDeBordStatsAction } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
@@ -103,6 +104,16 @@ export function StatistiquesDemandesTab({ users, periodeId, codeDepartement }: S
       {/* Repartition dossiers DN */}
       <div className="fr-mb-4w">
         <RepartitionDossiersCards users={filteredUsers} stats={stats} loading={loading} />
+      </div>
+
+      {/* Sources d'acquisition */}
+      <div className="fr-mb-4w">
+        <SourcesAcquisitionTable
+          filteredUsers={filteredUsers}
+          allUsers={users}
+          periodeId={periodeId}
+          codeDepartement={codeDepartement}
+        />
       </div>
     </div>
   );

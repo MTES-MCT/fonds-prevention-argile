@@ -4,6 +4,7 @@ import { users } from "../schema/users";
 import { BaseRepository } from "./base.repository";
 import type { User, NewUser } from "../schema/users";
 import { FranceConnectUserInfo } from "@/features/auth";
+import { SourceAcquisition } from "@/shared/domain/value-objects";
 
 export class UserRepository extends BaseRepository<User> {
   /**
@@ -127,7 +128,15 @@ export class UserRepository extends BaseRepository<User> {
   /**
    * Met à jour les coordonnées de contact
    */
-  async updateContactInfo(id: string, data: { emailContact?: string; telephone?: string }): Promise<User | null> {
+  async updateContactInfo(
+    id: string,
+    data: {
+      emailContact?: string;
+      telephone?: string;
+      sourceAcquisition?: SourceAcquisition | null;
+      sourceAcquisitionPrecision?: string | null;
+    }
+  ): Promise<User | null> {
     const result = await db.update(users).set(data).where(eq(users.id, id)).returning();
 
     return result[0] || null;
