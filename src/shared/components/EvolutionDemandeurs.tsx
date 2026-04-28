@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useDsfrChart } from "@/shared/hooks/useDsfrChart";
-import type { EvolutionDemandeurs as EvolutionDemandeursType } from "@/features/backoffice/espace-agent/statistiques/domain/types";
+import type { EvolutionDemandeurs as EvolutionDemandeursType } from "@/shared/utils/evolution-temporelle";
 
 interface EvolutionDemandeursProps {
   evolution: EvolutionDemandeursType;

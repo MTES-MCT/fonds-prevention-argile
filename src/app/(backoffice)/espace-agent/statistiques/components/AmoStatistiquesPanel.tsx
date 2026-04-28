@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAmoStatistiquesAction } from "@/features/backoffice/espace-agent/statistiques/actions";
 import type { AmoStatistiques } from "@/features/backoffice/espace-agent/statistiques/domain/types";
-import { EvolutionDemandeurs } from "./EvolutionDemandeurs";
+import { EvolutionDemandeurs } from "@/shared/components/EvolutionDemandeurs";
 import { IndicateursCles } from "./IndicateursCles";
 import { RepartitionParEtape } from "./RepartitionParEtape";
 import { RepartitionParRevenu } from "./RepartitionParRevenu";

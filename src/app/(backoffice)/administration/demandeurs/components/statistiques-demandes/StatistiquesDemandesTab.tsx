@@ -5,7 +5,7 @@ import { NombreDemandesParEtape } from "./NombreDemandesParEtape";
 import { DelaisMoyensParEtape } from "./DelaisMoyensParEtape";
 import { RepartitionAmoCards } from "./RepartitionAmoCards";
 import { RepartitionDossiersCards } from "./RepartitionDossiersCards";
-import { EvolutionDemandeurs } from "@/app/(backoffice)/espace-agent/statistiques/components/EvolutionDemandeurs";
+import { EvolutionDemandeurs } from "@/shared/components/EvolutionDemandeurs";
 import { filterUsersByDepartement } from "../filters/departements/departementFilter.utils";
 import { getTableauDeBordStatsAction } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
 import { aggregerEvolution } from "@/shared/utils/evolution-temporelle";
