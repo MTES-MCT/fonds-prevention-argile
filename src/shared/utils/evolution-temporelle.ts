@@ -67,10 +67,16 @@ export function aggregerEvolution(dates: Date[]): EvolutionDemandeurs {
     }
   }
 
+  // En granularité semaine, inclure l'année évite l'ambiguïté entre deux "01/01" sur des plages > 1 an
+  const formatOptions: Intl.DateTimeFormatOptions =
+    granularite === "jour"
+      ? { day: "2-digit", month: "2-digit", timeZone: "UTC" }
+      : { day: "2-digit", month: "2-digit", year: "2-digit", timeZone: "UTC" };
+
   const points: PointEvolution[] = Array.from(compte.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([cle, count]) => ({
-      label: new Date(cle).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", timeZone: "UTC" }),
+      label: new Date(cle).toLocaleDateString("fr-FR", formatOptions),
       count,
     }));
 

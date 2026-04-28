@@ -51,10 +51,16 @@ describe("aggregerEvolution", () => {
       new Date("2026-02-15T12:00:00Z"), // dimanche -> semaine du 09/02
     ]);
     expect(result.granularite).toBe("semaine");
-    const semaineDuLundi5 = result.points.find((p) => p.label === "05/01");
+    const semaineDuLundi5 = result.points.find((p) => p.label === "05/01/26");
     expect(semaineDuLundi5?.count).toBe(2);
-    const semaineDuLundi9Fev = result.points.find((p) => p.label === "09/02");
+    const semaineDuLundi9Fev = result.points.find((p) => p.label === "09/02/26");
     expect(semaineDuLundi9Fev?.count).toBe(1);
+  });
+
+  it("inclut l'année dans le label en granularité semaine pour éviter l'ambiguïté multi-année", () => {
+    const result = aggregerEvolution([new Date("2025-12-15T12:00:00Z"), new Date("2026-02-10T12:00:00Z")]);
+    expect(result.granularite).toBe("semaine");
+    expect(result.points[0].label).toMatch(/\d{2}\/\d{2}\/\d{2}/);
   });
 
   it("gère les dates traversant un changement d'année", () => {
