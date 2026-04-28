@@ -1,4 +1,7 @@
 import { Step } from "@/shared/domain/value-objects";
+import type { EvolutionDemandeurs } from "@/shared/utils/evolution-temporelle";
+
+export type { PointEvolution, EvolutionDemandeurs } from "@/shared/utils/evolution-temporelle";
 
 /**
  * Types pour les statistiques de l'espace AMO
@@ -49,22 +52,6 @@ export interface CommuneStats {
   commune: string;
   codeDepartement: string;
   nombreDemandeurs: number;
-}
-
-/**
- * Un point de la courbe d'évolution (jour ou semaine)
- */
-export interface PointEvolution {
-  label: string;
-  count: number;
-}
-
-/**
- * Évolution du nombre de demandeurs créés dans le temps
- */
-export interface EvolutionDemandeurs {
-  points: PointEvolution[];
-  granularite: "jour" | "semaine";
 }
 
 /**
