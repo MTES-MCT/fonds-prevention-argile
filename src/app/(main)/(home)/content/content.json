@@ -40,13 +40,9 @@
       }
     },
     "non_pris_en_charge": {
-      "title": "Risques de dégradation avancée de votre maison sans action de votre part",
-      "subtitle": "Attention, le RGA peut provoquer l'apparition de gros dégâts coûteux, évolutifs et très problématiques pour votre maison. Distorsion des portes et des fenêtres, dislocation des dallages et des cloisons, rupture de canalisations d’eau enterrées et fissures traversantes sur vos murs, notamment.",
-      "subtitle2": "Le fonds de prévention RGA en cours d’expérimentation peut vous aider à vous en prémunir tant que votre maison est encore saine afin d'éviter au maximum l’apparition des sinistres liés au retrait-gonflement des argiles.",
-      "callout": {
-        "title": "Signes non pris en charge par le Fonds de Prévention Argile",
-        "text": "Si votre logement présente déjà des signes de dégradation, il est trop tard pour faire appel au Fonds de Prévention."
-      }
+      "title": "Risques de dégradation avancée sans action de votre part",
+      "subtitle": "Attention, le RGA peut provoquer de gros dégâts coûteux et très problématiques pour votre maison. Le fonds de prévention est là pour vous aider à vous en prémunir afin d'éviter au maximum les sinistres liés aux retrait-gonflement des argiles.",
+      "subtitle2": "Si rien n'est fait, des désordres structuraux peuvent apparaître rapidement : distorsion des portes et des fenêtres, dislocation des dallages et des cloisons, rupture de canalisations enterrées et fissures traversantes sur vos murs."
     }
   },
   "savoir_si_concerne_section": {

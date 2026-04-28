@@ -11,7 +11,6 @@ export default function SignesASurveiller() {
         <h2>{content.signes_a_surveiller_section.non_pris_en_charge.title}</h2>
         <p>{content.signes_a_surveiller_section.non_pris_en_charge.subtitle}</p>
         <p>{content.signes_a_surveiller_section.non_pris_en_charge.subtitle2}</p>
-        <CalloutNonEligible />
       </div>
     </section>
   );
