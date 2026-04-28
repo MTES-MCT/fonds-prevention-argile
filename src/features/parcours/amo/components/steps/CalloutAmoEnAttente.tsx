@@ -34,6 +34,9 @@ export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }:
   const [amoChoisie, setAmoChoisie] = useState<Amo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isAssigning, setIsAssigning] = useState(isAutoAttributionMode && statutAmo === null);
+  // Cas où l'auto-attribution échoue car aucun AMO n'est seedé pour le territoire :
+  // on bascule sur un callout dédié "AMO pas encore disponible" (cf. maquette OBLIGATOIRE).
+  const [noAmoAvailable, setNoAmoAvailable] = useState(false);
   // Garde idempotente par version de coordonnées : on retry l'attribution
   // chaque fois que `contactInfoVersion` change (ex. après confirmation du modal).
   const triedVersionRef = useRef<number | null>(null);
@@ -46,10 +49,16 @@ export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }:
     triedVersionRef.current = contactInfoVersion;
 
     setError(null);
+    setNoAmoAvailable(false);
     setIsAssigning(true);
     assignAmoAutomatique()
       .then((result) => {
         if (!result.success) {
+          // Cas spécifique : aucun AMO seedé pour le département → callout dédié plutôt qu'erreur brute.
+          if (result.error?.includes("Aucun AMO disponible")) {
+            setNoAmoAvailable(true);
+            return;
+          }
           setError(result.error || "Impossible d'attribuer un AMO automatiquement");
           return;
         }
@@ -74,6 +83,22 @@ export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }:
     return (
       <div className="fr-callout">
         <p className="fr-callout__text">Attribution de votre AMO local en cours...</p>
+      </div>
+    );
+  }
+
+  // Cas OBLIGATOIRE / AV_AMO_FUSIONNES : aucun AMO n'est seedé pour le département du demandeur.
+  if (noAmoAvailable) {
+    return (
+      <div id="choix-amo">
+        <div className="fr-callout fr-callout--blue-cumulus">
+          <p className="fr-callout__title">AMO pas encore disponible dans votre département</p>
+          <p className="fr-callout__text">
+            Pour bénéficier du Fonds Prévention Argile, il est impératif de faire appel à un AMO (Assistant à Maîtrise
+            d'Ouvrage). Nous sommes actuellement en train de finaliser des contrats avec des AMO de votre département.
+            Nous vous contacterons par e-mail dès que vous pourrez contacter les professionnels certifiés.
+          </p>
+        </div>
       </div>
     );
   }

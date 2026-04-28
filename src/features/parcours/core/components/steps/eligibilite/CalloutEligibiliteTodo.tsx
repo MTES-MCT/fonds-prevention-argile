@@ -6,11 +6,15 @@ import { useParcours } from "../../../context/useParcours";
 import { envoyerDossierEligibiliteAvecDonnees } from "../../../actions";
 import { useSimulateurRga } from "@/features/simulateur";
 import { ROUTES } from "@/features/auth/client";
+import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 
 export default function CalloutEligibiliteTodo() {
   const router = useRouter();
   const { data: rgaData, clearRGA } = useSimulateurRga();
-  const { refresh } = useParcours(); // Pour rafraîchir après envoi
+  const { refresh, statutAmo } = useParcours(); // Pour rafraîchir après envoi
+
+  // Quand l'AMO a validé l'accompagnement, on met en avant la confirmation dans le titre.
+  const isAmoConfirmed = statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE;
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +96,11 @@ export default function CalloutEligibiliteTodo() {
       )}
 
       <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
-        <p className="fr-callout__title">Remplissez votre formulaire d'éligibilité</p>
+        <p className="fr-callout__title">
+          {isAmoConfirmed
+            ? "Votre AMO a confirmé votre accompagnement ! Vous pouvez remplir votre formulaire d'éligibilité"
+            : "Remplissez votre formulaire d'éligibilité"}
+        </p>
         <p className="fr-callout__text">
           Une fois votre formulaire rempli et soumis, un instructeur l'analysera. Vous recevrez une notification
           lorsqu'il aura pris sa décision.
