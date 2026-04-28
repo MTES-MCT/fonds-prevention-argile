@@ -15,7 +15,7 @@ export default function CalloutEligibiliteEnConstruction() {
   const isAmoConfirmed = statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE;
   const title = isAmoConfirmed
     ? "Votre AMO a confirmé votre accompagnement ! Vous pouvez remplir votre formulaire d'éligibilité"
-    : "Remplissez votre formulaire d'éligibilité";
+    : "Vous pouvez remplir votre formulaire d'éligibilité";
   const description =
     "Une fois votre formulaire rempli et soumis, un instructeur l'analysera. Vous recevrez une notification lorsqu'il aura pris sa décision.";
 

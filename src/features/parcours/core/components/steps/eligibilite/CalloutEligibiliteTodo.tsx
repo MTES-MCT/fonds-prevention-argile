@@ -99,7 +99,7 @@ export default function CalloutEligibiliteTodo() {
         <p className="fr-callout__title">
           {isAmoConfirmed
             ? "Votre AMO a confirmé votre accompagnement ! Vous pouvez remplir votre formulaire d'éligibilité"
-            : "Remplissez votre formulaire d'éligibilité"}
+            : "Vous pouvez remplir votre formulaire d'éligibilité"}
         </p>
         <p className="fr-callout__text">
           Une fois votre formulaire rempli et soumis, un instructeur l'analysera. Vous recevrez une notification
