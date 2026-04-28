@@ -59,10 +59,8 @@ export default async function ValidationAmoPage({ params }: ValidationAmoPagePro
       case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
         choixMessage = "Vous avez indiqué que le demandeur n'est pas éligible.";
         break;
-      case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
-        choixMessage = "Vous avez refusé d'accompagner ce demandeur.";
-        break;
       default:
+        // Inclut ACCOMPAGNEMENT_REFUSE (legacy, plus produit) + tout autre cas
         choixMessage = "Vous avez déjà répondu à cette demande.";
     }
 
