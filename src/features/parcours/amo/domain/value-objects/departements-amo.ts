@@ -1,9 +1,11 @@
 import { normalizeCodeDepartement } from "@/shared/constants/departements.constants";
+import { getSharedEnv } from "@/shared/config/env.config";
 
 /**
  * Mode d'AMO appliqué selon le département du demandeur (arrêté 2026).
  * - OBLIGATOIRE : 1 AMO auto-affecté à la création du parcours.
  * - AV_AMO_FUSIONNES : l'aller-vers local joue le rôle d'AMO (auto-attribution).
+ *   Mode optionnel : aucun département en mode AV_AMO_FUSIONNES par défaut.
  * - FACULTATIF : le demandeur peut choisir un AMO ou continuer sans.
  */
 export enum AmoMode {
@@ -13,11 +15,44 @@ export enum AmoMode {
 }
 
 /**
- * Codes normalisés (sans zéro initial) — alignés sur les clés du référentiel
+ * Valeurs par défaut (utilisées si les variables d'environnement ne sont pas définies).
+ * Configuration côté Scalingo via :
+ *   - NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE   (CSV, ex. "03,36,47,54,81")
+ *   - NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES  (CSV, ex. "" pour vide, ou "63" pour activer)
+ *
+ * Les codes sont normalisés (sans zéro initial) — alignés sur les clés du référentiel
  * `DEPARTEMENTS` de `@/shared/constants/departements.constants`.
  */
-const DEPARTEMENTS_AMO_OBLIGATOIRE = new Set(["36", "47", "81"]);
-const DEPARTEMENTS_AV_AMO_FUSIONNES = new Set(["3", "54", "63"]);
+const DEFAULT_DEPARTEMENTS_AMO_OBLIGATOIRE = ["3", "36", "47", "54", "81"] as const;
+const DEFAULT_DEPARTEMENTS_AV_AMO_FUSIONNES: readonly string[] = [];
+
+/**
+ * Construit l'ensemble des codes département à partir d'une variable d'environnement CSV.
+ *   - undefined → utilise les valeurs par défaut
+ *   - "" ou CSV → parse (chaîne vide = override explicite vers liste vide)
+ */
+function buildDeptSet(envVar: string | undefined, defaults: readonly string[]): Set<string> {
+  const source =
+    envVar === undefined
+      ? Array.from(defaults)
+      : envVar
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+  return new Set(source.map(normalizeCodeDepartement));
+}
+
+const env = getSharedEnv();
+
+const DEPARTEMENTS_AMO_OBLIGATOIRE = buildDeptSet(
+  env.NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE,
+  DEFAULT_DEPARTEMENTS_AMO_OBLIGATOIRE
+);
+
+const DEPARTEMENTS_AV_AMO_FUSIONNES = buildDeptSet(
+  env.NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES,
+  DEFAULT_DEPARTEMENTS_AV_AMO_FUSIONNES
+);
 
 /**
  * Résout le mode d'AMO applicable pour un département donné.

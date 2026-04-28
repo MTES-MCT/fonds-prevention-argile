@@ -213,7 +213,7 @@ describe("skipAmoStepForUser", () => {
     expect(result).toEqual({ success: false, error: "L'AMO est obligatoire pour ce département" });
   });
 
-  it("refuse en mode AV_AMO_FUSIONNES (ex. dept 54)", async () => {
+  it("refuse aussi pour un autre département OBLIGATOIRE (ex. dept 54)", async () => {
     vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("54001"));
     const result = await skipAmoStepForUser(userId);
     expect(result).toEqual({ success: false, error: "L'AMO est obligatoire pour ce département" });
