@@ -1,5 +1,5 @@
-import { richTextParser } from "@/shared/utils";
 import content from "../content/content.json";
+import PlafondsSubventionsTable from "./PlafondsSubventionsTable";
 
 export default function MontantDesAidesSection() {
   return (
@@ -11,17 +11,16 @@ export default function MontantDesAidesSection() {
           <a href={content.montant_des_aides_section.description.linkUrl} target="_blank" rel="noopener noreferrer">
             {content.montant_des_aides_section.description.linkText}
           </a>
+          .
         </p>
-        <div className="fr-callout fr-col-md-8">
-          <h3 className="fr-callout__title">{content.montant_des_aides_section.highlight.title}</h3>
-          <p className="fr-callout__text">{richTextParser(content.montant_des_aides_section.highlight.text)}</p>
-        </div>
+
+        {/* Tableau Taux de subvention de l'État */}
+        <h3 className="fr-mt-6w">{content.montant_des_aides_section.table.title}</h3>
         <div className="fr-table fr-table--bordered fr-col-md-10" id="table-5-component">
           <div className="fr-table__wrapper">
             <div className="fr-table__container">
               <div className="fr-table__content">
                 <table id="table-5">
-                  <caption>{content.montant_des_aides_section.table.title}</caption>
                   <thead>
                     <tr>
                       <th></th>
@@ -63,6 +62,9 @@ export default function MontantDesAidesSection() {
             </div>
           </div>
         </div>
+
+        {/* Tableau Plafonds des subventions (avec dropdown départements) */}
+        <PlafondsSubventionsTable />
       </div>
     </section>
   );

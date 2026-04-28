@@ -284,15 +284,11 @@
     }
   },
   "montant_des_aides_section": {
-    "title": "Quels sont les montants des aides de l'Etat?",
+    "title": "Quels sont les montants des aides ?",
     "description": {
       "text": "Les montants des aides dépendent du niveau de revenu de votre ménage. Plus d’informations sur ",
-      "linkText": "les catégories de revenus",
-      "linkUrl": "https://france-renov.gouv.fr/bareme"
-    },
-    "highlight": {
-      "title": "Plafonds de dépenses",
-      "text": "En phase étude, le plafond de subvention est de <strong>2 000 € HT sans AMO (étude)</strong> et de <strong>3 000 € HT avec AMO (étude).</strong> La réalisation des travaux est limitée à <strong>15 000 € hors taxes.</strong>"
+      "linkText": "l'arrêté du 27 avril 2026",
+      "linkUrl": "#"
     },
     "table": {
       "title": "Taux de subvention de l’État",
@@ -327,10 +323,55 @@
           "intermediaire": "70% du montant"
         },
         {
-          "type": "Travaux de prévention éligibles",
+          "type": "Tous travaux",
           "tres_modeste": "80% du montant",
           "modeste": "70% du montant",
           "intermediaire": "50% du montant"
+        }
+      ]
+    },
+    "plafonds_subventions": {
+      "title": "Plafonds des subventions",
+      "dropdown_label": "Choisissez votre département pour personnaliser les données",
+      "dropdown_placeholder": "Nom du département",
+      "info": "Prestations obligatoires ou facultatives selon le département.",
+      "empty_state": "Sélectionnez un département pour voir quelles prestations sont obligatoires",
+      "headers": {
+        "phase": "",
+        "prestation": "Prestations",
+        "plafond": "Plafonds de dépenses éligibles (en € hors taxes)",
+        "obligatoire": "Prestations obligatoires ?"
+      },
+      "rows": [
+        {
+          "phase": "Phase étude",
+          "prestation": "Réalisation du diagnostic de vulnérabilité de votre maison et l'inspection des réseaux d'eau enterrés, réalisée par un professionnel compétent sur le RGA",
+          "plafond": "2 000 €",
+          "always": "obligatoire"
+        },
+        {
+          "phase": "Phase étude",
+          "prestation": "Assistance administrative à maîtrise d'ouvrage (AMO administratif)",
+          "plafond": "1 000 €",
+          "depends_on_amo": true
+        },
+        {
+          "phase": "Phase travaux",
+          "prestation": "Réalisées par un maître d'œuvre",
+          "plafond": "1 800 €",
+          "always": "obligatoire"
+        },
+        {
+          "phase": "Phase travaux",
+          "prestation": "Assistance administrative à maîtrise d'ouvrage (AMO administratif)",
+          "plafond": "200 €",
+          "depends_on_amo": true
+        },
+        {
+          "phase": "Phase travaux",
+          "prestation": "Travaux de prévention éligibles",
+          "plafond": "14 000 €",
+          "always": "facultative"
         }
       ]
     }
