@@ -14,6 +14,7 @@ export interface DossierDS {
   numeroDs: number | null;
   etatDs: DSStatus;
   submittedAt: Date | null;
+  processedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

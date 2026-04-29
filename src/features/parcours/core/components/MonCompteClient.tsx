@@ -14,7 +14,6 @@ import {
   CalloutAmoEnAttente,
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
-  CalloutDiagnosticAccepte,
   CalloutDiagnosticEnInstruction,
   CalloutDiagnosticTodo,
   CalloutEligibiliteAccepte,
@@ -30,6 +29,7 @@ import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/P
 import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
 import { useMigrateRGAToDB } from "../hooks";
 import { formatDate } from "@/shared/utils";
+import CalloutDevisTodo from "./steps/devis/CalloutDevisTodo";
 
 export default function MonCompteClient() {
   // Migration RGA si nécessaire (après connexion FC)
@@ -186,15 +186,16 @@ export default function MonCompteClient() {
             </div>
           </div>
         </div>
-
-        {/* Section "Pour en savoir plus" si logement non éligible */}
-        {(statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE || isQualifiedNonEligible) && (
-          <PourEnSavoirPlusSectionContent />
-        )}
       </section>
 
       {/* Sections communes */}
       <StepDetailSection />
+
+      {/* Section "Pour en savoir plus" si logement non éligible */}
+      {(statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE || isQualifiedNonEligible) && (
+        <PourEnSavoirPlusSectionContent />
+      )}
+
       <FaqAccountSection />
     </>
   );
@@ -325,7 +326,7 @@ function renderDiagnosticCallout(dsStatus: DSStatus | null) {
   }
 
   if (dsStatus === DSStatus.ACCEPTE) {
-    return <CalloutDiagnosticAccepte />;
+    return <CalloutDevisTodo />;
   }
 
   return null;
@@ -335,8 +336,7 @@ function renderDevisCallout(dsStatus: DSStatus | null) {
   // TODO: Créer les callouts pour le devis
   return (
     <div>
-      Callout Devis (à créer)
-      <pre>{JSON.stringify(dsStatus, null, 2)}</pre>
+      <CalloutDevisTodo />
     </div>
   );
 }
@@ -385,9 +385,7 @@ function getStatusBadgeLabel(
     case DSStatus.ACCEPTE:
       return "Accepté";
     case DSStatus.EN_INSTRUCTION:
-      return submittedAt
-        ? `En instruction depuis le ${formatDate(submittedAt.toISOString())}`
-        : "En instruction";
+      return submittedAt ? `En instruction depuis le ${formatDate(submittedAt.toISOString())}` : "En instruction";
     case DSStatus.EN_CONSTRUCTION:
       return "En construction";
     case DSStatus.REFUSE:
