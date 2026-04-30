@@ -32,7 +32,7 @@ import { useSimulateurRga } from "@/features/simulateur";
 import Loading from "@/app/(main)/loading";
 import SimulationNeededAlert from "@/app/(main)/mon-compte/components/SimulationNeededAlert";
 import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/PourEnSavoirPlusSection";
-import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
+// import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
 import { useMigrateRGAToDB } from "../hooks";
 import { formatDate } from "@/shared/utils";
 
@@ -208,7 +208,7 @@ export default function MonCompteClient() {
 
       {/* Sections communes */}
       <StepDetailSection />
-      <FaqAccountSection />
+      {/*<FaqAccountSection />*/}
     </>
   );
 }
