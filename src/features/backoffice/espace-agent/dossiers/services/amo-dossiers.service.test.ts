@@ -12,6 +12,22 @@ vi.mock("@/shared/database/client", () => ({
   },
 }));
 
+// Mock du service de sync DS pour éviter le chargement du client GraphQL
+// et neutraliser la sync upfront dans getAmoDossiersData
+vi.mock("@/features/parcours/dossiers-ds/services/ds-sync.service", () => ({
+  syncDossiersList: vi.fn().mockResolvedValue({ totalSynced: 0, totalUpdated: 0, totalSkipped: 0 }),
+}));
+
+// Helper pour mocker la requête de sync upfront (innerJoin x2, where, sans orderBy)
+const mockDbSelectSyncRows = (rows: unknown[] = []) => {
+  const mockWhere = vi.fn().mockResolvedValue(rows);
+  const mockInnerJoin2 = vi.fn().mockReturnValue({ where: mockWhere });
+  const mockInnerJoin1 = vi.fn().mockReturnValue({ innerJoin: mockInnerJoin2 });
+  const mockFrom = vi.fn().mockReturnValue({ innerJoin: mockInnerJoin1 });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return { from: mockFrom } as any;
+};
+
 // Helper pour mocker les chaînes Drizzle - count avec innerJoin
 const mockDbSelectCountWithJoin = (countValue: number) => {
   const mockWhere = vi.fn().mockResolvedValue([{ count: countValue }]);
@@ -95,6 +111,7 @@ describe("AmoDossiersService", () => {
     it("devrait retourner les données des dossiers complètes", async () => {
       // Arrange - Mock des 4 requêtes DB parallèles + DS status pour chaque dossier
       vi.mocked(db.select)
+        .mockReturnValueOnce(mockDbSelectSyncRows([])) // sync upfront (skip si vide)
         .mockReturnValueOnce(mockDbSelectCountWithJoin(12)) // nombre dossiers suivis
         .mockReturnValueOnce(mockDbSelectCountWithJoin(3)) // nombre dossiers archivés
         .mockReturnValueOnce(
@@ -140,6 +157,7 @@ describe("AmoDossiersService", () => {
     it("devrait retourner 0 et tableaux vides si aucun dossier", async () => {
       // Arrange
       vi.mocked(db.select)
+        .mockReturnValueOnce(mockDbSelectSyncRows([])) // sync upfront
         .mockReturnValueOnce(mockDbSelectCountWithJoin(0)) // nombre suivis
         .mockReturnValueOnce(mockDbSelectCountWithJoin(0)) // nombre archivés
         .mockReturnValueOnce(mockDbSelectList([])) // liste suivis vide
@@ -158,6 +176,7 @@ describe("AmoDossiersService", () => {
     it("devrait gérer les dossiers sans données de commune", async () => {
       // Arrange
       vi.mocked(db.select)
+        .mockReturnValueOnce(mockDbSelectSyncRows([])) // sync upfront
         .mockReturnValueOnce(mockDbSelectCountWithJoin(1))
         .mockReturnValueOnce(mockDbSelectCountWithJoin(0))
         .mockReturnValueOnce(
@@ -188,6 +207,7 @@ describe("AmoDossiersService", () => {
     it("devrait retourner la structure complète des données", async () => {
       // Arrange
       vi.mocked(db.select)
+        .mockReturnValueOnce(mockDbSelectSyncRows([])) // sync upfront
         .mockReturnValueOnce(mockDbSelectCountWithJoin(5))
         .mockReturnValueOnce(mockDbSelectCountWithJoin(2))
         .mockReturnValueOnce(mockDbSelectList([]))
@@ -210,6 +230,7 @@ describe("AmoDossiersService", () => {
     it("devrait retourner les dossiers avec la bonne structure", async () => {
       // Arrange
       vi.mocked(db.select)
+        .mockReturnValueOnce(mockDbSelectSyncRows([])) // sync upfront
         .mockReturnValueOnce(mockDbSelectCountWithJoin(1))
         .mockReturnValueOnce(mockDbSelectCountWithJoin(0))
         .mockReturnValueOnce(
@@ -253,6 +274,7 @@ describe("AmoDossiersService", () => {
       };
 
       vi.mocked(db.select)
+        .mockReturnValueOnce(mockDbSelectSyncRows([])) // sync upfront
         .mockReturnValueOnce(mockEmptyCount())
         .mockReturnValueOnce(mockEmptyCount())
         .mockReturnValueOnce(mockDbSelectList([]))

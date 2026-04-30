@@ -1,9 +1,12 @@
 "use client";
 
 import { UserWithParcoursDetails } from "@/features/backoffice";
+import { useAuth } from "@/features/auth/client";
+import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { formatDateTime } from "@/shared/utils/date.utils";
+import { SuperAdminDemarchesLinks } from "./SuperAdminDemarchesLinks";
 
 interface UserDetailParcoursProps {
   user: UserWithParcoursDetails;
@@ -21,6 +24,9 @@ const PARCOURS_STEPS_CONFIG = [
 ] as const;
 
 export function UserDetailParcours({ user }: UserDetailParcoursProps) {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === UserRole.SUPER_ADMINISTRATEUR;
+
   return (
     <div>
       <h3 className="fr-h6 fr-mb-3w">Timeline du parcours</h3>
@@ -153,6 +159,9 @@ export function UserDetailParcours({ user }: UserDetailParcoursProps) {
       <p className="fr-badge fr-badge--new ">
         Dernière connexion : {formatDateTime(user.user.lastLogin.toISOString())}
       </p>
+
+      {/* Zone Super Administrateur : liens directs vers les démarches DS */}
+      {isSuperAdmin && <SuperAdminDemarchesLinks dossiers={user.dossiers} />}
     </div>
   );
 }

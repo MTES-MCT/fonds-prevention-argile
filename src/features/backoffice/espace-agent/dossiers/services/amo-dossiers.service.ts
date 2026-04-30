@@ -2,6 +2,7 @@ import { count, eq, and, or, asc, isNull, isNotNull, inArray } from "drizzle-orm
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations, parcoursPrevention, dossiersDemarchesSimplifiees, users } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { syncDossiersList } from "@/features/parcours/dossiers-ds/services/ds-sync.service";
 import type { AmoDossiersData, DossierSuivi } from "../domain/types";
 
 /** Statuts de validation AMO considérés comme refusés */
@@ -22,6 +23,8 @@ const STATUTS_REFUSES = [StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, StatutValida
  * @param entrepriseAmoId - ID de l'entreprise AMO, ou `null` pour un accès global (SUPER_ADMIN)
  */
 export async function getAmoDossiersData(entrepriseAmoId: string | null): Promise<AmoDossiersData> {
+  await syncActiveAmoDossiers(entrepriseAmoId);
+
   const [nombreDossiersSuivis, nombreDossiersArchives, dossiersSuivis, dossiersArchives] = await Promise.all([
     getNombreDossiersSuivis(entrepriseAmoId),
     getNombreDossiersArchives(entrepriseAmoId),
@@ -35,6 +38,42 @@ export async function getAmoDossiersData(entrepriseAmoId: string | null): Promis
     dossiersSuivis,
     dossiersArchives,
   };
+}
+
+/**
+ * Synchronise les statuts DS des dossiers actifs (étape courante) du scope AMO
+ * avant de retourner la liste, pour garantir des statuts à jour à l'écran.
+ * Throttling et concurrence sont gérés par syncDossiersList.
+ */
+async function syncActiveAmoDossiers(entrepriseAmoId: string | null): Promise<void> {
+  const rows = await db
+    .select({
+      parcoursId: dossiersDemarchesSimplifiees.parcoursId,
+      step: dossiersDemarchesSimplifiees.step,
+      dsNumber: dossiersDemarchesSimplifiees.dsNumber,
+      lastSyncAt: dossiersDemarchesSimplifiees.lastSyncAt,
+    })
+    .from(parcoursAmoValidations)
+    .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
+    .innerJoin(
+      dossiersDemarchesSimplifiees,
+      and(
+        eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id),
+        eq(dossiersDemarchesSimplifiees.step, parcoursPrevention.currentStep)
+      )
+    )
+    .where(
+      and(
+        entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
+        eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
+        isNull(parcoursPrevention.archivedAt),
+        isNotNull(dossiersDemarchesSimplifiees.dsNumber)
+      )
+    );
+
+  if (rows.length === 0) return;
+
+  await syncDossiersList(rows);
 }
 
 /**
