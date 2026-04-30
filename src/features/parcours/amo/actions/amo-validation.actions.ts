@@ -1,12 +1,7 @@
 "use server";
 
 import { ActionResult } from "@/shared/types/action-result.types";
-import {
-  approveValidation,
-  rejectEligibility,
-  rejectAccompagnement,
-  getValidationByToken,
-} from "../services/amo-validation.service";
+import { approveValidation, rejectEligibility, getValidationByToken } from "../services/amo-validation.service";
 import { ValidationAmoData } from "../domain/entities";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
@@ -111,31 +106,6 @@ export async function refuserLogementNonEligible(
     return result;
   } catch (error) {
     console.error("Erreur refuserLogementNonEligible:", error);
-    return {
-      success: false,
-      error: "Erreur lors du refus",
-    };
-  }
-}
-
-/**
- * Refuser l'accompagnement (AMO)
- */
-export async function refuserAccompagnement(
-  validationId: string,
-  commentaire: string
-): Promise<ActionResult<{ message: string }>> {
-  try {
-    // Vérifier que l'agent AMO est propriétaire de cette validation
-    const ownershipCheck = await verifyAmoOwnership(validationId);
-    if (!ownershipCheck.success) {
-      return { success: false, error: ownershipCheck.error };
-    }
-
-    const result = await rejectAccompagnement(validationId, commentaire);
-    return result;
-  } catch (error) {
-    console.error("Erreur refuserAccompagnement:", error);
     return {
       success: false,
       error: "Erreur lors du refus",

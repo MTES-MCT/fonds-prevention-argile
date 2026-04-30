@@ -1,12 +1,14 @@
 import content from "../content/content.json";
 import contentTravauxEligiblesCommon from "../../travaux-eligibles/content/common.json";
 import Image from "next/image";
+import { phaseBadgeClassName, phaseLabel } from "../../travaux-eligibles/utils/phase.utils";
 
 export default function QuelsSontTravauxEligiblesSection() {
   return (
     <section className="fr-container-fluid fr-py-10w">
       <div className="fr-container">
         <h2>{content.quels_sont_travaux_eligibles_section.title}</h2>
+        <p>{content.quels_sont_travaux_eligibles_section.subtitle}</p>
         <div className="fr-tabs">
           <ul className="fr-tabs__list" role="tablist" aria-label="">
             {contentTravauxEligiblesCommon.autres_travaux_section.travaux_tabs.map((tab, index) => (
@@ -42,7 +44,15 @@ export default function QuelsSontTravauxEligiblesSection() {
                           <h3 className="fr-card__title">
                             <a href={item.pageUrl}>{item.name}</a>
                           </h3>
-                          <div className="fr-card__start"></div>
+                          <div className="fr-card__start">
+                            <ul className="fr-badges-group">
+                              <li>
+                                <p className={`fr-badge fr-badge--sm ${phaseBadgeClassName(item.phase)}`}>
+                                  {phaseLabel(item.phase)}
+                                </p>
+                              </li>
+                            </ul>
+                          </div>
                         </div>
                       </div>
                       <div className="fr-card__header">

@@ -6,7 +6,6 @@ import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospe
 import {
   accepterAccompagnement,
   refuserDemandeNonEligible,
-  refuserDemandeAccompagnement,
   getNextDemandeurEnAttente,
 } from "@/features/backoffice/espace-agent/demandes/actions";
 import { ConfirmationReponseModal } from "./ConfirmationReponseModal";
@@ -62,9 +61,6 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
         case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
           result = await refuserDemandeNonEligible(demandeId, commentaire.trim());
           break;
-        case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
-          result = await refuserDemandeAccompagnement(demandeId, "Accompagnement refusé");
-          break;
       }
 
       if (result?.success) {
@@ -100,10 +96,10 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
           Attention, en confirmant votre accompagnement, vous attestez que le demandeur est éligible selon les critères
           définis par{" "}
           <a
-            href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052201370"
+            href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000053981048"
             target="_blank"
             rel="noopener noreferrer">
-            l&apos;arrêté du 6 septembre 2025
+            l&apos;arrêté du 23 avril 2026
           </a>
           .
         </p>
@@ -129,7 +125,6 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
             <option value={StatutValidationAmo.LOGEMENT_NON_ELIGIBLE}>
               J&apos;ai pris contact avec ce demandeur, mais il n&apos;est pas éligible
             </option>
-            <option value={StatutValidationAmo.ACCOMPAGNEMENT_REFUSE}>Je n&apos;accompagne pas ce demandeur</option>
           </select>
         </div>
 

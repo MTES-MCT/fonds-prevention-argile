@@ -3,7 +3,6 @@ import {
   getAmosForCodeInsee,
   getAllAmosWithCommunes,
   getUserSelectedAmo,
-  getUserRejectedAmo,
   getAmoById,
   checkAmoCoversCodeInsee,
 } from "./amo-query.service";
@@ -386,46 +385,6 @@ describe("amo-query.service", () => {
       vi.mocked(db.select).mockReturnValueOnce(createMockChain([]));
 
       await expect(getUserSelectedAmo(userId)).rejects.toThrow("Parcours non trouvé");
-    });
-  });
-
-  describe("getUserRejectedAmo", () => {
-    const userId = "user-123";
-    const mockParcours = { id: "parcours-789" };
-    const mockAmoRefusee = {
-      id: "amo-1",
-      nom: "AMO Qui a Refusé",
-    };
-
-    it("devrait retourner l'AMO qui a refusé l'accompagnement", async () => {
-      // Mock pour récupérer le parcours
-      vi.mocked(db.select).mockReturnValueOnce(createMockChain([mockParcours]));
-
-      // Mock pour récupérer l'AMO refusée
-      vi.mocked(db.select).mockReturnValueOnce(createMockChain([mockAmoRefusee]));
-
-      const result = await getUserRejectedAmo(userId);
-
-      expect(result).toEqual(mockAmoRefusee);
-    });
-
-    it("devrait retourner null si aucune AMO n'a refusé", async () => {
-      // Mock pour récupérer le parcours
-      vi.mocked(db.select).mockReturnValueOnce(createMockChain([mockParcours]));
-
-      // Mock pour récupérer l'AMO refusée (vide)
-      vi.mocked(db.select).mockReturnValueOnce(createMockChain([]));
-
-      const result = await getUserRejectedAmo(userId);
-
-      expect(result).toBeNull();
-    });
-
-    it("devrait lancer une erreur si le parcours n'est pas trouvé", async () => {
-      // Mock pour ne pas trouver le parcours
-      vi.mocked(db.select).mockReturnValueOnce(createMockChain([]));
-
-      await expect(getUserRejectedAmo(userId)).rejects.toThrow("Parcours non trouvé");
     });
   });
 

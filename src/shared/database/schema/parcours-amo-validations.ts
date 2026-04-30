@@ -2,8 +2,9 @@ import { pgTable, uuid, timestamp, text, varchar, index } from "drizzle-orm/pg-c
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { entreprisesAmo } from "./entreprises-amo";
-import { statutValidationAmoPgEnum } from "../enums/enums";
+import { statutValidationAmoPgEnum, attributionAmoModePgEnum } from "../enums/enums";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
 
 export const parcoursAmoValidations = pgTable(
   "parcours_amo_validations",
@@ -16,13 +17,16 @@ export const parcoursAmoValidations = pgTable(
       .unique() // Un parcours = une validation AMO
       .references(() => parcoursPrevention.id, { onDelete: "cascade" }),
 
-    // L'entreprise AMO choisie par l'utilisateur
-    entrepriseAmoId: uuid("entreprise_amo_id")
-      .notNull()
-      .references(() => entreprisesAmo.id, { onDelete: "restrict" }),
+    // L'entreprise AMO choisie par l'utilisateur (null si statut SANS_AMO)
+    entrepriseAmoId: uuid("entreprise_amo_id").references(() => entreprisesAmo.id, { onDelete: "restrict" }),
 
     // Statut de la validation
     statut: statutValidationAmoPgEnum("statut").notNull().default(StatutValidationAmo.EN_ATTENTE),
+
+    // Mode d'attribution : tracé pour différencier choix manuel, auto-affectation et skip
+    attributionMode: attributionAmoModePgEnum("attribution_mode")
+      .notNull()
+      .default(AttributionAmoMode.MANUEL),
 
     // Commentaire/justification de l'AMO
     commentaire: text("commentaire"),

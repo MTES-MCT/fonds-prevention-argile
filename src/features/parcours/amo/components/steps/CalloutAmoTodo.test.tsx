@@ -18,8 +18,8 @@ vi.mock("@/features/parcours/dossiers-ds/adapters/rest/client", () => ({
 // Mock des dépendances
 vi.mock("@/features/parcours/amo/actions", () => ({
   getAmosDisponibles: vi.fn(),
-  getAmoRefusee: vi.fn(),
   choisirAmo: vi.fn(),
+  skipAmoStep: vi.fn(),
 }));
 
 vi.mock("@/features/seo/allers-vers/actions", () => ({
@@ -54,11 +54,6 @@ describe("CalloutAmoTodo", () => {
       isAuthenticated: true,
     } as ReturnType<typeof authClient.useAuth>);
 
-    // Mock par défaut de getAmoRefusee (pas de refus)
-    vi.mocked(amoActions.getAmoRefusee).mockResolvedValue({
-      success: true,
-      data: null,
-    });
   });
 
   // Helper pour mocker useSimulateurRga
@@ -181,7 +176,7 @@ describe("CalloutAmoTodo", () => {
         expect(screen.getByText("AMO pas encore disponible dans votre département")).toBeInTheDocument();
       });
 
-      expect(screen.getByText(/Nous sommes actuellement en train de finaliser des contrats/)).toBeInTheDocument();
+      expect(screen.getByText(/Nous sommes en train de finaliser des contrats/)).toBeInTheDocument();
     });
   });
 
@@ -276,35 +271,7 @@ describe("CalloutAmoTodo", () => {
     });
   });
 
-  describe("Cas 5 : AMO refusé", () => {
-    it("affiche le message de refus et filtre l'AMO refusé de la liste", async () => {
-      mockSimulateurRga(false, "36001", undefined);
-      mockParcours(false, "36001", undefined);
-
-      vi.mocked(amoActions.getAmoRefusee).mockResolvedValue({
-        success: true,
-        data: { id: "amo-refused", nom: "AMO Refusé" },
-      });
-
-      vi.mocked(amoActions.getAmosDisponibles).mockResolvedValue({
-        success: true,
-        data: [createMockAmo("amo-refused", "AMO Refusé"), createMockAmo("amo-available", "AMO Disponible")],
-      });
-
-      render(<CalloutAmoTodo accompagnementRefuse={true} />);
-
-      await waitFor(() => {
-        expect(screen.getByText(/L'AMO "AMO Refusé" a refusé la demande/)).toBeInTheDocument();
-      });
-
-      // L'AMO refusé ne doit pas apparaître dans la liste
-      expect(screen.queryByText("AMO Refusé")).not.toBeInTheDocument();
-      // L'AMO disponible doit apparaître
-      expect(screen.getByText("AMO Disponible")).toBeInTheDocument();
-    });
-  });
-
-  describe("Cas 6 : Gestion des erreurs", () => {
+  describe("Cas 5 : Gestion des erreurs", () => {
     it("affiche une erreur quand getAmosDisponibles échoue", async () => {
       mockSimulateurRga(false, "36001", undefined);
       mockParcours(false, "36001", undefined);

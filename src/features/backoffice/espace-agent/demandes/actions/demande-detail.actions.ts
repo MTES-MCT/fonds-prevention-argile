@@ -4,7 +4,6 @@ import { ActionResult } from "@/shared/types/action-result.types";
 import {
   approveValidation,
   rejectEligibility,
-  rejectAccompagnement,
 } from "@/features/parcours/amo/services/amo-validation.service";
 import { getDemandeDetail } from "../services/demande-detail.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
@@ -134,34 +133,6 @@ export async function refuserDemandeNonEligible(
     return {
       success: false,
       error: "Erreur lors du refus pour non éligibilité",
-    };
-  }
-}
-
-/**
- * Refuser l'accompagnement
- */
-export async function refuserDemandeAccompagnement(
-  demandeId: string,
-  commentaire: string
-): Promise<ActionResult<{ message: string }>> {
-  try {
-    const readOnlyError = await assertNotSuperAdminReadOnly();
-    if (readOnlyError) return { success: false, error: readOnlyError };
-
-    // Vérifier que l'agent AMO est propriétaire de cette demande
-    const ownershipCheck = await verifyAmoOwnership(demandeId);
-    if (!ownershipCheck.success) {
-      return { success: false, error: ownershipCheck.error };
-    }
-
-    const result = await rejectAccompagnement(demandeId, commentaire);
-    return result;
-  } catch (error) {
-    console.error("Erreur refuserDemandeAccompagnement:", error);
-    return {
-      success: false,
-      error: "Erreur lors du refus de l'accompagnement",
     };
   }
 }

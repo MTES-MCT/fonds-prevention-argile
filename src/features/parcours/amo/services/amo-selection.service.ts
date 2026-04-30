@@ -11,6 +11,8 @@ import {
 import { parcoursRepo } from "@/shared/database/repositories";
 import { ActionResult } from "@/shared/types/action-result.types";
 import { AMO_VALIDATION_TOKEN_VALIDITY_DAYS, StatutValidationAmo } from "../domain/value-objects";
+import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
+import { AmoMode, getAmoMode } from "../domain/value-objects/departements-amo";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { Status, Step } from "../../core";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
@@ -95,10 +97,14 @@ async function checkAmoCoversTerritory(
  * - Génère le token
  * - Envoie l'email à l'AMO
  * - Stocke le brevoMessageId pour le tracking
+ *
+ * @param attributionMode mode d'attribution de l'AMO (MANUEL par défaut, AUTO_OBLIGATOIRE
+ *                        ou AUTO_AV_AMO si appelé depuis l'auto-assignation)
  */
 export async function selectAmoForUser(
   userId: string,
-  params: SelectAmoParams
+  params: SelectAmoParams,
+  attributionMode: AttributionAmoMode = AttributionAmoMode.MANUEL
 ): Promise<ActionResult<SelectAmoResult>> {
   // Validation des données personnelles
   const validationError = validatePersonalData(params);
@@ -169,6 +175,7 @@ export async function selectAmoForUser(
       parcoursId: parcours.id,
       entrepriseAmoId,
       statut: StatutValidationAmo.EN_ATTENTE,
+      attributionMode,
       userPrenom: userPrenom.trim(),
       userNom: userNom.trim(),
       userEmail: userEmail.trim(),
@@ -180,6 +187,7 @@ export async function selectAmoForUser(
       set: {
         entrepriseAmoId,
         statut: StatutValidationAmo.EN_ATTENTE,
+        attributionMode,
         choisieAt: new Date(),
         valideeAt: null,
         commentaire: null,
@@ -271,5 +279,205 @@ export async function selectAmoForUser(
       message: "AMO sélectionnée avec succès",
       token,
     },
+  };
+}
+
+/**
+ * Récupère le 1er AMO couvrant le territoire du parcours.
+ * Logique EPCI > département (alignée sur `getAmosDisponibles`).
+ */
+async function findFirstAmoForTerritory(
+  codeInsee: string,
+  codeEpci: string | null
+): Promise<{ id: string } | null> {
+  if (codeEpci) {
+    const [amoEpci] = await db
+      .select({ id: entreprisesAmo.id })
+      .from(entreprisesAmo)
+      .innerJoin(entreprisesAmoEpci, eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId))
+      .where(eq(entreprisesAmoEpci.codeEpci, codeEpci))
+      .limit(1);
+    if (amoEpci) return amoEpci;
+  }
+
+  const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
+  const [amoDept] = await db
+    .select({ id: entreprisesAmo.id })
+    .from(entreprisesAmo)
+    .where(like(entreprisesAmo.departements, `%${codeDepartement}%`))
+    .limit(1);
+
+  return amoDept ?? null;
+}
+
+/**
+ * Auto-affecte un AMO au parcours d'un utilisateur (modes OBLIGATOIRE et AV_AMO_FUSIONNES).
+ *
+ * Idempotent : si une validation existe déjà pour ce parcours, ne fait rien.
+ *
+ * Récupère :
+ * - le département du demandeur depuis rgaSimulationData
+ * - le 1er AMO couvrant le territoire (EPCI > département)
+ * - l'email/téléphone de contact depuis users (sinon firstName/lastName fallback)
+ * Délègue ensuite à `selectAmoForUser` avec le mode d'attribution adéquat.
+ */
+export async function assignAmoAutomatiqueForUser(userId: string): Promise<ActionResult<SelectAmoResult>> {
+  const parcours = await parcoursRepo.findByUserId(userId);
+  if (!parcours) {
+    return { success: false, error: "Parcours non trouvé" };
+  }
+
+  if (parcours.currentStep !== Step.CHOIX_AMO) {
+    return { success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" };
+  }
+
+  // Idempotence : une validation existe déjà → no-op
+  const [existing] = await db
+    .select({ id: parcoursAmoValidations.id })
+    .from(parcoursAmoValidations)
+    .where(eq(parcoursAmoValidations.parcoursId, parcours.id))
+    .limit(1);
+  if (existing) {
+    return { success: true, data: { message: "AMO déjà attribuée", token: "" } };
+  }
+
+  const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData?.logement?.commune);
+  if (!codeInsee) {
+    return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
+  }
+
+  const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
+  const mode = getAmoMode(codeDepartement);
+
+  // Détermine le mode d'attribution :
+  //   - OBLIGATOIRE / AV_AMO_FUSIONNES : auto-attribué silencieusement à l'arrivée sur /mon-compte
+  //   - FACULTATIF : appelée après que l'utilisateur a explicitement choisi "Oui" dans
+  //     CalloutChoixAccompagnement → on prend le 1er AMO du territoire (skip de l'étape liste).
+  let attributionMode: AttributionAmoMode;
+  if (mode === AmoMode.OBLIGATOIRE) {
+    attributionMode = AttributionAmoMode.AUTO_OBLIGATOIRE;
+  } else if (mode === AmoMode.AV_AMO_FUSIONNES) {
+    attributionMode = AttributionAmoMode.AUTO_AV_AMO;
+  } else {
+    attributionMode = AttributionAmoMode.MANUEL;
+  }
+
+  const codeEpci = parcours.rgaSimulationData?.logement?.epci
+    ? String(parcours.rgaSimulationData.logement.epci).trim()
+    : null;
+
+  const amo = await findFirstAmoForTerritory(codeInsee, codeEpci);
+  if (!amo) {
+    return { success: false, error: "Aucun AMO disponible pour le territoire du demandeur" };
+  }
+
+  // Récupérer les coordonnées de contact du demandeur
+  const [user] = await db
+    .select({
+      prenom: users.prenom,
+      nom: users.nom,
+      email: users.email,
+      emailContact: users.emailContact,
+      telephone: users.telephone,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!user) {
+    return { success: false, error: "Utilisateur non trouvé" };
+  }
+
+  if (!user.prenom || !user.nom) {
+    return { success: false, error: "Coordonnées du demandeur incomplètes (prénom/nom)" };
+  }
+  const userEmail = user.emailContact ?? user.email;
+  if (!userEmail) {
+    return { success: false, error: "Coordonnées du demandeur incomplètes (email)" };
+  }
+  if (!user.telephone) {
+    return { success: false, error: "Coordonnées du demandeur incomplètes (téléphone)" };
+  }
+
+  const adresseLogement = parcours.rgaSimulationData?.logement?.adresse;
+  if (!adresseLogement) {
+    return { success: false, error: "Adresse du logement manquante dans la simulation RGA" };
+  }
+
+  return selectAmoForUser(
+    userId,
+    {
+      entrepriseAmoId: amo.id,
+      userPrenom: user.prenom,
+      userNom: user.nom,
+      userEmail,
+      userTelephone: user.telephone,
+      adresseLogement,
+    },
+    attributionMode
+  );
+}
+
+/**
+ * Renonce explicitement à un AMO (mode FACULTATIF) et fait avancer le parcours
+ * directement à l'étape ELIGIBILITE.
+ *
+ * Crée une `parcours_amo_validations` avec :
+ *   - statut = SANS_AMO
+ *   - attributionMode = AUCUN
+ *   - entrepriseAmoId = null
+ */
+export async function skipAmoStepForUser(userId: string): Promise<ActionResult<{ message: string }>> {
+  const parcours = await parcoursRepo.findByUserId(userId);
+  if (!parcours) {
+    return { success: false, error: "Parcours non trouvé" };
+  }
+
+  if (parcours.currentStep !== Step.CHOIX_AMO || parcours.currentStatus !== Status.TODO) {
+    return { success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" };
+  }
+
+  const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData?.logement?.commune);
+  if (!codeInsee) {
+    return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
+  }
+
+  const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
+  if (getAmoMode(codeDepartement) !== AmoMode.FACULTATIF) {
+    return { success: false, error: "L'AMO est obligatoire pour ce département" };
+  }
+
+  await db
+    .insert(parcoursAmoValidations)
+    .values({
+      parcoursId: parcours.id,
+      entrepriseAmoId: null,
+      statut: StatutValidationAmo.SANS_AMO,
+      attributionMode: AttributionAmoMode.AUCUN,
+    })
+    .onConflictDoUpdate({
+      target: parcoursAmoValidations.parcoursId,
+      set: {
+        entrepriseAmoId: null,
+        statut: StatutValidationAmo.SANS_AMO,
+        attributionMode: AttributionAmoMode.AUCUN,
+        choisieAt: new Date(),
+        valideeAt: null,
+        commentaire: null,
+        brevoMessageId: null,
+        emailSentAt: null,
+        emailDeliveredAt: null,
+        emailOpenedAt: null,
+        emailClickedAt: null,
+        emailBounceType: null,
+        emailBounceReason: null,
+      },
+    });
+
+  await parcoursRepo.updateStep(parcours.id, Step.ELIGIBILITE, Status.TODO);
+
+  return {
+    success: true,
+    data: { message: "Parcours avancé à l'étape éligibilité sans AMO" },
   };
 }

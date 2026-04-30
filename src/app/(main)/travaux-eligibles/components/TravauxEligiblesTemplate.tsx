@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import LancezVousSection from "./LancezVousSection";
 import contentCommon from "../content/common.json";
+import { findPhaseByPageUrl, phaseBadgeClassName, phaseDescription, phaseLabel } from "../utils/phase.utils";
 
 interface TravauxEligiblesTemplateProps {
   title: string;
@@ -56,7 +57,30 @@ export default function TravauxEligiblesTemplate({
           <div className="container">
             <h1>{title}</h1>
 
-            <p className={`fr-badge ${tag.icon} fr-badge--icon-left`}>{tag.title}</p>
+            {(() => {
+              const phase = findPhaseByPageUrl(pageLink);
+              return (
+                <>
+                  <ul className="fr-badges-group">
+                    <li>
+                      <p className={`fr-badge ${tag.icon} fr-badge--icon-left`}>{tag.title}</p>
+                    </li>
+                    {phase && (
+                      <li>
+                        <p className={`fr-badge ${phaseBadgeClassName(phase)}`}>{phaseLabel(phase)}</p>
+                      </li>
+                    )}
+                  </ul>
+
+                  {phase && (
+                    <div className="fr-callout fr-mt-4w">
+                      <h3 className="fr-callout__title">Cette prestation fait partie de la phase {phase}</h3>
+                      <p className="fr-callout__text">{phaseDescription(phase)}</p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             {/* Image */}
             <figure role="group" className="fr-content-media" aria-label="Description / Source">

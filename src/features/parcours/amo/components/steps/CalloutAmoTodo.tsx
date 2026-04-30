@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/features/auth/client";
 import type { Amo } from "@/features/parcours/amo";
-import { choisirAmo, getAmoRefusee, getAmosDisponibles } from "@/features/parcours/amo/actions";
+import { choisirAmo, getAmosDisponibles, skipAmoStep } from "@/features/parcours/amo/actions";
 import { useSimulateurRga } from "@/features/simulateur";
 import { useEffect, useState } from "react";
 import { getContactInfo } from "@/features/parcours/core/actions/contact-info.actions";
@@ -11,23 +11,21 @@ import type { AllersVers } from "@/features/seo/allers-vers";
 import { getCodeDepartementFromCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { ContactCard } from "@/shared/components";
 import { useParcours } from "@/features/parcours/core/context/useParcours";
+import { useAmoMode } from "@/features/parcours/amo/hooks";
+import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 
 interface CalloutAmoTodoProps {
-  accompagnementRefuse?: boolean;
   onSuccess?: () => void;
   refresh?: () => Promise<void>;
   contactInfoVersion?: number;
 }
 
-export default function CalloutAmoTodo({
-  accompagnementRefuse = false,
-  onSuccess,
-  refresh,
-  contactInfoVersion = 0,
-}: CalloutAmoTodoProps) {
+export default function CalloutAmoTodo({ onSuccess, refresh, contactInfoVersion = 0 }: CalloutAmoTodoProps) {
   const { user } = useAuth();
   const { data: rgaData, isLoading: isLoadingRga } = useSimulateurRga();
   const { parcours, isLoading: isLoadingParcours } = useParcours();
+  const amoMode = useAmoMode();
+  const isFacultatif = amoMode === AmoMode.FACULTATIF;
 
   const [amoList, setAmoList] = useState<Amo[]>([]);
   const [allersVersList, setAllersVersList] = useState<AllersVers[]>([]);
@@ -37,10 +35,6 @@ export default function CalloutAmoTodo({
   const [modalError, setModalError] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [amoRefusee, setAmoRefusee] = useState<{
-    id: string;
-    nom: string;
-  } | null>(null);
 
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
@@ -54,25 +48,12 @@ export default function CalloutAmoTodo({
 
     async function loadData() {
       try {
-        let refuseeId: string | null = null;
-
-        // Charger l'AMO refusée si accompagnementRefuse
-        if (accompagnementRefuse) {
-          const refuseeResult = await getAmoRefusee();
-          if (refuseeResult.success && refuseeResult.data) {
-            setAmoRefusee(refuseeResult.data);
-            refuseeId = refuseeResult.data.id;
-          }
-        }
-
-        // Charger la liste des AMO disponibles
         const result = await getAmosDisponibles();
         if (result.success) {
-          const filteredList = refuseeId ? result.data.filter((amo) => amo.id !== refuseeId) : result.data;
-          setAmoList(filteredList);
+          setAmoList(result.data);
 
           // Si aucun AMO disponible, charger les Allers Vers
-          if (filteredList.length === 0) {
+          if (result.data.length === 0) {
             await loadAllersVers();
           }
         } else {
@@ -108,14 +89,7 @@ export default function CalloutAmoTodo({
     }
 
     loadData();
-  }, [
-    accompagnementRefuse,
-    isLoadingRga,
-    isLoadingParcours,
-    parcours?.rgaSimulationData,
-    rgaData?.logement?.commune,
-    rgaData?.logement?.epci,
-  ]);
+  }, [isLoadingRga, isLoadingParcours, parcours?.rgaSimulationData, rgaData?.logement?.commune, rgaData?.logement?.epci]);
 
   // Charger les coordonnées de contact sauvegardées, sinon fallback sur l'email FC
   useEffect(() => {
@@ -137,6 +111,16 @@ export default function CalloutAmoTodo({
 
   const handleAmoSelection = (amoId: string) => {
     setSelectedAmoId(amoId);
+  };
+
+  const handleSkipAmo = async () => {
+    setError(null);
+    const result = await skipAmoStep();
+    if (!result.success) {
+      setError(result.error || "Erreur lors de l'enregistrement de votre choix");
+      return;
+    }
+    if (refresh) await refresh();
   };
 
   const handleConfirm = async () => {
@@ -259,11 +243,21 @@ export default function CalloutAmoTodo({
       <div id="choix-amo">
         <div className="fr-callout fr-callout--blue-cumulus">
           <p className="fr-callout__title">AMO pas encore disponible dans votre département</p>
-          <p className="fr-callout__text">
-            Pour bénéficier du Fonds Prévention Argile, il est impératif de faire appel à un AMO (Assistant à Maîtrise
-            d'Ouvrage). Nous sommes actuellement en train de finaliser des contrats avec des AMO de votre département.
-            Nous vous contacterons par e-mail dès que vous pourrez contacter les professionnels certifiés.
+          <p className="fr-callout__text fr-mb-2w">
+            Nous sommes en train de finaliser des contrats avec des AMO de votre département. Vous serez notifié par
+            e-mail dès qu'un professionnel certifié sera disponible.
           </p>
+          {isFacultatif && (
+            <>
+              <p className="fr-callout__text fr-mb-2w">
+                L'accompagnement par un AMO étant facultatif dans votre département, vous pouvez aussi continuer vos
+                démarches seul dès maintenant.
+              </p>
+              <button type="button" className="fr-btn fr-btn--secondary" onClick={handleSkipAmo}>
+                Continuer sans AMO
+              </button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -273,25 +267,12 @@ export default function CalloutAmoTodo({
   return (
     <div id="choix-amo">
       <div className="fr-callout fr-callout--yellow-moutarde">
-        {!amoRefusee ? (
-          <>
-            <p className="fr-callout__title">Contactez un AMO</p>
-            <p className="fr-callout__text fr-mb-4w">
-              Le recours à un AMO (Assistant à Maîtrise d'ouvrage) est obligatoire pour bénéficier du Fonds prévention
-              argile. Contactez puis confirmez la structure choisie dans les propositions ci-dessous afin de passer à
-              l'étape suivante.
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="fr-callout__title">L'AMO "{amoRefusee.nom}" a refusé la demande d'accompagnement</p>
-            <p className="fr-callout__text fr-mb-4w">
-              En réponse à votre demande, l'AMO a décliné votre requête d'accompagnement. Vous pouvez soumettre une
-              nouvelle demande à un autre AMO. Assurez-vous de le contacter au préalable pour confirmer votre
-              collaboration.
-            </p>
-          </>
-        )}
+        <p className="fr-callout__title">Contactez un AMO</p>
+        <p className="fr-callout__text fr-mb-4w">
+          {isFacultatif
+            ? "Vous avez choisi d'être accompagné par un AMO (Assistant à Maîtrise d'ouvrage). Contactez puis confirmez la structure choisie dans les propositions ci-dessous afin de passer à l'étape suivante."
+            : "Le recours à un AMO (Assistant à Maîtrise d'ouvrage) est obligatoire pour bénéficier du Fonds prévention argile. Contactez puis confirmez la structure choisie dans les propositions ci-dessous afin de passer à l'étape suivante."}
+        </p>
 
         <div className="fr-mt-4w">
           <p className="fr-text--bold fr-mb-2w">Indiquez l'AMO avec qui vous avez contractualisé.</p>

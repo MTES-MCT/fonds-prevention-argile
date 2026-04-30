@@ -145,6 +145,12 @@ const clientSchema = z.object({
 const sharedSchema = z.object({
   NEXT_PUBLIC_APP_ENV: z.enum(["local", "docker", "staging", "production"]).default("local"),
   NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL: z.string().min(1),
+
+  // Configuration AMO par département (arrêté 2026). Format CSV : "03,36,47,54,81".
+  // Optionnelles : si non définies, des valeurs par défaut sont utilisées dans
+  // `src/features/parcours/amo/domain/value-objects/departements-amo.ts`.
+  NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE: z.string().optional(),
+  NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES: z.string().optional(),
 });
 
 // ==========================================
@@ -209,6 +215,8 @@ export function getSharedEnv() {
       _sharedEnv = {
         NEXT_PUBLIC_APP_ENV: appEnv as "local" | "docker" | "staging" | "production",
         NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL: process.env.NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL || "",
+        NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE: process.env.NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE,
+        NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES: process.env.NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES,
       };
       return _sharedEnv;
     }

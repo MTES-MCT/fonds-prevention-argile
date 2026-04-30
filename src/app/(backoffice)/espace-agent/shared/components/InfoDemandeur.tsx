@@ -78,7 +78,7 @@ export function InfoDemandeur({ demandeur, suiviDepuis, editSimulationHref }: In
         )}
         {demandeur.sourceAcquisition && (
           <>
-            <dt className="fr-text">Source d'acquisition :</dt>
+            <dt className="fr-text">Acquisition :</dt>
             <dd className="fr-m-0">
               {SOURCE_ACQUISITION_LABELS[demandeur.sourceAcquisition]}
               {demandeur.sourceAcquisitionPrecision && (

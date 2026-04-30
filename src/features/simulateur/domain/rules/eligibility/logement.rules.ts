@@ -18,7 +18,7 @@ export function checkMaison(type: string | undefined): RuleResult {
 }
 
 /**
- * Vérifie le nombre de niveaux (max 2, soit R+1)
+ * Vérifie le nombre de niveaux
  */
 export function checkNiveaux(niveaux: number | undefined): RuleResult {
   if (niveaux === undefined) {

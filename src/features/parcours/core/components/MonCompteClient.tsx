@@ -4,16 +4,21 @@ import { useAuth } from "@/features/auth/client";
 import MaListe from "./common/MaListe";
 import StepDetailSection from "./common/StepDetailSection";
 import ContactInfoModal from "./ContactInfoModal";
+import AllerVersLocal from "./AllerVersLocal";
 import { useState, useEffect } from "react";
 import { useParcours } from "../context/useParcours";
 import { getContactInfo } from "../actions/contact-info.actions";
-import { Step, STEP_LABELS_NUMBERED } from "../domain";
+import { Step } from "../domain";
 import { StatutValidationAmo } from "../../amo/domain/value-objects";
+import { AmoMode } from "../../amo/domain/value-objects/departements-amo";
+import { getStepBadgeLabel } from "../../amo/domain/value-objects/step-list";
+import { useAmoMode } from "../../amo/hooks";
 import { DSStatus } from "../../dossiers-ds/domain";
 import {
   CalloutAmoEnAttente,
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
+  CalloutChoixAccompagnement,
   CalloutDiagnosticAccepte,
   CalloutDiagnosticEnInstruction,
   CalloutDiagnosticTodo,
@@ -27,7 +32,7 @@ import { useSimulateurRga } from "@/features/simulateur";
 import Loading from "@/app/(main)/loading";
 import SimulationNeededAlert from "@/app/(main)/mon-compte/components/SimulationNeededAlert";
 import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/PourEnSavoirPlusSection";
-import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
+// import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
 import { useMigrateRGAToDB } from "../hooks";
 import { formatDate } from "@/shared/utils";
 
@@ -63,11 +68,13 @@ export default function MonCompteClient() {
 
   const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
 
-  // Vérifier si les coordonnées de contact sont déjà renseignées
+  // Vérifier si les coordonnées de contact sont déjà renseignées.
+  // Le téléphone et l'email_contact sont tous deux requis (l'auto-attribution AMO
+  // en mode OBLIGATOIRE/AV_AMO_FUSIONNES exige le téléphone, sinon elle échoue).
   useEffect(() => {
     if (!user || contactInfoChecked) return;
     getContactInfo().then((result) => {
-      if (result.success && !result.data.emailContact && !result.data.telephone) {
+      if (result.success && (!result.data.emailContact || !result.data.telephone)) {
         setShowContactModal(true);
       }
       setContactInfoChecked(true);
@@ -136,23 +143,29 @@ export default function MonCompteClient() {
       />
       <section className="fr-container-fluid fr-py-10w">
         <div className="fr-container">
-          <h1>Bonjour {user.firstName}</h1>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start fr-mb-4w gap-4">
+            <div>
+              <h1>Bonjour {user.firstName}</h1>
 
-          {/* Badges de statut */}
-          <ul className="fr-badges-group fr-mb-4w">
-            <li>
-              {/* Badge de statut d'étape */}
-              {hasParcours && (
-                <p className="fr-badge fr-badge--new fr-mr-2w">
-                  {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo, currentStepSubmittedAt) || "À faire"}
-                </p>
-              )}
-            </li>
-            <li>
-              {/* Badge d'étape */}
-              {hasParcours && currentStep && <p className="fr-badge">{STEP_LABELS_NUMBERED[currentStep]} </p>}
-            </li>
-          </ul>
+              {/* Badges de statut */}
+              <ul className="fr-badges-group">
+                <li>
+                  {/* Badge de statut d'étape */}
+                  {hasParcours && (
+                    <p className="fr-badge fr-badge--new fr-mr-2w">
+                      {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo, currentStepSubmittedAt) || "À faire"}
+                    </p>
+                  )}
+                </li>
+                <li>
+                  {/* Badge d'étape */}
+                  {hasParcours && currentStep && <p className="fr-badge">{getStepBadgeLabel(currentStep)} </p>}
+                </li>
+              </ul>
+            </div>
+
+            <AllerVersLocal />
+          </div>
 
           {/* Alerte de succès AMO */}
           {showAmoSuccessAlert && (
@@ -195,7 +208,7 @@ export default function MonCompteClient() {
 
       {/* Sections communes */}
       <StepDetailSection />
-      <FaqAccountSection />
+      {/*<FaqAccountSection />*/}
     </>
   );
 }
@@ -221,6 +234,8 @@ function CalloutManager({
   refresh: () => Promise<void>;
   contactInfoVersion: number;
 }) {
+  const amoMode = useAmoMode();
+
   // Si pas de parcours, rien à afficher
   if (!hasParcours || !currentStep) {
     return null;
@@ -229,7 +244,14 @@ function CalloutManager({
   // Gestion selon l'étape courante
   switch (currentStep) {
     case Step.CHOIX_AMO:
-      return renderChoixAmoCallout(statutAmo, isQualifiedNonEligible, onAmoSuccess, refresh, contactInfoVersion);
+      return renderChoixAmoCallout(
+        amoMode,
+        statutAmo,
+        isQualifiedNonEligible,
+        onAmoSuccess,
+        refresh,
+        contactInfoVersion
+      );
 
     case Step.ELIGIBILITE:
       return renderEligibiliteCallout(dsStatus);
@@ -250,6 +272,7 @@ function CalloutManager({
 
 // Helpers pour chaque étape
 function renderChoixAmoCallout(
+  amoMode: AmoMode | null,
   statutAmo: StatutValidationAmo | null,
   isQualifiedNonEligible: boolean,
   onAmoSuccess: () => void,
@@ -261,7 +284,24 @@ function renderChoixAmoCallout(
     return <CalloutAmoLogementNonEligible />;
   }
 
+  // Modes OBLIGATOIRE et AV_AMO_FUSIONNES : `CalloutAmoEnAttente` gère lui-même
+  // l'auto-attribution silencieuse quand statutAmo est null.
+  if (amoMode === AmoMode.OBLIGATOIRE || amoMode === AmoMode.AV_AMO_FUSIONNES) {
+    if (
+      statutAmo === null ||
+      statutAmo === StatutValidationAmo.EN_ATTENTE ||
+      statutAmo === StatutValidationAmo.SANS_AMO
+    ) {
+      return <CalloutAmoEnAttente refresh={refresh} contactInfoVersion={contactInfoVersion} />;
+    }
+  }
+
   if (statutAmo === null) {
+    // Mode FACULTATIF (arrêté 2026) : choix initial entre AMO et démarches autonomes.
+    // "Oui" → assignAmoAutomatique (1er AMO du territoire), "Non" → skipAmoStep.
+    if (amoMode === AmoMode.FACULTATIF) {
+      return <CalloutChoixAccompagnement onSuccess={onAmoSuccess} refresh={refresh} />;
+    }
     return <CalloutAmoTodo onSuccess={onAmoSuccess} refresh={refresh} contactInfoVersion={contactInfoVersion} />;
   }
 
@@ -269,19 +309,13 @@ function renderChoixAmoCallout(
     return <CalloutAmoEnAttente />;
   }
 
-  if (statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
+  // Statut LOGEMENT_NON_ELIGIBLE et ACCOMPAGNEMENT_REFUSE (legacy, plus produit côté UI mais
+  // conservé pour rétrocompatibilité avec d'anciens records) → même UI : "logement non éligible".
+  if (
+    statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE ||
+    statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
+  ) {
     return <CalloutAmoLogementNonEligible />;
-  }
-
-  if (statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE) {
-    return (
-      <CalloutAmoTodo
-        accompagnementRefuse
-        onSuccess={onAmoSuccess}
-        refresh={refresh}
-        contactInfoVersion={contactInfoVersion}
-      />
-    );
   }
 
   return undefined;
@@ -364,7 +398,7 @@ function getStatusBadgeLabel(
 
     switch (statutAmo) {
       case StatutValidationAmo.EN_ATTENTE:
-        return "Attente de l'AMO";
+        return "En attente de l'AMO";
       case StatutValidationAmo.LOGEMENT_ELIGIBLE:
         return "Validé";
       case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:

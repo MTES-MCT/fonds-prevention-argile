@@ -14,6 +14,7 @@
           {
             "name": "Repérage des fuites des réseaux d'eau enterrés",
             "type": "reperage-fuite-reseaux-eaux",
+            "phase": "etude",
             "image": {
               "alt": "Fonds prévention argile - Repérage des fuites des réseaux d'eau",
               "src": "/images/travaux-eligibles/reperage-fuites.webp"
@@ -23,6 +24,7 @@
           {
             "name": "Pose ou réparation des canalisations d’évacuation des eaux pluviales",
             "type": "pose-canalisation-evacuation-eaux-pluviales",
+            "phase": "travaux",
             "image": {
               "alt": "Pose ou réparation des canalisations d’évacuation des eaux pluviales",
               "src": "/images/travaux-eligibles/pose-canalisation.png"
@@ -32,6 +34,7 @@
           {
             "name": "Réalisation d'un test de perméabilité du sol",
             "type": "test-permeabilite-sol",
+            "phase": "travaux",
             "image": {
               "alt": "Réalisation d'un test de perméabilité du sol",
               "src": "/images/travaux-eligibles/test-permeabilite-sol.png"
@@ -41,6 +44,7 @@
           {
             "name": "Création d'un dispositif simple d’infiltration des eaux à la parcelle ...",
             "type": "dispositif-infiltration-eaux",
+            "phase": "travaux",
             "image": {
               "alt": "dispositif simple d’infiltration des eaux à la parcellet",
               "src": "/images/travaux-eligibles/infiltration.png"
@@ -50,6 +54,7 @@
           {
             "name": "Création d'un drainage des eaux déportées et séparatif des eaux pluviales en amont des terr...",
             "type": "drainage-eaux-deportees",
+            "phase": "travaux",
             "image": {
               "alt": "drainage des eaux déportées et séparatif des eaux pluviales",
               "src": "/images/travaux-eligibles/drainage-eaux-deportees.webp"
@@ -65,6 +70,7 @@
           {
             "name": "Installation d'un écran anti-racine",
             "type": "installation-ecran-anti-racine",
+            "phase": "travaux",
             "image": {
               "alt": "Installation d'un écran anti-racine",
               "src": "/images/travaux-eligibles/anti-racine.webp"
@@ -74,6 +80,7 @@
           {
             "name": "Suppression des systèmes racinaires trop proche de la maison",
             "type": "suppression-systemes-racinaires",
+            "phase": "travaux",
             "image": {
               "alt": "Suppression des systèmes racinaires trop proche de la maison",
               "src": "/images/travaux-eligibles/abattage.webp"
@@ -89,6 +96,7 @@
           {
             "name": "Pose d'une membrane d'imperméabilité autour de la maison",
             "type": "pose-membrane-impermeabilite",
+            "phase": "travaux",
             "image": {
               "alt": "Pose d'une membrane d'imperméabilité autour de la maison",
               "src": "/images/travaux-eligibles/geomembrane.webp"
@@ -98,6 +106,7 @@
           {
             "name": "Pose d'un trottoir imperméable périphérique",
             "type": "pose-trottoir-impermeable-peripherique",
+            "phase": "travaux",
             "image": {
               "alt": "Pose d'un trottoir imperméable périphérique",
               "src": "/images/travaux-eligibles/trottoir.png"

@@ -31,7 +31,7 @@ export const ANCIENNETE_MINIMALE_CONSTRUCTION = 15;
 /**
  * Nombre maximum de niveaux autorisés
  */
-export const NIVEAUX_MAXIMUM = 2;
+export const NIVEAUX_MAXIMUM = 3;
 
 /**
  * Montant maximum d'indemnisation passée pour rester éligible

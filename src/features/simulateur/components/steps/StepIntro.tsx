@@ -31,10 +31,10 @@ export function StepIntro({ onStart }: StepIntroProps) {
                 En quelques étapes, découvrez si votre logement et votre situation correspondent aux critères
                 d'éligibilité définis par l'État pour bénéficier des aides du fonds de prévention{" "}
                 <Link
-                  href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052201370"
+                  href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000053981048"
                   target="_blank"
                   rel="noopener noreferrer">
-                  (arrêté du 6 septembre 2025)
+                  (arrêté du 23 avril 2026)
                 </Link>
                 .
               </p>

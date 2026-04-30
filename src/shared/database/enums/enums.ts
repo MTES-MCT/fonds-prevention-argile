@@ -5,6 +5,7 @@ import {
   DSStatus,
   StatutValidationAmo,
   SituationParticulier,
+  AttributionAmoMode,
   SourceAcquisition,
 } from "@/shared/domain/value-objects";
 import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
@@ -38,6 +39,14 @@ export const statutValidationAmoPgEnum = pgEnum("statut_validation_amo", [
   StatutValidationAmo.LOGEMENT_ELIGIBLE,
   StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
   StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
+  StatutValidationAmo.SANS_AMO,
+]);
+
+export const attributionAmoModePgEnum = pgEnum("attribution_amo_mode", [
+  AttributionAmoMode.MANUEL,
+  AttributionAmoMode.AUTO_OBLIGATOIRE,
+  AttributionAmoMode.AUTO_AV_AMO,
+  AttributionAmoMode.AUCUN,
 ]);
 
 export const situationParticulierPgEnum = pgEnum("situation_particulier", [

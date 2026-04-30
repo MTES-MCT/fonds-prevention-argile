@@ -3,14 +3,9 @@ import {
   getDemandeDetailAction,
   accepterAccompagnement,
   refuserDemandeNonEligible,
-  refuserDemandeAccompagnement,
 } from "./demande-detail.actions";
 import { getDemandeDetail } from "../services/demande-detail.service";
-import {
-  approveValidation,
-  rejectEligibility,
-  rejectAccompagnement,
-} from "@/features/parcours/amo/services/amo-validation.service";
+import { approveValidation, rejectEligibility } from "@/features/parcours/amo/services/amo-validation.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -239,29 +234,4 @@ describe("demande-detail.actions", () => {
     });
   });
 
-  describe("refuserDemandeAccompagnement", () => {
-    it("devrait refuser l'accompagnement", async () => {
-      vi.mocked(getCurrentUser).mockResolvedValue({
-        id: "user-123",
-        role: UserRole.ADMINISTRATEUR,
-        email: "admin@example.com",
-        authMethod: "proconnect",
-        loginTime: new Date().toISOString(),
-        firstName: "Test",
-        lastName: "Admin",
-      });
-
-      vi.mocked(rejectAccompagnement).mockResolvedValue({
-        success: true,
-        data: { message: "Accompagnement refusé" },
-      });
-
-      const result = await refuserDemandeAccompagnement("demande-123", "Accompagnement refusé");
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(rejectAccompagnement).toHaveBeenCalledWith("demande-123", "Accompagnement refusé");
-      }
-    });
-  });
 });
