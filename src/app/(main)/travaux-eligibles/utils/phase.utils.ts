@@ -14,7 +14,7 @@ export function phaseBadgeClassName(phase: Phase | string): string {
 
 /** Description longue pour le callout de la page dédiée. */
 export function phaseDescription(phase: Phase | string): string {
-  return `Le dispositif d'aides aux ménages est découpé en deux phases : étude (qui comprend le diagnostic), et travaux (qui comprend la réalisation des travaux). Cette prestation relève de la phase ${phase}.`;
+  return `Le dispositif d'aides aux ménages est découpé en deux phases : La phase étude (qui comprend la réalisation du diagnostic de vulnérabilité), et la phase travaux (qui comprend la réalisation des travaux de prévention). Cette prestation relève de la phase ${phase}.`;
 }
 
 /**
