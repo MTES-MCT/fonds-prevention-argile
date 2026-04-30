@@ -97,7 +97,7 @@ export default function PlafondsSubventionsTable() {
                         ) : index === 0 ? (
                           <td
                             rowSpan={rows.length}
-                            className="text-center italic align-middle"
+                            className="text-center italic align-middle !whitespace-normal break-words"
                             style={{
                               backgroundColor: "var(--background-alt-grey)",
                               color: "var(--text-mention-grey)",
