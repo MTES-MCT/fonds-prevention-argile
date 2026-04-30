@@ -19,7 +19,7 @@
     "image": {
       "alt": "Fonds prévention argile - Un service de l'État",
       "src": "/images/home/fissure-escalier.jpeg",
-      "caption": "Maison fissurée par la sécheresse - Crédit photo : L. Ighil Ameur © Cerema. Les travaux n’ont pas été réalisés dans les temps, le logement n’est plus éligible au Fonds de Prévention."
+      "caption": "Maison fissurée par la sécheresse - Crédit photo : L. Ighil Ameur © Cerema."
     },
     "title": "Qu’est-ce que le Retrait-gonflement des argiles, ou RGA ?",
     "highlight": "<strong>12,1 millions de maisons individuelles existantes (soit 61,5% des maisons individuelles) sont désormais situées en zones d’exposition moyenne et forte au RGA.</strong> Le RGA implique <strong>1 Milliard d'€ d'indemnisation annuelle</strong> sur le dispositif d'indemnisation des catastrophes naturelles.",
@@ -230,7 +230,7 @@
       },
       {
         "question": "Quelles sont les étapes du parcours et les délais moyens ?",
-        "answer": "Le parcours comprend trois étapes principales : vérification de l'éligibilité, réalisation d'un diagnostic par un professionnel, et exécution des travaux si le diagnostic est validé. Les délais peuvent varier en fonction de la disponibilité des professionnels et de la complexité des travaux."
+        "answer": "Le parcours comprend trois étapes principales : vérification de l'éligibilité, réalisation d'un diagnostic de vulnérabilité par un professionnel, et exécution des travaux si le diagnostic est validé. Les délais peuvent varier en fonction de la disponibilité des professionnels et de la complexité des travaux."
       },
       {
         "question": "De quels documents ai-je besoin ?",
@@ -287,8 +287,8 @@
     "title": "Quels sont les montants des aides ?",
     "description": {
       "text": "Les montants des aides dépendent du niveau de revenu de votre ménage. Plus d’informations sur ",
-      "linkText": "l'arrêté du 27 avril 2026",
-      "linkUrl": "#"
+      "linkText": "l'arrêté du 23 avril 2026",
+      "linkUrl": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000053981048"
     },
     "table": {
       "title": "Taux de subvention de l’État",
@@ -312,21 +312,21 @@
       "rows": [
         {
           "type": "Phase étude",
-          "tres_modeste": "90% du montant",
-          "modeste": "85% du montant",
-          "intermediaire": "70% du montant"
+          "tres_modeste": "90% du montant TTC",
+          "modeste": "85% du montant TTC",
+          "intermediaire": "70% du montant TTC"
         },
         {
           "type": "Phase travaux",
-          "tres_modeste": "90% du montant",
-          "modeste": "85% du montant",
-          "intermediaire": "70% du montant"
+          "tres_modeste": "90% du montant TTC",
+          "modeste": "85% du montant TTC",
+          "intermediaire": "70% du montant TTC"
         },
         {
           "type": "Tous travaux",
-          "tres_modeste": "80% du montant",
-          "modeste": "70% du montant",
-          "intermediaire": "50% du montant"
+          "tres_modeste": "80% du montant TTC",
+          "modeste": "70% du montant TTC",
+          "intermediaire": "50% du montant TTC"
         }
       ]
     },
@@ -346,31 +346,31 @@
         {
           "phase": "Phase étude",
           "prestation": "Réalisation du diagnostic de vulnérabilité de votre maison et l'inspection des réseaux d'eau enterrés, réalisée par un professionnel compétent sur le RGA",
-          "plafond": "2 000 €",
+          "plafond": "2 000 € HT",
           "always": "obligatoire"
         },
         {
           "phase": "Phase étude",
           "prestation": "Assistance administrative à maîtrise d'ouvrage (AMO administratif)",
-          "plafond": "1 000 €",
+          "plafond": "1 000 € HT",
           "depends_on_amo": true
         },
         {
           "phase": "Phase travaux",
           "prestation": "Réalisées par un maître d'œuvre",
-          "plafond": "1 800 €",
+          "plafond": "1 800 € HT",
           "always": "obligatoire"
         },
         {
           "phase": "Phase travaux",
           "prestation": "Assistance administrative à maîtrise d'ouvrage (AMO administratif)",
-          "plafond": "200 €",
+          "plafond": "200 € HT",
           "depends_on_amo": true
         },
         {
           "phase": "Phase travaux",
           "prestation": "Travaux de prévention éligibles",
-          "plafond": "14 000 €",
+          "plafond": "14 000 € HT",
           "always": "facultative"
         }
       ]

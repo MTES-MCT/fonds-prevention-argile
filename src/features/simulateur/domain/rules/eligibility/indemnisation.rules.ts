@@ -10,7 +10,7 @@ interface IndemnisationData {
 }
 
 /**
- * Vérifie l'indemnisation RGA passée selon l'arrêté du 6 septembre 2025
+ * Vérifie l'indemnisation RGA passée selon l'arrêté du 23 avril 2026
  *
  * Non éligible si :
  * - Indemnisé APRÈS le 30 juin 2025 (quelque soit le montant)
