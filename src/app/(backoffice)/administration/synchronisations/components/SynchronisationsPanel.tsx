@@ -91,6 +91,10 @@ export default function SynchronisationsPanel() {
         setError(result.error || "Erreur lors du déclenchement");
         return;
       }
+      if (result.data.skipped) {
+        setError(`Synchro non lancée : ${result.data.reason}`);
+        return;
+      }
       setFeedback(
         `Synchro lancée : ${result.data.totalScanned} scannés, ${result.data.totalUpdated} mis à jour, ${result.data.totalErrors} erreurs.`
       );

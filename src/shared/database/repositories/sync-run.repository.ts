@@ -155,6 +155,20 @@ export class SyncRunRepository {
   }
 
   /**
+   * Récupère un run en cours (finished_at IS NULL), s'il existe.
+   * Utilisé pour le verrou anti-runs concurrents.
+   */
+  async findPendingRun(): Promise<SyncRun | null> {
+    const [row] = await db
+      .select()
+      .from(syncRuns)
+      .where(sql`${syncRuns.finishedAt} IS NULL`)
+      .orderBy(desc(syncRuns.startedAt))
+      .limit(1);
+    return row ?? null;
+  }
+
+  /**
    * Récupère le dernier run terminé (utile pour exposer un état global rapide).
    */
   async findLastFinished(): Promise<SyncRun | null> {

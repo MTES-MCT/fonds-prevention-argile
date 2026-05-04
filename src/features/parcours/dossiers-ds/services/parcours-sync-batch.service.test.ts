@@ -21,6 +21,7 @@ vi.mock("@/shared/database/repositories", () => ({
     createRun: vi.fn(),
     addEntry: vi.fn(),
     finalizeRun: vi.fn(),
+    findPendingRun: vi.fn(),
   },
 }));
 
@@ -51,6 +52,15 @@ const mockedSyncDossierStatus = vi.mocked(syncDossierStatus);
 const mockedRecomputeStatus = vi.mocked(recomputeParcoursStatus);
 const mockedMoveToNextStep = vi.mocked(moveToNextStep);
 
+/** Type guard pour narrow dans les tests qui attendent un run effectif. */
+function assertExecuted<T extends { skipped: boolean }>(
+  result: T
+): asserts result is Extract<T, { skipped: false }> {
+  if (result.skipped) {
+    throw new Error("Le run a été skipped alors qu'il ne devait pas l'être");
+  }
+}
+
 function fakeParcours(overrides: Partial<{
   id: string;
   userId: string;
@@ -74,6 +84,8 @@ describe("runSyncBatch", () => {
     mockedSyncRunRepo.createRun.mockResolvedValue({ id: "run-1" } as never);
     mockedSyncRunRepo.addEntry.mockResolvedValue({ id: "entry-1" } as never);
     mockedSyncRunRepo.finalizeRun.mockResolvedValue({ id: "run-1" } as never);
+    // Par défaut : aucun run en cours (verrou libre)
+    mockedSyncRunRepo.findPendingRun.mockResolvedValue(null as never);
     // Par défaut : recompute ne change rien (les tests qui veulent simuler une transition
     // s'appuient sur les findById séquencés du parcours, pas sur cette valeur)
     mockedRecomputeStatus.mockResolvedValue({ success: true, data: { updated: false } } as never);
@@ -83,6 +95,7 @@ describe("runSyncBatch", () => {
     mockedParcoursRepo.findActiveForSync.mockResolvedValue([]);
 
     const result = await runSyncBatch(SyncRunTrigger.CRON);
+    assertExecuted(result);
 
     expect(result.status).toBe(SyncRunStatus.SUCCESS);
     expect(result.totalScanned).toBe(0);
@@ -107,6 +120,7 @@ describe("runSyncBatch", () => {
     } as never);
 
     const result = await runSyncBatch(SyncRunTrigger.CRON);
+    assertExecuted(result);
 
     expect(result.totalUpdated).toBe(0);
     expect(mockedSyncRunRepo.addEntry).not.toHaveBeenCalled();
@@ -148,6 +162,7 @@ describe("runSyncBatch", () => {
     } as never);
 
     const result = await runSyncBatch(SyncRunTrigger.CRON);
+    assertExecuted(result);
 
     expect(mockedMoveToNextStep).toHaveBeenCalledWith("u1");
     expect(mockedSyncRunRepo.addEntry).toHaveBeenCalledTimes(1);
@@ -176,6 +191,7 @@ describe("runSyncBatch", () => {
     mockedGetAllDossiers.mockResolvedValue([]);
 
     const result = await runSyncBatch(SyncRunTrigger.CRON);
+    assertExecuted(result);
 
     expect(result.totalErrors).toBe(1);
     expect(result.status).toBe(SyncRunStatus.PARTIAL);
@@ -210,6 +226,7 @@ describe("runSyncBatch", () => {
     } as never);
 
     const result = await runSyncBatch(SyncRunTrigger.CRON);
+    assertExecuted(result);
 
     expect(mockedMoveToNextStep).not.toHaveBeenCalled();
     expect(mockedSyncRunRepo.addEntry).toHaveBeenCalledTimes(1);
@@ -246,6 +263,7 @@ describe("runSyncBatch", () => {
     } as never);
 
     const result = await runSyncBatch(SyncRunTrigger.CRON);
+    assertExecuted(result);
 
     expect(mockedMoveToNextStep).not.toHaveBeenCalled();
     expect(mockedSyncRunRepo.addEntry).toHaveBeenCalledTimes(1);
@@ -304,6 +322,7 @@ describe("runSyncBatch", () => {
     } as never);
 
     const result = await runSyncBatch(SyncRunTrigger.CRON);
+    assertExecuted(result);
 
     // recomputeParcoursStatus appelé exactement 1 fois pour ce parcours
     expect(mockedRecomputeStatus).toHaveBeenCalledTimes(1);
@@ -333,8 +352,62 @@ describe("runSyncBatch", () => {
     mockedParcoursRepo.findById.mockRejectedValue(new Error("boom"));
 
     const result = await runSyncBatch(SyncRunTrigger.CRON);
+    assertExecuted(result);
 
     expect(result.totalErrors).toBe(2);
     expect(result.status).toBe(SyncRunStatus.ERROR);
+  });
+
+  describe("verrou anti-runs concurrents", () => {
+    it("run récent en cours → skipped, pas de createRun", async () => {
+      const recentPending = {
+        id: "pending-1",
+        startedAt: new Date(Date.now() - 5 * 60 * 1000), // démarré il y a 5 min
+        finishedAt: null,
+        totalParcoursScanned: 0,
+        totalParcoursUpdated: 0,
+        totalErrors: 0,
+      };
+      mockedSyncRunRepo.findPendingRun.mockResolvedValue(recentPending as never);
+
+      const result = await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(result.skipped).toBe(true);
+      if (!result.skipped) throw new Error("type narrowing");
+      expect(result.existingRunId).toBe("pending-1");
+      expect(result.reason).toContain("déjà en cours");
+      expect(mockedSyncRunRepo.createRun).not.toHaveBeenCalled();
+      expect(mockedSyncRunRepo.finalizeRun).not.toHaveBeenCalled();
+      expect(mockedParcoursRepo.findActiveForSync).not.toHaveBeenCalled();
+    });
+
+    it("run zombie (> 30 min) → finalisé en error, nouveau run créé", async () => {
+      const zombie = {
+        id: "zombie-1",
+        startedAt: new Date(Date.now() - 45 * 60 * 1000), // démarré il y a 45 min
+        finishedAt: null,
+        totalParcoursScanned: 3,
+        totalParcoursUpdated: 1,
+        totalErrors: 0,
+      };
+      mockedSyncRunRepo.findPendingRun.mockResolvedValue(zombie as never);
+      mockedParcoursRepo.findActiveForSync.mockResolvedValue([]);
+
+      const result = await runSyncBatch(SyncRunTrigger.CRON);
+      assertExecuted(result);
+
+      // Le zombie a été finalisé en error
+      expect(mockedSyncRunRepo.finalizeRun).toHaveBeenCalledWith(
+        "zombie-1",
+        expect.objectContaining({
+          status: SyncRunStatus.ERROR,
+          errorSummary: expect.stringContaining("zombie"),
+        })
+      );
+      // Un nouveau run a bien été créé et finalisé normalement
+      expect(mockedSyncRunRepo.createRun).toHaveBeenCalledWith(SyncRunTrigger.CRON);
+      expect(result.runId).toBe("run-1");
+      expect(result.status).toBe(SyncRunStatus.SUCCESS);
+    });
   });
 });

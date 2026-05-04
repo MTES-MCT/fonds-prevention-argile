@@ -139,16 +139,17 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 
 `runSyncBatch(triggeredBy)` :
 
-1. Crée une ligne `sync_runs` (status null = pending tant que `finished_at` est null).
-2. Récupère tous les parcours actifs via `parcoursRepo.findActiveForSync()` (`archived_at IS NULL AND completed_at IS NULL`).
-3. Pour chaque parcours, dans un `try/catch` indépendant :
+1. **Verrou** : check `findPendingRun()`. Si run en cours < 30 min → return `{ skipped: true }`. Si zombie ≥ 30 min → finalise en `ERROR` puis continue. Voir §6.7.
+2. Crée une ligne `sync_runs` (status null = pending tant que `finished_at` est null).
+3. Récupère tous les parcours actifs via `parcoursRepo.findActiveForSync()` (`archived_at IS NULL AND completed_at IS NULL`).
+4. Pour chaque parcours, dans un `try/catch` indépendant :
    a. Lit l'état initial (`stepBefore`, `statusBefore`).
    b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`.
    c. Appelle `recomputeParcoursStatus` une fois.
    d. Si `current_status === VALIDE` ET `!isLastStep`, appelle `moveToNextStep`.
    e. Si quelque chose a changé (changement DS, status, étape, ou erreur), écrit une `sync_run_entries`.
    f. `sleep(150ms)` pour ne pas saturer l'API DS.
-4. Finalise le run : `finished_at = NOW()`, totaux, status final (`success` / `partial` / `error` / pas d'erreur).
+5. Finalise le run : `finished_at = NOW()`, totaux, status final (`success` / `partial` / `error` / pas d'erreur).
 
 ### 4.2 Tables d'historique
 
@@ -284,16 +285,33 @@ Server actions : `src/features/backoffice/administration/synchronisations/action
 
 **Justification** : l'endpoint déclenche du travail backend coûteux (boucle sur tous les parcours, appels API DS). Sans auth, exposé à de l'abus. Pattern identique à `BREVO_WEBHOOK_SECRET`. Pas de données sensibles exfiltrables, mais protection contre déni de service / pollution de l'historique.
 
-### 6.7 Sleep 150 ms entre parcours
+### 6.7 Verrou anti-runs concurrents
+
+**Décision** : avant de créer un nouveau run, `runSyncBatch` vérifie qu'aucun run n'est en cours (`findPendingRun()` = ligne `sync_runs` sans `finished_at`).
+
+- Si un run est en cours **et** démarré il y a < 30 min → on **skip** : le résultat retourné est `{ skipped: true, reason, existingRunId }`. L'endpoint et l'UI affichent un message « run déjà en cours ».
+- Si un run est en cours **et** démarré il y a ≥ 30 min → considéré comme **zombie** : on le finalise en `ERROR` avec `errorSummary = "Run zombie auto-expiré..."`, puis on lance un nouveau run normalement. Le système est ainsi self-healing après crash / timeout.
+
+Le seuil de 30 min est volontairement généreux par rapport au `maxDuration = 5 min` de la route HTTP CRON. Constante : `STALE_RUN_THRESHOLD_MS` dans `parcours-sync-batch.service.ts`.
+
+**Justification** : Scalingo Scheduler peut retarder un run et un super-admin peut cliquer « Lancer maintenant » entre temps → deux `runSyncBatch` parallèles écriraient des entries dupliquées et doubleraient les appels DS. Le verrou est implémenté en applicatif (pas un advisory lock Postgres) car il suffit largement pour la fréquence et la volumétrie attendues.
+
+**Type retourné** : `SyncRunResult` est un union discriminé :
+```ts
+type SyncRunResult =
+  | { skipped: false; runId; status; totalScanned; totalUpdated; totalErrors }
+  | { skipped: true;  reason; existingRunId }
+```
+
+### 6.9 Sleep 150 ms entre parcours
 
 **Décision** : `await sleep(150)` entre chaque parcours dans `runSyncBatch`.
 
 **Justification** : l'API DS GraphQL n'a pas de rate limit documenté précisément, mais on évite de la marteler. À 150 ms × 10 000 parcours = 25 min, ce qui rentre dans le budget `maxDuration = 300s` côté endpoint si pas trop de parcours, et évite les pics de charge. À ajuster si la volumétrie grandit.
 
-### 6.8 Non-décisions / dette technique connue
+### 6.10 Non-décisions / dette technique connue
 
 - **Pas de `markAsCompleted` automatique sur `factures/valide`** : le code actuel ne set jamais `completed_at`. Les parcours terminés restent dans `findActiveForSync` et sont rebalayés à chaque CRON pour rien. À traiter dans un chantier ultérieur.
-- **Pas de verrou anti-runs concurrents** : si Scheduler et bouton manuel se croisent, deux `runSyncBatch` peuvent tourner en parallèle. Idempotent (pas de corruption) mais pollue l'historique. À traiter avec un check `pending run` avant `createRun`.
 - **Pas de purge automatique de l'historique** : `sync_runs` et `sync_run_entries` grossissent indéfiniment. Prévoir un CRON de purge (>90 jours par exemple) en complément.
 
 ---

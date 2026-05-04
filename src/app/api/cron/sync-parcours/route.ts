@@ -41,12 +41,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     const result = await runSyncBatch(SyncRunTrigger.CRON);
+
+    if (result.skipped) {
+      console.log(`[CRON sync-parcours] skipped: ${result.reason}`);
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        reason: result.reason,
+        existingRunId: result.existingRunId,
+      });
+    }
+
     console.log(
       `[CRON sync-parcours] runId=${result.runId} status=${result.status} scanned=${result.totalScanned} updated=${result.totalUpdated} errors=${result.totalErrors}`
     );
 
     return NextResponse.json({
       success: true,
+      skipped: false,
       runId: result.runId,
       status: result.status,
       totals: {

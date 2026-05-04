@@ -10,28 +10,68 @@ import { getAllDossiersByParcours } from "./dossier-ds.service";
 import { recomputeParcoursStatus, syncDossierStatus } from "./ds-sync.service";
 
 /**
- * Synchronisation batch des parcours :
- * - itère tous les parcours actifs (non archivés / non complétés)
- * - synchronise leurs dossiers DS
- * - fait progresser le parcours vers l'étape suivante si le statut interne devient VALIDE
- * - enregistre l'historique dans sync_runs / sync_run_entries
+ * Synchronisation batch des parcours (CRON et déclenchement manuel super-admin).
+ *
+ * Doc de référence : `docs/parcours/FLOW-AND-SYNC.md` (§4 CRON et historique).
+ *
+ * Pour chaque parcours actif :
+ * 1. Sync de tous ses dossiers DS (mise à jour de `ds_status`)
+ * 2. Recompute du `current_status` à partir du dossier de `current_step`
+ * 3. Progression auto (`moveToNextStep`) si VALIDE et pas dernière étape
+ * 4. Trace des changements dans `sync_run_entries`
  */
 
-export interface SyncRunResult {
-  runId: string;
-  status: SyncRunStatus;
-  totalScanned: number;
-  totalUpdated: number;
-  totalErrors: number;
-}
+export type SyncRunResult =
+  | {
+      skipped: false;
+      runId: string;
+      status: SyncRunStatus;
+      totalScanned: number;
+      totalUpdated: number;
+      totalErrors: number;
+    }
+  | {
+      skipped: true;
+      reason: string;
+      existingRunId: string;
+    };
 
 const SLEEP_BETWEEN_PARCOURS_MS = 150;
+
+/**
+ * Au-delà de ce seuil, un run encore "pending" (finished_at IS NULL) est considéré
+ * comme zombie : on le finalise en `error` et on lance un nouveau run.
+ * Doit être > maxDuration de la route /api/cron/sync-parcours (5 min) avec marge.
+ */
+const STALE_RUN_THRESHOLD_MS = 30 * 60 * 1000; // 30 min
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function runSyncBatch(triggeredBy: SyncRunTrigger): Promise<SyncRunResult> {
+  // Verrou anti-runs concurrents : si un run est déjà en cours, on skip
+  // (ou on l'expire et on continue s'il est zombie).
+  const pending = await syncRunRepo.findPendingRun();
+  if (pending) {
+    const ageMs = Date.now() - new Date(pending.startedAt).getTime();
+    if (ageMs < STALE_RUN_THRESHOLD_MS) {
+      return {
+        skipped: true,
+        reason: `Un run est déjà en cours (${pending.id}), démarré il y a ${Math.round(ageMs / 1000)}s.`,
+        existingRunId: pending.id,
+      };
+    }
+    // Run zombie : on le finalise en erreur et on continue
+    await syncRunRepo.finalizeRun(pending.id, {
+      status: SyncRunStatus.ERROR,
+      totalParcoursScanned: pending.totalParcoursScanned,
+      totalParcoursUpdated: pending.totalParcoursUpdated,
+      totalErrors: pending.totalErrors,
+      errorSummary: `Run zombie auto-expiré après ${Math.round(ageMs / 60000)} min sans finished_at.`,
+    });
+  }
+
   const run = await syncRunRepo.createRun(triggeredBy);
 
   const parcoursList = await parcoursRepo.findActiveForSync();
@@ -108,6 +148,7 @@ export async function runSyncBatch(triggeredBy: SyncRunTrigger): Promise<SyncRun
   });
 
   return {
+    skipped: false,
     runId: run.id,
     status,
     totalScanned: parcoursList.length,
