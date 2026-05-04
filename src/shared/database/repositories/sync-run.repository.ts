@@ -14,7 +14,7 @@ import {
   SyncRunTrigger,
 } from "@/shared/domain/value-objects/sync-run-status.enum";
 
-export interface SyncRunListItem extends SyncRun {}
+export type SyncRunListItem = SyncRun;
 
 export interface SyncRunDetailEntry extends SyncRunEntry {
   parcoursId: string;
