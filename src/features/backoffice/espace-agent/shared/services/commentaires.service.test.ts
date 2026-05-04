@@ -7,7 +7,7 @@ import {
   allersVersRepository,
 } from "@/shared/database/repositories";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
-import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
+import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import type { CommentaireDetail } from "../domain/types/commentaire.types";
@@ -40,7 +40,7 @@ vi.mock("@/features/auth/permissions/services/rbac.service", () => ({
 }));
 
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
-  calculateAgentScope: vi.fn(),
+  verifyProspectTerritoryAccess: vi.fn(),
 }));
 
 describe("CommentairesService", () => {
@@ -109,22 +109,14 @@ describe("CommentairesService", () => {
       vi.mocked(hasPermission).mockImplementation((role, permission) => {
         return permission === BackofficePermission.COMMENTAIRES_READ;
       });
-      vi.mocked(calculateAgentScope).mockResolvedValue({
-        isNational: false,
-        entrepriseAmoIds: ["amo-1"],
-        departements: ["75"],
-        epcis: [],
-        canViewAllDossiers: false,
-        canViewDossiersByEntreprise: true,
-        canViewDossiersWithoutAmo: false,
-      });
+      vi.mocked(verifyProspectTerritoryAccess).mockResolvedValue(null);
       vi.mocked(parcoursCommentairesRepo.findByParcoursId).mockResolvedValue([mockCommentaire]);
 
       // Act
       const result = await service.getCommentairesForParcours("parcours-1", "agent-1", UserRole.AMO, "amo-1", null);
 
       // Assert
-      expect(calculateAgentScope).toHaveBeenCalledWith({
+      expect(verifyProspectTerritoryAccess).toHaveBeenCalledWith("parcours-1", {
         id: "agent-1",
         role: UserRole.AMO,
         entrepriseAmoId: "amo-1",

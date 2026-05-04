@@ -8,6 +8,7 @@ import { UserRole } from "@/shared/domain/value-objects";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
+import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import type { ActionResult } from "@/shared/types";
 
 /**
@@ -34,10 +35,14 @@ export async function archiveProspectAction(parcoursId: string, archiveReason: s
       return { success: false, error: "Agent non lié à une structure Allers-Vers" };
     }
 
-    // Vérifier que le parcours existe
-    const parcours = await parcoursPreventionRepository.findById(parcoursId);
-    if (!parcours) {
-      return { success: false, error: "Parcours non trouvé" };
+    const territoryError = await verifyProspectTerritoryAccess(parcoursId, {
+      id: user.agentId ?? "",
+      role,
+      entrepriseAmoId: user.entrepriseAmoId ?? null,
+      allersVersId: user.allersVersId,
+    });
+    if (territoryError) {
+      return { success: false, error: territoryError };
     }
 
     await parcoursPreventionRepository.updateSituationParticulier(
@@ -80,9 +85,14 @@ export async function unarchiveProspectAction(parcoursId: string): Promise<Actio
       return { success: false, error: "Agent non lié à une structure Allers-Vers" };
     }
 
-    const parcours = await parcoursPreventionRepository.findById(parcoursId);
-    if (!parcours) {
-      return { success: false, error: "Parcours non trouvé" };
+    const territoryError = await verifyProspectTerritoryAccess(parcoursId, {
+      id: user.agentId ?? "",
+      role,
+      entrepriseAmoId: user.entrepriseAmoId ?? null,
+      allersVersId: user.allersVersId,
+    });
+    if (territoryError) {
+      return { success: false, error: territoryError };
     }
 
     // Retour à PROSPECT (workflow Allers-Vers, pas ELIGIBLE)

@@ -6,7 +6,7 @@ import {
 } from "@/shared/database/repositories";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
-import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
+import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import type { UserRole } from "@/shared/domain/value-objects";
 import type {
   CommentairesListResult,
@@ -58,17 +58,20 @@ export class CommentairesService {
       };
     }
 
-    // Pour les agents AMO / Allers-Vers : vérifier l'accès au parcours via le scope
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _scope = await calculateAgentScope({
+    // Vérifier que le parcours est dans le scope territorial de l'agent
+    const territoryError = await verifyProspectTerritoryAccess(parcoursId, {
       id: agentId,
       role,
       entrepriseAmoId: entrepriseAmoId ?? null,
       allersVersId: allersVersId ?? null,
     });
+    if (territoryError) {
+      return {
+        commentaires: [],
+        totalCount: 0,
+      };
+    }
 
-    // TODO: Vérifier que le parcours est dans le scope de l'agent
-    // Pour l'instant, on autorise l'accès (sera implémenté avec la logique de scope complète)
     const commentaires = await parcoursCommentairesRepo.findByParcoursId(parcoursId);
 
     return {
