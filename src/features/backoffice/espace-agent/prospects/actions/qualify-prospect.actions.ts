@@ -9,6 +9,7 @@ import { UserRole } from "@/shared/domain/value-objects";
 import { QualificationDecision } from "../domain/types";
 import { qualificationService } from "../services/qualification.service";
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
+import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
 import type { ActionResult } from "@/shared/types";
 
@@ -83,7 +84,18 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
 
     const { parcoursId, decision, actionsRealisees, raisonsIneligibilite, note } = parsed.data;
 
-    // 5. Logique métier
+    // 5. Vérification territoriale
+    const territoryError = await verifyProspectTerritoryAccess(parcoursId, {
+      id: user.agentId,
+      role,
+      entrepriseAmoId: user.entrepriseAmoId ?? null,
+      allersVersId: user.allersVersId,
+    });
+    if (territoryError) {
+      return { success: false, error: territoryError };
+    }
+
+    // 6. Logique métier
     const qualification = await qualificationService.qualifyProspect({
       parcoursId,
       agentId: user.agentId,
@@ -93,7 +105,7 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
       note,
     });
 
-    // 6. Invalidation du cache
+    // 7. Invalidation du cache
     revalidatePath("/espace-agent", "layout");
 
     return { success: true, data: qualification };
@@ -127,7 +139,18 @@ export async function getProspectQualificationAction(
       return { success: false, error: "Agent non lié à une structure Allers-Vers" };
     }
 
-    // 4. Récupérer la qualification
+    // 4. Vérification territoriale
+    const territoryError = await verifyProspectTerritoryAccess(parcoursId, {
+      id: user.agentId ?? "",
+      role,
+      entrepriseAmoId: user.entrepriseAmoId ?? null,
+      allersVersId: user.allersVersId,
+    });
+    if (territoryError) {
+      return { success: false, error: territoryError };
+    }
+
+    // 5. Récupérer la qualification
     const qualification = await qualificationService.getLatestQualification(parcoursId);
 
     return { success: true, data: qualification };

@@ -1,6 +1,8 @@
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { agentPermissionsRepository, allersVersRepository } from "@/shared/database";
+import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import type { AgentScope, AgentScopeInput, DossierAccessCheck, ScopeFilters } from "../domain/types/agent-scope.types";
 
 /**
@@ -253,6 +255,40 @@ export function isAmoConfigured(agent: AgentScopeInput): boolean {
     return true; // Non applicable pour les autres rôles
   }
   return agent.entrepriseAmoId !== null;
+}
+
+/**
+ * Verifie qu'un prospect (parcours) est dans le territoire d'un agent Allers-Vers.
+ * Retourne null si l'acces est autorise, ou un message d'erreur sinon.
+ */
+export async function verifyProspectTerritoryAccess(
+  parcoursId: string,
+  agent: AgentScopeInput
+): Promise<string | null> {
+  const scope = await calculateAgentScope(agent);
+
+  if (scope.isNational) {
+    return null;
+  }
+
+  const parcours = await parcoursPreventionRepository.findById(parcoursId);
+  if (!parcours) {
+    return "Parcours non trouvé";
+  }
+
+  const rgaData = getEffectiveRGAData(parcours);
+  const codeDepartement = rgaData?.logement?.code_departement;
+  const codeEpci = rgaData?.logement?.epci;
+
+  const matchesDepartement =
+    scope.departements.length > 0 && codeDepartement && scope.departements.includes(String(codeDepartement));
+  const matchesEpci = scope.epcis.length > 0 && codeEpci && scope.epcis.includes(String(codeEpci));
+
+  if (!matchesDepartement && !matchesEpci) {
+    return "Ce prospect n'est pas dans votre territoire";
+  }
+
+  return null;
 }
 
 /**
