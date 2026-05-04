@@ -204,6 +204,13 @@
       "when": 1777480385058,
       "tag": "0028_classy_thundra",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1777900750149,
+      "tag": "0029_kind_makkari",
+      "breakpoints": true
     }
   ]
 }

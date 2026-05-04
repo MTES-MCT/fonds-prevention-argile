@@ -145,6 +145,18 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   /**
+   * Trouve les parcours actifs à synchroniser : ni archivés, ni complétés.
+   * Utilisé par le CRON de synchronisation des dossiers DS.
+   */
+  async findActiveForSync(): Promise<ParcoursPrevention[]> {
+    return await db
+      .select()
+      .from(parcoursPrevention)
+      .where(and(isNull(parcoursPrevention.archivedAt), isNull(parcoursPrevention.completedAt)))
+      .orderBy(asc(parcoursPrevention.createdAt));
+  }
+
+  /**
    * Trouve les parcours en instruction
    */
   async findInProgress(): Promise<ParcoursPrevention[]> {

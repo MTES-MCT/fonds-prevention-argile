@@ -7,6 +7,8 @@ import {
   SituationParticulier,
   AttributionAmoMode,
   SourceAcquisition,
+  SyncRunStatus,
+  SyncRunTrigger,
 } from "@/shared/domain/value-objects";
 import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
 
@@ -77,4 +79,15 @@ export const agentRolePgEnum = pgEnum("agent_role", [
   AGENT_ROLES.ALLERS_VERS,
   AGENT_ROLES.AMO_ET_ALLERS_VERS,
   AGENT_ROLES.ANALYSTE_DDT,
+]);
+
+export const syncRunStatusPgEnum = pgEnum("sync_run_status", [
+  SyncRunStatus.SUCCESS,
+  SyncRunStatus.PARTIAL,
+  SyncRunStatus.ERROR,
+]);
+
+export const syncRunTriggerPgEnum = pgEnum("sync_run_trigger", [
+  SyncRunTrigger.CRON,
+  SyncRunTrigger.MANUAL,
 ]);

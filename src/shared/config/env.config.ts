@@ -124,6 +124,9 @@ const serverSchema = z.object({
   JWT_SECRET: z.string().min(32),
   BASE_URL: z.string().url().default("http://localhost:3000"),
 
+  // Secret partagé pour authentifier les déclenchements du CRON (Scalingo Scheduler)
+  CRON_SECRET: z.string().min(32, "CRON_SECRET doit faire au moins 32 caractères"),
+
   // Variables FranceConnect
   ...franceConnectEnvSchema.shape,
 
