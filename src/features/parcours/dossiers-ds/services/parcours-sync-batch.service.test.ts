@@ -181,6 +181,76 @@ describe("runSyncBatch", () => {
     expect(errorEntry.error).toContain("DB down");
   });
 
+  it("changement DS sans atteindre VALIDE → entry sans step_advanced", async () => {
+    const before = fakeParcours({
+      currentStep: Step.ELIGIBILITE,
+      currentStatus: Status.TODO,
+    });
+    const afterSync = fakeParcours({
+      currentStep: Step.ELIGIBILITE,
+      currentStatus: Status.EN_INSTRUCTION,
+    });
+
+    mockedParcoursRepo.findActiveForSync.mockResolvedValue([before as never]);
+    mockedParcoursRepo.findById
+      .mockResolvedValueOnce(before as never)
+      .mockResolvedValueOnce(afterSync as never);
+
+    mockedGetAllDossiers.mockResolvedValue([
+      { id: "d1", step: Step.ELIGIBILITE, dsNumber: "123" } as never,
+    ]);
+    mockedSyncDossierStatus.mockResolvedValue({
+      success: true,
+      data: { updated: true, oldStatus: DSStatus.EN_CONSTRUCTION, newStatus: DSStatus.EN_INSTRUCTION },
+    } as never);
+
+    const result = await runSyncBatch(SyncRunTrigger.CRON);
+
+    expect(mockedMoveToNextStep).not.toHaveBeenCalled();
+    expect(mockedSyncRunRepo.addEntry).toHaveBeenCalledTimes(1);
+    const entry = mockedSyncRunRepo.addEntry.mock.calls[0][0];
+    expect(entry.stepAdvanced).toBe(false);
+    expect(entry.dsStatusChanges).toEqual([
+      { step: Step.ELIGIBILITE, oldDsStatus: DSStatus.EN_CONSTRUCTION, newDsStatus: DSStatus.EN_INSTRUCTION },
+    ]);
+    expect(result.totalUpdated).toBe(1);
+    expect(result.status).toBe(SyncRunStatus.SUCCESS);
+  });
+
+  it("dernière étape (FACTURES) qui devient VALIDE → pas de moveToNextStep", async () => {
+    const before = fakeParcours({
+      currentStep: Step.FACTURES,
+      currentStatus: Status.EN_INSTRUCTION,
+    });
+    const afterSync = fakeParcours({
+      currentStep: Step.FACTURES,
+      currentStatus: Status.VALIDE,
+    });
+
+    mockedParcoursRepo.findActiveForSync.mockResolvedValue([before as never]);
+    mockedParcoursRepo.findById
+      .mockResolvedValueOnce(before as never)
+      .mockResolvedValueOnce(afterSync as never);
+
+    mockedGetAllDossiers.mockResolvedValue([
+      { id: "df", step: Step.FACTURES, dsNumber: "999" } as never,
+    ]);
+    mockedSyncDossierStatus.mockResolvedValue({
+      success: true,
+      data: { updated: true, oldStatus: DSStatus.EN_INSTRUCTION, newStatus: DSStatus.ACCEPTE },
+    } as never);
+
+    const result = await runSyncBatch(SyncRunTrigger.CRON);
+
+    expect(mockedMoveToNextStep).not.toHaveBeenCalled();
+    expect(mockedSyncRunRepo.addEntry).toHaveBeenCalledTimes(1);
+    const entry = mockedSyncRunRepo.addEntry.mock.calls[0][0];
+    expect(entry.stepAdvanced).toBe(false);
+    expect(entry.statusBefore).toBe(Status.EN_INSTRUCTION);
+    expect(entry.statusAfter).toBe(Status.VALIDE);
+    expect(result.status).toBe(SyncRunStatus.SUCCESS);
+  });
+
   it("tous les parcours plantent → status ERROR", async () => {
     const ko1 = fakeParcours({ id: "p1" });
     const ko2 = fakeParcours({ id: "p2" });
