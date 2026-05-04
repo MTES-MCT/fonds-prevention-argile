@@ -231,6 +231,23 @@ Build et lancement avec Docker Compose :
 docker-compose up --build
 ```
 
+### CRON de synchronisation des parcours
+
+Un job planifié synchronise périodiquement les statuts DS de tous les parcours actifs et fait progresser les parcours dont le dossier courant a été accepté.
+
+**Fichier de configuration** : `cron.json` à la racine (lu par l'addon Scheduler de Scalingo). Toutes les 15 minutes par défaut.
+
+**Pré-requis côté Scalingo**
+
+1. Activer l'addon **Scheduler** sur l'application.
+2. Ajouter deux variables d'environnement :
+   - `CRON_SECRET` : secret aléatoire (≥ 32 caractères). Générer avec `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+   - `APP_URL` : URL publique de l'application (ex: `https://fonds-argile.osc-fr1.scalingo.io`).
+
+**Endpoint** : `POST /api/cron/sync-parcours`, protégé par `Authorization: Bearer $CRON_SECRET`.
+
+**Déclenchement manuel** (super-admin) : depuis `/administration/synchronisations`, bouton « Lancer une synchro maintenant ». Permet aussi de consulter l'historique des runs et le détail des parcours mis à jour.
+
 ## Dépannage
 
 ### Problèmes de cache
