@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { runSyncBatch } from "./parcours-sync-batch.service";
 import { parcoursRepo, syncRunRepo } from "@/shared/database/repositories";
 import { getAllDossiersByParcours } from "./dossier-ds.service";
-import { syncDossierStatus } from "./ds-sync.service";
+import { recomputeParcoursStatus, syncDossierStatus } from "./ds-sync.service";
 import { moveToNextStep } from "@/features/parcours/core/services";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -34,6 +34,7 @@ vi.mock("./dossier-ds.service", () => ({
 vi.mock("./ds-sync.service", () => ({
   syncDossierStatus: vi.fn(),
   syncAllDossiers: vi.fn(),
+  recomputeParcoursStatus: vi.fn(),
 }));
 
 vi.mock("@/features/parcours/core/services", () => ({
@@ -47,6 +48,7 @@ const mockedParcoursRepo = vi.mocked(parcoursRepo);
 const mockedSyncRunRepo = vi.mocked(syncRunRepo);
 const mockedGetAllDossiers = vi.mocked(getAllDossiersByParcours);
 const mockedSyncDossierStatus = vi.mocked(syncDossierStatus);
+const mockedRecomputeStatus = vi.mocked(recomputeParcoursStatus);
 const mockedMoveToNextStep = vi.mocked(moveToNextStep);
 
 function fakeParcours(overrides: Partial<{
@@ -72,6 +74,9 @@ describe("runSyncBatch", () => {
     mockedSyncRunRepo.createRun.mockResolvedValue({ id: "run-1" } as never);
     mockedSyncRunRepo.addEntry.mockResolvedValue({ id: "entry-1" } as never);
     mockedSyncRunRepo.finalizeRun.mockResolvedValue({ id: "run-1" } as never);
+    // Par défaut : recompute ne change rien (les tests qui veulent simuler une transition
+    // s'appuient sur les findById séquencés du parcours, pas sur cette valeur)
+    mockedRecomputeStatus.mockResolvedValue({ success: true, data: { updated: false } } as never);
   });
 
   it("aucun parcours actif → status SUCCESS, pas d'entry", async () => {
@@ -248,6 +253,75 @@ describe("runSyncBatch", () => {
     expect(entry.stepAdvanced).toBe(false);
     expect(entry.statusBefore).toBe(Status.EN_INSTRUCTION);
     expect(entry.statusAfter).toBe(Status.VALIDE);
+    expect(result.status).toBe(SyncRunStatus.SUCCESS);
+  });
+
+  it("plusieurs dossiers : seul celui de current_step pilote current_status (via recomputeParcoursStatus)", async () => {
+    // Scénario : current_step=eligibilite (EN_INSTRUCTION). Le dossier eligibilite passe
+    // à ACCEPTE et un dossier diagnostic ouvert en avance passe de NON_ACCESSIBLE à
+    // EN_CONSTRUCTION. Avant le refactor, le dernier dossier itéré écrasait current_status.
+    // Maintenant, seul recomputeParcoursStatus (sur eligibilite) pilote current_status.
+    const before = fakeParcours({
+      currentStep: Step.ELIGIBILITE,
+      currentStatus: Status.EN_INSTRUCTION,
+    });
+    const afterRecompute = fakeParcours({
+      currentStep: Step.ELIGIBILITE,
+      currentStatus: Status.VALIDE,
+    });
+    const afterProgress = fakeParcours({
+      currentStep: Step.DIAGNOSTIC,
+      currentStatus: Status.TODO,
+    });
+
+    mockedParcoursRepo.findActiveForSync.mockResolvedValue([before as never]);
+    mockedParcoursRepo.findById
+      .mockResolvedValueOnce(before as never) // début syncOneParcours
+      .mockResolvedValueOnce(afterRecompute as never) // après recomputeParcoursStatus
+      .mockResolvedValueOnce(afterProgress as never); // après moveToNextStep
+
+    mockedGetAllDossiers.mockResolvedValue([
+      { id: "d1", step: Step.ELIGIBILITE, dsNumber: "111" } as never,
+      { id: "d2", step: Step.DIAGNOSTIC, dsNumber: "222" } as never,
+    ]);
+
+    mockedSyncDossierStatus.mockImplementation(async (_pid, step) => {
+      if (step === Step.ELIGIBILITE) {
+        return {
+          success: true,
+          data: { updated: true, oldStatus: DSStatus.EN_INSTRUCTION, newStatus: DSStatus.ACCEPTE },
+        } as never;
+      }
+      return {
+        success: true,
+        data: { updated: true, oldStatus: DSStatus.NON_ACCESSIBLE, newStatus: DSStatus.EN_CONSTRUCTION },
+      } as never;
+    });
+
+    mockedMoveToNextStep.mockResolvedValue({
+      success: true,
+      data: { state: { step: Step.DIAGNOSTIC, status: Status.TODO }, complete: false },
+    } as never);
+
+    const result = await runSyncBatch(SyncRunTrigger.CRON);
+
+    // recomputeParcoursStatus appelé exactement 1 fois pour ce parcours
+    expect(mockedRecomputeStatus).toHaveBeenCalledTimes(1);
+    expect(mockedRecomputeStatus).toHaveBeenCalledWith("p1");
+
+    // Les 2 dossiers sont synchronisés
+    expect(mockedSyncDossierStatus).toHaveBeenCalledTimes(2);
+
+    // moveToNextStep est bien appelé (current_status est passé à VALIDE après recompute)
+    expect(mockedMoveToNextStep).toHaveBeenCalledWith("u1");
+
+    // Une seule entry, qui reflète la transition eligibilite → diagnostic
+    expect(mockedSyncRunRepo.addEntry).toHaveBeenCalledTimes(1);
+    const entry = mockedSyncRunRepo.addEntry.mock.calls[0][0];
+    expect(entry.stepBefore).toBe(Step.ELIGIBILITE);
+    expect(entry.stepAfter).toBe(Step.DIAGNOSTIC);
+    expect(entry.stepAdvanced).toBe(true);
+    expect(entry.dsStatusChanges).toHaveLength(2);
     expect(result.status).toBe(SyncRunStatus.SUCCESS);
   });
 

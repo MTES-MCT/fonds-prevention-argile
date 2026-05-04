@@ -1,7 +1,7 @@
 "use server";
 
 import { getSession } from "@/features/auth/server";
-import { syncDossierStatus, syncAllDossiers } from "../services/ds-sync.service";
+import { recomputeParcoursStatus, syncDossierStatus, syncAllDossiers } from "../services/ds-sync.service";
 import { getDossierByStep, getAllDossiersByParcours } from "../services/dossier-ds.service";
 import { DSStatus } from "../domain/value-objects/ds-status";
 import type { Step } from "../../core/domain/value-objects/step";
@@ -64,8 +64,12 @@ export async function syncUserDossierStatus(step: Step): Promise<ActionResult<Sy
       };
     }
 
-    // Synchroniser
+    // Synchroniser le dossier
     const syncResult = await syncDossierStatus(parcours.parcours.id, step, dossier.dsNumber);
+
+    // Recalculer current_status sur la base du dossier de l'étape courante
+    // (préserve le comportement antérieur où la sync UI mettait à jour le parcours)
+    await recomputeParcoursStatus(parcours.parcours.id);
 
     return syncResult;
   } catch (error) {

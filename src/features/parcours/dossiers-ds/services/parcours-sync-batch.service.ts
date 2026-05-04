@@ -7,7 +7,7 @@ import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { moveToNextStep } from "@/features/parcours/core/services";
 import type { DsStatusChange } from "@/shared/database/schema/sync-run-entries";
 import { getAllDossiersByParcours } from "./dossier-ds.service";
-import { syncDossierStatus } from "./ds-sync.service";
+import { recomputeParcoursStatus, syncDossierStatus } from "./ds-sync.service";
 
 /**
  * Synchronisation batch des parcours :
@@ -134,6 +134,9 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
   const dossiers = await getAllDossiersByParcours(parcoursId);
   const dsChanges: DsStatusChange[] = [];
 
+  // 1. Synchronise tous les dossiers (sans toucher au current_status du parcours).
+  //    On garde tous les dossiers en sync DS pour rester cohérent côté historique,
+  //    même si seul celui de current_step pilote le current_status.
   for (const dossier of dossiers) {
     if (!dossier.dsNumber) continue;
 
@@ -147,7 +150,10 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
     }
   }
 
-  // Relire pour avoir le current_status à jour (la sync l'a possiblement modifié)
+  // 2. Recalcule current_status à partir du dossier de current_step uniquement.
+  await recomputeParcoursStatus(parcoursId);
+
+  // 3. Relire pour avoir le current_status à jour
   const afterSync = await parcoursRepo.findById(parcoursId);
   if (!afterSync) {
     throw new Error("Parcours disparu pendant la synchro");
