@@ -109,12 +109,22 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   /**
-   * Marque un parcours comme complété
+   * Marque un parcours comme complété.
+   * Idempotent : si `completedAt` est déjà rempli, ne touche pas la valeur
+   * existante (pour préserver le timestamp d'origine).
    */
   async markAsCompleted(id: string): Promise<ParcoursPrevention | null> {
-    return await this.update(id, {
-      completedAt: new Date(),
-    });
+    const result = await db
+      .update(parcoursPrevention)
+      .set({ completedAt: new Date() })
+      .where(and(eq(parcoursPrevention.id, id), isNull(parcoursPrevention.completedAt)))
+      .returning();
+
+    if (result.length > 0) {
+      return result[0];
+    }
+    // Déjà complété : on retourne la ligne telle quelle
+    return await this.findById(id);
   }
 
   /**

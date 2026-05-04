@@ -67,8 +67,11 @@ export async function moveToNextStep(userId: string): Promise<
     status: data.parcours.status,
   };
 
-  // Si déjà complet
+  // Si déjà complet : marquer la complétion en BDD (idempotent) et retourner.
+  // Ce point d'entrée est aussi atteint par le CRON lorsqu'un dossier `factures`
+  // est validé, ce qui sort le parcours de findActiveForSync au prochain run.
   if (isParcoursComplete(currentState)) {
+    await parcoursRepo.markAsCompleted(data.parcours.id);
     return {
       success: true,
       data: {

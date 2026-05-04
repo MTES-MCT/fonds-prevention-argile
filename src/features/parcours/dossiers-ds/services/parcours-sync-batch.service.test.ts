@@ -239,7 +239,7 @@ describe("runSyncBatch", () => {
     expect(result.status).toBe(SyncRunStatus.SUCCESS);
   });
 
-  it("dernière étape (FACTURES) qui devient VALIDE → pas de moveToNextStep", async () => {
+  it("dernière étape (FACTURES) qui devient VALIDE → moveToNextStep appelé, complete=true, pas de step_advanced", async () => {
     const before = fakeParcours({
       currentStep: Step.FACTURES,
       currentStatus: Status.EN_INSTRUCTION,
@@ -252,7 +252,8 @@ describe("runSyncBatch", () => {
     mockedParcoursRepo.findActiveForSync.mockResolvedValue([before as never]);
     mockedParcoursRepo.findById
       .mockResolvedValueOnce(before as never)
-      .mockResolvedValueOnce(afterSync as never);
+      .mockResolvedValueOnce(afterSync as never)
+      .mockResolvedValueOnce(afterSync as never); // re-lecture après moveToNextStep
 
     mockedGetAllDossiers.mockResolvedValue([
       { id: "df", step: Step.FACTURES, dsNumber: "999" } as never,
@@ -261,14 +262,21 @@ describe("runSyncBatch", () => {
       success: true,
       data: { updated: true, oldStatus: DSStatus.EN_INSTRUCTION, newStatus: DSStatus.ACCEPTE },
     } as never);
+    // moveToNextStep retourne complete=true (markAsCompleted appelé en interne)
+    mockedMoveToNextStep.mockResolvedValue({
+      success: true,
+      data: { state: { step: Step.FACTURES, status: Status.VALIDE }, complete: true },
+    } as never);
 
     const result = await runSyncBatch(SyncRunTrigger.CRON);
     assertExecuted(result);
 
-    expect(mockedMoveToNextStep).not.toHaveBeenCalled();
+    expect(mockedMoveToNextStep).toHaveBeenCalledWith("u1");
     expect(mockedSyncRunRepo.addEntry).toHaveBeenCalledTimes(1);
     const entry = mockedSyncRunRepo.addEntry.mock.calls[0][0];
-    expect(entry.stepAdvanced).toBe(false);
+    expect(entry.stepAdvanced).toBe(false); // pas d'avancement, c'est une complétion
+    expect(entry.stepBefore).toBe(Step.FACTURES);
+    expect(entry.stepAfter).toBe(Step.FACTURES);
     expect(entry.statusBefore).toBe(Status.EN_INSTRUCTION);
     expect(entry.statusAfter).toBe(Status.VALIDE);
     expect(result.status).toBe(SyncRunStatus.SUCCESS);

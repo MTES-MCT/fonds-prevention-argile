@@ -59,8 +59,10 @@ TODO ──(création dossier DS)──► EN_INSTRUCTION ──(sync DS, ds_sta
 | `diagnostic / todo` → `diagnostic / en_instruction` | Demandeur clique « Transmettre les résultats » → `envoyerDossierDiagnostic` (préremplissage DS) | `diagnostic.service.ts:125` |
 | `diagnostic / en_instruction` → `diagnostic / valide` | Idem éligibilité (sync + recompute) | id. |
 | `diagnostic / valide` → `devis / todo` | Idem (CRON) | id. |
-| `devis / *` → `factures / *` | Idem (cycle dépôt → sync → progression) | id. |
-| `factures / valide` | État terminal. **`moveToNextStep` ne fait rien** car `isLastStep(factures)`. | `parcours-permissions.service.ts:26` |
+| `devis / *` → `devis / valide` | Idem (cycle dépôt → sync → recompute) | id. |
+| `devis / valide` → `factures / todo` | Idem (CRON) | id. |
+| `factures / *` → `factures / valide` | Sync DS (factures.ds_status = accepte) + recompute | id. |
+| `factures / valide` | **État terminal**. `moveToNextStep` détecte `isParcoursComplete` et appelle `markAsCompleted` (set `completed_at`). Le parcours sort de `findActiveForSync` au prochain run. | `parcours-progression.service.ts` (branche `isParcoursComplete`), `parcours-prevention.repository.ts` (méthode `markAsCompleted` idempotente) |
 
 ### 2.2 Garde-fous existants
 
@@ -146,7 +148,9 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
    a. Lit l'état initial (`stepBefore`, `statusBefore`).
    b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`.
    c. Appelle `recomputeParcoursStatus` une fois.
-   d. Si `current_status === VALIDE` ET `!isLastStep`, appelle `moveToNextStep`.
+   d. Si `current_status === VALIDE`, appelle `moveToNextStep` qui :
+      - avance à l'étape suivante si non finale ;
+      - sinon (étape `factures`) appelle `markAsCompleted` (set `completed_at`).
    e. Si quelque chose a changé (changement DS, status, étape, ou erreur), écrit une `sync_run_entries`.
    f. `sleep(150ms)` pour ne pas saturer l'API DS.
 5. Finalise le run : `finished_at = NOW()`, totaux, status final (`success` / `partial` / `error` / pas d'erreur).
@@ -285,7 +289,17 @@ Server actions : `src/features/backoffice/administration/synchronisations/action
 
 **Justification** : l'endpoint déclenche du travail backend coûteux (boucle sur tous les parcours, appels API DS). Sans auth, exposé à de l'abus. Pattern identique à `BREVO_WEBHOOK_SECRET`. Pas de données sensibles exfiltrables, mais protection contre déni de service / pollution de l'historique.
 
-### 6.7 Verrou anti-runs concurrents
+### 6.7 Complétion automatique sur `factures/valide`
+
+**Décision** : `moveToNextStep` détecte `isParcoursComplete(state)` (= `step === FACTURES && status === VALIDE`) et appelle `parcoursRepo.markAsCompleted(id)` qui set `completed_at`. Le CRON appelle systématiquement `moveToNextStep` quand `current_status === VALIDE`, peu importe l'étape.
+
+Côté repository, `markAsCompleted` est **idempotent** : le SQL est `UPDATE ... WHERE completed_at IS NULL`, donc un appel sur un parcours déjà complété est un no-op (le timestamp d'origine est préservé).
+
+**Justification** : sans ça, les parcours arrivés à `factures/valide` restaient indéfiniment dans `findActiveForSync()` (qui filtre `completed_at IS NULL`). Le CRON balayait ces parcours à chaque run pour rien (appels DS inutiles, entries potentiellement dupliquées si le statut DS bougeait encore). Avec `markAsCompleted`, ils sortent du périmètre dès le run qui les fait passer à `valide`.
+
+**Effet sur l'historique** : la `sync_run_entries` du run qui complète le parcours montre `stepBefore = stepAfter = factures`, `statusBefore = en_instruction`, `statusAfter = valide`, `step_advanced = false`. La complétion n'a pas de flag explicite — elle se déduit du `stepAfter = factures` + `statusAfter = valide`. Suffisant pour le MVP, on pourra ajouter un champ `parcours_completed: bool` plus tard si nécessaire.
+
+### 6.8 Verrou anti-runs concurrents
 
 **Décision** : avant de créer un nouveau run, `runSyncBatch` vérifie qu'aucun run n'est en cours (`findPendingRun()` = ligne `sync_runs` sans `finished_at`).
 
@@ -311,8 +325,8 @@ type SyncRunResult =
 
 ### 6.10 Non-décisions / dette technique connue
 
-- **Pas de `markAsCompleted` automatique sur `factures/valide`** : le code actuel ne set jamais `completed_at`. Les parcours terminés restent dans `findActiveForSync` et sont rebalayés à chaque CRON pour rien. À traiter dans un chantier ultérieur.
 - **Pas de purge automatique de l'historique** : `sync_runs` et `sync_run_entries` grossissent indéfiniment. Prévoir un CRON de purge (>90 jours par exemple) en complément.
+- **Pas de flag explicite « parcours complété » dans `sync_run_entries`** : la complétion se déduit de `stepAfter = factures && statusAfter = valide`. À ajouter si on veut filtrer/agréger sur ce critère dans la vue admin.
 
 ---
 

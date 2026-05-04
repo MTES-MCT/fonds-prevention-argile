@@ -2,7 +2,6 @@ import { parcoursRepo, syncRunRepo } from "@/shared/database/repositories";
 import { SyncRunStatus, SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
-import { isLastStep } from "@/features/parcours/core/domain/value-objects/step";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { moveToNextStep } from "@/features/parcours/core/services";
 import type { DsStatusChange } from "@/shared/database/schema/sync-run-entries";
@@ -200,17 +199,24 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
     throw new Error("Parcours disparu pendant la synchro");
   }
 
+  // Si le statut courant est VALIDE, on appelle moveToNextStep dans tous les cas :
+  // - étape non finale → progression vers l'étape suivante (TODO)
+  // - étape finale (factures) → markAsCompleted en interne, sort le parcours
+  //   de findActiveForSync au prochain run.
   let stepAdvanced = false;
-  if (afterSync.currentStatus === Status.VALIDE && !isLastStep(afterSync.currentStep)) {
+  let final = afterSync;
+  if (afterSync.currentStatus === Status.VALIDE) {
     const progression = await moveToNextStep(userId);
     if (progression.success && !progression.data.complete) {
       stepAdvanced = true;
     }
-  }
-
-  const final = stepAdvanced ? await parcoursRepo.findById(parcoursId) : afterSync;
-  if (!final) {
-    throw new Error("Parcours disparu après progression");
+    // Re-lecture seulement si on a appelé moveToNextStep (qui modifie potentiellement
+    // currentStep, currentStatus, et/ou completedAt).
+    const refreshed = await parcoursRepo.findById(parcoursId);
+    if (!refreshed) {
+      throw new Error("Parcours disparu après progression");
+    }
+    final = refreshed;
   }
 
   return {
