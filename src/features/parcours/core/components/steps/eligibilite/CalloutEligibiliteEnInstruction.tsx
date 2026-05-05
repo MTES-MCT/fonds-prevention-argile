@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParcours } from "../../../context/useParcours";
 import { Step } from "../../../domain";
-import { getDossierDsDemandeUrl, getDossierDsMessagerieUrl } from "@/features/parcours/dossiers-ds/utils";
+import { getDossierDsMessagerieUrl } from "@/features/parcours/dossiers-ds/utils";
 
 export default function CalloutEligibiliteEnInstruction() {
   const { dossiers } = useParcours();
@@ -11,10 +11,12 @@ export default function CalloutEligibiliteEnInstruction() {
   // Récupérer le dossier d'éligibilité
   const dossierEligilibilite = dossiers?.find((d) => d.demarcheEtape === Step.ELIGIBILITE);
 
-  // URLs de la demande dans Démarches Simplifiées
-  const demandeDsUrl = getDossierDsDemandeUrl(dossierEligilibilite?.numeroDs);
+  // URL de la demande : on utilise demarcheUrl (qui priorise l'URL stockée avec
+  // prefill_token retournée par DS, force le mode "usager" sur les comptes
+  // multi-profils admin/instructeur/usager).
+  const demandeDsUrl = dossierEligilibilite?.demarcheUrl ?? "#";
 
-  // URLs de la messagerie de la demande dans Démarches Simplifiées
+  // URL de la messagerie : reconstruite (l'URL DS de prefill ne contient pas le path messagerie).
   const messagerieDsUrl = getDossierDsMessagerieUrl(dossierEligilibilite?.numeroDs);
 
   return (
