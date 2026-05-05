@@ -14,6 +14,8 @@ interface EntonnoirEligibiliteProps {
   /** true quand l'appel Matomo est termine (succes ou echec) */
   matomoLoaded: boolean;
   loading: boolean;
+  /** true si un filtre partenaire est actif (les comptes BDD ne sont alors pas filtrables) */
+  partnerFilterActive?: boolean;
 }
 
 /**
@@ -22,7 +24,13 @@ interface EntonnoirEligibiliteProps {
  *
  * Les stats Matomo sont la source unique pour les simulations (pas de fallback BDD).
  */
-export default function EntonnoirEligibilite({ stats, matomoSimuStats, matomoLoaded, loading }: EntonnoirEligibiliteProps) {
+export default function EntonnoirEligibilite({
+  stats,
+  matomoSimuStats,
+  matomoLoaded,
+  loading,
+  partnerFilterActive = false,
+}: EntonnoirEligibiliteProps) {
   // Matomo uniquement pour les simulations (pas de fallback BDD)
   const simulationsTerminees = matomoSimuStats?.simulationsMatomo ?? null;
   const eligibles = matomoSimuStats?.simulationsEligibles ?? null;
@@ -92,13 +100,21 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, matomoLoa
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
+            value={
+              partnerFilterActive
+                ? "—"
+                : (stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "...")
+            }
             label="Comptes crees"
-            variation={stats?.comptesCrees.variation ?? null}
+            variation={partnerFilterActive ? null : (stats?.comptesCrees.variation ?? null)}
             variationType="points"
-            loading={loading}
+            loading={partnerFilterActive ? false : loading}
             compact
-            tooltip="Données base de données"
+            tooltip={
+              partnerFilterActive
+                ? "Non disponible avec un filtre partenaire (les comptes ne portent pas encore d'origine partenaire — voir Phase B)"
+                : "Données base de données"
+            }
           />
         </div>
 
@@ -109,18 +125,29 @@ export default function EntonnoirEligibilite({ stats, matomoSimuStats, matomoLoa
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={formatMatomoValue(taux, matomoLoaded, "%")}
+            value={partnerFilterActive ? "—" : formatMatomoValue(taux, matomoLoaded, "%")}
             label="Transfo. simu. &rarr; comptes"
-            variation={taux?.variation ?? null}
+            variation={partnerFilterActive ? null : (taux?.variation ?? null)}
             variationType="points"
             loading={false}
             compact
-            tooltip="Calculé : comptes créés / simulations terminées (Matomo)"
+            tooltip={
+              partnerFilterActive
+                ? "Non disponible avec un filtre partenaire (dépend des comptes BDD non filtrables — voir Phase B)"
+                : "Calculé : comptes créés / simulations terminées (Matomo)"
+            }
           />
         </div>
       </div>
       <p className="fr-text--xs fr-mt-1w" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
         Simulations : donnees Matomo (tous utilisateurs) | Comptes : donnees application
+        {partnerFilterActive && (
+          <>
+            <br />
+            <strong>Filtre partenaire actif :</strong> seules les données Matomo sont segmentées. Les comptes créés et le
+            taux de transformation ne sont pas filtrables tant que l'origine partenaire n'est pas stockée en base (Phase B).
+          </>
+        )}
       </p>
     </div>
   );

@@ -262,7 +262,13 @@ export default function AcquisitionPanel() {
         <div className="fr-container">
           {activeTab === "simulateur" && (
             <div id="tab-acquisition-simulateur-panel" role="tabpanel">
-              <EntonnoirEligibilite stats={stats} matomoSimuStats={matomoSimuStats} matomoLoaded={matomoLoaded} loading={loading} />
+              <EntonnoirEligibilite
+                stats={stats}
+                matomoSimuStats={matomoSimuStats}
+                matomoLoaded={matomoLoaded}
+                loading={loading}
+                partnerFilterActive={partner !== null}
+              />
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
                 <div className="fr-col-12 fr-col-lg-6">
                   <DetailEtapesFunnel funnel={matomoStats?.funnelSimulateurRGA ?? null} loading={funnelLoading} />
