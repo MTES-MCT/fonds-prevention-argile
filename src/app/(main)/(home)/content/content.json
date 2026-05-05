@@ -357,7 +357,7 @@
         },
         {
           "phase": "Phase travaux",
-          "prestation": "Prestations d'assistance du MOA dans la recherche d'entreprises de travaux, organisation, suivi et contrôle des travaux, constat de conformité et rapport de fin de travaux, réalisées par un maître d’œuvre.",
+          "prestation": "Prestations d'assistance du MOA dans la recherche d'entreprises de travaux, organisation, suivi et contrôle des travaux, constat de conformité et rapport de fin de travaux, réalisées par un maître d’œuvre",
           "plafond": "1 800 € HT",
           "always": "obligatoire"
         },
