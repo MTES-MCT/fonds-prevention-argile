@@ -167,15 +167,32 @@ export default function SynchronisationsPanel() {
                 parcours.
               </p>
             </div>
-            <div className="fr-col-auto">
+            <div className="fr-col-auto" style={{ textAlign: "right" }}>
               <button
                 type="button"
                 className="fr-btn"
                 onClick={handleTrigger}
-                disabled={isTriggering}>
+                disabled={buttonDisabled}
+                title={
+                  pendingRun && !isPendingStale
+                    ? "Une synchronisation est déjà en cours, attendez sa fin pour en lancer une nouvelle."
+                    : undefined
+                }>
                 <span className="fr-icon-refresh-line fr-icon--sm mr-2" aria-hidden="true" />
-                {isTriggering ? "Synchro en cours..." : "Lancer une synchro maintenant"}
+                {buttonLabel}
               </button>
+              {pendingRun && !isPendingStale && (
+                <p className="fr-text--sm fr-mt-1v fr-mb-0" style={{ color: "var(--text-mention-grey)" }}>
+                  Démarrée il y a {formatElapsed(pendingRun.startedAt)}
+                  {pendingRun.triggeredBy === SyncRunTrigger.CRON ? " (CRON)" : " (manuel)"}.
+                  Actualisation auto toutes les {PENDING_POLL_INTERVAL_MS / 1000} s.
+                </p>
+              )}
+              {pendingRun && isPendingStale && (
+                <p className="fr-text--sm fr-mt-1v fr-mb-0" style={{ color: "var(--text-default-warning)" }}>
+                  Run précédent bloqué depuis &gt; 30 min. Le relancer le finalisera en erreur.
+                </p>
+              )}
             </div>
           </div>
 
