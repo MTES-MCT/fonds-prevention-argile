@@ -78,7 +78,7 @@ export function StepEtatMaison({
             <label className="fr-label" htmlFor="etat-tres-peu-endommagee">
               Très peu endommagée
               <span className="fr-hint-text fr-text-default--info">
-                Micro-fissures (<strong>1mm d'écartement maximum</strong>) sur les murs extérieurs et/ou intérieurs
+                Micro-fissures (<strong>5mm d'écartement maximum</strong>) sur les murs extérieurs et/ou intérieurs
               </span>
             </label>
           </div>
@@ -97,8 +97,8 @@ export function StepEtatMaison({
             <label className="fr-label" htmlFor="etat-endommagee">
               Endommagée avec des premiers désordres structuraux déjà présents
               <span className="fr-hint-text fr-text-default--info">
-                Fissures importantes (<strong>supérieures à 1mm d'écartement</strong>) sur les murs extérieurs et/ou
-                intérieurs
+                Fissures importantes (<strong>supérieures à 5mm d'écartement</strong>) sur les murs extérieurs et/ou
+                intérieurs, les doublages et les cloisons, les planchers et les plafonds
               </span>
             </label>
           </div>
