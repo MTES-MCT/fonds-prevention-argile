@@ -45,7 +45,9 @@ import {
   fetchMatomoUniqueVisitors,
   fetchMatomoSimulationsGroupedByDepartment,
   fetchMatomoSimulationsGroupedByDimension,
+  buildPartnerSegment,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
+import type { PartnerKey } from "@/features/backoffice/administration/acquisition/domain/types/partner.types";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getClientEnv } from "@/shared/config/env.config";
 
@@ -105,9 +107,11 @@ interface SimulationsMatomoResult {
 async function getSimulationsMatomo(
   debut: Date,
   fin: Date,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<SimulationsMatomoResult> {
   const dateRange = formatMatomoDateRange(debut, fin);
+  const partnerSegment = buildPartnerSegment(partner);
 
   let events: Map<string, number>;
 
@@ -120,9 +124,10 @@ async function getSimulationsMatomo(
     events = await fetchMatomoEventsByDepartment(codeDeptMatomo, dimensionId, {
       period: "range",
       date: dateRange,
+      extraSegment: partnerSegment,
     });
   } else {
-    events = await fetchMatomoEvents({ period: "range", date: dateRange });
+    events = await fetchMatomoEvents({ period: "range", date: dateRange, segment: partnerSegment });
   }
 
   const eligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE) ?? 0;
@@ -134,9 +139,14 @@ async function getSimulationsMatomo(
 /**
  * Recupere le nombre de visiteurs uniques depuis Matomo, avec filtrage departement optionnel.
  */
-async function getUniqueVisitors(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
+async function getUniqueVisitors(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<number> {
   const dateRange = formatMatomoDateRange(debut, fin);
-  let segment: string | undefined;
+  const segments: string[] = [];
 
   if (codeDepartement) {
     const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
@@ -144,8 +154,13 @@ async function getUniqueVisitors(debut: Date, fin: Date, codeDepartement?: strin
     if (!dimensionId) return 0;
 
     const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
-    segment = `dimension${dimensionId}==${codeDeptMatomo}`;
+    segments.push(`dimension${dimensionId}==${codeDeptMatomo}`);
   }
+
+  const partnerSegment = buildPartnerSegment(partner);
+  if (partnerSegment) segments.push(partnerSegment);
+
+  const segment = segments.length > 0 ? segments.join(";") : undefined;
 
   return fetchMatomoUniqueVisitors("range", dateRange, segment);
 }
@@ -815,23 +830,30 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
  */
 export async function getTopDepartementsMatomo(
   periodeId: PeriodeId,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<DepartementStats[]> {
   const { debut, fin } = getDateRange(periodeId);
   const dateRange = formatMatomoDateRange(debut, fin);
+  const partnerSegment = buildPartnerSegment(partner);
 
   const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
   const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
 
   if (!dimensionId) {
     console.warn("[getTopDepartementsMatomo] NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID non configuré, fallback BDD");
-    return getTopDepartementsStats(debut, fin);
+    return partner ? [] : getTopDepartementsStats(debut, fin);
   }
 
   // Récupérer simulations Matomo par département + données BDD en parallèle
+  // Avec filtre partenaire, les stats BDD (comptes/dossiers) ne sont pas filtrables -> on les zéroise
   const [matomoByDept, bddStats] = await Promise.all([
-    fetchMatomoSimulationsGroupedByDepartment(dimensionId, { period: "range", date: dateRange }),
-    getTopDepartementsStats(debut, fin),
+    fetchMatomoSimulationsGroupedByDepartment(dimensionId, {
+      period: "range",
+      date: dateRange,
+      extraSegment: partnerSegment,
+    }),
+    partner ? Promise.resolve([] as DepartementStats[]) : getTopDepartementsStats(debut, fin),
   ]);
 
   if (matomoByDept.size === 0) {
@@ -930,26 +952,29 @@ async function getTopCommunesStats(
  */
 export async function getTopCommunesMatomo(
   periodeId: PeriodeId,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<CommuneSimulationsStats[]> {
   const { debut, fin } = getDateRange(periodeId);
   const dateRange = formatMatomoDateRange(debut, fin);
+  const partnerSegment = buildPartnerSegment(partner);
 
   const communeDimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID;
   const communeDimensionId = communeDimensionIdStr ? Number(communeDimensionIdStr) : null;
 
   if (!communeDimensionId) {
-    return getTopCommunesStats(debut, fin, codeDepartement);
+    return partner ? [] : getTopCommunesStats(debut, fin, codeDepartement);
   }
 
   try {
     const matomoByCommune = await fetchMatomoSimulationsGroupedByDimension(communeDimensionId, {
       period: "range",
       date: dateRange,
+      extraSegment: partnerSegment,
     });
 
     if (matomoByCommune.size === 0) {
-      return getTopCommunesStats(debut, fin, codeDepartement);
+      return partner ? [] : getTopCommunesStats(debut, fin, codeDepartement);
     }
 
     const result: CommuneSimulationsStats[] = [];
@@ -965,7 +990,7 @@ export async function getTopCommunesMatomo(
     // Trier et garder le top 5
     return result.sort((a, b) => b.simulations - a.simulations).slice(0, 5);
   } catch {
-    return getTopCommunesStats(debut, fin, codeDepartement);
+    return partner ? [] : getTopCommunesStats(debut, fin, codeDepartement);
   }
 }
 
@@ -1085,24 +1110,31 @@ export async function getTableauDeBordStats(
  */
 export async function getMatomoSimulationsStats(
   periodeId: PeriodeId,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<MatomoSimulationsStats> {
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 
   const matomoFallback: SimulationsMatomoResult = { eligible: 0, nonEligible: 0, total: 0 };
 
+  // Avec un filtre partenaire actif, les comptes BDD ne sont pas filtrables
+  // (Phase A) — on les force à 0 pour ne pas mélanger des données incohérentes.
+  const skipDbCounts = Boolean(partner);
+
   // Comptes crees BDD + visiteurs uniques Matomo (en parallele)
   const [currentMatomo, comptes, prevMatomo, prevComptes, currentVisitors, prevVisitors] = await Promise.all([
-    getSimulationsMatomo(debut, fin, codeDepartement).catch(() => matomoFallback),
-    countComptesCrees(debut, fin, codeDepartement),
+    getSimulationsMatomo(debut, fin, codeDepartement, partner).catch(() => matomoFallback),
+    skipDbCounts ? Promise.resolve(0) : countComptesCrees(debut, fin, codeDepartement),
     previousRange
-      ? getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement).catch(() => matomoFallback)
+      ? getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement, partner).catch(() => matomoFallback)
       : Promise.resolve(matomoFallback),
-    previousRange ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement) : Promise.resolve(0),
-    getUniqueVisitors(debut, fin, codeDepartement).catch(() => 0),
+    previousRange && !skipDbCounts
+      ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement)
+      : Promise.resolve(0),
+    getUniqueVisitors(debut, fin, codeDepartement, partner).catch(() => 0),
     previousRange
-      ? getUniqueVisitors(previousRange.debut, previousRange.fin, codeDepartement).catch(() => 0)
+      ? getUniqueVisitors(previousRange.debut, previousRange.fin, codeDepartement, partner).catch(() => 0)
       : Promise.resolve(0),
   ]);
 

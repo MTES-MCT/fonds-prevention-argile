@@ -22,6 +22,7 @@ import type {
 } from "../domain/types/tableau-de-bord.types";
 import type { EligibiliteStats } from "../domain/types/eligibilite-stats.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
+import type { PartnerKey } from "@/features/backoffice/administration/acquisition/domain/types/partner.types";
 
 /**
  * Recupere les statistiques du tableau de bord super-admin
@@ -56,7 +57,8 @@ export async function getTableauDeBordStatsAction(
  */
 export async function getMatomoSimulationsStatsAction(
   periodeId: PeriodeId,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<ActionResult<MatomoSimulationsStats>> {
   const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
 
@@ -68,7 +70,7 @@ export async function getMatomoSimulationsStatsAction(
   }
 
   try {
-    const stats = await getMatomoSimulationsStats(periodeId, codeDepartement);
+    const stats = await getMatomoSimulationsStats(periodeId, codeDepartement, partner);
     return { success: true, data: stats };
   } catch (error) {
     console.error("Erreur lors de la recuperation des statistiques Matomo:", error);
@@ -137,7 +139,8 @@ export async function getAutresDemandesArchiveesAction(
  */
 export async function getTopDepartementsMatomoAction(
   periodeId: PeriodeId,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<ActionResult<DepartementStats[]>> {
   const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
 
@@ -149,7 +152,7 @@ export async function getTopDepartementsMatomoAction(
   }
 
   try {
-    const stats = await getTopDepartementsMatomo(periodeId, codeDepartement);
+    const stats = await getTopDepartementsMatomo(periodeId, codeDepartement, partner);
     return { success: true, data: stats };
   } catch (error) {
     console.error("Erreur lors de la recuperation du top departements Matomo:", error);
@@ -165,7 +168,8 @@ export async function getTopDepartementsMatomoAction(
  */
 export async function getTopCommunesMatomoAction(
   periodeId: PeriodeId,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<ActionResult<CommuneSimulationsStats[]>> {
   const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
 
@@ -177,7 +181,7 @@ export async function getTopCommunesMatomoAction(
   }
 
   try {
-    const stats = await getTopCommunesMatomo(periodeId, codeDepartement);
+    const stats = await getTopCommunesMatomo(periodeId, codeDepartement, partner);
     return { success: true, data: stats };
   } catch (error) {
     console.error("Erreur lors de la recuperation du top communes Matomo:", error);

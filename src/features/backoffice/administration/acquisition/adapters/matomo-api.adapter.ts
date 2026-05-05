@@ -1,6 +1,27 @@
 import { getServerEnv, getClientEnv } from "@/shared/config/env.config";
 import type { MatomoVisitsResponse, MatomoEventActionResponse } from "../domain/types/matomo.types";
 import type { MatomoFunnelFlowTableResponse } from "../domain/types/matomo-funnels.types";
+import { PARTNER_REFERRERS, type PartnerKey } from "../domain/types/partner.types";
+
+/**
+ * Construit un segment Matomo filtrant par referrer (host) pour un partenaire connu.
+ */
+export function buildPartnerSegment(partner?: PartnerKey | null): string | undefined {
+  if (!partner) return undefined;
+  const host = PARTNER_REFERRERS[partner];
+  if (!host) return undefined;
+  return `referrerName==${host}`;
+}
+
+/**
+ * Combine plusieurs segments Matomo avec ";" (AND logique).
+ * Retourne undefined si aucun segment fourni.
+ */
+export function combineSegments(...segments: (string | undefined | null)[]): string | undefined {
+  const valid = segments.filter((s): s is string => Boolean(s));
+  if (valid.length === 0) return undefined;
+  return valid.join(";");
+}
 
 /**
  * Adapter pour l'API Matomo
@@ -234,7 +255,11 @@ export async function fetchMatomoUniqueVisitors(
  *
  * @param options - Période et date optionnelles
  */
-export async function fetchMatomoEvents(options?: { period?: string; date?: string }): Promise<Map<string, number>> {
+export async function fetchMatomoEvents(options?: {
+  period?: string;
+  date?: string;
+  segment?: string;
+}): Promise<Map<string, number>> {
   const config = getMatomoConfig();
 
   const data = await fetchMatomoApi<MatomoEventActionResponse[]>(
@@ -247,6 +272,7 @@ export async function fetchMatomoEvents(options?: { period?: string; date?: stri
       format: "JSON",
       token_auth: config.apiToken,
       flat: "1",
+      segment: options?.segment,
     },
     config.apiUrl
   );
@@ -271,10 +297,11 @@ export async function fetchMatomoEvents(options?: { period?: string; date?: stri
 export async function fetchMatomoEventsByDepartment(
   codeDepartement: string,
   dimensionId: number,
-  options?: { period?: string; date?: string }
+  options?: { period?: string; date?: string; extraSegment?: string }
 ): Promise<Map<string, number>> {
   const config = getMatomoConfig();
-  const segment = `dimension${dimensionId}==${codeDepartement}`;
+  const baseSegment = `dimension${dimensionId}==${codeDepartement}`;
+  const segment = combineSegments(baseSegment, options?.extraSegment) ?? baseSegment;
 
   const data = await fetchMatomoApi<MatomoEventActionResponse[]>(
     {
@@ -334,7 +361,7 @@ function extractDimensionValueFromLabel(label: string): string | null {
  */
 export async function fetchMatomoSimulationsGroupedByDimension(
   dimensionId: number,
-  options?: { period?: string; date?: string }
+  options?: { period?: string; date?: string; extraSegment?: string }
 ): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
   const config = getMatomoConfig();
 
@@ -350,15 +377,13 @@ export async function fetchMatomoSimulationsGroupedByDimension(
     flat: "1",
   };
 
+  const eligibleSegment = combineSegments("eventAction==simulateur_result_eligible", options?.extraSegment) ?? "";
+  const nonEligibleSegment =
+    combineSegments("eventAction==simulateur_result_non_eligible", options?.extraSegment) ?? "";
+
   const [eligibleData, nonEligibleData] = await Promise.all([
-    fetchMatomoApi<MatomoCustomDimensionRow[]>(
-      { ...baseParams, segment: "eventAction==simulateur_result_eligible" },
-      config.apiUrl
-    ),
-    fetchMatomoApi<MatomoCustomDimensionRow[]>(
-      { ...baseParams, segment: "eventAction==simulateur_result_non_eligible" },
-      config.apiUrl
-    ),
+    fetchMatomoApi<MatomoCustomDimensionRow[]>({ ...baseParams, segment: eligibleSegment }, config.apiUrl),
+    fetchMatomoApi<MatomoCustomDimensionRow[]>({ ...baseParams, segment: nonEligibleSegment }, config.apiUrl),
   ]);
 
   const result = new Map<string, { total: number; eligible: number; nonEligible: number }>();
@@ -389,7 +414,7 @@ export async function fetchMatomoSimulationsGroupedByDimension(
  */
 export async function fetchMatomoSimulationsGroupedByDepartment(
   dimensionId: number,
-  options?: { period?: string; date?: string }
+  options?: { period?: string; date?: string; extraSegment?: string }
 ): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
   return fetchMatomoSimulationsGroupedByDimension(dimensionId, options);
 }

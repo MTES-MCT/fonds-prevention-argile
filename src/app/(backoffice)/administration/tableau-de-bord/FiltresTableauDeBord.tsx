@@ -3,6 +3,11 @@
 import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
+import {
+  PARTNER_OPTIONS,
+  isPartnerKey,
+  type PartnerKey,
+} from "@/features/backoffice/administration/acquisition/domain/types/partner.types";
 
 interface FiltresTableauDeBordProps {
   periodeId: PeriodeId;
@@ -11,6 +16,9 @@ interface FiltresTableauDeBordProps {
   onPeriodeChange: (periodeId: PeriodeId) => void;
   onDepartementChange: (codeDepartement: string) => void;
   departementDisabled?: boolean;
+  partner?: PartnerKey | null;
+  onPartnerChange?: (partner: PartnerKey | null) => void;
+  showPartnerFilter?: boolean;
 }
 
 export function FiltresTableauDeBord({
@@ -20,6 +28,9 @@ export function FiltresTableauDeBord({
   onPeriodeChange,
   onDepartementChange,
   departementDisabled = false,
+  partner = null,
+  onPartnerChange,
+  showPartnerFilter = false,
 }: FiltresTableauDeBordProps) {
   return (
     <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--right">
@@ -59,6 +70,29 @@ export function FiltresTableauDeBord({
           </select>
         </div>
       </div>
+      {showPartnerFilter && onPartnerChange && (
+        <div className="fr-col-auto">
+          <div className="fr-select-group">
+            <select
+              className="fr-select"
+              id="filtre-partenaire"
+              name="partenaire"
+              value={partner ?? ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                onPartnerChange(value && isPartnerKey(value) ? value : null);
+              }}
+              aria-label="Filtre par partenaire">
+              <option value="">Toutes les sources</option>
+              {PARTNER_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
