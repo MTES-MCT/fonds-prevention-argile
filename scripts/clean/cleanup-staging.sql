@@ -10,7 +10,7 @@ DELETE FROM users;
 
 -- 3. Vérifications
 SELECT COUNT(*) AS users_restants FROM users;                          -- attendu : 0
-SELECT COUNT(*) AS agents_intouchés FROM agents;                       -- attendu : ton nombre d'agents
+SELECT COUNT(*) AS agents_intouchés FROM agents;                       -- attendu :  nombre d'agents
 SELECT COUNT(*) AS parcours_restants FROM parcours_prevention;         -- attendu : 0 (cascadé)
 SELECT COUNT(*) AS dossiers_restants FROM dossiers_demarches_simplifiees; -- attendu : 0 (cascadé)
 SELECT COUNT(*) AS validations_amo_restantes FROM parcours_amo_validations; -- attendu : 0 (cascadé)
