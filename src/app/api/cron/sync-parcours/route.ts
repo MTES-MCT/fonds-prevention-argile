@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerEnv } from "@/shared/config/env.config";
 import { runSyncBatch } from "@/features/parcours/dossiers-ds/services/parcours-sync-batch.service";
 import { SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
+import { safeTokenEquals } from "@/shared/utils";
 
 /**
  * Endpoint CRON de synchronisation des parcours.
@@ -31,7 +32,7 @@ function verifyBearerToken(request: NextRequest): boolean {
     return false;
   }
 
-  return parts[1] === expected;
+  return safeTokenEquals(parts[1], expected);
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
