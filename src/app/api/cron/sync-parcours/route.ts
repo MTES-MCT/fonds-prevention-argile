@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerEnv } from "@/shared/config/env.config";
 import { runSyncBatch } from "@/features/parcours/dossiers-ds/services/parcours-sync-batch.service";
 import { SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
-import { safeTokenEquals } from "@/shared/utils";
+import { safeTokenEquals } from "@/shared/utils/crypto.utils";
 
 /**
  * Endpoint CRON de synchronisation des parcours.
