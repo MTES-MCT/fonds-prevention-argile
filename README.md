@@ -259,19 +259,27 @@ Cette séparation évite que la sync d'un dossier d'étape précédente ou futur
 
 #### Déclencheurs
 
-- **CRON Scalingo Scheduler** (toutes les 15 min) — itère tous les parcours actifs (`archived_at IS NULL AND completed_at IS NULL`), synchronise leurs dossiers, recalcule, fait progresser si nécessaire, et écrit l'historique dans `sync_runs` / `sync_run_entries`.
+- **CRON GitHub Actions** (3 fois par jour : 06:15, 13:15 et 16:15 UTC, ≈ matin / début d'après-midi / fin de journée FR) — itère tous les parcours actifs (`archived_at IS NULL AND completed_at IS NULL`), synchronise leurs dossiers, recalcule, fait progresser si nécessaire, et écrit l'historique dans `sync_runs` / `sync_run_entries`.
 - **UI demandeur** (`syncUserDossierStatus`, `syncAllUserDossiers`) — déclenché à la connexion / au refresh manuel.
 - **Super-admin** (`/administration/synchronisations`, bouton « Lancer une synchro maintenant ») — utilise le même service que le CRON, marqué `triggered_by = manual`.
 
-#### Configuration Scalingo
+#### Configuration GitHub Actions
 
-1. Activer l'addon **Scheduler** sur l'application.
-2. Variables d'environnement :
-   - `CRON_SECRET` : secret aléatoire (≥ 32 caractères). Générer avec `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
-   - `APP_URL` : URL publique de l'application (ex : `https://fonds-argile.osc-fr1.scalingo.io`).
-3. Le fichier `cron.json` à la racine est lu automatiquement par le Scheduler.
+Workflow : [`.github/workflows/cron-sync-parcours.yml`](.github/workflows/cron-sync-parcours.yml).
 
-Endpoint déclenché : `POST /api/cron/sync-parcours`, protégé par `Authorization: Bearer $CRON_SECRET`.
+Le workflow utilise une **matrix [staging, production]** sur les **GitHub Environments** pour scoper les secrets par environnement.
+
+**Setup côté GitHub** (à faire une seule fois, par un admin du repo) :
+
+1. Settings → Environments → créer `staging` et `production`.
+2. Pour chaque environment, ajouter :
+   - **Secret** `CRON_SECRET` : secret aléatoire ≥ 32 caractères, identique à celui configuré côté Scalingo de l'env. Générer avec `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+   - **Variable** `APP_URL` : URL publique de l'app (ex : `https://fonds-argile-staging.osc-fr1.scalingo.io` pour staging, URL prod pour production).
+3. Côté Scalingo (chaque app), ajouter la même variable d'env `CRON_SECRET` que celle configurée dans GitHub. `APP_URL` n'est pas nécessaire côté Scalingo (c'est juste le destinataire du curl).
+
+**Déclenchement manuel** : Actions → CRON sync parcours → "Run workflow" → confirme.
+
+**Endpoint** appelé : `POST /api/cron/sync-parcours`, protégé par `Authorization: Bearer $CRON_SECRET`.
 
 #### Vue d'historique
 

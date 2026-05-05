@@ -1,0 +1,69 @@
+name: CRON sync parcours
+
+# Synchronise les statuts DS des parcours actifs et fait progresser ceux qui doivent l'être.
+# Doc : docs/parcours/FLOW-AND-SYNC.md (§4 CRON et historique).
+
+on:
+  schedule:
+    # 3 créneaux par jour, en UTC. Décalé de 15 min après l'heure pile pour
+    # éviter les pics de charge GitHub Actions. Le timezone GitHub Actions est
+    # UTC : avec le passage été/hiver français, ces heures dérivent de ±1h.
+    - cron: "15 6 * * *"   # tôt le matin     (~07:15 hiver / 08:15 été FR)
+    - cron: "15 13 * * *"  # après déjeuner    (~14:15 hiver / 15:15 été FR)
+    - cron: "15 16 * * *"  # fin de journée    (~17:15 hiver / 18:15 été FR)
+  # Permet de déclencher manuellement depuis l'UI GitHub (Actions → Run workflow).
+  workflow_dispatch:
+
+# On annule pas les runs en cours : si un run en cours quand un suivant démarre,
+# le verrou applicatif côté API renverra { skipped: true }.
+concurrency:
+  group: cron-sync-parcours-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    name: Sync ${{ matrix.environment }}
+    strategy:
+      # fail-fast=false : un échec sur staging ne doit pas empêcher prod (et inversement).
+      fail-fast: false
+      matrix:
+        environment: [staging, production]
+    # Le secret CRON_SECRET et la variable APP_URL sont scopés par GitHub Environment.
+    environment: ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger sync endpoint
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${APP_URL:-}" ]; then
+            echo "::error::APP_URL non configuré dans l'environnement '${{ matrix.environment }}'"
+            exit 1
+          fi
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET non configuré dans l'environnement '${{ matrix.environment }}'"
+            exit 1
+          fi
+
+          echo "Trigger sync sur ${APP_URL}/api/cron/sync-parcours"
+
+          response=$(curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP_STATUS:%{http_code}" \
+            "${APP_URL}/api/cron/sync-parcours")
+
+          status=$(echo "$response" | tail -n1 | sed 's/HTTP_STATUS://')
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP $status"
+          echo "$body"
+
+          if [ "$status" -ne 200 ]; then
+            echo "::error::Le endpoint a renvoyé un statut non 200"
+            exit 1
+          fi

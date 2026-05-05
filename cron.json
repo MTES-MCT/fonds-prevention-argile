@@ -1,9 +1,0 @@
-{
-  "jobs": [
-    {
-      "command": "curl -fsS -X POST -H \"Authorization: Bearer $CRON_SECRET\" $APP_URL/api/cron/sync-parcours",
-      "size": "S",
-      "cron": "*/15 * * * *"
-    }
-  ]
-}

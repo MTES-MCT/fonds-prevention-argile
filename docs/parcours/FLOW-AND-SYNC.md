@@ -125,7 +125,7 @@ Note : `REFUSE` repasse en `EN_INSTRUCTION` interne (et non `VALIDE`) — c'est 
 
 | Déclencheur | Service appelé | Périmètre |
 |-------------|----------------|-----------|
-| **CRON Scalingo Scheduler** (toutes les 15 min) | `runSyncBatch("cron")` | Tous les parcours actifs |
+| **CRON GitHub Actions** (3 fois par jour : 06:15, 13:15, 16:15 UTC) | `runSyncBatch("cron")` | Tous les parcours actifs |
 | **Super-admin** (bouton « Lancer maintenant ») | `runSyncBatch("manual")` | Idem CRON |
 | **UI demandeur** (au refresh, manuel, ou navigation) | `syncUserDossierStatus(step)` ou `syncAllUserDossiers()` | Le parcours du demandeur connecté |
 
@@ -187,25 +187,37 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 | `error`             | text (nullable)                       |
 | `created_at`        | timestamp                             |
 
-### 4.3 Configuration Scalingo
+### 4.3 Configuration GitHub Actions
 
-Fichier `cron.json` à la racine, lu par l'addon Scheduler :
+Workflow : [`.github/workflows/cron-sync-parcours.yml`](../../.github/workflows/cron-sync-parcours.yml).
 
-```json
-{
-  "jobs": [
-    {
-      "command": "curl -fsS -X POST -H \"Authorization: Bearer $CRON_SECRET\" $APP_URL/api/cron/sync-parcours",
-      "size": "S",
-      "cron": "*/15 * * * *"
-    }
-  ]
-}
-```
+**Cadence** : 3 créneaux par jour, en UTC :
 
-Variables d'environnement à configurer côté Scalingo :
-- `CRON_SECRET` : secret aléatoire ≥ 32 caractères (validation Zod dans `env.config.ts`). Génération : `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
-- `APP_URL` : URL publique (ex : `https://fonds-argile.osc-fr1.scalingo.io`).
+| Cron UTC       | Heure FR hiver | Heure FR été | Intention            |
+|----------------|----------------|--------------|----------------------|
+| `15 6 * * *`   | 07:15          | 08:15        | tôt le matin         |
+| `15 13 * * *`  | 14:15          | 15:15        | après déjeuner       |
+| `15 16 * * *`  | 17:15          | 18:15        | fin de journée       |
+
+GitHub Actions cron est en **UTC sans support timezone**, donc les heures locales FR dérivent de ±1 h selon le passage été/hiver. Les heures UTC ont été choisies pour rester dans des fenêtres acceptables toute l'année. Décalage de 15 min après l'heure pile pour éviter les pics de charge GitHub Actions.
+
+**Stratégie matrix** : un seul workflow lance deux jobs en parallèle (`staging` et `production`) via `strategy.matrix.environment`. `fail-fast: false` → un échec sur staging n'empêche pas prod (et inversement).
+
+**GitHub Environments** : la séparation des secrets entre staging et prod se fait via **GitHub Environments**. Setup côté GitHub (admin du repo) :
+
+1. Settings → Environments → créer `staging` et `production`.
+2. Pour chaque environment :
+   - **Secret** `CRON_SECRET` (≥ 32 caractères, identique côté Scalingo).
+   - **Variable** `APP_URL` (URL publique de l'app correspondante).
+3. Le workflow référence `${{ secrets.CRON_SECRET }}` et `${{ vars.APP_URL }}` qui se résolvent automatiquement selon `environment: ${{ matrix.environment }}`.
+
+**Côté Scalingo (chaque app)** : ajouter la variable d'env `CRON_SECRET` (validée par Zod dans `env.config.ts`, ≥ 32 caractères). Pas besoin d'`APP_URL` côté Scalingo — c'est le destinataire du curl, configuré côté GitHub uniquement.
+
+**Déclenchement manuel** : Actions → CRON sync parcours → "Run workflow". Lance les deux environments par défaut. Pour ne lancer qu'un seul, utiliser le bouton « Lancer une synchro maintenant » dans `/administration/synchronisations` côté app correspondante.
+
+**Concurrence** : `concurrency.cancel-in-progress: false` → si un run est déjà en cours, le suivant attend. De toute façon le verrou applicatif (§6.8) renvoie `{ skipped: true }` côté serveur si nécessaire.
+
+**Pourquoi 3 créneaux fixes plutôt qu'une cadence régulière ?** On vise les moments où le demandeur est susceptible d'utiliser l'app (matin, après déjeuner, fin de journée). Trois passages couvrent ces fenêtres sans surcharger l'API DS. Le bouton « Lancer maintenant » côté super-admin reste disponible pour les cas urgents.
 
 ### 4.4 Endpoint HTTP
 
@@ -267,21 +279,30 @@ Server actions : `src/features/backoffice/administration/synchronisations/action
 
 **Décision** : `sync_run_entries` n'est écrit que si quelque chose a changé pour le parcours (changement DS, transition d'étape ou de status, ou erreur). Les parcours scannés sans changement ne génèrent pas d'entrée.
 
-**Justification** : volume. Sur 10 000 parcours actifs syncés toutes les 15 min, on créerait ~1M entrées par jour pour rien. La table `sync_runs` (qui agrège les totaux) suffit pour le monitoring. Le détail n'est utile qu'en cas de changement.
+**Justification** : volume. Avec un CRON 3×/jour sur N parcours actifs, on évite N×3 entrées par jour vides. La table `sync_runs` (qui agrège les totaux) suffit pour le monitoring. Le détail n'est utile qu'en cas de changement.
 
-### 6.5 Scalingo Scheduler + endpoint HTTP, pas de worker dédié
+### 6.5 GitHub Actions + endpoint HTTP, pas de worker dédié
 
-**Décision** : Scheduler Scalingo (cron natif) qui appelle un endpoint HTTP de Next.js, pas de process worker séparé.
+**Décision** : workflow GitHub Actions (cron natif) qui appelle un endpoint HTTP de Next.js, pas de process worker côté Scalingo. Cadence : 3 fois par jour à des créneaux choisis (matin, après déjeuner, fin de journée). Voir §4.3.
 
 **Justification** :
-- Pas de dépendance ajoutée (`node-cron`, `agenda`, `bull`...).
-- La logique reste dans Next.js, mêmes connexions DB, mêmes env vars.
-- Pattern déjà utilisé pour le webhook Brevo (`/api/webhooks/brevo`).
+- Pas de dépendance Scalingo ajoutée (pas d'addon Scheduler à activer).
+- Logs natifs visibles dans l'UI GitHub (Actions → CRON sync parcours), notifications email natives sur échec.
+- "Run workflow" manuel disponible depuis l'UI GitHub.
+- Pattern indépendant de l'hébergeur : si on quitte Scalingo, le CRON suit.
+- La logique applicative reste dans Next.js, mêmes connexions DB, mêmes env vars.
 - Testable manuellement avec un simple `curl`.
 
 **Alternatives écartées** :
+- **Scalingo Scheduler** : valable, donne une meilleure précision de timing (cron Linux standard vs jusqu'à 15 min de retard côté GitHub Actions). Écarté car avec 3 créneaux espacés de plusieurs heures, un retard de quelques minutes est sans effet, et la visibilité GitHub est préférée.
 - `node-cron` dans le process Next.js : ne survit pas aux redémarrages, multiple instances → multiple runs simultanés.
 - Process Procfile dédié : nécessite un dyno supplémentaire, complique le déploiement.
+
+**Trade-off cadence / précision** :
+- GitHub Actions cron a un retard documenté pouvant aller jusqu'à 15 min (parfois plus en heures de pointe). Sur une cadence courte (15 min) ça devient problématique. Sur 3 créneaux espacés de plusieurs heures, c'est négligeable.
+- Si la latence d'acceptation DS → progression devient un point de douleur produit, soit on augmente la cadence (`*/4 * * *` = 4 h), soit on rebascule sur Scalingo Scheduler.
+
+**Multi-environnements** : le workflow utilise une **strategy matrix [staging, production]** sur les **GitHub Environments** pour scoper les secrets (`CRON_SECRET`, `APP_URL`) par env. Voir §4.3.
 
 ### 6.6 Auth par secret partagé sur l'endpoint CRON
 
@@ -308,7 +329,7 @@ Côté repository, `markAsCompleted` est **idempotent** : le SQL est `UPDATE ...
 
 Le seuil de 30 min est volontairement généreux par rapport au `maxDuration = 5 min` de la route HTTP CRON. Constante : `STALE_RUN_THRESHOLD_MS` dans `parcours-sync-batch.service.ts`.
 
-**Justification** : Scalingo Scheduler peut retarder un run et un super-admin peut cliquer « Lancer maintenant » entre temps → deux `runSyncBatch` parallèles écriraient des entries dupliquées et doubleraient les appels DS. Le verrou est implémenté en applicatif (pas un advisory lock Postgres) car il suffit largement pour la fréquence et la volumétrie attendues.
+**Justification** : un super-admin peut cliquer « Lancer maintenant » pendant qu'un run scheduled tourne (ou inversement) → deux `runSyncBatch` parallèles écriraient des entries dupliquées et doubleraient les appels DS. Le verrou est implémenté en applicatif (pas un advisory lock Postgres) car il suffit largement pour la fréquence et la volumétrie attendues.
 
 **Type retourné** : `SyncRunResult` est un union discriminé :
 ```ts
@@ -348,7 +369,7 @@ type SyncRunResult =
 | Action UI sync | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts` |
 | Validation AMO (auto-progression CHOIX_AMO) | `src/features/parcours/amo/services/amo-validation.service.ts` |
 | Endpoint CRON | `src/app/api/cron/sync-parcours/route.ts` |
-| Configuration Scheduler | `cron.json` (racine) |
+| Workflow CRON GitHub Actions | `.github/workflows/cron-sync-parcours.yml` |
 | Server actions admin | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts` |
 | Page liste runs | `src/app/(backoffice)/administration/synchronisations/page.tsx` |
 | Page détail run | `src/app/(backoffice)/administration/synchronisations/[id]/page.tsx` |

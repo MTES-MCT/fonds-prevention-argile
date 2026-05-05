@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   listSyncRunsAction,
@@ -11,6 +11,10 @@ import type { SyncRun } from "@/shared/database/schema/sync-runs";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 
 const PAGE_SIZE = 20;
+/** Au-delà de 30 min, un run pending est considéré zombie (cf. STALE_RUN_THRESHOLD_MS du service). */
+const STALE_THRESHOLD_MS = 30 * 60 * 1000;
+/** Polling pour rafraîchir l'état pendant qu'un run est en cours. */
+const PENDING_POLL_INTERVAL_MS = 5000;
 
 const STATUS_LABELS: Record<SyncRunStatus, string> = {
   [SyncRunStatus.SUCCESS]: "Succès",
@@ -53,6 +57,14 @@ function formatDuration(start: Date, end: Date | null): string {
   return `${minutes} min ${rest} s`;
 }
 
+function formatElapsed(start: Date): string {
+  const seconds = Math.max(0, Math.round((Date.now() - new Date(start).getTime()) / 1000));
+  if (seconds < 60) return `${seconds} s`;
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return `${minutes} min ${rest} s`;
+}
+
 export default function SynchronisationsPanel() {
   const [runs, setRuns] = useState<SyncRun[]>([]);
   const [page, setPage] = useState(1);
@@ -81,6 +93,44 @@ export default function SynchronisationsPanel() {
   useEffect(() => {
     loadRuns(1);
   }, [loadRuns]);
+
+  // Détecte un run en cours : le plus récent (premier de la liste car ordonnée DESC) sans finished_at.
+  // On ne le considère que si on est sur la page 1 (la liste affiche bien le plus récent).
+  const pendingRun = useMemo<SyncRun | null>(() => {
+    if (page !== 1 || runs.length === 0) return null;
+    const first = runs[0];
+    return first.finishedAt === null ? first : null;
+  }, [runs, page]);
+
+  const isPendingStale = pendingRun
+    ? Date.now() - new Date(pendingRun.startedAt).getTime() >= STALE_THRESHOLD_MS
+    : false;
+
+  // Tick toutes les secondes pour rafraîchir l'affichage du temps écoulé.
+  const [, setNowTick] = useState(0);
+  useEffect(() => {
+    if (!pendingRun || isPendingStale) return;
+    const t = setInterval(() => setNowTick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [pendingRun, isPendingStale]);
+
+  // Polling : rafraîchit la liste des runs tant qu'un run est en cours (non zombie).
+  useEffect(() => {
+    if (!pendingRun || isPendingStale) return;
+    const interval = setInterval(() => loadRuns(1), PENDING_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+    // On dépend de l'id du run pour éviter de recréer l'interval à chaque tick d'horloge.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingRun?.id, isPendingStale, loadRuns]);
+
+  const buttonDisabled = isTriggering || (pendingRun !== null && !isPendingStale);
+
+  const buttonLabel = (() => {
+    if (isTriggering) return "Synchro en cours...";
+    if (pendingRun && !isPendingStale) return `Synchro en cours (${formatElapsed(pendingRun.startedAt)})`;
+    if (pendingRun && isPendingStale) return "Forcer un nouveau run (le précédent semble bloqué)";
+    return "Lancer une synchro maintenant";
+  })();
 
   const handleTrigger = () => {
     setFeedback(null);
