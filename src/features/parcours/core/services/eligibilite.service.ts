@@ -86,37 +86,46 @@ export async function createEligibiliteDossier(
       };
     }
 
-    // 3. Récupérer l'AMO choisie
+    // 3. Récupérer l'AMO choisie (optionnelle : peut être null en mode FACULTATIF
+    //    quand le demandeur a choisi « je gère seul », statut validation = SANS_AMO).
+    //    En mode OBLIGATOIRE / AV_AMO_FUSIONNES, l'AMO est auto-attribuée à la création
+    //    du parcours donc getAmoChoisie retourne toujours une AMO.
     debug.log("Récupération de l'AMO choisie...");
     const amoResult = await getAmoChoisie();
-    if (!amoResult.success || !amoResult.data) {
-      console.error("Aucune AMO sélectionnée");
+    if (!amoResult.success) {
+      console.error("Erreur récupération AMO:", amoResult.error);
       return {
         success: false,
-        error: "Aucune AMO sélectionnée. Veuillez d'abord choisir une AMO.",
+        error: amoResult.error || "Erreur lors de la récupération de l'AMO",
       };
     }
 
     const amo = amoResult.data;
-    debug.log("AMO choisie:", {
-      nom: amo.nom,
-      siret: amo.siret,
-      email: amo.emails.split(";")[0].trim(),
-    });
+    if (amo) {
+      debug.log("AMO choisie:", {
+        nom: amo.nom,
+        siret: amo.siret,
+        email: amo.emails.split(";")[0].trim(),
+      });
+    } else {
+      debug.log("Aucune AMO (mode FACULTATIF avec choix 'je gère seul') — création sans champs AMO.");
+    }
 
-    // 4. Mapper RGA → DS avec ajout des infos AMO
+    // 4. Mapper RGA → DS avec ajout des infos AMO si présentes
     debug.log("Mapping RGA → DS...");
     const prefillData = mapRGAToDSFormat(rgaData);
 
-    // Ajouter les informations de l'AMO au prefill
-    prefillData[`champ_Q2hhbXAtNTQxOTQyOQ==`] = amo.siret;
-    prefillData[`champ_Q2hhbXAtNTQxOTQzMg==`] = amo.adresse;
-    prefillData.champ_amo_email = amo.emails.split(";")[0].trim();
-    if (amo.telephone) {
-      prefillData.champ_amo_telephone = amo.telephone;
-    }
-    if (amo.adresse) {
-      prefillData.champ_amo_adresse = amo.adresse;
+    // Ajouter les informations de l'AMO au prefill uniquement si une AMO est sélectionnée
+    if (amo) {
+      prefillData[`champ_Q2hhbXAtNTQxOTQyOQ==`] = amo.siret;
+      prefillData[`champ_Q2hhbXAtNTQxOTQzMg==`] = amo.adresse;
+      prefillData.champ_amo_email = amo.emails.split(";")[0].trim();
+      if (amo.telephone) {
+        prefillData.champ_amo_telephone = amo.telephone;
+      }
+      if (amo.adresse) {
+        prefillData.champ_amo_adresse = amo.adresse;
+      }
     }
 
     // Ajouter le téléphone du demandeur
