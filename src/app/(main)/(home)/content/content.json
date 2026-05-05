@@ -22,7 +22,7 @@
       "caption": "Maison fissurée par la sécheresse - Crédit photo : L. Ighil Ameur © Cerema."
     },
     "title": "Qu’est-ce que le Retrait-gonflement des argiles, ou RGA ?",
-    "highlight": "<strong>12,1 millions de maisons individuelles existantes (soit 61,5% des maisons individuelles) sont désormais situées en zones d’exposition moyenne et forte au RGA.</strong> Le RGA implique <strong>1 Milliard d'€ d'indemnisation annuelle</strong> sur le dispositif d'indemnisation des catastrophes naturelles.",
+    "highlight": "<strong>12,1 millions de maisons individuelles existantes (soit 61,5% des maisons individuelles) sont désormais situées en zones d’exposition moyenne et forte au RGA.</strong> La sécheresse de 2022 a coûté <strong>3,5 milliards d'euros</strong> d'indemnisation sur le dispositif d'indemnisation des catastrophes naturelles.",
     "subtitle": "Le phénomène de retrait-gonflement des argiles se manifeste par des variations du volume d'eau contenue dans un sol argileux au droit des fondations d'une maison. Sec, le sol se rétracte ; humide, il gonfle. Ces variations peuvent entraîner l'apparaition de désordres endommageant ainsi les maisons individuelles.",
     "subtitle2": "Le changement climatique aggrave ce phénomène : les dernières projections réalisées par la Caisse centrale de réassurance (CCR) tablent sur une <strong> augmentation de 44% à 162% de la sinistralité</strong> due au retrait-gonglement des argiles d'ici 2050."
   },
@@ -121,7 +121,7 @@
       "items": [
         { "text": "Votre maison n'est <strong>pas ou peu sinistrée</strong>" },
         {
-          "text": "Votre maison n'a pas de fissures dont l'écartement est supérieur à 5 mm sur :",
+          "text": "Votre maison n'a pas de fissures ou a des fissures dont l'écartement est supérieur à 5 mm sur :",
           "sublist": [
             "Les murs extérieurs et intérieurs",
             "Les doublages et les cloisons,",
@@ -345,7 +345,7 @@
       "rows": [
         {
           "phase": "Phase étude",
-          "prestation": "Réalisation du diagnostic de vulnérabilité de votre maison et l'inspection des réseaux d'eau enterrés, réalisée par un professionnel compétent sur le RGA",
+          "prestation": "Réalisation du diagnostic de vulnérabilité de votre maison et de l'inspection des réseaux d'eau enterrés, par des professionnels compétent sur le RGA",
           "plafond": "2 000 € HT",
           "always": "obligatoire"
         },
@@ -357,7 +357,7 @@
         },
         {
           "phase": "Phase travaux",
-          "prestation": "Réalisées par un maître d'œuvre",
+          "prestation": "Prestations d'assistance du MOA dans la recherche d'entreprises de travaux, organisation, suivi et contrôle des travaux, constat de conformité et rapport de fin de travaux, réalisées par un maître d’œuvre",
           "plafond": "1 800 € HT",
           "always": "obligatoire"
         },
