@@ -6,7 +6,7 @@ import { Status } from "../domain";
 import { getAmoChoisie } from "../../amo/actions";
 import { prefillClient } from "../../dossiers-ds/adapters";
 import { createDossierForCurrentStep } from "../../dossiers-ds/services";
-import { parcoursRepo } from "@/shared/database";
+import { parcoursRepo, userRepo } from "@/shared/database";
 import { DS_FIELDS_ELIGIBILITE } from "../../dossiers-ds/domain";
 import { createDebugLogger } from "@/shared/utils";
 import { PartialRGASimulationData } from "@/features/simulateur";
@@ -117,6 +117,12 @@ export async function createEligibiliteDossier(
     }
     if (amo.adresse) {
       prefillData.champ_amo_adresse = amo.adresse;
+    }
+
+    // Ajouter le téléphone du demandeur
+    const user = await userRepo.findById(userId);
+    if (user?.telephone) {
+      prefillData[`champ_Q2hhbXAtNTQyMjQ0MA==`] = user.telephone;
     }
 
     // Logger tous les champs mappés
