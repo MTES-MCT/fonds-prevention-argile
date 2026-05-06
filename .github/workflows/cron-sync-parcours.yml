@@ -51,7 +51,9 @@ jobs:
 
           echo "Trigger sync sur ${APP_URL}/api/cron/sync-parcours"
 
+          # 202 quasi-immédiat, run en background. Suivi : /administration/synchronisations.
           response=$(curl -fsS -X POST \
+            --max-time 30 \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             -H "Content-Type: application/json" \
             -w "\nHTTP_STATUS:%{http_code}" \
@@ -63,7 +65,7 @@ jobs:
           echo "HTTP $status"
           echo "$body"
 
-          if [ "$status" -ne 200 ]; then
-            echo "::error::Le endpoint a renvoyé un statut non 200"
+          if [ "$status" -ne 200 ] && [ "$status" -ne 202 ]; then
+            echo "::error::Statut HTTP inattendu : $status"
             exit 1
           fi

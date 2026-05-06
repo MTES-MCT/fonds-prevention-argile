@@ -1,23 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { getServerEnv } from "@/shared/config/env.config";
 import { runSyncBatch } from "@/features/parcours/dossiers-ds/services/parcours-sync-batch.service";
 import { SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
 import { safeTokenEquals } from "@/shared/utils/crypto.utils";
 
-/**
- * Endpoint CRON de synchronisation des parcours.
- *
- * Déclenché par le Scheduler Scalingo via :
- *   curl -X POST -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/sync-parcours
- *
- * - Itère tous les parcours actifs
- * - Synchronise leurs dossiers DS
- * - Fait progresser le parcours quand un dossier est accepté
- * - Enregistre l'historique du run dans `sync_runs` / `sync_run_entries`
- */
+// Endpoint CRON déclenché par GitHub Actions : 202 immédiat + run via after() (proxy Scalingo ~55s). Suivi : /administration/synchronisations.
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // 5 min, ajustable selon le volume
+export const maxDuration = 300;
 
 function verifyBearerToken(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
@@ -40,37 +30,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ success: false, error: "Authentification invalide" }, { status: 401 });
   }
 
-  try {
-    const result = await runSyncBatch(SyncRunTrigger.CRON);
+  // Run en background : réponse part vite, traitement continue.
+  after(async () => {
+    try {
+      const result = await runSyncBatch(SyncRunTrigger.CRON);
 
-    if (result.skipped) {
-      console.log(`[CRON sync-parcours] skipped: ${result.reason}`);
-      return NextResponse.json({
-        success: true,
-        skipped: true,
-        reason: result.reason,
-        existingRunId: result.existingRunId,
-      });
+      if (result.skipped) {
+        console.log(`[CRON sync-parcours] skipped: ${result.reason}`);
+        return;
+      }
+
+      console.log(
+        `[CRON sync-parcours] runId=${result.runId} status=${result.status} scanned=${result.totalScanned} updated=${result.totalUpdated} errors=${result.totalErrors}`
+      );
+    } catch (error) {
+      console.error("[CRON sync-parcours] Erreur (background):", error);
     }
+  });
 
-    console.log(
-      `[CRON sync-parcours] runId=${result.runId} status=${result.status} scanned=${result.totalScanned} updated=${result.totalUpdated} errors=${result.totalErrors}`
-    );
-
-    return NextResponse.json({
-      success: true,
-      skipped: false,
-      runId: result.runId,
-      status: result.status,
-      totals: {
-        scanned: result.totalScanned,
-        updated: result.totalUpdated,
-        errors: result.totalErrors,
-      },
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Erreur interne";
-    console.error("[CRON sync-parcours] Erreur:", error);
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
-  }
+  return NextResponse.json(
+    { success: true, accepted: true, message: "Synchronisation lancée en arrière-plan." },
+    { status: 202 }
+  );
 }
