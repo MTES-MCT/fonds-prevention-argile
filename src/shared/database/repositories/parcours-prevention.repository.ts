@@ -109,12 +109,22 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   /**
-   * Marque un parcours comme complété
+   * Marque un parcours comme complété.
+   * Idempotent : si `completedAt` est déjà rempli, ne touche pas la valeur
+   * existante (pour préserver le timestamp d'origine).
    */
   async markAsCompleted(id: string): Promise<ParcoursPrevention | null> {
-    return await this.update(id, {
-      completedAt: new Date(),
-    });
+    const result = await db
+      .update(parcoursPrevention)
+      .set({ completedAt: new Date() })
+      .where(and(eq(parcoursPrevention.id, id), isNull(parcoursPrevention.completedAt)))
+      .returning();
+
+    if (result.length > 0) {
+      return result[0];
+    }
+    // Déjà complété : on retourne la ligne telle quelle
+    return await this.findById(id);
   }
 
   /**
@@ -142,6 +152,18 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  /**
+   * Trouve les parcours actifs à synchroniser : ni archivés, ni complétés.
+   * Utilisé par le CRON de synchronisation des dossiers DS.
+   */
+  async findActiveForSync(): Promise<ParcoursPrevention[]> {
+    return await db
+      .select()
+      .from(parcoursPrevention)
+      .where(and(isNull(parcoursPrevention.archivedAt), isNull(parcoursPrevention.completedAt)))
+      .orderBy(asc(parcoursPrevention.createdAt));
   }
 
   /**

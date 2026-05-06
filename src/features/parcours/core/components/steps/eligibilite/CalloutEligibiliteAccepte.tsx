@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 export default function CalloutEligibiliteAccepte() {
   return (
     <div className="fr-callout fr-callout--yellow-moutarde fr-icon-time-line">
@@ -11,11 +9,9 @@ export default function CalloutEligibiliteAccepte() {
         instruction). Vous pouvez désormais contacter votre AMO pour trouver le bureau d’étude pour la réalisation de ce
         diagnostic. Lorsque c’est fait, n’oubliez pas de transmettre vos résultats.
       </p>
-      <Link
-        href={"#"} // TODO : lien vers la page de dépôt du diagnostic
-        className="fr-btn fr-btn--icon-right fr-icon-arrow-right-s-line">
-        Transmettre le résultat de mon diagnostic
-      </Link>
+      <p className="fr-text--sm fr-mt-2w fr-mb-0" style={{ fontStyle: "italic", color: "var(--text-mention-grey)" }}>
+        Vous passerez automatiquement à l’étape diagnostic dans les prochaines heures, sans action de votre part.
+      </p>
     </div>
   );
 }

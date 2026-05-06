@@ -1,5 +1,13 @@
 // Exporter les enums AVANT les tables pour éviter les erreurs de dépendances circulaires
-export { stepPgEnum, statusPgEnum, dsStatusPgEnum, statutValidationAmoPgEnum, agentRolePgEnum } from "../enums/enums";
+export {
+  stepPgEnum,
+  statusPgEnum,
+  dsStatusPgEnum,
+  statutValidationAmoPgEnum,
+  agentRolePgEnum,
+  syncRunStatusPgEnum,
+  syncRunTriggerPgEnum,
+} from "../enums/enums";
 
 // Exporter les tables
 export * from "./users";
@@ -19,3 +27,5 @@ export * from "./allers-vers-epci";
 export * from "./catastrophes-naturelles";
 export * from "./prospect-qualifications";
 export * from "./rga-zones";
+export * from "./sync-runs";
+export * from "./sync-run-entries";

@@ -14,6 +14,8 @@ export interface DossierDS {
   numeroDs: number | null;
   etatDs: DSStatus;
   submittedAt: Date | null;
+  /** Date à laquelle le dossier DS a été marqué comme accepté (renseigné par la sync DS). */
+  processedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

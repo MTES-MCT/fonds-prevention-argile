@@ -3,13 +3,16 @@
 import Link from "next/link";
 import { useParcours } from "../../../context/useParcours";
 import { Step } from "../../../domain";
-import { getDossierDsDemandeUrl, getDossierDsMessagerieUrl } from "@/features/parcours/dossiers-ds/utils";
+import { getDossierDsMessagerieUrl } from "@/features/parcours/dossiers-ds/utils";
 
 export default function CalloutDiagnosticEnInstruction() {
   const { dossiers } = useParcours();
 
   const dossierDiagnostic = dossiers?.find((d) => d.demarcheEtape === Step.DIAGNOSTIC);
-  const demandeDsUrl = getDossierDsDemandeUrl(dossierDiagnostic?.numeroDs);
+  // URL de la demande : on utilise demarcheUrl (qui priorise l'URL stockée avec
+  // prefill_token retournée par DS, force le mode "usager" sur les comptes
+  // multi-profils admin/instructeur/usager).
+  const demandeDsUrl = dossierDiagnostic?.demarcheUrl ?? "#";
   const messagerieDsUrl = getDossierDsMessagerieUrl(dossierDiagnostic?.numeroDs);
 
   return (

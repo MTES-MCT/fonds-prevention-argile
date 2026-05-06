@@ -231,6 +231,69 @@ Build et lancement avec Docker Compose :
 docker-compose up --build
 ```
 
+### Synchronisation des parcours
+
+> Documentation de référence détaillée : [`docs/parcours/FLOW-AND-SYNC.md`](docs/parcours/FLOW-AND-SYNC.md) (modèle d'état, transitions, architecture sync, décisions).
+
+#### Vue d'ensemble
+
+Un parcours a deux niveaux d'état :
+
+| Niveau            | Champ                                | Source de vérité                 |
+| ----------------- | ------------------------------------ | -------------------------------- |
+| Dossier DS        | `dossiers_demarches_simplifiees.ds_status` | API Démarches Simplifiées        |
+| Parcours interne  | `parcours_prevention.current_status` | Dérivé du dossier de `current_step` |
+| Parcours interne  | `parcours_prevention.current_step`   | Logique métier (progression)     |
+
+La sync ramène les statuts DS dans la BDD locale puis recalcule l'état interne du parcours. Quand le statut interne devient `valide`, le parcours avance automatiquement à l'étape suivante.
+
+#### Architecture du service de sync
+
+Trois fonctions dans `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`, à responsabilités séparées :
+
+1. **`syncDossierStatus(parcoursId, step, dsNumber)`** — appelle l'API DS pour un dossier donné, met à jour la table `dossiers_demarches_simplifiees`. **Ne touche pas** au `current_status` du parcours.
+2. **`recomputeParcoursStatus(parcoursId)`** — lit le dossier de l'étape courante (`current_step`), mappe son `ds_status` vers un statut interne (`DS_TO_INTERNAL_STATUS`) et écrit `parcours.current_status`. À appeler après une (ou plusieurs) sync. Si `current_step` n'a pas de dossier (cas de `choix_amo`), ne fait rien.
+3. **`syncAllDossiers(parcoursId, dossiers)`** — boucle `syncDossierStatus` sur tous les dossiers, puis appelle `recomputeParcoursStatus` une fois.
+
+Cette séparation évite que la sync d'un dossier d'étape précédente ou future écrase le `current_status` calculé pour l'étape courante. **Règle** : tout appel à `syncDossierStatus` doit être suivi d'un `recomputeParcoursStatus` (manuel ou via `syncAllDossiers`).
+
+#### Déclencheurs
+
+- **CRON GitHub Actions** (3 fois par jour : 06:15, 13:15 et 16:15 UTC, ≈ matin / début d'après-midi / fin de journée FR) — itère tous les parcours actifs (`archived_at IS NULL AND completed_at IS NULL`), synchronise leurs dossiers, recalcule, fait progresser si nécessaire, et écrit l'historique dans `sync_runs` / `sync_run_entries`.
+- **UI demandeur** (`syncUserDossierStatus`, `syncAllUserDossiers`) — déclenché à la connexion / au refresh manuel.
+- **Super-admin** (`/administration/synchronisations`, bouton « Lancer une synchro maintenant ») — utilise le même service que le CRON, marqué `triggered_by = manual`.
+
+#### Configuration GitHub Actions
+
+Workflow : [`.github/workflows/cron-sync-parcours.yml`](.github/workflows/cron-sync-parcours.yml).
+
+Le workflow utilise une **matrix [staging, production]** sur les **GitHub Environments** pour scoper les secrets par environnement.
+
+**Setup côté GitHub** (à faire une seule fois, par un admin du repo) :
+
+1. Settings → Environments → créer `staging` et `production`.
+2. Pour chaque environment, ajouter :
+   - **Secret** `CRON_SECRET` : secret aléatoire ≥ 32 caractères, identique à celui configuré côté Scalingo de l'env. Générer avec `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+   - **Variable** `APP_URL` : URL publique de l'app (ex : `https://fonds-argile-staging.osc-fr1.scalingo.io` pour staging, URL prod pour production).
+3. Côté Scalingo (chaque app), ajouter la même variable d'env `CRON_SECRET` que celle configurée dans GitHub. `APP_URL` n'est pas nécessaire côté Scalingo (c'est juste le destinataire du curl).
+
+**Déclenchement manuel** : Actions → CRON sync parcours → "Run workflow" → confirme.
+
+**Endpoint** appelé : `POST /api/cron/sync-parcours`, protégé par `Authorization: Bearer $CRON_SECRET`.
+
+#### Vue d'historique
+
+`/administration/synchronisations` (super-admin uniquement) affiche :
+- la liste paginée des runs (date, durée, statut succès/partiel/erreur, trigger CRON/manuel, totaux) ;
+- le détail d'un run avec, pour chaque parcours touché, les transitions d'étape, les changements DS détectés et l'éventuelle erreur.
+
+#### Tables associées
+
+- `sync_runs` — un run par déclenchement (id, started_at, finished_at, status, triggered_by, totaux, error_summary).
+- `sync_run_entries` — une entrée par parcours **modifié** durant un run (transitions step/status, liste des `ds_status_changes`, flag `step_advanced`, erreur).
+
+Les parcours non modifiés ne génèrent pas d'entrée — seuls les runs eux-mêmes sont systématiquement enregistrés.
+
 ## Dépannage
 
 ### Problèmes de cache

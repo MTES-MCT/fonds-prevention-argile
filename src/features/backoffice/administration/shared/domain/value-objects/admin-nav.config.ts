@@ -59,4 +59,11 @@ export const ADMIN_NAV_TABS: AdminNavTab[] = [
     icon: "fr-icon-chat-3-line",
     minRoles: [UserRole.SUPER_ADMINISTRATEUR],
   },
+  {
+    id: "synchronisations",
+    label: "Synchros",
+    href: "/administration/synchronisations",
+    icon: "fr-icon-refresh-line",
+    minRoles: [UserRole.SUPER_ADMINISTRATEUR],
+  },
 ];

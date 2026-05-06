@@ -4,9 +4,15 @@ import type { Step } from "../../core/domain/value-objects/step";
 import { DS_TO_INTERNAL_STATUS, DSStatus } from "../domain/value-objects/ds-status";
 import { parcoursRepo } from "@/shared/database/repositories";
 import type { ActionResult } from "@/shared/types";
+import type { Status } from "@/shared/domain/value-objects/status.enum";
 
 /**
- * Service de synchronisation des statuts DS
+ * Service de synchronisation des statuts DS.
+ *
+ * Doc de référence : `docs/parcours/FLOW-AND-SYNC.md` (§3 Architecture sync).
+ *
+ * Règle d'or : tout appel à `syncDossierStatus` doit être suivi d'un
+ * `recomputeParcoursStatus` (manuel ou via `syncAllDossiers`).
  */
 
 interface SyncResult {
@@ -16,7 +22,8 @@ interface SyncResult {
 }
 
 /**
- * Synchronise le statut d'un dossier DS avec l'API
+ * Synchronise le statut d'un dossier DS avec l'API.
+ * NE met PAS à jour `parcours.current_status` — appeler `recomputeParcoursStatus` ensuite.
  */
 export async function syncDossierStatus(
   parcoursId: string,
@@ -24,7 +31,6 @@ export async function syncDossierStatus(
   dsNumber: string
 ): Promise<ActionResult<SyncResult>> {
   try {
-    // Récupérer le dossier local
     const localDossier = await getDossierByStep(parcoursId, step);
 
     if (!localDossier) {
@@ -34,7 +40,6 @@ export async function syncDossierStatus(
       };
     }
 
-    // Récupérer le statut depuis DS
     const dsStatus = await graphqlClient.getDossierStatus(Number(dsNumber));
 
     if (!dsStatus) {
@@ -47,13 +52,8 @@ export async function syncDossierStatus(
     const newStatus = dsStatus as DSStatus;
     const oldStatus = localDossier.dsStatus as DSStatus;
 
-    // Si le statut a changé, mettre à jour
     if (newStatus !== oldStatus) {
       await updateDossierStatus(localDossier.id, newStatus);
-
-      // Mettre à jour le statut du parcours si nécessaire
-      const internalStatus = DS_TO_INTERNAL_STATUS[newStatus];
-      await parcoursRepo.updateStatus(parcoursId, internalStatus);
 
       return {
         success: true,
@@ -82,8 +82,54 @@ export async function syncDossierStatus(
   }
 }
 
+interface RecomputeResult {
+  updated: boolean;
+  oldStatus?: Status;
+  newStatus?: Status;
+}
+
 /**
- * Synchronise tous les dossiers d'un parcours
+ * Recalcule `parcours.current_status` à partir du dossier de l'étape courante.
+ *
+ * Règles :
+ * - Si l'étape courante n'a pas de dossier DS (ex : choix_amo), ne rien faire :
+ *   le `current_status` est piloté par d'autres mécanismes (validation AMO).
+ * - Sinon, mappe le `ds_status` du dossier courant vers un statut interne et
+ *   écrit en BDD si différent du `current_status` actuel.
+ */
+export async function recomputeParcoursStatus(parcoursId: string): Promise<ActionResult<RecomputeResult>> {
+  try {
+    const parcours = await parcoursRepo.findById(parcoursId);
+    if (!parcours) {
+      return { success: false, error: "Parcours non trouvé" };
+    }
+
+    const currentDossier = await getDossierByStep(parcoursId, parcours.currentStep);
+    if (!currentDossier) {
+      return { success: true, data: { updated: false } };
+    }
+
+    const expected = DS_TO_INTERNAL_STATUS[currentDossier.dsStatus as DSStatus];
+    if (expected === parcours.currentStatus) {
+      return {
+        success: true,
+        data: { updated: false, oldStatus: parcours.currentStatus, newStatus: expected },
+      };
+    }
+
+    await parcoursRepo.updateStatus(parcoursId, expected);
+    return {
+      success: true,
+      data: { updated: true, oldStatus: parcours.currentStatus, newStatus: expected },
+    };
+  } catch (error) {
+    console.error("Erreur recomputeParcoursStatus:", error);
+    return { success: false, error: "Erreur lors du recalcul du statut" };
+  }
+}
+
+/**
+ * Synchronise tous les dossiers d'un parcours puis recalcule son `current_status`.
  */
 export async function syncAllDossiers(
   parcoursId: string,
@@ -101,6 +147,9 @@ export async function syncAllDossiers(
         totalUpdated++;
       }
     }
+
+    // Recalcule une seule fois à la fin, sur la base du dossier de current_step.
+    await recomputeParcoursStatus(parcoursId);
 
     return {
       success: true,

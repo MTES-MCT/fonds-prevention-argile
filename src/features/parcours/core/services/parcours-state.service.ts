@@ -51,10 +51,14 @@ export async function getParcoursComplet(userId: string): Promise<ParcoursComple
     demarcheId: d.dsDemarcheId,
     demarcheNom: "", // Pas dans la DB, pourrait être récupéré depuis une config
     demarcheEtape: d.step,
-    demarcheUrl: d.dsNumber ? getDossierDsDemandeUrl(parseInt(d.dsNumber)) : d.dsUrl || undefined,
+    // On privilégie l'URL retournée par DS lors du prefill (contient `prefill_token`)
+    // car elle force DS à ouvrir le dossier en mode "usager" même si le compte DS possède aussi des profils instructeur/administrateur.
+    // Fallback : reconstruction depuis dsNumber si pas d'URL stockée
+    demarcheUrl: d.dsUrl || (d.dsNumber ? getDossierDsDemandeUrl(parseInt(d.dsNumber)) : undefined),
     numeroDs: d.dsNumber ? parseInt(d.dsNumber) : null,
     etatDs: d.dsStatus as DSStatus,
     submittedAt: d.submittedAt,
+    processedAt: d.processedAt,
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
   }));
