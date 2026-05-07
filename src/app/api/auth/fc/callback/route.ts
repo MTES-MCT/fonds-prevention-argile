@@ -5,7 +5,10 @@ import {
   handleFranceConnectError,
 } from "@/features/auth";
 import { getServerEnv } from "@/shared/config/env.config";
+import { normalizePartnerSlug } from "@/features/simulateur/utils/partner-detection";
 import { NextRequest, NextResponse } from "next/server";
+
+const PARTNER_COOKIE_NAME = "partner_source";
 
 /**
  * GET /api/auth/fc/callback
@@ -42,15 +45,25 @@ export async function GET(request: NextRequest) {
       return redirectTo("/?error=fc_missing_params");
     }
 
+    // Phase B : récupérer le partenaire depuis le cookie posé sur /connexion (sera consommé une fois)
+    const partnerSource = normalizePartnerSlug(request.cookies.get(PARTNER_COOKIE_NAME)?.value);
+
     // Traitement du callback
-    const result = await handleFranceConnectCallback(code, state);
+    const result = await handleFranceConnectCallback(code, state, { partnerSource });
 
     if (result.success) {
       // Récupérer l'URL de redirection sauvegardée
       const savedRedirectUrl = await getAndClearRedirectUrl();
 
       // Rediriger vers l'URL demandée ou l'espace particulier par défaut
-      return redirectTo(savedRedirectUrl || DEFAULT_REDIRECTS.particulier);
+      const response = redirectTo(savedRedirectUrl || DEFAULT_REDIRECTS.particulier);
+
+      // Nettoyer le cookie partner après consommation (évite re-application sur login ultérieur)
+      if (partnerSource) {
+        response.cookies.delete(PARTNER_COOKIE_NAME);
+      }
+
+      return response;
     }
 
     // Gestion des échecs de sécurité (state/nonce invalides)

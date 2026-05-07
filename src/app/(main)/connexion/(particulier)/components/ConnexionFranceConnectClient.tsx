@@ -5,6 +5,10 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FC_ERROR_MAPPING, ROUTES } from "@/features/auth/client";
 import { useLoadRGAFromURL } from "@/features/simulateur/hooks";
+import { normalizePartnerSlug } from "@/features/simulateur/utils/partner-detection";
+
+const PARTNER_COOKIE_NAME = "partner_source";
+const PARTNER_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30j
 
 export default function ConnexionFranceConnectClient() {
   // Charger les données RGA depuis l'URL si présentes (mode embed)
@@ -12,6 +16,14 @@ export default function ConnexionFranceConnectClient() {
 
   const [fcError, setFcError] = useState<string | null>(null);
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const partner = normalizePartnerSlug(searchParams.get("partner"));
+    if (!partner) return;
+
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${PARTNER_COOKIE_NAME}=${encodeURIComponent(partner)}; path=/; max-age=${PARTNER_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
+  }, [searchParams]);
 
   // Gérer les erreurs FranceConnect depuis l'URL
   useEffect(() => {
