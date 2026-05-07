@@ -83,7 +83,7 @@ export function FiltresTableauDeBord({
                 onPartnerChange(value && isPartnerKey(value) ? value : null);
               }}
               aria-label="Filtre par partenaire">
-              <option value="">Toutes les sources</option>
+              <option value="">Tous les partenaires</option>
               {PARTNER_OPTIONS.map((p) => (
                 <option key={p.value} value={p.value}>
                   {p.label}
