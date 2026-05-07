@@ -18,6 +18,8 @@ export interface UserWithParcoursDetails {
     telephone: string | null;
     sourceAcquisition: SourceAcquisition | null;
     sourceAcquisitionPrecision: string | null;
+    /** Slug partenaire d'origine (ex: "maif"), renseigné automatiquement depuis l'iframe partenaire (Phase B). */
+    partnerSource: string | null;
     lastLogin: Date;
     createdAt: Date;
     updatedAt: Date;
