@@ -61,24 +61,40 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
     });
   }, []);
 
-  // Gérer l'ouverture/fermeture via le DSFR
+  // Gérer l'ouverture/fermeture via le DSFR.
+  // L'init du DSFR (DsfrProvider) est asynchrone (~100ms+) : si on déclenche
+  // l'ouverture pendant ce délai (typique du flow partenaire qui arrive sur /mon-compte
+  // via une fenêtre fraîche après FranceConnect), `dsfr(dialog).modal` est encore
+  // undefined. On retry via requestAnimationFrame jusqu'à ce que l'instance existe.
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const modalInstance = (window as any).dsfr?.(dialog)?.modal;
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 30; // ~500ms à 60fps
 
-    if (!modalInstance) {
-      console.warn("DSFR modal instance not found");
-      return;
-    }
+    const tryToggle = () => {
+      if (cancelled) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const modalInstance = (window as any).dsfr?.(dialog)?.modal;
+      if (modalInstance) {
+        if (isOpen) modalInstance.disclose();
+        else modalInstance.conceal();
+        return;
+      }
+      if (++attempts < MAX_ATTEMPTS) {
+        requestAnimationFrame(tryToggle);
+      } else {
+        console.warn("DSFR modal instance not ready after retries");
+      }
+    };
 
-    if (isOpen) {
-      modalInstance.disclose();
-    } else {
-      modalInstance.conceal();
-    }
+    tryToggle();
+
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen]);
 
   // Écouter la fermeture de la modale par le DSFR (clic en dehors, Escape, etc.)
