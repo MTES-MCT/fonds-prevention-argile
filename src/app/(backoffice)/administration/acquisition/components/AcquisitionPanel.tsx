@@ -83,12 +83,11 @@ export default function AcquisitionPanel() {
   }, [periodeId, codeDepartement, partner]);
 
   // Charger les stats BDD (rapide) quand les filtres changent
-  // Note : les stats BDD ne sont pas filtrables par partenaire (Phase A)
   const loadStats = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    const result = await getTableauDeBordStatsAction(periodeId, codeDepartement || undefined);
+    const result = await getTableauDeBordStatsAction(periodeId, codeDepartement || undefined, partner);
 
     if (result.success) {
       setStats(result.data);
@@ -97,7 +96,7 @@ export default function AcquisitionPanel() {
     }
 
     setLoading(false);
-  }, [periodeId, codeDepartement]);
+  }, [periodeId, codeDepartement, partner]);
 
   useEffect(() => {
     loadStats();
@@ -267,7 +266,6 @@ export default function AcquisitionPanel() {
                 matomoSimuStats={matomoSimuStats}
                 matomoLoaded={matomoLoaded}
                 loading={loading}
-                partnerFilterActive={partner !== null}
               />
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
                 <div className="fr-col-12 fr-col-lg-6">
