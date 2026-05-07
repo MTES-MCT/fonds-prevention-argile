@@ -5,7 +5,7 @@ import {
   handleFranceConnectError,
 } from "@/features/auth";
 import { getServerEnv } from "@/shared/config/env.config";
-import { normalizePartnerSlug } from "@/features/simulateur/utils/partner-detection";
+import { normalizePartnerSlug } from "@/shared/domain/partners";
 import { NextRequest, NextResponse } from "next/server";
 
 const PARTNER_COOKIE_NAME = "partner_source";

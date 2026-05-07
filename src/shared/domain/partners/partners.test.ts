@@ -1,7 +1,28 @@
 import { describe, it, expect } from "vitest";
-import { detectPartnerFromReferrer, normalizePartnerSlug, resolvePartner } from "./partner-detection";
+import {
+  detectPartnerFromReferrer,
+  isPartnerKey,
+  normalizePartnerSlug,
+  PARTNERS,
+  PARTNER_OPTIONS,
+  PARTNER_REFERRERS,
+  resolvePartner,
+} from "./partners";
 
-describe("partner-detection", () => {
+describe("partners", () => {
+  describe("PARTNERS catalog", () => {
+    it("contient au moins MAIF", () => {
+      expect(PARTNERS).toHaveProperty("maif");
+      expect(PARTNERS.maif.referrerHost).toBe("auxalentours.maif.fr");
+    });
+
+    it("dérive correctement les helpers (PARTNER_REFERRERS, PARTNER_OPTIONS)", () => {
+      const slugs = Object.keys(PARTNERS);
+      expect(Object.keys(PARTNER_REFERRERS)).toEqual(slugs);
+      expect(PARTNER_OPTIONS.map((o) => o.value)).toEqual(slugs);
+    });
+  });
+
   describe("detectPartnerFromReferrer", () => {
     it("retourne 'maif' pour le host MAIF", () => {
       expect(detectPartnerFromReferrer("https://auxalentours.maif.fr/")).toBe("maif");
@@ -35,6 +56,13 @@ describe("partner-detection", () => {
       expect(normalizePartnerSlug("unknown")).toBeNull();
       expect(normalizePartnerSlug("")).toBeNull();
       expect(normalizePartnerSlug(null)).toBeNull();
+    });
+  });
+
+  describe("isPartnerKey", () => {
+    it("est un type guard fonctionnel", () => {
+      expect(isPartnerKey("maif")).toBe(true);
+      expect(isPartnerKey("not-a-partner")).toBe(false);
     });
   });
 

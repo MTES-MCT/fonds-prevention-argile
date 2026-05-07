@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { DEFAULT_PERIODE } from "../tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { PeriodeId } from "../tableau-de-bord/domain/types/tableau-de-bord.types";
-import type { PartnerKey } from "../acquisition/domain/types/partner.types";
+import type { PartnerKey } from "@/shared/domain/partners";
 
 interface AdministrationFiltersState {
   periodeId: PeriodeId;

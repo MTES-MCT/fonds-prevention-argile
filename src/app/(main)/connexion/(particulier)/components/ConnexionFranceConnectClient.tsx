@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FC_ERROR_MAPPING, ROUTES } from "@/features/auth/client";
 import { useLoadRGAFromURL } from "@/features/simulateur/hooks";
-import { normalizePartnerSlug } from "@/features/simulateur/utils/partner-detection";
+import { normalizePartnerSlug } from "@/shared/domain/partners";
 
 const PARTNER_COOKIE_NAME = "partner_source";
 const PARTNER_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30j

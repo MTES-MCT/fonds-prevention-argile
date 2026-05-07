@@ -5,7 +5,7 @@ import { useSimulateurFormulaire } from "../hooks/useSimulateurFormulaire";
 import { SimulateurStep } from "../domain/value-objects/simulateur-step.enum";
 import { useMatomo } from "@/shared/components/Matomo/useMatomo";
 import { encryptRGAData } from "../actions/encrypt-rga-data.actions";
-import { resolvePartner } from "../utils/partner-detection";
+import { resolvePartner } from "@/shared/domain/partners";
 
 // Steps
 import {

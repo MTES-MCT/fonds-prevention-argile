@@ -15,7 +15,7 @@ import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-
 import { toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
 import { getClientEnv } from "@/shared/config/env.config";
 import { buildPartnerSegment, combineSegments } from "../adapters/matomo-api.adapter";
-import type { PartnerKey } from "../domain/types/partner.types";
+import type { PartnerKey } from "@/shared/domain/partners";
 
 /**
  * Construit le segment Matomo pour filtrer par département via Custom Dimension.

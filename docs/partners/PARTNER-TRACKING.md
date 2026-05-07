@@ -93,40 +93,29 @@ https://fonds-prevention-argile.beta.gouv.fr/embed-simulateur?partner=maif
 
 Scénario : un partenaire fictif `partenaire-test` qui héberge `https://test-partenaire.example.com/` et veut intégrer notre iframe.
 
-### 1. Déclarer le slug côté code
+### 1. Déclarer le partenaire côté code
 
-**Deux fichiers** doivent rester en synchro (limitation actuelle — pas de source unique partagée client/server pour cette map).
-
-#### a) Map referrer côté simulateur (client)
-
-`src/features/simulateur/utils/partner-detection.ts` :
+**Un seul fichier** : `src/shared/domain/partners/partners.ts`. Ajouter une entrée dans le catalogue `PARTNERS` :
 
 ```ts
-const PARTNER_REFERRER_HOSTS: Record<string, string> = {
-  "auxalentours.maif.fr": "maif",
-  "test-partenaire.example.com": "partenaire-test", // ← ajouter
-};
+export const PARTNERS = {
+  maif: {
+    referrerHost: "auxalentours.maif.fr",
+    label: "MAIF (auxalentours)",
+  },
+  "partenaire-test": {                              // ← slug (kebab-case, ≤50 chars)
+    referrerHost: "test-partenaire.example.com",   // ← host du site partenaire
+    label: "Partenaire Test",                       // ← libellé affiché dans le filtre
+  },
+} as const satisfies Record<string, PartnerDefinition>;
 ```
 
-#### b) Map referrer + label côté backoffice
+C'est tout. TypeScript dérive automatiquement :
+- Le type `PartnerKey` (union des slugs)
+- Les maps `PARTNER_REFERRERS`, `PARTNER_LABELS`, `PARTNER_OPTIONS`
+- Les helpers `isPartnerKey`, `normalizePartnerSlug`, `detectPartnerFromReferrer`, `resolvePartner`
 
-`src/features/backoffice/administration/acquisition/domain/types/partner.types.ts` :
-
-```ts
-export type PartnerKey = "maif" | "partenaire-test"; // ← étendre l'union
-
-export const PARTNER_REFERRERS: Record<PartnerKey, string> = {
-  maif: "auxalentours.maif.fr",
-  "partenaire-test": "test-partenaire.example.com", // ← ajouter
-};
-
-export const PARTNER_LABELS: Record<PartnerKey, string> = {
-  maif: "MAIF (auxalentours)",
-  "partenaire-test": "Partenaire Test", // ← libellé affiché dans le filtre
-};
-```
-
-C'est tout. Aucune migration BDD, aucune env var, aucun déploiement Matomo.
+Aucune migration BDD, aucune env var, aucun déploiement Matomo. Le filtre apparaît dans le backoffice et la détection (URL + referrer) fonctionne immédiatement.
 
 ### 2. URL à partager au partenaire
 
@@ -224,7 +213,6 @@ Si le besoin émerge, l'ajout est straightforward (~30 min) :
 
 ## Limites et évolutions possibles
 
-- **Slug `PartnerKey` typé** : la liste des slugs est dupliquée client/server (`partner-detection.ts` + `partner.types.ts`). Possibilité future : exposer une seule source via un module shared.
 - **Pas d'attribution multi-touch** : on capture uniquement l'origine au moment de la création du compte. Un user qui passe par MAIF puis revient via un autre canal reste attribué à MAIF.
 - **Funnels Matomo non segmentables** : limitation de l'API Matomo, hors de notre contrôle. Workaround : utiliser les events `SIMULATEUR_STEP_*` qui sont segmentables.
 - **Cookie tiers en cas d'iframe sans navigation** : si un user ne clique jamais "Continuer" (reste dans l'iframe), aucun cookie n'est posé sur notre domaine — ce qui est conforme aux attentes (pas de compte créé = rien à attribuer).

@@ -22,7 +22,7 @@ import type {
 } from "../domain/types/tableau-de-bord.types";
 import type { EligibiliteStats } from "../domain/types/eligibilite-stats.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
-import type { PartnerKey } from "@/features/backoffice/administration/acquisition/domain/types/partner.types";
+import type { PartnerKey } from "@/shared/domain/partners";
 
 /**
  * Recupere les statistiques du tableau de bord super-admin

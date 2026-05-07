@@ -3,11 +3,7 @@
 import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
-import {
-  PARTNER_OPTIONS,
-  isPartnerKey,
-  type PartnerKey,
-} from "@/features/backoffice/administration/acquisition/domain/types/partner.types";
+import { PARTNER_OPTIONS, isPartnerKey, type PartnerKey } from "@/shared/domain/partners";
 
 interface FiltresTableauDeBordProps {
   periodeId: PeriodeId;

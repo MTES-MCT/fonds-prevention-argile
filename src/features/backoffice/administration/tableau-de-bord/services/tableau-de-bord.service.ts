@@ -47,7 +47,7 @@ import {
   fetchMatomoSimulationsGroupedByDimension,
   buildPartnerSegment,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
-import type { PartnerKey } from "@/features/backoffice/administration/acquisition/domain/types/partner.types";
+import type { PartnerKey } from "@/shared/domain/partners";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getClientEnv } from "@/shared/config/env.config";
 

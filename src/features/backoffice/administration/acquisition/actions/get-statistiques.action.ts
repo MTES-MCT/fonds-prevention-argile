@@ -7,7 +7,7 @@ import { getScopeFilters } from "@/features/auth/permissions/services/agent-scop
 import type { ActionResult } from "@/shared/types";
 import type { Statistiques } from "../domain/types/statistiques.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
-import type { PartnerKey } from "../domain/types/partner.types";
+import type { PartnerKey } from "@/shared/domain/partners";
 
 /**
  * Récupère les statistiques globales ou filtrées selon le scope de l'agent

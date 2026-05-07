@@ -1,7 +1,7 @@
 import { getServerEnv, getClientEnv } from "@/shared/config/env.config";
 import type { MatomoVisitsResponse, MatomoEventActionResponse } from "../domain/types/matomo.types";
 import type { MatomoFunnelFlowTableResponse } from "../domain/types/matomo-funnels.types";
-import { PARTNER_REFERRERS, type PartnerKey } from "../domain/types/partner.types";
+import { PARTNER_REFERRERS, type PartnerKey } from "@/shared/domain/partners";
 
 /**
  * Construit un segment Matomo filtrant par referrer (host) pour un partenaire connu.
