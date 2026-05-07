@@ -88,4 +88,16 @@ export const useCreationDossierStore = create<CreationDossierState>((set, get) =
     }),
 }));
 
-export const TOTAL_STEPS = 3;
+/**
+ * Nombre d'étapes affichées dans la ProgressBar selon le mode choisi.
+ * - Sans simulation : 3 étapes (choix, coordonnées, email)
+ * - Avec simulation : 4 étapes (choix, coordonnées, email, simulation post-création
+ *   réalisée via SimulateurEdition après redirection)
+ *
+ * Le wizard ne contient que 3 écrans dans tous les cas — la 4e étape
+ * du mode simulation se déroule en dehors du wizard, après création
+ * du dossier.
+ */
+export function getTotalSteps(wantsSimulation: boolean | null): number {
+  return wantsSimulation ? 4 : 3;
+}

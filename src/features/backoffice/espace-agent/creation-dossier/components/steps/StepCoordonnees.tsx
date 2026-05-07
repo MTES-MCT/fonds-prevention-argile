@@ -127,7 +127,7 @@ export function StepCoordonnees() {
     <>
       <h4 className="fr-mb-1v">Quelle est l&apos;adresse du bien du demandeur ?</h4>
       <p className="fr-text--sm fr-mb-4w text-gray-500">
-        Si vous ne l&apos;a connaissez pas, merci d&apos;indiquer la ville.
+        Si vous ne la connaissez pas, merci d&apos;indiquer la ville.
       </p>
 
       <div className="fr-input-group">
