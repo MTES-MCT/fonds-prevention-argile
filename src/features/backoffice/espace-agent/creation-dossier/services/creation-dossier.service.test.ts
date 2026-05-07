@@ -37,6 +37,8 @@ describe("createDossierByAgent", () => {
       email: "jean@ex.fr",
       emailContact: null,
       telephone: "0600000000",
+      sourceAcquisition: null,
+      sourceAcquisitionPrecision: null,
       claimToken: "token-abc",
       claimTokenExpiresAt: new Date(),
       claimedAt: null,
