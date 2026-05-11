@@ -56,11 +56,16 @@ export async function createDossierByAgent(
     createdByAgentId: agentId,
   });
 
-  // 4. Pré-remplissage des données simulation côté agent
-  //    - Parcours 2 : simulation complète fournie
-  //    - Parcours 1 : simulation minimale (adresse seule)
-  const simulationData = rgaSimulationDataAgent ?? buildMinimalAgentSimulation(adresseBien);
-  await parcoursRepo.updateRGADataAgent(parcours.id, simulationData, agentId);
+  // 4. Pré-remplissage optionnel des données simulation côté agent
+  //    - Simulation complète fournie → on stocke tel quel
+  //    - Adresse seule fournie (parcours 1) → simulation minimale
+  //    - Rien → pas d'écriture (le demandeur remplira son logement complet
+  //      via le simulateur ; cas typique parcours 2 où l'adresse est dans la sim)
+  const simulationData =
+    rgaSimulationDataAgent ?? (adresseBien ? buildMinimalAgentSimulation(adresseBien) : null);
+  if (simulationData) {
+    await parcoursRepo.updateRGADataAgent(parcours.id, simulationData, agentId);
+  }
 
   // 5. Envoi optionnel du mail d'invitation
   const baseUrl = getServerEnv().BASE_URL;

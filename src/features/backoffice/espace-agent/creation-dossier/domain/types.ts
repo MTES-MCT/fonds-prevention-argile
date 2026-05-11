@@ -11,7 +11,7 @@ export interface CreateDossierByAgentParams {
     email: string;
     telephone?: string;
   };
-  adresseBien: string;
+  adresseBien?: string;
   /** Données de simulation remplies par l'agent (parcours 2). */
   rgaSimulationDataAgent?: RGASimulationData;
   /** Envoie un email d'invitation au demandeur avec un lien de claim. */

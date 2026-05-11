@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { NavigationButtons } from "@/features/simulateur/components/shared/NavigationButtons";
 import { useCreationDossierStore } from "../../stores/creation-dossier.store";
+import { createDossierAllerVersAction } from "../../actions/create-dossier-aller-vers.action";
 
 /**
  * Étape coordonnées du demandeur, découpée en 3 sous-panneaux visuels
@@ -15,12 +17,42 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
 
 export function StepCoordonnees() {
+  const router = useRouter();
+  const [isCreating, startCreating] = useTransition();
+  const [createError, setCreateError] = useState<string | null>(null);
+
   const demandeur = useCreationDossierStore((s) => s.demandeur);
+  const wantsSimulation = useCreationDossierStore((s) => s.wantsSimulation);
+  const reset = useCreationDossierStore((s) => s.reset);
   const update = useCreationDossierStore((s) => s.updateDemandeur);
   const next = useCreationDossierStore((s) => s.next);
   const previous = useCreationDossierStore((s) => s.previous);
 
   const [subStep, setSubStep] = useState<SubStep>("identite");
+
+  // Mode "avec simulation" : à la sortie de l'étape coordonnées, on crée le
+  // dossier sans envoyer d'email puis on redirige vers la page simulation.
+  const submitAndGoToSimulation = () => {
+    setCreateError(null);
+    startCreating(async () => {
+      const result = await createDossierAllerVersAction({
+        demandeur: {
+          nom: demandeur.nom,
+          prenom: demandeur.prenom,
+          email: demandeur.email,
+          telephone: demandeur.telephone || undefined,
+        },
+        adresseBien: demandeur.adresseBien,
+        sendEmail: false,
+      });
+      if (!result.success) {
+        setCreateError(result.error);
+        return;
+      }
+      reset();
+      router.push(`/espace-agent/dossiers/nouveau/simulation/${result.data.parcoursId}`);
+    });
+  };
 
   const canGoFromIdentite = demandeur.nom.trim().length > 0 && demandeur.prenom.trim().length > 0;
   const canGoFromContact =
@@ -112,11 +144,20 @@ export function StepCoordonnees() {
           />
         </div>
 
+        {createError && (
+          <div className="fr-alert fr-alert--error fr-mt-2w">
+            <p>{createError}</p>
+          </div>
+        )}
+
         <NavigationButtons
           canGoBack
           onPrevious={() => setSubStep("identite")}
-          onNext={() => setSubStep("adresse")}
+          // En mode "avec simulation" : on saute la sous-étape adresse et on
+          // crée directement le dossier (l'adresse sera saisie dans le simulateur).
+          onNext={wantsSimulation ? submitAndGoToSimulation : () => setSubStep("adresse")}
           isNextDisabled={!canGoFromContact}
+          isLoading={isCreating}
         />
       </>
     );

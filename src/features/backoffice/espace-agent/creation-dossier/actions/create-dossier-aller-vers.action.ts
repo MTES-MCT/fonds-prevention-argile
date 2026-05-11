@@ -23,7 +23,11 @@ const createDossierSchema = z.object({
       .optional()
       .or(z.literal("").transform(() => undefined)),
   }),
-  adresseBien: z.string().trim().min(1, "L'adresse du bien est requise"),
+  adresseBien: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : undefined)),
   // Simulation complète optionnelle (parcours 2). On laisse le service stocker tel quel.
   rgaSimulationDataAgent: z.unknown().optional(),
   sendEmail: z.boolean(),
