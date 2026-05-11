@@ -7,7 +7,8 @@ import { AUTH_METHODS, COOKIE_NAMES, getCookieOptions, ROLES, SESSION_DURATION }
 import { ERROR_CODES } from "../../domain/errors/authErrors";
 import type { ErrorCode } from "../../domain/errors/authErrors";
 import { JWTPayload } from "../../domain/entities";
-import { userRepo } from "@/shared/database/repositories";
+import { userRepo, parcoursRepo } from "@/shared/database/repositories";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
 import { getOrCreateParcours } from "@/features/parcours/core/services";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
@@ -228,7 +229,12 @@ export async function handleFranceConnectCallback(
     });
 
     // 6. Initialiser le parcours si première connexion
-    await getOrCreateParcours(user.id);
+    const parcours = await getOrCreateParcours(user.id);
+
+    // 6bis. Si parcours en INVITATION (dossier pré-créé par un agent) → valider
+    if (parcours.currentStep === Step.INVITATION) {
+      await parcoursRepo.validateInvitation(parcours.id);
+    }
 
     // 7. Créer la session avec l'userId
     await createFranceConnectSession(
