@@ -237,12 +237,26 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       return existing;
     }
 
+    const initialStep = opts?.createdByAgentId ? Step.INVITATION : Step.CHOIX_AMO;
+
     return await this.create({
       userId,
-      currentStep: Step.CHOIX_AMO,
+      currentStep: initialStep,
       currentStatus: Status.TODO,
       createdByAgentId: opts?.createdByAgentId ?? null,
     });
+  }
+
+  /**
+   * Marque l'invitation comme acceptée et fait progresser le parcours vers CHOIX_AMO.
+   * Idempotent : ne fait rien si le parcours n'est plus à l'étape INVITATION.
+   */
+  async validateInvitation(parcoursId: string): Promise<ParcoursPrevention | null> {
+    const parcours = await this.findById(parcoursId);
+    if (!parcours || parcours.currentStep !== Step.INVITATION) {
+      return parcours;
+    }
+    return await this.updateStep(parcoursId, Step.CHOIX_AMO, Status.TODO);
   }
 
   /**

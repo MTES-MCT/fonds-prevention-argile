@@ -19,6 +19,7 @@ function getStepDemarcheId(step: Step): number {
   const env = getServerEnv();
 
   const stepToDemarcheMap: Record<Step, string> = {
+    [Step.INVITATION]: env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE,
     [Step.CHOIX_AMO]: env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE,
     [Step.ELIGIBILITE]: env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE,
     [Step.DIAGNOSTIC]: env.DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC,

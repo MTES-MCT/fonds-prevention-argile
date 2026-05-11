@@ -44,6 +44,7 @@ const SUB_TABS: { id: DemandeursTab; label: string }[] = [
 ];
 
 const STEP_LABELS: Record<Step, string> = {
+  [Step.INVITATION]: "Invitation envoyée",
   [Step.CHOIX_AMO]: "1. Sélection d'un AMO",
   [Step.ELIGIBILITE]: "2. Formulaire d'éligibilité",
   [Step.DIAGNOSTIC]: "3. Diagnostic",

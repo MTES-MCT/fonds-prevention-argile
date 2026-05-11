@@ -1,7 +1,7 @@
 lockfileVersion: '9.0'
 
 settings:
-  autoInstallPeers: false
+  autoInstallPeers: true
   excludeLinksFromLockfile: false
 
 overrides:
@@ -36,7 +36,7 @@ importers:
         version: 2.0.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@socialgouv/matomo-next':
         specifier: 1.13.1
-        version: 1.13.1(next@15.5.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
+        version: 1.13.1(next@15.5.15(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
       '@types/pg':
         specifier: 8.18.0
         version: 8.18.0
@@ -57,7 +57,7 @@ importers:
         version: 5.19.0
       next:
         specifier: 15.5.15
-        version: 15.5.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 15.5.15(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       nodemailer:
         specifier: 8.0.5
         version: 8.0.5
@@ -148,7 +148,7 @@ importers:
         version: 10.9.2(@types/node@22.13.5)(typescript@5.9.3)
       vitest:
         specifier: 4.1.3
-        version: 4.1.3(@types/node@22.13.5)(@vitest/ui@4.1.3)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.31.1)(tsx@4.21.0)
+        version: 4.1.3(@types/node@22.13.5)(@vitest/ui@4.1.3)(jsdom@26.1.0)(vite@7.3.2(@types/node@22.13.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
 
 packages:
 
@@ -3540,6 +3540,7 @@ packages:
       '@vitest/ui': 4.1.3
       happy-dom: '*'
       jsdom: '*'
+      vite: ^7.3.2
     peerDependenciesMeta:
       '@edge-runtime/vm':
         optional: true
@@ -4462,9 +4463,9 @@ snapshots:
       domhandler: 5.0.3
       selderee: 0.11.0
 
-  '@socialgouv/matomo-next@1.13.1(next@15.5.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)':
+  '@socialgouv/matomo-next@1.13.1(next@15.5.15(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)':
     dependencies:
-      next: 15.5.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      next: 15.5.15(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react: 19.2.4
 
   '@standard-schema/spec@1.1.0': {}
@@ -4862,7 +4863,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.1.0
-      vitest: 4.1.3(@types/node@22.13.5)(@vitest/ui@4.1.3)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.31.1)(tsx@4.21.0)
+      vitest: 4.1.3(@types/node@22.13.5)(@vitest/ui@4.1.3)(jsdom@26.1.0)(vite@7.3.2(@types/node@22.13.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
 
   '@vitest/utils@4.1.3':
     dependencies:
@@ -6278,7 +6279,7 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  next@15.5.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+  next@15.5.15(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
     dependencies:
       '@next/env': 15.5.15
       '@swc/helpers': 0.5.15
@@ -6286,7 +6287,7 @@ snapshots:
       postcss: 8.4.31
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
-      styled-jsx: 5.1.6(react@19.2.4)
+      styled-jsx: 5.1.6(@babel/core@7.29.0)(react@19.2.4)
     optionalDependencies:
       '@next/swc-darwin-arm64': 15.5.15
       '@next/swc-darwin-x64': 15.5.15
@@ -6841,10 +6842,12 @@ snapshots:
 
   strip-json-comments@3.1.1: {}
 
-  styled-jsx@5.1.6(react@19.2.4):
+  styled-jsx@5.1.6(@babel/core@7.29.0)(react@19.2.4):
     dependencies:
       client-only: 0.0.1
       react: 19.2.4
+    optionalDependencies:
+      '@babel/core': 7.29.0
 
   supercluster@8.0.1:
     dependencies:
@@ -7061,7 +7064,7 @@ snapshots:
       lightningcss: 1.31.1
       tsx: 4.21.0
 
-  vitest@4.1.3(@types/node@22.13.5)(@vitest/ui@4.1.3)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.31.1)(tsx@4.21.0):
+  vitest@4.1.3(@types/node@22.13.5)(@vitest/ui@4.1.3)(jsdom@26.1.0)(vite@7.3.2(@types/node@22.13.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)):
     dependencies:
       '@vitest/expect': 4.1.3
       '@vitest/mocker': 4.1.3(vite@7.3.2(@types/node@22.13.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
@@ -7088,17 +7091,7 @@ snapshots:
       '@vitest/ui': 4.1.3(vitest@4.1.3)
       jsdom: 26.1.0
     transitivePeerDependencies:
-      - jiti
-      - less
-      - lightningcss
       - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - terser
-      - tsx
-      - yaml
 
   w3c-xmlserializer@5.0.0:
     dependencies:
