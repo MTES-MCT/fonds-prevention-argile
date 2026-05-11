@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { NavigationButtons } from "@/features/simulateur/components/shared/NavigationButtons";
+import { mapBanFeatureToAddressData, type BanFeature } from "@/shared/adapters/ban";
+import { getEpciByCommune } from "@/shared/adapters/geo";
 import { useCreationDossierStore } from "../../stores/creation-dossier.store";
-import { createDossierAllerVersAction } from "../../actions/create-dossier-aller-vers.action";
 import { AddressAutocompleteInput } from "../AddressAutocompleteInput";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -13,15 +13,14 @@ const PHONE_RE = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
 /**
  * Étape 3/4 : coordonnées du demandeur.
  *
- * - Mode "avec simulation" : téléphone + email seuls. À la sortie, on crée le
- *   dossier (sans email envoyé) et on redirige vers /simulation/[parcoursId].
+ * - Mode "avec simulation" : téléphone + email seuls. À la sortie, on
+ *   navigue vers la page simulation. Aucune écriture DB ici : le dossier
+ *   n'est créé qu'au clic final sur "Envoyer et enregistrer le dossier".
  * - Mode "sans simulation" : téléphone + email + adresse du bien. À la sortie,
  *   on passe à l'étape 4 (envoi email) en local.
  */
 export function StepContact() {
   const router = useRouter();
-  const [isCreating, startCreating] = useTransition();
-  const [createError, setCreateError] = useState<string | null>(null);
 
   const demandeur = useCreationDossierStore((s) => s.demandeur);
   const wantsSimulation = useCreationDossierStore((s) => s.wantsSimulation);
@@ -34,34 +33,24 @@ export function StepContact() {
   const telephoneInvalid = telephoneInput.length > 0 && !PHONE_RE.test(telephoneInput);
   const emailInvalid = emailInput.length > 0 && !EMAIL_RE.test(emailInput);
   const contactValid = EMAIL_RE.test(emailInput) && (telephoneInput.length === 0 || PHONE_RE.test(telephoneInput));
-  const addressValid = !wantsSimulation ? demandeur.adresseBien.trim().length > 0 : true;
+  // Mode sans simulation : la sélection d'une suggestion BAN est obligatoire.
+  // Une saisie libre sans clic sur une suggestion → pas de détails structurés
+  // (code département, EPCI…) → dossier invisible pour les AV avec filtre
+  // territorial. On force donc le choix d'une suggestion.
+  const addressValid = !wantsSimulation ? demandeur.adresseBienDetails !== null : true;
+  const addressTypedButNotSelected =
+    !wantsSimulation && demandeur.adresseBien.trim().length > 0 && demandeur.adresseBienDetails === null;
   const canGoNext = contactValid && addressValid;
 
-  // Mode avec sim : à la sortie, on crée le dossier et on redirige vers simulation.
+  // Mode avec sim : on quitte le wizard inline pour rejoindre la page simulation.
+  // Le dossier n'est PAS encore créé en DB → la création se fait au clic final
+  // dans ResultInvitation (avec demandeur + simulation complète en un seul appel).
   const handleNext = () => {
     if (!wantsSimulation) {
       next();
       return;
     }
-    setCreateError(null);
-    startCreating(async () => {
-      const result = await createDossierAllerVersAction({
-        demandeur: {
-          nom: demandeur.nom,
-          prenom: demandeur.prenom,
-          email: demandeur.email,
-          telephone: demandeur.telephone || undefined,
-        },
-        sendEmail: false,
-      });
-      if (!result.success) {
-        setCreateError(result.error);
-        return;
-      }
-      // On NE reset PAS le store wizard ici : permet à l'agent de revenir
-      // via "Précédent" sur la page simulation et retrouver le state intact.
-      router.push(`/espace-agent/dossiers/nouveau/simulation/${result.data.parcoursId}`);
-    });
+    router.push(`/espace-agent/dossiers/nouveau/simulation`);
   };
 
   return (
@@ -76,9 +65,33 @@ export function StepContact() {
       {!wantsSimulation && (
         <AddressAutocompleteInput
           label="Adresse postale du logement concerné"
-          hint="Si vous ne la connaissez pas, merci d'indiquer la ville."
+          hint="Tapez les premiers caractères puis sélectionnez une suggestion dans la liste."
           value={demandeur.adresseBien}
           onChange={(adresseBien) => update({ adresseBien })}
+          errorMessage={
+            addressTypedButNotSelected
+              ? "Veuillez sélectionner une adresse dans les suggestions proposées."
+              : undefined
+          }
+          onSelectFeature={async (feature: BanFeature | null) => {
+            if (!feature) {
+              update({ adresseBienDetails: null });
+              return;
+            }
+            // Mapping immédiat sans EPCI (territoire matché via code_departement
+            // en attendant la réponse Geo).
+            const partial = mapBanFeatureToAddressData(feature);
+            update({ adresseBienDetails: partial });
+            try {
+              const epci = await getEpciByCommune(feature.properties.citycode);
+              if (epci) {
+                update({ adresseBienDetails: { ...partial, codeEpci: epci } });
+              }
+            } catch (error) {
+              console.error("[StepContact] Erreur récupération EPCI :", error);
+              // On laisse adresseBienDetails sans EPCI ; le match département suffit.
+            }
+          }}
         />
       )}
 
@@ -126,18 +139,11 @@ export function StepContact() {
         )}
       </div>
 
-      {createError && (
-        <div className="fr-alert fr-alert--error fr-mt-2w">
-          <p>{createError}</p>
-        </div>
-      )}
-
       <NavigationButtons
         canGoBack
         onPrevious={previous}
         onNext={handleNext}
         isNextDisabled={!canGoNext}
-        isLoading={isCreating}
       />
     </>
   );

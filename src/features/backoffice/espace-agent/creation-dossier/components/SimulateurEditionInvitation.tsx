@@ -10,15 +10,7 @@ import {
   selectIsEligible,
 } from "@/features/simulateur/stores/simulateur.store";
 import { SimulateurStep } from "@/features/simulateur/domain/value-objects/simulateur-step.enum";
-import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { ResultInvitation } from "./ResultInvitation";
-
-interface SimulateurEditionInvitationProps {
-  parcoursId: string;
-  initialData: RGASimulationData | null;
-  /** Email du demandeur (affiché à l'étape résultat pour le mail d'invitation). */
-  demandeurEmail: string;
-}
 
 /**
  * Variante AMO/AV de SimulateurEdition pour l'étape invitation.
@@ -28,19 +20,19 @@ interface SimulateurEditionInvitationProps {
  *   simulateur (carte/fond/formTitle/helpLink), pour s'intégrer dans la carte
  *   du wizard invitation (stepper "Étape 3 sur 4" géré par la page parente).
  * - L'étape INTRO est skippée et la simulation démarre directement à
- *   TYPE_LOGEMENT, avec des réponses pré-remplies si initialData est fourni.
+ *   TYPE_LOGEMENT.
  * - L'écran de résultat est remplacé par `ResultInvitation` (callout +
  *   bullets + bouton "Envoyer et enregistrer le dossier") via le context.
+ *
+ * Ne reçoit aucun `parcoursId` : le dossier n'est créé en DB qu'au clic final
+ * sur "Envoyer et enregistrer". Les réponses de l'agent vivent uniquement
+ * dans `useSimulateurStore` (sessionStorage) jusque-là.
  *
  * Partage le store singleton `useSimulateurStore` avec le simulateur public et
  * le mode édition AMO. Compromis assumé : un agent ne fait pas de simulation
  * publique en parallèle d'un wizard invitation.
  */
-export function SimulateurEditionInvitation({
-  parcoursId,
-  initialData,
-  demandeurEmail,
-}: SimulateurEditionInvitationProps) {
+export function SimulateurEditionInvitation() {
   const router = useRouter();
   const reset = useSimulateurStore((state) => state.reset);
   const setEditMode = useSimulateurStore((state) => state.setEditMode);
@@ -56,15 +48,7 @@ export function SimulateurEditionInvitation({
         ...state.simulation,
         currentStep: SimulateurStep.TYPE_LOGEMENT,
         history: [],
-        answers: initialData
-          ? {
-              logement: initialData.logement,
-              taxeFonciere: initialData.taxeFonciere,
-              rga: initialData.rga,
-              menage: initialData.menage,
-              vous: initialData.vous,
-            }
-          : state.simulation.answers,
+        answers: {},
       },
     }));
 
@@ -82,18 +66,9 @@ export function SimulateurEditionInvitation({
     <SimulateurProvider
       embedded
       showHelpLink={false}
-      initialData={initialData}
-      dossierId={parcoursId}
       onBackBeyondFirstStep={() => router.back()}
       customResultComponent={({ checks, isEligible, onBack, onRestart }) => (
-        <ResultInvitation
-          parcoursId={parcoursId}
-          demandeurEmail={demandeurEmail}
-          checks={checks}
-          isEligible={isEligible}
-          onBack={onBack}
-          onRestart={onRestart}
-        />
+        <ResultInvitation checks={checks} isEligible={isEligible} onBack={onBack} onRestart={onRestart} />
       )}>
       <InvitationStepper />
       <div className="fr-mt-4w">

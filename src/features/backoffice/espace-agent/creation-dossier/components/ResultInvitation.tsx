@@ -1,18 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { EligibilityChecks } from "@/features/simulateur/domain/entities/eligibility-result.entity";
 import { EligibilityChecksList } from "@/features/simulateur/components/results/EligibilityChecksList";
 import { useSimulateurStore, selectAnswers } from "@/features/simulateur/stores/simulateur.store";
 import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
 import { SimulateurStep } from "@/features/simulateur/domain/value-objects/simulateur-step.enum";
-import { updateSimulationDataAction } from "@/features/backoffice/espace-agent/shared/actions/update-simulation-data.action";
-import { sendInvitationEmailAction } from "../actions/send-invitation-email.action";
+import { useCreationDossierStore } from "../stores/creation-dossier.store";
+import { createDossierAllerVersAction } from "../actions/create-dossier-aller-vers.action";
 
 interface ResultInvitationProps {
-  parcoursId: string;
-  demandeurEmail: string;
   checks: EligibilityChecks;
   isEligible: boolean;
   /** Callback pour retourner à l'étape précédente du simulateur (avant le résultat). */
@@ -23,29 +21,31 @@ interface ResultInvitationProps {
 
 /**
  * Écran de résultat de l'étape 4/4 du wizard invitation.
- * Affiche :
- *  - Cas éligible : callout vert + bullets (email auto + dossier suivi) +
- *    bouton "Envoyer et enregistrer le dossier" + "Recommencer la simulation".
- *  - Cas non éligible : callout rouge + bullets (dossier suivi + conseil) +
- *    bouton "Enregistrer le dossier et quitter" + "Recommencer la simulation".
  *
  * Au click sur le bouton principal :
- *  - Sauvegarde des données simulation via updateSimulationDataAction
- *  - Si éligible : envoi de l'email d'invitation au demandeur
- *  - Redirection vers la page prospect du dossier créé
+ *  - Crée le dossier en DB (user stub + parcours + simulation agent + email
+ *    si éligible) en un seul appel `createDossierAllerVersAction`.
+ *  - Redirige vers la liste pertinente selon le rôle (AV → /prospects, AMO
+ *    → /dossiers).
+ *
+ * Si le demandeur n'est plus en store (rafraîchissement direct de la page
+ * sans passer par le wizard), redirige vers /nouveau pour recommencer.
  */
-export function ResultInvitation({
-  parcoursId,
-  demandeurEmail,
-  checks,
-  isEligible,
-  onBack,
-  onRestart,
-}: ResultInvitationProps) {
+export function ResultInvitation({ checks, isEligible, onBack, onRestart }: ResultInvitationProps) {
   const router = useRouter();
   const answers = useSimulateurStore(selectAnswers);
+  const demandeur = useCreationDossierStore((s) => s.demandeur);
+  const resetWizard = useCreationDossierStore((s) => s.reset);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // Si le state wizard a été perdu (rafraîchissement, navigation directe),
+  // on ne peut plus créer le dossier → retour au début du wizard.
+  useEffect(() => {
+    if (!demandeur.email || !demandeur.nom || !demandeur.prenom) {
+      router.replace("/espace-agent/dossiers/nouveau");
+    }
+  }, [demandeur, router]);
 
   const titleText = isEligible
     ? "Faire une simulation d’éligibilité puis créer le dossier"
@@ -60,20 +60,30 @@ export function ResultInvitation({
         setError("Données de simulation incomplètes");
         return;
       }
-      const saved = await updateSimulationDataAction(parcoursId, fullRgaData);
-      if (!saved.success) {
-        setError(saved.error || "Erreur lors de la sauvegarde");
+
+      const result = await createDossierAllerVersAction({
+        demandeur: {
+          nom: demandeur.nom,
+          prenom: demandeur.prenom,
+          email: demandeur.email,
+          telephone: demandeur.telephone || undefined,
+        },
+        rgaSimulationDataAgent: fullRgaData,
+        // Cas éligible : envoi auto du mail d'invitation. Sinon : pas d'envoi.
+        sendEmail: isEligible,
+      });
+
+      if (!result.success) {
+        setError(result.error);
         return;
       }
 
-      // Cas éligible : envoi du mail d'invitation (auto, pas de choix).
-      // Cas non éligible : pas d'envoi, juste sauvegarde + redirect.
-      if (isEligible) {
-        await sendInvitationEmailAction(parcoursId, true);
-      }
+      // Reset des stores avant la redirection pour éviter une double création
+      // si l'utilisateur revient en arrière via le bouton navigateur.
+      resetWizard();
+      useSimulateurStore.getState().reset();
 
-      // Retour à la liste des dossiers de l'agent après création de l'invitation.
-      router.push(`/espace-agent/dossiers`);
+      router.push(result.data.redirectUrl);
     });
   };
 
@@ -111,7 +121,7 @@ export function ResultInvitation({
       <ul className="fr-mt-4w">
         {isEligible && (
           <li>
-            Un email automatique va être envoyé sur <strong>{demandeurEmail || "l'adresse email du demandeur"}</strong>{" "}
+            Un email automatique va être envoyé sur <strong>{demandeur.email || "l'adresse email du demandeur"}</strong>{" "}
             afin que le demandeur accède à sa simulation
           </li>
         )}

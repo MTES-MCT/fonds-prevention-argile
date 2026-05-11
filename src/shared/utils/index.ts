@@ -6,3 +6,4 @@ export * from "./debug.utils";
 export * from "./async.utils";
 export * from "./geo.utils";
 export * from "./departements.utils";
+export * from "./phone.utils";

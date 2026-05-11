@@ -28,6 +28,9 @@ export function StepEnvoiEmail() {
           telephone: demandeur.telephone || undefined,
         },
         adresseBien: demandeur.adresseBien || undefined,
+        // Détails structurés BAN si une suggestion a été sélectionnée — permet
+        // au filtre territorial AV (`matchesTerritoire`) de retrouver le dossier.
+        adresseBienDetails: demandeur.adresseBienDetails ?? undefined,
         sendEmail,
       });
 
@@ -37,8 +40,8 @@ export function StepEnvoiEmail() {
       }
 
       reset();
-      // Après création (mode sans simulation), retour à la liste des dossiers de l'agent.
-      router.push(`/espace-agent/dossiers`);
+      // Retour à la liste pertinente selon le rôle (AV → /prospects, AMO → /dossiers).
+      router.push(result.data.redirectUrl);
     });
   };
 

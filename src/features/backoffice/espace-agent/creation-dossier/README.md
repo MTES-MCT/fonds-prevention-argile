@@ -10,17 +10,31 @@ Avant cette feature, un parcours ne pouvait exister qu'après connexion du deman
 
 Bouton **"+ Nouveau dossier"** dans la page liste des dossiers (`/espace-agent/dossiers`), visible pour les rôles `AMO`, `ALLERS_VERS` et `AMO_ET_ALLERS_VERS` (permission `DOSSIERS_CREATE`).
 
-Le wizard (`/espace-agent/dossiers/nouveau`) a 3 étapes :
+Le wizard (`/espace-agent/dossiers/nouveau`) a 4 étapes :
 
 1. **Choix du mode** — "Faire une simulation puis créer" ou "Créer sans simulation".
-2. **Coordonnées** — 3 sous-panneaux : identité (nom/prénom), contact (tel/email), adresse du bien.
-3. **Envoi email** — Envoyer ou non un email d'invitation FranceConnect.
+2. **Identité** — nom + prénom du demandeur.
+3. **Coordonnées** — téléphone + email (+ adresse postale en mode sans simulation, via autocomplétion BAN).
+4. **Étape 4 dépend du mode :**
+   - **Sans simulation** : page « Envoi email » (oui/non) + bouton « Enregistrer le dossier » → `createDossierAllerVersAction`.
+   - **Avec simulation** : page `/dossiers/nouveau/simulation` (sans paramètre) qui mount le simulateur. À la fin (résultat éligible/non), bouton « Envoyer et enregistrer le dossier » → `createDossierAllerVersAction` avec `rgaSimulationDataAgent` rempli.
 
-Après validation :
+### Création différée du parcours
 
-- Le dossier est créé en une seule passe (user stub + parcours + adresse en simulation minimale si besoin).
-- Si l'agent avait choisi **"avec simulation"**, on redirige vers la page prospect avec `?action=simulation`, qui redirige immédiatement vers `SimulateurEdition` (le composant existant qui opère sur un dossier persisté).
-- Sinon, on redirige vers la page prospect ; un callout jaune "Simulation à effectuer" y invite à lancer la simulation plus tard.
+**Le dossier n'est créé en DB qu'au clic final** sur « Enregistrer le dossier » (ou « Envoyer et enregistrer »). Tant que l'agent navigue dans le wizard et le simulateur, aucune ligne `users` / `parcours_prevention` n'est écrite.
+
+Pourquoi : l'utilisateur s'attend à une création « atomique » correspondant au bouton final. Avant cette refacto, le mode « avec simulation » créait le dossier dès le « Suivant » sur l'étape Coordonnées (parce que le simulateur embarqué avait besoin d'un `parcoursId` pour persister ses réponses). Conséquence : des dossiers orphelins en step `INVITATION` sans simulation en cas d'abandon en cours de simulateur.
+
+Mise en œuvre :
+
+- Le `useCreationDossierStore` (in-memory, non persisté) conserve le formulaire demandeur entre les étapes.
+- Le `useSimulateurStore` (sessionStorage) conserve les réponses de la simulation pendant que l'agent l'enchaîne.
+- `ResultInvitation` lit le demandeur dans le wizard store + les réponses dans le simulateur store, convertit via `EligibilityService.toRGASimulationData`, et appelle `createDossierAllerVersAction({ demandeur, rgaSimulationDataAgent, sendEmail: isEligible })` en un seul aller-retour serveur.
+
+Après création :
+
+- Si éligible (mode avec simulation) : email d'invitation envoyé au demandeur. Sinon : pas d'envoi.
+- Redirection vers la liste pertinente selon le rôle : AV / AMO_ET_ALLERS_VERS → `/espace-agent/prospects`, AMO pur → `/espace-agent/dossiers` (cf. `getPostCreationRedirectUrl`).
 
 ## Modèle de données
 
@@ -40,7 +54,24 @@ FK nullable vers `agents(id)` (`ON DELETE SET NULL`). Trace l'agent qui a créé
 
 ### Adresse du bien
 
-Stockée dans `rgaSimulationDataAgent.logement` (JSONB) sous la forme `{ adresse: "..." }`, même en l'absence de simulation complète. Raison : toute la chaîne de lecture (filtrage territorial `matchesTerritoire`, `InfoLogement` UI) opère sur `rgaSimulationData` / `rgaSimulationDataAgent`. Ajouter des colonnes dédiées aurait dupliqué la logique.
+Stockée dans `rgaSimulationDataAgent.logement` (JSONB) sous la forme :
+
+```ts
+{
+  adresse: string;          // label BAN complet
+  clef_ban: string;
+  commune: string;          // code INSEE (citycode)
+  commune_nom: string;
+  code_departement: string; // requis pour matchesTerritoire
+  code_region: string;
+  epci?: string;            // récupéré via getEpciByCommune (API Geo)
+  coordonnees: string;      // "lat,lon"
+}
+```
+
+Pourquoi ces champs : la chaîne de lecture (filtrage territorial `matchesTerritoire`, `InfoLogement` UI, mode édition AMO) opère sur `rgaSimulationData` / `rgaSimulationDataAgent`. Ajouter des colonnes dédiées aurait dupliqué la logique.
+
+**La sélection d'une suggestion BAN est obligatoire** dans le parcours sans simulation : l'agent ne peut pas avancer s'il a tapé l'adresse à la main sans cliquer sur une suggestion. Le bouton « Suivant » est désactivé tant que `demandeur.adresseBienDetails === null`, et un message d'erreur DSFR s'affiche sous le champ. Sans ces données structurées, le dossier n'apparaîtrait pas dans la liste des prospects de l'AV de son territoire (cf. `matchesTerritoire`).
 
 Pour permettre l'affichage des dossiers pré-créés dans la liste d'un AV, `matchesTerritoire()` fallback désormais sur `rgaSimulationDataAgent.logement` quand `rgaSimulationData` est null.
 
@@ -53,7 +84,18 @@ Au callback FC, `upsertFromFranceConnect()` applique dans l'ordre :
 3. **Fallback email** — si un **unique** stub non réclamé a le même email (case-insensitive), on le rattache au compte FC. Si plusieurs stubs correspondent, on ne rattache pas (ambigu).
 4. **Création** — nouveau user FC normal.
 
-Le cookie `FC_CLAIM_TOKEN` est posé par `/claim-dossier/[token]/page.tsx` (TTL 5 min, httpOnly) avant la redirection vers `/api/auth/fc/login`. Il est consommé (lu + supprimé) dans `handleFranceConnectCallback`.
+Le cookie `FC_CLAIM_TOKEN` est posé par le **Route Handler** `/claim-dossier/[token]/route.ts` (TTL 5 min, httpOnly) avant la redirection vers `/api/auth/fc/login`. C'est volontairement un Route Handler et pas une Page : Next.js 15 interdit de modifier les cookies depuis un Server Component. Le cas « lien invalide » est affiché par la page sœur `/claim-dossier/invalide`. Le cookie est consommé (lu + supprimé) dans `handleFranceConnectCallback`.
+
+### Promotion `rgaSimulationDataAgent` → `rgaSimulationData` au claim
+
+Quand le demandeur se France-connecte sur un parcours en `INVITATION`, `handleFranceConnectCallback` (`features/auth/adapters/franceconnect/franceconnect.service.ts`) fait :
+
+1. `validateInvitation` : avance le step `INVITATION → CHOIX_AMO`.
+2. **Si** `rgaSimulationDataAgent` est **complète** (au sens de `isSimulationComplete` du simulateur) et `rgaSimulationData` est null → on copie le contenu via `updateRGAData`.
+
+Pourquoi : `rgaSimulationData` est la donnée canonique lue par `MonCompteClient` (`hasRGAData = !!parcours.rgaSimulationData`), par le filtre territorial AV (`matchesTerritoire`), etc. Sans cette promotion, le demandeur arrive sur « Éligibilité manquante. Suite à une mise à jour, il est impératif de remplir à nouveau le simulateur. » alors que l'agent vient juste de tout remplir.
+
+Pour le parcours **sans simulation**, `rgaSimulationDataAgent` ne contient que `logement.adresse` (et éventuellement `code_departement`/`epci` du BAN). `isSimulationComplete` retourne `false` → pas de promotion → le demandeur voit bien le simulateur à remplir.
 
 ## Isolation front
 
@@ -89,9 +131,7 @@ Variante de `SimulateurEdition` pour le contexte invitation, qui :
 
 ### 4. Bouton "Précédent" depuis la 1ère étape du simulateur
 
-Le `SimulateurContext` expose un callback `onBackBeyondFirstStep?: () => void` consommé par `NavigationButtons`. Si défini, le bouton "Précédent" reste affiché sur la 1ère étape (history vide) et appelle ce callback à la place du `goBack` interne du store. En invitation, on passe `() => router.back()` → ramène l'agent à `/nouveau` avec le state du wizard intact (l'étape Contact reste pré-remplie).
-
-C'est aussi pour cette raison qu'on retire le `reset()` dans `StepContact.handleNext` après la création du dossier : on conserve le state pour le retour.
+Le `SimulateurContext` expose un callback `onBackBeyondFirstStep?: () => void` consommé par `NavigationButtons`. Si défini, le bouton "Précédent" reste affiché sur la 1ère étape (history vide) et appelle ce callback à la place du `goBack` interne du store. En invitation, on passe `() => router.back()` → ramène l'agent à `/nouveau` avec le state du wizard intact (l'étape Contact reste pré-remplie). Pas de risque de double création puisqu'aucun dossier n'a été créé en DB à ce stade.
 
 Le simulateur public et l'édition AMO ne définissent pas `onBackBeyondFirstStep` → comportement inchangé (pas de bouton Précédent sur la 1ère étape).
 
@@ -112,11 +152,11 @@ Côté pages :
 
 - `/espace-agent/dossiers` (bouton + Nouveau dossier) — autorise `AMO | ALLERS_VERS | AMO_ET_ALLERS_VERS`.
 - `/espace-agent/dossiers/nouveau` (wizard) — même check, redirige vers `/espace-agent/dossiers` sinon.
-- `/espace-agent/dossiers/nouveau/simulation/[parcoursId]` — idem.
+- `/espace-agent/dossiers/nouveau/simulation` (page simulation sans paramètre — état en `useSimulateurStore` + `useCreationDossierStore`) — idem.
 
 Côté server actions :
 
-- `createDossierAllerVersAction` (nom historique conservé pour éviter une cascade de renommages) et `sendInvitationEmailAction` exigent `DOSSIERS_CREATE` + au moins une structure (`user.allersVersId || user.entrepriseAmoId`).
+- `createDossierAllerVersAction` (nom historique conservé pour éviter une cascade de renommages) exige `DOSSIERS_CREATE` + au moins une structure (`user.allersVersId || user.entrepriseAmoId`). Création atomique : user stub + parcours + simulation agent (si fournie) + envoi email (si `sendEmail`).
 
 ## Email d'invitation envoyé au demandeur
 
@@ -131,11 +171,9 @@ Le `inviterName` est calculé par `getInviterName(agentId)` (`services/inviter-n
 - Agent AMO pur → raison sociale de l'entreprise AMO.
 - Agent `AMO_ET_ALLERS_VERS` (double casquette) → la structure Allers-vers gagne. Choix arbitraire mais cohérent avec le ton « rencontre terrain » de l'invitation. À revisiter si un agent mixte se plaint.
 
-L'envoi a lieu :
-- En mode **sans simulation** : depuis `creation-dossier.service.ts` à la création du dossier (`StepEnvoiEmail`). `hasSimulation = false` toujours.
-- En mode **avec simulation** : depuis `send-invitation-email.action.ts`, déclenché par `ResultInvitation` à la fin du wizard. `hasSimulation = !!parcours.rgaSimulationDataAgent` (true en pratique).
+L'envoi a lieu dans `creation-dossier.service.ts` lorsque `createDossierAllerVersAction` est appelée avec `sendEmail: true`, qu'on soit en mode **sans** simulation (depuis `StepEnvoiEmail`) ou **avec** simulation (depuis `ResultInvitation` quand `isEligible` vaut `true`). `hasSimulation` = `!!rgaSimulationDataAgent` passé à l'action.
 
-À la fin de la création (les 2 parcours), l'agent est redirigé vers `/espace-agent/dossiers`.
+À la fin de la création, l'agent est redirigé vers la page liste pertinente selon son rôle (cf. `getPostCreationRedirectUrl`).
 
 ## Limites connues & TODO
 
@@ -143,7 +181,7 @@ L'envoi a lieu :
 - **Collisions email** : si plusieurs stubs ont le même email, le fallback email est désactivé (retourne `null`). Seul le claim token permet alors le rattachement.
 - **Race au claim** : la mise à jour du stub (`claimStub`) n'est pas wrappée dans une transaction. En pratique, le token unique suffit à éviter le double claim, mais une transaction serait plus rigoureuse.
 - **sessionStorage partagé avec simulateur public** : si un même utilisateur ouvre simulateur public ET wizard invitation dans le même navigateur (cas non réaliste), leurs états s'écrasent. Acceptable car agent ≠ demandeur en pratique.
-- **Double soumission possible** : après création du dossier via le wizard, l'agent peut revenir à `/nouveau` (via "Revenir à l'étape précédente") avec le state intact. Re-cliquer "Suivant" sur l'étape Contact créera un 2ème dossier (cas rare). À gérer ultérieurement en marquant le store wizard avec un `lastSubmittedParcoursId`.
+- **Double soumission** : neutralisée par la refacto « création différée » — le dossier n'est créé qu'au clic final de `ResultInvitation` (ou de `StepEnvoiEmail`). Après succès, on `reset()` les stores avant la redirection ; revenir en arrière via le bouton navigateur ramène sur un wizard vide. Reste un cas marginal : double clic ultra-rapide sur le bouton final → atténué par `disabled={isPending}` mais pas idempotent côté serveur. À renforcer ultérieurement (clé d'idempotence ou verrou sur le couple email+agent+adresse).
 
 ## Pointeurs de code
 
@@ -152,14 +190,14 @@ L'envoi a lieu :
 | Schéma BDD | `src/shared/database/schema/users.ts`, `src/shared/database/schema/parcours-prevention.ts` |
 | Repos | `src/shared/database/repositories/user.repository.ts` (findByClaimToken, createStub, claimStub, upsertFromFranceConnect), `src/shared/database/repositories/parcours-prevention.repository.ts` (findOrCreateForUser, matchesTerritoire) |
 | Service | `services/creation-dossier.service.ts`, `services/inviter-name.service.ts` |
-| Server action | `actions/create-dossier-aller-vers.action.ts`, `actions/send-invitation-email.action.ts` |
+| Server action | `actions/create-dossier-aller-vers.action.ts` (création atomique + envoi email optionnel), `actions/post-creation-redirect.ts` (URL post-création par rôle) |
 | Store wizard | `stores/creation-dossier.store.ts` |
 | Composants wizard | `components/CreationDossierWizard.tsx`, `components/steps/*` |
 | Page wizard | `src/app/(backoffice)/espace-agent/dossiers/nouveau/page.tsx` |
 | Email template | `src/shared/email/templates/claim-dossier.template.tsx` |
 | Email action | `src/shared/email/actions/send-claim-dossier.actions.ts` |
-| Route claim public | `src/app/(main)/claim-dossier/[token]/page.tsx` |
+| Route claim public | `src/app/(main)/claim-dossier/[token]/route.ts` (Route Handler : pose le cookie + redirige FC) + `src/app/(main)/claim-dossier/invalide/page.tsx` (UI erreur) |
 | Callback FC modifié | `src/features/auth/adapters/franceconnect/franceconnect.service.ts` (`consumeClaimToken`, `handleFranceConnectCallback`) |
 | Callout page prospect | `src/app/(backoffice)/espace-agent/prospects/[id]/components/CalloutSimulationAEffectuer.tsx` |
-| Simulateur invitation (étape 3/4) | `components/SimulateurEditionInvitation.tsx`, `src/app/(backoffice)/espace-agent/dossiers/nouveau/simulation/[parcoursId]/page.tsx` |
+| Simulateur invitation (étape 3-4/4) | `components/SimulateurEditionInvitation.tsx` (sans props : lit `useCreationDossierStore` + `useSimulateurStore`), `components/ResultInvitation.tsx` (création du dossier au clic final), `src/app/(backoffice)/espace-agent/dossiers/nouveau/simulation/page.tsx` |
 | Mode embedded simulateur (partagé) | `src/features/simulateur/components/shared/SimulateurContext.tsx` (props `embedded`, `onBackBeyondFirstStep`), `src/features/simulateur/components/shared/SimulateurLayout.tsx`, `src/features/simulateur/components/shared/NavigationButtons.tsx` |

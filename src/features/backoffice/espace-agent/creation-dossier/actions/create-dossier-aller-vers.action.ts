@@ -10,6 +10,19 @@ import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/action
 import type { ActionResult } from "@/shared/types";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { createDossierByAgent } from "../services/creation-dossier.service";
+import { getPostCreationRedirectUrl } from "./post-creation-redirect";
+
+const adresseBienDetailsSchema = z.object({
+  label: z.string(),
+  clefBan: z.string(),
+  codeCommune: z.string(),
+  nomCommune: z.string(),
+  codePostal: z.string(),
+  codeDepartement: z.string(),
+  codeRegion: z.string(),
+  codeEpci: z.string().optional(),
+  coordinates: z.object({ lat: z.number(), lon: z.number() }),
+});
 
 const createDossierSchema = z.object({
   demandeur: z.object({
@@ -28,6 +41,11 @@ const createDossierSchema = z.object({
     .trim()
     .optional()
     .transform((v) => (v && v.length > 0 ? v : undefined)),
+  /**
+   * Détails BAN de l'adresse (citycode, code département, EPCI…) pour le
+   * filtre territorial des AV. Optionnel : si absent, on stocke le label seul.
+   */
+  adresseBienDetails: adresseBienDetailsSchema.optional(),
   // Simulation complète optionnelle (parcours 2). On laisse le service stocker tel quel.
   rgaSimulationDataAgent: z.unknown().optional(),
   sendEmail: z.boolean(),
@@ -44,7 +62,7 @@ type CreateDossierInput = z.infer<typeof createDossierSchema>;
  */
 export async function createDossierAllerVersAction(
   input: CreateDossierInput
-): Promise<ActionResult<{ parcoursId: string; claimUrl: string; emailSent: boolean }>> {
+): Promise<ActionResult<{ parcoursId: string; claimUrl: string; emailSent: boolean; redirectUrl: string }>> {
   try {
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
@@ -77,6 +95,7 @@ export async function createDossierAllerVersAction(
       agentId: user.agentId,
       demandeur: parsed.data.demandeur,
       adresseBien: parsed.data.adresseBien,
+      adresseBienDetails: parsed.data.adresseBienDetails,
       rgaSimulationDataAgent: parsed.data.rgaSimulationDataAgent as RGASimulationData | undefined,
       sendEmail: parsed.data.sendEmail,
     });
@@ -89,6 +108,7 @@ export async function createDossierAllerVersAction(
         parcoursId: result.parcoursId,
         claimUrl: result.claimUrl,
         emailSent: result.emailSent,
+        redirectUrl: getPostCreationRedirectUrl(user),
       },
     };
   } catch (error) {

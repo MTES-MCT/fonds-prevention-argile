@@ -4,6 +4,7 @@ import { getServerEnv } from "@/shared/config/env.config";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { sendClaimDossierEmail } from "@/shared/email/actions/send-claim-dossier.actions";
 import {
+  type AdresseBienDetails,
   type CreateDossierByAgentParams,
   type CreateDossierByAgentResult,
   CLAIM_TOKEN_TTL_MS,
@@ -12,17 +13,30 @@ import { getInviterName } from "./inviter-name.service";
 
 /**
  * Construit des données de simulation minimales à partir d'une adresse saisie
- * par un agent, en l'absence de simulation complète (parcours 1).
+ * par un agent, en l'absence de simulation complète (parcours sans simulation).
  *
- * Le cast vers RGASimulationData est volontaire : la colonne JSONB tolère
- * un objet partiel, et les lecteurs downstream (matchesTerritoire, InfoLogement)
+ * Si `details` (BAN) est fourni, on remplit `code_departement`, `commune`,
+ * `epci`, etc. pour que `matchesTerritoire` puisse rattacher le dossier au
+ * territoire de l'AV. Sans `details`, seul le label est stocké et le dossier
+ * sera invisible des AV avec filtre territorial.
+ *
+ * Le cast vers RGASimulationData est volontaire : la colonne JSONB tolère un
+ * objet partiel, et les lecteurs downstream (matchesTerritoire, InfoLogement)
  * utilisent de l'optional chaining.
  */
-function buildMinimalAgentSimulation(adresseBien: string): RGASimulationData {
+function buildMinimalAgentSimulation(adresseBien: string, details?: AdresseBienDetails): RGASimulationData {
+  const logement: Record<string, unknown> = { adresse: adresseBien };
+  if (details) {
+    logement.clef_ban = details.clefBan;
+    logement.commune = details.codeCommune;
+    logement.commune_nom = details.nomCommune;
+    logement.code_departement = details.codeDepartement;
+    logement.code_region = details.codeRegion;
+    if (details.codeEpci) logement.epci = details.codeEpci;
+    logement.coordonnees = `${details.coordinates.lat},${details.coordinates.lon}`;
+  }
   return {
-    logement: {
-      adresse: adresseBien,
-    },
+    logement,
     simulatedAt: new Date().toISOString(),
   } as unknown as RGASimulationData;
 }
@@ -36,7 +50,7 @@ function buildMinimalAgentSimulation(adresseBien: string): RGASimulationData {
 export async function createDossierByAgent(
   params: CreateDossierByAgentParams
 ): Promise<CreateDossierByAgentResult> {
-  const { agentId, demandeur, adresseBien, rgaSimulationDataAgent, sendEmail } = params;
+  const { agentId, demandeur, adresseBien, adresseBienDetails, rgaSimulationDataAgent, sendEmail } = params;
 
   // 1. Génération du claim token (+ expiration)
   const claimToken = generateSecureRandomString(48);
@@ -63,7 +77,7 @@ export async function createDossierByAgent(
   //    - Rien → pas d'écriture (le demandeur remplira son logement complet
   //      via le simulateur ; cas typique parcours 2 où l'adresse est dans la sim)
   const simulationData =
-    rgaSimulationDataAgent ?? (adresseBien ? buildMinimalAgentSimulation(adresseBien) : null);
+    rgaSimulationDataAgent ?? (adresseBien ? buildMinimalAgentSimulation(adresseBien, adresseBienDetails) : null);
   if (simulationData) {
     await parcoursRepo.updateRGADataAgent(parcours.id, simulationData, agentId);
   }

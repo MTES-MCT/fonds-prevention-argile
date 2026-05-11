@@ -11,6 +11,7 @@ import { userRepo, parcoursRepo } from "@/shared/database/repositories";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
 import { getOrCreateParcours } from "@/features/parcours/core/services";
+import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
 
 /**
@@ -233,6 +234,22 @@ export async function handleFranceConnectCallback(
 
     // 6bis. Si parcours en INVITATION (dossier pré-créé par un agent) → valider
     if (parcours.currentStep === Step.INVITATION) {
+      // Si l'agent a fait une simulation complète (parcours "avec simulation"),
+      // on la promeut comme simulation canonique du parcours pour que le
+      // demandeur n'ait pas à la refaire. Pour le parcours "sans simulation"
+      // (données minimales : seulement l'adresse), on laisse `rgaSimulationData`
+      // null → l'écran "Éligibilité manquante" invite le demandeur à la remplir.
+      // L'entité `Parcours` retournée par `getOrCreateParcours` n'expose pas
+      // `rgaSimulationDataAgent`, on relit la ligne brute via le repo.
+      const parcoursRow = await parcoursRepo.findById(parcours.id);
+      if (
+        parcoursRow &&
+        !parcoursRow.rgaSimulationData &&
+        parcoursRow.rgaSimulationDataAgent &&
+        isSimulationComplete(parcoursRow.rgaSimulationDataAgent)
+      ) {
+        await parcoursRepo.updateRGAData(parcours.id, parcoursRow.rgaSimulationDataAgent);
+      }
       await parcoursRepo.validateInvitation(parcours.id);
     }
 

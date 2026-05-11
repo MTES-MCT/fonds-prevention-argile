@@ -13,6 +13,18 @@ interface AddressAutocompleteInputProps {
   value: string;
   /** Callback appelé à chaque saisie ou sélection. */
   onChange: (value: string) => void;
+  /**
+   * Callback appelé quand l'utilisateur sélectionne une suggestion BAN, avec la
+   * feature complète (citycode, context, coordonnées, etc.). Appelé avec `null`
+   * quand l'utilisateur modifie le texte après une sélection — ce qui invalide
+   * les données structurées précédemment retenues.
+   */
+  onSelectFeature?: (feature: BanFeature | null) => void;
+  /**
+   * Message d'erreur DSFR affiché sous le champ. Active aussi l'état d'erreur
+   * visuel (bordure rouge + icône) du composant.
+   */
+  errorMessage?: string;
 }
 
 const SEARCH_DEBOUNCE_DELAY = 300;
@@ -27,9 +39,17 @@ const MAX_RESULTS = 5;
  * sélection de bâtiment, juste un texte. Utilisé pour le parcours sans
  * simulation du wizard invitation.
  */
-export function AddressAutocompleteInput({ label, hint, value, onChange }: AddressAutocompleteInputProps) {
+export function AddressAutocompleteInput({
+  label,
+  hint,
+  value,
+  onChange,
+  onSelectFeature,
+  errorMessage,
+}: AddressAutocompleteInputProps) {
   const inputId = useId();
   const listId = useId();
+  const errorId = useId();
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState<BanFeature[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -57,17 +77,20 @@ export function AddressAutocompleteInput({ label, hint, value, onChange }: Addre
 
   const handleSelect = (feature: BanFeature) => {
     onChange(feature.properties.label);
+    onSelectFeature?.(feature);
     setIsOpen(false);
   };
 
+  const hasError = !!errorMessage;
+
   return (
-    <div className="fr-input-group relative">
+    <div className={`fr-input-group relative ${hasError ? "fr-input-group--error" : ""}`}>
       <label className="fr-label" htmlFor={inputId}>
         {label}
         {hint && <span className="fr-hint-text">{hint}</span>}
       </label>
       <input
-        className="fr-input"
+        className={`fr-input ${hasError ? "fr-input--error" : ""}`}
         type="text"
         id={inputId}
         autoComplete="off"
@@ -75,9 +98,13 @@ export function AddressAutocompleteInput({ label, hint, value, onChange }: Addre
         aria-autocomplete="list"
         aria-expanded={isOpen && results.length > 0}
         aria-controls={listId}
+        aria-invalid={hasError || undefined}
+        aria-describedby={hasError ? errorId : undefined}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
+          // L'utilisateur tape : on invalide la sélection structurée précédente.
+          onSelectFeature?.(null);
           setIsOpen(true);
         }}
         onFocus={() => setIsOpen(true)}
@@ -105,6 +132,12 @@ export function AddressAutocompleteInput({ label, hint, value, onChange }: Addre
 
       {isSearching && value.length >= MIN_QUERY_LENGTH && results.length === 0 && (
         <p className="fr-hint-text fr-mt-1v">Recherche en cours…</p>
+      )}
+
+      {hasError && (
+        <p id={errorId} className="fr-error-text">
+          {errorMessage}
+        </p>
       )}
     </div>
   );

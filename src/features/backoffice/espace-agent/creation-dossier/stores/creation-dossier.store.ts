@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import type { BanAddressData } from "@/shared/adapters/ban";
 
 /**
  * Étapes inline du wizard AV. Toujours 4 étapes affichées dans la ProgressBar.
@@ -21,7 +22,15 @@ export interface DemandeurForm {
   prenom: string;
   telephone: string;
   email: string;
+  /** Texte libre saisi par l'agent (label BAN ou saisie manuelle). */
   adresseBien: string;
+  /**
+   * Données structurées de l'adresse sélectionnée dans l'autocomplete BAN
+   * (citycode, code département, EPCI, etc.). `null` tant que l'agent n'a pas
+   * cliqué sur une suggestion, ou si le texte a été modifié depuis. Nécessaire
+   * pour que le dossier match le territoire de l'AV dans `matchesTerritoire`.
+   */
+  adresseBienDetails: BanAddressData | null;
 }
 
 interface CreationDossierState {
@@ -45,6 +54,7 @@ const INITIAL_DEMANDEUR: DemandeurForm = {
   telephone: "",
   email: "",
   adresseBien: "",
+  adresseBienDetails: null,
 };
 
 export const useCreationDossierStore = create<CreationDossierState>((set, get) => ({

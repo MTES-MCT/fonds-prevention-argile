@@ -1,21 +1,19 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
 import { UserRole } from "@/shared/domain/value-objects";
-import { parcoursRepo, userRepo } from "@/shared/database/repositories";
-import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import { SimulateurEditionInvitation } from "@/features/backoffice/espace-agent/creation-dossier/components/SimulateurEditionInvitation";
-
-interface PageProps {
-  params: Promise<{ parcoursId: string }>;
-}
 
 /**
  * Étape 3/4 du wizard (mode avec simulation) : simulation d'éligibilité
  * remplie par l'agent (AMO ou Aller-vers). Affichée dans le layout wizard
  * avec stepper 3/4.
+ *
+ * Le wizard store (`useCreationDossierStore`, in-memory) conserve les
+ * informations du demandeur saisies aux étapes précédentes — on les relit
+ * dans `ResultInvitation` au moment de la création.
  */
-export default async function CreationDossierSimulationPage({ params }: PageProps) {
+export default async function CreationDossierSimulationPage() {
   const access = await resolveEspaceAgentAccess();
   if (access.kind === "error") redirect("/espace-agent/dossiers");
 
@@ -23,16 +21,6 @@ export default async function CreationDossierSimulationPage({ params }: PageProp
   if (role !== UserRole.AMO && role !== UserRole.ALLERS_VERS && role !== UserRole.AMO_ET_ALLERS_VERS) {
     redirect("/espace-agent/dossiers");
   }
-
-  const { parcoursId } = await params;
-  const parcours = await parcoursRepo.findById(parcoursId);
-  if (!parcours) notFound();
-
-  const demandeur = await userRepo.findById(parcours.userId);
-  if (!demandeur) notFound();
-
-  const initialData = getEffectiveRGAData(parcours);
-  const demandeurEmail = demandeur.email ?? "";
 
   return (
     <>
@@ -70,11 +58,7 @@ export default async function CreationDossierSimulationPage({ params }: PageProp
           <div className="fr-grid-row fr-grid-row--center">
             <div className="fr-col-12 fr-col-md-10 fr-col-lg-8">
               <div className="bg-white fr-p-6w">
-                <SimulateurEditionInvitation
-                  parcoursId={parcoursId}
-                  initialData={initialData}
-                  demandeurEmail={demandeurEmail}
-                />
+                <SimulateurEditionInvitation />
               </div>
             </div>
           </div>
