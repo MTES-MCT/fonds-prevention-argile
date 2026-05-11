@@ -1,6 +1,10 @@
-import { describe, it, expect } from "vitest";
-import { matchesTerritoire } from "./parcours-prevention.repository";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { ParcoursPreventionRepository, matchesTerritoire } from "./parcours-prevention.repository";
+import { Step, Status } from "@/features/parcours/core";
 import type { RGASimulationData } from "@/shared/domain/types";
+import type { ParcoursPrevention } from "../schema/parcours-prevention";
+
+vi.mock("../client", () => ({ db: {} }));
 
 function makeRgaData(overrides: Partial<RGASimulationData["logement"]> = {}): RGASimulationData {
   return {
@@ -150,6 +154,90 @@ describe("matchesTerritoire", () => {
     it("exclut un prospect dont l'EPCI ne correspond pas", () => {
       const data = makeRgaData({ epci: "200002" });
       expect(matchesTerritoire(data, [], ["200001"])).toBe(false);
+    });
+  });
+});
+
+describe("ParcoursPreventionRepository — invitation", () => {
+  let repo: ParcoursPreventionRepository;
+
+  const baseParcours: ParcoursPrevention = {
+    id: "parcours-1",
+    userId: "user-1",
+    currentStep: Step.INVITATION,
+    currentStatus: Status.TODO,
+    situationParticulier: "prospect" as never,
+    rgaSimulationData: null,
+    rgaSimulationCompletedAt: null,
+    rgaDataDeletedAt: null,
+    rgaDataDeletionReason: null,
+    rgaSimulationDataAgent: null,
+    rgaSimulationAgentEditedAt: null,
+    rgaSimulationAgentEditedBy: null,
+    archivedAt: null,
+    archiveReason: null,
+    archivedBy: null,
+    createdByAgentId: "agent-1",
+    completedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  beforeEach(() => {
+    repo = new ParcoursPreventionRepository();
+  });
+
+  describe("findOrCreateForUser", () => {
+    it("démarre à INVITATION quand createdByAgentId est fourni", async () => {
+      vi.spyOn(repo, "findByUserId").mockResolvedValue(null);
+      const create = vi.spyOn(repo, "create").mockResolvedValue(baseParcours);
+
+      await repo.findOrCreateForUser("user-1", { createdByAgentId: "agent-1" });
+
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({ currentStep: Step.INVITATION, createdByAgentId: "agent-1" })
+      );
+    });
+
+    it("démarre à CHOIX_AMO sans createdByAgentId", async () => {
+      vi.spyOn(repo, "findByUserId").mockResolvedValue(null);
+      const create = vi
+        .spyOn(repo, "create")
+        .mockResolvedValue({ ...baseParcours, currentStep: Step.CHOIX_AMO, createdByAgentId: null });
+
+      await repo.findOrCreateForUser("user-1");
+
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({ currentStep: Step.CHOIX_AMO, createdByAgentId: null })
+      );
+    });
+  });
+
+  describe("validateInvitation", () => {
+    it("passe le parcours de INVITATION à CHOIX_AMO/TODO", async () => {
+      vi.spyOn(repo, "findById").mockResolvedValue(baseParcours);
+      const updateStep = vi
+        .spyOn(repo, "updateStep")
+        .mockResolvedValue({ ...baseParcours, currentStep: Step.CHOIX_AMO });
+
+      await repo.validateInvitation("parcours-1");
+
+      expect(updateStep).toHaveBeenCalledWith("parcours-1", Step.CHOIX_AMO, Status.TODO);
+    });
+
+    it("ne fait rien si le parcours n'est plus à l'étape INVITATION", async () => {
+      vi.spyOn(repo, "findById").mockResolvedValue({ ...baseParcours, currentStep: Step.CHOIX_AMO });
+      const updateStep = vi.spyOn(repo, "updateStep");
+
+      await repo.validateInvitation("parcours-1");
+
+      expect(updateStep).not.toHaveBeenCalled();
+    });
+
+    it("retourne null si le parcours n'existe pas", async () => {
+      vi.spyOn(repo, "findById").mockResolvedValue(null);
+      const result = await repo.validateInvitation("missing");
+      expect(result).toBeNull();
     });
   });
 });
