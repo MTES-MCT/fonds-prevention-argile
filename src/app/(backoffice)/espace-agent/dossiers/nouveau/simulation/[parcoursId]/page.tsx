@@ -11,15 +11,16 @@ interface PageProps {
 }
 
 /**
- * Étape 3/4 du wizard AV (mode avec simulation) : simulation d'éligibilité
- * remplie par l'agent. Affichée dans le layout wizard AV avec stepper 3/4.
+ * Étape 3/4 du wizard (mode avec simulation) : simulation d'éligibilité
+ * remplie par l'agent (AMO ou Aller-vers). Affichée dans le layout wizard
+ * avec stepper 3/4.
  */
 export default async function CreationDossierSimulationPage({ params }: PageProps) {
   const access = await resolveEspaceAgentAccess();
   if (access.kind === "error") redirect("/espace-agent/dossiers");
 
   const role = access.agent.role as UserRole;
-  if (role !== UserRole.ALLERS_VERS && role !== UserRole.AMO_ET_ALLERS_VERS) {
+  if (role !== UserRole.AMO && role !== UserRole.ALLERS_VERS && role !== UserRole.AMO_ET_ALLERS_VERS) {
     redirect("/espace-agent/dossiers");
   }
 

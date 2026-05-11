@@ -36,9 +36,11 @@ const createDossierSchema = z.object({
 type CreateDossierInput = z.infer<typeof createDossierSchema>;
 
 /**
- * Crée un dossier pour un demandeur à l'initiative d'un agent Aller-vers.
+ * Crée un dossier pour un demandeur à l'initiative d'un agent (AMO ou Aller-vers).
  *
- * Accès restreint : ALLERS_VERS ou AMO_ET_ALLERS_VERS (via PROSPECTS_VIEW).
+ * Accès : AMO, ALLERS_VERS ou AMO_ET_ALLERS_VERS (via DOSSIERS_CREATE).
+ * L'agent doit être rattaché à au moins une structure (allers-vers ou AMO)
+ * pour qu'on puisse déterminer son `inviterName` dans l'email d'invitation.
  */
 export async function createDossierAllerVersAction(
   input: CreateDossierInput
@@ -53,12 +55,12 @@ export async function createDossierAllerVersAction(
     }
 
     const role = user.role as UserRole;
-    if (!hasPermission(role, BackofficePermission.PROSPECTS_VIEW)) {
+    if (!hasPermission(role, BackofficePermission.DOSSIERS_CREATE)) {
       return { success: false, error: "Permission refusée" };
     }
 
-    if (!user.allersVersId) {
-      return { success: false, error: "Agent non lié à une structure Allers-vers" };
+    if (!user.allersVersId && !user.entrepriseAmoId) {
+      return { success: false, error: "Agent non rattaché à une structure AMO ou Allers-vers" };
     }
 
     if (!user.agentId) {

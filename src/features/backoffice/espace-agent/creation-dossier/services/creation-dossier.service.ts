@@ -28,7 +28,7 @@ function buildMinimalAgentSimulation(adresseBien: string): RGASimulationData {
 }
 
 /**
- * Crée un dossier pour un demandeur à la place d'un agent Aller-vers.
+ * Crée un dossier pour un demandeur à la place d'un agent (AMO ou Aller-vers).
  *
  * Le dossier est rattaché à un user "stub" (sans fcId) et à un claim token
  * unique permettant au demandeur de le récupérer en se connectant via FC.

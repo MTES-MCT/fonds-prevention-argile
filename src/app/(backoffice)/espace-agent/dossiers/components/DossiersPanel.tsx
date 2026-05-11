@@ -11,7 +11,7 @@ import { Pagination } from "@/shared/components/Pagination/Pagination";
 import Link from "next/link";
 
 interface DossiersPanelProps {
-  /** Affiche le bouton "+ Nouveau dossier" (rôles Aller-vers uniquement). */
+  /** Affiche le bouton "+ Nouveau dossier" (rôles AMO et/ou Aller-vers). */
   canCreateDossier?: boolean;
 }
 

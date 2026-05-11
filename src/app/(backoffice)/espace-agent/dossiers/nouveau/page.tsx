@@ -4,8 +4,8 @@ import { UserRole } from "@/shared/domain/value-objects";
 import { CreationDossierWizard } from "@/features/backoffice/espace-agent/creation-dossier/components/CreationDossierWizard";
 
 /**
- * Page de création d'un dossier par un agent Aller-vers.
- * Accessible uniquement aux rôles ALLERS_VERS ou AMO_ET_ALLERS_VERS.
+ * Page de création d'un dossier par un agent (AMO ou Aller-vers).
+ * Accessible aux rôles AMO, ALLERS_VERS et AMO_ET_ALLERS_VERS.
  */
 export default async function CreationDossierPage() {
   const access = await resolveEspaceAgentAccess();
@@ -15,9 +15,10 @@ export default async function CreationDossierPage() {
   }
 
   const role = access.agent.role as UserRole;
-  const isAllerVers = role === UserRole.ALLERS_VERS || role === UserRole.AMO_ET_ALLERS_VERS;
+  const canCreate =
+    role === UserRole.AMO || role === UserRole.ALLERS_VERS || role === UserRole.AMO_ET_ALLERS_VERS;
 
-  if (!isAllerVers) {
+  if (!canCreate) {
     redirect("/espace-agent/dossiers");
   }
 

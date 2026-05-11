@@ -1,7 +1,7 @@
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 
 /**
- * Paramètres de création d'un dossier par un agent Aller-vers.
+ * Paramètres de création d'un dossier par un agent (AMO ou Aller-vers).
  */
 export interface CreateDossierByAgentParams {
   agentId: string;

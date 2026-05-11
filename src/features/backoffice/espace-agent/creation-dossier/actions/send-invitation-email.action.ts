@@ -13,8 +13,8 @@ import { getInviterName } from "../services/inviter-name.service";
 
 /**
  * Envoie (ou pas) l'email d'invitation au demandeur après création du dossier
- * et éventuelle simulation par l'agent. Utilisé à l'étape finale du wizard AV
- * (mode "avec simulation").
+ * et éventuelle simulation par l'agent. Utilisé à l'étape finale du wizard
+ * (mode "avec simulation"), accessible aux agents AMO et Aller-vers.
  */
 export async function sendInvitationEmailAction(
   parcoursId: string,
@@ -28,7 +28,7 @@ export async function sendInvitationEmailAction(
     if (!user) return { success: false, error: "Non authentifié" };
 
     const role = user.role as UserRole;
-    if (!hasPermission(role, BackofficePermission.PROSPECTS_VIEW)) {
+    if (!hasPermission(role, BackofficePermission.DOSSIERS_CREATE)) {
       return { success: false, error: "Permission refusée" };
     }
 

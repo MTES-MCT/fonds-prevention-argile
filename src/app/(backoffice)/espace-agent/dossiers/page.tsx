@@ -9,7 +9,8 @@ export default async function DossiersAmoPage() {
   const access = await resolveEspaceAgentAccess();
 
   const role = access.kind !== "error" ? (access.agent.role as UserRole) : null;
-  const canCreateDossier = role === UserRole.ALLERS_VERS || role === UserRole.AMO_ET_ALLERS_VERS;
+  const canCreateDossier =
+    role === UserRole.AMO || role === UserRole.ALLERS_VERS || role === UserRole.AMO_ET_ALLERS_VERS;
 
   return <DossiersPanel canCreateDossier={canCreateDossier} />;
 }

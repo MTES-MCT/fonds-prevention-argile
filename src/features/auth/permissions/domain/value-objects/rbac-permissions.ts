@@ -45,6 +45,11 @@ export enum BackofficePermission {
   PROSPECTS_VIEW_DETAIL = "prospects:view-detail",
   PROSPECTS_STATS = "prospects:stats",
 
+  // Création de dossier par un agent (AMO ou Aller-vers) pour un demandeur.
+  // Distincte de PROSPECTS_* (lecture territoire AV) : un agent AMO doit pouvoir
+  // créer un dossier sans pour autant accéder aux prospects de territoire AV.
+  DOSSIERS_CREATE = "dossiers:create",
+
   // Commentaires internes sur les parcours
   COMMENTAIRES_CREATE = "commentaires:create",
   COMMENTAIRES_READ = "commentaires:read",
@@ -99,6 +104,8 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     // Accès limité : dossiers de son entreprise AMO uniquement (lecture seule)
     BackofficePermission.DOSSIERS_AMO_READ,
     BackofficePermission.DOSSIERS_AMO_STATS_READ,
+    // Création de dossier (parcours d'invitation au nom d'un demandeur)
+    BackofficePermission.DOSSIERS_CREATE,
     // Commentaires : lecture/écriture sur les dossiers accessibles
     BackofficePermission.COMMENTAIRES_CREATE,
     BackofficePermission.COMMENTAIRES_READ,
@@ -111,6 +118,8 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.PROSPECTS_VIEW,
     BackofficePermission.PROSPECTS_VIEW_DETAIL,
     BackofficePermission.PROSPECTS_STATS,
+    // Création de dossier (parcours d'invitation au nom d'un demandeur)
+    BackofficePermission.DOSSIERS_CREATE,
     // Commentaires : lecture/écriture sur les prospects accessibles
     BackofficePermission.COMMENTAIRES_CREATE,
     BackofficePermission.COMMENTAIRES_READ,
@@ -130,6 +139,8 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.PROSPECTS_VIEW,
     BackofficePermission.PROSPECTS_VIEW_DETAIL,
     BackofficePermission.PROSPECTS_STATS,
+    // Création de dossier (parcours d'invitation au nom d'un demandeur)
+    BackofficePermission.DOSSIERS_CREATE,
     // Commentaires : lecture/écriture sur tous les dossiers/prospects accessibles
     BackofficePermission.COMMENTAIRES_CREATE,
     BackofficePermission.COMMENTAIRES_READ,

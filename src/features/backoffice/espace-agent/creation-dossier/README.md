@@ -1,14 +1,14 @@
-# Création de dossier par un agent Aller-vers
+# Création de dossier par un agent (AMO ou Aller-vers)
 
-Feature permettant à un agent Aller-vers (AV) de créer proactivement un dossier pour un demandeur rencontré sur le terrain, puis de lui envoyer un email d'invitation à finaliser son inscription via FranceConnect.
+Feature permettant à un agent AMO ou Aller-vers (AV) de créer proactivement un dossier pour un demandeur rencontré sur le terrain (en accompagnement physique ou téléphonique), puis de lui envoyer un email d'invitation à finaliser son inscription via FranceConnect.
 
 ## Objectif métier
 
-Avant cette feature, un parcours ne pouvait exister qu'après connexion du demandeur via FranceConnect. Les AV étaient donc cantonnés à un rôle réactif (suivi de prospects auto-créés). Désormais, un AV peut amorcer le dossier lui-même, avec ou sans simulation d'éligibilité, et transférer la main au demandeur via un lien personnel.
+Avant cette feature, un parcours ne pouvait exister qu'après connexion du demandeur via FranceConnect. Les agents AMO et AV étaient donc cantonnés à un rôle réactif (suivi de prospects auto-créés). Désormais, un agent peut amorcer le dossier lui-même, avec ou sans simulation d'éligibilité, et transférer la main au demandeur via un lien personnel.
 
 ## Parcours utilisateur
 
-Bouton **"+ Nouveau dossier"** dans la page liste des dossiers (`/espace-agent/dossiers`), visible uniquement pour les rôles `ALLERS_VERS` et `AMO_ET_ALLERS_VERS`.
+Bouton **"+ Nouveau dossier"** dans la page liste des dossiers (`/espace-agent/dossiers`), visible pour les rôles `AMO`, `ALLERS_VERS` et `AMO_ET_ALLERS_VERS` (permission `DOSSIERS_CREATE`).
 
 Le wizard (`/espace-agent/dossiers/nouveau`) a 3 étapes :
 
@@ -95,6 +95,29 @@ C'est aussi pour cette raison qu'on retire le `reset()` dans `StepContact.handle
 
 Le simulateur public et l'édition AMO ne définissent pas `onBackBeyondFirstStep` → comportement inchangé (pas de bouton Précédent sur la 1ère étape).
 
+## Contrôle d'accès (AMO + Aller-vers)
+
+La création de dossier est ouverte aux agents AMO **et** Aller-vers, via une permission dédiée `DOSSIERS_CREATE` (catalogue : `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`).
+
+| Rôle | `DOSSIERS_CREATE` |
+|---|---|
+| `AMO` | ✅ |
+| `ALLERS_VERS` | ✅ |
+| `AMO_ET_ALLERS_VERS` | ✅ |
+| `ADMINISTRATEUR` / `ANALYSTE` / `SUPER_ADMINISTRATEUR` (lecture seule) | ❌ |
+
+Pourquoi une permission dédiée plutôt que `PROSPECTS_VIEW` (utilisée auparavant) : `PROSPECTS_VIEW` représente la lecture des prospects de territoire AV. Étendre cette permission à AMO aurait élargi par accident son périmètre de visibilité (liste prospects, stats prospects, etc.). `DOSSIERS_CREATE` cible uniquement l'écriture de création de dossier.
+
+Côté pages :
+
+- `/espace-agent/dossiers` (bouton + Nouveau dossier) — autorise `AMO | ALLERS_VERS | AMO_ET_ALLERS_VERS`.
+- `/espace-agent/dossiers/nouveau` (wizard) — même check, redirige vers `/espace-agent/dossiers` sinon.
+- `/espace-agent/dossiers/nouveau/simulation/[parcoursId]` — idem.
+
+Côté server actions :
+
+- `createDossierAllerVersAction` (nom historique conservé pour éviter une cascade de renommages) et `sendInvitationEmailAction` exigent `DOSSIERS_CREATE` + au moins une structure (`user.allersVersId || user.entrepriseAmoId`).
+
 ## Email d'invitation envoyé au demandeur
 
 Deux variantes de wording selon que l'agent a déjà rempli la simulation d'éligibilité ou pas (paramètre `hasSimulation` du template `ClaimDossierTemplate`).
@@ -103,6 +126,10 @@ Deux variantes de wording selon que l'agent a déjà rempli la simulation d'éli
 - Cas **sans simulation** : « `{inviterName}` vous invite à créer votre compte sur le site du Fonds Prévention Argile pour déposer votre demande. »
 
 Le `inviterName` est calculé par `getInviterName(agentId)` (`services/inviter-name.service.ts`) avec la priorité : `allers_vers.nom` > `entreprises_amo.nom` > nom complet de l'agent. Permet d'afficher « Mairie d'Issoudun vous invite... » plutôt que le nom de l'agent personne.
+
+- Agent AV pur → nom de la structure Allers-vers.
+- Agent AMO pur → raison sociale de l'entreprise AMO.
+- Agent `AMO_ET_ALLERS_VERS` (double casquette) → la structure Allers-vers gagne. Choix arbitraire mais cohérent avec le ton « rencontre terrain » de l'invitation. À revisiter si un agent mixte se plaint.
 
 L'envoi a lieu :
 - En mode **sans simulation** : depuis `creation-dossier.service.ts` à la création du dossier (`StepEnvoiEmail`). `hasSimulation = false` toujours.
