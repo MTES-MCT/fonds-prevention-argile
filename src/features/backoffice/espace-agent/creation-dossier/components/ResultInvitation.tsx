@@ -72,7 +72,8 @@ export function ResultInvitation({
         await sendInvitationEmailAction(parcoursId, true);
       }
 
-      router.push(`/espace-agent/prospects/${parcoursId}`);
+      // Retour à la liste des dossiers de l'agent après création de l'invitation.
+      router.push(`/espace-agent/dossiers`);
     });
   };
 

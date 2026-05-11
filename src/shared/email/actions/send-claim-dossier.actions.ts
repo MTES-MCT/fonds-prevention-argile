@@ -7,26 +7,30 @@ import { emailService } from "../services/email.service";
 
 /**
  * Envoie au demandeur un mail l'invitant à finaliser son inscription via
- * FranceConnect (cas Aller-vers : dossier pré-créé par un agent).
+ * FranceConnect (cas Aller-vers / AMO : dossier pré-créé par un agent).
  */
 export async function sendClaimDossierEmail(params: {
   demandeurEmail: string;
-  demandeurPrenom: string;
+  demandeurPrenomNom: string;
+  inviterName: string;
   claimUrl: string;
+  hasSimulation: boolean;
 }): Promise<ActionResult<{ messageId?: string }>> {
   try {
-    const { demandeurEmail, demandeurPrenom, claimUrl } = params;
+    const { demandeurEmail, demandeurPrenomNom, inviterName, claimUrl, hasSimulation } = params;
 
     const html = await renderEmailTemplate(
       ClaimDossierTemplate({
-        demandeurPrenom,
+        demandeurPrenomNom,
+        inviterName,
         claimUrl,
+        hasSimulation,
       })
     );
 
     const result = await emailService.sendEmail({
       to: demandeurEmail,
-      subject: "Finalisez votre inscription au Fonds Prévention Argile",
+      subject: `${inviterName} vous invite à créer votre compte Fonds Prévention Argile`,
       html,
     });
 

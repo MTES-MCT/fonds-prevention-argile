@@ -8,6 +8,7 @@ import {
   type CreateDossierByAgentResult,
   CLAIM_TOKEN_TTL_MS,
 } from "../domain/types";
+import { getInviterName } from "./inviter-name.service";
 
 /**
  * Construit des données de simulation minimales à partir d'une adresse saisie
@@ -73,10 +74,13 @@ export async function createDossierByAgent(
   let emailSent = false;
 
   if (sendEmail) {
+    const inviterName = await getInviterName(agentId);
     const emailResult = await sendClaimDossierEmail({
       demandeurEmail: demandeur.email,
-      demandeurPrenom: demandeur.prenom,
+      demandeurPrenomNom: `${demandeur.prenom} ${demandeur.nom}`.trim(),
+      inviterName,
       claimUrl,
+      hasSimulation: !!rgaSimulationDataAgent,
     });
     emailSent = emailResult.success;
   }

@@ -23,6 +23,10 @@ vi.mock("@/shared/config/env.config", () => ({
   getServerEnv: () => ({ BASE_URL: "http://localhost:3000" }),
 }));
 
+vi.mock("./inviter-name.service", () => ({
+  getInviterName: vi.fn(async () => "Mairie de Test"),
+}));
+
 import { userRepo, parcoursRepo } from "@/shared/database/repositories";
 import { sendClaimDossierEmail } from "@/shared/email/actions/send-claim-dossier.actions";
 

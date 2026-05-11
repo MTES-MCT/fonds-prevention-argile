@@ -95,6 +95,21 @@ C'est aussi pour cette raison qu'on retire le `reset()` dans `StepContact.handle
 
 Le simulateur public et l'édition AMO ne définissent pas `onBackBeyondFirstStep` → comportement inchangé (pas de bouton Précédent sur la 1ère étape).
 
+## Email d'invitation envoyé au demandeur
+
+Deux variantes de wording selon que l'agent a déjà rempli la simulation d'éligibilité ou pas (paramètre `hasSimulation` du template `ClaimDossierTemplate`).
+
+- Cas **avec simulation** : « `{inviterName}` a rempli votre simulation d'éligibilité sur le site du Fonds Prévention Argile... » suivi de « Pour continuer votre demande, il vous suffit de créer votre compte. »
+- Cas **sans simulation** : « `{inviterName}` vous invite à créer votre compte sur le site du Fonds Prévention Argile pour déposer votre demande. »
+
+Le `inviterName` est calculé par `getInviterName(agentId)` (`services/inviter-name.service.ts`) avec la priorité : `allers_vers.nom` > `entreprises_amo.nom` > nom complet de l'agent. Permet d'afficher « Mairie d'Issoudun vous invite... » plutôt que le nom de l'agent personne.
+
+L'envoi a lieu :
+- En mode **sans simulation** : depuis `creation-dossier.service.ts` à la création du dossier (`StepEnvoiEmail`). `hasSimulation = false` toujours.
+- En mode **avec simulation** : depuis `send-invitation-email.action.ts`, déclenché par `ResultInvitation` à la fin du wizard. `hasSimulation = !!parcours.rgaSimulationDataAgent` (true en pratique).
+
+À la fin de la création (les 2 parcours), l'agent est redirigé vers `/espace-agent/dossiers`.
+
 ## Limites connues & TODO
 
 - **Stubs orphelins** : si le demandeur ne clique jamais sur le lien et n'a pas le même email FC, le stub reste indéfiniment. Pas de cleanup automatique. Envisager une tâche de purge > 6 mois.
@@ -109,8 +124,8 @@ Le simulateur public et l'édition AMO ne définissent pas `onBackBeyondFirstSte
 |---|---|
 | Schéma BDD | `src/shared/database/schema/users.ts`, `src/shared/database/schema/parcours-prevention.ts` |
 | Repos | `src/shared/database/repositories/user.repository.ts` (findByClaimToken, createStub, claimStub, upsertFromFranceConnect), `src/shared/database/repositories/parcours-prevention.repository.ts` (findOrCreateForUser, matchesTerritoire) |
-| Service | `services/creation-dossier.service.ts` |
-| Server action | `actions/create-dossier-aller-vers.action.ts` |
+| Service | `services/creation-dossier.service.ts`, `services/inviter-name.service.ts` |
+| Server action | `actions/create-dossier-aller-vers.action.ts`, `actions/send-invitation-email.action.ts` |
 | Store wizard | `stores/creation-dossier.store.ts` |
 | Composants wizard | `components/CreationDossierWizard.tsx`, `components/steps/*` |
 | Page wizard | `src/app/(backoffice)/espace-agent/dossiers/nouveau/page.tsx` |

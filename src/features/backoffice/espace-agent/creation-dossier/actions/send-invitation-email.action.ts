@@ -9,6 +9,7 @@ import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/action
 import { parcoursRepo, userRepo } from "@/shared/database/repositories";
 import { sendClaimDossierEmail } from "@/shared/email/actions/send-claim-dossier.actions";
 import type { ActionResult } from "@/shared/types";
+import { getInviterName } from "../services/inviter-name.service";
 
 /**
  * Envoie (ou pas) l'email d'invitation au demandeur après création du dossier
@@ -35,6 +36,10 @@ export async function sendInvitationEmailAction(
       return { success: true, data: { emailSent: false } };
     }
 
+    if (!user.agentId) {
+      return { success: false, error: "Agent non configuré" };
+    }
+
     const parcours = await parcoursRepo.findById(parcoursId);
     if (!parcours) return { success: false, error: "Parcours introuvable" };
 
@@ -44,11 +49,15 @@ export async function sendInvitationEmailAction(
     }
 
     const claimUrl = `${getServerEnv().BASE_URL}/claim-dossier/${demandeur.claimToken}`;
+    const inviterName = await getInviterName(user.agentId);
+    const demandeurPrenomNom = `${demandeur.prenom ?? ""} ${demandeur.nom ?? ""}`.trim();
 
     const result = await sendClaimDossierEmail({
       demandeurEmail: demandeur.email,
-      demandeurPrenom: demandeur.prenom ?? "",
+      demandeurPrenomNom,
+      inviterName,
       claimUrl,
+      hasSimulation: !!parcours.rgaSimulationDataAgent,
     });
 
     return { success: true, data: { emailSent: result.success } };

@@ -1,33 +1,74 @@
 import { EmailLayout, EmailComponents } from "./EmailLayout";
 
-export function ClaimDossierTemplate({
-  demandeurPrenom,
-  claimUrl,
-}: {
-  demandeurPrenom: string;
+interface ClaimDossierTemplateProps {
+  /** Prénom-Nom du demandeur affiché dans la salutation. */
+  demandeurPrenomNom: string;
+  /** Nom de la structure / agent qui invite (Aller-vers ou AMO). */
+  inviterName: string;
+  /** URL de claim (lien personnel vers FranceConnect). */
   claimUrl: string;
-}) {
+  /**
+   * `true` si l'agent a rempli la simulation d'éligibilité avant d'envoyer
+   * l'invitation. Adapte le wording du paragraphe d'introduction.
+   */
+  hasSimulation: boolean;
+}
+
+/**
+ * Email d'invitation envoyé au demandeur après création de son dossier par
+ * un agent AMO ou Aller-vers. Deux variantes de wording selon que l'agent
+ * a rempli la simulation d'éligibilité ou non.
+ */
+export function ClaimDossierTemplate({
+  demandeurPrenomNom,
+  inviterName,
+  claimUrl,
+  hasSimulation,
+}: ClaimDossierTemplateProps) {
   return (
-    <EmailLayout preheader="Finalisez votre inscription au Fonds Prévention Argile">
-      <EmailComponents.Heading>Bonjour {demandeurPrenom},</EmailComponents.Heading>
+    <EmailLayout preheader={`${inviterName} vous invite à créer votre compte Fonds Prévention Argile`}>
+      <EmailComponents.Paragraph>Bonjour {demandeurPrenomNom},</EmailComponents.Paragraph>
 
-      <EmailComponents.Paragraph>
-        Un agent du dispositif Fonds Prévention Argile a préparé un dossier à votre nom.
-      </EmailComponents.Paragraph>
+      {hasSimulation ? (
+        <>
+          <EmailComponents.Paragraph>
+            {inviterName} a rempli votre simulation d&apos;éligibilité sur le site du Fonds Prévention Argile (
+            <a href="https://fonds-prevention-argile.beta.gouv.fr" style={{ color: "#000091" }}>
+              fonds-prevention-argile.beta.gouv.fr
+            </a>
+            ). Cette étape est nécessaire pour déposer votre demande d&apos;aide.
+          </EmailComponents.Paragraph>
+          <p style={{ margin: "0 0 16px 0", fontSize: "16px", lineHeight: "1.6", color: "#333333", fontWeight: 700 }}>
+            Pour continuer votre demande, il vous suffit de créer votre compte en quelques clics.
+          </p>
+        </>
+      ) : (
+        <>
+          <EmailComponents.Paragraph>
+            {inviterName} vous invite à créer votre compte sur le site du Fonds Prévention Argile (
+            <a href={claimUrl} style={{ color: "#000091" }}>
+              fonds-prevention-argile.beta.gouv.fr
+            </a>
+            ) pour déposer votre demande d&apos;aide.
+          </EmailComponents.Paragraph>
+          <p style={{ margin: "0 0 16px 0", fontSize: "16px", lineHeight: "1.6", color: "#333333", fontWeight: 700 }}>
+            C&apos;est rapide et sécurisé : cela vous permettra de suivre vos démarches dans un espace centralisé.
+          </p>
+        </>
+      )}
 
-      <EmailComponents.Paragraph>
-        Pour finaliser votre inscription et accéder à votre dossier, cliquez sur le bouton ci-dessous. Vous serez
-        redirigé vers FranceConnect pour créer votre compte en toute sécurité.
-      </EmailComponents.Paragraph>
+      <p style={{ margin: "16px 0 8px 0", fontSize: "16px", lineHeight: "1.6", color: "#333333" }}>
+        Pourquoi créer un compte ?
+      </p>
+      <ul style={{ margin: "0 0 16px 0", paddingLeft: "20px", fontSize: "16px", lineHeight: "1.6", color: "#333333" }}>
+        <li>✅ Vérifier votre éligibilité (si cela n&apos;a pas encore été fait)</li>
+        <li>✅ Compléter les formulaires nécessaires simplement</li>
+        <li>✅ Suivre l&apos;avancement de votre dossier</li>
+      </ul>
 
-      <div style={{ marginTop: "24px", marginBottom: "24px" }}>
-        <EmailComponents.Button href={claimUrl}>Finaliser mon inscription</EmailComponents.Button>
+      <div style={{ marginTop: "24px", marginBottom: "8px" }}>
+        <EmailComponents.Button href={claimUrl}>Créer mon compte</EmailComponents.Button>
       </div>
-
-      <EmailComponents.Paragraph>
-        Ce lien est personnel et valable 90 jours. Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer
-        ce message.
-      </EmailComponents.Paragraph>
     </EmailLayout>
   );
 }

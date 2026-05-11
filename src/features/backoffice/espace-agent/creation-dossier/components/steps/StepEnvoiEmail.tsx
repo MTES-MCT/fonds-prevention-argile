@@ -36,9 +36,9 @@ export function StepEnvoiEmail() {
         return;
       }
 
-      const parcoursId = result.data.parcoursId;
       reset();
-      router.push(`/espace-agent/prospects/${parcoursId}`);
+      // Après création (mode sans simulation), retour à la liste des dossiers de l'agent.
+      router.push(`/espace-agent/dossiers`);
     });
   };
 
