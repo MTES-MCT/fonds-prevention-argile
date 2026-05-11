@@ -108,4 +108,8 @@ export interface ProspectDetail extends Prospect {
   hasUserClaimed: boolean;
   /** true si une simulation (initiale ou agent) a été enregistrée. */
   hasSimulation: boolean;
+  /** Date d'envoi de l'invitation (= parcours.createdAt si initié par un agent). */
+  invitationSentAt: Date | null;
+  /** Date d'acceptation de l'invitation (= users.claimedAt). */
+  invitationAcceptedAt: Date | null;
 }

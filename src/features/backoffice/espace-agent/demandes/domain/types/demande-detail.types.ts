@@ -58,6 +58,10 @@ export interface InfoLogement {
 export interface ParcoursDateProgression {
   /** Date de création du compte */
   compteCreatedAt: Date;
+  /** Date d'envoi de l'invitation (parcours initié par un agent). */
+  invitationSentAt?: Date;
+  /** Date d'acceptation de l'invitation (connexion FC après claim). */
+  invitationAcceptedAt?: Date;
   /** Date où le demandeur a choisi l'AMO */
   amoChoisieAt?: Date;
   /** Date de soumission du formulaire d'éligibilité */

@@ -123,6 +123,8 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
     // Construire l'objet des dates de progression
     const dates: ParcoursDateProgression = {
       compteCreatedAt: dossier.parcours.createdAt,
+      invitationSentAt: dossier.parcours.createdByAgentId ? dossier.parcours.createdAt : undefined,
+      invitationAcceptedAt: dossier.user.claimedAt ?? undefined,
       amoChoisieAt: dossier.validation.choisieAt,
       eligibiliteSubmittedAt: datesByStep.get(Step.ELIGIBILITE),
       diagnosticSubmittedAt: datesByStep.get(Step.DIAGNOSTIC),

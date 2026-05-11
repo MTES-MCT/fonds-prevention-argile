@@ -183,6 +183,8 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       agentEditInfo,
       hasUserClaimed,
       hasSimulation,
+      invitationSentAt: result.parcours.createdByAgentId ? result.parcours.createdAt : null,
+      invitationAcceptedAt: result.user.claimedAt,
     };
 
     return { success: true, data: prospectDetail };
