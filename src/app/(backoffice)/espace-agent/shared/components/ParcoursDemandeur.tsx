@@ -5,6 +5,8 @@ import { formatDate, daysBetween } from "@/shared/utils";
 
 interface ParcoursDateProgression {
   compteCreatedAt: Date;
+  invitationSentAt?: Date;
+  invitationAcceptedAt?: Date;
   amoChoisieAt?: Date;
   eligibiliteSubmittedAt?: Date;
   diagnosticSubmittedAt?: Date;
@@ -32,37 +34,46 @@ interface StepConfig {
   processedDateKey?: keyof ParcoursDateProgression;
 }
 
-const STEPS_CONFIG: StepConfig[] = [
-  { step: null, label: "Compte créé", dateKey: "compteCreatedAt" },
-  { step: Step.CHOIX_AMO, label: "Choisir un AMO", dateKey: "amoChoisieAt" },
-  {
-    step: Step.ELIGIBILITE,
-    label: "Soumettre le formulaire d'éligibilité",
-    dateKey: "eligibiliteSubmittedAt",
-    processedDateKey: "eligibiliteProcessedAt",
-  },
-  {
-    step: Step.DIAGNOSTIC,
-    label: "Soumettre le diagnostic",
-    dateKey: "diagnosticSubmittedAt",
-    processedDateKey: "diagnosticProcessedAt",
-  },
-  {
-    step: Step.DEVIS,
-    label: "Soumettre les devis",
-    dateKey: "devisSubmittedAt",
-    processedDateKey: "devisProcessedAt",
-  },
-  {
-    step: Step.FACTURES,
-    label: "Transmettre les factures",
-    dateKey: "facturesSubmittedAt",
-    processedDateKey: "facturesProcessedAt",
-  },
-];
+function buildStepsConfig(hasInvitation: boolean): StepConfig[] {
+  const base: StepConfig[] = [{ step: null, label: "Compte créé", dateKey: "compteCreatedAt" }];
 
-function getStepIndex(step: Step): number {
-  return STEPS_CONFIG.findIndex((s) => s.step === step);
+  if (hasInvitation) {
+    base.push({
+      step: Step.INVITATION,
+      label: "Invitation acceptée par le demandeur",
+      dateKey: "invitationAcceptedAt",
+    });
+  }
+
+  base.push(
+    { step: Step.CHOIX_AMO, label: "Choisir un AMO", dateKey: "amoChoisieAt" },
+    {
+      step: Step.ELIGIBILITE,
+      label: "Soumettre le formulaire d'éligibilité",
+      dateKey: "eligibiliteSubmittedAt",
+      processedDateKey: "eligibiliteProcessedAt",
+    },
+    {
+      step: Step.DIAGNOSTIC,
+      label: "Soumettre le diagnostic",
+      dateKey: "diagnosticSubmittedAt",
+      processedDateKey: "diagnosticProcessedAt",
+    },
+    {
+      step: Step.DEVIS,
+      label: "Soumettre les devis",
+      dateKey: "devisSubmittedAt",
+      processedDateKey: "devisProcessedAt",
+    },
+    {
+      step: Step.FACTURES,
+      label: "Transmettre les factures",
+      dateKey: "facturesSubmittedAt",
+      processedDateKey: "facturesProcessedAt",
+    }
+  );
+
+  return base;
 }
 
 /**
@@ -122,7 +133,9 @@ function CurrentStepBadge({
  * Composant affichant le parcours du demandeur
  */
 export function ParcoursDemandeur({ currentStep, currentStatus, dsStatus, dates, lastUpdatedAt }: ParcoursDemandeurProps) {
-  const currentStepIndex = getStepIndex(currentStep);
+  const hasInvitation = !!dates.invitationSentAt;
+  const stepsConfig = buildStepsConfig(hasInvitation);
+  const currentStepIndex = stepsConfig.findIndex((s) => s.step === currentStep);
 
   // Calcul du nombre de jours depuis dernière action
   const daysSinceLastAction = lastUpdatedAt ? daysBetween(lastUpdatedAt, new Date()) : null;
@@ -147,7 +160,7 @@ export function ParcoursDemandeur({ currentStep, currentStatus, dsStatus, dates,
 
           <div className="fr-card__desc">
             <ul className="fr-raw-list">
-              {STEPS_CONFIG.map((stepConfig, index) => {
+              {stepsConfig.map((stepConfig, index) => {
                 const isCompleted = index < currentStepIndex;
                 const isCurrent = index === currentStepIndex;
                 const isPending = index > currentStepIndex;

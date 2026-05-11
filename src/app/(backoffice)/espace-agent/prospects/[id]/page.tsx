@@ -199,6 +199,8 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
                   dsStatus={null}
                   dates={{
                     compteCreatedAt: prospect.createdAt,
+                    invitationSentAt: prospect.invitationSentAt ?? undefined,
+                    invitationAcceptedAt: prospect.invitationAcceptedAt ?? undefined,
                   }}
                   lastUpdatedAt={prospect.updatedAt}
                 />
