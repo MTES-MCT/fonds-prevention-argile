@@ -18,6 +18,7 @@ import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
  */
 
 export const stepPgEnum = pgEnum("step", [
+  Step.INVITATION,
   Step.CHOIX_AMO,
   Step.ELIGIBILITE,
   Step.DIAGNOSTIC,

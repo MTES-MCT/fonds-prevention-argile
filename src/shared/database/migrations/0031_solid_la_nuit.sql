@@ -1,0 +1,1 @@
+ALTER TYPE "public"."step" ADD VALUE 'invitation' BEFORE 'choix_amo';
