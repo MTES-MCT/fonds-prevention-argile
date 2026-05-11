@@ -26,6 +26,7 @@ import { ResultEdition, ResultEligible, ResultNonEligible } from "./results";
 import { MATOMO_EVENTS } from "@/shared/constants";
 import { SIMULATEUR_STEP_EVENTS } from "../domain";
 import { useSimulateurStore, selectEditMode } from "../stores/simulateur.store";
+import { useSimulateurContext } from "./shared/SimulateurContext";
 import { getClientEnv } from "@/shared/config/env.config";
 import type { MatomoCustomDimension } from "@/shared/components/Matomo/useMatomo";
 
@@ -58,6 +59,7 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
   } = useSimulateurFormulaire();
 
   const editMode = useSimulateurStore(selectEditMode);
+  const { customResultComponent } = useSimulateurContext();
   const { trackEvent } = useMatomo();
   const previousStepRef = useRef<SimulateurStep | null>(null);
 
@@ -251,6 +253,12 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
       );
 
     case SimulateurStep.RESULTAT:
+      // Composant de résultat injecté via le context (mode embedded, ex: wizard invitation).
+      // Prend la priorité sur ResultEdition pour permettre un layout custom.
+      if (customResultComponent && checks) {
+        return customResultComponent({ checks, isEligible, onBack: goBack, onRestart: reset });
+      }
+
       // Mode édition agent : vue résultat dédiée
       if (editMode && checks) {
         return <ResultEdition checks={checks} isEligible={isEligible} onBack={goBack} onRestart={reset} />;

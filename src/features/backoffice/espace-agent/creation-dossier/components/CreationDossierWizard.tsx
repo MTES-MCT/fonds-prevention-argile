@@ -1,9 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCreationDossierStore, WizardStep, getTotalSteps } from "../stores/creation-dossier.store";
+import {
+  useCreationDossierStore,
+  WizardStep,
+  TOTAL_STEPS,
+  getDisplayedStepNumber,
+} from "../stores/creation-dossier.store";
 import { StepChoixMode } from "./steps/StepChoixMode";
-import { StepCoordonnees } from "./steps/StepCoordonnees";
+import { StepIdentite } from "./steps/StepIdentite";
+import { StepContact } from "./steps/StepContact";
 import { StepEnvoiEmail } from "./steps/StepEnvoiEmail";
 
 /**
@@ -20,7 +26,8 @@ function getStepperTitle(wantsSimulation: boolean | null): string | null {
 export function CreationDossierWizard() {
   const currentStep = useCreationDossierStore((s) => s.currentStep);
   const wantsSimulation = useCreationDossierStore((s) => s.wantsSimulation);
-  const totalSteps = getTotalSteps(wantsSimulation);
+  const totalSteps = TOTAL_STEPS;
+  const displayedStep = getDisplayedStepNumber(currentStep, wantsSimulation);
   const stepperTitle = getStepperTitle(wantsSimulation);
 
   return (
@@ -65,23 +72,24 @@ export function CreationDossierWizard() {
                     <h2 className="fr-stepper__title">
                       {stepperTitle}
                       <span className="fr-stepper__state">
-                        Étape {currentStep} sur {totalSteps}
+                        Étape {displayedStep} sur {totalSteps}
                       </span>
                     </h2>
                   ) : (
                     <p className="fr-stepper__state fr-mb-2w">
-                      Étape {currentStep} sur {totalSteps}
+                      Étape {displayedStep} sur {totalSteps}
                     </p>
                   )}
                   <div
                     className="fr-stepper__steps"
-                    data-fr-current-step={currentStep}
+                    data-fr-current-step={displayedStep}
                     data-fr-steps={totalSteps}></div>
                 </div>
 
                 <div className="fr-mt-4w">
                   {currentStep === WizardStep.CHOIX_MODE && <StepChoixMode />}
-                  {currentStep === WizardStep.COORDONNEES && <StepCoordonnees />}
+                  {currentStep === WizardStep.IDENTITE && <StepIdentite />}
+                  {currentStep === WizardStep.CONTACT && <StepContact />}
                   {currentStep === WizardStep.ENVOI_EMAIL && <StepEnvoiEmail />}
                 </div>
               </div>

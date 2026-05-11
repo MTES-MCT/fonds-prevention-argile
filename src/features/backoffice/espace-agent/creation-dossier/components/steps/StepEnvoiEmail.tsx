@@ -14,7 +14,6 @@ export function StepEnvoiEmail() {
   const sendEmail = useCreationDossierStore((s) => s.sendEmail);
   const setSendEmail = useCreationDossierStore((s) => s.setSendEmail);
   const demandeur = useCreationDossierStore((s) => s.demandeur);
-  const wantsSimulation = useCreationDossierStore((s) => s.wantsSimulation);
   const reset = useCreationDossierStore((s) => s.reset);
   const previous = useCreationDossierStore((s) => s.previous);
 
@@ -28,7 +27,7 @@ export function StepEnvoiEmail() {
           email: demandeur.email,
           telephone: demandeur.telephone || undefined,
         },
-        adresseBien: demandeur.adresseBien,
+        adresseBien: demandeur.adresseBien || undefined,
         sendEmail,
       });
 
@@ -39,14 +38,7 @@ export function StepEnvoiEmail() {
 
       const parcoursId = result.data.parcoursId;
       reset();
-
-      // Si l'AV a choisi "avec simulation", on le redirige vers la page du
-      // prospect avec un indicateur pour ouvrir immédiatement le simulateur.
-      if (wantsSimulation) {
-        router.push(`/espace-agent/prospects/${parcoursId}?action=simulation`);
-      } else {
-        router.push(`/espace-agent/prospects/${parcoursId}`);
-      }
+      router.push(`/espace-agent/prospects/${parcoursId}`);
     });
   };
 

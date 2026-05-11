@@ -57,15 +57,51 @@ Le cookie `FC_CLAIM_TOKEN` est posé par `/claim-dossier/[token]/page.tsx` (TTL 
 
 ## Isolation front
 
-Le wizard utilise un store Zustand **dédié** (`stores/creation-dossier.store.ts`), volontairement séparé de `useSimulateurStore`. Raison : le simulateur public persiste son état en `sessionStorage`, et utiliser le même store aurait risqué d'écraser la simulation en cours d'un demandeur naviguant dans le même onglet que l'agent.
+Le wizard utilise un store Zustand **dédié** au state local (`stores/creation-dossier.store.ts` : currentStep + demandeur form + wantsSimulation + sendEmail) — séparé de `useSimulateurStore`.
 
-La simulation complète (parcours 2) passe par `SimulateurEdition` existant, qui gère sa propre persistance. Le wizard ne contient pas les 10 étapes du simulateur inline ; il crée le dossier puis délègue au `SimulateurEdition`.
+## Intégration du simulateur dans le wizard (parcours 2 "avec simulation")
+
+L'étape 3/4 du wizard avec simulation affiche les 10 étapes du simulateur **inline** dans la carte du wizard AV (layout breadcrumb + carte blanche + stepper "Étape 3 sur 4"). Pour atteindre ce rendu sans dupliquer la logique du simulateur, on réutilise les composants existants `SimulateurFormulaire` / `SimulateurEdition` avec deux adaptations légères :
+
+### 1. Mode `embedded` du `SimulateurContext`
+
+Le `SimulateurContext` expose un prop `embedded?: boolean`. Quand il vaut `true` :
+- `SimulateurLayout` rend **uniquement** le contenu de l'étape (title + subtitle + children), sans son wrapping externe (carte grise, formTitle "Simulateur d'éligibilité au Fonds Prévention Argile", lien "Besoin d'aide ?", ProgressBar interne).
+- Le simulateur s'intègre ainsi visuellement dans la carte du wizard parent qui fournit son propre stepper.
+
+Le simulateur public et l'édition AMO n'utilisent pas `embedded` → leur rendu reste inchangé.
+
+### 2. Composant `SimulateurEditionInvitation`
+
+Variante de `SimulateurEdition` pour le contexte invitation, qui :
+- Pose `embedded: true` sur le `SimulateurProvider`.
+- **Skip l'écran INTRO** : initialise le store directement à `TYPE_LOGEMENT` avec `history: []` (via `useSimulateurStore.setState` direct). Évite à l'agent de cliquer sur "Démarrer" puisqu'il sait déjà ce qu'il fait.
+- Désactive le bouton "Précédent" natif du simulateur sur la 1ère étape (conséquence de `history: []` qui rend `canGoBack = false`).
+
+### 3. Store simulateur partagé (compromis assumé)
+
+`SimulateurEditionInvitation` **partage le store singleton `useSimulateurStore`** avec le simulateur public et le mode édition AMO (clé sessionStorage unique `fonds-argile-simulateur`).
+
+**Pourquoi pas un store dédié ?** Une factory + Context Provider permettrait d'isoler chaque contexte. Trade-off rejeté : surface API trop large (3 fichiers du simulateur public à refactorer, Provider obligatoire partout, risque de régression). En pratique :
+- Le simulateur public est utilisé par des **demandeurs** ; le wizard invitation par des **agents**. Pas de scénario de concurrence réaliste.
+- Le mode édition AMO partage **déjà** ce store singleton depuis sa création (commit `6a19aa12`, février 2026). On prolonge l'usage existant.
+- `reset()` + `setEditMode(true)` au mount + `setEditMode(false)` au démontage isolent les sessions dans le temps.
+
+### 4. Bouton "Précédent" depuis la 1ère étape du simulateur
+
+Le `SimulateurContext` expose un callback `onBackBeyondFirstStep?: () => void` consommé par `NavigationButtons`. Si défini, le bouton "Précédent" reste affiché sur la 1ère étape (history vide) et appelle ce callback à la place du `goBack` interne du store. En invitation, on passe `() => router.back()` → ramène l'agent à `/nouveau` avec le state du wizard intact (l'étape Contact reste pré-remplie).
+
+C'est aussi pour cette raison qu'on retire le `reset()` dans `StepContact.handleNext` après la création du dossier : on conserve le state pour le retour.
+
+Le simulateur public et l'édition AMO ne définissent pas `onBackBeyondFirstStep` → comportement inchangé (pas de bouton Précédent sur la 1ère étape).
 
 ## Limites connues & TODO
 
 - **Stubs orphelins** : si le demandeur ne clique jamais sur le lien et n'a pas le même email FC, le stub reste indéfiniment. Pas de cleanup automatique. Envisager une tâche de purge > 6 mois.
 - **Collisions email** : si plusieurs stubs ont le même email, le fallback email est désactivé (retourne `null`). Seul le claim token permet alors le rattachement.
 - **Race au claim** : la mise à jour du stub (`claimStub`) n'est pas wrappée dans une transaction. En pratique, le token unique suffit à éviter le double claim, mais une transaction serait plus rigoureuse.
+- **sessionStorage partagé avec simulateur public** : si un même utilisateur ouvre simulateur public ET wizard invitation dans le même navigateur (cas non réaliste), leurs états s'écrasent. Acceptable car agent ≠ demandeur en pratique.
+- **Double soumission possible** : après création du dossier via le wizard, l'agent peut revenir à `/nouveau` (via "Revenir à l'étape précédente") avec le state intact. Re-cliquer "Suivant" sur l'étape Contact créera un 2ème dossier (cas rare). À gérer ultérieurement en marquant le store wizard avec un `lastSubmittedParcoursId`.
 
 ## Pointeurs de code
 
@@ -83,3 +119,5 @@ La simulation complète (parcours 2) passe par `SimulateurEdition` existant, qui
 | Route claim public | `src/app/(main)/claim-dossier/[token]/page.tsx` |
 | Callback FC modifié | `src/features/auth/adapters/franceconnect/franceconnect.service.ts` (`consumeClaimToken`, `handleFranceConnectCallback`) |
 | Callout page prospect | `src/app/(backoffice)/espace-agent/prospects/[id]/components/CalloutSimulationAEffectuer.tsx` |
+| Simulateur invitation (étape 3/4) | `components/SimulateurEditionInvitation.tsx`, `src/app/(backoffice)/espace-agent/dossiers/nouveau/simulation/[parcoursId]/page.tsx` |
+| Mode embedded simulateur (partagé) | `src/features/simulateur/components/shared/SimulateurContext.tsx` (props `embedded`, `onBackBeyondFirstStep`), `src/features/simulateur/components/shared/SimulateurLayout.tsx`, `src/features/simulateur/components/shared/NavigationButtons.tsx` |

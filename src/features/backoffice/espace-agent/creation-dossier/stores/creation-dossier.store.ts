@@ -3,17 +3,17 @@
 import { create } from "zustand";
 
 /**
- * Étapes du wizard de création de dossier par un AV.
+ * Étapes inline du wizard AV. Toujours 4 étapes affichées dans la ProgressBar.
  *
- * Le wizard reste à 3 étapes dans tous les cas : la simulation n'est pas
- * inline car le composant `SimulateurEdition` existant opère sur un dossier
- * déjà persisté. Après création, si `wantsSimulation=true`, on redirige
- * l'agent vers la page du prospect où il peut démarrer la simulation.
+ * Mode "sans simulation" : choix → identité → contact (+ adresse) → envoi email
+ * Mode "avec simulation" : choix → identité → contact → puis sortie du wizard
+ * inline vers /simulation/[parcoursId] puis /resultat/[parcoursId]
  */
 export enum WizardStep {
   CHOIX_MODE = 1,
-  COORDONNEES = 2,
-  ENVOI_EMAIL = 3,
+  IDENTITE = 2,
+  CONTACT = 3,
+  ENVOI_EMAIL = 4,
 }
 
 export interface DemandeurForm {
@@ -26,10 +26,6 @@ export interface DemandeurForm {
 
 interface CreationDossierState {
   currentStep: WizardStep;
-  /**
-   * Choix du mode ("faire simulation" vs "sans simulation") effectué à l'étape 1.
-   * Détermine la redirection finale, pas le nombre d'étapes du wizard.
-   */
   wantsSimulation: boolean | null;
   demandeur: DemandeurForm;
   sendEmail: boolean;
@@ -88,16 +84,18 @@ export const useCreationDossierStore = create<CreationDossierState>((set, get) =
     }),
 }));
 
+/** Toujours 4 étapes affichées dans la ProgressBar (modes harmonisés). */
+export const TOTAL_STEPS = 4;
+
 /**
- * Nombre d'étapes affichées dans la ProgressBar selon le mode choisi.
- * - Sans simulation : 3 étapes (choix, coordonnées, email)
- * - Avec simulation : 4 étapes (choix, coordonnées, email, simulation post-création
- *   réalisée via SimulateurEdition après redirection)
- *
- * Le wizard ne contient que 3 écrans dans tous les cas — la 4e étape
- * du mode simulation se déroule en dehors du wizard, après création
- * du dossier.
+ * Numéro affiché dans le stepper selon le mode :
+ * - Sans simulation : CHOIX = 1, IDENTITE = 2, CONTACT = 3, ENVOI_EMAIL = 4
+ * - Avec simulation : CHOIX = 1, IDENTITE = 2, CONTACT = 2 (sub-step interne),
+ *   SIMULATION = 3, RESULTAT = 4
  */
-export function getTotalSteps(wantsSimulation: boolean | null): number {
-  return wantsSimulation ? 4 : 3;
+export function getDisplayedStepNumber(currentStep: WizardStep, wantsSimulation: boolean | null): number {
+  if (wantsSimulation && currentStep === WizardStep.CONTACT) {
+    return 2;
+  }
+  return currentStep;
 }
