@@ -3,6 +3,7 @@ import { db } from "@/shared/database/client";
 import { parcoursAmoValidations } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
+import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
 import { generateSecureRandomString } from "@/features/auth/utils/oauth.utils";
 import { getServerEnv } from "@/shared/config/env.config";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
@@ -87,10 +88,17 @@ export async function createDossierByAgent(
   }
 
   // 4 bis. Si l'agent est rattaché à une entreprise AMO (rôles AMO ou
-  // AMO_ET_ALLERS_VERS), on auto-crée une `parcours_amo_validations` en statut
-  // EN_ATTENTE. Cela rend le dossier visible immédiatement dans
-  // `/espace-agent/dossiers` côté AMO (la query joint sur cette table) et le
-  // pré-claim côté liste prospects AV (qui exclut les parcours déjà validés).
+  // AMO_ET_ALLERS_VERS), on auto-crée une `parcours_amo_validations` qui
+  // claim le dossier sur cette entreprise AMO. Le statut dépend de ce qu'a
+  // fait l'AMO :
+  //
+  //   - Simulation complète fournie → l'AMO a déjà vérifié l'éligibilité.
+  //     On évalue via `EligibilityService.evaluate` :
+  //       - éligible     → LOGEMENT_ELIGIBLE + valideeAt = now (dossier suivi)
+  //       - non éligible → LOGEMENT_NON_ELIGIBLE + valideeAt = now (archivé)
+  //   - Pas de simulation → EN_ATTENTE (l'AMO attend que le demandeur fasse
+  //     sa propre simulation après le claim FC).
+  //
   // Idempotent via ON CONFLICT (parcours_id) — utile pour les re-créations.
   const agent = await agentsRepo.findById(agentId);
   if (agent?.entrepriseAmoId) {
@@ -99,19 +107,39 @@ export async function createDossierByAgent(
       adresseBien ??
       (rgaSimulationDataAgent?.logement?.adresse as string | undefined) ??
       "";
+
+    let statut: StatutValidationAmo = StatutValidationAmo.EN_ATTENTE;
+    let valideeAt: Date | null = null;
+    let commentaire = `Invitation créée par ${fullName ? fullName + " — " : ""}agent AMO`;
+
+    if (rgaSimulationDataAgent) {
+      const { result } = EligibilityService.evaluate(rgaSimulationDataAgent);
+      if (result?.eligible === true) {
+        statut = StatutValidationAmo.LOGEMENT_ELIGIBLE;
+        valideeAt = new Date();
+        commentaire += " (simulation éligible)";
+      } else if (result?.eligible === false) {
+        statut = StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
+        valideeAt = new Date();
+        commentaire += " (simulation non éligible)";
+      }
+      // Si result est null (sim incomplète improbable ici) → on garde EN_ATTENTE.
+    }
+
     await db
       .insert(parcoursAmoValidations)
       .values({
         parcoursId: parcours.id,
         entrepriseAmoId: agent.entrepriseAmoId,
-        statut: StatutValidationAmo.EN_ATTENTE,
+        statut,
         attributionMode: AttributionAmoMode.MANUEL,
         userPrenom: demandeur.prenom,
         userNom: demandeur.nom,
         userEmail: demandeur.email,
         userTelephone: demandeur.telephone ?? "",
         adresseLogement,
-        commentaire: `Invitation créée par ${fullName ? fullName + " — " : ""}agent AMO`,
+        commentaire,
+        valideeAt,
       })
       .onConflictDoNothing({ target: parcoursAmoValidations.parcoursId });
   }

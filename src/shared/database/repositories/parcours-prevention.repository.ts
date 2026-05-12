@@ -8,6 +8,7 @@ import type { ParcoursPrevention, NewParcoursPrevention } from "../schema/parcou
 import { getNextStep, Status, Step } from "@/features/parcours/core";
 import { RGASimulationData } from "@/shared/domain/types";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
 export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevention> {
   /**
@@ -248,7 +249,17 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   /**
-   * Marque l'invitation comme acceptée et fait progresser le parcours vers CHOIX_AMO.
+   * Marque l'invitation comme acceptée et fait progresser le parcours.
+   *
+   * - Si une validation AMO en `LOGEMENT_ELIGIBLE` existe déjà pour ce parcours
+   *   (cas d'une invitation créée par un agent AMO avec simulation éligible) :
+   *   l'AMO est déjà choisi+validé → on saute `CHOIX_AMO` et on va directement
+   *   à `ELIGIBILITE/TODO`.
+   * - Si une validation `LOGEMENT_NON_ELIGIBLE` existe : on reste sur `CHOIX_AMO`
+   *   (le demandeur sera bloqué de toute façon par le statut AMO).
+   * - Sinon (invitation AV sans validation AMO, ou AMO sans simulation) :
+   *   transition standard vers `CHOIX_AMO/TODO`.
+   *
    * Idempotent : ne fait rien si le parcours n'est plus à l'étape INVITATION.
    */
   async validateInvitation(parcoursId: string): Promise<ParcoursPrevention | null> {
@@ -256,6 +267,18 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
     if (!parcours || parcours.currentStep !== Step.INVITATION) {
       return parcours;
     }
+
+    const [existingValidation] = await db
+      .select({ statut: parcoursAmoValidations.statut })
+      .from(parcoursAmoValidations)
+      .where(eq(parcoursAmoValidations.parcoursId, parcoursId))
+      .limit(1);
+
+    if (existingValidation?.statut === StatutValidationAmo.LOGEMENT_ELIGIBLE) {
+      // AMO déjà choisi+validé via l'invitation → on saute la sélection AMO.
+      return await this.updateStep(parcoursId, Step.ELIGIBILITE, Status.TODO);
+    }
+
     return await this.updateStep(parcoursId, Step.CHOIX_AMO, Status.TODO);
   }
 

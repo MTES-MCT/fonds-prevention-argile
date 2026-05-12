@@ -4,7 +4,21 @@ import { Step, Status } from "@/features/parcours/core";
 import type { RGASimulationData } from "@/shared/domain/types";
 import type { ParcoursPrevention } from "../schema/parcours-prevention";
 
-vi.mock("../client", () => ({ db: {} }));
+// Mock minimal du client db : `db.select()...limit(n)` retourne `[]` par défaut
+// (aucune validation AMO existante, donc validateInvitation suit la branche
+// standard vers CHOIX_AMO/TODO). Les méthodes du repo testées directement sont
+// stubbées via `vi.spyOn`, donc ce mock n'a pas besoin de gérer le query builder
+// complet.
+const dbSelectChain = {
+  from: vi.fn(() => dbSelectChain),
+  where: vi.fn(() => dbSelectChain),
+  limit: vi.fn(async () => [] as unknown[]),
+};
+vi.mock("../client", () => ({
+  db: {
+    select: vi.fn(() => dbSelectChain),
+  },
+}));
 
 function makeRgaData(overrides: Partial<RGASimulationData["logement"]> = {}): RGASimulationData {
   return {
@@ -238,6 +252,19 @@ describe("ParcoursPreventionRepository — invitation", () => {
       vi.spyOn(repo, "findById").mockResolvedValue(null);
       const result = await repo.validateInvitation("missing");
       expect(result).toBeNull();
+    });
+
+    it("saute CHOIX_AMO si une validation AMO LOGEMENT_ELIGIBLE existe déjà", async () => {
+      vi.spyOn(repo, "findById").mockResolvedValue(baseParcours);
+      // Mock : retourne une validation AMO en LOGEMENT_ELIGIBLE
+      dbSelectChain.limit.mockResolvedValueOnce([{ statut: "logement_eligible" }]);
+      const updateStep = vi
+        .spyOn(repo, "updateStep")
+        .mockResolvedValue({ ...baseParcours, currentStep: Step.ELIGIBILITE });
+
+      await repo.validateInvitation("parcours-1");
+
+      expect(updateStep).toHaveBeenCalledWith("parcours-1", Step.ELIGIBILITE, Status.TODO);
     });
   });
 });
