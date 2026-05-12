@@ -8,6 +8,14 @@ import type { AmoDossiersData, DossierSuivi } from "../domain/types";
 const STATUTS_REFUSES = [StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, StatutValidationAmo.ACCOMPAGNEMENT_REFUSE];
 
 /**
+ * Statuts qui font qu'un dossier apparaît dans l'onglet "Suivis" :
+ * - EN_ATTENTE : invitation créée par un agent AMO, en attente du claim FC
+ *   du demandeur (cas du parcours d'invitation AMO).
+ * - LOGEMENT_ELIGIBLE : demande validée par l'AMO après instruction.
+ */
+const STATUTS_SUIVIS = [StatutValidationAmo.EN_ATTENTE, StatutValidationAmo.LOGEMENT_ELIGIBLE];
+
+/**
  * Service pour la page des dossiers de l'espace AMO
  *
  * Fournit les données pour afficher les dossiers suivis et archivés (demandes acceptées)
@@ -38,9 +46,11 @@ export async function getAmoDossiersData(entrepriseAmoId: string | null): Promis
 }
 
 /**
- * Compte le nombre de dossiers suivis (demandes acceptées, non archivées)
+ * Compte le nombre de dossiers suivis (non archivés)
  *
- * Un dossier est "suivi" si son statut est LOGEMENT_ELIGIBLE et son parcours n'est pas archivé
+ * Inclut :
+ * - EN_ATTENTE : invitations créées par l'AMO en attente de claim FC.
+ * - LOGEMENT_ELIGIBLE : demandes validées par l'AMO.
  */
 async function getNombreDossiersSuivis(entrepriseAmoId: string | null): Promise<number> {
   const result = await db
@@ -50,7 +60,7 @@ async function getNombreDossiersSuivis(entrepriseAmoId: string | null): Promise<
     .where(
       and(
         entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
-        eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
+        inArray(parcoursAmoValidations.statut, STATUTS_SUIVIS),
         isNull(parcoursPrevention.archivedAt)
       )
     );
@@ -60,7 +70,7 @@ async function getNombreDossiersSuivis(entrepriseAmoId: string | null): Promise<
 
 /**
  * Compte le nombre de dossiers archivés :
- * - Demandes acceptées puis archivées manuellement par l'AMO
+ * - Demandes EN_ATTENTE ou LOGEMENT_ELIGIBLE archivées manuellement par l'AMO
  * - Demandes refusées (logement non éligible ou accompagnement refusé)
  */
 async function getNombreDossiersArchives(entrepriseAmoId: string | null): Promise<number> {
@@ -72,9 +82,9 @@ async function getNombreDossiersArchives(entrepriseAmoId: string | null): Promis
       and(
         entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined,
         or(
-          // Acceptées + archivées manuellement
+          // En attente / éligibles + archivées manuellement
           and(
-            eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
+            inArray(parcoursAmoValidations.statut, STATUTS_SUIVIS),
             isNotNull(parcoursPrevention.archivedAt)
           ),
           // Refusées (toujours considérées comme archivées)
@@ -119,13 +129,13 @@ async function getDossiersWithArchiveFilter(
   const statusCondition =
     filter === "active"
       ? and(
-          eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
+          inArray(parcoursAmoValidations.statut, STATUTS_SUIVIS),
           isNull(parcoursPrevention.archivedAt)
         )
       : or(
-          // Acceptées + archivées manuellement
+          // EN_ATTENTE / LOGEMENT_ELIGIBLE + archivées manuellement
           and(
-            eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
+            inArray(parcoursAmoValidations.statut, STATUTS_SUIVIS),
             isNotNull(parcoursPrevention.archivedAt)
           ),
           // Refusées (toujours considérées comme archivées)
@@ -139,10 +149,14 @@ async function getDossiersWithArchiveFilter(
       nom: parcoursAmoValidations.userNom,
       userPrenom: users.prenom,
       userNom: users.nom,
+      // valideeAt est NULL pour les EN_ATTENTE (invitations non encore validées).
+      // On retombe sur choisieAt côté présentation (cf. dateValidation plus bas).
       valideeAt: parcoursAmoValidations.valideeAt,
+      choisieAt: parcoursAmoValidations.choisieAt,
       statutValidation: parcoursAmoValidations.statut,
       parcoursId: parcoursAmoValidations.parcoursId,
       rgaSimulationData: parcoursPrevention.rgaSimulationData,
+      rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
       currentStep: parcoursPrevention.currentStep,
       currentStatus: parcoursPrevention.currentStatus,
       parcoursUpdatedAt: parcoursPrevention.updatedAt,
@@ -151,7 +165,8 @@ async function getDossiersWithArchiveFilter(
     .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
     .innerJoin(users, eq(users.id, parcoursPrevention.userId))
     .where(and(entrepriseAmoId ? eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId) : undefined, statusCondition))
-    .orderBy(asc(parcoursAmoValidations.valideeAt));
+    // Tri par `choisieAt` (toujours rempli) plutôt que `valideeAt` (NULL pour EN_ATTENTE).
+    .orderBy(asc(parcoursAmoValidations.choisieAt));
 
   // Pour chaque dossier, récupère le dsStatus de l'étape courante
   const dossiersWithDsStatus = await Promise.all(
@@ -167,18 +182,24 @@ async function getDossiersWithArchiveFilter(
         )
         .limit(1);
 
+      // Pour les EN_ATTENTE (invitations), pas de simulation côté demandeur :
+      // on retombe sur la simulation pré-remplie par l'agent (`rgaSimulationDataAgent`).
+      const logement = row.rgaSimulationData?.logement ?? row.rgaSimulationDataAgent?.logement;
+
       return {
         id: row.id,
         parcoursId: row.parcoursId,
         prenom: row.prenom || row.userPrenom,
         nom: row.nom || row.userNom,
-        commune: row.rgaSimulationData?.logement?.commune_nom ?? null,
-        codeDepartement: row.rgaSimulationData?.logement?.code_departement ?? null,
+        commune: logement?.commune_nom ?? null,
+        codeDepartement: logement?.code_departement ?? null,
         etape: row.currentStep,
         statut: row.currentStatus,
         statutValidation: row.statutValidation,
         dsStatus: dossierDS[0]?.dsStatus ?? null,
-        dateValidation: row.valideeAt!,
+        // Pour EN_ATTENTE, valideeAt est NULL → fallback sur choisieAt
+        // (date de création de la validation = date d'invitation).
+        dateValidation: row.valideeAt ?? row.choisieAt,
         dateDernierStatut: row.parcoursUpdatedAt!,
       };
     })

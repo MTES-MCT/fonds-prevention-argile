@@ -9,6 +9,24 @@ vi.mock("@/shared/database/repositories", () => ({
     findOrCreateForUser: vi.fn(),
     updateRGADataAgent: vi.fn(),
   },
+  agentsRepo: {
+    // Par défaut on retourne un agent sans entrepriseAmoId (cas AV pur).
+    // Les tests qui veulent tester le chemin AMO peuvent le surcharger.
+    findById: vi.fn(async () => ({ id: "agent-1", entrepriseAmoId: null, allersVersId: "av-1" })),
+  },
+}));
+
+// Le service appelle `db.insert(parcoursAmoValidations).values(...).onConflictDoNothing(...)`
+// uniquement quand l'agent a un entrepriseAmoId. Stubé pour ne pas appeler
+// la BDD dans les tests (par défaut le mock agent ci-dessus court-circuite).
+vi.mock("@/shared/database/client", () => ({
+  db: {
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoNothing: vi.fn(async () => undefined),
+      })),
+    })),
+  },
 }));
 
 vi.mock("@/shared/email/actions/send-claim-dossier.actions", () => ({

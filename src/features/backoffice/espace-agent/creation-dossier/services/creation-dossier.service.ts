@@ -1,4 +1,8 @@
-import { userRepo, parcoursRepo } from "@/shared/database/repositories";
+import { userRepo, parcoursRepo, agentsRepo } from "@/shared/database/repositories";
+import { db } from "@/shared/database/client";
+import { parcoursAmoValidations } from "@/shared/database/schema";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
 import { generateSecureRandomString } from "@/features/auth/utils/oauth.utils";
 import { getServerEnv } from "@/shared/config/env.config";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
@@ -80,6 +84,36 @@ export async function createDossierByAgent(
     rgaSimulationDataAgent ?? (adresseBien ? buildMinimalAgentSimulation(adresseBien, adresseBienDetails) : null);
   if (simulationData) {
     await parcoursRepo.updateRGADataAgent(parcours.id, simulationData, agentId);
+  }
+
+  // 4 bis. Si l'agent est rattaché à une entreprise AMO (rôles AMO ou
+  // AMO_ET_ALLERS_VERS), on auto-crée une `parcours_amo_validations` en statut
+  // EN_ATTENTE. Cela rend le dossier visible immédiatement dans
+  // `/espace-agent/dossiers` côté AMO (la query joint sur cette table) et le
+  // pré-claim côté liste prospects AV (qui exclut les parcours déjà validés).
+  // Idempotent via ON CONFLICT (parcours_id) — utile pour les re-créations.
+  const agent = await agentsRepo.findById(agentId);
+  if (agent?.entrepriseAmoId) {
+    const fullName = `${demandeur.prenom} ${demandeur.nom}`.trim();
+    const adresseLogement =
+      adresseBien ??
+      (rgaSimulationDataAgent?.logement?.adresse as string | undefined) ??
+      "";
+    await db
+      .insert(parcoursAmoValidations)
+      .values({
+        parcoursId: parcours.id,
+        entrepriseAmoId: agent.entrepriseAmoId,
+        statut: StatutValidationAmo.EN_ATTENTE,
+        attributionMode: AttributionAmoMode.MANUEL,
+        userPrenom: demandeur.prenom,
+        userNom: demandeur.nom,
+        userEmail: demandeur.email,
+        userTelephone: demandeur.telephone ?? "",
+        adresseLogement,
+        commentaire: `Invitation créée par ${fullName ? fullName + " — " : ""}agent AMO`,
+      })
+      .onConflictDoNothing({ target: parcoursAmoValidations.parcoursId });
   }
 
   // 5. Envoi optionnel du mail d'invitation

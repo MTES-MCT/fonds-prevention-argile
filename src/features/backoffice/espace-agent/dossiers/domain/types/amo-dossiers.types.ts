@@ -98,6 +98,9 @@ export function getPrecisionText(etape: Step, statut: Status, dsStatus: DSStatus
 
   // Cas par étape et statut
   switch (etape) {
+    case Step.INVITATION:
+      return "Invitation envoyée — en attente de connexion FranceConnect du demandeur.";
+
     case Step.CHOIX_AMO:
       return "Sélection AMO en cours.";
 
