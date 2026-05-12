@@ -5,9 +5,9 @@
  * pour chaque stat, avec les requetes equivalentes en SQL lisible.
  *
  * Usage :
- *   npx tsx scripts/verify-dashboard-stats.ts
- *   npx tsx scripts/verify-dashboard-stats.ts --periode 30j
- *   npx tsx scripts/verify-dashboard-stats.ts --periode 30j --departement 24
+ *   npx tsx scripts/ops/verify-dashboard-stats.ts
+ *   npx tsx scripts/ops/verify-dashboard-stats.ts --periode 30j
+ *   npx tsx scripts/ops/verify-dashboard-stats.ts --periode 30j --departement 24
  *
  * Prerequis : BDD locale avec donnees prod restaurees, .env.local configure.
  */
@@ -18,13 +18,13 @@ config({ path: ".env.local" });
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { count, and, gte, lt, eq, isNotNull, inArray, desc, sql } from "drizzle-orm";
-import * as schema from "../src/shared/database/schema";
-import { parcoursPrevention, parcoursAmoValidations, dossiersDemarchesSimplifiees } from "../src/shared/database/schema";
-import { prospectQualifications } from "../src/shared/database/schema/prospect-qualifications";
-import { StatutValidationAmo } from "../src/features/parcours/amo/domain/value-objects";
-import { EligibilityService } from "../src/features/simulateur/domain/services/eligibility.service";
-import { normalizeCodeDepartement, toOfficialCodeDepartement, getDepartementName } from "../src/shared/constants/departements.constants";
-import { asString } from "../src/shared/utils/object.utils";
+import * as schema from "@/shared/database/schema";
+import { parcoursPrevention, parcoursAmoValidations, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
+import { prospectQualifications } from "@/shared/database/schema/prospect-qualifications";
+import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
+import { normalizeCodeDepartement, toOfficialCodeDepartement, getDepartementName } from "@/shared/constants/departements.constants";
+import { asString } from "@/shared/utils/object.utils";
 
 // --- Config ---
 const args = process.argv.slice(2);

@@ -79,6 +79,6 @@ suffisante pour determiner si un batiment est en zone fort, moyen ou faible.
 | `src/shared/services/rga/rga-alea.service.ts`              | Valide les coordonnees et appelle le repository |
 | `src/shared/database/repositories/rga-zones.repository.ts` | Requete spatiale PostGIS (`ST_Intersects`)      |
 | `src/shared/services/bdnb/bdnb.service.ts`                 | Appel BDNB + override avec le resultat PostGIS  |
-| `scripts/import-rga-zones/import-rga-zones.ts`             | Script d'import du shapefile en local           |
-| `scripts/import-rga-zones/README.md`                       | Procedures d'import local et Scalingo           |
+| `scripts/import/rga-zones/import-rga-zones.ts`             | Script d'import du shapefile en local           |
+| `scripts/import/rga-zones/README.md`                       | Procedures d'import local et Scalingo           |
 | `public/map/style-carte-argile.json`                       | Style MapLibre avec URL du PMTiles              |

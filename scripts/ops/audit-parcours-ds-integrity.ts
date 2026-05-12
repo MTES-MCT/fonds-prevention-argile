@@ -12,10 +12,10 @@
  * AUCUNE ÉCRITURE EN BASE. AUCUN APPEL D'ÉCRITURE VERS DS.
  *
  * Usage :
- *   pnpm tsx scripts/audit-parcours-ds-integrity.ts
- *   pnpm tsx scripts/audit-parcours-ds-integrity.ts --csv=rapport.csv
- *   pnpm tsx scripts/audit-parcours-ds-integrity.ts --parcours-id=<uuid>
- *   pnpm tsx scripts/audit-parcours-ds-integrity.ts --anonymize   # masque les PII pour partage
+ *   pnpm tsx scripts/ops/audit-parcours-ds-integrity.ts
+ *   pnpm tsx scripts/ops/audit-parcours-ds-integrity.ts --csv=rapport.csv
+ *   pnpm tsx scripts/ops/audit-parcours-ds-integrity.ts --parcours-id=<uuid>
+ *   pnpm tsx scripts/ops/audit-parcours-ds-integrity.ts --anonymize   # masque les PII pour partage
  *
  * Prérequis : .env.local avec DATABASE_URL + DEMARCHES_SIMPLIFIEES_*
  */
@@ -29,7 +29,7 @@ import { createHash } from "node:crypto";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { and, eq, inArray, desc } from "drizzle-orm";
-import * as schema from "../src/shared/database/schema";
+import * as schema from "@/shared/database/schema";
 import {
   parcoursPrevention,
   users,
@@ -37,9 +37,9 @@ import {
   parcoursAmoValidations,
   parcoursCommentaires,
   entreprisesAmo,
-} from "../src/shared/database/schema";
-import { Step, STEP_LABELS } from "../src/shared/domain/value-objects/step.enum";
-import { DSStatus } from "../src/shared/domain/value-objects/ds-status.enum";
+} from "@/shared/database/schema";
+import { Step, STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 
 // --- Args ---
 const args = process.argv.slice(2);
