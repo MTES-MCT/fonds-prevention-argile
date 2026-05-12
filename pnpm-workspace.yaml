@@ -38,17 +38,17 @@ overrides:
   # Arbitrary requests via dev server (transitif via drizzle-kit)
   esbuild: "^0.25.0"
 
-onlyBuiltDependencies:
-  - "@next/swc-linux-x64-gnu"
-  - "@next/swc-darwin-arm64"
-  - "@next/swc-darwin-x64"
-  - "@next/swc-win32-x64-msvc"
-  - esbuild
-  - sharp
-
 trustPolicyExclude:
   # Types-only, runtime-safe. Voir https://github.com/nodejs/undici/issues/4666
   - undici-types
   # semver@6.x n'a plus de provenance attestation ; transitif via @babel/core
   # (dépendance dev-only de @vitejs/plugin-react) — pas de risque runtime
   - semver
+
+# Approbation explicite des scripts d'install natif (pnpm 11+).
+# Note : remplace `onlyBuiltDependencies` (ancien mécanisme pnpm 9-10, ignoré en 11).
+allowBuilds:
+  argon2: true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
