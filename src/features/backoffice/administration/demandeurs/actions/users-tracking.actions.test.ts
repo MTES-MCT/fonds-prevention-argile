@@ -44,6 +44,7 @@ describe("users-tracking.actions", () => {
       telephone: "0612345678",
       sourceAcquisition: null,
       sourceAcquisitionPrecision: null,
+      partnerSource: null,
       lastLogin: new Date("2024-01-15T10:00:00Z"),
       createdAt: new Date("2024-01-01T10:00:00Z"),
       updatedAt: new Date("2024-01-15T10:00:00Z"),

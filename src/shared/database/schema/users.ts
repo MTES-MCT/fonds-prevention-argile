@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   telephone: varchar("telephone", { length: 20 }),
   sourceAcquisition: sourceAcquisitionPgEnum("source_acquisition"),
   sourceAcquisitionPrecision: text("source_acquisition_precision"),
+  partnerSource: varchar("partner_source", { length: 50 }),
   lastLogin: timestamp("last_login", { mode: "date" }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" })

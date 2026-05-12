@@ -31,6 +31,7 @@ import {
   useAdministrationFiltersStore,
   selectPeriodeId,
   selectCodeDepartement,
+  selectPartner,
 } from "@/features/backoffice/administration/stores/administration-filters.store";
 
 export default function AcquisitionPanel() {
@@ -39,8 +40,10 @@ export default function AcquisitionPanel() {
 
   const periodeId = useAdministrationFiltersStore(selectPeriodeId);
   const codeDepartement = useAdministrationFiltersStore(selectCodeDepartement);
+  const partner = useAdministrationFiltersStore(selectPartner);
   const setPeriodeId = useAdministrationFiltersStore((s) => s.setPeriodeId);
   const setCodeDepartement = useAdministrationFiltersStore((s) => s.setCodeDepartement);
+  const setPartner = useAdministrationFiltersStore((s) => s.setPartner);
   const [departements, setDepartements] = useState<DepartementDisponible[]>([]);
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
   const [matomoSimuStats, setMatomoSimuStats] = useState<MatomoSimulationsStats | null>(null);
@@ -70,21 +73,21 @@ export default function AcquisitionPanel() {
   useEffect(() => {
     async function loadMatomoStats() {
       setFunnelLoading(true);
-      const result = await getStatistiquesAction(periodeId, codeDepartement || undefined);
+      const result = await getStatistiquesAction(periodeId, codeDepartement || undefined, partner);
       if (result.success) {
         setMatomoStats(result.data);
       }
       setFunnelLoading(false);
     }
     loadMatomoStats();
-  }, [periodeId, codeDepartement]);
+  }, [periodeId, codeDepartement, partner]);
 
   // Charger les stats BDD (rapide) quand les filtres changent
   const loadStats = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    const result = await getTableauDeBordStatsAction(periodeId, codeDepartement || undefined);
+    const result = await getTableauDeBordStatsAction(periodeId, codeDepartement || undefined, partner);
 
     if (result.success) {
       setStats(result.data);
@@ -93,7 +96,7 @@ export default function AcquisitionPanel() {
     }
 
     setLoading(false);
-  }, [periodeId, codeDepartement]);
+  }, [periodeId, codeDepartement, partner]);
 
   useEffect(() => {
     loadStats();
@@ -106,7 +109,7 @@ export default function AcquisitionPanel() {
     setMatomoLoaded(false);
 
     async function loadMatomoSimu() {
-      const result = await getMatomoSimulationsStatsAction(periodeId, codeDepartement || undefined);
+      const result = await getMatomoSimulationsStatsAction(periodeId, codeDepartement || undefined, partner);
       if (!cancelled) {
         if (result.success) {
           setMatomoSimuStats(result.data);
@@ -119,7 +122,7 @@ export default function AcquisitionPanel() {
     return () => {
       cancelled = true;
     };
-  }, [periodeId, codeDepartement]);
+  }, [periodeId, codeDepartement, partner]);
 
   // Charger le top departements Matomo (simulations toutes sources) quand les filtres changent
   useEffect(() => {
@@ -128,7 +131,7 @@ export default function AcquisitionPanel() {
     setTopDeptsLoading(true);
 
     async function loadTopDepts() {
-      const result = await getTopDepartementsMatomoAction(periodeId, codeDepartement || undefined);
+      const result = await getTopDepartementsMatomoAction(periodeId, codeDepartement || undefined, partner);
       if (!cancelled) {
         if (result.success) {
           setTopDepartementsMatomo(result.data);
@@ -141,7 +144,7 @@ export default function AcquisitionPanel() {
     return () => {
       cancelled = true;
     };
-  }, [periodeId, codeDepartement]);
+  }, [periodeId, codeDepartement, partner]);
 
   // Charger le top communes Matomo quand les filtres changent
   useEffect(() => {
@@ -150,7 +153,7 @@ export default function AcquisitionPanel() {
     setTopCommunesLoading(true);
 
     async function loadTopCommunes() {
-      const result = await getTopCommunesMatomoAction(periodeId, codeDepartement || undefined);
+      const result = await getTopCommunesMatomoAction(periodeId, codeDepartement || undefined, partner);
       if (!cancelled) {
         if (result.success) {
           setTopCommunesMatomo(result.data);
@@ -163,7 +166,7 @@ export default function AcquisitionPanel() {
     return () => {
       cancelled = true;
     };
-  }, [periodeId, codeDepartement]);
+  }, [periodeId, codeDepartement, partner]);
 
   // Agents DDT : vue departement uniquement
   if (isAnalyseDdt) {
@@ -207,6 +210,9 @@ export default function AcquisitionPanel() {
                 departements={departements}
                 onPeriodeChange={setPeriodeId}
                 onDepartementChange={setCodeDepartement}
+                partner={partner}
+                onPartnerChange={setPartner}
+                showPartnerFilter
               />
             </div>
           </div>
@@ -255,7 +261,12 @@ export default function AcquisitionPanel() {
         <div className="fr-container">
           {activeTab === "simulateur" && (
             <div id="tab-acquisition-simulateur-panel" role="tabpanel">
-              <EntonnoirEligibilite stats={stats} matomoSimuStats={matomoSimuStats} matomoLoaded={matomoLoaded} loading={loading} />
+              <EntonnoirEligibilite
+                stats={stats}
+                matomoSimuStats={matomoSimuStats}
+                matomoLoaded={matomoLoaded}
+                loading={loading}
+              />
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
                 <div className="fr-col-12 fr-col-lg-6">
                   <DetailEtapesFunnel funnel={matomoStats?.funnelSimulateurRGA ?? null} loading={funnelLoading} />

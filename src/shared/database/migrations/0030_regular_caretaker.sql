@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "partner_source" varchar(50);

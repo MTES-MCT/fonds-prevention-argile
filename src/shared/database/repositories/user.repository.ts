@@ -89,9 +89,17 @@ export class UserRepository extends BaseRepository<User> {
   }
 
   /**
-   * Crée ou met à jour un utilisateur depuis FranceConnect
+   * Crée ou met à jour un utilisateur depuis FranceConnect.
+   *
+   * @param userInfo - Données FranceConnect
+   * @param options.partnerSource - Slug partenaire (ex: "maif") provenant du cookie posé sur le simulateur.
+   *   Persisté UNIQUEMENT à la création du user (pas écrasé sur les login suivants pour
+   *   conserver l'attribution d'origine).
    */
-  async upsertFromFranceConnect(userInfo: FranceConnectUserInfo): Promise<User> {
+  async upsertFromFranceConnect(
+    userInfo: FranceConnectUserInfo,
+    options?: { partnerSource?: string | null }
+  ): Promise<User> {
     const fcId = userInfo.sub;
 
     // Recherche de l'utilisateur existant
@@ -105,6 +113,11 @@ export class UserRepository extends BaseRepository<User> {
         nom: userInfo.family_name || existingUser.nom,
         prenom: userInfo.given_name || existingUser.prenom,
       };
+
+      // Backfill de partnerSource si l'utilisateur existe sans valeur (ex: user créé avant Phase B)
+      if (options?.partnerSource && !existingUser.partnerSource) {
+        updates.partnerSource = options.partnerSource;
+      }
 
       const updated = await this.update(existingUser.id, updates);
 
@@ -121,6 +134,7 @@ export class UserRepository extends BaseRepository<User> {
         nom: userInfo.family_name,
         prenom: userInfo.given_name,
         lastLogin: new Date(),
+        partnerSource: options?.partnerSource ?? null,
       });
     }
   }

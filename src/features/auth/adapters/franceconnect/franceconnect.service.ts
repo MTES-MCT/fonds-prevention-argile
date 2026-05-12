@@ -162,10 +162,16 @@ export function generateLogoutUrl(idToken: string, state?: string): string {
 
 /**
  * Traite le callback FranceConnect complet
+ *
+ * @param code - Code d'autorisation OIDC
+ * @param state - State CSRF
+ * @param options.partnerSource - Slug partenaire (ex: "maif") lu depuis le cookie `partner_source`
+ *   posé sur la page /connexion. Sauvegardé sur le user à la création (Phase B partner tracking).
  */
 export async function handleFranceConnectCallback(
   code: string,
-  state: string
+  state: string,
+  options?: { partnerSource?: string | null }
 ): Promise<{ success: boolean; error?: string; shouldLogout?: boolean }> {
   try {
     // 1. Vérifier le state
@@ -195,7 +201,10 @@ export async function handleFranceConnectCallback(
     const userInfo = await getUserInfo(tokens.access_token);
 
     // 5. Créer ou récupérer l'utilisateur en base
-    const user = await userRepo.upsertFromFranceConnect(userInfo);
+    // Le partnerSource est sauvegardé à la création (et backfillé si absent), pas écrasé sur les login suivants.
+    const user = await userRepo.upsertFromFranceConnect(userInfo, {
+      partnerSource: options?.partnerSource ?? null,
+    });
 
     // 6. Initialiser le parcours si première connexion
     await getOrCreateParcours(user.id);

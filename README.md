@@ -122,6 +122,16 @@ pnpm ci
 
 Installe les dépendances avec lockfile et lance la validation complète.
 
+## Documentation interne
+
+Documentation technique détaillée dans `docs/` :
+
+- [`docs/parcours/FLOW-AND-SYNC.md`](./docs/parcours/FLOW-AND-SYNC.md) — Flux du parcours utilisateur et synchronisation Démarches Simplifiées
+- [`docs/partners/PARTNER-TRACKING.md`](./docs/partners/PARTNER-TRACKING.md) — **Suivi des partenaires intégrant l'iframe** (MAIF, etc.) : détection, persistance via cookie + champ `users.partner_source`, filtrage backoffice, et procédure pour ajouter un nouveau partenaire
+- [`docs/testing/TESTING-AUTH.md`](./docs/testing/TESTING-AUTH.md) — Stratégie de tests pour l'authentification
+- [`docs/testing/TESTING-SIMULATEUR.md`](./docs/testing/TESTING-SIMULATEUR.md) — Stratégie de tests pour le simulateur
+- [`docs/security/snyk-accepted-vulnerabilities.md`](./docs/security/snyk-accepted-vulnerabilities.md) — Vulnérabilités acceptées suivies par Snyk
+
 ## Structure du projet
 
 ```

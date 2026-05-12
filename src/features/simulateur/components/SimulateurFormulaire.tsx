@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useSimulateurFormulaire } from "../hooks/useSimulateurFormulaire";
 import { SimulateurStep } from "../domain/value-objects/simulateur-step.enum";
 import { useMatomo } from "@/shared/components/Matomo/useMatomo";
 import { encryptRGAData } from "../actions/encrypt-rga-data.actions";
+import { resolvePartner } from "@/shared/domain/partners";
 
 // Steps
 import {
@@ -28,10 +29,18 @@ import { useSimulateurStore, selectEditMode } from "../stores/simulateur.store";
 import { getClientEnv } from "@/shared/config/env.config";
 import type { MatomoCustomDimension } from "@/shared/components/Matomo/useMatomo";
 
+interface SimulateurFormulaireProps {
+  /**
+   * Slug partenaire (ex: "maif"), si fourni en server-side via le param URL `?partner=`.
+   * Si absent, le composant détecte automatiquement via `document.referrer`.
+   */
+  partner?: string | null;
+}
+
 /**
  * Composant orchestrateur du simulateur d'éligibilité
  */
-export function SimulateurFormulaire() {
+export function SimulateurFormulaire({ partner: partnerProp = null }: SimulateurFormulaireProps = {}) {
   const {
     isLoading,
     currentStep,
@@ -51,6 +60,13 @@ export function SimulateurFormulaire() {
   const editMode = useSimulateurStore(selectEditMode);
   const { trackEvent } = useMatomo();
   const previousStepRef = useRef<SimulateurStep | null>(null);
+
+  // Résolution du partenaire : prop server (URL ?partner=) en priorité, sinon document.referrer
+  // Calculé une seule fois au montage (après hydratation, donc côté navigateur uniquement).
+  const partner = useMemo(() => {
+    if (typeof window === "undefined") return partnerProp ?? null;
+    return resolvePartner(partnerProp, document.referrer);
+  }, [partnerProp]);
 
   // Scroll to top à chaque changement d'étape
   useEffect(() => {
@@ -130,6 +146,11 @@ export function SimulateurFormulaire() {
   const handleContinueToFC = async () => {
     commitToRGAStore();
 
+    // Append le partenaire détecté à l'URL pour que la page /connexion puisse poser un cookie
+    // first-party qui survivra au redirect FranceConnect (cf. Phase B partner tracking).
+    const partnerQs = partner ? `&partner=${encodeURIComponent(partner)}` : "";
+    const baseUrl = `/connexion?redirect=/parcours${partnerQs}`;
+
     // Si on est dans une iframe, ouvrir dans une nouvelle fenêtre
     // Sinon, naviguer normalement
     const isInIframe = window !== window.parent;
@@ -137,22 +158,22 @@ export function SimulateurFormulaire() {
     if (isInIframe) {
       // En mode iframe, ouvrir la fenêtre AVANT l'appel async pour éviter le blocage popup Safari.
       // Safari n'autorise window.open() qu'en contexte synchrone d'un geste utilisateur.
-      const fcWindow = window.open("/connexion?redirect=/parcours", "_blank");
+      const fcWindow = window.open(baseUrl, "_blank");
 
       try {
         const result = await encryptRGAData(answers);
 
         if (result.success && fcWindow && !fcWindow.closed) {
           // Rediriger la fenêtre pré-ouverte avec les données chiffrées
-          fcWindow.location.href = `/connexion?redirect=/parcours#d=${result.encrypted}`;
+          fcWindow.location.href = `${baseUrl}#d=${result.encrypted}`;
         }
-        // Si chiffrement échoué, la fenêtre est déjà sur /connexion?redirect=/parcours (fallback OK)
+        // Si chiffrement échoué, la fenêtre est déjà sur le fallback OK
       } catch (error) {
         console.error("[SimulateurFormulaire] Server action encryptRGAData échouée (possible redéploiement):", error);
         // La fenêtre est déjà ouverte sur le fallback, rien à faire
       }
     } else {
-      window.location.href = "/connexion?redirect=/parcours";
+      window.location.href = baseUrl;
     }
   };
 

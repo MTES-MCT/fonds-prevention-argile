@@ -7,6 +7,7 @@ import { getScopeFilters } from "@/features/auth/permissions/services/agent-scop
 import type { ActionResult } from "@/shared/types";
 import type { Statistiques } from "../domain/types/statistiques.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import type { PartnerKey } from "@/shared/domain/partners";
 
 /**
  * Récupère les statistiques globales ou filtrées selon le scope de l'agent
@@ -16,7 +17,11 @@ import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-
  * Note : Pour les agents AMO, les statistiques Matomo (visiteurs, taux de rebond)
  * ne sont pas disponibles car elles sont globales au site.
  */
-export async function getStatistiquesAction(periodeId?: PeriodeId, codeDepartement?: string): Promise<ActionResult<Statistiques>> {
+export async function getStatistiquesAction(
+  periodeId?: PeriodeId,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<ActionResult<Statistiques>> {
   // Vérifier la permission de lecture des stats
   const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
 
@@ -31,7 +36,7 @@ export async function getStatistiquesAction(periodeId?: PeriodeId, codeDeparteme
     // Récupérer les filtres selon le scope de l'utilisateur
     const scopeFilters = await getScopeFilters();
 
-    const stats = await getStatistiques(scopeFilters, periodeId, codeDepartement);
+    const stats = await getStatistiques(scopeFilters, periodeId, codeDepartement, partner);
 
     return {
       success: true,

@@ -22,7 +22,12 @@ interface EntonnoirEligibiliteProps {
  *
  * Les stats Matomo sont la source unique pour les simulations (pas de fallback BDD).
  */
-export default function EntonnoirEligibilite({ stats, matomoSimuStats, matomoLoaded, loading }: EntonnoirEligibiliteProps) {
+export default function EntonnoirEligibilite({
+  stats,
+  matomoSimuStats,
+  matomoLoaded,
+  loading,
+}: EntonnoirEligibiliteProps) {
   // Matomo uniquement pour les simulations (pas de fallback BDD)
   const simulationsTerminees = matomoSimuStats?.simulationsMatomo ?? null;
   const eligibles = matomoSimuStats?.simulationsEligibles ?? null;

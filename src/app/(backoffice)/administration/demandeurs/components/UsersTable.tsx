@@ -7,6 +7,7 @@ import { UserWithParcoursDetails, EmailTrackingStatus } from "@/features/backoff
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects";
+import { PARTNER_LABELS, isPartnerKey } from "@/shared/domain/partners";
 
 interface UsersTableProps {
   users: UserWithParcoursDetails[];
@@ -233,6 +234,7 @@ export function UsersTable({ users }: UsersTableProps) {
                   <th scope="col">Prénom Nom</th>
                   <th scope="col">Commune (Dpt)</th>
                   <th scope="col">Date d'inscription</th>
+                  <th scope="col">Source</th>
                   <th scope="col">Étape en cours</th>
                   <th scope="col">Statut dossier</th>
                   <th scope="col">Validation</th>
@@ -252,6 +254,17 @@ export function UsersTable({ users }: UsersTableProps) {
 
                         {/* Date d'inscription */}
                         <td className="fr-text--sm">{formatDate(user.user.createdAt.toISOString())}</td>
+
+                        {/* Source partenaire (origine iframe) */}
+                        <td className="fr-text--sm">
+                          {user.user.partnerSource && isPartnerKey(user.user.partnerSource) ? (
+                            <span className="fr-badge fr-badge--sm fr-badge--blue-cumulus">
+                              {PARTNER_LABELS[user.user.partnerSource]}
+                            </span>
+                          ) : (
+                            <span style={{ color: "var(--text-mention-grey)" }}>—</span>
+                          )}
+                        </td>
 
                         {/* Étape en cours - Libellé */}
                         <td className="fr-text--sm">
@@ -286,7 +299,7 @@ export function UsersTable({ users }: UsersTableProps) {
                       {/* Ligne détail dépliable */}
                       {expandedUserId === user.user.id && (
                         <tr>
-                          <td colSpan={7}>
+                          <td colSpan={8}>
                             <div className="fr-p-4w" style={{ backgroundColor: "#f6f6f6" }}>
                               <UserDetailRow user={user} />
                             </div>

@@ -45,7 +45,9 @@ import {
   fetchMatomoUniqueVisitors,
   fetchMatomoSimulationsGroupedByDepartment,
   fetchMatomoSimulationsGroupedByDimension,
+  buildPartnerSegment,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
+import type { PartnerKey } from "@/shared/domain/partners";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getClientEnv } from "@/shared/config/env.config";
 
@@ -105,9 +107,11 @@ interface SimulationsMatomoResult {
 async function getSimulationsMatomo(
   debut: Date,
   fin: Date,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<SimulationsMatomoResult> {
   const dateRange = formatMatomoDateRange(debut, fin);
+  const partnerSegment = buildPartnerSegment(partner);
 
   let events: Map<string, number>;
 
@@ -120,9 +124,10 @@ async function getSimulationsMatomo(
     events = await fetchMatomoEventsByDepartment(codeDeptMatomo, dimensionId, {
       period: "range",
       date: dateRange,
+      extraSegment: partnerSegment,
     });
   } else {
-    events = await fetchMatomoEvents({ period: "range", date: dateRange });
+    events = await fetchMatomoEvents({ period: "range", date: dateRange, segment: partnerSegment });
   }
 
   const eligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE) ?? 0;
@@ -134,9 +139,14 @@ async function getSimulationsMatomo(
 /**
  * Recupere le nombre de visiteurs uniques depuis Matomo, avec filtrage departement optionnel.
  */
-async function getUniqueVisitors(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
+async function getUniqueVisitors(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<number> {
   const dateRange = formatMatomoDateRange(debut, fin);
-  let segment: string | undefined;
+  const segments: string[] = [];
 
   if (codeDepartement) {
     const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
@@ -144,10 +154,32 @@ async function getUniqueVisitors(debut: Date, fin: Date, codeDepartement?: strin
     if (!dimensionId) return 0;
 
     const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
-    segment = `dimension${dimensionId}==${codeDeptMatomo}`;
+    segments.push(`dimension${dimensionId}==${codeDeptMatomo}`);
   }
 
+  const partnerSegment = buildPartnerSegment(partner);
+  if (partnerSegment) segments.push(partnerSegment);
+
+  const segment = segments.length > 0 ? segments.join(";") : undefined;
+
   return fetchMatomoUniqueVisitors("range", dateRange, segment);
+}
+
+/**
+ * Helper : condition SQL filtrant les parcours selon l'origine partenaire.
+ *
+ * Utilise un EXISTS sur la table users pour ne pas multiplier les lignes (vs INNER JOIN).
+ * Filtre implicitement les parcours sans userId (anonymes) puisque users.id ne peut matcher null.
+ *
+ * À combiner avec les autres conditions via `and(...)`.
+ */
+function whereParcoursPartner(partner: PartnerKey | null | undefined) {
+  if (!partner) return undefined;
+  return sql`EXISTS (
+    SELECT 1 FROM ${users}
+    WHERE ${users.id} = ${parcoursPrevention.userId}
+    AND ${users.partnerSource} = ${partner}
+  )`;
 }
 
 /**
@@ -167,7 +199,12 @@ function whereDepartement(codeDept: string) {
 /**
  * Compte les parcours crees (proxy simulations) sur une periode et optionnellement un departement
  */
-async function countSimulations(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
+async function countSimulations(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<number> {
   const conditions = [
     gte(parcoursPrevention.createdAt, debut),
     lt(parcoursPrevention.createdAt, fin),
@@ -177,6 +214,8 @@ async function countSimulations(debut: Date, fin: Date, codeDepartement?: string
   if (codeDepartement) {
     conditions.push(whereDepartement(codeDepartement));
   }
+  const partnerCond = whereParcoursPartner(partner);
+  if (partnerCond) conditions.push(partnerCond);
 
   const result = await db
     .select({ count: count() })
@@ -193,7 +232,8 @@ async function countSimulations(debut: Date, fin: Date, codeDepartement?: string
 async function countSimulationsParEligibilite(
   debut: Date,
   fin: Date,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<{ eligibles: number; nonEligibles: number }> {
   const conditions = [
     gte(parcoursPrevention.createdAt, debut),
@@ -204,6 +244,8 @@ async function countSimulationsParEligibilite(
   if (codeDepartement) {
     conditions.push(whereDepartement(codeDepartement));
   }
+  const partnerCond = whereParcoursPartner(partner);
+  if (partnerCond) conditions.push(partnerCond);
 
   const parcours = await db
     .select({
@@ -233,7 +275,12 @@ async function countSimulationsParEligibilite(
 /**
  * Compte les comptes crees (parcours avec userId) sur une periode et optionnellement un departement
  */
-async function countComptesCrees(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
+async function countComptesCrees(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<number> {
   const conditions = [
     isNotNull(parcoursPrevention.userId),
     gte(parcoursPrevention.createdAt, debut),
@@ -244,6 +291,8 @@ async function countComptesCrees(debut: Date, fin: Date, codeDepartement?: strin
     conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
     conditions.push(whereDepartement(codeDepartement));
   }
+  const partnerCond = whereParcoursPartner(partner);
+  if (partnerCond) conditions.push(partnerCond);
 
   const result = await db
     .select({ count: count() })
@@ -256,20 +305,30 @@ async function countComptesCrees(debut: Date, fin: Date, codeDepartement?: strin
 /**
  * Compte les demandes AMO envoyees sur une periode et optionnellement un departement
  */
-async function countDemandesAmo(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
-  if (codeDepartement) {
+async function countDemandesAmo(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<number> {
+  // Si filtre departement OU partenaire, on doit join parcours pour appliquer la condition
+  if (codeDepartement || partner) {
+    const conditions = [
+      gte(parcoursAmoValidations.choisieAt, debut),
+      lt(parcoursAmoValidations.choisieAt, fin),
+    ];
+    if (codeDepartement) {
+      conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+      conditions.push(whereDepartement(codeDepartement));
+    }
+    const partnerCond = whereParcoursPartner(partner);
+    if (partnerCond) conditions.push(partnerCond);
+
     const result = await db
       .select({ count: count() })
       .from(parcoursAmoValidations)
       .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
-      .where(
-        and(
-          gte(parcoursAmoValidations.choisieAt, debut),
-          lt(parcoursAmoValidations.choisieAt, fin),
-          isNotNull(parcoursPrevention.rgaSimulationData),
-          whereDepartement(codeDepartement)
-        )
-      );
+      .where(and(...conditions));
     return result[0]?.count ?? 0;
   }
 
@@ -284,16 +343,26 @@ async function countDemandesAmo(debut: Date, fin: Date, codeDepartement?: string
  * Compte les demandes AMO envoyees sur la periode et encore en attente de reponse.
  * Permet de savoir si les demandes sont gerees assez rapidement.
  */
-async function countReponsesAmoEnAttente(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
+async function countReponsesAmoEnAttente(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<number> {
   const conditions = [
     gte(parcoursAmoValidations.choisieAt, debut),
     lt(parcoursAmoValidations.choisieAt, fin),
     eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE),
   ];
 
-  if (codeDepartement) {
-    conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
-    conditions.push(whereDepartement(codeDepartement));
+  const partnerCond = whereParcoursPartner(partner);
+
+  if (codeDepartement || partnerCond) {
+    if (codeDepartement) {
+      conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+      conditions.push(whereDepartement(codeDepartement));
+    }
+    if (partnerCond) conditions.push(partnerCond);
 
     const result = await db
       .select({ count: count() })
@@ -313,20 +382,29 @@ async function countReponsesAmoEnAttente(debut: Date, fin: Date, codeDepartement
 /**
  * Compte les dossiers Demarche Numerique crees sur une periode
  */
-async function countDossiersDN(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
-  if (codeDepartement) {
+async function countDossiersDN(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<number> {
+  if (codeDepartement || partner) {
+    const conditions = [
+      gte(dossiersDemarchesSimplifiees.createdAt, debut),
+      lt(dossiersDemarchesSimplifiees.createdAt, fin),
+    ];
+    if (codeDepartement) {
+      conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+      conditions.push(whereDepartement(codeDepartement));
+    }
+    const partnerCond = whereParcoursPartner(partner);
+    if (partnerCond) conditions.push(partnerCond);
+
     const result = await db
       .select({ count: count() })
       .from(dossiersDemarchesSimplifiees)
       .innerJoin(parcoursPrevention, eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id))
-      .where(
-        and(
-          gte(dossiersDemarchesSimplifiees.createdAt, debut),
-          lt(dossiersDemarchesSimplifiees.createdAt, fin),
-          isNotNull(parcoursPrevention.rgaSimulationData),
-          whereDepartement(codeDepartement)
-        )
-      );
+      .where(and(...conditions));
     return result[0]?.count ?? 0;
   }
 
@@ -340,7 +418,12 @@ async function countDossiersDN(debut: Date, fin: Date, codeDepartement?: string)
 /**
  * Compte les demandes archivees sur une periode
  */
-async function countDemandesArchivees(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
+async function countDemandesArchivees(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<number> {
   const conditions = [
     isNotNull(parcoursPrevention.archivedAt),
     gte(parcoursPrevention.archivedAt, debut),
@@ -351,6 +434,8 @@ async function countDemandesArchivees(debut: Date, fin: Date, codeDepartement?: 
     conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
     conditions.push(whereDepartement(codeDepartement));
   }
+  const partnerCond = whereParcoursPartner(partner);
+  if (partnerCond) conditions.push(partnerCond);
 
   const result = await db
     .select({ count: count() })
@@ -382,7 +467,8 @@ const SEUIL_HAUSSE_MOTIFS = 10;
 async function getArchiveReasonsDistribution(
   debut: Date,
   fin: Date,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<Map<string, number>> {
   const conditions = [
     isNotNull(parcoursPrevention.archivedAt),
@@ -395,6 +481,8 @@ async function getArchiveReasonsDistribution(
     conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
     conditions.push(whereDepartement(codeDepartement));
   }
+  const partnerCond = whereParcoursPartner(partner);
+  if (partnerCond) conditions.push(partnerCond);
 
   const rows = await db
     .select({
@@ -424,11 +512,12 @@ async function getDemandesArchiveesDetail(
   debut: Date,
   fin: Date,
   previousRange: { debut: Date; fin: Date } | null,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<DemandesArchiveesStats> {
-  const distributionActuelle = await getArchiveReasonsDistribution(debut, fin, codeDepartement);
+  const distributionActuelle = await getArchiveReasonsDistribution(debut, fin, codeDepartement, partner);
   const distributionPrecedente = previousRange
-    ? await getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement)
+    ? await getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement, partner)
     : new Map<string, number>();
 
   // Total archivées sur la période
@@ -470,13 +559,14 @@ async function getDemandesArchiveesDetail(
  */
 export async function getAutresDemandesArchiveesDetail(
   periodeId: PeriodeId,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<{ total: number; demandes: DemandeArchiveeDetail[] }> {
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 
   // Récupérer la distribution pour identifier les motifs hors top 5
-  const detail = await getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement);
+  const detail = await getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement, partner);
   const autresRaisons = detail.autresMotifs.map((m) => m.raison);
 
   if (autresRaisons.length === 0) {
@@ -496,6 +586,8 @@ export async function getAutresDemandesArchiveesDetail(
     conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
     conditions.push(whereDepartement(codeDepartement));
   }
+  const partnerCond = whereParcoursPartner(partner);
+  if (partnerCond) conditions.push(partnerCond);
 
   const rows = await db
     .select({
@@ -545,7 +637,8 @@ const INELIGIBLE_ARCHIVE_REASONS = ["Le demandeur n'est pas éligible", "Non él
 async function getIneligibiliteReasonsDistribution(
   debut: Date,
   fin: Date,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<{ distribution: Map<string, number>; totalParcours: number }> {
   const conditions = [
     isNotNull(parcoursPrevention.archivedAt),
@@ -558,6 +651,8 @@ async function getIneligibiliteReasonsDistribution(
     conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
     conditions.push(whereDepartement(codeDepartement));
   }
+  const partnerCond = whereParcoursPartner(partner);
+  if (partnerCond) conditions.push(partnerCond);
 
   // Récupérer les parcours inéligibles avec la dernière qualification associée
   const rows = await db
@@ -603,15 +698,17 @@ async function getDemandesIneligiblesDetail(
   debut: Date,
   fin: Date,
   previousRange: { debut: Date; fin: Date } | null,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<DemandesIneligiblesStats> {
   const { distribution: distributionActuelle, totalParcours } = await getIneligibiliteReasonsDistribution(
     debut,
     fin,
-    codeDepartement
+    codeDepartement,
+    partner
   );
   const { distribution: distributionPrecedente } = previousRange
-    ? await getIneligibiliteReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement)
+    ? await getIneligibiliteReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement, partner)
     : { distribution: new Map<string, number>() };
 
   if (totalParcours === 0) {
@@ -659,15 +756,16 @@ async function detecterMotifsEnHausse(
   debut: Date,
   fin: Date,
   previousRange: { debut: Date; fin: Date } | null,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<AlerteTendance[]> {
   if (!previousRange) {
     return [];
   }
 
   const [distributionActuelle, distributionPrecedente] = await Promise.all([
-    getArchiveReasonsDistribution(debut, fin, codeDepartement),
-    getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement),
+    getArchiveReasonsDistribution(debut, fin, codeDepartement, partner),
+    getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement, partner),
   ]);
 
   const motifsEnHausse: string[] = [];
@@ -715,8 +813,21 @@ function extractCodeDepartement(rgaSimulationData: unknown, rgaSimulationDataAge
  * Calcule les statistiques par département : simulations, éligibilité, dossiers DN, transformation.
  * Toujours global (pas de filtre département) pour permettre le classement.
  */
-async function getTopDepartementsStats(debut: Date, fin: Date): Promise<DepartementStats[]> {
+async function getTopDepartementsStats(
+  debut: Date,
+  fin: Date,
+  partner?: PartnerKey | null
+): Promise<DepartementStats[]> {
+  const partnerCond = whereParcoursPartner(partner);
+
   // Requête 1 : tous les parcours avec simulation sur la période
+  const parcoursConditions = [
+    gte(parcoursPrevention.createdAt, debut),
+    lt(parcoursPrevention.createdAt, fin),
+    isNotNull(parcoursPrevention.rgaSimulationData),
+  ];
+  if (partnerCond) parcoursConditions.push(partnerCond);
+
   const parcours = await db
     .select({
       id: parcoursPrevention.id,
@@ -725,15 +836,16 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
       rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
     })
     .from(parcoursPrevention)
-    .where(
-      and(
-        gte(parcoursPrevention.createdAt, debut),
-        lt(parcoursPrevention.createdAt, fin),
-        isNotNull(parcoursPrevention.rgaSimulationData)
-      )
-    );
+    .where(and(...parcoursConditions));
 
   // Requête 2 : dossiers DN avec données département du parcours
+  const dossiersConditions = [
+    gte(dossiersDemarchesSimplifiees.createdAt, debut),
+    lt(dossiersDemarchesSimplifiees.createdAt, fin),
+    isNotNull(parcoursPrevention.rgaSimulationData),
+  ];
+  if (partnerCond) dossiersConditions.push(partnerCond);
+
   const dossiers = await db
     .select({
       rgaSimulationData: parcoursPrevention.rgaSimulationData,
@@ -741,13 +853,7 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
     })
     .from(dossiersDemarchesSimplifiees)
     .innerJoin(parcoursPrevention, eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id))
-    .where(
-      and(
-        gte(dossiersDemarchesSimplifiees.createdAt, debut),
-        lt(dossiersDemarchesSimplifiees.createdAt, fin),
-        isNotNull(parcoursPrevention.rgaSimulationData)
-      )
-    );
+    .where(and(...dossiersConditions));
 
   // Grouper les simulations par département + évaluer l'éligibilité + compter les comptes
   const deptSimulations = new Map<string, { total: number; eligibles: number; comptes: number }>();
@@ -815,23 +921,29 @@ async function getTopDepartementsStats(debut: Date, fin: Date): Promise<Departem
  */
 export async function getTopDepartementsMatomo(
   periodeId: PeriodeId,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<DepartementStats[]> {
   const { debut, fin } = getDateRange(periodeId);
   const dateRange = formatMatomoDateRange(debut, fin);
+  const partnerSegment = buildPartnerSegment(partner);
 
   const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
   const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
 
   if (!dimensionId) {
     console.warn("[getTopDepartementsMatomo] NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID non configuré, fallback BDD");
-    return getTopDepartementsStats(debut, fin);
+    return getTopDepartementsStats(debut, fin, partner);
   }
 
   // Récupérer simulations Matomo par département + données BDD en parallèle
   const [matomoByDept, bddStats] = await Promise.all([
-    fetchMatomoSimulationsGroupedByDepartment(dimensionId, { period: "range", date: dateRange }),
-    getTopDepartementsStats(debut, fin),
+    fetchMatomoSimulationsGroupedByDepartment(dimensionId, {
+      period: "range",
+      date: dateRange,
+      extraSegment: partnerSegment,
+    }),
+    getTopDepartementsStats(debut, fin, partner),
   ]);
 
   if (matomoByDept.size === 0) {
@@ -884,13 +996,16 @@ export async function getTopDepartementsMatomo(
 async function getTopCommunesStats(
   debut: Date,
   fin: Date,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<CommuneSimulationsStats[]> {
   const conditions = [
     gte(parcoursPrevention.createdAt, debut),
     lt(parcoursPrevention.createdAt, fin),
     isNotNull(parcoursPrevention.rgaSimulationData),
   ];
+  const partnerCond = whereParcoursPartner(partner);
+  if (partnerCond) conditions.push(partnerCond);
 
   const parcours = await db
     .select({
@@ -930,26 +1045,29 @@ async function getTopCommunesStats(
  */
 export async function getTopCommunesMatomo(
   periodeId: PeriodeId,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<CommuneSimulationsStats[]> {
   const { debut, fin } = getDateRange(periodeId);
   const dateRange = formatMatomoDateRange(debut, fin);
+  const partnerSegment = buildPartnerSegment(partner);
 
   const communeDimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID;
   const communeDimensionId = communeDimensionIdStr ? Number(communeDimensionIdStr) : null;
 
   if (!communeDimensionId) {
-    return getTopCommunesStats(debut, fin, codeDepartement);
+    return getTopCommunesStats(debut, fin, codeDepartement, partner);
   }
 
   try {
     const matomoByCommune = await fetchMatomoSimulationsGroupedByDimension(communeDimensionId, {
       period: "range",
       date: dateRange,
+      extraSegment: partnerSegment,
     });
 
     if (matomoByCommune.size === 0) {
-      return getTopCommunesStats(debut, fin, codeDepartement);
+      return getTopCommunesStats(debut, fin, codeDepartement, partner);
     }
 
     const result: CommuneSimulationsStats[] = [];
@@ -965,7 +1083,7 @@ export async function getTopCommunesMatomo(
     // Trier et garder le top 5
     return result.sort((a, b) => b.simulations - a.simulations).slice(0, 5);
   } catch {
-    return getTopCommunesStats(debut, fin, codeDepartement);
+    return getTopCommunesStats(debut, fin, codeDepartement, partner);
   }
 }
 
@@ -974,7 +1092,8 @@ export async function getTopCommunesMatomo(
  */
 export async function getTableauDeBordStats(
   periodeId: PeriodeId,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<TableauDeBordStats> {
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
@@ -994,18 +1113,18 @@ export async function getTableauDeBordStats(
     topDepartements,
     topCommunes,
   ] = await Promise.all([
-    countSimulations(debut, fin, codeDepartement),
-    countSimulationsParEligibilite(debut, fin, codeDepartement),
-    countComptesCrees(debut, fin, codeDepartement),
-    countDemandesAmo(debut, fin, codeDepartement),
-    countReponsesAmoEnAttente(debut, fin, codeDepartement),
-    countDossiersDN(debut, fin, codeDepartement),
-    countDemandesArchivees(debut, fin, codeDepartement),
-    detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement),
-    getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement),
-    getDemandesIneligiblesDetail(debut, fin, previousRange, codeDepartement),
-    getTopDepartementsStats(debut, fin),
-    getTopCommunesStats(debut, fin, codeDepartement),
+    countSimulations(debut, fin, codeDepartement, partner),
+    countSimulationsParEligibilite(debut, fin, codeDepartement, partner),
+    countComptesCrees(debut, fin, codeDepartement, partner),
+    countDemandesAmo(debut, fin, codeDepartement, partner),
+    countReponsesAmoEnAttente(debut, fin, codeDepartement, partner),
+    countDossiersDN(debut, fin, codeDepartement, partner),
+    countDemandesArchivees(debut, fin, codeDepartement, partner),
+    detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement, partner),
+    getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement, partner),
+    getDemandesIneligiblesDetail(debut, fin, previousRange, codeDepartement, partner),
+    getTopDepartementsStats(debut, fin, partner),
+    getTopCommunesStats(debut, fin, codeDepartement, partner),
   ]);
 
   const tauxTransformation = simulations > 0 ? Math.round((comptes / simulations) * 1000) / 10 : 0;
@@ -1033,13 +1152,13 @@ export async function getTableauDeBordStats(
       prevDossiersDN,
       prevArchivees,
     ] = await Promise.all([
-      countSimulations(previousRange.debut, previousRange.fin, codeDepartement),
-      countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement),
-      countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement),
-      countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement),
-      countReponsesAmoEnAttente(previousRange.debut, previousRange.fin, codeDepartement),
-      countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement),
-      countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement),
+      countSimulations(previousRange.debut, previousRange.fin, codeDepartement, partner),
+      countSimulationsParEligibilite(previousRange.debut, previousRange.fin, codeDepartement, partner),
+      countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement, partner),
+      countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement, partner),
+      countReponsesAmoEnAttente(previousRange.debut, previousRange.fin, codeDepartement, partner),
+      countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement, partner),
+      countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement, partner),
     ]);
 
     const prevTaux = prevSimulations > 0 ? Math.round((prevComptes / prevSimulations) * 1000) / 10 : 0;
@@ -1085,24 +1204,27 @@ export async function getTableauDeBordStats(
  */
 export async function getMatomoSimulationsStats(
   periodeId: PeriodeId,
-  codeDepartement?: string
+  codeDepartement?: string,
+  partner?: PartnerKey | null
 ): Promise<MatomoSimulationsStats> {
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 
   const matomoFallback: SimulationsMatomoResult = { eligible: 0, nonEligible: 0, total: 0 };
 
-  // Comptes crees BDD + visiteurs uniques Matomo (en parallele)
+  // Comptes crees BDD (filtrés par partenaire via users.partner_source) + visiteurs uniques Matomo (en parallele)
   const [currentMatomo, comptes, prevMatomo, prevComptes, currentVisitors, prevVisitors] = await Promise.all([
-    getSimulationsMatomo(debut, fin, codeDepartement).catch(() => matomoFallback),
-    countComptesCrees(debut, fin, codeDepartement),
+    getSimulationsMatomo(debut, fin, codeDepartement, partner).catch(() => matomoFallback),
+    countComptesCrees(debut, fin, codeDepartement, partner),
     previousRange
-      ? getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement).catch(() => matomoFallback)
+      ? getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement, partner).catch(() => matomoFallback)
       : Promise.resolve(matomoFallback),
-    previousRange ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement) : Promise.resolve(0),
-    getUniqueVisitors(debut, fin, codeDepartement).catch(() => 0),
     previousRange
-      ? getUniqueVisitors(previousRange.debut, previousRange.fin, codeDepartement).catch(() => 0)
+      ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement, partner)
+      : Promise.resolve(0),
+    getUniqueVisitors(debut, fin, codeDepartement, partner).catch(() => 0),
+    previousRange
+      ? getUniqueVisitors(previousRange.debut, previousRange.fin, codeDepartement, partner).catch(() => 0)
       : Promise.resolve(0),
   ]);
 
@@ -1235,9 +1357,14 @@ function computeEligibiliteCounts(
 /**
  * Récupère les statistiques d'éligibilité avec variations.
  */
-export async function getEligibiliteStats(periodeId: PeriodeId, codeDepartement?: string): Promise<EligibiliteStats> {
+export async function getEligibiliteStats(
+  periodeId: PeriodeId,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<EligibiliteStats> {
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
+  const partnerCond = whereParcoursPartner(partner);
 
   // Requête : tous les parcours avec simulation sur la période
   const conditions = [
@@ -1248,6 +1375,7 @@ export async function getEligibiliteStats(periodeId: PeriodeId, codeDepartement?
   if (codeDepartement) {
     conditions.push(whereDepartement(codeDepartement));
   }
+  if (partnerCond) conditions.push(partnerCond);
 
   const parcoursResult = await db
     .select({
@@ -1270,6 +1398,7 @@ export async function getEligibiliteStats(periodeId: PeriodeId, codeDepartement?
     if (codeDepartement) {
       prevConditions.push(whereDepartement(codeDepartement));
     }
+    if (partnerCond) prevConditions.push(partnerCond);
 
     const prevResult = await db
       .select({
@@ -1283,7 +1412,7 @@ export async function getEligibiliteStats(periodeId: PeriodeId, codeDepartement?
   }
 
   // Top 5 départements (réutilise la fonction existante)
-  const allDepts = await getTopDepartementsStats(debut, fin);
+  const allDepts = await getTopDepartementsStats(debut, fin, partner);
   const top5Depts = allDepts
     .sort((a, b) => b.simulations - a.simulations)
     .slice(0, 5)
@@ -1294,7 +1423,7 @@ export async function getEligibiliteStats(periodeId: PeriodeId, codeDepartement?
     }));
 
   // Top 5 communes (réutilise la fonction existante)
-  const topCommunes = await getTopCommunesStats(debut, fin, codeDepartement);
+  const topCommunes = await getTopCommunesStats(debut, fin, codeDepartement, partner);
 
   // Assembler les résultats avec variations
   const tranchesRevenus = {} as Record<TrancheRevenuRga, { valeur: number; variation: number | null }>;
