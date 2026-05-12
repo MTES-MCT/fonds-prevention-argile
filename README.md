@@ -233,6 +233,44 @@ pnpm build
 pnpm start
 ```
 
+### Déploiement Scalingo
+
+L'app est déployée sur Scalingo via le [`nodejs-buildpack`](https://github.com/Scalingo/nodejs-buildpack) officiel. Le `Procfile` n'utilise **volontairement pas** `pnpm` au runtime — on appelle directement les shims `./node_modules/.bin/{next,tsx}`.
+
+#### Pourquoi pas `pnpm start` ?
+
+À chaque invocation, pnpm 11 exécute `runDepsStatusCheck`, un check d'intégrité interne du `node_modules`. Sur Scalingo, ce check détecte systématiquement une divergence après le packaging slug (le tar/détar de Scalingo casse les hardlinks que pnpm utilise pour son content-addressable store dans `node_modules/.pnpm/`). Pnpm décide alors de purger `node_modules` et de réinstaller les 637 packages — au boot du conteneur web. Trois symptômes possibles selon la config :
+
+| Config pnpm | Comportement au boot | Résultat |
+|---|---|---|
+| Défaut | Prompt "purger ?" → pas de TTY → `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY` | App ne démarre jamais |
+| `confirmModulesPurge: false` dans `pnpm-workspace.yaml` | Purge silencieuse + `pnpm install` → ~45s pour 637 packages | `SIGKILL` (timeout boot Scalingo = 60s) |
+| `PNPM_SKIP_PRUNING=true` côté env Scalingo | Aucun effet : cette variable contrôle uniquement le prune au BUILD, pas le check runtime de pnpm | Idem ci-dessus |
+
+Sources : [pnpm#9966](https://github.com/pnpm/pnpm/issues/9966) (breaking change v10.16+), [Scalingo nodejs-buildpack CHANGELOG](https://github.com/Scalingo/nodejs-buildpack/blob/master/CHANGELOG.md).
+
+#### La solution
+
+Le `Procfile` invoque directement les shims du `node_modules/.bin/`, sans passer par pnpm :
+
+```procfile
+postdeploy: ... ./node_modules/.bin/tsx src/shared/database/migrate.ts ...
+web: ./node_modules/.bin/next start
+```
+
+**Attention** : ne pas préfixer par `node`. Les `.bin/*` sont des **shims shell** (`#!/bin/sh`) qui exécutent ensuite Node ; les invoquer via `node node_modules/.bin/next` fait crasher Node avec un `SyntaxError` (Node essaie de parser le bash comme du JS). Les shims utilisent `exec` en interne, donc `SIGTERM` se propage correctement à Node (le process shell est remplacé, pas wrappé).
+
+Cette approche est aussi [explicitement recommandée par la doc Scalingo](https://doc.scalingo.com/languages/nodejs/start) : les wrappers package manager (pnpm/yarn/npm) ne forwardent pas correctement `SIGTERM` au process Node, ce qui empêche un shutdown gracieux ([pnpm#2653](https://github.com/pnpm/pnpm/issues/2653)).
+
+#### Pré-requis
+
+Pour que ce mécanisme fonctionne, **`next` et `tsx` doivent être en `dependencies`** (pas `devDependencies`) — sinon le buildpack les prune après le build et `node_modules/.bin/*` est vide au runtime.
+
+#### Garde-fous résiduels
+
+- `confirmModulesPurge: false` reste configuré dans `pnpm-workspace.yaml`. Inutile pour le démarrage du conteneur web (pnpm n'y tourne plus), mais filet de sécurité pour les commandes one-shot (`scalingo run pnpm ...`).
+- Si quelqu'un re-introduit `pnpm` dans le `Procfile` un jour, les trois symptômes ci-dessus reviendront. Garder `node node_modules/.bin/*` comme convention.
+
 ### Docker
 
 Build et lancement avec Docker Compose :
