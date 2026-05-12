@@ -4,6 +4,18 @@ import { create } from "zustand";
 import type { BanAddressData } from "@/shared/adapters/ban";
 
 /**
+ * Intent du wizard : détermine le « chapeau » sous lequel l'agent crée le dossier.
+ *
+ * - `amo` (défaut) : entrée depuis `/espace-agent/dossiers` (rôles AMO ou
+ *   AMO_ET_ALLERS_VERS). Le dossier est claim sur l'entreprise AMO de l'agent
+ *   via `parcours_amo_validations`. Redirect post-création : `/dossiers`.
+ * - `av` : entrée depuis `/espace-agent/prospects` (rôles ALLERS_VERS ou
+ *   AMO_ET_ALLERS_VERS). Aucun claim AMO même si l'agent en a une. Redirect
+ *   post-création : `/prospects`.
+ */
+export type WizardIntent = "amo" | "av";
+
+/**
  * Étapes inline du wizard AV. Toujours 4 étapes affichées dans la ProgressBar.
  *
  * Mode "sans simulation" : choix → identité → contact (+ adresse) → envoi email
@@ -38,10 +50,12 @@ interface CreationDossierState {
   wantsSimulation: boolean | null;
   demandeur: DemandeurForm;
   sendEmail: boolean;
+  intent: WizardIntent;
 
   setWantsSimulation: (value: boolean) => void;
   updateDemandeur: (patch: Partial<DemandeurForm>) => void;
   setSendEmail: (value: boolean) => void;
+  setIntent: (intent: WizardIntent) => void;
   goTo: (step: WizardStep) => void;
   next: () => void;
   previous: () => void;
@@ -62,6 +76,7 @@ export const useCreationDossierStore = create<CreationDossierState>((set, get) =
   wantsSimulation: null,
   demandeur: { ...INITIAL_DEMANDEUR },
   sendEmail: true,
+  intent: "amo",
 
   setWantsSimulation: (value) => set({ wantsSimulation: value }),
   updateDemandeur: (patch) =>
@@ -69,6 +84,7 @@ export const useCreationDossierStore = create<CreationDossierState>((set, get) =
       demandeur: { ...state.demandeur, ...patch },
     })),
   setSendEmail: (value) => set({ sendEmail: value }),
+  setIntent: (intent) => set({ intent }),
   goTo: (step) => set({ currentStep: step }),
 
   next: () => {
@@ -91,6 +107,9 @@ export const useCreationDossierStore = create<CreationDossierState>((set, get) =
       wantsSimulation: null,
       demandeur: { ...INITIAL_DEMANDEUR },
       sendEmail: true,
+      // Note : `intent` n'est PAS reset par défaut — il est posé une seule fois
+      // au mount du wizard depuis le param URL. Reset uniquement si on quitte
+      // complètement le flow de création (post-success redirect).
     }),
 }));
 

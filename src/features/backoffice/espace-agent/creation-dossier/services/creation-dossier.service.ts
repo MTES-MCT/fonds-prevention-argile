@@ -55,7 +55,15 @@ function buildMinimalAgentSimulation(adresseBien: string, details?: AdresseBienD
 export async function createDossierByAgent(
   params: CreateDossierByAgentParams
 ): Promise<CreateDossierByAgentResult> {
-  const { agentId, demandeur, adresseBien, adresseBienDetails, rgaSimulationDataAgent, sendEmail } = params;
+  const {
+    agentId,
+    demandeur,
+    adresseBien,
+    adresseBienDetails,
+    rgaSimulationDataAgent,
+    sendEmail,
+    intent = "amo",
+  } = params;
 
   // 1. Génération du claim token (+ expiration)
   const claimToken = generateSecureRandomString(48);
@@ -87,11 +95,12 @@ export async function createDossierByAgent(
     await parcoursRepo.updateRGADataAgent(parcours.id, simulationData, agentId);
   }
 
-  // 4 bis. Si l'agent est rattaché à une entreprise AMO (rôles AMO ou
-  // AMO_ET_ALLERS_VERS), on auto-crée une `parcours_amo_validations` qui
-  // claim le dossier sur cette entreprise AMO. Le statut dépend de ce qu'a
-  // fait l'AMO :
+  // 4 bis. Claim AMO auto, **uniquement en mode `amo`** (entrée /dossiers).
+  // En mode `av` (entrée /prospects), même si l'agent a un `entrepriseAmoId`
+  // (cas AMO_ET_ALLERS_VERS), on ne claim PAS sur cette entreprise — le
+  // dossier reste un prospect côté AV, exactement comme un AV pur.
   //
+  // Statut posé en mode `amo` :
   //   - Simulation complète fournie → l'AMO a déjà vérifié l'éligibilité.
   //     On évalue via `EligibilityService.evaluate` :
   //       - éligible     → LOGEMENT_ELIGIBLE + valideeAt = now (dossier suivi)
@@ -101,7 +110,8 @@ export async function createDossierByAgent(
   //
   // Idempotent via ON CONFLICT (parcours_id) — utile pour les re-créations.
   const agent = await agentsRepo.findById(agentId);
-  if (agent?.entrepriseAmoId) {
+  const shouldClaimAmo = !!agent?.entrepriseAmoId && intent === "amo";
+  if (shouldClaimAmo && agent?.entrepriseAmoId) {
     const fullName = `${demandeur.prenom} ${demandeur.nom}`.trim();
     const adresseLogement =
       adresseBien ??

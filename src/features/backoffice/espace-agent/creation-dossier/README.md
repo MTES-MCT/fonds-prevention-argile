@@ -8,7 +8,31 @@ Avant cette feature, un parcours ne pouvait exister qu'après connexion du deman
 
 ## Parcours utilisateur
 
-Bouton **"+ Nouveau dossier"** dans la page liste des dossiers (`/espace-agent/dossiers`), visible pour les rôles `AMO`, `ALLERS_VERS` et `AMO_ET_ALLERS_VERS` (permission `DOSSIERS_CREATE`).
+### Points d'entrée
+
+Deux entrées vers le wizard, selon le rôle de l'agent :
+
+| Page | Bouton « + Nouveau dossier » | Rôles | URL cible |
+|---|---|---|---|
+| `/espace-agent/dossiers` | ✅ | AMO + AMO_ET_ALLERS_VERS | `/dossiers/nouveau?intent=amo` |
+| `/espace-agent/prospects` | ✅ | ALLERS_VERS + AMO_ET_ALLERS_VERS | `/dossiers/nouveau?intent=av` |
+
+Le param URL **`?intent=av\|amo`** détermine le « chapeau » sous lequel l'agent agit :
+
+- **`intent=amo`** (entrée /dossiers) : le service `createDossierByAgent` **auto-claim** une `parcours_amo_validations` sur l'entreprise AMO de l'agent. Le dossier apparaît immédiatement dans /dossiers. Redirect post-création : `/dossiers`.
+- **`intent=av`** (entrée /prospects) : **pas** de claim AMO même si l'agent a un `entrepriseAmoId` (cas AMO_ET_ALLERS_VERS qui crée comme un AV). Le dossier reste un prospect. Redirect post-création : `/prospects`.
+
+L'intent est lu côté serveur dans `/dossiers/nouveau/page.tsx` + `/dossiers/nouveau/simulation/page.tsx` puis posé dans `useCreationDossierStore` au mount. Il est propagé jusqu'au call de `createDossierAllerVersAction` côté client.
+
+**Pourquoi URL plutôt qu'in-memory** : robuste au refresh, le `router.back()` du simulateur préserve l'URL, et l'intent est lisible dans les logs serveur.
+
+### Garde-fous
+
+- AV pur arrivant sur `/espace-agent/dossiers` → redirect server-side vers `/prospects` (la page AMO ne fonctionne pas pour lui de toute façon).
+- Forge `?intent=av` par un AMO pur → l'action retourne 400 (« Mode AV demandé mais agent non rattaché à un Aller-vers »).
+- Forge `?intent=amo` par un AV pur → le service détecte l'absence d'`entrepriseAmoId` et ne crée pas de validation. Dégradation gracieuse vers le comportement AV.
+
+### Étapes du wizard
 
 Le wizard (`/espace-agent/dossiers/nouveau`) a 4 étapes :
 
@@ -34,7 +58,9 @@ Mise en œuvre :
 Après création :
 
 - Si éligible (mode avec simulation) : email d'invitation envoyé au demandeur. Sinon : pas d'envoi.
-- Redirection vers la liste pertinente selon le rôle : AV / AMO_ET_ALLERS_VERS → `/espace-agent/prospects`, AMO pur → `/espace-agent/dossiers` (cf. `getPostCreationRedirectUrl`).
+- Redirection pilotée par l'`intent` du wizard (cf. `getPostCreationRedirectUrl(user, intent)`) :
+  - `intent=av` → `/espace-agent/prospects`
+  - `intent=amo` → `/espace-agent/dossiers` (ou `/prospects` en fallback si l'agent n'a pas d'`entrepriseAmoId`).
 
 ## Modèle de données
 
@@ -150,7 +176,8 @@ Pourquoi une permission dédiée plutôt que `PROSPECTS_VIEW` (utilisée auparav
 
 Côté pages :
 
-- `/espace-agent/dossiers` (bouton + Nouveau dossier) — autorise `AMO | ALLERS_VERS | AMO_ET_ALLERS_VERS`.
+- `/espace-agent/dossiers` : redirect server-side `→ /prospects` pour ALLERS_VERS pur (la page n'a pas de sens pour lui). Bouton « + Nouveau dossier » visible pour `AMO | AMO_ET_ALLERS_VERS`, lien `→ /dossiers/nouveau?intent=amo`.
+- `/espace-agent/prospects` : bouton « + Nouveau dossier » visible pour `ALLERS_VERS | AMO_ET_ALLERS_VERS`, lien `→ /dossiers/nouveau?intent=av`.
 - `/espace-agent/dossiers/nouveau` (wizard) — même check, redirige vers `/espace-agent/dossiers` sinon.
 - `/espace-agent/dossiers/nouveau/simulation` (page simulation sans paramètre — état en `useSimulateurStore` + `useCreationDossierStore`) — idem.
 

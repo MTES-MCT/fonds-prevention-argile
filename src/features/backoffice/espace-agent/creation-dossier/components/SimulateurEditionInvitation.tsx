@@ -10,7 +10,13 @@ import {
   selectIsEligible,
 } from "@/features/simulateur/stores/simulateur.store";
 import { SimulateurStep } from "@/features/simulateur/domain/value-objects/simulateur-step.enum";
+import { useCreationDossierStore, type WizardIntent } from "../stores/creation-dossier.store";
 import { ResultInvitation } from "./ResultInvitation";
+
+interface SimulateurEditionInvitationProps {
+  /** Intent lu depuis le param URL, propagé au wizard store. */
+  intent: WizardIntent;
+}
 
 /**
  * Variante AMO/AV de SimulateurEdition pour l'étape invitation.
@@ -32,11 +38,19 @@ import { ResultInvitation } from "./ResultInvitation";
  * le mode édition AMO. Compromis assumé : un agent ne fait pas de simulation
  * publique en parallèle d'un wizard invitation.
  */
-export function SimulateurEditionInvitation() {
+export function SimulateurEditionInvitation({ intent }: SimulateurEditionInvitationProps) {
   const router = useRouter();
   const reset = useSimulateurStore((state) => state.reset);
   const setEditMode = useSimulateurStore((state) => state.setEditMode);
+  const setIntent = useCreationDossierStore((s) => s.setIntent);
   const [isReady, setIsReady] = useState(false);
+
+  // Re-sync l'intent du wizard store au cas où on arrive ici via refresh direct
+  // sur /simulation?intent=… (le store in-memory aurait perdu la valeur posée
+  // par le wizard parent au mount initial).
+  useEffect(() => {
+    setIntent(intent);
+  }, [intent, setIntent]);
 
   useEffect(() => {
     reset();

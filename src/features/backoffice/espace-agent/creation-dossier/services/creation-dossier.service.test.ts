@@ -45,7 +45,8 @@ vi.mock("./inviter-name.service", () => ({
   getInviterName: vi.fn(async () => "Mairie de Test"),
 }));
 
-import { userRepo, parcoursRepo } from "@/shared/database/repositories";
+import { userRepo, parcoursRepo, agentsRepo } from "@/shared/database/repositories";
+import { db } from "@/shared/database/client";
 import { sendClaimDossierEmail } from "@/shared/email/actions/send-claim-dossier.actions";
 
 describe("createDossierByAgent", () => {
@@ -140,5 +141,39 @@ describe("createDossierByAgent", () => {
     const result = await createDossierByAgent(baseParams);
 
     expect(result.emailSent).toBe(false);
+  });
+
+  describe("intent=av : pas de claim AMO même si l'agent a un entrepriseAmoId", () => {
+    it("skip db.insert(parcoursAmoValidations) quand intent=av", async () => {
+      // Agent AMO_ET_ALLERS_VERS : a un entrepriseAmoId, mais entre via /prospects.
+      vi.mocked(agentsRepo.findById).mockResolvedValueOnce({
+        id: "agent-mixed",
+        entrepriseAmoId: "amo-42",
+        allersVersId: "av-7",
+      } as never);
+
+      const insertSpy = vi.mocked(db.insert);
+      insertSpy.mockClear();
+
+      await createDossierByAgent({ ...baseParams, intent: "av" });
+
+      // db.insert n'a pas dû être appelé pour parcoursAmoValidations
+      expect(insertSpy).not.toHaveBeenCalled();
+    });
+
+    it("appelle db.insert(parcoursAmoValidations) quand intent=amo (défaut)", async () => {
+      vi.mocked(agentsRepo.findById).mockResolvedValueOnce({
+        id: "agent-amo",
+        entrepriseAmoId: "amo-42",
+        allersVersId: null,
+      } as never);
+
+      const insertSpy = vi.mocked(db.insert);
+      insertSpy.mockClear();
+
+      await createDossierByAgent({ ...baseParams, intent: "amo" });
+
+      expect(insertSpy).toHaveBeenCalledTimes(1);
+    });
   });
 });

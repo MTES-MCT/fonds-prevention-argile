@@ -24,6 +24,7 @@ export function StepContact() {
 
   const demandeur = useCreationDossierStore((s) => s.demandeur);
   const wantsSimulation = useCreationDossierStore((s) => s.wantsSimulation);
+  const intent = useCreationDossierStore((s) => s.intent);
   const update = useCreationDossierStore((s) => s.updateDemandeur);
   const next = useCreationDossierStore((s) => s.next);
   const previous = useCreationDossierStore((s) => s.previous);
@@ -45,12 +46,14 @@ export function StepContact() {
   // Mode avec sim : on quitte le wizard inline pour rejoindre la page simulation.
   // Le dossier n'est PAS encore créé en DB → la création se fait au clic final
   // dans ResultInvitation (avec demandeur + simulation complète en un seul appel).
+  // On propage `?intent=…` dans l'URL pour que la page simulation soit robuste
+  // au refresh (et que le router.back() ramène ici avec l'intent intact).
   const handleNext = () => {
     if (!wantsSimulation) {
       next();
       return;
     }
-    router.push(`/espace-agent/dossiers/nouveau/simulation`);
+    router.push(`/espace-agent/dossiers/nouveau/simulation?intent=${intent}`);
   };
 
   return (

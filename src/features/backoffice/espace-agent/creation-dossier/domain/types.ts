@@ -42,6 +42,11 @@ export interface CreateDossierByAgentParams {
   rgaSimulationDataAgent?: RGASimulationData;
   /** Envoie un email d'invitation au demandeur avec un lien de claim. */
   sendEmail: boolean;
+  /**
+   * Intent du wizard. `amo` (défaut) : claim AMO auto si l'agent a un
+   * `entrepriseAmoId`. `av` : pas de claim AMO, le dossier reste prospect.
+   */
+  intent?: "amo" | "av";
 }
 
 export interface CreateDossierByAgentResult {

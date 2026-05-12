@@ -35,6 +35,7 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
   const router = useRouter();
   const answers = useSimulateurStore(selectAnswers);
   const demandeur = useCreationDossierStore((s) => s.demandeur);
+  const intent = useCreationDossierStore((s) => s.intent);
   const resetWizard = useCreationDossierStore((s) => s.reset);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +72,7 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
         rgaSimulationDataAgent: fullRgaData,
         // Cas éligible : envoi auto du mail d'invitation. Sinon : pas d'envoi.
         sendEmail: isEligible,
+        intent,
       });
 
       if (!result.success) {

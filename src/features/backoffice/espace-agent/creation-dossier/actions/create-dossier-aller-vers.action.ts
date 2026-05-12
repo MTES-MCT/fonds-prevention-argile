@@ -49,9 +49,19 @@ const createDossierSchema = z.object({
   // Simulation complète optionnelle (parcours 2). On laisse le service stocker tel quel.
   rgaSimulationDataAgent: z.unknown().optional(),
   sendEmail: z.boolean(),
+  /**
+   * Intent du wizard : détermine le « chapeau » sous lequel l'agent agit.
+   * - `amo` (défaut) : entrée /dossiers → claim AMO auto, redirect /dossiers.
+   * - `av` : entrée /prospects → pas de claim AMO, redirect /prospects.
+   */
+  intent: z.enum(["amo", "av"]).optional().default("amo"),
 });
 
-type CreateDossierInput = z.infer<typeof createDossierSchema>;
+// Note : on utilise `z.input<>` plutôt que `z.infer<>` (= `z.output<>`) parce
+// que `intent` a un `.default("amo")` côté Zod → en sortie c'est requis, en
+// entrée c'est optionnel. Les callers (steps du wizard) doivent pouvoir omettre
+// `intent` quand ils ne l'ont pas (cas legacy / tests).
+type CreateDossierInput = z.input<typeof createDossierSchema>;
 
 /**
  * Crée un dossier pour un demandeur à l'initiative d'un agent (AMO ou Aller-vers).
@@ -91,6 +101,16 @@ export async function createDossierAllerVersAction(
       return { success: false, error: firstError };
     }
 
+    // Garde-fou : mode AV exige que l'agent soit rattaché à un Aller-vers.
+    // Évite qu'un AMO pur forçant `?intent=av` crée un dossier "fantôme"
+    // (pas de claim AMO + pas de visibilité côté prospects sans territoire).
+    if (parsed.data.intent === "av" && !user.allersVersId) {
+      return {
+        success: false,
+        error: "Mode AV demandé mais agent non rattaché à un Aller-vers",
+      };
+    }
+
     const result = await createDossierByAgent({
       agentId: user.agentId,
       demandeur: parsed.data.demandeur,
@@ -98,6 +118,7 @@ export async function createDossierAllerVersAction(
       adresseBienDetails: parsed.data.adresseBienDetails,
       rgaSimulationDataAgent: parsed.data.rgaSimulationDataAgent as RGASimulationData | undefined,
       sendEmail: parsed.data.sendEmail,
+      intent: parsed.data.intent,
     });
 
     revalidatePath("/espace-agent", "layout");
@@ -108,7 +129,7 @@ export async function createDossierAllerVersAction(
         parcoursId: result.parcoursId,
         claimUrl: result.claimUrl,
         emailSent: result.emailSent,
-        redirectUrl: getPostCreationRedirectUrl(user),
+        redirectUrl: getPostCreationRedirectUrl(user, parsed.data.intent),
       },
     };
   } catch (error) {

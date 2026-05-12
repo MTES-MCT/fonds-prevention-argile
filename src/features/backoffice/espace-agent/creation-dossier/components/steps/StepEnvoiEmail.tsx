@@ -14,6 +14,7 @@ export function StepEnvoiEmail() {
   const sendEmail = useCreationDossierStore((s) => s.sendEmail);
   const setSendEmail = useCreationDossierStore((s) => s.setSendEmail);
   const demandeur = useCreationDossierStore((s) => s.demandeur);
+  const intent = useCreationDossierStore((s) => s.intent);
   const reset = useCreationDossierStore((s) => s.reset);
   const previous = useCreationDossierStore((s) => s.previous);
 
@@ -32,6 +33,7 @@ export function StepEnvoiEmail() {
         // au filtre territorial AV (`matchesTerritoire`) de retrouver le dossier.
         adresseBienDetails: demandeur.adresseBienDetails ?? undefined,
         sendEmail,
+        intent,
       });
 
       if (!result.success) {

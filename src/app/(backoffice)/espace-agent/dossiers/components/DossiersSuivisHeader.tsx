@@ -36,7 +36,7 @@ export function DossiersSuivisHeader({ nombreDossiers, canCreateDossier = false 
         </div>
         {canCreateDossier && (
           <Link
-            href="/espace-agent/dossiers/nouveau"
+            href="/espace-agent/dossiers/nouveau?intent=amo"
             className="fr-btn fr-icon-add-line fr-btn--icon-left self-start md:self-center">
             Nouveau dossier
           </Link>

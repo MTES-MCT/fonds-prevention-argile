@@ -1,16 +1,26 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import {
   useCreationDossierStore,
   WizardStep,
   TOTAL_STEPS,
   getDisplayedStepNumber,
+  type WizardIntent,
 } from "../stores/creation-dossier.store";
 import { StepChoixMode } from "./steps/StepChoixMode";
 import { StepIdentite } from "./steps/StepIdentite";
 import { StepContact } from "./steps/StepContact";
 import { StepEnvoiEmail } from "./steps/StepEnvoiEmail";
+
+interface CreationDossierWizardProps {
+  /**
+   * Intent du wizard, lu côté serveur depuis `?intent=av|amo` et propagé ici.
+   * Posé dans le store au mount pour piloter le claim AMO et le redirect final.
+   */
+  intent: WizardIntent;
+}
 
 /**
  * Titre affiché dans le stepper sous "Étape X sur N".
@@ -23,12 +33,20 @@ function getStepperTitle(wantsSimulation: boolean | null): string | null {
     : "Création de dossier sans simulation d’éligibilité";
 }
 
-export function CreationDossierWizard() {
+export function CreationDossierWizard({ intent }: CreationDossierWizardProps) {
   const currentStep = useCreationDossierStore((s) => s.currentStep);
   const wantsSimulation = useCreationDossierStore((s) => s.wantsSimulation);
+  const setIntent = useCreationDossierStore((s) => s.setIntent);
   const totalSteps = TOTAL_STEPS;
   const displayedStep = getDisplayedStepNumber(currentStep, wantsSimulation);
   const stepperTitle = getStepperTitle(wantsSimulation);
+
+  // Synchronise l'intent du store avec celui passé en prop (issu du param URL).
+  // Important : utilise un useEffect, pas un set dans le render — sinon les
+  // sélecteurs Zustand provoquent une boucle.
+  useEffect(() => {
+    setIntent(intent);
+  }, [intent, setIntent]);
 
   return (
     <>

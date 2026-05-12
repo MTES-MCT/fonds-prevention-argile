@@ -4,6 +4,10 @@ import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/s
 import { UserRole } from "@/shared/domain/value-objects";
 import { SimulateurEditionInvitation } from "@/features/backoffice/espace-agent/creation-dossier/components/SimulateurEditionInvitation";
 
+interface PageProps {
+  searchParams: Promise<{ intent?: string }>;
+}
+
 /**
  * Étape 3/4 du wizard (mode avec simulation) : simulation d'éligibilité
  * remplie par l'agent (AMO ou Aller-vers). Affichée dans le layout wizard
@@ -12,8 +16,11 @@ import { SimulateurEditionInvitation } from "@/features/backoffice/espace-agent/
  * Le wizard store (`useCreationDossierStore`, in-memory) conserve les
  * informations du demandeur saisies aux étapes précédentes — on les relit
  * dans `ResultInvitation` au moment de la création.
+ *
+ * Le param URL `?intent=av|amo` est lu et propagé via `SimulateurEditionInvitation`
+ * pour résister à un refresh sur cette page.
  */
-export default async function CreationDossierSimulationPage() {
+export default async function CreationDossierSimulationPage({ searchParams }: PageProps) {
   const access = await resolveEspaceAgentAccess();
   if (access.kind === "error") redirect("/espace-agent/dossiers");
 
@@ -21,6 +28,9 @@ export default async function CreationDossierSimulationPage() {
   if (role !== UserRole.AMO && role !== UserRole.ALLERS_VERS && role !== UserRole.AMO_ET_ALLERS_VERS) {
     redirect("/espace-agent/dossiers");
   }
+
+  const { intent: rawIntent } = await searchParams;
+  const intent: "av" | "amo" = rawIntent === "av" ? "av" : "amo";
 
   return (
     <>
@@ -58,7 +68,7 @@ export default async function CreationDossierSimulationPage() {
           <div className="fr-grid-row fr-grid-row--center">
             <div className="fr-col-12 fr-col-md-10 fr-col-lg-8">
               <div className="bg-white fr-p-6w">
-                <SimulateurEditionInvitation />
+                <SimulateurEditionInvitation intent={intent} />
               </div>
             </div>
           </div>
