@@ -43,6 +43,7 @@ describe("createDossierByAgent", () => {
       telephone: "0600000000",
       sourceAcquisition: null,
       sourceAcquisitionPrecision: null,
+      partnerSource: null,
       claimToken: "token-abc",
       claimTokenExpiresAt: new Date(),
       claimedAt: null,

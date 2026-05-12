@@ -1,6 +1,6 @@
 {
   "id": "65902e2d-37c9-4ce3-ad46-1ccce994553c",
-  "prevId": "2b34216d-fca0-494c-a839-e67c46c9fa54",
+  "prevId": "0ef0628a-febe-43cf-8376-b0a42f6c6337",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -964,6 +964,12 @@
         "source_acquisition_precision": {
           "name": "source_acquisition_precision",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "partner_source": {
+          "name": "partner_source",
+          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": false
         },

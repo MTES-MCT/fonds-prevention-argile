@@ -28,6 +28,7 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
     telephone: null,
     sourceAcquisition: null,
     sourceAcquisitionPrecision: null,
+    partnerSource: null,
     claimToken: "token-valid",
     claimTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
     claimedAt: null,
