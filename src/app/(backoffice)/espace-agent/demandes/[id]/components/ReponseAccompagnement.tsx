@@ -24,6 +24,7 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
     statutActuel !== StatutValidationAmo.EN_ATTENTE ? (statutActuel as StatutValidationAmo) : ""
   );
   const [commentaire, setCommentaire] = useState("");
+  const [precisionAutre, setPrecisionAutre] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,10 +42,18 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
     }
 
     // Validation de la raison pour le cas "non éligible"
+    let commentairePayload = commentaire.trim();
     if (choix === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
       if (!commentaire) {
         setError("Veuillez sélectionner une raison d'inéligibilité");
         return;
+      }
+      if (commentaire === "autre") {
+        if (precisionAutre.trim().length < 10) {
+          setError("Veuillez préciser la raison en au moins 10 caractères");
+          return;
+        }
+        commentairePayload = `Autre : ${precisionAutre.trim()}`;
       }
     }
 
@@ -59,7 +68,7 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
           result = await accepterAccompagnement(demandeId);
           break;
         case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
-          result = await refuserDemandeNonEligible(demandeId, commentaire.trim());
+          result = await refuserDemandeNonEligible(demandeId, commentairePayload);
           break;
       }
 
@@ -147,6 +156,23 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
                 </option>
               ))}
             </select>
+            {commentaire === "autre" && (
+              <div className="fr-input-group fr-mt-2w">
+                <label className="fr-label" htmlFor="precision-autre-input">
+                  Précisez la raison
+                  <span className="fr-hint-text">Minimum 10 caractères</span>
+                </label>
+                <input
+                  className="fr-input"
+                  type="text"
+                  id="precision-autre-input"
+                  value={precisionAutre}
+                  onChange={(e) => setPrecisionAutre(e.target.value)}
+                  disabled={isSubmitting || alreadyProcessed}
+                  placeholder="Précisez la raison"
+                />
+              </div>
+            )}
           </div>
         )}
 
