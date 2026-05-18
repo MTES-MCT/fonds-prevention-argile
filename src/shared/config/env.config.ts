@@ -120,6 +120,9 @@ const serverSchema = z.object({
   BREVO_WEBHOOK_SECRET: z.string().min(32, "BREVO_WEBHOOK_SECRET doit faire au moins 32 caractères"),
   EMAIL_FROM: z.string().email("EMAIL_FROM doit être une adresse email valide"),
 
+  // Redirection des mails sortants (staging). Cf. README.
+  EMAIL_DEV_INBOX: z.string().email().optional(),
+
   RGA_ENCRYPTION_KEY: z.string().min(32),
   JWT_SECRET: z.string().min(32),
   BASE_URL: z.string().url().default("http://localhost:3000"),
@@ -157,6 +160,25 @@ const sharedSchema = z.object({
 });
 
 // ==========================================
+// Garde-fous EMAIL_DEV_INBOX
+// ==========================================
+
+const ALLOWED_DEV_INBOX_DOMAINS = ["beta.gouv.fr"] as const;
+
+export function assertEmailDevInboxSafety(isProd: boolean, emailDevInbox: string | undefined): void {
+  if (!emailDevInbox) return;
+
+  if (isProd) {
+    throw new Error("EMAIL_DEV_INBOX not allowed in production");
+  }
+
+  const domain = emailDevInbox.split("@")[1]?.toLowerCase();
+  if (!domain || !ALLOWED_DEV_INBOX_DOMAINS.includes(domain as (typeof ALLOWED_DEV_INBOX_DOMAINS)[number])) {
+    throw new Error(`EMAIL_DEV_INBOX domain not allowed (allowed: ${ALLOWED_DEV_INBOX_DOMAINS.join(", ")})`);
+  }
+}
+
+// ==========================================
 // Getters avec lazy loading
 // ==========================================
 
@@ -175,6 +197,14 @@ export function getServerEnv() {
       throw new Error("Invalid server environment variables");
     }
     _serverEnv = result.data;
+
+    assertEmailDevInboxSafety(isProduction(), _serverEnv.EMAIL_DEV_INBOX);
+
+    if (_serverEnv.EMAIL_DEV_INBOX) {
+      console.warn(
+        `[EMAIL] redirect active → ${_serverEnv.EMAIL_DEV_INBOX} (env=${getSharedEnv().NEXT_PUBLIC_APP_ENV})`
+      );
+    }
   }
 
   return _serverEnv;

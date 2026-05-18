@@ -49,6 +49,7 @@ Le mode d'AMO appliqué à chaque demandeur dépend de son département. La conf
 **Tout département non listé dans ces deux variables retombe sur le mode `FACULTATIF`** : le demandeur choisit lui-même s'il souhaite être accompagné ("Oui" → 1er AMO du territoire, "Non" → skip vers Éligibilité).
 
 **Format** : codes département séparés par virgules. Le zéro initial est optionnel (`03` et `3` sont équivalents). Exemples valides :
+
 - `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE=03,36,47,54,81`
 - `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES=` (vide explicite)
 - `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES=63` (pour basculer 63 en mode AV/AMO fusionnés)
@@ -271,6 +272,26 @@ Pour que ce mécanisme fonctionne, **`next` et `tsx` doivent être en `dependenc
 - `confirmModulesPurge: false` reste configuré dans `pnpm-workspace.yaml`. Inutile pour le démarrage du conteneur web (pnpm n'y tourne plus), mais filet de sécurité pour les commandes one-shot (`scalingo run pnpm ...`).
 - Si quelqu'un re-introduit `pnpm` dans le `Procfile` un jour, les trois symptômes ci-dessus reviendront. Garder `node node_modules/.bin/*` comme convention.
 
+### Tester les emails sur staging
+
+Sur staging, les utilisateurs FranceConnect Sandbox ont des emails synthétiques non monitorables, donc impossible de vérifier les mails envoyés par l'app. La variable `EMAIL_DEV_INBOX` redirige tous les mails Brevo vers **une boîte privée de ton choix**, en gardant Brevo en transport (iso-prod). Le destinataire original apparaît dans le sujet : `[STAGING → real@target.com] <sujet>`.
+
+```bash
+scalingo --app fonds-argile-staging env-set EMAIL_DEV_INBOX=ta-boite-privee@example.fr
+scalingo --app fonds-argile-staging env-unset EMAIL_DEV_INBOX     # pour désactiver
+```
+
+Au boot, le log `[EMAIL] DEV REDIRECT ACTIVE (env=staging) → ...` confirme l'activation.
+
+**Garde-fous** (`assertEmailDevInboxSafety` dans `env.config.ts`) :
+- L'app **refuse de démarrer** si `EMAIL_DEV_INBOX` est setée en production.
+- Seul le domaine `@beta.gouv.fr` est accepté comme destination (allowlist hardcodée). Pour ajouter un domaine : modifier `ALLOWED_DEV_INBOX_DOMAINS` dans le code.
+- En local, Mailhog ([localhost:8025](http://localhost:8025)) reste actif ; `EMAIL_DEV_INBOX` n'agit que sur la branche Brevo.
+
+**Pourquoi pas Mailhog sur staging ?** Pour garder Brevo (templates, deliverability, bounces, rate limits) réellement dans la boucle — sinon staging perd sa raison d'être. À reconsidérer si le quota Brevo sature.
+
+**Code** : `src/shared/email/utils/dev-redirect.utils.ts` (helper), appelé dans `sendViaBrevo` de `email.service.ts`.
+
 ### Docker
 
 Build et lancement avec Docker Compose :
@@ -332,6 +353,7 @@ Le workflow utilise une **matrix [staging, production]** sur les **GitHub Enviro
 #### Vue d'historique
 
 `/administration/synchronisations` (super-admin uniquement) affiche :
+
 - la liste paginée des runs (date, durée, statut succès/partiel/erreur, trigger CRON/manuel, totaux) ;
 - le détail d'un run avec, pour chaque parcours touché, les transitions d'étape, les changements DS détectés et l'éventuelle erreur.
 

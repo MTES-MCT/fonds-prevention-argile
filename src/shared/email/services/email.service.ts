@@ -2,6 +2,7 @@ import { BrevoClient } from "@getbrevo/brevo";
 import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
 import { emailConfig, isEmailEnabled, isLocalDevelopment } from "../config/email.config";
+import { applyEmailDevRedirect } from "../utils/dev-redirect.utils";
 import { createDebugLogger } from "@/shared/utils/debug.utils";
 
 interface SendEmailParams {
@@ -115,7 +116,7 @@ export class EmailService {
   }
 
   /**
-   * Envoi via Brevo (staging/production)
+   * Envoi via Brevo (staging/production).
    */
   private async sendViaBrevo(params: SendEmailParams): Promise<SendEmailResult> {
     if (!this.brevoClient || !isEmailEnabled()) {
@@ -126,8 +127,12 @@ export class EmailService {
       };
     }
 
+    const effective = applyEmailDevRedirect(params);
+
     try {
-      const recipients = Array.isArray(params.to) ? params.to.map((email) => ({ email })) : [{ email: params.to }];
+      const recipients = Array.isArray(effective.to)
+        ? effective.to.map((email) => ({ email }))
+        : [{ email: effective.to }];
 
       const result = await this.brevoClient.transactionalEmails.sendTransacEmail({
         sender: {
@@ -135,10 +140,10 @@ export class EmailService {
           name: emailConfig.from.name,
         },
         to: recipients,
-        subject: params.subject,
-        htmlContent: params.html,
-        textContent: params.text,
-        replyTo: params.replyTo || emailConfig.replyTo,
+        subject: effective.subject,
+        htmlContent: effective.html,
+        textContent: effective.text,
+        replyTo: effective.replyTo || emailConfig.replyTo,
       });
 
       return {
