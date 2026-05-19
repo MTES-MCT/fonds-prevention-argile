@@ -6,16 +6,14 @@ import type { DossierItem, DossiersTerritoireFilters } from "../domain/types/dos
 import type { ActionResult } from "@/shared/types";
 
 export interface DossiersTerritoireData {
-  suivis: DossierItem[];
-  archives: DossierItem[];
-  nombreSuivis: number;
-  nombreArchives: number;
+  dossiers: DossierItem[];
+  total: number;
 }
 
 /**
- * Récupère les dossiers du territoire de l'agent connecté, séparés en suivis
- * (actifs) et archivés. Le rôle (y compris SUPER_ADMINISTRATEUR) est porté
- * directement par l'agent — `calculateAgentScope` gère le branchement.
+ * Récupère les dossiers du territoire de l'agent connecté. Le filtrage par
+ * type de responsable (AV/AMO/Ménage/DDT/Archivés) et par EPCI est fait côté
+ * UI sur la liste unifiée.
  */
 export async function getDossiersTerritoireDataAction(
   filters?: DossiersTerritoireFilters
@@ -37,17 +35,9 @@ export async function getDossiersTerritoireDataAction(
       filters
     );
 
-    const suivis = dossiers.filter((d) => d.archivedAt === null);
-    const archives = dossiers.filter((d) => d.archivedAt !== null);
-
     return {
       success: true,
-      data: {
-        suivis,
-        archives,
-        nombreSuivis: suivis.length,
-        nombreArchives: archives.length,
-      },
+      data: { dossiers, total: dossiers.length },
     };
   } catch (error) {
     console.error("[getDossiersTerritoireDataAction] Erreur:", error);

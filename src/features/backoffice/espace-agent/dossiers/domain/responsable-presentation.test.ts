@@ -6,6 +6,7 @@ import {
   getDossierStepLabel,
   getResponsableBadge,
   getDossierPrecisionLabel,
+  getResponsableTabLabel,
 } from "./responsable-presentation";
 
 describe("getDossierStepLabel", () => {
@@ -83,5 +84,19 @@ describe("getDossierPrecisionLabel", () => {
       { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE }
     );
     expect(text).toMatch(/diagnostic/i);
+  });
+});
+
+describe("getResponsableTabLabel", () => {
+  it("retourne le prefix seul sans département", () => {
+    expect(getResponsableTabLabel("AV", [])).toBe("AV");
+  });
+
+  it("suffixe avec le code département s'il y en a un seul", () => {
+    expect(getResponsableTabLabel("AMO", ["36"])).toBe("AMO 36");
+  });
+
+  it("indique le nombre de départements pour plusieurs", () => {
+    expect(getResponsableTabLabel("AV", ["36", "91", "75"])).toBe("AV (3)");
   });
 });

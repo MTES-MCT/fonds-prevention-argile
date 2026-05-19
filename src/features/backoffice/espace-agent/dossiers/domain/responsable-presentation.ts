@@ -29,6 +29,18 @@ export function getResponsableDisplayName(responsable: Responsable): string {
   }
 }
 
+export type ResponsableTabId = "tous" | "AV" | "AMO" | "MENAGE" | "DDT" | "ARCHIVE";
+
+/**
+ * Construit le libellé d'un onglet « En attente de » en suffixant
+ * éventuellement avec le ou les départements présents dans le scope.
+ */
+export function getResponsableTabLabel(prefix: string, codesDepartement: string[]): string {
+  if (codesDepartement.length === 0) return prefix;
+  if (codesDepartement.length === 1) return `${prefix} ${codesDepartement[0]}`;
+  return `${prefix} (${codesDepartement.length})`;
+}
+
 /**
  * Libellés d'étape conformes à la maquette du listing dossiers.
  */

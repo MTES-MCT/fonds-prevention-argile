@@ -1,39 +1,73 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   getDossiersTerritoireDataAction,
   type DossiersTerritoireData,
 } from "@/features/backoffice/espace-agent/dossiers/actions/get-dossiers-territoire-data.action";
-import { DOSSIER_STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain";
-import { Step } from "@/shared/domain/value-objects/step.enum";
+import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
+import {
+  getResponsableTabLabel,
+  type ResponsableTabId,
+} from "@/features/backoffice/espace-agent/dossiers/domain";
 import { DossiersSuivisHeader } from "./DossiersSuivisHeader";
 import { DossiersSuivisTable } from "./DossiersSuivisTable";
 import { Pagination } from "@/shared/components/Pagination/Pagination";
-import Link from "next/link";
 
 interface DossiersPanelProps {
   /** Affiche le bouton "+ Nouveau dossier" (rôles AMO et/ou Aller-vers). */
   canCreateDossier?: boolean;
 }
 
+const TAB_IDS: ResponsableTabId[] = ["tous", "AV", "AMO", "MENAGE", "DDT", "ARCHIVE"];
+
+/** Filtre une liste de dossiers selon l'onglet « En attente de ». */
+function filterByTab(dossiers: DossierItem[], tab: ResponsableTabId): DossierItem[] {
+  if (tab === "tous") return dossiers.filter((d) => d.responsable.type !== "ARCHIVE");
+  return dossiers.filter((d) => d.responsable.type === tab);
+}
+
+function getDeptsForTab(dossiers: DossierItem[], tab: ResponsableTabId): string[] {
+  const set = new Set<string>();
+  for (const d of filterByTab(dossiers, tab)) {
+    if (d.responsable.type === "AV" || d.responsable.type === "AMO") {
+      if (d.responsable.codeDepartement) set.add(d.responsable.codeDepartement);
+    }
+  }
+  return Array.from(set).sort();
+}
+
+function getTabLabel(tab: ResponsableTabId, dossiers: DossierItem[]): string {
+  switch (tab) {
+    case "tous":
+      return "Tous";
+    case "AV":
+      return getResponsableTabLabel("AV", getDeptsForTab(dossiers, "AV"));
+    case "AMO":
+      return getResponsableTabLabel("AMO", getDeptsForTab(dossiers, "AMO"));
+    case "MENAGE":
+      return "Ménage";
+    case "DDT":
+      return "Instruction DDT";
+    case "ARCHIVE":
+      return "Archivés";
+  }
+}
+
 /**
- * Panel unifié des dossiers — onglets Suivis / Archivés.
- * Visible par tous les agents (AMO, AV, hybride, super-admin) ; le scope
- * territorial est appliqué côté server action.
+ * Panel unifié des dossiers — onglets par responsable, filtre EPCI et recherche.
  */
 export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps = {}) {
   const [data, setData] = useState<DossiersTerritoireData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [pageSuivis, setPageSuivis] = useState(1);
-  const [pageSizeSuivis, setPageSizeSuivis] = useState(20);
-  const [pageArchives, setPageArchives] = useState(1);
-  const [pageSizeArchives, setPageSizeArchives] = useState(20);
-
-  const [filterEtapeSuivis, setFilterEtapeSuivis] = useState<Step | "">("");
-  const [filterEtapeArchives, setFilterEtapeArchives] = useState<Step | "">("");
+  const [activeTab, setActiveTab] = useState<ResponsableTabId>("tous");
+  const [epciFilter, setEpciFilter] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const loadData = useCallback(async () => {
     try {
@@ -54,6 +88,43 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Liste des EPCI distincts présents pour peupler le filtre.
+  const availableEpcis = useMemo(() => {
+    if (!data) return [];
+    const set = new Set<string>();
+    for (const d of data.dossiers) {
+      if (d.logement.codeEpci) set.add(d.logement.codeEpci);
+    }
+    return Array.from(set).sort();
+  }, [data]);
+
+  const counters = useMemo(() => {
+    const map: Record<ResponsableTabId, number> = { tous: 0, AV: 0, AMO: 0, MENAGE: 0, DDT: 0, ARCHIVE: 0 };
+    if (!data) return map;
+    for (const tab of TAB_IDS) map[tab] = filterByTab(data.dossiers, tab).length;
+    return map;
+  }, [data]);
+
+  const visible = useMemo(() => {
+    if (!data) return [];
+    const byTab = filterByTab(data.dossiers, activeTab);
+    const byEpci = epciFilter ? byTab.filter((d) => d.logement.codeEpci === epciFilter) : byTab;
+    if (!search.trim()) return byEpci;
+    const q = search.trim().toLowerCase();
+    return byEpci.filter((d) => {
+      const nom = `${d.particulier.prenom} ${d.particulier.nom}`.toLowerCase();
+      const commune = d.logement.commune?.toLowerCase() ?? "";
+      return nom.includes(q) || commune.includes(q);
+    });
+  }, [data, activeTab, epciFilter, search]);
+
+  const paginated = visible.slice((page - 1) * pageSize, page * pageSize);
+
+  const handleTabChange = (tab: ResponsableTabId) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
 
   if (isLoading) {
     return (
@@ -84,151 +155,106 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
     );
   }
 
-  if (!data) {
-    return null;
-  }
-
-  const handlePageSizeSuivisChange = (size: number) => {
-    setPageSizeSuivis(size);
-    setPageSuivis(1);
-  };
-
-  const handlePageSizeArchivesChange = (size: number) => {
-    setPageSizeArchives(size);
-    setPageArchives(1);
-  };
-
-  const handleFilterEtapeSuivisChange = (value: string) => {
-    setFilterEtapeSuivis(value as Step | "");
-    setPageSuivis(1);
-  };
-
-  const handleFilterEtapeArchivesChange = (value: string) => {
-    setFilterEtapeArchives(value as Step | "");
-    setPageArchives(1);
-  };
-
-  const filteredSuivis = filterEtapeSuivis
-    ? data.suivis.filter((d) => d.currentStep === filterEtapeSuivis)
-    : data.suivis;
-  const paginatedSuivis = filteredSuivis.slice((pageSuivis - 1) * pageSizeSuivis, pageSuivis * pageSizeSuivis);
-
-  const filteredArchives = filterEtapeArchives
-    ? data.archives.filter((d) => d.currentStep === filterEtapeArchives)
-    : data.archives;
-  const paginatedArchives = filteredArchives.slice(
-    (pageArchives - 1) * pageSizeArchives,
-    pageArchives * pageSizeArchives
-  );
+  if (!data) return null;
 
   return (
     <>
-      <DossiersSuivisHeader nombreDossiers={data.nombreSuivis} canCreateDossier={canCreateDossier} />
+      <DossiersSuivisHeader nombreDossiers={data.total} canCreateDossier={canCreateDossier} />
       <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
         <div className="fr-container">
           <div className="fr-tabs">
-            <ul className="fr-tabs__list" role="tablist" aria-label="Dossiers">
-              <li role="presentation">
-                <button
-                  type="button"
-                  id="tab-suivis"
-                  className="fr-tabs__tab"
-                  tabIndex={0}
-                  role="tab"
-                  aria-selected="true"
-                  aria-controls="tab-suivis-panel">
-                  <p className="fr-badge fr-badge--sm fr-mr-2v fr-badge--blue-cumulus">{data.nombreSuivis}</p>
-                  Suivis
-                </button>
-              </li>
-              <li role="presentation">
-                <button
-                  type="button"
-                  id="tab-archives"
-                  className="fr-tabs__tab"
-                  tabIndex={-1}
-                  role="tab"
-                  aria-selected="false"
-                  aria-controls="tab-archives-panel">
-                  <p className="fr-badge fr-badge--sm fr-mr-2v fr-badge--blue-cumulus">{data.nombreArchives}</p>
-                  Archivés
-                </button>
-              </li>
+            <ul className="fr-tabs__list" role="tablist" aria-label="Dossiers par responsable">
+              {TAB_IDS.map((tab) => (
+                <li key={tab} role="presentation">
+                  <button
+                    type="button"
+                    id={`tab-${tab}`}
+                    className="fr-tabs__tab"
+                    tabIndex={activeTab === tab ? 0 : -1}
+                    role="tab"
+                    aria-selected={activeTab === tab}
+                    aria-controls="tab-active-panel"
+                    onClick={() => handleTabChange(tab)}>
+                    <p className="fr-badge fr-badge--sm fr-mr-2v fr-badge--blue-cumulus">{counters[tab]}</p>
+                    {getTabLabel(tab, data.dossiers)}
+                  </button>
+                </li>
+              ))}
             </ul>
+
             <div
-              id="tab-suivis-panel"
+              id="tab-active-panel"
               className="fr-tabs__panel fr-tabs__panel--selected"
               role="tabpanel"
-              aria-labelledby="tab-suivis"
+              aria-labelledby={`tab-${activeTab}`}
               tabIndex={0}>
-              {data.nombreSuivis === 0 ? (
-                <div className="fr-alert fr-alert--info">
-                  <h3 className="fr-alert__title">Aucun dossier suivi sur votre territoire</h3>
-                  <p>Les nouveaux dossiers du territoire apparaîtront ici.</p>
+              <div className="fr-grid-row fr-grid-row--gutters fr-mb-2w">
+                <div className="fr-col-12 fr-col-md-6">
+                  <div className="fr-input-group">
+                    <label className="fr-label" htmlFor="dossiers-search">
+                      Rechercher
+                    </label>
+                    <input
+                      className="fr-input"
+                      id="dossiers-search"
+                      type="search"
+                      placeholder="Nom du demandeur, commune..."
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                        setPage(1);
+                      }}
+                    />
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <div className="fr-select-group" style={{ maxWidth: "300px", marginLeft: "auto" }}>
-                    <label className="fr-label" htmlFor="filtre-etape-suivis">
-                      Étape
+                <div className="fr-col-12 fr-col-md-4">
+                  <div className="fr-select-group">
+                    <label className="fr-label" htmlFor="dossiers-epci">
+                      EPCI
                     </label>
                     <select
                       className="fr-select"
-                      id="filtre-etape-suivis"
-                      name="filtre-etape-suivis"
-                      value={filterEtapeSuivis}
-                      onChange={(e) => handleFilterEtapeSuivisChange(e.target.value)}>
-                      <option value="">Toutes les étapes</option>
-                      {Object.entries(DOSSIER_STEP_LABELS).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
+                      id="dossiers-epci"
+                      value={epciFilter}
+                      onChange={(e) => {
+                        setEpciFilter(e.target.value);
+                        setPage(1);
+                      }}>
+                      <option value="">Tous les EPCI</option>
+                      {availableEpcis.map((epci) => (
+                        <option key={epci} value={epci}>
+                          {epci}
                         </option>
                       ))}
                     </select>
                   </div>
-                  <DossiersSuivisTable dossiers={paginatedSuivis} onRefresh={loadData} />
+                </div>
+              </div>
+
+              {visible.length === 0 ? (
+                <div className="fr-alert fr-alert--info">
+                  <h3 className="fr-alert__title">Aucun dossier</h3>
+                  <p>Aucun dossier ne correspond à ces filtres.</p>
+                </div>
+              ) : (
+                <>
+                  <DossiersSuivisTable
+                    dossiers={paginated}
+                    isArchived={activeTab === "ARCHIVE"}
+                    onRefresh={loadData}
+                  />
                   <Pagination
-                    currentPage={pageSuivis}
-                    totalItems={filteredSuivis.length}
-                    pageSize={pageSizeSuivis}
-                    onPageChange={setPageSuivis}
-                    onPageSizeChange={handlePageSizeSuivisChange}
+                    currentPage={page}
+                    totalItems={visible.length}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={(size) => {
+                      setPageSize(size);
+                      setPage(1);
+                    }}
                   />
                 </>
               )}
-            </div>
-            <div
-              id="tab-archives-panel"
-              className="fr-tabs__panel"
-              role="tabpanel"
-              aria-labelledby="tab-archives"
-              tabIndex={0}>
-              <div className="fr-select-group" style={{ maxWidth: "300px", marginLeft: "auto" }}>
-                <label className="fr-label" htmlFor="filtre-etape-archives">
-                  Étape
-                </label>
-                <select
-                  className="fr-select"
-                  id="filtre-etape-archives"
-                  name="filtre-etape-archives"
-                  value={filterEtapeArchives}
-                  onChange={(e) => handleFilterEtapeArchivesChange(e.target.value)}>
-                  <option value="">Toutes les étapes</option>
-                  {Object.entries(DOSSIER_STEP_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <DossiersSuivisTable dossiers={paginatedArchives} isArchived onRefresh={loadData} />
-              <Pagination
-                currentPage={pageArchives}
-                totalItems={filteredArchives.length}
-                pageSize={pageSizeArchives}
-                onPageChange={setPageArchives}
-                onPageSizeChange={handlePageSizeArchivesChange}
-              />
             </div>
           </div>
 
