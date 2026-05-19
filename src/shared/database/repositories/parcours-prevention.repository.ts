@@ -3,6 +3,7 @@ import { db } from "../client";
 import { parcoursPrevention } from "../schema/parcours-prevention";
 import { users } from "../schema/users";
 import { parcoursAmoValidations } from "../schema/parcours-amo-validations";
+import { dossiersDemarchesSimplifiees } from "../schema/dossiers-demarches-simplifiees";
 import { BaseRepository, PaginationParams, PaginationResult } from "./base.repository";
 import type { ParcoursPrevention, NewParcoursPrevention } from "../schema/parcours-prevention";
 import { getNextStep, Status, Step } from "@/features/parcours/core";
@@ -451,17 +452,81 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       return matchesTerritoire(getDemandeurFirstSimulation(r), departements, epcis);
     });
   }
+
+  /**
+   * Récupère tous les parcours (avec ou sans validation AMO) d'un territoire.
+   * Filtrage territorial fait côté JS via `getDemandeurFirstSimulation` (fallback
+   * agent-edited si le demandeur n'a pas simulé).
+   */
+  async getParcoursByTerritoire(
+    departements: string[],
+    epcis: string[] = [],
+    filters?: {
+      step?: Step;
+      search?: string;
+    }
+  ) {
+    const conditions: SQL[] = [];
+    if (filters?.step) {
+      conditions.push(eq(parcoursPrevention.currentStep, filters.step));
+    }
+    if (filters?.search) {
+      conditions.push(
+        sql`(LOWER(${users.prenom}) LIKE LOWER(${"%" + filters.search + "%"}) OR LOWER(${users.nom}) LIKE LOWER(${"%" + filters.search + "%"}))`
+      );
+    }
+
+    const results = await db
+      .select({
+        parcoursId: parcoursPrevention.id,
+        userId: parcoursPrevention.userId,
+        situationParticulier: parcoursPrevention.situationParticulier,
+        currentStep: parcoursPrevention.currentStep,
+        currentStatus: parcoursPrevention.currentStatus,
+        createdAt: parcoursPrevention.createdAt,
+        updatedAt: parcoursPrevention.updatedAt,
+        archivedAt: parcoursPrevention.archivedAt,
+        createdByAgentId: parcoursPrevention.createdByAgentId,
+        rgaSimulationData: parcoursPrevention.rgaSimulationData,
+        rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
+        // Utilisateur
+        userPrenom: users.prenom,
+        userNom: users.nom,
+        userEmail: users.email,
+        userTelephone: users.telephone,
+        // Validation AMO (null si dossier sans AMO)
+        validationId: parcoursAmoValidations.id,
+        validationStatut: parcoursAmoValidations.statut,
+        entrepriseAmoId: parcoursAmoValidations.entrepriseAmoId,
+        validationChoisieAt: parcoursAmoValidations.choisieAt,
+        validationValideeAt: parcoursAmoValidations.valideeAt,
+        // Dossier DS de l'étape courante (null si absent)
+        dsStatus: dossiersDemarchesSimplifiees.dsStatus,
+      })
+      .from(parcoursPrevention)
+      .innerJoin(users, eq(parcoursPrevention.userId, users.id))
+      .leftJoin(parcoursAmoValidations, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
+      .leftJoin(
+        dossiersDemarchesSimplifiees,
+        and(
+          eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id),
+          eq(dossiersDemarchesSimplifiees.step, parcoursPrevention.currentStep)
+        )
+      )
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(parcoursPrevention.updatedAt));
+
+    return results.filter((r) => matchesTerritoire(getDemandeurFirstSimulation(r), departements, epcis));
+  }
 }
 
 /**
- * Vérifie si un parcours correspond au territoire d'un Allers-Vers.
+ * Vérifie si un parcours est inclus dans le territoire d'un agent.
  *
- * Logique de filtrage :
- * - Si des EPCIs sont spécifiés dans le scope, ils sont prioritaires :
- *   on filtre strictement par EPCI (plus précis qu'un département).
- * - Sinon, on filtre par département.
- * - Si le parcours n'a pas de données de localisation, il n'est inclus
- *   que si aucun filtre territorial n'est spécifié.
+ * Sémantique : union EPCI ∪ département.
+ * Un parcours match dès que son département OU son EPCI est dans le scope.
+ * Sans données de localisation, il n'est inclus que si aucun filtre territorial
+ * n'est spécifié.
  */
 export function matchesTerritoire(
   rgaSimulationData: RGASimulationData | null,
@@ -469,12 +534,8 @@ export function matchesTerritoire(
   epcis: string[]
 ): boolean {
   const hasFiltreTerritorial = departements.length > 0 || epcis.length > 0;
+  const logement = rgaSimulationData?.logement;
 
-  if (!rgaSimulationData) {
-    return !hasFiltreTerritorial;
-  }
-
-  const logement = rgaSimulationData.logement;
   if (!logement) {
     return !hasFiltreTerritorial;
   }
@@ -483,15 +544,12 @@ export function matchesTerritoire(
     return true;
   }
 
-  // Si des EPCIs sont spécifiés, ils sont le filtre prioritaire (plus précis)
-  if (epcis.length > 0) {
-    // Conversion en string pour gérer les cas où le JSONB retourne un number
-    return !!logement.epci && epcis.includes(String(logement.epci));
-  }
+  // Conversion en string : JSONB peut retourner un number (ex: 59 au lieu de "59")
+  const matchDept =
+    departements.length > 0 && !!logement.code_departement && departements.includes(String(logement.code_departement));
+  const matchEpci = epcis.length > 0 && !!logement.epci && epcis.includes(String(logement.epci));
 
-  // Sinon, filtrer par département
-  // Conversion en string : le JSONB peut retourner un number (ex: 59 au lieu de "59")
-  return !!logement.code_departement && departements.includes(String(logement.code_departement));
+  return matchDept || matchEpci;
 }
 
 // Export d'une instance singleton

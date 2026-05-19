@@ -86,76 +86,30 @@ describe("matchesTerritoire", () => {
     });
   });
 
-  describe("filtrage par EPCI (cas multi Allers-Vers sur un même département)", () => {
-    it("inclut un prospect dont l'EPCI correspond", () => {
-      const data = makeRgaData({
-        code_departement: "33",
-        epci: "200001",
-      });
+  describe("union EPCI ∪ département (scope élargi)", () => {
+    it("inclut si le département match (même si l'EPCI ne correspond pas)", () => {
+      // Union : dept couvert suffit, l'EPCI hors-scope n'exclut pas.
+      const data = makeRgaData({ code_departement: "33", epci: "999999" });
       expect(matchesTerritoire(data, ["33"], ["200001"])).toBe(true);
     });
 
-    it("exclut un prospect du même département mais d'un autre EPCI", () => {
-      const data = makeRgaData({
-        code_departement: "33",
-        epci: "200002",
-      });
+    it("inclut si l'EPCI match (même si le département n'est pas couvert)", () => {
+      const data = makeRgaData({ code_departement: "75", epci: "200001" });
+      expect(matchesTerritoire(data, ["33"], ["200001"])).toBe(true);
+    });
+
+    it("exclut si ni le département ni l'EPCI ne sont dans le scope", () => {
+      const data = makeRgaData({ code_departement: "75", epci: "200002" });
       expect(matchesTerritoire(data, ["33"], ["200001"])).toBe(false);
     });
 
-    it("l'EPCI est prioritaire sur le département", () => {
-      // Même si le département match, si des EPCIs sont spécifiés
-      // seul l'EPCI compte
-      const data = makeRgaData({
-        code_departement: "33",
-        epci: "999999",
-      });
-      expect(matchesTerritoire(data, ["33"], ["200001"])).toBe(false);
-    });
-
-    it("fonctionne avec plusieurs EPCIs dans le scope", () => {
-      const data = makeRgaData({
-        code_departement: "33",
-        epci: "200003",
-      });
-      expect(matchesTerritoire(data, ["33"], ["200001", "200002", "200003"])).toBe(true);
-    });
-
-    it("exclut un prospect sans EPCI dans ses données", () => {
-      const data = makeRgaData({
-        code_departement: "33",
-        epci: "",
-      });
-      expect(matchesTerritoire(data, ["33"], ["200001"])).toBe(false);
+    it("fonctionne avec plusieurs EPCIs", () => {
+      const data = makeRgaData({ code_departement: "75", epci: "200003" });
+      expect(matchesTerritoire(data, [], ["200001", "200002", "200003"])).toBe(true);
     });
 
     it("exclut un parcours sans rgaSimulationData", () => {
       expect(matchesTerritoire(null, ["33"], ["200001"])).toBe(false);
-    });
-  });
-
-  describe("scénario réel : 2 Allers-Vers sur le même département", () => {
-    const prospectEpciA = makeRgaData({
-      code_departement: "33",
-      epci: "243300316", // EPCI de l'Aller-vers A
-    });
-    const prospectEpciB = makeRgaData({
-      code_departement: "33",
-      epci: "243301033", // EPCI de l'Aller-vers B
-    });
-
-    it("l'agent Aller-vers A ne voit que ses prospects", () => {
-      const scopeA = { departements: ["33"], epcis: ["243300316"] };
-
-      expect(matchesTerritoire(prospectEpciA, scopeA.departements, scopeA.epcis)).toBe(true);
-      expect(matchesTerritoire(prospectEpciB, scopeA.departements, scopeA.epcis)).toBe(false);
-    });
-
-    it("l'agent Aller-vers B ne voit que ses prospects", () => {
-      const scopeB = { departements: ["33"], epcis: ["243301033"] };
-
-      expect(matchesTerritoire(prospectEpciA, scopeB.departements, scopeB.epcis)).toBe(false);
-      expect(matchesTerritoire(prospectEpciB, scopeB.departements, scopeB.epcis)).toBe(true);
     });
   });
 
