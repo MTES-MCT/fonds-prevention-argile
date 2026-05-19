@@ -13,7 +13,7 @@ import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
-import { STATUTS_CONSULTABLES } from "./amo-dossiers.service";
+import { STATUTS_CONSULTABLES } from "../domain/types";
 
 /**
  * Récupérer le détail d'un dossier suivi par son ID

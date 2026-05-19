@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { DossierSuivi } from "@/features/backoffice/espace-agent/dossiers/domain/types";
+import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import {
   STEP_LABELS,
   getPrecisionText,
   getPrecisionStyle,
-  isDossierRefuse,
 } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { ROUTES } from "@/features/auth/domain/value-objects";
@@ -18,12 +17,17 @@ import { ArchiveModal } from "../../shared/components/ArchiveModal";
 import { UnarchiveModal } from "../../shared/components/UnarchiveModal";
 
 interface DossiersSuivisTableProps {
-  dossiers: DossierSuivi[];
+  dossiers: DossierItem[];
   /** Indique si les dossiers affichés sont archivés (change la couleur de la cellule Précisions) */
   isArchived?: boolean;
   /** Callback pour recharger les données après archivage/désarchivage */
   onRefresh?: () => void;
 }
+
+const STATUTS_REFUSES: StatutValidationAmo[] = [
+  StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
+  StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
+];
 
 /**
  * Tableau des dossiers suivis
@@ -78,30 +82,36 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                   {dossiers.length === 0 ? (
                     <tr>
                       <td colSpan={5} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
-                        Aucun dossier suivi
+                        Aucun dossier
                       </td>
                     </tr>
                   ) : (
                     dossiers.map((dossier) => {
-                      const daysAgo = formatDaysAgoSplit(dossier.dateDernierStatut.toISOString());
-                      const isRefuse = isDossierRefuse(dossier);
+                      const daysAgo = formatDaysAgoSplit(dossier.updatedAt.toISOString());
+                      const statutValidation = dossier.validation?.statut ?? null;
+                      const isRefuse = statutValidation !== null && STATUTS_REFUSES.includes(statutValidation);
                       const greyStyle = isArchived ? { color: "var(--text-mention-grey)" } : undefined;
 
                       // Texte de précision : spécifique pour les dossiers refusés
                       const precisionText = isRefuse
-                        ? dossier.statutValidation === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE
+                        ? statutValidation === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE
                           ? "Logement non éligible."
                           : "Accompagnement refusé."
-                        : getPrecisionText(dossier.etape, dossier.statut, dossier.dsStatus);
+                        : getPrecisionText(dossier.currentStep, dossier.currentStatus, dossier.dsStatus);
 
-                      // Actions du menu contextuel
+                      // URL détail : page AMO (validationId) si validation existe, sinon page
+                      // prospect (parcoursId). Sera unifié plus tard.
+                      const detailHref = dossier.validation
+                        ? ROUTES.backoffice.espaceAmo.dossier(dossier.validation.id)
+                        : `/espace-agent/prospects/${dossier.parcoursId}`;
+
                       const actionItems = [
                         {
                           label: "Voir sa simulation d'éligibilité",
                           icon: "fr-icon-eye-line",
-                          onClick: () => router.push(ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)),
+                          onClick: () =>
+                            router.push(ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.parcoursId)),
                         },
-                        // Pas d'archivage/désarchivage pour les dossiers refusés
                         ...(!isRefuse
                           ? [
                               isArchived
@@ -120,22 +130,22 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                       ];
 
                       return (
-                        <tr key={dossier.id}>
+                        <tr key={dossier.parcoursId}>
                           <td>
-                            <Link href={ROUTES.backoffice.espaceAmo.dossier(dossier.id)} className="fr-link">
-                              {formatNomComplet(dossier.prenom, dossier.nom)}
+                            <Link href={detailHref} className="fr-link">
+                              {formatNomComplet(dossier.particulier.prenom, dossier.particulier.nom)}
                             </Link>
                             {isRefuse && (
                               <p className="fr-badge fr-badge--sm fr-badge--error fr-badge--no-icon fr-ml-1w">Refusé</p>
                             )}
                           </td>
-                          <td style={greyStyle}>{dossier.commune}</td>
+                          <td style={greyStyle}>{dossier.logement.commune}</td>
                           <td>
                             {isArchived ? (
-                              <p className="fr-tag">{STEP_LABELS[dossier.etape]}</p>
+                              <p className="fr-tag">{STEP_LABELS[dossier.currentStep]}</p>
                             ) : (
                               <a href="#" className="fr-tag">
-                                {STEP_LABELS[dossier.etape]}
+                                {STEP_LABELS[dossier.currentStep]}
                               </a>
                             )}
                           </td>
@@ -144,7 +154,7 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                               maxWidth: "350px",
                               wordWrap: "break-word",
                               whiteSpace: "normal",
-                              ...getPrecisionStyle(dossier.statut, isArchived || isRefuse),
+                              ...getPrecisionStyle(dossier.currentStatus, isArchived || isRefuse),
                               ...greyStyle,
                             }}>
                             <div>{precisionText}</div>

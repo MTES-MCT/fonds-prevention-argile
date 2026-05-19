@@ -1,14 +1,9 @@
 import type { AmoTab, AmoTabId } from "../types/amo-tab.types";
 
 /**
- * Configuration des onglets pour les agents AMO
+ * Configuration unifiée des onglets de l'espace agent (tous rôles métier).
  */
-export const AMO_TABS: AmoTab[] = [
-  {
-    id: "demandes",
-    label: "Demandes",
-    href: "/espace-agent/demandes",
-  },
+export const AGENT_TABS: AmoTab[] = [
   {
     id: "dossiers",
     label: "Dossiers",
@@ -21,44 +16,10 @@ export const AMO_TABS: AmoTab[] = [
   },
 ];
 
-/**
- * Configuration des onglets pour les agents Allers-Vers
- */
-export const ALLERS_VERS_TABS: AmoTab[] = [
-  {
-    id: "prospects",
-    label: "Prospects",
-    href: "/espace-agent/prospects",
-  },
-];
+/** @deprecated remplacé par AGENT_TABS — gardé temporairement pour AmoContext. */
+export const AMO_TABS: AmoTab[] = AGENT_TABS;
 
 /**
- * Configuration des onglets pour les agents AMO et Allers-Vers (rôle double)
+ * Onglet par défaut
  */
-export const AMO_ET_ALLERS_VERS_TABS: AmoTab[] = [
-  {
-    id: "prospects",
-    label: "Prospects",
-    href: "/espace-agent/prospects",
-  },
-  {
-    id: "demandes",
-    label: "Demandes",
-    href: "/espace-agent/demandes",
-  },
-  {
-    id: "dossiers",
-    label: "Dossiers",
-    href: "/espace-agent/dossiers",
-  },
-  {
-    id: "statistiques",
-    label: "Statistiques",
-    href: "/espace-agent/statistiques",
-  },
-];
-
-/**
- * Onglet par défaut - Premier onglet
- */
-export const DEFAULT_AMO_TAB: AmoTabId = "demandes";
+export const DEFAULT_AMO_TAB: AmoTabId = "dossiers";

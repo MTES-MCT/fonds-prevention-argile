@@ -70,6 +70,7 @@ function toDossierItem(row: Row): DossierItem {
     situationParticulier: row.situationParticulier,
     validation: row.validationId
       ? {
+          id: row.validationId,
           statut: row.validationStatut!,
           entrepriseAmoId: row.entrepriseAmoId,
           choisieAt: row.validationChoisieAt!,

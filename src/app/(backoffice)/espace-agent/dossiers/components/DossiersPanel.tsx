@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getAmoDossiersDataAction } from "@/features/backoffice/espace-agent/dossiers/actions";
-import type { AmoDossiersData } from "@/features/backoffice/espace-agent/dossiers/domain/types";
+import {
+  getDossiersTerritoireDataAction,
+  type DossiersTerritoireData,
+} from "@/features/backoffice/espace-agent/dossiers/actions/get-dossiers-territoire-data.action";
 import { STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DossiersSuivisHeader } from "./DossiersSuivisHeader";
@@ -16,26 +18,26 @@ interface DossiersPanelProps {
 }
 
 /**
- * Panel des dossiers pour l'espace AMO avec onglets Suivis / Archivés
+ * Panel unifié des dossiers — onglets Suivis / Archivés.
+ * Visible par tous les agents (AMO, AV, hybride, super-admin) ; le scope
+ * territorial est appliqué côté server action.
  */
 export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps = {}) {
-  const [data, setData] = useState<AmoDossiersData | null>(null);
+  const [data, setData] = useState<DossiersTerritoireData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Pagination state par onglet
   const [pageSuivis, setPageSuivis] = useState(1);
   const [pageSizeSuivis, setPageSizeSuivis] = useState(20);
   const [pageArchives, setPageArchives] = useState(1);
   const [pageSizeArchives, setPageSizeArchives] = useState(20);
 
-  // Filtre par étape par onglet
   const [filterEtapeSuivis, setFilterEtapeSuivis] = useState<Step | "">("");
   const [filterEtapeArchives, setFilterEtapeArchives] = useState<Step | "">("");
 
   const loadData = useCallback(async () => {
     try {
-      const result = await getAmoDossiersDataAction();
+      const result = await getDossiersTerritoireDataAction();
       if (result.success) {
         setData(result.data);
       } else {
@@ -106,15 +108,14 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
     setPageArchives(1);
   };
 
-  // Filtre → puis pagination
   const filteredSuivis = filterEtapeSuivis
-    ? data.dossiersSuivis.filter((d) => d.etape === filterEtapeSuivis)
-    : data.dossiersSuivis;
+    ? data.suivis.filter((d) => d.currentStep === filterEtapeSuivis)
+    : data.suivis;
   const paginatedSuivis = filteredSuivis.slice((pageSuivis - 1) * pageSizeSuivis, pageSuivis * pageSizeSuivis);
 
   const filteredArchives = filterEtapeArchives
-    ? data.dossiersArchives.filter((d) => d.etape === filterEtapeArchives)
-    : data.dossiersArchives;
+    ? data.archives.filter((d) => d.currentStep === filterEtapeArchives)
+    : data.archives;
   const paginatedArchives = filteredArchives.slice(
     (pageArchives - 1) * pageSizeArchives,
     pageArchives * pageSizeArchives
@@ -122,7 +123,7 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
 
   return (
     <>
-      <DossiersSuivisHeader nombreDossiers={data.nombreDossiersSuivis} canCreateDossier={canCreateDossier} />
+      <DossiersSuivisHeader nombreDossiers={data.nombreSuivis} canCreateDossier={canCreateDossier} />
       <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
         <div className="fr-container">
           <div className="fr-tabs">
@@ -136,8 +137,8 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
                   role="tab"
                   aria-selected="true"
                   aria-controls="tab-suivis-panel">
-                  <p className="fr-badge fr-badge--sm fr-mr-2v fr-badge--blue-cumulus">{data.nombreDossiersSuivis}</p>
-                  👁️ Suivis
+                  <p className="fr-badge fr-badge--sm fr-mr-2v fr-badge--blue-cumulus">{data.nombreSuivis}</p>
+                  Suivis
                 </button>
               </li>
               <li role="presentation">
@@ -149,8 +150,8 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
                   role="tab"
                   aria-selected="false"
                   aria-controls="tab-archives-panel">
-                  <p className="fr-badge fr-badge--sm fr-mr-2v fr-badge--blue-cumulus">{data.nombreDossiersArchives}</p>
-                  🗂️ Archivés
+                  <p className="fr-badge fr-badge--sm fr-mr-2v fr-badge--blue-cumulus">{data.nombreArchives}</p>
+                  Archivés
                 </button>
               </li>
             </ul>
@@ -160,10 +161,10 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
               role="tabpanel"
               aria-labelledby="tab-suivis"
               tabIndex={0}>
-              {data.nombreDossiersSuivis === 0 ? (
+              {data.nombreSuivis === 0 ? (
                 <div className="fr-alert fr-alert--info">
-                  <h3 className="fr-alert__title">Vous n&apos;avez pas de dossier suivi</h3>
-                  <p>Recevez et acceptez des demandes d&apos;accompagnement. Les dossiers liés apparaîtront ensuite.</p>
+                  <h3 className="fr-alert__title">Aucun dossier suivi sur votre territoire</h3>
+                  <p>Les nouveaux dossiers du territoire apparaîtront ici.</p>
                 </div>
               ) : (
                 <>

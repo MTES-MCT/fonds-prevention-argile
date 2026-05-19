@@ -26,6 +26,7 @@ export interface DossierItem {
   situationParticulier: SituationParticulier;
   /** Validation AMO si elle existe (null pour un parcours sans AMO assigné). */
   validation: {
+    id: string;
     statut: StatutValidationAmo;
     entrepriseAmoId: string | null;
     choisieAt: Date;

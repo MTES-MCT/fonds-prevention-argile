@@ -53,6 +53,23 @@ export interface AmoDossiersData {
 }
 
 /**
+ * Statuts qui font apparaître un dossier dans l'onglet "Suivis" (vs archivés).
+ */
+export const STATUTS_SUIVIS = [StatutValidationAmo.EN_ATTENTE, StatutValidationAmo.LOGEMENT_ELIGIBLE];
+
+/**
+ * Statuts considérés comme refusés (le dossier est archivé de fait).
+ */
+export const STATUTS_REFUSES = [StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, StatutValidationAmo.ACCOMPAGNEMENT_REFUSE];
+
+/**
+ * Statuts pour lesquels la page detail `/dossiers/[id]` est consultable.
+ * SUIVIS + REFUSES : un dossier archivé non éligible reste lisible côté agent
+ * pour consulter le motif d'inéligibilité.
+ */
+export const STATUTS_CONSULTABLES = [...STATUTS_SUIVIS, ...STATUTS_REFUSES];
+
+/**
  * Vérifie si un dossier a été refusé par l'AMO
  */
 export function isDossierRefuse(dossier: DossierSuivi): boolean {
