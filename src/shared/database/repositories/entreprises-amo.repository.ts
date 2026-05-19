@@ -4,6 +4,7 @@ import { entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "../s
 import type { NewEntrepriseAmo } from "../schema/entreprises-amo";
 import { BaseRepository } from "./base.repository";
 import type { Amo } from "@/features/parcours/amo/domain/entities";
+import { parseCodesDepartement } from "@/shared/utils/departements.utils";
 
 /**
  * Repository pour les entreprises AMO
@@ -210,6 +211,34 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
         );
       }
     });
+  }
+
+  /**
+   * Récupère les codes EPCI assignés à une entreprise AMO
+   */
+  async getEpcisByEntrepriseAmoId(entrepriseAmoId: string): Promise<string[]> {
+    const result = await db
+      .select({ codeEpci: entreprisesAmoEpci.codeEpci })
+      .from(entreprisesAmoEpci)
+      .where(eq(entreprisesAmoEpci.entrepriseAmoId, entrepriseAmoId));
+
+    return result.map((row) => row.codeEpci);
+  }
+
+  /**
+   * Récupère les codes département couverts par une entreprise AMO
+   * Extrait depuis le champ texte `departements` (format "Indre 36, Essonne 91").
+   */
+  async getDepartementsByEntrepriseAmoId(entrepriseAmoId: string): Promise<string[]> {
+    const [row] = await db
+      .select({ departements: entreprisesAmo.departements })
+      .from(entreprisesAmo)
+      .where(eq(entreprisesAmo.id, entrepriseAmoId))
+      .limit(1);
+
+    if (!row) return [];
+
+    return parseCodesDepartement(row.departements);
   }
 
   /**
