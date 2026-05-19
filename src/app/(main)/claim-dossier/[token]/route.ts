@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { userRepo } from "@/shared/database/repositories";
 import { COOKIE_NAMES, getCookieOptions } from "@/features/auth/domain/value-objects";
+import { getServerEnv } from "@/shared/config/env.config";
 
 /**
  * Point d'entrée du lien envoyé par email à un demandeur pour lequel un agent
@@ -17,16 +18,18 @@ import { COOKIE_NAMES, getCookieOptions } from "@/features/auth/domain/value-obj
  *    vers `/api/auth/fc/login`.
  * 3. Sinon, redirige vers `/claim-dossier/invalide` qui affiche le message d'erreur.
  */
-export async function GET(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
 
   const stub = await userRepo.findByClaimToken(token);
 
+  const baseUrl = getServerEnv().BASE_URL;
+
   if (!stub) {
-    return NextResponse.redirect(new URL("/claim-dossier/invalide", request.url));
+    return NextResponse.redirect(new URL("/claim-dossier/invalide", baseUrl));
   }
 
-  const response = NextResponse.redirect(new URL("/api/auth/fc/login", request.url));
+  const response = NextResponse.redirect(new URL("/api/auth/fc/login", baseUrl));
   response.cookies.set(COOKIE_NAMES.FC_CLAIM_TOKEN, token, getCookieOptions(300));
   return response;
 }
