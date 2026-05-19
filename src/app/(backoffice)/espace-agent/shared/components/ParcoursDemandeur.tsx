@@ -2,6 +2,7 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { formatDate, daysBetween } from "@/shared/utils";
+import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 
 interface ParcoursDateProgression {
   compteCreatedAt: Date;
@@ -25,6 +26,8 @@ interface ParcoursDemandeurProps {
   dates: ParcoursDateProgression;
   /** Date de dernière mise à jour pour afficher le nombre de jours depuis dernière action */
   lastUpdatedAt?: Date;
+  /** Agent qui a pré-créé le compte (av-add-dossier). Null = auto-création demandeur. */
+  creator?: ParcoursCreatorInfo | null;
 }
 
 interface StepConfig {
@@ -132,7 +135,7 @@ function CurrentStepBadge({
 /**
  * Composant affichant le parcours du demandeur
  */
-export function ParcoursDemandeur({ currentStep, currentStatus, dsStatus, dates, lastUpdatedAt }: ParcoursDemandeurProps) {
+export function ParcoursDemandeur({ currentStep, currentStatus, dsStatus, dates, lastUpdatedAt, creator }: ParcoursDemandeurProps) {
   const hasInvitation = !!dates.invitationSentAt;
   const stepsConfig = buildStepsConfig(hasInvitation);
   const currentStepIndex = stepsConfig.findIndex((s) => s.step === currentStep);
@@ -197,6 +200,14 @@ export function ParcoursDemandeur({ currentStep, currentStatus, dsStatus, dates,
                           processedAt={processedDate}
                         />
                       </span>
+                    )}
+
+                    {/* Indique l'agent invitant sous "Compte créé" (av-add-dossier) */}
+                    {index === 0 && creator && (
+                      <div className="fr-text--sm text-gray-500 fr-ml-3v">
+                        Invité par {creator.displayName}
+                        {creator.structureNom && ` — ${creator.structureNom}`}
+                      </div>
                     )}
                   </li>
                 );

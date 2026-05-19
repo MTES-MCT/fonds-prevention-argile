@@ -13,6 +13,7 @@ import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
+import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 
 /**
  * Récupérer le détail d'un dossier suivi par son ID
@@ -136,8 +137,11 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       facturesProcessedAt: processedDatesByStep.get(Step.FACTURES),
     };
 
-    // Construire les informations de diff agent
-    const agentEditInfo = await buildAgentEditInfo(dossier.parcours);
+    // Construire les informations de diff agent + résolution agent invitant
+    const [agentEditInfo, creator] = await Promise.all([
+      buildAgentEditInfo(dossier.parcours),
+      getParcoursCreator(dossier.parcours.createdByAgentId),
+    ]);
 
     const dossierDetail: DossierDetail = {
       id: dossier.validation.id,
@@ -152,6 +156,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       suiviDepuis: dossier.validation.valideeAt!,
       dates,
       agentEditInfo,
+      creator,
     };
 
     return { success: true, data: dossierDetail };

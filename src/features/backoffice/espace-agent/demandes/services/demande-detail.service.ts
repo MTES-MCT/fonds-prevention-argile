@@ -11,6 +11,7 @@ import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
+import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 
 /**
  * Récupérer le détail d'une demande d'accompagnement par son ID
@@ -114,8 +115,11 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       facturesProcessedAt: processedDatesByStep.get(Step.FACTURES),
     };
 
-    // Construire les informations de diff agent
-    const agentEditInfo = await buildAgentEditInfo(demande.parcours);
+    // Construire les informations de diff agent + résolution agent invitant
+    const [agentEditInfo, creator] = await Promise.all([
+      buildAgentEditInfo(demande.parcours),
+      getParcoursCreator(demande.parcours.createdByAgentId),
+    ]);
 
     const demandeDetail: DemandeDetail = {
       id: demande.validation.id,
@@ -129,6 +133,7 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       parcoursCreatedAt: demande.parcours.createdAt,
       dates,
       agentEditInfo,
+      creator,
     };
 
     return { success: true, data: demandeDetail };

@@ -1,5 +1,6 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { SourceAcquisition } from "@/shared/domain/value-objects/source-acquisition.enum";
+import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 
 /**
  * Types pour la page détail d'une demande d'accompagnement
@@ -128,4 +129,6 @@ export interface DemandeDetail {
   dates: ParcoursDateProgression;
   /** Informations sur les modifications agent (si données éditées) */
   agentEditInfo?: AgentEditInfo | null;
+  /** Agent qui a pré-créé le compte (av-add-dossier), null sinon. */
+  creator: ParcoursCreatorInfo | null;
 }

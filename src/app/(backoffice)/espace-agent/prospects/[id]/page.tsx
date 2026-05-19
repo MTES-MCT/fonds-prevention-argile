@@ -203,6 +203,7 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
                     invitationAcceptedAt: prospect.invitationAcceptedAt ?? undefined,
                   }}
                   lastUpdatedAt={prospect.updatedAt}
+                  creator={prospect.creator}
                 />
                 <AFaire
                   items={[

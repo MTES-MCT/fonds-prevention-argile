@@ -91,6 +91,7 @@ describe("demande-detail.actions", () => {
           devisSubmittedAt: undefined,
           facturesSubmittedAt: undefined,
         },
+        creator: null,
       };
 
       vi.mocked(getDemandeDetail).mockResolvedValue({

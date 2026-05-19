@@ -162,7 +162,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                   flexDirection: "column",
                   gap: "2rem",
                 }}>
-                <ParcoursDemandeur currentStep={demande.currentStep} currentStatus={Status.TODO} dsStatus={null} dates={demande.dates} />
+                <ParcoursDemandeur currentStep={demande.currentStep} currentStatus={Status.TODO} dsStatus={null} dates={demande.dates} creator={demande.creator} />
                 <AFaire
                   items={[
                     "Contacter le demandeur",

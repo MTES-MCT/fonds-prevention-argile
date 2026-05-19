@@ -172,6 +172,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   dsStatus={dossier.dsStatus}
                   dates={dossier.dates}
                   lastUpdatedAt={dossier.lastUpdatedAt}
+                  creator={dossier.creator}
                 />
                 <AFaire
                   items={[
