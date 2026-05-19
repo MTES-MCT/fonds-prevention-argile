@@ -65,7 +65,10 @@ export class ProspectsListService {
 
     // Transformer en Prospects
     const mapToProspect = (r: (typeof prospectsRaw)[number]): Prospect => {
-      const logement = r.rgaSimulationData?.logement;
+      // Fallback sur rgaSimulationDataAgent : un dossier créé par agent (av-add-dossier)
+      // a son adresse BAN dans rgaSimulationDataAgent tant que le demandeur n'a pas
+      // fait sa propre simulation.
+      const logement = r.rgaSimulationData?.logement ?? r.rgaSimulationDataAgent?.logement;
 
       return {
         parcoursId: r.parcoursId,

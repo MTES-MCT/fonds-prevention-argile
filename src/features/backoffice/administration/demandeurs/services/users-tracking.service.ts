@@ -71,6 +71,7 @@ export async function getUsersWithParcours(scopeFilters?: ScopeFilters | null): 
       parcoursUpdatedAt: parcoursPrevention.updatedAt,
       parcoursCompletedAt: parcoursPrevention.completedAt,
       parcoursRgaSimulationData: parcoursPrevention.rgaSimulationData,
+      parcoursRgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
       parcoursRgaSimulationCompletedAt: parcoursPrevention.rgaSimulationCompletedAt,
       parcoursRgaDataDeletedAt: parcoursPrevention.rgaDataDeletedAt,
 
@@ -173,8 +174,10 @@ export async function getUsersWithParcours(scopeFilters?: ScopeFilters | null): 
               rgaDataDeletedAt: row.parcoursRgaDataDeletedAt,
             }
           : null,
-        // Exposer rgaSimulationData complet pour les statistiques
-        rgaSimulation: row.parcoursRgaSimulationData || null,
+        // Exposer rgaSimulationData complet pour les statistiques. Fallback sur
+        // rgaSimulationDataAgent pour ne pas perdre les dossiers créés par agent
+        // (av-add-dossier) tant que le demandeur n'a pas fait sa propre simulation.
+        rgaSimulation: row.parcoursRgaSimulationData || row.parcoursRgaSimulationDataAgent || null,
         amoValidation: row.validationId
           ? {
               id: row.validationId,

@@ -1,4 +1,4 @@
-import { count, eq, and, isNotNull, sql } from "drizzle-orm";
+import { count, eq, and, isNotNull, or, sql } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { parcoursPrevention, prospectQualifications, parcoursAmoValidations } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
@@ -34,6 +34,19 @@ const STEPS_ORDER: Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, 
  * initiaux, car le JSONB peut contenir "03" (string), "3" (string via number) ou 3 (number → "3" via ->>).
  * regexp_replace('03', '^0+', '') → '3' = regexp_replace('3', '^0+', '') → '3'
  */
+/**
+ * Vrai si le parcours a une simulation (du demandeur OU de l'agent).
+ * Indispensable pour inclure les dossiers créés par agent (av-add-dossier)
+ * qui n'ont que `rgaSimulationDataAgent` tant que le demandeur n'a pas
+ * fait sa propre simulation.
+ */
+function hasAnySimulationData() {
+  return or(
+    isNotNull(parcoursPrevention.rgaSimulationData),
+    isNotNull(parcoursPrevention.rgaSimulationDataAgent)
+  );
+}
+
 function whereDepartement(codeDept: string) {
   const normalizedCode = normalizeCodeDepartement(codeDept);
   return sql`regexp_replace(
@@ -56,7 +69,7 @@ export async function getAvailableDepartements(): Promise<DepartementDisponible[
       rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
     })
     .from(parcoursPrevention)
-    .where(isNotNull(parcoursPrevention.rgaSimulationData));
+    .where(hasAnySimulationData());
 
   // Group by code_departement en JS, normalisé pour éviter les doublons
   // Le JSONB peut contenir : number 3, string "03", string "3" → tous normalisés en "3"
@@ -140,7 +153,7 @@ async function getDossiersParEtape(codeDept: string): Promise<DossierParEtape[]>
         .where(
           and(
             eq(parcoursPrevention.currentStep, step),
-            isNotNull(parcoursPrevention.rgaSimulationData),
+            hasAnySimulationData(),
             whereDepartement(codeDept)
           )
         );
@@ -205,7 +218,7 @@ async function getZonesDynamiques(codeDept: string): Promise<ZoneDynamique[]> {
       rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
     })
     .from(parcoursPrevention)
-    .where(and(isNotNull(parcoursPrevention.rgaSimulationData), whereDepartement(codeDept)));
+    .where(and(hasAnySimulationData(), whereDepartement(codeDept)));
 
   // Group by commune_nom
   const communeMap = new Map<string, number>();
@@ -233,7 +246,7 @@ async function getNombreComptesCreés(codeDept: string): Promise<number> {
     .where(
       and(
         isNotNull(parcoursPrevention.userId),
-        isNotNull(parcoursPrevention.rgaSimulationData),
+        hasAnySimulationData(),
         whereDepartement(codeDept)
       )
     );

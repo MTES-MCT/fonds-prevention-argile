@@ -71,6 +71,7 @@ async function getDemandesATraiter(entrepriseAmoId: string | null): Promise<Dema
       userNom: users.nom,
       createdAt: parcoursAmoValidations.createdAt,
       rgaSimulationData: parcoursPrevention.rgaSimulationData,
+      rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
     })
     .from(parcoursAmoValidations)
     .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
@@ -80,12 +81,16 @@ async function getDemandesATraiter(entrepriseAmoId: string | null): Promise<Dema
     )
     .orderBy(asc(parcoursAmoValidations.createdAt));
 
-  return results.map((row) => ({
-    id: row.id,
-    prenom: row.prenom || row.userPrenom,
-    nom: row.nom || row.userNom,
-    commune: row.rgaSimulationData?.logement?.commune_nom ?? null,
-    codePostal: row.rgaSimulationData?.logement?.code_departement ?? null,
-    dateCreation: row.createdAt,
-  }));
+  return results.map((row) => {
+    // Fallback agent : un dossier av-add-dossier a son logement dans rgaSimulationDataAgent.
+    const logement = row.rgaSimulationData?.logement ?? row.rgaSimulationDataAgent?.logement;
+    return {
+      id: row.id,
+      prenom: row.prenom || row.userPrenom,
+      nom: row.nom || row.userNom,
+      commune: logement?.commune_nom ?? null,
+      codePostal: logement?.code_departement ?? null,
+      dateCreation: row.createdAt,
+    };
+  });
 }
