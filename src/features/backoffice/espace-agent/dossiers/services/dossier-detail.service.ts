@@ -5,7 +5,6 @@ import type { DossierDetail, InfoDemandeur, InfoLogement, ParcoursDateProgressio
 import type { ActionResult } from "@/shared/types/action-result.types";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
-import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
@@ -14,6 +13,7 @@ import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
+import { STATUTS_SUIVIS } from "./amo-dossiers.service";
 
 /**
  * Récupérer le détail d'un dossier suivi par son ID
@@ -48,8 +48,9 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       return { success: false, error: "Dossier non trouvé" };
     }
 
-    // Vérifier que c'est bien un dossier suivi (statut LOGEMENT_ELIGIBLE)
-    if (dossier.validation.statut !== StatutValidationAmo.LOGEMENT_ELIGIBLE) {
+    // Cohérence avec la liste : EN_ATTENTE (invitation en attente du claim FC)
+    // et LOGEMENT_ELIGIBLE (demande validée) sont tous deux des "dossiers suivis".
+    if (!STATUTS_SUIVIS.includes(dossier.validation.statut)) {
       return { success: false, error: "Ce dossier n'est pas un dossier suivi" };
     }
 
