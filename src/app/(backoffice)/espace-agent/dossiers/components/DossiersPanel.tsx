@@ -5,7 +5,7 @@ import {
   getDossiersTerritoireDataAction,
   type DossiersTerritoireData,
 } from "@/features/backoffice/espace-agent/dossiers/actions/get-dossiers-territoire-data.action";
-import { STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain/types";
+import { DOSSIER_STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DossiersSuivisHeader } from "./DossiersSuivisHeader";
 import { DossiersSuivisTable } from "./DossiersSuivisTable";
@@ -179,7 +179,7 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
                       value={filterEtapeSuivis}
                       onChange={(e) => handleFilterEtapeSuivisChange(e.target.value)}>
                       <option value="">Toutes les étapes</option>
-                      {Object.entries(STEP_LABELS).map(([value, label]) => (
+                      {Object.entries(DOSSIER_STEP_LABELS).map(([value, label]) => (
                         <option key={value} value={value}>
                           {label}
                         </option>
@@ -214,7 +214,7 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
                   value={filterEtapeArchives}
                   onChange={(e) => handleFilterEtapeArchivesChange(e.target.value)}>
                   <option value="">Toutes les étapes</option>
-                  {Object.entries(STEP_LABELS).map(([value, label]) => (
+                  {Object.entries(DOSSIER_STEP_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
                     </option>

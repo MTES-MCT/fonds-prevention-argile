@@ -3,6 +3,7 @@ import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import type { Responsable } from "@/features/parcours/core/domain/services/responsable.service";
 
 /**
  * Élément unifié de la liste « dossiers par territoire ».
@@ -39,6 +40,8 @@ export interface DossierItem {
   archivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  /** Responsable du dossier à l'instant T (dérivé par `getResponsableDossier`). */
+  responsable: Responsable;
 }
 
 /** Filtres optionnels appliqués au listing. */

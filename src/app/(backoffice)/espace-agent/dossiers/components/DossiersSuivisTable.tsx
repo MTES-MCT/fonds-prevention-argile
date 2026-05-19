@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import {
-  STEP_LABELS,
-  getPrecisionText,
+  getDossierStepLabel,
+  getResponsableBadge,
+  getResponsableDisplayName,
+  getDossierPrecisionLabel,
   getPrecisionStyle,
-} from "@/features/backoffice/espace-agent/dossiers/domain/types";
+} from "@/features/backoffice/espace-agent/dossiers/domain";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { ROUTES } from "@/features/auth/domain/value-objects";
-import { formatNomComplet, formatDaysAgoSplit } from "@/shared/utils";
+import { formatNomComplet, formatDaysAgoSplit, formatDate } from "@/shared/utils";
 import { ActionMenu } from "../../shared/components/ActionMenu";
 import { ArchiveModal } from "../../shared/components/ArchiveModal";
 import { UnarchiveModal } from "../../shared/components/UnarchiveModal";
@@ -56,32 +58,20 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
               <table>
                 <thead>
                   <tr>
-                    <th scope="col">
-                      <span className="fr-icon-user-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
-                      Demandeurs
-                    </th>
-                    <th scope="col">
-                      <span className="fr-icon-map-pin-2-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
-                      Commune
-                    </th>
-                    <th scope="col">
-                      <span className="fr-icon-list-ordered fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
-                      Étape
-                    </th>
-                    <th scope="col">
-                      <span className="fr-icon-info-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
-                      Précisions
-                    </th>
-                    <th scope="col">
-                      <span className="fr-icon-flashlight-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
-                      Action
-                    </th>
+                    <th scope="col">Demandeurs</th>
+                    <th scope="col">Responsable</th>
+                    <th scope="col">Commune</th>
+                    <th scope="col">Étape</th>
+                    <th scope="col">En attente de</th>
+                    <th scope="col">Précisions</th>
+                    <th scope="col">Ajout</th>
+                    <th scope="col">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dossiers.length === 0 ? (
                     <tr>
-                      <td colSpan={5} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
+                      <td colSpan={8} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
                         Aucun dossier
                       </td>
                     </tr>
@@ -92,12 +82,16 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                       const isRefuse = statutValidation !== null && STATUTS_REFUSES.includes(statutValidation);
                       const greyStyle = isArchived ? { color: "var(--text-mention-grey)" } : undefined;
 
-                      // Texte de précision : spécifique pour les dossiers refusés
-                      const precisionText = isRefuse
-                        ? statutValidation === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE
-                          ? "Logement non éligible."
-                          : "Accompagnement refusé."
-                        : getPrecisionText(dossier.currentStep, dossier.currentStatus, dossier.dsStatus);
+                      const etapeLabel = getDossierStepLabel(dossier.currentStep, dossier.validation);
+                      const badge = getResponsableBadge(dossier.responsable);
+                      const precisionText = getDossierPrecisionLabel(
+                        dossier.responsable,
+                        dossier.currentStep,
+                        dossier.currentStatus,
+                        dossier.dsStatus,
+                        dossier.validation
+                      );
+                      const responsableLabel = getResponsableDisplayName(dossier.responsable);
 
                       // URL détail : page AMO (validationId) si validation existe, sinon page
                       // prospect (parcoursId). Sera unifié plus tard.
@@ -139,15 +133,15 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                               <p className="fr-badge fr-badge--sm fr-badge--error fr-badge--no-icon fr-ml-1w">Refusé</p>
                             )}
                           </td>
+                          <td style={greyStyle}>{responsableLabel}</td>
                           <td style={greyStyle}>{dossier.logement.commune}</td>
                           <td>
-                            {isArchived ? (
-                              <p className="fr-tag">{STEP_LABELS[dossier.currentStep]}</p>
-                            ) : (
-                              <a href="#" className="fr-tag">
-                                {STEP_LABELS[dossier.currentStep]}
-                              </a>
-                            )}
+                            <p className="fr-tag">{etapeLabel}</p>
+                          </td>
+                          <td>
+                            <p className={`fr-badge fr-badge--sm fr-badge--no-icon ${badge.colorClass}`}>
+                              {badge.label}
+                            </p>
                           </td>
                           <td
                             style={{
@@ -164,6 +158,7 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                               </div>
                             )}
                           </td>
+                          <td style={greyStyle}>{formatDate(dossier.createdAt.toISOString())}</td>
                           <td>
                             <ActionMenu items={actionItems} />
                           </td>

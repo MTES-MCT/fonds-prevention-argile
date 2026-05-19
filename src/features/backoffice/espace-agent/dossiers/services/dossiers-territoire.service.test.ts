@@ -6,9 +6,10 @@ import { SituationParticulier } from "@/shared/domain/value-objects/situation-pa
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { AgentScope } from "../../../../auth/permissions/domain/types/agent-scope.types";
 
-const { getParcoursByTerritoire, calculateAgentScope } = vi.hoisted(() => ({
+const { getParcoursByTerritoire, calculateAgentScope, resolveResponsables } = vi.hoisted(() => ({
   getParcoursByTerritoire: vi.fn(),
   calculateAgentScope: vi.fn(),
+  resolveResponsables: vi.fn(),
 }));
 
 vi.mock("@/shared/database", () => ({
@@ -17,6 +18,10 @@ vi.mock("@/shared/database", () => ({
 
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
   calculateAgentScope,
+}));
+
+vi.mock("./responsable-resolver.service", () => ({
+  resolveResponsables,
 }));
 
 import { getDossiersByAgent } from "./dossiers-territoire.service";
@@ -66,6 +71,15 @@ function makeRow(overrides: Record<string, unknown> = {}) {
 describe("getDossiersByAgent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Par défaut, le resolver renvoie un responsable « ARCHIVE » pour chaque dossier.
+    // Les tests qui veulent vérifier la résolution surchargent cette valeur.
+    resolveResponsables.mockImplementation(async (items: Array<{ parcoursId: string }>) => {
+      const map = new Map();
+      for (const item of items) {
+        map.set(item.parcoursId, { type: "ARCHIVE" });
+      }
+      return map;
+    });
   });
 
   it("interroge le repo avec les territoires du scope (AMO)", async () => {

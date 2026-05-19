@@ -2,6 +2,7 @@ import { parcoursRepo } from "@/shared/database";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import type { AgentScopeInput } from "@/features/auth/permissions/domain/types/agent-scope.types";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
+import { resolveResponsables, type ResolverDossier } from "./responsable-resolver.service";
 import type {
   DossierItem,
   DossiersTerritoireFilters,
@@ -29,8 +30,21 @@ export async function getDossiersByAgent(
   const epcis = scope.isNational ? [] : scope.epcis;
 
   const rows = await parcoursRepo.getParcoursByTerritoire(departements, epcis, filters);
+  const bareItems = rows.map(toDossierItemSansResponsable);
 
-  const dossiers: DossierItem[] = rows.map(toDossierItem);
+  const resolverInput: ResolverDossier[] = bareItems.map((item) => ({
+    parcoursId: item.parcoursId,
+    archivedAt: item.archivedAt,
+    currentStatus: item.currentStatus,
+    codeDepartement: item.logement.codeDepartement,
+    validation: item.validation ? { statut: item.validation.statut, entrepriseAmoId: item.validation.entrepriseAmoId } : null,
+  }));
+  const responsables = await resolveResponsables(resolverInput);
+
+  const dossiers: DossierItem[] = bareItems.map((item) => ({
+    ...item,
+    responsable: responsables.get(item.parcoursId)!,
+  }));
 
   return {
     dossiers,
@@ -48,8 +62,9 @@ function emptyResult(departements: string[], epcis: string[]): DossiersTerritoir
 }
 
 type Row = Awaited<ReturnType<typeof parcoursRepo.getParcoursByTerritoire>>[number];
+type DossierItemSansResponsable = Omit<DossierItem, "responsable">;
 
-function toDossierItem(row: Row): DossierItem {
+function toDossierItemSansResponsable(row: Row): DossierItemSansResponsable {
   const logement = getDemandeurFirstLogement(row);
 
   return {
