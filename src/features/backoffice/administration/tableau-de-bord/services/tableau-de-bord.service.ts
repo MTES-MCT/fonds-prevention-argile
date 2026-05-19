@@ -12,6 +12,7 @@ import { prospectQualifications } from "@/shared/database/schema/prospect-qualif
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types/qualification.types";
 import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
+import { getAgentFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
 import type {
   TableauDeBordStats,
   MatomoSimulationsStats,
@@ -259,9 +260,10 @@ async function countSimulationsParEligibilite(
   let nonEligibles = 0;
 
   for (const p of parcours) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const simData = (p.rgaSimulationDataAgent ?? p.rgaSimulationData) as any;
-    const evaluation = EligibilityService.evaluate(simData);
+    // Agent-first : on privilégie la donnée BAN-strict pour la classification éligibilité.
+    // `evaluate` accepte une sim partielle ; un parcours sans données du tout
+    // sera donc évalué comme non-éligible (cohérent avec l'ancien comportement).
+    const evaluation = EligibilityService.evaluate(getAgentFirstSimulation(p) ?? {});
     if (evaluation.result?.eligible) {
       eligibles += 1;
     } else {
@@ -870,10 +872,10 @@ async function getTopDepartementsStats(
       entry.comptes += 1;
     }
 
-    // Évaluer l'éligibilité avec les données les plus récentes
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const simData = (p.rgaSimulationDataAgent ?? p.rgaSimulationData) as any;
-    const evaluation = EligibilityService.evaluate(simData);
+    // Agent-first pour le classement géographique (BAN-strict).
+    // `evaluate` accepte une sim partielle ; un parcours sans données du tout
+    // sera donc évalué comme non-éligible (cohérent avec l'ancien comportement).
+    const evaluation = EligibilityService.evaluate(getAgentFirstSimulation(p) ?? {});
     if (evaluation.result?.eligible) {
       entry.eligibles += 1;
     }

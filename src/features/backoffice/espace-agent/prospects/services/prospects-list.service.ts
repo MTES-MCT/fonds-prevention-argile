@@ -5,6 +5,7 @@ import { daysSince } from "@/shared/utils/date-diff";
 import { db, entreprisesAmo } from "@/shared/database";
 import { like, or } from "drizzle-orm";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import type { Prospect, ProspectsListResult, ProspectFilters } from "../domain/types";
 
 /**
@@ -65,10 +66,7 @@ export class ProspectsListService {
 
     // Transformer en Prospects
     const mapToProspect = (r: (typeof prospectsRaw)[number]): Prospect => {
-      // Fallback sur rgaSimulationDataAgent : un dossier créé par agent (av-add-dossier)
-      // a son adresse BAN dans rgaSimulationDataAgent tant que le demandeur n'a pas
-      // fait sa propre simulation.
-      const logement = r.rgaSimulationData?.logement ?? r.rgaSimulationDataAgent?.logement;
+      const logement = getDemandeurFirstLogement(r);
 
       return {
         parcoursId: r.parcoursId,

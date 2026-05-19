@@ -2,6 +2,7 @@ import { count, eq, and, or, asc, isNull, isNotNull, inArray } from "drizzle-orm
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations, parcoursPrevention, dossiersDemarchesSimplifiees, users } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import type { AmoDossiersData, DossierSuivi } from "../domain/types";
 
 /** Statuts de validation AMO considérés comme refusés */
@@ -182,9 +183,7 @@ async function getDossiersWithArchiveFilter(
         )
         .limit(1);
 
-      // Pour les EN_ATTENTE (invitations), pas de simulation côté demandeur :
-      // on retombe sur la simulation pré-remplie par l'agent (`rgaSimulationDataAgent`).
-      const logement = row.rgaSimulationData?.logement ?? row.rgaSimulationDataAgent?.logement;
+      const logement = getDemandeurFirstLogement(row);
 
       return {
         id: row.id,

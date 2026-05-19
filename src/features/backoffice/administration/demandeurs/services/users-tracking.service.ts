@@ -6,6 +6,7 @@ import { entreprisesAmo } from "@/shared/database/schema/entreprises-amo";
 import { dossiersDemarchesSimplifiees } from "@/shared/database/schema/dossiers-demarches-simplifiees";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import { getDemandeurFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
 import type { UserWithParcoursDetails, DossierInfo } from "../domain/types/user-with-parcours.types";
 import { amoValidationTokens } from "@/shared/database";
 import type { ScopeFilters } from "@/features/auth/permissions/domain/types/agent-scope.types";
@@ -174,10 +175,11 @@ export async function getUsersWithParcours(scopeFilters?: ScopeFilters | null): 
               rgaDataDeletedAt: row.parcoursRgaDataDeletedAt,
             }
           : null,
-        // Exposer rgaSimulationData complet pour les statistiques. Fallback sur
-        // rgaSimulationDataAgent pour ne pas perdre les dossiers créés par agent
-        // (av-add-dossier) tant que le demandeur n'a pas fait sa propre simulation.
-        rgaSimulation: row.parcoursRgaSimulationData || row.parcoursRgaSimulationDataAgent || null,
+        // Exposer la simulation effective pour les statistiques (user-first).
+        rgaSimulation: getDemandeurFirstSimulation({
+          rgaSimulationData: row.parcoursRgaSimulationData,
+          rgaSimulationDataAgent: row.parcoursRgaSimulationDataAgent,
+        }),
         amoValidation: row.validationId
           ? {
               id: row.validationId,

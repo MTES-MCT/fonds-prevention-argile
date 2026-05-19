@@ -2,6 +2,7 @@ import { count, eq, and, asc } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations, parcoursPrevention, users } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import type { AmoAccueilData, DemandeAccompagnement } from "../domain/types";
 
 /**
@@ -82,8 +83,7 @@ async function getDemandesATraiter(entrepriseAmoId: string | null): Promise<Dema
     .orderBy(asc(parcoursAmoValidations.createdAt));
 
   return results.map((row) => {
-    // Fallback agent : un dossier av-add-dossier a son logement dans rgaSimulationDataAgent.
-    const logement = row.rgaSimulationData?.logement ?? row.rgaSimulationDataAgent?.logement;
+    const logement = getDemandeurFirstLogement(row);
     return {
       id: row.id,
       prenom: row.prenom || row.userPrenom,

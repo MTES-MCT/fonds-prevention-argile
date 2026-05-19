@@ -7,6 +7,7 @@ import { BaseRepository, PaginationParams, PaginationResult } from "./base.repos
 import type { ParcoursPrevention, NewParcoursPrevention } from "../schema/parcours-prevention";
 import { getNextStep, Status, Step } from "@/features/parcours/core";
 import { RGASimulationData } from "@/shared/domain/types";
+import { getDemandeurFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
@@ -447,9 +448,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         }
       }
 
-      // Fallback sur les données éditées par l'agent (cas des dossiers pré-créés
-      // par un AV où rgaSimulationData n'est pas encore rempli par le demandeur).
-      return matchesTerritoire(r.rgaSimulationData ?? r.rgaSimulationDataAgent, departements, epcis);
+      return matchesTerritoire(getDemandeurFirstSimulation(r), departements, epcis);
     });
   }
 }
