@@ -23,8 +23,7 @@ function getAccepteMessage(currentStep: Step): CalloutMessage {
     case Step.ELIGIBILITE:
       return {
         title: "L'éligibilité a été acceptée par la DDT.",
-        description:
-          "Le demandeur peut maintenant passer à l'étape suivante : le diagnostic de son logement.",
+        description: "Le demandeur peut maintenant passer à l'étape suivante : le diagnostic de son logement.",
         hint: "Accompagnez le demandeur dans la recherche d'un expert pour réaliser le diagnostic.",
         variant: "green-emeraude",
       };
@@ -47,8 +46,7 @@ function getAccepteMessage(currentStep: Step): CalloutMessage {
     case Step.FACTURES:
       return {
         title: "Les factures ont été acceptées par la DDT.",
-        description:
-          "Le paiement et la clôture de la demande sont à venir.",
+        description: "Le paiement et la clôture de la demande sont à venir.",
         hint: "",
         variant: "green-emeraude",
       };
@@ -108,6 +106,14 @@ function getEnInstructionMessage(currentStep: Step): CalloutMessage {
  */
 function getDefaultMessage(currentStep: Step): CalloutMessage {
   switch (currentStep) {
+    case Step.INVITATION:
+      return {
+        title: "Le demandeur n'a pas encore accepté l'invitation.",
+        description:
+          "Un email contenant le lien d'inscription lui a été envoyé. Le statut basculera dès qu'il aura cliqué et finalisé sa connexion.",
+        hint: "N'hésitez pas à relancer le demandeur par téléphone si besoin.",
+        variant: "yellow-moutarde",
+      };
     case Step.ELIGIBILITE:
       return {
         title:
@@ -136,8 +142,7 @@ function getDefaultMessage(currentStep: Step): CalloutMessage {
     case Step.FACTURES:
       return {
         title: "Le demandeur doit transmettre les factures après travaux via demarche.numerique.gouv.fr.",
-        description:
-          "Une fois les travaux terminés, le demandeur peut soumettre les factures pour recevoir les aides.",
+        description: "Une fois les travaux terminés, le demandeur peut soumettre les factures pour recevoir les aides.",
         hint: "Les factures doivent correspondre aux devis validés.",
         variant: "yellow-moutarde",
       };
