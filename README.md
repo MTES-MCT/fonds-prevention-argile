@@ -49,6 +49,7 @@ Le mode d'AMO appliqué à chaque demandeur dépend de son département. La conf
 **Tout département non listé dans ces deux variables retombe sur le mode `FACULTATIF`** : le demandeur choisit lui-même s'il souhaite être accompagné ("Oui" → 1er AMO du territoire, "Non" → skip vers Éligibilité).
 
 **Format** : codes département séparés par virgules. Le zéro initial est optionnel (`03` et `3` sont équivalents). Exemples valides :
+
 - `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE=03,36,47,54,81`
 - `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES=` (vide explicite)
 - `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES=63` (pour basculer 63 en mode AV/AMO fusionnés)
@@ -233,6 +234,64 @@ pnpm build
 pnpm start
 ```
 
+### Déploiement Scalingo
+
+L'app est déployée sur Scalingo via le [`nodejs-buildpack`](https://github.com/Scalingo/nodejs-buildpack) officiel. Le `Procfile` n'utilise **volontairement pas** `pnpm` au runtime — on appelle directement les shims `./node_modules/.bin/{next,tsx}`.
+
+#### Pourquoi pas `pnpm start` ?
+
+À chaque invocation, pnpm 11 exécute `runDepsStatusCheck`, un check d'intégrité interne du `node_modules`. Sur Scalingo, ce check détecte systématiquement une divergence après le packaging slug (le tar/détar de Scalingo casse les hardlinks que pnpm utilise pour son content-addressable store dans `node_modules/.pnpm/`). Pnpm décide alors de purger `node_modules` et de réinstaller les 637 packages — au boot du conteneur web. Trois symptômes possibles selon la config :
+
+| Config pnpm | Comportement au boot | Résultat |
+|---|---|---|
+| Défaut | Prompt "purger ?" → pas de TTY → `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY` | App ne démarre jamais |
+| `confirmModulesPurge: false` dans `pnpm-workspace.yaml` | Purge silencieuse + `pnpm install` → ~45s pour 637 packages | `SIGKILL` (timeout boot Scalingo = 60s) |
+| `PNPM_SKIP_PRUNING=true` côté env Scalingo | Aucun effet : cette variable contrôle uniquement le prune au BUILD, pas le check runtime de pnpm | Idem ci-dessus |
+
+Sources : [pnpm#9966](https://github.com/pnpm/pnpm/issues/9966) (breaking change v10.16+), [Scalingo nodejs-buildpack CHANGELOG](https://github.com/Scalingo/nodejs-buildpack/blob/master/CHANGELOG.md).
+
+#### La solution
+
+Le `Procfile` invoque directement les shims du `node_modules/.bin/`, sans passer par pnpm :
+
+```procfile
+postdeploy: ... ./node_modules/.bin/tsx src/shared/database/migrate.ts ...
+web: ./node_modules/.bin/next start
+```
+
+**Attention** : ne pas préfixer par `node`. Les `.bin/*` sont des **shims shell** (`#!/bin/sh`) qui exécutent ensuite Node ; les invoquer via `node node_modules/.bin/next` fait crasher Node avec un `SyntaxError` (Node essaie de parser le bash comme du JS). Les shims utilisent `exec` en interne, donc `SIGTERM` se propage correctement à Node (le process shell est remplacé, pas wrappé).
+
+Cette approche est aussi [explicitement recommandée par la doc Scalingo](https://doc.scalingo.com/languages/nodejs/start) : les wrappers package manager (pnpm/yarn/npm) ne forwardent pas correctement `SIGTERM` au process Node, ce qui empêche un shutdown gracieux ([pnpm#2653](https://github.com/pnpm/pnpm/issues/2653)).
+
+#### Pré-requis
+
+Pour que ce mécanisme fonctionne, **`next` et `tsx` doivent être en `dependencies`** (pas `devDependencies`) — sinon le buildpack les prune après le build et `node_modules/.bin/*` est vide au runtime.
+
+#### Garde-fous résiduels
+
+- `confirmModulesPurge: false` reste configuré dans `pnpm-workspace.yaml`. Inutile pour le démarrage du conteneur web (pnpm n'y tourne plus), mais filet de sécurité pour les commandes one-shot (`scalingo run pnpm ...`).
+- Si quelqu'un re-introduit `pnpm` dans le `Procfile` un jour, les trois symptômes ci-dessus reviendront. Garder `node node_modules/.bin/*` comme convention.
+
+### Tester les emails sur staging
+
+Sur staging, les utilisateurs FranceConnect Sandbox ont des emails synthétiques non monitorables, donc impossible de vérifier les mails envoyés par l'app. La variable `EMAIL_DEV_INBOX` redirige tous les mails Brevo vers **une boîte privée de ton choix**, en gardant Brevo en transport (iso-prod). Le destinataire original apparaît dans le sujet : `[STAGING → real@target.com] <sujet>`.
+
+```bash
+scalingo --app fonds-argile-staging env-set EMAIL_DEV_INBOX=ta-boite-privee@example.fr
+scalingo --app fonds-argile-staging env-unset EMAIL_DEV_INBOX     # pour désactiver
+```
+
+Au boot, le log `[EMAIL] DEV REDIRECT ACTIVE (env=staging) → ...` confirme l'activation.
+
+**Garde-fous** (`assertEmailDevInboxSafety` dans `env.config.ts`) :
+- L'app **refuse de démarrer** si `EMAIL_DEV_INBOX` est setée en production.
+- Seul le domaine `@beta.gouv.fr` est accepté comme destination (allowlist hardcodée). Pour ajouter un domaine : modifier `ALLOWED_DEV_INBOX_DOMAINS` dans le code.
+- En local, Mailhog ([localhost:8025](http://localhost:8025)) reste actif ; `EMAIL_DEV_INBOX` n'agit que sur la branche Brevo.
+
+**Pourquoi pas Mailhog sur staging ?** Pour garder Brevo (templates, deliverability, bounces, rate limits) réellement dans la boucle — sinon staging perd sa raison d'être. À reconsidérer si le quota Brevo sature.
+
+**Code** : `src/shared/email/utils/dev-redirect.utils.ts` (helper), appelé dans `sendViaBrevo` de `email.service.ts`.
+
 ### Docker
 
 Build et lancement avec Docker Compose :
@@ -294,6 +353,7 @@ Le workflow utilise une **matrix [staging, production]** sur les **GitHub Enviro
 #### Vue d'historique
 
 `/administration/synchronisations` (super-admin uniquement) affiche :
+
 - la liste paginée des runs (date, durée, statut succès/partiel/erreur, trigger CRON/manuel, totaux) ;
 - le détail d'un run avec, pour chaque parcours touché, les transitions d'étape, les changements DS détectés et l'éventuelle erreur.
 
@@ -418,7 +478,7 @@ Si vous souhaitez uniquement modifier des textes de l'application :
 
 ## Sécurité des dépendances
 
-Ce projet applique des mesures de protection contre les attaques de type supply chain (ex: shai-hulud).
+Ce projet applique plusieurs couches de protection contre les attaques de type supply chain (ex : `shai-hulud`, `mini-shai-hulud` qui a touché l'écosystème `@tanstack/*` en mai 2026).
 
 ### Configuration `.npmrc`
 
@@ -429,15 +489,43 @@ Ce projet applique des mesures de protection contre les attaques de type supply 
 
 ### Configuration `pnpm-workspace.yaml`
 
-| Option                  | Valeur         | Protection                                                                                                                |
-| ----------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `savePrefix`            | `~`            | Limite les mises à jour automatiques aux versions patch uniquement (ex: `5.1.x`). Évite les breaking changes inattendus   |
-| `minimumReleaseAge`     | `10080`        | Refuse les packages publiés depuis moins de 7 jours. Laisse le temps à la communauté de détecter des versions compromises |
-| `trustPolicy`           | `no-downgrade` | Empêche la republication d'une version existante avec un contenu différent (attaque par remplacement)                     |
-| `onlyBuiltDependencies` | whitelist      | Seuls les packages listés peuvent exécuter des scripts de build natifs. Tous les autres sont bloqués                      |
+| Option                | Valeur                         | Protection                                                                                                                                |
+| --------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `savePrefix`          | `~`                            | Force `pnpm add` à figer le minor/major (ex : `5.1.~3`). Sans ça, par défaut, `pnpm add` ouvre la porte aux minor (`^`)                   |
+| `minimumReleaseAge`   | `10080` (7 j)                  | Refuse les versions publiées depuis moins de 7 jours (cf. ci-dessous)                                                                     |
+| `minimumReleaseAgeExclude` | liste                     | Packages exemptés du délai (ex : `next`, `@next/swc-*`) parce qu'on veut leurs hotfix immédiats et qu'on a confiance dans leur pipeline   |
+| `trustPolicy`         | `no-downgrade`                 | Refuse les downgrades silencieux d'une dépendance déjà installée (un attaquant ne peut pas rétrograder un transitif vers une CVE connue)  |
+| `trustPolicyExclude`  | liste                          | Exceptions runtime-safe documentées (ex : `undici-types`, `semver@6` transitif `@babel/core`) — chaque entrée a un commentaire de justif  |
+| `overrides`           | map                            | Force des versions patchées pour les CVE transitives connues (vite, rollup, minimatch, picomatch, ajv, esbuild, etc.)                     |
+| `allowBuilds`         | map `pkg: true`                | Approbation explicite des scripts d'install natifs (pnpm 11+). Sans ça, toute compilation native est silencieusement bloquée              |
 
-### Packages autorisés pour les builds natifs
+> **Note pnpm 11** : `onlyBuiltDependencies` (allow-list utilisée en pnpm 9-10) n'est plus respectée par pnpm 11 — c'est `allowBuilds` qui prend le relais. Si on essayait de garder les deux, ça doublonnerait sans rien apporter.
 
-- `@next/swc-*` : Compilateur SWC de Next.js (binaires Rust)
-- `esbuild` : Bundler (binaire Go)
-- `sharp` : Traitement d'images (bindings C++)
+### `minimumReleaseAge` — quarantine de 7 jours
+
+C'est la mesure la plus défensive du projet. Concrètement :
+
+- Une dépendance ne peut être installée par `pnpm install` / `pnpm add` que si **sa version est publiée sur npm depuis au moins 7 jours**.
+- Toute version plus récente est rejetée (sauf si le package est listé dans `minimumReleaseAgeExclude`).
+- Cela suppose qu'une version malveillante publiée par un attaquant sera détectée et yankée par npm avant que ce délai n'expire (en pratique, la communauté + Socket.dev + GitHub Security Advisories détectent ce genre d'attaque en quelques heures à 2-3 jours).
+
+**Cas concret — attaque TanStack du 11 mai 2026** : 84 versions malveillantes de 14 packages `@tanstack/*` ont été publiées vers 19:20 UTC, détectées et yankées dans les heures qui suivent. Un `pnpm install` lancé pendant cette fenêtre **sans** `minimumReleaseAge` aurait pull les versions compromises. Avec `minimumReleaseAge: 10080`, la fenêtre d'install n'aurait été possible qu'à partir du 18 mai — bien après le yank.
+
+**Côté CI** : la même règle s'applique sur les Pull Requests, ce qui empêche un attaquant qui a publié hier d'arriver en main aujourd'hui via une PR de bot type `dependabot --auto-merge`.
+
+**Pour contourner ponctuellement** : `pnpm install --no-frozen-lockfile --ignore-min-release-age` (interactif, à ne **pas** ajouter au CI). Ou ajouter le package incriminé à `minimumReleaseAgeExclude` avec un commentaire justifiant l'urgence.
+
+### Packages autorisés pour les builds natifs (`allowBuilds`)
+
+| Package         | Pourquoi                                                                                              |
+| --------------- | ----------------------------------------------------------------------------------------------------- |
+| `argon2`        | Hashing de mot de passe (auth ProConnect). Postinstall `node-gyp-build` qui résout des prebuilts.     |
+| `esbuild`       | Bundler de Vitest et Next. Postinstall qui télécharge le binaire Go pour la plateforme courante.       |
+| `sharp`         | Traitement d'images (génération d'images OG, vignettes). Postinstall qui résout des bindings C++.    |
+| `unrs-resolver` | Resolver transitif (stack Next/Oxc). Postinstall qui sélectionne le bon binaire natif Rust.           |
+
+Les `@next/swc-*` ne sont **pas** listés ici : ils n'ont pas de script `install`/`postinstall` côté npm (les binaires sont téléchargés directement par pnpm sans hook), donc rien à approuver.
+
+### Lockfile à intégrité SHA-512
+
+`pnpm-lock.yaml` contient un hash `sha512` pour chaque tarball. Même si un mainteneur d'un package que nous utilisons était compromis demain et republiait une version tamperée **avec le même numéro de version**, pnpm refuserait l'install (mismatch d'intégrité). C'est ce qui rend la combinaison `lockfile committé` + `pnpm install --frozen-lockfile` (utilisée en CI) immune aux republications silencieuses.

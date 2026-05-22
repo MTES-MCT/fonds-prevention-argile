@@ -44,6 +44,18 @@ export function SimulateurLayout({
   const hasSubContent = subtitle || description;
   const titleMargin = hasSubContent ? "fr-mb-1v" : "fr-mb-4w";
 
+  // Mode embarqué : le parent (ex: wizard invitation AMO AV) fournit son propre layout.
+  // On rend uniquement le contenu de l'étape sans wrapping externe.
+  if (context.embedded) {
+    return (
+      <>
+        {title && <h4 className={titleMargin}>{title}</h4>}
+        {subtitle && <div className="fr-text--sm fr-mb-2w text-gray-500">{subtitle}</div>}
+        {children}
+      </>
+    );
+  }
+
   return (
     <div className="bg-[var(--background-alt-grey)] md:bg-transparent">
       <div className="fr-container fr-mb-8w">

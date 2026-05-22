@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { StatTile } from "@/app/(backoffice)/espace-agent/shared";
 
@@ -8,6 +9,8 @@ interface ProspectsHeaderProps {
   nombreEligibles: number;
   nombreArchives: number;
   hasAmoDisponible: boolean;
+  /** Affiche le bouton "+ Nouveau dossier" (mode AV → /dossiers/nouveau?intent=av). */
+  canCreateDossier?: boolean;
 }
 
 export function ProspectsHeader({
@@ -15,13 +18,25 @@ export function ProspectsHeader({
   nombreEligibles,
   nombreArchives,
   hasAmoDisponible,
+  canCreateDossier = false,
 }: ProspectsHeaderProps) {
   const { user } = useAuth();
 
   return (
     <div className="fr-container fr-py-4w">
-      {user?.firstName && <h1 className="fr-h1 fr-mb-0">Bonjour {user.firstName}</h1>}
-      <p className="fr-mt-2w fr-text--xl text-gray-500">Voici les dernières mises à jour</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 fr-mb-2w">
+        <div>
+          {user?.firstName && <h1 className="fr-h1 fr-mb-0">Bonjour {user.firstName}</h1>}
+          <p className="fr-mt-2w fr-text--xl text-gray-500">Voici les dernières mises à jour</p>
+        </div>
+        {canCreateDossier && (
+          <Link
+            href="/espace-agent/dossiers/nouveau?intent=av"
+            className="fr-btn fr-icon-add-line fr-btn--icon-left self-start md:self-center">
+            Nouveau dossier
+          </Link>
+        )}
+      </div>
 
       {!hasAmoDisponible && (
         <div className="fr-alert fr-alert--info fr-mt-4w">

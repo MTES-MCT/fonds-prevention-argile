@@ -1,12 +1,14 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type {
   InfoDemandeur,
   InfoLogement,
   ParcoursDateProgression,
   AgentEditInfo,
 } from "@/features/backoffice/espace-agent/demandes/domain/types/demande-detail.types";
+import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 
 /**
  * Types pour la page détail d'un dossier suivi
@@ -39,6 +41,8 @@ export interface DossierDetail {
   currentStatus: Status;
   /** Statut DS du dossier de l'étape courante */
   dsStatus: DSStatus | null;
+  /** Statut de la validation AMO (pour distinguer en_attente / éligible / non éligible côté UI). */
+  validationStatut: StatutValidationAmo;
   /** Date de création du parcours */
   parcoursCreatedAt: Date;
   /** Date de dernière mise à jour du parcours */
@@ -51,6 +55,8 @@ export interface DossierDetail {
   dates: ParcoursDateProgression;
   /** Informations sur les modifications agent (si données éditées) */
   agentEditInfo?: AgentEditInfo | null;
+  /** Agent qui a pré-créé le compte (av-add-dossier), null sinon. */
+  creator: ParcoursCreatorInfo | null;
 }
 
 // Ré-export des types partagés pour faciliter les imports

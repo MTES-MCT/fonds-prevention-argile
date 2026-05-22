@@ -11,16 +11,11 @@ const SIMULATEUR_STORAGE_KEY = "fonds-argile-simulateur";
  * État du store simulateur
  */
 interface SimulateurState {
-  // État de la simulation
   simulation: SimulationState;
-
-  // Mode édition (agent AMO/allers-vers) — désactive les early exits
+  /** Mode édition (agent AMO/allers-vers) — désactive les early exits. */
   editMode: boolean;
-
-  // Hydratation SSR
   isHydrated: boolean;
 
-  // Actions
   start: () => void;
   submitAnswer: (answers: PartialRGASimulationData) => void;
   goBack: () => void;
@@ -30,25 +25,30 @@ interface SimulateurState {
 }
 
 /**
- * Store Zustand pour le simulateur d'éligibilité
- * Persiste en sessionStorage (durée de la session uniquement)
+ * Store Zustand singleton pour le simulateur d'éligibilité.
+ * Persiste en sessionStorage (durée de la session uniquement).
+ *
+ * Le store est partagé entre :
+ * - Le simulateur public (/simulateur, /embed-simulateur)
+ * - Le mode édition AMO (/edition-donnees-simulation/[id])
+ * - Le wizard AV (/dossiers/nouveau/simulation/[parcoursId])
+ *
+ * Dans la pratique ces 3 usages ne sont jamais simultanés pour un même
+ * utilisateur (agent vs demandeur, et une seule simulation à la fois).
  */
 export const useSimulateurStore = create<SimulateurState>()(
   persist(
     (set, get) => ({
-      // État initial
       simulation: SimulationService.create(),
       editMode: false,
       isHydrated: false,
 
-      // Démarre la simulation (intro → première étape)
       start: () => {
         set((state) => ({
           simulation: SimulationService.start(state.simulation),
         }));
       },
 
-      // Soumet une réponse et passe à l'étape suivante
       submitAnswer: (answers: PartialRGASimulationData) => {
         const { editMode } = get();
         set((state) => ({
@@ -58,7 +58,6 @@ export const useSimulateurStore = create<SimulateurState>()(
         }));
       },
 
-      // Revient à l'étape précédente
       goBack: () => {
         const { editMode } = get();
         set((state) => ({
@@ -68,17 +67,14 @@ export const useSimulateurStore = create<SimulateurState>()(
         }));
       },
 
-      // Réinitialise la simulation
       reset: () => {
         set({ simulation: SimulationService.reset(), editMode: false });
       },
 
-      // Active/désactive le mode édition
       setEditMode: (editMode: boolean) => {
         set({ editMode });
       },
 
-      // Marque comme hydraté
       setHydrated: () => {
         set({ isHydrated: true });
       },
@@ -113,15 +109,9 @@ export const selectAnswers = (state: SimulateurState) => state.simulation.answer
 export const selectResult = (state: SimulateurState) => state.simulation.result;
 export const selectHistory = (state: SimulateurState) => state.simulation.history;
 export const selectIsHydrated = (state: SimulateurState) => state.isHydrated;
-
 export const selectCanGoBack = (state: SimulateurState) => SimulationService.canGoBack(state.simulation);
-
 export const selectIsFinished = (state: SimulateurState) => SimulationService.isFinished(state.simulation);
-
 export const selectIsEligible = (state: SimulateurState) => SimulationService.isEligible(state.simulation);
-
 export const selectIsIntro = (state: SimulateurState) => state.simulation.currentStep === SimulateurStep.INTRO;
-
 export const selectIsResultat = (state: SimulateurState) => state.simulation.currentStep === SimulateurStep.RESULTAT;
-
 export const selectEditMode = (state: SimulateurState) => state.editMode;

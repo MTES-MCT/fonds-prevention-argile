@@ -22,6 +22,7 @@ import type {
 
 /** Labels des étapes pour l'affichage */
 const STEP_LABELS: Record<Step, string> = {
+  [Step.INVITATION]: "Invitation",
   [Step.CHOIX_AMO]: "Choix AMO",
   [Step.ELIGIBILITE]: "Éligibilité",
   [Step.DIAGNOSTIC]: "Diagnostic",

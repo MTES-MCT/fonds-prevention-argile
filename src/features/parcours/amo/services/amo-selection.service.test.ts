@@ -96,6 +96,7 @@ describe("amo-selection.service", () => {
       archivedAt: null,
       archiveReason: null,
       archivedBy: null,
+      createdByAgentId: null,
     };
 
     const mockAmo = {

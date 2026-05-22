@@ -81,6 +81,7 @@ function buildMockParcours(codeInsee: string, codeEpci: string = "") {
     archivedAt: null,
     archiveReason: null,
     archivedBy: null,
+    createdByAgentId: null,
   };
 }
 

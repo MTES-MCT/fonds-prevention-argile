@@ -189,6 +189,35 @@ describe("AmoAccueilService", () => {
       expect(demande.codePostal).toBe("36");
     });
 
+    it("devrait extraire la commune depuis rgaSimulationDataAgent si rgaSimulationData est null (dossier créé par agent)", async () => {
+      // Arrange — un dossier av-add-dossier a son adresse dans rgaSimulationDataAgent
+      // tant que le demandeur n'a pas fait sa propre simulation.
+      vi.mocked(db.select)
+        .mockReturnValueOnce(mockDbSelectCount(1))
+        .mockReturnValueOnce(mockDbSelectCount(0))
+        .mockReturnValueOnce(
+          mockDbSelectList([
+            {
+              id: "av-1",
+              prenom: "Élise",
+              nom: "Bernard",
+              createdAt: new Date("2026-05-12"),
+              rgaSimulationData: null,
+              rgaSimulationDataAgent: {
+                logement: { commune_nom: "Châteauroux", code_departement: "36" },
+              },
+            },
+          ])
+        );
+
+      // Act
+      const result = await getAmoAccueilData(entrepriseAmoId);
+
+      // Assert
+      expect(result.demandesATraiter[0].commune).toBe("Châteauroux");
+      expect(result.demandesATraiter[0].codePostal).toBe("36");
+    });
+
     it("devrait gérer les résultats vides avec le fallback ?? 0", async () => {
       // Arrange - Tableaux vides pour les counts
       const mockEmptyCount = () => {

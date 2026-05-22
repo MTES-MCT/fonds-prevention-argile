@@ -9,8 +9,8 @@
  * 5. Comparaison 7j vs 30j vs 90j — le ratio est-il stable dans le temps ?
  *
  * Usage :
- *   npx tsx scripts/matomo/debug-matomo-events.ts
- *   npx tsx scripts/matomo/debug-matomo-events.ts --since=2026-04-09
+ *   npx tsx scripts/ops/debug-matomo-events.ts
+ *   npx tsx scripts/ops/debug-matomo-events.ts --since=2026-04-09
  */
 
 import { config } from "dotenv";

@@ -2,6 +2,7 @@ import { eq, sql, SQL, desc } from "drizzle-orm";
 import { db } from "../client";
 import { agents, type Agent, type NewAgent } from "../schema/agents";
 import { entreprisesAmo } from "../schema/entreprises-amo";
+import { allersVers } from "../schema/allers-vers";
 import { BaseRepository } from "./base.repository";
 import { AgentRole } from "@/shared/domain/value-objects";
 
@@ -95,6 +96,49 @@ export class AgentsRepository extends BaseRepository<Agent> {
               siret: row.entrepriseAmoSiret,
             }
           : null,
+    };
+  }
+
+  /**
+   * Trouve un agent et sa structure de rattachement (entreprise AMO OU
+   * aller-vers). Sert à afficher "Compte créé par X (structure)" côté
+   * demandeur quand un dossier a été pré-créé par un agent.
+   */
+  async findByIdWithStructure(id: string): Promise<{
+    id: string;
+    givenName: string;
+    usualName: string | null;
+    role: AgentRole;
+    entrepriseAmo: { id: string; nom: string } | null;
+    allersVers: { id: string; nom: string } | null;
+  } | null> {
+    const result = await db
+      .select({
+        id: agents.id,
+        givenName: agents.givenName,
+        usualName: agents.usualName,
+        role: agents.role,
+        amoId: entreprisesAmo.id,
+        amoNom: entreprisesAmo.nom,
+        avId: allersVers.id,
+        avNom: allersVers.nom,
+      })
+      .from(agents)
+      .leftJoin(entreprisesAmo, eq(agents.entrepriseAmoId, entreprisesAmo.id))
+      .leftJoin(allersVers, eq(agents.allersVersId, allersVers.id))
+      .where(eq(agents.id, id))
+      .limit(1);
+
+    const row = result[0];
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      givenName: row.givenName,
+      usualName: row.usualName,
+      role: row.role as AgentRole,
+      entrepriseAmo: row.amoId && row.amoNom ? { id: row.amoId, nom: row.amoNom } : null,
+      allersVers: row.avId && row.avNom ? { id: row.avId, nom: row.avNom } : null,
     };
   }
 

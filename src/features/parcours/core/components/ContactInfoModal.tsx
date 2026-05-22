@@ -4,10 +4,17 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { updateContactInfoAction } from "../actions/contact-info.actions";
 import { getActeursLocauxDisponibles, type ActeursLocaux } from "../actions/acteurs-locaux.actions";
 import { SourceAcquisition, SOURCE_ACQUISITION_LABELS } from "@/shared/domain/value-objects";
+import { normalizeFrenchPhone } from "@/shared/utils";
 
 interface ContactInfoModalProps {
   isOpen: boolean;
   defaultEmail?: string;
+  /**
+   * Numéro de téléphone à pré-remplir (typiquement celui saisi par un agent
+   * AMO/AV lors de la création d'une invitation). Normalisé via
+   * `normalizeFrenchPhone` en `0XXXXXXXXX` avant injection dans le champ.
+   */
+  defaultTelephone?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -27,9 +34,15 @@ interface DynamicOption {
   nom: string;
 }
 
-export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSuccess }: ContactInfoModalProps) {
+export default function ContactInfoModal({
+  isOpen,
+  defaultEmail,
+  defaultTelephone,
+  onClose,
+  onSuccess,
+}: ContactInfoModalProps) {
   const [email, setEmail] = useState(defaultEmail || "");
-  const [telephone, setTelephone] = useState("");
+  const [telephone, setTelephone] = useState(() => normalizeFrenchPhone(defaultTelephone));
   const [selectValue, setSelectValue] = useState<string>("");
   const [sourceAcquisitionPrecision, setSourceAcquisitionPrecision] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +73,17 @@ export default function ContactInfoModal({ isOpen, defaultEmail, onClose, onSucc
       }
     });
   }, []);
+
+  // Resynchronise les valeurs initiales des champs si les props `default*`
+  // arrivent après le premier rendu (cas typique : le parent les récupère via
+  // un fetch async). Préserve la saisie de l'utilisateur si déjà commencée.
+  useEffect(() => {
+    setTelephone((current) => (current ? current : normalizeFrenchPhone(defaultTelephone)));
+  }, [defaultTelephone]);
+
+  useEffect(() => {
+    setEmail((current) => (current ? current : defaultEmail || ""));
+  }, [defaultEmail]);
 
   // Gérer l'ouverture/fermeture via le DSFR.
   // L'init du DSFR (DsfrProvider) est asynchrone (~100ms+) : si on déclenche

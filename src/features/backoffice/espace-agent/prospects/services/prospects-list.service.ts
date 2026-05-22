@@ -5,6 +5,7 @@ import { daysSince } from "@/shared/utils/date-diff";
 import { db, entreprisesAmo } from "@/shared/database";
 import { like, or } from "drizzle-orm";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import type { Prospect, ProspectsListResult, ProspectFilters } from "../domain/types";
 
 /**
@@ -65,7 +66,7 @@ export class ProspectsListService {
 
     // Transformer en Prospects
     const mapToProspect = (r: (typeof prospectsRaw)[number]): Prospect => {
-      const logement = r.rgaSimulationData?.logement;
+      const logement = getDemandeurFirstLogement(r);
 
       return {
         parcoursId: r.parcoursId,

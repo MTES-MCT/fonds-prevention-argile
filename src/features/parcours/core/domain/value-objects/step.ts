@@ -5,9 +5,20 @@ export { Step, STEP_LABELS, STEP_LABELS_NUMBERED } from "@/shared/domain/value-o
 import { Step } from "@/shared/domain/value-objects/step.enum";
 
 /**
- * Ordre des étapes dans le parcours
+ * Ordre des étapes dans le parcours.
+ *
+ * `Step.INVITATION` est l'étape initiale optionnelle utilisée pour les
+ * dossiers pré-créés par un agent (AMO ou Aller-vers). Les parcours classiques
+ * (auto-inscription FranceConnect) démarrent directement à `Step.CHOIX_AMO`.
  */
-export const STEP_ORDER = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES] as const;
+export const STEP_ORDER = [
+  Step.INVITATION,
+  Step.CHOIX_AMO,
+  Step.ELIGIBILITE,
+  Step.DIAGNOSTIC,
+  Step.DEVIS,
+  Step.FACTURES,
+] as const;
 
 /**
  * Type dérivé pour l'ordre des étapes

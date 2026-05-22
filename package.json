@@ -1,8 +1,8 @@
 {
   "name": "fonds-prevention-argile",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "private": true,
-  "packageManager": "pnpm@10.33.4",
+  "packageManager": "pnpm@11.0.9",
   "engines": {
     "node": "24.x"
   },
@@ -28,8 +28,7 @@
     "db:migrate": "tsx src/shared/database/migrate.ts",
     "db:studio": "pnpm drizzle-kit studio",
     "db:generate": "pnpm drizzle-kit generate",
-    "db:setup": "pnpm db:push && pnpm db:seed",
-    "db:reset:full": "pnpm db:reset && sleep 5 && pnpm db:setup",
+    "db:reset:full": "pnpm db:reset && sleep 5 && pnpm db:push",
     "clean": "rm -rf .next && pnpm start:dev",
     "fresh": "rm -rf .next node_modules pnpm-lock.yaml && pnpm install && pnpm start:dev",
     "prepare": "husky",
@@ -37,8 +36,9 @@
     "talisman:check": "talisman --scan",
     "seo:generate": "tsx src/features/seo/scripts/generate-seo-data.ts",
     "seo:import-catnat": "tsx src/features/seo/catnat/scripts/import-catnat.ts",
-    "fix:epci": "tsx scripts/fix-missing-epci/fix-missing-epci.ts",
-    "rga:import": "tsx scripts/import-rga-zones/import-rga-zones.ts"
+    "seed:staging": "tsx scripts/seed/seed-staging.ts",
+    "fix:epci": "tsx scripts/ops/fix-missing-epci.ts",
+    "rga:import": "tsx scripts/import/rga-zones/import-rga-zones.ts"
   },
   "dependencies": {
     "@getbrevo/brevo": "4.0.1",
@@ -53,7 +53,7 @@
     "drizzle-orm": "0.45.2",
     "exceljs": "~4.4.0",
     "maplibre-gl": "5.19.0",
-    "next": "15.5.15",
+    "next": "15.5.18",
     "nodemailer": "8.0.5",
     "pmtiles": "4.4.0",
     "postgres": "3.4.8",

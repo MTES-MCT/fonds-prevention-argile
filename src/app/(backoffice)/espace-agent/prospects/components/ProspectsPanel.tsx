@@ -15,7 +15,12 @@ import { Pagination } from "@/shared/components/Pagination/Pagination";
  * - 3 onglets DSFR : Prospects, Éligibles, Archivés
  * - Tableau + pagination par onglet
  */
-export function ProspectsPanel() {
+interface ProspectsPanelProps {
+  /** Affiche le bouton "+ Nouveau dossier" dans le header (rôles AV / AMO_ET_AV). */
+  canCreateDossier?: boolean;
+}
+
+export function ProspectsPanel({ canCreateDossier = false }: ProspectsPanelProps = {}) {
   const [data, setData] = useState<ProspectsListResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +109,7 @@ export function ProspectsPanel() {
         nombreEligibles={data.totalEligibles}
         nombreArchives={data.totalArchives}
         hasAmoDisponible={data.hasAmoDisponible}
+        canCreateDossier={canCreateDossier}
       />
 
       <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">

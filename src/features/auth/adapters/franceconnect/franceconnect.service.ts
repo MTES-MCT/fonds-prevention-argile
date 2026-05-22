@@ -7,9 +7,11 @@ import { AUTH_METHODS, COOKIE_NAMES, getCookieOptions, ROLES, SESSION_DURATION }
 import { ERROR_CODES } from "../../domain/errors/authErrors";
 import type { ErrorCode } from "../../domain/errors/authErrors";
 import { JWTPayload } from "../../domain/entities";
-import { userRepo } from "@/shared/database/repositories";
+import { userRepo, parcoursRepo } from "@/shared/database/repositories";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
 import { getOrCreateParcours } from "@/features/parcours/core/services";
+import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
 
 /**
@@ -115,6 +117,22 @@ export async function getStoredNonce(): Promise<string | null> {
 }
 
 /**
+ * Lit et supprime le cookie de claim token posé par /claim-dossier/[token].
+ * Retourne undefined si absent — la connexion FC suit alors le flux normal.
+ */
+export async function consumeClaimToken(): Promise<string | undefined> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAMES.FC_CLAIM_TOKEN)?.value;
+
+  if (token) {
+    cookieStore.delete(COOKIE_NAMES.FC_CLAIM_TOKEN);
+    return token;
+  }
+
+  return undefined;
+}
+
+/**
  * Crée une session FranceConnect
  */
 export async function createFranceConnectSession(
@@ -200,14 +218,40 @@ export async function handleFranceConnectCallback(
     // 4. Récupérer les infos utilisateur
     const userInfo = await getUserInfo(tokens.access_token);
 
+    // 4bis. Consommer le claim token s'il existe (dossier pré-créé par un AV)
+    const claimToken = await consumeClaimToken();
+
     // 5. Créer ou récupérer l'utilisateur en base
-    // Le partnerSource est sauvegardé à la création (et backfillé si absent), pas écrasé sur les login suivants.
+    // - partnerSource : sauvegardé à la création (et backfillé si absent), pas écrasé sur les login suivants.
+    // - claimToken : si présent, rattache le user stub pré-créé par un agent AV au compte FC.
     const user = await userRepo.upsertFromFranceConnect(userInfo, {
       partnerSource: options?.partnerSource ?? null,
+      claimToken,
     });
 
     // 6. Initialiser le parcours si première connexion
-    await getOrCreateParcours(user.id);
+    const parcours = await getOrCreateParcours(user.id);
+
+    // 6bis. Si parcours en INVITATION (dossier pré-créé par un agent) → valider
+    if (parcours.currentStep === Step.INVITATION) {
+      // Si l'agent a fait une simulation complète (parcours "avec simulation"),
+      // on la promeut comme simulation canonique du parcours pour que le
+      // demandeur n'ait pas à la refaire. Pour le parcours "sans simulation"
+      // (données minimales : seulement l'adresse), on laisse `rgaSimulationData`
+      // null → l'écran "Éligibilité manquante" invite le demandeur à la remplir.
+      // L'entité `Parcours` retournée par `getOrCreateParcours` n'expose pas
+      // `rgaSimulationDataAgent`, on relit la ligne brute via le repo.
+      const parcoursRow = await parcoursRepo.findById(parcours.id);
+      if (
+        parcoursRow &&
+        !parcoursRow.rgaSimulationData &&
+        parcoursRow.rgaSimulationDataAgent &&
+        isSimulationComplete(parcoursRow.rgaSimulationDataAgent)
+      ) {
+        await parcoursRepo.updateRGAData(parcours.id, parcoursRow.rgaSimulationDataAgent);
+      }
+      await parcoursRepo.validateInvitation(parcours.id);
+    }
 
     // 7. Créer la session avec l'userId
     await createFranceConnectSession(

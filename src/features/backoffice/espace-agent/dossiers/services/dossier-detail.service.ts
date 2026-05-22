@@ -5,7 +5,6 @@ import type { DossierDetail, InfoDemandeur, InfoLogement, ParcoursDateProgressio
 import type { ActionResult } from "@/shared/types/action-result.types";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
-import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
@@ -13,6 +12,8 @@ import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
+import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
+import { STATUTS_CONSULTABLES } from "./amo-dossiers.service";
 
 /**
  * Récupérer le détail d'un dossier suivi par son ID
@@ -47,9 +48,10 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       return { success: false, error: "Dossier non trouvé" };
     }
 
-    // Vérifier que c'est bien un dossier suivi (statut LOGEMENT_ELIGIBLE)
-    if (dossier.validation.statut !== StatutValidationAmo.LOGEMENT_ELIGIBLE) {
-      return { success: false, error: "Ce dossier n'est pas un dossier suivi" };
+    // Page consultable pour les statuts SUIVIS + REFUSES (un dossier archivé
+    // non éligible reste lisible pour voir le motif).
+    if (!STATUTS_CONSULTABLES.includes(dossier.validation.statut)) {
+      return { success: false, error: "Ce dossier n'est pas consultable" };
     }
 
     // Vérifier que l'AMO est propriétaire du dossier (sauf admins)
@@ -123,6 +125,10 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
     // Construire l'objet des dates de progression
     const dates: ParcoursDateProgression = {
       compteCreatedAt: dossier.parcours.createdAt,
+      // Pas d'invitation envoyée si parcours archivé direct (sim non éligible).
+      invitationSentAt:
+        dossier.parcours.createdByAgentId && !dossier.parcours.archivedAt ? dossier.parcours.createdAt : undefined,
+      invitationAcceptedAt: dossier.user.claimedAt ?? undefined,
       amoChoisieAt: dossier.validation.choisieAt,
       eligibiliteSubmittedAt: datesByStep.get(Step.ELIGIBILITE),
       diagnosticSubmittedAt: datesByStep.get(Step.DIAGNOSTIC),
@@ -134,8 +140,11 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       facturesProcessedAt: processedDatesByStep.get(Step.FACTURES),
     };
 
-    // Construire les informations de diff agent
-    const agentEditInfo = await buildAgentEditInfo(dossier.parcours);
+    // Construire les informations de diff agent + résolution agent invitant
+    const [agentEditInfo, creator] = await Promise.all([
+      buildAgentEditInfo(dossier.parcours),
+      getParcoursCreator(dossier.parcours.createdByAgentId),
+    ]);
 
     const dossierDetail: DossierDetail = {
       id: dossier.validation.id,
@@ -145,11 +154,13 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       currentStep: dossier.parcours.currentStep as Step,
       currentStatus: dossier.parcours.currentStatus as Status,
       dsStatus: dossierDS?.dsStatus ?? null,
+      validationStatut: dossier.validation.statut,
       parcoursCreatedAt: dossier.parcours.createdAt,
       lastUpdatedAt: dossier.parcours.updatedAt,
       suiviDepuis: dossier.validation.valideeAt!,
       dates,
       agentEditInfo,
+      creator,
     };
 
     return { success: true, data: dossierDetail };

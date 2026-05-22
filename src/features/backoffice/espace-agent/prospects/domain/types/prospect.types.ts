@@ -3,6 +3,7 @@ import { SituationParticulier } from "@/shared/domain/value-objects/situation-pa
 import { SourceAcquisition } from "@/shared/domain/value-objects/source-acquisition.enum";
 import type { InfoLogement, AgentEditInfo } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import type { Amo } from "@/features/parcours/amo/domain/entities";
+import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 
 /**
  * Un prospect = un particulier qui a créé un compte mais n'a PAS fait de demande à un AMO
@@ -104,4 +105,14 @@ export interface ProspectDetail extends Prospect {
   }[];
   /** Informations sur les modifications agent (si données éditées) */
   agentEditInfo?: AgentEditInfo | null;
+  /** true si le demandeur s'est connecté via FranceConnect (fcId présent). */
+  hasUserClaimed: boolean;
+  /** true si une simulation (initiale ou agent) a été enregistrée. */
+  hasSimulation: boolean;
+  /** Date d'envoi de l'invitation (= parcours.createdAt si initié par un agent). */
+  invitationSentAt: Date | null;
+  /** Date d'acceptation de l'invitation (= users.claimedAt). */
+  invitationAcceptedAt: Date | null;
+  /** Agent qui a pré-créé le compte (av-add-dossier), null sinon. */
+  creator: ParcoursCreatorInfo | null;
 }

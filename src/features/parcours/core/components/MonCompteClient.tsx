@@ -47,6 +47,10 @@ export default function MonCompteClient() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactInfoChecked, setContactInfoChecked] = useState(false);
   const [contactInfoVersion, setContactInfoVersion] = useState(0);
+  // Téléphone connu côté DB (potentiellement saisi par un agent AMO/AV lors
+  // d'une invitation). Sert à pré-remplir `ContactInfoModal` quand le demandeur
+  // arrive sans `emailContact` mais avec un `telephone` déjà connu.
+  const [userTelephone, setUserTelephone] = useState<string | undefined>(undefined);
 
   // Utilisation du hook parcours simplifié
   const {
@@ -74,8 +78,13 @@ export default function MonCompteClient() {
   useEffect(() => {
     if (!user || contactInfoChecked) return;
     getContactInfo().then((result) => {
-      if (result.success && (!result.data.emailContact || !result.data.telephone)) {
-        setShowContactModal(true);
+      if (result.success) {
+        // Mémorise le téléphone existant (saisi par un agent AMO/AV lors de
+        // l'invitation) pour pré-remplir le modal le cas échéant.
+        if (result.data.telephone) setUserTelephone(result.data.telephone);
+        if (!result.data.emailContact || !result.data.telephone) {
+          setShowContactModal(true);
+        }
       }
       setContactInfoChecked(true);
     });
@@ -115,6 +124,7 @@ export default function MonCompteClient() {
         <ContactInfoModal
           isOpen={showContactModal}
           defaultEmail={user.email}
+          defaultTelephone={userTelephone}
           onClose={() => setShowContactModal(false)}
           onSuccess={() => {
             setShowContactModal(false);

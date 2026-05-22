@@ -10,7 +10,9 @@ DELETE FROM users WHERE id::text LIKE '11111111-1111-1111-1111-111111111c%';
 -- =============================================================================
 -- USERS (20 users)
 -- =============================================================================
-INSERT INTO users (id, sub, email, given_name, family_name, email_contact, created_at, updated_at)
+-- Note : `sub` n'existe pas sur users (la table agents l'a). Sur users, c'est
+-- `fc_id` (l'identifiant FranceConnect). `given_name`/`family_name` → `prenom`/`nom`.
+INSERT INTO users (id, fc_id, email, prenom, nom, email_contact, created_at, updated_at)
 VALUES
   -- Allier (03)
   ('11111111-1111-1111-1111-111111111c01', 'sub_elig_01', 'elig01@test.fr', 'Lucas',    'Martin',    'elig01@test.fr', NOW() - INTERVAL '15 days', NOW()),

@@ -16,6 +16,7 @@ import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/d
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
+import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 
 function buildAdresseComplete(logement: Partial<RGASimulationData["logement"]>): string {
   const parts = [logement.adresse, logement.commune].filter(Boolean);
@@ -147,8 +148,15 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     // Déterminer le statut AMO du prospect
     const amoInfo = await resolveAmoInfo(logement?.commune || "", logement?.code_departement || "");
 
-    // Construire les informations de diff agent
-    const agentEditInfo = await buildAgentEditInfo(result.parcours);
+    // Construire les informations de diff agent + résolution agent invitant
+    const [agentEditInfo, creator] = await Promise.all([
+      buildAgentEditInfo(result.parcours),
+      getParcoursCreator(result.parcours.createdByAgentId),
+    ]);
+
+    const hasUserClaimed = result.user.fcId !== null && result.user.fcId !== undefined;
+    const hasSimulation =
+      result.parcours.rgaSimulationData !== null || result.parcours.rgaSimulationDataAgent !== null;
 
     // Construire l'objet ProspectDetail
     const prospectDetail: ProspectDetail = {
@@ -177,6 +185,14 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       amoInfo,
       stepsHistory: [], // TODO: implémenter l'historique si nécessaire
       agentEditInfo,
+      hasUserClaimed,
+      hasSimulation,
+      // Pas d'invitation envoyée si le parcours a été archivé direct à la
+      // création (sim non éligible → on skip le mail dans creation-dossier).
+      invitationSentAt:
+        result.parcours.createdByAgentId && !result.parcours.archivedAt ? result.parcours.createdAt : null,
+      invitationAcceptedAt: result.user.claimedAt,
+      creator,
     };
 
     return { success: true, data: prospectDetail };

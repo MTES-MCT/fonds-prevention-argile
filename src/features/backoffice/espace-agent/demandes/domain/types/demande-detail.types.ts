@@ -1,5 +1,6 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { SourceAcquisition } from "@/shared/domain/value-objects/source-acquisition.enum";
+import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 
 /**
  * Types pour la page détail d'une demande d'accompagnement
@@ -58,6 +59,10 @@ export interface InfoLogement {
 export interface ParcoursDateProgression {
   /** Date de création du compte */
   compteCreatedAt: Date;
+  /** Date d'envoi de l'invitation (parcours initié par un agent). */
+  invitationSentAt?: Date;
+  /** Date d'acceptation de l'invitation (connexion FC après claim). */
+  invitationAcceptedAt?: Date;
   /** Date où le demandeur a choisi l'AMO */
   amoChoisieAt?: Date;
   /** Date de soumission du formulaire d'éligibilité */
@@ -124,4 +129,6 @@ export interface DemandeDetail {
   dates: ParcoursDateProgression;
   /** Informations sur les modifications agent (si données éditées) */
   agentEditInfo?: AgentEditInfo | null;
+  /** Agent qui a pré-créé le compte (av-add-dossier), null sinon. */
+  creator: ParcoursCreatorInfo | null;
 }
