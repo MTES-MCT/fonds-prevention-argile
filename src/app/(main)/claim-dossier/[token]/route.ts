@@ -14,10 +14,14 @@ import { getServerEnv } from "@/shared/config/env.config";
  *
  * Flux :
  * 1. Vérifie que le token existe, n'est pas expiré et n'a pas déjà été consommé.
- * 2. Si valide, pose un cookie httpOnly de courte durée (5 min) puis redirige
- *    vers `/api/auth/fc/login`.
+ * 2. Si valide, pose un cookie httpOnly (15 min) puis redirige vers la page
+ *    `/connexion` pour que le demandeur lance FranceConnect lui-même — c'est
+ *    plus rassurant qu'un redirect direct vers le bouton FC. Le cookie est
+ *    consommé par `consumeClaimToken` dans le callback FC.
  * 3. Sinon, redirige vers `/claim-dossier/invalide` qui affiche le message d'erreur.
  */
+const CLAIM_COOKIE_TTL_SECONDS = 15 * 60;
+
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
 
@@ -29,7 +33,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     return NextResponse.redirect(new URL("/claim-dossier/invalide", baseUrl));
   }
 
-  const response = NextResponse.redirect(new URL("/api/auth/fc/login", baseUrl));
-  response.cookies.set(COOKIE_NAMES.FC_CLAIM_TOKEN, token, getCookieOptions(300));
+  const response = NextResponse.redirect(new URL("/connexion", baseUrl));
+  response.cookies.set(COOKIE_NAMES.FC_CLAIM_TOKEN, token, getCookieOptions(CLAIM_COOKIE_TTL_SECONDS));
   return response;
 }
