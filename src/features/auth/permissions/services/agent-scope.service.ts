@@ -244,11 +244,10 @@ export function getScopeFilterConditions(scope: AgentScope): ScopeFilters | null
     };
   }
 
-  // Allers-vers (phase future) = filtrer par territoire + exclure ceux avec AMO
+  // Allers-vers : filtrer par territoire
   if (scope.canViewDossiersWithoutAmo) {
     return {
       departements: scope.departements.length > 0 ? scope.departements : undefined,
-      excludeWithAmo: true,
     };
   }
 

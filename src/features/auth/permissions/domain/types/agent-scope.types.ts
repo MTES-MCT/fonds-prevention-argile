@@ -56,9 +56,6 @@ export interface ScopeFilters {
   /** Si défini, filtrer par ces codes de départements */
   departements?: string[];
 
-  /** Si true, exclure les dossiers qui ont déjà une AMO */
-  excludeWithAmo?: boolean;
-
   /** Si true, aucun résultat ne doit être retourné (accès refusé) */
   noAccess?: boolean;
 }

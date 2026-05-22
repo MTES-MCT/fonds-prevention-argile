@@ -10,8 +10,8 @@ import {
   getResponsableDisplayName,
   getDossierPrecisionLabel,
   getPrecisionStyle,
+  STATUTS_REFUSES,
 } from "@/features/backoffice/espace-agent/dossiers/domain";
-import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { ROUTES } from "@/features/auth/domain/value-objects";
 import { formatNomComplet, formatDaysAgoSplit, formatDate } from "@/shared/utils";
 import { ActionMenu } from "../../shared/components/ActionMenu";
@@ -25,11 +25,6 @@ interface DossiersSuivisTableProps {
   /** Callback pour recharger les données après archivage/désarchivage */
   onRefresh?: () => void;
 }
-
-const STATUTS_REFUSES: StatutValidationAmo[] = [
-  StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
-  StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
-];
 
 /**
  * Tableau des dossiers suivis

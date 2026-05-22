@@ -411,7 +411,7 @@ describe("agent-scope.service", () => {
       expect(filters?.entrepriseAmoIds).toEqual(["entreprise-123", "entreprise-456"]);
     });
 
-    it("devrait retourner excludeWithAmo pour les allers-vers", () => {
+    it("devrait retourner les départements pour les allers-vers", () => {
       const scope: AgentScope = {
         isNational: false,
         entrepriseAmoIds: [],
@@ -425,7 +425,6 @@ describe("agent-scope.service", () => {
       const filters = getScopeFilterConditions(scope);
 
       expect(filters).not.toBeNull();
-      expect(filters?.excludeWithAmo).toBe(true);
       expect(filters?.departements).toEqual(["75"]);
     });
 
