@@ -2,15 +2,39 @@ import { Status } from "@/shared/domain/value-objects/status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
 /**
+ * Discriminant du type de responsable. Garde la cohérence des littéraux entre
+ * le type `Responsable` et les comparaisons (switch, garde…).
+ */
+export const RESPONSABLE_TYPE = {
+  AV: "AV",
+  AMO: "AMO",
+  MENAGE: "MENAGE",
+  DDT: "DDT",
+  ARCHIVE: "ARCHIVE",
+} as const;
+
+export type ResponsableType = (typeof RESPONSABLE_TYPE)[keyof typeof RESPONSABLE_TYPE];
+
+/**
  * Responsable d'un dossier à l'instant T (calculé à la volée).
  * Discriminated union sur `type`.
  */
 export type Responsable =
-  | { type: "ARCHIVE" }
-  | { type: "AV"; structureId: string | null; structureNom: string; codeDepartement: string | null }
-  | { type: "AMO"; entrepriseId: string; entrepriseNom: string; codeDepartement: string | null }
-  | { type: "MENAGE"; codeDepartement: string | null }
-  | { type: "DDT"; codeDepartement: string | null };
+  | { type: typeof RESPONSABLE_TYPE.ARCHIVE }
+  | {
+      type: typeof RESPONSABLE_TYPE.AV;
+      structureId: string | null;
+      structureNom: string;
+      codeDepartement: string | null;
+    }
+  | {
+      type: typeof RESPONSABLE_TYPE.AMO;
+      entrepriseId: string;
+      entrepriseNom: string;
+      codeDepartement: string | null;
+    }
+  | { type: typeof RESPONSABLE_TYPE.MENAGE; codeDepartement: string | null }
+  | { type: typeof RESPONSABLE_TYPE.DDT; codeDepartement: string | null };
 
 export interface ResponsableInput {
   currentStatus: Status;
@@ -41,7 +65,7 @@ export function getResponsableDossier(input: ResponsableInput): Responsable {
   const { archivedAt, validation, currentStatus, codeDepartement, allersVersTerritorial } = input;
 
   if (archivedAt !== null) {
-    return { type: "ARCHIVE" };
+    return { type: RESPONSABLE_TYPE.ARCHIVE };
   }
 
   if (!validation) {
@@ -51,7 +75,7 @@ export function getResponsableDossier(input: ResponsableInput): Responsable {
   switch (validation.statut) {
     case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
     case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
-      return { type: "ARCHIVE" };
+      return { type: RESPONSABLE_TYPE.ARCHIVE };
 
     case StatutValidationAmo.SANS_AMO:
       return buildAv(allersVersTerritorial, codeDepartement);
@@ -59,7 +83,7 @@ export function getResponsableDossier(input: ResponsableInput): Responsable {
     case StatutValidationAmo.EN_ATTENTE:
       return validation.entreprise
         ? {
-            type: "AMO",
+            type: RESPONSABLE_TYPE.AMO,
             entrepriseId: validation.entreprise.id,
             entrepriseNom: validation.entreprise.nom,
             codeDepartement,
@@ -71,17 +95,17 @@ export function getResponsableDossier(input: ResponsableInput): Responsable {
         return buildAv(allersVersTerritorial, codeDepartement);
       }
       return currentStatus === Status.EN_INSTRUCTION
-        ? { type: "DDT", codeDepartement }
-        : { type: "MENAGE", codeDepartement };
+        ? { type: RESPONSABLE_TYPE.DDT, codeDepartement }
+        : { type: RESPONSABLE_TYPE.MENAGE, codeDepartement };
   }
 }
 
 function buildAv(
   av: { id: string; nom: string } | null,
   codeDepartement: string | null
-): Extract<Responsable, { type: "AV" }> {
+): Extract<Responsable, { type: typeof RESPONSABLE_TYPE.AV }> {
   return {
-    type: "AV",
+    type: RESPONSABLE_TYPE.AV,
     structureId: av?.id ?? null,
     structureNom: av?.nom ?? "Aller-vers du territoire",
     codeDepartement,

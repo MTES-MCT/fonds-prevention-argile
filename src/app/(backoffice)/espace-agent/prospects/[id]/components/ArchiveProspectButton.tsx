@@ -3,15 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArchiveModal } from "../../../shared/components/ArchiveModal";
-import { archiveProspectAction } from "@/features/backoffice/espace-agent/prospects/actions/archive-prospect.actions";
-import { ROUTES } from "@/features/auth/domain/value-objects";
 
 interface ArchiveProspectButtonProps {
   parcoursId: string;
 }
 
 /**
- * Bouton "Archiver" avec modale de confirmation pour la page détail prospect
+ * Bouton "Archiver" avec modale de confirmation pour la page détail prospect.
+ * Utilise l'action d'archivage unifiée (qui vérifie le responsable).
  */
 export function ArchiveProspectButton({ parcoursId }: ArchiveProspectButtonProps) {
   const router = useRouter();
@@ -19,7 +18,7 @@ export function ArchiveProspectButton({ parcoursId }: ArchiveProspectButtonProps
 
   function handleSuccess() {
     setIsOpen(false);
-    router.push(ROUTES.backoffice.espaceAgent.prospects);
+    router.push("/espace-agent/dossiers");
   }
 
   return (
@@ -29,14 +28,7 @@ export function ArchiveProspectButton({ parcoursId }: ArchiveProspectButtonProps
         Archiver
       </button>
 
-      <ArchiveModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        parcoursId={parcoursId}
-        onSuccess={handleSuccess}
-        archiveAction={archiveProspectAction}
-        entityLabel="prospect"
-      />
+      <ArchiveModal isOpen={isOpen} onClose={() => setIsOpen(false)} parcoursId={parcoursId} onSuccess={handleSuccess} />
     </>
   );
 }

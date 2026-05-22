@@ -42,6 +42,8 @@ export interface DossierItem {
   updatedAt: Date;
   /** Responsable du dossier à l'instant T (dérivé par `getResponsableDossier`). */
   responsable: Responsable;
+  /** L'agent connecté peut-il agir au titre du responsable (archiver, qualifier) ? */
+  canActAsResponsable: boolean;
 }
 
 /** Filtres optionnels appliqués au listing. */

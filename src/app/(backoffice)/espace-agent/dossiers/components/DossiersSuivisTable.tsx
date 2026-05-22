@@ -106,7 +106,8 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                           onClick: () =>
                             router.push(ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.parcoursId)),
                         },
-                        ...(!isRefuse
+                        // Archiver / Désarchiver : réservé au responsable courant.
+                        ...(!isRefuse && dossier.canActAsResponsable
                           ? [
                               isArchived
                                 ? {

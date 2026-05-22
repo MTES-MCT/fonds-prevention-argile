@@ -1,5 +1,8 @@
-import { allersVersRepository, entreprisesAmoRepo } from "@/shared/database";
+import { eq } from "drizzle-orm";
+import { allersVersRepository, db, entreprisesAmoRepo, parcoursRepo } from "@/shared/database";
+import { parcoursAmoValidations } from "@/shared/database/schema";
 import { getResponsableDossier, type Responsable } from "@/features/parcours/core/domain/services/responsable.service";
+import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import type { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { Status } from "@/shared/domain/value-objects/status.enum";
 
@@ -49,6 +52,39 @@ export async function resolveResponsables(
     result.set(d.parcoursId, responsable);
   }
   return result;
+}
+
+/**
+ * Résout le responsable d'un parcours unique (utilisé par les server actions
+ * qui doivent vérifier l'autorisation avant un archivage ou une qualification).
+ * Retourne `null` si le parcours n'existe pas.
+ */
+export async function resolveResponsableForParcours(parcoursId: string): Promise<Responsable | null> {
+  const parcours = await parcoursRepo.findById(parcoursId);
+  if (!parcours) return null;
+
+  const [validation] = await db
+    .select()
+    .from(parcoursAmoValidations)
+    .where(eq(parcoursAmoValidations.parcoursId, parcoursId))
+    .limit(1);
+
+  const logement = getDemandeurFirstLogement(parcours);
+  const codeDepartement = logement?.code_departement ? String(logement.code_departement) : null;
+
+  const map = await resolveResponsables([
+    {
+      parcoursId,
+      archivedAt: parcours.archivedAt,
+      currentStatus: parcours.currentStatus,
+      codeDepartement,
+      validation: validation
+        ? { statut: validation.statut, entrepriseAmoId: validation.entrepriseAmoId }
+        : null,
+    },
+  ]);
+
+  return map.get(parcoursId) ?? null;
 }
 
 function unique<T>(values: (T | null)[]): T[] {
