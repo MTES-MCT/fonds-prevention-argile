@@ -187,7 +187,10 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       agentEditInfo,
       hasUserClaimed,
       hasSimulation,
-      invitationSentAt: result.parcours.createdByAgentId ? result.parcours.createdAt : null,
+      // Pas d'invitation envoyée si le parcours a été archivé direct à la
+      // création (sim non éligible → on skip le mail dans creation-dossier).
+      invitationSentAt:
+        result.parcours.createdByAgentId && !result.parcours.archivedAt ? result.parcours.createdAt : null,
       invitationAcceptedAt: result.user.claimedAt,
       creator,
     };

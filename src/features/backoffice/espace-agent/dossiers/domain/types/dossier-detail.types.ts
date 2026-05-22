@@ -1,6 +1,7 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type {
   InfoDemandeur,
   InfoLogement,
@@ -40,6 +41,8 @@ export interface DossierDetail {
   currentStatus: Status;
   /** Statut DS du dossier de l'étape courante */
   dsStatus: DSStatus | null;
+  /** Statut de la validation AMO (pour distinguer en_attente / éligible / non éligible côté UI). */
+  validationStatut: StatutValidationAmo;
   /** Date de création du parcours */
   parcoursCreatedAt: Date;
   /** Date de dernière mise à jour du parcours */

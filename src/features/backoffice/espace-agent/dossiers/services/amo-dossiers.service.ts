@@ -22,6 +22,13 @@ const STATUTS_REFUSES = [StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, StatutValida
 export const STATUTS_SUIVIS = [StatutValidationAmo.EN_ATTENTE, StatutValidationAmo.LOGEMENT_ELIGIBLE];
 
 /**
+ * Statuts pour lesquels la page detail `/dossiers/[id]` est consultable.
+ * SUIVIS + REFUSES : un dossier archivé non éligible reste lisible côté agent
+ * pour consulter le motif d'inéligibilité.
+ */
+export const STATUTS_CONSULTABLES = [...STATUTS_SUIVIS, ...STATUTS_REFUSES];
+
+/**
  * Service pour la page des dossiers de l'espace AMO
  *
  * Fournit les données pour afficher les dossiers suivis et archivés (demandes acceptées)

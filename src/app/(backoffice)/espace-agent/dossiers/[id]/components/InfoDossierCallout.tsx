@@ -1,11 +1,14 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
 interface InfoDossierCalloutProps {
   currentStep: Step;
   currentStatus: Status;
   dsStatus: DSStatus | null;
+  /** Statut validation AMO — sert à détecter un dossier archivé non éligible. */
+  validationStatut?: StatutValidationAmo;
 }
 
 interface CalloutMessage {
@@ -159,10 +162,20 @@ function getDefaultMessage(currentStep: Step): CalloutMessage {
 /**
  * Callout informatif sur l'etat du dossier et les actions a effectuer par le demandeur
  */
-export function InfoDossierCallout({ currentStep, currentStatus, dsStatus }: InfoDossierCalloutProps) {
+export function InfoDossierCallout({ currentStep, currentStatus, dsStatus, validationStatut }: InfoDossierCalloutProps) {
   let message: CalloutMessage;
 
-  if (dsStatus === DSStatus.ACCEPTE || currentStatus === Status.VALIDE) {
+  if (validationStatut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
+    // Dossier archivé automatiquement à la création parce que la simulation
+    // a déterminé que le demandeur n'est pas éligible.
+    message = {
+      title: "Dossier archivé — non éligible",
+      description:
+        "La simulation a déterminé que ce dossier n'est pas éligible au dispositif. Il a été archivé automatiquement à la création.",
+      hint: "Les raisons d'inéligibilité sont consultables dans les détails du dossier.",
+      variant: "red-marianne",
+    };
+  } else if (dsStatus === DSStatus.ACCEPTE || currentStatus === Status.VALIDE) {
     message = getAccepteMessage(currentStep);
   } else if (dsStatus === DSStatus.REFUSE || dsStatus === DSStatus.CLASSE_SANS_SUITE) {
     message = getRefuseMessage(currentStep);

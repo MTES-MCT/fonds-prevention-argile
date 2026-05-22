@@ -107,7 +107,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
         {/* Section en-tête : Callout + InfoDemandeur */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
-            <InfoDossierCallout currentStep={dossier.currentStep} currentStatus={dossier.currentStatus} dsStatus={dossier.dsStatus} />
+            <InfoDossierCallout currentStep={dossier.currentStep} currentStatus={dossier.currentStatus} dsStatus={dossier.dsStatus} validationStatut={dossier.validationStatut} />
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <div style={{ alignSelf: "flex-start" }}>

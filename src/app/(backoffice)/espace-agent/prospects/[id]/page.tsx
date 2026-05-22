@@ -120,14 +120,23 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
             )}
           </div>
           <div className="fr-badges-group">
-            <p className="fr-badge fr-badge--new">
-              Nouveau prospect du {formatDateShort(prospect.createdAt.toISOString())}
-            </p>
-            <p className="fr-badge">
-              {prospect.hasSimulation
-                ? STEP_LABELS_NUMBERED[prospect.currentStep] || prospect.currentStep
-                : "Simulation à effectuer"}
-            </p>
+            {prospect.situationParticulier === SituationParticulier.ARCHIVE ? (
+              // Dossier archivé : un seul badge "Archivé". Évite d'afficher
+              // "Invitation envoyée" ou autres labels step trompeurs sur un
+              // dossier qui n'a pas vocation à progresser.
+              <p className="fr-badge fr-badge--error">Archivé le {formatDateShort(prospect.createdAt.toISOString())}</p>
+            ) : (
+              <>
+                <p className="fr-badge fr-badge--new">
+                  Nouveau prospect du {formatDateShort(prospect.createdAt.toISOString())}
+                </p>
+                <p className="fr-badge">
+                  {prospect.hasSimulation
+                    ? STEP_LABELS_NUMBERED[prospect.currentStep] || prospect.currentStep
+                    : "Simulation à effectuer"}
+                </p>
+              </>
+            )}
           </div>
         </div>
 
@@ -135,10 +144,7 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
             {!prospect.hasSimulation && (
-              <CalloutSimulationAEffectuer
-                parcoursId={prospect.parcoursId}
-                hasUserClaimed={prospect.hasUserClaimed}
-              />
+              <CalloutSimulationAEffectuer parcoursId={prospect.parcoursId} hasUserClaimed={prospect.hasUserClaimed} />
             )}
             <QualificationSection
               parcoursId={prospect.parcoursId}

@@ -8,11 +8,27 @@ vi.mock("@/shared/database/repositories", () => ({
   parcoursRepo: {
     findOrCreateForUser: vi.fn(),
     updateRGADataAgent: vi.fn(),
+    updateSituationParticulier: vi.fn(),
   },
   agentsRepo: {
     // Par défaut on retourne un agent sans entrepriseAmoId (cas AV pur).
     // Les tests qui veulent tester le chemin AMO peuvent le surcharger.
     findById: vi.fn(async () => ({ id: "agent-1", entrepriseAmoId: null, allersVersId: "av-1" })),
+  },
+}));
+
+// Mock du service d'éligibilité — par défaut retourne null (sim incomplète) ;
+// les tests dédiés au cas non-éligible surchargeront la valeur de retour.
+vi.mock("@/features/simulateur/domain/services/eligibility.service", () => ({
+  EligibilityService: {
+    evaluate: vi.fn(() => ({ result: null, checks: {}, isComplete: false })),
+    getReasonMessage: vi.fn(() => "Raison test"),
+  },
+}));
+
+vi.mock("@/features/backoffice/espace-agent/prospects/services/qualification.service", () => ({
+  qualificationService: {
+    qualifyProspect: vi.fn(),
   },
 }));
 
@@ -48,6 +64,11 @@ vi.mock("./inviter-name.service", () => ({
 import { userRepo, parcoursRepo, agentsRepo } from "@/shared/database/repositories";
 import { db } from "@/shared/database/client";
 import { sendClaimDossierEmail } from "@/shared/email/actions/send-claim-dossier.actions";
+import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
+import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
+import { EligibilityReason } from "@/features/simulateur/domain/value-objects/eligibility-reason.enum";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 
 describe("createDossierByAgent", () => {
   beforeEach(() => {
@@ -174,6 +195,80 @@ describe("createDossierByAgent", () => {
       await createDossierByAgent({ ...baseParams, intent: "amo" });
 
       expect(insertSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("simulation non éligible : auto-archivage + skip mail", () => {
+    const simNonEligible = {
+      logement: { adresse: "X", type: "appartement" },
+      simulatedAt: new Date().toISOString(),
+    };
+
+    beforeEach(() => {
+      // EligibilityService renvoie eligible: false (raison APPARTEMENT par défaut)
+      vi.mocked(EligibilityService.evaluate).mockReturnValue({
+        result: {
+          eligible: false,
+          reason: EligibilityReason.APPARTEMENT,
+          determinedAtStep: "type_logement",
+          determinedAt: new Date().toISOString(),
+          checks: {} as never,
+        },
+        checks: {} as never,
+        isComplete: true,
+      });
+    });
+
+    it("intent=av non éligible : appelle qualifyProspect + skip mail", async () => {
+      const result = await createDossierByAgent({
+        ...baseParams,
+        intent: "av",
+        rgaSimulationDataAgent: simNonEligible as never,
+      });
+
+      expect(qualificationService.qualifyProspect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          parcoursId: "parcours-1",
+          agentId: "agent-1",
+          decision: QualificationDecision.NON_ELIGIBLE,
+          raisonsIneligibilite: ["appartement"],
+        })
+      );
+      expect(parcoursRepo.updateSituationParticulier).not.toHaveBeenCalled();
+      expect(sendClaimDossierEmail).not.toHaveBeenCalled();
+      expect(result.emailSent).toBe(false);
+    });
+
+    it("intent=amo non éligible : insert validation NON_ELIGIBLE + updateSituationParticulier(ARCHIVE) + skip mail", async () => {
+      vi.mocked(agentsRepo.findById).mockResolvedValueOnce({
+        id: "agent-amo",
+        entrepriseAmoId: "amo-42",
+        allersVersId: null,
+      } as never);
+
+      const insertSpy = vi.mocked(db.insert);
+      insertSpy.mockClear();
+
+      const result = await createDossierByAgent({
+        ...baseParams,
+        intent: "amo",
+        rgaSimulationDataAgent: simNonEligible as never,
+      });
+
+      // Validation AMO créée
+      expect(insertSpy).toHaveBeenCalledTimes(1);
+      // Parcours archivé
+      expect(parcoursRepo.updateSituationParticulier).toHaveBeenCalledWith(
+        "parcours-1",
+        SituationParticulier.ARCHIVE,
+        expect.stringContaining("Non éligible"),
+        "agent-1"
+      );
+      // qualifyProspect NON appelé (c'est le chemin AV)
+      expect(qualificationService.qualifyProspect).not.toHaveBeenCalled();
+      // Mail skipé
+      expect(sendClaimDossierEmail).not.toHaveBeenCalled();
+      expect(result.emailSent).toBe(false);
     });
   });
 });

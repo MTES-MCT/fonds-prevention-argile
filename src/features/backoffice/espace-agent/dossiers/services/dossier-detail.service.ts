@@ -13,7 +13,7 @@ import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
-import { STATUTS_SUIVIS } from "./amo-dossiers.service";
+import { STATUTS_CONSULTABLES } from "./amo-dossiers.service";
 
 /**
  * Récupérer le détail d'un dossier suivi par son ID
@@ -48,10 +48,10 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       return { success: false, error: "Dossier non trouvé" };
     }
 
-    // Cohérence avec la liste : EN_ATTENTE (invitation en attente du claim FC)
-    // et LOGEMENT_ELIGIBLE (demande validée) sont tous deux des "dossiers suivis".
-    if (!STATUTS_SUIVIS.includes(dossier.validation.statut)) {
-      return { success: false, error: "Ce dossier n'est pas un dossier suivi" };
+    // Page consultable pour les statuts SUIVIS + REFUSES (un dossier archivé
+    // non éligible reste lisible pour voir le motif).
+    if (!STATUTS_CONSULTABLES.includes(dossier.validation.statut)) {
+      return { success: false, error: "Ce dossier n'est pas consultable" };
     }
 
     // Vérifier que l'AMO est propriétaire du dossier (sauf admins)
@@ -125,7 +125,9 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
     // Construire l'objet des dates de progression
     const dates: ParcoursDateProgression = {
       compteCreatedAt: dossier.parcours.createdAt,
-      invitationSentAt: dossier.parcours.createdByAgentId ? dossier.parcours.createdAt : undefined,
+      // Pas d'invitation envoyée si parcours archivé direct (sim non éligible).
+      invitationSentAt:
+        dossier.parcours.createdByAgentId && !dossier.parcours.archivedAt ? dossier.parcours.createdAt : undefined,
       invitationAcceptedAt: dossier.user.claimedAt ?? undefined,
       amoChoisieAt: dossier.validation.choisieAt,
       eligibiliteSubmittedAt: datesByStep.get(Step.ELIGIBILITE),
@@ -152,6 +154,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       currentStep: dossier.parcours.currentStep as Step,
       currentStatus: dossier.parcours.currentStatus as Status,
       dsStatus: dossierDS?.dsStatus ?? null,
+      validationStatut: dossier.validation.statut,
       parcoursCreatedAt: dossier.parcours.createdAt,
       lastUpdatedAt: dossier.parcours.updatedAt,
       suiviDepuis: dossier.validation.valideeAt!,

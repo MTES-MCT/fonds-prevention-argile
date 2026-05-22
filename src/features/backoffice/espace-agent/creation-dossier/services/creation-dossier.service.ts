@@ -3,11 +3,15 @@ import { db } from "@/shared/database/client";
 import { parcoursAmoValidations } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
+import { mapEligibilityReasonToRaisonIneligibilite } from "@/features/simulateur/domain/utils/eligibility-reason-to-raison.utils";
 import { generateSecureRandomString } from "@/features/auth/utils/oauth.utils";
 import { getServerEnv } from "@/shared/config/env.config";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { sendClaimDossierEmail } from "@/shared/email/actions/send-claim-dossier.actions";
+import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
+import { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import {
   type AdresseBienDetails,
   type CreateDossierByAgentParams,
@@ -95,20 +99,19 @@ export async function createDossierByAgent(
     await parcoursRepo.updateRGADataAgent(parcours.id, simulationData, agentId);
   }
 
-  // 4 bis. Claim AMO auto, **uniquement en mode `amo`** (entrée /dossiers).
+  // 4 bis. Évaluation d'éligibilité une fois, utilisée par les branches en aval
+  //         (claim AMO + auto-archivage non éligible).
+  const eligibilityResult = rgaSimulationDataAgent
+    ? EligibilityService.evaluate(rgaSimulationDataAgent).result
+    : null;
+  const isNonEligible = eligibilityResult?.eligible === false;
+
+  // 4 ter. Claim AMO auto, **uniquement en mode `amo`** (entrée /dossiers).
   // En mode `av` (entrée /prospects), même si l'agent a un `entrepriseAmoId`
   // (cas AMO_ET_ALLERS_VERS), on ne claim PAS sur cette entreprise — le
   // dossier reste un prospect côté AV, exactement comme un AV pur.
   //
-  // Statut posé en mode `amo` :
-  //   - Simulation complète fournie → l'AMO a déjà vérifié l'éligibilité.
-  //     On évalue via `EligibilityService.evaluate` :
-  //       - éligible     → LOGEMENT_ELIGIBLE + valideeAt = now (dossier suivi)
-  //       - non éligible → LOGEMENT_NON_ELIGIBLE + valideeAt = now (archivé)
-  //   - Pas de simulation → EN_ATTENTE (l'AMO attend que le demandeur fasse
-  //     sa propre simulation après le claim FC).
-  //
-  // Idempotent via ON CONFLICT (parcours_id) — utile pour les re-créations.
+  // Idempotent via ON CONFLICT (parcours_id).
   const agent = await agentsRepo.findById(agentId);
   const shouldClaimAmo = !!agent?.entrepriseAmoId && intent === "amo";
   if (shouldClaimAmo && agent?.entrepriseAmoId) {
@@ -122,18 +125,14 @@ export async function createDossierByAgent(
     let valideeAt: Date | null = null;
     let commentaire = `Invitation créée par ${fullName ? fullName + " — " : ""}agent AMO`;
 
-    if (rgaSimulationDataAgent) {
-      const { result } = EligibilityService.evaluate(rgaSimulationDataAgent);
-      if (result?.eligible === true) {
-        statut = StatutValidationAmo.LOGEMENT_ELIGIBLE;
-        valideeAt = new Date();
-        commentaire += " (simulation éligible)";
-      } else if (result?.eligible === false) {
-        statut = StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
-        valideeAt = new Date();
-        commentaire += " (simulation non éligible)";
-      }
-      // Si result est null (sim incomplète improbable ici) → on garde EN_ATTENTE.
+    if (eligibilityResult?.eligible === true) {
+      statut = StatutValidationAmo.LOGEMENT_ELIGIBLE;
+      valideeAt = new Date();
+      commentaire += " (simulation éligible)";
+    } else if (isNonEligible) {
+      statut = StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
+      valideeAt = new Date();
+      commentaire += " (simulation non éligible)";
     }
 
     await db
@@ -154,12 +153,51 @@ export async function createDossierByAgent(
       .onConflictDoNothing({ target: parcoursAmoValidations.parcoursId });
   }
 
-  // 5. Envoi optionnel du mail d'invitation
+  // 4 quater. Auto-archivage si la simulation est non éligible.
+  // - mode `av` : crée une `prospect_qualifications` qui archive le parcours.
+  // - mode `amo` : la validation NON_ELIGIBLE est déjà posée plus haut ; il reste
+  //   à archiver explicitement le parcours pour que `archivedAt` soit set (sinon
+  //   le dashboard admin qui filtre dessus ne voit pas le dossier comme archivé).
+  if (isNonEligible) {
+    // Inclure le libellé exact de la raison dans la note pour que l'agent voie
+    // pourquoi le dossier a été archivé (le tag `raisonsIneligibilite` peut
+    // retomber sur "autre" pour certaines raisons sans mapping direct, ex.
+    // DEMANDE_CATNAT_EN_COURS).
+    const reasonLabel = eligibilityResult?.reason
+      ? EligibilityService.getReasonMessage(eligibilityResult.reason)
+      : "";
+    const archiveNote = reasonLabel
+      ? `Non éligible (simulation auto à la création) — ${reasonLabel}`
+      : "Non éligible (simulation auto à la création)";
+
+    if (intent === "av") {
+      await qualificationService.qualifyProspect({
+        parcoursId: parcours.id,
+        agentId,
+        decision: QualificationDecision.NON_ELIGIBLE,
+        actionsRealisees: [],
+        raisonsIneligibilite: [mapEligibilityReasonToRaisonIneligibilite(eligibilityResult?.reason)],
+        note: archiveNote,
+      });
+    } else {
+      await parcoursRepo.updateSituationParticulier(
+        parcours.id,
+        SituationParticulier.ARCHIVE,
+        archiveNote,
+        agentId
+      );
+    }
+  }
+
+  // 5. Envoi optionnel du mail d'invitation.
+  // On skip le mail si la simulation a déterminé que le demandeur est non
+  // éligible — pas de sens de l'inviter à créer un compte sur un dossier
+  // déjà archivé.
   const baseUrl = getServerEnv().BASE_URL;
   const claimUrl = `${baseUrl}/claim-dossier/${claimToken}`;
   let emailSent = false;
 
-  if (sendEmail) {
+  if (sendEmail && !isNonEligible) {
     const inviterName = await getInviterName(agentId);
     const emailResult = await sendClaimDossierEmail({
       demandeurEmail: demandeur.email,
