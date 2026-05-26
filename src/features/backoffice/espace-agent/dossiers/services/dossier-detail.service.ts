@@ -13,12 +13,14 @@ import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
+import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import { STATUTS_CONSULTABLES } from "../domain/types";
 
 /**
- * Récupérer le détail d'un dossier suivi par son ID
- * Vérifie que l'utilisateur connecté est bien l'AMO propriétaire
- * et que le dossier est bien en statut LOGEMENT_ELIGIBLE
+ * Récupère le détail d'un dossier suivi.
+ * L'accès en lecture s'aligne sur la visibilité territoriale du listing :
+ * tout agent du territoire (AMO, AV, hybride) peut consulter le dossier ;
+ * les admins ont un accès global.
  */
 export async function getDossierDetail(dossierId: string): Promise<ActionResult<DossierDetail>> {
   try {
@@ -27,9 +29,6 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
     if (!user) {
       return { success: false, error: "Non authentifié" };
     }
-
-    // Les admins peuvent tout voir
-    const isAdmin = user.role === UserRole.SUPER_ADMINISTRATEUR || user.role === UserRole.ADMINISTRATEUR;
 
     // Récupérer le dossier avec les données du parcours
     const [dossier] = await db
@@ -54,21 +53,17 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       return { success: false, error: "Ce dossier n'est pas consultable" };
     }
 
-    // Vérifier que l'AMO est propriétaire du dossier (sauf admins)
-    if (!isAdmin) {
-      const canAccessDossiers = user.role === UserRole.AMO || user.role === UserRole.AMO_ET_ALLERS_VERS;
-
-      if (!canAccessDossiers) {
-        return { success: false, error: "Accès réservé aux AMO" };
-      }
-
-      if (!user.entrepriseAmoId) {
-        return { success: false, error: "Votre compte AMO n'est pas configuré" };
-      }
-
-      if (dossier.validation.entrepriseAmoId !== user.entrepriseAmoId) {
-        return { success: false, error: "Ce dossier ne vous est pas destiné" };
-      }
+    // Contrôle d'accès aligné sur le listing : tout agent du territoire peut lire.
+    // verifyProspectTerritoryAccess gère l'accès national (admins) et le match
+    // EPCI ∪ département sur le scope de l'agent.
+    const territoryError = await verifyProspectTerritoryAccess(dossier.validation.parcoursId, {
+      id: user.agentId ?? "",
+      role: user.role as UserRole,
+      entrepriseAmoId: user.entrepriseAmoId ?? null,
+      allersVersId: user.allersVersId ?? null,
+    });
+    if (territoryError) {
+      return { success: false, error: territoryError };
     }
 
     // Récupérer le statut DS de l'étape courante
