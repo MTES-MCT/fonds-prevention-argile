@@ -42,6 +42,17 @@ export function getResponsableTabLabel(prefix: string, codesDepartement: string[
 }
 
 /**
+ * Libellés étendus des KPIs affichés en cartes au-dessus du listing.
+ * Mêmes catégories que les onglets responsable, version longue.
+ */
+export const RESPONSABLE_KPI_LABELS: Record<Exclude<ResponsableTabId, "tous" | "ARCHIVE">, string> = {
+  AV: "Pré-éligibilité à vérifier",
+  AMO: "Demande AMO en attente",
+  MENAGE: "Actions Ménages attendues",
+  DDT: "Instructions DDT en cours",
+};
+
+/**
  * Libellés d'étape conformes à la maquette du listing dossiers.
  */
 export const DOSSIER_STEP_LABELS: Record<Step, string> = {

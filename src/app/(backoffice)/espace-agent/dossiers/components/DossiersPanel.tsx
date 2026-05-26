@@ -7,12 +7,10 @@ import {
   type DossiersTerritoireData,
 } from "@/features/backoffice/espace-agent/dossiers/actions/get-dossiers-territoire-data.action";
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
-import {
-  getResponsableTabLabel,
-  type ResponsableTabId,
-} from "@/features/backoffice/espace-agent/dossiers/domain";
+import { getResponsableTabLabel, type ResponsableTabId } from "@/features/backoffice/espace-agent/dossiers/domain";
 import { DossiersSuivisHeader } from "./DossiersSuivisHeader";
 import { DossiersSuivisTable } from "./DossiersSuivisTable";
+import { DossiersKpiCards } from "./DossiersKpiCards";
 import { Pagination } from "@/shared/components/Pagination/Pagination";
 
 interface DossiersPanelProps {
@@ -91,15 +89,8 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
     loadData();
   }, [loadData]);
 
-  // Liste des EPCI distincts présents pour peupler le filtre.
-  const availableEpcis = useMemo(() => {
-    if (!data) return [];
-    const set = new Set<string>();
-    for (const d of data.dossiers) {
-      if (d.logement.codeEpci) set.add(d.logement.codeEpci);
-    }
-    return Array.from(set).sort();
-  }, [data]);
+  // Liste des EPCI distincts (avec leur nom lisible) fournie par le serveur.
+  const availableEpcis = data?.epcisDisponibles ?? [];
 
   const counters = useMemo(() => {
     const map: Record<ResponsableTabId, number> = { tous: 0, AV: 0, AMO: 0, MENAGE: 0, DDT: 0, ARCHIVE: 0 };
@@ -161,7 +152,10 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
 
   return (
     <>
-      <DossiersSuivisHeader prenom={prenom} />
+      <div className="fr-container fr-py-6w">
+        <DossiersSuivisHeader prenom={prenom} />
+        <DossiersKpiCards counters={counters} />
+      </div>
       <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
         <div className="fr-container">
           <h2 className="fr-h4 fr-mb-3w">Tous les dossiers ({data.total})</h2>
@@ -229,8 +223,8 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
                 }}>
                 <option value="">EPCI</option>
                 {availableEpcis.map((epci) => (
-                  <option key={epci} value={epci}>
-                    EPCI – {epci}
+                  <option key={epci.code} value={epci.code}>
+                    {epci.nom}
                   </option>
                 ))}
               </select>

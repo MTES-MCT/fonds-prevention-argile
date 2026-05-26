@@ -2,12 +2,17 @@
 
 import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
 import { getDossiersByAgent } from "../services/dossiers-territoire.service";
-import type { DossierItem, DossiersTerritoireFilters } from "../domain/types/dossiers-territoire.types";
+import type {
+  DossierItem,
+  DossiersTerritoireFilters,
+  EpciChoice,
+} from "../domain/types/dossiers-territoire.types";
 import type { ActionResult } from "@/shared/types";
 
 export interface DossiersTerritoireData {
   dossiers: DossierItem[];
   total: number;
+  epcisDisponibles: EpciChoice[];
 }
 
 /**
@@ -25,7 +30,7 @@ export async function getDossiersTerritoireDataAction(
     }
 
     const { agent } = access;
-    const { dossiers } = await getDossiersByAgent(
+    const { dossiers, epcisDisponibles } = await getDossiersByAgent(
       {
         id: agent.id,
         role: agent.role,
@@ -37,7 +42,7 @@ export async function getDossiersTerritoireDataAction(
 
     return {
       success: true,
-      data: { dossiers, total: dossiers.length },
+      data: { dossiers, total: dossiers.length, epcisDisponibles },
     };
   } catch (error) {
     console.error("[getDossiersTerritoireDataAction] Erreur:", error);

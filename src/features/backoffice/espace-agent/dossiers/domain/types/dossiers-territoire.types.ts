@@ -52,6 +52,12 @@ export interface DossiersTerritoireFilters {
   search?: string;
 }
 
+/** Choix proposé dans le filtre EPCI : libellé lisible + code SIREN. */
+export interface EpciChoice {
+  code: string;
+  nom: string;
+}
+
 export interface DossiersTerritoireResult {
   dossiers: DossierItem[];
   total: number;
@@ -59,4 +65,6 @@ export interface DossiersTerritoireResult {
     departements: string[];
     epcis: string[];
   };
+  /** EPCI distincts présents dans les dossiers retournés, avec leur nom lisible. */
+  epcisDisponibles: EpciChoice[];
 }

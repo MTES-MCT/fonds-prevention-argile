@@ -6,11 +6,13 @@ import {
 } from "@/features/auth/permissions/services/responsable-permissions.service";
 import type { AgentScopeInput } from "@/features/auth/permissions/domain/types/agent-scope.types";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
+import { getEpciBySiren } from "@/features/seo/services/territoires.service";
 import { resolveResponsables, type ResolverDossier } from "./responsable-resolver.service";
 import type {
   DossierItem,
   DossiersTerritoireFilters,
   DossiersTerritoireResult,
+  EpciChoice,
 } from "../domain/types/dossiers-territoire.types";
 
 /**
@@ -61,6 +63,7 @@ export async function getDossiersByAgent(
     dossiers,
     total: dossiers.length,
     territoiresCouverts: { departements, epcis },
+    epcisDisponibles: buildEpciChoices(dossiers),
   };
 }
 
@@ -69,7 +72,22 @@ function emptyResult(departements: string[], epcis: string[]): DossiersTerritoir
     dossiers: [],
     total: 0,
     territoiresCouverts: { departements, epcis },
+    epcisDisponibles: [],
   };
+}
+
+/**
+ * Construit la liste {code, nom} des EPCI distincts présents dans les dossiers,
+ * triée par nom pour le rendu du filtre. Le nom vient du référentiel SEO.
+ */
+function buildEpciChoices(dossiers: DossierItem[]): EpciChoice[] {
+  const codes = new Set<string>();
+  for (const d of dossiers) {
+    if (d.logement.codeEpci) codes.add(d.logement.codeEpci);
+  }
+  return Array.from(codes)
+    .map((code) => ({ code, nom: getEpciBySiren(code)?.nom ?? code }))
+    .sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
 }
 
 type Row = Awaited<ReturnType<typeof parcoursRepo.getParcoursByTerritoire>>[number];
