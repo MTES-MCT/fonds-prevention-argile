@@ -7,7 +7,12 @@ import {
   type DossiersTerritoireData,
 } from "@/features/backoffice/espace-agent/dossiers/actions/get-dossiers-territoire-data.action";
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
-import { getResponsableTabLabel, type ResponsableTabId } from "@/features/backoffice/espace-agent/dossiers/domain";
+import {
+  getDossierStepLabel,
+  getResponsableDisplayName,
+  getResponsableTabLabel,
+  type ResponsableTabId,
+} from "@/features/backoffice/espace-agent/dossiers/domain";
 import { DossiersSuivisHeader } from "./DossiersSuivisHeader";
 import { DossiersSuivisTable } from "./DossiersSuivisTable";
 import { DossiersKpiCards } from "./DossiersKpiCards";
@@ -66,8 +71,13 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
   const [activeTab, setActiveTab] = useState<ResponsableTabId>("tous");
   const [epciFilter, setEpciFilter] = useState<string>("");
   const [search, setSearch] = useState<string>("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  // Filtres par colonne (multi-sélection, live).
+  const [responsableFilter, setResponsableFilter] = useState<Set<string>>(new Set());
+  const [etapeFilter, setEtapeFilter] = useState<Set<string>>(new Set());
+  const [enAttenteFilter, setEnAttenteFilter] = useState<Set<string>>(new Set());
 
   const loadData = useCallback(async () => {
     try {
@@ -92,6 +102,30 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
   // Liste des EPCI distincts (avec leur nom lisible) fournie par le serveur.
   const availableEpcis = data?.epcisDisponibles ?? [];
 
+  // Options uniques pour les filtres par colonne (calculées sur l'onglet courant
+  // pour ne proposer que des valeurs présentes dans le sous-ensemble visible).
+  const filterOptions = useMemo(() => {
+    const responsables = new Set<string>();
+    const etapes = new Set<string>();
+    const enAttente = new Set<string>();
+    if (!data) return { responsables: [], etapes: [], enAttente: [] };
+    for (const d of filterByTab(data.dossiers, activeTab)) {
+      const r = getResponsableDisplayName(d.responsable);
+      if (r !== "—") responsables.add(r);
+      etapes.add(getDossierStepLabel(d.currentStep, d.validation));
+      enAttente.add(d.responsable.type);
+    }
+    const toOptions = (values: Set<string>) =>
+      Array.from(values)
+        .sort((a, b) => a.localeCompare(b, "fr"))
+        .map((v) => ({ value: v, label: v }));
+    return {
+      responsables: toOptions(responsables),
+      etapes: toOptions(etapes),
+      enAttente: toOptions(enAttente),
+    };
+  }, [data, activeTab]);
+
   const counters = useMemo(() => {
     const map: Record<ResponsableTabId, number> = { tous: 0, AV: 0, AMO: 0, MENAGE: 0, DDT: 0, ARCHIVE: 0 };
     if (!data) return map;
@@ -103,14 +137,29 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
     if (!data) return [];
     const byTab = filterByTab(data.dossiers, activeTab);
     const byEpci = epciFilter ? byTab.filter((d) => d.logement.codeEpci === epciFilter) : byTab;
-    if (!search.trim()) return byEpci;
     const q = search.trim().toLowerCase();
-    return byEpci.filter((d) => {
-      const nom = `${d.particulier.prenom} ${d.particulier.nom}`.toLowerCase();
-      const commune = d.logement.commune?.toLowerCase() ?? "";
-      return nom.includes(q) || commune.includes(q);
-    });
-  }, [data, activeTab, epciFilter, search]);
+    const bySearch = q
+      ? byEpci.filter((d) => {
+          const nom = `${d.particulier.prenom} ${d.particulier.nom}`.toLowerCase();
+          const commune = d.logement.commune?.toLowerCase() ?? "";
+          return nom.includes(q) || commune.includes(q);
+        })
+      : byEpci;
+    // Filtres par colonne (multi-sélection).
+    const byResponsable =
+      responsableFilter.size > 0
+        ? bySearch.filter((d) => responsableFilter.has(getResponsableDisplayName(d.responsable)))
+        : bySearch;
+    const byEtape =
+      etapeFilter.size > 0
+        ? byResponsable.filter((d) => etapeFilter.has(getDossierStepLabel(d.currentStep, d.validation)))
+        : byResponsable;
+    const byEnAttente =
+      enAttenteFilter.size > 0 ? byEtape.filter((d) => enAttenteFilter.has(d.responsable.type)) : byEtape;
+    // Tri par date de création (la colonne « Création » du tableau).
+    const sign = sortOrder === "asc" ? 1 : -1;
+    return [...byEnAttente].sort((a, b) => sign * (a.createdAt.getTime() - b.createdAt.getTime()));
+  }, [data, activeTab, epciFilter, search, sortOrder, responsableFilter, etapeFilter, enAttenteFilter]);
 
   const paginated = visible.slice((page - 1) * pageSize, page * pageSize);
 
@@ -238,7 +287,31 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
             </div>
           ) : (
             <>
-              <DossiersSuivisTable dossiers={paginated} isArchived={activeTab === "ARCHIVE"} onRefresh={loadData} />
+              <DossiersSuivisTable
+                dossiers={paginated}
+                isArchived={activeTab === "ARCHIVE"}
+                onRefresh={loadData}
+                sortOrder={sortOrder}
+                onToggleSort={() => setSortOrder((o) => (o === "asc" ? "desc" : "asc"))}
+                responsableOptions={filterOptions.responsables}
+                etapeOptions={filterOptions.etapes}
+                enAttenteOptions={filterOptions.enAttente}
+                responsableFilter={responsableFilter}
+                etapeFilter={etapeFilter}
+                enAttenteFilter={enAttenteFilter}
+                onResponsableFilterChange={(next) => {
+                  setResponsableFilter(next);
+                  setPage(1);
+                }}
+                onEtapeFilterChange={(next) => {
+                  setEtapeFilter(next);
+                  setPage(1);
+                }}
+                onEnAttenteFilterChange={(next) => {
+                  setEnAttenteFilter(next);
+                  setPage(1);
+                }}
+              />
               <Pagination
                 currentPage={page}
                 totalItems={visible.length}

@@ -6,17 +6,25 @@ import { SituationParticulier } from "@/shared/domain/value-objects/situation-pa
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { AgentScope } from "../../../../auth/permissions/domain/types/agent-scope.types";
 
-const { getParcoursByTerritoire, calculateAgentScope, resolveResponsables, getActorContext, canActAsResponsable } =
-  vi.hoisted(() => ({
-    getParcoursByTerritoire: vi.fn(),
-    calculateAgentScope: vi.fn(),
-    resolveResponsables: vi.fn(),
-    getActorContext: vi.fn(),
-    canActAsResponsable: vi.fn(),
-  }));
+const {
+  getParcoursByTerritoire,
+  calculateAgentScope,
+  resolveResponsables,
+  getActorContext,
+  canActAsResponsable,
+  getLastMessageByParcoursIds,
+} = vi.hoisted(() => ({
+  getParcoursByTerritoire: vi.fn(),
+  calculateAgentScope: vi.fn(),
+  resolveResponsables: vi.fn(),
+  getActorContext: vi.fn(),
+  canActAsResponsable: vi.fn(),
+  getLastMessageByParcoursIds: vi.fn(),
+}));
 
 vi.mock("@/shared/database", () => ({
   parcoursRepo: { getParcoursByTerritoire },
+  parcoursCommentairesRepo: { getLastMessageByParcoursIds },
 }));
 
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
@@ -92,6 +100,7 @@ describe("getDossiersByAgent", () => {
       allersVersDepartements: [],
     });
     canActAsResponsable.mockReturnValue(false);
+    getLastMessageByParcoursIds.mockResolvedValue(new Map());
   });
 
   it("interroge le repo avec les territoires du scope (AMO)", async () => {

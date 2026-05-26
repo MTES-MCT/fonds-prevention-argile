@@ -44,6 +44,8 @@ export interface DossierItem {
   responsable: Responsable;
   /** L'agent connecté peut-il agir au titre du responsable (archiver, qualifier) ? */
   canActAsResponsable: boolean;
+  /** Dernier commentaire interne (= « note complémentaire liée »), null si aucun. */
+  derniereNote: string | null;
 }
 
 /** Filtres optionnels appliqués au listing. */

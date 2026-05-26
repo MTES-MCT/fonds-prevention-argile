@@ -17,6 +17,8 @@ import { formatNomComplet, formatDaysAgoSplit, formatDate } from "@/shared/utils
 import { ActionMenu } from "../../shared/components/ActionMenu";
 import { ArchiveModal } from "../../shared/components/ArchiveModal";
 import { UnarchiveModal } from "../../shared/components/UnarchiveModal";
+import { ColumnFilterButton, type FilterOption } from "./ColumnFilterButton";
+import { ColumnSortButton } from "./ColumnSortButton";
 
 interface DossiersSuivisTableProps {
   dossiers: DossierItem[];
@@ -24,12 +26,41 @@ interface DossiersSuivisTableProps {
   isArchived?: boolean;
   /** Callback pour recharger les données après archivage/désarchivage */
   onRefresh?: () => void;
+  /** Sens du tri sur la colonne « Création ». */
+  sortOrder?: "asc" | "desc";
+  /** Inverse le sens du tri sur la colonne « Création ». */
+  onToggleSort?: () => void;
+  /** Options et état du filtre par colonne. */
+  responsableOptions?: FilterOption[];
+  etapeOptions?: FilterOption[];
+  enAttenteOptions?: FilterOption[];
+  responsableFilter?: Set<string>;
+  etapeFilter?: Set<string>;
+  enAttenteFilter?: Set<string>;
+  onResponsableFilterChange?: (next: Set<string>) => void;
+  onEtapeFilterChange?: (next: Set<string>) => void;
+  onEnAttenteFilterChange?: (next: Set<string>) => void;
 }
 
 /**
  * Tableau des dossiers suivis
  */
-export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }: DossiersSuivisTableProps) {
+export function DossiersSuivisTable({
+  dossiers,
+  isArchived = false,
+  onRefresh,
+  sortOrder = "desc",
+  onToggleSort,
+  responsableOptions = [],
+  etapeOptions = [],
+  enAttenteOptions = [],
+  responsableFilter,
+  etapeFilter,
+  enAttenteFilter,
+  onResponsableFilterChange,
+  onEtapeFilterChange,
+  onEnAttenteFilterChange,
+}: DossiersSuivisTableProps) {
   const router = useRouter();
   const [archiveParcoursId, setArchiveParcoursId] = useState<string | null>(null);
   const [unarchiveParcoursId, setUnarchiveParcoursId] = useState<string | null>(null);
@@ -53,20 +84,67 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
               <table>
                 <thead>
                   <tr>
+                    <th scope="col">
+                      <span className="flex items-center justify-between gap-2">
+                        Création
+                        {onToggleSort && (
+                          <ColumnSortButton order={sortOrder} onToggle={onToggleSort} criterion="création" />
+                        )}
+                      </span>
+                    </th>
                     <th scope="col">Demandeurs</th>
-                    <th scope="col">Responsable</th>
+                    <th scope="col">
+                      <span className="flex items-center justify-between gap-2">
+                        Responsable
+                        {onResponsableFilterChange && responsableFilter && (
+                          <ColumnFilterButton
+                            ariaLabel="Filtrer par responsable"
+                            options={responsableOptions}
+                            selected={responsableFilter}
+                            onChange={onResponsableFilterChange}
+                          />
+                        )}
+                      </span>
+                    </th>
                     <th scope="col">Commune</th>
-                    <th scope="col">Étape</th>
-                    <th scope="col">En attente de</th>
-                    <th scope="col">Précisions</th>
+                    <th scope="col">
+                      <span className="flex items-center justify-between gap-2">
+                        Étape
+                        {onEtapeFilterChange && etapeFilter && (
+                          <ColumnFilterButton
+                            ariaLabel="Filtrer par étape"
+                            options={etapeOptions}
+                            selected={etapeFilter}
+                            onChange={onEtapeFilterChange}
+                          />
+                        )}
+                      </span>
+                    </th>
+                    <th scope="col">
+                      <span className="flex items-center justify-between gap-2">
+                        En attente de
+                        {onEnAttenteFilterChange && enAttenteFilter && (
+                          <ColumnFilterButton
+                            ariaLabel="Filtrer par responsable courant"
+                            options={enAttenteOptions}
+                            selected={enAttenteFilter}
+                            onChange={onEnAttenteFilterChange}
+                          />
+                        )}
+                      </span>
+                    </th>
+                    <th scope="col" style={{ minWidth: "320px" }}>
+                      Précisions
+                    </th>
                     <th scope="col">Ajout</th>
+                    <th scope="col">Note complémentaire liée</th>
                     <th scope="col">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dossiers.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
+                      <td colSpan={10} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
                         Aucun dossier
                       </td>
                     </tr>
@@ -121,6 +199,7 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
 
                       return (
                         <tr key={dossier.parcoursId}>
+                          <td style={greyStyle}>{formatDate(dossier.createdAt.toISOString())}</td>
                           <td>
                             <Link href={detailHref} className="fr-link">
                               {formatNomComplet(dossier.particulier.prenom, dossier.particulier.nom)}
@@ -141,7 +220,8 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                           </td>
                           <td
                             style={{
-                              maxWidth: "350px",
+                              minWidth: "320px",
+                              maxWidth: "420px",
                               wordWrap: "break-word",
                               whiteSpace: "normal",
                               ...getPrecisionStyle(dossier.currentStatus, isArchived || isRefuse),
@@ -155,6 +235,17 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                             )}
                           </td>
                           <td style={greyStyle}>{formatDate(dossier.createdAt.toISOString())}</td>
+                          <td
+                            style={{
+                              maxWidth: "240px",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              ...greyStyle,
+                            }}
+                            title={dossier.derniereNote ?? undefined}>
+                            {dossier.derniereNote ?? <span style={{ color: "var(--text-mention-grey)" }}>—</span>}
+                          </td>
                           <td>
                             <ActionMenu items={actionItems} />
                           </td>

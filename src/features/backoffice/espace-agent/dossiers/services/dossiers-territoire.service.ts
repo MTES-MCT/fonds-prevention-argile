@@ -1,4 +1,4 @@
-import { parcoursRepo } from "@/shared/database";
+import { parcoursCommentairesRepo, parcoursRepo } from "@/shared/database";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import {
   canActAsResponsable,
@@ -45,9 +45,10 @@ export async function getDossiersByAgent(
     codeDepartement: item.logement.codeDepartement,
     validation: item.validation ? { statut: item.validation.statut, entrepriseAmoId: item.validation.entrepriseAmoId } : null,
   }));
-  const [responsables, actor] = await Promise.all([
+  const [responsables, actor, notesMap] = await Promise.all([
     resolveResponsables(resolverInput),
     getActorContext({ entrepriseAmoId: agent.entrepriseAmoId ?? null, allersVersId: agent.allersVersId ?? null }),
+    parcoursCommentairesRepo.getLastMessageByParcoursIds(bareItems.map((i) => i.parcoursId)),
   ]);
 
   const dossiers: DossierItem[] = bareItems.map((item) => {
@@ -56,6 +57,7 @@ export async function getDossiersByAgent(
       ...item,
       responsable,
       canActAsResponsable: canActAsResponsable(actor, responsable),
+      derniereNote: notesMap.get(item.parcoursId) ?? null,
     };
   });
 
@@ -91,7 +93,7 @@ function buildEpciChoices(dossiers: DossierItem[]): EpciChoice[] {
 }
 
 type Row = Awaited<ReturnType<typeof parcoursRepo.getParcoursByTerritoire>>[number];
-type DossierItemSansResponsable = Omit<DossierItem, "responsable" | "canActAsResponsable">;
+type DossierItemSansResponsable = Omit<DossierItem, "responsable" | "canActAsResponsable" | "derniereNote">;
 
 function toDossierItemSansResponsable(row: Row): DossierItemSansResponsable {
   const logement = getDemandeurFirstLogement(row);
