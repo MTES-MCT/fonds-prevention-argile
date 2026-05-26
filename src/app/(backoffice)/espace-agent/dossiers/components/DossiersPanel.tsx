@@ -18,6 +18,8 @@ import { Pagination } from "@/shared/components/Pagination/Pagination";
 interface DossiersPanelProps {
   /** Affiche le bouton "+ Nouveau dossier" (rôles AMO et/ou Aller-vers). */
   canCreateDossier?: boolean;
+  /** Prénom de l'agent connecté (« Bonjour … »). */
+  prenom: string | null;
 }
 
 const TAB_IDS: ResponsableTabId[] = ["tous", "AV", "AMO", "MENAGE", "DDT", "ARCHIVE"];
@@ -58,7 +60,7 @@ function getTabLabel(tab: ResponsableTabId, dossiers: DossierItem[]): string {
 /**
  * Panel unifié des dossiers — onglets par responsable, filtre EPCI et recherche.
  */
-export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps = {}) {
+export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPanelProps) {
   const [data, setData] = useState<DossiersTerritoireData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,7 +131,7 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
   if (isLoading) {
     return (
       <>
-        <DossiersSuivisHeader nombreDossiers={0} canCreateDossier={canCreateDossier} />
+        <DossiersSuivisHeader prenom={prenom} />
         <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
           <div className="fr-container">
             <p>Chargement...</p>
@@ -142,7 +144,7 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
   if (error) {
     return (
       <>
-        <DossiersSuivisHeader nombreDossiers={0} canCreateDossier={canCreateDossier} />
+        <DossiersSuivisHeader prenom={prenom} />
         <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
           <div className="fr-container">
             <div className="fr-alert fr-alert--error">
@@ -159,104 +161,102 @@ export function DossiersPanel({ canCreateDossier = false }: DossiersPanelProps =
 
   return (
     <>
-      <DossiersSuivisHeader nombreDossiers={data.total} canCreateDossier={canCreateDossier} />
+      <DossiersSuivisHeader prenom={prenom} />
       <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
         <div className="fr-container">
-          <div className="fr-tabs">
-            <ul className="fr-tabs__list" role="tablist" aria-label="Dossiers par responsable">
+          <h2 className="fr-h4 fr-mb-3w">Tous les dossiers ({data.total})</h2>
+
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <ul className="fr-tags-group fr-mb-0" aria-label="Filtrer les dossiers par responsable">
               {TAB_IDS.map((tab) => (
-                <li key={tab} role="presentation">
+                <li key={tab}>
                   <button
                     type="button"
-                    id={`tab-${tab}`}
-                    className="fr-tabs__tab"
-                    tabIndex={activeTab === tab ? 0 : -1}
-                    role="tab"
-                    aria-selected={activeTab === tab}
-                    aria-controls="tab-active-panel"
+                    className="fr-tag"
+                    aria-pressed={activeTab === tab}
                     onClick={() => handleTabChange(tab)}>
-                    <p className="fr-badge fr-badge--sm fr-mr-2v fr-badge--blue-cumulus">{counters[tab]}</p>
+                    <span className="fr-badge fr-badge--sm fr-mr-1v fr-badge--blue-cumulus">{counters[tab]}</span>
                     {getTabLabel(tab, data.dossiers)}
                   </button>
                 </li>
               ))}
             </ul>
+            {canCreateDossier && (
+              <Link
+                href="/espace-agent/dossiers/nouveau?intent=amo"
+                className="fr-btn fr-icon-add-line fr-btn--icon-left self-start md:self-auto whitespace-nowrap">
+                Nouveau dossier
+              </Link>
+            )}
+          </div>
 
-            <div
-              id="tab-active-panel"
-              className="fr-tabs__panel fr-tabs__panel--selected"
-              role="tabpanel"
-              aria-labelledby={`tab-${activeTab}`}
-              tabIndex={0}>
-              <div className="fr-grid-row fr-grid-row--gutters fr-mb-2w">
-                <div className="fr-col-12 fr-col-md-6">
-                  <div className="fr-input-group">
-                    <label className="fr-label" htmlFor="dossiers-search">
-                      Rechercher
-                    </label>
-                    <input
-                      className="fr-input"
-                      id="dossiers-search"
-                      type="search"
-                      placeholder="Nom du demandeur, commune..."
-                      value={search}
-                      onChange={(e) => {
-                        setSearch(e.target.value);
-                        setPage(1);
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="fr-col-12 fr-col-md-4">
-                  <div className="fr-select-group">
-                    <label className="fr-label" htmlFor="dossiers-epci">
-                      EPCI
-                    </label>
-                    <select
-                      className="fr-select"
-                      id="dossiers-epci"
-                      value={epciFilter}
-                      onChange={(e) => {
-                        setEpciFilter(e.target.value);
-                        setPage(1);
-                      }}>
-                      <option value="">Tous les EPCI</option>
-                      {availableEpcis.map((epci) => (
-                        <option key={epci} value={epci}>
-                          {epci}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {visible.length === 0 ? (
-                <div className="fr-alert fr-alert--info">
-                  <h3 className="fr-alert__title">Aucun dossier</h3>
-                  <p>Aucun dossier ne correspond à ces filtres.</p>
-                </div>
-              ) : (
-                <>
-                  <DossiersSuivisTable
-                    dossiers={paginated}
-                    isArchived={activeTab === "ARCHIVE"}
-                    onRefresh={loadData}
-                  />
-                  <Pagination
-                    currentPage={page}
-                    totalItems={visible.length}
-                    pageSize={pageSize}
-                    onPageChange={setPage}
-                    onPageSizeChange={(size) => {
-                      setPageSize(size);
-                      setPage(1);
-                    }}
-                  />
-                </>
-              )}
+          <div className="fr-grid-row fr-grid-row--gutters fr-mt-3w fr-mb-2w">
+            <div className="fr-col-12 fr-col-md-6">
+              <label className="fr-label sr-only" htmlFor="dossiers-search">
+                Rechercher
+              </label>
+              <input
+                className="fr-input"
+                id="dossiers-search"
+                type="search"
+                placeholder="Rechercher (nom, commune...)"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                style={{
+                  backgroundImage:
+                    "url(\"data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23161616' d='M18.031 16.617l4.283 4.282-1.415 1.415-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9 9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617zm-2.006-.742A6.977 6.977 0 0 0 18 11c0-3.867-3.133-7-7-7-3.867 0-7 3.133-7 7 0 3.867 3.133 7 7 7a6.977 6.977 0 0 0 4.875-1.975l.15-.15z'/></svg>\")",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "calc(100% - 0.75rem) 50%",
+                  backgroundSize: "1rem 1rem",
+                  paddingRight: "2.5rem",
+                }}
+              />
+            </div>
+            <div className="fr-col-12 fr-col-md-4">
+              <label className="fr-label sr-only" htmlFor="dossiers-epci">
+                EPCI
+              </label>
+              <select
+                className="fr-select"
+                id="dossiers-epci"
+                value={epciFilter}
+                onChange={(e) => {
+                  setEpciFilter(e.target.value);
+                  setPage(1);
+                }}>
+                <option value="">EPCI</option>
+                {availableEpcis.map((epci) => (
+                  <option key={epci} value={epci}>
+                    EPCI – {epci}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
+
+          {visible.length === 0 ? (
+            <div className="fr-alert fr-alert--info">
+              <h3 className="fr-alert__title">Aucun dossier</h3>
+              <p>Aucun dossier ne correspond à ces filtres.</p>
+            </div>
+          ) : (
+            <>
+              <DossiersSuivisTable dossiers={paginated} isArchived={activeTab === "ARCHIVE"} onRefresh={loadData} />
+              <Pagination
+                currentPage={page}
+                totalItems={visible.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
+              />
+            </>
+          )}
 
           <div className="fr-callout fr-mt-4w">
             <h3 className="fr-callout__title">Le saviez-vous ?</h3>

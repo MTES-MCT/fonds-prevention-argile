@@ -1,11 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAgentRole } from "@/features/auth/hooks";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import { AGENT_TABS } from "@/features/backoffice/espace-agent/shared/domain/value-objects/amo-tabs.config";
 import type { AmoTab } from "@/features/backoffice/espace-agent/shared/domain/types/amo-tab.types";
+import { getNombreDossiersAction } from "@/features/backoffice/espace-agent/dossiers/actions";
+import { CountBadge } from "@/shared/components/CountBadge";
 
 function getActiveTab(pathname: string, tabs: AmoTab[]): string | null {
   for (const tab of tabs) {
@@ -19,6 +22,11 @@ function getActiveTab(pathname: string, tabs: AmoTab[]): string | null {
 function AgentNavigationTabs({ tabs }: { tabs: AmoTab[] }) {
   const pathname = usePathname();
   const activeTab = getActiveTab(pathname, tabs);
+  const [nombreDossiers, setNombreDossiers] = useState<number>(0);
+
+  useEffect(() => {
+    getNombreDossiersAction().then(setNombreDossiers);
+  }, []);
 
   return (
     <nav className="fr-nav" id="agent-navigation" role="navigation" aria-label="Menu espace agent">
@@ -27,6 +35,7 @@ function AgentNavigationTabs({ tabs }: { tabs: AmoTab[] }) {
           <li key={tab.id} className="fr-nav__item">
             <Link href={tab.href} className="fr-nav__link" aria-current={activeTab === tab.id ? "page" : undefined}>
               {tab.label}
+              {tab.id === "dossiers" && <CountBadge count={nombreDossiers} />}
             </Link>
           </li>
         ))}
