@@ -6,7 +6,7 @@ import { getNextStep } from "../domain/value-objects/step";
 import { getParcoursPermissions, isParcoursComplete } from "./parcours-permissions.service";
 import type { DossierDS } from "../../dossiers-ds/domain/entities/dossier-ds";
 import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status";
-import { getDossierDsDemandeUrl } from "../../dossiers-ds/utils/ds-url.utils";
+import { buildDemarcheUrl } from "../../dossiers-ds/utils/ds-url.utils";
 
 /**
  * Service de gestion de l'état du parcours
@@ -51,10 +51,7 @@ export async function getParcoursComplet(userId: string): Promise<ParcoursComple
     demarcheId: d.dsDemarcheId,
     demarcheNom: "", // Pas dans la DB, pourrait être récupéré depuis une config
     demarcheEtape: d.step,
-    // On privilégie l'URL retournée par DS lors du prefill (contient `prefill_token`)
-    // car elle force DS à ouvrir le dossier en mode "usager" même si le compte DS possède aussi des profils instructeur/administrateur.
-    // Fallback : reconstruction depuis dsNumber si pas d'URL stockée
-    demarcheUrl: d.dsUrl || (d.dsNumber ? getDossierDsDemandeUrl(parseInt(d.dsNumber)) : undefined),
+    demarcheUrl: buildDemarcheUrl(d),
     numeroDs: d.dsNumber ? parseInt(d.dsNumber) : null,
     etatDs: d.dsStatus as DSStatus,
     submittedAt: d.submittedAt,
