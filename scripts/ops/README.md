@@ -9,6 +9,7 @@ Utilitaires pour intervenir sur une BDD existante : audit d'intégrité, correct
 | Script | Type | Rôle | Lancement |
 |---|---|---|---|
 | [`audit-parcours-ds-integrity.ts`](#audit-parcours-ds-integrity) | read-only | Détecte les parcours dont l'état interne n'a pas de dossier DS correspondant | `tsx scripts/ops/audit-parcours-ds-integrity.ts` |
+| [`fix-double-progression-amo.ts`](#fix-double-progression-amo) | **écrit** | Détecte et corrige les parcours victimes du bug double-progression AMO (régression vers eligibilite/todo) | `tsx scripts/ops/fix-double-progression-amo.ts` |
 | [`verify-dashboard-stats.ts`](#verify-dashboard-stats) | read-only | Vérifie que les stats du tableau de bord correspondent aux requêtes SQL équivalentes | `tsx scripts/ops/verify-dashboard-stats.ts` |
 | [`fix-missing-epci.ts`](#fix-missing-epci) | **écrit** | Backfill du code EPCI sur les parcours qui en sont dépourvus (via `geo.api.gouv.fr`) | `pnpm fix:epci` |
 | [`debug-matomo-events.ts`](#debug-matomo-events) | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur) | `tsx scripts/ops/debug-matomo-events.ts` |
@@ -30,6 +31,33 @@ tsx scripts/ops/audit-parcours-ds-integrity.ts --anonymize   # masque les PII
 ```
 
 **Prérequis** : `.env.local` avec `DATABASE_URL` + `DEMARCHES_SIMPLIFIEES_*`.
+
+### fix-double-progression-amo
+
+Détecte et corrige les parcours victimes du bug double-progression AMO (cf. [`../../docs/parcours/INCIDENT-double-progression-amo.md`](../../docs/parcours/INCIDENT-double-progression-amo.md)) : parcours en `diagnostic/devis/factures` sans dossier DS d'éligibilité. Le script détecte les cas lui-même (même critère que l'audit), les catégorise, et ramène les parcours concernés à `eligibilite/todo`. Pas de mapping JSON à produire.
+
+Trois catégories, traitées différemment :
+
+| Catégorie | Critère | Traitement |
+|---|---|---|
+| **régressable** | aucun dossier DS | régression directe (`--apply`) |
+| **cleanup requis** | dossiers downstream uniquement `en_construction` (brouillons DS jamais soumis, ex. cas "Edouard") | suppression des brouillons + régression (`--apply --with-cleanup`) |
+| **à reviewer** | au moins un dossier downstream soumis (`en_instruction`/`accepte`/…) | jamais touché automatiquement — listé pour intervention humaine |
+
+Trois niveaux d'engagement croissants :
+
+```bash
+tsx scripts/ops/fix-double-progression-amo.ts                         # dry-run : affiche le plan
+tsx scripts/ops/fix-double-progression-amo.ts --apply                 # corrige les régressables (cat. 1)
+tsx scripts/ops/fix-double-progression-amo.ts --apply --with-cleanup  # corrige aussi les cas "Edouard" (cat. 2)
+tsx scripts/ops/fix-double-progression-amo.ts --parcours-id=<uuid>    # cible un seul parcours
+```
+
+La régression est un UPDATE conditionnel sur `current_step IN (diagnostic,devis,factures)` (skip si l'état a changé entre la détection et l'apply). La suppression des brouillons est conditionnée sur `ds_status='en_construction'`. Tout passe en transaction par parcours.
+
+**Vérification post-fix** : relancer en dry-run doit afficher 0 régressable / 0 cleanup requis. Relancer à J+3 et J+7 pour confirmer qu'aucun nouveau cas n'apparaît (le fix serveur d'idempotence tient).
+
+**Prérequis** : `.env.local` avec `DATABASE_URL` (l'API DS n'est pas sollicitée).
 
 ### verify-dashboard-stats
 

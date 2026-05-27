@@ -147,7 +147,7 @@ describe("demande-detail.actions", () => {
 
       vi.mocked(approveValidation).mockResolvedValue({
         success: true,
-        data: { message: "Validation acceptée" },
+        data: { message: "Validation acceptée", alreadyProcessed: false, valideeAt: new Date() },
       });
 
       const result = await accepterAccompagnement("demande-123", "Commentaire test");
@@ -194,7 +194,7 @@ describe("demande-detail.actions", () => {
 
       vi.mocked(rejectEligibility).mockResolvedValue({
         success: true,
-        data: { message: "Demande refusée" },
+        data: { message: "Demande refusée", alreadyProcessed: false, valideeAt: new Date() },
       });
 
       const result = await refuserDemandeNonEligible("demande-123", "Le logement n'est pas dans une zone RGA");

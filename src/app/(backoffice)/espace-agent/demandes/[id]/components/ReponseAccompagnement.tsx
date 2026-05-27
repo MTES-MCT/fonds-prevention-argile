@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import {
@@ -27,6 +27,11 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
   const [precisionAutre, setPrecisionAutre] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Garde synchrone contre le double-clic : `disabled` lié à `isSubmitting`
+  // n'est appliqué qu'au re-render suivant. Cette ref bloque les clics arrivés
+  // avant que React n'ait re-rendu, source de la race observée en prod
+  // (deux approveValidation concurrents → saut de 2 étapes).
+  const submitLockRef = useRef(false);
 
   // États pour la modale de confirmation
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,6 +41,9 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
   const alreadyProcessed = statutActuel !== StatutValidationAmo.EN_ATTENTE;
 
   const handleSubmit = async () => {
+    // Garde synchrone : si une soumission est déjà en vol, ignorer le clic.
+    if (submitLockRef.current) return;
+
     if (!choix) {
       setError("Veuillez sélectionner une réponse");
       return;
@@ -57,6 +65,7 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
       }
     }
 
+    submitLockRef.current = true;
     setIsSubmitting(true);
     setError(null);
 
@@ -73,6 +82,15 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
       }
 
       if (result?.success) {
+        // Si la demande était déjà traitée (race serveur), on n'ouvre pas la modale
+        // de confirmation classique : on affiche un message d'info à la place.
+        if (result.data?.alreadyProcessed) {
+          setError(
+            "Cette demande a déjà été traitée. Rafraîchissez la page pour voir l'état à jour."
+          );
+          return;
+        }
+
         // Récupérer le prochain demandeur en attente
         const nextResult = await getNextDemandeurEnAttente(demandeId);
         if (nextResult.success && nextResult.data) {
@@ -90,6 +108,7 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
       setError("Une erreur est survenue lors de la réponse");
     } finally {
       setIsSubmitting(false);
+      submitLockRef.current = false;
     }
   };
 
