@@ -25,14 +25,17 @@
  *   --apply --with-cleanup corrige aussi la catégorie 2 (DELETE brouillons en_construction
  *                          downstream + régression, en transaction).
  *
- * Filtres :
+ * Filtres / options :
  *   --parcours-id=<uuid>   limite à un seul parcours (debug / cas isolé type "Edouard").
+ *   --anonymize            masque les PII (id, email, ds_number) dans l'affichage, pour
+ *                          partager le plan sans exposer les identifiants.
  *
  * La régression est un UPDATE conditionnel sur `current_step IN (diagnostic,devis,factures)`
  * pour ne pas écraser un changement concurrent survenu entre la détection et l'apply.
  *
  * Usage :
  *   pnpm tsx scripts/ops/fix-double-progression-amo.ts                          # dry-run
+ *   pnpm tsx scripts/ops/fix-double-progression-amo.ts --anonymize              # dry-run anonymisé
  *   pnpm tsx scripts/ops/fix-double-progression-amo.ts --apply                  # cat. 1
  *   pnpm tsx scripts/ops/fix-double-progression-amo.ts --apply --with-cleanup   # cat. 1 + 2
  *   pnpm tsx scripts/ops/fix-double-progression-amo.ts --parcours-id=<uuid>     # cible
@@ -45,6 +48,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 config({ path: ".env" });
 
+import { createHash } from "node:crypto";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { and, eq, inArray, isNull } from "drizzle-orm";
@@ -53,6 +57,7 @@ import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/share
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { categorizeDoubleProgression } from "./lib/double-progression";
 
 // --- Args ---
 const args = process.argv.slice(2);
@@ -63,11 +68,38 @@ function getArg(name: string): string | undefined {
 }
 const APPLY = args.includes("--apply");
 const WITH_CLEANUP = args.includes("--with-cleanup");
+const ANONYMIZE = args.includes("--anonymize");
 const PARCOURS_ID_FILTER = getArg("parcours-id");
 
 if (WITH_CLEANUP && !APPLY) {
   console.error("--with-cleanup nécessite --apply (rien à nettoyer en dry-run).");
   process.exit(1);
+}
+
+// --- Anonymisation (pour partage du plan sans exposer les PII) ---
+// Hash court (6 chars) dérivé d'un sel de session : stable pour un run, imprévisible
+// d'un run à l'autre. Les vraies valeurs (id, email) restent utilisées en interne pour
+// les UPDATE/DELETE ; seuls les AFFICHAGES sont masqués.
+const RUN_SALT = createHash("sha256")
+  .update(String(Date.now()) + Math.random().toString())
+  .digest("hex")
+  .slice(0, 16);
+
+function shortHash(value: string): string {
+  return createHash("sha256").update(RUN_SALT + value).digest("hex").slice(0, 6);
+}
+function redactUuid(id: string): string {
+  return ANONYMIZE ? `<id:${shortHash(id)}>` : id;
+}
+function redactEmail(email: string | null): string {
+  if (!email) return "<sans email>";
+  if (!ANONYMIZE) return email;
+  const tld = email.slice(email.lastIndexOf(".") + 1);
+  return `<email:${shortHash(email)}@***.${tld}>`;
+}
+function redactDsNumber(n: string | null): string {
+  if (!n) return "";
+  return ANONYMIZE ? `#<ds:${shortHash(n)}>` : `#${n}`;
 }
 
 // --- DB ---
@@ -143,23 +175,21 @@ async function categorize(): Promise<Case[]> {
       .from(dossiersDemarchesSimplifiees)
       .where(eq(dossiersDemarchesSimplifiees.parcoursId, c.id))) as LocalDossier[];
 
-    // Si un dossier d'éligibilité existe, ce n'est PAS un cas du bug : le parcours a
-    // bien franchi l'éligibilité. (Cas "groupe A" = utilisateur passif, géré par l'audit.)
-    if (dossiers.some((d) => d.step === Step.ELIGIBILITE)) {
+    // Catégorisation partagée avec l'audit (cf. lib/double-progression.ts).
+    const fullCategory = categorizeDoubleProgression(dossiers);
+
+    // Cas "légitime" (a franchi l'éligibilité) : pas un bug, le fix n'y touche pas.
+    if (fullCategory === "legitime") {
       continue;
     }
 
-    let category: Category;
+    const category: Category = fullCategory;
     let enConstructionToDelete: { id: string; step: Step }[] = [];
     let reviewReason: string | undefined;
 
-    if (dossiers.length === 0) {
-      category = "regressable";
-    } else if (dossiers.every((d) => d.dsStatus === DSStatus.EN_CONSTRUCTION)) {
-      category = "cleanup_requis";
+    if (category === "cleanup_requis") {
       enConstructionToDelete = dossiers.map((d) => ({ id: d.id, step: d.step }));
-    } else {
-      category = "a_reviewer";
+    } else if (category === "a_reviewer") {
       const soumis = dossiers.filter((d) => d.dsStatus !== DSStatus.EN_CONSTRUCTION);
       reviewReason = `dossier(s) downstream soumis côté DS : ${soumis
         .map((d) => `${d.step}=${d.dsStatus}`)
@@ -227,7 +257,7 @@ async function cleanupAndRegresser(c: Case): Promise<boolean> {
 }
 
 function dossierLine(d: LocalDossier): string {
-  return `${d.step}=${d.dsStatus}${d.dsNumber ? ` (#${d.dsNumber})` : ""}`;
+  return `${d.step}=${d.dsStatus}${d.dsNumber ? ` (${redactDsNumber(d.dsNumber)})` : ""}`;
 }
 
 async function main() {
@@ -235,11 +265,11 @@ async function main() {
   console.log(
     `FIX DOUBLE-PROGRESSION AMO — ${
       APPLY ? (WITH_CLEANUP ? "APPLY + CLEANUP" : "APPLY") : "DRY-RUN"
-    }`
+    }${ANONYMIZE ? " (anonymisé)" : ""}`
   );
   console.log("=".repeat(72));
   console.log(`Cible : régression vers ${TARGET_STEP}/${TARGET_STATUS}`);
-  if (PARCOURS_ID_FILTER) console.log(`Filtre parcours-id : ${PARCOURS_ID_FILTER}`);
+  if (PARCOURS_ID_FILTER) console.log(`Filtre parcours-id : ${redactUuid(PARCOURS_ID_FILTER)}`);
   console.log();
 
   const cases = await categorize();
@@ -258,7 +288,7 @@ async function main() {
   if (regressables.length > 0) {
     console.log("--- RÉGRESSABLES (catégorie 1) ---");
     for (const c of regressables) {
-      console.log(`  [${c.parcoursId}] ${c.email ?? "<sans email>"} — ${c.currentStep}/${c.currentStatus} → ${TARGET_STEP}/${TARGET_STATUS}`);
+      console.log(`  [${redactUuid(c.parcoursId)}] ${redactEmail(c.email)} — ${c.currentStep}/${c.currentStatus} → ${TARGET_STEP}/${TARGET_STATUS}`);
     }
     console.log();
   }
@@ -266,7 +296,7 @@ async function main() {
   if (cleanupRequis.length > 0) {
     console.log("--- CLEANUP REQUIS (catégorie 2 — type \"Edouard\") ---");
     for (const c of cleanupRequis) {
-      console.log(`  [${c.parcoursId}] ${c.email ?? "<sans email>"} — ${c.currentStep}/${c.currentStatus}`);
+      console.log(`  [${redactUuid(c.parcoursId)}] ${redactEmail(c.email)} — ${c.currentStep}/${c.currentStatus}`);
       console.log(`      dossiers à supprimer : ${c.dossiers.map(dossierLine).join(", ")}`);
       console.log(`      → DELETE brouillon(s) + régression à ${TARGET_STEP}/${TARGET_STATUS}`);
     }
@@ -279,7 +309,7 @@ async function main() {
   if (aReviewer.length > 0) {
     console.log("--- À REVIEWER MANUELLEMENT (catégorie 3 — jamais touché auto) ---");
     for (const c of aReviewer) {
-      console.log(`  [${c.parcoursId}] ${c.email ?? "<sans email>"} — ${c.currentStep}/${c.currentStatus}`);
+      console.log(`  [${redactUuid(c.parcoursId)}] ${redactEmail(c.email)} — ${c.currentStep}/${c.currentStatus}`);
       console.log(`      ${c.reviewReason}`);
       console.log(`      dossiers : ${c.dossiers.map(dossierLine).join(", ")}`);
     }
@@ -313,14 +343,14 @@ async function main() {
       const moved = await regresser(c.parcoursId);
       if (moved) {
         okRegress++;
-        console.log(`  OK régressé  ${c.parcoursId}`);
+        console.log(`  OK régressé  ${redactUuid(c.parcoursId)}`);
       } else {
         skippedState++;
-        console.log(`  SKIP (état modifié depuis la détection) ${c.parcoursId}`);
+        console.log(`  SKIP (état modifié depuis la détection) ${redactUuid(c.parcoursId)}`);
       }
     } catch (err) {
       failed++;
-      console.error(`  ERR ${c.parcoursId} : ${err instanceof Error ? err.message : String(err)}`);
+      console.error(`  ERR ${redactUuid(c.parcoursId)} : ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -330,14 +360,14 @@ async function main() {
         const moved = await cleanupAndRegresser(c);
         if (moved) {
           okCleanup++;
-          console.log(`  OK cleanup+régressé ${c.parcoursId} (${c.enConstructionToDelete.length} brouillon(s) supprimé(s))`);
+          console.log(`  OK cleanup+régressé ${redactUuid(c.parcoursId)} (${c.enConstructionToDelete.length} brouillon(s) supprimé(s))`);
         } else {
           skippedState++;
-          console.log(`  SKIP (état modifié depuis la détection) ${c.parcoursId}`);
+          console.log(`  SKIP (état modifié depuis la détection) ${redactUuid(c.parcoursId)}`);
         }
       } catch (err) {
         failed++;
-        console.error(`  ERR ${c.parcoursId} : ${err instanceof Error ? err.message : String(err)}`);
+        console.error(`  ERR ${redactUuid(c.parcoursId)} : ${err instanceof Error ? err.message : String(err)}`);
       }
     }
   } else if (cleanupRequis.length > 0) {

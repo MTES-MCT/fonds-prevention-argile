@@ -183,6 +183,50 @@ tsx scripts/ops/fix-double-progression-amo.ts --apply --with-cleanup  # + cas "E
 
 Ramener à `eligibilite/todo` est sûr : pour les cas "cleanup requis", on ne supprime que des brouillons DS jamais soumis. Le parcours reprend normalement via l'UI à la prochaine connexion de l'utilisateur, et un dossier diagnostic neuf (avec les bonnes annotations) sera créé le moment venu.
 
+### Runbook d'exécution
+
+À jouer dans l'ordre, sur un **restore frais de la BDD prod en local** (`DATABASE_URL` du `.env.local` doit pointer vers ce restore). Les alias pnpm transmettent les flags directement, sans `--`.
+
+`--anonymize` masque les PII (id, email, ds_number) à l'affichage — disponible sur **toutes** les commandes ci-dessous (audit, dry-run ET apply), pour produire des logs partageables. Les vraies valeurs restent utilisées en interne pour les écritures.
+
+```bash
+# 0. Restore frais de la BDD prod en local
+bash .local/restore-db.sh <backup>.tar.gz
+
+# 1. Audit (read-only). Catégorise et affiche un résumé :
+#    légitimes (rien à corriger) / régressables / cleanup requis / à reviewer.
+#    --anonymize : version masquée (partage / ticket Notion). Sans flag : version interne avec identités.
+pnpm audit:parcours-ds --anonymize --csv=audit-J0-anon.csv
+pnpm audit:parcours-ds --csv=audit-J0.csv
+
+# 2. Plan de correction (dry-run, aucune écriture).
+#    Affiche les mêmes catégories que l'audit (logique partagée) : régressables / cleanup requis / à reviewer.
+pnpm fix:double-progression --anonymize
+
+# 3. Correction. --with-cleanup traite aussi les cas "Edouard"
+#    (suppression des brouillons diagnostic en_construction + régression).
+#    --anonymize : logs d'exécution partageables (OK/SKIP/ERR avec id masqués).
+pnpm fix:double-progression --apply --with-cleanup --anonymize
+
+# 4. Vérification : doit afficher 0 régressable / 0 cleanup requis.
+pnpm fix:double-progression --anonymize
+
+# 5. Re-audit : ne doit rester que les cas légitimes (groupe A, utilisateurs passifs).
+pnpm audit:parcours-ds --anonymize
+
+# --- J+3 puis J+7 (après déploiement du fix serveur) ---
+# Confirme qu'aucun NOUVEAU cas n'apparaît (le fix d'idempotence tient).
+pnpm fix:double-progression --anonymize
+```
+
+Cibler un seul parcours (ex. débloquer un cas isolé sans toucher au reste) :
+
+```bash
+pnpm fix:double-progression --parcours-id=<uuid> --apply --with-cleanup --anonymize
+```
+
+Si l'étape 1, 2 ou 3 liste des cas en catégorie **à reviewer** (dossier downstream soumis côté DS), ils ne sont jamais touchés automatiquement : les traiter au cas par cas (recherche du dossier DS, rattachement manuel ou décision métier).
+
 ---
 
 ## 6. Prévention future

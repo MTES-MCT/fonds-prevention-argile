@@ -48,6 +48,7 @@ Trois niveaux d'engagement croissants :
 
 ```bash
 tsx scripts/ops/fix-double-progression-amo.ts                         # dry-run : affiche le plan
+tsx scripts/ops/fix-double-progression-amo.ts --anonymize             # dry-run, PII masquées (partage)
 tsx scripts/ops/fix-double-progression-amo.ts --apply                 # corrige les régressables (cat. 1)
 tsx scripts/ops/fix-double-progression-amo.ts --apply --with-cleanup  # corrige aussi les cas "Edouard" (cat. 2)
 tsx scripts/ops/fix-double-progression-amo.ts --parcours-id=<uuid>    # cible un seul parcours
