@@ -49,6 +49,10 @@ trustPolicyExclude:
   # semver@6.x n'a plus de provenance attestation ; transitif via @babel/core
   # (dépendance dev-only de @vitejs/plugin-react) — pas de risque runtime
   - semver
+  # Faux positif "trust downgrade" apparu avec pnpm 11.4.0 : provenance attestation
+  # absente sur la 3.10.x. Package légitime (mainteneurs jounqin / typescript-eslint,
+  # publié depuis 2017), dev-only — résolution d'imports TS pour eslint-plugin-import.
+  - eslint-import-resolver-typescript
 
 # Approbation explicite des scripts d'install natif (pnpm 11+).
 # Note : remplace `onlyBuiltDependencies` (ancien mécanisme pnpm 9-10, ignoré en 11).
