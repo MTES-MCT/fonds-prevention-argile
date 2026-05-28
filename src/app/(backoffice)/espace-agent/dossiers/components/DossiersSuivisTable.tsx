@@ -13,6 +13,7 @@ import {
   STATUTS_REFUSES,
 } from "@/features/backoffice/espace-agent/dossiers/domain";
 import { ROUTES } from "@/features/auth/domain/value-objects";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { formatNomComplet, formatDaysAgoSplit, formatDate } from "@/shared/utils";
 import { ActionMenu } from "../../shared/components/ActionMenu";
 import { ArchiveModal } from "../../shared/components/ArchiveModal";
@@ -166,10 +167,15 @@ export function DossiersSuivisTable({
                       );
                       const responsableLabel = getResponsableDisplayName(dossier.responsable);
 
-                      // URL détail : page AMO (validationId) si validation existe, sinon page
-                      // prospect (parcoursId). Sera unifié plus tard.
+                      // URL détail selon l'état :
+                      // - validation EN_ATTENTE (à qualifier par l'AMO) → page de validation
+                      //   /demandes/[id] (callout + boutons accepter/refuser).
+                      // - validation traitée (éligible/refusée) → page de suivi /dossiers/[id].
+                      // - pas de validation → page prospect (parcoursId).
                       const detailHref = dossier.validation
-                        ? ROUTES.backoffice.espaceAmo.dossier(dossier.validation.id)
+                        ? statutValidation === StatutValidationAmo.EN_ATTENTE
+                          ? ROUTES.backoffice.espaceAmo.demande(dossier.validation.id)
+                          : ROUTES.backoffice.espaceAmo.dossier(dossier.validation.id)
                         : `/espace-agent/prospects/${dossier.parcoursId}`;
 
                       const actionItems = [
