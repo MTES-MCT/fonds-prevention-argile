@@ -38,6 +38,8 @@
     "seo:import-catnat": "tsx src/features/seo/catnat/scripts/import-catnat.ts",
     "seed:staging": "tsx scripts/seed/seed-staging.ts",
     "fix:epci": "tsx scripts/ops/fix-missing-epci.ts",
+    "audit:parcours-ds": "tsx scripts/ops/audit-parcours-ds-integrity.ts",
+    "fix:double-progression": "tsx scripts/ops/fix-double-progression-amo.ts",
     "rga:import": "tsx scripts/import/rga-zones/import-rga-zones.ts"
   },
   "dependencies": {

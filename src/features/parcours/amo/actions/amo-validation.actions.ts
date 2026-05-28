@@ -61,7 +61,7 @@ async function verifyAmoOwnership(validationId: string): Promise<ActionResult<{ 
 export async function validerLogementEligible(
   validationId: string,
   commentaire?: string
-): Promise<ActionResult<{ message: string }>> {
+): Promise<ActionResult<{ message: string; alreadyProcessed: boolean; valideeAt: Date }>> {
   try {
     // Vérifier que l'agent AMO est propriétaire de cette validation
     const ownershipCheck = await verifyAmoOwnership(validationId);
@@ -86,7 +86,7 @@ export async function validerLogementEligible(
 export async function refuserLogementNonEligible(
   validationId: string,
   commentaire: string
-): Promise<ActionResult<{ message: string }>> {
+): Promise<ActionResult<{ message: string; alreadyProcessed: boolean; valideeAt: Date }>> {
   try {
     // Vérifier que l'agent AMO est propriétaire de cette validation
     const ownershipCheck = await verifyAmoOwnership(validationId);

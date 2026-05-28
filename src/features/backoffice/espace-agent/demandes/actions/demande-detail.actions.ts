@@ -79,7 +79,7 @@ export async function getDemandeDetailAction(demandeId: string): Promise<ActionR
 export async function accepterAccompagnement(
   demandeId: string,
   commentaire?: string
-): Promise<ActionResult<{ message: string }>> {
+): Promise<ActionResult<{ message: string; alreadyProcessed: boolean; valideeAt: Date }>> {
   try {
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
@@ -107,7 +107,7 @@ export async function accepterAccompagnement(
 export async function refuserDemandeNonEligible(
   demandeId: string,
   commentaire: string
-): Promise<ActionResult<{ message: string }>> {
+): Promise<ActionResult<{ message: string; alreadyProcessed: boolean; valideeAt: Date }>> {
   try {
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };

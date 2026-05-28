@@ -40,6 +40,11 @@ import {
 } from "@/shared/database/schema";
 import { Step, STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import {
+  categorizeDoubleProgression,
+  CATEGORY_LABELS,
+  type DoubleProgressionCategory,
+} from "./lib/double-progression";
 
 // --- Args ---
 const args = process.argv.slice(2);
@@ -184,6 +189,7 @@ interface ParcoursReport {
   emailsToSearch: string[];
   dsSearch: Partial<Record<Step, DsSearchHit[] | "skipped" | "error">>;
   anomalies: string[];
+  category: DoubleProgressionCategory;
 }
 
 // --- DS API ---
@@ -449,13 +455,32 @@ async function main() {
       emailsToSearch,
       dsSearch: {},
       anomalies,
+      category: categorizeDoubleProgression(dossiers),
     };
     reports.push(report);
   }
 
-  console.log(`Parcours avec anomalies : ${reports.length}`);
+  console.log(`Parcours à examiner (étape courante sans dossier DS — inclut des cas légitimes) : ${reports.length}`);
+
+  // Tri par catégorie : combien sont des cas légitimes vs de vrais bugs à corriger.
+  const byCategory = {
+    legitime: reports.filter((r) => r.category === "legitime").length,
+    regressable: reports.filter((r) => r.category === "regressable").length,
+    cleanup_requis: reports.filter((r) => r.category === "cleanup_requis").length,
+    a_reviewer: reports.filter((r) => r.category === "a_reviewer").length,
+  };
+  console.log();
+  console.log("Répartition par catégorie (cf. fix-double-progression-amo.ts) :");
+  console.log(`  - légitimes (rien à corriger)         : ${byCategory.legitime}`);
+  console.log(`  - régressables (bug)                  : ${byCategory.regressable}`);
+  console.log(`  - cleanup requis (bug type Edouard)   : ${byCategory.cleanup_requis}`);
+  console.log(`  - à reviewer manuellement             : ${byCategory.a_reviewer}`);
+  const aCorriger = byCategory.regressable + byCategory.cleanup_requis + byCategory.a_reviewer;
+  console.log(`  → ${aCorriger} parcours à corriger, ${byCategory.legitime} légitimes.`);
+  console.log();
+
   if (reports.length === 0) {
-    console.log("\nAucun parcours orphelin. Fin.");
+    console.log("\nAucun parcours à examiner. Fin.");
     await client.end();
     return;
   }
@@ -524,7 +549,7 @@ async function main() {
   console.log("=".repeat(72));
 
   reports.forEach((r, i) => {
-    console.log(`\n--- Parcours orphelin #${i + 1} ---`);
+    console.log(`\n--- Parcours #${i + 1} — ${CATEGORY_LABELS[r.category]} ---`);
     console.log(`  parcoursId         : ${redactUuid(r.parcoursId)}`);
     console.log(`  userId             : ${redactUuid(r.userId)}`);
     console.log(`  user               : ${redactName(r.userNom, r.userPrenom)}`);
@@ -539,7 +564,7 @@ async function main() {
     if (r.archivedAt) {
       console.log(`  archived           : ${r.archivedAt.toISOString()} (${r.archiveReason ?? "sans raison"})`);
     }
-    console.log(`  anomalies          :`);
+    console.log(`  à examiner         :`);
     for (const a of r.anomalies) console.log(`    - ${a}`);
 
     // Lignes DS locales
@@ -725,7 +750,7 @@ async function main() {
   }
 
   console.log("\n" + "=".repeat(72));
-  console.log(`Audit terminé. ${reports.length} parcours à traiter manuellement.`);
+  console.log(`Audit terminé. ${reports.length} parcours à examiner (dont la majorité sont des cas légitimes — voir le fix pour le tri).`);
   console.log("=".repeat(72));
 
   await client.end();
