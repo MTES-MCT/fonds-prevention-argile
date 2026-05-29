@@ -1,8 +1,7 @@
 import { db } from "@/shared/database/client";
 import { parcoursPrevention, users } from "@/shared/database/schema";
 import { eq } from "drizzle-orm";
-import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
-import type { AgentScopeInput } from "@/features/auth/permissions/domain/types/agent-scope.types";
+import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import type { ProspectDetail, ProspectAmoInfo } from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
 import { getCurrentUser } from "@/features/auth/services/user.service";
@@ -65,20 +64,16 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       return { success: false, error: "Non authentifié" };
     }
 
-    // Les admins peuvent tout voir
-    const isAdmin = user.role === UserRole.SUPER_ADMINISTRATEUR || user.role === UserRole.ADMINISTRATEUR;
-
-    // Vérifier les permissions pour les non-admins
-    if (!isAdmin) {
-      const canViewProspects = user.role === UserRole.ALLERS_VERS || user.role === UserRole.AMO_ET_ALLERS_VERS;
-
-      if (!canViewProspects) {
-        return { success: false, error: "Accès réservé aux agents Allers-Vers" };
-      }
-
-      if (!user.allersVersId) {
-        return { success: false, error: "Votre compte Allers-Vers n'est pas configuré" };
-      }
+    // Contrôle d'accès aligné sur le listing : tout agent du territoire (AMO, AV,
+    // hybride) peut consulter le prospect ; les admins ont un accès global.
+    const territoryError = await verifyProspectTerritoryAccess(parcoursId, {
+      id: user.agentId ?? "",
+      role: user.role as UserRole,
+      entrepriseAmoId: user.entrepriseAmoId ?? null,
+      allersVersId: user.allersVersId ?? null,
+    });
+    if (territoryError) {
+      return { success: false, error: territoryError };
     }
 
     // Récupérer les données du parcours avec l'utilisateur
@@ -100,30 +95,6 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     // Utiliser les données agent si disponibles, sinon les données initiales
     const rgaData = getEffectiveRGAData(result.parcours);
     const logement = rgaData?.logement;
-
-    // Vérifier que le prospect est dans le territoire de l'agent (sauf admins)
-    if (!isAdmin && user.allersVersId) {
-      const agentInput: AgentScopeInput = {
-        id: user.agentId ?? "",
-        role: user.role as UserRole,
-        entrepriseAmoId: user.entrepriseAmoId ?? null,
-        allersVersId: user.allersVersId ?? null,
-      };
-
-      const scope = await calculateAgentScope(agentInput);
-
-      const codeDepartement = logement?.code_departement;
-      const codeEpci = logement?.epci;
-
-      // Conversion en String() car le JSONB peut retourner un number au lieu d'un string
-      const matchesDepartement =
-        scope.departements.length > 0 && codeDepartement && scope.departements.includes(String(codeDepartement));
-      const matchesEpci = scope.epcis.length > 0 && codeEpci && scope.epcis.includes(String(codeEpci));
-
-      if (!matchesDepartement && !matchesEpci) {
-        return { success: false, error: "Ce prospect n'est pas dans votre territoire" };
-      }
-    }
 
     // Construire l'objet InfoLogement à partir de RGASimulationData
     const coords = parseCoordinatesString(rgaData?.logement?.coordonnees);
