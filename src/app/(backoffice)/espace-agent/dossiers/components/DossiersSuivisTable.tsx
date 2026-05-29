@@ -167,13 +167,16 @@ export function DossiersSuivisTable({
                       );
                       const responsableLabel = getResponsableDisplayName(dossier.responsable);
 
-                      // URL détail selon l'état :
-                      // - validation EN_ATTENTE (à qualifier par l'AMO) → page de validation
-                      //   /demandes/[id] (callout + boutons accepter/refuser).
+                      // URL détail selon l'état ET le rôle de l'agent :
+                      // - EN_ATTENTE + agent responsable (l'AMO destinataire) → page de
+                      //   validation /demandes/[id] (callout + boutons accepter/refuser).
+                      // - EN_ATTENTE mais agent NON responsable (AV / autre AMO du territoire)
+                      //   → page de suivi /dossiers/[id] en consultation (l'accès /demandes
+                      //   est réservé à l'AMO propriétaire, sinon 404).
                       // - validation traitée (éligible/refusée) → page de suivi /dossiers/[id].
                       // - pas de validation → page prospect (parcoursId).
                       const detailHref = dossier.validation
-                        ? statutValidation === StatutValidationAmo.EN_ATTENTE
+                        ? statutValidation === StatutValidationAmo.EN_ATTENTE && dossier.canActAsResponsable
                           ? ROUTES.backoffice.espaceAmo.demande(dossier.validation.id)
                           : ROUTES.backoffice.espaceAmo.dossier(dossier.validation.id)
                         : `/espace-agent/prospects/${dossier.parcoursId}`;
