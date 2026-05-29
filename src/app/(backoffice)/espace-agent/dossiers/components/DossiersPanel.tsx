@@ -26,7 +26,7 @@ interface DossiersPanelProps {
   prenom: string | null;
 }
 
-const TAB_IDS: ResponsableTabId[] = ["tous", "AV", "AMO", "MENAGE", "DDT", "ARCHIVE"];
+const TAB_IDS: ResponsableTabId[] = ["mes-dossiers", "AV", "AMO", "MENAGE", "DDT", "ARCHIVE"];
 
 // Ordre chronologique des libellés d'étape pour le filtre « Étape »
 // (suit le parcours : Création de compte → Choix AMO → Éligibilité → Diag → Devis → Factures),
@@ -40,7 +40,10 @@ const ETAPE_LABEL_ORDER: string[] = [
 
 /** Filtre une liste de dossiers selon l'onglet « En attente de ». */
 function filterByTab(dossiers: DossierItem[], tab: ResponsableTabId): DossierItem[] {
-  if (tab === "tous") return dossiers.filter((d) => d.responsable.type !== "ARCHIVE");
+  // « Mes dossiers » = ceux dont l'agent connecté est le responsable courant
+  // (canActAsResponsable). Pour un AMO : ses dossiers en attente de validation ;
+  // pour un AV : ses prospects/pré-éligibilités. Vide pour un admin (responsable d'aucun).
+  if (tab === "mes-dossiers") return dossiers.filter((d) => d.canActAsResponsable);
   return dossiers.filter((d) => d.responsable.type === tab);
 }
 
@@ -56,8 +59,8 @@ function getDeptsForTab(dossiers: DossierItem[], tab: ResponsableTabId): string[
 
 function getTabLabel(tab: ResponsableTabId, dossiers: DossierItem[]): string {
   switch (tab) {
-    case "tous":
-      return "Tous";
+    case "mes-dossiers":
+      return "Mes dossiers";
     case "AV":
       return getResponsableTabLabel("AV", getDeptsForTab(dossiers, "AV"));
     case "AMO":
@@ -79,7 +82,7 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [activeTab, setActiveTab] = useState<ResponsableTabId>("tous");
+  const [activeTab, setActiveTab] = useState<ResponsableTabId>("mes-dossiers");
   const [epciFilter, setEpciFilter] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -143,7 +146,7 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
   }, [data, activeTab]);
 
   const counters = useMemo(() => {
-    const map: Record<ResponsableTabId, number> = { tous: 0, AV: 0, AMO: 0, MENAGE: 0, DDT: 0, ARCHIVE: 0 };
+    const map: Record<ResponsableTabId, number> = { "mes-dossiers": 0, AV: 0, AMO: 0, MENAGE: 0, DDT: 0, ARCHIVE: 0 };
     if (!data) return map;
     for (const tab of TAB_IDS) map[tab] = filterByTab(data.dossiers, tab).length;
     return map;

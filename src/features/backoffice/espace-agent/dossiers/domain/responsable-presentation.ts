@@ -5,31 +5,21 @@ import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-valida
 import type { Responsable } from "@/features/parcours/core/domain/services/responsable.service";
 
 /**
- * Abrège un nom de structure en gardant le premier mot complet et l'initiale
- * du dernier mot (ex. "Michel Martin" → "Michel M.").
- */
-export function formatResponsableShort(nom: string): string {
-  const parts = nom.trim().split(/\s+/);
-  if (parts.length <= 1) return nom;
-  return `${parts[0]} ${parts[parts.length - 1][0]?.toUpperCase() ?? ""}.`;
-}
-
-/**
- * Libellé affichable du responsable d'un dossier : nom abrégé pour AV/AMO,
- * tiret pour les autres types (DDT, MENAGE, ARCHIVE).
+ * Libellé affichable du responsable d'un dossier : nom complet de la structure
+ * pour AV/AMO, tiret pour les autres types (DDT, MENAGE, ARCHIVE).
  */
 export function getResponsableDisplayName(responsable: Responsable): string {
   switch (responsable.type) {
     case "AV":
-      return formatResponsableShort(responsable.structureNom);
+      return responsable.structureNom;
     case "AMO":
-      return formatResponsableShort(responsable.entrepriseNom);
+      return responsable.entrepriseNom;
     default:
       return "—";
   }
 }
 
-export type ResponsableTabId = "tous" | "AV" | "AMO" | "MENAGE" | "DDT" | "ARCHIVE";
+export type ResponsableTabId = "mes-dossiers" | "AV" | "AMO" | "MENAGE" | "DDT" | "ARCHIVE";
 
 /**
  * Construit le libellé d'un onglet « En attente de » en suffixant
@@ -45,7 +35,7 @@ export function getResponsableTabLabel(prefix: string, codesDepartement: string[
  * Libellés étendus des KPIs affichés en cartes au-dessus du listing.
  * Mêmes catégories que les onglets responsable, version longue.
  */
-export const RESPONSABLE_KPI_LABELS: Record<Exclude<ResponsableTabId, "tous" | "ARCHIVE">, string> = {
+export const RESPONSABLE_KPI_LABELS: Record<Exclude<ResponsableTabId, "mes-dossiers" | "ARCHIVE">, string> = {
   AV: "Pré-éligibilité à vérifier",
   AMO: "Demande AMO en attente",
   MENAGE: "Actions Ménages attendues",
