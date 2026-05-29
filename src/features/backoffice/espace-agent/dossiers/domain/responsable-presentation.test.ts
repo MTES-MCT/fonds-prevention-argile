@@ -20,8 +20,8 @@ describe("getDossierStepLabel", () => {
     expect(getDossierStepLabel(Step.CHOIX_AMO, null)).toBe("Choix de l'AMO");
   });
 
-  it("retourne 'Pré-éligibilité' pour INVITATION", () => {
-    expect(getDossierStepLabel(Step.INVITATION, null)).toBe("Pré-éligibilité");
+  it("retourne 'Création de compte' pour INVITATION", () => {
+    expect(getDossierStepLabel(Step.INVITATION, null)).toBe("Création de compte");
   });
 });
 

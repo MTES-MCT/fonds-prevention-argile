@@ -56,7 +56,7 @@ export const RESPONSABLE_KPI_LABELS: Record<Exclude<ResponsableTabId, "tous" | "
  * Libellés d'étape conformes à la maquette du listing dossiers.
  */
 export const DOSSIER_STEP_LABELS: Record<Step, string> = {
-  [Step.INVITATION]: "Pré-éligibilité",
+  [Step.INVITATION]: "Création de compte",
   [Step.CHOIX_AMO]: "Choix de l'AMO",
   [Step.ELIGIBILITE]: "Formulaire d'éligibilité",
   [Step.DIAGNOSTIC]: "Diagnostic logement",
@@ -66,7 +66,7 @@ export const DOSSIER_STEP_LABELS: Record<Step, string> = {
 
 /**
  * Étape affichée dans la colonne « Étape » :
- * - si pas de validation AMO acceptée et étape ≤ CHOIX_AMO → « Pré-éligibilité »
+ * - si pas de validation AMO acceptée et étape ≤ CHOIX_AMO → « Création de compte »
  * - sinon le libellé de l'étape
  * - « Non-éligible » si validation refusée (logement non éligible)
  */

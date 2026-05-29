@@ -29,7 +29,7 @@ interface DossiersPanelProps {
 const TAB_IDS: ResponsableTabId[] = ["tous", "AV", "AMO", "MENAGE", "DDT", "ARCHIVE"];
 
 // Ordre chronologique des libellés d'étape pour le filtre « Étape »
-// (suit le parcours : Pré-éligibilité → Choix AMO → Éligibilité → Diag → Devis → Factures),
+// (suit le parcours : Création de compte → Choix AMO → Éligibilité → Diag → Devis → Factures),
 // + « Non-éligible » en fin. Sert à trier les options autrement qu'alphabétiquement.
 const ETAPE_LABEL_ORDER: string[] = [
   ...[Step.INVITATION, Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES].map((s) =>
