@@ -9,6 +9,7 @@ Utilitaires pour intervenir sur une BDD existante : audit d'intégrité, correct
 | Script | Type | Rôle | Lancement |
 |---|---|---|---|
 | [`audit-parcours-ds-integrity.ts`](#audit-parcours-ds-integrity) | read-only | Détecte les parcours dont l'état interne n'a pas de dossier DS correspondant | `tsx scripts/ops/audit-parcours-ds-integrity.ts` |
+| [`audit-epci-fallback.ts`](#audit-epci-fallback) | read-only | Liste les EPCI des dossiers absents du référentiel SEO (affichés en code brut dans le filtre AMO) et les catégorise via geo.api | `tsx scripts/ops/audit-epci-fallback.ts` |
 | [`fix-double-progression-amo.ts`](#fix-double-progression-amo) | **écrit** | Détecte et corrige les parcours victimes du bug double-progression AMO (régression vers eligibilite/todo) | `tsx scripts/ops/fix-double-progression-amo.ts` |
 | [`verify-dashboard-stats.ts`](#verify-dashboard-stats) | read-only | Vérifie que les stats du tableau de bord correspondent aux requêtes SQL équivalentes | `tsx scripts/ops/verify-dashboard-stats.ts` |
 | [`fix-missing-epci.ts`](#fix-missing-epci) | **écrit** | Backfill du code EPCI sur les parcours qui en sont dépourvus (via `geo.api.gouv.fr`) | `pnpm fix:epci` |
@@ -31,6 +32,22 @@ tsx scripts/ops/audit-parcours-ds-integrity.ts --anonymize   # masque les PII
 ```
 
 **Prérequis** : `.env.local` avec `DATABASE_URL` + `DEMARCHES_SIMPLIFIEES_*`.
+
+### audit-epci-fallback
+
+Le filtre EPCI du listing AMO (espace-agent) affiche le **nom** de l'EPCI quand son SIREN figure dans le référentiel SEO (`src/features/seo/data/generated/epci.json`, ~163 EPCI), sinon retombe sur le **code brut**. Ce script liste les codes EPCI des dossiers absents du référentiel, compte les dossiers concernés, et catégorise chaque cas via `geo.api.gouv.fr` :
+
+- **hors top-300** : EPCI d'un département couvert mais absent du référentiel — le générateur SEO ne récupère que les 300 communes les plus peuplées par département (`COMMUNES_PAR_DEPARTEMENT`), donc les EPCI de petites communes manquent.
+- **hors zone** : EPCI d'un département non couvert par le dispositif.
+- **code invalide** : SIREN inconnu de geo.api (périmé / fusion d'EPCI).
+
+Sur une copie de prod, le résultat attendu est **0 fallback** (les vrais dossiers sont dans des EPCI référencés). Des fallbacks signalent en général des **données de staging non clean** (EPCI fictifs des seeds `fake-parcours`).
+
+```bash
+tsx scripts/ops/audit-epci-fallback.ts
+```
+
+**Prérequis** : `.env.local` avec `DATABASE_URL`.
 
 ### fix-double-progression-amo
 
