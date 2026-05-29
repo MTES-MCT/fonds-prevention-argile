@@ -175,6 +175,17 @@ export function InfoDossierCallout({ currentStep, currentStatus, dsStatus, valid
       hint: "Les raisons d'inéligibilité sont consultables dans les détails du dossier.",
       variant: "red-marianne",
     };
+  } else if (validationStatut === StatutValidationAmo.EN_ATTENTE) {
+    // Dossier en attente de validation par l'AMO (étape choix AMO). Le parcours est
+    // en EN_INSTRUCTION, mais ce n'est PAS la DDT qui instruit : c'est l'AMO qui doit
+    // confirmer l'éligibilité. Ce cas doit primer sur la branche EN_INSTRUCTION plus bas.
+    message = {
+      title: "En attente de validation par l'AMO.",
+      description:
+        "L'AMO doit confirmer l'éligibilité du logement avant que le demandeur ne dépose son dossier d'éligibilité.",
+      hint: "",
+      variant: "yellow-moutarde",
+    };
   } else if (dsStatus === DSStatus.ACCEPTE || currentStatus === Status.VALIDE) {
     message = getAccepteMessage(currentStep);
   } else if (dsStatus === DSStatus.REFUSE || dsStatus === DSStatus.CLASSE_SANS_SUITE) {
