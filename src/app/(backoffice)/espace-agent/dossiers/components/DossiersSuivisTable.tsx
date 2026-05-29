@@ -137,7 +137,6 @@ export function DossiersSuivisTable({
                     <th scope="col" style={{ minWidth: "320px" }}>
                       Précisions
                     </th>
-                    <th scope="col">Ajout</th>
                     <th scope="col">Note complémentaire liée</th>
                     <th scope="col">Action</th>
                   </tr>
@@ -145,7 +144,7 @@ export function DossiersSuivisTable({
                 <tbody>
                   {dossiers.length === 0 ? (
                     <tr>
-                      <td colSpan={10} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
+                      <td colSpan={9} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
                         Aucun dossier
                       </td>
                     </tr>
@@ -243,7 +242,6 @@ export function DossiersSuivisTable({
                               </div>
                             )}
                           </td>
-                          <td style={greyStyle}>{formatDate(dossier.createdAt.toISOString())}</td>
                           <td
                             style={{
                               maxWidth: "240px",
