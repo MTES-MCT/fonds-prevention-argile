@@ -13,6 +13,7 @@ import {
   getResponsableTabLabel,
   type ResponsableTabId,
 } from "@/features/backoffice/espace-agent/dossiers/domain";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DossiersSuivisHeader } from "./DossiersSuivisHeader";
 import { DossiersSuivisTable } from "./DossiersSuivisTable";
 import { DossiersKpiCards } from "./DossiersKpiCards";
@@ -26,6 +27,16 @@ interface DossiersPanelProps {
 }
 
 const TAB_IDS: ResponsableTabId[] = ["tous", "AV", "AMO", "MENAGE", "DDT", "ARCHIVE"];
+
+// Ordre chronologique des libellés d'étape pour le filtre « Étape »
+// (suit le parcours : Pré-éligibilité → Choix AMO → Éligibilité → Diag → Devis → Factures),
+// + « Non-éligible » en fin. Sert à trier les options autrement qu'alphabétiquement.
+const ETAPE_LABEL_ORDER: string[] = [
+  ...[Step.INVITATION, Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES].map((s) =>
+    getDossierStepLabel(s, null)
+  ),
+  "Non-éligible",
+];
 
 /** Filtre une liste de dossiers selon l'onglet « En attente de ». */
 function filterByTab(dossiers: DossierItem[], tab: ResponsableTabId): DossierItem[] {
@@ -119,9 +130,14 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
       Array.from(values)
         .sort((a, b) => a.localeCompare(b, "fr"))
         .map((v) => ({ value: v, label: v }));
+    // Les étapes suivent l'ordre du parcours (chronologique), pas l'ordre alphabétique.
+    const toEtapeOptions = (values: Set<string>) =>
+      Array.from(values)
+        .sort((a, b) => ETAPE_LABEL_ORDER.indexOf(a) - ETAPE_LABEL_ORDER.indexOf(b))
+        .map((v) => ({ value: v, label: v }));
     return {
       responsables: toOptions(responsables),
-      etapes: toOptions(etapes),
+      etapes: toEtapeOptions(etapes),
       enAttente: toOptions(enAttente),
     };
   }, [data, activeTab]);
