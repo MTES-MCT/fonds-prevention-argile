@@ -430,7 +430,16 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(parcoursPrevention.updatedAt));
 
-    return results.filter((r) => matchesTerritoire(getDemandeurFirstSimulation(r), departements, epcis));
+    const territoire = results.filter((r) => matchesTerritoire(getDemandeurFirstSimulation(r), departements, epcis));
+
+    // Dédup par parcoursId : le LEFT JOIN dossiers DS peut produire plusieurs lignes
+    // par parcours (pas d'unicité sur (parcours_id, step)). Garde la plus récente.
+    const seen = new Set<string>();
+    return territoire.filter((r) => {
+      if (seen.has(r.parcoursId)) return false;
+      seen.add(r.parcoursId);
+      return true;
+    });
   }
 
   /**
