@@ -103,7 +103,8 @@ describe("resolveResponsables", () => {
     expect(allersVersRepository.findByEpciWithDepartementFallback).toHaveBeenCalledTimes(1);
   });
 
-  it("dossier archivé : responsable ARCHIVE + état ARCHIVE", async () => {
+  it("dossier archivé avec AMO : responsable AMO sticky + état ARCHIVE", async () => {
+    entreprisesAmoRepo.findById.mockResolvedValue({ id: "amo-1", nom: "Entreprise A" });
     allersVersRepository.findByEpciWithDepartementFallback.mockResolvedValue([]);
 
     const map = await resolveResponsables([
@@ -117,7 +118,43 @@ describe("resolveResponsables", () => {
       },
     ]);
 
-    expect(map.get("p1")?.responsable).toEqual({ type: "ARCHIVE" });
+    expect(map.get("p1")?.responsable).toMatchObject({ type: "AMO", entrepriseId: "amo-1" });
     expect(map.get("p1")?.etat).toBe("ARCHIVE");
+  });
+
+  it("dossier refusé (LOGEMENT_NON_ELIGIBLE) : responsable AMO sticky + état REFUSE", async () => {
+    entreprisesAmoRepo.findById.mockResolvedValue({ id: "amo-1", nom: "Entreprise A" });
+    allersVersRepository.findByEpciWithDepartementFallback.mockResolvedValue([{ id: "av-1", nom: "ADIL 36" }]);
+
+    const map = await resolveResponsables([
+      {
+        parcoursId: "p1",
+        archivedAt: null,
+        currentStatus: Status.TODO,
+        codeDepartement: "36",
+        codeEpci: null,
+        validation: { statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, entrepriseAmoId: "amo-1" },
+      },
+    ]);
+
+    expect(map.get("p1")?.responsable).toMatchObject({ type: "AMO", entrepriseId: "amo-1" });
+    expect(map.get("p1")?.etat).toBe("REFUSE");
+  });
+
+  it("dossier sans AV territorial + sans AMO : responsable INDETERMINE", async () => {
+    allersVersRepository.findByEpciWithDepartementFallback.mockResolvedValue([]);
+
+    const map = await resolveResponsables([
+      {
+        parcoursId: "p1",
+        archivedAt: null,
+        currentStatus: Status.TODO,
+        codeDepartement: "36",
+        codeEpci: null,
+        validation: null,
+      },
+    ]);
+
+    expect(map.get("p1")?.responsable).toEqual({ type: "INDETERMINE" });
   });
 });

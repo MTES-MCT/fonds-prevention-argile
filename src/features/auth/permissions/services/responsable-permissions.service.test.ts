@@ -90,12 +90,10 @@ describe("canActAsResponsable", () => {
     });
   });
 
-  describe("autres types de responsable", () => {
-    it("refuse pour DDT, MENAGE, ARCHIVE", () => {
+  describe("responsable INDETERMINE", () => {
+    it("refuse même un agent privilégié (pas d'AV ni d'AMO résolu)", () => {
       const actor = makeActor({ entrepriseAmoId: "amo-1", allersVersId: "av-1", allersVersDepartements: ["36"] });
-      expect(canActAsResponsable(actor, { type: "DDT", codeDepartement: "36" })).toBe(false);
-      expect(canActAsResponsable(actor, { type: "MENAGE", codeDepartement: "36" })).toBe(false);
-      expect(canActAsResponsable(actor, { type: "ARCHIVE" })).toBe(false);
+      expect(canActAsResponsable(actor, { type: "INDETERMINE" })).toBe(false);
     });
   });
 });

@@ -60,8 +60,6 @@ export async function resolveResponsables(
         : null;
 
     const responsable = getResponsableDossier({
-      currentStatus: d.currentStatus,
-      archivedAt: d.archivedAt,
       validation: d.validation ? { statut: d.validation.statut, entreprise } : null,
       codeDepartement: d.codeDepartement,
       allersVersTerritorial: avParTerritoire.get(territoireKey(d.codeEpci, d.codeDepartement)) ?? null,

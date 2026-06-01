@@ -29,9 +29,9 @@ export function canActAsResponsable(actor: ActorContext, responsable: Responsabl
       return (
         responsable.codeDepartement !== null && actor.allersVersDepartements.includes(responsable.codeDepartement)
       );
-    case RESPONSABLE_TYPE.MENAGE:
-    case RESPONSABLE_TYPE.DDT:
-    case RESPONSABLE_TYPE.ARCHIVE:
+    case RESPONSABLE_TYPE.INDETERMINE:
+      // Pas d'AV rattaché au territoire et pas d'AMO accompagnant : personne
+      // ne peut agir au titre du responsable. Ne devrait pas arriver en prod.
       return false;
   }
 }

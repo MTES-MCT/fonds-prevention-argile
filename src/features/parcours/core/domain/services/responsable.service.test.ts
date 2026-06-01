@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { Status } from "@/shared/domain/value-objects/status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { getResponsableDossier, type ResponsableInput } from "./responsable.service";
 
@@ -8,8 +7,6 @@ const entreprise = { id: "amo-1", nom: "Entreprise A" };
 
 function makeInput(overrides: Partial<ResponsableInput> = {}): ResponsableInput {
   return {
-    currentStatus: Status.TODO,
-    archivedAt: null,
     validation: null,
     codeDepartement: "36",
     allersVersTerritorial: av,
@@ -18,84 +15,77 @@ function makeInput(overrides: Partial<ResponsableInput> = {}): ResponsableInput 
 }
 
 describe("getResponsableDossier", () => {
-  it("retourne ARCHIVE si le parcours est archivé", () => {
-    const result = getResponsableDossier(makeInput({ archivedAt: new Date() }));
-    expect(result.type).toBe("ARCHIVE");
+  it("AV par défaut quand aucune validation AMO n'est posée", () => {
+    const result = getResponsableDossier(makeInput({ validation: null }));
+    expect(result).toMatchObject({ type: "AV", structureId: "av-1", structureNom: "ADIL 36", codeDepartement: "36" });
   });
 
-  it("retourne ARCHIVE pour une validation LOGEMENT_NON_ELIGIBLE", () => {
-    const result = getResponsableDossier(
-      makeInput({
-        validation: { statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, entreprise },
-      })
-    );
-    expect(result.type).toBe("ARCHIVE");
-  });
-
-  it("retourne ARCHIVE pour une validation ACCOMPAGNEMENT_REFUSE", () => {
-    const result = getResponsableDossier(
-      makeInput({
-        validation: { statut: StatutValidationAmo.ACCOMPAGNEMENT_REFUSE, entreprise },
-      })
-    );
-    expect(result.type).toBe("ARCHIVE");
-  });
-
-  it("retourne AV pour une renonciation explicite (SANS_AMO)", () => {
+  it("AV pour une renonciation explicite (SANS_AMO)", () => {
     const result = getResponsableDossier(
       makeInput({
         validation: { statut: StatutValidationAmo.SANS_AMO, entreprise: null },
       })
     );
-    expect(result).toMatchObject({ type: "AV", structureId: "av-1", structureNom: "ADIL 36", codeDepartement: "36" });
+    expect(result).toMatchObject({ type: "AV", structureId: "av-1" });
   });
 
-  it("retourne AV en pré-éligibilité (pas de validation AMO)", () => {
-    const result = getResponsableDossier(makeInput({ validation: null }));
-    expect(result.type).toBe("AV");
-  });
-
-  it("retourne AMO quand une validation EN_ATTENTE est posée", () => {
+  it("AMO pour une validation EN_ATTENTE (accompagnement posé)", () => {
     const result = getResponsableDossier(
       makeInput({
         validation: { statut: StatutValidationAmo.EN_ATTENTE, entreprise },
       })
     );
-    expect(result).toMatchObject({ type: "AMO", entrepriseId: "amo-1", entrepriseNom: "Entreprise A" });
+    expect(result).toMatchObject({ type: "AMO", entrepriseId: "amo-1", entrepriseNom: "Entreprise A", codeDepartement: "36" });
   });
 
-  it("retourne DDT pour une étape en instruction (validation acceptée)", () => {
+  it("AMO sticky pour une validation LOGEMENT_ELIGIBLE (reste responsable après validation)", () => {
     const result = getResponsableDossier(
       makeInput({
-        currentStatus: Status.EN_INSTRUCTION,
         validation: { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE, entreprise },
       })
     );
-    expect(result).toMatchObject({ type: "DDT", codeDepartement: "36" });
+    expect(result).toMatchObject({ type: "AMO", entrepriseId: "amo-1" });
   });
 
-  it("retourne MENAGE pour une étape TODO côté demandeur (validation acceptée)", () => {
+  it("AMO sticky pour une validation LOGEMENT_NON_ELIGIBLE (responsable AMO + état REFUSE)", () => {
     const result = getResponsableDossier(
       makeInput({
-        currentStatus: Status.TODO,
-        validation: { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE, entreprise },
+        validation: { statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, entreprise },
       })
     );
-    expect(result.type).toBe("MENAGE");
+    expect(result).toMatchObject({ type: "AMO", entrepriseId: "amo-1" });
   });
 
-  it("retourne MENAGE pour une étape validée (en attente de l'étape suivante)", () => {
+  it("AMO sticky pour une validation ACCOMPAGNEMENT_REFUSE (responsable AMO + état REFUSE)", () => {
     const result = getResponsableDossier(
       makeInput({
-        currentStatus: Status.VALIDE,
-        validation: { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE, entreprise },
+        validation: { statut: StatutValidationAmo.ACCOMPAGNEMENT_REFUSE, entreprise },
       })
     );
-    expect(result.type).toBe("MENAGE");
+    expect(result).toMatchObject({ type: "AMO", entrepriseId: "amo-1" });
   });
 
-  it("fallback AV avec label générique quand aucun AV territorial n'est résolu", () => {
+  it("AV si validation EN_ATTENTE sans entreprise (cas limite défensif)", () => {
+    const result = getResponsableDossier(
+      makeInput({
+        validation: { statut: StatutValidationAmo.EN_ATTENTE, entreprise: null },
+      })
+    );
+    expect(result).toMatchObject({ type: "AV", structureId: "av-1" });
+  });
+
+  it("INDETERMINE si aucun AV territorial n'est résolu et pas d'AMO", () => {
     const result = getResponsableDossier(makeInput({ allersVersTerritorial: null }));
-    expect(result).toMatchObject({ type: "AV", structureId: null, structureNom: "Aller-vers du territoire" });
+    expect(result).toEqual({ type: "INDETERMINE" });
+  });
+
+  it("AMO sticky même si aucun AV territorial n'est résolu (l'AMO prime)", () => {
+    const result = getResponsableDossier(
+      makeInput({
+        allersVersTerritorial: null,
+        validation: { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE, entreprise },
+      })
+    );
+    expect(result).toMatchObject({ type: "AMO", entrepriseId: "amo-1" });
   });
 });

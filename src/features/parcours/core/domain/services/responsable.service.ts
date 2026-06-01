@@ -1,16 +1,23 @@
-import { Status } from "@/shared/domain/value-objects/status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
 /**
  * Discriminant du type de responsable. Garde la cohérence des littéraux entre
  * le type `Responsable` et les comparaisons (switch, garde…).
+ *
+ * Seuls trois types existent :
+ *  - AV : Aller-vers rattaché à l'EPCI (fallback département) du logement.
+ *  - AMO : entreprise AMO une fois qu'un accompagnement est posé (« sticky »).
+ *  - INDETERMINE : aucun AV trouvé pour le territoire (ne devrait pas arriver
+ *    en prod, fallback défensif).
+ *
+ * MENAGE, DDT et ARCHIVE ne sont **plus** des types de responsable — ce sont
+ * des états du dossier (cf. `dossier-etat.service.ts`). Le responsable d'un
+ * dossier validé, refusé ou archivé reste l'AMO qui l'a accompagné.
  */
 export const RESPONSABLE_TYPE = {
   AV: "AV",
   AMO: "AMO",
-  MENAGE: "MENAGE",
-  DDT: "DDT",
-  ARCHIVE: "ARCHIVE",
+  INDETERMINE: "INDETERMINE",
 } as const;
 
 export type ResponsableType = (typeof RESPONSABLE_TYPE)[keyof typeof RESPONSABLE_TYPE];
@@ -20,7 +27,6 @@ export type ResponsableType = (typeof RESPONSABLE_TYPE)[keyof typeof RESPONSABLE
  * Discriminated union sur `type`.
  */
 export type Responsable =
-  | { type: typeof RESPONSABLE_TYPE.ARCHIVE }
   | {
       type: typeof RESPONSABLE_TYPE.AV;
       structureId: string | null;
@@ -33,82 +39,51 @@ export type Responsable =
       entrepriseNom: string;
       codeDepartement: string | null;
     }
-  | { type: typeof RESPONSABLE_TYPE.MENAGE; codeDepartement: string | null }
-  | { type: typeof RESPONSABLE_TYPE.DDT; codeDepartement: string | null };
+  | { type: typeof RESPONSABLE_TYPE.INDETERMINE };
 
 export interface ResponsableInput {
-  currentStatus: Status;
-  archivedAt: Date | null;
   validation: {
     statut: StatutValidationAmo;
     entreprise: { id: string; nom: string } | null;
   } | null;
   codeDepartement: string | null;
   /**
-   * Aller-vers territorial associé au département du logement.
-   * Sert à nommer le responsable AV quand le parcours n'a pas d'agent créateur
-   * (ex : parcours initié par le demandeur via le simulateur public).
+   * Aller-vers territorial associé à l'EPCI (fallback département) du logement.
+   * Sert à nommer le responsable AV par défaut (parcours sans AMO ou avec
+   * renonciation explicite SANS_AMO).
    */
   allersVersTerritorial: { id: string; nom: string } | null;
 }
 
 /**
- * Règle métier :
- * - Dossier archivé ou validation refusée → ARCHIVE.
- * - Pas de validation AMO (pré-éligibilité) ou renonciation (SANS_AMO) → AV territorial.
- * - Validation AMO `EN_ATTENTE` → AMO (doit qualifier l'éligibilité).
- * - Validation AMO `LOGEMENT_ELIGIBLE` :
- *   • Étape en instruction par la DDT (`EN_INSTRUCTION`) → DDT.
- *   • Étape en attente du ménage (`TODO` ou `VALIDE`) → MENAGE.
+ * Règle métier (responsable « sticky ») :
+ *  - Si un accompagnement AMO est posé (toute validation avec une entreprise,
+ *    sauf SANS_AMO) → AMO. L'AMO reste responsable pour toute la vie du dossier
+ *    (validé, refusé, archivé), il ne « lâche » jamais.
+ *  - Sinon → AV territorial (rattaché par EPCI, fallback département).
+ *  - Si aucun AV n'est trouvé pour le territoire → INDETERMINE (fallback
+ *    défensif ; en prod il y a toujours un AV).
  */
 export function getResponsableDossier(input: ResponsableInput): Responsable {
-  const { archivedAt, validation, currentStatus, codeDepartement, allersVersTerritorial } = input;
+  const { validation, codeDepartement, allersVersTerritorial } = input;
 
-  if (archivedAt !== null) {
-    return { type: RESPONSABLE_TYPE.ARCHIVE };
+  if (validation && validation.entreprise && validation.statut !== StatutValidationAmo.SANS_AMO) {
+    return {
+      type: RESPONSABLE_TYPE.AMO,
+      entrepriseId: validation.entreprise.id,
+      entrepriseNom: validation.entreprise.nom,
+      codeDepartement,
+    };
   }
 
-  if (!validation) {
-    return buildAv(allersVersTerritorial, codeDepartement);
+  if (allersVersTerritorial) {
+    return {
+      type: RESPONSABLE_TYPE.AV,
+      structureId: allersVersTerritorial.id,
+      structureNom: allersVersTerritorial.nom,
+      codeDepartement,
+    };
   }
 
-  switch (validation.statut) {
-    case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
-    case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
-      return { type: RESPONSABLE_TYPE.ARCHIVE };
-
-    case StatutValidationAmo.SANS_AMO:
-      return buildAv(allersVersTerritorial, codeDepartement);
-
-    case StatutValidationAmo.EN_ATTENTE:
-      return validation.entreprise
-        ? {
-            type: RESPONSABLE_TYPE.AMO,
-            entrepriseId: validation.entreprise.id,
-            entrepriseNom: validation.entreprise.nom,
-            codeDepartement,
-          }
-        : buildAv(allersVersTerritorial, codeDepartement);
-
-    case StatutValidationAmo.LOGEMENT_ELIGIBLE:
-      if (!validation.entreprise) {
-        return buildAv(allersVersTerritorial, codeDepartement);
-      }
-      return currentStatus === Status.EN_INSTRUCTION
-        ? { type: RESPONSABLE_TYPE.DDT, codeDepartement }
-        : { type: RESPONSABLE_TYPE.MENAGE, codeDepartement };
-  }
+  return { type: RESPONSABLE_TYPE.INDETERMINE };
 }
-
-function buildAv(
-  av: { id: string; nom: string } | null,
-  codeDepartement: string | null
-): Extract<Responsable, { type: typeof RESPONSABLE_TYPE.AV }> {
-  return {
-    type: RESPONSABLE_TYPE.AV,
-    structureId: av?.id ?? null,
-    structureNom: av?.nom ?? "Aller-vers du territoire",
-    codeDepartement,
-  };
-}
-
