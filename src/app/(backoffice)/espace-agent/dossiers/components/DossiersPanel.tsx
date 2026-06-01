@@ -223,11 +223,20 @@ export function DossiersPanel({
     setPage(1);
   };
 
-  // Bandeau « X résultat(s) dans vos dossiers » + lien d'élargissement.
-  // Affiché uniquement en mode « Mes dossiers » dès qu'une recherche texte
-  // est saisie (0 ou X résultats, cf. mockup).
-  const showMineSearchHint = activeScope === "mine" && search.trim().length > 0;
-  const mineSearchHintLabel = `${visible.length} résultat${visible.length > 1 ? "s" : ""} dans vos dossiers`;
+  // Bandeau « X résultat(s) dans vos/tous les dossiers » — affiché dès qu'un
+  // filtre est actif (recherche, EPCI ou filtre par colonne). Le scope habille
+  // le texte (« dans vos dossiers » vs « dans tous les dossiers ») et le lien
+  // d'élargissement n'apparaît qu'en mode « Mes dossiers ».
+  const hasActiveFilter =
+    search.trim().length > 0 ||
+    epciFilter !== "" ||
+    responsableFilter.size > 0 ||
+    etapeFilter.size > 0 ||
+    enAttenteFilter.size > 0;
+  const resultsLabel =
+    activeScope === "mine"
+      ? `${visible.length} résultat${visible.length > 1 ? "s" : ""} dans vos dossiers`
+      : `${visible.length} résultat${visible.length > 1 ? "s" : ""} dans tous les dossiers`;
 
   if (isLoading) {
     return (
@@ -349,15 +358,20 @@ export function DossiersPanel({
             </div>
           </div>
 
-          {showMineSearchHint && (
+          {hasActiveFilter && (
             <p className="fr-mb-2w">
-              {mineSearchHintLabel}{" "}
-              <button
-                type="button"
-                className="fr-link"
-                onClick={() => handleScopeChange("all")}>
-                Élargir la recherche à tous les dossiers
-              </button>
+              {resultsLabel}
+              {activeScope === "mine" && (
+                <>
+                  {" "}
+                  <button
+                    type="button"
+                    className="fr-link"
+                    onClick={() => handleScopeChange("all")}>
+                    Élargir la recherche à tous les dossiers
+                  </button>
+                </>
+              )}
             </p>
           )}
 
