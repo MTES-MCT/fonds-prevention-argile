@@ -241,7 +241,9 @@ export function DossiersPanel({
   if (isLoading) {
     return (
       <>
-        <DossiersSuivisHeader prenom={prenom} />
+        <div className="fr-container fr-py-6w">
+          <DossiersSuivisHeader prenom={prenom} />
+        </div>
         <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
           <div className="fr-container">
             <p>Chargement...</p>
@@ -254,7 +256,9 @@ export function DossiersPanel({
   if (error) {
     return (
       <>
-        <DossiersSuivisHeader prenom={prenom} />
+        <div className="fr-container fr-py-6w">
+          <DossiersSuivisHeader prenom={prenom} />
+        </div>
         <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
           <div className="fr-container">
             <div className="fr-alert fr-alert--error">
