@@ -43,19 +43,21 @@ export async function getDossiersByAgent(
     archivedAt: item.archivedAt,
     currentStatus: item.currentStatus,
     codeDepartement: item.logement.codeDepartement,
+    codeEpci: item.logement.codeEpci,
     validation: item.validation ? { statut: item.validation.statut, entrepriseAmoId: item.validation.entrepriseAmoId } : null,
   }));
-  const [responsables, actor, notesMap] = await Promise.all([
+  const [resolved, actor, notesMap] = await Promise.all([
     resolveResponsables(resolverInput),
     getActorContext({ entrepriseAmoId: agent.entrepriseAmoId ?? null, allersVersId: agent.allersVersId ?? null }),
     parcoursCommentairesRepo.getLastMessageByParcoursIds(bareItems.map((i) => i.parcoursId)),
   ]);
 
   const dossiers: DossierItem[] = bareItems.map((item) => {
-    const responsable = responsables.get(item.parcoursId)!;
+    const { responsable, etat } = resolved.get(item.parcoursId)!;
     return {
       ...item,
       responsable,
+      etat,
       canActAsResponsable: canActAsResponsable(actor, responsable),
       derniereNote: notesMap.get(item.parcoursId) ?? null,
     };
@@ -93,7 +95,7 @@ function buildEpciChoices(dossiers: DossierItem[]): EpciChoice[] {
 }
 
 type Row = Awaited<ReturnType<typeof parcoursRepo.getParcoursByTerritoire>>[number];
-type DossierItemSansResponsable = Omit<DossierItem, "responsable" | "canActAsResponsable" | "derniereNote">;
+type DossierItemSansResponsable = Omit<DossierItem, "responsable" | "etat" | "canActAsResponsable" | "derniereNote">;
 
 function toDossierItemSansResponsable(row: Row): DossierItemSansResponsable {
   const logement = getDemandeurFirstLogement(row);

@@ -4,6 +4,7 @@ import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { Responsable } from "@/features/parcours/core/domain/services/responsable.service";
+import type { DossierEtat } from "@/features/parcours/core/domain/services/dossier-etat.service";
 
 /**
  * Élément unifié de la liste « dossiers par territoire ».
@@ -42,6 +43,12 @@ export interface DossierItem {
   updatedAt: Date;
   /** Responsable du dossier à l'instant T (dérivé par `getResponsableDossier`). */
   responsable: Responsable;
+  /**
+   * État courant du dossier (où en est-il / qui doit agir) — dimension distincte
+   * du responsable, dérivée par `getDossierEtat`. Alimente le badge « En attente de »,
+   * les KPI et les filtres MENAGE/DDT/ARCHIVE.
+   */
+  etat: DossierEtat;
   /** L'agent connecté peut-il agir au titre du responsable (archiver, qualifier) ? */
   canActAsResponsable: boolean;
   /** Dernier commentaire interne (= « note complémentaire liée »), null si aucun. */
