@@ -3,6 +3,7 @@ import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { Responsable } from "@/features/parcours/core/domain/services/responsable.service";
+import type { DossierEtat } from "@/features/parcours/core/domain/services/dossier-etat.service";
 
 /**
  * Libellé affichable du responsable d'un dossier : nom complet de la structure
@@ -73,37 +74,43 @@ export function getDossierStepLabel(
 type Badge = { label: string; colorClass: string };
 
 /**
- * Badge « En attente de » dérivé du responsable.
+ * Badge « En attente de » dérivé de l'état du dossier (qui doit agir).
+ *
  * Les couleurs s'inspirent du DSFR : badge--warning (orange), --new (violet),
  * --green-emeraude (vert), --info (bleu), --grey (gris).
+ *
+ * Le `codeDepartement` n'est utilisé que pour les états où le badge mentionne
+ * le département (AV_QUALIFICATION, EN_ATTENTE_AMO).
  */
-export function getResponsableBadge(responsable: Responsable): Badge {
-  switch (responsable.type) {
-    case "AV":
+export function getEtatBadge(etat: DossierEtat, codeDepartement: string | null): Badge {
+  switch (etat) {
+    case "AV_QUALIFICATION":
       return {
-        label: `AV${responsable.codeDepartement ? ` ${responsable.codeDepartement}` : ""}`,
+        label: `AV${codeDepartement ? ` ${codeDepartement}` : ""}`,
         colorClass: "fr-badge--warning",
       };
-    case "AMO":
+    case "EN_ATTENTE_AMO":
       return {
-        label: `AMO${responsable.codeDepartement ? ` ${responsable.codeDepartement}` : ""}`,
+        label: `AMO${codeDepartement ? ` ${codeDepartement}` : ""}`,
         colorClass: "fr-badge--new",
       };
     case "MENAGE":
       return { label: "Ménage", colorClass: "fr-badge--yellow-tournesol" };
     case "DDT":
       return { label: "Instruction DDT", colorClass: "fr-badge--info" };
+    case "REFUSE":
+      return { label: "Refusé", colorClass: "fr-badge--grey" };
     case "ARCHIVE":
       return { label: "Archivé", colorClass: "fr-badge--grey" };
   }
 }
 
 /**
- * Phrase de précision (colonne « Précisions ») dérivée du responsable et de
- * l'état du dossier DS courant.
+ * Phrase de précision (colonne « Précisions ») dérivée de l'état du dossier
+ * et de l'état du dossier DS courant.
  */
 export function getDossierPrecisionLabel(
-  responsable: Responsable,
+  etat: DossierEtat,
   currentStep: Step,
   currentStatus: Status,
   dsStatus: DSStatus | null,
@@ -116,10 +123,10 @@ export function getDossierPrecisionLabel(
     return "Accompagnement refusé.";
   }
 
-  switch (responsable.type) {
-    case "AV":
+  switch (etat) {
+    case "AV_QUALIFICATION":
       return "En attente de qualification de votre part.";
-    case "AMO":
+    case "EN_ATTENTE_AMO":
       return "En attente de réponse de l'AMO sur l'éligibilité.";
     case "DDT":
       return "En instruction par la DDT.";
@@ -127,6 +134,10 @@ export function getDossierPrecisionLabel(
       if (dsStatus === DSStatus.REFUSE) return "Refusé par la DDT — consulter la messagerie démarches.";
       if (currentStatus === Status.VALIDE) return etapeValideeLabel(currentStep);
       return etapeTodoLabel(currentStep);
+    case "REFUSE":
+      // Couvert par les early returns ci-dessus pour les libellés détaillés ;
+      // ce fallback ne devrait pas être atteint en pratique.
+      return "Dossier refusé.";
     case "ARCHIVE":
       return "Dossier archivé.";
   }

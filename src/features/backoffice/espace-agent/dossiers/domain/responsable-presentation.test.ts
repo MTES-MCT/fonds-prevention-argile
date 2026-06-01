@@ -4,7 +4,7 @@ import { Status } from "@/shared/domain/value-objects/status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import {
   getDossierStepLabel,
-  getResponsableBadge,
+  getEtatBadge,
   getDossierPrecisionLabel,
   getResponsableTabLabel,
 } from "./responsable-presentation";
@@ -25,37 +25,43 @@ describe("getDossierStepLabel", () => {
   });
 });
 
-describe("getResponsableBadge", () => {
-  it("formate AV avec son département", () => {
-    const badge = getResponsableBadge({
-      type: "AV",
-      structureId: "av-1",
-      structureNom: "ADIL 36",
-      codeDepartement: "36",
-    });
+describe("getEtatBadge", () => {
+  it("formate AV_QUALIFICATION avec son département", () => {
+    const badge = getEtatBadge("AV_QUALIFICATION", "36");
     expect(badge.label).toBe("AV 36");
     expect(badge.colorClass).toContain("warning");
   });
 
-  it("formate AMO avec son département", () => {
-    const badge = getResponsableBadge({
-      type: "AMO",
-      entrepriseId: "amo-1",
-      entrepriseNom: "Entreprise A",
-      codeDepartement: "91",
-    });
+  it("formate EN_ATTENTE_AMO avec son département", () => {
+    const badge = getEtatBadge("EN_ATTENTE_AMO", "91");
     expect(badge.label).toBe("AMO 91");
   });
 
+  it("formate AV_QUALIFICATION sans département (label court)", () => {
+    expect(getEtatBadge("AV_QUALIFICATION", null).label).toBe("AV");
+  });
+
+  it("retourne 'Ménage' pour MENAGE", () => {
+    expect(getEtatBadge("MENAGE", "36").label).toBe("Ménage");
+  });
+
+  it("retourne 'Instruction DDT' pour DDT", () => {
+    expect(getEtatBadge("DDT", null).label).toBe("Instruction DDT");
+  });
+
   it("retourne 'Archivé' pour ARCHIVE", () => {
-    expect(getResponsableBadge({ type: "ARCHIVE" }).label).toBe("Archivé");
+    expect(getEtatBadge("ARCHIVE", null).label).toBe("Archivé");
+  });
+
+  it("retourne 'Refusé' pour REFUSE", () => {
+    expect(getEtatBadge("REFUSE", null).label).toBe("Refusé");
   });
 });
 
 describe("getDossierPrecisionLabel", () => {
   it("renvoie un texte refus pour une validation LOGEMENT_NON_ELIGIBLE", () => {
     const text = getDossierPrecisionLabel(
-      { type: "ARCHIVE" },
+      "REFUSE",
       Step.ELIGIBILITE,
       Status.TODO,
       null,
@@ -64,9 +70,20 @@ describe("getDossierPrecisionLabel", () => {
     expect(text).toBe("Logement non éligible.");
   });
 
-  it("renvoie 'En instruction' pour un responsable DDT", () => {
+  it("renvoie un texte refus pour une validation ACCOMPAGNEMENT_REFUSE", () => {
     const text = getDossierPrecisionLabel(
-      { type: "DDT", codeDepartement: "36" },
+      "REFUSE",
+      Step.ELIGIBILITE,
+      Status.TODO,
+      null,
+      { statut: StatutValidationAmo.ACCOMPAGNEMENT_REFUSE }
+    );
+    expect(text).toBe("Accompagnement refusé.");
+  });
+
+  it("renvoie 'En instruction' pour un état DDT", () => {
+    const text = getDossierPrecisionLabel(
+      "DDT",
       Step.ELIGIBILITE,
       Status.EN_INSTRUCTION,
       null,
@@ -77,13 +94,23 @@ describe("getDossierPrecisionLabel", () => {
 
   it("renvoie le label TODO ménage pour une étape DIAGNOSTIC TODO", () => {
     const text = getDossierPrecisionLabel(
-      { type: "MENAGE", codeDepartement: "36" },
+      "MENAGE",
       Step.DIAGNOSTIC,
       Status.TODO,
       null,
       { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE }
     );
     expect(text).toMatch(/diagnostic/i);
+  });
+
+  it("renvoie 'En attente de qualification' pour AV_QUALIFICATION", () => {
+    const text = getDossierPrecisionLabel("AV_QUALIFICATION", Step.INVITATION, Status.TODO, null, null);
+    expect(text).toMatch(/qualification/i);
+  });
+
+  it("renvoie 'Dossier archivé' pour ARCHIVE", () => {
+    const text = getDossierPrecisionLabel("ARCHIVE", Step.ELIGIBILITE, Status.TODO, null, null);
+    expect(text).toBe("Dossier archivé.");
   });
 });
 

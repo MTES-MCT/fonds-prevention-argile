@@ -9,6 +9,7 @@ import {
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import {
   getDossierStepLabel,
+  getEtatBadge,
   getResponsableDisplayName,
   getResponsableTabLabel,
   type ResponsableTabId,
@@ -38,13 +39,18 @@ const ETAPE_LABEL_ORDER: string[] = [
   "Non-éligible",
 ];
 
-/** Filtre une liste de dossiers selon l'onglet « En attente de ». */
+/** Filtre une liste de dossiers selon l'onglet « En attente de ».
+ *
+ * Deux dimensions distinctes :
+ * - « mes-dossiers » filtre par responsabilité (canActAsResponsable),
+ * - « AV » / « AMO » filtrent par type de responsable courant,
+ * - « MENAGE » / « DDT » / « ARCHIVE » filtrent par état du dossier
+ *   (qui doit agir / où en est-il), indépendamment du responsable.
+ */
 function filterByTab(dossiers: DossierItem[], tab: ResponsableTabId): DossierItem[] {
-  // « Mes dossiers » = ceux dont l'agent connecté est le responsable courant
-  // (canActAsResponsable). Pour un AMO : ses dossiers en attente de validation ;
-  // pour un AV : ses prospects/pré-éligibilités. Vide pour un admin (responsable d'aucun).
   if (tab === "mes-dossiers") return dossiers.filter((d) => d.canActAsResponsable);
-  return dossiers.filter((d) => d.responsable.type === tab);
+  if (tab === "AV" || tab === "AMO") return dossiers.filter((d) => d.responsable.type === tab);
+  return dossiers.filter((d) => d.etat === tab);
 }
 
 function getDeptsForTab(dossiers: DossierItem[], tab: ResponsableTabId): string[] {
@@ -121,13 +127,15 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
   const filterOptions = useMemo(() => {
     const responsables = new Set<string>();
     const etapes = new Set<string>();
-    const enAttente = new Set<string>();
+    const enAttenteEtats = new Set<string>();
     if (!data) return { responsables: [], etapes: [], enAttente: [] };
     for (const d of filterByTab(data.dossiers, activeTab)) {
       const r = getResponsableDisplayName(d.responsable);
       if (r !== "—") responsables.add(r);
       etapes.add(getDossierStepLabel(d.currentStep, d.validation));
-      enAttente.add(d.responsable.type);
+      // Filtre « En attente de » : indexé par état (orthogonal au responsable),
+      // pour répondre à « qui doit agir » indépendamment de qui détient le dossier.
+      enAttenteEtats.add(d.etat);
     }
     const toOptions = (values: Set<string>) =>
       Array.from(values)
@@ -138,10 +146,16 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
       Array.from(values)
         .sort((a, b) => ETAPE_LABEL_ORDER.indexOf(a) - ETAPE_LABEL_ORDER.indexOf(b))
         .map((v) => ({ value: v, label: v }));
+    // Pour « En attente de » : value = code d'état (stable), label = badge sans
+    // suffixe département (lisible pour l'utilisateur).
+    const toEtatOptions = (values: Set<string>) =>
+      Array.from(values)
+        .map((v) => ({ value: v, label: getEtatBadge(v as DossierItem["etat"], null).label }))
+        .sort((a, b) => a.label.localeCompare(b.label, "fr"));
     return {
       responsables: toOptions(responsables),
       etapes: toEtapeOptions(etapes),
-      enAttente: toOptions(enAttente),
+      enAttente: toEtatOptions(enAttenteEtats),
     };
   }, [data, activeTab]);
 
@@ -174,7 +188,7 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
         ? byResponsable.filter((d) => etapeFilter.has(getDossierStepLabel(d.currentStep, d.validation)))
         : byResponsable;
     const byEnAttente =
-      enAttenteFilter.size > 0 ? byEtape.filter((d) => enAttenteFilter.has(d.responsable.type)) : byEtape;
+      enAttenteFilter.size > 0 ? byEtape.filter((d) => enAttenteFilter.has(d.etat)) : byEtape;
     // Tri par date de création (la colonne « Création » du tableau).
     const sign = sortOrder === "asc" ? 1 : -1;
     return [...byEnAttente].sort((a, b) => sign * (a.createdAt.getTime() - b.createdAt.getTime()));

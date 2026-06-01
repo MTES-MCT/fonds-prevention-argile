@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import {
   getDossierStepLabel,
-  getResponsableBadge,
+  getEtatBadge,
   getResponsableDisplayName,
   getDossierPrecisionLabel,
   getPrecisionStyle,
@@ -156,9 +156,9 @@ export function DossiersSuivisTable({
                       const greyStyle = isArchived ? { color: "var(--text-mention-grey)" } : undefined;
 
                       const etapeLabel = getDossierStepLabel(dossier.currentStep, dossier.validation);
-                      const badge = getResponsableBadge(dossier.responsable);
+                      const badge = getEtatBadge(dossier.etat, dossier.logement.codeDepartement);
                       const precisionText = getDossierPrecisionLabel(
-                        dossier.responsable,
+                        dossier.etat,
                         dossier.currentStep,
                         dossier.currentStatus,
                         dossier.dsStatus,
