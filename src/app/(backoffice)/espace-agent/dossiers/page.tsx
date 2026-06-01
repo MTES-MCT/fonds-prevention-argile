@@ -14,8 +14,17 @@ export default async function DossiersAgentPage() {
   const user = await getCurrentUser();
 
   // Bouton "+ Nouveau dossier" visible pour tout agent métier (intent résolu côté wizard).
-  const canCreateDossier =
+  // Onglet « Mes dossiers » actif par défaut pour ces mêmes rôles ; un super-admin
+  // (ni AMO ni AV) n'a aucun dossier dont il soit responsable : on l'ouvre sur
+  // « Tous les dossiers ».
+  const isAgentResponsable =
     role === UserRole.AMO || role === UserRole.AMO_ET_ALLERS_VERS || role === UserRole.ALLERS_VERS;
 
-  return <DossiersPanel canCreateDossier={canCreateDossier} prenom={user?.firstName ?? null} />;
+  return (
+    <DossiersPanel
+      canCreateDossier={isAgentResponsable}
+      defaultScope={isAgentResponsable ? "mine" : "all"}
+      prenom={user?.firstName ?? null}
+    />
+  );
 }

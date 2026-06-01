@@ -23,8 +23,6 @@ import { ColumnSortButton } from "./ColumnSortButton";
 
 interface DossiersSuivisTableProps {
   dossiers: DossierItem[];
-  /** Indique si les dossiers affichés sont archivés (change la couleur de la cellule Précisions) */
-  isArchived?: boolean;
   /** Callback pour recharger les données après archivage/désarchivage */
   onRefresh?: () => void;
   /** Sens du tri sur la colonne « Création ». */
@@ -48,7 +46,6 @@ interface DossiersSuivisTableProps {
  */
 export function DossiersSuivisTable({
   dossiers,
-  isArchived = false,
   onRefresh,
   sortOrder = "desc",
   onToggleSort,
@@ -153,6 +150,9 @@ export function DossiersSuivisTable({
                       const daysAgo = formatDaysAgoSplit(dossier.updatedAt.toISOString());
                       const statutValidation = dossier.validation?.statut ?? null;
                       const isRefuse = statutValidation !== null && STATUTS_REFUSES.includes(statutValidation);
+                      // Grisé appliqué par ligne (avant : prop globale `isArchived` pilotée
+                      // par l'onglet « Archivés », désormais supprimé).
+                      const isArchived = dossier.etat === "ARCHIVE";
                       const greyStyle = isArchived ? { color: "var(--text-mention-grey)" } : undefined;
 
                       const etapeLabel = getDossierStepLabel(dossier.currentStep, dossier.validation);

@@ -9,25 +9,28 @@ import {
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import {
   getDossierStepLabel,
-  getEtatBadge,
   getResponsableDisplayName,
-  getResponsableTabLabel,
-  type ResponsableTabId,
 } from "@/features/backoffice/espace-agent/dossiers/domain";
+import type { DossierEtat } from "@/features/parcours/core/domain/services/dossier-etat.service";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DossiersSuivisHeader } from "./DossiersSuivisHeader";
 import { DossiersSuivisTable } from "./DossiersSuivisTable";
-import { DossiersKpiCards } from "./DossiersKpiCards";
+import { DossiersKpiCards, type DossiersKpiCounters } from "./DossiersKpiCards";
 import { Pagination } from "@/shared/components/Pagination/Pagination";
+
+type Scope = "mine" | "all";
 
 interface DossiersPanelProps {
   /** Affiche le bouton "+ Nouveau dossier" (rôles AMO et/ou Aller-vers). */
   canCreateDossier?: boolean;
+  /**
+   * Onglet actif au chargement : "mine" pour les agents AMO/AV/hybrides
+   * (filtre par `canActAsResponsable`), "all" pour les super-admins.
+   */
+  defaultScope?: Scope;
   /** Prénom de l'agent connecté (« Bonjour … »). */
   prenom: string | null;
 }
-
-const TAB_IDS: ResponsableTabId[] = ["mes-dossiers", "AV", "AMO", "MENAGE", "DDT", "ARCHIVE"];
 
 // Ordre chronologique des libellés d'étape pour le filtre « Étape »
 // (suit le parcours : Création de compte → Choix AMO → Éligibilité → Diag → Devis → Factures),
@@ -39,56 +42,37 @@ const ETAPE_LABEL_ORDER: string[] = [
   "Non-éligible",
 ];
 
-/** Filtre une liste de dossiers selon l'onglet « En attente de ».
+/**
+ * Whitelist canonique des options du filtre par colonne « En attente de ».
  *
- * Deux dimensions distinctes :
- * - « mes-dossiers » filtre par responsabilité (canActAsResponsable),
- * - « AV » / « AMO » filtrent par type de responsable courant,
- * - « MENAGE » / « DDT » / « ARCHIVE » filtrent par état du dossier
- *   (qui doit agir / où en est-il), indépendamment du responsable.
+ * Représente les 5 actions/états qui aident l'agent à prioriser son travail
+ * (« qui dois-je relancer ? quel dossier traiter en premier ? »). L'état REFUSE
+ * n'apparaît pas dans le filtre (dossier terminal, pas « à traiter »), mais
+ * reste visible dans le tableau avec son badge.
+ *
+ * L'ordre suit le parcours métier (pas l'ordre alphabétique).
  */
-function filterByTab(dossiers: DossierItem[], tab: ResponsableTabId): DossierItem[] {
-  if (tab === "mes-dossiers") return dossiers.filter((d) => d.canActAsResponsable);
-  if (tab === "AV" || tab === "AMO") return dossiers.filter((d) => d.responsable.type === tab);
-  return dossiers.filter((d) => d.etat === tab);
-}
-
-function getDeptsForTab(dossiers: DossierItem[], tab: ResponsableTabId): string[] {
-  const set = new Set<string>();
-  for (const d of filterByTab(dossiers, tab)) {
-    if (d.responsable.type === "AV" || d.responsable.type === "AMO") {
-      if (d.responsable.codeDepartement) set.add(d.responsable.codeDepartement);
-    }
-  }
-  return Array.from(set).sort();
-}
-
-function getTabLabel(tab: ResponsableTabId, dossiers: DossierItem[]): string {
-  switch (tab) {
-    case "mes-dossiers":
-      return "Mes dossiers";
-    case "AV":
-      return getResponsableTabLabel("AV", getDeptsForTab(dossiers, "AV"));
-    case "AMO":
-      return getResponsableTabLabel("AMO", getDeptsForTab(dossiers, "AMO"));
-    case "MENAGE":
-      return "Ménage";
-    case "DDT":
-      return "Instruction DDT";
-    case "ARCHIVE":
-      return "Archivés";
-  }
-}
+const EN_ATTENTE_FILTRABLES: ReadonlyArray<{ value: DossierEtat; label: string }> = [
+  { value: "AV_QUALIFICATION", label: "AV" },
+  { value: "EN_ATTENTE_AMO", label: "AMO" },
+  { value: "MENAGE", label: "Ménage" },
+  { value: "DDT", label: "DDT" },
+  { value: "ARCHIVE", label: "Archivé" },
+];
 
 /**
- * Panel unifié des dossiers — onglets par responsable, filtre EPCI et recherche.
+ * Panel unifié des dossiers — tags Mes/Tous, filtre EPCI et recherche.
  */
-export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPanelProps) {
+export function DossiersPanel({
+  canCreateDossier = false,
+  defaultScope = "all",
+  prenom,
+}: DossiersPanelProps) {
   const [data, setData] = useState<DossiersTerritoireData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [activeTab, setActiveTab] = useState<ResponsableTabId>("mes-dossiers");
+  const [activeScope, setActiveScope] = useState<Scope>(defaultScope);
   const [epciFilter, setEpciFilter] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -122,84 +106,128 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
   // Liste des EPCI distincts (avec leur nom lisible) fournie par le serveur.
   const availableEpcis = data?.epcisDisponibles ?? [];
 
-  // Options uniques pour les filtres par colonne (calculées sur l'onglet courant
-  // pour ne proposer que des valeurs présentes dans le sous-ensemble visible).
+  /**
+   * Applique les filtres « non-scope » (recherche, EPCI, filtres par colonne).
+   * Sert deux usages :
+   *  - au passage de `activeScope` = scope sélectionné, calcule le `visible` paginé,
+   *  - sans pré-filtre `canActAsResponsable`, calcule les compteurs contextuels
+   *    de chaque tag (Mes/Tous), pour montrer combien de résultats il y aurait
+   *    si on cliquait sur l'autre tag.
+   */
+  const applyNonScopeFilters = useCallback(
+    (dossiers: DossierItem[]): DossierItem[] => {
+      const byEpci = epciFilter ? dossiers.filter((d) => d.logement.codeEpci === epciFilter) : dossiers;
+      const q = search.trim().toLowerCase();
+      const bySearch = q
+        ? byEpci.filter((d) => {
+            const nom = `${d.particulier.prenom} ${d.particulier.nom}`.toLowerCase();
+            const commune = d.logement.commune?.toLowerCase() ?? "";
+            return nom.includes(q) || commune.includes(q);
+          })
+        : byEpci;
+      const byResponsable =
+        responsableFilter.size > 0
+          ? bySearch.filter((d) => responsableFilter.has(getResponsableDisplayName(d.responsable)))
+          : bySearch;
+      const byEtape =
+        etapeFilter.size > 0
+          ? byResponsable.filter((d) => etapeFilter.has(getDossierStepLabel(d.currentStep, d.validation)))
+          : byResponsable;
+      return enAttenteFilter.size > 0 ? byEtape.filter((d) => enAttenteFilter.has(d.etat)) : byEtape;
+    },
+    [epciFilter, search, responsableFilter, etapeFilter, enAttenteFilter]
+  );
+
+  // Compteurs contextuels affichés dans les deux tags. Les deux suivent les
+  // filtres locaux (recherche, EPCI, colonnes) ; seul le filtre `canActAsResponsable`
+  // est appliqué/non-appliqué selon le tag.
+  const scopeCounts = useMemo(() => {
+    if (!data) return { mine: 0, all: 0 };
+    const allFiltered = applyNonScopeFilters(data.dossiers);
+    return {
+      all: allFiltered.length,
+      mine: allFiltered.filter((d) => d.canActAsResponsable).length,
+    };
+  }, [data, applyNonScopeFilters]);
+
+  // Sous-ensemble effectivement listé : applique le scope choisi sur les
+  // dossiers déjà filtrés (recherche / EPCI / colonnes).
+  const visible = useMemo(() => {
+    if (!data) return [];
+    const filtered = applyNonScopeFilters(data.dossiers);
+    const scoped = activeScope === "mine" ? filtered.filter((d) => d.canActAsResponsable) : filtered;
+    // Tri par date de création (colonne « Création »).
+    const sign = sortOrder === "asc" ? 1 : -1;
+    return [...scoped].sort((a, b) => sign * (a.createdAt.getTime() - b.createdAt.getTime()));
+  }, [data, applyNonScopeFilters, activeScope, sortOrder]);
+
+  // Options de filtre par colonne : restreintes au sous-ensemble actuellement
+  // visible (pour ne proposer que des valeurs présentes). Le filtre « En attente
+  // de » est borné à une whitelist canonique (5 valeurs métier).
   const filterOptions = useMemo(() => {
     const responsables = new Set<string>();
     const etapes = new Set<string>();
-    const enAttenteEtats = new Set<string>();
-    if (!data) return { responsables: [], etapes: [], enAttente: [] };
-    for (const d of filterByTab(data.dossiers, activeTab)) {
+    const etatsPresents = new Set<DossierEtat>();
+    for (const d of visible) {
       const r = getResponsableDisplayName(d.responsable);
       if (r !== "—") responsables.add(r);
       etapes.add(getDossierStepLabel(d.currentStep, d.validation));
-      // Filtre « En attente de » : indexé par état (orthogonal au responsable),
-      // pour répondre à « qui doit agir » indépendamment de qui détient le dossier.
-      enAttenteEtats.add(d.etat);
+      etatsPresents.add(d.etat);
     }
     const toOptions = (values: Set<string>) =>
       Array.from(values)
         .sort((a, b) => a.localeCompare(b, "fr"))
         .map((v) => ({ value: v, label: v }));
-    // Les étapes suivent l'ordre du parcours (chronologique), pas l'ordre alphabétique.
     const toEtapeOptions = (values: Set<string>) =>
       Array.from(values)
         .sort((a, b) => ETAPE_LABEL_ORDER.indexOf(a) - ETAPE_LABEL_ORDER.indexOf(b))
         .map((v) => ({ value: v, label: v }));
-    // Pour « En attente de » : value = code d'état (stable), label = badge sans
-    // suffixe département (lisible pour l'utilisateur).
-    const toEtatOptions = (values: Set<string>) =>
-      Array.from(values)
-        .map((v) => ({ value: v, label: getEtatBadge(v as DossierItem["etat"], null).label }))
-        .sort((a, b) => a.label.localeCompare(b.label, "fr"));
     return {
       responsables: toOptions(responsables),
       etapes: toEtapeOptions(etapes),
-      enAttente: toEtatOptions(enAttenteEtats),
+      enAttente: EN_ATTENTE_FILTRABLES.filter((opt) => etatsPresents.has(opt.value)).map(
+        ({ value, label }) => ({ value, label })
+      ),
     };
-  }, [data, activeTab]);
+  }, [visible]);
 
-  const counters = useMemo(() => {
-    const map: Record<ResponsableTabId, number> = { "mes-dossiers": 0, AV: 0, AMO: 0, MENAGE: 0, DDT: 0, ARCHIVE: 0 };
+  // Compteurs KPI : 4 cartes (Pré-éligibilité AV / Demande AMO / Actions Ménages
+  // / Instructions DDT) calculées sur TOUS les dossiers (indépendantes du scope
+  // et des filtres locaux), pour donner une vue d'ensemble à l'agent.
+  const counters: DossiersKpiCounters = useMemo(() => {
+    const map: DossiersKpiCounters = { AV: 0, AMO: 0, MENAGE: 0, DDT: 0 };
     if (!data) return map;
-    for (const tab of TAB_IDS) map[tab] = filterByTab(data.dossiers, tab).length;
+    for (const d of data.dossiers) {
+      switch (d.etat) {
+        case "AV_QUALIFICATION":
+          map.AV++;
+          break;
+        case "EN_ATTENTE_AMO":
+          map.AMO++;
+          break;
+        case "MENAGE":
+          map.MENAGE++;
+          break;
+        case "DDT":
+          map.DDT++;
+          break;
+      }
+    }
     return map;
   }, [data]);
 
-  const visible = useMemo(() => {
-    if (!data) return [];
-    const byTab = filterByTab(data.dossiers, activeTab);
-    const byEpci = epciFilter ? byTab.filter((d) => d.logement.codeEpci === epciFilter) : byTab;
-    const q = search.trim().toLowerCase();
-    const bySearch = q
-      ? byEpci.filter((d) => {
-          const nom = `${d.particulier.prenom} ${d.particulier.nom}`.toLowerCase();
-          const commune = d.logement.commune?.toLowerCase() ?? "";
-          return nom.includes(q) || commune.includes(q);
-        })
-      : byEpci;
-    // Filtres par colonne (multi-sélection).
-    const byResponsable =
-      responsableFilter.size > 0
-        ? bySearch.filter((d) => responsableFilter.has(getResponsableDisplayName(d.responsable)))
-        : bySearch;
-    const byEtape =
-      etapeFilter.size > 0
-        ? byResponsable.filter((d) => etapeFilter.has(getDossierStepLabel(d.currentStep, d.validation)))
-        : byResponsable;
-    const byEnAttente =
-      enAttenteFilter.size > 0 ? byEtape.filter((d) => enAttenteFilter.has(d.etat)) : byEtape;
-    // Tri par date de création (la colonne « Création » du tableau).
-    const sign = sortOrder === "asc" ? 1 : -1;
-    return [...byEnAttente].sort((a, b) => sign * (a.createdAt.getTime() - b.createdAt.getTime()));
-  }, [data, activeTab, epciFilter, search, sortOrder, responsableFilter, etapeFilter, enAttenteFilter]);
-
   const paginated = visible.slice((page - 1) * pageSize, page * pageSize);
 
-  const handleTabChange = (tab: ResponsableTabId) => {
-    setActiveTab(tab);
+  const handleScopeChange = (next: Scope) => {
+    setActiveScope(next);
     setPage(1);
   };
+
+  // Bandeau « X résultat(s) dans vos dossiers » + lien d'élargissement.
+  // Affiché uniquement en mode « Mes dossiers » dès qu'une recherche texte
+  // est saisie (0 ou X résultats, cf. mockup).
+  const showMineSearchHint = activeScope === "mine" && search.trim().length > 0;
+  const mineSearchHintLabel = `${visible.length} résultat${visible.length > 1 ? "s" : ""} dans vos dossiers`;
 
   if (isLoading) {
     return (
@@ -240,22 +268,30 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
       </div>
       <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
         <div className="fr-container">
-          <h2 className="fr-h4 fr-mb-3w">Tous les dossiers ({data.total})</h2>
+          <h2 className="fr-h4 fr-mb-3w">Suivi des dossiers</h2>
 
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <ul className="fr-tags-group fr-mb-0" aria-label="Filtrer les dossiers par responsable">
-              {TAB_IDS.map((tab) => (
-                <li key={tab}>
-                  <button
-                    type="button"
-                    className="fr-tag"
-                    aria-pressed={activeTab === tab}
-                    onClick={() => handleTabChange(tab)}>
-                    <span className="fr-badge fr-badge--sm fr-mr-1v fr-badge--blue-cumulus">{counters[tab]}</span>
-                    {getTabLabel(tab, data.dossiers)}
-                  </button>
-                </li>
-              ))}
+            <ul className="fr-tags-group fr-mb-0" aria-label="Filtrer les dossiers par responsabilité">
+              <li>
+                <button
+                  type="button"
+                  className="fr-tag"
+                  aria-pressed={activeScope === "mine"}
+                  onClick={() => handleScopeChange("mine")}>
+                  Mes dossiers
+                  <span className="fr-badge fr-badge--sm fr-ml-1v fr-badge--blue-cumulus">{scopeCounts.mine}</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="fr-tag"
+                  aria-pressed={activeScope === "all"}
+                  onClick={() => handleScopeChange("all")}>
+                  Tous les dossiers
+                  <span className="fr-badge fr-badge--sm fr-ml-1v fr-badge--blue-cumulus">{scopeCounts.all}</span>
+                </button>
+              </li>
             </ul>
             {canCreateDossier && (
               <Link
@@ -313,6 +349,18 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
             </div>
           </div>
 
+          {showMineSearchHint && (
+            <p className="fr-mb-2w">
+              {mineSearchHintLabel}{" "}
+              <button
+                type="button"
+                className="fr-link"
+                onClick={() => handleScopeChange("all")}>
+                Élargir la recherche à tous les dossiers
+              </button>
+            </p>
+          )}
+
           {visible.length === 0 ? (
             <div className="fr-alert fr-alert--info">
               <h3 className="fr-alert__title">Aucun dossier</h3>
@@ -322,7 +370,6 @@ export function DossiersPanel({ canCreateDossier = false, prenom }: DossiersPane
             <>
               <DossiersSuivisTable
                 dossiers={paginated}
-                isArchived={activeTab === "ARCHIVE"}
                 onRefresh={loadData}
                 sortOrder={sortOrder}
                 onToggleSort={() => setSortOrder((o) => (o === "asc" ? "desc" : "asc"))}
