@@ -121,3 +121,16 @@ export function getArticleDepartement(code: string): string {
 export function formatDepartementAvecArticle(code: string, nom: string): string {
   return `${getArticleDepartement(code)}${nom}`;
 }
+
+// Codes département métropole (01-95, 2A, 2B) et DROM (971-976).
+const CODE_DEPT_RE = /\b(2[AB]|97[1-6]|0[1-9]|[1-8]\d|9[0-5])\b/g;
+
+/**
+ * Extrait les codes département d'une chaîne libre.
+ * @example parseCodesDepartement("Indre 36, Essonne 91") → ["36", "91"]
+ */
+export function parseCodesDepartement(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  const matches = raw.match(CODE_DEPT_RE) ?? [];
+  return Array.from(new Set(matches));
+}

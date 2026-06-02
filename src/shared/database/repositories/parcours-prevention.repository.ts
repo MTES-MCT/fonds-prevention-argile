@@ -3,6 +3,7 @@ import { db } from "../client";
 import { parcoursPrevention } from "../schema/parcours-prevention";
 import { users } from "../schema/users";
 import { parcoursAmoValidations } from "../schema/parcours-amo-validations";
+import { dossiersDemarchesSimplifiees } from "../schema/dossiers-demarches-simplifiees";
 import { BaseRepository, PaginationParams, PaginationResult } from "./base.repository";
 import type { ParcoursPrevention, NewParcoursPrevention } from "../schema/parcours-prevention";
 import { getNextStep, Status, Step } from "@/features/parcours/core";
@@ -365,55 +366,41 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
     });
   }
 
+
   /**
-   * Récupère les parcours sans AMO pour un territoire donné (Allers-Vers)
-   * Le filtrage territorial est effectué côté application à partir des données
-   * de logement présentes dans rgaSimulationData.
-   *
-   * @param departements - Codes des départements couverts
-   * @param epcis - Codes des EPCIs couverts
-   * @param filters - Filtres optionnels
-   * @returns Liste des parcours prospects avec informations utilisateur
+   * Récupère tous les parcours (avec ou sans validation AMO) d'un territoire.
+   * Filtrage territorial fait côté JS via `getDemandeurFirstSimulation` (fallback
+   * agent-edited si le demandeur n'a pas simulé).
    */
-  async getParcoursWithoutAmoByTerritoire(
+  async getParcoursByTerritoire(
     departements: string[],
     epcis: string[] = [],
     filters?: {
-      commune?: string;
       step?: Step;
-      maxDaysSinceAction?: number;
       search?: string;
-      situationParticulier?: SituationParticulier;
     }
   ) {
-    // Construire les conditions de filtre
-    const conditions = [];
-
-    // Filtre par situation particulier
-    if (filters?.situationParticulier) {
-      conditions.push(eq(parcoursPrevention.situationParticulier, filters.situationParticulier));
-    }
-
-    // Filtres optionnels
+    const conditions: SQL[] = [];
     if (filters?.step) {
       conditions.push(eq(parcoursPrevention.currentStep, filters.step));
     }
     if (filters?.search) {
-      // Recherche sur nom ou prénom (case insensitive avec ILIKE en PostgreSQL)
       conditions.push(
         sql`(LOWER(${users.prenom}) LIKE LOWER(${"%" + filters.search + "%"}) OR LOWER(${users.nom}) LIKE LOWER(${"%" + filters.search + "%"}))`
       );
     }
 
-    // Requête principale
     const results = await db
       .select({
-        // Parcours
         parcoursId: parcoursPrevention.id,
+        userId: parcoursPrevention.userId,
         situationParticulier: parcoursPrevention.situationParticulier,
         currentStep: parcoursPrevention.currentStep,
+        currentStatus: parcoursPrevention.currentStatus,
         createdAt: parcoursPrevention.createdAt,
         updatedAt: parcoursPrevention.updatedAt,
+        archivedAt: parcoursPrevention.archivedAt,
+        createdByAgentId: parcoursPrevention.createdByAgentId,
         rgaSimulationData: parcoursPrevention.rgaSimulationData,
         rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
         // Utilisateur
@@ -421,47 +408,65 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         userNom: users.nom,
         userEmail: users.email,
         userTelephone: users.telephone,
-        userSourceAcquisition: users.sourceAcquisition,
-        userSourceAcquisitionPrecision: users.sourceAcquisitionPrecision,
+        // Validation AMO (null si dossier sans AMO)
+        validationId: parcoursAmoValidations.id,
+        validationStatut: parcoursAmoValidations.statut,
+        entrepriseAmoId: parcoursAmoValidations.entrepriseAmoId,
+        validationChoisieAt: parcoursAmoValidations.choisieAt,
+        validationValideeAt: parcoursAmoValidations.valideeAt,
+        // Dossier DS de l'étape courante (null si absent)
+        dsStatus: dossiersDemarchesSimplifiees.dsStatus,
       })
       .from(parcoursPrevention)
       .innerJoin(users, eq(parcoursPrevention.userId, users.id))
-      .leftJoin(parcoursAmoValidations, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
-      .where(
+      .leftJoin(parcoursAmoValidations, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
+      .leftJoin(
+        dossiersDemarchesSimplifiees,
         and(
-          // Pas de validation AMO (parcours sans AMO)
-          isNull(parcoursAmoValidations.id),
-          // Autres filtres
-          ...conditions
+          eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id),
+          eq(dossiersDemarchesSimplifiees.step, parcoursPrevention.currentStep)
         )
       )
-      .orderBy(asc(parcoursPrevention.createdAt));
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(parcoursPrevention.updatedAt));
 
-    // Filtrer par ancienneté et territoire côté application
-    return results.filter((r) => {
-      // Filtrage par ancienneté
-      if (filters?.maxDaysSinceAction !== undefined) {
-        const now = new Date();
-        const daysSince = Math.floor((now.getTime() - r.updatedAt.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysSince > filters.maxDaysSinceAction) {
-          return false;
-        }
-      }
+    const territoire = results.filter((r) => matchesTerritoire(getDemandeurFirstSimulation(r), departements, epcis));
 
-      return matchesTerritoire(getDemandeurFirstSimulation(r), departements, epcis);
+    // Dédup par parcoursId : le LEFT JOIN dossiers DS peut produire plusieurs lignes
+    // par parcours (pas d'unicité sur (parcours_id, step)). Garde la plus récente.
+    const seen = new Set<string>();
+    return territoire.filter((r) => {
+      if (seen.has(r.parcoursId)) return false;
+      seen.add(r.parcoursId);
+      return true;
     });
+  }
+
+  /**
+   * Compte les parcours actifs (non archivés) du territoire. Variante allégée
+   * de `getParcoursByTerritoire` : ne charge que les colonnes nécessaires au
+   * filtrage territorial, sans jointure ni résolution responsable.
+   */
+  async countParcoursByTerritoire(departements: string[], epcis: string[] = []): Promise<number> {
+    const rows = await db
+      .select({
+        rgaSimulationData: parcoursPrevention.rgaSimulationData,
+        rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
+      })
+      .from(parcoursPrevention)
+      .where(isNull(parcoursPrevention.archivedAt));
+
+    return rows.filter((r) => matchesTerritoire(getDemandeurFirstSimulation(r), departements, epcis)).length;
   }
 }
 
 /**
- * Vérifie si un parcours correspond au territoire d'un Allers-Vers.
+ * Vérifie si un parcours est inclus dans le territoire d'un agent.
  *
- * Logique de filtrage :
- * - Si des EPCIs sont spécifiés dans le scope, ils sont prioritaires :
- *   on filtre strictement par EPCI (plus précis qu'un département).
- * - Sinon, on filtre par département.
- * - Si le parcours n'a pas de données de localisation, il n'est inclus
- *   que si aucun filtre territorial n'est spécifié.
+ * Sémantique : union EPCI ∪ département.
+ * Un parcours match dès que son département OU son EPCI est dans le scope.
+ * Sans données de localisation, il n'est inclus que si aucun filtre territorial
+ * n'est spécifié.
  */
 export function matchesTerritoire(
   rgaSimulationData: RGASimulationData | null,
@@ -469,12 +474,8 @@ export function matchesTerritoire(
   epcis: string[]
 ): boolean {
   const hasFiltreTerritorial = departements.length > 0 || epcis.length > 0;
+  const logement = rgaSimulationData?.logement;
 
-  if (!rgaSimulationData) {
-    return !hasFiltreTerritorial;
-  }
-
-  const logement = rgaSimulationData.logement;
   if (!logement) {
     return !hasFiltreTerritorial;
   }
@@ -483,15 +484,12 @@ export function matchesTerritoire(
     return true;
   }
 
-  // Si des EPCIs sont spécifiés, ils sont le filtre prioritaire (plus précis)
-  if (epcis.length > 0) {
-    // Conversion en string pour gérer les cas où le JSONB retourne un number
-    return !!logement.epci && epcis.includes(String(logement.epci));
-  }
+  // Conversion en string : JSONB peut retourner un number (ex: 59 au lieu de "59")
+  const matchDept =
+    departements.length > 0 && !!logement.code_departement && departements.includes(String(logement.code_departement));
+  const matchEpci = epcis.length > 0 && !!logement.epci && epcis.includes(String(logement.epci));
 
-  // Sinon, filtrer par département
-  // Conversion en string : le JSONB peut retourner un number (ex: 59 au lieu de "59")
-  return !!logement.code_departement && departements.includes(String(logement.code_departement));
+  return matchDept || matchEpci;
 }
 
 // Export d'une instance singleton

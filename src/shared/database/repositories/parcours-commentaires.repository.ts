@@ -1,4 +1,4 @@
-import { eq, desc, sql, and, gte, lte, type SQL } from "drizzle-orm";
+import { eq, desc, sql, and, gte, lte, inArray, type SQL } from "drizzle-orm";
 import { db } from "../client";
 import { parcoursCommentaires } from "../schema/parcours-commentaires";
 import { agents } from "../schema/agents";
@@ -346,6 +346,31 @@ export class ParcoursCommentairesRepository extends BaseRepository<ParcoursComme
       structureType: "ADMINISTRATION",
       structureName: null,
     };
+  }
+
+  /**
+   * Retourne le dernier message de commentaire par parcoursId, pour une liste
+   * de parcoursIds. Une seule requête, déduplication côté JS sur la version
+   * la plus récente.
+   */
+  async getLastMessageByParcoursIds(parcoursIds: string[]): Promise<Map<string, string>> {
+    const result = new Map<string, string>();
+    if (parcoursIds.length === 0) return result;
+
+    const rows = await db
+      .select({
+        parcoursId: parcoursCommentaires.parcoursId,
+        message: parcoursCommentaires.message,
+      })
+      .from(parcoursCommentaires)
+      .where(inArray(parcoursCommentaires.parcoursId, parcoursIds))
+      .orderBy(desc(parcoursCommentaires.createdAt));
+
+    // Premier rencontré = le plus récent grâce au ORDER BY DESC.
+    for (const row of rows) {
+      if (!result.has(row.parcoursId)) result.set(row.parcoursId, row.message);
+    }
+    return result;
   }
 }
 

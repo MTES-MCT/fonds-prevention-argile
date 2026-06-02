@@ -1,15 +1,11 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/services/user.service";
-import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
-import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { UserRole } from "@/shared/domain/value-objects";
 
 /**
- * Page d'accueil de l'espace agent
- * Redirige intelligemment selon les permissions de l'agent
+ * Page d'accueil de l'espace agent : tous les rôles agents accèdent à la même page de listing des dossiers, qui adapte son contenu en fonction du scope de l'agent.
  */
 export default async function EspaceAgentHomePage() {
-  // Récupérer l'utilisateur actuel
   const user = await getCurrentUser();
   if (!user) {
     redirect("/connexion/agent");
@@ -17,28 +13,15 @@ export default async function EspaceAgentHomePage() {
 
   const role = user.role as UserRole;
 
-  // SUPER_ADMINISTRATEUR : accès lecture seule à l'espace agent (recette / validation)
-  // Par défaut vers /demandes (vue AMO principale)
-  if (role === UserRole.SUPER_ADMINISTRATEUR) {
-    redirect("/espace-agent/demandes");
+  const isAgentRole =
+    role === UserRole.AMO ||
+    role === UserRole.ALLERS_VERS ||
+    role === UserRole.AMO_ET_ALLERS_VERS ||
+    role === UserRole.SUPER_ADMINISTRATEUR;
+
+  if (isAgentRole) {
+    redirect("/espace-agent/dossiers");
   }
 
-  // Vérifier les permissions pour déterminer la redirection
-  const hasDemandesPermission = hasPermission(role, BackofficePermission.DOSSIERS_AMO_READ);
-  const hasProspectsPermission = hasPermission(role, BackofficePermission.PROSPECTS_VIEW);
-
-  // Redirection selon les permissions et le rôle
-  if (role === UserRole.AMO_ET_ALLERS_VERS) {
-    // AMO_ET_ALLERS_VERS → rediriger vers Prospects (page par défaut)
-    redirect("/espace-agent/prospects");
-  } else if (hasDemandesPermission) {
-    // AMO → rediriger vers Demandes
-    redirect("/espace-agent/demandes");
-  } else if (hasProspectsPermission) {
-    // ALLERS_VERS → rediriger vers Prospects
-    redirect("/espace-agent/prospects");
-  }
-
-  // Aucune permission → accès refusé
   redirect("/backoffice/access-denied");
 }

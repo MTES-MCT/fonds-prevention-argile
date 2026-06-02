@@ -2,14 +2,22 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import type { AgentScope, AgentScopeInput } from "../domain/types/agent-scope.types";
 
-// Mock du repository
+// Mocks des repositories utilisés par calculateAgentScope
 vi.mock("@/shared/database", () => ({
   agentPermissionsRepository: {
     getDepartementsByAgentId: vi.fn(),
   },
+  allersVersRepository: {
+    getDepartementsByAllersVersId: vi.fn(),
+    getEpcisByAllersVersId: vi.fn(),
+  },
+  entreprisesAmoRepo: {
+    getDepartementsByEntrepriseAmoId: vi.fn(),
+    getEpcisByEntrepriseAmoId: vi.fn(),
+  },
 }));
 
-import { agentPermissionsRepository } from "@/shared/database";
+import { agentPermissionsRepository, allersVersRepository, entreprisesAmoRepo } from "@/shared/database";
 import {
   calculateAgentScope,
   canAccessDossier,
@@ -61,7 +69,10 @@ describe("agent-scope.service", () => {
     });
 
     describe("AMO", () => {
-      it("devrait avoir accès uniquement aux dossiers de son entreprise", async () => {
+      it("devrait peupler ses départements et EPCI depuis son entreprise", async () => {
+        vi.mocked(entreprisesAmoRepo.getDepartementsByEntrepriseAmoId).mockResolvedValue(["36", "91"]);
+        vi.mocked(entreprisesAmoRepo.getEpcisByEntrepriseAmoId).mockResolvedValue(["247400690"]);
+
         const agent: AgentScopeInput = {
           id: "agent-3",
           role: UserRole.AMO,
@@ -75,7 +86,8 @@ describe("agent-scope.service", () => {
         expect(scope.canViewDossiersByEntreprise).toBe(true);
         expect(scope.canViewDossiersWithoutAmo).toBe(false);
         expect(scope.entrepriseAmoIds).toEqual(["entreprise-123"]);
-        expect(scope.departements).toEqual([]);
+        expect(scope.departements).toEqual(["36", "91"]);
+        expect(scope.epcis).toEqual(["247400690"]);
       });
 
       it("devrait avoir un scope vide si pas d'entreprise rattachée", async () => {
@@ -90,6 +102,43 @@ describe("agent-scope.service", () => {
         expect(scope.isNational).toBe(false);
         expect(scope.canViewDossiersByEntreprise).toBe(true);
         expect(scope.entrepriseAmoIds).toEqual([]);
+        expect(scope.departements).toEqual([]);
+        expect(scope.epcis).toEqual([]);
+      });
+    });
+
+    describe("AMO_ET_ALLERS_VERS", () => {
+      it("devrait agréger les territoires AV et AMO sans doublons", async () => {
+        vi.mocked(allersVersRepository.getDepartementsByAllersVersId).mockResolvedValue(["36"]);
+        vi.mocked(allersVersRepository.getEpcisByAllersVersId).mockResolvedValue(["EPCI_AV"]);
+        vi.mocked(entreprisesAmoRepo.getDepartementsByEntrepriseAmoId).mockResolvedValue(["36", "91"]);
+        vi.mocked(entreprisesAmoRepo.getEpcisByEntrepriseAmoId).mockResolvedValue(["EPCI_AMO"]);
+
+        const agent: AgentScopeInput = {
+          id: "agent-hybride",
+          role: UserRole.AMO_ET_ALLERS_VERS,
+          entrepriseAmoId: "entreprise-123",
+          allersVersId: "av-456",
+        };
+
+        const scope = await calculateAgentScope(agent);
+
+        expect(scope.entrepriseAmoIds).toEqual(["entreprise-123"]);
+        expect(scope.departements.sort()).toEqual(["36", "91"]);
+        expect(scope.epcis.sort()).toEqual(["EPCI_AMO", "EPCI_AV"]);
+        expect(scope.canViewDossiersByEntreprise).toBe(true);
+        expect(scope.canViewDossiersWithoutAmo).toBe(true);
+      });
+
+      it("devrait lever une erreur si entrepriseAmoId ou allersVersId manquant", async () => {
+        await expect(
+          calculateAgentScope({
+            id: "agent-hybride-incomplet",
+            role: UserRole.AMO_ET_ALLERS_VERS,
+            entrepriseAmoId: null,
+            allersVersId: "av-456",
+          })
+        ).rejects.toThrow();
       });
     });
 
@@ -362,7 +411,7 @@ describe("agent-scope.service", () => {
       expect(filters?.entrepriseAmoIds).toEqual(["entreprise-123", "entreprise-456"]);
     });
 
-    it("devrait retourner excludeWithAmo pour les allers-vers", () => {
+    it("devrait retourner les départements pour les allers-vers", () => {
       const scope: AgentScope = {
         isNational: false,
         entrepriseAmoIds: [],
@@ -376,7 +425,6 @@ describe("agent-scope.service", () => {
       const filters = getScopeFilterConditions(scope);
 
       expect(filters).not.toBeNull();
-      expect(filters?.excludeWithAmo).toBe(true);
       expect(filters?.departements).toEqual(["75"]);
     });
 

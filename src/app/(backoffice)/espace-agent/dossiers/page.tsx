@@ -1,27 +1,30 @@
-import { redirect } from "next/navigation";
 import { DossiersPanel } from "./components/DossiersPanel";
 import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
+import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 
 /**
- * Espace AMO - Page des dossiers suivis et archivés.
- *
- * Accessible aux rôles AMO, AMO_ET_ALLERS_VERS et SUPER_ADMINISTRATEUR (lecture).
- * Un ALLERS_VERS pur est redirigé vers `/prospects` puisque la page repose sur
- * `parcours_amo_validations` et n'a aucun sens pour lui.
+ * Page des dossiers d'un agent — listing unifié par territoire.
+ * Accessible à tous les rôles agents (AMO, ALLERS_VERS, AMO_ET_ALLERS_VERS)
+ * et à SUPER_ADMINISTRATEUR en lecture.
  */
-export default async function DossiersAmoPage() {
+export default async function DossiersAgentPage() {
   const access = await resolveEspaceAgentAccess();
   const role = access.kind !== "error" ? (access.agent.role as UserRole) : null;
+  const user = await getCurrentUser();
 
-  // AV pur → redirect /prospects (sa page de référence).
-  if (role === UserRole.ALLERS_VERS) {
-    redirect("/espace-agent/prospects");
-  }
+  // Bouton "+ Nouveau dossier" visible pour tout agent métier (intent résolu côté wizard).
+  // Onglet « Mes dossiers » actif par défaut pour ces mêmes rôles ; un super-admin
+  // (ni AMO ni AV) n'a aucun dossier dont il soit responsable : on l'ouvre sur
+  // « Tous les dossiers ».
+  const isAgentResponsable =
+    role === UserRole.AMO || role === UserRole.AMO_ET_ALLERS_VERS || role === UserRole.ALLERS_VERS;
 
-  // Bouton "+ Nouveau dossier" visible pour AMO et AMO_ET_ALLERS_VERS. Le lien
-  // pointe vers `/dossiers/nouveau?intent=amo` (cf. DossiersSuivisHeader).
-  const canCreateDossier = role === UserRole.AMO || role === UserRole.AMO_ET_ALLERS_VERS;
-
-  return <DossiersPanel canCreateDossier={canCreateDossier} />;
+  return (
+    <DossiersPanel
+      canCreateDossier={isAgentResponsable}
+      defaultScope={isAgentResponsable ? "mine" : "all"}
+      prenom={user?.firstName ?? null}
+    />
+  );
 }

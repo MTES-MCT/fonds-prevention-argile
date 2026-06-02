@@ -10,6 +10,7 @@ import { QualificationDecision } from "../domain/types";
 import { qualificationService } from "../services/qualification.service";
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
+import { assertCanActAsResponsable } from "@/features/auth/permissions/services/responsable-permissions.service";
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
 import type { ActionResult } from "@/shared/types";
 
@@ -84,16 +85,12 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
 
     const { parcoursId, decision, actionsRealisees, raisonsIneligibilite, note } = parsed.data;
 
-    // 5. Vérification territoriale
-    const territoryError = await verifyProspectTerritoryAccess(parcoursId, {
-      id: user.agentId,
-      role,
+    // 5. Garde responsable : seul le responsable courant peut qualifier
+    const guard = await assertCanActAsResponsable(parcoursId, {
       entrepriseAmoId: user.entrepriseAmoId ?? null,
       allersVersId: user.allersVersId,
     });
-    if (territoryError) {
-      return { success: false, error: territoryError };
-    }
+    if (!guard.ok) return { success: false, error: guard.error };
 
     // 6. Logique métier
     const qualification = await qualificationService.qualifyProspect({

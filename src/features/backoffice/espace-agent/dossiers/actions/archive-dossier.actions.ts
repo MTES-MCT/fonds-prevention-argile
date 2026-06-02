@@ -1,19 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
-import { db } from "@/shared/database/client";
-import { parcoursAmoValidations } from "@/shared/database/schema";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
+import { assertCanActAsResponsable } from "@/features/auth/permissions/services/responsable-permissions.service";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { ActionResult } from "@/shared/types";
 
 /**
- * Archive un dossier AMO (parcours prévention)
- *
- * Vérifie que l'agent connecté est bien rattaché à l'entreprise AMO du dossier.
+ * Archive un dossier — réservé au responsable courant du dossier
+ * (AV territorial pour un prospect, entreprise AMO assignée sinon).
  */
 export async function archiveDossierAction(parcoursId: string, archiveReason: string): Promise<ActionResult<void>> {
   try {
@@ -21,31 +18,14 @@ export async function archiveDossierAction(parcoursId: string, archiveReason: st
     if (readOnlyError) return { success: false, error: readOnlyError };
 
     const agentResult = await getCurrentAgent();
-    if (!agentResult.success) {
-      return { success: false, error: agentResult.error };
-    }
-
+    if (!agentResult.success) return { success: false, error: agentResult.error };
     const agent = agentResult.data;
 
-    if (!agent.entrepriseAmoId) {
-      return { success: false, error: "Aucune entreprise AMO associée à votre compte" };
-    }
-
-    // Vérifier que le dossier appartient à l'entreprise AMO de l'agent
-    const [validation] = await db
-      .select({ id: parcoursAmoValidations.id })
-      .from(parcoursAmoValidations)
-      .where(
-        and(
-          eq(parcoursAmoValidations.parcoursId, parcoursId),
-          eq(parcoursAmoValidations.entrepriseAmoId, agent.entrepriseAmoId)
-        )
-      )
-      .limit(1);
-
-    if (!validation) {
-      return { success: false, error: "Dossier non trouvé ou non autorisé" };
-    }
+    const guard = await assertCanActAsResponsable(parcoursId, {
+      entrepriseAmoId: agent.entrepriseAmoId ?? null,
+      allersVersId: agent.allersVersId ?? null,
+    });
+    if (!guard.ok) return { success: false, error: guard.error };
 
     await parcoursPreventionRepository.updateSituationParticulier(
       parcoursId,
@@ -55,7 +35,6 @@ export async function archiveDossierAction(parcoursId: string, archiveReason: st
     );
 
     revalidatePath("/espace-agent", "layout");
-
     return { success: true, data: undefined };
   } catch (error) {
     console.error("[archiveDossierAction] Erreur:", error);
@@ -64,9 +43,8 @@ export async function archiveDossierAction(parcoursId: string, archiveReason: st
 }
 
 /**
- * Désarchive un dossier AMO (parcours prévention)
- *
- * Remet le parcours en statut ELIGIBLE et nettoie les champs d'archivage.
+ * Désarchive un dossier — réservé au responsable courant.
+ * Remet le parcours en statut ELIGIBLE (le repository nettoie archivedAt).
  */
 export async function unarchiveDossierAction(parcoursId: string): Promise<ActionResult<void>> {
   try {
@@ -74,37 +52,21 @@ export async function unarchiveDossierAction(parcoursId: string): Promise<Action
     if (readOnlyError) return { success: false, error: readOnlyError };
 
     const agentResult = await getCurrentAgent();
-    if (!agentResult.success) {
-      return { success: false, error: agentResult.error };
-    }
-
+    if (!agentResult.success) return { success: false, error: agentResult.error };
     const agent = agentResult.data;
 
-    if (!agent.entrepriseAmoId) {
-      return { success: false, error: "Aucune entreprise AMO associée à votre compte" };
-    }
+    const guard = await assertCanActAsResponsable(parcoursId, {
+      entrepriseAmoId: agent.entrepriseAmoId ?? null,
+      allersVersId: agent.allersVersId ?? null,
+    });
+    if (!guard.ok) return { success: false, error: guard.error };
 
-    // Vérifier que le dossier appartient à l'entreprise AMO de l'agent
-    const [validation] = await db
-      .select({ id: parcoursAmoValidations.id })
-      .from(parcoursAmoValidations)
-      .where(
-        and(
-          eq(parcoursAmoValidations.parcoursId, parcoursId),
-          eq(parcoursAmoValidations.entrepriseAmoId, agent.entrepriseAmoId)
-        )
-      )
-      .limit(1);
-
-    if (!validation) {
-      return { success: false, error: "Dossier non trouvé ou non autorisé" };
-    }
-
-    // ELIGIBLE remet le parcours actif (le repository nettoie archivedAt/archiveReason)
-    await parcoursPreventionRepository.updateSituationParticulier(parcoursId, SituationParticulier.ELIGIBLE);
+    // Cible : ELIGIBLE si un AMO est responsable, PROSPECT sinon (workflow AV).
+    const target =
+      guard.responsable.type === "AMO" ? SituationParticulier.ELIGIBLE : SituationParticulier.PROSPECT;
+    await parcoursPreventionRepository.updateSituationParticulier(parcoursId, target);
 
     revalidatePath("/espace-agent", "layout");
-
     return { success: true, data: undefined };
   } catch (error) {
     console.error("[unarchiveDossierAction] Erreur:", error);

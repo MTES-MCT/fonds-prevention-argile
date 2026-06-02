@@ -3,32 +3,62 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { DossierSuivi } from "@/features/backoffice/espace-agent/dossiers/domain/types";
+import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import {
-  STEP_LABELS,
-  getPrecisionText,
+  getDossierStepLabel,
+  getEtatBadge,
+  getResponsableDisplayName,
+  getDossierPrecisionLabel,
   getPrecisionStyle,
-  isDossierRefuse,
-} from "@/features/backoffice/espace-agent/dossiers/domain/types";
-import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+  STATUTS_REFUSES,
+} from "@/features/backoffice/espace-agent/dossiers/domain";
 import { ROUTES } from "@/features/auth/domain/value-objects";
-import { formatNomComplet, formatDaysAgoSplit } from "@/shared/utils";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { formatNomComplet, formatDaysAgoSplit, formatDate } from "@/shared/utils";
 import { ActionMenu } from "../../shared/components/ActionMenu";
 import { ArchiveModal } from "../../shared/components/ArchiveModal";
 import { UnarchiveModal } from "../../shared/components/UnarchiveModal";
+import { ColumnFilterButton, type FilterOption } from "./ColumnFilterButton";
+import { ColumnSortButton } from "./ColumnSortButton";
 
 interface DossiersSuivisTableProps {
-  dossiers: DossierSuivi[];
-  /** Indique si les dossiers affichés sont archivés (change la couleur de la cellule Précisions) */
-  isArchived?: boolean;
+  dossiers: DossierItem[];
   /** Callback pour recharger les données après archivage/désarchivage */
   onRefresh?: () => void;
+  /** Sens du tri sur la colonne « Création ». */
+  sortOrder?: "asc" | "desc";
+  /** Inverse le sens du tri sur la colonne « Création ». */
+  onToggleSort?: () => void;
+  /** Options et état du filtre par colonne. */
+  responsableOptions?: FilterOption[];
+  etapeOptions?: FilterOption[];
+  enAttenteOptions?: FilterOption[];
+  responsableFilter?: Set<string>;
+  etapeFilter?: Set<string>;
+  enAttenteFilter?: Set<string>;
+  onResponsableFilterChange?: (next: Set<string>) => void;
+  onEtapeFilterChange?: (next: Set<string>) => void;
+  onEnAttenteFilterChange?: (next: Set<string>) => void;
 }
 
 /**
  * Tableau des dossiers suivis
  */
-export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }: DossiersSuivisTableProps) {
+export function DossiersSuivisTable({
+  dossiers,
+  onRefresh,
+  sortOrder = "desc",
+  onToggleSort,
+  responsableOptions = [],
+  etapeOptions = [],
+  enAttenteOptions = [],
+  responsableFilter,
+  etapeFilter,
+  enAttenteFilter,
+  onResponsableFilterChange,
+  onEtapeFilterChange,
+  onEnAttenteFilterChange,
+}: DossiersSuivisTableProps) {
   const router = useRouter();
   const [archiveParcoursId, setArchiveParcoursId] = useState<string | null>(null);
   const [unarchiveParcoursId, setUnarchiveParcoursId] = useState<string | null>(null);
@@ -53,56 +83,112 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                 <thead>
                   <tr>
                     <th scope="col">
-                      <span className="fr-icon-user-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
-                      Demandeurs
+                      <span className="flex items-center justify-between gap-2">
+                        Création
+                        {onToggleSort && (
+                          <ColumnSortButton order={sortOrder} onToggle={onToggleSort} criterion="création" />
+                        )}
+                      </span>
+                    </th>
+                    <th scope="col">Demandeurs</th>
+                    <th scope="col">
+                      <span className="flex items-center justify-between gap-2">
+                        Responsable
+                        {onResponsableFilterChange && responsableFilter && (
+                          <ColumnFilterButton
+                            ariaLabel="Filtrer par responsable"
+                            options={responsableOptions}
+                            selected={responsableFilter}
+                            onChange={onResponsableFilterChange}
+                          />
+                        )}
+                      </span>
+                    </th>
+                    <th scope="col">Commune</th>
+                    <th scope="col">
+                      <span className="flex items-center justify-between gap-2">
+                        Étape
+                        {onEtapeFilterChange && etapeFilter && (
+                          <ColumnFilterButton
+                            ariaLabel="Filtrer par étape"
+                            options={etapeOptions}
+                            selected={etapeFilter}
+                            onChange={onEtapeFilterChange}
+                          />
+                        )}
+                      </span>
                     </th>
                     <th scope="col">
-                      <span className="fr-icon-map-pin-2-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
-                      Commune
+                      <span className="flex items-center justify-between gap-2">
+                        En attente de
+                        {onEnAttenteFilterChange && enAttenteFilter && (
+                          <ColumnFilterButton
+                            ariaLabel="Filtrer par responsable courant"
+                            options={enAttenteOptions}
+                            selected={enAttenteFilter}
+                            onChange={onEnAttenteFilterChange}
+                          />
+                        )}
+                      </span>
                     </th>
-                    <th scope="col">
-                      <span className="fr-icon-list-ordered fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
-                      Étape
-                    </th>
-                    <th scope="col">
-                      <span className="fr-icon-info-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
+                    <th scope="col" style={{ minWidth: "320px" }}>
                       Précisions
                     </th>
-                    <th scope="col">
-                      <span className="fr-icon-flashlight-fill fr-icon--sm fr-mr-2v" aria-hidden="true"></span>
-                      Action
-                    </th>
+                    <th scope="col">Note complémentaire liée</th>
+                    <th scope="col">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dossiers.length === 0 ? (
                     <tr>
-                      <td colSpan={5} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
-                        Aucun dossier suivi
+                      <td colSpan={9} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
+                        Aucun dossier
                       </td>
                     </tr>
                   ) : (
                     dossiers.map((dossier) => {
-                      const daysAgo = formatDaysAgoSplit(dossier.dateDernierStatut.toISOString());
-                      const isRefuse = isDossierRefuse(dossier);
+                      const daysAgo = formatDaysAgoSplit(dossier.updatedAt.toISOString());
+                      const statutValidation = dossier.validation?.statut ?? null;
+                      const isRefuse = statutValidation !== null && STATUTS_REFUSES.includes(statutValidation);
+                      // Grisé appliqué par ligne (avant : prop globale `isArchived` pilotée
+                      // par l'onglet « Archivés », désormais supprimé).
+                      const isArchived = dossier.etat === "ARCHIVE";
                       const greyStyle = isArchived ? { color: "var(--text-mention-grey)" } : undefined;
 
-                      // Texte de précision : spécifique pour les dossiers refusés
-                      const precisionText = isRefuse
-                        ? dossier.statutValidation === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE
-                          ? "Logement non éligible."
-                          : "Accompagnement refusé."
-                        : getPrecisionText(dossier.etape, dossier.statut, dossier.dsStatus);
+                      const etapeLabel = getDossierStepLabel(dossier.currentStep, dossier.validation);
+                      const badge = getEtatBadge(dossier.etat, dossier.logement.codeDepartement);
+                      const precisionText = getDossierPrecisionLabel(
+                        dossier.etat,
+                        dossier.currentStep,
+                        dossier.currentStatus,
+                        dossier.dsStatus,
+                        dossier.validation
+                      );
+                      const responsableLabel = getResponsableDisplayName(dossier.responsable);
 
-                      // Actions du menu contextuel
+                      // URL détail selon l'état ET le rôle de l'agent :
+                      // - EN_ATTENTE + agent responsable (l'AMO destinataire) → page de
+                      //   validation /demandes/[id] (callout + boutons accepter/refuser).
+                      // - EN_ATTENTE mais agent NON responsable (AV / autre AMO du territoire)
+                      //   → page de suivi /dossiers/[id] en consultation (l'accès /demandes
+                      //   est réservé à l'AMO propriétaire, sinon 404).
+                      // - validation traitée (éligible/refusée) → page de suivi /dossiers/[id].
+                      // - pas de validation → page prospect (parcoursId).
+                      const detailHref = dossier.validation
+                        ? statutValidation === StatutValidationAmo.EN_ATTENTE && dossier.canActAsResponsable
+                          ? ROUTES.backoffice.espaceAmo.demande(dossier.validation.id)
+                          : ROUTES.backoffice.espaceAmo.dossier(dossier.validation.id)
+                        : `/espace-agent/prospects/${dossier.parcoursId}`;
+
                       const actionItems = [
                         {
                           label: "Voir sa simulation d'éligibilité",
                           icon: "fr-icon-eye-line",
-                          onClick: () => router.push(ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)),
+                          onClick: () =>
+                            router.push(ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.parcoursId)),
                         },
-                        // Pas d'archivage/désarchivage pour les dossiers refusés
-                        ...(!isRefuse
+                        // Archiver / Désarchiver : réservé au responsable courant.
+                        ...(!isRefuse && dossier.canActAsResponsable
                           ? [
                               isArchived
                                 ? {
@@ -120,31 +206,33 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                       ];
 
                       return (
-                        <tr key={dossier.id}>
+                        <tr key={dossier.parcoursId}>
+                          <td style={greyStyle}>{formatDate(dossier.createdAt.toISOString())}</td>
                           <td>
-                            <Link href={ROUTES.backoffice.espaceAmo.dossier(dossier.id)} className="fr-link">
-                              {formatNomComplet(dossier.prenom, dossier.nom)}
+                            <Link href={detailHref} className="fr-link">
+                              {formatNomComplet(dossier.particulier.prenom, dossier.particulier.nom)}
                             </Link>
                             {isRefuse && (
                               <p className="fr-badge fr-badge--sm fr-badge--error fr-badge--no-icon fr-ml-1w">Refusé</p>
                             )}
                           </td>
-                          <td style={greyStyle}>{dossier.commune}</td>
+                          <td style={greyStyle}>{responsableLabel}</td>
+                          <td style={greyStyle}>{dossier.logement.commune}</td>
                           <td>
-                            {isArchived ? (
-                              <p className="fr-tag">{STEP_LABELS[dossier.etape]}</p>
-                            ) : (
-                              <a href="#" className="fr-tag">
-                                {STEP_LABELS[dossier.etape]}
-                              </a>
-                            )}
+                            <p className="fr-tag">{etapeLabel}</p>
+                          </td>
+                          <td>
+                            <p className={`fr-badge fr-badge--sm fr-badge--no-icon ${badge.colorClass}`}>
+                              {badge.label}
+                            </p>
                           </td>
                           <td
                             style={{
-                              maxWidth: "350px",
+                              minWidth: "320px",
+                              maxWidth: "420px",
                               wordWrap: "break-word",
                               whiteSpace: "normal",
-                              ...getPrecisionStyle(dossier.statut, isArchived || isRefuse),
+                              ...getPrecisionStyle(dossier.currentStatus, isArchived || isRefuse),
                               ...greyStyle,
                             }}>
                             <div>{precisionText}</div>
@@ -153,6 +241,17 @@ export function DossiersSuivisTable({ dossiers, isArchived = false, onRefresh }:
                                 {daysAgo.text} (le {daysAgo.date})
                               </div>
                             )}
+                          </td>
+                          <td
+                            style={{
+                              maxWidth: "240px",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              ...greyStyle,
+                            }}
+                            title={dossier.derniereNote ?? undefined}>
+                            {dossier.derniereNote ?? <span style={{ color: "var(--text-mention-grey)" }}>—</span>}
                           </td>
                           <td>
                             <ActionMenu items={actionItems} />

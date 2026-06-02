@@ -4,7 +4,7 @@ import { getDossierDetail } from "@/features/backoffice/espace-agent/dossiers/se
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
-import { STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain/types";
+import { DOSSIER_STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain";
 import { InfoDemandeur, InfoLogement, ParcoursDemandeur, AFaire, QualificationAllersVers } from "../../shared";
 import { NotesPartagees } from "../../shared";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
@@ -95,7 +95,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
               <h1 className="fr-h2 fr-mb-2w">{nomComplet}</h1>
               <div className="fr-badges-group">
                 <DossierStatusBadge dsStatus={dossier.dsStatus} />
-                <p className="fr-badge">{STEP_LABELS[dossier.currentStep]}</p>
+                <p className="fr-badge">{DOSSIER_STEP_LABELS[dossier.currentStep]}</p>
               </div>
             </div>
             <div className="fr-col-auto">
