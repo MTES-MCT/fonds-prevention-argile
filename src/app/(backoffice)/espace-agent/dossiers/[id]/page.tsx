@@ -108,6 +108,9 @@ export default async function DossierDetailPage({ params }: PageProps) {
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
             <InfoDossierCallout currentStep={dossier.currentStep} currentStatus={dossier.currentStatus} dsStatus={dossier.dsStatus} validationStatut={dossier.validationStatut} />
+            <div className="fr-mt-4w">
+              <ActionsRealisees parcoursId={dossier.parcoursId} />
+            </div>
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <div style={{ alignSelf: "flex-start" }}>
@@ -182,7 +185,6 @@ export default async function DossierDetailPage({ params }: PageProps) {
                     "Préparer la suite pour effectuer le diagnostic si l'éligibilité est validée par la DDT.",
                   ]}
                 />
-                <ActionsRealisees parcoursId={dossier.parcoursId} />
               </div>
             </div>
           </div>

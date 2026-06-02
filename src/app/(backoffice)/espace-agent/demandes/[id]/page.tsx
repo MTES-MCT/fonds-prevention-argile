@@ -109,6 +109,9 @@ export default async function DemandeDetailPage({ params }: PageProps) {
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
             <ReponseAccompagnement demandeId={demande.id} statutActuel={demande.statut} />
+            <div className="fr-mt-4w">
+              <ActionsRealisees parcoursId={demande.parcoursId} />
+            </div>
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <div style={{ alignSelf: "flex-start" }}>
@@ -172,7 +175,6 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                     "Informer et préparer le demandeur pour les étapes suivantes",
                   ]}
                 />
-                <ActionsRealisees parcoursId={demande.parcoursId} />
               </div>
             </div>
           </div>

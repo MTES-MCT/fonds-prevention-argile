@@ -162,6 +162,9 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
               agentNom={qualificationAgentNom}
               structureNom={qualificationStructureNom}
             />
+            <div className="fr-mt-4w">
+              <ActionsRealisees parcoursId={prospect.parcoursId} />
+            </div>
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <InfoDemandeur
@@ -218,7 +221,6 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
                     "L'inciter à contacter et choisir un AMO",
                   ]}
                 />
-                <ActionsRealisees parcoursId={prospect.parcoursId} />
               </div>
             </div>
           </div>
