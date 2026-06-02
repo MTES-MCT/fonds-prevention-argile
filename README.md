@@ -4,8 +4,8 @@ Application web pour le Fonds de Prévention des Risques liés au Retrait-Gonfle
 
 ## Prérequis
 
-- **Node.js** 22.x
-- **pnpm** 10.13.1
+- **Node.js** 24.x
+- **pnpm** 11.5.0
 - **Git** pour cloner le repository
 
 ## Installation
@@ -41,10 +41,10 @@ Configurez les variables selon votre environnement. Les principales variables in
 
 Le mode d'AMO appliqué à chaque demandeur dépend de son département. La configuration est pilotée par 2 variables d'environnement optionnelles. Si elles ne sont pas définies, des valeurs par défaut alignées sur la dernière config produit sont utilisées.
 
-| Variable                                       | Format        | Défaut             | Description                                                                                                  |
-| ---------------------------------------------- | ------------- | ------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE`     | CSV codes dept| `03,36,47,54,81`   | Départements où l'AMO est obligatoire (1 AMO auto-affecté à l'arrivée sur `/mon-compte`).                    |
-| `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES`    | CSV codes dept| _(vide)_           | Départements où l'aller-vers local joue aussi le rôle d'AMO (auto-attribution silencieuse). Optionnel.        |
+| Variable                                    | Format         | Défaut           | Description                                                                                            |
+| ------------------------------------------- | -------------- | ---------------- | ------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE`  | CSV codes dept | `03,36,47,54,81` | Départements où l'AMO est obligatoire (1 AMO auto-affecté à l'arrivée sur `/mon-compte`).              |
+| `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES` | CSV codes dept | _(vide)_         | Départements où l'aller-vers local joue aussi le rôle d'AMO (auto-attribution silencieuse). Optionnel. |
 
 **Tout département non listé dans ces deux variables retombe sur le mode `FACULTATIF`** : le demandeur choisit lui-même s'il souhaite être accompagné ("Oui" → 1er AMO du territoire, "Non" → skip vers Éligibilité).
 
@@ -242,11 +242,11 @@ L'app est déployée sur Scalingo via le [`nodejs-buildpack`](https://github.com
 
 À chaque invocation, pnpm 11 exécute `runDepsStatusCheck`, un check d'intégrité interne du `node_modules`. Sur Scalingo, ce check détecte systématiquement une divergence après le packaging slug (le tar/détar de Scalingo casse les hardlinks que pnpm utilise pour son content-addressable store dans `node_modules/.pnpm/`). Pnpm décide alors de purger `node_modules` et de réinstaller les 637 packages — au boot du conteneur web. Trois symptômes possibles selon la config :
 
-| Config pnpm | Comportement au boot | Résultat |
-|---|---|---|
-| Défaut | Prompt "purger ?" → pas de TTY → `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY` | App ne démarre jamais |
-| `confirmModulesPurge: false` dans `pnpm-workspace.yaml` | Purge silencieuse + `pnpm install` → ~45s pour 637 packages | `SIGKILL` (timeout boot Scalingo = 60s) |
-| `PNPM_SKIP_PRUNING=true` côté env Scalingo | Aucun effet : cette variable contrôle uniquement le prune au BUILD, pas le check runtime de pnpm | Idem ci-dessus |
+| Config pnpm                                             | Comportement au boot                                                                             | Résultat                                |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| Défaut                                                  | Prompt "purger ?" → pas de TTY → `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`                    | App ne démarre jamais                   |
+| `confirmModulesPurge: false` dans `pnpm-workspace.yaml` | Purge silencieuse + `pnpm install` → ~45s pour 637 packages                                      | `SIGKILL` (timeout boot Scalingo = 60s) |
+| `PNPM_SKIP_PRUNING=true` côté env Scalingo              | Aucun effet : cette variable contrôle uniquement le prune au BUILD, pas le check runtime de pnpm | Idem ci-dessus                          |
 
 Sources : [pnpm#9966](https://github.com/pnpm/pnpm/issues/9966) (breaking change v10.16+), [Scalingo nodejs-buildpack CHANGELOG](https://github.com/Scalingo/nodejs-buildpack/blob/master/CHANGELOG.md).
 
@@ -284,6 +284,7 @@ scalingo --app fonds-argile-staging env-unset EMAIL_DEV_INBOX     # pour désact
 Au boot, le log `[EMAIL] DEV REDIRECT ACTIVE (env=staging) → ...` confirme l'activation.
 
 **Garde-fous** (`assertEmailDevInboxSafety` dans `env.config.ts`) :
+
 - L'app **refuse de démarrer** si `EMAIL_DEV_INBOX` est setée en production.
 - Seul le domaine `@beta.gouv.fr` est accepté comme destination (allowlist hardcodée). Pour ajouter un domaine : modifier `ALLOWED_DEV_INBOX_DOMAINS` dans le code.
 - En local, Mailhog ([localhost:8025](http://localhost:8025)) reste actif ; `EMAIL_DEV_INBOX` n'agit que sur la branche Brevo.
@@ -308,11 +309,11 @@ docker-compose up --build
 
 Un parcours a deux niveaux d'état :
 
-| Niveau            | Champ                                | Source de vérité                 |
-| ----------------- | ------------------------------------ | -------------------------------- |
-| Dossier DS        | `dossiers_demarches_simplifiees.ds_status` | API Démarches Simplifiées        |
-| Parcours interne  | `parcours_prevention.current_status` | Dérivé du dossier de `current_step` |
-| Parcours interne  | `parcours_prevention.current_step`   | Logique métier (progression)     |
+| Niveau           | Champ                                      | Source de vérité                    |
+| ---------------- | ------------------------------------------ | ----------------------------------- |
+| Dossier DS       | `dossiers_demarches_simplifiees.ds_status` | API Démarches Simplifiées           |
+| Parcours interne | `parcours_prevention.current_status`       | Dérivé du dossier de `current_step` |
+| Parcours interne | `parcours_prevention.current_step`         | Logique métier (progression)        |
 
 La sync ramène les statuts DS dans la BDD locale puis recalcule l'état interne du parcours. Quand le statut interne devient `valide`, le parcours avance automatiquement à l'étape suivante.
 
@@ -489,15 +490,15 @@ Ce projet applique plusieurs couches de protection contre les attaques de type s
 
 ### Configuration `pnpm-workspace.yaml`
 
-| Option                | Valeur                         | Protection                                                                                                                                |
-| --------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `savePrefix`          | `~`                            | Force `pnpm add` à figer le minor/major (ex : `5.1.~3`). Sans ça, par défaut, `pnpm add` ouvre la porte aux minor (`^`)                   |
-| `minimumReleaseAge`   | `10080` (7 j)                  | Refuse les versions publiées depuis moins de 7 jours (cf. ci-dessous)                                                                     |
-| `minimumReleaseAgeExclude` | liste                     | Packages exemptés du délai (ex : `next`, `@next/swc-*`) parce qu'on veut leurs hotfix immédiats et qu'on a confiance dans leur pipeline   |
-| `trustPolicy`         | `no-downgrade`                 | Refuse les downgrades silencieux d'une dépendance déjà installée (un attaquant ne peut pas rétrograder un transitif vers une CVE connue)  |
-| `trustPolicyExclude`  | liste                          | Exceptions runtime-safe documentées (ex : `undici-types`, `semver@6` transitif `@babel/core`) — chaque entrée a un commentaire de justif  |
-| `overrides`           | map                            | Force des versions patchées pour les CVE transitives connues (vite, rollup, minimatch, picomatch, ajv, esbuild, etc.)                     |
-| `allowBuilds`         | map `pkg: true`                | Approbation explicite des scripts d'install natifs (pnpm 11+). Sans ça, toute compilation native est silencieusement bloquée              |
+| Option                     | Valeur          | Protection                                                                                                                               |
+| -------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `savePrefix`               | `~`             | Force `pnpm add` à figer le minor/major (ex : `5.1.~3`). Sans ça, par défaut, `pnpm add` ouvre la porte aux minor (`^`)                  |
+| `minimumReleaseAge`        | `10080` (7 j)   | Refuse les versions publiées depuis moins de 7 jours (cf. ci-dessous)                                                                    |
+| `minimumReleaseAgeExclude` | liste           | Packages exemptés du délai (ex : `next`, `@next/swc-*`) parce qu'on veut leurs hotfix immédiats et qu'on a confiance dans leur pipeline  |
+| `trustPolicy`              | `no-downgrade`  | Refuse les downgrades silencieux d'une dépendance déjà installée (un attaquant ne peut pas rétrograder un transitif vers une CVE connue) |
+| `trustPolicyExclude`       | liste           | Exceptions runtime-safe documentées (ex : `undici-types`, `semver@6` transitif `@babel/core`) — chaque entrée a un commentaire de justif |
+| `overrides`                | map             | Force des versions patchées pour les CVE transitives connues (vite, rollup, minimatch, picomatch, ajv, esbuild, etc.)                    |
+| `allowBuilds`              | map `pkg: true` | Approbation explicite des scripts d'install natifs (pnpm 11+). Sans ça, toute compilation native est silencieusement bloquée             |
 
 > **Note pnpm 11** : `onlyBuiltDependencies` (allow-list utilisée en pnpm 9-10) n'est plus respectée par pnpm 11 — c'est `allowBuilds` qui prend le relais. Si on essayait de garder les deux, ça doublonnerait sans rien apporter.
 
@@ -517,12 +518,12 @@ C'est la mesure la plus défensive du projet. Concrètement :
 
 ### Packages autorisés pour les builds natifs (`allowBuilds`)
 
-| Package         | Pourquoi                                                                                              |
-| --------------- | ----------------------------------------------------------------------------------------------------- |
-| `argon2`        | Hashing de mot de passe (auth ProConnect). Postinstall `node-gyp-build` qui résout des prebuilts.     |
-| `esbuild`       | Bundler de Vitest et Next. Postinstall qui télécharge le binaire Go pour la plateforme courante.       |
-| `sharp`         | Traitement d'images (génération d'images OG, vignettes). Postinstall qui résout des bindings C++.    |
-| `unrs-resolver` | Resolver transitif (stack Next/Oxc). Postinstall qui sélectionne le bon binaire natif Rust.           |
+| Package         | Pourquoi                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------- |
+| `argon2`        | Hashing de mot de passe (auth ProConnect). Postinstall `node-gyp-build` qui résout des prebuilts. |
+| `esbuild`       | Bundler de Vitest et Next. Postinstall qui télécharge le binaire Go pour la plateforme courante.  |
+| `sharp`         | Traitement d'images (génération d'images OG, vignettes). Postinstall qui résout des bindings C++. |
+| `unrs-resolver` | Resolver transitif (stack Next/Oxc). Postinstall qui sélectionne le bon binaire natif Rust.       |
 
 Les `@next/swc-*` ne sont **pas** listés ici : ils n'ont pas de script `install`/`postinstall` côté npm (les binaires sont téléchargés directement par pnpm sans hook), donc rien à approuver.
 
