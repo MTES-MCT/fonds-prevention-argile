@@ -35,7 +35,7 @@ Nous utilisons le **DSFR** (`@gouvfr/dsfr`, `@gouvfr/dsfr-chart`) comme système
 ### Positives
 
 - Accessibilité et identité de l'État respectées.
-- Mode clair forcé (`force white mode`), composants DSFR réutilisés.
+- Composants DSFR réutilisés.
 
 ### Négatives / Risques
 
