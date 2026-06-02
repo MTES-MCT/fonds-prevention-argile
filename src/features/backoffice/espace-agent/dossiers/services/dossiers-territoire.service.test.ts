@@ -12,19 +12,19 @@ const {
   resolveResponsables,
   getActorContext,
   canActAsResponsable,
-  getLastMessageByParcoursIds,
+  getLastActionByParcoursIds,
 } = vi.hoisted(() => ({
   getParcoursByTerritoire: vi.fn(),
   calculateAgentScope: vi.fn(),
   resolveResponsables: vi.fn(),
   getActorContext: vi.fn(),
   canActAsResponsable: vi.fn(),
-  getLastMessageByParcoursIds: vi.fn(),
+  getLastActionByParcoursIds: vi.fn(),
 }));
 
 vi.mock("@/shared/database", () => ({
   parcoursRepo: { getParcoursByTerritoire },
-  parcoursCommentairesRepo: { getLastMessageByParcoursIds },
+  parcoursActionsRepo: { getLastActionByParcoursIds },
 }));
 
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
@@ -100,7 +100,7 @@ describe("getDossiersByAgent", () => {
       allersVersDepartements: [],
     });
     canActAsResponsable.mockReturnValue(false);
-    getLastMessageByParcoursIds.mockResolvedValue(new Map());
+    getLastActionByParcoursIds.mockResolvedValue(new Map());
   });
 
   it("interroge le repo avec les territoires du scope (AMO)", async () => {

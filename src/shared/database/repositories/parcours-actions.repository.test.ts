@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { ParcoursCommentairesRepository } from "./parcours-commentaires.repository";
-import type { StructureType } from "@/features/backoffice/espace-agent/shared/domain/types/commentaire.types";
+import { ParcoursActionsRepository } from "./parcours-actions.repository";
+import type { StructureType } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 
-describe("ParcoursCommentairesRepository", () => {
-  let repository: ParcoursCommentairesRepository;
+describe("ParcoursActionsRepository", () => {
+  let repository: ParcoursActionsRepository;
 
   beforeEach(() => {
-    repository = new ParcoursCommentairesRepository();
+    repository = new ParcoursActionsRepository();
   });
 
   describe("determineStructure (private method logic)", () => {
@@ -94,7 +94,7 @@ describe("ParcoursCommentairesRepository", () => {
     it("devrait avoir les méthodes spécifiques aux commentaires", () => {
       expect(typeof repository.findByParcoursId).toBe("function");
       expect(typeof repository.findByIdWithDetails).toBe("function");
-      expect(typeof repository.canEditComment).toBe("function");
+      expect(typeof repository.canEditAction).toBe("function");
       expect(typeof repository.countByParcoursId).toBe("function");
     });
   });
@@ -164,9 +164,9 @@ describe("ParcoursCommentairesRepository", () => {
     });
   });
 
-  describe("Logique de ownership (canEditComment)", () => {
+  describe("Logique de ownership (canEditAction)", () => {
     it("devrait permettre l'édition si agentId correspond", () => {
-      // La méthode canEditComment vérifie :
+      // La méthode canEditAction vérifie :
       // commentaire.agentId === agentId
 
       const commentaireAgentId = "agent-1";
