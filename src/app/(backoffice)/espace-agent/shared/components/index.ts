@@ -8,5 +8,5 @@ export * from "./InfoLogement";
 export * from "./ParcoursDemandeur";
 export * from "./GagnezDuTemps";
 export * from "./AFaire";
-export * from "./NotesPartagees";
+export * from "./Actions";
 export * from "./QualificationAllersVers";

@@ -13,7 +13,7 @@ import {
   AFaire,
   QualificationAllersVers,
 } from "../../shared";
-import { NotesPartagees } from "../../shared";
+import { ActionsRealisees } from "../../shared";
 import { ReponseAccompagnement } from "./components/ReponseAccompagnement";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
@@ -172,7 +172,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                     "Informer et préparer le demandeur pour les étapes suivantes",
                   ]}
                 />
-                <NotesPartagees parcoursId={demande.parcoursId} />
+                <ActionsRealisees parcoursId={demande.parcoursId} />
               </div>
             </div>
           </div>
