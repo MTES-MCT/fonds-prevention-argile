@@ -51,8 +51,13 @@ export interface DossierItem {
   etat: DossierEtat;
   /** L'agent connecté peut-il agir au titre du responsable (archiver, qualifier) ? */
   canActAsResponsable: boolean;
-  /** Dernier commentaire interne (= « note complémentaire liée »), null si aucun. */
-  derniereNote: string | null;
+  /** Dernière action réalisée sur le dossier (type + commentaire + date), null si aucune. */
+  derniereAction: {
+    actionType: string;
+    label: string;
+    message: string | null;
+    date: Date;
+  } | null;
 }
 
 /** Filtres optionnels appliqués au listing. */

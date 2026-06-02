@@ -134,7 +134,9 @@ export function DossiersSuivisTable({
                     <th scope="col" style={{ minWidth: "320px" }}>
                       Précisions
                     </th>
-                    <th scope="col">Note complémentaire liée</th>
+                    <th scope="col" style={{ minWidth: "240px" }}>
+                      Dernière action
+                    </th>
                     <th scope="col">Action</th>
                   </tr>
                 </thead>
@@ -242,16 +244,32 @@ export function DossiersSuivisTable({
                               </div>
                             )}
                           </td>
-                          <td
-                            style={{
-                              maxWidth: "240px",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              ...greyStyle,
-                            }}
-                            title={dossier.derniereNote ?? undefined}>
-                            {dossier.derniereNote ?? <span style={{ color: "var(--text-mention-grey)" }}>—</span>}
+                          <td style={{ maxWidth: "280px", ...greyStyle }}>
+                            {dossier.derniereAction ? (
+                              <>
+                                <p className="fr-badge fr-badge--sm fr-badge--no-icon fr-mb-1v">
+                                  {dossier.derniereAction.label}
+                                </p>
+                                <div className="fr-text--xs fr-text-mention--grey">
+                                  {formatDate(dossier.derniereAction.date.toISOString())}
+                                </div>
+                                {dossier.derniereAction.message && (
+                                  <div
+                                    className="fr-text--xs"
+                                    style={{
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                      maxWidth: "280px",
+                                    }}
+                                    title={dossier.derniereAction.message}>
+                                    {dossier.derniereAction.message}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <span style={{ color: "var(--text-mention-grey)" }}>—</span>
+                            )}
                           </td>
                           <td>
                             <ActionMenu items={actionItems} />
