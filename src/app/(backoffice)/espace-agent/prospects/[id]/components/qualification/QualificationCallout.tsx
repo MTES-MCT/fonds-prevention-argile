@@ -88,10 +88,12 @@ export function QualificationCallout({
           </div>
         </div>
 
-        {/* Actions réalisées */}
-        <p className="fr-mb-1w">
-          Actions réalisées : <strong>{actionsLabels}</strong>
-        </p>
+        {/* Actions réalisées (historique : vide pour les nouvelles qualifications) */}
+        {actionsLabels && (
+          <p className="fr-mb-1w">
+            Actions réalisées : <strong>{actionsLabels}</strong>
+          </p>
+        )}
 
         {/* Raisons d'inéligibilité (si non_eligible) */}
         {decision === QualificationDecision.NON_ELIGIBLE && raisonsLabels && (
