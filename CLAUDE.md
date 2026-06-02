@@ -98,6 +98,57 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 - Lint avant commit : `pnpm format && pnpm lint`
 - Produire du code, pas des plans (sauf si demandé explicitement)
 
+## Commits : simples et conventionnels
+
+Suivre **Conventional Commits** : un titre court, une seule ligne de description.
+
+Format :
+
+```
+<type>(<scope?>): <titre court à l'impératif>
+
+<description en une seule ligne, le pourquoi plus que le quoi>
+```
+
+**Types courants** : `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`.
+
+**Exemples** :
+
+```
+feat(parcours): ajoute l'étape AMO au parcours agent
+
+Permet aux agents AV+AMO de saisir un dossier sans passer par FranceConnect.
+```
+
+```
+fix(dossiers-ds): corrige la logique d'URL DS dans l'état du parcours
+
+L'URL pointait vers la démarche au lieu du dossier, cassant la reprise de saisie.
+```
+
+```
+docs(adr): justifie le choix de Drizzle ORM
+
+Tradeoffs vs Prisma et raisons du choix pour la sérialisation JSONB.
+```
+
+Règles :
+
+- Titre **sous 70 caractères**, à l'impératif, en minuscules.
+- **Une seule ligne** de description (pas de listes à puces, pas de paragraphes).
+- Préférer le **pourquoi** au quoi (le diff montre déjà le quoi).
+- **Aucune mention d'auteur ou de co-auteur** dans le corps du commit (pas de `Co-Authored-By`, pas de `Generated with`, etc.). L'auteur git suffit.
+- Committer uniquement à la demande explicite de l'utilisateur.
+
+## Compaction du contexte
+
+Lors de la compaction automatique ou manuelle (`/compact`), TOUJOURS préserver :
+
+- La liste des fichiers modifiés dans la session
+- Les commandes de test et vérification à relancer
+- Les Gotchas rencontrés pendant la session
+- Les décisions architecturales prises
+
 ## Notes importantes
 
 - Configuration email: Brevo (production) / Mailhog (dev)
@@ -117,3 +168,13 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 - Les valeurs JSONB (`rgaSimulationData`) peuvent être des nombres au lieu de strings — toujours utiliser `asString()` de `@/shared/utils` pour lire les champs
 - Les modales DSFR ne s'ouvrent pas avec l'attribut HTML `open` — utiliser `window.dsfr(modal).modal.disclose()`
 - L'API Matomo Funnels timeout sur les périodes longues — limiter à 7 jours
+
+## Documentation contextuelle
+
+Guides de référence détaillés, chargés en contexte via les références ci-dessous :
+
+- @.claude/context/security-rules.md — Checklist sécurité (secrets, validation Zod, autorisation, SQL, logs)
+- @docs/parcours/FLOW-AND-SYNC.md — Flux et synchronisation du parcours
+- @docs/security/snyk-accepted-vulnerabilities.md — Vulnérabilités acceptées (faux positifs)
+
+Décisions d'architecture : voir `docs/adr/` (créer un ADR avec la skill `/adr`).
