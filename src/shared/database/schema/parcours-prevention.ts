@@ -3,7 +3,7 @@ import { relations } from "drizzle-orm";
 import { users } from "./users";
 import { agents } from "./agents";
 import { dossiersDemarchesSimplifiees } from "./dossiers-demarches-simplifiees";
-import { parcoursCommentaires } from "./parcours-commentaires";
+import { parcoursActions } from "./parcours-actions";
 import { statusPgEnum, stepPgEnum, situationParticulierPgEnum } from "../enums/enums";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -73,7 +73,7 @@ export const parcoursPreventionRelations = relations(parcoursPrevention, ({ one,
     references: [agents.id],
   }),
   dossiersDemarchesSimplifiees: many(dossiersDemarchesSimplifiees),
-  commentaires: many(parcoursCommentaires),
+  actions: many(parcoursActions),
 }));
 
 export type ParcoursPrevention = typeof parcoursPrevention.$inferSelect;

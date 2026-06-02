@@ -12,7 +12,7 @@ export {
 // Exporter les tables
 export * from "./users";
 export * from "./parcours-prevention";
-export * from "./parcours-commentaires";
+export * from "./parcours-actions";
 export * from "./dossiers-demarches-simplifiees";
 export * from "./entreprises-amo";
 export * from "./entreprises-amo-communes";

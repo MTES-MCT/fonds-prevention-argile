@@ -225,6 +225,13 @@
       "when": 1778487394543,
       "tag": "0031_solid_la_nuit",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1780401600000,
+      "tag": "0032_rename_commentaires_to_actions",
+      "breakpoints": true
     }
   ]
 }
