@@ -56,35 +56,37 @@ export function ActionsRealisees({ parcoursId }: ActionsRealiseesProps) {
   return (
     <div className="fr-card">
       <div className="fr-card__body fr-p-3w">
-        <h3 className="fr-mb-1w" style={{ display: "flex", alignItems: "center" }}>
-          <span className="fr-icon-calendar-line fr-mr-2v" aria-hidden="true"></span>
-          Actions réalisées
-          {totalCount > 0 && (
-            <span className="fr-badge fr-badge--sm fr-badge--no-icon fr-badge--yellow-tournesol fr-ml-2v">
-              {totalCount}
-            </span>
-          )}
-        </h3>
-        <p className="fr-text--sm fr-mb-0 text-gray-600">
-          Tout élément pertinent qui ne rentre pas dans la qualification du dossier.
-        </p>
-
-        <div className="fr-mt-3w">
-          {!isAddingAction ? (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+          <div>
+            <h3 className="fr-mb-1w" style={{ display: "flex", alignItems: "center" }}>
+              <span className="fr-icon-calendar-line fr-mr-2v" aria-hidden="true"></span>
+              Actions réalisées
+              {totalCount > 0 && (
+                <span className="fr-badge fr-badge--sm fr-badge--no-icon fr-badge--yellow-tournesol fr-ml-2v">
+                  {totalCount}
+                </span>
+              )}
+            </h3>
+            <p className="fr-text--sm fr-mb-0 text-gray-600">
+              Tout élément pertinent qui ne rentre pas dans la qualification du dossier.
+            </p>
+          </div>
+          {!isAddingAction && (
             <button
               className="fr-btn fr-btn--secondary fr-btn--sm fr-btn--icon-left fr-icon-add-line"
               onClick={() => setIsAddingAction(true)}
-              type="button">
+              type="button"
+              style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
               Ajouter une action
             </button>
-          ) : (
-            <ActionForm
-              parcoursId={parcoursId}
-              onSuccess={handleActionCreated}
-              onCancel={() => setIsAddingAction(false)}
-            />
           )}
         </div>
+
+        {isAddingAction && (
+          <div className="fr-mt-3w">
+            <ActionForm parcoursId={parcoursId} onSuccess={handleActionCreated} onCancel={() => setIsAddingAction(false)} />
+          </div>
+        )}
 
         <hr className="fr-hr fr-mt-3w" style={{ marginBottom: 0 }} />
 
@@ -99,28 +101,34 @@ export function ActionsRealisees({ parcoursId }: ActionsRealiseesProps) {
             </div>
           ) : (
             <>
-              <div className="fr-table fr-table--sm fr-mb-0" style={{ overflowX: "auto" }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Action réalisée</th>
-                      <th scope="col">Par</th>
-                      <th scope="col">Date</th>
-                      <th scope="col">Note complémentaire</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayedActions.map((action) => (
-                      <ActionItem
-                        key={action.id}
-                        action={action}
-                        currentAgentId={currentAgentId}
-                        onUpdated={loadActions}
-                        onDeleted={loadActions}
-                      />
-                    ))}
-                  </tbody>
-                </table>
+              <div className="fr-table fr-table--sm fr-table--bordered fr-mb-0">
+                <div className="fr-table__wrapper">
+                  <div className="fr-table__container">
+                    <div className="fr-table__content">
+                      <table style={{ width: "100%" }}>
+                        <thead>
+                          <tr>
+                            <th scope="col">Action réalisée</th>
+                            <th scope="col">Par</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Note complémentaire</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {displayedActions.map((action) => (
+                            <ActionItem
+                              key={action.id}
+                              action={action}
+                              currentAgentId={currentAgentId}
+                              onUpdated={loadActions}
+                              onDeleted={loadActions}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {hasMore && (
@@ -130,6 +138,9 @@ export function ActionsRealisees({ parcoursId }: ActionsRealiseesProps) {
                     className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm"
                     onClick={() => setShowAll((v) => !v)}>
                     {showAll ? "Voir moins" : "Voir plus"}
+                    <span
+                      className={`${showAll ? "fr-icon-arrow-up-s-line" : "fr-icon-arrow-down-s-line"} fr-icon--sm fr-ml-1v`}
+                      aria-hidden="true"></span>
                   </button>
                 </div>
               )}

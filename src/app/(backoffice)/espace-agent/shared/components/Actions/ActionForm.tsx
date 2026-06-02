@@ -163,9 +163,7 @@ export function ActionForm({ parcoursId, actionId, initialMessage = "", onSucces
       <div className="fr-input-group fr-mt-2w">
         <label className="fr-label fr-text--bold" htmlFor="action-message">
           {isEditMode ? "Note complémentaire" : "2. Note complémentaire"}
-          <span className="fr-hint-text">
-            Optionnelle. Le demandeur n&apos;aura pas accès à cette note.
-          </span>
+          <span className="fr-hint-text">Optionnelle. Le demandeur n&apos;aura pas accès à cette note.</span>
         </label>
         <textarea
           ref={textareaRef}
@@ -198,10 +196,8 @@ export function ActionForm({ parcoursId, actionId, initialMessage = "", onSucces
           </button>
         </li>
         <li>
-          <button
-            type="submit"
-            className="fr-btn fr-btn--icon-left fr-icon-save-line"
-            disabled={isSubmitting}>
+          <button type="submit" className="fr-btn" disabled={isSubmitting}>
+            <span className="fr-icon-save-line fr-icon--sm fr-mr-1v" aria-hidden="true"></span>
             {isSubmitting ? "Enregistrement..." : isEditMode ? "Modifier" : "Enregistrer"}
           </button>
         </li>
