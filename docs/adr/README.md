@@ -25,8 +25,15 @@ purement cosmétique.
 
 ## Index
 
-| N°   | Titre      | Statut |
-| ---- | ---------- | ------ |
-| 0000 | _Template_ | —      |
+| N°   | Titre                                                                                            | Statut  |
+| ---- | ------------------------------------------------------------------------------------------------ | ------- |
+| 0000 | [_Template_](0000-template.md)                                                                   | —       |
+| 0001 | [Next.js 15 (App Router) + React 19](0001-nextjs-15-app-router.md)                               | Accepté |
+| 0002 | [PostgreSQL + Drizzle ORM](0002-postgresql-drizzle-orm.md)                                       | Accepté |
+| 0003 | [DSFR comme système de design, Tailwind pour l'appoint](0003-dsfr-tailwind-ui.md)                | Accepté |
+| 0004 | [Démarches Simplifiées comme socle des dossiers](0004-demarches-simplifiees-backbone.md)         | Accepté |
+| 0005 | [Authentification OIDC — FranceConnect + ProConnect](0005-auth-oidc-franceconnect-proconnect.md) | Accepté |
+| 0006 | [Architecture DDD-lite organisée par features](0006-architecture-ddd-lite-par-features.md)       | Accepté |
+| 0007 | [Modèle d'état du parcours et synchronisation DS par CRON](0007-modele-etat-parcours-sync-ds.md) | Accepté |
 
-<!-- Ajouter chaque nouvel ADR ici, ordre décroissant ou croissant selon préférence -->
+<!-- Ajouter chaque nouvel ADR ici -->
