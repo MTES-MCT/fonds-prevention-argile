@@ -12,7 +12,7 @@ export interface FranceConnectUserInfo {
   sub: string; // Identifiant unique FranceConnect
   given_name?: string; // Prénom
   family_name?: string; // Nom de naissance
-  usual_name?: string; // Nom d'usage (ex: nom marital)
+  preferred_username?: string; // Nom d'usage (ex: nom marital) - claim FranceConnect
   email?: string; // Email
   birthdate?: string; // Date de naissance (optionnel)
   gender?: string; // Genre (optionnel)

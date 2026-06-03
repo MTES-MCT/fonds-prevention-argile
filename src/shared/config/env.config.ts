@@ -64,7 +64,7 @@ const franceConnectEnvSchema = z.object({
   FC_POST_LOGOUT_URL: z.string().url("FC_POST_LOGOUT_URL doit être une URL valide"),
 
   // Scopes (optionnel avec valeur par défaut)
-  FC_SCOPES: z.string().default("openid given_name family_name usual_name email"),
+  FC_SCOPES: z.string().default("openid given_name family_name preferred_username email"),
 
   // Sécurité
   FC_STATE_TTL: z.string().transform(Number).default("300"),

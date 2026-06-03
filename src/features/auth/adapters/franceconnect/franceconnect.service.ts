@@ -258,7 +258,7 @@ export async function handleFranceConnectCallback(
       user.id,
       tokens.id_token,
       userInfo.given_name,
-      userInfo.family_name,
+      userInfo.preferred_username || userInfo.family_name,
       userInfo.email
     );
 

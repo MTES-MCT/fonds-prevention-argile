@@ -121,4 +121,32 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
 
     expect(findByEmail).not.toHaveBeenCalled();
   });
+
+  it("création : nom d'usage (preferred_username) prioritaire sur le nom de naissance", async () => {
+    vi.spyOn(repo, "findByFcId").mockResolvedValue(null);
+    vi.spyOn(repo, "findByEmailWithoutFcId").mockResolvedValue(null);
+    const create = vi.spyOn(repo, "create").mockResolvedValue({ ...existingFcUser, id: "user-new" });
+
+    await repo.upsertFromFranceConnect({
+      ...fcInfo,
+      family_name: "Dupont",
+      preferred_username: "Martin",
+    } as FranceConnectUserInfo);
+
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ nom: "Martin" }));
+  });
+
+  it("création : sans nom d'usage → fallback sur le nom de naissance", async () => {
+    vi.spyOn(repo, "findByFcId").mockResolvedValue(null);
+    vi.spyOn(repo, "findByEmailWithoutFcId").mockResolvedValue(null);
+    const create = vi.spyOn(repo, "create").mockResolvedValue({ ...existingFcUser, id: "user-new" });
+
+    await repo.upsertFromFranceConnect({
+      ...fcInfo,
+      family_name: "Dupont",
+      preferred_username: undefined,
+    } as FranceConnectUserInfo);
+
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ nom: "Dupont" }));
+  });
 });
