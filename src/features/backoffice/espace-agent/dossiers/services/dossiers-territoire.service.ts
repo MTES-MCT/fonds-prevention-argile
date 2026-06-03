@@ -1,4 +1,5 @@
-import { parcoursCommentairesRepo, parcoursRepo } from "@/shared/database";
+import { parcoursActionsRepo, parcoursRepo } from "@/shared/database";
+import { ACTION_LABELS_BY_VALUE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import {
   canActAsResponsable,
@@ -46,20 +47,28 @@ export async function getDossiersByAgent(
     codeEpci: item.logement.codeEpci,
     validation: item.validation ? { statut: item.validation.statut, entrepriseAmoId: item.validation.entrepriseAmoId } : null,
   }));
-  const [resolved, actor, notesMap] = await Promise.all([
+  const [resolved, actor, actionsMap] = await Promise.all([
     resolveResponsables(resolverInput),
     getActorContext({ entrepriseAmoId: agent.entrepriseAmoId ?? null, allersVersId: agent.allersVersId ?? null }),
-    parcoursCommentairesRepo.getLastMessageByParcoursIds(bareItems.map((i) => i.parcoursId)),
+    parcoursActionsRepo.getLastActionByParcoursIds(bareItems.map((i) => i.parcoursId)),
   ]);
 
   const dossiers: DossierItem[] = bareItems.map((item) => {
     const { responsable, etat } = resolved.get(item.parcoursId)!;
+    const lastAction = actionsMap.get(item.parcoursId);
     return {
       ...item,
       responsable,
       etat,
       canActAsResponsable: canActAsResponsable(actor, responsable),
-      derniereNote: notesMap.get(item.parcoursId) ?? null,
+      derniereAction: lastAction
+        ? {
+            actionType: lastAction.actionType,
+            label: ACTION_LABELS_BY_VALUE[lastAction.actionType] ?? lastAction.actionType,
+            message: lastAction.message,
+            date: lastAction.createdAt,
+          }
+        : null,
     };
   });
 
@@ -95,7 +104,7 @@ function buildEpciChoices(dossiers: DossierItem[]): EpciChoice[] {
 }
 
 type Row = Awaited<ReturnType<typeof parcoursRepo.getParcoursByTerritoire>>[number];
-type DossierItemSansResponsable = Omit<DossierItem, "responsable" | "etat" | "canActAsResponsable" | "derniereNote">;
+type DossierItemSansResponsable = Omit<DossierItem, "responsable" | "etat" | "canActAsResponsable" | "derniereAction">;
 
 function toDossierItemSansResponsable(row: Row): DossierItemSansResponsable {
   const logement = getDemandeurFirstLogement(row);

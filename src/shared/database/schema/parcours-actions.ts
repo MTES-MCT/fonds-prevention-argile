@@ -4,11 +4,12 @@ import { parcoursPrevention } from "./parcours-prevention";
 import { agents } from "./agents";
 
 /**
- * Table des commentaires internes sur les parcours
+ * Table des actions réalisées par les professionnels sur les parcours
  * Visible uniquement par les professionnels (agents AMO, Allers-Vers, administrateurs)
- * Permet le suivi et la communication entre professionnels sur un dossier
+ * Une action = un type d'action typé + un commentaire optionnel.
+ * Le type "commentaire_libre" correspond aux anciennes notes partagées (texte libre).
  */
-export const parcoursCommentaires = pgTable("parcours_commentaires", {
+export const parcoursActions = pgTable("parcours_actions", {
   id: uuid("id").primaryKey().defaultRandom(),
 
   // Relations
@@ -17,13 +18,18 @@ export const parcoursCommentaires = pgTable("parcours_commentaires", {
     .references(() => parcoursPrevention.id, { onDelete: "cascade" }),
   agentId: uuid("agent_id").references(() => agents.id, { onDelete: "set null" }),
 
+  // Type d'action (cf. ACTION_TYPE_GROUPS) — "commentaire_libre" par défaut pour l'historique
+  actionType: text("action_type").notNull(),
+  // Précision libre lorsque actionType = "autre"
+  actionPrecision: text("action_precision"),
+
   // Snapshot auteur (dénormalisé, conservé même si l'agent est supprimé)
   authorName: varchar("author_name", { length: 255 }).notNull(),
   authorStructure: varchar("author_structure", { length: 255 }),
   authorStructureType: varchar("author_structure_type", { length: 50 }),
 
-  // Contenu
-  message: text("message").notNull(),
+  // Commentaire optionnel lié à l'action (le demandeur n'y a pas accès)
+  message: text("message"),
 
   // Timestamps
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
@@ -37,17 +43,17 @@ export const parcoursCommentaires = pgTable("parcours_commentaires", {
 /**
  * Relations Drizzle
  */
-export const parcoursCommentairesRelations = relations(parcoursCommentaires, ({ one }) => ({
+export const parcoursActionsRelations = relations(parcoursActions, ({ one }) => ({
   parcours: one(parcoursPrevention, {
-    fields: [parcoursCommentaires.parcoursId],
+    fields: [parcoursActions.parcoursId],
     references: [parcoursPrevention.id],
   }),
   agent: one(agents, {
-    fields: [parcoursCommentaires.agentId],
+    fields: [parcoursActions.agentId],
     references: [agents.id],
   }),
 }));
 
 // Types TypeScript générés
-export type ParcoursCommentaire = typeof parcoursCommentaires.$inferSelect;
-export type NewParcoursCommentaire = typeof parcoursCommentaires.$inferInsert;
+export type ParcoursAction = typeof parcoursActions.$inferSelect;
+export type NewParcoursAction = typeof parcoursActions.$inferInsert;

@@ -1,4 +1,4 @@
-import { parcoursCommentairesRepo } from "@/shared/database/repositories/parcours-commentaires.repository";
+import { parcoursActionsRepo } from "@/shared/database/repositories/parcours-actions.repository";
 import type { CommentairesAdminFilters, CommentairesAdminListResult } from "../domain/types/commentaire-admin.types";
 
 /**
@@ -9,7 +9,7 @@ export async function getCommentairesAdmin(filters: CommentairesAdminFilters): P
 
   const offset = (page - 1) * pageSize;
 
-  const result = await parcoursCommentairesRepo.findAllWithDetails({
+  const result = await parcoursActionsRepo.findAllWithDetails({
     limit: pageSize,
     offset,
     dateDebut: dateDebut ? new Date(dateDebut) : undefined,

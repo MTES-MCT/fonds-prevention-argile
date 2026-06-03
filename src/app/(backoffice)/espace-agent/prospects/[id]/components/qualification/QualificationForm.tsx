@@ -3,7 +3,6 @@
 import { useState, useTransition, useEffect, useRef, useId } from "react";
 import { useRouter } from "next/navigation";
 import {
-  QUALIFICATION_ACTIONS,
   QUALIFICATION_DECISIONS,
   QualificationDecision,
   RAISONS_INELIGIBILITE,
@@ -195,14 +194,11 @@ export function QualificationForm({
   const [isPending, startTransition] = useTransition();
 
   // Parse des valeurs initiales (gère le format "autre:précision")
-  const initActions = initialValues ? parseValuesWithAutre(initialValues.actionsRealisees) : null;
   const initRaisons = initialValues?.raisonsIneligibilite
     ? parseValuesWithAutre(initialValues.raisonsIneligibilite)
     : null;
 
   // State formulaire
-  const [actionsRealisees, setActionsRealisees] = useState<string[]>(initActions?.normalized ?? []);
-  const [autreActionPrecision, setAutreActionPrecision] = useState(initActions?.precision ?? "");
   const [decision, setDecision] = useState<QualificationDecision | "">(initialValues?.decision ?? "");
   const [raisonsIneligibilite, setRaisonsIneligibilite] = useState<string[]>(initRaisons?.normalized ?? []);
   const [autreRaisonPrecision, setAutreRaisonPrecision] = useState(initRaisons?.precision ?? "");
@@ -215,7 +211,6 @@ export function QualificationForm({
   const uniqueId = useId();
   const modalId = `modal-confirm-qualification-${uniqueId}`;
 
-  const isAutreActionChecked = actionsRealisees.includes("autre");
   const isAutreRaisonChecked = raisonsIneligibilite.includes("autre");
 
   // Ouvrir/fermer la modale via l'API DSFR
@@ -250,13 +245,6 @@ export function QualificationForm({
   }, []);
 
   // Handlers
-  function handleActionChange(value: string, checked: boolean) {
-    setActionsRealisees((prev) => (checked ? [...prev, value] : prev.filter((v) => v !== value)));
-    if (value === "autre" && !checked) {
-      setAutreActionPrecision("");
-    }
-  }
-
   function handleRaisonChange(value: string, checked: boolean) {
     setRaisonsIneligibilite((prev) => (checked ? [...prev, value] : prev.filter((v) => v !== value)));
     if (value === "autre" && !checked) {
@@ -276,10 +264,6 @@ export function QualificationForm({
     e.preventDefault();
     setError(null);
 
-    if (actionsRealisees.length === 0) {
-      setError("Veuillez sélectionner au moins une action réalisée.");
-      return;
-    }
     if (!decision) {
       setError("Veuillez sélectionner une décision.");
       return;
@@ -298,9 +282,6 @@ export function QualificationForm({
     if (!decision) return;
 
     startTransition(async () => {
-      const finalActions = actionsRealisees.map((a) =>
-        a === "autre" && autreActionPrecision.trim() ? `autre:${autreActionPrecision.trim()}` : a
-      );
       const finalRaisons = raisonsIneligibilite.map((r) =>
         r === "autre" && autreRaisonPrecision.trim() ? `autre:${autreRaisonPrecision.trim()}` : r
       );
@@ -308,7 +289,6 @@ export function QualificationForm({
       const result = await qualifyProspectAction({
         parcoursId,
         decision,
-        actionsRealisees: finalActions,
         raisonsIneligibilite: decision === QualificationDecision.NON_ELIGIBLE ? finalRaisons : undefined,
         note: note.trim() || undefined,
       });
@@ -338,52 +318,10 @@ export function QualificationForm({
           </div>
         )}
 
-        {/* 1. Actions réalisées avec le demandeur */}
-        <fieldset className="fr-fieldset" aria-labelledby="actions-legend actions-hint">
-          <legend className="fr-fieldset__legend fr-text--bold" id="actions-legend">
-            1. Actions réalisées avec le demandeur
-          </legend>
-          <p className="fr-hint-text fr-mb-2w" id="actions-hint">
-            Sélectionnez les actions menées
-          </p>
-          {QUALIFICATION_ACTIONS.map((action) => (
-            <div key={action.value} className="fr-fieldset__element">
-              <div className="fr-checkbox-group">
-                <input
-                  type="checkbox"
-                  id={`action-${action.value}`}
-                  name="actionsRealisees"
-                  value={action.value}
-                  checked={actionsRealisees.includes(action.value)}
-                  onChange={(e) => handleActionChange(action.value, e.target.checked)}
-                  disabled={isPending}
-                />
-                <label className="fr-label" htmlFor={`action-${action.value}`}>
-                  {action.label}
-                </label>
-              </div>
-              {action.value === "autre" && isAutreActionChecked && (
-                <div className="fr-input-group fr-mt-1w">
-                  <input
-                    className="fr-input"
-                    type="text"
-                    id="autre-action-precision"
-                    aria-label="Précisez l'action réalisée"
-                    value={autreActionPrecision}
-                    onChange={(e) => setAutreActionPrecision(e.target.value)}
-                    disabled={isPending}
-                    placeholder="Précisez l'action réalisée"
-                  />
-                </div>
-              )}
-            </div>
-          ))}
-        </fieldset>
-
-        {/* 2. Le demandeur est-il éligible au dispositif ? */}
-        <fieldset className="fr-fieldset fr-mt-3w" aria-labelledby="decision-legend">
+        {/* 1. Le demandeur est-il éligible au dispositif ? */}
+        <fieldset className="fr-fieldset" aria-labelledby="decision-legend">
           <legend className="fr-fieldset__legend fr-text--bold" id="decision-legend">
-            2. Le demandeur est-il éligible au dispositif ?
+            1. Le demandeur est-il éligible au dispositif ?
           </legend>
           {QUALIFICATION_DECISIONS.map((d) => (
             <div key={d.value} className="fr-fieldset__element">
@@ -420,7 +358,7 @@ export function QualificationForm({
         {/* Note complémentaire */}
         <div className="fr-input-group fr-mt-3w">
           <label className="fr-label fr-text--bold" htmlFor="qualification-note">
-            3. Note complémentaire
+            2. Note complémentaire
           </label>
           <p className="fr-hint-text fr-mt-2w fr-mb-2w" id="actions-hint">
             Peut aider le demandeur à saisir les raisons de son inéligibilité.

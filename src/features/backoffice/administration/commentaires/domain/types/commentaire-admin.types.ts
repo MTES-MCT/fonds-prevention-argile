@@ -1,4 +1,4 @@
-import type { StructureType } from "@/features/backoffice/espace-agent/shared/domain/types/commentaire.types";
+import type { StructureType } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 
 /**
  * Detail d'un commentaire pour la vue administration
@@ -7,7 +7,7 @@ import type { StructureType } from "@/features/backoffice/espace-agent/shared/do
 export interface CommentaireAdminDetail {
   id: string;
   parcoursId: string;
-  message: string;
+  message: string | null;
   createdAt: Date;
   editedAt: Date | null;
   authorName: string;

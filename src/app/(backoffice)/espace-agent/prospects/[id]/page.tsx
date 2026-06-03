@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/features/auth/services/user.service";
 import { STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 import { InfoDemandeur, InfoLogement, ParcoursDemandeur, GagnezDuTemps, AFaire } from "../../shared";
 import { Status } from "@/shared/domain/value-objects/status.enum";
-import { NotesPartagees } from "../../shared";
+import { ActionsRealisees } from "../../shared";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { ArchiveProspectButton } from "./components/ArchiveProspectButton";
 import { CalloutSimulationAEffectuer } from "./components/CalloutSimulationAEffectuer";
@@ -162,6 +162,9 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
               agentNom={qualificationAgentNom}
               structureNom={qualificationStructureNom}
             />
+            <div className="fr-mt-4w">
+              <ActionsRealisees parcoursId={prospect.parcoursId} />
+            </div>
           </div>
           <div className="fr-col-12 fr-col-md-4">
             <InfoDemandeur
@@ -218,7 +221,6 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
                     "L'inciter à contacter et choisir un AMO",
                   ]}
                 />
-                <NotesPartagees parcoursId={prospect.parcoursId} />
               </div>
             </div>
           </div>

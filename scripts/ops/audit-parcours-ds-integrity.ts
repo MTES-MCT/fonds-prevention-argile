@@ -35,7 +35,7 @@ import {
   users,
   dossiersDemarchesSimplifiees,
   parcoursAmoValidations,
-  parcoursCommentaires,
+  parcoursActions,
   entreprisesAmo,
 } from "@/shared/database/schema";
 import { Step, STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
@@ -155,7 +155,7 @@ interface CommentaireSummary {
   authorName: string;
   authorStructure: string | null;
   authorStructureType: string | null;
-  message: string;
+  message: string | null;
   createdAt: Date;
 }
 
@@ -415,15 +415,15 @@ async function main() {
 
     const commentaires = await db
       .select({
-        authorName: parcoursCommentaires.authorName,
-        authorStructure: parcoursCommentaires.authorStructure,
-        authorStructureType: parcoursCommentaires.authorStructureType,
-        message: parcoursCommentaires.message,
-        createdAt: parcoursCommentaires.createdAt,
+        authorName: parcoursActions.authorName,
+        authorStructure: parcoursActions.authorStructure,
+        authorStructureType: parcoursActions.authorStructureType,
+        message: parcoursActions.message,
+        createdAt: parcoursActions.createdAt,
       })
-      .from(parcoursCommentaires)
-      .where(eq(parcoursCommentaires.parcoursId, c.parcoursId))
-      .orderBy(desc(parcoursCommentaires.createdAt));
+      .from(parcoursActions)
+      .where(eq(parcoursActions.parcoursId, c.parcoursId))
+      .orderBy(desc(parcoursActions.createdAt));
 
     const emailsToSearch = Array.from(
       new Set(
@@ -602,7 +602,7 @@ async function main() {
       for (const cm of r.commentaires) {
         const author = ANONYMIZE ? `<author:${shortHash(cm.authorName)}>` : cm.authorName;
         const struct = cm.authorStructure ?? "?";
-        const msg = ANONYMIZE ? `<message ${cm.message.length} chars>` : cm.message.slice(0, 200);
+        const msg = ANONYMIZE ? `<message ${cm.message?.length ?? 0} chars>` : (cm.message?.slice(0, 200) ?? "");
         console.log(`    [${cm.createdAt.toISOString()}] ${author} (${struct}, ${cm.authorStructureType ?? "?"}): ${msg}`);
       }
     } else {

@@ -8,7 +8,7 @@ import type {
   CommentaireAdminDetail,
   CommentairesAdminFilters,
 } from "@/features/backoffice/administration/commentaires/domain/types/commentaire-admin.types";
-import type { StructureType } from "@/features/backoffice/espace-agent/shared/domain/types/commentaire.types";
+import type { StructureType } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { formatDateTime } from "@/shared/utils/date.utils";
 
 const STRUCTURE_TYPE_OPTIONS: { value: string; label: string }[] = [

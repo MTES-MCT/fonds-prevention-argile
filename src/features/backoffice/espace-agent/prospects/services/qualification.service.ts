@@ -8,7 +8,7 @@ interface QualifyProspectParams {
   parcoursId: string;
   agentId: string;
   decision: QualificationDecision;
-  actionsRealisees: string[];
+  actionsRealisees?: string[];
   raisonsIneligibilite?: string[];
   note?: string;
 }
@@ -38,7 +38,7 @@ export class QualificationService {
       parcoursId,
       agentId,
       decision,
-      actionsRealisees,
+      actionsRealisees: actionsRealisees ?? [],
       raisonsIneligibilite: raisonsIneligibilite ?? null,
       note: note ?? null,
     });

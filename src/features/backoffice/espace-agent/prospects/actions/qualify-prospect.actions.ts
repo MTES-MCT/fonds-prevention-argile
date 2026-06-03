@@ -24,7 +24,7 @@ const qualifyProspectSchema = z
       QualificationDecision.A_QUALIFIER,
       QualificationDecision.NON_ELIGIBLE,
     ]),
-    actionsRealisees: z.array(z.string()).min(1, "Au moins une action est requise"),
+    actionsRealisees: z.array(z.string()).optional(),
     raisonsIneligibilite: z.array(z.string()).optional(),
     note: z.string().optional(),
   })
