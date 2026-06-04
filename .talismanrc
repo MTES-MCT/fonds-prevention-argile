@@ -24,3 +24,5 @@ threshold: high
 allowed_patterns:
   - "API_KEY_EXAMPLE"
   - "123456"
+  # URL publique Notion du kit de communication (faux positif hex sur l'ID de page)
+  - "35668d719691808f90c1ecd70172a3e7"

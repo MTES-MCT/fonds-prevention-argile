@@ -130,6 +130,14 @@ const serverSchema = z.object({
   // Secret partagé pour authentifier les déclenchements du CRON (Scalingo Scheduler)
   CRON_SECRET: z.string().min(32, "CRON_SECRET doit faire au moins 32 caractères"),
 
+  // URL de la page Notion du kit de communication (route /kit). Surchargeable si le lien change.
+  KIT_COMMUNICATION_URL: z
+    .string()
+    .url()
+    .default(
+      "https://fonds-prevention-argile.notion.site/Kit-de-communication-Fonds-de-pr-vention-argile-35668d719691808f90c1ecd70172a3e7"
+    ),
+
   // Variables FranceConnect
   ...franceConnectEnvSchema.shape,
 
