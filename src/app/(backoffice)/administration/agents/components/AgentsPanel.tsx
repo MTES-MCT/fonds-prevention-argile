@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import AgentsList from "./AgentsList";
+import AgentsEmailExport from "./AgentsEmailExport";
 import AgentFormModal, { type AgentFormData, type EntrepriseAmoOption, type AllersVersOption } from "./AgentFormModal";
 import AgentDeleteModal from "./AgentDeleteModal";
 import {
@@ -270,6 +271,10 @@ export default function AgentsPanel() {
             </div>
           ) : (
             <div id={`tab-agents-${activeTab}-panel`} role="tabpanel">
+              <AgentsEmailExport
+                agents={agentsByTab[activeTab] ?? []}
+                tabLabel={ROLE_TABS.find((tab) => tab.id === activeTab)?.label ?? "Tous"}
+              />
               <AgentsList
                 agents={agentsByTab[activeTab] ?? []}
                 onEdit={handleEdit}
