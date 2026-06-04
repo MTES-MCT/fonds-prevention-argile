@@ -2,23 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { parseDossiersFilters, serializeDossiersFilters, type Scope } from "./dossiers-filters-url";
 import {
   getDossiersTerritoireDataAction,
   type DossiersTerritoireData,
 } from "@/features/backoffice/espace-agent/dossiers/actions/get-dossiers-territoire-data.action";
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
-import {
-  getDossierStepLabel,
-  getResponsableDisplayName,
-} from "@/features/backoffice/espace-agent/dossiers/domain";
+import { getDossierStepLabel, getResponsableDisplayName } from "@/features/backoffice/espace-agent/dossiers/domain";
 import type { DossierEtat } from "@/features/parcours/core/domain/services/dossier-etat.service";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DossiersSuivisHeader } from "./DossiersSuivisHeader";
 import { DossiersSuivisTable } from "./DossiersSuivisTable";
 import { DossiersKpiCards, type DossiersKpiCounters } from "./DossiersKpiCards";
 import { Pagination } from "@/shared/components/Pagination/Pagination";
-
-type Scope = "mine" | "all";
 
 interface DossiersPanelProps {
   /** Affiche le bouton "+ Nouveau dossier" (rôles AMO et/ou Aller-vers). */
@@ -63,25 +60,62 @@ const EN_ATTENTE_FILTRABLES: ReadonlyArray<{ value: DossierEtat; label: string }
 /**
  * Panel unifié des dossiers — tags Mes/Tous, filtre EPCI et recherche.
  */
-export function DossiersPanel({
-  canCreateDossier = false,
-  defaultScope = "all",
-  prenom,
-}: DossiersPanelProps) {
+export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", prenom }: DossiersPanelProps) {
   const [data, setData] = useState<DossiersTerritoireData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [activeScope, setActiveScope] = useState<Scope>(defaultScope);
-  const [epciFilter, setEpciFilter] = useState<string>("");
-  const [search, setSearch] = useState<string>("");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  // État initial des filtres lu une seule fois depuis l'URL (query string).
+  // Permet de restaurer les filtres au retour « Précédent » et de partager une
+  // vue filtrée. La synchro état → URL est faite par l'effet plus bas.
+  const searchParams = useSearchParams();
+  const [initialFilters] = useState(() =>
+    parseDossiersFilters(new URLSearchParams(searchParams.toString()), defaultScope)
+  );
+
+  const [activeScope, setActiveScope] = useState<Scope>(initialFilters.scope);
+  const [epciFilter, setEpciFilter] = useState<string>(initialFilters.epci);
+  const [search, setSearch] = useState<string>(initialFilters.search);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(initialFilters.sort);
+  const [page, setPage] = useState(initialFilters.page);
+  const [pageSize, setPageSize] = useState(initialFilters.pageSize);
   // Filtres par colonne (multi-sélection, live).
-  const [responsableFilter, setResponsableFilter] = useState<Set<string>>(new Set());
-  const [etapeFilter, setEtapeFilter] = useState<Set<string>>(new Set());
-  const [enAttenteFilter, setEnAttenteFilter] = useState<Set<string>>(new Set());
+  const [responsableFilter, setResponsableFilter] = useState<Set<string>>(initialFilters.responsable);
+  const [etapeFilter, setEtapeFilter] = useState<Set<string>>(initialFilters.etape);
+  const [enAttenteFilter, setEnAttenteFilter] = useState<Set<string>>(initialFilters.enAttente);
+
+  // Synchronise les filtres dans l'URL à chaque changement, via l'History API
+  // (replaceState) plutôt que router.replace : on évite un refetch RSC à chaque
+  // frappe tout en gardant l'URL à jour pour le partage et le « Précédent ».
+  useEffect(() => {
+    const qs = serializeDossiersFilters(
+      {
+        scope: activeScope,
+        search,
+        epci: epciFilter,
+        sort: sortOrder,
+        page,
+        pageSize,
+        responsable: responsableFilter,
+        etape: etapeFilter,
+        enAttente: enAttenteFilter,
+      },
+      defaultScope
+    );
+    const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState(null, "", url);
+  }, [
+    activeScope,
+    search,
+    epciFilter,
+    sortOrder,
+    page,
+    pageSize,
+    responsableFilter,
+    etapeFilter,
+    enAttenteFilter,
+    defaultScope,
+  ]);
 
   const loadData = useCallback(async () => {
     try {
@@ -185,9 +219,10 @@ export function DossiersPanel({
     return {
       responsables: toOptions(responsables),
       etapes: toEtapeOptions(etapes),
-      enAttente: EN_ATTENTE_FILTRABLES.filter((opt) => etatsPresents.has(opt.value)).map(
-        ({ value, label }) => ({ value, label })
-      ),
+      enAttente: EN_ATTENTE_FILTRABLES.filter((opt) => etatsPresents.has(opt.value)).map(({ value, label }) => ({
+        value,
+        label,
+      })),
     };
   }, [visible]);
 
@@ -368,10 +403,7 @@ export function DossiersPanel({
               {activeScope === "mine" && (
                 <>
                   {" "}
-                  <button
-                    type="button"
-                    className="fr-link"
-                    onClick={() => handleScopeChange("all")}>
+                  <button type="button" className="fr-link" onClick={() => handleScopeChange("all")}>
                     Élargir la recherche à tous les dossiers
                   </button>
                 </>
