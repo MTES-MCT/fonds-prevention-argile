@@ -15,7 +15,7 @@ export interface RGASimulationData {
     annee_de_construction: string;
     rnb: string;
     niveaux: number;
-    zone_dexposition: "faible" | "moyen" | "fort";
+    zone_dexposition: "faible" | "moyen" | "fort" | null;
     type: "maison" | "appartement";
     mitoyen: boolean;
     proprietaire_occupant: boolean;

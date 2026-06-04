@@ -144,6 +144,20 @@ describe("step-flow.rules", () => {
         expect(result.checks.zoneForte).toBe(false);
       });
 
+      it("déclenche early exit pour hors zone argileuse (null)", () => {
+        const answers: PartialRGASimulationData = {
+          logement: {
+            type: "maison",
+            code_departement: "24",
+            zone_dexposition: null,
+          },
+        };
+        const result = evaluateEligibility(answers);
+        expect(result.shouldExit).toBe(true);
+        expect(result.failedAtStep).toBe(SimulateurStep.ADRESSE);
+        expect(result.checks.zoneForte).toBe(false);
+      });
+
       it("déclenche early exit pour construction trop récente", () => {
         const anneeRecente = (new Date().getFullYear() - 5).toString();
         const answers: PartialRGASimulationData = {
