@@ -7,6 +7,7 @@ import { createDossierForCurrentStep, getDossierByStep } from "../../dossiers-ds
 import { parcoursRepo } from "@/shared/database";
 import { createDebugLogger } from "@/shared/utils";
 import { DS_FIELD_IDS } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
+import { toAdresseRueSeule, toCommuneValue } from "../../dossiers-ds/domain/value-objects/ds-field-transformers";
 import { getServerEnv } from "@/shared/config/env.config";
 
 const debug = createDebugLogger("DIAGNOSTIC");
@@ -78,6 +79,20 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
     }
 
     prefillData[`champ_${DS_FIELD_IDS.DIAGNOSTIC.ANNOTATION_LIEN_FPA}`] = fpaLink;
+
+    // Commune (routage vers le bon groupe d'instructeurs) + adresse (texte),
+    // depuis la simulation RGA. Best-effort : on ne bloque pas si données absentes.
+    const logement = parcoursData.parcours.rgaSimulationData?.logement;
+    if (logement?.commune) {
+      prefillData[`champ_${DS_FIELD_IDS.DIAGNOSTIC.COMMUNE}`] = toCommuneValue(logement.commune, logement.adresse);
+    } else {
+      console.warn("Diagnostic: code commune RGA absent, champ commune (routage) non prérempli");
+    }
+    if (logement?.adresse) {
+      prefillData[`champ_${DS_FIELD_IDS.DIAGNOSTIC.ADRESSE_MAISON_TEXTE}`] = toAdresseRueSeule(logement.adresse);
+    } else {
+      console.warn("Diagnostic: adresse RGA absente, champ adresse non prérempli");
+    }
 
     debug.log("=== PREFILL ANNOTATIONS (essai via endpoint public /preremplir) ===");
     debug.log("  Annotation dossier éligibilité (DossierLink):");
