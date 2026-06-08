@@ -48,6 +48,12 @@ export function InfoDemandeur({ demandeur, suiviDepuis, editSimulationHref }: In
       <dl
         className="fr-mt-2w fr-mb-0"
         style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.5rem 1rem", alignItems: "baseline" }}>
+        {demandeur.nomFamille && demandeur.nomFamille !== demandeur.nom && (
+          <>
+            <dt className="fr-text">Nom de famille :</dt>
+            <dd className="fr-m-0">{demandeur.nomFamille}</dd>
+          </>
+        )}
         {demandeur.adresse && (
           <>
             <dt className="fr-text">adresse :</dt>

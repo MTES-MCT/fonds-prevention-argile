@@ -22,6 +22,7 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
     id: "user-stub-1",
     fcId: null,
     nom: "Dupont",
+    nomFamille: "Dupont",
     prenom: "Alice",
     email: "alice@example.com",
     emailContact: null,
@@ -133,7 +134,8 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
       preferred_username: "Martin",
     } as FranceConnectUserInfo);
 
-    expect(create).toHaveBeenCalledWith(expect.objectContaining({ nom: "Martin" }));
+    // nom = nom d'usage affiché, nomFamille = nom de famille RNIPP conservé en plus
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ nom: "Martin", nomFamille: "Dupont" }));
   });
 
   it("création : sans nom d'usage → fallback sur le nom de naissance", async () => {
@@ -147,6 +149,7 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
       preferred_username: undefined,
     } as FranceConnectUserInfo);
 
-    expect(create).toHaveBeenCalledWith(expect.objectContaining({ nom: "Dupont" }));
+    // sans nom d'usage : nom et nomFamille valent tous deux le family_name
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ nom: "Dupont", nomFamille: "Dupont" }));
   });
 });

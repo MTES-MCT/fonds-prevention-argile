@@ -12,6 +12,8 @@ import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/sha
 export interface InfoDemandeur {
   prenom: string | null;
   nom: string | null;
+  /** Nom de famille RNIPP (claim FranceConnect family_name), affiché si différent du nom d'usage */
+  nomFamille: string | null;
   email: string | null;
   telephone: string | null;
   adresse: string | null;

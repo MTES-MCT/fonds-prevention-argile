@@ -70,6 +70,7 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
     const demandeur: InfoDemandeur = {
       prenom: demande.validation.userPrenom || demande.user.prenom,
       nom: demande.validation.userNom || demande.user.nom,
+      nomFamille: demande.user.nomFamille,
       email: demande.validation.userEmail || demande.user.emailContact || demande.user.email,
       telephone: demande.validation.userTelephone || demande.user.telephone,
       adresse: rgaData?.logement?.adresse ?? demande.validation.adresseLogement,

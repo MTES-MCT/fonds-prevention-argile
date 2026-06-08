@@ -75,6 +75,7 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
   const demandeur = {
     prenom: prospect.particulier.prenom,
     nom: prospect.particulier.nom,
+    nomFamille: prospect.particulier.nomFamille,
     email: prospect.particulier.email,
     telephone: prospect.particulier.telephone,
     adresse: prospect.logement.adresse,

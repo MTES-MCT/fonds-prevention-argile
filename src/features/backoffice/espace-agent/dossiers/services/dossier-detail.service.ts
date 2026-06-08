@@ -1,5 +1,10 @@
 import { db } from "@/shared/database/client";
-import { parcoursAmoValidations, parcoursPrevention, dossiersDemarchesSimplifiees, users } from "@/shared/database/schema";
+import {
+  parcoursAmoValidations,
+  parcoursPrevention,
+  dossiersDemarchesSimplifiees,
+  users,
+} from "@/shared/database/schema";
 import { eq, and } from "drizzle-orm";
 import type { DossierDetail, InfoDemandeur, InfoLogement, ParcoursDateProgression } from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
@@ -86,6 +91,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
     const demandeur: InfoDemandeur = {
       prenom: dossier.validation.userPrenom || dossier.user.prenom,
       nom: dossier.validation.userNom || dossier.user.nom,
+      nomFamille: dossier.user.nomFamille,
       email: dossier.validation.userEmail || dossier.user.emailContact || dossier.user.email,
       telephone: dossier.validation.userTelephone || dossier.user.telephone,
       adresse: rgaData?.logement?.adresse ?? dossier.validation.adresseLogement,

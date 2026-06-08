@@ -7,7 +7,11 @@ export const users = pgTable("users", {
   // par un agent AV avant que le demandeur ne se connecte via FranceConnect.
   // Postgres autorise plusieurs NULL sur une contrainte UNIQUE.
   fcId: varchar("fc_id", { length: 255 }).unique(),
+  // `nom` = nom à afficher (nom d'usage preferred_username, fallback family_name).
   nom: varchar("nom", { length: 255 }),
+  // `nomFamille` = nom de famille actuel au RNIPP (claim FranceConnect family_name).
+  // Conservé en plus de `nom` pour l'afficher quand un nom d'usage différent existe.
+  nomFamille: varchar("nom_famille", { length: 255 }),
   prenom: varchar("prenom", { length: 255 }),
   email: varchar("email", { length: 255 }),
   emailContact: varchar("email_contact", { length: 255 }),

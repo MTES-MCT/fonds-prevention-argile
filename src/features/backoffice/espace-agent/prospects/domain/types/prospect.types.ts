@@ -20,6 +20,7 @@ export interface Prospect {
   particulier: {
     prenom: string;
     nom: string;
+    nomFamille: string | null;
     email: string;
     telephone: string | null;
     sourceAcquisition: SourceAcquisition | null;

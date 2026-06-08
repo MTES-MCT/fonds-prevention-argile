@@ -168,6 +168,7 @@ export class UserRepository extends BaseRepository<User> {
         // L'email FC est autoritaire si fourni ; sinon on garde celui saisi par l'AV.
         email: userInfo.email || sql`${users.email}`,
         nom: userInfo.preferred_username || userInfo.family_name || sql`${users.nom}`,
+        nomFamille: userInfo.family_name || sql`${users.nomFamille}`,
         prenom: userInfo.given_name || sql`${users.prenom}`,
         claimedAt: new Date(),
         claimToken: null,
@@ -220,6 +221,7 @@ export class UserRepository extends BaseRepository<User> {
         lastLogin: new Date(),
         email: userInfo.email || existingUser.email,
         nom: userInfo.preferred_username || userInfo.family_name || existingUser.nom,
+        nomFamille: userInfo.family_name || existingUser.nomFamille,
         prenom: userInfo.given_name || existingUser.prenom,
       };
 
@@ -250,6 +252,7 @@ export class UserRepository extends BaseRepository<User> {
       fcId,
       email: userInfo.email,
       nom: userInfo.preferred_username || userInfo.family_name,
+      nomFamille: userInfo.family_name,
       prenom: userInfo.given_name,
       lastLogin: new Date(),
       partnerSource: options?.partnerSource ?? null,
