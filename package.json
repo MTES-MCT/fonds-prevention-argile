@@ -43,7 +43,7 @@
     "rga:import": "tsx scripts/import/rga-zones/import-rga-zones.ts"
   },
   "dependencies": {
-    "@getbrevo/brevo": "4.0.1",
+    "@getbrevo/brevo": "5.0.4",
     "@gouvfr/dsfr": "1.14.4",
     "@gouvfr/dsfr-chart": "2.0.4",
     "@react-email/components": "1.0.8",
