@@ -2,8 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { parseDossiersFilters, serializeDossiersFilters, type Scope } from "./dossiers-filters-url";
+import { usePathname, useSearchParams } from "next/navigation";
+import {
+  parseDossiersFilters,
+  serializeDossiersFilters,
+  type DossiersFiltersState,
+  type Scope,
+} from "./dossiers-filters-url";
 import {
   getDossiersTerritoireDataAction,
   type DossiersTerritoireData,
@@ -65,57 +70,51 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // État initial des filtres lu une seule fois depuis l'URL (query string).
-  // Permet de restaurer les filtres au retour « Précédent » et de partager une
-  // vue filtrée. La synchro état → URL est faite par l'effet plus bas.
+  // Source de vérité unique : l'URL. Les filtres sont DÉRIVÉS de la query string
+  // (pas de copie dans un useState), donc back/forward du navigateur les restaure
+  // sans risque de désynchronisation état/URL.
   const searchParams = useSearchParams();
-  const [initialFilters] = useState(() =>
-    parseDossiersFilters(new URLSearchParams(searchParams.toString()), defaultScope)
+  const pathname = usePathname();
+
+  const filters = useMemo(
+    () => parseDossiersFilters(new URLSearchParams(searchParams.toString()), defaultScope),
+    [searchParams, defaultScope]
   );
 
-  const [activeScope, setActiveScope] = useState<Scope>(initialFilters.scope);
-  const [epciFilter, setEpciFilter] = useState<string>(initialFilters.epci);
-  const [search, setSearch] = useState<string>(initialFilters.search);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(initialFilters.sort);
-  const [page, setPage] = useState(initialFilters.page);
-  const [pageSize, setPageSize] = useState(initialFilters.pageSize);
-  // Filtres par colonne (multi-sélection, live).
-  const [responsableFilter, setResponsableFilter] = useState<Set<string>>(initialFilters.responsable);
-  const [etapeFilter, setEtapeFilter] = useState<Set<string>>(initialFilters.etape);
-  const [enAttenteFilter, setEnAttenteFilter] = useState<Set<string>>(initialFilters.enAttente);
+  // Écrit un sous-ensemble de filtres dans l'URL via l'History API (replaceState) :
+  // pas de refetch RSC, et une seule entrée d'historique pour la liste (« Précédent »
+  // sort de la liste ; le bouton « Réinitialiser » vide les filtres). Next.js patche
+  // replaceState pour mettre à jour `useSearchParams`, ce qui re-rend le composant.
+  const setFilters = useCallback(
+    (patch: Partial<DossiersFiltersState>) => {
+      const qs = serializeDossiersFilters({ ...filters, ...patch }, defaultScope);
+      window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
+    },
+    [filters, defaultScope, pathname]
+  );
 
-  // Synchronise les filtres dans l'URL à chaque changement, via l'History API
-  // (replaceState) plutôt que router.replace : on évite un refetch RSC à chaque
-  // frappe tout en gardant l'URL à jour pour le partage et le « Précédent ».
+  // Alias en lecture pour garder le reste du composant lisible.
+  const activeScope = filters.scope;
+  const epciFilter = filters.epci;
+  const sortOrder = filters.sort;
+  const page = filters.page;
+  const pageSize = filters.pageSize;
+  const responsableFilter = filters.responsable;
+  const etapeFilter = filters.etape;
+  const enAttenteFilter = filters.enAttente;
+
+  // Recherche : état local pour une saisie fluide et un filtrage instantané,
+  // poussé vers l'URL en différé (debounce) et re-semé quand l'URL change depuis
+  // l'extérieur (back/forward, réinitialisation).
+  const [search, setSearch] = useState(filters.search);
   useEffect(() => {
-    const qs = serializeDossiersFilters(
-      {
-        scope: activeScope,
-        search,
-        epci: epciFilter,
-        sort: sortOrder,
-        page,
-        pageSize,
-        responsable: responsableFilter,
-        etape: etapeFilter,
-        enAttente: enAttenteFilter,
-      },
-      defaultScope
-    );
-    const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
-    window.history.replaceState(null, "", url);
-  }, [
-    activeScope,
-    search,
-    epciFilter,
-    sortOrder,
-    page,
-    pageSize,
-    responsableFilter,
-    etapeFilter,
-    enAttenteFilter,
-    defaultScope,
-  ]);
+    setSearch(filters.search);
+  }, [filters.search]);
+  useEffect(() => {
+    if (search === filters.search) return;
+    const timeout = setTimeout(() => setFilters({ search, page: 1 }), 300);
+    return () => clearTimeout(timeout);
+  }, [search, filters.search, setFilters]);
 
   const loadData = useCallback(async () => {
     try {
@@ -251,25 +250,20 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
     return map;
   }, [data]);
 
-  const paginated = visible.slice((page - 1) * pageSize, page * pageSize);
+  // Page bornée au nombre de pages réel : évite une page vide quand un filtre
+  // (ou la recherche instantanée) réduit les résultats sous la page courante.
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const handleScopeChange = (next: Scope) => {
-    setActiveScope(next);
-    setPage(1);
-  };
+  const handleScopeChange = (next: Scope) => setFilters({ scope: next, page: 1 });
 
-  // Réinitialise tous les filtres à leurs valeurs par défaut. L'effet de synchro
-  // vide alors la query string : recharger la page repart d'une liste non filtrée.
+  // Réinitialise tous les filtres : on vide simplement la query string. Les
+  // filtres dérivés repartent sur leurs valeurs par défaut, et le champ de
+  // recherche local est re-semé par l'effet de synchro.
   const resetFilters = () => {
-    setActiveScope(defaultScope);
-    setEpciFilter("");
+    window.history.replaceState(null, "", pathname);
     setSearch("");
-    setSortOrder("desc");
-    setPage(1);
-    setPageSize(20);
-    setResponsableFilter(new Set());
-    setEtapeFilter(new Set());
-    setEnAttenteFilter(new Set());
   };
 
   // Bandeau « X résultat(s) dans vos/tous les dossiers » — affiché dès qu'un
@@ -375,10 +369,7 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
                 type="search"
                 placeholder="Rechercher (nom, commune...)"
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => setSearch(e.target.value)}
                 style={{
                   backgroundImage:
                     "url(\"data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23161616' d='M18.031 16.617l4.283 4.282-1.415 1.415-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9 9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617zm-2.006-.742A6.977 6.977 0 0 0 18 11c0-3.867-3.133-7-7-7-3.867 0-7 3.133-7 7 0 3.867 3.133 7 7 7a6.977 6.977 0 0 0 4.875-1.975l.15-.15z'/></svg>\")",
@@ -397,10 +388,7 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
                 className="fr-select"
                 id="dossiers-epci"
                 value={epciFilter}
-                onChange={(e) => {
-                  setEpciFilter(e.target.value);
-                  setPage(1);
-                }}>
+                onChange={(e) => setFilters({ epci: e.target.value, page: 1 })}>
                 <option value="">EPCI</option>
                 {availableEpcis.map((epci) => (
                   <option key={epci.code} value={epci.code}>
@@ -445,35 +433,23 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
                 dossiers={paginated}
                 onRefresh={loadData}
                 sortOrder={sortOrder}
-                onToggleSort={() => setSortOrder((o) => (o === "asc" ? "desc" : "asc"))}
+                onToggleSort={() => setFilters({ sort: sortOrder === "asc" ? "desc" : "asc" })}
                 responsableOptions={filterOptions.responsables}
                 etapeOptions={filterOptions.etapes}
                 enAttenteOptions={filterOptions.enAttente}
                 responsableFilter={responsableFilter}
                 etapeFilter={etapeFilter}
                 enAttenteFilter={enAttenteFilter}
-                onResponsableFilterChange={(next) => {
-                  setResponsableFilter(next);
-                  setPage(1);
-                }}
-                onEtapeFilterChange={(next) => {
-                  setEtapeFilter(next);
-                  setPage(1);
-                }}
-                onEnAttenteFilterChange={(next) => {
-                  setEnAttenteFilter(next);
-                  setPage(1);
-                }}
+                onResponsableFilterChange={(next) => setFilters({ responsable: next, page: 1 })}
+                onEtapeFilterChange={(next) => setFilters({ etape: next, page: 1 })}
+                onEnAttenteFilterChange={(next) => setFilters({ enAttente: next, page: 1 })}
               />
               <Pagination
-                currentPage={page}
+                currentPage={currentPage}
                 totalItems={visible.length}
                 pageSize={pageSize}
-                onPageChange={setPage}
-                onPageSizeChange={(size) => {
-                  setPageSize(size);
-                  setPage(1);
-                }}
+                onPageChange={(p) => setFilters({ page: p })}
+                onPageSizeChange={(size) => setFilters({ pageSize: size, page: 1 })}
               />
             </>
           )}
