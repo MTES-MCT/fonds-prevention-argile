@@ -258,6 +258,20 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
     setPage(1);
   };
 
+  // Réinitialise tous les filtres à leurs valeurs par défaut. L'effet de synchro
+  // vide alors la query string : recharger la page repart d'une liste non filtrée.
+  const resetFilters = () => {
+    setActiveScope(defaultScope);
+    setEpciFilter("");
+    setSearch("");
+    setSortOrder("desc");
+    setPage(1);
+    setPageSize(20);
+    setResponsableFilter(new Set());
+    setEtapeFilter(new Set());
+    setEnAttenteFilter(new Set());
+  };
+
   // Bandeau « X résultat(s) dans vos/tous les dossiers » — affiché dès qu'un
   // filtre est actif (recherche, EPCI ou filtre par colonne). Le scope habille
   // le texte (« dans vos dossiers » vs « dans tous les dossiers ») et le lien
@@ -396,6 +410,15 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
               </select>
             </div>
           </div>
+
+          {(hasActiveFilter || activeScope !== defaultScope) && (
+            <button
+              type="button"
+              className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-icon-refresh-line fr-btn--icon-left fr-mb-2w"
+              onClick={resetFilters}>
+              Réinitialiser les filtres
+            </button>
+          )}
 
           {hasActiveFilter && (
             <p className="fr-mb-2w">
