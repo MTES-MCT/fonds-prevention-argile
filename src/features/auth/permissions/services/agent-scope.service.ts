@@ -1,8 +1,11 @@
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { agentPermissionsRepository, allersVersRepository, entreprisesAmoRepo } from "@/shared/database";
-import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
-import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
+import {
+  matchesTerritoire,
+  parcoursPreventionRepository,
+} from "@/shared/database/repositories/parcours-prevention.repository";
+import { getDemandeurFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
 import type { AgentScope, AgentScopeInput, DossierAccessCheck, ScopeFilters } from "../domain/types/agent-scope.types";
 
 /**
@@ -287,19 +290,21 @@ export async function verifyProspectTerritoryAccess(
     return "Parcours non trouvé";
   }
 
-  const rgaData = getEffectiveRGAData(parcours);
-  const codeDepartement = rgaData?.logement?.code_departement;
-  const codeEpci = rgaData?.logement?.epci;
-
-  const matchesDepartement =
-    scope.departements.length > 0 && codeDepartement && scope.departements.includes(String(codeDepartement));
-  const matchesEpci = scope.epcis.length > 0 && codeEpci && scope.epcis.includes(String(codeEpci));
-
-  if (!matchesDepartement && !matchesEpci) {
+  // Un agent sans périmètre territorial (ni département ni EPCI) ne voit aucun
+  // prospect — cohérent avec le listing qui renvoie une liste vide dans ce cas.
+  const hasFiltreTerritorial = scope.departements.length > 0 || scope.epcis.length > 0;
+  if (!hasFiltreTerritorial) {
     return "Ce prospect n'est pas dans votre territoire";
   }
 
-  return null;
+  // Aligné sur le listing (`getParcoursByTerritoire` → `matchesTerritoire`) :
+  // même résolution USER-first (`getDemandeurFirstSimulation`) et même prédicat
+  // union département ∪ EPCI. Avant, ce contrôle lisait `getEffectiveRGAData`
+  // (AGENT-first), d'où l'incohérence « dossier visible en liste mais 404 au
+  // détail » quand la simulation du demandeur et celle de l'agent divergeaient.
+  const inTerritoire = matchesTerritoire(getDemandeurFirstSimulation(parcours), scope.departements, scope.epcis);
+
+  return inTerritoire ? null : "Ce prospect n'est pas dans votre territoire";
 }
 
 /**

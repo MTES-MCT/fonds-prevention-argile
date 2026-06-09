@@ -52,8 +52,9 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       return { success: false, error: "Dossier non trouvé" };
     }
 
-    // Page consultable pour les statuts SUIVIS + REFUSES (un dossier archivé
-    // non éligible reste lisible pour voir le motif).
+    // Page consultable pour les statuts SUIVIS + REFUSES + SANS_AMO (un dossier
+    // archivé non éligible reste lisible pour voir le motif ; un dossier sans AMO
+    // reste lisible car il progresse quand même dans le parcours).
     if (!STATUTS_CONSULTABLES.includes(dossier.validation.statut)) {
       return { success: false, error: "Ce dossier n'est pas consultable" };
     }
@@ -158,7 +159,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       validationStatut: dossier.validation.statut,
       parcoursCreatedAt: dossier.parcours.createdAt,
       lastUpdatedAt: dossier.parcours.updatedAt,
-      suiviDepuis: dossier.validation.valideeAt!,
+      suiviDepuis: dossier.validation.valideeAt,
       dates,
       agentEditInfo,
       creator,

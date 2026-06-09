@@ -14,10 +14,15 @@ export const STATUTS_REFUSES = [StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, Statu
 
 /**
  * Statuts pour lesquels la page detail `/dossiers/[id]` est consultable.
- * SUIVIS + REFUSES : un dossier archivé non éligible reste lisible côté agent
- * pour consulter le motif d'inéligibilité.
+ * SUIVIS + REFUSES + SANS_AMO :
+ * - un dossier archivé non éligible reste lisible côté agent pour consulter le
+ *   motif d'inéligibilité ;
+ * - un dossier `SANS_AMO` (demandeur sans accompagnement AMO) progresse quand
+ *   même dans le parcours (éligibilité, diagnostic…) : son responsable est
+ *   l'Aller-vers territorial, il doit donc rester consultable. Sans cette ligne,
+ *   ces dossiers renvoyaient un 404 au détail (y compris pour un super-admin).
  */
-export const STATUTS_CONSULTABLES = [...STATUTS_SUIVIS, ...STATUTS_REFUSES];
+export const STATUTS_CONSULTABLES = [...STATUTS_SUIVIS, ...STATUTS_REFUSES, StatutValidationAmo.SANS_AMO];
 
 /**
  * Variantes visuelles pour la cellule « Précisions ».
