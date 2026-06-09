@@ -107,7 +107,12 @@ export default async function DossierDetailPage({ params }: PageProps) {
         {/* Section en-tête : Callout + InfoDemandeur */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
-            <InfoDossierCallout currentStep={dossier.currentStep} currentStatus={dossier.currentStatus} dsStatus={dossier.dsStatus} validationStatut={dossier.validationStatut} />
+            <InfoDossierCallout
+              currentStep={dossier.currentStep}
+              currentStatus={dossier.currentStatus}
+              dsStatus={dossier.dsStatus}
+              validationStatut={dossier.validationStatut}
+            />
             <div className="fr-mt-4w">
               <ActionsRealisees parcoursId={dossier.parcoursId} />
             </div>
@@ -116,7 +121,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
             <div style={{ alignSelf: "flex-start" }}>
               <InfoDemandeur
                 demandeur={dossier.demandeur}
-                suiviDepuis={dossier.suiviDepuis}
+                suiviDepuis={dossier.suiviDepuis ?? undefined}
                 editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)}
               />
             </div>

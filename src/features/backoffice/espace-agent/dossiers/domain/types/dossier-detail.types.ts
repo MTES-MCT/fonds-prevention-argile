@@ -47,8 +47,8 @@ export interface DossierDetail {
   parcoursCreatedAt: Date;
   /** Date de dernière mise à jour du parcours */
   lastUpdatedAt: Date;
-  /** Date de validation de la demande par l'AMO */
-  suiviDepuis: Date;
+  /** Date de validation de la demande par l'AMO (null pour un dossier SANS_AMO) */
+  suiviDepuis: Date | null;
   /** Informations sur l'indemnisation passée (optionnel) */
   dateIndemnisation?: DateIndemnisation;
   /** Dates de progression du parcours par étape */

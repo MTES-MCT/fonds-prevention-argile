@@ -129,7 +129,61 @@ Distinctions clés :
 
 ---
 
-## 6. Fichiers clés
+## 6. Cohérence listing ↔ détail (résolution territoriale)
+
+> **Règle** : le contrôle d'accès au **détail** d'un dossier/prospect doit
+> s'aligner exactement sur la **visibilité du listing**. Un dossier visible dans
+> la liste d'un agent doit être ouvrable par cet agent — et inversement. Toute
+> divergence produit un « visible en liste mais 404 au détail » (ou l'inverse,
+> une fuite).
+
+Un parcours a **deux sources de localisation** : la simulation du demandeur
+(`rgaSimulationData`) et celle saisie par l'agent (`rgaSimulationDataAgent`, ex.
+flux _av-add-dossier_). Deux conventions de résolution coexistent :
+
+- **USER-first** (`getDemandeurFirstSimulation` = `rgaSimulationData ?? rgaSimulationDataAgent`) :
+  utilisée pour le **filtrage territorial** (listing) et le **contrôle d'accès**.
+- **AGENT-first** (`getEffectiveRGAData` = `rgaSimulationDataAgent ?? rgaSimulationData`) :
+  réservée à l'**affichage** du détail (l'adresse BAN-stricte de l'agent prime)
+  et aux **stats de référence**.
+
+Le prédicat unique de territorialité est
+`matchesTerritoire(getDemandeurFirstSimulation(parcours), departements, epcis)`
+(union département ∪ EPCI), partagé par le listing
+(`parcoursPreventionRepository.getParcoursByTerritoire`) et par le contrôle
+d'accès (`verifyProspectTerritoryAccess`).
+
+### Bug corrigé (juin 2026) — 404 sur les dossiers sans AMO
+
+**Symptôme** : des dossiers « en attente d'AV » / « en formulaire d'éligibilité »
+visibles dans le listing renvoyaient un **404** à l'ouverture, y compris pour un
+`SUPER_ADMINISTRATEUR` (accès national).
+
+**Cause principale (statut `SANS_AMO`)** : ces dossiers sont des parcours **sans
+accompagnement AMO** — la validation a le statut `SANS_AMO` (responsable =
+Aller-vers territorial) tout en progressant dans le parcours (éligibilité,
+diagnostic…). Le routing les envoie vers `/espace-agent/dossiers/[validationId]`,
+mais `STATUTS_CONSULTABLES` n'incluait que SUIVIS + REFUSES, **pas `SANS_AMO`** :
+`getDossierDetail` retournait « non consultable » → `notFound()` → 404 pour tout
+le monde (super-admin compris, car le filtre statut s'applique avant tout contrôle
+de rôle). **Correctif** : `SANS_AMO` ajouté à `STATUTS_CONSULTABLES`
+(`amo-dossiers.types.ts`). À noter : une validation `SANS_AMO` a `valideeAt = null`
+(`suiviDepuis` est donc nullable).
+
+**Cause secondaire (résolution territoriale, agents scoppés)** : indépendamment du
+statut, `verifyProspectTerritoryAccess` résolvait la localisation en **AGENT-first**
+(`getEffectiveRGAData`) alors que le listing filtre en **USER-first**. Quand les
+deux simulations divergeaient sur le département/EPCI, un agent scoppé (AMO / AV /
+hybride) voyait le dossier en liste mais était rejeté au détail. **Correctif** :
+`verifyProspectTerritoryAccess` utilise désormais le même prédicat
+`matchesTerritoire(getDemandeurFirstSimulation(...))` que le listing ; un agent sans
+périmètre territorial (non-national) est refusé, comme dans le listing. Un rôle
+national (`scope.isNational`) court-circuite ce contrôle et n'était donc pas
+concerné par cette cause secondaire.
+
+---
+
+## 7. Fichiers clés
 
 | Rôle                             | Fichier                                                                  |
 | -------------------------------- | ------------------------------------------------------------------------ |
