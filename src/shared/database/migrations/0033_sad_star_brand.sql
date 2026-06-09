@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "nom_famille" varchar(255);

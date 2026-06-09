@@ -77,6 +77,7 @@ describe("createDossierByAgent", () => {
       id: "user-stub-1",
       fcId: null,
       nom: "Dupont",
+      nomFamille: "Dupont",
       prenom: "Jean",
       email: "jean@ex.fr",
       emailContact: null,

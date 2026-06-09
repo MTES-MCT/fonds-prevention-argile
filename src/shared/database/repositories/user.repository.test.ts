@@ -22,6 +22,7 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
     id: "user-stub-1",
     fcId: null,
     nom: "Dupont",
+    nomFamille: "Dupont",
     prenom: "Alice",
     email: "alice@example.com",
     emailContact: null,
@@ -120,5 +121,35 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
     await repo.upsertFromFranceConnect({ ...fcInfo, email: undefined } as FranceConnectUserInfo);
 
     expect(findByEmail).not.toHaveBeenCalled();
+  });
+
+  it("création : nom d'usage (preferred_username) prioritaire sur le nom de naissance", async () => {
+    vi.spyOn(repo, "findByFcId").mockResolvedValue(null);
+    vi.spyOn(repo, "findByEmailWithoutFcId").mockResolvedValue(null);
+    const create = vi.spyOn(repo, "create").mockResolvedValue({ ...existingFcUser, id: "user-new" });
+
+    await repo.upsertFromFranceConnect({
+      ...fcInfo,
+      family_name: "Dupont",
+      preferred_username: "Martin",
+    } as FranceConnectUserInfo);
+
+    // nom = nom d'usage affiché, nomFamille = nom de famille RNIPP conservé en plus
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ nom: "Martin", nomFamille: "Dupont" }));
+  });
+
+  it("création : sans nom d'usage → fallback sur le nom de naissance", async () => {
+    vi.spyOn(repo, "findByFcId").mockResolvedValue(null);
+    vi.spyOn(repo, "findByEmailWithoutFcId").mockResolvedValue(null);
+    const create = vi.spyOn(repo, "create").mockResolvedValue({ ...existingFcUser, id: "user-new" });
+
+    await repo.upsertFromFranceConnect({
+      ...fcInfo,
+      family_name: "Dupont",
+      preferred_username: undefined,
+    } as FranceConnectUserInfo);
+
+    // sans nom d'usage : nom et nomFamille valent tous deux le family_name
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ nom: "Dupont", nomFamille: "Dupont" }));
   });
 });

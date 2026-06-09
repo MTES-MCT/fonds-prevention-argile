@@ -126,8 +126,7 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     ]);
 
     const hasUserClaimed = result.user.fcId !== null && result.user.fcId !== undefined;
-    const hasSimulation =
-      result.parcours.rgaSimulationData !== null || result.parcours.rgaSimulationDataAgent !== null;
+    const hasSimulation = result.parcours.rgaSimulationData !== null || result.parcours.rgaSimulationDataAgent !== null;
 
     // Construire l'objet ProspectDetail
     const prospectDetail: ProspectDetail = {
@@ -136,6 +135,7 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       particulier: {
         prenom: result.user.prenom || "",
         nom: result.user.nom || "",
+        nomFamille: result.user.nomFamille,
         email: result.user.email || "",
         telephone: result.user.telephone || null,
         sourceAcquisition: result.user.sourceAcquisition,

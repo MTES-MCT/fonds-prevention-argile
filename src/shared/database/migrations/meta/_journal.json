@@ -232,6 +232,13 @@
       "when": 1780401600000,
       "tag": "0032_rename_commentaires_to_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1780922169044,
+      "tag": "0033_sad_star_brand",
+      "breakpoints": true
     }
   ]
 }

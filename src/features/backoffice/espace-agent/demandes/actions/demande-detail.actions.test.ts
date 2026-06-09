@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  getDemandeDetailAction,
-  accepterAccompagnement,
-  refuserDemandeNonEligible,
-} from "./demande-detail.actions";
+import { getDemandeDetailAction, accepterAccompagnement, refuserDemandeNonEligible } from "./demande-detail.actions";
 import { getDemandeDetail } from "../services/demande-detail.service";
 import { approveValidation, rejectEligibility } from "@/features/parcours/amo/services/amo-validation.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
@@ -56,6 +52,7 @@ describe("demande-detail.actions", () => {
         demandeur: {
           prenom: "Jean",
           nom: "Dupont",
+          nomFamille: "Dupont",
           email: "jean.dupont@example.com",
           telephone: "0123456789",
           adresse: "1 rue de la Paix",
@@ -234,5 +231,4 @@ describe("demande-detail.actions", () => {
       }
     });
   });
-
 });
