@@ -40,6 +40,7 @@
     "fix:epci": "tsx scripts/ops/fix-missing-epci.ts",
     "audit:parcours-ds": "tsx scripts/ops/audit-parcours-ds-integrity.ts",
     "fix:double-progression": "tsx scripts/ops/fix-double-progression-amo.ts",
+    "fix:amo-non-eligible": "tsx --tsconfig scripts/tsconfig.json scripts/ops/reset-amo-non-eligible.ts",
     "rga:import": "tsx scripts/import/rga-zones/import-rga-zones.ts"
   },
   "dependencies": {
