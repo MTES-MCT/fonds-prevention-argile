@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { DossiersPanel } from "./components/DossiersPanel";
 import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
 import { getCurrentUser } from "@/features/auth/services/user.service";
@@ -21,10 +22,12 @@ export default async function DossiersAgentPage() {
     role === UserRole.AMO || role === UserRole.AMO_ET_ALLERS_VERS || role === UserRole.ALLERS_VERS;
 
   return (
-    <DossiersPanel
-      canCreateDossier={isAgentResponsable}
-      defaultScope={isAgentResponsable ? "mine" : "all"}
-      prenom={user?.firstName ?? null}
-    />
+    <Suspense>
+      <DossiersPanel
+        canCreateDossier={isAgentResponsable}
+        defaultScope={isAgentResponsable ? "mine" : "all"}
+        prenom={user?.firstName ?? null}
+      />
+    </Suspense>
   );
 }
