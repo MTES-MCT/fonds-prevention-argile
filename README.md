@@ -272,6 +272,28 @@ Pour que ce mécanisme fonctionne, **`next` et `tsx` doivent être en `dependenc
 - `confirmModulesPurge: false` reste configuré dans `pnpm-workspace.yaml`. Inutile pour le démarrage du conteneur web (pnpm n'y tourne plus), mais filet de sécurité pour les commandes one-shot (`scalingo run pnpm ...`).
 - Si quelqu'un re-introduit `pnpm` dans le `Procfile` un jour, les trois symptômes ci-dessus reviendront. Garder `node node_modules/.bin/*` comme convention.
 
+#### Clé de chiffrement des Server Actions (`NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`)
+
+Next 14.1+ chiffre les arguments capturés par la closure d'une Server Action (AES-GCM 256). C'est une variable **lue par Next lui-même** (`process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`, cf. `next/dist/server/app-render/encryption-utils*.js`) — on ne la référence donc **pas** dans `env.config.ts` ni dans le code applicatif.
+
+Si elle n'est pas fournie, Next **génère une clé aléatoire au build** et la met en cache dans `.next/`. Comme chaque déploiement Scalingo reconstruit depuis les sources (cache `.next` non conservé), **la clé change à chaque déploiement** → les onglets ouverts sur l'ancien build envoient des actions chiffrées avec l'ancienne clé et déclenchent, juste après déploiement, des rafales de :
+
+```
+Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
+```
+
+**Fix** : fixer une clé stable (identique entre tous les builds/déploiements d'une même app), ce qui fige le chiffrement d'un déploiement à l'autre et fait disparaître ces erreurs.
+
+```bash
+# 32 octets = AES-256, base64 (exactement le format que Next génère en interne)
+openssl rand -base64 32
+
+scalingo -a fonds-argile -region osc-secnum-fr1 env-set NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="<clé>"
+# clé DIFFÉRENTE sur staging
+```
+
+Lue **au build** → redéployer après l'avoir posée. À noter : sur Scalingo le build tourne une fois et le slug (donc la clé en cache) est distribué à tous les containers web — le multi-instances n'est donc pas la cause ; c'est bien la rotation de clé entre déploiements. Ça ne couvre pas le cas d'une Server Action carrément supprimée/renommée entre deux versions (son ID n'existe plus, indépendamment de la clé).
+
 ### Tester les emails sur staging
 
 Sur staging, les utilisateurs FranceConnect Sandbox ont des emails synthétiques non monitorables, donc impossible de vérifier les mails envoyés par l'app. La variable `EMAIL_DEV_INBOX` redirige tous les mails Brevo vers **une boîte privée de ton choix**, en gardant Brevo en transport (iso-prod). Le destinataire original apparaît dans le sujet : `[STAGING → real@target.com] <sujet>`.
