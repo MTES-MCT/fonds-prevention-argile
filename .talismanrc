@@ -1,7 +1,7 @@
 # Configuration Talisman pour fonds-prevention-argile
 fileignoreconfig:
   - filename: pnpm-lock.yaml
-    checksum: b9acea1c1900bae831ba1db94591620134a05b414e6959d633b36ab333f3ac81
+    checksum: 9fdde067d05ecf28163b33ea8e23c222a3dae0c383b06cc55b9d6b0736fc9b89
   - filename: package-lock.json
     checksum: ignore
   - filename: .env.example
