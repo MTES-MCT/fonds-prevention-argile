@@ -1,5 +1,6 @@
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 
 /**
  * État courant d'un dossier — orthogonal au responsable.
@@ -44,13 +45,25 @@ export type DossierEtat = (typeof DOSSIER_ETAT)[keyof typeof DOSSIER_ETAT];
  * - validation refusée (LOGEMENT_NON_ELIGIBLE / ACCOMPAGNEMENT_REFUSE) → REFUSE
  * - pas de validation OU SANS_AMO → AV_QUALIFICATION
  * - validation EN_ATTENTE → EN_ATTENTE_AMO
- * - validation acceptée + étape en instruction DDT → DDT
- * - validation acceptée + étape côté demandeur (TODO/VALIDE) → MENAGE
+ * - validation acceptée → DDT ou MENAGE selon « qui détient la balle » (voir ci-dessous)
+ *
+ * Pour une validation acceptée, la balle est à la DDT dès que le dossier est déposé
+ * et tant qu'il n'est pas (re)passé côté ménage (cf. ADR-0009) :
+ * - `ds_status = EN_INSTRUCTION` → DDT (instruction en cours)
+ * - `ds_status = EN_CONSTRUCTION` (déposé) :
+ *     - sans `instructedAt` → premier dépôt en attente de prise en instruction → DDT
+ *     - avec `instructedAt` → renvoyé pour correction par la DDT → MENAGE
+ * - sinon (pas encore déposé, accepté, refusé…) → suit le `current_status` interne
+ *   (`EN_INSTRUCTION` → DDT, sinon MENAGE).
+ *
+ * `dsStatus`/`instructedAt` sont optionnels : sans eux, on retombe sur `current_status`.
  */
 export function getDossierEtat(input: {
   currentStatus: Status;
   archivedAt: Date | null;
   validation: { statut: StatutValidationAmo } | null;
+  dsStatus?: DSStatus | null;
+  instructedAt?: Date | null;
 }): DossierEtat {
   if (input.archivedAt !== null) {
     return DOSSIER_ETAT.ARCHIVE;
@@ -67,6 +80,12 @@ export function getDossierEtat(input: {
     case StatutValidationAmo.EN_ATTENTE:
       return DOSSIER_ETAT.EN_ATTENTE_AMO;
     case StatutValidationAmo.LOGEMENT_ELIGIBLE:
+      if (input.dsStatus === DSStatus.EN_INSTRUCTION) {
+        return DOSSIER_ETAT.DDT;
+      }
+      if (input.dsStatus === DSStatus.EN_CONSTRUCTION) {
+        return input.instructedAt == null ? DOSSIER_ETAT.DDT : DOSSIER_ETAT.MENAGE;
+      }
       return input.currentStatus === Status.EN_INSTRUCTION ? DOSSIER_ETAT.DDT : DOSSIER_ETAT.MENAGE;
   }
 }

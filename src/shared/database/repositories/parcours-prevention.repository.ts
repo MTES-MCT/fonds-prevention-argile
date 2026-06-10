@@ -230,10 +230,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
    * `createdByAgentId` trace l'agent créateur (utile pour les dossiers
    * pré-créés par un Aller-vers).
    */
-  async findOrCreateForUser(
-    userId: string,
-    opts?: { createdByAgentId?: string }
-  ): Promise<ParcoursPrevention> {
+  async findOrCreateForUser(userId: string, opts?: { createdByAgentId?: string }): Promise<ParcoursPrevention> {
     const existing = await this.findByUserId(userId);
 
     if (existing) {
@@ -366,7 +363,6 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
     });
   }
 
-
   /**
    * Récupère tous les parcours (avec ou sans validation AMO) d'un territoire.
    * Filtrage territorial fait côté JS via `getDemandeurFirstSimulation` (fallback
@@ -416,6 +412,7 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         validationValideeAt: parcoursAmoValidations.valideeAt,
         // Dossier DS de l'étape courante (null si absent)
         dsStatus: dossiersDemarchesSimplifiees.dsStatus,
+        instructedAt: dossiersDemarchesSimplifiees.instructedAt,
       })
       .from(parcoursPrevention)
       .innerJoin(users, eq(parcoursPrevention.userId, users.id))

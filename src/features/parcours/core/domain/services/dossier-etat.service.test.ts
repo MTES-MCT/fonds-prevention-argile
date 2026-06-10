@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { getDossierEtat } from "./dossier-etat.service";
 
 describe("getDossierEtat", () => {
@@ -92,5 +93,53 @@ describe("getDossierEtat", () => {
         validation: { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
       })
     ).toBe("MENAGE");
+  });
+
+  it("MENAGE pour une validation acceptée + dossier pas encore déposé (ds_status null)", () => {
+    expect(
+      getDossierEtat({
+        currentStatus: Status.TODO,
+        archivedAt: null,
+        validation: { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+        dsStatus: null,
+        instructedAt: null,
+      })
+    ).toBe("MENAGE");
+  });
+
+  it("DDT pour un dossier déposé en attente de prise en instruction (EN_CONSTRUCTION, jamais instruit)", () => {
+    expect(
+      getDossierEtat({
+        currentStatus: Status.TODO,
+        archivedAt: null,
+        validation: { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+        dsStatus: DSStatus.EN_CONSTRUCTION,
+        instructedAt: null,
+      })
+    ).toBe("DDT");
+  });
+
+  it("MENAGE pour un dossier renvoyé en construction pour correction (EN_CONSTRUCTION, déjà instruit)", () => {
+    expect(
+      getDossierEtat({
+        currentStatus: Status.TODO,
+        archivedAt: null,
+        validation: { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+        dsStatus: DSStatus.EN_CONSTRUCTION,
+        instructedAt: new Date("2026-01-10T10:00:00Z"),
+      })
+    ).toBe("MENAGE");
+  });
+
+  it("DDT pour un dossier en instruction (EN_INSTRUCTION) même si current_status TODO", () => {
+    expect(
+      getDossierEtat({
+        currentStatus: Status.TODO,
+        archivedAt: null,
+        validation: { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+        dsStatus: DSStatus.EN_INSTRUCTION,
+        instructedAt: new Date("2026-01-12T10:00:00Z"),
+      })
+    ).toBe("DDT");
   });
 });
