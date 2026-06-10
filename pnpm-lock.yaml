@@ -20,8 +20,8 @@ importers:
   .:
     dependencies:
       '@getbrevo/brevo':
-        specifier: 4.0.1
-        version: 4.0.1
+        specifier: 5.0.4
+        version: 5.0.4
       '@gouvfr/dsfr':
         specifier: 1.14.4
         version: 1.14.4
@@ -548,8 +548,8 @@ packages:
   '@fast-csv/parse@4.3.6':
     resolution: {integrity: sha512-uRsLYksqpbDmWaSmzvJcuApSEe38+6NQZBUsuAyMZKqHxH0g1wcJgsKUvN3WC8tewaqFjBMMGrkHmC+T7k8LvA==}
 
-  '@getbrevo/brevo@4.0.1':
-    resolution: {integrity: sha512-U1xOsr5e7pfRTdngrt9VWmPV8SQD/LayTOp55/Wnb4aW33IkBWypDJ8jOpQtxn6xL4t8aBw1thRisvQY4+/Edw==}
+  '@getbrevo/brevo@5.0.4':
+    resolution: {integrity: sha512-wN4mHE6O0Pb/d/Dh3E4MAm2zCHbLLUcFF8/wgwTeMPy9KzHBYLu7S/nsJbzd0AWL09MHn8vwue8ULL9YOzluOQ==}
     engines: {node: '>=18.0.0'}
 
   '@gouvfr/dsfr-chart@2.0.4':
@@ -4075,7 +4075,7 @@ snapshots:
       lodash.isundefined: 3.0.1
       lodash.uniq: 4.5.0
 
-  '@getbrevo/brevo@4.0.1': {}
+  '@getbrevo/brevo@5.0.4': {}
 
   '@gouvfr/dsfr-chart@2.0.4': {}
 
