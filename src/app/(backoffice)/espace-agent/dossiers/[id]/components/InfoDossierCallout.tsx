@@ -230,7 +230,9 @@ export function InfoDossierCallout({
     message = getAccepteMessage(currentStep);
   } else if (dsStatus === DSStatus.REFUSE || dsStatus === DSStatus.CLASSE_SANS_SUITE) {
     message = getRefuseMessage(currentStep);
-  } else if (dsStatus === DSStatus.EN_INSTRUCTION || currentStatus === Status.EN_INSTRUCTION) {
+  } else if (dsStatus === DSStatus.EN_INSTRUCTION) {
+    // ds_status fait foi (cf. ADR-0009) : current_status reste TODO tant que la DDT
+    // n'a pas pris le dossier en instruction, donc pas de fallback sur currentStatus ici.
     message = getEnInstructionMessage(currentStep);
   } else if (dsStatus === DSStatus.EN_CONSTRUCTION) {
     message = getEnConstructionMessage(currentStep, instructedAt !== null);
