@@ -46,7 +46,7 @@
   "dependencies": {
     "@getbrevo/brevo": "5.0.4",
     "@gouvfr/dsfr": "1.14.4",
-    "@gouvfr/dsfr-chart": "2.0.4",
+    "@gouvfr/dsfr-chart": "2.1.1",
     "@react-email/components": "1.0.12",
     "@react-email/render": "2.0.8",
     "@socialgouv/matomo-next": "1.13.1",
