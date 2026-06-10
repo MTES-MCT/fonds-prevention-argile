@@ -53,6 +53,11 @@ Refresh des branches Dependabot sur `chore/update-deps`. Audit via `pnpm audit`
   `noUncheckedSideEffectImports`).
 - `zod` 3.25.20 → 4.4.3 (`error.errors` → `error.issues`, `FC_STATE_TTL` en `z.coerce.number`).
 
+### Corrigés via override (`pnpm-workspace.yaml`)
+
+- `tmp` `^0.2.6` (résout la seule High : path traversal, transitif via `exceljs`).
+  Bump patch sans risque, exceljs compatible. Élimine la seule vulnérabilité High du `pnpm audit`.
+
 ### Reportés (non propres)
 
 - **Next 16** : reporté à une PR dédiée (`next lint` retiré → migration CLI ESLint).
@@ -62,15 +67,14 @@ Refresh des branches Dependabot sur `chore/update-deps`. Audit via `pnpm audit`
 
 ### Vulnérabilités restantes (post-refresh, `pnpm audit`) — acceptées
 
-Toutes transitives, sans path d'exploitation directe :
+Toutes transitives, sans path d'exploitation directe (0 High après l'override `tmp`) :
 
-| Dépendance vulnérable     | Sévérité | Type    | Chemin                                      | Justification                                                                     |
-| ------------------------- | -------- | ------- | ------------------------------------------- | --------------------------------------------------------------------------------- |
-| `tmp` <0.2.6              | High     | runtime | `exceljs > tmp`                             | Path traversal via prefix/postfix non contrôlés par l'app                         |
-| `protocol-buffers-schema` | Moderate | runtime | `maplibre-gl > … > protocol-buffers-schema` | Pas de schéma protobuf fourni par l'utilisateur                                   |
-| `postcss` <8.5.10         | Moderate | build   | `@socialgouv/matomo-next > next > postcss`  | PostCSS bundlé par Next 15 ; notre `postcss` direct = 8.5.15 ; résolu par Next 16 |
-| `uuid` <11.1.1            | Moderate | runtime | `exceljs > uuid`                            | exceljs ne passe pas de buffer utilisateur                                        |
-| `diff` (jsdiff DoS)       | Low      | devDep  | `ts-node > diff`                            | Non déployé en prod                                                               |
+| Dépendance vulnérable     | Sévérité | Type    | Chemin                                      | Justification                                                                                 |
+| ------------------------- | -------- | ------- | ------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `protocol-buffers-schema` | Moderate | runtime | `maplibre-gl > … > protocol-buffers-schema` | Pas de schéma protobuf fourni par l'utilisateur ; déjà sur le dernier maplibre                |
+| `postcss` <8.5.10         | Moderate | build   | `@socialgouv/matomo-next > next > postcss`  | PostCSS bundlé par Next 15 ; notre `postcss` direct = 8.5.15 ; résolu par Next 16             |
+| `uuid` <11.1.1            | Moderate | runtime | `exceljs > uuid`                            | exceljs appelle `uuidv4()` sans buffer → faille non atteignable ; override v11 = major risqué |
+| `diff` (jsdiff DoS)       | Low      | devDep  | `ts-node > diff`                            | Non déployé en prod                                                                           |
 
 ## Prochaine revue
 
