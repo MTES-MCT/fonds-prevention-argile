@@ -179,7 +179,7 @@ interface ParcoursReport {
     id: string;
     step: string;
     dsNumber: string | null;
-    dsStatus: string;
+    dsStatus: string | null;
     submittedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;

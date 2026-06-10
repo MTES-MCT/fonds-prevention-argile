@@ -40,20 +40,25 @@ export async function syncDossierStatus(
       };
     }
 
-    const dsStatus = await graphqlClient.getDossierStatus(Number(dsNumber));
+    const dsResult = await graphqlClient.getDossierStatus(Number(dsNumber));
 
-    if (!dsStatus) {
+    if (!dsResult) {
       return {
         success: false,
         error: "Impossible de récupérer le statut DS",
       };
     }
 
-    const newStatus = dsStatus as DSStatus;
+    const newStatus = dsResult.state as DSStatus;
     const oldStatus = localDossier.dsStatus as DSStatus;
 
+    const dates = {
+      submittedAt: dsResult.datePassageEnConstruction ? new Date(dsResult.datePassageEnConstruction) : undefined,
+      instructedAt: dsResult.datePassageEnInstruction ? new Date(dsResult.datePassageEnInstruction) : undefined,
+    };
+
     if (newStatus !== oldStatus) {
-      await updateDossierStatus(localDossier.id, newStatus);
+      await updateDossierStatus(localDossier.id, newStatus, dates);
 
       return {
         success: true,
@@ -63,6 +68,11 @@ export async function syncDossierStatus(
           newStatus,
         },
       };
+    }
+
+    // Statut inchangé mais on met à jour les dates si pas encore renseignées
+    if (dates.submittedAt || dates.instructedAt) {
+      await updateDossierStatus(localDossier.id, newStatus, dates);
     }
 
     return {
@@ -109,6 +119,9 @@ export async function recomputeParcoursStatus(parcoursId: string): Promise<Actio
       return { success: true, data: { updated: false } };
     }
 
+    if (!currentDossier.dsStatus) {
+      return { success: true, data: { updated: false } };
+    }
     const expected = DS_TO_INTERNAL_STATUS[currentDossier.dsStatus as DSStatus];
     if (expected === parcours.currentStatus) {
       return {

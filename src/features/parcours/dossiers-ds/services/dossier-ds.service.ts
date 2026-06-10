@@ -1,6 +1,6 @@
 import { db } from "@/shared/database/client";
 import { dossiersDemarchesSimplifiees } from "@/shared/database/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import type { Step } from "../../core/domain/value-objects/step";
 import { DSStatus } from "../domain/value-objects/ds-status";
 import type { ActionResult } from "@/shared/types";
@@ -33,8 +33,6 @@ export async function createDossierForCurrentStep(
         dsNumber: params.dsNumber,
         dsDemarcheId: params.dsDemarcheId,
         dsUrl: params.dsUrl,
-        dsStatus: DSStatus.EN_CONSTRUCTION,
-        submittedAt: new Date(),
       })
       .returning();
 
@@ -64,12 +62,19 @@ export async function getDossierByStep(parcoursId: string, step: Step) {
   return dossier || null;
 }
 
+interface UpdateDossierStatusDates {
+  submittedAt?: Date;
+  instructedAt?: Date;
+}
+
 /**
- * Met à jour le statut DS d'un dossier
+ * Met à jour le statut DS d'un dossier.
+ * Les dates submittedAt et instructedAt ne sont écrites que si elles ne sont pas déjà renseignées (COALESCE).
  */
 export async function updateDossierStatus(
   dossierId: string,
-  newStatus: DSStatus
+  newStatus: DSStatus,
+  dates?: UpdateDossierStatusDates
 ): Promise<ActionResult<{ updated: boolean }>> {
   try {
     await db
@@ -78,6 +83,12 @@ export async function updateDossierStatus(
         dsStatus: newStatus,
         lastSyncAt: new Date(),
         ...(newStatus === DSStatus.ACCEPTE && { processedAt: new Date() }),
+        ...(dates?.submittedAt && {
+          submittedAt: sql`COALESCE(${dossiersDemarchesSimplifiees.submittedAt}, ${dates.submittedAt})`,
+        }),
+        ...(dates?.instructedAt && {
+          instructedAt: sql`COALESCE(${dossiersDemarchesSimplifiees.instructedAt}, ${dates.instructedAt})`,
+        }),
       })
       .where(eq(dossiersDemarchesSimplifiees.id, dossierId));
 
