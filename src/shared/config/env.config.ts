@@ -67,7 +67,7 @@ const franceConnectEnvSchema = z.object({
   FC_SCOPES: z.string().default("openid given_name family_name preferred_username email"),
 
   // Sécurité
-  FC_STATE_TTL: z.string().transform(Number).default("300"),
+  FC_STATE_TTL: z.coerce.number().default(300),
   FC_ACR_VALUES: z.string().default("eidas1"),
 });
 

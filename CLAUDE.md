@@ -98,6 +98,17 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 - Lint avant commit : `pnpm format && pnpm lint`
 - Produire du code, pas des plans (sauf si demandé explicitement)
 
+### Documentation à chaque PR / groupe de commits / fonctionnalité
+
+- À chaque fonctionnalité (groupe de commits) ou PR, mettre à jour la doc impactée :
+  `docs/ARCHITECTURE.md`, `docs/security/RBAC-ROLES.md`, `docs/parcours/FLOW-AND-SYNC.md`,
+  `README.md`, et créer un ADR (`/adr`) si une décision structurante est prise.
+  Pas de doc inutile : ne documenter que ce qui change réellement.
+- Vérifier les vulnérabilités à chaque fonctionnalité (groupe de commits) : lancer
+  `pnpm audit` (et `pnpm audit --prod` pour isoler le runtime). Toute vulnérabilité
+  nouvelle ou acceptée doit être tracée dans `docs/security/snyk-accepted-vulnerabilities.md`
+  avec sévérité, chemin transitif et justification d'acceptation (ou plan de correction).
+
 ## Commits : simples et conventionnels
 
 Suivre **Conventional Commits** : un titre court, une seule ligne de description.
