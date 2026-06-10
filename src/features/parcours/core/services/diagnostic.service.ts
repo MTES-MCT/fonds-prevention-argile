@@ -122,7 +122,10 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
       };
     }
 
-    await parcoursRepo.updateStatus(parcoursData.parcours.id, Status.EN_INSTRUCTION);
+    // Le dossier vient d'être créé dans DS mais n'est pas encore déposé (ds_status NULL).
+    // current_status reste TODO : il ne passera à EN_INSTRUCTION que lorsque la sync DS
+    // constatera la prise en instruction par la DDT. Voir ADR-0009.
+    await parcoursRepo.updateStatus(parcoursData.parcours.id, Status.TODO);
     debug.log("=== DOSSIER DIAGNOSTIC CRÉÉ AVEC SUCCÈS ===");
 
     return {
