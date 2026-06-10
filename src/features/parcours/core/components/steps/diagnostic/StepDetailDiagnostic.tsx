@@ -50,8 +50,12 @@ export default function StepDetailDiagnostic() {
           </p>
         )}
 
-        {isStepActive && (lastDSStatus === DSStatus.NON_ACCESSIBLE || lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
+        {isStepActive && (!lastDSStatus || lastDSStatus === DSStatus.NON_ACCESSIBLE) && (
           <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>
+        )}
+
+        {isStepActive && lastDSStatus === DSStatus.EN_CONSTRUCTION && (
+          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">En attente d'instruction</span>
         )}
 
         {isStepActive && lastDSStatus === DSStatus.EN_INSTRUCTION && (
@@ -91,7 +95,7 @@ export default function StepDetailDiagnostic() {
         {/* Contenu si étape active */}
         {isStepActive && (
           <>
-            {(lastDSStatus === DSStatus.NON_ACCESSIBLE || lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
+            {(!lastDSStatus || lastDSStatus === DSStatus.NON_ACCESSIBLE) && (
               <>
                 <p>Démarrer le diagnostic et communiquer les résultats</p>
                 {dsUrl ? (
@@ -116,6 +120,21 @@ export default function StepDetailDiagnostic() {
                   <p className="fr-error-text fr-mt-2w" role="alert">
                     {error}
                   </p>
+                )}
+              </>
+            )}
+
+            {lastDSStatus === DSStatus.EN_CONSTRUCTION && (
+              <>
+                <p>Votre diagnostic a bien été déposé. Un instructeur l'analysera prochainement.</p>
+                {dsUrl && (
+                  <Link
+                    href={dsUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="fr-btn fr-btn--secondary fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line">
+                    Voir mes réponses
+                  </Link>
                 )}
               </>
             )}

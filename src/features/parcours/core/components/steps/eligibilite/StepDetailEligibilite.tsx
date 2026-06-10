@@ -34,8 +34,12 @@ export default function StepDetailEligibilite() {
           </p>
         )}
 
-        {isStepActive && (lastDSStatus === DSStatus.NON_ACCESSIBLE || lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
+        {isStepActive && (!lastDSStatus || lastDSStatus === DSStatus.NON_ACCESSIBLE) && (
           <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>
+        )}
+
+        {isStepActive && lastDSStatus === DSStatus.EN_CONSTRUCTION && (
+          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">En attente d'instruction</span>
         )}
 
         {isStepActive && lastDSStatus === DSStatus.EN_INSTRUCTION && (
@@ -77,8 +81,8 @@ export default function StepDetailEligibilite() {
         {/* Contenu si étape active */}
         {isStepActive && (
           <>
-            {/* Contenu si en brouillon ou en construction */}
-            {(lastDSStatus === DSStatus.NON_ACCESSIBLE || lastDSStatus === DSStatus.EN_CONSTRUCTION) && (
+            {/* Contenu si pas encore de statut */}
+            {(!lastDSStatus || lastDSStatus === DSStatus.NON_ACCESSIBLE) && (
               <>
                 <p>Remplissez le formulaire pour connaître votre éligibilité </p>
 
@@ -89,6 +93,25 @@ export default function StepDetailEligibilite() {
                     target="_blank"
                     className="fr-btn fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line">
                     Reprendre le formulaire
+                  </Link>
+                ) : (
+                  <></>
+                )}
+              </>
+            )}
+
+            {/* Contenu si dossier déposé, en attente d'instruction */}
+            {lastDSStatus === DSStatus.EN_CONSTRUCTION && (
+              <>
+                <p>Votre formulaire a bien été déposé. Un instructeur l'analysera prochainement.</p>
+
+                {dsUrl ? (
+                  <Link
+                    href={dsUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="fr-btn fr-btn--secondary fr-text--sm fr-btn--icon-right fr-icon-arrow-right-s-line">
+                    Voir mes réponses
                   </Link>
                 ) : (
                   <></>
