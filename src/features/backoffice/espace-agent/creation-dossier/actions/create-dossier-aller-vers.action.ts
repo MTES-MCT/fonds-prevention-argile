@@ -97,7 +97,7 @@ export async function createDossierAllerVersAction(
 
     const parsed = createDossierSchema.safeParse(input);
     if (!parsed.success) {
-      const firstError = parsed.error.errors[0]?.message ?? "Données invalides";
+      const firstError = parsed.error.issues[0]?.message ?? "Données invalides";
       return { success: false, error: firstError };
     }
 

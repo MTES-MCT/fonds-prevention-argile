@@ -75,7 +75,7 @@ export async function updateContactInfoAction(input: UpdateContactInfoInput): Pr
 
     const parsed = updateContactInfoSchema.safeParse(input);
     if (!parsed.success) {
-      const firstError = parsed.error.errors[0]?.message ?? "Données invalides";
+      const firstError = parsed.error.issues[0]?.message ?? "Données invalides";
       return { success: false, error: firstError };
     }
 
