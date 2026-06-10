@@ -71,12 +71,29 @@ Le mapping `DS_TO_INTERNAL_STATUS` (`EN_CONSTRUCTION → TODO`, cf. [FLOW-AND-SY
 - `0034_nullable_ds_status` : `ds_status` DROP NOT NULL + DROP DEFAULT, ajout `instructed_at`, backfill `UPDATE … SET ds_status = NULL WHERE last_sync_at IS NULL`.
 - Appliquer avec `pnpm db:migrate`.
 
+## Cohérence de `current_status` à la création
+
+La sémantique ci-dessus a révélé une incohérence sur `current_status` (l'état interne du parcours, cf. [ADR-0007](0007-modele-etat-parcours-sync-ds.md)) au moment de la création d'un dossier.
+
+`current_status` n'a que 3 valeurs (`todo | en_instruction | valide`) pour 4 états réels (pas déposé / déposé en attente / en instruction / instruit). La vérité fine est portée par `ds_status` ; `current_status` n'est qu'un dérivé grossier. Le mapping `DS_TO_INTERNAL_STATUS` (`EN_CONSTRUCTION → TODO`) **n'est pas modifié**.
+
+Décision : **`current_status` n'est plus posé optimistement à `EN_INSTRUCTION` à la création d'un dossier ; il reste `TODO` jusqu'à ce que la sync DS constate la prise en instruction.**
+
+- `diagnostic.service` posait `EN_INSTRUCTION` à la création (alors que `eligibilite.service` posait déjà `TODO`) → aligné sur `TODO`.
+- L'action `creerDossier` (code mort, posait `EN_INSTRUCTION` + servait de verrou anti-doublon via `canCreateDossier`) est supprimée.
+- `eligibilite.service` gagne une garde d'idempotence (`getDossierByStep`) puisque le bump de statut ne sert plus de verrou anti-doublon.
+- L'état « qui détient la balle » (`getDossierEtat`, badge DDT/ménage du listing agent) et le `InfoDossierCallout` sont pilotés par `ds_status` (et `instructedAt` pour distinguer 1er dépôt et retour de correction), et non plus par `current_status`.
+
+Effets : un dossier fraîchement créé non déposé n'apparaît plus « en instruction » côté agent ; un dossier déposé en attente est correctement attribué à la DDT ; la validation manuelle (`canValidateDossier`, gate `EN_INSTRUCTION`) n'est plus possible avant que la DDT instruise réellement.
+
 ## Liens
 
 - ADR liés : [ADR-0004](0004-demarches-simplifiees-backbone.md), [ADR-0007](0007-modele-etat-parcours-sync-ds.md)
-- Documentation flux : [docs/parcours/FLOW-AND-SYNC.md](../parcours/FLOW-AND-SYNC.md) (§1.2, §3.2)
+- Documentation flux : [docs/parcours/FLOW-AND-SYNC.md](../parcours/FLOW-AND-SYNC.md) (§1.2, §1.3, §2, §3.2)
 - Migration : `src/shared/database/migrations/0034_nullable_ds_status.sql`
 - Sync DS : `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`, `src/features/parcours/dossiers-ds/services/dossier-ds.service.ts`, `src/features/parcours/dossiers-ds/adapters/graphql/client.ts`
+- `current_status` à la création : `src/features/parcours/core/services/diagnostic.service.ts`, `src/features/parcours/core/services/eligibilite.service.ts`
+- État DDT/ménage : `src/features/parcours/core/domain/services/dossier-etat.service.ts`, `src/features/backoffice/espace-agent/dossiers/services/responsable-resolver.service.ts`
 - Affichage agent : `src/app/(backoffice)/espace-agent/dossiers/[id]/components/InfoDossierCallout.tsx`
 - Affichage demandeur : `src/features/parcours/core/components/steps/`, `src/features/parcours/core/components/MonCompteClient.tsx`
 - Détection ops : `scripts/ops/lib/double-progression.ts`
