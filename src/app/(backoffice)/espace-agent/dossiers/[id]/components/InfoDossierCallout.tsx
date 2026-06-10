@@ -9,6 +9,8 @@ interface InfoDossierCalloutProps {
   dsStatus: DSStatus | null;
   /** Statut validation AMO — sert à détecter un dossier archivé non éligible. */
   validationStatut?: StatutValidationAmo;
+  /** Date de passage en instruction — distingue 1er dépôt et retour de correction DDT. */
+  instructedAt: Date | null;
 }
 
 interface CalloutMessage {
@@ -105,7 +107,39 @@ function getEnInstructionMessage(currentStep: Step): CalloutMessage {
 }
 
 /**
- * Messages par defaut (TODO / en construction)
+ * Messages lorsque le dossier est en construction :
+ * - Cas 1 (instructedAt null) : dépôt initial, en attente de prise en instruction
+ * - Cas 2 (instructedAt renseigné) : renvoyé en construction par l'instructeur pour demande de complément
+ */
+function getEnConstructionMessage(currentStep: Step, isRetourCorrection: boolean): CalloutMessage {
+  const stepLabel: Record<string, string> = {
+    [Step.ELIGIBILITE]: "La demande d'éligibilité",
+    [Step.DIAGNOSTIC]: "Le diagnostic",
+    [Step.DEVIS]: "Les devis",
+    [Step.FACTURES]: "Les factures",
+  };
+  const label = stepLabel[currentStep] ?? "Le dossier";
+
+  if (isRetourCorrection) {
+    return {
+      title: `${label} a été renvoyé(e) en construction par la DDT.`,
+      description:
+        "La DDT a demandé des compléments ou corrections. Le demandeur doit mettre à jour son dossier sur demarche.numerique.gouv.fr puis le soumettre à nouveau.",
+      hint: "Accompagnez le demandeur dans la correction de son dossier.",
+      variant: "yellow-moutarde",
+    };
+  }
+
+  return {
+    title: `${label} a été déposé(e), en attente de prise en instruction par la DDT.`,
+    description: "Le demandeur sera notifié une fois que la DDT aura pris son dossier en instruction.",
+    hint: "",
+    variant: "blue-france",
+  };
+}
+
+/**
+ * Messages par defaut (dossier non encore déposé)
  */
 function getDefaultMessage(currentStep: Step): CalloutMessage {
   switch (currentStep) {
@@ -162,7 +196,13 @@ function getDefaultMessage(currentStep: Step): CalloutMessage {
 /**
  * Callout informatif sur l'etat du dossier et les actions a effectuer par le demandeur
  */
-export function InfoDossierCallout({ currentStep, currentStatus, dsStatus, validationStatut }: InfoDossierCalloutProps) {
+export function InfoDossierCallout({
+  currentStep,
+  currentStatus,
+  dsStatus,
+  validationStatut,
+  instructedAt,
+}: InfoDossierCalloutProps) {
   let message: CalloutMessage;
 
   if (validationStatut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
@@ -192,6 +232,8 @@ export function InfoDossierCallout({ currentStep, currentStatus, dsStatus, valid
     message = getRefuseMessage(currentStep);
   } else if (dsStatus === DSStatus.EN_INSTRUCTION || currentStatus === Status.EN_INSTRUCTION) {
     message = getEnInstructionMessage(currentStep);
+  } else if (dsStatus === DSStatus.EN_CONSTRUCTION) {
+    message = getEnConstructionMessage(currentStep, instructedAt !== null);
   } else {
     message = getDefaultMessage(currentStep);
   }

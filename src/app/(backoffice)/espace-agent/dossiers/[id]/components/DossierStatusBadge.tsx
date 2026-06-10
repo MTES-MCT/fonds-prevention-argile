@@ -19,7 +19,7 @@ const DS_STATUS_BADGE_CLASS: Record<DSStatus, string> = {
  */
 export function DossierStatusBadge({ dsStatus }: DossierStatusBadgeProps) {
   if (!dsStatus) {
-    return <p className="fr-badge fr-badge--new">EN CONSTRUCTION</p>;
+    return <p className="fr-badge fr-badge--new">En cours de création</p>;
   }
 
   const badgeClass = DS_STATUS_BADGE_CLASS[dsStatus] ?? "fr-badge--new";
