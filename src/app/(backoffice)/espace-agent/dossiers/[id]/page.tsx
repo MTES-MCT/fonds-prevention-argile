@@ -112,6 +112,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
               currentStatus={dossier.currentStatus}
               dsStatus={dossier.dsStatus}
               validationStatut={dossier.validationStatut}
+              instructedAt={dossier.instructedAt}
             />
             <div className="fr-mt-4w">
               <ActionsRealisees parcoursId={dossier.parcoursId} />

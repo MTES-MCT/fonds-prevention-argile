@@ -43,6 +43,8 @@ export interface DossierDetail {
   dsStatus: DSStatus | null;
   /** Statut de la validation AMO (pour distinguer en_attente / éligible / non éligible côté UI). */
   validationStatut: StatutValidationAmo;
+  /** Date de passage en instruction (null si jamais passé en instruction) */
+  instructedAt: Date | null;
   /** Date de création du parcours */
   parcoursCreatedAt: Date;
   /** Date de dernière mise à jour du parcours */
