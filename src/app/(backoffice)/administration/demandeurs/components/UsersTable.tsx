@@ -146,18 +146,26 @@ function StatusBadges({ user }: { user: UserWithParcoursDetails }) {
     if (!dossier) return null;
 
     // Vérifier le vrai statut DS, pas seulement submittedAt
+    if (!dossier.dsStatus) {
+      return (
+        <span className="fr-badge fr-badge--warning fr-badge--sm">
+          BROUILLON CRÉÉ LE {formatDate(dossier.createdAt.toISOString())}
+        </span>
+      );
+    }
+
     switch (dossier.dsStatus) {
       case DSStatus.EN_CONSTRUCTION:
         return (
-          <span className="fr-badge fr-badge--warning fr-badge--sm">
-            BROUILLON CRÉÉ LE {formatDate(dossier.createdAt.toISOString())}
+          <span className="fr-badge fr-badge--new fr-badge--sm">
+            DÉPOSÉ{dossier.submittedAt ? ` LE ${formatDate(dossier.submittedAt.toISOString())}` : ""}
           </span>
         );
 
       case DSStatus.EN_INSTRUCTION:
         return (
           <span className="fr-badge fr-badge--info fr-badge--sm">
-            EN INSTRUCTION{dossier.submittedAt ? ` LE ${formatDate(dossier.submittedAt.toISOString())}` : ""}
+            EN INSTRUCTION{dossier.instructedAt ? ` LE ${formatDate(dossier.instructedAt.toISOString())}` : ""}
           </span>
         );
 
