@@ -127,5 +127,10 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 | Matomo                | Analytics                                        | `@socialgouv/matomo-next`                        |
 | Géorisques / RGA      | Données risque                                   | `src/features/seo/`, `scripts/import/rga-zones/` |
 
+> Démarches Simplifiées = `demarche.numerique.gouv.fr` (nouveau nom de
+> `demarches-simplifiees.fr`, même backend). Une seule instance : les 3 URLs de
+> config DS pointent vers le même domaine et le token doit être instructeur de
+> chaque démarche. Voir [ADR-0009](adr/0009-instance-unique-ds-et-permissions-token.md).
+
 Voir aussi : [FLOW-AND-SYNC.md](parcours/FLOW-AND-SYNC.md) (parcours et sync DS),
 [RBAC-ROLES.md](security/RBAC-ROLES.md) (accès), [adr/](adr/README.md) (décisions).
