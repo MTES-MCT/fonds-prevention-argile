@@ -22,11 +22,11 @@ Source de vérité : `src/shared/domain/value-objects/step.enum.ts`. Ordre canon
 
 Chaque parcours a deux niveaux d'état complémentaires :
 
-| Niveau            | Champ                                | Source de vérité                 |
-| ----------------- | ------------------------------------ | -------------------------------- |
-| Dossier DS        | `dossiers_demarches_simplifiees.ds_status` | API Démarches Simplifiées        |
-| Parcours interne  | `parcours_prevention.current_status` | Dérivé du dossier de `current_step` |
-| Parcours interne  | `parcours_prevention.current_step`   | Logique métier (progression)     |
+| Niveau           | Champ                                      | Source de vérité                    |
+| ---------------- | ------------------------------------------ | ----------------------------------- |
+| Dossier DS       | `dossiers_demarches_simplifiees.ds_status` | API Démarches Simplifiées           |
+| Parcours interne | `parcours_prevention.current_status`       | Dérivé du dossier de `current_step` |
+| Parcours interne | `parcours_prevention.current_step`         | Logique métier (progression)        |
 
 - **`ds_status`** ∈ `EN_CONSTRUCTION | EN_INSTRUCTION | ACCEPTE | REFUSE | CLASSE_SANS_SUITE | NON_ACCESSIBLE` — c'est DS qui décide.
 - **`current_status`** ∈ `todo | en_instruction | valide` — dérivé via `DS_TO_INTERNAL_STATUS` (voir §3.2).
@@ -48,21 +48,21 @@ TODO ──(création dossier DS)──► EN_INSTRUCTION ──(sync DS, ds_sta
 
 ### 2.1 Tableau des transitions
 
-| Transition                     | Mécanisme                                | Code |
-|--------------------------------|------------------------------------------|------|
-| Inscription → `choix_amo / todo` | À la création du parcours (`findOrCreateForUser`) | `parcours-prevention.repository.ts:206` |
-| `choix_amo / todo` → `choix_amo / en_instruction` | Demandeur choisit un AMO | `selectAmoForUser`, `amo-selection.service.ts:266` |
-| `choix_amo / en_instruction` → `eligibilite / todo` | **AMO valide** via lien email → `approveValidation` appelle `moveToNextStep` automatiquement | `amo-validation.service.ts:66` |
-| `eligibilite / todo` → `eligibilite / en_instruction` | Demandeur soumet le formulaire DS éligibilité (`creerDossier`) | `parcours-dossier.actions.ts:54` |
-| `eligibilite / en_instruction` → `eligibilite / valide` | Sync détecte `ds_status = accepte` + `recomputeParcoursStatus` | `ds-sync.service.ts` (voir §3) |
-| `eligibilite / valide` → `diagnostic / todo` | **CRON** appelle `moveToNextStep` automatiquement après recompute | `parcours-sync-batch.service.ts` (voir §4) |
-| `diagnostic / todo` → `diagnostic / en_instruction` | Demandeur clique « Transmettre les résultats » → `envoyerDossierDiagnostic` (préremplissage DS) | `diagnostic.service.ts:125` |
-| `diagnostic / en_instruction` → `diagnostic / valide` | Idem éligibilité (sync + recompute) | id. |
-| `diagnostic / valide` → `devis / todo` | Idem (CRON) | id. |
-| `devis / *` → `devis / valide` | Idem (cycle dépôt → sync → recompute) | id. |
-| `devis / valide` → `factures / todo` | Idem (CRON) | id. |
-| `factures / *` → `factures / valide` | Sync DS (factures.ds_status = accepte) + recompute | id. |
-| `factures / valide` | **État terminal**. `moveToNextStep` détecte `isParcoursComplete` et appelle `markAsCompleted` (set `completed_at`). Le parcours sort de `findActiveForSync` au prochain run. | `parcours-progression.service.ts` (branche `isParcoursComplete`), `parcours-prevention.repository.ts` (méthode `markAsCompleted` idempotente) |
+| Transition                                              | Mécanisme                                                                                                                                                                    | Code                                                                                                                                          |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Inscription → `choix_amo / todo`                        | À la création du parcours (`findOrCreateForUser`)                                                                                                                            | `parcours-prevention.repository.ts:206`                                                                                                       |
+| `choix_amo / todo` → `choix_amo / en_instruction`       | Demandeur choisit un AMO                                                                                                                                                     | `selectAmoForUser`, `amo-selection.service.ts:266`                                                                                            |
+| `choix_amo / en_instruction` → `eligibilite / todo`     | **AMO valide** via lien email → `approveValidation` appelle `moveToNextStep` automatiquement                                                                                 | `amo-validation.service.ts:66`                                                                                                                |
+| `eligibilite / todo` → `eligibilite / en_instruction`   | Demandeur soumet le formulaire DS éligibilité (`creerDossier`)                                                                                                               | `parcours-dossier.actions.ts:54`                                                                                                              |
+| `eligibilite / en_instruction` → `eligibilite / valide` | Sync détecte `ds_status = accepte` + `recomputeParcoursStatus`                                                                                                               | `ds-sync.service.ts` (voir §3)                                                                                                                |
+| `eligibilite / valide` → `diagnostic / todo`            | **CRON** appelle `moveToNextStep` automatiquement après recompute                                                                                                            | `parcours-sync-batch.service.ts` (voir §4)                                                                                                    |
+| `diagnostic / todo` → `diagnostic / en_instruction`     | Demandeur clique « Transmettre les résultats » → `envoyerDossierDiagnostic` (préremplissage DS)                                                                              | `diagnostic.service.ts:125`                                                                                                                   |
+| `diagnostic / en_instruction` → `diagnostic / valide`   | Idem éligibilité (sync + recompute)                                                                                                                                          | id.                                                                                                                                           |
+| `diagnostic / valide` → `devis / todo`                  | Idem (CRON)                                                                                                                                                                  | id.                                                                                                                                           |
+| `devis / *` → `devis / valide`                          | Idem (cycle dépôt → sync → recompute)                                                                                                                                        | id.                                                                                                                                           |
+| `devis / valide` → `factures / todo`                    | Idem (CRON)                                                                                                                                                                  | id.                                                                                                                                           |
+| `factures / *` → `factures / valide`                    | Sync DS (factures.ds_status = accepte) + recompute                                                                                                                           | id.                                                                                                                                           |
+| `factures / valide`                                     | **État terminal**. `moveToNextStep` détecte `isParcoursComplete` et appelle `markAsCompleted` (set `completed_at`). Le parcours sort de `findActiveForSync` au prochain run. | `parcours-progression.service.ts` (branche `isParcoursComplete`), `parcours-prevention.repository.ts` (méthode `markAsCompleted` idempotente) |
 
 ### 2.2 Garde-fous existants
 
@@ -110,24 +110,24 @@ syncAllDossiers(parcoursId, dossiers)
 
 Source : `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`.
 
-| `ds_status`        | `current_status` (interne) |
-|--------------------|----------------------------|
-| `EN_CONSTRUCTION`  | `TODO`                     |
-| `EN_INSTRUCTION`   | `EN_INSTRUCTION`           |
-| `ACCEPTE`          | `VALIDE`                   |
-| `REFUSE`           | `EN_INSTRUCTION`           |
-| `CLASSE_SANS_SUITE`| `EN_INSTRUCTION`           |
-| `NON_ACCESSIBLE`   | `TODO`                     |
+| `ds_status`         | `current_status` (interne) |
+| ------------------- | -------------------------- |
+| `EN_CONSTRUCTION`   | `TODO`                     |
+| `EN_INSTRUCTION`    | `EN_INSTRUCTION`           |
+| `ACCEPTE`           | `VALIDE`                   |
+| `REFUSE`            | `EN_INSTRUCTION`           |
+| `CLASSE_SANS_SUITE` | `EN_INSTRUCTION`           |
+| `NON_ACCESSIBLE`    | `TODO`                     |
 
 Note : `REFUSE` repasse en `EN_INSTRUCTION` interne (et non `VALIDE`) — c'est volontaire, un dossier refusé n'avance pas l'étape.
 
 ### 3.3 Déclencheurs de sync
 
-| Déclencheur | Service appelé | Périmètre |
-|-------------|----------------|-----------|
-| **CRON GitHub Actions** (3 fois par jour : 06:15, 13:15, 16:15 UTC) | `runSyncBatch("cron")` | Tous les parcours actifs |
-| **Super-admin** (bouton « Lancer maintenant ») | `runSyncBatch("manual")` | Idem CRON |
-| **UI demandeur** (au refresh, manuel, ou navigation) | `syncUserDossierStatus(step)` ou `syncAllUserDossiers()` | Le parcours du demandeur connecté |
+| Déclencheur                                                         | Service appelé                                           | Périmètre                         |
+| ------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------- |
+| **CRON GitHub Actions** (3 fois par jour : 06:15, 13:15, 16:15 UTC) | `runSyncBatch("cron")`                                   | Tous les parcours actifs          |
+| **Super-admin** (bouton « Lancer maintenant »)                      | `runSyncBatch("manual")`                                 | Idem CRON                         |
+| **UI demandeur** (au refresh, manuel, ou navigation)                | `syncUserDossierStatus(step)` ou `syncAllUserDossiers()` | Le parcours du demandeur connecté |
 
 Tous appellent `recomputeParcoursStatus` après la phase de sync — soit en interne (`syncAllDossiers`, `runSyncBatch`), soit en explicite (`syncUserDossierStatus`).
 
@@ -149,43 +149,43 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
    b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`.
    c. Appelle `recomputeParcoursStatus` une fois.
    d. Si `current_status === VALIDE`, appelle `moveToNextStep` qui :
-      - avance à l'étape suivante si non finale ;
-      - sinon (étape `factures`) appelle `markAsCompleted` (set `completed_at`).
-   e. Si quelque chose a changé (changement DS, status, étape, ou erreur), écrit une `sync_run_entries`.
-   f. `sleep(150ms)` pour ne pas saturer l'API DS.
+   - avance à l'étape suivante si non finale ;
+   - sinon (étape `factures`) appelle `markAsCompleted` (set `completed_at`).
+     e. Si quelque chose a changé (changement DS, status, étape, ou erreur), écrit une `sync_run_entries`.
+     f. `sleep(150ms)` pour ne pas saturer l'API DS.
 5. Finalise le run : `finished_at = NOW()`, totaux, status final (`success` / `partial` / `error` / pas d'erreur).
 
 ### 4.2 Tables d'historique
 
 **`sync_runs`** — un enregistrement par run.
 
-| Colonne                 | Type                                |
-|-------------------------|-------------------------------------|
-| `id`                    | uuid                                |
-| `started_at`            | timestamp                           |
-| `finished_at`           | timestamp (null = en cours)         |
-| `status`                | `success | partial | error | null` |
-| `triggered_by`          | `cron | manual`                     |
-| `total_parcours_scanned`| int                                 |
-| `total_parcours_updated`| int                                 |
-| `total_errors`          | int                                 |
-| `error_summary`         | text (20 premières erreurs concat)  |
+| Colonne                  | Type                               |
+| ------------------------ | ---------------------------------- | ------- | ----- | ----- |
+| `id`                     | uuid                               |
+| `started_at`             | timestamp                          |
+| `finished_at`            | timestamp (null = en cours)        |
+| `status`                 | `success                           | partial | error | null` |
+| `triggered_by`           | `cron                              | manual` |
+| `total_parcours_scanned` | int                                |
+| `total_parcours_updated` | int                                |
+| `total_errors`           | int                                |
+| `error_summary`          | text (20 premières erreurs concat) |
 
 **`sync_run_entries`** — une entrée par parcours **modifié** (ou en erreur) durant un run. Les parcours sans changement ne génèrent **pas** d'entrée pour ne pas alourdir la table.
 
-| Colonne             | Type                                  |
-|---------------------|---------------------------------------|
-| `id`                | uuid                                  |
-| `sync_run_id`       | FK → sync_runs (cascade)              |
-| `parcours_id`       | FK → parcours_prevention (cascade)    |
-| `step_before`       | step enum (nullable)                  |
-| `step_after`        | step enum (nullable)                  |
-| `status_before`     | status enum (nullable)                |
-| `status_after`      | status enum (nullable)                |
+| Colonne             | Type                                           |
+| ------------------- | ---------------------------------------------- |
+| `id`                | uuid                                           |
+| `sync_run_id`       | FK → sync_runs (cascade)                       |
+| `parcours_id`       | FK → parcours_prevention (cascade)             |
+| `step_before`       | step enum (nullable)                           |
+| `step_after`        | step enum (nullable)                           |
+| `status_before`     | status enum (nullable)                         |
+| `status_after`      | status enum (nullable)                         |
 | `ds_status_changes` | jsonb : `[{ step, oldDsStatus, newDsStatus }]` |
-| `step_advanced`     | boolean                               |
-| `error`             | text (nullable)                       |
-| `created_at`        | timestamp                             |
+| `step_advanced`     | boolean                                        |
+| `error`             | text (nullable)                                |
+| `created_at`        | timestamp                                      |
 
 ### 4.3 Configuration GitHub Actions
 
@@ -193,11 +193,11 @@ Workflow : [`.github/workflows/cron-sync-parcours.yml`](../../.github/workflows/
 
 **Cadence** : 3 créneaux par jour, en UTC :
 
-| Cron UTC       | Heure FR hiver | Heure FR été | Intention            |
-|----------------|----------------|--------------|----------------------|
-| `15 6 * * *`   | 07:15          | 08:15        | tôt le matin         |
-| `15 13 * * *`  | 14:15          | 15:15        | après déjeuner       |
-| `15 16 * * *`  | 17:15          | 18:15        | fin de journée       |
+| Cron UTC      | Heure FR hiver | Heure FR été | Intention      |
+| ------------- | -------------- | ------------ | -------------- |
+| `15 6 * * *`  | 07:15          | 08:15        | tôt le matin   |
+| `15 13 * * *` | 14:15          | 15:15        | après déjeuner |
+| `15 16 * * *` | 17:15          | 18:15        | fin de journée |
 
 GitHub Actions cron est en **UTC sans support timezone**, donc les heures locales FR dérivent de ±1 h selon le passage été/hiver. Les heures UTC ont été choisies pour rester dans des fenêtres acceptables toute l'année. Décalage de 15 min après l'heure pile pour éviter les pics de charge GitHub Actions.
 
@@ -239,11 +239,11 @@ URL : `/administration/synchronisations` (réservée `SUPER_ADMINISTRATEUR`).
 
 Server actions : `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`.
 
-| Action                       | Rôle requis        | Effet                                    |
-|------------------------------|--------------------|------------------------------------------|
-| `listSyncRunsAction`         | SUPER_ADMINISTRATEUR | Liste paginée                            |
-| `getSyncRunDetailAction`     | SUPER_ADMINISTRATEUR | Détail d'un run avec entries jointes     |
-| `triggerManualSyncAction`    | SUPER_ADMINISTRATEUR | Lance `runSyncBatch("manual")`           |
+| Action                    | Rôle requis          | Effet                                |
+| ------------------------- | -------------------- | ------------------------------------ |
+| `listSyncRunsAction`      | SUPER_ADMINISTRATEUR | Liste paginée                        |
+| `getSyncRunDetailAction`  | SUPER_ADMINISTRATEUR | Détail d'un run avec entries jointes |
+| `triggerManualSyncAction` | SUPER_ADMINISTRATEUR | Lance `runSyncBatch("manual")`       |
 
 ---
 
@@ -256,6 +256,7 @@ Server actions : `src/features/backoffice/administration/synchronisations/action
 **Justification** : avant le CRON, il fallait une action utilisateur (visite + clic) pour propager. Conséquence : si personne ne se connectait, le parcours restait figé indéfiniment, même après acceptation DS. Avec l'auto-progression CRON, le parcours avance dès que possible. C'était précisément le bug initial qui a déclenché ce chantier (parcours bloqué en `eligibilite/valide` après acceptation DS).
 
 **Alternatives écartées** :
+
 - Garder le bouton manuel : ajoute une étape inutile pour le demandeur, et résout pas le cas où il ne se connecte plus.
 - Notification email + bouton : possible mais hors scope, la sync silencieuse fait le job.
 
@@ -286,6 +287,7 @@ Server actions : `src/features/backoffice/administration/synchronisations/action
 **Décision** : workflow GitHub Actions (cron natif) qui appelle un endpoint HTTP de Next.js, pas de process worker côté Scalingo. Cadence : 3 fois par jour à des créneaux choisis (matin, après déjeuner, fin de journée). Voir §4.3.
 
 **Justification** :
+
 - Pas de dépendance Scalingo ajoutée (pas d'addon Scheduler à activer).
 - Logs natifs visibles dans l'UI GitHub (Actions → CRON sync parcours), notifications email natives sur échec.
 - "Run workflow" manuel disponible depuis l'UI GitHub.
@@ -294,11 +296,13 @@ Server actions : `src/features/backoffice/administration/synchronisations/action
 - Testable manuellement avec un simple `curl`.
 
 **Alternatives écartées** :
+
 - **Scalingo Scheduler** : valable, donne une meilleure précision de timing (cron Linux standard vs jusqu'à 15 min de retard côté GitHub Actions). Écarté car avec 3 créneaux espacés de plusieurs heures, un retard de quelques minutes est sans effet, et la visibilité GitHub est préférée.
 - `node-cron` dans le process Next.js : ne survit pas aux redémarrages, multiple instances → multiple runs simultanés.
 - Process Procfile dédié : nécessite un dyno supplémentaire, complique le déploiement.
 
 **Trade-off cadence / précision** :
+
 - GitHub Actions cron a un retard documenté pouvant aller jusqu'à 15 min (parfois plus en heures de pointe). Sur une cadence courte (15 min) ça devient problématique. Sur 3 créneaux espacés de plusieurs heures, c'est négligeable.
 - Si la latence d'acceptation DS → progression devient un point de douleur produit, soit on augmente la cadence (`*/4 * * *` = 4 h), soit on rebascule sur Scalingo Scheduler.
 
@@ -332,10 +336,11 @@ Le seuil de 30 min est volontairement généreux par rapport au `maxDuration = 5
 **Justification** : un super-admin peut cliquer « Lancer maintenant » pendant qu'un run scheduled tourne (ou inversement) → deux `runSyncBatch` parallèles écriraient des entries dupliquées et doubleraient les appels DS. Le verrou est implémenté en applicatif (pas un advisory lock Postgres) car il suffit largement pour la fréquence et la volumétrie attendues.
 
 **Type retourné** : `SyncRunResult` est un union discriminé :
+
 ```ts
 type SyncRunResult =
   | { skipped: false; runId; status; totalScanned; totalUpdated; totalErrors }
-  | { skipped: true;  reason; existingRunId }
+  | { skipped: true; reason; existingRunId };
 ```
 
 ### 6.9 Sleep 150 ms entre parcours
@@ -351,25 +356,61 @@ type SyncRunResult =
 
 ---
 
-## 7. Fichiers clés
+## 7. Prérequis et pièges DS (préremplissage, publication, permissions)
 
-| Rôle | Fichier |
-|------|---------|
-| Schéma parcours | `src/shared/database/schema/parcours-prevention.ts` |
-| Schéma dossiers DS | `src/shared/database/schema/dossiers-demarches-simplifiees.ts` |
-| Schéma historique CRON | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts` |
-| Repository parcours | `src/shared/database/repositories/parcours-prevention.repository.ts` |
-| Repository sync_runs | `src/shared/database/repositories/sync-run.repository.ts` |
-| Enums step / status | `src/shared/domain/value-objects/step.enum.ts`, `status.enum.ts`, `ds-status.enum.ts` |
-| Mapping DS → interne | `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts` |
-| Permissions / garde-fous | `src/features/parcours/core/services/parcours-permissions.service.ts` |
-| Progression d'étape | `src/features/parcours/core/services/parcours-progression.service.ts` |
-| Service sync DS | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts` |
-| Service sync batch (CRON) | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts` |
-| Action UI sync | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts` |
-| Validation AMO (auto-progression CHOIX_AMO) | `src/features/parcours/amo/services/amo-validation.service.ts` |
-| Endpoint CRON | `src/app/api/cron/sync-parcours/route.ts` |
-| Workflow CRON GitHub Actions | `.github/workflows/cron-sync-parcours.yml` |
-| Server actions admin | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts` |
-| Page liste runs | `src/app/(backoffice)/administration/synchronisations/page.tsx` |
-| Page détail run | `src/app/(backoffice)/administration/synchronisations/[id]/page.tsx` |
+Diagnostiqués en juin 2026 sur un parcours bloqué en éligibilité. Ce ne sont **pas
+des bugs de code** mais des prérequis opérationnels côté DS — à vérifier avant de
+soupçonner le code.
+
+### 7.1 Le lien de préremplissage est réutilisable (pas à usage unique)
+
+L'URL `ds_url` d'un dossier `en_construction` (`/commencer/<uuid>?prefill_token=...`)
+est **réutilisable** : à chaque accès, DS affiche « Vous avez un dossier prérempli →
+Poursuivre mon dossier prérempli ». Le `prefill_token` n'est **pas** consommé/éphémère.
+Conséquence : `buildDemarcheUrl` (`ds-url.utils.ts`) qui sert ce lien tant que
+`ds_status = en_construction` est **correct** — un bouton « Reprendre » qui le ressert
+fonctionne. Ne pas chercher un bug de 404 de ce côté.
+
+### 7.2 Une démarche non publiée (brouillon/test) bloque le dépôt
+
+Une démarche en état `brouillon` (GraphQL `demarche.state`) affiche côté usager
+« Démarche en test, réservée à l'administration… pour déposer, obtenez le lien
+public ». Le demandeur peut **ouvrir/poursuivre** son brouillon mais **ne peut pas
+déposer** → le dossier reste `en_construction` → le parcours ne progresse jamais
+(symptôme : « validé mais jamais retrouvé / bloqué à l'étape »). Prérequis : la
+démarche doit être **publiée**. Détection : `pnpm ds:check-permissions` affiche
+`[non publiée]` pour ces démarches.
+
+### 7.3 Le token doit être instructeur de chaque démarche
+
+Cf. [ADR-0009](../adr/0009-instance-unique-ds-et-permissions-token.md). Si le token
+GraphQL n'est pas instructeur d'une démarche, `getDossier` reçoit `unauthorized` →
+la sync de cette étape échoue. Depuis juin 2026 cette erreur est **tracée**
+(`sync_run_entries.error`) au lieu d'être avalée en faux « RAS » (voir §3.1).
+Détection préventive : `pnpm ds:check-permissions` (statut `UNAUTHORIZED`).
+
+---
+
+## 8. Fichiers clés
+
+| Rôle                                        | Fichier                                                                                |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Schéma parcours                             | `src/shared/database/schema/parcours-prevention.ts`                                    |
+| Schéma dossiers DS                          | `src/shared/database/schema/dossiers-demarches-simplifiees.ts`                         |
+| Schéma historique CRON                      | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts`                       |
+| Repository parcours                         | `src/shared/database/repositories/parcours-prevention.repository.ts`                   |
+| Repository sync_runs                        | `src/shared/database/repositories/sync-run.repository.ts`                              |
+| Enums step / status                         | `src/shared/domain/value-objects/step.enum.ts`, `status.enum.ts`, `ds-status.enum.ts`  |
+| Mapping DS → interne                        | `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`                  |
+| Permissions / garde-fous                    | `src/features/parcours/core/services/parcours-permissions.service.ts`                  |
+| Progression d'étape                         | `src/features/parcours/core/services/parcours-progression.service.ts`                  |
+| Service sync DS                             | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                        |
+| Service sync batch (CRON)                   | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`            |
+| Vérif permissions / état démarches DS       | `scripts/ops/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                    |
+| Action UI sync                              | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                    |
+| Validation AMO (auto-progression CHOIX_AMO) | `src/features/parcours/amo/services/amo-validation.service.ts`                         |
+| Endpoint CRON                               | `src/app/api/cron/sync-parcours/route.ts`                                              |
+| Workflow CRON GitHub Actions                | `.github/workflows/cron-sync-parcours.yml`                                             |
+| Server actions admin                        | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts` |
+| Page liste runs                             | `src/app/(backoffice)/administration/synchronisations/page.tsx`                        |
+| Page détail run                             | `src/app/(backoffice)/administration/synchronisations/[id]/page.tsx`                   |
