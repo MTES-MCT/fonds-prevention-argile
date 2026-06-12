@@ -36,18 +36,9 @@ import * as schema from "@/shared/database/schema";
 import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { getArg, hasFlag } from "../lib/args";
 
 // --- Args ---
-const args = process.argv.slice(2);
-function getArg(name: string): string | undefined {
-  const prefix = `--${name}=`;
-  const hit = args.find((a) => a.startsWith(prefix));
-  return hit ? hit.slice(prefix.length) : undefined;
-}
-function hasFlag(name: string): boolean {
-  return args.includes(`--${name}`);
-}
-
 const CHECK_DS = hasFlag("check-ds");
 const CSV_PATH = getArg("csv");
 const ANONYMIZE = hasFlag("anonymize");

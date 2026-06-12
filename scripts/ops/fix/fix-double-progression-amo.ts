@@ -58,17 +58,12 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { categorizeDoubleProgression } from "../lib/double-progression";
+import { getArg, hasFlag } from "../lib/args";
 
 // --- Args ---
-const args = process.argv.slice(2);
-function getArg(name: string): string | undefined {
-  const prefix = `--${name}=`;
-  const hit = args.find((a) => a.startsWith(prefix));
-  return hit ? hit.slice(prefix.length) : undefined;
-}
-const APPLY = args.includes("--apply");
-const WITH_CLEANUP = args.includes("--with-cleanup");
-const ANONYMIZE = args.includes("--anonymize");
+const APPLY = hasFlag("apply");
+const WITH_CLEANUP = hasFlag("with-cleanup");
+const ANONYMIZE = hasFlag("anonymize");
 const PARCOURS_ID_FILTER = getArg("parcours-id");
 
 if (WITH_CLEANUP && !APPLY) {

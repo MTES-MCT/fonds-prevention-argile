@@ -45,17 +45,9 @@ import {
   CATEGORY_LABELS,
   type DoubleProgressionCategory,
 } from "../lib/double-progression";
+import { getArg, hasFlag } from "../lib/args";
 
 // --- Args ---
-const args = process.argv.slice(2);
-function getArg(name: string): string | undefined {
-  const prefix = `--${name}=`;
-  const hit = args.find((a) => a.startsWith(prefix));
-  return hit ? hit.slice(prefix.length) : undefined;
-}
-function hasFlag(name: string): boolean {
-  return args.includes(`--${name}`);
-}
 const CSV_PATH = getArg("csv");
 const PARCOURS_ID_FILTER = getArg("parcours-id");
 const ANONYMIZE = hasFlag("anonymize");

@@ -80,16 +80,11 @@ import { SituationParticulier } from "@/shared/domain/value-objects/situation-pa
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { AMO_VALIDATION_TOKEN_VALIDITY_DAYS } from "@/features/parcours/amo/domain/value-objects/constants";
 import { normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
+import { getArg, hasFlag } from "../lib/args";
 
 // --- Args ---
-const args = process.argv.slice(2);
-function getArg(name: string): string | undefined {
-  const prefix = `--${name}=`;
-  const hit = args.find((a) => a.startsWith(prefix));
-  return hit ? hit.slice(prefix.length) : undefined;
-}
-const APPLY = args.includes("--apply");
-const SEND_EMAIL = args.includes("--send-email");
+const APPLY = hasFlag("apply");
+const SEND_EMAIL = hasFlag("send-email");
 const PARCOURS_ID = getArg("parcours-id");
 const NOM = getArg("nom");
 
