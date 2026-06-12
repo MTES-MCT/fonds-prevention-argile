@@ -278,15 +278,13 @@ export class DemarchesSimplifieesClient {
       }
     `;
 
-    try {
-      const data = await this.executeQuery<{ dossier: Dossier }>(query, {
-        number: dossierNumber,
-      });
-      return data.dossier;
-    } catch (error) {
-      console.error(`Failed to fetch dossier ${dossierNumber}:`, error);
-      return null;
-    }
+    // On ne capture PAS l'erreur ici : une erreur API (unauthorized, réseau...) doit
+    // remonter pour être tracée. `data.dossier` vaut null uniquement quand le dossier
+    // est réellement introuvable (réponse DS sans erreur).
+    const data = await this.executeQuery<{ dossier: Dossier }>(query, {
+      number: dossierNumber,
+    });
+    return data.dossier;
   }
 
   /**

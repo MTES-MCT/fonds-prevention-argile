@@ -88,8 +88,9 @@ export async function runSyncBatch(triggeredBy: SyncRunTrigger): Promise<SyncRun
         result.stepAdvanced ||
         result.statusBefore !== result.statusAfter ||
         result.stepBefore !== result.stepAfter;
+      const hadErrors = result.errors.length > 0;
 
-      if (changedSomething) {
+      if (changedSomething || hadErrors) {
         await syncRunRepo.addEntry({
           syncRunId: run.id,
           parcoursId: parcours.id,
@@ -99,8 +100,14 @@ export async function runSyncBatch(triggeredBy: SyncRunTrigger): Promise<SyncRun
           statusAfter: result.statusAfter,
           dsStatusChanges: result.dsChanges,
           stepAdvanced: result.stepAdvanced,
+          error: hadErrors ? result.errors.join(" | ") : undefined,
         });
-        totalUpdated++;
+        if (changedSomething) totalUpdated++;
+      }
+
+      if (hadErrors) {
+        totalErrors++;
+        errorMessages.push(`parcours ${parcours.id}: ${result.errors.join(" | ")}`);
       }
     } catch (error) {
       totalErrors++;
@@ -163,6 +170,7 @@ interface SyncOneResult {
   statusAfter: Status;
   dsChanges: DsStatusChange[];
   stepAdvanced: boolean;
+  errors: string[];
 }
 
 async function syncOneParcours(parcoursId: string, userId: string): Promise<SyncOneResult> {
@@ -173,6 +181,7 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
 
   const dossiers = await getAllDossiersByParcours(parcoursId);
   const dsChanges: DsStatusChange[] = [];
+  const dossierErrors: string[] = [];
 
   // 1. Synchronise tous les dossiers (sans toucher au current_status du parcours).
   //    On garde tous les dossiers en sync DS pour rester cohérent côté historique,
@@ -187,6 +196,10 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
         oldDsStatus: result.data.oldStatus as DSStatus,
         newDsStatus: result.data.newStatus as DSStatus,
       });
+    } else if (!result.success) {
+      // Échec de sync d'un dossier (ex: unauthorized côté DS) : on le collecte au lieu
+      // de l'ignorer silencieusement, pour le tracer dans l'historique du run.
+      dossierErrors.push(`${dossier.step}: ${result.error}`);
     }
   }
 
@@ -226,5 +239,6 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
     statusAfter: final.currentStatus,
     dsChanges,
     stepAdvanced,
+    errors: dossierErrors,
   };
 }

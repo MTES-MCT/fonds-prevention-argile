@@ -45,7 +45,7 @@ export async function syncDossierStatus(
     if (!dsStatus) {
       return {
         success: false,
-        error: "Impossible de récupérer le statut DS",
+        error: `Dossier ${dsNumber} introuvable côté DS (numéro inexistant ou brouillon non déposé)`,
       };
     }
 
@@ -74,10 +74,11 @@ export async function syncDossierStatus(
       },
     };
   } catch (error) {
-    console.error("Erreur syncDossierStatus:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Erreur syncDossierStatus (step=${step}, dsNumber=${dsNumber}):`, error);
     return {
       success: false,
-      error: "Erreur lors de la synchronisation",
+      error: `Sync dossier ${dsNumber} échouée: ${message}`,
     };
   }
 }
