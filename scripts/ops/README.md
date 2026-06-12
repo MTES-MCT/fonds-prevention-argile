@@ -20,11 +20,19 @@ scalingo -a fonds-argile -region osc-secnum-fr1 run bash
 pnpm ds:check-permissions
 ```
 
-Lancer les scripts via leur alias `pnpm <script>` (ex. `pnpm ds:check-permissions`),
-pas `tsx ...` nu ni `npx tsx` (résolution du binaire et version pnpm). `tsx` est une
-dépendance de production, donc disponible dans le conteneur. Les scripts **autonomes**
-(sans import `@/`, comme `check-ds-permissions` et `fetch-demarche-schema`) sont les plus
-robustes ; ceux qui importent `@/` nécessitent `--tsconfig scripts/tsconfig.json`.
+Lancer via l'alias `pnpm <script>` (ex. `pnpm ds:check-permissions`). `tsx` est une
+dépendance de production, donc disponible dans le conteneur.
+
+> **Gotcha pnpm/Scalingo** : par défaut, pnpm 11 vérifie les deps avant `pnpm <script>`
+> et relance un `pnpm install` complet — qui **OOM (SIGKILL)** le conteneur one-off
+> (RAM limitée). On désactive ce comportement via `verifyDepsBeforeRun: false` dans
+> [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml), ce qui rend `pnpm <script>`
+> identique en local et sur Scalingo. En secours, on peut toujours bypasser pnpm :
+> `node_modules/.bin/tsx scripts/ops/<script>.ts`.
+
+Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
+`fetch-demarche-schema`) sont les plus robustes ; ceux qui importent `@/` nécessitent
+`--tsconfig scripts/tsconfig.json`.
 
 ## Index
 

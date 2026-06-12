@@ -8,6 +8,12 @@ minimumReleaseAge: 10080 # one week in minutes
 # Sans ça, `pnpm start` sur Scalingo plante avec ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY
 # si pnpm détecte une discrepancy entre node_modules installé et la config courante.
 confirmModulesPurge: false
+
+# Empêche pnpm de relancer une install (vérification des deps) avant `pnpm <script>`.
+# Sans ça, lancer un script ops dans un conteneur one-off Scalingo déclenche un
+# `pnpm install` complet qui OOM (SIGKILL). Permet de lancer les scripts via
+# `pnpm <script>` de manière identique en local et sur Scalingo.
+verifyDepsBeforeRun: false
 minimumReleaseAgeExclude:
   - next
   - "@next/env"
