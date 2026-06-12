@@ -17,22 +17,12 @@
  * (en local via .env.local ; sur Scalingo les variables sont déjà injectées).
  */
 
-import { config } from "dotenv";
-
-config({ path: ".env.local" });
-config({ path: ".env" });
+import { dsQuery } from "../lib/ds-graphql";
 
 const INSTANCES = {
   simplifiees: "https://www.demarches-simplifiees.fr/api/v2/graphql",
   numerique: "https://demarche.numerique.gouv.fr/api/v2/graphql",
 } as const;
-
-const API_KEY = process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY;
-
-if (!API_KEY) {
-  console.error("DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY manquante (env / .env.local)");
-  process.exit(1);
-}
 
 const configuredUrl = process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL || INSTANCES.simplifiees;
 
@@ -79,39 +69,23 @@ async function checkDemarche(url: string, id: string): Promise<CheckResult> {
     return { status: "INVALID_ID", detail: "id non numérique ou hors plage (placeholder ?)" };
   }
 
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${API_KEY}`,
-      },
-      body: JSON.stringify({ query: QUERY, variables: { n: numericId } }),
-    });
+  const r = await dsQuery<{ demarche: { title: string; state: string } | null }>(QUERY, { n: numericId }, { url });
 
-    if (!response.ok) {
-      return { status: "ERROR", detail: `HTTP ${response.status}` };
+  if (r.httpError) return { status: "ERROR", detail: r.httpError };
+  if (r.errors?.length) {
+    const code = r.errors[0]?.extensions?.code;
+    if (code === "unauthorized") {
+      return { status: "UNAUTHORIZED", detail: "token sans accès à cette démarche" };
     }
-
-    const result = await response.json();
-
-    if (result.errors?.length) {
-      const code = result.errors[0]?.extensions?.code;
-      if (code === "unauthorized") {
-        return { status: "UNAUTHORIZED", detail: "token sans accès à cette démarche" };
-      }
-      return { status: "ERROR", detail: result.errors.map((e: { message: string }) => e.message).join(", ") };
-    }
-
-    const demarche = result.data?.demarche;
-    if (!demarche) {
-      return { status: "NOT_FOUND", detail: "démarche introuvable (numéro inexistant ?)" };
-    }
-
-    return { status: "OK", detail: demarche.title ?? "", state: demarche.state };
-  } catch (error) {
-    return { status: "ERROR", detail: error instanceof Error ? error.message : String(error) };
+    return { status: "ERROR", detail: r.errors.map((e) => e.message).join(", ") };
   }
+
+  const demarche = r.data?.demarche;
+  if (!demarche) {
+    return { status: "NOT_FOUND", detail: "démarche introuvable (numéro inexistant ?)" };
+  }
+
+  return { status: "OK", detail: demarche.title ?? "", state: demarche.state };
 }
 
 async function main() {

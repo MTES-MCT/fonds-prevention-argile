@@ -6,19 +6,7 @@
  * Exemple: npx tsx scripts/ops/ds/fetch-demarche-schema.ts 129894
  */
 
-import { config } from "dotenv";
-
-config({ path: ".env.local" });
-config({ path: ".env" });
-
-const GRAPHQL_URL =
-  process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL || "https://www.demarches-simplifiees.fr/api/v2/graphql";
-const API_KEY = process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY;
-
-if (!API_KEY) {
-  console.error("DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY manquante dans .env.local");
-  process.exit(1);
-}
+import { dsQuery } from "../lib/ds-graphql";
 
 const demarcheNumber = parseInt(process.argv[2]);
 if (!demarcheNumber) {
@@ -85,28 +73,18 @@ const query = `
 async function main() {
   console.log(`\nRecuperation du schema de la demarche ${demarcheNumber}...\n`);
 
-  const response = await fetch(GRAPHQL_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify({ query, variables: { number: demarcheNumber } }),
-  });
+  const result = await dsQuery(query, { number: demarcheNumber });
 
-  if (!response.ok) {
-    console.error(`Erreur HTTP ${response.status}: ${response.statusText}`);
+  if (result.httpError) {
+    console.error(`Erreur HTTP: ${result.httpError}`);
     process.exit(1);
   }
-
-  const result = await response.json();
-
   if (result.errors) {
     console.error("Erreurs GraphQL:", JSON.stringify(result.errors, null, 2));
     process.exit(1);
   }
 
-  const demarche = result.data.demarche;
+  const demarche = (result.data as Record<string, any>).demarche;
 
   // --- Metadata ---
   console.log("=== DEMARCHE ===");

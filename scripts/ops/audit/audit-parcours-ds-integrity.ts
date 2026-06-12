@@ -23,6 +23,7 @@
 import { writeFileSync } from "node:fs";
 import { and, eq, inArray, desc } from "drizzle-orm";
 import { createOpsDb } from "../lib/db";
+import { dsQuery, DEMARCHE_IDS } from "../lib/ds-graphql";
 import { createRedactor } from "../lib/anonymize";
 import {
   parcoursPrevention,
@@ -49,22 +50,7 @@ const ANONYMIZE = hasFlag("anonymize");
 // --- Anonymisation (hash court stable pour le run, imprévisible d'un run à l'autre) ---
 const { shortHash, redactEmail, redactName, redactUuid, redactDsNumber } = createRedactor(ANONYMIZE);
 
-// --- Env ---
-const GRAPHQL_URL =
-  process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL || "https://www.demarches-simplifiees.fr/api/v2/graphql";
-const API_KEY = process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY;
-
-const DEMARCHE_IDS: Partial<Record<Step, string | undefined>> = {
-  [Step.ELIGIBILITE]: process.env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE,
-  [Step.DIAGNOSTIC]: process.env.DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC,
-  [Step.DEVIS]: process.env.DEMARCHES_SIMPLIFIEES_ID_DEVIS,
-  [Step.FACTURES]: process.env.DEMARCHES_SIMPLIFIEES_ID_FACTURES,
-};
-
-if (!API_KEY) {
-  console.error("DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY manquante dans .env.local");
-  process.exit(1);
-}
+// --- Env DS (clé API gérée par lib/ds-graphql) ---
 for (const step of [Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES]) {
   if (!DEMARCHE_IDS[step]) {
     console.error(`DEMARCHES_SIMPLIFIEES_ID_${step.toUpperCase()} manquant dans .env.local`);
@@ -180,22 +166,12 @@ interface PaginatedNodes {
 }
 
 async function fetchGraphQL<T>(query: string, variables: Record<string, unknown>): Promise<T> {
-  const resp = await fetch(GRAPHQL_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify({ query, variables }),
-  });
-  if (!resp.ok) {
-    throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+  const r = await dsQuery<T>(query, variables);
+  if (r.httpError) throw new Error(r.httpError);
+  if (r.errors?.length) {
+    throw new Error(`GraphQL: ${r.errors.map((e) => e.message).join(", ")}`);
   }
-  const json = await resp.json();
-  if (json.errors?.length) {
-    throw new Error(`GraphQL: ${json.errors.map((e: { message: string }) => e.message).join(", ")}`);
-  }
-  return json.data as T;
+  return r.data as T;
 }
 
 const demarcheCache = new Map<Step, DossierNode[]>();

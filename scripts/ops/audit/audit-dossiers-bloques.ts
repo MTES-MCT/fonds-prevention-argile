@@ -27,6 +27,7 @@ import { writeFileSync } from "node:fs";
 import { and, eq, inArray, isNull, desc } from "drizzle-orm";
 import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { createOpsDb } from "../lib/db";
+import { getDossierState } from "../lib/ds-graphql";
 import { createRedactor } from "../lib/anonymize";
 import { STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
@@ -55,15 +56,6 @@ if (ONLY && ONLY !== DSStatus.EN_CONSTRUCTION && ONLY !== DSStatus.EN_INSTRUCTIO
 // --- Anonymisation ---
 const { redactEmail } = createRedactor(ANONYMIZE);
 
-// --- Env DS (seulement si --check-ds) ---
-const GRAPHQL_URL =
-  process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL || "https://www.demarches-simplifiees.fr/api/v2/graphql";
-const API_KEY = process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY;
-if (CHECK_DS && !API_KEY) {
-  console.error("--check-ds nécessite DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY dans .env.local");
-  process.exit(1);
-}
-
 // --- DB ---
 const { db, client } = createOpsDb();
 
@@ -79,24 +71,6 @@ function ageBucket(days: number | null): string {
   if (days > 30) return ">30j";
   if (days > 7) return ">7j";
   return "<=7j";
-}
-
-async function fetchDsState(dsNumber: number): Promise<{ state?: string; error?: string }> {
-  try {
-    const res = await fetch(GRAPHQL_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${API_KEY}` },
-      body: JSON.stringify({ query: "query($n:Int!){dossier(number:$n){state}}", variables: { n: dsNumber } }),
-    });
-    if (!res.ok) return { error: `HTTP ${res.status}` };
-    const json = await res.json();
-    if (json.errors?.length) {
-      return { error: json.errors[0]?.extensions?.code ?? json.errors[0]?.message ?? "graphql_error" };
-    }
-    return { state: json.data?.dossier?.state ?? undefined };
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : String(e) };
-  }
 }
 
 /**
@@ -186,7 +160,7 @@ async function main() {
     const byClass = new Map<string, number>();
     for (const r of blocked) {
       const dsNum = r.dsNumber ? Number(r.dsNumber) : null;
-      const ds = dsNum ? await fetchDsState(dsNum) : { error: "ds_number_absent" };
+      const ds = dsNum ? await getDossierState(dsNum) : { error: "ds_number_absent" };
       const cls = dsNum ? classify(r.dsStatus, ds) : "ds_number_absent";
       byClass.set(cls, (byClass.get(cls) ?? 0) + 1);
       csvLines.push(
