@@ -63,6 +63,7 @@ type CheckStatus = "OK" | "UNAUTHORIZED" | "NOT_FOUND" | "INVALID_ID" | "ERROR";
 interface CheckResult {
   status: CheckStatus;
   detail: string;
+  state?: string;
 }
 
 const QUERY = `query($n:Int!){demarche(number:$n){number title state}}`;
@@ -107,7 +108,7 @@ async function checkDemarche(url: string, id: string): Promise<CheckResult> {
       return { status: "NOT_FOUND", detail: "démarche introuvable (numéro inexistant ?)" };
     }
 
-    return { status: "OK", detail: `${demarche.state} — ${demarche.title}` };
+    return { status: "OK", detail: demarche.title ?? "", state: demarche.state };
   } catch (error) {
     return { status: "ERROR", detail: error instanceof Error ? error.message : String(error) };
   }
@@ -115,6 +116,7 @@ async function checkDemarche(url: string, id: string): Promise<CheckResult> {
 
 async function main() {
   let exitCode = 0;
+  let warnings = 0;
 
   for (let i = 0; i < instances.length; i++) {
     const instance = instances[i];
@@ -122,7 +124,15 @@ async function main() {
 
     for (const demarche of DEMARCHES) {
       const result = await checkDemarche(instance.url, demarche.id);
-      const line = `  ${demarche.etape.padEnd(12)} ${demarche.id.padEnd(8)} -> ${result.status.padEnd(13)} ${result.detail}`;
+      const stateCol = result.state ? `state=${result.state}` : "";
+      let line = `  ${demarche.etape.padEnd(12)} ${demarche.id.padEnd(8)} -> ${result.status.padEnd(13)} ${stateCol.padEnd(18)} ${result.detail}`;
+
+      // Signale (sans bloquer) une démarche accessible mais non publiée. En preprod
+      // c'est normal ; en prod une démarche non publiée mérite un coup d'oeil.
+      if (result.status === "OK" && result.state && result.state !== "publiee") {
+        line += " [non publiée]";
+        warnings++;
+      }
       console.log(line);
 
       // L'exit code reflète uniquement la première instance (= instance configurée
@@ -140,6 +150,11 @@ async function main() {
   } else {
     console.log(
       "ECHEC : au moins une démarche inaccessible — rattacher le compte du token comme instructeur (cf. ADR-0009)."
+    );
+  }
+  if (warnings > 0) {
+    console.log(
+      `INFO : ${warnings} démarche(s) non publiée(s) (state != publiee) — normal en preprod, à vérifier avant prod.`
     );
   }
 
