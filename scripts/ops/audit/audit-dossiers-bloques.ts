@@ -28,7 +28,7 @@ config({ path: ".env.local" });
 config({ path: ".env" });
 
 import { writeFileSync } from "node:fs";
-import { createHash } from "node:crypto";
+import { createRedactor } from "../lib/anonymize";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { and, eq, inArray, isNull, desc } from "drizzle-orm";
@@ -58,22 +58,8 @@ if (ONLY && ONLY !== DSStatus.EN_CONSTRUCTION && ONLY !== DSStatus.EN_INSTRUCTIO
   process.exit(1);
 }
 
-// --- Anonymisation (hash court stable pour le run) ---
-const RUN_SALT = createHash("sha256")
-  .update(String(Date.now()) + Math.random().toString())
-  .digest("hex")
-  .slice(0, 16);
-function shortHash(value: string): string {
-  return createHash("sha256")
-    .update(RUN_SALT + value)
-    .digest("hex")
-    .slice(0, 6);
-}
-function redactEmail(email: string | null | undefined): string {
-  if (!email) return "<aucun>";
-  if (!ANONYMIZE) return email;
-  return `<email:${shortHash(email)}>`;
-}
+// --- Anonymisation ---
+const { redactEmail } = createRedactor(ANONYMIZE);
 
 // --- Env DS (seulement si --check-ds) ---
 const GRAPHQL_URL =

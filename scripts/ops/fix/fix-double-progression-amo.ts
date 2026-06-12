@@ -48,7 +48,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 config({ path: ".env" });
 
-import { createHash } from "node:crypto";
+import { createRedactor } from "../lib/anonymize";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { and, eq, inArray, isNull } from "drizzle-orm";
@@ -71,34 +71,8 @@ if (WITH_CLEANUP && !APPLY) {
   process.exit(1);
 }
 
-// --- Anonymisation (pour partage du plan sans exposer les PII) ---
-// Hash court (6 chars) dérivé d'un sel de session : stable pour un run, imprévisible
-// d'un run à l'autre. Les vraies valeurs (id, email) restent utilisées en interne pour
-// les UPDATE/DELETE ; seuls les AFFICHAGES sont masqués.
-const RUN_SALT = createHash("sha256")
-  .update(String(Date.now()) + Math.random().toString())
-  .digest("hex")
-  .slice(0, 16);
-
-function shortHash(value: string): string {
-  return createHash("sha256")
-    .update(RUN_SALT + value)
-    .digest("hex")
-    .slice(0, 6);
-}
-function redactUuid(id: string): string {
-  return ANONYMIZE ? `<id:${shortHash(id)}>` : id;
-}
-function redactEmail(email: string | null): string {
-  if (!email) return "<sans email>";
-  if (!ANONYMIZE) return email;
-  const tld = email.slice(email.lastIndexOf(".") + 1);
-  return `<email:${shortHash(email)}@***.${tld}>`;
-}
-function redactDsNumber(n: string | null): string {
-  if (!n) return "";
-  return ANONYMIZE ? `#<ds:${shortHash(n)}>` : `#${n}`;
-}
+// --- Anonymisation (affichages masqués ; les vraies valeurs restent utilisées en interne) ---
+const { redactUuid, redactEmail, redactDsNumber } = createRedactor(ANONYMIZE);
 
 // --- DB ---
 const connectionString =

@@ -25,7 +25,7 @@ config({ path: ".env.local" });
 config({ path: ".env" });
 
 import { writeFileSync } from "node:fs";
-import { createHash } from "node:crypto";
+import { createRedactor } from "../lib/anonymize";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { and, eq, inArray, desc } from "drizzle-orm";
@@ -52,41 +52,8 @@ const CSV_PATH = getArg("csv");
 const PARCOURS_ID_FILTER = getArg("parcours-id");
 const ANONYMIZE = hasFlag("anonymize");
 
-// --- Anonymisation ---
-// Hash court (6 chars) dérivé d'un secret de session → stable pour un run, imprévisible d'un run à l'autre
-const RUN_SALT = createHash("sha256")
-  .update(String(Date.now()) + Math.random().toString())
-  .digest("hex")
-  .slice(0, 16);
-
-function shortHash(value: string): string {
-  return createHash("sha256")
-    .update(RUN_SALT + value)
-    .digest("hex")
-    .slice(0, 6);
-}
-function redactEmail(email: string | null | undefined): string {
-  if (!email) return "<aucun>";
-  if (!ANONYMIZE) return email;
-  const at = email.indexOf("@");
-  if (at <= 0) return `<redacted:${shortHash(email)}>`;
-  const tld = email.slice(email.lastIndexOf(".") + 1);
-  return `<email:${shortHash(email)}@***.${tld}>`;
-}
-function redactName(nom: string | null | undefined, prenom: string | null | undefined): string {
-  const full = `${prenom ?? ""} ${nom ?? ""}`.trim();
-  if (!full) return "<anonyme>";
-  if (!ANONYMIZE) return full;
-  return `<user:${shortHash(full)}>`;
-}
-function redactUuid(id: string): string {
-  if (!ANONYMIZE) return id;
-  return `<id:${shortHash(id)}>`;
-}
-function redactDsNumber(n: number): string {
-  if (!ANONYMIZE) return `#${n}`;
-  return `#<ds:${shortHash(String(n))}>`;
-}
+// --- Anonymisation (hash court stable pour le run, imprévisible d'un run à l'autre) ---
+const { shortHash, redactEmail, redactName, redactUuid, redactDsNumber } = createRedactor(ANONYMIZE);
 
 // --- Env ---
 const GRAPHQL_URL =
