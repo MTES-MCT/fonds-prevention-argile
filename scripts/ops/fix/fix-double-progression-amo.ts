@@ -44,15 +44,9 @@
  * ce script ne touche pas à l'API DS).
  */
 
-import { config } from "dotenv";
-config({ path: ".env.local" });
-config({ path: ".env" });
-
-import { createRedactor } from "../lib/anonymize";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import * as schema from "@/shared/database/schema";
+import { createOpsDb } from "../lib/db";
+import { createRedactor } from "../lib/anonymize";
 import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
@@ -75,15 +69,7 @@ if (WITH_CLEANUP && !APPLY) {
 const { redactUuid, redactEmail, redactDsNumber } = createRedactor(ANONYMIZE);
 
 // --- DB ---
-const connectionString =
-  process.env.DATABASE_URL ??
-  (() => {
-    const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
-    if (!DB_HOST) throw new Error("DATABASE_URL ou DB_HOST requis");
-    return `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
-  })();
-const client = postgres(connectionString, { max: 5, idle_timeout: 10 });
-const db = drizzle(client, { schema });
+const { db, client } = createOpsDb();
 
 // --- Constantes métier ---
 // Étapes en aval de l'éligibilité : un parcours qui y est sans dossier d'éligibilité

@@ -23,17 +23,11 @@
  * Prérequis : .env.local avec DATABASE_URL (+ DEMARCHES_SIMPLIFIEES_* si --check-ds).
  */
 
-import { config } from "dotenv";
-config({ path: ".env.local" });
-config({ path: ".env" });
-
 import { writeFileSync } from "node:fs";
-import { createRedactor } from "../lib/anonymize";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
 import { and, eq, inArray, isNull, desc } from "drizzle-orm";
-import * as schema from "@/shared/database/schema";
 import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
+import { createOpsDb } from "../lib/db";
+import { createRedactor } from "../lib/anonymize";
 import { STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { getArg, hasFlag } from "../lib/args";
@@ -71,15 +65,7 @@ if (CHECK_DS && !API_KEY) {
 }
 
 // --- DB ---
-const connectionString =
-  process.env.DATABASE_URL ??
-  (() => {
-    const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
-    if (!DB_HOST) throw new Error("DATABASE_URL ou DB_HOST requis");
-    return `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
-  })();
-const client = postgres(connectionString, { max: 5, idle_timeout: 10 });
-const db = drizzle(client, { schema });
+const { db, client } = createOpsDb();
 
 // --- Helpers ---
 const NOW = Date.now();

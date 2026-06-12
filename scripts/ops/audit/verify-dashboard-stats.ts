@@ -12,18 +12,17 @@
  * Prerequis : BDD locale avec donnees prod restaurees, .env.local configure.
  */
 
-import { config } from "dotenv";
-config({ path: ".env.local" });
-
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
 import { count, and, gte, lt, eq, isNotNull, inArray, desc, sql } from "drizzle-orm";
-import * as schema from "@/shared/database/schema";
+import { createOpsDb } from "../lib/db";
 import { parcoursPrevention, parcoursAmoValidations, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { prospectQualifications } from "@/shared/database/schema/prospect-qualifications";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
-import { normalizeCodeDepartement, toOfficialCodeDepartement, getDepartementName } from "@/shared/constants/departements.constants";
+import {
+  normalizeCodeDepartement,
+  toOfficialCodeDepartement,
+  getDepartementName,
+} from "@/shared/constants/departements.constants";
 import { asString } from "@/shared/utils/object.utils";
 
 // --- Config ---
@@ -48,14 +47,7 @@ const PERIODES: Record<string, number | null> = {
 const SERVICE_START_DATE = new Date("2025-10-16");
 
 // --- DB ---
-const connectionString = process.env.DATABASE_URL ?? (() => {
-  const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
-  if (!DB_HOST) throw new Error("DATABASE_URL ou DB_HOST requis");
-  return `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
-})();
-
-const client = postgres(connectionString, { max: 5, idle_timeout: 10 });
-const db = drizzle(client, { schema });
+const { db, client } = createOpsDb();
 
 // --- Helpers ---
 function getDateRange(periodeId: string): { debut: Date; fin: Date } {
@@ -107,7 +99,10 @@ async function countSimulations(debut: Date, fin: Date, codeDepartement?: string
   if (codeDepartement) {
     conditions.push(whereDepartement(codeDepartement));
   }
-  const result = await db.select({ count: count() }).from(parcoursPrevention).where(and(...conditions));
+  const result = await db
+    .select({ count: count() })
+    .from(parcoursPrevention)
+    .where(and(...conditions));
   return result[0]?.count ?? 0;
 }
 
@@ -121,7 +116,10 @@ async function countComptesCrees(debut: Date, fin: Date, codeDepartement?: strin
     conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
     conditions.push(whereDepartement(codeDepartement));
   }
-  const result = await db.select({ count: count() }).from(parcoursPrevention).where(and(...conditions));
+  const result = await db
+    .select({ count: count() })
+    .from(parcoursPrevention)
+    .where(and(...conditions));
   return result[0]?.count ?? 0;
 }
 
@@ -204,7 +202,10 @@ async function countDemandesArchivees(debut: Date, fin: Date, codeDepartement?: 
     conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
     conditions.push(whereDepartement(codeDepartement));
   }
-  const result = await db.select({ count: count() }).from(parcoursPrevention).where(and(...conditions));
+  const result = await db
+    .select({ count: count() })
+    .from(parcoursPrevention)
+    .where(and(...conditions));
   return result[0]?.count ?? 0;
 }
 
@@ -219,7 +220,10 @@ async function countDemandesIneligibles(debut: Date, fin: Date, codeDepartement?
     conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
     conditions.push(whereDepartement(codeDepartement));
   }
-  const result = await db.select({ count: count() }).from(parcoursPrevention).where(and(...conditions));
+  const result = await db
+    .select({ count: count() })
+    .from(parcoursPrevention)
+    .where(and(...conditions));
   return result[0]?.count ?? 0;
 }
 
@@ -486,7 +490,9 @@ async function main() {
 
   const topTotalSim = top.reduce((acc, d) => acc + d.simulations, 0);
   if (topTotalSim !== simulations) {
-    console.log(`  [INFO] Simulations top depts (${topTotalSim}) vs total (${simulations}) - diff = ${simulations - topTotalSim} (parcours sans departement)`);
+    console.log(
+      `  [INFO] Simulations top depts (${topTotalSim}) vs total (${simulations}) - diff = ${simulations - topTotalSim} (parcours sans departement)`
+    );
   } else {
     console.log(`  [OK] Somme simulations par dept = total`);
   }
