@@ -21,7 +21,8 @@ interface DiagnosticResult {
 
 /**
  * Crée (ou récupère) le dossier DS diagnostic pour l'utilisateur.
- * Préremplit les 2 annotations privées (lien dossier éligibilité, lien back office FPA).
+ * Préremplit les 2 annotations privées (lien dossier éligibilité, lien back office FPA)
+ * + commune (routage instructeurs) et adresse depuis la simulation RGA.
  * Idempotent : si un dossier existe déjà pour l'étape, retourne son URL.
  */
 export async function createDiagnosticDossier(userId: string): Promise<ActionResult<DiagnosticResult>> {
@@ -94,14 +95,7 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
       console.warn("Diagnostic: adresse RGA absente, champ adresse non prérempli");
     }
 
-    debug.log("=== PREFILL ANNOTATIONS (essai via endpoint public /preremplir) ===");
-    debug.log("  Annotation dossier éligibilité (DossierLink):");
-    debug.log(`    ID: ${DS_FIELD_IDS.DIAGNOSTIC.ANNOTATION_DOSSIER_ELIGIBILITE}`);
-    debug.log(`    Valeur: ${eligibiliteDossier?.dsNumber ?? "<absent>"}`);
-    debug.log("  Annotation lien FPA (Text):");
-    debug.log(`    ID: ${DS_FIELD_IDS.DIAGNOSTIC.ANNOTATION_LIEN_FPA}`);
-    debug.log(`    Valeur: ${fpaLink}`);
-    debug.log("Payload complet envoyé à DS:", JSON.stringify(prefillData, null, 2));
+    debug.log("Payload prérempli envoyé à DS:", JSON.stringify(prefillData, null, 2));
 
     const createResponse = await prefillClient.createPrefillDossier(prefillData, Step.DIAGNOSTIC);
 
@@ -109,9 +103,7 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
     debug.log("  dossier_url:", createResponse.dossier_url);
     debug.log("  dossier_number:", createResponse.dossier_number);
     debug.log("  dossier_id:", createResponse.dossier_id);
-    debug.log(
-      "A vérifier manuellement côté DS : ouvrir le dossier et confirmer que les 2 annotations privées sont bien remplies."
-    );
+    debug.log("A vérifier côté DS : annotations privées + commune et adresse préremplies.");
 
     if (!createResponse.dossier_url || !createResponse.dossier_number) {
       console.error("Réponse DS invalide:", createResponse);
