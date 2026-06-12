@@ -2,8 +2,8 @@
  * Script pour récupérer le schéma complet d'une démarche DN
  * (champs, annotations privées, metadata)
  *
- * Usage: npx tsx scripts/fetch-demarche-schema.ts <numero_demarche>
- * Exemple: npx tsx scripts/fetch-demarche-schema.ts 129894
+ * Usage: npx tsx scripts/ops/ds/fetch-demarche-schema.ts <numero_demarche>
+ * Exemple: npx tsx scripts/ops/ds/fetch-demarche-schema.ts 129894
  */
 
 import { config } from "dotenv";
@@ -22,8 +22,8 @@ if (!API_KEY) {
 
 const demarcheNumber = parseInt(process.argv[2]);
 if (!demarcheNumber) {
-  console.error("Usage: npx tsx scripts/fetch-demarche-schema.ts <numero_demarche>");
-  console.error("Exemple: npx tsx scripts/fetch-demarche-schema.ts 129894");
+  console.error("Usage: npx tsx scripts/ops/ds/fetch-demarche-schema.ts <numero_demarche>");
+  console.error("Exemple: npx tsx scripts/ops/ds/fetch-demarche-schema.ts 129894");
   process.exit(1);
 }
 

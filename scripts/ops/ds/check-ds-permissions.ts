@@ -9,8 +9,8 @@
  * Script autonome (aucun import `@/`) → lançable tel quel en local et sur Scalingo.
  *
  * Usage:
- *   npx tsx scripts/ops/check-ds-permissions.ts            # instance configurée (env)
- *   npx tsx scripts/ops/check-ds-permissions.ts --instance=both   # teste les deux domaines
+ *   npx tsx scripts/ops/ds/check-ds-permissions.ts            # instance configurée (env)
+ *   npx tsx scripts/ops/ds/check-ds-permissions.ts --instance=both   # teste les deux domaines
  *   pnpm ds:check-permissions
  *
  * Prérequis : DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY + DEMARCHES_SIMPLIFIEES_ID_* dans l'env

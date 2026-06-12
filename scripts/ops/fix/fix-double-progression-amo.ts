@@ -57,7 +57,7 @@ import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/share
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import { categorizeDoubleProgression } from "./lib/double-progression";
+import { categorizeDoubleProgression } from "../lib/double-progression";
 
 // --- Args ---
 const args = process.argv.slice(2);
@@ -86,7 +86,10 @@ const RUN_SALT = createHash("sha256")
   .slice(0, 16);
 
 function shortHash(value: string): string {
-  return createHash("sha256").update(RUN_SALT + value).digest("hex").slice(0, 6);
+  return createHash("sha256")
+    .update(RUN_SALT + value)
+    .digest("hex")
+    .slice(0, 6);
 }
 function redactUuid(id: string): string {
   return ANONYMIZE ? `<id:${shortHash(id)}>` : id;
@@ -215,12 +218,7 @@ async function regresser(parcoursId: string): Promise<boolean> {
   const [moved] = await db
     .update(parcoursPrevention)
     .set({ currentStep: TARGET_STEP, currentStatus: TARGET_STATUS })
-    .where(
-      and(
-        eq(parcoursPrevention.id, parcoursId),
-        inArray(parcoursPrevention.currentStep, STEPS_AVALES)
-      )
-    )
+    .where(and(eq(parcoursPrevention.id, parcoursId), inArray(parcoursPrevention.currentStep, STEPS_AVALES)))
     .returning({ id: parcoursPrevention.id });
   return !!moved;
 }
@@ -244,12 +242,7 @@ async function cleanupAndRegresser(c: Case): Promise<boolean> {
     const [moved] = await tx
       .update(parcoursPrevention)
       .set({ currentStep: TARGET_STEP, currentStatus: TARGET_STATUS })
-      .where(
-        and(
-          eq(parcoursPrevention.id, c.parcoursId),
-          inArray(parcoursPrevention.currentStep, STEPS_AVALES)
-        )
-      )
+      .where(and(eq(parcoursPrevention.id, c.parcoursId), inArray(parcoursPrevention.currentStep, STEPS_AVALES)))
       .returning({ id: parcoursPrevention.id });
 
     return !!moved;
@@ -288,13 +281,15 @@ async function main() {
   if (regressables.length > 0) {
     console.log("--- RÉGRESSABLES (catégorie 1) ---");
     for (const c of regressables) {
-      console.log(`  [${redactUuid(c.parcoursId)}] ${redactEmail(c.email)} — ${c.currentStep}/${c.currentStatus} → ${TARGET_STEP}/${TARGET_STATUS}`);
+      console.log(
+        `  [${redactUuid(c.parcoursId)}] ${redactEmail(c.email)} — ${c.currentStep}/${c.currentStatus} → ${TARGET_STEP}/${TARGET_STATUS}`
+      );
     }
     console.log();
   }
 
   if (cleanupRequis.length > 0) {
-    console.log("--- CLEANUP REQUIS (catégorie 2 — type \"Edouard\") ---");
+    console.log('--- CLEANUP REQUIS (catégorie 2 — type "Edouard") ---');
     for (const c of cleanupRequis) {
       console.log(`  [${redactUuid(c.parcoursId)}] ${redactEmail(c.email)} — ${c.currentStep}/${c.currentStatus}`);
       console.log(`      dossiers à supprimer : ${c.dossiers.map(dossierLine).join(", ")}`);
@@ -360,7 +355,9 @@ async function main() {
         const moved = await cleanupAndRegresser(c);
         if (moved) {
           okCleanup++;
-          console.log(`  OK cleanup+régressé ${redactUuid(c.parcoursId)} (${c.enConstructionToDelete.length} brouillon(s) supprimé(s))`);
+          console.log(
+            `  OK cleanup+régressé ${redactUuid(c.parcoursId)} (${c.enConstructionToDelete.length} brouillon(s) supprimé(s))`
+          );
         } else {
           skippedState++;
           console.log(`  SKIP (état modifié depuis la détection) ${redactUuid(c.parcoursId)}`);

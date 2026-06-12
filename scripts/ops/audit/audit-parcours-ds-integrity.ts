@@ -44,7 +44,7 @@ import {
   categorizeDoubleProgression,
   CATEGORY_LABELS,
   type DoubleProgressionCategory,
-} from "./lib/double-progression";
+} from "../lib/double-progression";
 
 // --- Args ---
 const args = process.argv.slice(2);
@@ -68,7 +68,10 @@ const RUN_SALT = createHash("sha256")
   .slice(0, 16);
 
 function shortHash(value: string): string {
-  return createHash("sha256").update(RUN_SALT + value).digest("hex").slice(0, 6);
+  return createHash("sha256")
+    .update(RUN_SALT + value)
+    .digest("hex")
+    .slice(0, 6);
 }
 function redactEmail(email: string | null | undefined): string {
   if (!email) return "<aucun>";
@@ -95,8 +98,7 @@ function redactDsNumber(n: number): string {
 
 // --- Env ---
 const GRAPHQL_URL =
-  process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL ||
-  "https://www.demarches-simplifiees.fr/api/v2/graphql";
+  process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL || "https://www.demarches-simplifiees.fr/api/v2/graphql";
 const API_KEY = process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY;
 
 const DEMARCHE_IDS: Partial<Record<Step, string | undefined>> = {
@@ -232,10 +234,7 @@ interface PaginatedNodes {
   };
 }
 
-async function fetchGraphQL<T>(
-  query: string,
-  variables: Record<string, unknown>
-): Promise<T> {
+async function fetchGraphQL<T>(query: string, variables: Record<string, unknown>): Promise<T> {
   const resp = await fetch(GRAPHQL_URL, {
     method: "POST",
     headers: {
@@ -376,13 +375,9 @@ async function main() {
 
     const anomalies: string[] = [];
 
-    const eligibiliteAccepte = dossiers.find(
-      (d) => d.step === Step.ELIGIBILITE && d.dsStatus === DSStatus.ACCEPTE
-    );
+    const eligibiliteAccepte = dossiers.find((d) => d.step === Step.ELIGIBILITE && d.dsStatus === DSStatus.ACCEPTE);
     if (!eligibiliteAccepte) {
-      anomalies.push(
-        `current_step=${c.currentStep} mais aucune ligne DS step=eligibilite avec ds_status=accepte`
-      );
+      anomalies.push(`current_step=${c.currentStep} mais aucune ligne DS step=eligibilite avec ds_status=accepte`);
     }
 
     const dossierCourant = dossiers.find((d) => d.step === c.currentStep);
@@ -495,9 +490,7 @@ async function main() {
     }
   }
 
-  console.log(
-    `\nChargement des dossiers DS (démarches : ${[...stepsToSearch].join(", ")})...`
-  );
+  console.log(`\nChargement des dossiers DS (démarches : ${[...stepsToSearch].join(", ")})...`);
   for (const step of stepsToSearch) {
     try {
       await loadAllDossiersForDemarche(step);
@@ -534,10 +527,7 @@ async function main() {
       try {
         r.dsSearch[step] = await searchDossiersByEmails(step, emailsWithOrigin);
       } catch (err) {
-        console.error(
-          `  [${r.parcoursId}] Erreur recherche démarche ${step}:`,
-          err
-        );
+        console.error(`  [${r.parcoursId}] Erreur recherche démarche ${step}:`, err);
         r.dsSearch[step] = "error";
       }
     }
@@ -581,7 +571,9 @@ async function main() {
       const v = r.amoValidation;
       console.log(`  validation AMO     :`);
       console.log(`    statut           : ${v.statut}`);
-      console.log(`    entreprise       : ${ANONYMIZE ? `<amo:${shortHash(v.entrepriseAmoNom ?? "")}>` : v.entrepriseAmoNom ?? "?"}`);
+      console.log(
+        `    entreprise       : ${ANONYMIZE ? `<amo:${shortHash(v.entrepriseAmoNom ?? "")}>` : (v.entrepriseAmoNom ?? "?")}`
+      );
       console.log(`    choisie le       : ${v.choisieAt.toISOString()}`);
       console.log(`    validée le       : ${v.valideeAt?.toISOString() ?? "?"}`);
       console.log(`    user_email (amo) : ${redactEmail(v.userEmail)}`);
@@ -603,18 +595,20 @@ async function main() {
         const author = ANONYMIZE ? `<author:${shortHash(cm.authorName)}>` : cm.authorName;
         const struct = cm.authorStructure ?? "?";
         const msg = ANONYMIZE ? `<message ${cm.message?.length ?? 0} chars>` : (cm.message?.slice(0, 200) ?? "");
-        console.log(`    [${cm.createdAt.toISOString()}] ${author} (${struct}, ${cm.authorStructureType ?? "?"}): ${msg}`);
+        console.log(
+          `    [${cm.createdAt.toISOString()}] ${author} (${struct}, ${cm.authorStructureType ?? "?"}): ${msg}`
+        );
       }
     } else {
       console.log(`  commentaires       : aucun`);
     }
 
     // Recherche DS
-    console.log(`  emails testés côté DS: ${r.emailsToSearch.length === 0 ? "aucun" : r.emailsToSearch.map(redactEmail).join(", ")}`);
+    console.log(
+      `  emails testés côté DS: ${r.emailsToSearch.length === 0 ? "aucun" : r.emailsToSearch.map(redactEmail).join(", ")}`
+    );
     console.log(`  recherche côté DS  :`);
-    for (const [step, hits] of Object.entries(r.dsSearch) as Array<
-      [Step, DsSearchHit[] | "skipped" | "error"]
-    >) {
+    for (const [step, hits] of Object.entries(r.dsSearch) as Array<[Step, DsSearchHit[] | "skipped" | "error"]>) {
       const label = STEP_LABELS[step];
       if (hits === "skipped") {
         console.log(`    [${label}] sauté (aucun email disponible)`);
@@ -715,8 +709,8 @@ async function main() {
         redactUuid(r.parcoursId),
         redactEmail(r.userEmail),
         redactEmail(r.userEmailContact),
-        ANONYMIZE ? "" : r.userNom ?? "",
-        ANONYMIZE ? "" : r.userPrenom ?? "",
+        ANONYMIZE ? "" : (r.userNom ?? ""),
+        ANONYMIZE ? "" : (r.userPrenom ?? ""),
         r.currentStep,
         r.currentStatus,
         r.parcoursCreatedAt.toISOString(),
@@ -731,7 +725,9 @@ async function main() {
           .join("|"),
         r.amoValidation?.statut ?? "",
         r.amoValidation?.entrepriseAmoNom
-          ? (ANONYMIZE ? `<amo:${shortHash(r.amoValidation.entrepriseAmoNom)}>` : r.amoValidation.entrepriseAmoNom)
+          ? ANONYMIZE
+            ? `<amo:${shortHash(r.amoValidation.entrepriseAmoNom)}>`
+            : r.amoValidation.entrepriseAmoNom
           : "",
         redactEmail(r.amoValidation?.userEmail ?? null),
         r.amoValidation?.choisieAt.toISOString() ?? "",
@@ -750,7 +746,9 @@ async function main() {
   }
 
   console.log("\n" + "=".repeat(72));
-  console.log(`Audit terminé. ${reports.length} parcours à examiner (dont la majorité sont des cas légitimes — voir le fix pour le tri).`);
+  console.log(
+    `Audit terminé. ${reports.length} parcours à examiner (dont la majorité sont des cas légitimes — voir le fix pour le tri).`
+  );
   console.log("=".repeat(72));
 
   await client.end();
