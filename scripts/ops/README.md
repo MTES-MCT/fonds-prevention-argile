@@ -4,19 +4,42 @@ Utilitaires pour intervenir sur une BDD existante : audit d'intégrité, correct
 
 > Tous les scripts read-only par défaut. Ceux qui écrivent ont un mode `--dry-run` pour prévisualiser avant d'appliquer.
 
+## Exécution sur Scalingo
+
+Les scripts tournent dans un conteneur one-off, avec le code déployé et les variables
+d'environnement **déjà injectées** (pas de `.env.local` là-bas — `dotenv` ne trouve
+rien, c'est normal, les vars sont déjà dans `process.env`).
+
+```bash
+# Staging
+scalingo -a fonds-argile-staging -region osc-fr1 run bash
+# Prod
+scalingo -a fonds-argile -region osc-secnum-fr1 run bash
+
+# Puis, dans le conteneur :
+pnpm ds:check-permissions
+```
+
+Lancer les scripts via leur alias `pnpm <script>` (ex. `pnpm ds:check-permissions`),
+pas `tsx ...` nu ni `npx tsx` (résolution du binaire et version pnpm). `tsx` est une
+dépendance de production, donc disponible dans le conteneur. Les scripts **autonomes**
+(sans import `@/`, comme `check-ds-permissions` et `fetch-demarche-schema`) sont les plus
+robustes ; ceux qui importent `@/` nécessitent `--tsconfig scripts/tsconfig.json`.
+
 ## Index
 
-| Script | Type | Rôle | Lancement |
-|---|---|---|---|
-| [`audit-parcours-ds-integrity.ts`](#audit-parcours-ds-integrity) | read-only | Détecte les parcours dont l'état interne n'a pas de dossier DS correspondant | `tsx scripts/ops/audit-parcours-ds-integrity.ts` |
-| [`audit-epci-fallback.ts`](#audit-epci-fallback) | read-only | Liste les EPCI des dossiers absents du référentiel SEO (affichés en code brut dans le filtre AMO) et les catégorise via geo.api | `tsx scripts/ops/audit-epci-fallback.ts` |
-| [`fix-double-progression-amo.ts`](#fix-double-progression-amo) | **écrit** | Détecte et corrige les parcours victimes du bug double-progression AMO (régression vers eligibilite/todo) | `tsx scripts/ops/fix-double-progression-amo.ts` |
-| [`verify-dashboard-stats.ts`](#verify-dashboard-stats) | read-only | Vérifie que les stats du tableau de bord correspondent aux requêtes SQL équivalentes | `tsx scripts/ops/verify-dashboard-stats.ts` |
-| [`fix-missing-epci.ts`](#fix-missing-epci) | **écrit** | Backfill du code EPCI sur les parcours qui en sont dépourvus (via `geo.api.gouv.fr`) | `pnpm fix:epci` |
-| [`debug-matomo-events.ts`](#debug-matomo-events) | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur) | `tsx scripts/ops/debug-matomo-events.ts` |
-| [`fetch-demarche-schema.ts`](#fetch-demarche-schema) | read-only | Récupère le schéma GraphQL d'une démarche DS (utile pour itérer sur les mappings) | `tsx scripts/ops/fetch-demarche-schema.ts` |
-| [`extend-expired-tokens.sql`](#extend-expired-tokens) | **écrit** | Repousse la date d'expiration des tokens AMO expirés | `psql -f scripts/ops/extend-expired-tokens.sql` |
-| [`cleanup-staging.sql`](#cleanup-staging) | **écrit** | Nettoyage destructif d'une BDD staging (TRUNCATE des tables transactionnelles) | `psql -f scripts/ops/cleanup-staging.sql` |
+| Script                                                           | Type      | Rôle                                                                                                                            | Lancement                                        |
+| ---------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| [`audit-parcours-ds-integrity.ts`](#audit-parcours-ds-integrity) | read-only | Détecte les parcours dont l'état interne n'a pas de dossier DS correspondant                                                    | `tsx scripts/ops/audit-parcours-ds-integrity.ts` |
+| [`audit-epci-fallback.ts`](#audit-epci-fallback)                 | read-only | Liste les EPCI des dossiers absents du référentiel SEO (affichés en code brut dans le filtre AMO) et les catégorise via geo.api | `tsx scripts/ops/audit-epci-fallback.ts`         |
+| [`fix-double-progression-amo.ts`](#fix-double-progression-amo)   | **écrit** | Détecte et corrige les parcours victimes du bug double-progression AMO (régression vers eligibilite/todo)                       | `tsx scripts/ops/fix-double-progression-amo.ts`  |
+| [`verify-dashboard-stats.ts`](#verify-dashboard-stats)           | read-only | Vérifie que les stats du tableau de bord correspondent aux requêtes SQL équivalentes                                            | `tsx scripts/ops/verify-dashboard-stats.ts`      |
+| [`fix-missing-epci.ts`](#fix-missing-epci)                       | **écrit** | Backfill du code EPCI sur les parcours qui en sont dépourvus (via `geo.api.gouv.fr`)                                            | `pnpm fix:epci`                                  |
+| [`debug-matomo-events.ts`](#debug-matomo-events)                 | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur)                                                                 | `tsx scripts/ops/debug-matomo-events.ts`         |
+| [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Récupère le schéma GraphQL d'une démarche DS (utile pour itérer sur les mappings)                                               | `tsx scripts/ops/fetch-demarche-schema.ts`       |
+| [`check-ds-permissions.ts`](#check-ds-permissions)               | read-only | Vérifie que le token GraphQL a accès à chaque démarche configurée (sinon synchro KO)                                            | `pnpm ds:check-permissions`                      |
+| [`extend-expired-tokens.sql`](#extend-expired-tokens)            | **écrit** | Repousse la date d'expiration des tokens AMO expirés                                                                            | `psql -f scripts/ops/extend-expired-tokens.sql`  |
+| [`cleanup-staging.sql`](#cleanup-staging)                        | **écrit** | Nettoyage destructif d'une BDD staging (TRUNCATE des tables transactionnelles)                                                  | `psql -f scripts/ops/cleanup-staging.sql`        |
 
 ## Détails
 
@@ -55,11 +78,11 @@ Détecte et corrige les parcours victimes du bug double-progression AMO (cf. [`.
 
 Trois catégories, traitées différemment :
 
-| Catégorie | Critère | Traitement |
-|---|---|---|
-| **régressable** | aucun dossier DS | régression directe (`--apply`) |
+| Catégorie          | Critère                                                                                           | Traitement                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **régressable**    | aucun dossier DS                                                                                  | régression directe (`--apply`)                                     |
 | **cleanup requis** | dossiers downstream uniquement `en_construction` (brouillons DS jamais soumis, ex. cas "Edouard") | suppression des brouillons + régression (`--apply --with-cleanup`) |
-| **à reviewer** | au moins un dossier downstream soumis (`en_instruction`/`accepte`/…) | jamais touché automatiquement — listé pour intervention humaine |
+| **à reviewer**     | au moins un dossier downstream soumis (`en_instruction`/`accepte`/…)                              | jamais touché automatiquement — listé pour intervention humaine    |
 
 Trois niveaux d'engagement croissants :
 
@@ -98,6 +121,7 @@ pnpm fix:epci                   # mode par défaut (dry-run d'abord, à confirme
 ### debug-matomo-events
 
 Diagnostic des doublons d'événements Matomo dans le funnel simulateur :
+
 1. Ratio events/visits par étape
 2. Ratio `type_logement` / `start` (signature de double-fire)
 3. Ratio par jour sur 10 jours
@@ -112,6 +136,23 @@ tsx scripts/ops/debug-matomo-events.ts --since=2026-04-09
 ### fetch-demarche-schema
 
 Récupère le schéma GraphQL d'une démarche DS (champs publics) pour vérifier les mappings côté code.
+
+### check-ds-permissions
+
+Vérifie que le compte derrière `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY` est bien
+instructeur/admin de **chaque** démarche configurée (`eligibilite`, `diagnostic`,
+`devis`, `factures`). Une démarche en `UNAUTHORIZED` bloque silencieusement la
+synchro des dossiers de cette étape (cf. [ADR-0009](../../docs/adr/0009-instance-unique-ds-et-permissions-token.md)).
+Sort en `exit 1` si au moins une démarche de l'instance configurée est inaccessible.
+
+```bash
+pnpm ds:check-permissions                                   # instance configurée (env)
+tsx scripts/ops/check-ds-permissions.ts --instance=both     # teste les 2 domaines DS
+```
+
+**Prérequis** : `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY` + `DEMARCHES_SIMPLIFIEES_ID_*`
+(en local via `.env.local` ; sur Scalingo les variables sont déjà injectées, voir
+[Exécution sur Scalingo](#exécution-sur-scalingo)).
 
 ### extend-expired-tokens
 
