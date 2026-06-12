@@ -39,6 +39,7 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 | Script                                                           | Type      | Rôle                                                                                                                            | Lancement                                              |
 | ---------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | [`audit-parcours-ds-integrity.ts`](#audit-parcours-ds-integrity) | read-only | Détecte les parcours dont l'état interne n'a pas de dossier DS correspondant                                                    | `tsx scripts/ops/audit/audit-parcours-ds-integrity.ts` |
+| [`audit-dossiers-bloques.ts`](#audit-dossiers-bloques)           | read-only | Parcours bloqués sur le dossier de l'étape courante (en_construction/en_instruction), cross-check DS optionnel                  | `pnpm audit:dossiers-bloques`                          |
 | [`audit-epci-fallback.ts`](#audit-epci-fallback)                 | read-only | Liste les EPCI des dossiers absents du référentiel SEO (affichés en code brut dans le filtre AMO) et les catégorise via geo.api | `tsx scripts/ops/audit/audit-epci-fallback.ts`         |
 | [`fix-double-progression-amo.ts`](#fix-double-progression-amo)   | **écrit** | Détecte et corrige les parcours victimes du bug double-progression AMO (régression vers eligibilite/todo)                       | `tsx scripts/ops/fix/fix-double-progression-amo.ts`    |
 | [`verify-dashboard-stats.ts`](#verify-dashboard-stats)           | read-only | Vérifie que les stats du tableau de bord correspondent aux requêtes SQL équivalentes                                            | `tsx scripts/ops/audit/verify-dashboard-stats.ts`      |
@@ -63,6 +64,26 @@ tsx scripts/ops/audit/audit-parcours-ds-integrity.ts --anonymize   # masque les 
 ```
 
 **Prérequis** : `.env.local` avec `DATABASE_URL` + `DEMARCHES_SIMPLIFIEES_*`.
+
+### audit-dossiers-bloques
+
+Parcours actifs bloqués sur le dossier de leur **étape courante**. Audite par défaut
+les deux statuts : `en_construction` (brouillon jamais déposé = drop-off usager) et
+`en_instruction` (déposé mais qui n'avance pas). Sortie : répartition par étape/statut
+et par ancienneté. Avec `--check-ds`, croise chaque dossier avec son vrai statut DS pour
+séparer **drop-off** (DS aussi en_construction, pas un bug) de **désync** (DS plus avancé
+que nous = bug) et des cas **DS supprimé/inaccessible** (démarche test/permission, cf.
+[ADR-0009](../../docs/adr/0009-instance-unique-ds-et-permissions-token.md)).
+
+```bash
+pnpm audit:dossiers-bloques                       # les 2 statuts (défaut)
+pnpm audit:dossiers-bloques --check-ds            # + vrai statut DS (drop-off vs désync)
+pnpm audit:dossiers-bloques --only=en_instruction # un seul statut
+pnpm audit:dossiers-bloques --older-than=30       # bloqués depuis > 30 jours
+pnpm audit:dossiers-bloques --check-ds --csv=rapport.csv --anonymize
+```
+
+**Prérequis** : `.env.local` avec `DATABASE_URL` (+ `DEMARCHES_SIMPLIFIEES_GRAPHQL_*` si `--check-ds`).
 
 ### audit-epci-fallback
 
