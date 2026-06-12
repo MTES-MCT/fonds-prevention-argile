@@ -72,6 +72,16 @@ function ageBucket(days: number | null): string {
   if (days > 7) return ">7j";
   return "<=7j";
 }
+function fmtDate(d: Date | null): string {
+  return d ? new Date(d).toISOString().slice(0, 10) : "";
+}
+/** Type d'URL DS stockée (anonymisation-safe : pas de token exposé). */
+function dsUrlKind(url: string | null): string {
+  if (!url) return "";
+  if (url.includes("/commencer/") && url.includes("prefill_token")) return "prefill";
+  if (url.includes("/dossiers/")) return "stable";
+  return "autre";
+}
 
 /**
  * Classe un dossier bloqué selon notre statut interne et le vrai statut DS.
@@ -108,6 +118,8 @@ async function main() {
       dsNumber: dossiersDemarchesSimplifiees.dsNumber,
       dsStatus: dossiersDemarchesSimplifiees.dsStatus,
       dsUpdatedAt: dossiersDemarchesSimplifiees.updatedAt,
+      dsCreatedAt: dossiersDemarchesSimplifiees.createdAt,
+      dsUrl: dossiersDemarchesSimplifiees.dsUrl,
       email: users.email,
     })
     .from(parcoursPrevention)
@@ -129,8 +141,9 @@ async function main() {
     .orderBy(desc(dossiersDemarchesSimplifiees.updatedAt));
 
   // Filtre d'ancienneté éventuel.
+  // Âge = depuis la CRÉATION du dossier (updated_at est bruité par les syncs).
   const blocked = rows
-    .map((r) => ({ ...r, ageDays: ageDays(r.dsUpdatedAt) }))
+    .map((r) => ({ ...r, ageDays: ageDays(r.dsCreatedAt) }))
     .filter((r) => !OLDER_THAN_DAYS || (r.ageDays ?? 0) > OLDER_THAN_DAYS);
 
   console.log(`Total bloqués : ${blocked.length}\n`);
@@ -148,13 +161,15 @@ async function main() {
   for (const [k, n] of [...byStepStatus.entries()].sort((a, b) => b[1] - a[1])) {
     console.log(`  ${k.padEnd(32)} ${n}`);
   }
-  console.log("\nPar ancienneté :");
+  console.log("\nPar ancienneté (depuis création) :");
   for (const b of ["<=7j", ">7j", ">30j", ">90j", "inconnu"]) {
     if (byBucket.get(b)) console.log(`  ${b.padEnd(10)} ${byBucket.get(b)}`);
   }
 
   // --- Cross-check DS ---
-  const csvLines: string[] = ["parcoursId,step,internalStatus,dsNumber,dsStatus,ageDays,email,dsState,classification"];
+  const csvLines: string[] = [
+    "parcoursId,step,internalStatus,dsNumber,dsStatus,createdAt,ageDays,dsUrlKind,email,dsState,classification",
+  ];
   if (CHECK_DS) {
     console.log("\n=== Cross-check DS (--check-ds) ===");
     const byClass = new Map<string, number>();
@@ -170,7 +185,9 @@ async function main() {
           r.internalStatus,
           r.dsNumber ?? "",
           r.dsStatus,
+          fmtDate(r.dsCreatedAt),
           r.ageDays ?? "",
+          dsUrlKind(r.dsUrl),
           redactEmail(r.email),
           ds.state ?? ds.error ?? "",
           cls,
@@ -194,7 +211,9 @@ async function main() {
           r.internalStatus,
           r.dsNumber ?? "",
           r.dsStatus,
+          fmtDate(r.dsCreatedAt),
           r.ageDays ?? "",
+          dsUrlKind(r.dsUrl),
           redactEmail(r.email),
           "",
           "",
