@@ -362,18 +362,22 @@ type SyncRunResult =
 
 ## 7. Prérequis et pièges DS (préremplissage, publication, permissions)
 
-Diagnostiqués en juin 2026 sur un parcours bloqué en éligibilité. Ce ne sont **pas
-des bugs de code** mais des prérequis opérationnels côté DS — à vérifier avant de
-soupçonner le code.
+Diagnostiqués en juin 2026 sur des parcours bloqués en éligibilité. Comportements DS à
+connaître et prérequis opérationnels — à vérifier avant (ou en plus) de soupçonner le
+code.
 
-### 7.1 Le lien de préremplissage est réutilisable (pas à usage unique)
+### 7.1 Le lien de préremplissage : réutilisable pour un brouillon, mort après dépôt
 
-L'URL `ds_url` d'un dossier `en_construction` (`/commencer/<uuid>?prefill_token=...`)
-est **réutilisable** : à chaque accès, DS affiche « Vous avez un dossier prérempli →
-Poursuivre mon dossier prérempli ». Le `prefill_token` n'est **pas** consommé/éphémère.
-Conséquence : `buildDemarcheUrl` (`ds-url.utils.ts`) qui sert ce lien tant que
-`ds_status = en_construction` est **correct** — un bouton « Reprendre » qui le ressert
-fonctionne. Ne pas chercher un bug de 404 de ce côté.
+L'URL `ds_url` (`/commencer/<uuid>?prefill_token=...`) est **réutilisable tant que le
+dossier est un brouillon non déposé** : DS affiche « Vous avez un dossier prérempli →
+Poursuivre ». Le `prefill_token` n'est pas à usage unique. **Mais une fois le dossier
+DÉPOSÉ, ce lien ne pointe plus vers le dossier → 404** (bug QA de juin 2026).
+
+Comme DS renvoie `ds_status = en_construction` aussi bien pour un brouillon que pour un
+dossier déposé en attente d'instruction, le statut **ne suffit pas** à choisir l'URL de
+reprise. `buildDemarcheUrl` (`ds-url.utils.ts`) bascule donc sur le signal **`submitted_at`**
+(date de dépôt) : brouillon (`submitted_at` absent) → lien prefill ; déposé → URL stable
+`/dossiers/<n>/demande`. Voir [ADR-0012](../adr/0012-url-reprise-dossier-basee-sur-depot.md).
 
 ### 7.2 Une démarche non publiée (brouillon/test) bloque le dépôt
 
