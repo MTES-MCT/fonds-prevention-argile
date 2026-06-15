@@ -12,7 +12,7 @@ SELECT id, nom FROM entreprises_amo;
 -- =============================================================================
 DELETE FROM prospect_qualifications WHERE id::text LIKE '66666666-6666-6666-6666-6666666666%';
 DELETE FROM prospect_qualifications WHERE agent_id IN (SELECT id FROM agents WHERE sub IN ('seed_geraldine', 'seed_jeanpatrick'));
-DELETE FROM parcours_commentaires WHERE id::text LIKE '77777777-7777-7777-7777-7777777777%';
+DELETE FROM parcours_actions WHERE id::text LIKE '77777777-7777-7777-7777-7777777777%';
 DELETE FROM dossiers_demarches_simplifiees WHERE id::text LIKE '44444444-4444-4444-4444-4444444444%';
 DELETE FROM dossiers_demarches_simplifiees WHERE id::text LIKE '44444444-4444-4444-4444-44444444a%';
 DELETE FROM parcours_amo_validations WHERE id::text LIKE '33333333-3333-3333-3333-3333333333%';
