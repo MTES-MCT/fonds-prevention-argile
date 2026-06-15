@@ -35,6 +35,28 @@ describe("ds-url.utils", () => {
       ).toBe(PREFILL_URL);
     });
 
+    it("EN_CONSTRUCTION mais DÉPOSÉ (submittedAt renseigné) → URL stable (le prefill est mort)", () => {
+      expect(
+        buildDemarcheUrl({
+          dsStatus: DSStatus.EN_CONSTRUCTION,
+          dsNumber: "999",
+          dsUrl: PREFILL_URL,
+          submittedAt: new Date("2026-06-01"),
+        })
+      ).toBe(STABLE_URL);
+    });
+
+    it("EN_CONSTRUCTION et NON déposé (brouillon, submittedAt absent) → URL prefill", () => {
+      expect(
+        buildDemarcheUrl({
+          dsStatus: DSStatus.EN_CONSTRUCTION,
+          dsNumber: "999",
+          dsUrl: PREFILL_URL,
+          submittedAt: null,
+        })
+      ).toBe(PREFILL_URL);
+    });
+
     it("retourne l'URL stable /dossiers/<n>/demande quand le dossier est EN_INSTRUCTION (ignore l'URL prefill stockée)", () => {
       expect(
         buildDemarcheUrl({

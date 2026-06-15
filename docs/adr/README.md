@@ -39,5 +39,6 @@ purement cosmétique.
 | 0009 | [Sémantique du statut DS — `en_construction` = déposé, `ds_status` nullable, dates](0009-semantique-statut-ds-depose-vs-brouillon.md)   | Accepté |
 | 0010 | [Actions typées sur les parcours (remplacement des commentaires libres)](0010-actions-typees-parcours.md)                               | Accepté |
 | 0011 | [Instance unique DS (demarche.numerique.gouv.fr) et permissions du token par démarche](0011-instance-unique-ds-et-permissions-token.md) | Accepté |
+| 0012 | [URL de reprise du dossier DS basée sur la date de dépôt (et non le statut)](0012-url-reprise-dossier-basee-sur-depot.md)               | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->
