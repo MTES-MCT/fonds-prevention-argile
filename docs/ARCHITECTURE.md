@@ -88,7 +88,7 @@ users (1) ──1:1── parcours_prevention (1) ──1:N── dossiers_demar
                         │
                         ├──1:1── parcours_amo_validations ──N:1── entreprises_amo
                         │              └──1:N── amo_validation_tokens
-                        ├──1:N── parcours_commentaires ──N:1── agents
+                        ├──1:N── parcours_actions ──N:1── agents
                         ├──1:N── prospect_qualifications ──N:1── agents
                         └──1:N── sync_run_entries ──N:1── sync_runs
 
@@ -104,7 +104,7 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 
 | Domaine          | Tables                                                                                             |
 | ---------------- | -------------------------------------------------------------------------------------------------- |
-| Parcours         | `users`, `parcours_prevention`, `dossiers_demarches_simplifiees`, `parcours_commentaires`          |
+| Parcours         | `users`, `parcours_prevention`, `dossiers_demarches_simplifiees`, `parcours_actions`               |
 | AMO              | `parcours_amo_validations`, `amo_validation_tokens`, `entreprises_amo`, `entreprises_amo_communes` |
 | Agents           | `agents`, `agent_permissions`                                                                      |
 | Allers-vers      | `allers_vers`, `allers_vers_departements`, `allers_vers_epci`, `prospect_qualifications`           |
