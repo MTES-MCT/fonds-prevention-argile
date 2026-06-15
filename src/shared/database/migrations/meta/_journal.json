@@ -239,6 +239,13 @@
       "when": 1780922169044,
       "tag": "0033_sad_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1781080761789,
+      "tag": "0034_nullable_ds_status",
+      "breakpoints": true
     }
   ]
 }

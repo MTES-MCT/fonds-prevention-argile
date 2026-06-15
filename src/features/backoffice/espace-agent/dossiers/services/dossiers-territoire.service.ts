@@ -45,7 +45,11 @@ export async function getDossiersByAgent(
     currentStatus: item.currentStatus,
     codeDepartement: item.logement.codeDepartement,
     codeEpci: item.logement.codeEpci,
-    validation: item.validation ? { statut: item.validation.statut, entrepriseAmoId: item.validation.entrepriseAmoId } : null,
+    validation: item.validation
+      ? { statut: item.validation.statut, entrepriseAmoId: item.validation.entrepriseAmoId }
+      : null,
+    dsStatus: item.dsStatus,
+    instructedAt: item.instructedAt,
   }));
   const [resolved, actor, actionsMap] = await Promise.all([
     resolveResponsables(resolverInput),
@@ -135,6 +139,7 @@ function toDossierItemSansResponsable(row: Row): DossierItemSansResponsable {
         }
       : null,
     dsStatus: row.dsStatus ?? null,
+    instructedAt: row.instructedAt ?? null,
     createdByAgentId: row.createdByAgentId,
     archivedAt: row.archivedAt,
     createdAt: row.createdAt,

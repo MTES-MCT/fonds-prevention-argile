@@ -14,34 +14,29 @@ interface RepartitionDossiersCardsProps {
 
 export function RepartitionDossiersCards({ users, stats, loading = false }: RepartitionDossiersCardsProps) {
   const counts = useMemo(() => {
-    let brouillons = 0;
+    let enCreation = 0;
     let deposes = 0;
-    let enConstruction = 0;
     let enInstruction = 0;
+    let instruits = 0;
 
     for (const u of users) {
       const allDossiers = [u.dossiers.eligibilite, u.dossiers.diagnostic, u.dossiers.devis, u.dossiers.factures];
       for (const d of allDossiers) {
         if (!d) continue;
-        switch (d.dsStatus) {
-          case DSStatus.EN_CONSTRUCTION:
-            brouillons++;
-            enConstruction++;
-            break;
-          case DSStatus.EN_INSTRUCTION:
-            deposes++;
-            enInstruction++;
-            break;
-          case DSStatus.ACCEPTE:
-          case DSStatus.REFUSE:
-          case DSStatus.CLASSE_SANS_SUITE:
-            deposes++;
-            break;
+
+        if (d.dsNumber !== null && !d.dsStatus) {
+          enCreation++;
+        } else if (d.dsStatus === DSStatus.EN_CONSTRUCTION) {
+          deposes++;
+        } else if (d.dsStatus === DSStatus.EN_INSTRUCTION) {
+          enInstruction++;
+        } else if (d.dsStatus === DSStatus.ACCEPTE || d.dsStatus === DSStatus.REFUSE || d.dsStatus === DSStatus.CLASSE_SANS_SUITE) {
+          instruits++;
         }
       }
     }
 
-    return { brouillons, deposes, enConstruction, enInstruction };
+    return { enCreation, deposes, enInstruction, instruits };
   }, [users]);
 
   return (
@@ -50,8 +45,8 @@ export function RepartitionDossiersCards({ users, stats, loading = false }: Repa
       <p className="fr-text--sm fr-text-mention--grey fr-mb-2w">Dans Démarche Numérique</p>
       <div className="fr-grid-row fr-grid-row--gutters">
         <DashboardStatCard
-          value={counts.brouillons.toLocaleString("fr-FR")}
-          label="Brouillons créés"
+          value={counts.enCreation.toLocaleString("fr-FR")}
+          label="En cours de création"
           variation={null}
           loading={loading}
           compact
@@ -64,15 +59,15 @@ export function RepartitionDossiersCards({ users, stats, loading = false }: Repa
           compact
         />
         <DashboardStatCard
-          value={counts.enConstruction.toLocaleString("fr-FR")}
-          label="En construction"
+          value={counts.enInstruction.toLocaleString("fr-FR")}
+          label="En instruction DDT"
           variation={null}
           loading={loading}
           compact
         />
         <DashboardStatCard
-          value={counts.enInstruction.toLocaleString("fr-FR")}
-          label="En instruction DDT"
+          value={counts.instruits.toLocaleString("fr-FR")}
+          label="Dossiers instruits"
           variation={null}
           loading={loading}
           compact

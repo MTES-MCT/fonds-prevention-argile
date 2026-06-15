@@ -58,8 +58,8 @@ export async function syncUserDossierStatus(step: Step): Promise<ActionResult<Sy
         success: true,
         data: {
           updated: false,
-          oldStatus: dossier.dsStatus,
-          newStatus: dossier.dsStatus,
+          oldStatus: dossier.dsStatus ?? undefined,
+          newStatus: dossier.dsStatus ?? undefined,
         },
       };
     }

@@ -2,7 +2,6 @@ import { pgTable, uuid, timestamp, varchar } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { dsStatusPgEnum, stepPgEnum } from "../enums/enums";
-import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 
 // Table des dossiers Démarches Simplifiées
 export const dossiersDemarchesSimplifiees = pgTable("dossiers_demarches_simplifiees", {
@@ -18,9 +17,10 @@ export const dossiersDemarchesSimplifiees = pgTable("dossiers_demarches_simplifi
   dsId: varchar("ds_id", { length: 50 }),
   dsDemarcheId: varchar("ds_demarche_id", { length: 50 }).notNull(),
 
-  dsStatus: dsStatusPgEnum("ds_status").notNull().default(DSStatus.EN_CONSTRUCTION),
+  dsStatus: dsStatusPgEnum("ds_status"),
 
   submittedAt: timestamp("submitted_at", { mode: "date" }),
+  instructedAt: timestamp("instructed_at", { mode: "date" }),
   processedAt: timestamp("processed_at", { mode: "date" }),
 
   dsUrl: varchar("ds_url", { length: 500 }),

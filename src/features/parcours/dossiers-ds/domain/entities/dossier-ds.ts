@@ -12,8 +12,10 @@ export interface DossierDS {
   demarcheEtape: Step;
   demarcheUrl?: string;
   numeroDs: number | null;
-  etatDs: DSStatus;
+  etatDs: DSStatus | null;
   submittedAt: Date | null;
+  /** Date de passage en instruction par la DDT (renseignée par la sync DS, null sinon). */
+  instructedAt: Date | null;
   /** Date à laquelle le dossier DS a été marqué comme accepté (renseigné par la sync DS). */
   processedAt: Date | null;
   createdAt: Date;

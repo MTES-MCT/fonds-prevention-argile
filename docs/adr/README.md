@@ -36,7 +36,8 @@ purement cosmétique.
 | 0006 | [Architecture DDD-lite organisée par features](0006-architecture-ddd-lite-par-features.md)                                              | Accepté |
 | 0007 | [Modèle d'état du parcours et synchronisation DS par CRON](0007-modele-etat-parcours-sync-ds.md)                                        | Accepté |
 | 0008 | [Robustesse du tracking Matomo du simulateur et critère d'acceptation](0008-tracking-matomo-simulateur-deduplication.md)                | Accepté |
-| 0009 | [Instance unique DS (demarche.numerique.gouv.fr) et permissions du token par démarche](0009-instance-unique-ds-et-permissions-token.md) | Accepté |
+| 0009 | [Sémantique du statut DS — `en_construction` = déposé, `ds_status` nullable, dates](0009-semantique-statut-ds-depose-vs-brouillon.md)   | Accepté |
 | 0010 | [Actions typées sur les parcours (remplacement des commentaires libres)](0010-actions-typees-parcours.md)                               | Accepté |
+| 0011 | [Instance unique DS (demarche.numerique.gouv.fr) et permissions du token par démarche](0011-instance-unique-ds-et-permissions-token.md) | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->

@@ -74,7 +74,10 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
 
     // Récupérer le statut DS de l'étape courante
     const [dossierDS] = await db
-      .select({ dsStatus: dossiersDemarchesSimplifiees.dsStatus })
+      .select({
+        dsStatus: dossiersDemarchesSimplifiees.dsStatus,
+        instructedAt: dossiersDemarchesSimplifiees.instructedAt,
+      })
       .from(dossiersDemarchesSimplifiees)
       .where(
         and(
@@ -157,6 +160,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       currentStatus: dossier.parcours.currentStatus as Status,
       dsStatus: dossierDS?.dsStatus ?? null,
       validationStatut: dossier.validation.statut,
+      instructedAt: dossierDS?.instructedAt ?? null,
       parcoursCreatedAt: dossier.parcours.createdAt,
       lastUpdatedAt: dossier.parcours.updatedAt,
       suiviDepuis: dossier.validation.valideeAt,

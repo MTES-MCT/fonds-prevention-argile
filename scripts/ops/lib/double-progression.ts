@@ -8,18 +8,14 @@
  */
 
 import { Step } from "@/shared/domain/value-objects/step.enum";
-import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 
-export type DoubleProgressionCategory =
-  | "legitime"
-  | "regressable"
-  | "cleanup_requis"
-  | "a_reviewer";
+export type DoubleProgressionCategory = "legitime" | "regressable" | "cleanup_requis" | "a_reviewer";
 
 /** Forme minimale d'un dossier DS suffisante pour catégoriser. */
 export interface DossierForCategory {
   step: string;
-  dsStatus: string;
+  /** `null` = dossier créé dans DS mais jamais soumis (brouillon jetable). */
+  dsStatus: string | null;
 }
 
 /**
@@ -30,7 +26,7 @@ export interface DossierForCategory {
  *                      normalement. Cas typique de l'utilisateur passif qui n'a pas
  *                      (encore) créé le dossier de son étape courante. **Rien à corriger.**
  * - `regressable`    : aucun dossier DS → propulsé sans rien créer (bug). Régression simple.
- * - `cleanup_requis` : dossiers downstream UNIQUEMENT `en_construction` (brouillons DS
+ * - `cleanup_requis` : dossiers downstream UNIQUEMENT sans statut DS (brouillons DS
  *                      jamais soumis, ex. cas "Edouard"). Régression après suppression des brouillons.
  * - `a_reviewer`     : au moins un dossier downstream SOUMIS sans dossier d'éligibilité.
  *                      Vraie donnée en jeu → intervention humaine.
@@ -38,12 +34,10 @@ export interface DossierForCategory {
  * Pré-condition : à n'appeler que sur des parcours dont `current_step` est en aval
  * de l'éligibilité (diagnostic/devis/factures).
  */
-export function categorizeDoubleProgression(
-  dossiers: DossierForCategory[]
-): DoubleProgressionCategory {
+export function categorizeDoubleProgression(dossiers: DossierForCategory[]): DoubleProgressionCategory {
   if (dossiers.some((d) => d.step === Step.ELIGIBILITE)) return "legitime";
   if (dossiers.length === 0) return "regressable";
-  if (dossiers.every((d) => d.dsStatus === DSStatus.EN_CONSTRUCTION)) return "cleanup_requis";
+  if (dossiers.every((d) => !d.dsStatus)) return "cleanup_requis";
   return "a_reviewer";
 }
 

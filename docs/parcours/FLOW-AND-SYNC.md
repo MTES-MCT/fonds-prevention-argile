@@ -28,17 +28,19 @@ Chaque parcours a deux niveaux d'état complémentaires :
 | Parcours interne | `parcours_prevention.current_status`       | Dérivé du dossier de `current_step` |
 | Parcours interne | `parcours_prevention.current_step`         | Logique métier (progression)        |
 
-- **`ds_status`** ∈ `EN_CONSTRUCTION | EN_INSTRUCTION | ACCEPTE | REFUSE | CLASSE_SANS_SUITE | NON_ACCESSIBLE` — c'est DS qui décide.
+- **`ds_status`** ∈ `null | EN_CONSTRUCTION | EN_INSTRUCTION | ACCEPTE | REFUSE | CLASSE_SANS_SUITE | NON_ACCESSIBLE` — c'est DS qui décide. `null` = dossier créé dans DS mais **pas encore déposé** ; `EN_CONSTRUCTION` = **déposé**, en attente d'instruction (et non « brouillon »). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
 - **`current_status`** ∈ `todo | en_instruction | valide` — dérivé via `DS_TO_INTERNAL_STATUS` (voir §3.2).
 - **`current_step`** ∈ les 5 étapes — change uniquement sur appel explicite à `moveToNextStep`.
 
 ### 1.3 Cycle de vie d'une étape
 
 ```
-TODO ──(création dossier DS)──► EN_INSTRUCTION ──(sync DS, ds_status=accepte)──► VALIDE ──(moveToNextStep)──► étape N+1, TODO
+TODO ──(dépôt usager, sync ds=en_construction)──► TODO* ──(sync ds=en_instruction)──► EN_INSTRUCTION ──(sync ds=accepte)──► VALIDE ──(moveToNextStep)──► étape N+1, TODO
+   (* déposé, en attente de prise en instruction par la DDT)
 ```
 
-- **TODO → EN_INSTRUCTION** : création du dossier DS (`creerDossier` action ou `createDiagnosticDossier` selon l'étape).
+- **Création du dossier** : `current_status` reste `TODO` — le dossier DS est créé mais pas encore déposé (`ds_status = null`). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
+- **TODO → EN_INSTRUCTION** : la sync détecte `ds_status = en_instruction` (la DDT a pris le dossier en instruction) ; `recomputeParcoursStatus` écrit `current_status = en_instruction`. Le dépôt usager met `ds_status = en_construction`, qui mappe en interne sur `TODO` (§3.2) : le parcours reste `TODO` jusqu'à la prise en instruction.
 - **EN_INSTRUCTION → VALIDE** : la sync détecte que le dossier DS est passé à `ACCEPTE` côté DS, le mapping interne donne `VALIDE`, et `recomputeParcoursStatus` écrit `current_status = valide`.
 - **VALIDE → étape suivante (TODO)** : appel à `moveToNextStep(userId)`.
 
@@ -53,10 +55,10 @@ TODO ──(création dossier DS)──► EN_INSTRUCTION ──(sync DS, ds_sta
 | Inscription → `choix_amo / todo`                        | À la création du parcours (`findOrCreateForUser`)                                                                                                                            | `parcours-prevention.repository.ts:206`                                                                                                       |
 | `choix_amo / todo` → `choix_amo / en_instruction`       | Demandeur choisit un AMO                                                                                                                                                     | `selectAmoForUser`, `amo-selection.service.ts:266`                                                                                            |
 | `choix_amo / en_instruction` → `eligibilite / todo`     | **AMO valide** via lien email → `approveValidation` appelle `moveToNextStep` automatiquement                                                                                 | `amo-validation.service.ts:66`                                                                                                                |
-| `eligibilite / todo` → `eligibilite / en_instruction`   | Demandeur soumet le formulaire DS éligibilité (`creerDossier`)                                                                                                               | `parcours-dossier.actions.ts:54`                                                                                                              |
+| `eligibilite / todo` → `eligibilite / en_instruction`   | Sync détecte `ds_status = en_instruction` (DDT prend la main) + `recomputeParcoursStatus`. La création du dossier (`createEligibiliteDossier`) garde `todo` (ADR-0009)       | `ds-sync.service.ts`, `eligibilite.service.ts`                                                                                                |
 | `eligibilite / en_instruction` → `eligibilite / valide` | Sync détecte `ds_status = accepte` + `recomputeParcoursStatus`                                                                                                               | `ds-sync.service.ts` (voir §3)                                                                                                                |
 | `eligibilite / valide` → `diagnostic / todo`            | **CRON** appelle `moveToNextStep` automatiquement après recompute                                                                                                            | `parcours-sync-batch.service.ts` (voir §4)                                                                                                    |
-| `diagnostic / todo` → `diagnostic / en_instruction`     | Demandeur clique « Transmettre les résultats » → `envoyerDossierDiagnostic` (préremplissage DS)                                                                              | `diagnostic.service.ts:125`                                                                                                                   |
+| `diagnostic / todo` → `diagnostic / en_instruction`     | Sync détecte `ds_status = en_instruction` (DDT prend la main) + recompute. La création (`envoyerDossierDiagnostic`) garde `todo` (ADR-0009)                                  | `ds-sync.service.ts`, `diagnostic.service.ts`                                                                                                 |
 | `diagnostic / en_instruction` → `diagnostic / valide`   | Idem éligibilité (sync + recompute)                                                                                                                                          | id.                                                                                                                                           |
 | `diagnostic / valide` → `devis / todo`                  | Idem (CRON)                                                                                                                                                                  | id.                                                                                                                                           |
 | `devis / *` → `devis / valide`                          | Idem (cycle dépôt → sync → recompute)                                                                                                                                        | id.                                                                                                                                           |
@@ -67,8 +69,8 @@ TODO ──(création dossier DS)──► EN_INSTRUCTION ──(sync DS, ds_sta
 ### 2.2 Garde-fous existants
 
 - **`canPassToNextStep(state)`** (`parcours-permissions.service.ts:26`) : `status === VALIDE && !isLastStep(step)`.
-- **`canCreateDossier(state)`** : `status === TODO`.
-- **`canValidateDossier(state)`** : `status === EN_INSTRUCTION`.
+- **`canCreateDossier(state)`** : `status === TODO`. Ne sert plus de verrou anti-doublon — la création de dossier est idempotente (`getDossierByStep`), cf. [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
+- **`canValidateDossier(state)`** : `status === EN_INSTRUCTION` — donc possible uniquement quand la DDT instruit réellement (le dossier seulement déposé reste `TODO`).
 - `moveToNextStep` re-fetche l'état avant d'écrire → idempotent, safe en concurrence.
 - `findActiveForSync()` exclut les parcours archivés et complétés du périmètre du CRON.
 
@@ -120,6 +122,8 @@ Source : `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`.
 | `NON_ACCESSIBLE`    | `TODO`                     |
 
 Note : `REFUSE` repasse en `EN_INSTRUCTION` interne (et non `VALIDE`) — c'est volontaire, un dossier refusé n'avance pas l'étape.
+
+Note : un `ds_status = null` (dossier créé non déposé) n'a pas d'entrée de mapping — `recomputeParcoursStatus` l'ignore et laisse `current_status` inchangé. `EN_CONSTRUCTION` (déposé) reste mappé en `TODO` interne : un dépôt en attente d'instruction n'avance pas encore l'étape côté parcours. Les dates `submitted_at` (passage en construction = dépôt) et `instructed_at` (passage en instruction) sont écrites par la sync en `COALESCE`. Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
 
 ### 3.3 Déclencheurs de sync
 
@@ -383,7 +387,7 @@ démarche doit être **publiée**. Détection : `pnpm ds:check-permissions` affi
 
 ### 7.3 Le token doit être instructeur de chaque démarche
 
-Cf. [ADR-0009](../adr/0009-instance-unique-ds-et-permissions-token.md). Si le token
+Cf. [ADR-0011](../adr/0011-instance-unique-ds-et-permissions-token.md). Si le token
 GraphQL n'est pas instructeur d'une démarche, `getDossier` reçoit `unauthorized` →
 la sync de cette étape échoue. Depuis juin 2026 cette erreur est **tracée**
 (`sync_run_entries.error`) au lieu d'être avalée en faux « RAS » (voir §3.1).
@@ -406,7 +410,7 @@ Détection préventive : `pnpm ds:check-permissions` (statut `UNAUTHORIZED`).
 | Progression d'étape                         | `src/features/parcours/core/services/parcours-progression.service.ts`                  |
 | Service sync DS                             | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                        |
 | Service sync batch (CRON)                   | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`            |
-| Vérif permissions / état démarches DS       | `scripts/ops/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                    |
+| Vérif permissions / état démarches DS       | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                 |
 | Action UI sync                              | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                    |
 | Validation AMO (auto-progression CHOIX_AMO) | `src/features/parcours/amo/services/amo-validation.service.ts`                         |
 | Endpoint CRON                               | `src/app/api/cron/sync-parcours/route.ts`                                              |

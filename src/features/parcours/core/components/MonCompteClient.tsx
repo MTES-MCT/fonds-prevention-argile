@@ -66,8 +66,8 @@ export default function MonCompteClient() {
     isLoading: isLoadingParcours,
   } = useParcours();
 
-  const currentStepSubmittedAt = currentStep
-    ? (dossiers?.find((d) => d.demarcheEtape === currentStep)?.submittedAt ?? null)
+  const currentStepInstructedAt = currentStep
+    ? (dossiers?.find((d) => d.demarcheEtape === currentStep)?.instructedAt ?? null)
     : null;
 
   const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
@@ -163,7 +163,7 @@ export default function MonCompteClient() {
                   {/* Badge de statut d'étape */}
                   {hasParcours && (
                     <p className="fr-badge fr-badge--new fr-mr-2w">
-                      {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo, currentStepSubmittedAt) || "À faire"}
+                      {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo, currentStepInstructedAt) || "À faire"}
                     </p>
                   )}
                 </li>
@@ -401,7 +401,7 @@ function getStatusBadgeLabel(
   currentStep: Step | null,
   lastDSStatus: DSStatus | null,
   statutAmo: StatutValidationAmo | null,
-  submittedAt: Date | null
+  instructedAt: Date | null
 ): string | null {
   // Si on est à l'étape CHOIX_AMO, afficher le statut AMO
   if (currentStep === Step.CHOIX_AMO) {
@@ -430,9 +430,9 @@ function getStatusBadgeLabel(
     case DSStatus.ACCEPTE:
       return "Accepté";
     case DSStatus.EN_INSTRUCTION:
-      return submittedAt ? `En instruction depuis le ${formatDate(submittedAt.toISOString())}` : "En instruction";
+      return instructedAt ? `En instruction depuis le ${formatDate(instructedAt.toISOString())}` : "En instruction";
     case DSStatus.EN_CONSTRUCTION:
-      return "En construction";
+      return "En attente d'instruction";
     case DSStatus.REFUSE:
       return "Refusé";
     case DSStatus.CLASSE_SANS_SUITE:

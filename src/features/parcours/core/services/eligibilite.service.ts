@@ -5,7 +5,7 @@ import { mapRGAToDSFormat, validateRGADataForDS } from "../../dossiers-ds/mapper
 import { Status } from "../domain";
 import { getAmoChoisie } from "../../amo/actions";
 import { prefillClient } from "../../dossiers-ds/adapters";
-import { createDossierForCurrentStep } from "../../dossiers-ds/services";
+import { createDossierForCurrentStep, getDossierByStep } from "../../dossiers-ds/services";
 import { parcoursRepo, userRepo } from "@/shared/database";
 import { DS_FIELDS_ELIGIBILITE } from "../../dossiers-ds/domain";
 import { createDebugLogger } from "@/shared/utils";
@@ -74,6 +74,22 @@ export async function createEligibiliteDossier(
       return {
         success: false,
         error: "Vous n'êtes pas à l'étape d'éligibilité",
+      };
+    }
+
+    // Idempotence : si un dossier existe déjà pour cette étape, le retourner
+    // (le current_status ne sert plus de verrou anti-doublon, cf. ADR-0009).
+    const existing = await getDossierByStep(parcoursData.parcours.id, Step.ELIGIBILITE);
+    if (existing) {
+      debug.log("Dossier éligibilité déjà existant, renvoi de l'URL:", existing.dsUrl);
+      return {
+        success: true,
+        data: {
+          dossierUrl: existing.dsUrl ?? "",
+          dossierNumber: Number(existing.dsNumber),
+          dossierId: existing.id,
+          message: "Dossier éligibilité déjà créé",
+        },
       };
     }
 

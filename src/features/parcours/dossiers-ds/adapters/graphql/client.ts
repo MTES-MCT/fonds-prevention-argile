@@ -288,11 +288,20 @@ export class DemarchesSimplifieesClient {
   }
 
   /**
-   * Récupère le statut d'un dossier par son numéro
+   * Récupère le statut et les dates clés d'un dossier par son numéro
    */
-  async getDossierStatus(dossierNumber: number): Promise<string | null> {
+  async getDossierStatus(dossierNumber: number): Promise<{
+    state: string;
+    datePassageEnConstruction?: string;
+    datePassageEnInstruction?: string;
+  } | null> {
     const dossier = await this.getDossier(dossierNumber);
-    return dossier?.state || null;
+    if (!dossier) return null;
+    return {
+      state: dossier.state,
+      datePassageEnConstruction: dossier.datePassageEnConstruction,
+      datePassageEnInstruction: dossier.datePassageEnInstruction,
+    };
   }
 
   /**
