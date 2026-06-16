@@ -1,12 +1,15 @@
-FROM node:22-alpine
+FROM node:24-alpine
 
-# Installer pnpm globalement avec npm
-RUN npm install -g pnpm@10.18.2
+# Mettre a jour les paquets systeme Alpine (corrige les CVE openssl/libssl3)
+RUN apk upgrade --no-cache
+
+# Installer pnpm globalement avec npm (aligne sur packageManager du repo)
+RUN npm install -g pnpm@11.5.2
 
 WORKDIR /app
 
-# Copier les fichiers de dépendances
-COPY package.json pnpm-lock.yaml ./
+# Copier les fichiers de dépendances (pnpm-workspace.yaml porte les overrides)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Installer les dépendances
 RUN pnpm install --frozen-lockfile

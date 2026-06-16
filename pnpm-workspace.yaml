@@ -41,6 +41,8 @@ overrides:
   # ReDoS $data (transitif via eslint)
   ajv: "^6.14.0"
   # Arbitrary requests via dev server (transitif via drizzle-kit)
+  # NB: CVE Deno binary-integrity (<0.28.1) non-exploitable en Node ; bump vers ^0.28.1
+  # bloqué par minimumReleaseAge (0.28.1 publié le 2026-06-11) jusqu'au 2026-06-18.
   esbuild: "^0.25.0"
   # Path traversal via prefix/postfix non assainis (transitif via exceljs)
   tmp: "^0.2.6"

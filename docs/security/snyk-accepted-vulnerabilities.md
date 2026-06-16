@@ -76,8 +76,53 @@ Toutes transitives, sans path d'exploitation directe (0 High après l'override `
 | `uuid` <11.1.1            | Moderate | runtime | `exceljs > uuid`                            | exceljs appelle `uuidv4()` sans buffer → faille non atteignable ; override v11 = major risqué |
 | `diff` (jsdiff DoS)       | Low      | devDep  | `ts-node > diff`                            | Non déployé en prod                                                                           |
 
+## Refresh CVE — juin 2026 (branche `fix/cve`)
+
+Branche dédiée aux CVE remontées par le scan conteneur + nouvelle dérive `pnpm audit`.
+Vérification : `pnpm validate` (typecheck + lint + 1291 tests verts).
+
+### CVE Alpine openssl/libssl3 — image **dev uniquement**, corrigées
+
+`CVE-2026-45445`, `CVE-2026-42766`, `CVE-2026-42767` (openssl/libssl3 `3.5.6-r0`) sont des
+paquets **apk Alpine**, pas npm. Elles proviennent de `FROM node:22-alpine` dans le
+`Dockerfile`, qui ne sert qu'au **dev local** (`docker-compose.yml`, `CMD pnpm start:dev`).
+La **prod** déploie via le **buildpack Node Scalingo** (base Ubuntu, `.buildpacks` + `Procfile`),
+sans cette image Alpine : ces CVE ne touchent pas le runtime de production.
+
+**Correctif** (`Dockerfile`) :
+
+- bump `node:22-alpine` → `node:24-alpine` (aligne `engines.node=24.x`) ;
+- `RUN apk upgrade --no-cache` pour garantir les paquets système (openssl) patchés
+  (`libssl3`/`libcrypto3` `3.5.6-r0` → `3.5.7-r0`, vérifié sur l'image construite) ;
+- copie de `pnpm-workspace.yaml` avant `pnpm install --frozen-lockfile` et alignement
+  de pnpm `10.18.2` → `11.5.2` (les overrides vivent désormais dans `pnpm-workspace.yaml`,
+  non copié auparavant → la build dev échouait en `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`).
+
+### Dependabot embarqués
+
+- `@gouvfr/dsfr-chart` 2.0.4 → 2.1.1 (PR #226). Le breaking change 2.1.0 (databox `title`→`name`)
+  ne nous concerne pas : on n'utilise que `<line-chart>` avec `name=`.
+- `@types/react` 19.2.14 → 19.2.17 (PR #226, types only).
+
+### Reportés (inchangés, PR dédiée Next 16)
+
+- **Next 16** (#213), **ESLint 10** (#211), **@vitejs/plugin-react 6** (#209) : voir refresh juin
+  ci-dessus, toujours couplés à la migration Next 16.
+
+### Nouvelle vuln High acceptée — `esbuild` (devtooling)
+
+| Dépendance vulnérable | Sévérité | Type  | Chemin                                                        | Justification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --------------------- | -------- | ----- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `esbuild` <0.28.1     | High     | build | `tsx > esbuild`, `drizzle-kit > esbuild` (override `^0.25.0`) | « Missing binary integrity verification in **Deno** » : non atteignable en Node ; esbuild ne tourne qu'au build/migration (`tsx migrate.ts`), pas en service de requêtes. Le pin vient de l'override explicite `esbuild: ^0.25.0` (`pnpm-workspace.yaml`). Bump vers `^0.28.1` **tenté** mais bloqué par `minimumReleaseAge` (1 semaine) : `esbuild@0.28.1` publié le 2026-06-11 → éligible à partir du **2026-06-18**. À ce moment, repasser l'override à `^0.28.1` et `pnpm install` (pas besoin d'exclusion). |
+
+Les Moderate restantes (`protocol-buffers-schema`, `postcss`, `uuid`) sont inchangées (voir tableau
+refresh juin ci-dessus).
+
 ## Prochaine revue
 
 - **Lors de l'upgrade Next 16** (PR dédiée) : réévaluer next, eslint-config-next,
   ESLint 10 et le `postcss` bundlé par Next ; migrer le script `lint` vers le CLI ESLint.
+- **`esbuild`** : à partir du **2026-06-18** (fin du `minimumReleaseAge`), passer l'override
+  `esbuild: ^0.25.0` → `^0.28.1` dans `pnpm-workspace.yaml` puis `pnpm install` — élimine la
+  seule High runtime restante.
 - **Vérifier trimestriellement** les fix upstream pour `exceljs` (tmp, uuid) et `maplibre-gl`.
