@@ -9,6 +9,7 @@ import {
 import {
   ParcoursAnomalyType,
   PARCOURS_ANOMALY_LABELS,
+  DemarcheSanteStatus,
   type AnomaliesResult,
   type AnomalyRow,
   type DemarcheSante,
@@ -20,6 +21,14 @@ const TYPE_BADGE_CLASSES: Record<ParcoursAnomalyType, string> = {
   [ParcoursAnomalyType.BLOQUE]: "fr-badge--warning",
   [ParcoursAnomalyType.ORPHELIN]: "fr-badge--error",
   [ParcoursAnomalyType.SYNC_ERREUR]: "fr-badge--error",
+};
+
+const SANTE_BADGE: Record<DemarcheSanteStatus, { cls: string; label: string; showNumber: boolean }> = {
+  [DemarcheSanteStatus.PUBLIEE]: { cls: "fr-badge--success", label: "publiée", showNumber: true },
+  [DemarcheSanteStatus.NON_PUBLIEE]: { cls: "fr-badge--warning", label: "non publiée", showNumber: true },
+  [DemarcheSanteStatus.NON_DISPONIBLE]: { cls: "fr-badge--info", label: "non créée", showNumber: false },
+  [DemarcheSanteStatus.NON_CONFIGUREE]: { cls: "fr-badge--info", label: "non configurée", showNumber: false },
+  [DemarcheSanteStatus.ERREUR]: { cls: "fr-badge--error", label: "erreur API", showNumber: false },
 };
 
 const TYPE_ORDER: ParcoursAnomalyType[] = [
@@ -63,12 +72,12 @@ export default function DiagnosticsPanel() {
     <>
       <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
-          <AdminBreadcrumb currentPageLabel="Diagnostics" />
+          <AdminBreadcrumb currentPageLabel="Diagnostics DN" />
           <div className="fr-grid-row fr-grid-row--middle fr-mb-4w">
             <div className="fr-col">
-              <h1 className="fr-h2 fr-mb-1v">Diagnostics</h1>
+              <h1 className="fr-h2 fr-mb-1v">Diagnostics DN</h1>
               <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
-                Parcours en anomalie côté Démarches Simplifiées (détection en base, sans appel DS) et santé des
+                Parcours en anomalie côté Démarches Numériques (détection en base, sans appel DN) et santé des
                 démarches. Réservé aux super-administrateurs.
               </p>
             </div>
@@ -92,24 +101,21 @@ export default function DiagnosticsPanel() {
               <h2 className="fr-h6 fr-mb-2v">Santé des démarches</h2>
               <ul className="fr-badges-group">
                 {sante.map((d) => {
-                  const ok = d.configured && d.published && !d.error;
-                  const label = !d.configured
-                    ? "non configurée"
-                    : d.error
-                      ? "inaccessible"
-                      : d.published
-                        ? "publiée"
-                        : (d.state ?? "non publiée");
+                  const b = SANTE_BADGE[d.status];
                   return (
                     <li key={d.step}>
-                      <span className={`fr-badge fr-badge--sm ${ok ? "fr-badge--success" : "fr-badge--error"}`}>
-                        {STEP_LABELS[d.step]} : {label}
-                        {d.demarcheNumber ? ` (#${d.demarcheNumber})` : ""}
+                      <span className={`fr-badge fr-badge--sm ${b.cls}`}>
+                        {STEP_LABELS[d.step]} : {b.label}
+                        {b.showNumber && d.demarcheNumber ? ` (#${d.demarcheNumber})` : ""}
                       </span>
                     </li>
                   );
                 })}
               </ul>
+              <p className="fr-text--xs fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
+                « non créée » : la démarche n&apos;existe pas encore côté Démarches Numériques (étape pas encore
+                ouverte).
+              </p>
             </div>
           )}
 

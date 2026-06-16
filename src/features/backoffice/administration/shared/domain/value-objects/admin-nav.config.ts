@@ -68,7 +68,7 @@ export const ADMIN_NAV_TABS: AdminNavTab[] = [
   },
   {
     id: "diagnostics",
-    label: "Diagnostics",
+    label: "Diagnostics DN",
     href: "/administration/diagnostics",
     icon: "fr-icon-stethoscope-line",
     minRoles: [UserRole.SUPER_ADMINISTRATEUR],

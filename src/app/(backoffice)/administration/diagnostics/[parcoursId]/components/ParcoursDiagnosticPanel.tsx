@@ -58,10 +58,10 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
     <>
       <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
-          <AdminBreadcrumb currentPageLabel="Diagnostics — analyse parcours" />
+          <AdminBreadcrumb currentPageLabel="Diagnostics DN — analyse parcours" />
           <p className="fr-mb-2v">
             <Link href="/administration/diagnostics" className="fr-link fr-icon-arrow-left-line fr-link--icon-left">
-              Retour aux diagnostics
+              Retour aux diagnostics DN
             </Link>
           </p>
           <h1 className="fr-h2 fr-mb-1v">Analyse d&apos;un parcours</h1>

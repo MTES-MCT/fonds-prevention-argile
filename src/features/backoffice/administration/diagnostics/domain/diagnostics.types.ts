@@ -60,15 +60,26 @@ export interface AnomaliesResult {
   generatedAt: string;
 }
 
-/** Santé d'une démarche DS (cross-check live léger : publiée ? token instructeur ?). */
+/** État de santé d'une démarche Démarches Numériques (DN). */
+export enum DemarcheSanteStatus {
+  /** Démarche publiée : les usagers peuvent déposer. */
+  PUBLIEE = "publiee",
+  /** Démarche existante mais non publiée (brouillon / close) → blocage dépôt usager. */
+  NON_PUBLIEE = "non_publiee",
+  /** Démarche pas (encore) créée côté DN (ex. devis/factures non encore ouvertes). */
+  NON_DISPONIBLE = "non_disponible",
+  /** Aucune démarche configurée côté app pour cette étape. */
+  NON_CONFIGUREE = "non_configuree",
+  /** Erreur API lors du contrôle. */
+  ERREUR = "erreur",
+}
+
+/** Santé d'une démarche DN (cross-check live léger : existe ? publiée ?). */
 export interface DemarcheSante {
   step: Step;
   demarcheNumber: number | null;
   title: string | null;
   state: string | null;
-  /** `true` si la démarche est publiée (les usagers peuvent déposer). */
-  published: boolean;
-  /** `true` si une démarche est configurée pour cette étape côté app. */
-  configured: boolean;
-  error: string | null;
+  status: DemarcheSanteStatus;
+  errorDetail: string | null;
 }
