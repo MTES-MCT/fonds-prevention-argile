@@ -15,6 +15,7 @@ import {
   type DemarcheSante,
 } from "@/features/backoffice/administration/diagnostics/domain/diagnostics.types";
 import { STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
+import { getDemarcheProceduresUrl, getDossierDsDemandeUrl } from "@/features/parcours/dossiers-ds/utils";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 
 const TYPE_BADGE_CLASSES: Record<ParcoursAnomalyType, string> = {
@@ -23,12 +24,16 @@ const TYPE_BADGE_CLASSES: Record<ParcoursAnomalyType, string> = {
   [ParcoursAnomalyType.SYNC_ERREUR]: "fr-badge--error",
 };
 
-const SANTE_BADGE: Record<DemarcheSanteStatus, { cls: string; label: string; showNumber: boolean }> = {
-  [DemarcheSanteStatus.PUBLIEE]: { cls: "fr-badge--success", label: "publiée", showNumber: true },
-  [DemarcheSanteStatus.NON_PUBLIEE]: { cls: "fr-badge--warning", label: "non publiée", showNumber: true },
-  [DemarcheSanteStatus.NON_DISPONIBLE]: { cls: "fr-badge--info", label: "non créée", showNumber: false },
-  [DemarcheSanteStatus.NON_CONFIGUREE]: { cls: "fr-badge--info", label: "non configurée", showNumber: false },
-  [DemarcheSanteStatus.ERREUR]: { cls: "fr-badge--error", label: "erreur API", showNumber: false },
+const SANTE_ALERT: Record<DemarcheSanteStatus, { cls: string; label: string; hasLink: boolean }> = {
+  [DemarcheSanteStatus.PUBLIEE]: { cls: "fr-alert--success", label: "publiée", hasLink: true },
+  [DemarcheSanteStatus.NON_PUBLIEE]: {
+    cls: "fr-alert--warning",
+    label: "non publiée (dépôt usager bloqué)",
+    hasLink: true,
+  },
+  [DemarcheSanteStatus.NON_DISPONIBLE]: { cls: "fr-alert--info", label: "non créée (à venir)", hasLink: false },
+  [DemarcheSanteStatus.NON_CONFIGUREE]: { cls: "fr-alert--info", label: "non configurée", hasLink: false },
+  [DemarcheSanteStatus.ERREUR]: { cls: "fr-alert--error", label: "erreur API", hasLink: true },
 };
 
 const TYPE_ORDER: ParcoursAnomalyType[] = [
@@ -99,19 +104,28 @@ export default function DiagnosticsPanel() {
           {sante && (
             <div className="fr-mb-4w">
               <h2 className="fr-h6 fr-mb-2v">Santé des démarches</h2>
-              <ul className="fr-badges-group">
-                {sante.map((d) => {
-                  const b = SANTE_BADGE[d.status];
-                  return (
-                    <li key={d.step}>
-                      <span className={`fr-badge fr-badge--sm ${b.cls}`}>
-                        {STEP_LABELS[d.step]} : {b.label}
-                        {b.showNumber && d.demarcheNumber ? ` (#${d.demarcheNumber})` : ""}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
+              {sante.map((d) => {
+                const a = SANTE_ALERT[d.status];
+                const url = a.hasLink && d.demarcheNumber ? getDemarcheProceduresUrl(d.demarcheNumber) : null;
+                const showNumber = d.demarcheNumber && d.status !== DemarcheSanteStatus.NON_DISPONIBLE;
+                return (
+                  <div key={d.step} className={`fr-alert fr-alert--sm ${a.cls} fr-mb-2v`}>
+                    <p>
+                      <strong>{STEP_LABELS[d.step]}</strong> : {a.label}
+                      {showNumber ? ` (#${d.demarcheNumber})` : ""}
+                      {d.errorDetail ? ` — ${d.errorDetail}` : ""}
+                      {url ? (
+                        <>
+                          {" — "}
+                          <a href={url} target="_blank" rel="noopener noreferrer">
+                            Ouvrir la démarche
+                          </a>
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
+                );
+              })}
               <p className="fr-text--xs fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
                 « non créée » : la démarche n&apos;existe pas encore côté Démarches Numériques (étape pas encore
                 ouverte).
@@ -175,7 +189,7 @@ export default function DiagnosticsPanel() {
                           <th>Demandeur</th>
                           <th>Étape / statut</th>
                           <th>Anomalie</th>
-                          <th>Dossier DS</th>
+                          <th>Dossier DN</th>
                           <th>Âge (j)</th>
                           <th>Détail</th>
                           <th>Action</th>
@@ -193,7 +207,21 @@ export default function DiagnosticsPanel() {
                                 {PARCOURS_ANOMALY_LABELS[r.type].label}
                               </span>
                             </td>
-                            <td>{r.dsNumber ? `#${r.dsNumber} (${r.dsStatus ?? "?"})` : "-"}</td>
+                            <td>
+                              {r.dsNumber ? (
+                                <>
+                                  <a
+                                    href={getDossierDsDemandeUrl(Number(r.dsNumber))}
+                                    target="_blank"
+                                    rel="noopener noreferrer">
+                                    #{r.dsNumber}
+                                  </a>{" "}
+                                  ({r.dsStatus ?? "?"})
+                                </>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
                             <td>{r.ageDays ?? "-"}</td>
                             <td style={{ maxWidth: 320, fontSize: "0.8rem", color: "var(--text-mention-grey)" }}>
                               {r.detail ?? "-"}

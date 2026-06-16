@@ -65,3 +65,13 @@ export function getDossierDsInstructeurUrl(
   const baseDsUrl = env?.NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL || "https://www.demarches-simplifiees.fr";
   return `${baseDsUrl}/procedures/${dsDemarcheId}/dossiers/${dsNumber}`;
 }
+
+// Helper pour générer l'URL back-office d'une démarche (page procédure)
+export function getDemarcheProceduresUrl(demarcheNumber?: number | string | null | undefined): string {
+  if (!demarcheNumber) {
+    return "#";
+  }
+  const env = getSharedEnv();
+  const baseDsUrl = env?.NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL || "https://www.demarches-simplifiees.fr";
+  return `${baseDsUrl}/procedures/${demarcheNumber}`;
+}

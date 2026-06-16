@@ -37,11 +37,7 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
     setIsLoading(false);
   }, [parcoursId]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const handleSearch = () => {
+  const runSearch = useCallback(() => {
     setHits(null);
     startSearch(async () => {
       const res = await searchEligibiliteByEmailAction(parcoursId);
@@ -49,10 +45,16 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
         setHits(res.data.hits);
         setCapped(res.data.capped);
       } else {
-        setError(res.error || "Erreur lors de la recherche");
+        setError(res.error || "Erreur lors de la recherche par email");
       }
     });
-  };
+  }, [parcoursId]);
+
+  // Au chargement : cross-check DS et recherche par email lancés en parallèle.
+  useEffect(() => {
+    load();
+    runSearch();
+  }, [load, runSearch]);
 
   return (
     <>
@@ -92,7 +94,7 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
             </div>
           ) : (
             <>
-              <h2 className="fr-h6 fr-mb-2v">Dossiers du parcours (état local vs Démarches Simplifiées)</h2>
+              <h2 className="fr-h6 fr-mb-2v">Dossiers du parcours (état local vs Démarches Numériques)</h2>
               <div className="fr-table fr-table--bordered fr-mb-4w">
                 <div className="fr-table__wrapper">
                   <div className="fr-table__container">
@@ -101,22 +103,33 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
                         <thead>
                           <tr>
                             <th>Étape</th>
-                            <th>N° DS</th>
+                            <th>N° DN</th>
                             <th>Statut local</th>
-                            <th>État réel DS</th>
+                            <th>État réel DN</th>
                             <th>Diagnostic métier</th>
                           </tr>
                         </thead>
                         <tbody>
                           {detail.dossiers.length === 0 ? (
                             <tr>
-                              <td colSpan={5}>Aucun dossier DS rattaché à ce parcours.</td>
+                              <td colSpan={5}>Aucun dossier DN rattaché à ce parcours.</td>
                             </tr>
                           ) : (
                             detail.dossiers.map((d) => (
                               <tr key={d.step}>
                                 <td>{STEP_LABELS[d.step]}</td>
-                                <td>{d.dsNumber ? `#${d.dsNumber}` : "-"}</td>
+                                <td>
+                                  {d.dsNumber ? (
+                                    <a
+                                      href={getDossierDsDemandeUrl(Number(d.dsNumber))}
+                                      target="_blank"
+                                      rel="noopener noreferrer">
+                                      #{d.dsNumber}
+                                    </a>
+                                  ) : (
+                                    "-"
+                                  )}
+                                </td>
                                 <td>{d.localStatus ?? "non déposé"}</td>
                                 <td>{d.dsError ? <em>erreur : {d.dsError}</em> : (d.dsState ?? "-")}</td>
                                 <td style={{ maxWidth: 420 }}>
@@ -144,18 +157,12 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
                 </div>
               </div>
 
-              <h2 className="fr-h6 fr-mb-2v">Recherche du dossier perdu côté DS</h2>
+              <h2 className="fr-h6 fr-mb-2v">Recherche du dossier perdu côté DN</h2>
               <p className="fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
-                Recherche les dossiers de la démarche éligibilité dont l&apos;email usager correspond au demandeur
-                (utile pour un parcours « dossier perdu »). Opération coûteuse (balaye la démarche).
+                Dossiers de la démarche éligibilité dont l&apos;email usager correspond au demandeur (utile pour un
+                parcours « dossier perdu »). Lancée automatiquement au chargement.
               </p>
-              <button
-                type="button"
-                className="fr-btn fr-btn--secondary fr-mb-2w"
-                onClick={handleSearch}
-                disabled={isSearching}>
-                {isSearching ? "Recherche en cours..." : "Rechercher côté DS par email"}
-              </button>
+              {isSearching && <p className="fr-text--sm">Recherche par email en cours…</p>}
 
               {hits && (
                 <div className="fr-mt-2w">
