@@ -1,6 +1,6 @@
 import { db } from "@/shared/database/client";
 import { dossiersDemarchesSimplifiees } from "@/shared/database/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { Step } from "../../core/domain/value-objects/step";
 import { DSStatus } from "../domain/value-objects/ds-status";
 import type { ActionResult } from "@/shared/types";
@@ -83,12 +83,13 @@ export async function updateDossierStatus(
         dsStatus: newStatus,
         lastSyncAt: new Date(),
         ...(newStatus === DSStatus.ACCEPTE && { processedAt: new Date() }),
-        ...(dates?.submittedAt && {
-          submittedAt: sql`COALESCE(${dossiersDemarchesSimplifiees.submittedAt}, ${dates.submittedAt})`,
-        }),
-        ...(dates?.instructedAt && {
-          instructedAt: sql`COALESCE(${dossiersDemarchesSimplifiees.instructedAt}, ${dates.instructedAt})`,
-        }),
+        // Dates de dépôt / instruction : passées en `Date` typée (mapper Drizzle, comme
+        // lastSyncAt). NE PAS interpoler un `Date` dans un `sql` brut (COALESCE) — postgres.js
+        // ne sait pas le sérialiser et fait planter tout l'UPDATE (ERR_INVALID_ARG_TYPE).
+        // datePassageEnConstruction/EnInstruction sont immuables côté DS → réécrire = idempotent ;
+        // le spread conditionnel évite d'écraser une date existante par `null`.
+        ...(dates?.submittedAt && { submittedAt: dates.submittedAt }),
+        ...(dates?.instructedAt && { instructedAt: dates.instructedAt }),
       })
       .where(eq(dossiersDemarchesSimplifiees.id, dossierId));
 

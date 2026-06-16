@@ -123,7 +123,7 @@ Source : `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`.
 
 Note : `REFUSE` repasse en `EN_INSTRUCTION` interne (et non `VALIDE`) — c'est volontaire, un dossier refusé n'avance pas l'étape.
 
-Note : un `ds_status = null` (dossier créé non déposé) n'a pas d'entrée de mapping — `recomputeParcoursStatus` l'ignore et laisse `current_status` inchangé. `EN_CONSTRUCTION` (déposé) reste mappé en `TODO` interne : un dépôt en attente d'instruction n'avance pas encore l'étape côté parcours. Les dates `submitted_at` (passage en construction = dépôt) et `instructed_at` (passage en instruction) sont écrites par la sync en `COALESCE`. Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
+Note : un `ds_status = null` (dossier créé non déposé) n'a pas d'entrée de mapping — `recomputeParcoursStatus` l'ignore et laisse `current_status` inchangé. `EN_CONSTRUCTION` (déposé) reste mappé en `TODO` interne : un dépôt en attente d'instruction n'avance pas encore l'étape côté parcours. Les dates `submitted_at` (passage en construction = dépôt) et `instructed_at` (passage en instruction) sont écrites par la sync via le mapper de colonne Drizzle (`Date` typée — ne jamais interpoler un `Date` dans un `sql` brut, cela fait planter l'UPDATE). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
 
 ### 3.3 Déclencheurs de sync
 
