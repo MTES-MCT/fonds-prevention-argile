@@ -11,6 +11,7 @@ import { obtenirMonParcours } from "../actions";
 import { getValidationAmo } from "../../amo/actions";
 import { getMyIneligibiliteData } from "../actions/qualification-query.actions";
 import { syncAllUserDossiers, syncUserDossierStatus } from "../../dossiers-ds/actions/dossier-sync.actions";
+import { getDossierForStep, getStepDsStatus } from "../../dossiers-ds/utils/dossier-step.utils";
 import { DossierDS } from "../../dossiers-ds";
 import { ROLES, useAuth } from "@/features/auth/client";
 import { createDebugLogger } from "@/shared/utils";
@@ -43,7 +44,6 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
   // État de synchronisation
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
-  const [lastDSStatus, setLastDSStatus] = useState<DSStatus | null>(null);
 
   // Données calculées
   const [isComplete, setIsComplete] = useState(false);
@@ -90,11 +90,6 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
         setDossiers(result.data.dossiers);
         setIsComplete(result.data.isComplete);
         setProchainEtape(result.data.prochainEtape);
-
-        const currentDossier = result.data.dossiers.find((d) => d.demarcheEtape === result.data.parcours.currentStep);
-        if (currentDossier) {
-          setLastDSStatus(currentDossier.etatDs as DSStatus);
-        }
 
         debug.log("[fetchParcours] Fetching AMO validation...");
         // Récupérer le statut AMO
@@ -157,10 +152,6 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
 
         if (result.success && result.data) {
           setLastSync(new Date());
-
-          if (result.data.newStatus) {
-            setLastDSStatus(result.data.newStatus as DSStatus);
-          }
 
           // Rafraîchir si le statut DS a changé OU si l'étape a avancé
           // (auto-progression : un dossier déjà `valide` passe à l'étape suivante
@@ -314,12 +305,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
   }, [autoSync, isAuthenticated, user?.role, parcours, syncNow, syncInterval]);
 
   // Helpers
-  const getDossierByStep = useCallback(
-    (step: Step) => {
-      return dossiers.find((d) => d.demarcheEtape === step);
-    },
-    [dossiers]
-  );
+  const getDossierByStep = useCallback((step: Step) => getDossierForStep(dossiers, step), [dossiers]);
 
   const getDSStatusByStep = useCallback(
     (step: Step): DSStatus | undefined => {
@@ -332,6 +318,9 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     if (!parcours) return undefined;
     return getDossierByStep(parcours.currentStep);
   }, [parcours, getDossierByStep]);
+
+  // Statut DS de l'étape courante, dérivé de son dossier (null si pas de dossier).
+  const lastDSStatus = getStepDsStatus(dossiers, parcours?.currentStep ?? null);
 
   const value = {
     // Données
