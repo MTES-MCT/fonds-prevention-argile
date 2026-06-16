@@ -46,7 +46,7 @@
   "dependencies": {
     "@getbrevo/brevo": "5.0.4",
     "@gouvfr/dsfr": "1.14.4",
-    "@gouvfr/dsfr-chart": "2.0.4",
+    "@gouvfr/dsfr-chart": "2.1.1",
     "@react-email/components": "1.0.12",
     "@react-email/render": "2.0.8",
     "@socialgouv/matomo-next": "1.13.1",
@@ -76,7 +76,7 @@
     "@testing-library/user-event": "14.6.1",
     "@types/node": "22.13.5",
     "@types/nodemailer": "8.0.0",
-    "@types/react": "19.2.14",
+    "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.4",
     "@vitest/ui": "4.1.8",
