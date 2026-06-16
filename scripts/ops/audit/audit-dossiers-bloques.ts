@@ -9,7 +9,7 @@
  * Avec `--check-ds`, croise chaque dossier avec son vrai statut DS pour distinguer :
  *   - drop-off usager (DS aussi en_construction) — pas un bug ;
  *   - désynchronisation (DS plus avancé que nous) — vrai bug à corriger ;
- *   - dossier DS supprimé / inaccessible (démarche test, permission) — cf. ADR-0009.
+ *   - dossier DS supprimé / inaccessible (démarche test, permission) — cf. ADR-0011.
  *
  * AUCUNE ÉCRITURE EN BASE. AUCUN APPEL D'ÉCRITURE VERS DS.
  *
@@ -176,7 +176,7 @@ async function main() {
     for (const r of blocked) {
       const dsNum = r.dsNumber ? Number(r.dsNumber) : null;
       const ds = dsNum ? await getDossierState(dsNum) : { error: "ds_number_absent" };
-      const cls = dsNum ? classify(r.dsStatus, ds) : "ds_number_absent";
+      const cls = dsNum && r.dsStatus ? classify(r.dsStatus, ds) : "ds_number_absent";
       byClass.set(cls, (byClass.get(cls) ?? 0) + 1);
       csvLines.push(
         [
@@ -200,7 +200,7 @@ async function main() {
       console.log(`  ${k.padEnd(24)} ${n}`);
     }
     console.log(
-      "\nLecture : `jamais_depose` = usager n'a pas déposé (pas un bug) ; `desync*` = DS plus avancé que nous (bug à corriger) ; `ds_supprime`/`ds_inaccessible` = démarche test/permission (cf. ADR-0009)."
+      "\nLecture : `jamais_depose` = usager n'a pas déposé (pas un bug) ; `desync*` = DS plus avancé que nous (bug à corriger) ; `ds_supprime`/`ds_inaccessible` = démarche test/permission (cf. ADR-0011)."
     );
   } else {
     for (const r of blocked) {

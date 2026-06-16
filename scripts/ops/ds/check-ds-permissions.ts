@@ -3,7 +3,7 @@
  * à chaque démarche configurée (éligibilité, diagnostic, devis, factures).
  *
  * Une démarche en UNAUTHORIZED signifie que la synchro des dossiers de cette étape
- * échouera (cf. ADR-0009). Le script sort en erreur (exit 1) si au moins une démarche
+ * échouera (cf. ADR-0011). Le script sort en erreur (exit 1) si au moins une démarche
  * de l'instance configurée est inaccessible — exploitable en monitoring / mise en service.
  *
  * Script autonome (aucun import `@/`) → lançable tel quel en local et sur Scalingo.
@@ -123,7 +123,7 @@ async function main() {
     console.log("OK : toutes les démarches de l'instance configurée sont accessibles.");
   } else {
     console.log(
-      "ECHEC : au moins une démarche inaccessible — rattacher le compte du token comme instructeur (cf. ADR-0009)."
+      "ECHEC : au moins une démarche inaccessible — rattacher le compte du token comme instructeur (cf. ADR-0011)."
     );
   }
   if (warnings > 0) {

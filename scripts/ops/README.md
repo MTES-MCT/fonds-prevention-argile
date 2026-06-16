@@ -73,7 +73,7 @@ les deux statuts : `en_construction` (brouillon jamais déposé = drop-off usage
 et par ancienneté. Avec `--check-ds`, croise chaque dossier avec son vrai statut DS pour
 séparer **drop-off** (DS aussi en_construction, pas un bug) de **désync** (DS plus avancé
 que nous = bug) et des cas **DS supprimé/inaccessible** (démarche test/permission, cf.
-[ADR-0009](../../docs/adr/0009-instance-unique-ds-et-permissions-token.md)).
+[ADR-0011](../../docs/adr/0011-instance-unique-ds-et-permissions-token.md)).
 
 ```bash
 pnpm audit:dossiers-bloques                       # les 2 statuts (défaut)
@@ -171,7 +171,7 @@ Récupère le schéma GraphQL d'une démarche DS (champs publics) pour vérifier
 Vérifie que le compte derrière `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY` est bien
 instructeur/admin de **chaque** démarche configurée (`eligibilite`, `diagnostic`,
 `devis`, `factures`). Une démarche en `UNAUTHORIZED` bloque silencieusement la
-synchro des dossiers de cette étape (cf. [ADR-0009](../../docs/adr/0009-instance-unique-ds-et-permissions-token.md)).
+synchro des dossiers de cette étape (cf. [ADR-0011](../../docs/adr/0011-instance-unique-ds-et-permissions-token.md)).
 Sort en `exit 1` si au moins une démarche de l'instance configurée est inaccessible.
 
 ```bash
