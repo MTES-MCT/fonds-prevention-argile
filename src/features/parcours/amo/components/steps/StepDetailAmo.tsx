@@ -28,8 +28,10 @@ export default function StepDetailAmo() {
   return (
     <div className="fr-card">
       <div className="fr-card__body fr-py-4w">
-        {/* Badge conditionnel */}
-        {!statutAmo && <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>}
+        {/* Badge conditionnel. « A faire » uniquement à l'étape choix_amo  */}
+        {currentStep === Step.CHOIX_AMO && !statutAmo && (
+          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>
+        )}
 
         {statutAmo === StatutValidationAmo.EN_ATTENTE && (
           <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">En attente</span>
