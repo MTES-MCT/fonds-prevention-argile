@@ -88,7 +88,7 @@ users (1) ──1:1── parcours_prevention (1) ──1:N── dossiers_demar
                         │
                         ├──1:1── parcours_amo_validations ──N:1── entreprises_amo
                         │              └──1:N── amo_validation_tokens
-                        ├──1:N── parcours_commentaires ──N:1── agents
+                        ├──1:N── parcours_actions ──N:1── agents
                         ├──1:N── prospect_qualifications ──N:1── agents
                         └──1:N── sync_run_entries ──N:1── sync_runs
 
@@ -104,7 +104,7 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 
 | Domaine          | Tables                                                                                             |
 | ---------------- | -------------------------------------------------------------------------------------------------- |
-| Parcours         | `users`, `parcours_prevention`, `dossiers_demarches_simplifiees`, `parcours_commentaires`          |
+| Parcours         | `users`, `parcours_prevention`, `dossiers_demarches_simplifiees`, `parcours_actions`               |
 | AMO              | `parcours_amo_validations`, `amo_validation_tokens`, `entreprises_amo`, `entreprises_amo_communes` |
 | Agents           | `agents`, `agent_permissions`                                                                      |
 | Allers-vers      | `allers_vers`, `allers_vers_departements`, `allers_vers_epci`, `prospect_qualifications`           |
@@ -126,6 +126,11 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 | Brevo / Mailhog       | Emails (prod / dev)                              | `src/shared/email/`                              |
 | Matomo                | Analytics                                        | `@socialgouv/matomo-next`                        |
 | Géorisques / RGA      | Données risque                                   | `src/features/seo/`, `scripts/import/rga-zones/` |
+
+> Démarches Simplifiées = `demarche.numerique.gouv.fr` (nouveau nom de
+> `demarches-simplifiees.fr`, même backend). Une seule instance : les 3 URLs de
+> config DS pointent vers le même domaine et le token doit être instructeur de
+> chaque démarche. Voir [ADR-0011](adr/0011-instance-unique-ds-et-permissions-token.md).
 
 Voir aussi : [FLOW-AND-SYNC.md](parcours/FLOW-AND-SYNC.md) (parcours et sync DS),
 [RBAC-ROLES.md](security/RBAC-ROLES.md) (accès), [adr/](adr/README.md) (décisions).

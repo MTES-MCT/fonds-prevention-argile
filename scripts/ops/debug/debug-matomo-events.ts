@@ -13,8 +13,7 @@
  *   npx tsx scripts/ops/debug-matomo-events.ts --since=2026-04-09
  */
 
-import { config } from "dotenv";
-config({ path: ".env.local" });
+import "../lib/env";
 
 // Parsing des arguments CLI
 const args = process.argv.slice(2);

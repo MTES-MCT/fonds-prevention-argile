@@ -10,7 +10,7 @@ export default function CalloutEligibiliteAccepte() {
         diagnostic. Lorsque c’est fait, n’oubliez pas de transmettre vos résultats.
       </p>
       <p className="fr-text--sm fr-mt-2w fr-mb-0" style={{ fontStyle: "italic", color: "var(--text-mention-grey)" }}>
-        Vous passerez automatiquement à l’étape diagnostic dans les prochaines heures, sans action de votre part.
+        Vous allez passer automatiquement à l’étape diagnostic, sans action de votre part.
       </p>
     </div>
   );

@@ -2,6 +2,7 @@ import { isEtatSinistre, isZoneExposition, ZoneExposition } from "@/features/sim
 import type { DSField } from "../types/ds-field.types";
 import { DSFieldType } from "./ds-field-type.enum";
 import { DSSection } from "./ds-section.enum";
+import { toAdresseRueSeule, toCommuneValue } from "./ds-field-transformers";
 
 /**
  * Mapping complet des champs DS pour l'éligibilité
@@ -111,12 +112,7 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     section: DSSection.MAISON,
     type: DSFieldType.TEXT,
     rgaPath: "logement.adresse",
-    transformer: (value: unknown) => {
-      if (typeof value !== "string") return "";
-      const match = value.match(/^(.+?)\s+\d{5}/);
-      const rueSeule = match ? match[1].trim() : value;
-      return rueSeule;
-    },
+    transformer: (value: unknown) => toAdresseRueSeule(value),
   },
   "Q2hhbXAtNTY0ODQ3NA==": {
     id: "Q2hhbXAtNTY0ODQ3NA==",
@@ -125,13 +121,8 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     type: DSFieldType.COMMUNE,
     rgaPath: "logement.commune",
     transformer: (value: unknown, fullData?: Record<string, unknown>) => {
-      const codeInsee = String(value || "");
       const logement = fullData?.logement as { adresse?: string } | undefined;
-      const adresse = logement?.adresse;
-      const codePostalMatch = typeof adresse === "string" ? adresse.match(/\b(\d{5})\b/) : null;
-      const codePostal = codePostalMatch ? codePostalMatch[1] : "";
-      const result = [codePostal, codeInsee];
-      return result;
+      return toCommuneValue(value, logement?.adresse);
     },
   },
   "Q2hhbXAtNTU0MjU2OA==": {

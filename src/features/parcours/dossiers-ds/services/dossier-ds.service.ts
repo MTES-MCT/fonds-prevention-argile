@@ -33,8 +33,6 @@ export async function createDossierForCurrentStep(
         dsNumber: params.dsNumber,
         dsDemarcheId: params.dsDemarcheId,
         dsUrl: params.dsUrl,
-        dsStatus: DSStatus.EN_CONSTRUCTION,
-        submittedAt: new Date(),
       })
       .returning();
 
@@ -64,12 +62,19 @@ export async function getDossierByStep(parcoursId: string, step: Step) {
   return dossier || null;
 }
 
+interface UpdateDossierStatusDates {
+  submittedAt?: Date;
+  instructedAt?: Date;
+}
+
 /**
- * Met à jour le statut DS d'un dossier
+ * Met à jour le statut DS d'un dossier.
+ * Les dates submittedAt et instructedAt ne sont écrites que si elles ne sont pas déjà renseignées (COALESCE).
  */
 export async function updateDossierStatus(
   dossierId: string,
-  newStatus: DSStatus
+  newStatus: DSStatus,
+  dates?: UpdateDossierStatusDates
 ): Promise<ActionResult<{ updated: boolean }>> {
   try {
     await db
@@ -78,6 +83,13 @@ export async function updateDossierStatus(
         dsStatus: newStatus,
         lastSyncAt: new Date(),
         ...(newStatus === DSStatus.ACCEPTE && { processedAt: new Date() }),
+        // Dates de dépôt / instruction : passées en `Date` typée (mapper Drizzle, comme
+        // lastSyncAt). NE PAS interpoler un `Date` dans un `sql` brut (COALESCE) — postgres.js
+        // ne sait pas le sérialiser et fait planter tout l'UPDATE (ERR_INVALID_ARG_TYPE).
+        // datePassageEnConstruction/EnInstruction sont immuables côté DS → réécrire = idempotent ;
+        // le spread conditionnel évite d'écraser une date existante par `null`.
+        ...(dates?.submittedAt && { submittedAt: dates.submittedAt }),
+        ...(dates?.instructedAt && { instructedAt: dates.instructedAt }),
       })
       .where(eq(dossiersDemarchesSimplifiees.id, dossierId));
 

@@ -109,6 +109,23 @@ Le projet suit une architecture orientée domaine (DDD-lite):
   nouvelle ou acceptée doit être tracée dans `docs/security/snyk-accepted-vulnerabilities.md`
   avec sévérité, chemin transitif et justification d'acceptation (ou plan de correction).
 
+### Tests E2E / UI à chaque PR
+
+À chaque PR (ou groupe de commits livrant une fonctionnalité), proposer une
+**checklist de tests manuels UI / E2E** que l'utilisateur déroulera pour valider la
+branche. Règles :
+
+- Format **collable dans Notion** : cases à cocher Markdown (`- [ ]`), une action par ligne.
+- **Étape par étape, en quelques mots** : action → résultat attendu. Pas de paragraphes.
+- **Couverture simple** : le chemin nominal + 1 à 2 cas limites qui touchent réellement au
+  changement de la branche. Ne pas re-tester toute l'app, seulement la surface impactée.
+- Grouper par flux / écran si plusieurs zones sont touchées.
+- Lister en tête les **prérequis** (compte de test, environnement, seed) si nécessaires.
+- Quand le changement corrige un bug remonté (QA), inclure le **scénario de repro exact**
+  pour vérifier la non-régression.
+- Français, accents. Pas d'emojis.
+- Si la branche ne touche rien de visible côté UI, l'indiquer : « rien à tester côté UI ».
+
 ## Commits : simples et conventionnels
 
 Suivre **Conventional Commits** : un titre court, une seule ligne de description.

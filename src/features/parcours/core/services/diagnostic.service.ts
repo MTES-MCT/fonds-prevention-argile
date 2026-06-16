@@ -7,6 +7,7 @@ import { createDossierForCurrentStep, getDossierByStep } from "../../dossiers-ds
 import { parcoursRepo } from "@/shared/database";
 import { createDebugLogger } from "@/shared/utils";
 import { DS_FIELD_IDS } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
+import { toAdresseRueSeule, toCommuneValue } from "../../dossiers-ds/domain/value-objects/ds-field-transformers";
 import { getServerEnv } from "@/shared/config/env.config";
 
 const debug = createDebugLogger("DIAGNOSTIC");
@@ -20,7 +21,8 @@ interface DiagnosticResult {
 
 /**
  * Crée (ou récupère) le dossier DS diagnostic pour l'utilisateur.
- * Préremplit les 2 annotations privées (lien dossier éligibilité, lien back office FPA).
+ * Préremplit les 2 annotations privées (lien dossier éligibilité, lien back office FPA)
+ * + commune (routage instructeurs) et adresse depuis la simulation RGA.
  * Idempotent : si un dossier existe déjà pour l'étape, retourne son URL.
  */
 export async function createDiagnosticDossier(userId: string): Promise<ActionResult<DiagnosticResult>> {
@@ -79,14 +81,21 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
 
     prefillData[`champ_${DS_FIELD_IDS.DIAGNOSTIC.ANNOTATION_LIEN_FPA}`] = fpaLink;
 
-    debug.log("=== PREFILL ANNOTATIONS (essai via endpoint public /preremplir) ===");
-    debug.log("  Annotation dossier éligibilité (DossierLink):");
-    debug.log(`    ID: ${DS_FIELD_IDS.DIAGNOSTIC.ANNOTATION_DOSSIER_ELIGIBILITE}`);
-    debug.log(`    Valeur: ${eligibiliteDossier?.dsNumber ?? "<absent>"}`);
-    debug.log("  Annotation lien FPA (Text):");
-    debug.log(`    ID: ${DS_FIELD_IDS.DIAGNOSTIC.ANNOTATION_LIEN_FPA}`);
-    debug.log(`    Valeur: ${fpaLink}`);
-    debug.log("Payload complet envoyé à DS:", JSON.stringify(prefillData, null, 2));
+    // Commune (routage vers le bon groupe d'instructeurs) + adresse (texte),
+    // depuis la simulation RGA. Best-effort : on ne bloque pas si données absentes.
+    const logement = parcoursData.parcours.rgaSimulationData?.logement;
+    if (logement?.commune) {
+      prefillData[`champ_${DS_FIELD_IDS.DIAGNOSTIC.COMMUNE}`] = toCommuneValue(logement.commune, logement.adresse);
+    } else {
+      console.warn("Diagnostic: code commune RGA absent, champ commune (routage) non prérempli");
+    }
+    if (logement?.adresse) {
+      prefillData[`champ_${DS_FIELD_IDS.DIAGNOSTIC.ADRESSE_MAISON_TEXTE}`] = toAdresseRueSeule(logement.adresse);
+    } else {
+      console.warn("Diagnostic: adresse RGA absente, champ adresse non prérempli");
+    }
+
+    debug.log("Payload prérempli envoyé à DS:", JSON.stringify(prefillData, null, 2));
 
     const createResponse = await prefillClient.createPrefillDossier(prefillData, Step.DIAGNOSTIC);
 
@@ -94,9 +103,7 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
     debug.log("  dossier_url:", createResponse.dossier_url);
     debug.log("  dossier_number:", createResponse.dossier_number);
     debug.log("  dossier_id:", createResponse.dossier_id);
-    debug.log(
-      "A vérifier manuellement côté DS : ouvrir le dossier et confirmer que les 2 annotations privées sont bien remplies."
-    );
+    debug.log("A vérifier côté DS : annotations privées + commune et adresse préremplies.");
 
     if (!createResponse.dossier_url || !createResponse.dossier_number) {
       console.error("Réponse DS invalide:", createResponse);
@@ -122,7 +129,10 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
       };
     }
 
-    await parcoursRepo.updateStatus(parcoursData.parcours.id, Status.EN_INSTRUCTION);
+    // Le dossier vient d'être créé dans DS mais n'est pas encore déposé (ds_status NULL).
+    // current_status reste TODO : il ne passera à EN_INSTRUCTION que lorsque la sync DS
+    // constatera la prise en instruction par la DDT. Voir ADR-0009.
+    await parcoursRepo.updateStatus(parcoursData.parcours.id, Status.TODO);
     debug.log("=== DOSSIER DIAGNOSTIC CRÉÉ AVEC SUCCÈS ===");
 
     return {

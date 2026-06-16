@@ -19,8 +19,16 @@ import {
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
   CalloutChoixAccompagnement,
+  CalloutDiagnosticEnConstruction,
   CalloutDiagnosticEnInstruction,
   CalloutDiagnosticTodo,
+  CalloutDevisTodo,
+  CalloutDevisEnConstruction,
+  CalloutDevisEnInstruction,
+  CalloutFacturesTodo,
+  CalloutFacturesEnConstruction,
+  CalloutFacturesEnInstruction,
+  CalloutDossierTermine,
   CalloutEligibiliteAccepte,
   CalloutEligibiliteEnConstruction,
   CalloutEligibiliteEnInstruction,
@@ -34,7 +42,6 @@ import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/P
 // import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
 import { useMigrateRGAToDB } from "../hooks";
 import { formatDate } from "@/shared/utils";
-import CalloutDevisTodo from "./steps/devis/CalloutDevisTodo";
 
 export default function MonCompteClient() {
   // Migration RGA si nécessaire (après connexion FC)
@@ -66,8 +73,8 @@ export default function MonCompteClient() {
     isLoading: isLoadingParcours,
   } = useParcours();
 
-  const currentStepSubmittedAt = currentStep
-    ? (dossiers?.find((d) => d.demarcheEtape === currentStep)?.submittedAt ?? null)
+  const currentStepInstructedAt = currentStep
+    ? (dossiers?.find((d) => d.demarcheEtape === currentStep)?.instructedAt ?? null)
     : null;
 
   const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
@@ -163,7 +170,7 @@ export default function MonCompteClient() {
                   {/* Badge de statut d'étape */}
                   {hasParcours && (
                     <p className="fr-badge fr-badge--new fr-mr-2w">
-                      {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo, currentStepSubmittedAt) || "À faire"}
+                      {getStatusBadgeLabel(currentStep, lastDSStatus, statutAmo, currentStepInstructedAt) || "À faire"}
                     </p>
                   )}
                 </li>
@@ -362,7 +369,7 @@ function renderDiagnosticCallout(dsStatus: DSStatus | null) {
   }
 
   if (dsStatus === DSStatus.EN_CONSTRUCTION) {
-    return <CalloutDiagnosticTodo />;
+    return <CalloutDiagnosticEnConstruction />;
   }
 
   if (dsStatus === DSStatus.EN_INSTRUCTION) {
@@ -376,24 +383,46 @@ function renderDiagnosticCallout(dsStatus: DSStatus | null) {
   return null;
 }
 
-// TODO: décliner les callouts par dsStatus (todo / en_construction / en_instruction / accepte / refuse)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function renderDevisCallout(dsStatus: DSStatus | null) {
-  return (
-    <div>
-      <CalloutDevisTodo />
-    </div>
-  );
+  if (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE) {
+    return <CalloutDevisTodo />;
+  }
+
+  if (dsStatus === DSStatus.EN_CONSTRUCTION) {
+    return <CalloutDevisEnConstruction />;
+  }
+
+  if (dsStatus === DSStatus.EN_INSTRUCTION) {
+    return <CalloutDevisEnInstruction />;
+  }
+
+  // Devis acceptés → l'étape passe aux factures : on invite à transmettre les factures.
+  if (dsStatus === DSStatus.ACCEPTE) {
+    return <CalloutFacturesTodo />;
+  }
+
+  return null;
 }
 
 function renderFacturesCallout(dsStatus: DSStatus | null) {
-  // TODO: Créer les callouts pour les factures
-  return (
-    <div>
-      Callout factures (à créer)
-      <pre>{JSON.stringify(dsStatus, null, 2)}</pre>
-    </div>
-  );
+  if (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE) {
+    return <CalloutFacturesTodo />;
+  }
+
+  if (dsStatus === DSStatus.EN_CONSTRUCTION) {
+    return <CalloutFacturesEnConstruction />;
+  }
+
+  if (dsStatus === DSStatus.EN_INSTRUCTION) {
+    return <CalloutFacturesEnInstruction />;
+  }
+
+  // Factures acceptées → dossier terminé (paiement effectué).
+  if (dsStatus === DSStatus.ACCEPTE) {
+    return <CalloutDossierTermine />;
+  }
+
+  return null;
 }
 
 // Helper pour obtenir le label du badge de statut
@@ -401,7 +430,7 @@ function getStatusBadgeLabel(
   currentStep: Step | null,
   lastDSStatus: DSStatus | null,
   statutAmo: StatutValidationAmo | null,
-  submittedAt: Date | null
+  instructedAt: Date | null
 ): string | null {
   // Si on est à l'étape CHOIX_AMO, afficher le statut AMO
   if (currentStep === Step.CHOIX_AMO) {
@@ -430,9 +459,9 @@ function getStatusBadgeLabel(
     case DSStatus.ACCEPTE:
       return "Accepté";
     case DSStatus.EN_INSTRUCTION:
-      return submittedAt ? `En instruction depuis le ${formatDate(submittedAt.toISOString())}` : "En instruction";
+      return instructedAt ? `En instruction depuis le ${formatDate(instructedAt.toISOString())}` : "En instruction";
     case DSStatus.EN_CONSTRUCTION:
-      return "En construction";
+      return "En attente d'instruction";
     case DSStatus.REFUSE:
       return "Refusé";
     case DSStatus.CLASSE_SANS_SUITE:

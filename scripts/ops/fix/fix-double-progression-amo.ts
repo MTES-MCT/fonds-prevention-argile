@@ -44,31 +44,20 @@
  * ce script ne touche pas à l'API DS).
  */
 
-import { config } from "dotenv";
-config({ path: ".env.local" });
-config({ path: ".env" });
-
-import { createHash } from "node:crypto";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import * as schema from "@/shared/database/schema";
+import { createOpsDb } from "../lib/db";
+import { createRedactor } from "../lib/anonymize";
 import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import { categorizeDoubleProgression } from "./lib/double-progression";
+import { categorizeDoubleProgression } from "../lib/double-progression";
+import { getArg, hasFlag } from "../lib/args";
 
 // --- Args ---
-const args = process.argv.slice(2);
-function getArg(name: string): string | undefined {
-  const prefix = `--${name}=`;
-  const hit = args.find((a) => a.startsWith(prefix));
-  return hit ? hit.slice(prefix.length) : undefined;
-}
-const APPLY = args.includes("--apply");
-const WITH_CLEANUP = args.includes("--with-cleanup");
-const ANONYMIZE = args.includes("--anonymize");
+const APPLY = hasFlag("apply");
+const WITH_CLEANUP = hasFlag("with-cleanup");
+const ANONYMIZE = hasFlag("anonymize");
 const PARCOURS_ID_FILTER = getArg("parcours-id");
 
 if (WITH_CLEANUP && !APPLY) {
@@ -76,42 +65,11 @@ if (WITH_CLEANUP && !APPLY) {
   process.exit(1);
 }
 
-// --- Anonymisation (pour partage du plan sans exposer les PII) ---
-// Hash court (6 chars) dérivé d'un sel de session : stable pour un run, imprévisible
-// d'un run à l'autre. Les vraies valeurs (id, email) restent utilisées en interne pour
-// les UPDATE/DELETE ; seuls les AFFICHAGES sont masqués.
-const RUN_SALT = createHash("sha256")
-  .update(String(Date.now()) + Math.random().toString())
-  .digest("hex")
-  .slice(0, 16);
-
-function shortHash(value: string): string {
-  return createHash("sha256").update(RUN_SALT + value).digest("hex").slice(0, 6);
-}
-function redactUuid(id: string): string {
-  return ANONYMIZE ? `<id:${shortHash(id)}>` : id;
-}
-function redactEmail(email: string | null): string {
-  if (!email) return "<sans email>";
-  if (!ANONYMIZE) return email;
-  const tld = email.slice(email.lastIndexOf(".") + 1);
-  return `<email:${shortHash(email)}@***.${tld}>`;
-}
-function redactDsNumber(n: string | null): string {
-  if (!n) return "";
-  return ANONYMIZE ? `#<ds:${shortHash(n)}>` : `#${n}`;
-}
+// --- Anonymisation (affichages masqués ; les vraies valeurs restent utilisées en interne) ---
+const { redactUuid, redactEmail, redactDsNumber } = createRedactor(ANONYMIZE);
 
 // --- DB ---
-const connectionString =
-  process.env.DATABASE_URL ??
-  (() => {
-    const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
-    if (!DB_HOST) throw new Error("DATABASE_URL ou DB_HOST requis");
-    return `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
-  })();
-const client = postgres(connectionString, { max: 5, idle_timeout: 10 });
-const db = drizzle(client, { schema });
+const { db, client } = createOpsDb();
 
 // --- Constantes métier ---
 // Étapes en aval de l'éligibilité : un parcours qui y est sans dossier d'éligibilité
@@ -215,12 +173,7 @@ async function regresser(parcoursId: string): Promise<boolean> {
   const [moved] = await db
     .update(parcoursPrevention)
     .set({ currentStep: TARGET_STEP, currentStatus: TARGET_STATUS })
-    .where(
-      and(
-        eq(parcoursPrevention.id, parcoursId),
-        inArray(parcoursPrevention.currentStep, STEPS_AVALES)
-      )
-    )
+    .where(and(eq(parcoursPrevention.id, parcoursId), inArray(parcoursPrevention.currentStep, STEPS_AVALES)))
     .returning({ id: parcoursPrevention.id });
   return !!moved;
 }
@@ -244,12 +197,7 @@ async function cleanupAndRegresser(c: Case): Promise<boolean> {
     const [moved] = await tx
       .update(parcoursPrevention)
       .set({ currentStep: TARGET_STEP, currentStatus: TARGET_STATUS })
-      .where(
-        and(
-          eq(parcoursPrevention.id, c.parcoursId),
-          inArray(parcoursPrevention.currentStep, STEPS_AVALES)
-        )
-      )
+      .where(and(eq(parcoursPrevention.id, c.parcoursId), inArray(parcoursPrevention.currentStep, STEPS_AVALES)))
       .returning({ id: parcoursPrevention.id });
 
     return !!moved;
@@ -288,13 +236,15 @@ async function main() {
   if (regressables.length > 0) {
     console.log("--- RÉGRESSABLES (catégorie 1) ---");
     for (const c of regressables) {
-      console.log(`  [${redactUuid(c.parcoursId)}] ${redactEmail(c.email)} — ${c.currentStep}/${c.currentStatus} → ${TARGET_STEP}/${TARGET_STATUS}`);
+      console.log(
+        `  [${redactUuid(c.parcoursId)}] ${redactEmail(c.email)} — ${c.currentStep}/${c.currentStatus} → ${TARGET_STEP}/${TARGET_STATUS}`
+      );
     }
     console.log();
   }
 
   if (cleanupRequis.length > 0) {
-    console.log("--- CLEANUP REQUIS (catégorie 2 — type \"Edouard\") ---");
+    console.log('--- CLEANUP REQUIS (catégorie 2 — type "Edouard") ---');
     for (const c of cleanupRequis) {
       console.log(`  [${redactUuid(c.parcoursId)}] ${redactEmail(c.email)} — ${c.currentStep}/${c.currentStatus}`);
       console.log(`      dossiers à supprimer : ${c.dossiers.map(dossierLine).join(", ")}`);
@@ -360,7 +310,9 @@ async function main() {
         const moved = await cleanupAndRegresser(c);
         if (moved) {
           okCleanup++;
-          console.log(`  OK cleanup+régressé ${redactUuid(c.parcoursId)} (${c.enConstructionToDelete.length} brouillon(s) supprimé(s))`);
+          console.log(
+            `  OK cleanup+régressé ${redactUuid(c.parcoursId)} (${c.enConstructionToDelete.length} brouillon(s) supprimé(s))`
+          );
         } else {
           skippedState++;
           console.log(`  SKIP (état modifié depuis la détection) ${redactUuid(c.parcoursId)}`);

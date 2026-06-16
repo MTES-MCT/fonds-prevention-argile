@@ -36,6 +36,8 @@ export interface DossierItem {
   } | null;
   /** Statut DS de l'étape courante (null si pas de dossier DS pour cette étape). */
   dsStatus: DSStatus | null;
+  /** Date de passage en instruction du dossier de l'étape courante (null sinon). */
+  instructedAt: Date | null;
   /** Agent qui a pré-créé le dossier (cas invitation AV), null sinon. */
   createdByAgentId: string | null;
   archivedAt: Date | null;

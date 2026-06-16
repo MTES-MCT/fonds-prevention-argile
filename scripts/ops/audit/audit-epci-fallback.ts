@@ -14,14 +14,8 @@
  * Prérequis : .env.local avec DATABASE_URL.
  */
 
-import { config } from "dotenv";
-config({ path: ".env.local" });
-config({ path: ".env" });
-
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import * as schema from "@/shared/database/schema";
 import { parcoursPrevention } from "@/shared/database/schema";
+import { createOpsDb } from "../lib/db";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import epciData from "@/features/seo/data/generated/epci.json";
 
@@ -36,15 +30,7 @@ const referentielSirens = new Set(referentiel.map((e) => e.codeSiren));
 const departementsCouverts = new Set(referentiel.flatMap((e) => e.codesDepartements));
 
 // --- DB ---
-const connectionString =
-  process.env.DATABASE_URL ??
-  (() => {
-    const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
-    if (!DB_HOST) throw new Error("DATABASE_URL ou DB_HOST requis");
-    return `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
-  })();
-const client = postgres(connectionString, { max: 5, idle_timeout: 10 });
-const db = drizzle(client, { schema });
+const { db, client } = createOpsDb();
 
 async function fetchEpciNom(codeSiren: string): Promise<string | null> {
   try {
@@ -61,9 +47,7 @@ async function main() {
   console.log("=".repeat(72));
   console.log("AUDIT EPCI FALLBACK (read-only)");
   console.log("=".repeat(72));
-  console.log(
-    `Référentiel SEO : ${referentiel.length} EPCI sur ${departementsCouverts.size} départements couverts.`
-  );
+  console.log(`Référentiel SEO : ${referentiel.length} EPCI sur ${departementsCouverts.size} départements couverts.`);
   console.log();
 
   const rows = await db

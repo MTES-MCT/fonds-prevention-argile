@@ -13,7 +13,7 @@
   -- =============================================================================
 
   -- Nettoyage des anciennes données de seed commentaires
-  DELETE FROM parcours_commentaires WHERE id::text LIKE '77777777-7777-7777-7777-7777777777%';
+  DELETE FROM parcours_actions WHERE id::text LIKE '77777777-7777-7777-7777-7777777777%';
   DELETE FROM agents WHERE sub IN ('seed_geraldine', 'seed_jeanpatrick');
   DELETE FROM entreprises_amo WHERE siret = '99999999900001';
   DELETE FROM allers_vers WHERE id = '88888888-8888-8888-8888-888888888801';
@@ -76,10 +76,13 @@
   -- =============================================================================
   -- 4. Commentaires sur les parcours AMO (22222222-...)
   -- =============================================================================
-  INSERT INTO parcours_commentaires (id, parcours_id, agent_id, author_name, author_structure, author_structure_type, message, created_at, updated_at)
-  VALUES
+  -- Anciens commentaires libres → actions typées `commentaire_libre` (cf. migration 0032).
+  INSERT INTO parcours_actions (id, parcours_id, agent_id, action_type, author_name, author_structure, author_structure_type, message, created_at, updated_at)
+  SELECT v.id, v.parcours_id, v.agent_id, 'commentaire_libre',
+         v.author_name, v.author_structure, v.author_structure_type, v.message, v.created_at, v.updated_at
+  FROM (VALUES
     -- Parcours 01 - Mario Brosse (Châteauroux, eligibilite)
-    ('77777777-7777-7777-7777-777777777701', '22222222-2222-2222-2222-222222222201', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001',
+    ('77777777-7777-7777-7777-777777777701'::uuid, '22222222-2222-2222-2222-222222222201'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001'::uuid,
     'Géraldine Moulin', 'AMO du Berry Profond', 'AMO',
     'Le demandeur m''a appelé pour me dire que ses portes ne fermaient plus. J''ai failli lui répondre que c''était peut-être juste le vent, mais bon, professionnalisme oblige.',
     NOW() - INTERVAL '14 days', NOW() - INTERVAL '14 days'),
@@ -194,11 +197,11 @@
     'Géraldine Moulin', 'AMO du Berry Profond', 'AMO',
     'RDV pris avec le prospect. Il veut absolument me montrer sa cave. J''ai dit oui. J''espère que c''est bien de la cave dont on parle et pas de sa collection de vins. Quoique.',
     NOW() - INTERVAL '6 days', NOW() - INTERVAL '6 days')
-
+  ) AS v (id, parcours_id, agent_id, author_name, author_structure, author_structure_type, message, created_at, updated_at)
   ON CONFLICT (id) DO NOTHING;
 
   -- =============================================================================
   -- VÉRIFICATION
   -- =============================================================================
   SELECT 'Agents créés :' as info, count(*) as total FROM agents WHERE sub LIKE 'seed_%';
-  SELECT 'Commentaires créés :' as info, count(*) as total FROM parcours_commentaires WHERE id::text LIKE '77777777-7777-7777-7777-7777777777%';
+  SELECT 'Actions créées :' as info, count(*) as total FROM parcours_actions WHERE id::text LIKE '77777777-7777-7777-7777-7777777777%';

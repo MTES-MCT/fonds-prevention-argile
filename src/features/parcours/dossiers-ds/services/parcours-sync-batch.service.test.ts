@@ -7,10 +7,7 @@ import { moveToNextStep } from "@/features/parcours/core/services";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import {
-  SyncRunStatus,
-  SyncRunTrigger,
-} from "@/shared/domain/value-objects/sync-run-status.enum";
+import { SyncRunStatus, SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
 
 vi.mock("@/shared/database/repositories", () => ({
   parcoursRepo: {
@@ -53,20 +50,20 @@ const mockedRecomputeStatus = vi.mocked(recomputeParcoursStatus);
 const mockedMoveToNextStep = vi.mocked(moveToNextStep);
 
 /** Type guard pour narrow dans les tests qui attendent un run effectif. */
-function assertExecuted<T extends { skipped: boolean }>(
-  result: T
-): asserts result is Extract<T, { skipped: false }> {
+function assertExecuted<T extends { skipped: boolean }>(result: T): asserts result is Extract<T, { skipped: false }> {
   if (result.skipped) {
     throw new Error("Le run a été skipped alors qu'il ne devait pas l'être");
   }
 }
 
-function fakeParcours(overrides: Partial<{
-  id: string;
-  userId: string;
-  currentStep: Step;
-  currentStatus: Status;
-}> = {}) {
+function fakeParcours(
+  overrides: Partial<{
+    id: string;
+    userId: string;
+    currentStep: Step;
+    currentStatus: Status;
+  }> = {}
+) {
   return {
     id: "p1",
     userId: "u1",
@@ -101,19 +98,20 @@ describe("runSyncBatch", () => {
     expect(result.totalScanned).toBe(0);
     expect(result.totalUpdated).toBe(0);
     expect(mockedSyncRunRepo.addEntry).not.toHaveBeenCalled();
-    expect(mockedSyncRunRepo.finalizeRun).toHaveBeenCalledWith("run-1", expect.objectContaining({
-      status: SyncRunStatus.SUCCESS,
-      totalParcoursScanned: 0,
-    }));
+    expect(mockedSyncRunRepo.finalizeRun).toHaveBeenCalledWith(
+      "run-1",
+      expect.objectContaining({
+        status: SyncRunStatus.SUCCESS,
+        totalParcoursScanned: 0,
+      })
+    );
   });
 
   it("parcours sans changement DS et sans progression → pas d'entry", async () => {
     const parcours = fakeParcours();
     mockedParcoursRepo.findActiveForSync.mockResolvedValue([parcours as never]);
     mockedParcoursRepo.findById.mockResolvedValue(parcours as never);
-    mockedGetAllDossiers.mockResolvedValue([
-      { id: "d1", step: Step.ELIGIBILITE, dsNumber: "123" } as never,
-    ]);
+    mockedGetAllDossiers.mockResolvedValue([{ id: "d1", step: Step.ELIGIBILITE, dsNumber: "123" } as never]);
     mockedSyncDossierStatus.mockResolvedValue({
       success: true,
       data: { updated: false, oldStatus: DSStatus.EN_INSTRUCTION, newStatus: DSStatus.EN_INSTRUCTION },
@@ -149,9 +147,7 @@ describe("runSyncBatch", () => {
       .mockResolvedValueOnce(afterSync as never)
       .mockResolvedValueOnce(afterProgress as never);
 
-    mockedGetAllDossiers.mockResolvedValue([
-      { id: "d1", step: Step.ELIGIBILITE, dsNumber: "123" } as never,
-    ]);
+    mockedGetAllDossiers.mockResolvedValue([{ id: "d1", step: Step.ELIGIBILITE, dsNumber: "123" } as never]);
     mockedSyncDossierStatus.mockResolvedValue({
       success: true,
       data: { updated: true, oldStatus: DSStatus.EN_INSTRUCTION, newStatus: DSStatus.ACCEPTE },
@@ -202,6 +198,34 @@ describe("runSyncBatch", () => {
     expect(errorEntry.error).toContain("DB down");
   });
 
+  it("dossier en échec de sync (ex: unauthorized) → entry tracée avec error, pas avalée", async () => {
+    const parcours = fakeParcours({
+      currentStep: Step.ELIGIBILITE,
+      currentStatus: Status.EN_INSTRUCTION,
+    });
+
+    mockedParcoursRepo.findActiveForSync.mockResolvedValue([parcours as never]);
+    // findById : début syncOneParcours + après recompute (pas de VALIDE → pas de moveToNextStep)
+    mockedParcoursRepo.findById.mockResolvedValue(parcours as never);
+    mockedGetAllDossiers.mockResolvedValue([{ id: "d1", step: Step.ELIGIBILITE, dsNumber: "31892126" } as never]);
+    mockedSyncDossierStatus.mockResolvedValue({
+      success: false,
+      error: "Sync dossier 31892126 échouée: GraphQL errors: An object of type Dossier was hidden due to permissions",
+    } as never);
+
+    const result = await runSyncBatch(SyncRunTrigger.CRON);
+    assertExecuted(result);
+
+    expect(result.totalErrors).toBe(1);
+    expect(result.status).toBe(SyncRunStatus.ERROR);
+    expect(mockedSyncRunRepo.addEntry).toHaveBeenCalledTimes(1);
+    const entry = mockedSyncRunRepo.addEntry.mock.calls[0][0];
+    expect(entry.error).toContain("hidden due to permissions");
+    expect(entry.error).toContain("eligibilite");
+    expect(entry.dsStatusChanges).toEqual([]);
+    expect(mockedMoveToNextStep).not.toHaveBeenCalled();
+  });
+
   it("changement DS sans atteindre VALIDE → entry sans step_advanced", async () => {
     const before = fakeParcours({
       currentStep: Step.ELIGIBILITE,
@@ -213,13 +237,9 @@ describe("runSyncBatch", () => {
     });
 
     mockedParcoursRepo.findActiveForSync.mockResolvedValue([before as never]);
-    mockedParcoursRepo.findById
-      .mockResolvedValueOnce(before as never)
-      .mockResolvedValueOnce(afterSync as never);
+    mockedParcoursRepo.findById.mockResolvedValueOnce(before as never).mockResolvedValueOnce(afterSync as never);
 
-    mockedGetAllDossiers.mockResolvedValue([
-      { id: "d1", step: Step.ELIGIBILITE, dsNumber: "123" } as never,
-    ]);
+    mockedGetAllDossiers.mockResolvedValue([{ id: "d1", step: Step.ELIGIBILITE, dsNumber: "123" } as never]);
     mockedSyncDossierStatus.mockResolvedValue({
       success: true,
       data: { updated: true, oldStatus: DSStatus.EN_CONSTRUCTION, newStatus: DSStatus.EN_INSTRUCTION },
@@ -255,9 +275,7 @@ describe("runSyncBatch", () => {
       .mockResolvedValueOnce(afterSync as never)
       .mockResolvedValueOnce(afterSync as never); // re-lecture après moveToNextStep
 
-    mockedGetAllDossiers.mockResolvedValue([
-      { id: "df", step: Step.FACTURES, dsNumber: "999" } as never,
-    ]);
+    mockedGetAllDossiers.mockResolvedValue([{ id: "df", step: Step.FACTURES, dsNumber: "999" } as never]);
     mockedSyncDossierStatus.mockResolvedValue({
       success: true,
       data: { updated: true, oldStatus: DSStatus.EN_INSTRUCTION, newStatus: DSStatus.ACCEPTE },

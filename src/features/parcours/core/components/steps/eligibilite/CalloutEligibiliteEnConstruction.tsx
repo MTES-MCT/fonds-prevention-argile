@@ -12,38 +12,25 @@ export default function CalloutEligibiliteEnConstruction() {
   const dsUrl = getDossierUrl(Step.ELIGIBILITE);
 
   // Quand l'AMO a validé l'accompagnement, on met en avant la confirmation dans le titre.
-  const isAmoConfirmed = statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE;
-  const title = isAmoConfirmed
-    ? "Votre AMO a confirmé votre accompagnement ! Vous pouvez remplir votre formulaire d'éligibilité"
-    : "Vous pouvez remplir votre formulaire d'éligibilité";
+  const title = statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE
+    ? "Votre AMO a confirmé votre accompagnement ! Votre formulaire d'éligibilité est en attente d'instruction."
+    : "Votre formulaire d'éligibilité est en attente d'instruction.";
   const description =
-    "Une fois votre formulaire rempli et soumis, un instructeur l'analysera. Vous recevrez une notification lorsqu'il aura pris sa décision.";
+    "Un instructeur analysera prochainement vos réponses. Vous recevrez une notification lorsqu'il aura pris sa décision.";
 
-  // Si pas d'URL disponible
-  if (!dsUrl) {
-    return (
-      <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
-        <p className="fr-callout__title">{title}</p>
-        <p className="fr-callout__text">{description}</p>
-        <button className="fr-btn fr-btn--secondary" disabled>
-          Lien du formulaire non disponible
-        </button>
-      </div>
-    );
-  }
-
-  // Affichage normal avec le lien
   return (
-    <div className="fr-callout fr-callout--yellow-moutarde fr-icon-info-line">
+    <div className="fr-callout fr-callout--blue-france fr-icon-info-line">
       <p className="fr-callout__title">{title}</p>
       <p className="fr-callout__text">{description}</p>
-      <Link
-        href={dsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fr-btn fr-btn--icon-right fr-icon-external-link-line">
-        Reprendre le formulaire d'éligibilité
-      </Link>
+      {dsUrl && (
+        <Link
+          href={dsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-external-link-line">
+          Voir mes réponses
+        </Link>
+      )}
     </div>
   );
 }

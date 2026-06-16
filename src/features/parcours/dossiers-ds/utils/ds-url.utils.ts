@@ -1,24 +1,36 @@
 import { getSharedEnv } from "@/shared/config/env.config";
 import { DSStatus } from "../domain/value-objects/ds-status";
 
-// En construction : on garde l'URL prefill DS (`/commencer/...?prefill_token=...`) qui
-// force le mode "usager" sur les comptes DS multi-profils et permet de reprendre le brouillon.
-// Une fois soumis (EN_INSTRUCTION, ACCEPTE, REFUSE, CLASSE_SANS_SUITE), on utilise l'URL stable
-// `/dossiers/<dsNumber>/demande` : le prefill_token n'a plus de sens et son URL `/commencer`
-// ne pointe plus vers le dossier instruit.
+// Signal de bascule = `submitted_at` (date de dépôt = passage en construction côté DS),
+// PAS `ds_status` : DS renvoie `en_construction` aussi bien pour un brouillon non déposé
+// que pour un dossier déposé en attente d'instruction — seul `submitted_at` les distingue.
+// Voir ADR-0012.
+//
+// - Brouillon NON déposé (`submitted_at` absent) → URL prefill `/commencer/...?prefill_token=...`
+//   (force le mode "usager" sur les comptes DS multi-profils, et permet de reprendre/déposer).
+// - Déposé (`submitted_at` renseigné, ou statut déjà en instruction/accepté/...) → URL stable
+//   `/dossiers/<dsNumber>/demande` : le lien prefill `/commencer` ne pointe plus vers le dossier
+//   une fois déposé (404).
 export function buildDemarcheUrl(d: {
   dsStatus: DSStatus | string | null;
   dsNumber: string | null;
   dsUrl: string | null;
+  submittedAt?: Date | null;
 }): string | undefined {
   if (d.dsStatus === DSStatus.NON_ACCESSIBLE) return undefined;
 
   const stableUrl = d.dsNumber ? getDossierDsDemandeUrl(parseInt(d.dsNumber)) : undefined;
 
-  if (d.dsStatus === DSStatus.EN_CONSTRUCTION) {
-    return d.dsUrl || stableUrl;
-  }
-  return stableUrl || d.dsUrl || undefined;
+  const isDepose =
+    !!d.submittedAt ||
+    d.dsStatus === DSStatus.EN_INSTRUCTION ||
+    d.dsStatus === DSStatus.ACCEPTE ||
+    d.dsStatus === DSStatus.REFUSE ||
+    d.dsStatus === DSStatus.CLASSE_SANS_SUITE;
+
+  // Déposé → URL stable (le lien prefill est mort). Brouillon → URL prefill.
+  if (isDepose) return stableUrl || d.dsUrl || undefined;
+  return d.dsUrl || stableUrl;
 }
 
 // Helper pour générer l'URL de la demande dans Démarches Simplifiées

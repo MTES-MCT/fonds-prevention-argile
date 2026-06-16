@@ -20,16 +20,11 @@
  * Prérequis : .env.local avec DATABASE_URL + DEMARCHES_SIMPLIFIEES_*
  */
 
-import { config } from "dotenv";
-config({ path: ".env.local" });
-config({ path: ".env" });
-
 import { writeFileSync } from "node:fs";
-import { createHash } from "node:crypto";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
 import { and, eq, inArray, desc } from "drizzle-orm";
-import * as schema from "@/shared/database/schema";
+import { createOpsDb } from "../lib/db";
+import { dsQuery, DEMARCHE_IDS } from "../lib/ds-graphql";
+import { createRedactor } from "../lib/anonymize";
 import {
   parcoursPrevention,
   users,
@@ -44,72 +39,18 @@ import {
   categorizeDoubleProgression,
   CATEGORY_LABELS,
   type DoubleProgressionCategory,
-} from "./lib/double-progression";
+} from "../lib/double-progression";
+import { getArg, hasFlag } from "../lib/args";
 
 // --- Args ---
-const args = process.argv.slice(2);
-function getArg(name: string): string | undefined {
-  const prefix = `--${name}=`;
-  const hit = args.find((a) => a.startsWith(prefix));
-  return hit ? hit.slice(prefix.length) : undefined;
-}
-function hasFlag(name: string): boolean {
-  return args.includes(`--${name}`);
-}
 const CSV_PATH = getArg("csv");
 const PARCOURS_ID_FILTER = getArg("parcours-id");
 const ANONYMIZE = hasFlag("anonymize");
 
-// --- Anonymisation ---
-// Hash court (6 chars) dérivé d'un secret de session → stable pour un run, imprévisible d'un run à l'autre
-const RUN_SALT = createHash("sha256")
-  .update(String(Date.now()) + Math.random().toString())
-  .digest("hex")
-  .slice(0, 16);
+// --- Anonymisation (hash court stable pour le run, imprévisible d'un run à l'autre) ---
+const { shortHash, redactEmail, redactName, redactUuid, redactDsNumber } = createRedactor(ANONYMIZE);
 
-function shortHash(value: string): string {
-  return createHash("sha256").update(RUN_SALT + value).digest("hex").slice(0, 6);
-}
-function redactEmail(email: string | null | undefined): string {
-  if (!email) return "<aucun>";
-  if (!ANONYMIZE) return email;
-  const at = email.indexOf("@");
-  if (at <= 0) return `<redacted:${shortHash(email)}>`;
-  const tld = email.slice(email.lastIndexOf(".") + 1);
-  return `<email:${shortHash(email)}@***.${tld}>`;
-}
-function redactName(nom: string | null | undefined, prenom: string | null | undefined): string {
-  const full = `${prenom ?? ""} ${nom ?? ""}`.trim();
-  if (!full) return "<anonyme>";
-  if (!ANONYMIZE) return full;
-  return `<user:${shortHash(full)}>`;
-}
-function redactUuid(id: string): string {
-  if (!ANONYMIZE) return id;
-  return `<id:${shortHash(id)}>`;
-}
-function redactDsNumber(n: number): string {
-  if (!ANONYMIZE) return `#${n}`;
-  return `#<ds:${shortHash(String(n))}>`;
-}
-
-// --- Env ---
-const GRAPHQL_URL =
-  process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL ||
-  "https://www.demarches-simplifiees.fr/api/v2/graphql";
-const API_KEY = process.env.DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY;
-
-const DEMARCHE_IDS: Partial<Record<Step, string | undefined>> = {
-  [Step.ELIGIBILITE]: process.env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE,
-  [Step.DIAGNOSTIC]: process.env.DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC,
-  [Step.DEVIS]: process.env.DEMARCHES_SIMPLIFIEES_ID_DEVIS,
-  [Step.FACTURES]: process.env.DEMARCHES_SIMPLIFIEES_ID_FACTURES,
-};
-
-if (!API_KEY) {
-  console.error("DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY manquante dans .env.local");
-  process.exit(1);
-}
+// --- Env DS (clé API gérée par lib/ds-graphql) ---
 for (const step of [Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES]) {
   if (!DEMARCHE_IDS[step]) {
     console.error(`DEMARCHES_SIMPLIFIEES_ID_${step.toUpperCase()} manquant dans .env.local`);
@@ -118,15 +59,7 @@ for (const step of [Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES
 }
 
 // --- DB ---
-const connectionString =
-  process.env.DATABASE_URL ??
-  (() => {
-    const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
-    if (!DB_HOST) throw new Error("DATABASE_URL ou DB_HOST requis");
-    return `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
-  })();
-const client = postgres(connectionString, { max: 5, idle_timeout: 10 });
-const db = drizzle(client, { schema });
+const { db, client } = createOpsDb();
 
 // --- Types ---
 interface DsSearchHit {
@@ -179,7 +112,7 @@ interface ParcoursReport {
     id: string;
     step: string;
     dsNumber: string | null;
-    dsStatus: string;
+    dsStatus: string | null;
     submittedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
@@ -232,26 +165,13 @@ interface PaginatedNodes {
   };
 }
 
-async function fetchGraphQL<T>(
-  query: string,
-  variables: Record<string, unknown>
-): Promise<T> {
-  const resp = await fetch(GRAPHQL_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify({ query, variables }),
-  });
-  if (!resp.ok) {
-    throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+async function fetchGraphQL<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+  const r = await dsQuery<T>(query, variables);
+  if (r.httpError) throw new Error(r.httpError);
+  if (r.errors?.length) {
+    throw new Error(`GraphQL: ${r.errors.map((e) => e.message).join(", ")}`);
   }
-  const json = await resp.json();
-  if (json.errors?.length) {
-    throw new Error(`GraphQL: ${json.errors.map((e: { message: string }) => e.message).join(", ")}`);
-  }
-  return json.data as T;
+  return r.data as T;
 }
 
 const demarcheCache = new Map<Step, DossierNode[]>();
@@ -376,13 +296,9 @@ async function main() {
 
     const anomalies: string[] = [];
 
-    const eligibiliteAccepte = dossiers.find(
-      (d) => d.step === Step.ELIGIBILITE && d.dsStatus === DSStatus.ACCEPTE
-    );
+    const eligibiliteAccepte = dossiers.find((d) => d.step === Step.ELIGIBILITE && d.dsStatus === DSStatus.ACCEPTE);
     if (!eligibiliteAccepte) {
-      anomalies.push(
-        `current_step=${c.currentStep} mais aucune ligne DS step=eligibilite avec ds_status=accepte`
-      );
+      anomalies.push(`current_step=${c.currentStep} mais aucune ligne DS step=eligibilite avec ds_status=accepte`);
     }
 
     const dossierCourant = dossiers.find((d) => d.step === c.currentStep);
@@ -495,9 +411,7 @@ async function main() {
     }
   }
 
-  console.log(
-    `\nChargement des dossiers DS (démarches : ${[...stepsToSearch].join(", ")})...`
-  );
+  console.log(`\nChargement des dossiers DS (démarches : ${[...stepsToSearch].join(", ")})...`);
   for (const step of stepsToSearch) {
     try {
       await loadAllDossiersForDemarche(step);
@@ -534,10 +448,7 @@ async function main() {
       try {
         r.dsSearch[step] = await searchDossiersByEmails(step, emailsWithOrigin);
       } catch (err) {
-        console.error(
-          `  [${r.parcoursId}] Erreur recherche démarche ${step}:`,
-          err
-        );
+        console.error(`  [${r.parcoursId}] Erreur recherche démarche ${step}:`, err);
         r.dsSearch[step] = "error";
       }
     }
@@ -581,7 +492,9 @@ async function main() {
       const v = r.amoValidation;
       console.log(`  validation AMO     :`);
       console.log(`    statut           : ${v.statut}`);
-      console.log(`    entreprise       : ${ANONYMIZE ? `<amo:${shortHash(v.entrepriseAmoNom ?? "")}>` : v.entrepriseAmoNom ?? "?"}`);
+      console.log(
+        `    entreprise       : ${ANONYMIZE ? `<amo:${shortHash(v.entrepriseAmoNom ?? "")}>` : (v.entrepriseAmoNom ?? "?")}`
+      );
       console.log(`    choisie le       : ${v.choisieAt.toISOString()}`);
       console.log(`    validée le       : ${v.valideeAt?.toISOString() ?? "?"}`);
       console.log(`    user_email (amo) : ${redactEmail(v.userEmail)}`);
@@ -603,18 +516,20 @@ async function main() {
         const author = ANONYMIZE ? `<author:${shortHash(cm.authorName)}>` : cm.authorName;
         const struct = cm.authorStructure ?? "?";
         const msg = ANONYMIZE ? `<message ${cm.message?.length ?? 0} chars>` : (cm.message?.slice(0, 200) ?? "");
-        console.log(`    [${cm.createdAt.toISOString()}] ${author} (${struct}, ${cm.authorStructureType ?? "?"}): ${msg}`);
+        console.log(
+          `    [${cm.createdAt.toISOString()}] ${author} (${struct}, ${cm.authorStructureType ?? "?"}): ${msg}`
+        );
       }
     } else {
       console.log(`  commentaires       : aucun`);
     }
 
     // Recherche DS
-    console.log(`  emails testés côté DS: ${r.emailsToSearch.length === 0 ? "aucun" : r.emailsToSearch.map(redactEmail).join(", ")}`);
+    console.log(
+      `  emails testés côté DS: ${r.emailsToSearch.length === 0 ? "aucun" : r.emailsToSearch.map(redactEmail).join(", ")}`
+    );
     console.log(`  recherche côté DS  :`);
-    for (const [step, hits] of Object.entries(r.dsSearch) as Array<
-      [Step, DsSearchHit[] | "skipped" | "error"]
-    >) {
+    for (const [step, hits] of Object.entries(r.dsSearch) as Array<[Step, DsSearchHit[] | "skipped" | "error"]>) {
       const label = STEP_LABELS[step];
       if (hits === "skipped") {
         console.log(`    [${label}] sauté (aucun email disponible)`);
@@ -715,8 +630,8 @@ async function main() {
         redactUuid(r.parcoursId),
         redactEmail(r.userEmail),
         redactEmail(r.userEmailContact),
-        ANONYMIZE ? "" : r.userNom ?? "",
-        ANONYMIZE ? "" : r.userPrenom ?? "",
+        ANONYMIZE ? "" : (r.userNom ?? ""),
+        ANONYMIZE ? "" : (r.userPrenom ?? ""),
         r.currentStep,
         r.currentStatus,
         r.parcoursCreatedAt.toISOString(),
@@ -731,7 +646,9 @@ async function main() {
           .join("|"),
         r.amoValidation?.statut ?? "",
         r.amoValidation?.entrepriseAmoNom
-          ? (ANONYMIZE ? `<amo:${shortHash(r.amoValidation.entrepriseAmoNom)}>` : r.amoValidation.entrepriseAmoNom)
+          ? ANONYMIZE
+            ? `<amo:${shortHash(r.amoValidation.entrepriseAmoNom)}>`
+            : r.amoValidation.entrepriseAmoNom
           : "",
         redactEmail(r.amoValidation?.userEmail ?? null),
         r.amoValidation?.choisieAt.toISOString() ?? "",
@@ -750,7 +667,9 @@ async function main() {
   }
 
   console.log("\n" + "=".repeat(72));
-  console.log(`Audit terminé. ${reports.length} parcours à examiner (dont la majorité sont des cas légitimes — voir le fix pour le tri).`);
+  console.log(
+    `Audit terminé. ${reports.length} parcours à examiner (dont la majorité sont des cas légitimes — voir le fix pour le tri).`
+  );
   console.log("=".repeat(72));
 
   await client.end();

@@ -37,10 +37,12 @@
     "seo:generate": "tsx src/features/seo/scripts/generate-seo-data.ts",
     "seo:import-catnat": "tsx src/features/seo/catnat/scripts/import-catnat.ts",
     "seed:staging": "tsx scripts/seed/seed-staging.ts",
-    "fix:epci": "tsx scripts/ops/fix-missing-epci.ts",
-    "audit:parcours-ds": "tsx scripts/ops/audit-parcours-ds-integrity.ts",
-    "fix:double-progression": "tsx scripts/ops/fix-double-progression-amo.ts",
-    "fix:amo-non-eligible": "tsx --tsconfig scripts/tsconfig.json scripts/ops/reset-amo-non-eligible.ts",
+    "fix:epci": "tsx scripts/ops/fix/fix-missing-epci.ts",
+    "audit:parcours-ds": "tsx scripts/ops/audit/audit-parcours-ds-integrity.ts",
+    "audit:dossiers-bloques": "tsx scripts/ops/audit/audit-dossiers-bloques.ts",
+    "ds:check-permissions": "tsx scripts/ops/ds/check-ds-permissions.ts",
+    "fix:double-progression": "tsx scripts/ops/fix/fix-double-progression-amo.ts",
+    "fix:amo-non-eligible": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reset-amo-non-eligible.ts",
     "rga:import": "tsx scripts/import/rga-zones/import-rga-zones.ts"
   },
   "dependencies": {

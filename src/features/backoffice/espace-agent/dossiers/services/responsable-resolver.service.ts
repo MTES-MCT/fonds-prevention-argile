@@ -6,6 +6,7 @@ import { getDossierEtat, type DossierEtat } from "@/features/parcours/core/domai
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import type { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { Status } from "@/shared/domain/value-objects/status.enum";
+import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 
 /**
  * Données minimales d'un dossier pour résoudre son responsable.
@@ -24,6 +25,10 @@ export interface ResolverDossier {
     statut: StatutValidationAmo;
     entrepriseAmoId: string | null;
   } | null;
+  /** Statut DS du dossier de l'étape courante — affine l'état DDT/ménage (cf. getDossierEtat). */
+  dsStatus?: DSStatus | null;
+  /** Date de passage en instruction — distingue 1er dépôt et retour de correction. */
+  instructedAt?: Date | null;
 }
 
 /**
@@ -41,23 +46,16 @@ export interface ResolvedDossier {
  *  - récupère en une fois les Aller-vers couvrant les couples (EPCI, département)
  *    présents, avec priorité EPCI et fallback département.
  */
-export async function resolveResponsables(
-  dossiers: ResolverDossier[]
-): Promise<Map<string, ResolvedDossier>> {
+export async function resolveResponsables(dossiers: ResolverDossier[]): Promise<Map<string, ResolvedDossier>> {
   const amoIds = unique(dossiers.map((d) => d.validation?.entrepriseAmoId ?? null));
   const territoires = uniqueTerritoires(dossiers);
 
-  const [amosMap, avParTerritoire] = await Promise.all([
-    loadAmoMap(amoIds),
-    loadAvParTerritoire(territoires),
-  ]);
+  const [amosMap, avParTerritoire] = await Promise.all([loadAmoMap(amoIds), loadAvParTerritoire(territoires)]);
 
   const result = new Map<string, ResolvedDossier>();
   for (const d of dossiers) {
     const entreprise =
-      d.validation && d.validation.entrepriseAmoId
-        ? amosMap.get(d.validation.entrepriseAmoId) ?? null
-        : null;
+      d.validation && d.validation.entrepriseAmoId ? (amosMap.get(d.validation.entrepriseAmoId) ?? null) : null;
 
     const responsable = getResponsableDossier({
       validation: d.validation ? { statut: d.validation.statut, entreprise } : null,
@@ -69,6 +67,8 @@ export async function resolveResponsables(
       currentStatus: d.currentStatus,
       archivedAt: d.archivedAt,
       validation: d.validation ? { statut: d.validation.statut } : null,
+      dsStatus: d.dsStatus ?? null,
+      instructedAt: d.instructedAt ?? null,
     });
 
     result.set(d.parcoursId, { responsable, etat });
@@ -102,9 +102,7 @@ export async function resolveResponsableForParcours(parcoursId: string): Promise
       currentStatus: parcours.currentStatus,
       codeDepartement,
       codeEpci,
-      validation: validation
-        ? { statut: validation.statut, entrepriseAmoId: validation.entrepriseAmoId }
-        : null,
+      validation: validation ? { statut: validation.statut, entrepriseAmoId: validation.entrepriseAmoId } : null,
     },
   ]);
 
@@ -123,7 +121,9 @@ function territoireKey(codeEpci: string | null, codeDepartement: string | null):
   return `${codeEpci ?? ""}|${codeDepartement ?? ""}`;
 }
 
-function uniqueTerritoires(dossiers: ResolverDossier[]): Array<{ codeEpci: string | null; codeDepartement: string | null }> {
+function uniqueTerritoires(
+  dossiers: ResolverDossier[]
+): Array<{ codeEpci: string | null; codeDepartement: string | null }> {
   const seen = new Set<string>();
   const list: Array<{ codeEpci: string | null; codeDepartement: string | null }> = [];
   for (const d of dossiers) {

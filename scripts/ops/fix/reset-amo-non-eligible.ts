@@ -58,15 +58,9 @@
  * (Brevo en prod / Mailhog en dev) et BASE_URL doivent être valides.
  */
 
-import { config } from "dotenv";
-config({ path: ".env.local" });
-config({ path: ".env" });
-
 import { randomUUID } from "node:crypto";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
 import { and, desc, eq, ilike } from "drizzle-orm";
-import * as schema from "@/shared/database/schema";
+import { createOpsDb } from "../lib/db";
 import {
   parcoursPrevention,
   parcoursAmoValidations,
@@ -80,16 +74,11 @@ import { SituationParticulier } from "@/shared/domain/value-objects/situation-pa
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { AMO_VALIDATION_TOKEN_VALIDITY_DAYS } from "@/features/parcours/amo/domain/value-objects/constants";
 import { normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
+import { getArg, hasFlag } from "../lib/args";
 
 // --- Args ---
-const args = process.argv.slice(2);
-function getArg(name: string): string | undefined {
-  const prefix = `--${name}=`;
-  const hit = args.find((a) => a.startsWith(prefix));
-  return hit ? hit.slice(prefix.length) : undefined;
-}
-const APPLY = args.includes("--apply");
-const SEND_EMAIL = args.includes("--send-email");
+const APPLY = hasFlag("apply");
+const SEND_EMAIL = hasFlag("send-email");
 const PARCOURS_ID = getArg("parcours-id");
 const NOM = getArg("nom");
 
@@ -103,15 +92,7 @@ if (SEND_EMAIL && !APPLY) {
 }
 
 // --- DB ---
-const connectionString =
-  process.env.DATABASE_URL ??
-  (() => {
-    const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
-    if (!DB_HOST) throw new Error("DATABASE_URL ou DB_HOST requis");
-    return `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
-  })();
-const client = postgres(connectionString, { max: 5, idle_timeout: 10 });
-const db = drizzle(client, { schema });
+const { db, client } = createOpsDb();
 
 function line() {
   console.log("=".repeat(72));
