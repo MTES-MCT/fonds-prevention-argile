@@ -8,12 +8,7 @@ import { ADMIN_NAV_TABS } from "@/features/backoffice/administration/shared/doma
 import type { AdminNavTab } from "@/features/backoffice/administration/shared/domain/value-objects/admin-nav.config";
 
 /** Rôles ayant accès au menu horizontal d'administration */
-const ADMIN_NAV_ROLES: string[] = [
-  UserRole.SUPER_ADMINISTRATEUR,
-  UserRole.ADMINISTRATEUR,
-  UserRole.ANALYSTE,
-  UserRole.ANALYSTE_DDT,
-];
+const ADMIN_NAV_ROLES: string[] = [UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR, UserRole.ANALYSTE];
 
 function getActiveTab(pathname: string, tabs: AdminNavTab[]): string | null {
   // Correspondance exacte pour la racine "/administration"

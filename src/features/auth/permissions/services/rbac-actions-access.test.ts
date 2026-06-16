@@ -42,7 +42,7 @@ describe("RBAC — accès aux actions", () => {
   });
 
   describe("analystes (aucun accès aux actions)", () => {
-    it.each([UserRole.ANALYSTE, UserRole.ANALYSTE_DDT])("%s ne peut ni créer ni lire d'action", (role) => {
+    it.each([UserRole.ANALYSTE])("%s ne peut ni créer ni lire d'action", (role) => {
       expect(hasPermission(role, BackofficePermission.COMMENTAIRES_CREATE)).toBe(false);
       expect(hasPermission(role, BackofficePermission.COMMENTAIRES_READ)).toBe(false);
       expect(hasPermission(role, BackofficePermission.COMMENTAIRES_READ_ALL)).toBe(false);

@@ -253,6 +253,13 @@
       "when": 1781797085360,
       "tag": "0035_puzzling_nomad",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1782125689661,
+      "tag": "0036_even_hercules",
+      "breakpoints": true
     }
   ]
 }

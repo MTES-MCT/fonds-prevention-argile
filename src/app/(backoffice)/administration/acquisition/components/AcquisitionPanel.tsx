@@ -11,6 +11,7 @@ import {
   getTopDepartementsMatomoAction,
   getTopCommunesMatomoAction,
 } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
+import { getAgentDepartementsAction } from "@/features/backoffice";
 import type {
   TableauDeBordStats,
   MatomoSimulationsStats,
@@ -36,7 +37,10 @@ import {
 
 export default function AcquisitionPanel() {
   const { user } = useAuth();
-  const isAnalyseDdt = user?.role === UserRole.ANALYSTE_DDT;
+  const isAnalyste = user?.role === UserRole.ANALYSTE;
+  // Un analyste avec des départements assignés = mode DDT (vue par département).
+  // Sans département = analyste national (tableau de bord complet).
+  const [isDepartemental, setIsDepartemental] = useState<boolean | null>(null);
 
   const periodeId = useAdministrationFiltersStore(selectPeriodeId);
   const codeDepartement = useAdministrationFiltersStore(selectCodeDepartement);
@@ -68,6 +72,23 @@ export default function AcquisitionPanel() {
     }
     loadDepartements();
   }, []);
+
+  // Déterminer si l'analyste est restreint à des départements (mode DDT)
+  useEffect(() => {
+    let cancelled = false;
+    async function resolveScope() {
+      if (!isAnalyste) {
+        if (!cancelled) setIsDepartemental(false);
+        return;
+      }
+      const result = await getAgentDepartementsAction();
+      if (!cancelled) setIsDepartemental(result.success && result.data.length > 0);
+    }
+    resolveScope();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAnalyste]);
 
   // Charger les donnees Matomo (funnel + visites + taux rebond) quand les filtres changent
   useEffect(() => {
@@ -168,8 +189,13 @@ export default function AcquisitionPanel() {
     };
   }, [periodeId, codeDepartement, partner]);
 
-  // Agents DDT : vue departement uniquement
-  if (isAnalyseDdt) {
+  // Analyste départemental (DDT) : éviter le flash du tableau complet pendant la résolution du scope
+  if (isAnalyste && isDepartemental === null) {
+    return null;
+  }
+
+  // Analyste départemental (DDT) : vue departement uniquement
+  if (isDepartemental) {
     return (
       <>
         <section className="fr-container-fluid fr-py-4w">

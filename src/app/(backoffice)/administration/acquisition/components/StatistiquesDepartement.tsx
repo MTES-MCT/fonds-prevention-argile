@@ -17,7 +17,8 @@ import DepartementSelector from "./DepartementSelector";
 
 export default function StatistiquesDepartement() {
   const { user } = useAuth();
-  const isAnalyseDdt = user?.role === UserRole.ANALYSTE_DDT;
+  // Un analyste avec des départements assignés est restreint à ces territoires (mode DDT).
+  const isAnalyste = user?.role === UserRole.ANALYSTE;
 
   const [departements, setDepartements] = useState<DepartementDisponible[]>([]);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
@@ -38,8 +39,8 @@ export default function StatistiquesDepartement() {
 
       let availableDepts = result.data;
 
-      // Pour les agents DDT : filtrer les départements selon leurs permissions
-      if (isAnalyseDdt) {
+      // Pour un analyste restreint à des départements : filtrer selon ses permissions
+      if (isAnalyste) {
         const agentDeptsResult = await getAgentDepartementsAction();
         if (agentDeptsResult.success && agentDeptsResult.data.length > 0) {
           const allowedCodes = agentDeptsResult.data;
@@ -61,7 +62,7 @@ export default function StatistiquesDepartement() {
     }
     loadDepartements();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAnalyseDdt]);
+  }, [isAnalyste]);
 
   // Charger les stats quand un département est sélectionné
   const handleSelectDepartement = useCallback(async (code: string) => {
@@ -88,7 +89,7 @@ export default function StatistiquesDepartement() {
   return (
     <div>
       {/* Sélecteur de département en premier */}
-      {!(isAnalyseDdt && departements.length <= 1) && (
+      {!(isAnalyste && departements.length <= 1) && (
         <DepartementSelector
           departements={departements}
           selectedCode={selectedCode}

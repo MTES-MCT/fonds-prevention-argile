@@ -32,7 +32,6 @@ function AgentNavLinks() {
       );
 
     case UserRole.ANALYSTE:
-    case UserRole.ANALYSTE_DDT:
     case UserRole.ADMINISTRATEUR:
       return (
         <li>
@@ -71,7 +70,6 @@ function AgentNavLinksMobile() {
       );
 
     case UserRole.ANALYSTE:
-    case UserRole.ANALYSTE_DDT:
     case UserRole.ADMINISTRATEUR:
       return (
         <li>

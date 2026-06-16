@@ -66,12 +66,6 @@ const ROLE_TABS: RoleTab[] = [
     roles: [UserRole.ANALYSTE],
     badgeClass: "fr-badge--orange-safran",
   },
-  {
-    id: "analyste-ddt",
-    label: "Analyste DDT",
-    roles: [UserRole.ANALYSTE_DDT],
-    badgeClass: "fr-badge--orange-safran",
-  },
 ];
 
 export default function AgentsPanel() {
