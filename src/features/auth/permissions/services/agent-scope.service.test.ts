@@ -577,6 +577,54 @@ describe("agent-scope.service", () => {
       expect(error).toBe("Ce prospect n'est pas dans votre territoire");
     });
 
+    it("autorise un analyste départemental sur un dossier de son territoire", async () => {
+      vi.mocked(agentPermissionsRepository.getDepartementsByAgentId).mockResolvedValue(["32"]);
+      vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(
+        parcours({ rgaSimulationData: simAuDepartement("32") })
+      );
+
+      const error = await verifyProspectTerritoryAccess("parcours-1", {
+        id: "analyste-ddt",
+        role: UserRole.ANALYSTE,
+        entrepriseAmoId: null,
+        allersVersId: null,
+      });
+
+      expect(error).toBeNull();
+    });
+
+    it("refuse un analyste départemental sur un dossier hors de son territoire", async () => {
+      vi.mocked(agentPermissionsRepository.getDepartementsByAgentId).mockResolvedValue(["32"]);
+      vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(
+        parcours({ rgaSimulationData: simAuDepartement("33") })
+      );
+
+      const error = await verifyProspectTerritoryAccess("parcours-1", {
+        id: "analyste-ddt",
+        role: UserRole.ANALYSTE,
+        entrepriseAmoId: null,
+        allersVersId: null,
+      });
+
+      expect(error).toBe("Ce prospect n'est pas dans votre territoire");
+    });
+
+    it("refuse un analyste national (sans département) : pas d'accès dossier hors stats", async () => {
+      vi.mocked(agentPermissionsRepository.getDepartementsByAgentId).mockResolvedValue([]);
+      vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(
+        parcours({ rgaSimulationData: simAuDepartement("32") })
+      );
+
+      const error = await verifyProspectTerritoryAccess("parcours-1", {
+        id: "analyste-national",
+        role: UserRole.ANALYSTE,
+        entrepriseAmoId: null,
+        allersVersId: null,
+      });
+
+      expect(error).toBe("Ce prospect n'est pas dans votre territoire");
+    });
+
     it("retourne une erreur si le parcours est introuvable", async () => {
       vi.mocked(allersVersRepository.getDepartementsByAllersVersId).mockResolvedValue(["32"]);
       vi.mocked(allersVersRepository.getEpcisByAllersVersId).mockResolvedValue([]);

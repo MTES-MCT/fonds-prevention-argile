@@ -154,6 +154,33 @@ describe("getDossiersByAgent", () => {
     expect(getParcoursByTerritoire).not.toHaveBeenCalled();
   });
 
+  it("interroge le repo avec les départements pour un analyste départemental (DDT)", async () => {
+    calculateAgentScope.mockResolvedValue(makeScope({ departements: ["36"] }));
+    getParcoursByTerritoire.mockResolvedValue([makeRow()]);
+
+    const result = await getDossiersByAgent({
+      id: "analyste-ddt",
+      role: UserRole.ANALYSTE,
+      entrepriseAmoId: null,
+    });
+
+    expect(getParcoursByTerritoire).toHaveBeenCalledWith(["36"], [], undefined);
+    expect(result.total).toBe(1);
+  });
+
+  it("ne fuit aucun dossier pour un analyste national (isNational sans canViewAllDossiers)", async () => {
+    calculateAgentScope.mockResolvedValue(makeScope({ isNational: true }));
+
+    const result = await getDossiersByAgent({
+      id: "analyste-national",
+      role: UserRole.ANALYSTE,
+      entrepriseAmoId: null,
+    });
+
+    expect(result.dossiers).toEqual([]);
+    expect(getParcoursByTerritoire).not.toHaveBeenCalled();
+  });
+
   it("mappe correctement un dossier sans validation AMO (prospect)", async () => {
     calculateAgentScope.mockResolvedValue(makeScope({ departements: ["36"], canViewDossiersWithoutAmo: true }));
     getParcoursByTerritoire.mockResolvedValue([makeRow()]);

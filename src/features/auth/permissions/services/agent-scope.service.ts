@@ -265,7 +265,10 @@ export async function verifyProspectTerritoryAccess(
 ): Promise<string | null> {
   const scope = await calculateAgentScope(agent);
 
-  if (scope.isNational) {
+  // Accès national aux dossiers (admins) = court-circuit. On se base sur
+  // canViewAllDossiers et non isNational : un analyste national voit les stats
+  // nationales mais ne doit pas accéder au détail d'un dossier hors territoire.
+  if (scope.canViewAllDossiers) {
     return null;
   }
 
