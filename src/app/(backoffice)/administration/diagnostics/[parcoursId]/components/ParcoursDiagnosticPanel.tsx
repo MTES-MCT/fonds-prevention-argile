@@ -59,14 +59,14 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
   return (
     <>
       <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
-        <div className="fr-container">
+        <div className="fr-container fr-mb-4w">
           <AdminBreadcrumb currentPageLabel="Diagnostics DN — analyse parcours" />
           <p className="fr-mb-2v">
             <Link href="/administration/diagnostics" className="fr-link fr-icon-arrow-left-line fr-link--icon-left">
               Retour aux diagnostics DN
             </Link>
           </p>
-          <h1 className="fr-h2 fr-mb-1v">Analyse d&apos;un parcours</h1>
+          <h1 className="fr-h2 fr-mb-2w">Analyse d&apos;un parcours</h1>
           {detail && (
             <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
               {userLabel(detail)} — {STEP_LABELS[detail.currentStep]} / {detail.currentStatus}
@@ -86,7 +86,7 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
         <div className="fr-container">
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
-              <div className="text-gray-500">Cross-check DS en cours...</div>
+              <div className="text-gray-500">Cross-check DN en cours...</div>
             </div>
           ) : !detail ? (
             <div className="fr-callout">
@@ -160,7 +160,7 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
               <h2 className="fr-h6 fr-mb-2v">Recherche du dossier perdu côté DN</h2>
               <p className="fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
                 Dossiers de la démarche éligibilité dont l&apos;email usager correspond au demandeur (utile pour un
-                parcours « dossier perdu »). Lancée automatiquement au chargement.
+                parcours « dossier perdu »).
               </p>
               {isSearching && <p className="fr-text--sm">Recherche par email en cours…</p>}
 

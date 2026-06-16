@@ -15,8 +15,15 @@ import {
   type DemarcheSante,
 } from "@/features/backoffice/administration/diagnostics/domain/diagnostics.types";
 import { STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
-import { getDemarcheProceduresUrl, getDossierDsDemandeUrl } from "@/features/parcours/dossiers-ds/utils";
+import { getDossierDsDemandeUrl } from "@/features/parcours/dossiers-ds/utils";
+import { getSharedEnv } from "@/shared/config/env.config";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
+
+/** URL d'administration d'une démarche (back-office DN) — spécifique à l'onglet Diagnostics. */
+function getDemarcheAdminUrl(demarcheNumber: number | string): string {
+  const base = getSharedEnv()?.NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL || "https://demarche.numerique.gouv.fr";
+  return `${base}/admin/procedures/${demarcheNumber}`;
+}
 
 const TYPE_BADGE_CLASSES: Record<ParcoursAnomalyType, string> = {
   [ParcoursAnomalyType.BLOQUE]: "fr-badge--warning",
@@ -106,7 +113,7 @@ export default function DiagnosticsPanel() {
               <h2 className="fr-h6 fr-mb-2v">Santé des démarches</h2>
               {sante.map((d) => {
                 const a = SANTE_ALERT[d.status];
-                const url = a.hasLink && d.demarcheNumber ? getDemarcheProceduresUrl(d.demarcheNumber) : null;
+                const url = a.hasLink && d.demarcheNumber ? getDemarcheAdminUrl(d.demarcheNumber) : null;
                 const showNumber = d.demarcheNumber && d.status !== DemarcheSanteStatus.NON_DISPONIBLE;
                 return (
                   <div key={d.step} className={`fr-alert fr-alert--sm ${a.cls} fr-mb-2v`}>
