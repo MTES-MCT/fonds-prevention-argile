@@ -31,6 +31,7 @@ import { getDossierState } from "../lib/ds-graphql";
 import { createRedactor } from "../lib/anonymize";
 import { STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { classifyDossierAnomaly } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-anomaly";
 import { getArg, hasFlag } from "../lib/args";
 
 // --- Args ---
@@ -81,27 +82,6 @@ function dsUrlKind(url: string | null): string {
   if (url.includes("/commencer/") && url.includes("prefill_token")) return "prefill";
   if (url.includes("/dossiers/")) return "stable";
   return "autre";
-}
-
-/**
- * Classe un dossier bloqué selon notre statut interne et le vrai statut DS.
- * Distingue le drop-off usager (pas un bug) de la désynchronisation (bug).
- */
-function classify(ourStatus: string, ds: { state?: string; error?: string }): string {
-  if (ds.error === "not_found") return "ds_supprime";
-  if (ds.error === "unauthorized") return "ds_inaccessible";
-  if (ds.error) return `ds_erreur(${ds.error})`;
-  const s = ds.state;
-  if (ourStatus === DSStatus.EN_CONSTRUCTION) {
-    if (s === "en_construction") return "jamais_depose";
-    return "desync"; // DS avancé alors qu'on est en_construction → bug
-  }
-  // ourStatus === en_instruction
-  if (s === "accepte") return "desync_a_syncer";
-  if (s === "en_instruction") return "en_attente_instructeur";
-  if (s === "refuse" || s === "sans_suite") return "desync";
-  if (s === "en_construction") return "regression_ds";
-  return `inattendu(${s ?? "?"})`;
 }
 
 async function main() {
@@ -176,7 +156,7 @@ async function main() {
     for (const r of blocked) {
       const dsNum = r.dsNumber ? Number(r.dsNumber) : null;
       const ds = dsNum ? await getDossierState(dsNum) : { error: "ds_number_absent" };
-      const cls = dsNum && r.dsStatus ? classify(r.dsStatus, ds) : "ds_number_absent";
+      const cls = dsNum && r.dsStatus ? classifyDossierAnomaly({ localStatus: r.dsStatus, ds }) : "ds_number_absent";
       byClass.set(cls, (byClass.get(cls) ?? 0) + 1);
       csvLines.push(
         [
