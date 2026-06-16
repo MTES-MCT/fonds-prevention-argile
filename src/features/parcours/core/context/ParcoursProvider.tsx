@@ -162,7 +162,10 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
             setLastDSStatus(result.data.newStatus as DSStatus);
           }
 
-          if (result.data.updated) {
+          // Rafraîchir si le statut DS a changé OU si l'étape a avancé
+          // (auto-progression : un dossier déjà `valide` passe à l'étape suivante
+          // sans changement DS, donc `updated` peut être false). Voir §6.1.
+          if (result.data.updated || result.data.stepAdvanced) {
             await refreshParcours();
             router.refresh();
           }
@@ -195,7 +198,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
       if (result.success && result.data) {
         setLastSync(new Date());
 
-        if (result.data.totalUpdated > 0) {
+        if (result.data.totalUpdated > 0 || result.data.stepAdvanced) {
           await refreshParcours();
           router.refresh();
         }

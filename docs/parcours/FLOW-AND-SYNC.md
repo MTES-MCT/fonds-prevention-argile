@@ -57,12 +57,12 @@ TODO ──(dépôt usager, sync ds=en_construction)──► TODO* ──(sync 
 | `choix_amo / en_instruction` → `eligibilite / todo`     | **AMO valide** via lien email → `approveValidation` appelle `moveToNextStep` automatiquement                                                                                 | `amo-validation.service.ts:66`                                                                                                                |
 | `eligibilite / todo` → `eligibilite / en_instruction`   | Sync détecte `ds_status = en_instruction` (DDT prend la main) + `recomputeParcoursStatus`. La création du dossier (`createEligibiliteDossier`) garde `todo` (ADR-0009)       | `ds-sync.service.ts`, `eligibilite.service.ts`                                                                                                |
 | `eligibilite / en_instruction` → `eligibilite / valide` | Sync détecte `ds_status = accepte` + `recomputeParcoursStatus`                                                                                                               | `ds-sync.service.ts` (voir §3)                                                                                                                |
-| `eligibilite / valide` → `diagnostic / todo`            | **CRON** appelle `moveToNextStep` automatiquement après recompute                                                                                                            | `parcours-sync-batch.service.ts` (voir §4)                                                                                                    |
+| `eligibilite / valide` → `diagnostic / todo`            | **CRON ou sync UI demandeur** appelle `moveToNextStep` automatiquement après recompute                                                                                       | `parcours-sync-batch.service.ts` (§4), `dossier-sync.actions.ts` (§6.1)                                                                       |
 | `diagnostic / todo` → `diagnostic / en_instruction`     | Sync détecte `ds_status = en_instruction` (DDT prend la main) + recompute. La création (`envoyerDossierDiagnostic`) garde `todo` (ADR-0009)                                  | `ds-sync.service.ts`, `diagnostic.service.ts`                                                                                                 |
 | `diagnostic / en_instruction` → `diagnostic / valide`   | Idem éligibilité (sync + recompute)                                                                                                                                          | id.                                                                                                                                           |
-| `diagnostic / valide` → `devis / todo`                  | Idem (CRON)                                                                                                                                                                  | id.                                                                                                                                           |
+| `diagnostic / valide` → `devis / todo`                  | Idem (CRON ou sync UI)                                                                                                                                                       | id.                                                                                                                                           |
 | `devis / *` → `devis / valide`                          | Idem (cycle dépôt → sync → recompute)                                                                                                                                        | id.                                                                                                                                           |
-| `devis / valide` → `factures / todo`                    | Idem (CRON)                                                                                                                                                                  | id.                                                                                                                                           |
+| `devis / valide` → `factures / todo`                    | Idem (CRON ou sync UI)                                                                                                                                                       | id.                                                                                                                                           |
 | `factures / *` → `factures / valide`                    | Sync DS (factures.ds_status = accepte) + recompute                                                                                                                           | id.                                                                                                                                           |
 | `factures / valide`                                     | **État terminal**. `moveToNextStep` détecte `isParcoursComplete` et appelle `markAsCompleted` (set `completed_at`). Le parcours sort de `findActiveForSync` au prochain run. | `parcours-progression.service.ts` (branche `isParcoursComplete`), `parcours-prevention.repository.ts` (méthode `markAsCompleted` idempotente) |
 
@@ -133,7 +133,7 @@ Note : un `ds_status = null` (dossier créé non déposé) n'a pas d'entrée de 
 | **Super-admin** (bouton « Lancer maintenant »)                      | `runSyncBatch("manual")`                                 | Idem CRON                         |
 | **UI demandeur** (au refresh, manuel, ou navigation)                | `syncUserDossierStatus(step)` ou `syncAllUserDossiers()` | Le parcours du demandeur connecté |
 
-Tous appellent `recomputeParcoursStatus` après la phase de sync — soit en interne (`syncAllDossiers`, `runSyncBatch`), soit en explicite (`syncUserDossierStatus`).
+Tous appellent `recomputeParcoursStatus` après la phase de sync — soit en interne (`syncAllDossiers`, `runSyncBatch`), soit en explicite (`syncUserDossierStatus`). Tous appellent ensuite `moveToNextStep` : le CRON (et le manuel) dans `runSyncBatch`, l'UI demandeur dans `syncUserDossierStatus` / `syncAllUserDossiers`. `moveToNextStep` est idempotent et no-op si l'étape courante n'est pas `valide` (voir §6.1).
 
 ---
 
@@ -253,16 +253,17 @@ Server actions : `src/features/backoffice/administration/synchronisations/action
 
 ## 6. Décisions architecturales et leur justification
 
-### 6.1 Auto-progression dans le CRON (et non dans l'UI)
+### 6.1 Auto-progression automatique (CRON + sync UI demandeur)
 
-**Décision** : quand `current_status` devient `VALIDE` après recompute, le CRON appelle `moveToNextStep` automatiquement. Pas de bouton de confirmation côté demandeur.
+**Décision** : quand `current_status` devient `VALIDE` après recompute, on appelle `moveToNextStep` automatiquement, **dans le CRON comme dans la sync UI demandeur** (`syncUserDossierStatus` / `syncAllUserDossiers`). Pas de bouton de confirmation côté demandeur. `moveToNextStep` est idempotent et no-op (aucune écriture) si l'étape courante n'est pas `valide`, donc l'appeler systématiquement après recompute est sans risque.
 
-**Justification** : avant le CRON, il fallait une action utilisateur (visite + clic) pour propager. Conséquence : si personne ne se connectait, le parcours restait figé indéfiniment, même après acceptation DS. Avec l'auto-progression CRON, le parcours avance dès que possible. C'était précisément le bug initial qui a déclenché ce chantier (parcours bloqué en `eligibilite/valide` après acceptation DS).
+**Justification** : à l'origine, il fallait une action utilisateur (visite + clic) pour propager ; si personne ne se connectait, le parcours restait figé indéfiniment, même après acceptation DS. Le CRON a résolu ce cas. Mais tant que la sync UI ne faisait que `recomputeParcoursStatus` (sans `moveToNextStep`), un demandeur **connecté** qui voyait son éligibilité acceptée restait coincé sur `eligibilite/valide` jusqu'au prochain run CRON (jusqu'à plusieurs heures), au lieu de passer immédiatement à `diagnostic/todo`. C'était le symptôme QA (« validé mais pas passé à l'étape suivante »). En appelant `moveToNextStep` aussi côté UI, le parcours avance dès que le demandeur rafraîchit/navigue, et le CRON reste le filet pour les parcours dont personne ne se connecte.
 
 **Alternatives écartées** :
 
-- Garder le bouton manuel : ajoute une étape inutile pour le demandeur, et résout pas le cas où il ne se connecte plus.
+- Garder le bouton manuel : ajoute une étape inutile pour le demandeur, et ne résout pas le cas où il ne se connecte plus.
 - Notification email + bouton : possible mais hors scope, la sync silencieuse fait le job.
+- Laisser la progression au seul CRON : laisse un demandeur connecté attendre le prochain run sans raison (symptôme QA ci-dessus).
 
 ### 6.2 Découplage `syncDossierStatus` / `recomputeParcoursStatus`
 
