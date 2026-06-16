@@ -22,6 +22,13 @@ import {
   CalloutDiagnosticEnConstruction,
   CalloutDiagnosticEnInstruction,
   CalloutDiagnosticTodo,
+  CalloutDevisTodo,
+  CalloutDevisEnConstruction,
+  CalloutDevisEnInstruction,
+  CalloutFacturesTodo,
+  CalloutFacturesEnConstruction,
+  CalloutFacturesEnInstruction,
+  CalloutDossierTermine,
   CalloutEligibiliteAccepte,
   CalloutEligibiliteEnConstruction,
   CalloutEligibiliteEnInstruction,
@@ -35,7 +42,6 @@ import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/P
 // import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
 import { useMigrateRGAToDB } from "../hooks";
 import { formatDate } from "@/shared/utils";
-import CalloutDevisTodo from "./steps/devis/CalloutDevisTodo";
 
 export default function MonCompteClient() {
   // Migration RGA si nécessaire (après connexion FC)
@@ -377,24 +383,46 @@ function renderDiagnosticCallout(dsStatus: DSStatus | null) {
   return null;
 }
 
-// TODO: décliner les callouts par dsStatus (todo / en_construction / en_instruction / accepte / refuse)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function renderDevisCallout(dsStatus: DSStatus | null) {
-  return (
-    <div>
-      <CalloutDevisTodo />
-    </div>
-  );
+  if (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE) {
+    return <CalloutDevisTodo />;
+  }
+
+  if (dsStatus === DSStatus.EN_CONSTRUCTION) {
+    return <CalloutDevisEnConstruction />;
+  }
+
+  if (dsStatus === DSStatus.EN_INSTRUCTION) {
+    return <CalloutDevisEnInstruction />;
+  }
+
+  // Devis acceptés → l'étape passe aux factures : on invite à transmettre les factures.
+  if (dsStatus === DSStatus.ACCEPTE) {
+    return <CalloutFacturesTodo />;
+  }
+
+  return null;
 }
 
 function renderFacturesCallout(dsStatus: DSStatus | null) {
-  // TODO: Créer les callouts pour les factures
-  return (
-    <div>
-      Callout factures (à créer)
-      <pre>{JSON.stringify(dsStatus, null, 2)}</pre>
-    </div>
-  );
+  if (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE) {
+    return <CalloutFacturesTodo />;
+  }
+
+  if (dsStatus === DSStatus.EN_CONSTRUCTION) {
+    return <CalloutFacturesEnConstruction />;
+  }
+
+  if (dsStatus === DSStatus.EN_INSTRUCTION) {
+    return <CalloutFacturesEnInstruction />;
+  }
+
+  // Factures acceptées → dossier terminé (paiement effectué).
+  if (dsStatus === DSStatus.ACCEPTE) {
+    return <CalloutDossierTermine />;
+  }
+
+  return null;
 }
 
 // Helper pour obtenir le label du badge de statut
