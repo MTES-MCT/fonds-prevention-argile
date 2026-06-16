@@ -3,7 +3,7 @@
 import { checkAgentAccess } from "@/features/auth";
 import { isSuperAdminRole } from "@/shared/domain/value-objects/user-role.enum";
 import type { ActionResult } from "@/shared/types";
-import { detectAnomalies } from "../services/diagnostics.service";
+import { getParcoursDiagnostics } from "../services/diagnostics.service";
 import { getDemarchesSante } from "../services/demarches-sante.service";
 import {
   getParcoursDiagnosticDetail,
@@ -11,7 +11,7 @@ import {
   type ParcoursDiagnosticDetail,
   type DsEmailHit,
 } from "../services/diagnostics-detail.service";
-import type { AnomaliesResult, DemarcheSante } from "../domain/diagnostics.types";
+import type { DiagnosticsResult, DemarcheSante } from "../domain/diagnostics.types";
 
 /**
  * Server actions de la vue de diagnostic data (réservée SUPER_ADMINISTRATEUR).
@@ -28,17 +28,17 @@ async function ensureSuperAdmin(): Promise<{ ok: true } | { ok: false; error: st
   return { ok: true };
 }
 
-/** Liste des parcours en anomalie, détectés EN BASE (aucun appel DS). */
-export async function listAnomaliesAction(): Promise<ActionResult<AnomaliesResult>> {
+/** Classification EN BASE de tous les parcours actifs (aucun appel DN). */
+export async function listDiagnosticsAction(): Promise<ActionResult<DiagnosticsResult>> {
   const guard = await ensureSuperAdmin();
   if (!guard.ok) return { success: false, error: guard.error };
 
   try {
-    const result = await detectAnomalies();
+    const result = await getParcoursDiagnostics();
     return { success: true, data: result };
   } catch (error) {
-    console.error("Erreur listAnomaliesAction:", error);
-    return { success: false, error: "Erreur lors de la détection des anomalies" };
+    console.error("Erreur listDiagnosticsAction:", error);
+    return { success: false, error: "Erreur lors de la classification des parcours" };
   }
 }
 

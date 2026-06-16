@@ -3,40 +3,122 @@ import type { Status } from "@/shared/domain/value-objects/status.enum";
 import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 
 /**
- * Types d'anomalie détectables EN BASE (sans appel à Démarches Simplifiées), pour le listing
- * de la vue de diagnostic super-admin. Le cross-check DS live (taxonomie fine `DsAnomalyType`)
- * n'intervient que sur le détail d'un parcours.
+ * État de diagnostic d'un parcours actif, calculé EN BASE (sans appel DN) à partir du dossier
+ * de son étape COURANTE + l'historique de sync. Un parcours = un état (priorité aux anomalies).
+ * Permet de piloter tous les cas via un filtre unique.
  */
-export enum ParcoursAnomalyType {
-  /** Dossier de l'étape courante déposé (en construction / en instruction) qui n'avance pas. */
-  BLOQUE = "bloque",
-  /** Parcours à une étape avancée (diagnostic+) sans dossier d'éligibilité accepté : dossier perdu. */
-  ORPHELIN = "orphelin",
+export enum DiagnosticState {
+  // --- Anomalies (prioritaires sur l'état du dossier) ---
   /** La dernière synchronisation de ce parcours a renvoyé une erreur. */
   SYNC_ERREUR = "sync_erreur",
+  /** Étape avancée (diagnostic+) sans dossier d'éligibilité accepté : dossier perdu. */
+  ORPHELIN = "orphelin",
+  /** Dossier avec un numéro DN mais jamais synchronisé (last_sync_at null). */
+  JAMAIS_SYNCHRONISE = "jamais_synchronise",
+  /** Déposé depuis plus du seuil sans avoir été pris en instruction : ne bouge plus. */
+  BLOQUE = "bloque",
+  // --- États normaux du dossier de l'étape courante ---
+  /** Dossier créé mais jamais déposé par l'usager (brouillon). */
+  BROUILLON = "brouillon",
+  /** Déposé récemment, en attente de prise en instruction (normal). */
+  DEPOSE_EN_ATTENTE = "depose_en_attente",
+  /** En cours d'instruction par la DDT (normal). */
+  EN_INSTRUCTION = "en_instruction",
+  /** Dossier de l'étape courante accepté (en attente de progression). */
+  ACCEPTE = "accepte",
+  /** Dossier refusé. */
+  REFUSE = "refuse",
+  /** Dossier classé sans suite. */
+  CLASSE_SANS_SUITE = "classe_sans_suite",
+  /** Étape courante sans dossier (étape "à faire" avant création — normal). */
+  SANS_DOSSIER = "sans_dossier",
 }
 
-export const PARCOURS_ANOMALY_LABELS: Record<ParcoursAnomalyType, { label: string; description: string }> = {
-  [ParcoursAnomalyType.BLOQUE]: {
-    label: "Bloqué",
-    description:
-      "Le dossier de l'étape courante est déposé (en construction ou en instruction) mais le parcours n'avance pas. À croiser avec l'état réel côté DS pour distinguer une attente normale d'une désynchronisation.",
+export type DiagnosticSeverity = "error" | "warning" | "info" | "success";
+
+/** Seuil (en jours) au-delà duquel un dossier déposé non instruit est considéré « bloqué ». */
+export const SEUIL_BLOQUE_JOURS = 30;
+
+export const DIAGNOSTIC_STATE_META: Record<
+  DiagnosticState,
+  { label: string; description: string; severity: DiagnosticSeverity }
+> = {
+  [DiagnosticState.SYNC_ERREUR]: {
+    label: "Sync en erreur",
+    description: "La dernière synchronisation a échoué (token non instructeur, dossier introuvable, erreur API…).",
+    severity: "error",
   },
-  [ParcoursAnomalyType.ORPHELIN]: {
+  [DiagnosticState.ORPHELIN]: {
     label: "Dossier perdu",
     description:
-      "Le parcours est à une étape avancée (diagnostic, devis ou factures) mais aucun dossier d'éligibilité accepté n'est rattaché en base : le dossier DS s'est désynchronisé. Recherche par email côté DS recommandée.",
+      "Parcours à une étape avancée sans dossier d'éligibilité accepté rattaché : désynchronisation parcours ↔ DN. Recherche par email recommandée (voir le détail).",
+    severity: "error",
   },
-  [ParcoursAnomalyType.SYNC_ERREUR]: {
-    label: "Sync en erreur",
-    description:
-      "La dernière synchronisation de ce parcours a échoué (token non instructeur, dossier introuvable, erreur API…). Voir le message d'erreur et la vue Synchronisations.",
+  [DiagnosticState.JAMAIS_SYNCHRONISE]: {
+    label: "Jamais synchronisé",
+    description: "Le dossier a un numéro DN mais n'a jamais été synchronisé (aucun last_sync_at).",
+    severity: "warning",
+  },
+  [DiagnosticState.BLOQUE]: {
+    label: "Bloqué",
+    description: `Dossier déposé depuis plus de ${SEUIL_BLOQUE_JOURS} jours sans avoir été pris en instruction par la DDT : il ne bouge plus.`,
+    severity: "warning",
+  },
+  [DiagnosticState.BROUILLON]: {
+    label: "Brouillon",
+    description: "Dossier créé mais jamais déposé par l'usager (drop-off). Comportement normal.",
+    severity: "info",
+  },
+  [DiagnosticState.DEPOSE_EN_ATTENTE]: {
+    label: "Déposé (en attente)",
+    description: `Déposé depuis moins de ${SEUIL_BLOQUE_JOURS} jours, en attente de prise en instruction. Normal.`,
+    severity: "info",
+  },
+  [DiagnosticState.EN_INSTRUCTION]: {
+    label: "En instruction",
+    description: "En cours d'instruction par la DDT. Normal.",
+    severity: "info",
+  },
+  [DiagnosticState.ACCEPTE]: {
+    label: "Accepté",
+    description: "Dossier de l'étape courante accepté. Le parcours devrait progresser à la prochaine sync.",
+    severity: "success",
+  },
+  [DiagnosticState.REFUSE]: {
+    label: "Refusé",
+    description: "Dossier refusé par la DDT.",
+    severity: "warning",
+  },
+  [DiagnosticState.CLASSE_SANS_SUITE]: {
+    label: "Classé sans suite",
+    description: "Dossier classé sans suite par la DDT.",
+    severity: "info",
+  },
+  [DiagnosticState.SANS_DOSSIER]: {
+    label: "Sans dossier",
+    description: "Étape courante « à faire » sans dossier DN encore créé. Normal en début d'étape.",
+    severity: "info",
   },
 };
 
-/** Une ligne d'anomalie (un parcours × un type d'anomalie). */
-export interface AnomalyRow {
-  type: ParcoursAnomalyType;
+/** Ordre d'affichage des filtres : anomalies d'abord, puis états normaux. */
+export const DIAGNOSTIC_STATE_ORDER: DiagnosticState[] = [
+  DiagnosticState.SYNC_ERREUR,
+  DiagnosticState.ORPHELIN,
+  DiagnosticState.JAMAIS_SYNCHRONISE,
+  DiagnosticState.BLOQUE,
+  DiagnosticState.BROUILLON,
+  DiagnosticState.DEPOSE_EN_ATTENTE,
+  DiagnosticState.EN_INSTRUCTION,
+  DiagnosticState.ACCEPTE,
+  DiagnosticState.REFUSE,
+  DiagnosticState.CLASSE_SANS_SUITE,
+  DiagnosticState.SANS_DOSSIER,
+];
+
+/** Une ligne de diagnostic (un parcours actif). */
+export interface DiagnosticRow {
+  state: DiagnosticState;
   parcoursId: string;
   userId: string;
   userNom: string | null;
@@ -48,15 +130,15 @@ export interface AnomalyRow {
   dsStatus: DSStatus | null;
   submittedAt: Date | null;
   lastSyncAt: Date | null;
-  /** Âge en jours (depuis la création du dossier, ou du parcours pour un orphelin). */
+  /** Âge en jours depuis la date pertinente pour l'état (dépôt, création…). */
   ageDays: number | null;
-  /** Détail libre (ex. message d'erreur de sync). */
   detail: string | null;
 }
 
-export interface AnomaliesResult {
-  rows: AnomalyRow[];
-  counts: Record<ParcoursAnomalyType, number>;
+export interface DiagnosticsResult {
+  rows: DiagnosticRow[];
+  counts: Record<DiagnosticState, number>;
+  total: number;
   generatedAt: string;
 }
 

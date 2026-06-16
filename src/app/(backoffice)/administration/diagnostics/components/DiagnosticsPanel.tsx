@@ -3,15 +3,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  listAnomaliesAction,
+  listDiagnosticsAction,
   getDemarchesSanteAction,
 } from "@/features/backoffice/administration/diagnostics/actions/diagnostics.actions";
 import {
-  ParcoursAnomalyType,
-  PARCOURS_ANOMALY_LABELS,
+  DiagnosticState,
+  DIAGNOSTIC_STATE_META,
+  DIAGNOSTIC_STATE_ORDER,
   DemarcheSanteStatus,
-  type AnomaliesResult,
-  type AnomalyRow,
+  type DiagnosticSeverity,
+  type DiagnosticsResult,
+  type DiagnosticRow,
   type DemarcheSante,
 } from "@/features/backoffice/administration/diagnostics/domain/diagnostics.types";
 import { STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
@@ -25,10 +27,11 @@ function getDemarcheAdminUrl(demarcheNumber: number | string): string {
   return `${base}/admin/procedures/${demarcheNumber}`;
 }
 
-const TYPE_BADGE_CLASSES: Record<ParcoursAnomalyType, string> = {
-  [ParcoursAnomalyType.BLOQUE]: "fr-badge--warning",
-  [ParcoursAnomalyType.ORPHELIN]: "fr-badge--error",
-  [ParcoursAnomalyType.SYNC_ERREUR]: "fr-badge--error",
+const SEVERITY_BADGE: Record<DiagnosticSeverity, string> = {
+  error: "fr-badge--error",
+  warning: "fr-badge--warning",
+  info: "fr-badge--info",
+  success: "fr-badge--success",
 };
 
 const SANTE_ALERT: Record<DemarcheSanteStatus, { cls: string; label: string; hasLink: boolean }> = {
@@ -43,30 +46,24 @@ const SANTE_ALERT: Record<DemarcheSanteStatus, { cls: string; label: string; has
   [DemarcheSanteStatus.ERREUR]: { cls: "fr-alert--error", label: "erreur API", hasLink: true },
 };
 
-const TYPE_ORDER: ParcoursAnomalyType[] = [
-  ParcoursAnomalyType.BLOQUE,
-  ParcoursAnomalyType.ORPHELIN,
-  ParcoursAnomalyType.SYNC_ERREUR,
-];
-
-function userLabel(r: AnomalyRow): string {
+function userLabel(r: DiagnosticRow): string {
   const name = [r.userPrenom, r.userNom].filter(Boolean).join(" ").trim();
   return name || r.userEmail || r.userId.slice(0, 8);
 }
 
 export default function DiagnosticsPanel() {
-  const [anomalies, setAnomalies] = useState<AnomaliesResult | null>(null);
+  const [diagnostics, setDiagnostics] = useState<DiagnosticsResult | null>(null);
   const [sante, setSante] = useState<DemarcheSante[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<ParcoursAnomalyType | "all">("all");
+  const [filter, setFilter] = useState<DiagnosticState | "all">("all");
 
   const load = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    const [anoRes, santeRes] = await Promise.all([listAnomaliesAction(), getDemarchesSanteAction()]);
-    if (anoRes.success) setAnomalies(anoRes.data);
-    else setError(anoRes.error || "Erreur lors du chargement");
+    const [diagRes, santeRes] = await Promise.all([listDiagnosticsAction(), getDemarchesSanteAction()]);
+    if (diagRes.success) setDiagnostics(diagRes.data);
+    else setError(diagRes.error || "Erreur lors du chargement");
     if (santeRes.success) setSante(santeRes.data);
     setIsLoading(false);
   }, []);
@@ -76,9 +73,9 @@ export default function DiagnosticsPanel() {
   }, [load]);
 
   const visibleRows = useMemo(() => {
-    if (!anomalies) return [];
-    return filter === "all" ? anomalies.rows : anomalies.rows.filter((r) => r.type === filter);
-  }, [anomalies, filter]);
+    if (!diagnostics) return [];
+    return filter === "all" ? diagnostics.rows : diagnostics.rows.filter((r) => r.state === filter);
+  }, [diagnostics, filter]);
 
   return (
     <>
@@ -89,8 +86,8 @@ export default function DiagnosticsPanel() {
             <div className="fr-col">
               <h1 className="fr-h2 fr-mb-1v">Diagnostics DN</h1>
               <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
-                Parcours en anomalie côté Démarches Numériques (détection en base, sans appel DN) et santé des
-                démarches. Réservé aux super-administrateurs.
+                État Démarches Numériques du dossier de l&apos;étape courante de chaque parcours actif (détection en
+                base, sans appel DN) et santé des démarches. Réservé aux super-administrateurs.
               </p>
             </div>
             <div className="fr-col-auto" style={{ textAlign: "right" }}>
@@ -140,8 +137,8 @@ export default function DiagnosticsPanel() {
             </div>
           )}
 
-          {/* Filtres par type + compteurs */}
-          {anomalies && (
+          {/* Filtres par état + compteurs (tous les états, même à 0) */}
+          {diagnostics && (
             <div className="fr-mb-2w">
               <ul className="fr-tags-group">
                 <li>
@@ -150,24 +147,24 @@ export default function DiagnosticsPanel() {
                     className={`fr-tag ${filter === "all" ? "fr-tag--dismiss" : ""}`}
                     aria-pressed={filter === "all"}
                     onClick={() => setFilter("all")}>
-                    Tout ({anomalies.rows.length})
+                    Tout ({diagnostics.total})
                   </button>
                 </li>
-                {TYPE_ORDER.map((t) => (
-                  <li key={t}>
+                {DIAGNOSTIC_STATE_ORDER.map((s) => (
+                  <li key={s}>
                     <button
                       type="button"
-                      className={`fr-tag ${filter === t ? "fr-tag--dismiss" : ""}`}
-                      aria-pressed={filter === t}
-                      onClick={() => setFilter(t)}>
-                      {PARCOURS_ANOMALY_LABELS[t].label} ({anomalies.counts[t]})
+                      className={`fr-tag ${filter === s ? "fr-tag--dismiss" : ""}`}
+                      aria-pressed={filter === s}
+                      onClick={() => setFilter(s)}>
+                      {DIAGNOSTIC_STATE_META[s].label} ({diagnostics.counts[s]})
                     </button>
                   </li>
                 ))}
               </ul>
               {filter !== "all" && (
                 <p className="fr-text--sm fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
-                  {PARCOURS_ANOMALY_LABELS[filter].description}
+                  {DIAGNOSTIC_STATE_META[filter].description}
                 </p>
               )}
             </div>
@@ -183,7 +180,7 @@ export default function DiagnosticsPanel() {
             </div>
           ) : visibleRows.length === 0 ? (
             <div className="fr-callout">
-              <p className="fr-callout__text">Aucune anomalie détectée.</p>
+              <p className="fr-callout__text">Aucun parcours pour ce filtre.</p>
             </div>
           ) : (
             <div className="fr-table fr-table--bordered">
@@ -195,7 +192,7 @@ export default function DiagnosticsPanel() {
                         <tr>
                           <th>Demandeur</th>
                           <th>Étape / statut</th>
-                          <th>Anomalie</th>
+                          <th>État</th>
                           <th>Dossier DN</th>
                           <th>Âge (j)</th>
                           <th>Détail</th>
@@ -203,45 +200,48 @@ export default function DiagnosticsPanel() {
                         </tr>
                       </thead>
                       <tbody>
-                        {visibleRows.map((r) => (
-                          <tr key={`${r.type}-${r.parcoursId}`}>
-                            <td>{userLabel(r)}</td>
-                            <td>
-                              {STEP_LABELS[r.currentStep]} / {r.currentStatus}
-                            </td>
-                            <td>
-                              <span className={`fr-badge fr-badge--sm ${TYPE_BADGE_CLASSES[r.type]}`}>
-                                {PARCOURS_ANOMALY_LABELS[r.type].label}
-                              </span>
-                            </td>
-                            <td>
-                              {r.dsNumber ? (
-                                <>
-                                  <a
-                                    href={getDossierDsDemandeUrl(Number(r.dsNumber))}
-                                    target="_blank"
-                                    rel="noopener noreferrer">
-                                    #{r.dsNumber}
-                                  </a>{" "}
-                                  ({r.dsStatus ?? "?"})
-                                </>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-                            <td>{r.ageDays ?? "-"}</td>
-                            <td style={{ maxWidth: 320, fontSize: "0.8rem", color: "var(--text-mention-grey)" }}>
-                              {r.detail ?? "-"}
-                            </td>
-                            <td>
-                              <Link
-                                href={`/administration/diagnostics/${r.parcoursId}`}
-                                className="fr-btn fr-btn--secondary fr-btn--sm">
-                                Analyser
-                              </Link>
-                            </td>
-                          </tr>
-                        ))}
+                        {visibleRows.map((r) => {
+                          const meta = DIAGNOSTIC_STATE_META[r.state];
+                          return (
+                            <tr key={`${r.state}-${r.parcoursId}`}>
+                              <td>{userLabel(r)}</td>
+                              <td>
+                                {STEP_LABELS[r.currentStep]} / {r.currentStatus}
+                              </td>
+                              <td>
+                                <span className={`fr-badge fr-badge--sm ${SEVERITY_BADGE[meta.severity]}`}>
+                                  {meta.label}
+                                </span>
+                              </td>
+                              <td>
+                                {r.dsNumber ? (
+                                  <>
+                                    <a
+                                      href={getDossierDsDemandeUrl(Number(r.dsNumber))}
+                                      target="_blank"
+                                      rel="noopener noreferrer">
+                                      #{r.dsNumber}
+                                    </a>{" "}
+                                    ({r.dsStatus ?? "?"})
+                                  </>
+                                ) : (
+                                  "-"
+                                )}
+                              </td>
+                              <td>{r.ageDays ?? "-"}</td>
+                              <td style={{ maxWidth: 320, fontSize: "0.8rem", color: "var(--text-mention-grey)" }}>
+                                {r.detail ?? "-"}
+                              </td>
+                              <td>
+                                <Link
+                                  href={`/administration/diagnostics/${r.parcoursId}`}
+                                  className="fr-btn fr-btn--secondary fr-btn--sm">
+                                  Analyser
+                                </Link>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
