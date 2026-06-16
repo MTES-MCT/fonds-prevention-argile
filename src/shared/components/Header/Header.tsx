@@ -15,7 +15,10 @@ function AgentNavLinks() {
   const agentRole = useAgentRole();
 
   switch (agentRole) {
+    // Analyste : super-admin et analyste départemental (DDT) accèdent aussi à
+    // l'espace agent. Un analyste national est renvoyé par la garde du layout.
     case UserRole.SUPER_ADMINISTRATEUR:
+    case UserRole.ANALYSTE:
       return (
         <>
           <li>
@@ -31,7 +34,6 @@ function AgentNavLinks() {
         </>
       );
 
-    case UserRole.ANALYSTE:
     case UserRole.ADMINISTRATEUR:
       return (
         <li>
@@ -53,7 +55,10 @@ function AgentNavLinksMobile() {
   const agentRole = useAgentRole();
 
   switch (agentRole) {
+    // Analyste : super-admin et analyste départemental (DDT) accèdent aussi à
+    // l'espace agent. Un analyste national est renvoyé par la garde du layout.
     case UserRole.SUPER_ADMINISTRATEUR:
+    case UserRole.ANALYSTE:
       return (
         <>
           <li>
@@ -69,7 +74,6 @@ function AgentNavLinksMobile() {
         </>
       );
 
-    case UserRole.ANALYSTE:
     case UserRole.ADMINISTRATEUR:
       return (
         <li>
