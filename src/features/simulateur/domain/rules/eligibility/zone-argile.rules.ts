@@ -20,7 +20,7 @@ export function checkDepartementEligible(codeDepartement: string | undefined): R
 /**
  * Vérifie si la zone d'exposition est forte
  */
-export function checkZoneForte(zoneExposition: string | undefined): RuleResult {
+export function checkZoneForte(zoneExposition: string | null | undefined): RuleResult {
   if (!zoneExposition) {
     return { passed: false, reason: EligibilityReason.ZONE_NON_FORTE };
   }

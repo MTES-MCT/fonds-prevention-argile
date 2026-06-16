@@ -55,5 +55,11 @@ describe("zone-argile.rules", () => {
       expect(result.passed).toBe(false);
       expect(result.reason).toBe(EligibilityReason.ZONE_NON_FORTE);
     });
+
+    it("retourne failed pour null (hors zone argileuse)", () => {
+      const result = checkZoneForte(null);
+      expect(result.passed).toBe(false);
+      expect(result.reason).toBe(EligibilityReason.ZONE_NON_FORTE);
+    });
   });
 });

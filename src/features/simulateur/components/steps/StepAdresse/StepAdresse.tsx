@@ -244,7 +244,8 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
         coordonnees: formatCoordinatesString({ lat: buildingData.lat, lon: buildingData.lon }),
         clef_ban: addressData.clefBan,
         // Données du bâtiment (BDNB + potentiellement éditées)
-        zone_dexposition: buildingData.aleaArgiles || undefined,
+        // null = hors zone argileuse (réponse à part entière, distincte de "non répondu")
+        zone_dexposition: buildingData.aleaArgiles,
         annee_de_construction: formData.anneeConstruction?.toString(),
         niveaux: formData.nombreNiveaux ?? undefined,
         rnb: buildingData.rnbId,
