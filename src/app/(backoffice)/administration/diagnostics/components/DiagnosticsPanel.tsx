@@ -284,7 +284,14 @@ export default function DiagnosticsPanel() {
                                 )}
                               </td>
                               <td>{r.ageDays ?? "-"}</td>
-                              <td style={{ maxWidth: 320, fontSize: "0.8rem", color: "var(--text-mention-grey)" }}>
+                              <td
+                                style={{
+                                  maxWidth: 320,
+                                  fontSize: "0.8rem",
+                                  color: "var(--text-mention-grey)",
+                                  whiteSpace: "normal",
+                                  overflowWrap: "anywhere",
+                                }}>
                                 {r.detail ?? "-"}
                               </td>
                               <td>
