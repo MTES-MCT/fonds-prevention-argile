@@ -398,6 +398,56 @@ la sync de cette étape échoue. Depuis juin 2026 cette erreur est **tracée**
 (`sync_run_entries.error`) au lieu d'être avalée en faux « RAS » (voir §3.1).
 Détection préventive : `pnpm ds:check-permissions` (statut `UNAUTHORIZED`).
 
+### 7.4 Remédiation : reset d'un dossier d'éligibilité non synchronisable
+
+> Guide simplifié dédié (cas, sous-cas, scripts, playbook) :
+> [SYNC-ERREURS-ET-REMEDIATION.md](SYNC-ERREURS-ET-REMEDIATION.md).
+
+Quand le lien DS n'a jamais été fait correctement (token non instructeur, démarche non
+publiée, dossier introuvable), le dossier d'éligibilité est « fantôme » : jamais
+déposable, jamais synchronisable. Le parcours reste bloqué en `eligibilite/todo` et
+apparaît en **SYNC EN ERREUR** sur `administration/diagnostics` (cf. §7.2/7.3).
+
+Remédiation : **supprimer la ligne `dossiers_demarches_simplifiees` de l'étape
+éligibilité**, en laissant le parcours en `eligibilite/todo` (état « l'AMO vient de
+valider »). Côté espace demandeur, `getDossierByStep` renvoie alors `null` → le CTA
+« Remplir le formulaire d'éligibilité » réapparaît et `createEligibiliteDossier`
+génère un **nouveau lien prefill** (« commencer »), et non « reprendre » le dossier
+cassé (cf. `buildDemarcheUrl`, bascule sur `submitted_at`, §7.1). La validation AMO
+(`LOGEMENT_ELIGIBLE`) n'est pas touchée.
+
+Script : `pnpm fix:eligibilite-sync-error` (dry-run par défaut, `--apply` pour
+exécuter, `--parcours-id=<uuid>` pour cibler). **Auto-vérifiant côté DN** : avant toute
+suppression, le script interroge DN (lecture seule) pour chaque candidat et ne supprime
+**que** les dossiers confirmés disparus. La validation AMO et l'historique
+`sync_run_entries` sont **conservés**. Verdicts :
+
+- **GONE** (DN « Dossier not found » ou dossier inexistant) → pointeur mort → **reset**
+  (suppression → nouveau lien « commencer »).
+- **EXISTS** (le dossier existe encore côté DN : en construction / en instruction / traité)
+  → **jamais supprimé** (vraie donnée) ; la prochaine sync réussie rattrapera le parcours.
+- **PROBE_ERREUR** (erreur DN ≠ « not found », ex. unauthorized) → laissé (incertitude).
+- **SANS_DOSSIER** (pas de dossier local) → rien à faire.
+
+Pourquoi la vérification DN et pas l'heuristique `submitted_at` : un `submitted_at`
+renseigné ne garantit pas que le dossier existe encore (DN **purge les dossiers en
+construction jamais transmis** → « Dossier not found » sur un dossier pourtant déposé).
+Seul l'appel DN distingue un pointeur mort d'un vrai dossier vivant en instruction.
+
+Sonde DN autonome (même cross-check, sans rien supprimer) :
+`pnpm ds:probe-dossiers --from-sync-errors` (ou `--numbers=…`) — classe la réponse réelle
+de DN (`SUPPRIME_OU_INTROUVABLE`, `DEPOSE_NON_INSTRUIT`, `EN_INSTRUCTION`, `TRAITE`,
+`INEXISTANT`). Utile pour auditer avant le reset.
+
+Le diagnostic distingue deux états de sync-erreur (détection en base, sans appel DN) :
+**« Sync erreur (déposé non instruit) »** (`SYNC_ERREUR_DEPOSE` — `submitted_at` + pas
+d'`instructed_at`, piste expiration DN) et **« Sync erreur (autre) »** (`SYNC_ERREUR`).
+
+> Limitation connue : le diagnostic classe en sync-erreur dès qu'une entrée
+> `sync_run_entries.error` non-null existe, sans la comparer aux syncs réussies
+> postérieures. Après reset, ces parcours **restent affichés en sync-erreur** tant
+> que cette logique de classement n'est pas corrigée (hors scope du script).
+
 ---
 
 ## 8. Fichiers clés
@@ -416,6 +466,8 @@ Détection préventive : `pnpm ds:check-permissions` (statut `UNAUTHORIZED`).
 | Service sync DS                             | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                        |
 | Service sync batch (CRON)                   | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`            |
 | Vérif permissions / état démarches DS       | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                 |
+| Reset dossier éligibilité sync-erreur       | `scripts/ops/fix/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`)  |
+| Sonde lecture-seule dossiers DN             | `scripts/ops/ds/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                          |
 | Action UI sync                              | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                    |
 | Validation AMO (auto-progression CHOIX_AMO) | `src/features/parcours/amo/services/amo-validation.service.ts`                         |
 | Endpoint CRON                               | `src/app/api/cron/sync-parcours/route.ts`                                              |
