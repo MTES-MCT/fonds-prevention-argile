@@ -32,16 +32,15 @@ Source : `src/middleware.ts`, `src/features/auth/domain/value-objects/constants.
 
 Enum : `src/shared/domain/value-objects/user-role.enum.ts`.
 
-| Rôle                   | Catégorie | Résumé                                                           |
-| ---------------------- | --------- | ---------------------------------------------------------------- |
-| `PARTICULIER`          | Demandeur | Propriétaire authentifié FranceConnect, suit son propre parcours |
-| `SUPER_ADMINISTRATEUR` | Admin     | Accès total (toutes permissions)                                 |
-| `ADMINISTRATEUR`       | Admin     | Back-office complet sauf gestion des agents                      |
-| `ANALYSTE`             | Agent     | Statistiques, national ou par département selon affectation      |
-| `ANALYSTE_DDT`         | Agent     | Statistiques restreintes à ses départements (jamais national)    |
-| `AMO`                  | Agent     | Dossiers de son entreprise AMO                                   |
-| `ALLERS_VERS`          | Agent     | Prospects de son territoire (dossiers sans AMO)                  |
-| `AMO_ET_ALLERS_VERS`   | Agent     | Cumul AMO + Allers-Vers (union des périmètres)                   |
+| Rôle                   | Catégorie | Résumé                                                                 |
+| ---------------------- | --------- | ---------------------------------------------------------------------- |
+| `PARTICULIER`          | Demandeur | Propriétaire authentifié FranceConnect, suit son propre parcours       |
+| `SUPER_ADMINISTRATEUR` | Admin     | Accès total (toutes permissions)                                       |
+| `ADMINISTRATEUR`       | Admin     | Back-office complet sauf gestion des agents                            |
+| `ANALYSTE`             | Agent     | Bimode : national (stats) sans département, ou suivi DDT départemental |
+| `AMO`                  | Agent     | Dossiers de son entreprise AMO                                         |
+| `ALLERS_VERS`          | Agent     | Prospects de son territoire (dossiers sans AMO)                        |
+| `AMO_ET_ALLERS_VERS`   | Agent     | Cumul AMO + Allers-Vers (union des périmètres)                         |
 
 Helpers : `isAgentRole`, `isAdminRole`, `isSuperAdminRole`, `isValidRole`.
 Groupes : `ADMIN_ROLES` (super-admin + admin), `AGENT_ROLES` (tous sauf
@@ -53,14 +52,19 @@ Groupes : `ADMIN_ROLES` (super-admin + admin), `AGENT_ROLES` (tous sauf
 
 Deux grands espaces back-office, gardés au niveau des `layout.tsx` / `page.tsx`.
 
-| Espace / route                                  | Rôles autorisés                                                      | Espace de repli                    |
-| ----------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------- |
-| `/mon-compte`, `/mes-dossiers`, `/mes-demandes` | `PARTICULIER` (FranceConnect)                                        | `/connexion`                       |
-| `/administration/*`                             | `SUPER_ADMINISTRATEUR`, `ADMINISTRATEUR`, `ANALYSTE`, `ANALYSTE_DDT` | AMO/AV → `/espace-agent`           |
-| `/espace-agent/*`                               | `AMO`, `ALLERS_VERS`, `AMO_ET_ALLERS_VERS`, `SUPER_ADMINISTRATEUR`   | admin/analyste → `/administration` |
+| Espace / route                                  | Rôles autorisés                                                                                | Espace de repli                             |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `/mon-compte`, `/mes-dossiers`, `/mes-demandes` | `PARTICULIER` (FranceConnect)                                                                  | `/connexion`                                |
+| `/administration/*`                             | `SUPER_ADMINISTRATEUR`, `ADMINISTRATEUR`, `ANALYSTE`                                           | AMO/AV → `/espace-agent`                    |
+| `/espace-agent/*`                               | `AMO`, `ALLERS_VERS`, `AMO_ET_ALLERS_VERS`, `ANALYSTE` (départemental), `SUPER_ADMINISTRATEUR` | admin/analyste national → `/administration` |
 
 Redirection par défaut après connexion (selon rôle) : admins/analystes →
 `/administration` ; AMO/AV → `/espace-agent` ; particulier → `/mon-compte`.
+
+> Un `ANALYSTE` avec au moins un département (mode « suivi DDT ») accède aussi à
+> l'espace agent pour consulter les dossiers de son territoire et y ajouter des
+> messages. Un `ANALYSTE` sans département (national) reste cantonné aux stats :
+> la garde du layout espace-agent le renvoie vers `/administration`.
 
 Gardes principales :
 
@@ -94,7 +98,10 @@ Repères de permissions par rôle :
 - **ADMINISTRATEUR** : stats, users, AMO (R/W/import/delete), allers-vers
   (R/W/import/delete), étapes (éligibilité/diagnostic/devis/factures en lecture),
   commentaires (lecture globale). Pas la gestion des agents.
-- **ANALYSTE / ANALYSTE_DDT** : lecture stats uniquement (voir §5 pour le périmètre).
+- **ANALYSTE** : lecture stats (national ou départemental, voir §5). En mode
+  départemental (suivi DDT), peut aussi ajouter/éditer ses propres messages
+  (`COMMENTAIRES_*`) sur les dossiers de son territoire. Ne gère pas l'éligibilité
+  (`ELIGIBILITE_WRITE`) et ne crée pas de dossier (`DOSSIERS_CREATE`).
 - **AMO** : dossiers AMO (lecture + stats), création de dossier, commentaires
   (création + édition/suppression des siens).
 - **ALLERS_VERS** : prospects (vue + détail + stats), création de dossier,
@@ -115,13 +122,17 @@ données. Calculé dans
 | AMO                 | non       | oui                | non               | son entreprise AMO                              |
 | ALLERS_VERS         | non       | non                | oui               | ses départements / EPCI                         |
 | AMO_ET_ALLERS_VERS  | non       | oui                | oui               | union entreprise AMO + territoire AV            |
-| ANALYSTE            | non       | non                | non               | national si aucun dept affecté, sinon ses depts |
-| ANALYSTE_DDT        | non       | non                | non               | ses départements (jamais national)              |
+| ANALYSTE            | non       | non                | non               | national (stats) si aucun dept, sinon ses depts |
 
 Distinctions clés :
 
-- **ANALYSTE vs ANALYSTE_DDT** : un `ANALYSTE` sans département affecté voit les
-  stats nationales ; un `ANALYSTE_DDT` est toujours restreint à ses départements.
+- **ANALYSTE bimode (stats vs dossiers)** : sans département affecté, l'`ANALYSTE`
+  est national mais ne voit que les **statistiques** — aucun dossier individuel
+  (`canViewAllDossiers = false`, la garde du layout espace-agent le renvoie vers
+  `/administration`). Avec un ou plusieurs départements (mode « suivi DDT »), il
+  accède aux **dossiers de ces territoires** et peut y ajouter des messages.
+  C'est `canViewAllDossiers` (réservé aux admins) — et non `isNational` (stats) —
+  qui ouvre le détail d'un dossier hors territoire.
 - **ALLERS_VERS vs AMO_ET_ALLERS_VERS** : l'allers-vers seul ne voit que les
   dossiers sans AMO de son territoire ; la version fusionnée cumule aussi les
   dossiers de son entreprise AMO. La version fusionnée requiert une entreprise AMO
