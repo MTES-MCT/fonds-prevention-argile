@@ -126,6 +126,27 @@ export const DIAGNOSTIC_STATE_ORDER: DiagnosticState[] = [
   DiagnosticState.SANS_DOSSIER,
 ];
 
+/**
+ * Verdict DN observé (issu de `dn_probe_state`, écrit par la sync) — la « vérité DN » du
+ * dossier de l'étape courante, sans rappeler l'API. Voir docs SYNC-ERREURS §7.
+ */
+export type DnVerdict = "gone" | "exists" | "probe_error" | "unknown";
+
+export const DN_VERDICT_META: Record<DnVerdict, { label: string; severity: DiagnosticSeverity }> = {
+  gone: { label: "Disparu côté DN", severity: "error" },
+  exists: { label: "Existe côté DN", severity: "success" },
+  probe_error: { label: "Sondage en erreur", severity: "warning" },
+  unknown: { label: "Non sondé", severity: "info" },
+};
+
+/** Dérive le verdict DN à partir de l'état brut persisté par la sync. */
+export function dnVerdictOf(dnProbeState: string | null): DnVerdict {
+  if (!dnProbeState) return "unknown";
+  if (dnProbeState === "not_found") return "gone";
+  if (dnProbeState === "unauthorized" || dnProbeState === "api_error") return "probe_error";
+  return "exists"; // en_construction / en_instruction / accepte / refuse / sans_suite
+}
+
 /** Une ligne de diagnostic (un parcours actif). */
 export interface DiagnosticRow {
   state: DiagnosticState;
@@ -143,6 +164,10 @@ export interface DiagnosticRow {
   /** Âge en jours depuis la date pertinente pour l'état (dépôt, création…). */
   ageDays: number | null;
   detail: string | null;
+  /** Verdict DN persisté (dn_probe_state) + sa fraîcheur, et le verdict dérivé. */
+  dnProbeState: string | null;
+  dnProbeAt: Date | null;
+  dnVerdict: DnVerdict;
 }
 
 export interface DiagnosticsResult {

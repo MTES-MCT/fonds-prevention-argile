@@ -1,5 +1,5 @@
 import { graphqlClient } from "../adapters/graphql/client";
-import { getDossierByStep, updateDossierStatus } from "./dossier-ds.service";
+import { getDossierByStep, updateDossierStatus, recordDnProbeState } from "./dossier-ds.service";
 import type { Step } from "../../core/domain/value-objects/step";
 import { DS_TO_INTERNAL_STATUS, DSStatus } from "../domain/value-objects/ds-status";
 import { parcoursRepo } from "@/shared/database/repositories";
@@ -30,67 +30,82 @@ export async function syncDossierStatus(
   step: Step,
   dsNumber: string
 ): Promise<ActionResult<SyncResult>> {
-  try {
-    const localDossier = await getDossierByStep(parcoursId, step);
+  const localDossier = await getDossierByStep(parcoursId, step);
 
-    if (!localDossier) {
-      return {
-        success: false,
-        error: "Dossier local non trouvé",
-      };
-    }
-
-    const dsResult = await graphqlClient.getDossierStatus(Number(dsNumber));
-
-    if (!dsResult) {
-      return {
-        success: false,
-        error: `Dossier ${dsNumber} introuvable côté DS (numéro inexistant ou brouillon non déposé)`,
-      };
-    }
-
-    const newStatus = dsResult.state as DSStatus;
-    const oldStatus = localDossier.dsStatus as DSStatus;
-
-    const dates = {
-      submittedAt: dsResult.datePassageEnConstruction ? new Date(dsResult.datePassageEnConstruction) : undefined,
-      instructedAt: dsResult.datePassageEnInstruction ? new Date(dsResult.datePassageEnInstruction) : undefined,
-    };
-
-    if (newStatus !== oldStatus) {
-      await updateDossierStatus(localDossier.id, newStatus, dates);
-
-      return {
-        success: true,
-        data: {
-          updated: true,
-          oldStatus,
-          newStatus,
-        },
-      };
-    }
-
-    // Statut inchangé mais on met à jour les dates si pas encore renseignées
-    if (dates.submittedAt || dates.instructedAt) {
-      await updateDossierStatus(localDossier.id, newStatus, dates);
-    }
-
+  if (!localDossier) {
     return {
-      success: true,
-      data: {
-        updated: false,
-        oldStatus,
-        newStatus: oldStatus,
-      },
+      success: false,
+      error: "Dossier local non trouvé",
     };
+  }
+
+  let dsResult: Awaited<ReturnType<typeof graphqlClient.getDossierStatus>>;
+  try {
+    dsResult = await graphqlClient.getDossierStatus(Number(dsNumber));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    // Trace le verdict DN même en erreur (pour le diagnostic en lecture DB).
+    await recordDnProbeState(localDossier.id, probeStateFromError(message));
     console.error(`Erreur syncDossierStatus (step=${step}, dsNumber=${dsNumber}):`, error);
     return {
       success: false,
       error: `Sync dossier ${dsNumber} échouée: ${message}`,
     };
   }
+
+  if (!dsResult) {
+    await recordDnProbeState(localDossier.id, "not_found");
+    return {
+      success: false,
+      error: `Dossier ${dsNumber} introuvable côté DS (numéro inexistant ou brouillon non déposé)`,
+    };
+  }
+
+  // Verdict DN observé (succès) : état réel renvoyé par DN.
+  await recordDnProbeState(localDossier.id, dsResult.state);
+
+  const newStatus = dsResult.state as DSStatus;
+  const oldStatus = localDossier.dsStatus as DSStatus;
+
+  const dates = {
+    submittedAt: dsResult.datePassageEnConstruction ? new Date(dsResult.datePassageEnConstruction) : undefined,
+    instructedAt: dsResult.datePassageEnInstruction ? new Date(dsResult.datePassageEnInstruction) : undefined,
+  };
+
+  if (newStatus !== oldStatus) {
+    await updateDossierStatus(localDossier.id, newStatus, dates);
+
+    return {
+      success: true,
+      data: {
+        updated: true,
+        oldStatus,
+        newStatus,
+      },
+    };
+  }
+
+  // Statut inchangé mais on met à jour les dates si pas encore renseignées
+  if (dates.submittedAt || dates.instructedAt) {
+    await updateDossierStatus(localDossier.id, newStatus, dates);
+  }
+
+  return {
+    success: true,
+    data: {
+      updated: false,
+      oldStatus,
+      newStatus: oldStatus,
+    },
+  };
+}
+
+/** Normalise un message d'erreur DN en verdict de sondage. */
+function probeStateFromError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("not found") || m.includes("not_found")) return "not_found";
+  if (m.includes("unauthorized")) return "unauthorized";
+  return "api_error";
 }
 
 interface RecomputeResult {

@@ -1,6 +1,10 @@
+import { and, eq, isNotNull, isNull, inArray } from "drizzle-orm";
 import { parcoursRepo, dossierDsRepo, userRepo } from "@/shared/database/repositories";
+import { db } from "@/shared/database/client";
+import { parcoursPrevention, dossiersDemarchesSimplifiees, syncRunEntries } from "@/shared/database/schema";
 import { graphqlClient } from "@/features/parcours/dossiers-ds/adapters/graphql/client";
 import { prefillClient } from "@/features/parcours/dossiers-ds/adapters";
+import { recordDnProbeState } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import {
   classifyDossierAnomaly,
@@ -205,4 +209,59 @@ export async function searchEligibiliteByEmail(parcoursId: string): Promise<{ hi
   }
 
   return { hits, capped };
+}
+
+/** Cap défensif du sondage DN à la demande (borne le coût / les appels DN). */
+const PROBE_CAP = 300;
+
+/**
+ * Sonde DN (lecture seule) le dossier de l'étape courante des parcours actifs **en
+ * sync-erreur**, et persiste le verdict (`dn_probe_state`) via la sync. Permet de rafraîchir
+ * la « vérité DN » de la liste à la demande, sans attendre le prochain CRON. Borné à la
+ * sous-population en erreur (≪ tout le parc).
+ */
+export async function probeDnForSyncErrors(): Promise<{ probed: number; capped: boolean }> {
+  const errorRows = await db
+    .select({ parcoursId: syncRunEntries.parcoursId })
+    .from(syncRunEntries)
+    .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, syncRunEntries.parcoursId))
+    .where(
+      and(
+        isNotNull(syncRunEntries.error),
+        isNull(parcoursPrevention.archivedAt),
+        isNull(parcoursPrevention.completedAt)
+      )
+    );
+  const ids = [...new Set(errorRows.map((r) => r.parcoursId))];
+  if (ids.length === 0) return { probed: 0, capped: false };
+
+  // Dossier de l'étape courante (avec un numéro DN) de ces parcours.
+  const dossiers = await db
+    .select({ id: dossiersDemarchesSimplifiees.id, dsNumber: dossiersDemarchesSimplifiees.dsNumber })
+    .from(dossiersDemarchesSimplifiees)
+    .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, dossiersDemarchesSimplifiees.parcoursId))
+    .where(
+      and(
+        inArray(dossiersDemarchesSimplifiees.parcoursId, ids),
+        eq(dossiersDemarchesSimplifiees.step, parcoursPrevention.currentStep),
+        isNotNull(dossiersDemarchesSimplifiees.dsNumber)
+      )
+    );
+
+  const capped = dossiers.length > PROBE_CAP;
+  const batch = dossiers.slice(0, PROBE_CAP);
+
+  let probed = 0;
+  for (const d of batch) {
+    if (!d.dsNumber) continue;
+    try {
+      const status = await graphqlClient.getDossierStatus(Number(d.dsNumber));
+      await recordDnProbeState(d.id, status ? status.state : "not_found");
+    } catch (err) {
+      await recordDnProbeState(d.id, toDsError(err));
+    }
+    probed++;
+    await sleep(SLEEP_MS);
+  }
+  return { probed, capped };
 }

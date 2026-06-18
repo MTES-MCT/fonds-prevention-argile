@@ -8,6 +8,7 @@ import { getDemarchesSante } from "../services/demarches-sante.service";
 import {
   getParcoursDiagnosticDetail,
   searchEligibiliteByEmail,
+  probeDnForSyncErrors,
   type ParcoursDiagnosticDetail,
   type DsEmailHit,
 } from "../services/diagnostics-detail.service";
@@ -70,6 +71,20 @@ export async function getParcoursDiagnosticDetailAction(
   } catch (error) {
     console.error("Erreur getParcoursDiagnosticDetailAction:", error);
     return { success: false, error: "Erreur lors du cross-check DS" };
+  }
+}
+
+/** Sonde DN live (borné à la sous-population en sync-erreur) et persiste les verdicts. */
+export async function probeDnSyncErrorsAction(): Promise<ActionResult<{ probed: number; capped: boolean }>> {
+  const guard = await ensureSuperAdmin();
+  if (!guard.ok) return { success: false, error: guard.error };
+
+  try {
+    const result = await probeDnForSyncErrors();
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Erreur probeDnSyncErrorsAction:", error);
+    return { success: false, error: "Erreur lors du sondage DN" };
   }
 }
 

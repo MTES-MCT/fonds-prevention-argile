@@ -61,9 +61,10 @@ Outillage (scripts ops, dry-run par défaut, `--apply` pour écrire) :
 
 - Les parcours réellement corrigés **quittent** la liste sync-erreur au prochain chargement.
 - La remédiation est sûre par construction (vérification DN avant écriture) et rejouable.
-- Limite assumée : la **liste** du diagnostic reste DB-only (aucun appel DN) ; les sous-cas
-  fins (drop-off vs mismatch vs existant) ne sont visibles que sur la **page de détail**
-  (cross-check DN live). Une évolution « liste enrichie DN » est proposée dans la doc.
+- La **liste** du diagnostic reste DB-only mais affiche désormais un **verdict DN** persisté
+  par la sync (`dn_probe_state`) + une sonde live à la demande bornée à la sous-population en
+  erreur (cf. doc §7). Les sous-cas fins (drop-off vs mismatch) restent affinés sur la **page
+  de détail** (cross-check DN live + recherche par email).
 - Le drop-off de fond (préremplis non complétés) persiste tant qu'on crée le dossier DN au
   clic ; le diagnostic + les scripts permettent de le traiter en continu.
 

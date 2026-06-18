@@ -8,6 +8,7 @@ import {
   DiagnosticState,
   DIAGNOSTIC_STATE_ORDER,
   SEUIL_BLOQUE_JOURS,
+  dnVerdictOf,
   type DiagnosticRow,
   type DiagnosticsResult,
 } from "../domain/diagnostics.types";
@@ -38,6 +39,8 @@ interface RawRow {
   instructedAt: Date | null;
   lastSyncAt: Date | null;
   dossierCreatedAt: Date | null;
+  dnProbeState: string | null;
+  dnProbeAt: Date | null;
   eligAccepteId: string | null;
   userNom: string | null;
   userPrenom: string | null;
@@ -133,6 +136,8 @@ export async function getParcoursDiagnostics(): Promise<DiagnosticsResult> {
       instructedAt: dossiersDemarchesSimplifiees.instructedAt,
       lastSyncAt: dossiersDemarchesSimplifiees.lastSyncAt,
       dossierCreatedAt: dossiersDemarchesSimplifiees.createdAt,
+      dnProbeState: dossiersDemarchesSimplifiees.dnProbeState,
+      dnProbeAt: dossiersDemarchesSimplifiees.dnProbeAt,
       eligAccepteId: elig.id,
       userNom: users.nom,
       userPrenom: users.prenom,
@@ -211,6 +216,9 @@ export async function getParcoursDiagnostics(): Promise<DiagnosticsResult> {
       lastSyncAt: r.lastSyncAt,
       ageDays: ageDays(referenceDate(state, r)),
       detail,
+      dnProbeState: r.dnProbeState,
+      dnProbeAt: r.dnProbeAt,
+      dnVerdict: dnVerdictOf(r.dnProbeState),
     };
   });
 

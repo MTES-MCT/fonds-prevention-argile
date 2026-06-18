@@ -31,6 +31,10 @@ export const dossiersDemarchesSimplifiees = pgTable("dossiers_demarches_simplifi
     .defaultNow()
     .$onUpdate(() => new Date()),
   lastSyncAt: timestamp("last_sync_at", { mode: "date" }),
+
+  // Verdict DN observé au dernier sondage de la sync (état réel côté DN)
+  dnProbeState: varchar("dn_probe_state", { length: 30 }),
+  dnProbeAt: timestamp("dn_probe_at", { mode: "date" }),
 });
 
 // Relations : un dossier appartient à un parcours

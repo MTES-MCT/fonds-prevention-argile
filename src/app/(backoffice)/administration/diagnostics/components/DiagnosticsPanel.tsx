@@ -5,11 +5,13 @@ import Link from "next/link";
 import {
   listDiagnosticsAction,
   getDemarchesSanteAction,
+  probeDnSyncErrorsAction,
 } from "@/features/backoffice/administration/diagnostics/actions/diagnostics.actions";
 import {
   DiagnosticState,
   DIAGNOSTIC_STATE_META,
   DIAGNOSTIC_STATE_ORDER,
+  DN_VERDICT_META,
   DemarcheSanteStatus,
   type DiagnosticSeverity,
   type DiagnosticsResult,
@@ -51,12 +53,20 @@ function userLabel(r: DiagnosticRow): string {
   return name || r.userEmail || r.userId.slice(0, 8);
 }
 
+function daysAgoLabel(d: Date | string | null): string {
+  if (!d) return "";
+  const n = Math.floor((Date.now() - new Date(d).getTime()) / 86_400_000);
+  return n <= 0 ? "aujourd'hui" : `il y a ${n} j`;
+}
+
 export default function DiagnosticsPanel() {
   const [diagnostics, setDiagnostics] = useState<DiagnosticsResult | null>(null);
   const [sante, setSante] = useState<DemarcheSante[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<DiagnosticState | "all">("all");
+  const [isProbing, setIsProbing] = useState(false);
+  const [probeMsg, setProbeMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -70,6 +80,21 @@ export default function DiagnosticsPanel() {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  const runProbe = useCallback(async () => {
+    setIsProbing(true);
+    setProbeMsg(null);
+    const res = await probeDnSyncErrorsAction();
+    if (res.success) {
+      setProbeMsg(
+        `Sondage DN terminé : ${res.data.probed} dossier(s) vérifié(s)${res.data.capped ? " (plafonné)" : ""}.`
+      );
+      await load();
+    } else {
+      setError(res.error || "Erreur lors du sondage DN");
+    }
+    setIsProbing(false);
   }, [load]);
 
   const visibleRows = useMemo(() => {
@@ -91,6 +116,15 @@ export default function DiagnosticsPanel() {
               </p>
             </div>
             <div className="fr-col-auto" style={{ textAlign: "right" }}>
+              <button
+                type="button"
+                className="fr-btn fr-btn--secondary fr-mr-2w"
+                onClick={runProbe}
+                disabled={isProbing || isLoading}
+                title="Interroge DN en direct pour la sous-population en sync-erreur et met à jour le verdict DN">
+                <span className="fr-icon-radar-line fr-icon--sm mr-2" aria-hidden="true" />
+                {isProbing ? "Sondage DN…" : "Sonder DN (erreurs)"}
+              </button>
               <button type="button" className="fr-btn fr-btn--secondary" onClick={load} disabled={isLoading}>
                 <span className="fr-icon-refresh-line fr-icon--sm mr-2" aria-hidden="true" />
                 Rafraîchir
@@ -101,6 +135,12 @@ export default function DiagnosticsPanel() {
           {error && (
             <div className="fr-alert fr-alert--error fr-mb-4w">
               <p>{error}</p>
+            </div>
+          )}
+
+          {probeMsg && (
+            <div className="fr-alert fr-alert--info fr-alert--sm fr-mb-4w">
+              <p>{probeMsg}</p>
             </div>
           )}
 
@@ -194,6 +234,7 @@ export default function DiagnosticsPanel() {
                           <th>Étape / statut</th>
                           <th>État</th>
                           <th>Dossier DN</th>
+                          <th>Verdict DN</th>
                           <th>Âge (j)</th>
                           <th>Détail</th>
                           <th>Action</th>
@@ -226,6 +267,20 @@ export default function DiagnosticsPanel() {
                                   </>
                                 ) : (
                                   "-"
+                                )}
+                              </td>
+                              <td style={{ fontSize: "0.8rem" }}>
+                                <span
+                                  className={`fr-badge fr-badge--sm ${SEVERITY_BADGE[DN_VERDICT_META[r.dnVerdict].severity]}`}>
+                                  {DN_VERDICT_META[r.dnVerdict].label}
+                                </span>
+                                {r.dnProbeState && (
+                                  <span
+                                    style={{ display: "block", color: "var(--text-mention-grey)" }}
+                                    title={r.dnProbeAt ? new Date(r.dnProbeAt).toLocaleString("fr-FR") : ""}>
+                                    {r.dnProbeState}
+                                    {r.dnProbeAt ? ` · ${daysAgoLabel(r.dnProbeAt)}` : ""}
+                                  </span>
                                 )}
                               </td>
                               <td>{r.ageDays ?? "-"}</td>
