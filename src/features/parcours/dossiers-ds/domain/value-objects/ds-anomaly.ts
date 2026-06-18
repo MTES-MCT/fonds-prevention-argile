@@ -11,6 +11,8 @@ import { DSStatus } from "./ds-status";
 export enum DsAnomalyType {
   /** Brouillon créé mais jamais déposé par l'usager (drop-off). Pas un bug. */
   JAMAIS_DEPOSE = "jamais_depose",
+  /** ds_status NULL (jamais synchronisé) mais le dossier existe côté DS : une sync suffit. */
+  JAMAIS_SYNCHRONISE_EXISTE = "jamais_synchronise_existe",
   /** DS diverge de notre état (plus avancé, refusé...) sans qu'on l'ait capté. */
   DESYNC = "desync",
   /** DS = accepté alors qu'on est en_instruction : à propager (recompute + moveToNextStep). */
@@ -47,6 +49,13 @@ export function classifyDossierAnomaly({ localStatus, ds }: DsCrossCheckInput): 
 
   const s = ds.state;
 
+  // Jamais confirmé chez nous : ds_status NULL = dossier jamais synchronisé (créé, pas de
+  // statut). not_found / unauthorized sont déjà traités plus haut. S'il reste un état DS,
+  // c'est que le dossier existe côté DS et qu'une simple sync recopiera l'état.
+  if (!localStatus) {
+    return s ? DsAnomalyType.JAMAIS_SYNCHRONISE_EXISTE : DsAnomalyType.INATTENDU;
+  }
+
   if (localStatus === DSStatus.EN_CONSTRUCTION) {
     // On le croit en construction : si DS aussi → jamais déposé ; sinon DS a avancé.
     if (s === "en_construction") return DsAnomalyType.JAMAIS_DEPOSE;
@@ -77,6 +86,12 @@ export const DS_ANOMALY_EXPLANATIONS: Record<DsAnomalyType, DsAnomalyExplanation
       "L'usager a créé le dossier mais ne l'a jamais déposé sur Démarches Simplifiées. DS purge ces brouillons après environ 3 mois. Ce n'est pas un bug.",
     isBug: false,
   },
+  [DsAnomalyType.JAMAIS_SYNCHRONISE_EXISTE]: {
+    label: "Jamais synchronisé (existe côté DS)",
+    explanation:
+      "Le dossier existe côté Démarches Numériques mais n'a jamais été synchronisé chez nous (ds_status absent). Relancer une synchronisation recopie l'état réel et débloque le parcours.",
+    isBug: true,
+  },
   [DsAnomalyType.DESYNC]: {
     label: "Désynchronisé",
     explanation:
@@ -103,7 +118,7 @@ export const DS_ANOMALY_EXPLANATIONS: Record<DsAnomalyType, DsAnomalyExplanation
   [DsAnomalyType.DS_SUPPRIME]: {
     label: "Introuvable côté DS",
     explanation:
-      "Le numéro de dossier stocké est introuvable côté Démarches Simplifiées (dossier purgé, archivé, ou numéro erroné). Rechercher le demandeur par email côté DS pour un éventuel rattachement.",
+      "Le numéro stocké est introuvable côté Démarches Numériques (prefill jamais complété puis purgé, dossier expiré, ou numéro erroné). Voir la recherche par email ci-dessous : un dossier sous un AUTRE numéro = mismatch à relinker ; aucun dossier = drop-off (l'usager n'a rien déposé) → reset.",
     isBug: true,
   },
   [DsAnomalyType.DS_INACCESSIBLE]: {

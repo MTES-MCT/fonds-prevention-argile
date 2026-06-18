@@ -73,13 +73,15 @@ export async function getParcoursDiagnosticDetail(parcoursId: string): Promise<P
       await sleep(SLEEP_MS);
     }
 
-    const anomalyType =
-      d.dsNumber && d.dsStatus
-        ? classifyDossierAnomaly({
-            localStatus: d.dsStatus,
-            ds: dsError ? { error: dsError } : { state: dsState ?? undefined },
-          })
-        : null;
+    // On classifie dès qu'il y a un numéro DN, MÊME si ds_status est NULL (jamais
+    // synchronisé) : c'est justement le cas des dossiers "drop-off / prefill jamais
+    // complété" qu'on veut diagnostiquer. classifyDossierAnomaly gère localStatus null.
+    const anomalyType = d.dsNumber
+      ? classifyDossierAnomaly({
+          localStatus: d.dsStatus,
+          ds: dsError ? { error: dsError } : { state: dsState ?? undefined },
+        })
+      : null;
 
     crossChecks.push({
       step: d.step,

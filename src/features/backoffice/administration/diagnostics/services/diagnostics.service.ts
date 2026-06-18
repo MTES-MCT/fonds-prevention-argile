@@ -45,7 +45,13 @@ interface RawRow {
 }
 
 function classify(r: RawRow, syncError: string | undefined): DiagnosticState {
-  if (syncError) return DiagnosticState.SYNC_ERREUR;
+  if (syncError) {
+    // Dépôt RÉELLEMENT confirmé par une sync (last_sync_at renseigné) mais jamais instruit
+    // → dossier DN vraisemblablement expiré/supprimé. On exige last_sync_at car un
+    // `submitted_at` sans sync est un faux dépôt legacy (création pré-#216), pas un vrai dépôt.
+    if (r.dossierId && r.lastSyncAt && r.submittedAt && !r.instructedAt) return DiagnosticState.SYNC_ERREUR_DEPOSE;
+    return DiagnosticState.SYNC_ERREUR;
+  }
 
   // Pas de dossier pour l'étape courante.
   if (!r.dossierId) {
@@ -78,6 +84,7 @@ function classify(r: RawRow, syncError: string | undefined): DiagnosticState {
 
 function referenceDate(state: DiagnosticState, r: RawRow): Date | null {
   switch (state) {
+    case DiagnosticState.SYNC_ERREUR_DEPOSE:
     case DiagnosticState.BLOQUE:
     case DiagnosticState.DEPOSE_EN_ATTENTE:
       return r.submittedAt ?? r.dossierCreatedAt;
@@ -162,7 +169,7 @@ export async function getParcoursDiagnostics(): Promise<DiagnosticsResult> {
     counts[state] += 1;
 
     const detail =
-      state === DiagnosticState.SYNC_ERREUR
+      state === DiagnosticState.SYNC_ERREUR || state === DiagnosticState.SYNC_ERREUR_DEPOSE
         ? (syncError ?? null)
         : state === DiagnosticState.ORPHELIN
           ? "Aucun dossier d'éligibilité accepté rattaché"

@@ -9,7 +9,9 @@ import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
  */
 export enum DiagnosticState {
   // --- Anomalies (prioritaires sur l'état du dossier) ---
-  /** La dernière synchronisation de ce parcours a renvoyé une erreur. */
+  /** Sync en erreur sur un dossier déposé mais jamais instruit : dossier DN probablement expiré/supprimé. */
+  SYNC_ERREUR_DEPOSE = "sync_erreur_depose",
+  /** La dernière synchronisation a renvoyé une erreur (hors cas « déposé non instruit »). */
   SYNC_ERREUR = "sync_erreur",
   /** Étape avancée (diagnostic+) sans dossier d'éligibilité accepté : dossier perdu. */
   ORPHELIN = "orphelin",
@@ -43,9 +45,16 @@ export const DIAGNOSTIC_STATE_META: Record<
   DiagnosticState,
   { label: string; description: string; severity: DiagnosticSeverity }
 > = {
+  [DiagnosticState.SYNC_ERREUR_DEPOSE]: {
+    label: "Sync erreur (déposé non instruit)",
+    description:
+      "Dépôt confirmé par une sync (last_sync_at) mais jamais pris en instruction, et la synchro échoue désormais : le dossier DN a probablement expiré ou été supprimé. L'usager doit recréer un dossier.",
+    severity: "error",
+  },
   [DiagnosticState.SYNC_ERREUR]: {
-    label: "Sync en erreur",
-    description: "La dernière synchronisation a échoué (token non instructeur, dossier introuvable, erreur API…).",
+    label: "Sync erreur (autre)",
+    description:
+      "Synchro échouée sur un dossier jamais confirmé côté DN (prefill jamais complété / brouillon), token non instructeur, ou dossier déjà instruit. À investiguer.",
     severity: "error",
   },
   [DiagnosticState.ORPHELIN]: {
@@ -103,6 +112,7 @@ export const DIAGNOSTIC_STATE_META: Record<
 
 /** Ordre d'affichage des filtres : anomalies d'abord, puis états normaux. */
 export const DIAGNOSTIC_STATE_ORDER: DiagnosticState[] = [
+  DiagnosticState.SYNC_ERREUR_DEPOSE,
   DiagnosticState.SYNC_ERREUR,
   DiagnosticState.ORPHELIN,
   DiagnosticState.JAMAIS_SYNCHRONISE,

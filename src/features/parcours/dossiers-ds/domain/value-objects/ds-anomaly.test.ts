@@ -66,6 +66,20 @@ describe("classifyDossierAnomaly", () => {
     );
   });
 
+  it("ds_status null + not_found → introuvable côté DS (drop-off / prefill non complété)", () => {
+    expect(classifyDossierAnomaly({ localStatus: null, ds: { error: "not_found" } })).toBe(DsAnomalyType.DS_SUPPRIME);
+  });
+
+  it("ds_status null + DS a le dossier → jamais synchronisé (existe côté DS) → resync", () => {
+    const t = classifyDossierAnomaly({ localStatus: null, ds: { state: "en_instruction" } });
+    expect(t).toBe(DsAnomalyType.JAMAIS_SYNCHRONISE_EXISTE);
+    expect(DS_ANOMALY_EXPLANATIONS[t].isBug).toBe(true);
+  });
+
+  it("ds_status null sans état ni erreur → inattendu", () => {
+    expect(classifyDossierAnomaly({ localStatus: null, ds: {} })).toBe(DsAnomalyType.INATTENDU);
+  });
+
   it("chaque type a une explication métier", () => {
     for (const type of Object.values(DsAnomalyType)) {
       const exp = DS_ANOMALY_EXPLANATIONS[type];
