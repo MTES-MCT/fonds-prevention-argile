@@ -147,11 +147,11 @@ Ne touche **ni** à la validation AMO (déjà `LOGEMENT_ELIGIBLE`), **ni** à
 > `ds:probe-dossiers --email-crosscheck` d'abord** : s'il existe des mismatches, les traiter
 > par relink (hors script pour l'instant) avant le reset en masse.
 
-> **Limite à connaître (diagnostic « collant »)** : le diagnostic classe en sync erreur dès
-> qu'une entrée `sync_run_entries.error` non-null existe, sans la comparer aux syncs réussies
-> postérieures. Après reset, ces parcours **restent affichés en sync erreur** tant que cette
-> logique n'est pas corrigée (amélioration prévue : comparer l'erreur à la date du dossier
-> courant).
+> **Bon à savoir (erreur obsolète auto-résolue)** : depuis le fix « erreur active », le
+> diagnostic ne compte plus une erreur de sync que si elle concerne encore le dossier courant
+> (dossier présent, erreur postérieure à sa création, et aucune sync réussie depuis). Donc
+> **après reset (dossier supprimé) ou resync réussie, le parcours quitte l'état sync-erreur**
+> au prochain chargement — l'historique `sync_run_entries` reste conservé.
 
 ### `pnpm fix:clean-faux-depots` — nettoyage des faux dépôts legacy
 
@@ -166,20 +166,58 @@ pnpm fix:clean-faux-depots           # dry-run (compte + ventilation par étape)
 pnpm fix:clean-faux-depots --apply   # applique
 ```
 
+### `pnpm fix:relink-eligibilite` — relink d'un mismatch
+
+Pour un dossier `EXISTE_SOUS_AUTRE_NUMERO` : repointe le dossier local vers le **vrai
+numéro** (souvent déjà accepté) et remet ses colonnes d'état à NULL ; la prochaine sync
+recopie l'état réel et fait avancer le parcours. À utiliser **à la place du reset** (qui
+ferait un doublon). Cible non archivée, état le plus avancé ; ambiguïté → laissé pour
+traitement manuel.
+
+```bash
+# explicite (numéro cible confirmé via le probe)
+pnpm fix:relink-eligibilite --parcours-id=<uuid> --to-ds-number=<n> --apply
+# auto-découverte des mismatches
+pnpm fix:relink-eligibilite --from-sync-errors            # dry-run
+pnpm fix:relink-eligibilite --from-sync-errors --apply
+```
+
+Après relink : **relancer une synchro** pour recopier l'état réel.
+
 ---
 
-## 4. Playbook de décision
+## 4. Playbook final
 
-1. **Diagnostiquer** : `pnpm ds:probe-dossiers --from-sync-errors --email-crosscheck`.
-2. **EN_INSTRUCTION / DEPOSE_NON_INSTRUIT / TRAITE** (existent côté DN) → **relancer une
-   sync** : bouton « Lancer une synchro maintenant » (`/administration/synchronisations`,
-   super-admin) ou attendre le CRON. Le miroir local se corrige, parcours débloqué.
-3. **GONE — ABSENT (drop-off) ou déposé-puis-purgé** → `fix:eligibilite-sync-error --apply`
-   (nouveau lien « commencer »).
-4. **GONE — EXISTE_SOUS_AUTRE_NUMERO (mismatch)** → **relink** (mettre à jour le `ds_number`
-   vers le dossier réel), pas de reset. À traiter à part.
-5. **PROBE_ERREUR / unauthorized** → vérifier que la démarche est publiée et que le token est
-   instructeur : `pnpm ds:check-permissions`.
+Ordre d'exécution recommandé. Chaque étape indique le(s) cas qu'elle résout.
+
+1. **Diagnostiquer** (lecture seule) :
+   `pnpm ds:probe-dossiers --from-sync-errors --email-crosscheck`.
+
+2. **Relancer une synchro DS** (bouton « Lancer une synchro maintenant »,
+   `/administration/synchronisations`).
+   → Résout **EN_INSTRUCTION / DEPOSE_NON_INSTRUIT / TRAITE** (dossiers qui existent encore
+   sur DN) : le miroir local se met à jour, le parcours se débloque et quitte la sync-erreur.
+
+3. **Relinker les mismatches** (avant le reset) :
+   `pnpm fix:relink-eligibilite --from-sync-errors` puis `--apply`, puis **resync**.
+   → Résout **GONE / EXISTE_SOUS_AUTRE_NUMERO** : récupère le dossier réel (souvent accepté)
+   sans doublon. Fait que ces parcours seront vus `EXISTS` (donc épargnés) à l'étape 4.
+
+4. **Reset des drop-offs restants** :
+   `pnpm fix:eligibilite-sync-error` (dry-run) puis `--apply`.
+   → Résout **GONE / ABSENT** : supprime le pointeur mort, l'usager retrouve le CTA
+   « Remplir le formulaire » (nouveau lien « commencer »). Le parcours quitte la sync-erreur.
+
+5. **Nettoyer les faux dépôts legacy** (hygiène, indépendant) :
+   `pnpm fix:clean-faux-depots` puis `--apply`.
+   → Corrige les `submitted_at` trompeurs (création pré-#216) : diagnostic et stats fiables.
+
+6. **PROBE_ERREUR / unauthorized** (s'il y en a) :
+   `pnpm ds:check-permissions` → vérifier publication de la démarche + token instructeur.
+
+> Depuis le fix « erreur active » (§2), reset et resync **font effectivement disparaître**
+> les parcours de la liste sync-erreur au prochain chargement (l'erreur obsolète n'est plus
+> comptée). Plus de « collant ».
 
 ---
 
@@ -189,6 +227,7 @@ pnpm fix:clean-faux-depots --apply   # applique
 | ---------------------------------- | ------------------------------------------------------------------------------------------- |
 | Sonde DN lecture-seule             | `scripts/ops/ds/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                               |
 | Reset auto-vérifiant               | `scripts/ops/fix/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`)       |
+| Relink mismatch                    | `scripts/ops/fix/relink-eligibilite-dossier.ts` (`pnpm fix:relink-eligibilite`)             |
 | Nettoyage faux dépôts legacy       | `scripts/ops/fix/clean-faux-depots-submitted-at.ts` (`pnpm fix:clean-faux-depots`)          |
 | Vérif permissions / publication DN | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                      |
 | Recherche dossier par email (UI)   | `searchEligibiliteByEmail` — page `/administration/diagnostics/[parcoursId]` (« Analyser ») |
@@ -196,7 +235,6 @@ pnpm fix:clean-faux-depots --apply   # applique
 | États diagnostic                   | `src/features/backoffice/administration/diagnostics/domain/diagnostics.types.ts`            |
 | Sync DN                            | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                             |
 | URL « commencer » vs « reprendre » | `src/features/parcours/dossiers-ds/utils/ds-url.utils.ts`                                   |
-| Nettoyage faux dépôts legacy       | `scripts/ops/fix/clean-faux-depots-submitted-at.ts` (`pnpm fix:clean-faux-depots`)          |
 
 ---
 
@@ -224,3 +262,51 @@ Pourquoi des dossiers « pas vraiment déposés » portent un `submitted_at` :
   côté stats).
 - Depuis #216, le code de création **ne pose plus** `submitted_at` ; le problème est donc
   **borné aux dossiers créés avant #216** et ne se reproduit pas.
+
+---
+
+## 7. Évolution proposée : diagnostic enrichi DN (au-delà du DB-only)
+
+Aujourd'hui la **liste** du diagnostic est DB-only : rapide, scanne tous les parcours, mais
+ne distingue pas les sous-cas qui dépendent de DN (drop-off vs mismatch vs existant). Seule la
+**page de détail** fait un cross-check DN live. Objectif : que la liste affiche les verdicts DN
+**comme le probe**, sans bloquer l'UI ni marteler l'API DN.
+
+**Tension** : un cross-check live coûte N appels DN (un `getDossier` par dossier) + une
+pagination de la démarche pour le cross-check email. Le faire **synchrone** sur tous les
+parcours à chaque ouverture de page est intenable (lenteur + rate-limit DN).
+
+### Plan en 3 incréments
+
+1. **Persister le verdict DN pendant la sync (quasi gratuit).** Le CRON de sync appelle déjà
+   `getDossierStatus` pour chaque dossier. Ajouter à `dossiers_demarches_simplifiees` deux
+   colonnes — `dn_probe_state` (`en_construction | en_instruction | accepte | refuse |
+sans_suite | not_found`) et `dn_probe_at` — écrites par `syncDossierStatus` (succès → état,
+   « not found » → `not_found`). La liste lit alors un verdict **DN-fiable** (latence ≤ cadence
+   CRON, ~8 h), toujours en lecture DB. Migration Drizzle + écriture dans la sync.
+
+2. **Classer la liste sur le verdict DN.** `getParcoursDiagnostics` utilise `dn_probe_state`
+   (au lieu de déduire du `ds_status` local) pour produire les groupes du probe : `GONE`
+   (not_found), `EXISTS` (état présent → resync), etc. Réutiliser `classifyDossierAnomaly`
+   (déjà partagé) en lui passant `{ state | error }` issu de `dn_probe_state`.
+
+3. **Rafraîchissement live à la demande (borné).** Un bouton « Sonder DN maintenant » sur la
+   liste filtrée (ex. la sous-population sync-erreur, ~quelques dizaines) déclenche une server
+   action qui exécute le probe **live** (avec `sleep`), met à jour les verdicts à l'écran et
+   persiste `dn_probe_state`/`dn_probe_at`. Borne le coût à la sélection, pas à tout le parc.
+
+### Cross-check email (mismatch)
+
+La détection « existe sous un autre numéro » nécessite une pagination complète de la démarche :
+trop coûteuse pour la liste. Elle reste **à la demande** (déjà dispo par parcours via
+« Analyser » → `searchEligibiliteByEmail`). Option : une action batch « détecter les
+mismatches » qui pagine **une fois** et marque les candidats `GONE` concernés.
+
+### Trade-offs
+
+- **Incrément 1+2** : le meilleur rapport valeur/risque (réutilise les appels DN déjà faits,
+  liste fiable à ~8 h près, pas de surcoût DN). Coût : une migration + écriture sync.
+- **Incrément 3** : fraîcheur temps réel mais bornée à une sélection ; à n'exposer qu'au
+  super-admin.
+- Garder la possibilité de **filtrer sur le verdict DN persisté** dans la liste (nouveaux
+  filtres « disparu côté DN », « existe à resync »).

@@ -443,10 +443,11 @@ Le diagnostic distingue deux états de sync-erreur (détection en base, sans app
 **« Sync erreur (déposé non instruit) »** (`SYNC_ERREUR_DEPOSE` — `submitted_at` + pas
 d'`instructed_at`, piste expiration DN) et **« Sync erreur (autre) »** (`SYNC_ERREUR`).
 
-> Limitation connue : le diagnostic classe en sync-erreur dès qu'une entrée
-> `sync_run_entries.error` non-null existe, sans la comparer aux syncs réussies
-> postérieures. Après reset, ces parcours **restent affichés en sync-erreur** tant
-> que cette logique de classement n'est pas corrigée (hors scope du script).
+> Erreur obsolète auto-résolue : le diagnostic ne compte une `sync_run_entries.error`
+> que si elle concerne encore le dossier courant (dossier présent, erreur postérieure à
+> sa création, aucune sync réussie depuis). Après reset (dossier supprimé) ou resync
+> réussie, le parcours **quitte** l'état sync-erreur au prochain chargement. L'historique
+> `sync_run_entries` reste conservé.
 
 ---
 
