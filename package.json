@@ -41,8 +41,11 @@
     "audit:parcours-ds": "tsx scripts/ops/audit/audit-parcours-ds-integrity.ts",
     "audit:dossiers-bloques": "tsx scripts/ops/audit/audit-dossiers-bloques.ts",
     "ds:check-permissions": "tsx scripts/ops/ds/check-ds-permissions.ts",
+    "ds:probe-dossiers": "tsx --tsconfig scripts/tsconfig.json scripts/ops/ds/probe-dossiers.ts",
     "fix:double-progression": "tsx scripts/ops/fix/fix-double-progression-amo.ts",
     "fix:amo-non-eligible": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reset-amo-non-eligible.ts",
+    "fix:eligibilite-sync-error": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reset-eligibilite-sync-error.ts",
+    "fix:clean-faux-depots": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/clean-faux-depots-submitted-at.ts",
     "rga:import": "tsx scripts/import/rga-zones/import-rga-zones.ts"
   },
   "dependencies": {
