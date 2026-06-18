@@ -37,6 +37,44 @@ export interface DossierCrossCheck {
   dsError: string | null;
   anomalyType: DsAnomalyType | null;
   explanation: DsAnomalyExplanation | null;
+  /** Chronologie pas-à-pas du « comment on en est arrivé là » (cas drop-off / faux dépôt). */
+  timeline: string[] | null;
+}
+
+/**
+ * Reconstitue la chronologie d'un dossier « drop-off » (jamais confirmé côté DN et
+ * introuvable). Détaille surtout le cas du `submitted_at` legacy laissé par la PR #216.
+ */
+function buildDossierTimeline(d: {
+  submittedAt: Date | null;
+  lastSyncAt: Date | null;
+  dsError: string | null;
+}): string[] | null {
+  // Ciblé : jamais confirmé côté DN (last_sync_at NULL) ET introuvable (not_found) = drop-off.
+  if (d.lastSyncAt || d.dsError !== "not_found") return null;
+
+  const fauxDepotLegacy = !!d.submittedAt;
+  const steps: string[] = [
+    "L'usager arrive à l'étape éligibilité et clique « Remplir le formulaire ». L'app crée un dossier prérempli sur Démarches Numériques (API de préremplissage) et stocke son numéro et le lien « commencer ».",
+  ];
+  if (fauxDepotLegacy) {
+    steps.push(
+      "Avant la PR #216, ce code de création posait aussi ds_status = en_construction et submitted_at = maintenant : le dossier était marqué « déposé » dès sa création, alors que l'usager n'avait encore rien rempli."
+    );
+  }
+  steps.push(
+    "L'usager n'a jamais ouvert ni complété le formulaire sur Démarches Numériques.",
+    "Démarches Numériques purge les dossiers préremplis non complétés après un délai : le dossier disparaît côté DN — la synchronisation renvoie désormais « Dossier not found »."
+  );
+  if (fauxDepotLegacy) {
+    steps.push(
+      "La PR #216 a repassé ds_status à NULL pour les dossiers jamais synchronisés (last_sync_at NULL), mais a laissé submitted_at en place. D'où l'état actuel : ds_status = NULL, last_sync_at = NULL, et un submitted_at trompeur qui est en réalité la date de CRÉATION, pas un vrai dépôt."
+    );
+  }
+  steps.push(
+    `Bilan : l'usager n'a jamais déposé (drop-off), le parcours reste bloqué en éligibilité avec un dossier fantôme. Remédiation : reset (nouveau lien « commencer »)${fauxDepotLegacy ? " puis nettoyage du faux submitted_at" : ""}.`
+  );
+  return steps;
 }
 
 export interface ParcoursDiagnosticDetail {
@@ -94,6 +132,7 @@ export async function getParcoursDiagnosticDetail(parcoursId: string): Promise<P
       dsError,
       anomalyType,
       explanation: anomalyType ? explainDsAnomaly(anomalyType) : null,
+      timeline: buildDossierTimeline({ submittedAt: d.submittedAt, lastSyncAt: d.lastSyncAt, dsError }),
     });
   }
 

@@ -82,6 +82,24 @@ function classify(r: RawRow, syncError: string | undefined): DiagnosticState {
   }
 }
 
+/**
+ * Une erreur de sync n'est « active » que si elle concerne le dossier de l'étape courante
+ * ET n'a pas été résolue depuis. Sinon elle est obsolète (reset, recréation, ou sync réussie
+ * postérieure) et ne doit plus classer le parcours en sync-erreur.
+ *
+ * Règles (erreur obsolète si) :
+ * - plus de dossier pour l'étape courante (reset) ;
+ * - le dossier courant est plus récent que l'erreur (recréé après l'erreur) ;
+ * - une sync a réussi depuis l'erreur (last_sync_at >= date de l'erreur).
+ */
+function resolveActiveError(r: RawRow, err: { error: string; at: Date } | undefined): string | undefined {
+  if (!err) return undefined;
+  if (!r.dossierId || !r.dossierCreatedAt) return undefined;
+  if (err.at < r.dossierCreatedAt) return undefined;
+  if (r.lastSyncAt && r.lastSyncAt >= err.at) return undefined;
+  return err.error;
+}
+
 function referenceDate(state: DiagnosticState, r: RawRow): Date | null {
   switch (state) {
     case DiagnosticState.SYNC_ERREUR_DEPOSE:
@@ -144,6 +162,7 @@ export async function getParcoursDiagnostics(): Promise<DiagnosticsResult> {
     .select({
       parcoursId: syncRunEntries.parcoursId,
       error: syncRunEntries.error,
+      createdAt: syncRunEntries.createdAt,
     })
     .from(syncRunEntries)
     .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, syncRunEntries.parcoursId))
@@ -156,15 +175,17 @@ export async function getParcoursDiagnostics(): Promise<DiagnosticsResult> {
     )
     .orderBy(desc(syncRunEntries.createdAt));
 
-  const errorByParcours = new Map<string, string>();
+  // Dernière erreur (la plus récente) par parcours, avec sa date pour juger si elle est encore active.
+  const errorByParcours = new Map<string, { error: string; at: Date }>();
   for (const e of errorEntries) {
-    if (e.error && !errorByParcours.has(e.parcoursId)) errorByParcours.set(e.parcoursId, e.error);
+    if (e.error && !errorByParcours.has(e.parcoursId))
+      errorByParcours.set(e.parcoursId, { error: e.error, at: e.createdAt });
   }
 
   const counts = Object.fromEntries(DIAGNOSTIC_STATE_ORDER.map((s) => [s, 0])) as Record<DiagnosticState, number>;
 
   const result: DiagnosticRow[] = rows.map((r) => {
-    const syncError = errorByParcours.get(r.parcoursId);
+    const syncError = resolveActiveError(r, errorByParcours.get(r.parcoursId));
     const state = classify(r, syncError);
     counts[state] += 1;
 
