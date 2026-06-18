@@ -453,26 +453,26 @@ d'`instructed_at`, piste expiration DN) et **« Sync erreur (autre) »** (`SYNC_
 
 ## 8. Fichiers clés
 
-| Rôle                                        | Fichier                                                                                |
-| ------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Schéma parcours                             | `src/shared/database/schema/parcours-prevention.ts`                                    |
-| Schéma dossiers DS                          | `src/shared/database/schema/dossiers-demarches-simplifiees.ts`                         |
-| Schéma historique CRON                      | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts`                       |
-| Repository parcours                         | `src/shared/database/repositories/parcours-prevention.repository.ts`                   |
-| Repository sync_runs                        | `src/shared/database/repositories/sync-run.repository.ts`                              |
-| Enums step / status                         | `src/shared/domain/value-objects/step.enum.ts`, `status.enum.ts`, `ds-status.enum.ts`  |
-| Mapping DS → interne                        | `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`                  |
-| Permissions / garde-fous                    | `src/features/parcours/core/services/parcours-permissions.service.ts`                  |
-| Progression d'étape                         | `src/features/parcours/core/services/parcours-progression.service.ts`                  |
-| Service sync DS                             | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                        |
-| Service sync batch (CRON)                   | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`            |
-| Vérif permissions / état démarches DS       | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                 |
-| Reset dossier éligibilité sync-erreur       | `scripts/ops/fix/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`)  |
-| Sonde lecture-seule dossiers DN             | `scripts/ops/ds/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                          |
-| Action UI sync                              | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                    |
-| Validation AMO (auto-progression CHOIX_AMO) | `src/features/parcours/amo/services/amo-validation.service.ts`                         |
-| Endpoint CRON                               | `src/app/api/cron/sync-parcours/route.ts`                                              |
-| Workflow CRON GitHub Actions                | `.github/workflows/cron-sync-parcours.yml`                                             |
-| Server actions admin                        | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts` |
-| Page liste runs                             | `src/app/(backoffice)/administration/synchronisations/page.tsx`                        |
-| Page détail run                             | `src/app/(backoffice)/administration/synchronisations/[id]/page.tsx`                   |
+| Rôle                                        | Fichier                                                                                        |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Schéma parcours                             | `src/shared/database/schema/parcours-prevention.ts`                                            |
+| Schéma dossiers DS                          | `src/shared/database/schema/dossiers-demarches-simplifiees.ts`                                 |
+| Schéma historique CRON                      | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts`                               |
+| Repository parcours                         | `src/shared/database/repositories/parcours-prevention.repository.ts`                           |
+| Repository sync_runs                        | `src/shared/database/repositories/sync-run.repository.ts`                                      |
+| Enums step / status                         | `src/shared/domain/value-objects/step.enum.ts`, `status.enum.ts`, `ds-status.enum.ts`          |
+| Mapping DS → interne                        | `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`                          |
+| Permissions / garde-fous                    | `src/features/parcours/core/services/parcours-permissions.service.ts`                          |
+| Progression d'étape                         | `src/features/parcours/core/services/parcours-progression.service.ts`                          |
+| Service sync DS                             | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                                |
+| Service sync batch (CRON)                   | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`                    |
+| Vérif permissions / état démarches DS       | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                         |
+| Reset dossier éligibilité sync-erreur       | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`) |
+| Sonde lecture-seule dossiers DN             | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                        |
+| Action UI sync                              | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                            |
+| Validation AMO (auto-progression CHOIX_AMO) | `src/features/parcours/amo/services/amo-validation.service.ts`                                 |
+| Endpoint CRON                               | `src/app/api/cron/sync-parcours/route.ts`                                                      |
+| Workflow CRON GitHub Actions                | `.github/workflows/cron-sync-parcours.yml`                                                     |
+| Server actions admin                        | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`         |
+| Page liste runs                             | `src/app/(backoffice)/administration/synchronisations/page.tsx`                                |
+| Page détail run                             | `src/app/(backoffice)/administration/synchronisations/[id]/page.tsx`                           |

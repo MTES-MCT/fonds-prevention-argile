@@ -35,7 +35,7 @@
  * Prérequis : .env.local avec DATABASE_URL + DEMARCHES_SIMPLIFIEES_GRAPHQL_API_* .
  */
 
-import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 // IMPORTANT : `createOpsDb` (via lib/env) charge dotenv à l'évaluation de son module.
 // Il DOIT être importé AVANT `graphqlClient`, dont le singleton lit l'env DN à la
 // construction et throw si l'env n'est pas chargé. L'ordre d'évaluation ESM (source-order,
@@ -44,10 +44,11 @@ import { createOpsDb } from "../lib/db";
 import { DEMARCHE_IDS } from "../lib/env";
 import { graphqlClient } from "@/features/parcours/dossiers-ds/adapters/graphql/client";
 import { createRedactor } from "../lib/anonymize";
-import { parcoursPrevention, users, dossiersDemarchesSimplifiees, syncRunEntries } from "@/shared/database/schema";
+import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { getArg, hasFlag } from "../lib/args";
+import { sleep, norm, getErrorByParcours, buildEmailIndex } from "./_shared";
 
 // --- Args ---
 const FROM_SYNC_ERRORS = hasFlag("from-sync-errors");
@@ -86,28 +87,6 @@ interface ProbeResult extends Cible {
   dateTraitement?: string | null;
   instructeurs?: number;
   errorMessage?: string;
-}
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-/** Map parcoursId → dernière erreur de sync (réplique la logique du diagnostic). */
-async function getErrorByParcours(db: ReturnType<typeof createOpsDb>["db"]): Promise<Map<string, string>> {
-  const rows = await db
-    .select({ parcoursId: syncRunEntries.parcoursId, error: syncRunEntries.error })
-    .from(syncRunEntries)
-    .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, syncRunEntries.parcoursId))
-    .where(
-      and(
-        isNotNull(syncRunEntries.error),
-        isNull(parcoursPrevention.archivedAt),
-        isNull(parcoursPrevention.completedAt)
-      )
-    )
-    .orderBy(desc(syncRunEntries.createdAt));
-
-  const map = new Map<string, string>();
-  for (const e of rows) if (e.error && !map.has(e.parcoursId)) map.set(e.parcoursId, e.error);
-  return map;
 }
 
 async function targetsFromSyncErrors(db: ReturnType<typeof createOpsDb>["db"]): Promise<Cible[]> {
@@ -154,40 +133,6 @@ async function targetsFromSyncErrors(db: ReturnType<typeof createOpsDb>["db"]): 
       localLastSyncAt: r.lastSyncAt,
       localCreatedAt: r.createdAt,
     }));
-}
-
-const norm = (e?: string | null) => e?.toLowerCase().trim() || null;
-const MAX_PAGES = 80; // garde-fou pagination de la démarche
-
-/**
- * Indexe les dossiers de la démarche éligibilité par email usager (une seule pagination).
- * Sert au cross-check : retrouver un dossier existant sous un AUTRE numéro que celui stocké.
- */
-async function buildEmailIndex(
-  demarcheNumber: number
-): Promise<{ index: Map<string, Array<{ number: number; state: string }>>; capped: boolean }> {
-  const index = new Map<string, Array<{ number: number; state: string }>>();
-  let after: string | null = null;
-  let pages = 0;
-  let capped = false;
-
-  while (pages < MAX_PAGES) {
-    pages++;
-    const conn = await graphqlClient.getDemarcheDossiers(demarcheNumber, { first: 100, after: after ?? undefined });
-    if (!conn) break;
-    for (const node of conn.nodes) {
-      const email = norm(node.usager?.email);
-      if (!email) continue;
-      const arr = index.get(email) ?? [];
-      arr.push({ number: node.number, state: node.state });
-      index.set(email, arr);
-    }
-    if (!conn.pageInfo.hasNextPage) break;
-    after = conn.pageInfo.endCursor ?? null;
-    if (SLEEP_MS > 0) await sleep(SLEEP_MS);
-    if (pages >= MAX_PAGES && conn.pageInfo.hasNextPage) capped = true;
-  }
-  return { index, capped };
 }
 
 const DAY_MS = 1000 * 60 * 60 * 24;
@@ -351,7 +296,7 @@ async function main() {
       console.log("\nCross-check ignoré : DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE absent de l'env.");
     } else {
       console.log("\nCross-check email sur la démarche éligibilité (pagination, lecture seule)...");
-      const { index, capped } = await buildEmailIndex(Number(demarcheId));
+      const { index, capped } = await buildEmailIndex(graphqlClient, Number(demarcheId), SLEEP_MS);
       if (capped) console.log("  (pagination plafonnée — résultats potentiellement partiels)");
       console.log();
       console.log("--- CROSS-CHECK des GONE ---");

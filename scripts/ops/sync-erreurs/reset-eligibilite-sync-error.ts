@@ -42,17 +42,18 @@
  * Prérequis : .env.local avec DATABASE_URL + DEMARCHES_SIMPLIFIEES_GRAPHQL_API_* .
  */
 
-import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 // IMPORTANT : `createOpsDb` (via lib/env) charge dotenv à l'évaluation de son module.
 // Il DOIT précéder l'import de `graphqlClient`, dont le singleton lit l'env DN à la
 // construction et throw sinon. L'ordre d'évaluation ESM garantit dotenv avant le singleton.
 import { createOpsDb } from "../lib/db";
 import { graphqlClient } from "@/features/parcours/dossiers-ds/adapters/graphql/client";
 import { createRedactor } from "../lib/anonymize";
-import { parcoursPrevention, users, dossiersDemarchesSimplifiees, syncRunEntries } from "@/shared/database/schema";
+import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { getArg, hasFlag } from "../lib/args";
+import { sleep, getErrorByParcours, classifyDnError } from "./_shared";
 
 // --- Args ---
 const APPLY = hasFlag("apply");
@@ -62,8 +63,6 @@ const SLEEP_MS = Number(getArg("sleep") ?? "200");
 
 const { redactUuid, redactEmail } = createRedactor(ANONYMIZE);
 const { db, client } = createOpsDb();
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 type Verdict = "gone" | "exists" | "probe_erreur" | "sans_dossier";
 
@@ -80,26 +79,6 @@ interface Candidate {
   probeError?: string; // message si PROBE_ERREUR
 }
 
-/** Map parcoursId → dernière erreur de sync (réplique la logique du diagnostic). */
-async function getErrorByParcours(): Promise<Map<string, string>> {
-  const rows = await db
-    .select({ parcoursId: syncRunEntries.parcoursId, error: syncRunEntries.error })
-    .from(syncRunEntries)
-    .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, syncRunEntries.parcoursId))
-    .where(
-      and(
-        isNotNull(syncRunEntries.error),
-        isNull(parcoursPrevention.archivedAt),
-        isNull(parcoursPrevention.completedAt)
-      )
-    )
-    .orderBy(desc(syncRunEntries.createdAt));
-
-  const map = new Map<string, string>();
-  for (const e of rows) if (e.error && !map.has(e.parcoursId)) map.set(e.parcoursId, e.error);
-  return map;
-}
-
 /** Interroge DN pour décider du sort du dossier (lecture seule). */
 async function verifyAgainstDN(
   dsNumber: string
@@ -111,7 +90,7 @@ async function verifyAgainstDN(
     return { verdict: "exists", dnState: d.state };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (/not found/i.test(msg)) return { verdict: "gone" };
+    if (classifyDnError(msg) === "not_found") return { verdict: "gone" };
     return { verdict: "probe_erreur", probeError: msg };
   }
 }
@@ -145,7 +124,7 @@ async function findCandidates(): Promise<Candidate[]> {
     )
     .where(and(...whereClauses));
 
-  const errorByParcours = await getErrorByParcours();
+  const errorByParcours = await getErrorByParcours(db);
 
   const candidates: Candidate[] = [];
   for (const r of rows) {

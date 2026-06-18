@@ -28,15 +28,16 @@
  * Prérequis : .env.local avec DATABASE_URL + DEMARCHES_SIMPLIFIEES_GRAPHQL_API_* .
  */
 
-import { and, eq, isNotNull, isNull, desc } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { createOpsDb } from "../lib/db";
 import { DEMARCHE_IDS } from "../lib/env";
 import { graphqlClient } from "@/features/parcours/dossiers-ds/adapters/graphql/client";
 import { createRedactor } from "../lib/anonymize";
-import { parcoursPrevention, users, dossiersDemarchesSimplifiees, syncRunEntries } from "@/shared/database/schema";
+import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { getArg, hasFlag } from "../lib/args";
+import { sleep, norm, getErrorByParcours, isNotFound, buildEmailIndex } from "./_shared";
 
 const APPLY = hasFlag("apply");
 const ANONYMIZE = hasFlag("anonymize");
@@ -47,10 +48,6 @@ const SLEEP_MS = Number(getArg("sleep") ?? "200");
 
 const { redactUuid, redactEmail } = createRedactor(ANONYMIZE);
 const { db, client } = createOpsDb();
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const norm = (e?: string | null) => e?.toLowerCase().trim() || null;
-const MAX_PAGES = 80;
 
 const STATE_RANK: Record<string, number> = {
   accepte: 4,
@@ -67,41 +64,6 @@ interface Relink {
   fromNumber: string;
   toNumber: string;
   toState: string;
-}
-
-/** Vrai si DN ne trouve pas le dossier (pointeur mort). */
-async function isNotFound(dsNumber: string): Promise<boolean> {
-  try {
-    const d = await graphqlClient.getDossier(Number(dsNumber));
-    return d === null;
-  } catch (err) {
-    return /not found/i.test(err instanceof Error ? err.message : String(err));
-  }
-}
-
-/** Indexe la démarche éligibilité par email usager : email -> [{number, state, archived}]. */
-async function buildEmailIndex(
-  demarcheNumber: number
-): Promise<Map<string, Array<{ number: number; state: string; archived: boolean }>>> {
-  const index = new Map<string, Array<{ number: number; state: string; archived: boolean }>>();
-  let after: string | null = null;
-  let pages = 0;
-  while (pages < MAX_PAGES) {
-    pages++;
-    const conn = await graphqlClient.getDemarcheDossiers(demarcheNumber, { first: 100, after: after ?? undefined });
-    if (!conn) break;
-    for (const node of conn.nodes) {
-      const email = norm(node.usager?.email);
-      if (!email) continue;
-      const arr = index.get(email) ?? [];
-      arr.push({ number: node.number, state: node.state, archived: !!node.archived });
-      index.set(email, arr);
-    }
-    if (!conn.pageInfo.hasNextPage) break;
-    after = conn.pageInfo.endCursor ?? null;
-    if (SLEEP_MS > 0) await sleep(SLEEP_MS);
-  }
-  return index;
 }
 
 /** Choisit le meilleur dossier cible (non archivé, état le plus avancé). null si aucun ou ambigu. */
@@ -151,22 +113,6 @@ async function applyRelink(dossierId: string, toNumber: string): Promise<boolean
   return updated.length > 0;
 }
 
-async function errorParcoursIds(): Promise<Set<string>> {
-  const rows = await db
-    .select({ parcoursId: syncRunEntries.parcoursId })
-    .from(syncRunEntries)
-    .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, syncRunEntries.parcoursId))
-    .where(
-      and(
-        isNotNull(syncRunEntries.error),
-        isNull(parcoursPrevention.archivedAt),
-        isNull(parcoursPrevention.completedAt)
-      )
-    )
-    .orderBy(desc(syncRunEntries.createdAt));
-  return new Set(rows.map((r) => r.parcoursId));
-}
-
 async function discoverFromSyncErrors(): Promise<Relink[]> {
   const demarcheId = DEMARCHE_IDS[Step.ELIGIBILITE];
   if (!demarcheId) {
@@ -201,18 +147,18 @@ async function discoverFromSyncErrors(): Promise<Relink[]> {
       )
     );
 
-  const errorSet = await errorParcoursIds();
-  const candidates = rows.filter((r) => errorSet.has(r.parcoursId));
+  const errorMap = await getErrorByParcours(db);
+  const candidates = rows.filter((r) => errorMap.has(r.parcoursId));
 
   console.log(`Candidats sync-erreur (eligibilite/todo) : ${candidates.length}`);
   console.log("Indexation de la démarche éligibilité par email (lecture seule)...");
-  const index = await buildEmailIndex(Number(demarcheId));
+  const { index } = await buildEmailIndex(graphqlClient, Number(demarcheId), SLEEP_MS);
 
   const relinks: Relink[] = [];
   for (const c of candidates) {
     if (!c.dsNumber) continue;
     // Mismatch = le numéro local est introuvable mais l'usager a un dossier sous un autre numéro.
-    if (!(await isNotFound(c.dsNumber))) {
+    if (!(await isNotFound(graphqlClient, c.dsNumber))) {
       if (SLEEP_MS > 0) await sleep(SLEEP_MS);
       continue;
     }
@@ -250,12 +196,12 @@ async function discoverExplicit(): Promise<Relink[]> {
     return [];
   }
   // Sécurité : le numéro local doit être mort, et le numéro cible doit exister côté DN.
-  const localDead = await isNotFound(dossier.dsNumber);
+  const localDead = await isNotFound(graphqlClient, dossier.dsNumber);
   if (!localDead) {
     console.error(`Le numéro local #${dossier.dsNumber} existe encore côté DN — relink refusé (pas un mismatch).`);
     return [];
   }
-  const targetExists = !(await isNotFound(TO_DS_NUMBER));
+  const targetExists = !(await isNotFound(graphqlClient, TO_DS_NUMBER));
   if (!targetExists) {
     console.error(`Le numéro cible #${TO_DS_NUMBER} est introuvable côté DN — relink refusé.`);
     return [];

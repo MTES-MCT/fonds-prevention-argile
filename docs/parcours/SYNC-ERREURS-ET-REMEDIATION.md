@@ -223,18 +223,18 @@ Ordre d'exécution recommandé. Chaque étape indique le(s) cas qu'elle résout.
 
 ## 5. Fichiers clés
 
-| Rôle                               | Fichier                                                                                     |
-| ---------------------------------- | ------------------------------------------------------------------------------------------- |
-| Sonde DN lecture-seule             | `scripts/ops/ds/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                               |
-| Reset auto-vérifiant               | `scripts/ops/fix/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`)       |
-| Relink mismatch                    | `scripts/ops/fix/relink-eligibilite-dossier.ts` (`pnpm fix:relink-eligibilite`)             |
-| Nettoyage faux dépôts legacy       | `scripts/ops/fix/clean-faux-depots-submitted-at.ts` (`pnpm fix:clean-faux-depots`)          |
-| Vérif permissions / publication DN | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                      |
-| Recherche dossier par email (UI)   | `searchEligibiliteByEmail` — page `/administration/diagnostics/[parcoursId]` (« Analyser ») |
-| Classification diagnostic          | `src/features/backoffice/administration/diagnostics/services/diagnostics.service.ts`        |
-| États diagnostic                   | `src/features/backoffice/administration/diagnostics/domain/diagnostics.types.ts`            |
-| Sync DN                            | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                             |
-| URL « commencer » vs « reprendre » | `src/features/parcours/dossiers-ds/utils/ds-url.utils.ts`                                   |
+| Rôle                               | Fichier                                                                                        |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Sonde DN lecture-seule             | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                        |
+| Reset auto-vérifiant               | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`) |
+| Relink mismatch                    | `scripts/ops/sync-erreurs/relink-eligibilite-dossier.ts` (`pnpm fix:relink-eligibilite`)       |
+| Nettoyage faux dépôts legacy       | `scripts/ops/sync-erreurs/clean-faux-depots-submitted-at.ts` (`pnpm fix:clean-faux-depots`)    |
+| Vérif permissions / publication DN | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                         |
+| Recherche dossier par email (UI)   | `searchEligibiliteByEmail` — page `/administration/diagnostics/[parcoursId]` (« Analyser »)    |
+| Classification diagnostic          | `src/features/backoffice/administration/diagnostics/services/diagnostics.service.ts`           |
+| États diagnostic                   | `src/features/backoffice/administration/diagnostics/domain/diagnostics.types.ts`               |
+| Sync DN                            | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                                |
+| URL « commencer » vs « reprendre » | `src/features/parcours/dossiers-ds/utils/ds-url.utils.ts`                                      |
 
 ---
 
@@ -265,48 +265,36 @@ Pourquoi des dossiers « pas vraiment déposés » portent un `submitted_at` :
 
 ---
 
-## 7. Évolution proposée : diagnostic enrichi DN (au-delà du DB-only)
+## 7. Diagnostic enrichi DN (implémenté)
 
-Aujourd'hui la **liste** du diagnostic est DB-only : rapide, scanne tous les parcours, mais
-ne distingue pas les sous-cas qui dépendent de DN (drop-off vs mismatch vs existant). Seule la
-**page de détail** fait un cross-check DN live. Objectif : que la liste affiche les verdicts DN
-**comme le probe**, sans bloquer l'UI ni marteler l'API DN.
+La **liste** du diagnostic reste DB-only (rapide, scanne tous les parcours), mais affiche
+désormais le **verdict DN** sans marteler l'API, via un verdict **persisté pendant la sync**.
 
-**Tension** : un cross-check live coûte N appels DN (un `getDossier` par dossier) + une
-pagination de la démarche pour le cross-check email. Le faire **synchrone** sur tous les
-parcours à chaque ouverture de page est intenable (lenteur + rate-limit DN).
+### Ce qui a été fait
 
-### Plan en 3 incréments
+1. **Verdict DN persisté pendant la sync.** Deux colonnes sur
+   `dossiers_demarches_simplifiees` — `dn_probe_state` (`en_construction | en_instruction |
+accepte | refuse | sans_suite | not_found | unauthorized | api_error`) et `dn_probe_at` —
+   écrites par `syncDossierStatus` sur **tous** les chemins (succès → état réel, échec →
+   `not_found` / `unauthorized` / `api_error`). Le CRON appelle déjà DN : surcoût quasi nul.
+   Migration `0035_*` (`pnpm db:migrate` pour l'appliquer).
 
-1. **Persister le verdict DN pendant la sync (quasi gratuit).** Le CRON de sync appelle déjà
-   `getDossierStatus` pour chaque dossier. Ajouter à `dossiers_demarches_simplifiees` deux
-   colonnes — `dn_probe_state` (`en_construction | en_instruction | accepte | refuse |
-sans_suite | not_found`) et `dn_probe_at` — écrites par `syncDossierStatus` (succès → état,
-   « not found » → `not_found`). La liste lit alors un verdict **DN-fiable** (latence ≤ cadence
-   CRON, ~8 h), toujours en lecture DB. Migration Drizzle + écriture dans la sync.
+2. **Verdict DN dans la liste.** `getParcoursDiagnostics` expose `dn_probe_state` + le verdict
+   dérivé (`dnVerdictOf` → `gone | exists | probe_error | unknown`, `DN_VERDICT_META`). La
+   liste affiche une colonne **« Verdict DN »** (badge + état brut + fraîcheur). Lecture DB,
+   latence ≤ cadence CRON (~8 h). NB : la classification métier (`DiagnosticState`) reste
+   inchangée ; le verdict DN est une **colonne complémentaire**, pas un remplacement.
 
-2. **Classer la liste sur le verdict DN.** `getParcoursDiagnostics` utilise `dn_probe_state`
-   (au lieu de déduire du `ds_status` local) pour produire les groupes du probe : `GONE`
-   (not_found), `EXISTS` (état présent → resync), etc. Réutiliser `classifyDossierAnomaly`
-   (déjà partagé) en lui passant `{ state | error }` issu de `dn_probe_state`.
+3. **Sonde DN à la demande (bornée).** Bouton **« Sonder DN (erreurs) »** (super-admin) →
+   `probeDnSyncErrorsAction` → `probeDnForSyncErrors` interroge DN **live** (avec `sleep`)
+   pour la **sous-population en sync-erreur** uniquement (cap `PROBE_CAP = 300`), persiste les
+   verdicts, puis rafraîchit la liste. Coût borné à la sélection, pas à tout le parc.
 
-3. **Rafraîchissement live à la demande (borné).** Un bouton « Sonder DN maintenant » sur la
-   liste filtrée (ex. la sous-population sync-erreur, ~quelques dizaines) déclenche une server
-   action qui exécute le probe **live** (avec `sleep`), met à jour les verdicts à l'écran et
-   persiste `dn_probe_state`/`dn_probe_at`. Borne le coût à la sélection, pas à tout le parc.
+### Reste possible (non fait)
 
-### Cross-check email (mismatch)
-
-La détection « existe sous un autre numéro » nécessite une pagination complète de la démarche :
-trop coûteuse pour la liste. Elle reste **à la demande** (déjà dispo par parcours via
-« Analyser » → `searchEligibiliteByEmail`). Option : une action batch « détecter les
-mismatches » qui pagine **une fois** et marque les candidats `GONE` concernés.
-
-### Trade-offs
-
-- **Incrément 1+2** : le meilleur rapport valeur/risque (réutilise les appels DN déjà faits,
-  liste fiable à ~8 h près, pas de surcoût DN). Coût : une migration + écriture sync.
-- **Incrément 3** : fraîcheur temps réel mais bornée à une sélection ; à n'exposer qu'au
-  super-admin.
-- Garder la possibilité de **filtrer sur le verdict DN persisté** dans la liste (nouveaux
-  filtres « disparu côté DN », « existe à resync »).
+- **Cross-check email (mismatch) batch** : détecter « existe sous un autre numéro » nécessite
+  une pagination complète de la démarche — reste à la demande par parcours (« Analyser » →
+  `searchEligibiliteByEmail`) ou via `pnpm ds:probe-dossiers --email-crosscheck`.
+- **Filtres sur le verdict DN** dans la liste (« disparu côté DN », « existe à resync »).
+- **Classer le `DiagnosticState` sur le verdict DN** (plutôt que sur `ds_status` local) si on
+  veut fusionner les deux taxonomies.
