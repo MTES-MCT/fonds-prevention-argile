@@ -46,6 +46,7 @@
     "fix:amo-non-eligible": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reset-amo-non-eligible.ts",
     "fix:eligibilite-sync-error": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reset-eligibilite-sync-error.ts",
     "fix:clean-faux-depots": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/clean-faux-depots-submitted-at.ts",
+    "fix:relink-eligibilite": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/relink-eligibilite-dossier.ts",
     "rga:import": "tsx scripts/import/rga-zones/import-rga-zones.ts"
   },
   "dependencies": {

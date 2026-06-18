@@ -270,7 +270,7 @@ async function main() {
   console.log("=".repeat(72));
   console.log(`Terminé : ${ok} reset, ${skipped} skip, ${failed} échec(s). EXISTS laissés : ${exists.length}.`);
   console.log(
-    "Rappel : ces parcours peuvent rester affichés en sync-erreur sur le diagnostic tant que la logique de classement n'est pas corrigée (historique sync_run_entries conservé)."
+    "Le dossier supprimé, ces parcours quittent l'état sync-erreur au prochain chargement du diagnostic (l'erreur devient obsolète, sans dossier courant). Historique sync_run_entries conservé."
   );
   console.log("=".repeat(72));
 
