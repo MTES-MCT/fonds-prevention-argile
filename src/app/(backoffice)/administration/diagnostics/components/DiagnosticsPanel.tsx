@@ -121,7 +121,7 @@ export default function DiagnosticsPanel() {
                 className="fr-btn fr-btn--secondary fr-mr-2w"
                 onClick={runProbe}
                 disabled={isProbing || isLoading}
-                title="Interroge DN en direct pour la sous-population en sync-erreur et met à jour le verdict DN">
+                title="Rafraîchit le « Verdict DN » en interrogeant DN en direct (sous-population en sync-erreur). Ne resynchronise pas le parcours : pour corriger un « Existe côté DN », utiliser « Lancer une synchro maintenant ».">
                 <span className="fr-icon-radar-line fr-icon--sm mr-2" aria-hidden="true" />
                 {isProbing ? "Sondage DN…" : "Sonder DN (erreurs)"}
               </button>
@@ -131,6 +131,38 @@ export default function DiagnosticsPanel() {
               </button>
             </div>
           </div>
+
+          <details className="fr-mb-4w fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
+            <summary style={{ cursor: "pointer" }}>Comment lire ce tableau ?</summary>
+            <div className="fr-mt-1v" style={{ maxWidth: 880 }}>
+              <p className="fr-mb-1v">Deux lectures, deux sources qui peuvent diverger (et c&apos;est normal) :</p>
+              <ul className="fr-mb-1v">
+                <li>
+                  <strong>État</strong> : classification calculée <strong>en base</strong> (historique de
+                  synchronisation + état local). Aucun appel DN. <em>Âge</em> et <em>Détail</em> reflètent aussi
+                  l&apos;historique (dernière erreur), pas le live.
+                </li>
+                <li>
+                  <strong>Verdict DN</strong> : état <strong>réel côté Démarches Numériques</strong> au dernier sondage
+                  ou sync (<code>dn_probe_state</code>). « Sonder DN (erreurs) » le <strong>rafraîchit</strong> en
+                  direct, mais ne resynchronise pas.
+                </li>
+              </ul>
+              <p className="fr-mb-1v">Quand les deux divergent sur un « Sync erreur » :</p>
+              <ul className="fr-mb-0">
+                <li>
+                  <strong>+ Existe côté DN</strong> → le dossier est vivant (souvent réapparu) : il faut{" "}
+                  <strong>relancer une synchro</strong> (« Lancer une synchro maintenant »). Le miroir local rattrape et
+                  le parcours quitte l&apos;erreur. <strong>Pas de reset.</strong>
+                </li>
+                <li>
+                  <strong>+ Disparu côté DN</strong> → pointeur mort (drop-off ou dossier purgé) :{" "}
+                  <strong>reset</strong> (script <code>fix:eligibilite-sync-error</code>) ; voir « Analyser » pour un
+                  éventuel dossier sous un autre numéro.
+                </li>
+              </ul>
+            </div>
+          </details>
 
           {error && (
             <div className="fr-alert fr-alert--error fr-mb-4w">
