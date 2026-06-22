@@ -25,7 +25,8 @@
  *   --email-crosscheck  pour chaque dossier disparu (GONE), pagine la démarche éligibilité
  *                       et cherche si l'usager a un dossier sous un AUTRE numéro
  *                       (ABSENT = drop-off vs EXISTE_SOUS_AUTRE_NUMERO = mismatch récupérable).
- *   --no-anonymize      affiche les emails/identifiants en clair (par défaut : anonymisé).
+ *   --no-anonymize      affiche en CLAIR le nom/prénom + email du demandeur (et les ids) —
+ *                       pratique pour copier-coller et contacter (par défaut : anonymisé).
  *   --sleep=<ms>        délai entre deux appels DN (défaut 200 ms).
  *
  * LECTURE SEULE : aucune écriture en base ni côté DN.
@@ -59,7 +60,7 @@ const EMAIL_CROSSCHECK = hasFlag("email-crosscheck");
 const ANONYMIZE = !hasFlag("no-anonymize"); // anonymisé par défaut
 const SLEEP_MS = Number(getArg("sleep") ?? "200");
 
-const { redactEmail, redactUuid } = createRedactor(ANONYMIZE);
+const { redactEmail, redactUuid, redactName } = createRedactor(ANONYMIZE);
 
 type Categorie =
   | "SUPPRIME_OU_INTROUVABLE"
@@ -74,6 +75,8 @@ interface Cible {
   parcoursId?: string;
   email?: string | null;
   emailContact?: string | null;
+  nom?: string | null;
+  prenom?: string | null;
   localDsStatus?: string | null;
   localSubmittedAt?: Date | null;
   localLastSyncAt?: Date | null;
@@ -97,6 +100,8 @@ async function targetsFromSyncErrors(db: ReturnType<typeof createOpsDb>["db"]): 
       parcoursId: parcoursPrevention.id,
       email: users.email,
       emailContact: users.emailContact,
+      nom: users.nom,
+      prenom: users.prenom,
       dsNumber: dossiersDemarchesSimplifiees.dsNumber,
       dsStatus: dossiersDemarchesSimplifiees.dsStatus,
       submittedAt: dossiersDemarchesSimplifiees.submittedAt,
@@ -130,6 +135,8 @@ async function targetsFromSyncErrors(db: ReturnType<typeof createOpsDb>["db"]): 
       parcoursId: r.parcoursId,
       email: r.email,
       emailContact: r.emailContact,
+      nom: r.nom,
+      prenom: r.prenom,
       localDsStatus: r.dsStatus,
       localSubmittedAt: r.submittedAt,
       localLastSyncAt: r.lastSyncAt,
@@ -247,7 +254,7 @@ async function probe(
 function printResult(r: ProbeResult) {
   const local =
     r.parcoursId !== undefined
-      ? ` | local: ds_status=${r.localDsStatus ?? "null"} submitted_at=${r.localSubmittedAt ? r.localSubmittedAt.toISOString() : "null"} | ${redactUuid(r.parcoursId)} ${redactEmail(r.email)}`
+      ? ` | local: ds_status=${r.localDsStatus ?? "null"} submitted_at=${r.localSubmittedAt ? r.localSubmittedAt.toISOString() : "null"} | ${redactUuid(r.parcoursId)} ${redactName(r.nom, r.prenom)} ${redactEmail(r.email)}`
       : "";
 
   if (r.categorie === "SUPPRIME_OU_INTROUVABLE" || r.categorie === "ERREUR_API" || r.categorie === "INEXISTANT") {
@@ -362,10 +369,12 @@ async function main() {
         if (found.length > 0) {
           mismatchNumbers.add(r.dsNumber);
           const list = found.map((d) => `#${d.number}(${d.state})`).join(", ");
-          console.log(`  #${r.dsNumber}  EXISTE_SOUS_AUTRE_NUMERO → ${list} | ${redactEmail(r.email)}`);
+          console.log(
+            `  #${r.dsNumber}  EXISTE_SOUS_AUTRE_NUMERO → ${list} | ${redactName(r.nom, r.prenom)} ${redactEmail(r.email)}`
+          );
         } else {
           absent++;
-          console.log(`  #${r.dsNumber}  ABSENT (drop-off) | ${redactEmail(r.email)}`);
+          console.log(`  #${r.dsNumber}  ABSENT (drop-off) | ${redactName(r.nom, r.prenom)} ${redactEmail(r.email)}`);
         }
       }
       console.log();
