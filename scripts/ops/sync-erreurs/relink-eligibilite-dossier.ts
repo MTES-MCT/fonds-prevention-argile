@@ -101,6 +101,19 @@ async function getEligibiliteDossier(parcoursId: string) {
   return d ?? null;
 }
 
+/**
+ * Vrai si un AUTRE dossier porte déjà ce ds_number. La colonne est UNIQUE : relinker vers un
+ * numéro déjà rattaché ailleurs viole la contrainte (cas du doublon de compte / email partagé).
+ */
+async function dsNumberTracked(toNumber: string, excludeDossierId: string): Promise<boolean> {
+  const [d] = await db
+    .select({ id: dossiersDemarchesSimplifiees.id })
+    .from(dossiersDemarchesSimplifiees)
+    .where(eq(dossiersDemarchesSimplifiees.dsNumber, toNumber))
+    .limit(1);
+  return !!d && d.id !== excludeDossierId;
+}
+
 /** Repointe le dossier vers le vrai numéro et remet les colonnes d'état à NULL (sync rebâtira). */
 async function applyRelink(dossierId: string, toNumber: string): Promise<boolean> {
   const updated = await db
@@ -176,6 +189,14 @@ async function discoverFromSyncErrors(): Promise<Relink[]> {
     const target = pickTarget(hits, c.dsNumber);
     if (!target) continue;
 
+    // La cible ne doit pas déjà être rattachée à un autre parcours (contrainte UNIQUE).
+    if (await dsNumberTracked(String(target.number), c.dossierId)) {
+      console.log(
+        `  SKIP ${redactUuid(c.parcoursId)} : cible #${target.number} (${target.state}) déjà rattachée à un AUTRE parcours (doublon de compte ?) — à traiter manuellement.`
+      );
+      continue;
+    }
+
     relinks.push({
       parcoursId: c.parcoursId,
       dossierId: c.dossierId,
@@ -211,6 +232,12 @@ async function discoverExplicit(): Promise<Relink[]> {
   const targetExists = !(await isNotFound(graphqlClient, TO_DS_NUMBER));
   if (!targetExists) {
     console.error(`Le numéro cible #${TO_DS_NUMBER} est introuvable côté DN — relink refusé.`);
+    return [];
+  }
+  if (await dsNumberTracked(TO_DS_NUMBER, dossier.id)) {
+    console.error(
+      `Le numéro cible #${TO_DS_NUMBER} est déjà rattaché à un autre parcours (contrainte UNIQUE) — relink refusé.`
+    );
     return [];
   }
   return [
