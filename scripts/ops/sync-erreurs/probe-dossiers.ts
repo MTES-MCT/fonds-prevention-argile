@@ -16,7 +16,9 @@
  * Modes (un des deux) :
  *   --from-sync-errors   sonde tous les dossiers d'éligibilité des parcours actifs en
  *                        eligibilite/todo ayant une erreur de sync (= les "SYNC EN ERREUR"
- *                        de la page diagnostics). Corrèle avec ds_status / submitted_at locaux.
+ *                        de la page diagnostics). Corrèle avec ds_status / submitted_at locaux,
+ *                        et produit un PLAN D'ACTION (cas A/B1/B2/B3 → resync/reset/relink/clean).
+ *                        Ajouter --email-crosscheck pour distinguer le mismatch (B2) du reset.
  *   --numbers=1,2,3      sonde une liste explicite de numéros DN.
  *
  * Options :
@@ -165,6 +167,47 @@ function goneSub(r: ProbeResult): { kind: "expiration" | "jamais_depose" | "inco
   };
 }
 
+// --- Cas final + action (cf. docs/parcours/SYNC-ERREURS-ET-REMEDIATION.md §2) ---
+type Cas = "A_EXISTS" | "B1_DROPOFF" | "B2_MISMATCH" | "B3_EXPIRE" | "ERREUR_SONDAGE" | "INDETERMINE";
+type Action = "resync" | "reset" | "relink" | "clean" | "check-permissions";
+
+const ACTION_HINT: Record<Action, string> = {
+  resync: "« Lancer une synchro maintenant »",
+  reset: "pnpm fix:eligibilite-sync-error --apply",
+  relink: "pnpm fix:relink-eligibilite --from-sync-errors --apply",
+  clean: "pnpm fix:clean-faux-depots --apply",
+  "check-permissions": "pnpm ds:check-permissions",
+};
+
+const CAS_LABEL: Record<Cas, string> = {
+  A_EXISTS: "A — existe côté DN",
+  B1_DROPOFF: "B1 — drop-off (prefill jamais complété)",
+  B2_MISMATCH: "B2 — mismatch (existe sous un autre numéro)",
+  B3_EXPIRE: "B3 — déposé puis purgé/expiré",
+  ERREUR_SONDAGE: "Erreur de sondage (token/démarche)",
+  INDETERMINE: "Indéterminé",
+};
+
+/**
+ * Cas final + action(s) d'un dossier, à partir du verdict DN et du mismatch. `clean` est
+ * transverse (faux dépôt legacy : submitted_at posé sans sync). Ne s'applique qu'en mode
+ * --from-sync-errors (signaux locaux requis).
+ */
+function classifyCase(r: ProbeResult, isMismatch: boolean): { cas: Cas; actions: Action[] } {
+  const fauxDepot = !!r.localSubmittedAt && !r.localLastSyncAt;
+  const clean: Action[] = fauxDepot ? ["clean"] : [];
+
+  if (r.categorie === "EN_INSTRUCTION" || r.categorie === "DEPOSE_NON_INSTRUIT" || r.categorie === "TRAITE") {
+    return { cas: "A_EXISTS", actions: ["resync", ...clean] };
+  }
+  if (r.categorie === "SUPPRIME_OU_INTROUVABLE" || r.categorie === "INEXISTANT") {
+    if (isMismatch) return { cas: "B2_MISMATCH", actions: ["relink"] };
+    return { cas: r.localLastSyncAt ? "B3_EXPIRE" : "B1_DROPOFF", actions: ["reset", ...clean] };
+  }
+  if (r.categorie === "ERREUR_API") return { cas: "ERREUR_SONDAGE", actions: ["check-permissions"] };
+  return { cas: "INDETERMINE", actions: clean };
+}
+
 async function probe(
   getDossier: (n: number) => Promise<{
     state: string;
@@ -284,6 +327,8 @@ async function main() {
   console.log("=".repeat(72));
 
   // --- Cross-check email : un GONE a-t-il un dossier sous un AUTRE numéro côté DN ? ---
+  const mismatchNumbers = new Set<string>();
+  let crosscheckRan = false;
   if (EMAIL_CROSSCHECK && FROM_SYNC_ERRORS) {
     const goneResults = results.filter(
       (r) => r.categorie === "SUPPRIME_OU_INTROUVABLE" || r.categorie === "INEXISTANT"
@@ -292,6 +337,7 @@ async function main() {
 
     if (goneResults.length === 0) {
       console.log("\nCross-check : aucun GONE à vérifier.");
+      crosscheckRan = true;
     } else if (!demarcheId) {
       console.log("\nCross-check ignoré : DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE absent de l'env.");
     } else {
@@ -302,12 +348,11 @@ async function main() {
       console.log("--- CROSS-CHECK des GONE ---");
 
       let absent = 0;
-      let mismatch = 0;
       for (const r of goneResults) {
         const emails = [norm(r.email), norm(r.emailContact)].filter((e): e is string => !!e);
         const found = emails.flatMap((e) => index.get(e) ?? []).filter((d) => String(d.number) !== r.dsNumber);
         if (found.length > 0) {
-          mismatch++;
+          mismatchNumbers.add(r.dsNumber);
           const list = found.map((d) => `#${d.number}(${d.state})`).join(", ");
           console.log(`  #${r.dsNumber}  EXISTE_SOUS_AUTRE_NUMERO → ${list} | ${redactEmail(r.email)}`);
         } else {
@@ -317,10 +362,41 @@ async function main() {
       }
       console.log();
       console.log(
-        `  Cross-check : ${mismatch} sous un autre numéro (mismatch récupérable), ${absent} absent (drop-off).`
+        `  Cross-check : ${mismatchNumbers.size} sous un autre numéro (mismatch récupérable), ${absent} absent (drop-off).`
       );
       console.log("=".repeat(72));
+      crosscheckRan = true;
     }
+  }
+
+  // --- PLAN D'ACTION (par cas) — seulement en mode --from-sync-errors ---
+  if (FROM_SYNC_ERRORS) {
+    const cases = results.map((r) => classifyCase(r, mismatchNumbers.has(r.dsNumber)));
+
+    const casCount = new Map<Cas, number>();
+    const actionCount = new Map<Action, number>();
+    for (const c of cases) {
+      casCount.set(c.cas, (casCount.get(c.cas) ?? 0) + 1);
+      for (const a of c.actions) actionCount.set(a, (actionCount.get(a) ?? 0) + 1);
+    }
+
+    console.log();
+    console.log("=".repeat(72));
+    console.log("PLAN D'ACTION");
+    console.log("  par cas :");
+    for (const [cas, n] of [...casCount.entries()].sort((a, b) => b[1] - a[1])) {
+      console.log(`    ${CAS_LABEL[cas].padEnd(48)} : ${n}`);
+    }
+    if (!crosscheckRan) {
+      console.log("  (mismatch B2 NON vérifié — relancer avec --email-crosscheck pour le distinguer du reset)");
+    }
+    console.log("  actions à mener :");
+    for (const a of ["resync", "relink", "reset", "clean", "check-permissions"] as Action[]) {
+      const n = actionCount.get(a) ?? 0;
+      if (n > 0) console.log(`    ${a.padEnd(10)} : ${String(n).padStart(3)}  → ${ACTION_HINT[a]}`);
+    }
+    console.log("  Ordre recommandé : relink → reset → clean ; resync via « Lancer une synchro ».");
+    console.log("=".repeat(72));
   }
 
   if (dbHandle) await dbHandle.client.end();
