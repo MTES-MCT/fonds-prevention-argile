@@ -1,6 +1,10 @@
+import { and, eq, isNotNull, isNull, inArray } from "drizzle-orm";
 import { parcoursRepo, dossierDsRepo, userRepo } from "@/shared/database/repositories";
+import { db } from "@/shared/database/client";
+import { parcoursPrevention, dossiersDemarchesSimplifiees, syncRunEntries } from "@/shared/database/schema";
 import { graphqlClient } from "@/features/parcours/dossiers-ds/adapters/graphql/client";
 import { prefillClient } from "@/features/parcours/dossiers-ds/adapters";
+import { recordDnProbeState } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import {
   classifyDossierAnomaly,
@@ -37,6 +41,44 @@ export interface DossierCrossCheck {
   dsError: string | null;
   anomalyType: DsAnomalyType | null;
   explanation: DsAnomalyExplanation | null;
+  /** Chronologie pas-à-pas du « comment on en est arrivé là » (cas drop-off / faux dépôt). */
+  timeline: string[] | null;
+}
+
+/**
+ * Reconstitue la chronologie d'un dossier « drop-off » (jamais confirmé côté DN et
+ * introuvable). Détaille surtout le cas du `submitted_at` legacy laissé par la PR #216.
+ */
+function buildDossierTimeline(d: {
+  submittedAt: Date | null;
+  lastSyncAt: Date | null;
+  dsError: string | null;
+}): string[] | null {
+  // Ciblé : jamais confirmé côté DN (last_sync_at NULL) ET introuvable (not_found) = drop-off.
+  if (d.lastSyncAt || d.dsError !== "not_found") return null;
+
+  const fauxDepotLegacy = !!d.submittedAt;
+  const steps: string[] = [
+    "L'usager arrive à l'étape éligibilité et clique « Remplir le formulaire ». L'app crée un dossier prérempli sur Démarches Numériques (API de préremplissage) et stocke son numéro et le lien « commencer ».",
+  ];
+  if (fauxDepotLegacy) {
+    steps.push(
+      "Avant la PR #216, ce code de création posait aussi ds_status = en_construction et submitted_at = maintenant : le dossier était marqué « déposé » dès sa création, alors que l'usager n'avait encore rien rempli."
+    );
+  }
+  steps.push(
+    "L'usager n'a jamais ouvert ni complété le formulaire sur Démarches Numériques.",
+    "Démarches Numériques purge les dossiers préremplis non complétés après un délai : le dossier disparaît côté DN — la synchronisation renvoie désormais « Dossier not found »."
+  );
+  if (fauxDepotLegacy) {
+    steps.push(
+      "La PR #216 a repassé ds_status à NULL pour les dossiers jamais synchronisés (last_sync_at NULL), mais a laissé submitted_at en place. D'où l'état actuel : ds_status = NULL, last_sync_at = NULL, et un submitted_at trompeur qui est en réalité la date de CRÉATION, pas un vrai dépôt."
+    );
+  }
+  steps.push(
+    `Bilan : l'usager n'a jamais déposé (drop-off), le parcours reste bloqué en éligibilité avec un dossier fantôme. Remédiation : reset (nouveau lien « commencer »)${fauxDepotLegacy ? " puis nettoyage du faux submitted_at" : ""}.`
+  );
+  return steps;
 }
 
 export interface ParcoursDiagnosticDetail {
@@ -73,13 +115,15 @@ export async function getParcoursDiagnosticDetail(parcoursId: string): Promise<P
       await sleep(SLEEP_MS);
     }
 
-    const anomalyType =
-      d.dsNumber && d.dsStatus
-        ? classifyDossierAnomaly({
-            localStatus: d.dsStatus,
-            ds: dsError ? { error: dsError } : { state: dsState ?? undefined },
-          })
-        : null;
+    // On classifie dès qu'il y a un numéro DN, MÊME si ds_status est NULL (jamais
+    // synchronisé) : c'est justement le cas des dossiers "drop-off / prefill jamais
+    // complété" qu'on veut diagnostiquer. classifyDossierAnomaly gère localStatus null.
+    const anomalyType = d.dsNumber
+      ? classifyDossierAnomaly({
+          localStatus: d.dsStatus,
+          ds: dsError ? { error: dsError } : { state: dsState ?? undefined },
+        })
+      : null;
 
     crossChecks.push({
       step: d.step,
@@ -92,6 +136,7 @@ export async function getParcoursDiagnosticDetail(parcoursId: string): Promise<P
       dsError,
       anomalyType,
       explanation: anomalyType ? explainDsAnomaly(anomalyType) : null,
+      timeline: buildDossierTimeline({ submittedAt: d.submittedAt, lastSyncAt: d.lastSyncAt, dsError }),
     });
   }
 
@@ -164,4 +209,59 @@ export async function searchEligibiliteByEmail(parcoursId: string): Promise<{ hi
   }
 
   return { hits, capped };
+}
+
+/** Cap défensif du sondage DN à la demande (borne le coût / les appels DN). */
+const PROBE_CAP = 300;
+
+/**
+ * Sonde DN (lecture seule) le dossier de l'étape courante des parcours actifs **en
+ * sync-erreur**, et persiste le verdict (`dn_probe_state`) via la sync. Permet de rafraîchir
+ * la « vérité DN » de la liste à la demande, sans attendre le prochain CRON. Borné à la
+ * sous-population en erreur (≪ tout le parc).
+ */
+export async function probeDnForSyncErrors(): Promise<{ probed: number; capped: boolean }> {
+  const errorRows = await db
+    .select({ parcoursId: syncRunEntries.parcoursId })
+    .from(syncRunEntries)
+    .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, syncRunEntries.parcoursId))
+    .where(
+      and(
+        isNotNull(syncRunEntries.error),
+        isNull(parcoursPrevention.archivedAt),
+        isNull(parcoursPrevention.completedAt)
+      )
+    );
+  const ids = [...new Set(errorRows.map((r) => r.parcoursId))];
+  if (ids.length === 0) return { probed: 0, capped: false };
+
+  // Dossier de l'étape courante (avec un numéro DN) de ces parcours.
+  const dossiers = await db
+    .select({ id: dossiersDemarchesSimplifiees.id, dsNumber: dossiersDemarchesSimplifiees.dsNumber })
+    .from(dossiersDemarchesSimplifiees)
+    .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, dossiersDemarchesSimplifiees.parcoursId))
+    .where(
+      and(
+        inArray(dossiersDemarchesSimplifiees.parcoursId, ids),
+        eq(dossiersDemarchesSimplifiees.step, parcoursPrevention.currentStep),
+        isNotNull(dossiersDemarchesSimplifiees.dsNumber)
+      )
+    );
+
+  const capped = dossiers.length > PROBE_CAP;
+  const batch = dossiers.slice(0, PROBE_CAP);
+
+  let probed = 0;
+  for (const d of batch) {
+    if (!d.dsNumber) continue;
+    try {
+      const status = await graphqlClient.getDossierStatus(Number(d.dsNumber));
+      await recordDnProbeState(d.id, status ? status.state : "not_found");
+    } catch (err) {
+      await recordDnProbeState(d.id, toDsError(err));
+    }
+    probed++;
+    await sleep(SLEEP_MS);
+  }
+  return { probed, capped };
 }

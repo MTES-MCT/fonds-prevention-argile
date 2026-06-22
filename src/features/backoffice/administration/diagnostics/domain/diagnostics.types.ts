@@ -9,7 +9,9 @@ import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
  */
 export enum DiagnosticState {
   // --- Anomalies (prioritaires sur l'état du dossier) ---
-  /** La dernière synchronisation de ce parcours a renvoyé une erreur. */
+  /** Sync en erreur sur un dossier déposé mais jamais instruit : dossier DN probablement expiré/supprimé. */
+  SYNC_ERREUR_DEPOSE = "sync_erreur_depose",
+  /** La dernière synchronisation a renvoyé une erreur (hors cas « déposé non instruit »). */
   SYNC_ERREUR = "sync_erreur",
   /** Étape avancée (diagnostic+) sans dossier d'éligibilité accepté : dossier perdu. */
   ORPHELIN = "orphelin",
@@ -43,9 +45,16 @@ export const DIAGNOSTIC_STATE_META: Record<
   DiagnosticState,
   { label: string; description: string; severity: DiagnosticSeverity }
 > = {
+  [DiagnosticState.SYNC_ERREUR_DEPOSE]: {
+    label: "Sync erreur (déposé non instruit)",
+    description:
+      "Dépôt confirmé par une sync (last_sync_at) mais jamais pris en instruction, et la synchro échoue désormais : le dossier DN a probablement expiré ou été supprimé. L'usager doit recréer un dossier.",
+    severity: "error",
+  },
   [DiagnosticState.SYNC_ERREUR]: {
-    label: "Sync en erreur",
-    description: "La dernière synchronisation a échoué (token non instructeur, dossier introuvable, erreur API…).",
+    label: "Sync erreur (autre)",
+    description:
+      "Synchro échouée sur un dossier jamais confirmé côté DN (prefill jamais complété / brouillon), token non instructeur, ou dossier déjà instruit. À investiguer.",
     severity: "error",
   },
   [DiagnosticState.ORPHELIN]: {
@@ -103,6 +112,7 @@ export const DIAGNOSTIC_STATE_META: Record<
 
 /** Ordre d'affichage des filtres : anomalies d'abord, puis états normaux. */
 export const DIAGNOSTIC_STATE_ORDER: DiagnosticState[] = [
+  DiagnosticState.SYNC_ERREUR_DEPOSE,
   DiagnosticState.SYNC_ERREUR,
   DiagnosticState.ORPHELIN,
   DiagnosticState.JAMAIS_SYNCHRONISE,
@@ -115,6 +125,27 @@ export const DIAGNOSTIC_STATE_ORDER: DiagnosticState[] = [
   DiagnosticState.CLASSE_SANS_SUITE,
   DiagnosticState.SANS_DOSSIER,
 ];
+
+/**
+ * Verdict DN observé (issu de `dn_probe_state`, écrit par la sync) — la « vérité DN » du
+ * dossier de l'étape courante, sans rappeler l'API. Voir docs SYNC-ERREURS §7.
+ */
+export type DnVerdict = "gone" | "exists" | "probe_error" | "unknown";
+
+export const DN_VERDICT_META: Record<DnVerdict, { label: string; severity: DiagnosticSeverity }> = {
+  gone: { label: "Disparu côté DN", severity: "error" },
+  exists: { label: "Existe côté DN", severity: "success" },
+  probe_error: { label: "Sondage en erreur", severity: "warning" },
+  unknown: { label: "Non sondé", severity: "info" },
+};
+
+/** Dérive le verdict DN à partir de l'état brut persisté par la sync. */
+export function dnVerdictOf(dnProbeState: string | null): DnVerdict {
+  if (!dnProbeState) return "unknown";
+  if (dnProbeState === "not_found") return "gone";
+  if (dnProbeState === "unauthorized" || dnProbeState === "api_error") return "probe_error";
+  return "exists"; // en_construction / en_instruction / accepte / refuse / sans_suite
+}
 
 /** Une ligne de diagnostic (un parcours actif). */
 export interface DiagnosticRow {
@@ -133,6 +164,10 @@ export interface DiagnosticRow {
   /** Âge en jours depuis la date pertinente pour l'état (dépôt, création…). */
   ageDays: number | null;
   detail: string | null;
+  /** Verdict DN persisté (dn_probe_state) + sa fraîcheur, et le verdict dérivé. */
+  dnProbeState: string | null;
+  dnProbeAt: Date | null;
+  dnVerdict: DnVerdict;
 }
 
 export interface DiagnosticsResult {

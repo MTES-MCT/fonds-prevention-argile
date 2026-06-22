@@ -50,6 +50,18 @@ export async function createDossierForCurrentStep(
 }
 
 /**
+ * Enregistre le verdict DN observé au dernier sondage de la sync (état réel côté DN, ou
+ * "not_found" / "unauthorized" / "api_error"). Sert au diagnostic pour classer la liste sur
+ * la vérité DN en lecture DB, sans rappeler l'API. Léger : un seul UPDATE, aucun autre champ.
+ */
+export async function recordDnProbeState(dossierId: string, state: string): Promise<void> {
+  await db
+    .update(dossiersDemarchesSimplifiees)
+    .set({ dnProbeState: state, dnProbeAt: new Date() })
+    .where(eq(dossiersDemarchesSimplifiees.id, dossierId));
+}
+
+/**
  * Récupère un dossier DS par étape
  */
 export async function getDossierByStep(parcoursId: string, step: Step) {

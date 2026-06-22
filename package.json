@@ -2,7 +2,7 @@
   "name": "fonds-prevention-argile",
   "version": "1.15.0",
   "private": true,
-  "packageManager": "pnpm@11.7.0",
+  "packageManager": "pnpm@11.8.0",
   "engines": {
     "node": "24.x"
   },
@@ -41,8 +41,12 @@
     "audit:parcours-ds": "tsx scripts/ops/audit/audit-parcours-ds-integrity.ts",
     "audit:dossiers-bloques": "tsx scripts/ops/audit/audit-dossiers-bloques.ts",
     "ds:check-permissions": "tsx scripts/ops/ds/check-ds-permissions.ts",
+    "ds:probe-dossiers": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/probe-dossiers.ts",
     "fix:double-progression": "tsx scripts/ops/fix/fix-double-progression-amo.ts",
     "fix:amo-non-eligible": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reset-amo-non-eligible.ts",
+    "fix:eligibilite-sync-error": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts",
+    "fix:clean-faux-depots": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/clean-faux-depots-submitted-at.ts",
+    "fix:relink-eligibilite": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/relink-eligibilite-dossier.ts",
     "rga:import": "tsx scripts/import/rga-zones/import-rga-zones.ts"
   },
   "dependencies": {

@@ -132,16 +132,40 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
                                 </td>
                                 <td>{d.localStatus ?? "non déposé"}</td>
                                 <td>{d.dsError ? <em>erreur : {d.dsError}</em> : (d.dsState ?? "-")}</td>
-                                <td style={{ maxWidth: 420 }}>
+                                <td style={{ maxWidth: 420, overflowWrap: "break-word", whiteSpace: "normal" }}>
                                   {d.explanation ? (
                                     <>
                                       <span
                                         className={`fr-badge fr-badge--sm ${d.explanation.isBug ? "fr-badge--error" : "fr-badge--success"} fr-mb-1v`}>
                                         {d.explanation.label}
                                       </span>
-                                      <p className="fr-text--xs fr-mb-0" style={{ color: "var(--text-mention-grey)" }}>
+                                      <p
+                                        className="fr-text--xs fr-mb-0"
+                                        style={{ color: "var(--text-mention-grey)", overflowWrap: "break-word" }}>
                                         {d.explanation.explanation}
                                       </p>
+                                      {d.timeline && (
+                                        <details className="fr-mt-1v">
+                                          <summary className="fr-text--xs" style={{ cursor: "pointer" }}>
+                                            Pourquoi ce dossier est dans cet état ?
+                                          </summary>
+                                          <ol
+                                            className="fr-mt-1v fr-mb-0"
+                                            style={{ paddingLeft: "1.2em", overflowWrap: "break-word" }}>
+                                            {d.timeline.map((s, i) => (
+                                              <li
+                                                key={i}
+                                                className="fr-text--xs"
+                                                style={{
+                                                  color: "var(--text-mention-grey)",
+                                                  overflowWrap: "break-word",
+                                                }}>
+                                                {s}
+                                              </li>
+                                            ))}
+                                          </ol>
+                                        </details>
+                                      )}
                                     </>
                                   ) : (
                                     "-"
