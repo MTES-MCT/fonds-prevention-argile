@@ -33,6 +33,26 @@ eligibilite: Sync dossier <N> échouée: GraphQL errors: Dossier not found
 
 ## 2. Les sous-cas
 
+### Synthèse : cas → action
+
+Le sur-ensemble « sync erreur » se décompose, selon le **verdict DN réel** (sondé), en :
+
+| Cas                                      | Verdict DN                                | Signal local                             | Action principale      | Transverse                   |
+| ---------------------------------------- | ----------------------------------------- | ---------------------------------------- | ---------------------- | ---------------------------- |
+| **A** — existe côté DN                   | en_instruction / en_construction / traité | —                                        | **resync**             | clean si faux `submitted_at` |
+| **B1** — drop-off (prefill non complété) | not_found + **ABSENT**                    | `last_sync_at` NULL                      | **reset**              | clean si faux `submitted_at` |
+| **B2** — mismatch                        | not_found + **existe sous autre n°**      | —                                        | **relink** (pas reset) | —                            |
+| **B3** — déposé puis purgé/expiré        | not_found + ABSENT                        | `last_sync_at` renseigné                 | **reset**              | —                            |
+| **Erreur de sondage**                    | unauthorized / api_error                  | —                                        | `ds:check-permissions` | —                            |
+| **(transverse)** faux dépôt legacy       | n'importe                                 | `submitted_at` set + `last_sync_at` NULL | —                      | **`fix:clean-faux-depots`**  |
+
+`clean` ne répare pas le parcours (c'est `reset`) : il efface le `submitted_at` trompeur posé
+à la création par le code pré-#216 (cf. §6), qui fausse diagnostic et stats. `pnpm
+ds:probe-dossiers --from-sync-errors --email-crosscheck` produit ce décompte directement
+(section **PLAN D'ACTION**).
+
+### Détail des états et verdicts
+
 Le diagnostic distingue **deux états** (calculés en base, sans appel DN) :
 
 | État diagnostic                                              | Condition en base                                                    | Interprétation                                                           |
@@ -186,38 +206,59 @@ Après relink : **relancer une synchro** pour recopier l'état réel.
 
 ---
 
-## 4. Playbook final
+## 4. Playbook (prod)
 
-Ordre d'exécution recommandé. Chaque étape indique le(s) cas qu'elle résout.
+Bout en bout. L'ordre n'est pas neutre (**relink avant reset**).
 
-1. **Diagnostiquer** (lecture seule) :
-   `pnpm ds:probe-dossiers --from-sync-errors --email-crosscheck`.
+### 1. Déploiement
 
-2. **Relancer une synchro DS** (bouton « Lancer une synchro maintenant »,
-   `/administration/synchronisations`).
-   → Résout **EN_INSTRUCTION / DEPOSE_NON_INSTRUIT / TRAITE** (dossiers qui existent encore
-   sur DN) : le miroir local se met à jour, le parcours se débloque et quitte la sync-erreur.
+- Déployer la branche, puis **appliquer la migration** (`pnpm db:migrate`) → colonnes
+  `dn_probe_*`. **Bloquant** : sans ça la vue diagnostic plante (`column dn_probe_state does
+not exist`).
+- Vérifier que `/administration/diagnostics` charge.
 
-3. **Relinker les mismatches** (avant le reset) :
-   `pnpm fix:relink-eligibilite --from-sync-errors` puis `--apply`, puis **resync**.
-   → Résout **GONE / EXISTE_SOUS_AUTRE_NUMERO** : récupère le dossier réel (souvent accepté)
-   sans doublon. Fait que ces parcours seront vus `EXISTS` (donc épargnés) à l'étape 4.
+### 2. Remplir la « vérité DN » + régler les cas A
 
-4. **Reset des drop-offs restants** :
-   `pnpm fix:eligibilite-sync-error` (dry-run) puis `--apply`.
-   → Résout **GONE / ABSENT** : supprime le pointeur mort, l'usager retrouve le CTA
-   « Remplir le formulaire » (nouveau lien « commencer »). Le parcours quitte la sync-erreur.
+Au déploiement, `dn_probe_state` est vide → colonne « Verdict DN » = **Non sondé** partout.
 
-5. **Nettoyer les faux dépôts legacy** (hygiène, indépendant) :
-   `pnpm fix:clean-faux-depots` puis `--apply`.
-   → Corrige les `submitted_at` trompeurs (création pré-#216) : diagnostic et stats fiables.
+- Cliquer **« Lancer une synchro maintenant »** (`/administration/synchronisations`) : elle
+  **resynchronise ET écrit `dn_probe_state`** en une passe.
+- Effet : les cas **A (existe côté DN)** se **corrigent tout seuls** (le miroir rattrape →
+  ils quittent la sync-erreur) et le « Verdict DN » se remplit pour tous. _(Le CRON ferait
+  pareil en quelques heures.)_
 
-6. **PROBE_ERREUR / unauthorized** (s'il y en a) :
-   `pnpm ds:check-permissions` → vérifier publication de la démarche + token instructeur.
+### 3. Lire le diagnostic — état des lieux
 
-> Depuis le fix « erreur active » (§2), reset et resync **font effectivement disparaître**
-> les parcours de la liste sync-erreur au prochain chargement (l'erreur obsolète n'est plus
-> comptée). Plus de « collant ».
+- Vue UI : filtrer les « sync erreur », lire la colonne **Verdict DN** (existe → résiduel à
+  resync ; disparu → à traiter). « Analyser » pour le détail d'un dossier.
+- Liste chiffrée + actionnable : `pnpm ds:probe-dossiers --from-sync-errors --email-crosscheck`
+  → section **PLAN D'ACTION** (combien de resync / reset / relink / clean / erreur).
+
+### 4. Exécuter les scripts — **dans cet ordre**, dry-run puis `--apply`
+
+1. **Relink** (mismatches B2) **en premier** : `pnpm fix:relink-eligibilite --from-sync-errors`
+   → `--apply` → **re-sync**. _Pourquoi en premier : un mismatch est « not found », le reset le
+   supprimerait à tort ; le relink le rend « existe » et le reset l'épargne ensuite._
+2. **Reset** (drop-offs B1 + purgés B3) : `pnpm fix:eligibilite-sync-error` → `--apply`.
+   _Sûr : re-vérifie DN, ne supprime que les GONE confirmés._
+3. **Clean** (faux dépôts legacy, transverse) : `pnpm fix:clean-faux-depots` → `--apply`.
+   \_Indépendant : ne répare pas le parcours, nettoie les `submitted_at` trompeurs (diagnostic
+   - stats). Lançable quand on veut.\_
+4. **Erreur de sondage** (s'il y en a) : `pnpm ds:check-permissions` (démarche publiée + token
+   instructeur).
+
+### 5. Vérifier
+
+- Rafraîchir la vue : les parcours traités **quittent la sync-erreur** (fix « erreur active »
+  §2 : dossier supprimé / resyncé → erreur obsolète, plus de « collant »).
+- Re-lancer `pnpm ds:probe-dossiers --from-sync-errors` → le PLAN D'ACTION doit retomber à ~0
+  (le résiduel = nouveaux drop-offs depuis).
+
+### 6. Pérenne
+
+- Le drop-off **se reproduit** (prefills jamais complétés). Repasser périodiquement par la vue
+  - relancer **reset/clean** au besoin. Le CRON entretient `dn_probe_state` et fait quitter
+    l'erreur aux cas A automatiquement. Pas de logs prod nécessaires.
 
 ---
 
