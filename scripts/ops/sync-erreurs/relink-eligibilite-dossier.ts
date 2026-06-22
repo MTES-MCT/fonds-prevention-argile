@@ -71,12 +71,19 @@ function pickTarget(
   candidates: Array<{ number: number; state: string; archived: boolean }>,
   excludeNumber: string
 ): { number: number; state: string } | null {
-  const usable = candidates.filter((c) => !c.archived && String(c.number) !== excludeNumber);
+  // Dédup par numéro : le même dossier peut apparaître plusieurs fois (email == emailContact,
+  // ou pagination). Deux entrées du MÊME numéro ne sont pas une ambiguïté.
+  const byNumber = new Map<number, { number: number; state: string; archived: boolean }>();
+  for (const c of candidates) {
+    if (c.archived || String(c.number) === excludeNumber) continue;
+    if (!byNumber.has(c.number)) byNumber.set(c.number, c);
+  }
+  const usable = [...byNumber.values()];
   if (usable.length === 0) return null;
   const ranked = usable.map((c) => ({ ...c, rank: STATE_RANK[c.state] ?? 0 }));
   const best = Math.max(...ranked.map((c) => c.rank));
   const top = ranked.filter((c) => c.rank === best);
-  if (top.length !== 1) return null; // ambigu -> manuel
+  if (top.length !== 1) return null; // ambigu (numéros DISTINCTS au même rang) -> manuel
   return { number: top[0].number, state: top[0].state };
 }
 
@@ -164,7 +171,7 @@ async function discoverFromSyncErrors(): Promise<Relink[]> {
     }
     if (SLEEP_MS > 0) await sleep(SLEEP_MS);
 
-    const emails = [norm(c.email), norm(c.emailContact)].filter((e): e is string => !!e);
+    const emails = [...new Set([norm(c.email), norm(c.emailContact)].filter((e): e is string => !!e))];
     const hits = emails.flatMap((e) => index.get(e) ?? []);
     const target = pickTarget(hits, c.dsNumber);
     if (!target) continue;

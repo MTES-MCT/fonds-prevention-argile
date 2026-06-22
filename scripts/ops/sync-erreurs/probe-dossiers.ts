@@ -349,8 +349,16 @@ async function main() {
 
       let absent = 0;
       for (const r of goneResults) {
-        const emails = [norm(r.email), norm(r.emailContact)].filter((e): e is string => !!e);
-        const found = emails.flatMap((e) => index.get(e) ?? []).filter((d) => String(d.number) !== r.dsNumber);
+        const emails = [...new Set([norm(r.email), norm(r.emailContact)].filter((e): e is string => !!e))];
+        // Dédup par numéro (email == emailContact ou pagination peuvent doubler les entrées).
+        const found = [
+          ...new Map(
+            emails
+              .flatMap((e) => index.get(e) ?? [])
+              .filter((d) => String(d.number) !== r.dsNumber)
+              .map((d) => [d.number, d])
+          ).values(),
+        ];
         if (found.length > 0) {
           mismatchNumbers.add(r.dsNumber);
           const list = found.map((d) => `#${d.number}(${d.state})`).join(", ");
