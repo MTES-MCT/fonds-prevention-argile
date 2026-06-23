@@ -101,7 +101,12 @@ Repères de permissions par rôle :
 - **ANALYSTE** : lecture stats (national ou départemental, voir §5). En mode
   départemental (suivi DDT), peut aussi ajouter/éditer ses propres messages
   (`COMMENTAIRES_*`) sur les dossiers de son territoire. Ne gère pas l'éligibilité
-  (`ELIGIBILITE_WRITE`) et ne crée pas de dossier (`DOSSIERS_CREATE`).
+  (`ELIGIBILITE_WRITE`) et ne crée pas de dossier (`DOSSIERS_CREATE`). La gestion
+  d'éligibilité (`accepterAccompagnement` / `refuserDemandeNonEligible`) est en
+  outre gardée par `verifyAmoOwnership` : l'analyste n'étant jamais propriétaire AMO
+  de la demande, l'action échoue côté serveur (« permission refusée »). Le composant
+  UI peut s'afficher mais reste inerte pour lui — la garde est au niveau de l'action,
+  pas par masquage. Voir [ADR-0014](../adr/0014-perimetre-donnees-role-analyste.md).
 - **AMO** : dossiers AMO (lecture + stats), création de dossier, commentaires
   (création + édition/suppression des siens).
 - **ALLERS_VERS** : prospects (vue + détail + stats), création de dossier,
@@ -133,6 +138,14 @@ Distinctions clés :
   accède aux **dossiers de ces territoires** et peut y ajouter des messages.
   C'est `canViewAllDossiers` (réservé aux admins) — et non `isNational` (stats) —
   qui ouvre le détail d'un dossier hors territoire.
+- **Données individuelles scopées, agrégats nationaux ouverts** : pour l'analyste
+  départemental, les **données individuelles** sont strictement territoriales —
+  dossiers (listing + détail), demandeurs (`getUsersWithParcours` filtré par
+  département), compteur de dossiers. En revanche, les **compteurs agrégés
+  nationaux** du Tableau de bord `/administration` (visiteurs, simulations, comptes
+  créés…) restent consultables : ce sont des agrégats non nominatifs et le pilotage
+  national fait partie du rôle. Décision assumée, voir
+  [ADR-0014](../adr/0014-perimetre-donnees-role-analyste.md).
 - **ALLERS_VERS vs AMO_ET_ALLERS_VERS** : l'allers-vers seul ne voit que les
   dossiers sans AMO de son territoire ; la version fusionnée cumule aussi les
   dossiers de son entreprise AMO. La version fusionnée requiert une entreprise AMO
