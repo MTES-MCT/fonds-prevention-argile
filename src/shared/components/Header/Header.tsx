@@ -1,91 +1,60 @@
 "use client";
 
 import { useAuth } from "@/features/auth/client";
-import { useAgentRole, useIsAgent } from "@/features/auth/hooks";
+import { useIsAgent, useCanAccessAdministration, useCanAccessEspaceAgent } from "@/features/auth/hooks";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
-import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import Link from "next/link";
-import { AgentNavigation } from "@/shared/components/AgentNavigation";
-import { AdminNavigation } from "@/shared/components/AdminNavigation";
+import { BackofficeNavigation } from "@/shared/components/BackofficeNavigation";
 
 /**
- * Liens de navigation pour les agents selon leur rôle
+ * Liens de navigation agent (desktop, haut de header).
+ * Le bouton « Vue espace agent » a été retiré : sur desktop, la rangée « Suivi des
+ * dossiers » de la navigation backoffice (ADR-0015) rend cette bascule inutile.
+ * On garde un accès direct à l'administration pour qui y a droit.
  */
 function AgentNavLinks() {
-  const agentRole = useAgentRole();
+  const showAdmin = useCanAccessAdministration();
 
-  switch (agentRole) {
-    // Analyste : super-admin et analyste départemental (DDT) accèdent aussi à
-    // l'espace agent. Un analyste national est renvoyé par la garde du layout.
-    case UserRole.SUPER_ADMINISTRATEUR:
-    case UserRole.ANALYSTE:
-      return (
-        <>
-          <li>
-            <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
-              Administration
-            </Link>
-          </li>
-          <li>
-            <Link href="/espace-agent" className="fr-icon-eye-line fr-btn">
-              Vue espace agent
-            </Link>
-          </li>
-        </>
-      );
+  if (!showAdmin) return null;
 
-    case UserRole.ADMINISTRATEUR:
-      return (
-        <li>
-          <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
-            Administration
-          </Link>
-        </li>
-      );
-
-    default:
-      return null;
-  }
+  return (
+    <li>
+      <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
+        Administration
+      </Link>
+    </li>
+  );
 }
 
 /**
- * Liens de navigation pour les agents (version mobile)
+ * Liens de navigation agent (mobile, modal).
+ * Le modal est la navigation sur mobile (les rangées backoffice sont desktop) :
+ * on y expose donc les deux espaces selon les capacités (ADR-0015).
  */
 function AgentNavLinksMobile() {
-  const agentRole = useAgentRole();
+  const showAdmin = useCanAccessAdministration();
+  const showAgent = useCanAccessEspaceAgent();
 
-  switch (agentRole) {
-    // Analyste : super-admin et analyste départemental (DDT) accèdent aussi à
-    // l'espace agent. Un analyste national est renvoyé par la garde du layout.
-    case UserRole.SUPER_ADMINISTRATEUR:
-    case UserRole.ANALYSTE:
-      return (
-        <>
-          <li>
-            <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
-              Administration
-            </Link>
-          </li>
-          <li>
-            <Link href="/espace-agent" className="fr-icon-eye-line fr-btn">
-              Vue espace agent
-            </Link>
-          </li>
-        </>
-      );
+  if (!showAdmin && !showAgent) return null;
 
-    case UserRole.ADMINISTRATEUR:
-      return (
+  return (
+    <>
+      {showAdmin && (
         <li>
           <Link href={ROUTES.backoffice.administration.root} className="fr-icon-settings-5-line fr-btn">
             Administration
           </Link>
         </li>
-      );
-
-    default:
-      return null;
-  }
+      )}
+      {showAgent && (
+        <li>
+          <Link href="/espace-agent/dossiers" className="fr-icon-folder-2-line fr-btn">
+            Dossiers
+          </Link>
+        </li>
+      )}
+    </>
+  );
 }
 
 const Header = () => {
@@ -197,11 +166,8 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Navigation agent (AMO, Allers-Vers, etc.) */}
-      <AgentNavigation />
-
-      {/* Navigation super-admin (menu horizontal) */}
-      <AdminNavigation />
+      {/* Navigation backoffice unifiée (deux rangées pilotées par rôle, ADR-0015) */}
+      <BackofficeNavigation />
 
       {/* Menu mobile */}
       <div className="fr-header__menu fr-modal" id="menu-modal-mobile" aria-labelledby="menu-mobile">
