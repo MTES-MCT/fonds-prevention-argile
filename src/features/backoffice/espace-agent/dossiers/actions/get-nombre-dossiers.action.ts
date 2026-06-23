@@ -22,8 +22,16 @@ export async function getNombreDossiersAction(): Promise<number> {
       allersVersId: agent.allersVersId ?? null,
     });
 
-    const departements = scope.isNational ? [] : scope.departements;
-    const epcis = scope.isNational ? [] : scope.epcis;
+    // Périmètre = canViewAllDossiers (admins), pas isNational : l'analyste national ne voit aucun dossier. Sans périmètre → 0.
+    const hasScope =
+      scope.canViewAllDossiers ||
+      scope.departements.length > 0 ||
+      scope.epcis.length > 0 ||
+      scope.canViewDossiersByEntreprise;
+    if (!hasScope) return 0;
+
+    const departements = scope.canViewAllDossiers ? [] : scope.departements;
+    const epcis = scope.canViewAllDossiers ? [] : scope.epcis;
 
     return parcoursRepo.countParcoursByTerritoire(departements, epcis);
   } catch (error) {

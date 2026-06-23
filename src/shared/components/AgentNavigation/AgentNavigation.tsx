@@ -56,15 +56,20 @@ export function AgentNavigation() {
     return null;
   }
 
+  // Barre propre à l'espace agent : sinon elle déborde sur /administration pour l'analyste national.
+  if (!pathname.startsWith("/espace-agent")) {
+    return null;
+  }
+
+  // ANALYSTE inclus : seul un départemental atteint l'espace agent (le national est redirigé par le layout).
   const isAgentRole =
     agentRole === UserRole.AMO ||
     agentRole === UserRole.ALLERS_VERS ||
-    agentRole === UserRole.AMO_ET_ALLERS_VERS;
+    agentRole === UserRole.AMO_ET_ALLERS_VERS ||
+    agentRole === UserRole.ANALYSTE ||
+    agentRole === UserRole.SUPER_ADMINISTRATEUR;
 
-  const isSuperAdminOnAgentRoute =
-    agentRole === UserRole.SUPER_ADMINISTRATEUR && pathname.startsWith("/espace-agent");
-
-  if (!isAgentRole && !isSuperAdminOnAgentRoute) {
+  if (!isAgentRole) {
     return null;
   }
 
