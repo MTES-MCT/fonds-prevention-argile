@@ -3,19 +3,48 @@ import { getDemandeDetailAction, accepterAccompagnement, refuserDemandeNonEligib
 import { getDemandeDetail } from "../services/demande-detail.service";
 import { approveValidation, rejectEligibility } from "@/features/parcours/amo/services/amo-validation.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
+import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { db } from "@/shared/database/client";
+import type { AuthUser } from "@/features/auth/domain/entities";
 
 // Mock des modules
 vi.mock("../services/demande-detail.service");
 vi.mock("@/features/parcours/amo/services/amo-validation.service");
 vi.mock("@/features/auth/services/user.service");
+vi.mock("@/features/backoffice/shared/actions/super-admin-access", () => ({
+  assertNotSuperAdminReadOnly: vi.fn(),
+}));
 vi.mock("@/shared/database/client", () => ({
   db: {
     select: vi.fn(),
   },
 }));
+
+// Helper : construit un AuthUser agent ProConnect minimal
+const makeAgent = (role: UserRole, entrepriseAmoId?: string | null): AuthUser => ({
+  id: "user-123",
+  role,
+  entrepriseAmoId: entrepriseAmoId ?? undefined,
+  email: "agent@example.com",
+  authMethod: "proconnect",
+  loginTime: new Date().toISOString(),
+  firstName: "Test",
+  lastName: "Agent",
+});
+
+// Mock de la requête db retournant l'entrepriseAmoId propriétaire de la demande
+const mockDemandeOwner = (entrepriseAmoId: string | null) => {
+  vi.mocked(db.select).mockReturnValue({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        limit: vi.fn().mockResolvedValue([{ entrepriseAmoId }]),
+      }),
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+};
 
 // Mock de l'environnement serveur
 vi.mock("@/shared/config/env.config", async (importOriginal) => {
@@ -42,6 +71,8 @@ vi.mock("@/features/parcours/dossiers-ds/adapters/graphql", () => ({
 describe("demande-detail.actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Par défaut : pas en lecture seule (agent normal)
+    vi.mocked(assertNotSuperAdminReadOnly).mockResolvedValue(null);
   });
 
   describe("getDemandeDetailAction", () => {
@@ -229,6 +260,58 @@ describe("demande-detail.actions", () => {
       if (!result.success) {
         expect(result.error).toContain("minimum 10 caractères");
       }
+    });
+  });
+
+  // Cellules négatives RBAC (anti-fuite) — cf. RBAC-TEST-PLAN §7
+  describe("RBAC — accepterAccompagnement / refuserDemandeNonEligible (verifyAmoOwnership)", () => {
+    it.each([UserRole.ANALYSTE, UserRole.ALLERS_VERS])("refuse l'accès au rôle %s (réservé AMO)", async (role) => {
+      vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(role, null));
+
+      const accept = await accepterAccompagnement("demande-123");
+      const refuse = await refuserDemandeNonEligible("demande-123", "Commentaire détaillé suffisant");
+
+      expect(accept.success).toBe(false);
+      expect(refuse.success).toBe(false);
+      if (!accept.success) expect(accept.error).toBe("Accès réservé aux AMO");
+      // Ni la validation ni le refus ne touchent le service métier
+      expect(approveValidation).not.toHaveBeenCalled();
+      expect(rejectEligibility).not.toHaveBeenCalled();
+    });
+
+    it("refuse un AMO propriétaire d'une AUTRE entreprise (SCOPE:owner)", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, "amo-A"));
+      mockDemandeOwner("amo-B"); // la demande appartient à une autre entreprise
+
+      const result = await accepterAccompagnement("demande-123", "Commentaire");
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toBe("Cette demande ne vous est pas destinée");
+      expect(approveValidation).not.toHaveBeenCalled();
+    });
+
+    it("refuse un AMO sans entreprise configurée", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, null));
+
+      const result = await accepterAccompagnement("demande-123", "Commentaire");
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toBe("Votre compte AMO n'est pas configuré");
+      expect(approveValidation).not.toHaveBeenCalled();
+    });
+
+    it("refuse le SUPER_ADMINISTRATEUR (espace agent en lecture seule)", async () => {
+      vi.mocked(assertNotSuperAdminReadOnly).mockResolvedValue(
+        "Action non autorisée : l'espace agent est en lecture seule pour les super administrateurs."
+      );
+
+      const result = await accepterAccompagnement("demande-123", "Commentaire");
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toContain("lecture seule");
+      // La garde lecture seule court-circuite avant toute vérification d'ownership
+      expect(getCurrentUser).not.toHaveBeenCalled();
+      expect(approveValidation).not.toHaveBeenCalled();
     });
   });
 });

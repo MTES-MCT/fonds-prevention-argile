@@ -112,37 +112,50 @@ ni test d'accès associé. Heuristique imparfaite mais qui attrape les oublis.
 > verdict attendu par rôle, et les cellules non couvertes à traiter.
 
 Inventaire généré le 2026-06-23 (audit multi-agents, 4 zones, 63 surfaces). **51
-cellules négatives** recensées : **32 couvertes**, **19 gaps**. Les agrégats
-nationaux consultables par l'`ANALYSTE` (ADR-0014) sont exclus des gaps.
+cellules négatives** recensées. Les agrégats nationaux consultables par l'`ANALYSTE`
+(ADR-0014) sont exclus des gaps.
 
-> Distinction importante mise au jour : certaines actions du Tableau de bord
-> (`getAutresDemandesArchiveesAction`, `getEligibiliteStatsAction`) renvoient des
-> **données individuelles** (et non des agrégats) sans appeler `getScopeFilters` —
-> elles ne sont **pas** couvertes par l'exception agrégats de l'ADR-0014 et
-> constituent de vraies fuites pour l'analyste départemental.
+> Avancement (2026-06-23, post-traitement HIGH) : la fuite nominative est corrigée
+> et **9 surfaces HIGH** désormais couvertes par des tests négatifs (détail demande
+> AMO action + service, création dossier, diagnostics super-admin, garde
+> `/administration`, layout espace-agent dont rejet FranceConnect, middleware,
+> autres demandes archivées). Reste en **PARTIEL** : les gardes des sous-pages
+> `/administration/*` (pattern `/administration` testé, à décliner) et les gardes
+> _page_ super-admin synchronisations. Le garde-fou meta (§5) reste à implémenter
+> pour attraper les futures `*.actions.ts` non gardées/non testées.
+
+> Mise au point post-audit (2026-06-23) : la fuite nominative
+> `getAutresDemandesArchiveesAction` est **corrigée** (scope territorial + test,
+> voir ci-dessous). En revanche `getEligibiliteStatsAction` a été **sur-classé** par
+> l'audit : son type de retour (`EligibiliteStats`) ne contient **que des agrégats**
+> (compteurs, tranches, tops département/commune) — **aucun champ nominatif**. Elle
+> tombe donc sous l'exception agrégats de l'ADR-0014 (un agrégat départemental est a
+> fortiori ouvert si le national l'est) et **n'est pas une fuite**. Seule
+> `getAutresDemandesArchiveesDetail` (qui renvoie `demandeur: "Prénom Nom"`, agent,
+> structure AMO) exposait du nominatif non scopé.
 
 ### HIGH — PII/individuel non scopé ou DENY de route non testé
 
-| Surface                                                                   | Fichier                                                                     | Sensibilité | Cellules négatives                                                  | Couvert ? |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------- | --------- |
-| Détail demande AMO + Accepter/Refuser                                     | `espace-agent/demandes/actions/demande-detail.actions.ts`                   | individual  | ANALYSTE / ALLERS_VERS → DENY (réservé AMO)                         | NON       |
-| Détail demande AMO (propriété)                                            | `espace-agent/demandes/actions/demande-detail.actions.ts:54`                | individual  | AMO mauvais entrepriseAmoId → SCOPE:owner                           | NON       |
-| Création dossier                                                          | `espace-agent/creation-dossier/actions/create-dossier-aller-vers.action.ts` | individual  | ANALYSTE / SUPER_ADMIN(RO) / AMO_ET_AV(av sans allersVersId) → DENY | NON       |
-| Listing demandes AMO (page)                                               | `espace-agent/demandes/page.tsx`                                            | individual  | ANALYSTE / ALLERS_VERS → DENY                                       | NON       |
-| Autres demandes archivées détail (MISSING getScopeFilters)                | `administration/tableau-de-bord/actions/tableau-de-bord.actions.ts:113`     | individual  | ANALYSTE-départemental → SCOPE:territoire (fuite)                   | NON       |
-| Stats éligibilité (MISSING getScopeFilters)                               | `administration/tableau-de-bord/actions/tableau-de-bord.actions.ts:200`     | individual  | ANALYSTE-départemental → SCOPE:territoire (fuite)                   | NON       |
-| Diagnostics List/Detail                                                   | `administration/diagnostics/actions/diagnostics.actions.ts`                 | individual  | ADMINISTRATEUR / ANALYSTE / non-auth → DENY                         | NON       |
-| Route /administration (guard)                                             | `app/(backoffice)/administration/page.tsx`                                  | none        | non-auth / PARTICULIER / AMO / ALLERS_VERS / AMO_ET_AV → DENY       | NON       |
-| Routes admin (agents/commentaires/amo/allers-vers/acquisition/demandeurs) | `app/(backoffice)/administration/*/page.tsx`                                | none        | ANALYSTE/ADMINISTRATEUR/AMO selon page → DENY                       | NON       |
-| Routes super-admin (synchronisations/diagnostics) guard                   | `app/(backoffice)/administration/{synchronisations,diagnostics}/page.tsx`   | none        | ADMINISTRATEUR / ANALYSTE → DENY                                    | NON       |
-| EspaceAgent Layout — rejet FranceConnect                                  | `app/(backoffice)/espace-agent/layout.tsx`                                  | individual  | FranceConnect (mauvaise méthode) → DENY                             | NON       |
-| Middleware auth & redirection                                             | `src/middleware.ts`                                                         | none        | AMO→/espace-agent ; non-auth→/connexion/agent → DENY                | NON       |
+| Surface                                                                   | Fichier                                                                     | Sensibilité | Cellules négatives                                                   | Couvert ?                                                        |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Détail demande AMO + Accepter/Refuser                                     | `espace-agent/demandes/actions/demande-detail.actions.ts`                   | individual  | ANALYSTE / ALLERS_VERS → DENY (réservé AMO)                          | OUI (action + service)                                           |
+| Détail demande AMO (propriété)                                            | `espace-agent/demandes/actions/demande-detail.actions.ts:54`                | individual  | AMO mauvais entrepriseAmoId → SCOPE:owner                            | OUI (testé)                                                      |
+| Création dossier                                                          | `espace-agent/creation-dossier/actions/create-dossier-aller-vers.action.ts` | individual  | ANALYSTE / SUPER_ADMIN(RO) / AMO_ET_AV(av sans allersVersId) → DENY  | OUI (testé)                                                      |
+| Listing demandes AMO (page)                                               | `espace-agent/demandes/page.tsx`                                            | individual  | ANALYSTE / ALLERS_VERS → DENY                                        | INDIRECT (wrapper : garde layout + action détail testées)        |
+| Autres demandes archivées détail (nominatif)                              | `administration/tableau-de-bord/actions/tableau-de-bord.actions.ts:113`     | individual  | ANALYSTE-départemental → SCOPE:territoire ; ANALYSTE national → DENY | OUI (corrigé + testé)                                            |
+| ~~Stats éligibilité~~ (agrégat, pas un gap)                               | `administration/tableau-de-bord/actions/tableau-de-bord.actions.ts:200`     | aggregate   | agrégat national ouvert à l'ANALYSTE (ADR-0014) → hors gaps          | N/A                                                              |
+| Diagnostics List/Detail                                                   | `administration/diagnostics/actions/diagnostics.actions.ts`                 | individual  | ADMINISTRATEUR / ANALYSTE / non-auth → DENY                          | OUI (testé)                                                      |
+| Route /administration (guard)                                             | `app/(backoffice)/administration/page.tsx`                                  | none        | non-auth / PARTICULIER / AMO / ALLERS_VERS / AMO_ET_AV → DENY        | OUI (testé)                                                      |
+| Routes admin (agents/commentaires/amo/allers-vers/acquisition/demandeurs) | `app/(backoffice)/administration/*/page.tsx`                                | none        | ANALYSTE/ADMINISTRATEUR/AMO selon page → DENY                        | PARTIEL (pattern /administration testé ; sous-pages à compléter) |
+| Routes super-admin (synchronisations/diagnostics) guard                   | `app/(backoffice)/administration/{synchronisations,diagnostics}/page.tsx`   | none        | ADMINISTRATEUR / ANALYSTE → DENY                                     | PARTIEL (actions diagnostics testées ; gardes page à compléter)  |
+| EspaceAgent Layout — rejet FranceConnect                                  | `app/(backoffice)/espace-agent/layout.tsx`                                  | individual  | FranceConnect (mauvaise méthode) → DENY                              | OUI (testé)                                                      |
+| Middleware auth & redirection                                             | `src/middleware.ts`                                                         | none        | AMO→/espace-amo ; non-auth→/connexion/agent → DENY                   | OUI (testé)                                                      |
 
 ### MEDIUM — scope individuel partiel / DENY admin partiel
 
 | Surface                                           | Fichier                                                           | Sensibilité | Cellules négatives                          | Couvert ?           |
 | ------------------------------------------------- | ----------------------------------------------------------------- | ----------- | ------------------------------------------- | ------------------- |
-| Accepter/Refuser accompagnement (lecture seule)   | `espace-agent/demandes/actions/demande-detail.actions.ts:79`      | individual  | SUPER_ADMINISTRATEUR → DENY (RO)            | PARTIEL (générique) |
+| Accepter/Refuser accompagnement (lecture seule)   | `espace-agent/demandes/actions/demande-detail.actions.ts:79`      | individual  | SUPER_ADMINISTRATEUR → DENY (RO)            | OUI (testé)         |
 | Commentaires create/update/delete (lecture seule) | `espace-agent/shared/actions/dossier-actions.actions.ts:45`       | individual  | SUPER_ADMINISTRATEUR → DENY (RO)            | PARTIEL (générique) |
 | Agents CRUD                                       | `administration/agents/actions/agents.actions.ts`                 | individual  | PARTICULIER → DENY                          | NON                 |
 | AMO CRUD                                          | `administration/amo/actions/amo-admin.actions.ts`                 | aggregate   | non-authentifié → DENY                      | NON                 |
@@ -156,3 +169,11 @@ nationaux consultables par l'`ANALYSTE` (ADR-0014) sont exclus des gaps.
 (AMO sans entreprise → DENY), `AgentNavigation.test.tsx`, `rbac.service.test.ts`,
 `users-tracking.actions.test.ts` (+ scope territoire), `agents.actions.test.ts`,
 `amo-admin.actions.test.ts`, `get-statistiques.action.test.ts`, `espace-agent/page.test.ts`.
+
+Ajoutés le 2026-06-23 (traitement HIGH) : `tableau-de-bord.actions.test.ts` (fuite
+nominative scopée : admin national / analyste départemental / analyste national → vide),
+`demande-detail.actions.test.ts` (+ cas ANALYSTE/ALLERS_VERS/owner/super-admin RO),
+`demande-detail.service.test.ts` (garde de lecture), `create-dossier-aller-vers.action.test.ts`,
+`diagnostics.actions.test.ts` (réservé super-admin), `espace-agent/layout.test.tsx`
+(rejet FranceConnect + rôles), `administration/page.test.tsx` (garde de route),
+`middleware.test.ts` (redirection non-auth + AMO hors `/administration`).
