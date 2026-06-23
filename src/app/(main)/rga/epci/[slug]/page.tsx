@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import {
-  getAllEpcis,
   getEpciBySlug,
   getDepartementByCode,
   getTopCommunesByEpci,
@@ -34,7 +33,8 @@ import { CatnatSummary } from "../../components/catnat";
 // Nombre de communes à afficher
 const NB_COMMUNES_A_AFFICHER = 8;
 
-export const dynamic = "force-dynamic";
+// ISR : cache 24h, généré à la demande sans prérendu au build, pour absorber les pics de crawl (OOM 21/06/2026).
+export const revalidate = 86400;
 
 interface PageProps {
   params: Promise<{
@@ -42,15 +42,9 @@ interface PageProps {
   }>;
 }
 
-/**
- * Génère les paramètres statiques pour toutes les pages EPCI
- */
-export async function generateStaticParams() {
-  const epcis = getAllEpcis();
-
-  return epcis.map((epci) => ({
-    slug: epci.slug,
-  }));
+// Liste vide = pas de prérendu au build, mais route en ISR : chaque slug généré au 1er hit puis caché (requis pour activer le cache).
+export function generateStaticParams(): { slug: string }[] {
+  return [];
 }
 
 /**
