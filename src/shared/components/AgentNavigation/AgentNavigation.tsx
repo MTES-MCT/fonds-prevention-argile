@@ -73,10 +73,14 @@ export function AgentNavigation() {
     return null;
   }
 
+  // L'analyste ne suit que des dossiers ici ; ses stats sont dans /administration
+  // (l'onglet Statistiques de l'espace agent est AMO-centré, sans objet pour lui).
+  const tabs = agentRole === UserRole.ANALYSTE ? AGENT_TABS.filter((tab) => tab.id !== "statistiques") : AGENT_TABS;
+
   return (
     <div className="fr-header__menu">
       <div className="fr-container">
-        <AgentNavigationTabs tabs={AGENT_TABS} />
+        <AgentNavigationTabs tabs={tabs} />
       </div>
     </div>
   );

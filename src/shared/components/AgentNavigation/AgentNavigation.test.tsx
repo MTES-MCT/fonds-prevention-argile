@@ -26,11 +26,11 @@ describe("AgentNavigation — visibilité des onglets espace agent", () => {
     mockPath("/espace-agent/dossiers");
   });
 
-  it("affiche les onglets Dossiers et Statistiques pour un ANALYSTE (suivi DDT)", () => {
+  it("affiche Dossiers mais pas Statistiques pour un ANALYSTE (stats dans /administration)", () => {
     mockRole(UserRole.ANALYSTE);
     render(<AgentNavigation />);
     expect(screen.getByText("Dossiers")).toBeInTheDocument();
-    expect(screen.getByText("Statistiques")).toBeInTheDocument();
+    expect(screen.queryByText("Statistiques")).not.toBeInTheDocument();
   });
 
   it("affiche les onglets pour un AMO (non-régression)", () => {

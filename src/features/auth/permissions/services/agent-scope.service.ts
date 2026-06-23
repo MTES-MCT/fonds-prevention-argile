@@ -238,10 +238,18 @@ export function getScopeFilterConditions(scope: AgentScope): ScopeFilters | null
     };
   }
 
-  // Analyste = pas d'accès aux dossiers individuels
-  return {
-    entrepriseAmoIds: [], // Filtre vide = aucun résultat
-  };
+  // Analyste départemental (suivi DDT) : restreint à ses départements.
+  if (scope.departements.length > 0) {
+    return { departements: scope.departements };
+  }
+
+  // Analyste national : pas de département → stats nationales, aucun filtre.
+  if (scope.isNational) {
+    return null;
+  }
+
+  // Aucun périmètre exploitable (ex. AMO sans entreprise) : aucun résultat.
+  return { noAccess: true };
 }
 
 /**
