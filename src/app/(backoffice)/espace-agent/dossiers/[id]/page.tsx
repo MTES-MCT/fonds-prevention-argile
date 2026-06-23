@@ -197,6 +197,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   currentStatus={dossier.currentStatus}
                   dsStatus={dossier.dsStatus}
                   dates={dossier.dates}
+                  dossiersTimeline={dossier.dossiersTimeline}
                   lastUpdatedAt={dossier.lastUpdatedAt}
                   creator={dossier.creator}
                 />
