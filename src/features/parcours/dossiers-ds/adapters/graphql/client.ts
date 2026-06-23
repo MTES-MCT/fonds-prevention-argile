@@ -294,6 +294,7 @@ export class DemarchesSimplifieesClient {
     state: string;
     datePassageEnConstruction?: string;
     datePassageEnInstruction?: string;
+    dateTraitement?: string;
   } | null> {
     const dossier = await this.getDossier(dossierNumber);
     if (!dossier) return null;
@@ -301,6 +302,7 @@ export class DemarchesSimplifieesClient {
       state: dossier.state,
       datePassageEnConstruction: dossier.datePassageEnConstruction,
       datePassageEnInstruction: dossier.datePassageEnInstruction,
+      dateTraitement: dossier.dateTraitement,
     };
   }
 

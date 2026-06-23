@@ -77,11 +77,12 @@ export async function getDossierByStep(parcoursId: string, step: Step) {
 interface UpdateDossierStatusDates {
   submittedAt?: Date;
   instructedAt?: Date;
+  processedAt?: Date;
 }
 
 /**
  * Met à jour le statut DS d'un dossier.
- * Les dates submittedAt et instructedAt ne sont écrites que si elles ne sont pas déjà renseignées (COALESCE).
+ * Les dates submittedAt / instructedAt / processedAt ne sont écrites que si elles sont fournies (COALESCE).
  */
 export async function updateDossierStatus(
   dossierId: string,
@@ -94,14 +95,15 @@ export async function updateDossierStatus(
       .set({
         dsStatus: newStatus,
         lastSyncAt: new Date(),
-        ...(newStatus === DSStatus.ACCEPTE && { processedAt: new Date() }),
-        // Dates de dépôt / instruction : passées en `Date` typée (mapper Drizzle, comme
+        // Dates de dépôt / instruction / décision : passées en `Date` typée (mapper Drizzle, comme
         // lastSyncAt). NE PAS interpoler un `Date` dans un `sql` brut (COALESCE) — postgres.js
         // ne sait pas le sérialiser et fait planter tout l'UPDATE (ERR_INVALID_ARG_TYPE).
-        // datePassageEnConstruction/EnInstruction sont immuables côté DS → réécrire = idempotent ;
-        // le spread conditionnel évite d'écraser une date existante par `null`.
+        // Ces dates sont immuables côté DS → réécrire = idempotent ; le spread conditionnel
+        // évite d'écraser une date existante par `null`. processedAt vient de `dateTraitement`
+        // (date de décision DDT) renseignée pour tout état final : accepté, refusé, classé.
         ...(dates?.submittedAt && { submittedAt: dates.submittedAt }),
         ...(dates?.instructedAt && { instructedAt: dates.instructedAt }),
+        ...(dates?.processedAt && { processedAt: dates.processedAt }),
       })
       .where(eq(dossiersDemarchesSimplifiees.id, dossierId));
 
