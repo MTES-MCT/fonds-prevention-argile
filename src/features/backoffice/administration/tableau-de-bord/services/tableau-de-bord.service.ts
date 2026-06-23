@@ -12,7 +12,8 @@ import { prospectQualifications } from "@/shared/database/schema/prospect-qualif
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types/qualification.types";
 import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
-import { getAgentFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
+import { getAgentFirstSimulation, getDemandeurFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
+import { matchesTerritoire } from "@/shared/database/repositories/parcours-prevention.repository";
 import type {
   TableauDeBordStats,
   MatomoSimulationsStats,
@@ -315,10 +316,7 @@ async function countDemandesAmo(
 ): Promise<number> {
   // Si filtre departement OU partenaire, on doit join parcours pour appliquer la condition
   if (codeDepartement || partner) {
-    const conditions = [
-      gte(parcoursAmoValidations.choisieAt, debut),
-      lt(parcoursAmoValidations.choisieAt, fin),
-    ];
+    const conditions = [gte(parcoursAmoValidations.choisieAt, debut), lt(parcoursAmoValidations.choisieAt, fin)];
     if (codeDepartement) {
       conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
       conditions.push(whereDepartement(codeDepartement));
@@ -562,7 +560,10 @@ async function getDemandesArchiveesDetail(
 export async function getAutresDemandesArchiveesDetail(
   periodeId: PeriodeId,
   codeDepartement?: string,
-  partner?: PartnerKey | null
+  partner?: PartnerKey | null,
+  // Restriction territoriale pour les surfaces nominatives : null/undefined = national
+  // (admins), liste non vide = restreint aux départements de l'agent (analyste DDT).
+  scopeDepartements?: string[] | null
 ): Promise<{ total: number; demandes: DemandeArchiveeDetail[] }> {
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
@@ -601,6 +602,8 @@ export async function getAutresDemandesArchiveesDetail(
       agentGivenName: agents.givenName,
       agentUsualName: agents.usualName,
       entrepriseAmoNom: entreprisesAmo.nom,
+      rgaSimulationData: parcoursPrevention.rgaSimulationData,
+      rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
     })
     .from(parcoursPrevention)
     .innerJoin(users, eq(parcoursPrevention.userId, users.id))
@@ -610,7 +613,23 @@ export async function getAutresDemandesArchiveesDetail(
     .where(and(...conditions))
     .orderBy(desc(parcoursPrevention.archivedAt));
 
-  const demandes: DemandeArchiveeDetail[] = rows.map((row) => ({
+  // Surface nominative : restreindre aux départements de l'agent (analyste DDT).
+  // USER-first comme le listing/contrôle d'accès (cf. RBAC-ROLES §6), pas AGENT-first.
+  const scopedRows =
+    scopeDepartements && scopeDepartements.length > 0
+      ? rows.filter((row) =>
+          matchesTerritoire(
+            getDemandeurFirstSimulation({
+              rgaSimulationData: row.rgaSimulationData,
+              rgaSimulationDataAgent: row.rgaSimulationDataAgent,
+            }),
+            scopeDepartements,
+            []
+          )
+        )
+      : rows;
+
+  const demandes: DemandeArchiveeDetail[] = scopedRows.map((row) => ({
     parcoursId: row.parcoursId,
     demandeur: [row.userPrenom, row.userNom].filter(Boolean).join(" ") || "Demandeur inconnu",
     agent: row.agentGivenName ? [row.agentGivenName, row.agentUsualName].filter(Boolean).join(" ") : null,
@@ -1219,7 +1238,9 @@ export async function getMatomoSimulationsStats(
     getSimulationsMatomo(debut, fin, codeDepartement, partner).catch(() => matomoFallback),
     countComptesCrees(debut, fin, codeDepartement, partner),
     previousRange
-      ? getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement, partner).catch(() => matomoFallback)
+      ? getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement, partner).catch(
+          () => matomoFallback
+        )
       : Promise.resolve(matomoFallback),
     previousRange
       ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement, partner)

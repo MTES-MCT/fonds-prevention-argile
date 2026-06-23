@@ -2,6 +2,8 @@
 
 import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
+import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
+import { getCurrentUser } from "@/features/auth/services/user.service";
 import {
   getTableauDeBordStats,
   getMatomoSimulationsStats,
@@ -125,7 +127,33 @@ export async function getAutresDemandesArchiveesAction(
   }
 
   try {
-    const result = await getAutresDemandesArchiveesDetail(periodeId, codeDepartement, partner);
+    // Surface nominative (noms des demandeurs archives) : restreindre au perimetre.
+    // Admin = national ; analyste departemental = ses departements ; analyste national
+    // ou sans perimetre = aucune donnee individuelle (ADR-0014). getScopeFilters ne
+    // suffit pas ici car il confond admin-national et analyste-national (tous deux null).
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "Non authentifie" };
+    }
+
+    const scope = await calculateAgentScope({
+      id: user.agentId ?? "",
+      role: user.role,
+      entrepriseAmoId: user.entrepriseAmoId ?? null,
+      allersVersId: user.allersVersId ?? null,
+    });
+
+    let scopeDepartements: string[] | null;
+    if (scope.canViewAllDossiers) {
+      scopeDepartements = null; // national (admins)
+    } else if (scope.departements.length > 0) {
+      scopeDepartements = scope.departements; // analyste departemental
+    } else {
+      // analyste national / sans perimetre : aucune donnee nominative
+      return { success: true, data: { total: 0, demandes: [] } };
+    }
+
+    const result = await getAutresDemandesArchiveesDetail(periodeId, codeDepartement, partner, scopeDepartements);
     return { success: true, data: result };
   } catch (error) {
     console.error("Erreur lors de la recuperation des autres demandes archivees:", error);
