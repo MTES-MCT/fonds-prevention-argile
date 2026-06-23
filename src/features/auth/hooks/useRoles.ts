@@ -63,3 +63,17 @@ export function useIsAnalyste(): boolean {
   const { user } = useAuth();
   return user?.role === ROLES.ANALYSTE;
 }
+
+/**
+ * Capacités d'accès backoffice pour la navigation unifiée (ADR-0015).
+ * Calculées côté serveur et exposées via /api/auth/check.
+ */
+export function useCanAccessAdministration(): boolean {
+  const { user } = useAuth();
+  return user?.canAccessAdministration ?? false;
+}
+
+export function useCanAccessEspaceAgent(): boolean {
+  const { user } = useAuth();
+  return user?.canAccessEspaceAgent ?? false;
+}

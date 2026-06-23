@@ -12,4 +12,7 @@ export interface AuthUser {
   agentId?: string;
   entrepriseAmoId?: string;
   allersVersId?: string;
+  /** Capacités d'accès backoffice pour la navigation unifiée (ADR-0015), calculées côté serveur. */
+  canAccessAdministration?: boolean;
+  canAccessEspaceAgent?: boolean;
 }
