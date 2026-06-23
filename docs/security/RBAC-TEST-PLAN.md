@@ -111,4 +111,48 @@ ni test d'accès associé. Heuristique imparfaite mais qui attrape les oublis.
 > Section alimentée par l'inventaire automatisé (cf. §3). Liste les surfaces, leur
 > verdict attendu par rôle, et les cellules non couvertes à traiter.
 
-_(À compléter par l'exécution de l'inventaire.)_
+Inventaire généré le 2026-06-23 (audit multi-agents, 4 zones, 63 surfaces). **51
+cellules négatives** recensées : **32 couvertes**, **19 gaps**. Les agrégats
+nationaux consultables par l'`ANALYSTE` (ADR-0014) sont exclus des gaps.
+
+> Distinction importante mise au jour : certaines actions du Tableau de bord
+> (`getAutresDemandesArchiveesAction`, `getEligibiliteStatsAction`) renvoient des
+> **données individuelles** (et non des agrégats) sans appeler `getScopeFilters` —
+> elles ne sont **pas** couvertes par l'exception agrégats de l'ADR-0014 et
+> constituent de vraies fuites pour l'analyste départemental.
+
+### HIGH — PII/individuel non scopé ou DENY de route non testé
+
+| Surface                                                                   | Fichier                                                                     | Sensibilité | Cellules négatives                                                  | Couvert ? |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------- | --------- |
+| Détail demande AMO + Accepter/Refuser                                     | `espace-agent/demandes/actions/demande-detail.actions.ts`                   | individual  | ANALYSTE / ALLERS_VERS → DENY (réservé AMO)                         | NON       |
+| Détail demande AMO (propriété)                                            | `espace-agent/demandes/actions/demande-detail.actions.ts:54`                | individual  | AMO mauvais entrepriseAmoId → SCOPE:owner                           | NON       |
+| Création dossier                                                          | `espace-agent/creation-dossier/actions/create-dossier-aller-vers.action.ts` | individual  | ANALYSTE / SUPER_ADMIN(RO) / AMO_ET_AV(av sans allersVersId) → DENY | NON       |
+| Listing demandes AMO (page)                                               | `espace-agent/demandes/page.tsx`                                            | individual  | ANALYSTE / ALLERS_VERS → DENY                                       | NON       |
+| Autres demandes archivées détail (MISSING getScopeFilters)                | `administration/tableau-de-bord/actions/tableau-de-bord.actions.ts:113`     | individual  | ANALYSTE-départemental → SCOPE:territoire (fuite)                   | NON       |
+| Stats éligibilité (MISSING getScopeFilters)                               | `administration/tableau-de-bord/actions/tableau-de-bord.actions.ts:200`     | individual  | ANALYSTE-départemental → SCOPE:territoire (fuite)                   | NON       |
+| Diagnostics List/Detail                                                   | `administration/diagnostics/actions/diagnostics.actions.ts`                 | individual  | ADMINISTRATEUR / ANALYSTE / non-auth → DENY                         | NON       |
+| Route /administration (guard)                                             | `app/(backoffice)/administration/page.tsx`                                  | none        | non-auth / PARTICULIER / AMO / ALLERS_VERS / AMO_ET_AV → DENY       | NON       |
+| Routes admin (agents/commentaires/amo/allers-vers/acquisition/demandeurs) | `app/(backoffice)/administration/*/page.tsx`                                | none        | ANALYSTE/ADMINISTRATEUR/AMO selon page → DENY                       | NON       |
+| Routes super-admin (synchronisations/diagnostics) guard                   | `app/(backoffice)/administration/{synchronisations,diagnostics}/page.tsx`   | none        | ADMINISTRATEUR / ANALYSTE → DENY                                    | NON       |
+| EspaceAgent Layout — rejet FranceConnect                                  | `app/(backoffice)/espace-agent/layout.tsx`                                  | individual  | FranceConnect (mauvaise méthode) → DENY                             | NON       |
+| Middleware auth & redirection                                             | `src/middleware.ts`                                                         | none        | AMO→/espace-agent ; non-auth→/connexion/agent → DENY                | NON       |
+
+### MEDIUM — scope individuel partiel / DENY admin partiel
+
+| Surface                                           | Fichier                                                           | Sensibilité | Cellules négatives                          | Couvert ?           |
+| ------------------------------------------------- | ----------------------------------------------------------------- | ----------- | ------------------------------------------- | ------------------- |
+| Accepter/Refuser accompagnement (lecture seule)   | `espace-agent/demandes/actions/demande-detail.actions.ts:79`      | individual  | SUPER_ADMINISTRATEUR → DENY (RO)            | PARTIEL (générique) |
+| Commentaires create/update/delete (lecture seule) | `espace-agent/shared/actions/dossier-actions.actions.ts:45`       | individual  | SUPER_ADMINISTRATEUR → DENY (RO)            | PARTIEL (générique) |
+| Agents CRUD                                       | `administration/agents/actions/agents.actions.ts`                 | individual  | PARTICULIER → DENY                          | NON                 |
+| AMO CRUD                                          | `administration/amo/actions/amo-admin.actions.ts`                 | aggregate   | non-authentifié → DENY                      | NON                 |
+| Allers-Vers CRUD                                  | `administration/allers-vers/actions/allers-vers-admin.actions.ts` | aggregate   | ANALYSTE / ALLERS_VERS / AMO → DENY         | PARTIEL             |
+| Synchronisations List/Trigger                     | `administration/synchronisations/actions/sync-runs.actions.ts`    | aggregate   | ADMINISTRATEUR / ANALYSTE / non-auth → DENY | NON                 |
+| AmoGuard — entreprise non configurée              | `app/(backoffice)/components/AmoGuard.tsx`                        | individual  | AMO / AMO_ET_AV sans entrepriseAmoId → DENY | NON                 |
+
+### Cellules négatives déjà couvertes (référence)
+
+`get-nombre-dossiers.action.test.ts` (analyste national → 0), `get-amo-statistiques.action.test.ts`
+(AMO sans entreprise → DENY), `AgentNavigation.test.tsx`, `rbac.service.test.ts`,
+`users-tracking.actions.test.ts` (+ scope territoire), `agents.actions.test.ts`,
+`amo-admin.actions.test.ts`, `get-statistiques.action.test.ts`, `espace-agent/page.test.ts`.
