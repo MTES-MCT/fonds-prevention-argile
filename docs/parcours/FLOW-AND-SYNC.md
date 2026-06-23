@@ -228,7 +228,9 @@ Source : `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`.
 
 Note : `REFUSE` repasse en `EN_INSTRUCTION` interne (et non `VALIDE`) — c'est volontaire, un dossier refusé n'avance pas l'étape.
 
-Note : un `ds_status = null` (dossier créé non déposé) n'a pas d'entrée de mapping — `recomputeParcoursStatus` l'ignore et laisse `current_status` inchangé. `EN_CONSTRUCTION` (déposé) reste mappé en `TODO` interne : un dépôt en attente d'instruction n'avance pas encore l'étape côté parcours. Les dates `submitted_at` (passage en construction = dépôt) et `instructed_at` (passage en instruction) sont écrites par la sync via le mapper de colonne Drizzle (`Date` typée — ne jamais interpoler un `Date` dans un `sql` brut, cela fait planter l'UPDATE). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
+Note : un `ds_status = null` (dossier créé non déposé) n'a pas d'entrée de mapping — `recomputeParcoursStatus` l'ignore et laisse `current_status` inchangé. `EN_CONSTRUCTION` (déposé) reste mappé en `TODO` interne : un dépôt en attente d'instruction n'avance pas encore l'étape côté parcours. Les dates `submitted_at` (passage en construction = dépôt), `instructed_at` (passage en instruction) et `processed_at` (décision DDT) sont écrites par la sync via le mapper de colonne Drizzle (`Date` typée — ne jamais interpoler un `Date` dans un `sql` brut, cela fait planter l'UPDATE). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
+
+Note : `processed_at` est la **date de décision DDT**, sourcée du champ DS `dateTraitement` (et non d'un `new Date()` au moment où la sync détecte l'état). Elle est renseignée pour **tout état final** : `ACCEPTE`, `REFUSE` et `CLASSE_SANS_SUITE` (auparavant elle n'était écrite que sur `ACCEPTE`). Comme les autres dates, elle est immuable (écrite via spread conditionnel, jamais écrasée par `null`). Côté UI, `processed_at` alimente la timeline des dossiers (`DossierTimeline`) avec le libellé « Validé le … » (accepté) ou « Refusé le … » (refusé / classé sans suite).
 
 ### 3.3 Déclencheurs de sync
 
@@ -629,6 +631,7 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Probe pièces + modèles DN                      | `scripts/ops/ds/fetch-pieces-justificatives.ts` (`pnpm ds:fetch-pieces`)                       |
 | Reset dossier éligibilité sync-erreur          | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`) |
 | Sonde lecture-seule dossiers DN                | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                        |
+| Backfill processed_at depuis dateTraitement    | `scripts/ops/ds/backfill-processed-at.ts` (`pnpm ds:backfill-processed-at`)                    |
 | Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                            |
 | Création dossier devis-travaux (3 annotations) | `src/features/parcours/core/services/devis.service.ts`                                         |
 | Validation AMO (auto-progression CHOIX_AMO)    | `src/features/parcours/amo/services/amo-validation.service.ts`                                 |

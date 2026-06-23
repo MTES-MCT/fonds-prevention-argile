@@ -70,6 +70,8 @@ export async function syncDossierStatus(
   const dates = {
     submittedAt: dsResult.datePassageEnConstruction ? new Date(dsResult.datePassageEnConstruction) : undefined,
     instructedAt: dsResult.datePassageEnInstruction ? new Date(dsResult.datePassageEnInstruction) : undefined,
+    // Date de décision DDT (renvoyée par DS pour tout état final : accepté, refusé, classé).
+    processedAt: dsResult.dateTraitement ? new Date(dsResult.dateTraitement) : undefined,
   };
 
   if (newStatus !== oldStatus) {
@@ -86,7 +88,7 @@ export async function syncDossierStatus(
   }
 
   // Statut inchangé mais on met à jour les dates si pas encore renseignées
-  if (dates.submittedAt || dates.instructedAt) {
+  if (dates.submittedAt || dates.instructedAt || dates.processedAt) {
     await updateDossierStatus(localDossier.id, newStatus, dates);
   }
 
