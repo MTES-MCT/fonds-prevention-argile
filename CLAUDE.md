@@ -206,6 +206,7 @@ Guides de référence détaillés, chargés en contexte via les références ci-
 - @.claude/context/security-rules.md — Checklist sécurité (secrets, validation Zod, autorisation, SQL, logs)
 - @docs/ARCHITECTURE.md — Vue d'ensemble (features, code partagé, routes, modèle de données)
 - @docs/security/RBAC-ROLES.md — Rôles, permissions et espaces (FranceConnect/ProConnect)
+- @docs/security/RBAC-TEST-PLAN.md — Plan de couverture RBAC (anti-fuite / anti-accès non désiré)
 - @docs/parcours/FLOW-AND-SYNC.md — Flux et synchronisation du parcours
 - @docs/security/snyk-accepted-vulnerabilities.md — Vulnérabilités acceptées (faux positifs)
 
