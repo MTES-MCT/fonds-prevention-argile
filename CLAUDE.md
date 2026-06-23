@@ -90,6 +90,7 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 - Nommage fichiers : `*.actions.ts` (Server Actions), `*.service.ts`, `*.repository.ts`, `*.adapter.ts`
 - Respecter le DSFR pour les composants UI
 - Pas d'emojis dans le code ou les messages de sortie
+- Commentaires de code concis : une seule ligne dès que possible. N'expliquer que le pourquoi (le non-évident) ; pas de pavé multi-lignes ni de paraphrase du code
 
 ## Workflow
 
@@ -167,6 +168,7 @@ Règles :
 - Préférer le **pourquoi** au quoi (le diff montre déjà le quoi).
 - **Aucune mention d'auteur ou de co-auteur** dans le corps du commit (pas de `Co-Authored-By`, pas de `Generated with`, etc.). L'auteur git suffit.
 - Committer uniquement à la demande explicite de l'utilisateur.
+- **Ne jamais `git push`** (ni `push --force`, ni création de PR distante) : les push sont gérés exclusivement par l'utilisateur. Se limiter au commit local.
 
 ## Compaction du contexte
 
