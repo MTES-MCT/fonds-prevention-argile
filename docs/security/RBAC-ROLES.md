@@ -76,6 +76,35 @@ Gardes principales :
   un `AMO` / `AMO_ET_ALLERS_VERS` sans entreprise rattachée.
 - Routes : `src/features/auth/domain/value-objects/configs/routes.config.ts`.
 
+### 3.1 Navigation backoffice (deux rangées, pilotées par rôle) — ADR-0015
+
+La barre de navigation backoffice est unifiée : deux rangées empilées dont la
+visibilité dépend du **rôle** (capacités), pas de l'URL. Rangée 1 = Pilotage
+(`/administration`), Rangée 2 = Suivi des dossiers (`/espace-agent`). La barre ne rend
+que sur les préfixes backoffice (garde de chemin, car le `Header` est partagé avec le
+site public). La nav n'est qu'un affichage : la barrière reste les gardes de layout /
+page / Server Actions.
+
+| Rôle                     | Rangée 1 — Pilotage                                                                                 | Rangée 2 — Dossiers    |
+| ------------------------ | --------------------------------------------------------------------------------------------------- | ---------------------- |
+| `SUPER_ADMINISTRATEUR`   | Tableau de bord, Acquisition, Demandeurs, Agents, AMO, Allers Vers, Notes, Synchros, Diagnostics DN | Dossiers, Statistiques |
+| `ADMINISTRATEUR`         | Tableau de bord, Acquisition, Demandeurs, AMO, Allers Vers                                          | —                      |
+| `ANALYSTE` national      | Tableau de bord, Acquisition, Demandeurs                                                            | —                      |
+| `ANALYSTE` départemental | Tableau de bord, Acquisition, Demandeurs                                                            | Dossiers (sans Stats)  |
+| `AMO`                    | —                                                                                                   | Dossiers, Statistiques |
+| `ALLERS_VERS`            | —                                                                                                   | Dossiers, Statistiques |
+| `AMO_ET_ALLERS_VERS`     | —                                                                                                   | Dossiers, Statistiques |
+
+- `canAccessAdministration` = `SUPER_ADMINISTRATEUR` / `ADMINISTRATEUR` / `ANALYSTE`.
+  Le filtrage par onglet de la rangée 1 reste celui de `ADMIN_NAV_TABS.minRoles`.
+- `canAccessEspaceAgent` = `SUPER_ADMINISTRATEUR` / `AMO` / `ALLERS_VERS` /
+  `AMO_ET_ALLERS_VERS`, **ou** `ANALYSTE` avec au moins un département. Aligné sur la
+  garde du layout espace-agent. Les deux booléens sont calculés côté serveur et exposés
+  via `/api/auth/check` (le statut départemental d'un analyste vit en base, pas dans le
+  rôle).
+- `Statistiques` masqué pour `ANALYSTE` (onglet AMO-centré ; ses stats sont dans
+  `/administration`).
+
 ---
 
 ## 4. Permissions fines et onglets

@@ -42,5 +42,6 @@ purement cosmétique.
 | 0012 | [URL de reprise du dossier DS basée sur la date de dépôt (et non le statut)](0012-url-reprise-dossier-basee-sur-depot.md)               | Accepté |
 | 0013 | [Remédiation des dossiers DN en sync-erreur (vérification DN, erreur active)](0013-remediation-dossiers-dn-sync-erreur.md)              | Accepté |
 | 0014 | [Périmètre de données du rôle ANALYSTE (national vs DDT départemental)](0014-perimetre-donnees-role-analyste.md)                        | Accepté |
+| 0015 | [Navigation backoffice unifiée (deux rangées pilotées par rôle)](0015-navigation-backoffice-unifiee.md)                                 | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->
