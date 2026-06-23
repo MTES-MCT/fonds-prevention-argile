@@ -86,4 +86,38 @@ describe("BackofficeNavigation — matrice d'affichage par rôle (ADR-0015)", ()
     const { container } = render(<BackofficeNavigation />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  describe("exclusivité de l'onglet actif (union des deux rangées)", () => {
+    it("sur /administration : seul « Tableau de bord » est actif, pas « Dossiers »", () => {
+      setup({ role: UserRole.SUPER_ADMINISTRATEUR, admin: true, agent: true, path: "/administration" });
+      render(<BackofficeNavigation />);
+
+      const actifs = screen.getAllByRole("link", { current: "page" });
+      expect(actifs).toHaveLength(1);
+      expect(actifs[0]).toHaveTextContent("Tableau de bord");
+    });
+
+    it("sur /administration/acquisition : seul « Acquisition » est actif", () => {
+      setup({ role: UserRole.SUPER_ADMINISTRATEUR, admin: true, agent: true, path: "/administration/acquisition" });
+      render(<BackofficeNavigation />);
+
+      const actifs = screen.getAllByRole("link", { current: "page" });
+      expect(actifs).toHaveLength(1);
+      expect(actifs[0]).toHaveTextContent("Acquisition");
+    });
+
+    it("sur /espace-agent/dossiers : seul « Dossiers » est actif, pas la rangée pilotage", () => {
+      setup({
+        role: UserRole.SUPER_ADMINISTRATEUR,
+        admin: true,
+        agent: true,
+        path: "/espace-agent/dossiers",
+      });
+      render(<BackofficeNavigation />);
+
+      const actifs = screen.getAllByRole("link", { current: "page" });
+      expect(actifs).toHaveLength(1);
+      expect(actifs[0]).toHaveTextContent("Dossiers");
+    });
+  });
 });

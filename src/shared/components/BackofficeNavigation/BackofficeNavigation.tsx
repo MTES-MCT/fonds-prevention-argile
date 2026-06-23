@@ -34,11 +34,14 @@ function isAdminTabActive(pathname: string, tab: AdminNavTab): boolean {
 
 function PilotageRow({ pathname, role }: { pathname: string; role: UserRole }) {
   const tabs = ADMIN_NAV_TABS.filter((tab) => !tab.minRoles || tab.minRoles.includes(role));
-  // Onglet actif : le plus spécifique l'emporte (le root ne match qu'en exact).
-  const activeId =
-    tabs.find((tab) => tab.href !== ADMIN_ROOT && pathname.startsWith(tab.href))?.id ??
-    tabs.find((tab) => isAdminTabActive(pathname, tab))?.id ??
-    null;
+  // Onglet actif uniquement si l'URL appartient à l'administration (un seul item
+  // actif sur l'union des deux rangées) ; le plus spécifique l'emporte, le root
+  // ne match qu'en exact.
+  const activeId = !pathname.startsWith(ADMIN_ROOT)
+    ? null
+    : (tabs.find((tab) => tab.href !== ADMIN_ROOT && pathname.startsWith(tab.href))?.id ??
+      tabs.find((tab) => isAdminTabActive(pathname, tab))?.id ??
+      null);
 
   return (
     <div className="fr-header__menu">
@@ -60,11 +63,16 @@ function PilotageRow({ pathname, role }: { pathname: string; role: UserRole }) {
   );
 }
 
+const ESPACE_AGENT_ROOT = "/espace-agent";
+
 function getAgentActiveTab(pathname: string, tabs: AmoTab[]): string | null {
-  for (const tab of tabs) {
-    if (pathname.startsWith(tab.href)) return tab.id;
-  }
-  return tabs[0]?.id ?? null;
+  // Un seul onglet actif sur l'union des deux rangées : la rangée Dossiers ne
+  // s'allume que si l'URL appartient à l'espace agent (sinon « Tableau de bord »
+  // ET « Dossiers » apparaîtraient actifs simultanément sur /administration).
+  if (!pathname.startsWith(ESPACE_AGENT_ROOT)) return null;
+  const match = tabs.find((tab) => pathname.startsWith(tab.href));
+  // Sur la racine /espace-agent, retomber sur le premier onglet (Dossiers).
+  return match?.id ?? tabs[0]?.id ?? null;
 }
 
 function DossiersRow({ pathname, role }: { pathname: string; role: UserRole }) {
