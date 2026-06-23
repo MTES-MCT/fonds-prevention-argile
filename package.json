@@ -42,6 +42,7 @@
     "audit:dossiers-bloques": "tsx scripts/ops/audit/audit-dossiers-bloques.ts",
     "ds:check-permissions": "tsx scripts/ops/ds/check-ds-permissions.ts",
     "ds:probe-dossiers": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/probe-dossiers.ts",
+    "ds:backfill-processed-at": "tsx --tsconfig scripts/tsconfig.json scripts/ops/ds/backfill-processed-at.ts",
     "fix:double-progression": "tsx scripts/ops/fix/fix-double-progression-amo.ts",
     "fix:reouvrir-demande": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reouvrir-demande.ts",
     "fix:eligibilite-sync-error": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts",
