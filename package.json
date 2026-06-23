@@ -44,6 +44,7 @@
     "ds:fetch-pieces": "tsx scripts/ops/ds/fetch-pieces-justificatives.ts",
     "ds:fetch-schema": "tsx scripts/ops/ds/fetch-demarche-schema.ts",
     "ds:probe-dossiers": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/probe-dossiers.ts",
+    "ds:backfill-processed-at": "tsx --tsconfig scripts/tsconfig.json scripts/ops/ds/backfill-processed-at.ts",
     "fix:double-progression": "tsx scripts/ops/fix/fix-double-progression-amo.ts",
     "fix:reouvrir-demande": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reouvrir-demande.ts",
     "fix:detacher-amo": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/detacher-amo.ts",
