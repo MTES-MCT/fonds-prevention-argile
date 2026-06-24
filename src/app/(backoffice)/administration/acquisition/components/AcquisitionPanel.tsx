@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useAuth } from "@/features/auth/client";
-import { UserRole } from "@/shared/domain/value-objects";
 import { FiltresTableauDeBord } from "../../tableau-de-bord/FiltresTableauDeBord";
 import {
   getTableauDeBordStatsAction,
@@ -11,7 +9,6 @@ import {
   getTopDepartementsMatomoAction,
   getTopCommunesMatomoAction,
 } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
-import { getAgentDepartementsAction } from "@/features/backoffice";
 import type {
   TableauDeBordStats,
   MatomoSimulationsStats,
@@ -26,7 +23,6 @@ import DetailEtapesFunnel from "./simulateur/DetailEtapesFunnel";
 import MotifsIneligibiliteCard from "./simulateur/MotifsIneligibiliteCard";
 import TopSimulationsCard from "./simulateur/TopSimulationsCard";
 import SiteVitrineTab from "./site-vitrine/SiteVitrineTab";
-import StatistiquesDepartement from "./StatistiquesDepartement";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 import {
   useAdministrationFiltersStore,
@@ -36,12 +32,9 @@ import {
 } from "@/features/backoffice/administration/stores/administration-filters.store";
 
 export default function AcquisitionPanel() {
-  const { user } = useAuth();
-  const isAnalyste = user?.role === UserRole.ANALYSTE;
-  // Un analyste avec des départements assignés = mode DDT (vue par département).
-  // Sans département = analyste national (tableau de bord complet).
-  const [isDepartemental, setIsDepartemental] = useState<boolean | null>(null);
-
+  // Vue Acquisition nationale pour tous les rôles admin, analyste compris : ce sont
+  // des agrégats (ADR-0014). Le périmètre territorial de l'analyste vit dans l'onglet
+  // Dossiers, pas ici. Le filtre département reste disponible, optionnel.
   const periodeId = useAdministrationFiltersStore(selectPeriodeId);
   const codeDepartement = useAdministrationFiltersStore(selectCodeDepartement);
   const partner = useAdministrationFiltersStore(selectPartner);
@@ -72,23 +65,6 @@ export default function AcquisitionPanel() {
     }
     loadDepartements();
   }, []);
-
-  // Déterminer si l'analyste est restreint à des départements (mode DDT)
-  useEffect(() => {
-    let cancelled = false;
-    async function resolveScope() {
-      if (!isAnalyste) {
-        if (!cancelled) setIsDepartemental(false);
-        return;
-      }
-      const result = await getAgentDepartementsAction();
-      if (!cancelled) setIsDepartemental(result.success && result.data.length > 0);
-    }
-    resolveScope();
-    return () => {
-      cancelled = true;
-    };
-  }, [isAnalyste]);
 
   // Charger les donnees Matomo (funnel + visites + taux rebond) quand les filtres changent
   useEffect(() => {
@@ -188,33 +164,6 @@ export default function AcquisitionPanel() {
       cancelled = true;
     };
   }, [periodeId, codeDepartement, partner]);
-
-  // Analyste départemental (DDT) : éviter le flash du tableau complet pendant la résolution du scope
-  if (isAnalyste && isDepartemental === null) {
-    return null;
-  }
-
-  // Analyste départemental (DDT) : vue departement uniquement
-  if (isDepartemental) {
-    return (
-      <>
-        <section className="fr-container-fluid fr-py-4w">
-          <div className="fr-container">
-            <AdminBreadcrumb currentPageLabel="Acquisition" />
-            <h1 className="fr-h2 fr-mb-1v">Acquisition</h1>
-            <p className="fr-text--lg" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
-              Statistiques par departement
-            </p>
-          </div>
-        </section>
-        <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
-          <div className="fr-container">
-            <StatistiquesDepartement />
-          </div>
-        </section>
-      </>
-    );
-  }
 
   return (
     <>
