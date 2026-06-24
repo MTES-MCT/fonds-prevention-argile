@@ -171,10 +171,12 @@ Distinctions clés :
   départemental, les **données individuelles** sont strictement territoriales —
   dossiers (listing + détail), demandeurs (`getUsersWithParcours` filtré par
   département), compteur de dossiers. En revanche, les **compteurs agrégés
-  nationaux** du Tableau de bord `/administration` (visiteurs, simulations, comptes
-  créés…) restent consultables : ce sont des agrégats non nominatifs et le pilotage
-  national fait partie du rôle. Décision assumée, voir
-  [ADR-0014](../adr/0014-perimetre-donnees-role-analyste.md).
+  nationaux** du Tableau de bord **et de l'Acquisition** `/administration` (visiteurs,
+  simulations, comptes créés, funnels…) restent consultables : ce sont des agrégats
+  non nominatifs et le pilotage national fait partie du rôle. Décision assumée, voir
+  [ADR-0014](../adr/0014-perimetre-donnees-role-analyste.md) (Acquisition réaligné en
+  national, [ADR-0015](../adr/0015-navigation-backoffice-unifiee.md) — la vue
+  départementale forcée a été retirée ; le territorial vit dans l'onglet Dossiers).
 - **ALLERS_VERS vs AMO_ET_ALLERS_VERS** : l'allers-vers seul ne voit que les
   dossiers sans AMO de son territoire ; la version fusionnée cumule aussi les
   dossiers de son entreprise AMO. La version fusionnée requiert une entreprise AMO

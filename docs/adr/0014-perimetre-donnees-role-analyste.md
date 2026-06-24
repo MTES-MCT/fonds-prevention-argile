@@ -54,9 +54,14 @@ données** pour éviter les fuites.
    (visiteurs, simulations, comptes créés…) reste consultable au national par un
    analyste départemental. Ce sont des **agrégats statistiques non nominatifs**, pas
    des données individuelles ; le pilotage national fait partie du rôle analyste.
-   Aucun clamp territorial forcé sur le Tableau de bord. (L'onglet Acquisition
-   dispose déjà du composant dédié `StatistiquesDepartement`, scopé pour le
-   départemental.)
+   Aucun clamp territorial forcé sur le Tableau de bord.
+
+   > Mise à jour (ADR-0015) : l'onglet **Acquisition** suit désormais la même règle —
+   > vue **nationale** pour l'analyste, comme pour les admins. La vue départementale
+   > forcée (composant `StatistiquesDepartement`) a été **retirée** : le périmètre
+   > territorial de l'analyste vit dans l'onglet **Dossiers** (données individuelles
+   > scopées), pas dans les agrégats d'Acquisition. Le filtre département reste
+   > disponible, optionnel.
 
 6. **Gestion d'éligibilité interdite, via la garde d'ownership AMO.** Les actions
    `accepterAccompagnement` / `refuserDemandeNonEligible` sont gardées par
