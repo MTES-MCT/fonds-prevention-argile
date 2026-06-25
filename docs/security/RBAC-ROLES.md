@@ -129,13 +129,17 @@ Repères de permissions par rôle :
   commentaires (lecture globale). Pas la gestion des agents.
 - **ANALYSTE** : lecture stats (national ou départemental, voir §5). En mode
   départemental (suivi DDT), peut aussi ajouter/éditer ses propres messages
-  (`COMMENTAIRES_*`) sur les dossiers de son territoire. Ne gère pas l'éligibilité
-  (`ELIGIBILITE_WRITE`) et ne crée pas de dossier (`DOSSIERS_CREATE`). La gestion
-  d'éligibilité (`accepterAccompagnement` / `refuserDemandeNonEligible`) est en
-  outre gardée par `verifyAmoOwnership` : l'analyste n'étant jamais propriétaire AMO
-  de la demande, l'action échoue côté serveur (« permission refusée »). Le composant
-  UI peut s'afficher mais reste inerte pour lui — la garde est au niveau de l'action,
-  pas par masquage. Voir [ADR-0014](../adr/0014-perimetre-donnees-role-analyste.md).
+  (`COMMENTAIRES_*`) sur les dossiers de son territoire, et **lire** le détail d'une
+  demande d'accompagnement (« vérifier l'éligibilité ») de son territoire en
+  **lecture seule** — `getDemandeDetail` ouvre cette lecture via
+  `verifyProspectTerritoryAccess` (comme le détail dossier), hors territoire = 404.
+  Ne gère pas l'éligibilité (`ELIGIBILITE_WRITE`) et ne crée pas de dossier
+  (`DOSSIERS_CREATE`). La gestion d'éligibilité (`accepterAccompagnement` /
+  `refuserDemandeNonEligible`) est en outre gardée par `verifyAmoOwnership` :
+  l'analyste n'étant jamais propriétaire AMO de la demande, l'action échoue côté
+  serveur (« Accès réservé aux AMO »). Le composant UI peut s'afficher mais reste
+  inerte pour lui — la garde est au niveau de l'action, pas par masquage. Voir
+  [ADR-0014](../adr/0014-perimetre-donnees-role-analyste.md).
 - **AMO** : dossiers AMO (lecture + stats), création de dossier, commentaires
   (création + édition/suppression des siens).
 - **ALLERS_VERS** : prospects (vue + détail + stats), création de dossier,

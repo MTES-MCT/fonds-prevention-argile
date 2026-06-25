@@ -72,6 +72,11 @@ données** pour éviter les fuites.
    L'analyste n'a ni `ELIGIBILITE_WRITE` ni `DOSSIERS_CREATE` ; il peut en revanche
    ajouter/éditer ses propres messages (`COMMENTAIRES_*` + territoire).
 
+   > Mise à jour : la **lecture** du détail d'une demande (« vérifier l'éligibilité »)
+   > est ouverte à l'analyste **dans son territoire** (`getDemandeDetail` via
+   > `verifyProspectTerritoryAccess`), corrigeant un 404. Seule l'**écriture**
+   > (accepter/refuser) reste bloquée — lecture seule, conforme au principe ci-dessus.
+
 ## Options envisagées
 
 ### Option A — Bimode + scope individuel territorial + agrégats nationaux ouverts (retenue)

@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import type { DemandeDetail, InfoDemandeur, InfoLogement, ParcoursDateProgression } from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
 import { getCurrentUser } from "@/features/auth/services/user.service";
+import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
@@ -45,20 +46,33 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       return { success: false, error: "Demande non trouvée" };
     }
 
-    // Vérifier que l'AMO est propriétaire de la demande (sauf admins)
+    // Contrôle d'accès (sauf admins).
     if (!isAdmin) {
-      const canAccessDemandes = user.role === UserRole.AMO || user.role === UserRole.AMO_ET_ALLERS_VERS;
+      if (user.role === UserRole.ANALYSTE) {
+        // Analyste : lecture seule scopée au territoire (l'écriture reste bloquée côté action).
+        const territoryError = await verifyProspectTerritoryAccess(demande.parcours.id, {
+          id: user.agentId ?? "",
+          role: user.role as UserRole,
+          entrepriseAmoId: user.entrepriseAmoId ?? null,
+          allersVersId: user.allersVersId ?? null,
+        });
+        if (territoryError) {
+          return { success: false, error: territoryError };
+        }
+      } else {
+        const canAccessDemandes = user.role === UserRole.AMO || user.role === UserRole.AMO_ET_ALLERS_VERS;
 
-      if (!canAccessDemandes) {
-        return { success: false, error: "Accès réservé aux AMO" };
-      }
+        if (!canAccessDemandes) {
+          return { success: false, error: "Accès réservé aux AMO" };
+        }
 
-      if (!user.entrepriseAmoId) {
-        return { success: false, error: "Votre compte AMO n'est pas configuré" };
-      }
+        if (!user.entrepriseAmoId) {
+          return { success: false, error: "Votre compte AMO n'est pas configuré" };
+        }
 
-      if (demande.validation.entrepriseAmoId !== user.entrepriseAmoId) {
-        return { success: false, error: "Cette demande ne vous est pas destinée" };
+        if (demande.validation.entrepriseAmoId !== user.entrepriseAmoId) {
+          return { success: false, error: "Cette demande ne vous est pas destinée" };
+        }
       }
     }
 
