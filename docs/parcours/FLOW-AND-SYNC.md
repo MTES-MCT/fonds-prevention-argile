@@ -439,9 +439,11 @@ Sonde DN autonome (même cross-check, sans rien supprimer) :
 de DN (`SUPPRIME_OU_INTROUVABLE`, `DEPOSE_NON_INSTRUIT`, `EN_INSTRUCTION`, `TRAITE`,
 `INEXISTANT`). Utile pour auditer avant le reset.
 
-Le diagnostic distingue deux états de sync-erreur (détection en base, sans appel DN) :
-**« Sync erreur (déposé non instruit) »** (`SYNC_ERREUR_DEPOSE` — `submitted_at` + pas
-d'`instructed_at`, piste expiration DN) et **« Sync erreur (autre) »** (`SYNC_ERREUR`).
+Le diagnostic distingue trois états quand la synchro échoue (détection en base via
+`dn_probe_state`, sans appel DN) : **« Anomalie de synchro »** (`SYNC_ANOMALIE` — vrai
+pépin technique), **« Dossier déposé disparu »** (`DOSSIER_DEPOSE_DISPARU` — dépôt confirmé
+puis disparu, rare) et **« Dossier DN non créé »** (`DOSSIER_DN_NON_CREE` — le demandeur
+n'a rien finalisé côté DN, fréquent et souvent normal).
 
 > Erreur obsolète auto-résolue : le diagnostic ne compte une `sync_run_entries.error`
 > que si elle concerne encore le dossier courant (dossier présent, erreur postérieure à

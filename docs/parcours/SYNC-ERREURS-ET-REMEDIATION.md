@@ -53,12 +53,23 @@ ds:probe-dossiers --from-sync-errors --email-crosscheck` produit ce décompte di
 
 ### Détail des états et verdicts
 
-Le diagnostic distingue **deux états** (calculés en base, sans appel DN) :
+Quand la synchro échoue (erreur **active**), le diagnostic distingue **trois états** (en
+base, sans appel DN), en s'appuyant sur le verdict DN persisté `dn_probe_state` :
 
-| État diagnostic                                              | Condition en base                                                    | Interprétation                                                           |
-| ------------------------------------------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| **Sync erreur (déposé non instruit)** (`SYNC_ERREUR_DEPOSE`) | `last_sync_at` ET `submitted_at` renseignés, pas d'`instructed_at`   | Dépôt confirmé par une sync, jamais instruit ; piste expiration/purge DN |
-| **Sync erreur (autre)** (`SYNC_ERREUR`)                      | autres cas (`last_sync_at` null = jamais confirmé, ou déjà instruit) | Prefill jamais complété, token, ou erreur isolée                         |
+| État diagnostic                                       | Condition en base                                               | Sévérité | Sens                                                                                    |
+| ----------------------------------------------------- | --------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------- |
+| **Anomalie de synchro** (`SYNC_ANOMALIE`)             | `dn_probe_state` = `unauthorized` / `api_error`                 | error    | vrai pépin technique (token, réseau) — **à investiguer**                                |
+| **Dossier déposé disparu** (`DOSSIER_DEPOSE_DISPARU`) | `last_sync_at` ET `submitted_at`, pas d'`instructed_at`         | warning  | dépôt réel confirmé puis disparu côté DN — **rare**                                     |
+| **Dossier DN non créé** (`DOSSIER_DN_NON_CREE`)       | autres cas (jamais confirmé : `not_found`, `last_sync_at` null) | info     | le demandeur a cliqué « Remplir » mais rien créé côté DN — **fréquent, souvent normal** |
+
+> **Pourquoi `last_sync_at` et pas seulement `submitted_at` ?** `submitted_at` seul **n'est
+> pas fiable** : avant la PR #216, il était posé **à la création** du dossier (faux dépôt
+> legacy), pas au dépôt réel. Le **seul** signal d'un vrai dépôt est `last_sync_at`
+> renseigné (= une sync a confirmé le dossier côté DN). Voir §6.
+
+> **Pourquoi « non créé » est en `info` (pas en rouge) ?** C'est le **gros du volume** et
+> c'est **souvent normal** (drop-off du funnel : clic « Remplir » sans aller au bout sur DN).
+> On ne garde le rouge que pour la vraie **anomalie technique**.
 
 > **Pourquoi `last_sync_at` et pas seulement `submitted_at` ?** `submitted_at` seul **n'est
 > pas fiable** : avant la PR #216, il était posé **à la création** du dossier (faux dépôt
@@ -98,8 +109,9 @@ l'usager a un dossier **sous un autre numéro** dans la démarche éligibilité 
 
 ### Où voir ces sous-cas dans l'UI
 
-- **Liste** (`/administration/diagnostics`) : DB-only (aucun appel DN), donc seulement les
-  deux états calculables en base — `SYNC_ERREUR_DEPOSE` vs `SYNC_ERREUR` (cf. §2).
+- **Liste** (`/administration/diagnostics`) : DB-only (aucun appel DN), donc les états
+  calculables en base — `SYNC_ANOMALIE` / `DOSSIER_DEPOSE_DISPARU` / `DOSSIER_DN_NON_CREE`
+  (cf. §2) + la colonne **Verdict DN** (issue de `dn_probe_state`).
 - **Détail** (`/administration/diagnostics/[parcoursId]`, « Analyser ») : cross-check DN
   **live**. La colonne **« Diagnostic métier »** affiche le sous-cas par dossier
   (`classifyDossierAnomaly`), y compris pour les dossiers `ds_status=null` (jamais
