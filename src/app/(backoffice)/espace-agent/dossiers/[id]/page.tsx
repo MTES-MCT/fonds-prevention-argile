@@ -12,6 +12,10 @@ import { DossierStatusBadge } from "./components/DossierStatusBadge";
 import { PiecesJustificatives } from "./components/PiecesJustificatives";
 import { GagnezDuTempsTravaux } from "./components/GagnezDuTempsTravaux";
 import { ArchiveDossierButton } from "./components/ArchiveDossierButton";
+import { ReouvrirDemandeButton } from "./components/ReouvrirDemandeButton";
+import { STATUTS_REFUSES } from "@/features/backoffice/espace-agent/dossiers/domain/types/amo-dossiers.types";
+import { ROLES_REOUVERTURE } from "@/features/backoffice/espace-agent/dossiers/domain/reouverture";
+import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
@@ -42,6 +46,15 @@ export default async function DossierDetailPage({ params }: PageProps) {
 
   const dossier = result.data;
   const nomComplet = formatNomComplet(dossier.demandeur.prenom, dossier.demandeur.nom);
+
+  // Bouton "Ré-ouvrir" : visible sur une demande refusée, pour les rôles habilités
+  // (le périmètre fin entreprise/territoire est revérifié côté action).
+  const isRefusee = dossier.validationStatut != null && STATUTS_REFUSES.includes(dossier.validationStatut);
+  let canReouvrir = false;
+  if (isRefusee) {
+    const agentResult = await getCurrentAgent();
+    canReouvrir = agentResult.success && ROLES_REOUVERTURE.includes(agentResult.data.role);
+  }
 
   // Récupérer la dernière qualification aller-vers
   const latestQualification = await qualificationService.getLatestQualification(dossier.parcoursId);
@@ -99,7 +112,11 @@ export default async function DossierDetailPage({ params }: PageProps) {
               </div>
             </div>
             <div className="fr-col-auto">
-              <ArchiveDossierButton parcoursId={dossier.parcoursId} />
+              {canReouvrir ? (
+                <ReouvrirDemandeButton parcoursId={dossier.parcoursId} />
+              ) : (
+                <ArchiveDossierButton parcoursId={dossier.parcoursId} />
+              )}
             </div>
           </div>
         </div>

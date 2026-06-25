@@ -10,6 +10,11 @@ export type StructureType = "AMO" | "ALLERS_VERS" | "DDT" | "ADMINISTRATION";
 
 /** Valeur de type d'action correspondant à l'ancienne note libre */
 export const ACTION_TYPE_COMMENTAIRE_LIBRE = "commentaire_libre";
+/**
+ * Action système (non sélectionnable dans le formulaire) : ré-ouverture d'une demande
+ * refusée par l'AMO. Tracée dans l'historique pour savoir qui a ré-ouvert et quand.
+ */
+export const ACTION_TYPE_DOSSIER_REOUVERT = "dossier_reouvert";
 /** Valeur de type d'action "Autre" (nécessite une précision) */
 export const ACTION_TYPE_AUTRE = "autre";
 
@@ -77,7 +82,8 @@ export const ACTION_LABELS_BY_VALUE: Record<string, string> = ACTION_TYPE_GROUPS
     }
     return acc;
   },
-  {} as Record<string, string>
+  // Types système hors formulaire : pas dans ACTION_TYPE_GROUPS, mais affichables dans l'historique.
+  { [ACTION_TYPE_DOSSIER_REOUVERT]: "Demande ré-ouverte" } as Record<string, string>
 );
 
 /** Liste plate de toutes les valeurs de type d'action (pour validation) */

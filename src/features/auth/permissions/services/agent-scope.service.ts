@@ -5,7 +5,7 @@ import {
   matchesTerritoire,
   parcoursPreventionRepository,
 } from "@/shared/database/repositories/parcours-prevention.repository";
-import { getDemandeurFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
+import { getDemandeurFirstSimulation, type ParcoursSimulationPair } from "@/shared/domain/utils/rga-simulation.utils";
 import type { AgentScope, AgentScopeInput, DossierAccessCheck, ScopeFilters } from "../domain/types/agent-scope.types";
 
 /**
@@ -186,6 +186,37 @@ export function canAccessDossier(
     hasAccess: false,
     reason: "Accès non autorisé à ce dossier",
   };
+}
+
+/**
+ * Autorise la ré-ouverture d'une demande refusée par l'AMO.
+ *
+ * Volontairement PLUS LARGE que `canAccessDossier` : une demande refusée porte
+ * l'entreprise AMO qui l'a refusée, donc un Aller-vers ne la « voit » normalement
+ * pas dans son listing. On l'autorise tout de même à ré-ouvrir un dossier de SON
+ * territoire (décision produit). Périmètre : AMO de l'entreprise rattachée, OU AV
+ * couvrant le territoire, OU accès national (super-admin). Cf. ADR-0016.
+ */
+export function canReopenRefusedDemande(
+  scope: AgentScope,
+  dossier: { entrepriseAmoId: string | null; parcours: ParcoursSimulationPair }
+): boolean {
+  if (scope.canViewAllDossiers) {
+    return true;
+  }
+
+  const amoMatch =
+    scope.canViewDossiersByEntreprise &&
+    !!dossier.entrepriseAmoId &&
+    scope.entrepriseAmoIds.includes(dossier.entrepriseAmoId);
+
+  const hasTerritoire = scope.departements.length > 0 || scope.epcis.length > 0;
+  const avTerritoryMatch =
+    scope.canViewDossiersWithoutAmo &&
+    hasTerritoire &&
+    matchesTerritoire(getDemandeurFirstSimulation(dossier.parcours), scope.departements, scope.epcis);
+
+  return amoMatch || avTerritoryMatch;
 }
 
 /**

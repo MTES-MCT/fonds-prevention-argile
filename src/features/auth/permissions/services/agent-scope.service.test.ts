@@ -36,6 +36,7 @@ import { parcoursPreventionRepository } from "@/shared/database/repositories/par
 import {
   calculateAgentScope,
   canAccessDossier,
+  canReopenRefusedDemande,
   canViewStatsForTerritory,
   getScopeFilterConditions,
   isAmoConfigured,
@@ -329,6 +330,81 @@ describe("agent-scope.service", () => {
         expect(result.hasAccess).toBe(false);
         expect(result.reason).toContain("Accès non autorisé");
       });
+    });
+  });
+
+  describe("canReopenRefusedDemande", () => {
+    // Parcours dont le demandeur a simulé dans le département 75.
+    const parcours75 = {
+      rgaSimulationData: { logement: { code_departement: "75" } },
+      rgaSimulationDataAgent: null,
+    } as unknown as ParcoursPrevention;
+
+    const adminScope: AgentScope = {
+      isNational: true,
+      entrepriseAmoIds: [],
+      departements: [],
+      epcis: [],
+      canViewAllDossiers: true,
+      canViewDossiersByEntreprise: true,
+      canViewDossiersWithoutAmo: true,
+    };
+    const amoScope: AgentScope = {
+      isNational: false,
+      entrepriseAmoIds: ["entreprise-123"],
+      departements: ["75"],
+      epcis: [],
+      canViewAllDossiers: false,
+      canViewDossiersByEntreprise: true,
+      canViewDossiersWithoutAmo: false,
+    };
+    const avScope: AgentScope = {
+      isNational: false,
+      entrepriseAmoIds: [],
+      departements: ["75"],
+      epcis: [],
+      canViewAllDossiers: false,
+      canViewDossiersByEntreprise: false,
+      canViewDossiersWithoutAmo: true,
+    };
+    const analysteScope: AgentScope = {
+      isNational: false,
+      entrepriseAmoIds: [],
+      departements: ["75"],
+      epcis: [],
+      canViewAllDossiers: false,
+      canViewDossiersByEntreprise: false,
+      canViewDossiersWithoutAmo: false,
+    };
+
+    it("autorise l'accès national (super-admin)", () => {
+      expect(canReopenRefusedDemande(adminScope, { entrepriseAmoId: "x", parcours: parcours75 })).toBe(true);
+    });
+
+    it("autorise l'AMO de l'entreprise rattachée", () => {
+      expect(canReopenRefusedDemande(amoScope, { entrepriseAmoId: "entreprise-123", parcours: parcours75 })).toBe(true);
+    });
+
+    it("refuse un AMO d'une autre entreprise", () => {
+      expect(canReopenRefusedDemande(amoScope, { entrepriseAmoId: "autre", parcours: parcours75 })).toBe(false);
+    });
+
+    it("autorise l'AV couvrant le territoire, malgré l'AMO sur la demande", () => {
+      expect(canReopenRefusedDemande(avScope, { entrepriseAmoId: "entreprise-123", parcours: parcours75 })).toBe(true);
+    });
+
+    it("refuse l'AV hors de son territoire", () => {
+      const parcours33 = {
+        rgaSimulationData: { logement: { code_departement: "33" } },
+        rgaSimulationDataAgent: null,
+      } as unknown as ParcoursPrevention;
+      expect(canReopenRefusedDemande(avScope, { entrepriseAmoId: null, parcours: parcours33 })).toBe(false);
+    });
+
+    it("refuse un analyste (départemental, sans capacité dossier)", () => {
+      expect(canReopenRefusedDemande(analysteScope, { entrepriseAmoId: "entreprise-123", parcours: parcours75 })).toBe(
+        false
+      );
     });
   });
 
