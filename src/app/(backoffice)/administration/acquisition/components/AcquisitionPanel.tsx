@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useAuth } from "@/features/auth/client";
-import { UserRole } from "@/shared/domain/value-objects";
 import { FiltresTableauDeBord } from "../../tableau-de-bord/FiltresTableauDeBord";
 import {
   getTableauDeBordStatsAction,
@@ -25,7 +23,6 @@ import DetailEtapesFunnel from "./simulateur/DetailEtapesFunnel";
 import MotifsIneligibiliteCard from "./simulateur/MotifsIneligibiliteCard";
 import TopSimulationsCard from "./simulateur/TopSimulationsCard";
 import SiteVitrineTab from "./site-vitrine/SiteVitrineTab";
-import StatistiquesDepartement from "./StatistiquesDepartement";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 import {
   useAdministrationFiltersStore,
@@ -35,9 +32,9 @@ import {
 } from "@/features/backoffice/administration/stores/administration-filters.store";
 
 export default function AcquisitionPanel() {
-  const { user } = useAuth();
-  const isAnalyseDdt = user?.role === UserRole.ANALYSTE_DDT;
-
+  // Vue Acquisition nationale pour tous les rôles admin, analyste compris : ce sont
+  // des agrégats (ADR-0014). Le périmètre territorial de l'analyste vit dans l'onglet
+  // Dossiers, pas ici. Le filtre département reste disponible, optionnel.
   const periodeId = useAdministrationFiltersStore(selectPeriodeId);
   const codeDepartement = useAdministrationFiltersStore(selectCodeDepartement);
   const partner = useAdministrationFiltersStore(selectPartner);
@@ -167,28 +164,6 @@ export default function AcquisitionPanel() {
       cancelled = true;
     };
   }, [periodeId, codeDepartement, partner]);
-
-  // Agents DDT : vue departement uniquement
-  if (isAnalyseDdt) {
-    return (
-      <>
-        <section className="fr-container-fluid fr-py-4w">
-          <div className="fr-container">
-            <AdminBreadcrumb currentPageLabel="Acquisition" />
-            <h1 className="fr-h2 fr-mb-1v">Acquisition</h1>
-            <p className="fr-text--lg" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
-              Statistiques par departement
-            </p>
-          </div>
-        </section>
-        <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
-          <div className="fr-container">
-            <StatistiquesDepartement />
-          </div>
-        </section>
-      </>
-    );
-  }
 
   return (
     <>

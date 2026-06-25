@@ -137,11 +137,13 @@ export default function AgentsList({
                         </div>
                       )}
 
-                    {/* Départements (pour Administrateur) */}
-                    {agent.role === UserRole.ADMINISTRATEUR && (
+                    {/* Départements (pour Administrateur et Analyste) */}
+                    {[UserRole.ADMINISTRATEUR, UserRole.ANALYSTE].includes(agent.role as UserRole) && (
                       <>
                         {departements.length === 0 ? (
-                          <span className="text-sm text-gray-500">Tous départements</span>
+                          <span className="text-sm text-gray-500">
+                            {agent.role === UserRole.ANALYSTE ? "National" : "Tous départements"}
+                          </span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {departements.slice(0, 3).map((code) => (
@@ -171,9 +173,6 @@ export default function AgentsList({
                     {agent.role === UserRole.SUPER_ADMINISTRATEUR && (
                       <span className="text-sm text-gray-500">Tous territoires</span>
                     )}
-
-                    {/* Analyste : aucun périmètre spécifique */}
-                    {agent.role === UserRole.ANALYSTE && <span className="text-sm text-gray-500">—</span>}
                   </div>
                 </td>
 

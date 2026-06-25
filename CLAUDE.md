@@ -90,7 +90,9 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 - Nommage fichiers : `*.actions.ts` (Server Actions), `*.service.ts`, `*.repository.ts`, `*.adapter.ts`
 - Respecter le DSFR pour les composants UI
 - Pas d'emojis dans le code ou les messages de sortie
-- Commentaires de code concis : une seule ligne dès que possible. N'expliquer que le pourquoi (le non-évident) ; pas de pavé multi-lignes ni de paraphrase du code
+- Commentaires de code : **1 ligne, jamais plus de 2**. Uniquement le _pourquoi_ non-évident, jamais la paraphrase du code. Le raisonnement détaillé (contexte, alternatives, décision) va dans le **message de commit** ou un **ADR**, pas dans le source.
+  - Mauvais : bloc JSDoc de 6 lignes qui re-déroule la logique de la fonction.
+  - Bon : `// Dérive du listing pour que le badge == « Tous les dossiers ».`
 
 ## Workflow
 
@@ -206,6 +208,7 @@ Guides de référence détaillés, chargés en contexte via les références ci-
 - @.claude/context/security-rules.md — Checklist sécurité (secrets, validation Zod, autorisation, SQL, logs)
 - @docs/ARCHITECTURE.md — Vue d'ensemble (features, code partagé, routes, modèle de données)
 - @docs/security/RBAC-ROLES.md — Rôles, permissions et espaces (FranceConnect/ProConnect)
+- @docs/security/RBAC-TEST-PLAN.md — Plan de couverture RBAC (anti-fuite / anti-accès non désiré)
 - @docs/parcours/FLOW-AND-SYNC.md — Flux et synchronisation du parcours
 - @docs/security/snyk-accepted-vulnerabilities.md — Vulnérabilités acceptées (faux positifs)
 

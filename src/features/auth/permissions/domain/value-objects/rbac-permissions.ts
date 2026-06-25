@@ -98,6 +98,13 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.USERS_STATS_READ,
     BackofficePermission.AMO_READ,
     BackofficePermission.ALLERS_VERS_READ,
+    // Suivi DDT : peut ajouter/lire/éditer ses messages sur les dossiers de son
+    // territoire, mais ne gère pas l'éligibilité (pas d'ELIGIBILITE_WRITE) ni la
+    // création de dossier (pas de DOSSIERS_CREATE).
+    BackofficePermission.COMMENTAIRES_CREATE,
+    BackofficePermission.COMMENTAIRES_READ,
+    BackofficePermission.COMMENTAIRES_UPDATE_OWN,
+    BackofficePermission.COMMENTAIRES_DELETE_OWN,
   ],
 
   [UserRole.AMO]: [
@@ -125,11 +132,6 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.COMMENTAIRES_READ,
     BackofficePermission.COMMENTAIRES_UPDATE_OWN,
     BackofficePermission.COMMENTAIRES_DELETE_OWN,
-  ],
-
-  [UserRole.ANALYSTE_DDT]: [
-    // Lecture seule : stats département uniquement
-    BackofficePermission.STATS_READ,
   ],
 
   [UserRole.AMO_ET_ALLERS_VERS]: [

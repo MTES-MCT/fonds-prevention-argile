@@ -14,7 +14,6 @@ export const revalidate = 0;
  * - SUPER_ADMINISTRATEUR
  * - ADMINISTRATEUR
  * - ANALYSTE
- * - ANALYSTE_DDT
  */
 export default async function AdminPage() {
   // Vérifier que l'utilisateur est un agent

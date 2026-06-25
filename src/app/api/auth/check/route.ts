@@ -1,6 +1,11 @@
 import { getCurrentUser, isAuthenticated, AUTH_METHODS } from "@/features/auth";
-import { userRepo } from "@/shared/database";
+import { userRepo, agentPermissionsRepository } from "@/shared/database";
 import { agentsRepo } from "@/shared/database/repositories";
+import { UserRole } from "@/shared/domain/value-objects";
+import {
+  canAccessAdministration,
+  canAccessEspaceAgent,
+} from "@/features/auth/permissions/services/backoffice-access.service";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -27,6 +32,14 @@ export async function GET() {
     if (user.authMethod === AUTH_METHODS.PROCONNECT) {
       const agent = await agentsRepo.findById(user.id);
 
+      // Capacités d'accès backoffice pour la navigation unifiée (ADR-0015).
+      // L'analyste départemental (au moins un département) accède à l'espace agent ;
+      // le national en est exclu — on ne lit les départements que pour ce rôle.
+      const analysteHasDepartements =
+        user.role === UserRole.ANALYSTE
+          ? (await agentPermissionsRepository.getDepartementsByAgentId(user.id)).length > 0
+          : false;
+
       return NextResponse.json({
         authenticated: true,
         user: {
@@ -36,6 +49,8 @@ export async function GET() {
           email: agent?.email ?? null,
           role: user.role,
           authMethod: user.authMethod,
+          canAccessAdministration: canAccessAdministration(user.role),
+          canAccessEspaceAgent: canAccessEspaceAgent(user.role, analysteHasDepartements),
         },
       });
     }

@@ -439,21 +439,10 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
     });
   }
 
-  /**
-   * Compte les parcours actifs (non archivés) du territoire. Variante allégée
-   * de `getParcoursByTerritoire` : ne charge que les colonnes nécessaires au
-   * filtrage territorial, sans jointure ni résolution responsable.
-   */
+  // Dérive du listing pour que le badge égale « Tous les dossiers » (archivés compris).
   async countParcoursByTerritoire(departements: string[], epcis: string[] = []): Promise<number> {
-    const rows = await db
-      .select({
-        rgaSimulationData: parcoursPrevention.rgaSimulationData,
-        rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
-      })
-      .from(parcoursPrevention)
-      .where(isNull(parcoursPrevention.archivedAt));
-
-    return rows.filter((r) => matchesTerritoire(getDemandeurFirstSimulation(r), departements, epcis)).length;
+    const rows = await this.getParcoursByTerritoire(departements, epcis);
+    return rows.length;
   }
 }
 

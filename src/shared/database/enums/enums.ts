@@ -79,7 +79,6 @@ export const agentRolePgEnum = pgEnum("agent_role", [
   AGENT_ROLES.ANALYSTE,
   AGENT_ROLES.ALLERS_VERS,
   AGENT_ROLES.AMO_ET_ALLERS_VERS,
-  AGENT_ROLES.ANALYSTE_DDT,
 ]);
 
 export const syncRunStatusPgEnum = pgEnum("sync_run_status", [
@@ -88,7 +87,4 @@ export const syncRunStatusPgEnum = pgEnum("sync_run_status", [
   SyncRunStatus.ERROR,
 ]);
 
-export const syncRunTriggerPgEnum = pgEnum("sync_run_trigger", [
-  SyncRunTrigger.CRON,
-  SyncRunTrigger.MANUAL,
-]);
+export const syncRunTriggerPgEnum = pgEnum("sync_run_trigger", [SyncRunTrigger.CRON, SyncRunTrigger.MANUAL]);

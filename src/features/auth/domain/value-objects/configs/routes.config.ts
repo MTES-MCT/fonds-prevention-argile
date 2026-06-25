@@ -135,7 +135,7 @@ export const DEFAULT_REDIRECTS = {
   // Par rôle agent
   super_administrateur: ROUTES.backoffice.administration.root,
   administrateur: ROUTES.backoffice.administration.root,
-  analyste_ddt: ROUTES.backoffice.administration.root,
+  analyste: ROUTES.backoffice.administration.root,
   amo: ROUTES.backoffice.espaceAmo.root,
 
   // Particulier

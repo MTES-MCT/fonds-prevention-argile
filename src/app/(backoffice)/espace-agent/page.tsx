@@ -13,10 +13,12 @@ export default async function EspaceAgentHomePage() {
 
   const role = user.role as UserRole;
 
+  // ANALYSTE inclus : un national est déjà redirigé par la garde du layout, donc tout analyste ici est départemental.
   const isAgentRole =
     role === UserRole.AMO ||
     role === UserRole.ALLERS_VERS ||
     role === UserRole.AMO_ET_ALLERS_VERS ||
+    role === UserRole.ANALYSTE ||
     role === UserRole.SUPER_ADMINISTRATEUR;
 
   if (isAgentRole) {

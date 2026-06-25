@@ -7,6 +7,7 @@ import { dossiersDemarchesSimplifiees } from "@/shared/database/schema/dossiers-
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { getDemandeurFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
+import { matchesTerritoire } from "@/shared/database/repositories/parcours-prevention.repository";
 import type { UserWithParcoursDetails, DossierInfo } from "../domain/types/user-with-parcours.types";
 import { amoValidationTokens } from "@/shared/database";
 import type { ScopeFilters } from "@/features/auth/permissions/domain/types/agent-scope.types";
@@ -141,10 +142,27 @@ export async function getUsersWithParcours(scopeFilters?: ScopeFilters | null): 
   // Exécuter la requête avec tri
   const results = await query.orderBy(desc(users.createdAt));
 
+  // Filtre territorial (analyste départemental) : le département vit dans la
+  // simulation JSONB, on filtre donc en JS comme getParcoursByTerritoire (USER-first).
+  const departementsScope = scopeFilters?.departements ?? [];
+  const scopedResults =
+    departementsScope.length > 0
+      ? results.filter((row) =>
+          matchesTerritoire(
+            getDemandeurFirstSimulation({
+              rgaSimulationData: row.parcoursRgaSimulationData,
+              rgaSimulationDataAgent: row.parcoursRgaSimulationDataAgent,
+            }),
+            departementsScope,
+            []
+          )
+        )
+      : results;
+
   // Grouper les résultats par utilisateur
   const usersMap = new Map<string, UserWithParcoursDetails>();
 
-  for (const row of results) {
+  for (const row of scopedResults) {
     // Si l'utilisateur n'est pas encore dans la map
     if (!usersMap.has(row.userId)) {
       usersMap.set(row.userId, {

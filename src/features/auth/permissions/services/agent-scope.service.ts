@@ -63,22 +63,6 @@ export async function calculateAgentScope(agent: AgentScopeInput): Promise<Agent
       };
     }
 
-    case UserRole.ANALYSTE_DDT: {
-      // Les agents DDT ont accès uniquement aux stats de leur(s) département(s) assigné(s)
-      const departementsAnalyseDdt = agent.id
-        ? await agentPermissionsRepository.getDepartementsByAgentId(agent.id)
-        : [];
-      return {
-        isNational: false, // Jamais d'accès national pour les DDT
-        entrepriseAmoIds: [],
-        departements: departementsAnalyseDdt,
-        epcis: [],
-        canViewAllDossiers: false,
-        canViewDossiersByEntreprise: false,
-        canViewDossiersWithoutAmo: false,
-      };
-    }
-
     case UserRole.ALLERS_VERS: {
       // Les Allers-Vers voient uniquement les dossiers sans AMO de leur territoire
       if (!allersVersId) {
@@ -254,10 +238,18 @@ export function getScopeFilterConditions(scope: AgentScope): ScopeFilters | null
     };
   }
 
-  // Analyste = pas d'accès aux dossiers individuels
-  return {
-    entrepriseAmoIds: [], // Filtre vide = aucun résultat
-  };
+  // Analyste départemental (suivi DDT) : restreint à ses départements.
+  if (scope.departements.length > 0) {
+    return { departements: scope.departements };
+  }
+
+  // Analyste national : pas de département → stats nationales, aucun filtre.
+  if (scope.isNational) {
+    return null;
+  }
+
+  // Aucun périmètre exploitable (ex. AMO sans entreprise) : aucun résultat.
+  return { noAccess: true };
 }
 
 /**
@@ -281,7 +273,10 @@ export async function verifyProspectTerritoryAccess(
 ): Promise<string | null> {
   const scope = await calculateAgentScope(agent);
 
-  if (scope.isNational) {
+  // Accès national aux dossiers (admins) = court-circuit. On se base sur
+  // canViewAllDossiers et non isNational : un analyste national voit les stats
+  // nationales mais ne doit pas accéder au détail d'un dossier hors territoire.
+  if (scope.canViewAllDossiers) {
     return null;
   }
 

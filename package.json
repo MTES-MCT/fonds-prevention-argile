@@ -1,6 +1,6 @@
 {
   "name": "fonds-prevention-argile",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "private": true,
   "packageManager": "pnpm@11.8.0",
   "engines": {

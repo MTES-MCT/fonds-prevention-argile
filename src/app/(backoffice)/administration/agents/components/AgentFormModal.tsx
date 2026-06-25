@@ -5,13 +5,6 @@ import { UserRole } from "@/shared/domain/value-objects";
 import type { AgentRole } from "@/shared/domain/value-objects";
 import DepartementsSelect from "./DepartementsSelect";
 import { AgentWithPermissions } from "@/features/backoffice";
-import { getAllDepartementsEligibles } from "@/shared/constants/rga.constants";
-
-/**
- * Liste des départements éligibles RGA pour le select Analyste DDT
- * Seuls les 11 départements du dispositif sont proposés
- */
-const DEPARTEMENTS_DDT_OPTIONS = getAllDepartementsEligibles().map(({ code, nom }) => ({ code, name: nom }));
 
 /**
  * Entreprise AMO simplifiée pour le select
@@ -57,7 +50,6 @@ const ROLE_OPTIONS: { value: AgentRole; label: string }[] = [
   { value: UserRole.ANALYSTE, label: "Analyste" },
   { value: UserRole.ALLERS_VERS, label: "Allers-Vers" },
   { value: UserRole.AMO_ET_ALLERS_VERS, label: "AMO et Allers-Vers" },
-  { value: UserRole.ANALYSTE_DDT, label: "Analyste DDT" },
 ];
 
 export default function AgentFormModal({
@@ -119,8 +111,8 @@ export default function AgentFormModal({
       allersVersId: [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(newRole)
         ? prev.allersVersId
         : undefined,
-      // Garder les départements pour Administrateur et Analyste DDT
-      departements: [UserRole.ADMINISTRATEUR, UserRole.ANALYSTE_DDT].includes(newRole) ? prev.departements : [],
+      // Garder les départements pour Administrateur et Analyste
+      departements: [UserRole.ADMINISTRATEUR, UserRole.ANALYSTE].includes(newRole) ? prev.departements : [],
     }));
   };
 
@@ -149,12 +141,6 @@ export default function AgentFormModal({
     // Validation territoire Allers-Vers si rôle = ALLERS_VERS ou AMO_ET_ALLERS_VERS
     if ([UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(formData.role) && !formData.allersVersId) {
       setError("Un territoire Allers-Vers doit être sélectionné pour ce rôle");
-      return;
-    }
-
-    // Validation département pour Analyste DDT
-    if (formData.role === UserRole.ANALYSTE_DDT && formData.departements.length === 0) {
-      setError("Au moins un département doit être sélectionné pour un Analyste DDT");
       return;
     }
 
@@ -344,8 +330,8 @@ export default function AgentFormModal({
                     </div>
                   )}
 
-                  {/* Départements (pour Administrateur et Analyste DDT) */}
-                  {formData.role === UserRole.ADMINISTRATEUR && (
+                  {/* Départements (pour Administrateur et Analyste) */}
+                  {[UserRole.ADMINISTRATEUR, UserRole.ANALYSTE].includes(formData.role) && (
                     <div className="fr-input-group">
                       <label className="fr-label">Départements autorisés</label>
                       <DepartementsSelect
@@ -355,35 +341,9 @@ export default function AgentFormModal({
                         placeholder="Sélectionner les départements..."
                       />
                       <p className="fr-hint-text">
-                        L&apos;administrateur n&apos;aura accès qu&apos;aux données de ces départements. Laissez vide
-                        pour un accès à tous les départements.
-                      </p>
-                    </div>
-                  )}
-
-                  {formData.role === UserRole.ANALYSTE_DDT && (
-                    <div className="fr-select-group">
-                      <label className="fr-label" htmlFor={`${modalId}-departementDdt`}>
-                        Département DDT *
-                      </label>
-                      <select
-                        id={`${modalId}-departementDdt`}
-                        className="fr-select"
-                        value={formData.departements[0] || ""}
-                        onChange={(e) =>
-                          setFormData({ ...formData, departements: e.target.value ? [e.target.value] : [] })
-                        }
-                        disabled={isLoading}
-                        required>
-                        <option value="">Sélectionner un département</option>
-                        {DEPARTEMENTS_DDT_OPTIONS.map((dept) => (
-                          <option key={dept.code} value={dept.code}>
-                            {dept.code} - {dept.name}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="fr-hint-text">
-                        L&apos;analyste DDT n&apos;aura accès qu&apos;aux statistiques de ce département.
+                        {formData.role === UserRole.ANALYSTE
+                          ? "Avec un ou plusieurs départements, l'analyste suit les dossiers de ces territoires (mode DDT). Laissez vide pour un accès national aux statistiques."
+                          : "L'administrateur n'aura accès qu'aux données de ces départements. Laissez vide pour un accès à tous les départements."}
                       </p>
                     </div>
                   )}

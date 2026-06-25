@@ -5,12 +5,13 @@ import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 
 /**
  * Garantit la matrice d'accès aux actions (anciennement commentaires) :
- * tous les agents terrain peuvent créer et lire les actions ; l'administrateur
- * reste en lecture seule ; les analystes n'ont aucun accès.
+ * tous les agents terrain et l'analyste (suivi DDT) peuvent créer et lire les
+ * actions ; l'administrateur reste en lecture seule ; aucun de ces rôles ne gère
+ * l'éligibilité.
  */
 describe("RBAC — accès aux actions", () => {
-  // Agents terrain : peuvent saisir des actions sur tous les dossiers
-  const ROLES_TERRAIN = [UserRole.AMO, UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS];
+  // Agents terrain + analyste DDT : peuvent saisir des actions
+  const ROLES_TERRAIN = [UserRole.AMO, UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS, UserRole.ANALYSTE];
 
   describe("agents terrain", () => {
     it.each(ROLES_TERRAIN)("%s peut créer une action (COMMENTAIRES_CREATE)", (role) => {
@@ -41,11 +42,18 @@ describe("RBAC — accès aux actions", () => {
     });
   });
 
-  describe("analystes (aucun accès aux actions)", () => {
-    it.each([UserRole.ANALYSTE, UserRole.ANALYSTE_DDT])("%s ne peut ni créer ni lire d'action", (role) => {
-      expect(hasPermission(role, BackofficePermission.COMMENTAIRES_CREATE)).toBe(false);
-      expect(hasPermission(role, BackofficePermission.COMMENTAIRES_READ)).toBe(false);
-      expect(hasPermission(role, BackofficePermission.COMMENTAIRES_READ_ALL)).toBe(false);
+  describe("analyste (suivi DDT)", () => {
+    it("peut créer et lire les actions (messages) sur les dossiers de son territoire", () => {
+      expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.COMMENTAIRES_CREATE)).toBe(true);
+      expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.COMMENTAIRES_READ)).toBe(true);
+      expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.COMMENTAIRES_UPDATE_OWN)).toBe(true);
+      expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.COMMENTAIRES_DELETE_OWN)).toBe(true);
+    });
+
+    it("ne gère pas l'éligibilité ni la création de dossier", () => {
+      expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.ELIGIBILITE_WRITE)).toBe(false);
+      expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.DOSSIERS_CREATE)).toBe(false);
+      expect(hasPermission(UserRole.ANALYSTE, BackofficePermission.COMMENTAIRES_READ_ALL)).toBe(false);
     });
   });
 });

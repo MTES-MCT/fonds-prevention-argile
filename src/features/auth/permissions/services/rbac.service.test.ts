@@ -274,23 +274,29 @@ describe("rbac.service", () => {
       expect(permissions).not.toContain(BackofficePermission.AGENTS_DELETE);
     });
 
-    it("devrait retourner uniquement les permissions de lecture pour ANALYSTE", () => {
+    it("devrait retourner les permissions de lecture + messages pour ANALYSTE", () => {
       const permissions = getRolePermissions(UserRole.ANALYSTE);
 
-      // Doit contenir (seulement 4 permissions)
-      expect(permissions.length).toBe(4);
+      // Lecture (stats, AMO, allers-vers)
       expect(permissions).toContain(BackofficePermission.STATS_READ);
       expect(permissions).toContain(BackofficePermission.USERS_STATS_READ);
       expect(permissions).toContain(BackofficePermission.AMO_READ);
       expect(permissions).toContain(BackofficePermission.ALLERS_VERS_READ);
 
-      // Ne doit PAS contenir
+      // Messages (suivi DDT) : peut ajouter/lire/éditer ses propres actions
+      expect(permissions).toContain(BackofficePermission.COMMENTAIRES_CREATE);
+      expect(permissions).toContain(BackofficePermission.COMMENTAIRES_READ);
+      expect(permissions).toContain(BackofficePermission.COMMENTAIRES_UPDATE_OWN);
+      expect(permissions).toContain(BackofficePermission.COMMENTAIRES_DELETE_OWN);
+
+      // Ne doit PAS contenir : pas de gestion éligibilité ni création de dossier
+      expect(permissions).not.toContain(BackofficePermission.ELIGIBILITE_WRITE);
+      expect(permissions).not.toContain(BackofficePermission.DOSSIERS_CREATE);
       expect(permissions).not.toContain(BackofficePermission.USERS_READ);
-      expect(permissions).not.toContain(BackofficePermission.USERS_DETAIL_READ);
       expect(permissions).not.toContain(BackofficePermission.AMO_WRITE);
-      expect(permissions).not.toContain(BackofficePermission.ALLERS_VERS_WRITE);
       expect(permissions).not.toContain(BackofficePermission.AGENTS_READ);
       expect(permissions).not.toContain(BackofficePermission.DOSSIERS_AMO_READ);
+      expect(permissions).not.toContain(BackofficePermission.COMMENTAIRES_READ_ALL);
     });
 
     it("devrait retourner les permissions dossiers AMO pour le rôle AMO", () => {

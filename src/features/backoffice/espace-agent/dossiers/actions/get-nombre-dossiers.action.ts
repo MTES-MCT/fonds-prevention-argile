@@ -4,11 +4,7 @@ import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/s
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import { parcoursRepo } from "@/shared/database";
 
-/**
- * Compteur léger pour afficher un badge à côté de l'onglet « Dossiers ».
- * Effectue un comptage minimal côté DB (pas de jointure ni de résolution
- * responsable). Retourne 0 en cas d'erreur — la nav reste affichable.
- */
+// Badge de l'onglet « Dossiers ». Retourne 0 en cas d'erreur pour ne pas casser la nav.
 export async function getNombreDossiersAction(): Promise<number> {
   try {
     const access = await resolveEspaceAgentAccess();
@@ -22,8 +18,16 @@ export async function getNombreDossiersAction(): Promise<number> {
       allersVersId: agent.allersVersId ?? null,
     });
 
-    const departements = scope.isNational ? [] : scope.departements;
-    const epcis = scope.isNational ? [] : scope.epcis;
+    // Périmètre = canViewAllDossiers (admins), pas isNational : l'analyste national ne voit aucun dossier. Sans périmètre → 0.
+    const hasScope =
+      scope.canViewAllDossiers ||
+      scope.departements.length > 0 ||
+      scope.epcis.length > 0 ||
+      scope.canViewDossiersByEntreprise;
+    if (!hasScope) return 0;
+
+    const departements = scope.canViewAllDossiers ? [] : scope.departements;
+    const epcis = scope.canViewAllDossiers ? [] : scope.epcis;
 
     return parcoursRepo.countParcoursByTerritoire(departements, epcis);
   } catch (error) {

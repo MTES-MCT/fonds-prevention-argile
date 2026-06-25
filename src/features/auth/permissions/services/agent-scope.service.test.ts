@@ -444,7 +444,37 @@ describe("agent-scope.service", () => {
       expect(filters?.departements).toEqual(["75"]);
     });
 
-    it("devrait retourner un filtre vide pour analyste (pas d'accès aux dossiers)", () => {
+    it("devrait restreindre l'analyste départemental à ses départements", () => {
+      const scope: AgentScope = {
+        isNational: false,
+        entrepriseAmoIds: [],
+        departements: ["36"],
+        epcis: [],
+        canViewAllDossiers: false,
+        canViewDossiersByEntreprise: false,
+        canViewDossiersWithoutAmo: false,
+      };
+
+      const filters = getScopeFilterConditions(scope);
+
+      expect(filters?.departements).toEqual(["36"]);
+    });
+
+    it("ne filtre pas l'analyste national (stats nationales)", () => {
+      const scope: AgentScope = {
+        isNational: true,
+        entrepriseAmoIds: [],
+        departements: [],
+        epcis: [],
+        canViewAllDossiers: false,
+        canViewDossiersByEntreprise: false,
+        canViewDossiersWithoutAmo: false,
+      };
+
+      expect(getScopeFilterConditions(scope)).toBeNull();
+    });
+
+    it("retourne noAccess sans aucun périmètre exploitable", () => {
       const scope: AgentScope = {
         isNational: false,
         entrepriseAmoIds: [],
@@ -455,10 +485,7 @@ describe("agent-scope.service", () => {
         canViewDossiersWithoutAmo: false,
       };
 
-      const filters = getScopeFilterConditions(scope);
-
-      expect(filters).not.toBeNull();
-      expect(filters?.entrepriseAmoIds).toEqual([]);
+      expect(getScopeFilterConditions(scope)?.noAccess).toBe(true);
     });
   });
 
@@ -572,6 +599,54 @@ describe("agent-scope.service", () => {
         role: UserRole.AMO_ET_ALLERS_VERS,
         entrepriseAmoId: "entreprise-123",
         allersVersId: "av-456",
+      });
+
+      expect(error).toBe("Ce prospect n'est pas dans votre territoire");
+    });
+
+    it("autorise un analyste départemental sur un dossier de son territoire", async () => {
+      vi.mocked(agentPermissionsRepository.getDepartementsByAgentId).mockResolvedValue(["32"]);
+      vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(
+        parcours({ rgaSimulationData: simAuDepartement("32") })
+      );
+
+      const error = await verifyProspectTerritoryAccess("parcours-1", {
+        id: "analyste-ddt",
+        role: UserRole.ANALYSTE,
+        entrepriseAmoId: null,
+        allersVersId: null,
+      });
+
+      expect(error).toBeNull();
+    });
+
+    it("refuse un analyste départemental sur un dossier hors de son territoire", async () => {
+      vi.mocked(agentPermissionsRepository.getDepartementsByAgentId).mockResolvedValue(["32"]);
+      vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(
+        parcours({ rgaSimulationData: simAuDepartement("33") })
+      );
+
+      const error = await verifyProspectTerritoryAccess("parcours-1", {
+        id: "analyste-ddt",
+        role: UserRole.ANALYSTE,
+        entrepriseAmoId: null,
+        allersVersId: null,
+      });
+
+      expect(error).toBe("Ce prospect n'est pas dans votre territoire");
+    });
+
+    it("refuse un analyste national (sans département) : pas d'accès dossier hors stats", async () => {
+      vi.mocked(agentPermissionsRepository.getDepartementsByAgentId).mockResolvedValue([]);
+      vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(
+        parcours({ rgaSimulationData: simAuDepartement("32") })
+      );
+
+      const error = await verifyProspectTerritoryAccess("parcours-1", {
+        id: "analyste-national",
+        role: UserRole.ANALYSTE,
+        entrepriseAmoId: null,
+        allersVersId: null,
       });
 
       expect(error).toBe("Ce prospect n'est pas dans votre territoire");

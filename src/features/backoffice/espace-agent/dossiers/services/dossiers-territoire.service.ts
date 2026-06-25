@@ -27,14 +27,17 @@ export async function getDossiersByAgent(
 ): Promise<DossiersTerritoireResult> {
   const scope = await calculateAgentScope(agent);
 
-  const hasTerritorialScope = scope.isNational || scope.departements.length > 0 || scope.epcis.length > 0;
+  // « Voir tous les dossiers » = accès national aux dossiers (admins via
+  // canViewAllDossiers), distinct de isNational qui ne vaut que pour les stats
+  // (un analyste national voit les stats nationales mais aucun dossier ici).
+  const hasTerritorialScope = scope.canViewAllDossiers || scope.departements.length > 0 || scope.epcis.length > 0;
   if (!hasTerritorialScope && !scope.canViewDossiersByEntreprise) {
     return emptyResult([], []);
   }
 
-  // Accès national : pas de filtre territorial (le repo retourne tout).
-  const departements = scope.isNational ? [] : scope.departements;
-  const epcis = scope.isNational ? [] : scope.epcis;
+  // Accès national aux dossiers : pas de filtre territorial (le repo retourne tout).
+  const departements = scope.canViewAllDossiers ? [] : scope.departements;
+  const epcis = scope.canViewAllDossiers ? [] : scope.epcis;
 
   const rows = await parcoursRepo.getParcoursByTerritoire(departements, epcis, filters);
   const bareItems = rows.map(toDossierItemSansResponsable);
