@@ -100,6 +100,9 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 - Préférer lancer un test ciblé (`pnpm test -- path/to/file.test.ts`) plutôt que toute la suite
 - Lint avant commit : `pnpm format && pnpm lint`
 - Produire du code, pas des plans (sauf si demandé explicitement)
+- À chaque fin de fonctionnalité (groupe de commits / PR), **bumper la version** dans
+  `package.json` selon SemVer : `feat` → minor (`1.17.0` → `1.18.0`), `fix`/`chore` →
+  patch. Inclure le bump dans le même lot de commits que la feature.
 
 ### Documentation à chaque PR / groupe de commits / fonctionnalité
 
