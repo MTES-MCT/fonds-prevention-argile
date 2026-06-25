@@ -242,17 +242,29 @@ concerné par cette cause secondaire.
 
 ---
 
+## 6.1 Ré-ouverture d'une demande refusée (garde élargie)
+
+L'action « Ré-ouvrir la demande » (demande refusée par l'AMO → `en_attente`, cf.
+[ADR-0016](../adr/0016-reouverture-demande-refusee.md)) utilise une garde **volontairement
+plus large** que la visibilité standard : `canReopenRefusedDemande` autorise le **super-admin**
+(national, exception assumée au read-only), l'**AMO de l'entreprise rattachée** et l'**Aller-vers
+couvrant le territoire** — y compris quand la demande porte une AMO (cas où `canAccessDossier`
+refuserait normalement l'AV). `ANALYSTE` et `ADMINISTRATEUR` sont exclus. Garde
+(`reouvrirDemandeAction`) = rôle habilité **+** `canReopenRefusedDemande(scope, …)` ; l'audit
+QUI/QUAND est écrit dans `parcours_actions` (type `dossier_reouvert`).
+
 ## 7. Fichiers clés
 
-| Rôle                             | Fichier                                                                  |
-| -------------------------------- | ------------------------------------------------------------------------ |
-| Enum des rôles                   | `src/shared/domain/value-objects/user-role.enum.ts`                      |
-| Service de permissions           | `src/features/auth/permissions/services/permissions.service.ts`          |
-| Matrice permissions / onglets    | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts` |
-| Périmètre données agent          | `src/features/auth/permissions/services/agent-scope.service.ts`          |
-| Service RBAC (onglets)           | `src/features/auth/permissions/services/rbac.service.ts`                 |
-| Config des routes / redirections | `src/features/auth/domain/value-objects/configs/routes.config.ts`        |
-| Aiguillage auth                  | `src/middleware.ts`                                                      |
-| Garde espace agent               | `src/app/(backoffice)/espace-agent/layout.tsx`                           |
-| Garde administration             | `src/app/(backoffice)/administration/page.tsx`                           |
-| Garde entreprise AMO             | `src/app/(backoffice)/components/AmoGuard.tsx`                           |
+| Rôle                             | Fichier                                                                                               |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Enum des rôles                   | `src/shared/domain/value-objects/user-role.enum.ts`                                                   |
+| Service de permissions           | `src/features/auth/permissions/services/permissions.service.ts`                                       |
+| Matrice permissions / onglets    | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                              |
+| Périmètre données agent          | `src/features/auth/permissions/services/agent-scope.service.ts`                                       |
+| Service RBAC (onglets)           | `src/features/auth/permissions/services/rbac.service.ts`                                              |
+| Config des routes / redirections | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                     |
+| Aiguillage auth                  | `src/middleware.ts`                                                                                   |
+| Garde espace agent               | `src/app/(backoffice)/espace-agent/layout.tsx`                                                        |
+| Garde administration             | `src/app/(backoffice)/administration/page.tsx`                                                        |
+| Garde entreprise AMO             | `src/app/(backoffice)/components/AmoGuard.tsx`                                                        |
+| Garde ré-ouverture demande       | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts` |

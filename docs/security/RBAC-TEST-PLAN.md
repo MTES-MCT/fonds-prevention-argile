@@ -150,6 +150,7 @@ cellules négatives** recensées. Les agrégats nationaux consultables par l'`AN
 | Routes super-admin (synchronisations/diagnostics) guard                   | `app/(backoffice)/administration/{synchronisations,diagnostics}/page.tsx`                      | none        | ADMINISTRATEUR / ANALYSTE → DENY                                        | PARTIEL (actions diagnostics testées ; gardes page à compléter)  |
 | EspaceAgent Layout — rejet FranceConnect                                  | `app/(backoffice)/espace-agent/layout.tsx`                                                     | individual  | FranceConnect (mauvaise méthode) → DENY                                 | OUI (testé)                                                      |
 | Middleware auth & redirection                                             | `src/middleware.ts`                                                                            | none        | AMO→/espace-amo ; non-auth→/connexion/agent → DENY                      | OUI (testé)                                                      |
+| Ré-ouverture demande refusée                                              | `dossiers/actions/reouvrir-demande.actions.ts`                                                 | individual  | ANALYSTE / non-auth / AMO autre entreprise / AV hors territoire → DENY  | OUI (action + prédicat `canReopenRefusedDemande`)                |
 
 ### MEDIUM — scope individuel partiel / DENY admin partiel
 

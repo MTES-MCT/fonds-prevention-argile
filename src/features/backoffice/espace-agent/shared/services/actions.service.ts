@@ -1,9 +1,5 @@
-import {
-  parcoursActionsRepo,
-  agentsRepo,
-  entreprisesAmoRepo,
-  allersVersRepository,
-} from "@/shared/database/repositories";
+import { parcoursActionsRepo, agentsRepo } from "@/shared/database/repositories";
+import { buildAuthorSnapshot } from "./author-snapshot";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
@@ -110,23 +106,7 @@ export class ActionsService {
         return { success: false, error: "Agent introuvable." };
       }
 
-      // Construire le snapshot auteur
-      const authorName = agent.usualName ? `${agent.givenName} ${agent.usualName}` : agent.givenName;
-
-      let authorStructure: string | null = null;
-      let authorStructureType: string | null = null;
-
-      if (agent.entrepriseAmoId) {
-        const entreprise = await entreprisesAmoRepo.findById(agent.entrepriseAmoId);
-        authorStructure = entreprise?.nom ?? null;
-        authorStructureType = "AMO";
-      } else if (agent.allersVersId) {
-        const av = await allersVersRepository.findById(agent.allersVersId);
-        authorStructure = av?.nom ?? null;
-        authorStructureType = "ALLERS_VERS";
-      } else {
-        authorStructureType = "ADMINISTRATION";
-      }
+      const { authorName, authorStructure, authorStructureType } = await buildAuthorSnapshot(agent);
 
       const created = await parcoursActionsRepo.create({
         parcoursId,
@@ -156,12 +136,7 @@ export class ActionsService {
    * Met à jour le commentaire d'une action existante
    * Seul l'auteur de l'action peut le modifier
    */
-  async updateAction(
-    actionId: string,
-    agentId: string,
-    role: UserRole,
-    message: string
-  ): Promise<UpdateActionResult> {
+  async updateAction(actionId: string, agentId: string, role: UserRole, message: string): Promise<UpdateActionResult> {
     if (!hasPermission(role, BackofficePermission.COMMENTAIRES_UPDATE_OWN)) {
       return {
         success: false,

@@ -44,6 +44,7 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 | [`fix-double-progression-amo.ts`](#fix-double-progression-amo)   | **écrit** | Détecte et corrige les parcours victimes du bug double-progression AMO (régression vers eligibilite/todo)                       | `tsx scripts/ops/fix/fix-double-progression-amo.ts`    |
 | [`verify-dashboard-stats.ts`](#verify-dashboard-stats)           | read-only | Vérifie que les stats du tableau de bord correspondent aux requêtes SQL équivalentes                                            | `tsx scripts/ops/audit/verify-dashboard-stats.ts`      |
 | [`fix-missing-epci.ts`](#fix-missing-epci)                       | **écrit** | Backfill du code EPCI sur les parcours qui en sont dépourvus (via `geo.api.gouv.fr`)                                            | `pnpm fix:epci`                                        |
+| [`reouvrir-demande.ts`](#reouvrir-demande)                       | **écrit** | Ré-ouvre une demande refusée par l'AMO (changement d'avis) : statut refusé -> en_attente + token frais (+ email)                | `pnpm fix:reouvrir-demande`                            |
 | [`debug-matomo-events.ts`](#debug-matomo-events)                 | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur)                                                                 | `tsx scripts/ops/debug/debug-matomo-events.ts`         |
 | [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Récupère le schéma GraphQL d'une démarche DS (utile pour itérer sur les mappings)                                               | `tsx scripts/ops/ds/fetch-demarche-schema.ts`          |
 | [`check-ds-permissions.ts`](#check-ds-permissions)               | read-only | Vérifie que le token GraphQL a accès à chaque démarche configurée (sinon synchro KO)                                            | `pnpm ds:check-permissions`                            |
@@ -145,6 +146,26 @@ Backfill du `logement.epci` sur ~10 parcours qui en sont dépourvus (problème h
 
 ```bash
 pnpm fix:epci                   # mode par défaut (dry-run d'abord, à confirmer)
+```
+
+### reouvrir-demande
+
+Ré-ouvre une demande refusée par l'AMO quand le demandeur « se réveille » (changement
+d'avis). Mince wrapper CLI autour du service `reouvrirDemandeRefusee` — le **même** que
+le bouton UI « Ré-ouvrir la demande » de l'espace agent. Remet la validation refusée
+(`logement_non_eligible` / `accompagnement_refuse`) en `en_attente`, désarchive le
+parcours (`prospect`, `archived_at` -> NULL, `current_status` -> `en_instruction`) et
+crée un token de validation frais (90 j). `--send-email` ré-envoie le mail à l'AMO
+(nécessite un code INSEE demandeur ou agent). Dry-run par défaut.
+
+> Le script n'écrit pas d'entrée d'audit `parcours_actions` (action ops, pas un agent
+> connecté) ; le traçage QUI/QUAND ne concerne que la ré-ouverture via l'UI.
+
+```bash
+pnpm fix:reouvrir-demande --nom=Dupont                          # dry-run, trouve par nom (ILIKE)
+pnpm fix:reouvrir-demande --parcours-id=<uuid>                  # dry-run
+pnpm fix:reouvrir-demande --parcours-id=<uuid> --apply          # applique (sans email)
+pnpm fix:reouvrir-demande --parcours-id=<uuid> --apply --send-email
 ```
 
 ### debug-matomo-events

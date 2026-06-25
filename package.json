@@ -1,6 +1,6 @@
 {
   "name": "fonds-prevention-argile",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "private": true,
   "packageManager": "pnpm@11.8.0",
   "engines": {
@@ -43,7 +43,7 @@
     "ds:check-permissions": "tsx scripts/ops/ds/check-ds-permissions.ts",
     "ds:probe-dossiers": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/probe-dossiers.ts",
     "fix:double-progression": "tsx scripts/ops/fix/fix-double-progression-amo.ts",
-    "fix:amo-non-eligible": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reset-amo-non-eligible.ts",
+    "fix:reouvrir-demande": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reouvrir-demande.ts",
     "fix:eligibilite-sync-error": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts",
     "fix:clean-faux-depots": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/clean-faux-depots-submitted-at.ts",
     "fix:relink-eligibilite": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/relink-eligibilite-dossier.ts",

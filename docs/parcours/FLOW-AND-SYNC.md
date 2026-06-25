@@ -78,6 +78,22 @@ TODO ──(dépôt usager, sync ds=en_construction)──► TODO* ──(sync 
 
 L'étape `choix_amo` **n'a pas de dossier DS**. La progression vers `eligibilite` est pilotée par la validation AMO via webhook email Brevo, pas par une sync DS. Conséquence pour le code de sync : `recomputeParcoursStatus` est no-op si `current_step = choix_amo` (pas de dossier de l'étape courante).
 
+### 2.4 Ré-ouverture d'une demande refusée (changement d'avis)
+
+Une demande refusée par l'AMO (`parcours_amo_validations.statut = logement_non_eligible`,
+parfois `accompagnement_refuse`) fige le parcours en `choix_amo / todo` ; le dossier
+apparaît dans les **archives** de l'AMO (état `REFUSE`, ce n'est pas un archivage
+`archived_at`). Quand le demandeur « se réveille », on **ré-ouvre** : transition inverse
+`refusé → en_attente` AMO.
+
+Service unique `reouvrirDemandeRefusee` (`reouverture-demande.service.ts`), partagé par
+le script ops `pnpm fix:reouvrir-demande` et la server action UI `reouvrirDemandeAction`
+(bouton « Ré-ouvrir la demande » sur le détail dossier). Effet : `validation -> en_attente`
+(reset `valideeAt`/commentaire/tracking), `parcours -> prospect` / `archived_* = null` /
+`current_status = en_instruction`, **nouveau token** (90 j) et email AMO optionnel.
+Permissions et audit : voir [ADR-0016](../adr/0016-reouverture-demande-refusee.md) et
+[RBAC-ROLES.md](../security/RBAC-ROLES.md).
+
 ---
 
 ## 3. Architecture de la synchronisation
