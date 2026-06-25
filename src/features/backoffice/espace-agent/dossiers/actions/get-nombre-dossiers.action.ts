@@ -4,11 +4,7 @@ import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/s
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import { parcoursRepo } from "@/shared/database";
 
-/**
- * Compteur léger pour afficher un badge à côté de l'onglet « Dossiers ».
- * Effectue un comptage minimal côté DB (pas de jointure ni de résolution
- * responsable). Retourne 0 en cas d'erreur — la nav reste affichable.
- */
+// Badge de l'onglet « Dossiers ». Retourne 0 en cas d'erreur pour ne pas casser la nav.
 export async function getNombreDossiersAction(): Promise<number> {
   try {
     const access = await resolveEspaceAgentAccess();
