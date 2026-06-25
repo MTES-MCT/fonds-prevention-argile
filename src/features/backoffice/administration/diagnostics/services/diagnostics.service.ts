@@ -49,11 +49,13 @@ interface RawRow {
 
 function classify(r: RawRow, syncError: string | undefined): DiagnosticState {
   if (syncError) {
-    // Dépôt RÉELLEMENT confirmé par une sync (last_sync_at renseigné) mais jamais instruit
-    // → dossier DN vraisemblablement expiré/supprimé. On exige last_sync_at car un
-    // `submitted_at` sans sync est un faux dépôt legacy (création pré-#216), pas un vrai dépôt.
-    if (r.dossierId && r.lastSyncAt && r.submittedAt && !r.instructedAt) return DiagnosticState.SYNC_ERREUR_DEPOSE;
-    return DiagnosticState.SYNC_ERREUR;
+    // Vraie anomalie technique (token non instructeur, réseau) : le verdict DN persisté le dit.
+    if (r.dnProbeState === "unauthorized" || r.dnProbeState === "api_error") return DiagnosticState.SYNC_ANOMALIE;
+    // Dépôt RÉELLEMENT confirmé par une sync (last_sync_at) mais jamais instruit, puis disparu.
+    // On exige last_sync_at car un `submitted_at` sans sync est un faux dépôt legacy (pré-#216).
+    if (r.dossierId && r.lastSyncAt && r.submittedAt && !r.instructedAt) return DiagnosticState.DOSSIER_DEPOSE_DISPARU;
+    // Sinon : le demandeur n'a pas (encore) créé/finalisé son dossier côté DN. Le gros du volume.
+    return DiagnosticState.DOSSIER_DN_NON_CREE;
   }
 
   // Pas de dossier pour l'étape courante.
@@ -105,7 +107,7 @@ function resolveActiveError(r: RawRow, err: { error: string; at: Date } | undefi
 
 function referenceDate(state: DiagnosticState, r: RawRow): Date | null {
   switch (state) {
-    case DiagnosticState.SYNC_ERREUR_DEPOSE:
+    case DiagnosticState.DOSSIER_DEPOSE_DISPARU:
     case DiagnosticState.BLOQUE:
     case DiagnosticState.DEPOSE_EN_ATTENTE:
       return r.submittedAt ?? r.dossierCreatedAt;
@@ -195,7 +197,9 @@ export async function getParcoursDiagnostics(): Promise<DiagnosticsResult> {
     counts[state] += 1;
 
     const detail =
-      state === DiagnosticState.SYNC_ERREUR || state === DiagnosticState.SYNC_ERREUR_DEPOSE
+      state === DiagnosticState.SYNC_ANOMALIE ||
+      state === DiagnosticState.DOSSIER_DEPOSE_DISPARU ||
+      state === DiagnosticState.DOSSIER_DN_NON_CREE
         ? (syncError ?? null)
         : state === DiagnosticState.ORPHELIN
           ? "Aucun dossier d'éligibilité accepté rattaché"
