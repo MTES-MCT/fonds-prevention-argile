@@ -61,10 +61,7 @@ export const DOSSIER_STEP_LABELS: Record<Step, string> = {
  * - sinon le libellé de l'étape
  * - « Non-éligible » si validation refusée (logement non éligible)
  */
-export function getDossierStepLabel(
-  step: Step,
-  validation: { statut: StatutValidationAmo } | null
-): string {
+export function getDossierStepLabel(step: Step, validation: { statut: StatutValidationAmo } | null): string {
   if (validation?.statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
     return "Non-éligible";
   }
@@ -114,7 +111,8 @@ export function getDossierPrecisionLabel(
   currentStep: Step,
   currentStatus: Status,
   dsStatus: DSStatus | null,
-  validation: { statut: StatutValidationAmo } | null
+  validation: { statut: StatutValidationAmo } | null,
+  instructedAt: Date | null
 ): string {
   if (validation?.statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
     return "Logement non éligible.";
@@ -133,6 +131,8 @@ export function getDossierPrecisionLabel(
     case "MENAGE":
       if (dsStatus === DSStatus.REFUSE) return "Refusé par la DDT — consulter la messagerie démarches.";
       if (currentStatus === Status.VALIDE) return etapeValideeLabel(currentStep);
+      // Déposé puis renvoyé en construction par la DDT (déjà instruit une fois) → correction attendue (cf. ADR-0009).
+      if (dsStatus === DSStatus.EN_CONSTRUCTION && instructedAt != null) return etapeCorrectionLabel(currentStep);
       return etapeTodoLabel(currentStep);
     case "REFUSE":
       // Couvert par les early returns ci-dessus pour les libellés détaillés ;
@@ -153,6 +153,21 @@ function etapeTodoLabel(step: Step): string {
       return "Diagnostic accepté. Le demandeur doit transmettre les devis.";
     case Step.FACTURES:
       return "Devis acceptés. Le demandeur doit transmettre les factures.";
+    default:
+      return "";
+  }
+}
+
+function etapeCorrectionLabel(step: Step): string {
+  switch (step) {
+    case Step.ELIGIBILITE:
+      return "Le demandeur doit corriger son formulaire d'éligibilité.";
+    case Step.DIAGNOSTIC:
+      return "Le demandeur doit corriger son diagnostic.";
+    case Step.DEVIS:
+      return "Le demandeur doit corriger ses devis.";
+    case Step.FACTURES:
+      return "Le demandeur doit corriger ses factures.";
     default:
       return "";
   }
