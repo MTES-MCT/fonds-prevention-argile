@@ -52,6 +52,9 @@ overrides:
   esbuild: "^0.25.0"
   # Path traversal via prefix/postfix non assainis (transitif via exceljs)
   tmp: "^0.2.6"
+  # CRLF injection, origin validation error, DoS WebSocket, TLS bypass SOCKS5
+  # (transitif via jsdom -> vitest, devDep test uniquement)
+  undici: "^7.28.0"
 
 trustPolicyExclude:
   # Types-only, runtime-safe. Voir https://github.com/nodejs/undici/issues/4666
