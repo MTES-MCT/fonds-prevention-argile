@@ -13,18 +13,30 @@ import { ConfirmationReponseModal } from "./ConfirmationReponseModal";
 interface ReponseAccompagnementProps {
   demandeId: string;
   statutActuel: string;
+  /** Réponse déjà enregistrée (demande traitée) : l'AMO est-elle mandataire financier ? */
+  estMandataireFinancier?: boolean | null;
+  /** Note complémentaire déjà enregistrée (champ commentaire) */
+  noteAmo?: string | null;
 }
 
 /**
  * Composant de sélection de la réponse à une demande d'accompagnement
  * Affichage sous forme de mise en avant DSFR avec un select
  */
-export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccompagnementProps) {
+export function ReponseAccompagnement({
+  demandeId,
+  statutActuel,
+  estMandataireFinancier,
+  noteAmo,
+}: ReponseAccompagnementProps) {
   const [choix, setChoix] = useState<StatutValidationAmo | "">(
     statutActuel !== StatutValidationAmo.EN_ATTENTE ? (statutActuel as StatutValidationAmo) : ""
   );
   const [commentaire, setCommentaire] = useState("");
   const [precisionAutre, setPrecisionAutre] = useState("");
+  // Réponses spécifiques au chemin "éligible et j'accompagne" (LOGEMENT_ELIGIBLE).
+  const [mandataireFinancier, setMandataireFinancier] = useState<boolean | null>(null);
+  const [noteComplementaire, setNoteComplementaire] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Garde synchrone contre le double-clic : `disabled` lié à `isSubmitting`
@@ -46,6 +58,12 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
 
     if (!choix) {
       setError("Veuillez sélectionner une réponse");
+      return;
+    }
+
+    // Le cas "éligible et j'accompagne" exige une réponse mandataire financier.
+    if (choix === StatutValidationAmo.LOGEMENT_ELIGIBLE && mandataireFinancier === null) {
+      setError("Veuillez indiquer si votre structure est le mandataire financier");
       return;
     }
 
@@ -74,7 +92,11 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
 
       switch (choix) {
         case StatutValidationAmo.LOGEMENT_ELIGIBLE:
-          result = await accepterAccompagnement(demandeId);
+          result = await accepterAccompagnement(
+            demandeId,
+            noteComplementaire.trim() || undefined,
+            mandataireFinancier ?? undefined
+          );
           break;
         case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
           result = await refuserDemandeNonEligible(demandeId, commentairePayload);
@@ -85,9 +107,7 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
         // Si la demande était déjà traitée (race serveur), on n'ouvre pas la modale
         // de confirmation classique : on affiche un message d'info à la place.
         if (result.data?.alreadyProcessed) {
-          setError(
-            "Cette demande a déjà été traitée. Rafraîchissez la page pour voir l'état à jour."
-          );
+          setError("Cette demande a déjà été traitée. Rafraîchissez la page pour voir l'état à jour.");
           return;
         }
 
@@ -156,6 +176,61 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
           </select>
         </div>
 
+        {choix === StatutValidationAmo.LOGEMENT_ELIGIBLE && !alreadyProcessed && (
+          <>
+            <fieldset className="fr-fieldset fr-mt-2w" aria-labelledby="mandataire-legend">
+              <legend className="fr-fieldset__legend fr-text--bold" id="mandataire-legend">
+                Votre structure est-elle le mandataire financier ?
+              </legend>
+              <div className="fr-fieldset__element">
+                <div className="fr-radio-group">
+                  <input
+                    type="radio"
+                    id="mandataire-oui"
+                    name="mandataire-financier"
+                    checked={mandataireFinancier === true}
+                    onChange={() => setMandataireFinancier(true)}
+                    disabled={isSubmitting}
+                  />
+                  <label className="fr-label" htmlFor="mandataire-oui">
+                    Oui, ma structure est le mandataire financier
+                  </label>
+                </div>
+              </div>
+              <div className="fr-fieldset__element">
+                <div className="fr-radio-group">
+                  <input
+                    type="radio"
+                    id="mandataire-non"
+                    name="mandataire-financier"
+                    checked={mandataireFinancier === false}
+                    onChange={() => setMandataireFinancier(false)}
+                    disabled={isSubmitting}
+                  />
+                  <label className="fr-label" htmlFor="mandataire-non">
+                    Non
+                  </label>
+                </div>
+              </div>
+            </fieldset>
+
+            <div className="fr-input-group">
+              <label className="fr-label" htmlFor="note-complementaire-input">
+                Note complémentaire
+                <span className="fr-hint-text">Optionnelle</span>
+              </label>
+              <textarea
+                className="fr-input"
+                id="note-complementaire-input"
+                rows={3}
+                value={noteComplementaire}
+                onChange={(e) => setNoteComplementaire(e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
+          </>
+        )}
+
         {choix === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && (
           <div className="fr-select-group">
             <label className="fr-label" htmlFor="commentaire-input">
@@ -199,6 +274,30 @@ export function ReponseAccompagnement({ demandeId, statutActuel }: ReponseAccomp
           <button type="button" className="fr-btn" onClick={handleSubmit} disabled={!choix || isSubmitting}>
             {isSubmitting ? "Envoi en cours..." : "Confirmer ma réponse"}
           </button>
+        )}
+
+        {alreadyProcessed && statutActuel === StatutValidationAmo.LOGEMENT_ELIGIBLE && (
+          <div className="fr-mt-4w">
+            <p className="fr-mb-1w">
+              Mandataire financier :{" "}
+              <strong>
+                {estMandataireFinancier === null ? "Non renseigné" : estMandataireFinancier ? "Oui" : "Non"}
+              </strong>
+            </p>
+            {noteAmo && (
+              <div className="fr-mt-1w">
+                <p className="fr-mb-1w">Note complémentaire</p>
+                <div
+                  style={{
+                    backgroundColor: "var(--background-contrast-grey)",
+                    padding: "1rem",
+                    borderRadius: "4px",
+                  }}>
+                  <p className="fr-mb-0">&ldquo;{noteAmo}&rdquo;</p>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {alreadyProcessed && (

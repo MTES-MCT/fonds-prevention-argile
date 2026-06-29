@@ -109,6 +109,7 @@ describe("demande-detail.actions", () => {
         statut: "EN_ATTENTE",
         dateCreation: new Date(),
         commentaire: null,
+        estMandataireFinancier: null,
         currentStep: Step.CHOIX_AMO,
         parcoursCreatedAt: new Date(),
         dates: {
@@ -178,11 +179,11 @@ describe("demande-detail.actions", () => {
         data: { message: "Validation acceptée", alreadyProcessed: false, valideeAt: new Date() },
       });
 
-      const result = await accepterAccompagnement("demande-123", "Commentaire test");
+      const result = await accepterAccompagnement("demande-123", "Commentaire test", true);
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(approveValidation).toHaveBeenCalledWith("demande-123", "Commentaire test");
+        expect(approveValidation).toHaveBeenCalledWith("demande-123", "Commentaire test", true);
       }
     });
 

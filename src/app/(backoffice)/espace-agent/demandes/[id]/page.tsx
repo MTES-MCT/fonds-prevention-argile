@@ -118,7 +118,12 @@ export default async function DemandeDetailPage({ params }: PageProps) {
             {demande.currentStep === Step.INVITATION && (
               <RenvoyerInvitationButton parcoursId={demande.parcoursId} email={demande.demandeur.email ?? ""} />
             )}
-            <ReponseAccompagnement demandeId={demande.id} statutActuel={demande.statut} />
+            <ReponseAccompagnement
+              demandeId={demande.id}
+              statutActuel={demande.statut}
+              estMandataireFinancier={demande.estMandataireFinancier}
+              noteAmo={demande.commentaire}
+            />
             <div className="fr-mt-4w">
               <ActionsRealisees parcoursId={demande.parcoursId} />
             </div>
@@ -146,6 +151,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                     decision={latestQualification.decision as QualificationDecision}
                     actionsRealisees={latestQualification.actionsRealisees}
                     raisonsIneligibilite={latestQualification.raisonsIneligibilite}
+                    estMandataireFinancier={latestQualification.estMandataireFinancier}
                     note={latestQualification.note}
                     agentNom={qualificationAgentNom}
                     structureNom={qualificationStructureNom}

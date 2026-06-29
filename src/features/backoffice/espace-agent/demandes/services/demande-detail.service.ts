@@ -144,6 +144,7 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       statut: demande.validation.statut,
       dateCreation: demande.validation.choisieAt,
       commentaire: demande.validation.commentaire,
+      estMandataireFinancier: demande.validation.estMandataireFinancier,
       currentStep: demande.parcours.currentStep as Step,
       parcoursCreatedAt: demande.parcours.createdAt,
       dates,

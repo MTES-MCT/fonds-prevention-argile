@@ -40,7 +40,8 @@ interface ApproveValidationData {
  */
 export async function approveValidation(
   validationId: string,
-  commentaire?: string
+  commentaire?: string,
+  estMandataireFinancier?: boolean
 ): Promise<ActionResult<ApproveValidationData>> {
   try {
     return await db.transaction(async (tx) => {
@@ -55,14 +56,10 @@ export async function approveValidation(
         .set({
           statut: StatutValidationAmo.LOGEMENT_ELIGIBLE,
           commentaire: commentaire || null,
+          estMandataireFinancier: estMandataireFinancier ?? null,
           valideeAt: now,
         })
-        .where(
-          and(
-            eq(parcoursAmoValidations.id, validationId),
-            isNull(parcoursAmoValidations.valideeAt)
-          )
-        )
+        .where(and(eq(parcoursAmoValidations.id, validationId), isNull(parcoursAmoValidations.valideeAt)))
         .returning({
           id: parcoursAmoValidations.id,
           parcoursId: parcoursAmoValidations.parcoursId,
@@ -170,12 +167,7 @@ export async function rejectEligibility(
           commentaire,
           valideeAt: now,
         })
-        .where(
-          and(
-            eq(parcoursAmoValidations.id, validationId),
-            isNull(parcoursAmoValidations.valideeAt)
-          )
-        )
+        .where(and(eq(parcoursAmoValidations.id, validationId), isNull(parcoursAmoValidations.valideeAt)))
         .returning({
           id: parcoursAmoValidations.id,
           parcoursId: parcoursAmoValidations.parcoursId,
@@ -216,10 +208,7 @@ export async function rejectEligibility(
         .update(parcoursPrevention)
         .set({ currentStatus: Status.TODO })
         .where(
-          and(
-            eq(parcoursPrevention.id, validation.parcoursId),
-            eq(parcoursPrevention.currentStep, Step.CHOIX_AMO)
-          )
+          and(eq(parcoursPrevention.id, validation.parcoursId), eq(parcoursPrevention.currentStep, Step.CHOIX_AMO))
         );
 
       return {

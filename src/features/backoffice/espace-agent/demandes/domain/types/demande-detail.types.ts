@@ -123,6 +123,8 @@ export interface DemandeDetail {
   dateCreation: Date;
   /** Commentaire éventuel de l'AMO */
   commentaire: string | null;
+  /** L'AMO est-elle mandataire financier ? (renseigné si la demande est acceptée) */
+  estMandataireFinancier: boolean | null;
   /** Étape actuelle du parcours */
   currentStep: Step;
   /** Date de création du parcours */
