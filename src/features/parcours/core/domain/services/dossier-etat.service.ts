@@ -21,7 +21,7 @@ import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
  * ici on agrège avec validation AMO + archivedAt pour catégoriser le listing.
  */
 export const DOSSIER_ETAT = {
-  /** Pas de validation AMO posée (ou SANS_AMO) — l'AV doit qualifier la pré-éligibilité. */
+  /** Pas de validation AMO posée (prospect créé par l'AV) — l'AV doit qualifier la pré-éligibilité. */
   AV_QUALIFICATION: "AV_QUALIFICATION",
   /** Validation AMO en attente — l'AMO doit confirmer l'éligibilité du logement. */
   EN_ATTENTE_AMO: "EN_ATTENTE_AMO",
@@ -43,11 +43,14 @@ export type DossierEtat = (typeof DOSSIER_ETAT)[keyof typeof DOSSIER_ETAT];
  * Règles :
  * - `archivedAt` non nul → ARCHIVE
  * - validation refusée (LOGEMENT_NON_ELIGIBLE / ACCOMPAGNEMENT_REFUSE) → REFUSE
- * - pas de validation OU SANS_AMO → AV_QUALIFICATION
+ * - pas de validation (prospect créé par l'AV, encore en pré-éligibilité) → AV_QUALIFICATION
  * - validation EN_ATTENTE → EN_ATTENTE_AMO
- * - validation acceptée → DDT ou MENAGE selon « qui détient la balle » (voir ci-dessous)
+ * - validation acceptée (LOGEMENT_ELIGIBLE) OU SANS_AMO → DDT/MENAGE selon « qui détient la
+ *   balle ». SANS_AMO (renonciation explicite) n'attend AUCUNE qualification AV : le parcours
+ *   a déjà avancé à l'éligibilité (cf. amo-selection.service `skipAmoStepForUser`), seul le
+ *   responsable diffère (AV au lieu d'AMO, calculé dans responsable.service).
  *
- * Pour une validation acceptée, la balle est à la DDT dès que le dossier est déposé
+ * Pour une validation acceptée ou SANS_AMO, la balle est à la DDT dès que le dossier est déposé
  * et tant qu'il n'est pas (re)passé côté ménage (cf. ADR-0009) :
  * - `ds_status = EN_INSTRUCTION` → DDT (instruction en cours)
  * - `ds_status = EN_CONSTRUCTION` (déposé) :
@@ -75,10 +78,10 @@ export function getDossierEtat(input: {
     case StatutValidationAmo.LOGEMENT_NON_ELIGIBLE:
     case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
       return DOSSIER_ETAT.REFUSE;
-    case StatutValidationAmo.SANS_AMO:
-      return DOSSIER_ETAT.AV_QUALIFICATION;
     case StatutValidationAmo.EN_ATTENTE:
       return DOSSIER_ETAT.EN_ATTENTE_AMO;
+    // SANS_AMO suit la même progression qu'une éligibilité acceptée : pas de gate AV.
+    case StatutValidationAmo.SANS_AMO:
     case StatutValidationAmo.LOGEMENT_ELIGIBLE:
       if (input.dsStatus === DSStatus.EN_INSTRUCTION) {
         return DOSSIER_ETAT.DDT;

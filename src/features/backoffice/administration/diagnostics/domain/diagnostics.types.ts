@@ -8,17 +8,19 @@ import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
  * Permet de piloter tous les cas via un filtre unique.
  */
 export enum DiagnosticState {
-  // --- Anomalies (prioritaires sur l'état du dossier) ---
-  /** Sync en erreur sur un dossier déposé mais jamais instruit : dossier DN probablement expiré/supprimé. */
-  SYNC_ERREUR_DEPOSE = "sync_erreur_depose",
-  /** La dernière synchronisation a renvoyé une erreur (hors cas « déposé non instruit »). */
-  SYNC_ERREUR = "sync_erreur",
+  // --- À investiguer (vraie anomalie technique) ---
+  /** Synchro en échec technique (token non instructeur, réseau…) : verdict DN unauthorized/api_error. */
+  SYNC_ANOMALIE = "sync_anomalie",
+  /** Dossier réellement déposé (confirmé par une sync) mais disparu côté DN ensuite. Rare. */
+  DOSSIER_DEPOSE_DISPARU = "dossier_depose_disparu",
   /** Étape avancée (diagnostic+) sans dossier d'éligibilité accepté : dossier perdu. */
   ORPHELIN = "orphelin",
   /** Dossier avec un numéro DN mais jamais synchronisé (last_sync_at null). */
   JAMAIS_SYNCHRONISE = "jamais_synchronise",
   /** Déposé depuis plus du seuil sans avoir été pris en instruction : ne bouge plus. */
   BLOQUE = "bloque",
+  /** Le demandeur a cliqué « Remplir » mais n'a pas (encore) créé/finalisé son dossier côté DN. Fréquent. */
+  DOSSIER_DN_NON_CREE = "dossier_dn_non_cree",
   // --- États normaux du dossier de l'étape courante ---
   /** Dossier créé mais jamais déposé par l'usager (brouillon). */
   BROUILLON = "brouillon",
@@ -45,17 +47,17 @@ export const DIAGNOSTIC_STATE_META: Record<
   DiagnosticState,
   { label: string; description: string; severity: DiagnosticSeverity }
 > = {
-  [DiagnosticState.SYNC_ERREUR_DEPOSE]: {
-    label: "Sync erreur (déposé non instruit)",
+  [DiagnosticState.SYNC_ANOMALIE]: {
+    label: "Anomalie de synchro",
     description:
-      "Dépôt confirmé par une sync (last_sync_at) mais jamais pris en instruction, et la synchro échoue désormais : le dossier DN a probablement expiré ou été supprimé. L'usager doit recréer un dossier.",
+      "Échec technique de la synchronisation avec Démarches Numériques (token non instructeur, accès refusé, réseau…). À investiguer.",
     severity: "error",
   },
-  [DiagnosticState.SYNC_ERREUR]: {
-    label: "Sync erreur (autre)",
+  [DiagnosticState.DOSSIER_DEPOSE_DISPARU]: {
+    label: "Dossier déposé disparu",
     description:
-      "Synchro échouée sur un dossier jamais confirmé côté DN (prefill jamais complété / brouillon), token non instructeur, ou dossier déjà instruit. À investiguer.",
-    severity: "error",
+      "Un dossier réellement déposé (confirmé par une sync) a ensuite disparu côté DN (probablement expiré/supprimé). Rare, à vérifier.",
+    severity: "warning",
   },
   [DiagnosticState.ORPHELIN]: {
     label: "Dossier perdu",
@@ -72,6 +74,12 @@ export const DIAGNOSTIC_STATE_META: Record<
     label: "Bloqué",
     description: `Dossier déposé depuis plus de ${SEUIL_BLOQUE_JOURS} jours sans avoir été pris en instruction par la DDT : il ne bouge plus.`,
     severity: "warning",
+  },
+  [DiagnosticState.DOSSIER_DN_NON_CREE]: {
+    label: "Dossier DN non créé",
+    description:
+      "Le demandeur a cliqué « Remplir le formulaire » mais n'a pas (encore) créé/finalisé son dossier sur Démarches Numériques (rien côté DN). Fréquent et souvent normal : récent = peut encore aboutir ; ancien = abandon à nettoyer.",
+    severity: "info",
   },
   [DiagnosticState.BROUILLON]: {
     label: "Brouillon",
@@ -112,11 +120,12 @@ export const DIAGNOSTIC_STATE_META: Record<
 
 /** Ordre d'affichage des filtres : anomalies d'abord, puis états normaux. */
 export const DIAGNOSTIC_STATE_ORDER: DiagnosticState[] = [
-  DiagnosticState.SYNC_ERREUR_DEPOSE,
-  DiagnosticState.SYNC_ERREUR,
+  DiagnosticState.SYNC_ANOMALIE,
+  DiagnosticState.DOSSIER_DEPOSE_DISPARU,
   DiagnosticState.ORPHELIN,
   DiagnosticState.JAMAIS_SYNCHRONISE,
   DiagnosticState.BLOQUE,
+  DiagnosticState.DOSSIER_DN_NON_CREE,
   DiagnosticState.BROUILLON,
   DiagnosticState.DEPOSE_EN_ATTENTE,
   DiagnosticState.EN_INSTRUCTION,

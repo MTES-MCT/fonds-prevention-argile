@@ -45,14 +45,50 @@ describe("getDossierEtat", () => {
     ).toBe("AV_QUALIFICATION");
   });
 
-  it("AV_QUALIFICATION pour SANS_AMO (renonciation explicite)", () => {
+  it("MENAGE pour SANS_AMO + étape TODO côté demandeur (progresse, pas d'attente AV)", () => {
     expect(
       getDossierEtat({
         currentStatus: Status.TODO,
         archivedAt: null,
         validation: { statut: StatutValidationAmo.SANS_AMO },
       })
-    ).toBe("AV_QUALIFICATION");
+    ).toBe("MENAGE");
+  });
+
+  it("DDT pour SANS_AMO + dossier déposé en attente d'instruction (EN_CONSTRUCTION, jamais instruit)", () => {
+    expect(
+      getDossierEtat({
+        currentStatus: Status.TODO,
+        archivedAt: null,
+        validation: { statut: StatutValidationAmo.SANS_AMO },
+        dsStatus: DSStatus.EN_CONSTRUCTION,
+        instructedAt: null,
+      })
+    ).toBe("DDT");
+  });
+
+  it("DDT pour SANS_AMO + dossier en instruction (EN_INSTRUCTION)", () => {
+    expect(
+      getDossierEtat({
+        currentStatus: Status.TODO,
+        archivedAt: null,
+        validation: { statut: StatutValidationAmo.SANS_AMO },
+        dsStatus: DSStatus.EN_INSTRUCTION,
+        instructedAt: new Date("2026-01-12T10:00:00Z"),
+      })
+    ).toBe("DDT");
+  });
+
+  it("MENAGE pour SANS_AMO + dossier renvoyé pour correction (EN_CONSTRUCTION, déjà instruit)", () => {
+    expect(
+      getDossierEtat({
+        currentStatus: Status.TODO,
+        archivedAt: null,
+        validation: { statut: StatutValidationAmo.SANS_AMO },
+        dsStatus: DSStatus.EN_CONSTRUCTION,
+        instructedAt: new Date("2026-01-10T10:00:00Z"),
+      })
+    ).toBe("MENAGE");
   });
 
   it("EN_ATTENTE_AMO pour une validation EN_ATTENTE", () => {

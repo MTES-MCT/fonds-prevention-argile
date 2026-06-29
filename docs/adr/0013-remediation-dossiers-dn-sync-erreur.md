@@ -34,8 +34,8 @@ Sur 46 cas réels : 43 drop-offs, 1 mismatch accepté, 2 dossiers existants à r
 > - dossier existant côté DN → **resync**, on ne touche à rien.
 >
 > **2. `last_sync_at` est le signal de « vrai dépôt »**, pas `submitted_at`. La classification
-> (`SYNC_ERREUR_DEPOSE`, sous-classification du probe) l'exige ; un script nettoie les faux
-> `submitted_at` legacy (`last_sync_at IS NULL`).
+> (`DOSSIER_DEPOSE_DISPARU` vs `DOSSIER_DN_NON_CREE`, sous-classification du probe) l'exige ;
+> un script nettoie les faux `submitted_at` legacy (`last_sync_at IS NULL`).
 >
 > **3. Erreur de sync « active ».** Le diagnostic ne compte une erreur que si elle concerne
 > encore le dossier courant : dossier présent, erreur postérieure à sa création, et aucune
