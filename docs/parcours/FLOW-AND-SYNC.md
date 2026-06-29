@@ -94,6 +94,26 @@ le script ops `pnpm fix:reouvrir-demande` et la server action UI `reouvrirDemand
 Permissions et audit : voir [ADR-0016](../adr/0016-reouverture-demande-refusee.md) et
 [RBAC-ROLES.md](../security/RBAC-ROLES.md).
 
+### 2.5 Détachement de l'AMO (passage en « sans AMO »)
+
+Un demandeur avait choisi un AMO quand celui-ci était **obligatoire** ; depuis la
+modification de l'arrêté, l'AMO est facultatif et il veut poursuivre **seul**. Aucun
+écran ne permet d'annuler un accompagnement une fois l'AMO choisi (l'UI ne couvre que
+le « renoncer » avant choix, `skipAmoStepForUser`, qui exige `choix_amo / todo` + un
+département `FACULTATIF`). On **détache** donc l'AMO manuellement.
+
+Script ops `pnpm fix:detacher-amo` (`scripts/ops/fix/detacher-amo.ts`, dry-run par
+défaut, `--apply`, ciblage `--parcours-id` ou `--nom`). Effet, en transaction :
+`parcours_amo_validations -> statut = sans_amo`, `attribution_mode = aucun`,
+`entreprise_amo_id = NULL` (purge commentaire / `validee_at` / tracking email) ; les
+tokens AMO encore actifs sont invalidés (`used_at = now`, sinon l'AMO pourrait valider
+via le vieux lien email). Étape : encore à `choix_amo` -> avance à `eligibilite / todo`
+(comme le « skip » UI) ; déjà au-delà -> étape **inchangée** (on ne fait que détacher).
+Le responsable bascule sur l'aller-vers du territoire (résolution par
+`rgaSimulationData`, cf. [RBAC-ROLES §6](../security/RBAC-ROLES.md)). Pas d'entrée
+d'audit `parcours_actions` (action ops). À distinguer de la ré-ouverture (§2.4), qui
+remet une demande **refusée** en attente de validation AMO — ici on **retire** l'AMO.
+
 ---
 
 ## 3. Architecture de la synchronisation
@@ -489,6 +509,7 @@ n'a rien finalisé côté DN, fréquent et souvent normal).
 | Sonde lecture-seule dossiers DN             | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                        |
 | Action UI sync                              | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                            |
 | Validation AMO (auto-progression CHOIX_AMO) | `src/features/parcours/amo/services/amo-validation.service.ts`                                 |
+| Détachement AMO (passage en sans AMO)       | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                    |
 | Endpoint CRON                               | `src/app/api/cron/sync-parcours/route.ts`                                                      |
 | Workflow CRON GitHub Actions                | `.github/workflows/cron-sync-parcours.yml`                                                     |
 | Server actions admin                        | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`         |

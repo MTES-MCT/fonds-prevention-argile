@@ -44,6 +44,7 @@
     "ds:probe-dossiers": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/probe-dossiers.ts",
     "fix:double-progression": "tsx scripts/ops/fix/fix-double-progression-amo.ts",
     "fix:reouvrir-demande": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reouvrir-demande.ts",
+    "fix:detacher-amo": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/detacher-amo.ts",
     "fix:eligibilite-sync-error": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts",
     "fix:clean-faux-depots": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/clean-faux-depots-submitted-at.ts",
     "fix:relink-eligibilite": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/relink-eligibilite-dossier.ts",

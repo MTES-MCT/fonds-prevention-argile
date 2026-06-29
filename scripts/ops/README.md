@@ -45,6 +45,7 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 | [`verify-dashboard-stats.ts`](#verify-dashboard-stats)           | read-only | Vérifie que les stats du tableau de bord correspondent aux requêtes SQL équivalentes                                            | `tsx scripts/ops/audit/verify-dashboard-stats.ts`      |
 | [`fix-missing-epci.ts`](#fix-missing-epci)                       | **écrit** | Backfill du code EPCI sur les parcours qui en sont dépourvus (via `geo.api.gouv.fr`)                                            | `pnpm fix:epci`                                        |
 | [`reouvrir-demande.ts`](#reouvrir-demande)                       | **écrit** | Ré-ouvre une demande refusée par l'AMO (changement d'avis) : statut refusé -> en_attente + token frais (+ email)                | `pnpm fix:reouvrir-demande`                            |
+| [`detacher-amo.ts`](#detacher-amo)                               | **écrit** | Détache l'AMO d'un parcours (passage en « sans AMO ») : AMO choisi avant l'arrêté, le demandeur veut continuer seul             | `pnpm fix:detacher-amo`                                |
 | [`debug-matomo-events.ts`](#debug-matomo-events)                 | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur)                                                                 | `tsx scripts/ops/debug/debug-matomo-events.ts`         |
 | [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Récupère le schéma GraphQL d'une démarche DS (utile pour itérer sur les mappings)                                               | `tsx scripts/ops/ds/fetch-demarche-schema.ts`          |
 | [`check-ds-permissions.ts`](#check-ds-permissions)               | read-only | Vérifie que le token GraphQL a accès à chaque démarche configurée (sinon synchro KO)                                            | `pnpm ds:check-permissions`                            |
@@ -167,6 +168,35 @@ pnpm fix:reouvrir-demande --parcours-id=<uuid>                  # dry-run
 pnpm fix:reouvrir-demande --parcours-id=<uuid> --apply          # applique (sans email)
 pnpm fix:reouvrir-demande --parcours-id=<uuid> --apply --send-email
 ```
+
+### detacher-amo
+
+Détache l'AMO d'un parcours et le bascule en « sans AMO » quand le demandeur veut
+poursuivre seul. Cas d'usage : un AMO avait été choisi alors qu'il était obligatoire,
+puis l'arrêté a rendu l'AMO facultatif ; aucun écran ne permet d'annuler
+l'accompagnement une fois l'AMO choisi → opération manuelle. Reproduit l'état cible du
+flux UI « renoncer à l'AMO » (`skipAmoStepForUser`) mais en partant d'un AMO **déjà
+choisi ou validé**, ce que l'UI ne couvre pas.
+
+Effet (en transaction) : `parcours_amo_validations` -> `statut = sans_amo`,
+`attribution_mode = aucun`, `entreprise_amo_id = NULL`, purge commentaire / `validee_at`
+/ tracking email ; les tokens AMO encore actifs sont invalidés (`used_at = now`, sinon
+l'AMO pourrait valider via le vieux lien email). Progression d'étape : si le parcours
+est encore à `choix_amo`, il avance à `eligibilite/todo` (comme le « skip » UI) ; s'il a
+déjà dépassé `choix_amo`, l'étape est **inchangée** (on détache seulement l'AMO). Le
+responsable bascule sur l'aller-vers du territoire (résolution par `rgaSimulationData`).
+Dry-run par défaut.
+
+> Le script n'écrit pas d'entrée d'audit `parcours_actions` (action ops, pas un agent
+> connecté).
+
+```bash
+pnpm fix:detacher-amo --nom=Dupont                     # dry-run, trouve par nom (ILIKE)
+pnpm fix:detacher-amo --parcours-id=<uuid>             # dry-run
+pnpm fix:detacher-amo --parcours-id=<uuid> --apply     # applique
+```
+
+**Prérequis** : `.env.local` avec `DATABASE_URL` (l'API DS n'est pas sollicitée).
 
 ### debug-matomo-events
 
