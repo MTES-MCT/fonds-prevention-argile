@@ -118,8 +118,40 @@ sans cette image Alpine : ces CVE ne touchent pas le runtime de production.
 Les Moderate restantes (`protocol-buffers-schema`, `postcss`, `uuid`) sont inchangées (voir tableau
 refresh juin ci-dessus).
 
+## Refresh CVE — juin 2026 (branche `fix/cve-nodemailer-undici`)
+
+Alerte Snyk (org MTES-MCT) sur 3 CVE. **Corrigées à la source** (pas d'acceptation).
+Vérification : `pnpm typecheck` + `pnpm lint` + 1437 tests verts + build prod OK.
+
+### nodemailer 8.0.10 → 9.0.1 (High SSRF — corrigée)
+
+`GHSA-p6gq-j5cr-w38f` : l'option message-level `raw` contourne
+`disableFileAccess`/`disableUrlAccess` (lecture fichier arbitraire + SSRF). Patchée en
+`>=9.0.1`. **Non exploitable ici** (chemin nodemailer réservé au SMTP dev/Mailhog —
+la prod passe par l'API HTTP Brevo ; aucun usage de `raw` ni d'`attachments`), mais
+corrigée à la source car c'est une dep de prod. Bump majeur 8→9 sans impact :
+l'API utilisée (`createTransport` + `sendMail` champs basiques) est stable, `@types/nodemailer`
+8.0.0 reste compatible (typecheck vert).
+
+### undici 7.27.0 → 7.28.0 (override — High/Moderate transitives, corrigées)
+
+`GHSA-vmh5-mc38-953g` (TLS bypass SOCKS5), `GHSA-vxpw-j846-p89q` (DoS WebSocket),
+CRLF injection et origin validation error. **devDependency uniquement** (transitif
+`jsdom` → `vitest`/`@vitest/ui`, jamais déployé en prod). Corrigé via override
+`undici: ^7.28.0` dans `pnpm-workspace.yaml` (patché `>=7.28.0`).
+
+> Note : Snyk annonçait « No remediation available yet » pour les CVE undici, mais
+> `pnpm audit` et l'upstream confirment le patch en 7.28.0 (publié 2026-06-15).
+
+### Reste après ce fix (`pnpm audit`)
+
+- **Prod** : 3 Moderate inchangées (`protocol-buffers-schema`, `postcss`, `uuid`) — déjà acceptées.
+- **Dev** : `vite` High (`server.fs.deny` bypass, `<=7.3.4`) — override déjà `^7.3.2` mais
+  bloqué à 7.3.2 par `minimumReleaseAge` ; à débloquer avec le refresh Next 16. Hors scope.
+
 ## Prochaine revue
 
+- **`vite`** : passer à `>=7.3.5` dès que `minimumReleaseAge` le permet (élimine la High devDep restante).
 - **Lors de l'upgrade Next 16** (PR dédiée) : réévaluer next, eslint-config-next,
   ESLint 10 et le `postcss` bundlé par Next ; migrer le script `lint` vers le CLI ESLint.
 - **`esbuild`** : à partir du **2026-06-18** (fin du `minimumReleaseAge`), passer l'override
