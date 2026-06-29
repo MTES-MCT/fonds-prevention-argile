@@ -26,6 +26,7 @@ const qualifyProspectSchema = z
     ]),
     actionsRealisees: z.array(z.string()).optional(),
     raisonsIneligibilite: z.array(z.string()).optional(),
+    estMandataireFinancier: z.boolean().optional(),
     note: z.string().optional(),
   })
   .refine(
@@ -83,7 +84,7 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
       return { success: false, error: firstError };
     }
 
-    const { parcoursId, decision, actionsRealisees, raisonsIneligibilite, note } = parsed.data;
+    const { parcoursId, decision, actionsRealisees, raisonsIneligibilite, estMandataireFinancier, note } = parsed.data;
 
     // 5. Garde responsable : seul le responsable courant peut qualifier
     const guard = await assertCanActAsResponsable(parcoursId, {
@@ -99,6 +100,7 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
       decision,
       actionsRealisees,
       raisonsIneligibilite,
+      estMandataireFinancier,
       note,
     });
 

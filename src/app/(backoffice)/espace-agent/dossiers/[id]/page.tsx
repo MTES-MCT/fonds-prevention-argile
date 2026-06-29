@@ -182,6 +182,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                     decision={latestQualification.decision as QualificationDecision}
                     actionsRealisees={latestQualification.actionsRealisees}
                     raisonsIneligibilite={latestQualification.raisonsIneligibilite}
+                    estMandataireFinancier={latestQualification.estMandataireFinancier}
                     note={latestQualification.note}
                     agentNom={qualificationAgentNom}
                     structureNom={qualificationStructureNom}

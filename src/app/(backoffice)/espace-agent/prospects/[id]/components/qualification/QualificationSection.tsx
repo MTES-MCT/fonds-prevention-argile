@@ -9,6 +9,7 @@ interface QualificationData {
   decision: QualificationDecision;
   actionsRealisees: string[];
   raisonsIneligibilite: string[] | null;
+  estMandataireFinancier: boolean | null;
   note: string | null;
   createdAt: string; // ISO string
 }
@@ -46,6 +47,7 @@ export function QualificationSection({ parcoursId, qualification, agentNom, stru
         decision={qualification.decision}
         actionsRealisees={qualification.actionsRealisees}
         raisonsIneligibilite={qualification.raisonsIneligibilite}
+        estMandataireFinancier={qualification.estMandataireFinancier}
         note={qualification.note}
         agentNom={agentNom}
         structureNom={structureNom}

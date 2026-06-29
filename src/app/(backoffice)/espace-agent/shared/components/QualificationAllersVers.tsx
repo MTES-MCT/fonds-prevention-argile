@@ -10,6 +10,7 @@ interface QualificationAllersVersProps {
   decision: QualificationDecision;
   actionsRealisees: string[];
   raisonsIneligibilite: string[] | null;
+  estMandataireFinancier: boolean | null;
   note: string | null;
   agentNom: string;
   structureNom: string;
@@ -42,6 +43,7 @@ export function QualificationAllersVers({
   decision,
   actionsRealisees,
   raisonsIneligibilite,
+  estMandataireFinancier,
   note,
   agentNom,
   structureNom,
@@ -102,6 +104,13 @@ export function QualificationAllersVers({
               {decision === QualificationDecision.NON_ELIGIBLE && raisonsLabels && (
                 <p className="fr-mb-1w">
                   Raisons d&apos;inéligibilité : <strong>{raisonsLabels}</strong>
+                </p>
+              )}
+
+              {/* Mandataire financier (si éligible) */}
+              {decision === QualificationDecision.ELIGIBLE && estMandataireFinancier !== null && (
+                <p className="fr-mb-1w">
+                  Mandataire financier : <strong>{estMandataireFinancier ? "Oui" : "Non"}</strong>
                 </p>
               )}
 
