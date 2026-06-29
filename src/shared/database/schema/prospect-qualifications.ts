@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, text, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, text, boolean, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { agents } from "./agents";
@@ -29,6 +29,9 @@ export const prospectQualifications = pgTable(
 
     // Raisons d'inéligibilité (rempli uniquement si decision = "non_eligible")
     raisonsIneligibilite: text("raisons_ineligibilite").array(),
+
+    // Renseigné quand la décision est ELIGIBLE ; null sinon.
+    estMandataireFinancier: boolean("est_mandataire_financier"),
 
     // Note complémentaire (optionnelle)
     note: text("note"),

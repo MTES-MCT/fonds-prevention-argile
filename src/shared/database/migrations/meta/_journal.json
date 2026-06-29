@@ -260,6 +260,13 @@
       "when": 1782125689661,
       "tag": "0036_even_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1782743063921,
+      "tag": "0037_gray_tusk",
+      "breakpoints": true
     }
   ]
 }

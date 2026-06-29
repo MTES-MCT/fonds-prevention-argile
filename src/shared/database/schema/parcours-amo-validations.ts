@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, text, varchar, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, text, varchar, boolean, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { entreprisesAmo } from "./entreprises-amo";
@@ -24,12 +24,13 @@ export const parcoursAmoValidations = pgTable(
     statut: statutValidationAmoPgEnum("statut").notNull().default(StatutValidationAmo.EN_ATTENTE),
 
     // Mode d'attribution : tracé pour différencier choix manuel, auto-affectation et skip
-    attributionMode: attributionAmoModePgEnum("attribution_mode")
-      .notNull()
-      .default(AttributionAmoMode.MANUEL),
+    attributionMode: attributionAmoModePgEnum("attribution_mode").notNull().default(AttributionAmoMode.MANUEL),
 
     // Commentaire/justification de l'AMO
     commentaire: text("commentaire"),
+
+    // Renseigné quand l'AMO valide et accompagne (LOGEMENT_ELIGIBLE) ; null sinon.
+    estMandataireFinancier: boolean("est_mandataire_financier"),
 
     // Données personnelles temporaires
     userPrenom: text("user_prenom"),
