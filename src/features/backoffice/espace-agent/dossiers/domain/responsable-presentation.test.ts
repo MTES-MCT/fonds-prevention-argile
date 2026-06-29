@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import {
   getDossierStepLabel,
   getEtatBadge,
@@ -11,9 +12,9 @@ import {
 
 describe("getDossierStepLabel", () => {
   it("retourne 'Non-éligible' pour une validation LOGEMENT_NON_ELIGIBLE", () => {
-    expect(
-      getDossierStepLabel(Step.CHOIX_AMO, { statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE })
-    ).toBe("Non-éligible");
+    expect(getDossierStepLabel(Step.CHOIX_AMO, { statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE })).toBe(
+      "Non-éligible"
+    );
   });
 
   it("retourne le libellé maquette pour CHOIX_AMO", () => {
@@ -65,7 +66,8 @@ describe("getDossierPrecisionLabel", () => {
       Step.ELIGIBILITE,
       Status.TODO,
       null,
-      { statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE }
+      { statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE },
+      null
     );
     expect(text).toBe("Logement non éligible.");
   });
@@ -76,7 +78,8 @@ describe("getDossierPrecisionLabel", () => {
       Step.ELIGIBILITE,
       Status.TODO,
       null,
-      { statut: StatutValidationAmo.ACCOMPAGNEMENT_REFUSE }
+      { statut: StatutValidationAmo.ACCOMPAGNEMENT_REFUSE },
+      null
     );
     expect(text).toBe("Accompagnement refusé.");
   });
@@ -87,7 +90,8 @@ describe("getDossierPrecisionLabel", () => {
       Step.ELIGIBILITE,
       Status.EN_INSTRUCTION,
       null,
-      { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE }
+      { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      null
     );
     expect(text).toMatch(/En instruction/);
   });
@@ -98,18 +102,55 @@ describe("getDossierPrecisionLabel", () => {
       Step.DIAGNOSTIC,
       Status.TODO,
       null,
-      { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE }
+      { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      null
     );
     expect(text).toMatch(/diagnostic/i);
   });
 
+  it("renvoie 'remplir' (premier dépôt) quand EN_CONSTRUCTION sans instructedAt", () => {
+    const text = getDossierPrecisionLabel(
+      "MENAGE",
+      Step.ELIGIBILITE,
+      Status.TODO,
+      DSStatus.EN_CONSTRUCTION,
+      { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      null
+    );
+    expect(text).toBe("Le demandeur doit remplir le formulaire d'éligibilité.");
+  });
+
+  it("renvoie 'corriger' pour un dossier d'éligibilité renvoyé en construction par la DDT", () => {
+    const text = getDossierPrecisionLabel(
+      "MENAGE",
+      Step.ELIGIBILITE,
+      Status.TODO,
+      DSStatus.EN_CONSTRUCTION,
+      { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      new Date("2026-01-10T10:00:00Z")
+    );
+    expect(text).toBe("Le demandeur doit corriger son formulaire d'éligibilité.");
+  });
+
+  it("renvoie 'corriger' pour un dossier de diagnostic renvoyé en construction par la DDT", () => {
+    const text = getDossierPrecisionLabel(
+      "MENAGE",
+      Step.DIAGNOSTIC,
+      Status.TODO,
+      DSStatus.EN_CONSTRUCTION,
+      { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      new Date("2026-01-10T10:00:00Z")
+    );
+    expect(text).toBe("Le demandeur doit corriger son diagnostic.");
+  });
+
   it("renvoie 'En attente de qualification' pour AV_QUALIFICATION", () => {
-    const text = getDossierPrecisionLabel("AV_QUALIFICATION", Step.INVITATION, Status.TODO, null, null);
+    const text = getDossierPrecisionLabel("AV_QUALIFICATION", Step.INVITATION, Status.TODO, null, null, null);
     expect(text).toMatch(/qualification/i);
   });
 
   it("renvoie 'Dossier archivé' pour ARCHIVE", () => {
-    const text = getDossierPrecisionLabel("ARCHIVE", Step.ELIGIBILITE, Status.TODO, null, null);
+    const text = getDossierPrecisionLabel("ARCHIVE", Step.ELIGIBILITE, Status.TODO, null, null, null);
     expect(text).toBe("Dossier archivé.");
   });
 });

@@ -164,7 +164,8 @@ export function DossiersSuivisTable({
                         dossier.currentStep,
                         dossier.currentStatus,
                         dossier.dsStatus,
-                        dossier.validation
+                        dossier.validation,
+                        dossier.instructedAt
                       );
                       const responsableLabel = getResponsableDisplayName(dossier.responsable);
 
