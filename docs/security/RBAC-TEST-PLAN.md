@@ -115,6 +115,23 @@ Inventaire généré le 2026-06-23 (audit multi-agents, 4 zones, 63 surfaces). *
 cellules négatives** recensées. Les agrégats nationaux consultables par l'`ANALYSTE`
 (ADR-0014) sont exclus des gaps.
 
+> Ouverture des stats aux agents (2026-07-06, ADR-0017) : `STATS_READ` +
+> `USERS_STATS_READ` accordés à `AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS`. Un audit
+> préalable a révélé que `getUsersForStats` **fuitait** (token AMO, adresse/coordonnées,
+> fcId, contacts entreprise, identifiants DS) — corrigé par une projection anonymisée
+> `toStatsProjection`. Nouvelles cellules négatives **couvertes par tests** :
+> `getUsersForStats` → AMO reçoit une projection **sans** PII/token/adresse/DS
+> (`users-tracking.actions.test.ts`) + cas nuls (`users-tracking.service.test.ts`) ;
+> `getAutresDemandesArchiveesAction` → **AMO/AV avec territoire → liste vide**
+> (anti-fuite nominative, `tableau-de-bord.actions.test.ts`) ; `getStatsScopeFilters`
+> → AMO/AV **national, jamais scopé entreprise** (`agent-scope.service.test.ts`) ;
+> `canAccessAdministration` → AMO/AV **ALLOW** (`backoffice-access.service.test.ts`) ;
+> garde page `/administration` → AMO/AV rendent le tableau de bord (`administration/page.test.tsx`) ;
+> `canAccessTab` / `hasPermission` → AMO/AV ont les stats mais **jamais** `USERS_READ`/
+> `USERS_DETAIL_READ` (`rbac.service.test.ts`). Les sous-pages sensibles
+> (`agents`/`amo`/`allers-vers`/`synchronisations`/`diagnostics`/`commentaires`) restent
+> **DENY** pour AMO/AV via leur garde de rôle propre (`isAdminRole`/`isSuperAdminRole`).
+
 > Avancement (2026-06-23, post-traitement HIGH) : la fuite nominative est corrigée
 > et **9 surfaces HIGH** désormais couvertes par des tests négatifs (détail demande
 > AMO action + service, création dossier, diagnostics super-admin, garde
