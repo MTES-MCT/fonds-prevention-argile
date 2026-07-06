@@ -19,7 +19,15 @@ export const DS_FIELD_IDS = {
     ADRESSE_MAISON_TEXTE: "Q2hhbXAtNjU2Mzk2Ng==", // texte simple
     COMMUNE: "Q2hhbXAtNjU2Mzk3MA==", // routage par département
   },
-  DEVIS: {},
+  DEVIS: {
+    // Annotations privées (instructeur)
+    ANNOTATION_DOSSIER_ELIGIBILITE: "Q2hhbXAtNTY4MDc2NQ==",
+    ANNOTATION_DOSSIER_PAIEMENT_ETUDE: "Q2hhbXAtNjY1MjI0MA==",
+    ANNOTATION_LIEN_FPA: "Q2hhbXAtNjM1MjA4OQ==",
+    // Champs métier préremplis (cf. scripts/ops/ds/fetch-demarche-schema.ts)
+    ADRESSE_MAISON_TEXTE: "Q2hhbXAtNjU2MzY2MA==", // texte simple
+    COMMUNE: "Q2hhbXAtNjU2MzY2Mg==", // routage par département
+  },
   FACTURES: {},
 } as const;
 
