@@ -108,6 +108,12 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
   ],
 
   [UserRole.AMO]: [
+    // Statistiques NATIONALES ouvertes aux agents (agrégats non nominatifs +
+    // demandeurs anonymisés). Le scope DOSSIERS reste l'entreprise ; seul le scope
+    // STATS est national (ADR-0017). USERS_STATS_READ ne donne QUE la vue agrégée
+    // (pas USERS_READ/USERS_DETAIL_READ, donc pas la liste nominative).
+    BackofficePermission.STATS_READ,
+    BackofficePermission.USERS_STATS_READ,
     // Accès limité : dossiers de son entreprise AMO uniquement (lecture seule)
     BackofficePermission.DOSSIERS_AMO_READ,
     BackofficePermission.DOSSIERS_AMO_STATS_READ,
@@ -121,6 +127,10 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
   ],
 
   [UserRole.ALLERS_VERS]: [
+    // Statistiques NATIONALES ouvertes aux agents (agrégats + demandeurs anonymisés,
+    // ADR-0017). Le scope DOSSIERS reste territorial ; seul le scope STATS est national.
+    BackofficePermission.STATS_READ,
+    BackofficePermission.USERS_STATS_READ,
     // Accès aux prospects de son territoire uniquement
     BackofficePermission.PROSPECTS_VIEW,
     BackofficePermission.PROSPECTS_VIEW_DETAIL,
@@ -135,6 +145,10 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
   ],
 
   [UserRole.AMO_ET_ALLERS_VERS]: [
+    // Statistiques NATIONALES ouvertes aux agents (agrégats + demandeurs anonymisés,
+    // ADR-0017). Scope DOSSIERS = union entreprise + territoire ; scope STATS national.
+    BackofficePermission.STATS_READ,
+    BackofficePermission.USERS_STATS_READ,
     // Combinaison des permissions AMO + Allers-Vers
     BackofficePermission.DOSSIERS_AMO_READ,
     BackofficePermission.DOSSIERS_AMO_STATS_READ,

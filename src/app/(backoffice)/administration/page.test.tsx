@@ -50,20 +50,19 @@ describe("AdminPage — garde de route /administration (§7)", () => {
     expect(result.type).toBe(AccesNonAutoriseAdmin);
   });
 
-  it.each([UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS, UserRole.ALLERS_VERS])(
-    "redirige le rôle %s vers l'espace agent",
-    async (role) => {
-      vi.mocked(checkAgentAccess).mockResolvedValue(grant(role));
-      await expect(AdminPage()).rejects.toThrow("REDIRECT:/espace-agent");
-    }
-  );
-
-  it.each([UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR, UserRole.ANALYSTE])(
-    "autorise le rôle %s (rend le tableau de bord)",
-    async (role) => {
-      vi.mocked(checkAgentAccess).mockResolvedValue(grant(role));
-      const result = await AdminPage();
-      expect(result.type).toBe(TableauDeBord);
-    }
-  );
+  // Ouverture des stats nationales (ADR-0017) : tout agent (y compris AMO /
+  // Allers-Vers) rend le tableau de bord — les données restent agrégées, et les
+  // onglets sensibles sont gardés ailleurs (page + minRoles).
+  it.each([
+    UserRole.SUPER_ADMINISTRATEUR,
+    UserRole.ADMINISTRATEUR,
+    UserRole.ANALYSTE,
+    UserRole.AMO,
+    UserRole.AMO_ET_ALLERS_VERS,
+    UserRole.ALLERS_VERS,
+  ])("autorise le rôle %s (rend le tableau de bord, sans redirection)", async (role) => {
+    vi.mocked(checkAgentAccess).mockResolvedValue(grant(role));
+    const result = await AdminPage();
+    expect(result.type).toBe(TableauDeBord);
+  });
 });

@@ -129,13 +129,13 @@ describe("rbac.service", () => {
         expect(hasPermission(UserRole.AMO, BackofficePermission.DOSSIERS_AMO_STATS_READ)).toBe(true);
       });
 
-      it("ne devrait PAS avoir accès aux statistiques globales", () => {
-        expect(hasPermission(UserRole.AMO, BackofficePermission.STATS_READ)).toBe(false);
+      it("devrait avoir accès aux statistiques NATIONALES (ADR-0017)", () => {
+        expect(hasPermission(UserRole.AMO, BackofficePermission.STATS_READ)).toBe(true);
+        expect(hasPermission(UserRole.AMO, BackofficePermission.USERS_STATS_READ)).toBe(true);
       });
 
-      it("ne devrait PAS avoir accès aux users", () => {
+      it("ne devrait PAS avoir accès à la liste NOMINATIVE des demandeurs", () => {
         expect(hasPermission(UserRole.AMO, BackofficePermission.USERS_READ)).toBe(false);
-        expect(hasPermission(UserRole.AMO, BackofficePermission.USERS_STATS_READ)).toBe(false);
         expect(hasPermission(UserRole.AMO, BackofficePermission.USERS_DETAIL_READ)).toBe(false);
       });
 
@@ -299,10 +299,13 @@ describe("rbac.service", () => {
       expect(permissions).not.toContain(BackofficePermission.COMMENTAIRES_READ_ALL);
     });
 
-    it("devrait retourner les permissions dossiers AMO pour le rôle AMO", () => {
+    it("devrait retourner les permissions dossiers AMO + stats nationales pour le rôle AMO", () => {
       const permissions = getRolePermissions(UserRole.AMO);
 
-      expect(permissions.length).toBe(7);
+      // 7 permissions historiques + STATS_READ + USERS_STATS_READ (ADR-0017)
+      expect(permissions.length).toBe(9);
+      expect(permissions).toContain(BackofficePermission.STATS_READ);
+      expect(permissions).toContain(BackofficePermission.USERS_STATS_READ);
       expect(permissions).toContain(BackofficePermission.DOSSIERS_AMO_READ);
       expect(permissions).toContain(BackofficePermission.DOSSIERS_AMO_STATS_READ);
       expect(permissions).toContain(BackofficePermission.DOSSIERS_CREATE);
@@ -310,6 +313,9 @@ describe("rbac.service", () => {
       expect(permissions).toContain(BackofficePermission.COMMENTAIRES_CREATE);
       expect(permissions).toContain(BackofficePermission.COMMENTAIRES_UPDATE_OWN);
       expect(permissions).toContain(BackofficePermission.COMMENTAIRES_DELETE_OWN);
+      // Mais JAMAIS la liste nominative des demandeurs
+      expect(permissions).not.toContain(BackofficePermission.USERS_READ);
+      expect(permissions).not.toContain(BackofficePermission.USERS_DETAIL_READ);
     });
 
     it("devrait retourner un tableau vide pour un rôle inconnu", () => {
@@ -326,8 +332,10 @@ describe("rbac.service", () => {
         expect(canAccessTab(UserRole.ANALYSTE, "statistiques")).toBe(true);
       });
 
-      it("ne devrait PAS être accessible par AMO et PARTICULIER", () => {
-        expect(canAccessTab(UserRole.AMO, "statistiques")).toBe(false);
+      it("est désormais accessible par AMO (stats nationales, ADR-0017), pas par PARTICULIER", () => {
+        expect(canAccessTab(UserRole.AMO, "statistiques")).toBe(true);
+        expect(canAccessTab(UserRole.ALLERS_VERS, "statistiques")).toBe(true);
+        expect(canAccessTab(UserRole.AMO_ET_ALLERS_VERS, "statistiques")).toBe(true);
         expect(canAccessTab(UserRole.PARTICULIER, "statistiques")).toBe(false);
       });
     });
@@ -339,8 +347,11 @@ describe("rbac.service", () => {
         expect(canAccessTab(UserRole.ANALYSTE, "users")).toBe(true);
       });
 
-      it("ne devrait PAS être accessible par AMO", () => {
-        expect(canAccessTab(UserRole.AMO, "users")).toBe(false);
+      it("est désormais accessible par AMO/Allers-Vers (stats agrégées USERS_STATS_READ, ADR-0017)", () => {
+        // TAB_PERMISSIONS.users = [USERS_STATS_READ] : la vue agrégée, jamais le nominatif.
+        expect(canAccessTab(UserRole.AMO, "users")).toBe(true);
+        expect(canAccessTab(UserRole.ALLERS_VERS, "users")).toBe(true);
+        expect(canAccessTab(UserRole.PARTICULIER, "users")).toBe(false);
       });
     });
 
@@ -470,9 +481,15 @@ describe("rbac.service", () => {
       expect(hasPermission(UserRole.SUPER_ADMINISTRATEUR, BackofficePermission.USERS_DETAIL_READ)).toBe(true);
     });
 
-    it("AMO et PARTICULIER ne devraient accéder ni aux stats ni au détail", () => {
-      expect(hasPermission(UserRole.AMO, BackofficePermission.USERS_STATS_READ)).toBe(false);
-      expect(hasPermission(UserRole.AMO, BackofficePermission.USERS_DETAIL_READ)).toBe(false);
+    it("AMO / Allers-Vers accèdent aux stats agrégées (ADR-0017) mais JAMAIS au détail nominatif", () => {
+      for (const role of [UserRole.AMO, UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS]) {
+        expect(hasPermission(role, BackofficePermission.USERS_STATS_READ)).toBe(true);
+        expect(hasPermission(role, BackofficePermission.USERS_DETAIL_READ)).toBe(false);
+        expect(hasPermission(role, BackofficePermission.USERS_READ)).toBe(false);
+      }
+    });
+
+    it("PARTICULIER n'accède ni aux stats ni au détail", () => {
       expect(hasPermission(UserRole.PARTICULIER, BackofficePermission.USERS_STATS_READ)).toBe(false);
       expect(hasPermission(UserRole.PARTICULIER, BackofficePermission.USERS_DETAIL_READ)).toBe(false);
     });

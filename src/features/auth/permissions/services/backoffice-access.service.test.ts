@@ -4,16 +4,22 @@ import { canAccessAdministration, canAccessEspaceAgent } from "./backoffice-acce
 
 describe("backoffice-access.service (ADR-0015)", () => {
   describe("canAccessAdministration", () => {
-    it.each([UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR, UserRole.ANALYSTE])("autorise %s", (role) => {
+    // Ouverture des stats nationales (ADR-0017) : les agents AMO / Allers-Vers
+    // accèdent désormais à /administration (onglets stats uniquement).
+    it.each([
+      UserRole.SUPER_ADMINISTRATEUR,
+      UserRole.ADMINISTRATEUR,
+      UserRole.ANALYSTE,
+      UserRole.AMO,
+      UserRole.ALLERS_VERS,
+      UserRole.AMO_ET_ALLERS_VERS,
+    ])("autorise %s", (role) => {
       expect(canAccessAdministration(role)).toBe(true);
     });
 
-    it.each([UserRole.AMO, UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS, UserRole.PARTICULIER])(
-      "refuse %s",
-      (role) => {
-        expect(canAccessAdministration(role)).toBe(false);
-      }
-    );
+    it("refuse PARTICULIER", () => {
+      expect(canAccessAdministration(UserRole.PARTICULIER)).toBe(false);
+    });
   });
 
   describe("canAccessEspaceAgent", () => {

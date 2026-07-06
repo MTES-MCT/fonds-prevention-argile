@@ -1,19 +1,16 @@
 import { checkAgentAccess, ROUTES } from "@/features/auth";
 import { AccesNonAutoriseAdmin } from "@/shared/components";
 import { redirect } from "next/navigation";
-import { UserRole } from "@/shared/domain/value-objects";
 import AcquisitionPanel from "./components/AcquisitionPanel";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 /**
- * Page des statistiques d'acquisition
+ * Page des statistiques d'acquisition (agrégats nationaux).
  *
- * Accessible par les roles :
- * - SUPER_ADMINISTRATEUR
- * - ADMINISTRATEUR
- * - ANALYSTE
+ * Accessible à tout agent (ADR-0017) : admins, analyste, et agents AMO /
+ * Allers-Vers (stats nationales ouvertes). Données agrégées, non nominatives.
  */
 export default async function AcquisitionPage() {
   const access = await checkAgentAccess();
@@ -24,15 +21,6 @@ export default async function AcquisitionPage() {
 
   if (!access.hasAccess) {
     return <AccesNonAutoriseAdmin />;
-  }
-
-  // Si AMO ou AMO_ET_ALLERS_VERS ou ALLERS_VERS : rediriger vers l'espace agent dedie
-  if (
-    access.user?.role === UserRole.AMO ||
-    access.user?.role === UserRole.AMO_ET_ALLERS_VERS ||
-    access.user?.role === UserRole.ALLERS_VERS
-  ) {
-    redirect(ROUTES.backoffice.espaceAgent.root);
   }
 
   return <AcquisitionPanel />;
