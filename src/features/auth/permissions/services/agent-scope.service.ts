@@ -357,3 +357,51 @@ export async function getScopeFilters(): Promise<ScopeFilters | null> {
 
   return getScopeFilterConditions(scope);
 }
+
+/**
+ * Rôles habilités aux STATISTIQUES nationales (agrégats non nominatifs).
+ * Distinct du scope DOSSIERS (territorial / par entreprise) : un agent AMO ou
+ * Allers-Vers garde son périmètre de dossiers mais consulte les stats à l'échelle
+ * nationale (ouverture des stats aux agents, cf. ADR-0017).
+ */
+export function canViewNationalStats(role: string): boolean {
+  return (
+    role === UserRole.SUPER_ADMINISTRATEUR ||
+    role === UserRole.ADMINISTRATEUR ||
+    role === UserRole.ANALYSTE ||
+    role === UserRole.AMO ||
+    role === UserRole.ALLERS_VERS ||
+    role === UserRole.AMO_ET_ALLERS_VERS
+  );
+}
+
+/**
+ * Filtres de scope pour les surfaces de STATISTIQUES, distinct de
+ * `getScopeFilters` (qui régit les dossiers). Règles :
+ * - Analyste départemental (suivi DDT) : restreint à ses départements (ADR-0014).
+ * - Autres rôles habilités (admins, analyste national, AMO, Allers-Vers,
+ *   AMO+Allers-Vers) : national (aucun filtre).
+ * - Rôle non habilité : aucun accès.
+ *
+ * Ne renvoie JAMAIS de filtre par entreprise AMO : les stats sont nationales,
+ * jamais scopées à l'entreprise de l'agent (contrairement à ses dossiers).
+ */
+export async function getStatsScopeFilters(): Promise<ScopeFilters | null> {
+  const user = await getCurrentUser();
+
+  if (!user || !canViewNationalStats(user.role)) {
+    return { noAccess: true };
+  }
+
+  // Seul l'analyste départemental reste territorial ; on lit directement ses
+  // départements (les autres rôles habilités sont nationaux, sans dépendance à
+  // l'entreprise / allers-vers).
+  if (user.role === UserRole.ANALYSTE) {
+    const departements = user.agentId ? await agentPermissionsRepository.getDepartementsByAgentId(user.agentId) : [];
+    if (departements.length > 0) {
+      return { departements };
+    }
+  }
+
+  return null;
+}

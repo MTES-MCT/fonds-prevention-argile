@@ -3,19 +3,18 @@
 import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { getStatistiques } from "../services/statistiques.service";
-import { getScopeFilters } from "@/features/auth/permissions/services/agent-scope.service";
+import { getStatsScopeFilters } from "@/features/auth/permissions/services/agent-scope.service";
 import type { ActionResult } from "@/shared/types";
 import type { Statistiques } from "../domain/types/statistiques.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { PartnerKey } from "@/shared/domain/partners";
 
 /**
- * Récupère les statistiques globales ou filtrées selon le scope de l'agent
+ * Récupère les statistiques d'acquisition (agrégats nationaux).
  * Permissions : STATS_READ
- * Filtrage : Selon le scope de l'agent (entreprise AMO, départements)
- *
- * Note : Pour les agents AMO, les statistiques Matomo (visiteurs, taux de rebond)
- * ne sont pas disponibles car elles sont globales au site.
+ * Périmètre : national pour tous les rôles habilités (admins, analyste national,
+ * agents AMO / Allers-Vers, cf. ADR-0017), sauf analyste départemental restreint à
+ * son territoire. Utilise le scope STATS (jamais scopé à l'entreprise de l'agent).
  */
 export async function getStatistiquesAction(
   periodeId?: PeriodeId,
@@ -33,8 +32,8 @@ export async function getStatistiquesAction(
   }
 
   try {
-    // Récupérer les filtres selon le scope de l'utilisateur
-    const scopeFilters = await getScopeFilters();
+    // Scope STATS (national, sauf analyste départemental) — jamais par entreprise AMO.
+    const scopeFilters = await getStatsScopeFilters();
 
     const stats = await getStatistiques(scopeFilters, periodeId, codeDepartement, partner);
 

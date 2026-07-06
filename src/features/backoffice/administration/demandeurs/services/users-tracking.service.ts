@@ -8,6 +8,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { getDemandeurFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
 import { matchesTerritoire } from "@/shared/database/repositories/parcours-prevention.repository";
+import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import type { UserWithParcoursDetails, DossierInfo } from "../domain/types/user-with-parcours.types";
 import { amoValidationTokens } from "@/shared/database";
 import type { ScopeFilters } from "@/features/auth/permissions/domain/types/agent-scope.types";
@@ -287,4 +288,95 @@ export async function getUsersWithParcours(scopeFilters?: ScopeFilters | null): 
   }
 
   return Array.from(usersMap.values());
+}
+
+/**
+ * Retire d'une simulation RGA les champs LOCALISANTS (adresse précise, coordonnées
+ * GPS, clef BAN, identifiant RNB du bâtiment) tout en conservant les champs
+ * agrégeables (département, commune INSEE, zone d'exposition, revenu, sinistralité).
+ */
+function sanitizeRgaForStats(rga: RGASimulationData | null): RGASimulationData | null {
+  if (!rga) return null;
+  return {
+    ...rga,
+    logement: {
+      ...rga.logement,
+      adresse: "",
+      coordonnees: "",
+      clef_ban: "",
+      rnb: "",
+    },
+  };
+}
+
+/** Retire d'un dossier DS ses identifiants individuels (numéro/id), inutiles aux stats. */
+function sanitizeDossierForStats(dossier: DossierInfo | null): DossierInfo | null {
+  if (!dossier) return null;
+  return { ...dossier, dsId: null, dsNumber: null };
+}
+
+/**
+ * Projection STRICTEMENT agrégée d'un demandeur, destinée aux surfaces
+ * statistiques (onglets stats de la page Demandeurs, ouverts aux agents non-admin).
+ *
+ * Retire toute donnée nominative, localisante ou sensible qui n'est pas nécessaire
+ * aux agrégats : nom/prénom, email/téléphone, fcId FranceConnect, adresse et
+ * coordonnées précises, token de validation AMO (secret), contacts de l'entreprise
+ * AMO, commentaire, tracking email, identifiants DS. Ne conserve que ce que les
+ * agrégats consomment (étape, statut, dates, département/commune, revenu,
+ * sinistralité, statut de validation AMO, statut DS). Cf. ADR-0017.
+ */
+export function toStatsProjection(user: UserWithParcoursDetails): UserWithParcoursDetails {
+  return {
+    user: {
+      ...user.user,
+      fcId: null,
+      email: null,
+      name: null,
+      firstName: null,
+      telephone: null,
+    },
+    parcours: user.parcours,
+    rgaSimulation: sanitizeRgaForStats(user.rgaSimulation),
+    amoValidation: user.amoValidation
+      ? {
+          id: user.amoValidation.id,
+          statut: user.amoValidation.statut,
+          choisieAt: user.amoValidation.choisieAt,
+          valideeAt: user.amoValidation.valideeAt,
+          commentaire: null,
+          amo: {
+            id: user.amoValidation.amo.id,
+            nom: user.amoValidation.amo.nom,
+            siret: null,
+            adresse: null,
+            emails: "",
+            telephone: null,
+          },
+          userData: {
+            prenom: null,
+            nom: null,
+            email: null,
+            telephone: null,
+            adresseLogement: null,
+          },
+          token: null,
+          emailTracking: {
+            brevoMessageId: null,
+            sentAt: null,
+            deliveredAt: null,
+            openedAt: null,
+            clickedAt: null,
+            bounceType: null,
+            bounceReason: null,
+          },
+        }
+      : null,
+    dossiers: {
+      eligibilite: sanitizeDossierForStats(user.dossiers.eligibilite),
+      diagnostic: sanitizeDossierForStats(user.dossiers.diagnostic),
+      devis: sanitizeDossierForStats(user.dossiers.devis),
+      factures: sanitizeDossierForStats(user.dossiers.factures),
+    },
+  };
 }
