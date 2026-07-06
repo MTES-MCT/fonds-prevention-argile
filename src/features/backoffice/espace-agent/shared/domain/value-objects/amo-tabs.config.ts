@@ -9,11 +9,6 @@ export const AGENT_TABS: AmoTab[] = [
     label: "Dossiers",
     href: "/espace-agent/dossiers",
   },
-  {
-    id: "statistiques",
-    label: "Statistiques",
-    href: "/espace-agent/statistiques",
-  },
 ];
 
 /** @deprecated remplacé par AGENT_TABS — gardé temporairement pour AmoContext. */

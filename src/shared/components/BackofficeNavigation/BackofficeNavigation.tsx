@@ -75,9 +75,9 @@ function getAgentActiveTab(pathname: string, tabs: AmoTab[]): string | null {
   return match?.id ?? tabs[0]?.id ?? null;
 }
 
-function DossiersRow({ pathname, role }: { pathname: string; role: UserRole }) {
-  // L'analyste suit des dossiers ici ; ses stats vivent dans /administration.
-  const tabs = role === UserRole.ANALYSTE ? AGENT_TABS.filter((tab) => tab.id !== "statistiques") : AGENT_TABS;
+function DossiersRow({ pathname }: { pathname: string }) {
+  // Onglet unique (Dossiers) : les stats vivent désormais dans /administration.
+  const tabs = AGENT_TABS;
   const activeTab = getAgentActiveTab(pathname, tabs);
   const [nombreDossiers, setNombreDossiers] = useState<number>(0);
 
@@ -123,7 +123,7 @@ export function BackofficeNavigation() {
   return (
     <>
       {showAdmin && <PilotageRow pathname={pathname} role={role as UserRole} />}
-      {showAgent && <DossiersRow pathname={pathname} role={role as UserRole} />}
+      {showAgent && <DossiersRow pathname={pathname} />}
     </>
   );
 }
