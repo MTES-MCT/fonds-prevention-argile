@@ -13,3 +13,4 @@ export * from "./AccesNonAutorise/AccesNonAutorise";
 export * from "./BackofficeNavigation";
 export { ContactCard } from "./ContactCard/ContactCard";
 export { Pagination } from "./Pagination/Pagination";
+export { StickyHorizontalScrollbar } from "./table/StickyHorizontalScrollbar";

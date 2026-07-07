@@ -288,7 +288,7 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
           <DossiersSuivisHeader prenom={prenom} />
         </div>
         <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
-          <div className="fr-container">
+          <div className="fpa-container-wide">
             <p>Chargement...</p>
           </div>
         </section>
@@ -303,7 +303,7 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
           <DossiersSuivisHeader prenom={prenom} />
         </div>
         <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
-          <div className="fr-container">
+          <div className="fpa-container-wide">
             <div className="fr-alert fr-alert--error">
               <h3 className="fr-alert__title">Erreur</h3>
               <p>{error}</p>
@@ -323,7 +323,7 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
         <DossiersKpiCards counters={counters} />
       </div>
       <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
-        <div className="fr-container">
+        <div className="fpa-container-wide">
           <h2 className="fr-h4 fr-mb-3w">Suivi des dossiers</h2>
 
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">

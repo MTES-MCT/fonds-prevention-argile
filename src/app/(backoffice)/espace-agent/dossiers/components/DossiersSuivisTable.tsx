@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { StickyHorizontalScrollbar } from "@/shared/components";
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
 import {
   getDossierStepLabel,
@@ -60,6 +61,7 @@ export function DossiersSuivisTable({
   onEnAttenteFilterChange,
 }: DossiersSuivisTableProps) {
   const router = useRouter();
+  const tableContainerRef = useRef<HTMLDivElement>(null);
   const [archiveParcoursId, setArchiveParcoursId] = useState<string | null>(null);
   const [unarchiveParcoursId, setUnarchiveParcoursId] = useState<string | null>(null);
 
@@ -75,9 +77,13 @@ export function DossiersSuivisTable({
 
   return (
     <>
+      <p className="fr-text--sm fr-text-mention--grey fr-mb-1w">
+        <span className="fr-icon-information-line fr-icon--sm fr-mr-1v" aria-hidden="true" />
+        Astuce : maintenez la touche ⇧ <em>Maj + molette</em> de votre souris pour défiler horizontalement
+      </p>
       <div className="fr-table fr-table--bordered">
         <div className="fr-table__wrapper">
-          <div className="fr-table__container">
+          <div className="fr-table__container" ref={tableContainerRef}>
             <div className="fr-table__content">
               <table>
                 <thead>
@@ -90,7 +96,9 @@ export function DossiersSuivisTable({
                         )}
                       </span>
                     </th>
-                    <th scope="col">Demandeurs</th>
+                    <th scope="col" className="dossiers-table__sticky-col">
+                      Demandeurs
+                    </th>
                     <th scope="col">
                       <span className="flex items-center justify-between gap-2">
                         Responsable
@@ -211,7 +219,7 @@ export function DossiersSuivisTable({
                       return (
                         <tr key={dossier.parcoursId}>
                           <td style={greyStyle}>{formatDate(dossier.createdAt.toISOString())}</td>
-                          <td>
+                          <td className="dossiers-table__sticky-col">
                             <Link href={detailHref} className="fr-link">
                               {formatNomComplet(dossier.particulier.prenom, dossier.particulier.nom)}
                             </Link>
@@ -285,6 +293,8 @@ export function DossiersSuivisTable({
           </div>
         </div>
       </div>
+
+      <StickyHorizontalScrollbar containerRef={tableContainerRef} />
 
       {/* Modale d'archivage (toujours montée pour que le DSFR l'initialise) */}
       <ArchiveModal
