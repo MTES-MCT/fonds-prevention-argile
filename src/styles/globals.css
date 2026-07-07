@@ -24,6 +24,51 @@
 }
 
 /* ===================================
+   Conteneur large — tableaux backoffice
+   Élargit une section au-delà du cap DSFR (.fr-container = 78rem)
+   pour exploiter la largeur d'écran sur les tableaux de données.
+   =================================== */
+.fpa-container-wide {
+  width: 100%;
+  max-width: 94rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+@media (min-width: 48em) {
+  .fpa-container-wide {
+    padding-inline: 1.5rem;
+  }
+}
+
+/* ===================================
+   Colonne figée — tableau « Suivi des dossiers »
+   Garde le demandeur visible pendant le scroll horizontal.
+   Fond opaque obligatoire : sinon le contenu défilé transparaît.
+   =================================== */
+.dossiers-table__sticky-col {
+  position: sticky;
+  left: 0;
+}
+/* Fond opaque = couleur DSFR de l'en-tête (--background-alt-grey), sinon le
+   contenu défilé transparaît. Box-shadow : restaure le filet droit ET la
+   bordure haute du cadre, que le fond opaque masquerait. */
+th.dossiers-table__sticky-col {
+  z-index: 2;
+  background-color: var(--background-alt-grey);
+  box-shadow:
+    inset 1px 0 0 0 var(--border-contrast-grey),
+    inset 0 1px 0 0 var(--border-contrast-grey),
+    inset -1px 0 0 0 var(--border-contrast-grey);
+}
+td.dossiers-table__sticky-col {
+  z-index: 1;
+  background-color: var(--background-default-grey);
+  box-shadow:
+    inset 1px 0 0 0 var(--border-contrast-grey),
+    inset -1px 0 0 0 var(--border-contrast-grey);
+}
+
+/* ===================================
    ProConnect Button Styles
    =================================== */
 .pc-connect {
