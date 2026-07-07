@@ -1,6 +1,6 @@
 {
   "name": "fonds-prevention-argile",
-  "version": "1.21.0",
+  "version": "1.22.0",
   "private": true,
   "packageManager": "pnpm@11.10.0",
   "engines": {
@@ -41,6 +41,7 @@
     "audit:parcours-ds": "tsx scripts/ops/audit/audit-parcours-ds-integrity.ts",
     "audit:dossiers-bloques": "tsx scripts/ops/audit/audit-dossiers-bloques.ts",
     "ds:check-permissions": "tsx scripts/ops/ds/check-ds-permissions.ts",
+    "ds:fetch-pieces": "tsx scripts/ops/ds/fetch-pieces-justificatives.ts",
     "ds:probe-dossiers": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/probe-dossiers.ts",
     "fix:double-progression": "tsx scripts/ops/fix/fix-double-progression-amo.ts",
     "fix:reouvrir-demande": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reouvrir-demande.ts",
