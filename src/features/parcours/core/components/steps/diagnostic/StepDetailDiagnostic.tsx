@@ -6,9 +6,11 @@ import { isStepBefore, Step } from "../../../domain";
 import { useParcours } from "../../../context/useParcours";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 import { envoyerDossierDiagnostic } from "../../../actions/diagnostic.actions";
+import type { PieceJustificative } from "@/features/parcours/dossiers-ds/domain/pieces-justificatives";
 import { formatDate } from "@/shared/utils";
+import PiecesAPrevoir from "../../common/PiecesAPrevoir";
 
-export default function StepDetailDiagnostic() {
+export default function StepDetailDiagnostic({ pieces }: { pieces?: PieceJustificative[] }) {
   const { currentStep, getDossierUrl, lastDSStatus, refresh, dossiers } = useParcours();
 
   const dsUrl = getDossierUrl(Step.DIAGNOSTIC);
@@ -84,10 +86,7 @@ export default function StepDetailDiagnostic() {
           <>
             <p style={{ color: "var(--text-disabled-grey)" }}>Démarrer le diagnostic et communiquer les résultats.</p>
             <div style={{ color: "var(--text-disabled-grey)" }}>
-              <p className="fr-text--xs">
-                Préparez les pièces nécessaires{" "}
-                <span className="fr-icon-arrow-right-line fr-icon--sm" aria-hidden="true" />
-              </p>
+              <PiecesAPrevoir pieces={pieces} />
             </div>
           </>
         )}

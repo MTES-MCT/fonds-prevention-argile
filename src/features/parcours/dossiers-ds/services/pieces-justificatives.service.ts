@@ -3,7 +3,12 @@ import { getServerEnv } from "@/shared/config/env.config";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { graphqlClient } from "../adapters/graphql/client";
 import type { ChampDescriptor } from "../adapters/graphql/types";
-import { findAideForLabel, PIECES_FALLBACK, type PieceJustificative } from "../domain/pieces-justificatives";
+import {
+  findAideForLabel,
+  PIECES_FALLBACK,
+  type PieceJustificative,
+  type PiecesByStep,
+} from "../domain/pieces-justificatives";
 
 /** __typename DN d'un descripteur de pièce justificative. */
 const PIECE_TYPENAME = "PieceJustificativeChampDescriptor";
@@ -93,4 +98,15 @@ export async function getPiecesJustificativesForStep(step: Step): Promise<PieceJ
     console.error(`Pièces justificatives indisponibles (step=${step}, demarche=${demarcheNumber})`, error);
     return PIECES_FALLBACK;
   }
+}
+
+/**
+ * Pièces à prévoir pour plusieurs étapes, indexées par étape. Chaque appel est mis
+ * en cache : pré-calculer toutes les étapes à venir côté serveur reste peu coûteux.
+ */
+export async function getPiecesJustificativesByStep(steps: Step[]): Promise<PiecesByStep> {
+  const entries = await Promise.all(
+    steps.map(async (step) => [step, await getPiecesJustificativesForStep(step)] as const)
+  );
+  return Object.fromEntries(entries) as PiecesByStep;
 }

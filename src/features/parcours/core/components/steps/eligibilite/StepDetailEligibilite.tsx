@@ -2,9 +2,11 @@ import Link from "next/link";
 import { isStepBefore, Step } from "../../../domain";
 import { useParcours } from "../../../context/useParcours";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
+import type { PieceJustificative } from "@/features/parcours/dossiers-ds/domain/pieces-justificatives";
 import { formatDate } from "@/shared/utils";
+import PiecesAPrevoir from "../../common/PiecesAPrevoir";
 
-export default function StepDetailEligibilite() {
+export default function StepDetailEligibilite({ pieces }: { pieces?: PieceJustificative[] }) {
   const { currentStep, lastDSStatus, getDossierUrl, dossiers } = useParcours();
 
   // URL du dossier d'éligibilité
@@ -70,10 +72,7 @@ export default function StepDetailEligibilite() {
               Remplissez le formulaire pour connaître votre éligibilité.
             </p>
             <div style={{ color: "var(--text-disabled-grey)" }}>
-              <p className="fr-text--xs">
-                Préparez les pièces nécessaires{" "}
-                <span className="fr-icon-arrow-right-line fr-icon--sm" aria-hidden="true" />
-              </p>
+              <PiecesAPrevoir pieces={pieces} />
             </div>
           </>
         )}

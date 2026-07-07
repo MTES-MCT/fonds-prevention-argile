@@ -1,7 +1,9 @@
 import { useParcours } from "../../../context/useParcours";
 import { isStepBefore, Step } from "../../../domain";
+import type { PieceJustificative } from "@/features/parcours/dossiers-ds/domain/pieces-justificatives";
+import PiecesAPrevoir from "../../common/PiecesAPrevoir";
 
-export default function StepDetailDevis() {
+export default function StepDetailDevis({ pieces }: { pieces?: PieceJustificative[] }) {
   const { currentStep } = useParcours();
   const isActive = currentStep === Step.DEVIS;
   const isStepBeforeCurrent = currentStep ? isStepBefore(currentStep, Step.DEVIS) : false;
@@ -30,10 +32,7 @@ export default function StepDetailDevis() {
           <>
             <p style={{ color: "var(--text-disabled-grey)" }}>Soumettre les devis pour accord avant travaux.</p>
             <div style={{ color: "var(--text-disabled-grey)" }}>
-              <p className="fr-text--xs">
-                Préparez les pièces nécessaires{" "}
-                <span className="fr-icon-arrow-right-line fr-icon--sm" aria-hidden="true" />
-              </p>
+              <PiecesAPrevoir pieces={pieces} />
             </div>
           </>
         )}

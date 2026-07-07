@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { useParcours } from "../../../context/useParcours";
 import { isStepBefore, Step } from "../../../domain";
+import type { PieceJustificative } from "@/features/parcours/dossiers-ds/domain/pieces-justificatives";
+import PiecesAPrevoir from "../../common/PiecesAPrevoir";
 
-export default function StepDetailFactures() {
+export default function StepDetailFactures({ pieces }: { pieces?: PieceJustificative[] }) {
   const { currentStep, getDossierUrl } = useParcours();
   const dsUrl = getDossierUrl(Step.FACTURES);
   const isActive = currentStep === Step.FACTURES;
@@ -32,10 +34,7 @@ export default function StepDetailFactures() {
           <>
             <p style={{ color: "var(--text-disabled-grey)" }}>Transmettre les factures pour être remboursé.</p>
             <div style={{ color: "var(--text-disabled-grey)" }}>
-              <p className="fr-text--xs">
-                Préparez les pièces nécessaires{" "}
-                <span className="fr-icon-arrow-right-line fr-icon--sm" aria-hidden="true" />
-              </p>
+              <PiecesAPrevoir pieces={pieces} />
             </div>
           </>
         )}
