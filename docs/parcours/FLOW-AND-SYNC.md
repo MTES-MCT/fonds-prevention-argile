@@ -491,7 +491,8 @@ n'a rien finalisé côté DN, fréquent et souvent normal).
 ### 7.5 Pièces justificatives à prévoir : source DN dynamique (+ modèles)
 
 La liste des pièces justificatives « à prévoir pour la prochaine étape » (affichée sur le
-détail dossier AMO, à terme côté demandeur) n'est plus codée en dur : elle est tirée
+détail dossier AMO **et sur les cartes d'étapes à venir du parcours demandeur**,
+`/mon-compte`) n'est plus codée en dur : elle est tirée
 **dynamiquement de la démarche DN** de l'étape courante via
 `getPiecesJustificativesForStep(step)`
 (`dossiers-ds/services/pieces-justificatives.service.ts`). Le service lit
@@ -507,8 +508,14 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
   les schémas DN bougent rarement.
 - Résilience : sur erreur DN ou liste vide, repli sur `PIECES_FALLBACK`
   (`pieces-fallback.const.ts`) — jamais de section vide.
+- Surface demandeur : `/mon-compte` (Server Component) précharge les pièces des étapes à
+  venir via `getPiecesJustificativesByStep` et les passe en prop `piecesByStep` jusqu'aux
+  cartes `StepDetail<Step>`, qui rendent le composant repliable `PiecesAPrevoir` (élément
+  natif `<details>`, pas de JS DSFR).
 - Vérification / inventaire : `pnpm ds:fetch-pieces` liste, par démarche configurée, les
   pièces et l'URL de leur modèle (confirme la présence de `fileTemplate`).
+- Surface agent restante (hors périmètre) : `GagnezDuTemps` (pages `demandes/[id]` et
+  `prospects/[id]`) porte encore une liste codée en dur — à converger ultérieurement.
 
 ---
 
