@@ -6,10 +6,10 @@ import type { PieceAide } from "./pieces-justificatives.types";
  * DN fournit le libellé, la description et le modèle ; on ajoute par-dessus le
  * « où l'obtenir » (liens impots.gouv, contacter l'assureur…). Le rattachement se
  * fait par mots-clés sur le libellé DN normalisé (les libellés DN sont libres et
- * peuvent évoluer) : première règle dont un mot-clé matche.
+ * peuvent évoluer).
  *
- * Contenu volontairement conservateur (Lot 1) : on n'ajoute une aide que lorsqu'elle
- * est certaine. Le reste sera complété au Lot 2 (surface demandeur).
+ * L'ordre compte : première règle dont un mot-clé matche. Les règles les plus
+ * spécifiques (assureur, mandat) passent avant les plus génériques (attestation).
  */
 interface AideRule {
   keywords: string[];
@@ -22,6 +22,13 @@ export function normalizeLabel(label: string): string {
 }
 
 const AIDE_RULES: AideRule[] = [
+  {
+    keywords: ["piece d'identite", "piece d identite", "piece d’identite"],
+    aide: {
+      texte: "Carte nationale d'identité ou passeport en cours de validité. Renouvellement possible via l'ANTS.",
+      liens: [{ label: "ants.gouv.fr", href: "https://ants.gouv.fr" }],
+    },
+  },
   {
     keywords: ["avis d'imposition", "avis d imposition", "avis d’imposition"],
     aide: {
@@ -36,6 +43,12 @@ const AIDE_RULES: AideRule[] = [
       texte:
         "Acte de propriété (acte notarié) ou avis de taxe foncière. La taxe foncière est disponible dans votre espace impots.gouv.fr ; l'acte notarié auprès de votre notaire.",
       liens: [{ label: "impots.gouv.fr", href: "https://www.impots.gouv.fr/accueil" }],
+    },
+  },
+  {
+    keywords: ["releve d'identite bancaire", "releve d identite bancaire", "rib"],
+    aide: {
+      texte: "Disponible dans votre application ou votre espace bancaire en ligne.",
     },
   },
   {
@@ -65,9 +78,27 @@ const AIDE_RULES: AideRule[] = [
     },
   },
   {
-    keywords: ["releve d'identite bancaire", "releve d identite bancaire", "rib"],
+    keywords: ["attestation sur l'honneur", "attestation sur l honneur", "attestation sur l’honneur"],
     aide: {
-      texte: "Disponible dans votre application ou espace bancaire en ligne.",
+      texte: "Utilisez le modèle fourni ci-dessus, à compléter et signer.",
+    },
+  },
+  {
+    keywords: ["rapport", "diagnostic de vulnerabilite"],
+    aide: {
+      texte: "Remis par le professionnel (bureau d'études / expert) qui a réalisé le diagnostic.",
+    },
+  },
+  {
+    keywords: ["facture"],
+    aide: {
+      texte: "Facture acquittée établie par l'entreprise ou le prestataire.",
+    },
+  },
+  {
+    keywords: ["devis"],
+    aide: {
+      texte: "Établi par votre AMO ou l'entreprise retenue pour les travaux.",
     },
   },
 ];

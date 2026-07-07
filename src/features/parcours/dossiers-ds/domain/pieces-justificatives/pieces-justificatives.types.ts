@@ -1,3 +1,5 @@
+import type { Step } from "@/shared/domain/value-objects/step.enum";
+
 /**
  * Types du domaine « pièces justificatives à prévoir ».
  *
@@ -33,3 +35,6 @@ export interface PieceJustificative {
   modele?: PieceModele;
   aide?: PieceAide;
 }
+
+/** Pièces à prévoir indexées par étape (pré-calculées côté serveur). */
+export type PiecesByStep = Partial<Record<Step, PieceJustificative[]>>;
