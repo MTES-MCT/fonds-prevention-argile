@@ -34,16 +34,16 @@ describe("BackofficeNavigation — matrice d'affichage par rôle (ADR-0015)", ()
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("SUPER_ADMINISTRATEUR : pilotage complet + Dossiers et Statistiques", () => {
+  it("SUPER_ADMINISTRATEUR : pilotage complet + Dossiers", () => {
     setup({ role: UserRole.SUPER_ADMINISTRATEUR, admin: true, agent: true });
     render(<BackofficeNavigation />);
     // Rangée pilotage (onglets super-admin inclus)
     expect(screen.getByText("Tableau de bord")).toBeInTheDocument();
     expect(screen.getByText("Agents")).toBeInTheDocument();
     expect(screen.getByText("Diagnostics DN")).toBeInTheDocument();
-    // Rangée dossiers
+    // Rangée dossiers : onglet unique (l'ancienne page Statistiques a été retirée, ADR-0017)
     expect(screen.getByText("Dossiers")).toBeInTheDocument();
-    expect(screen.getByText("Statistiques")).toBeInTheDocument();
+    expect(screen.queryByText("Statistiques")).not.toBeInTheDocument();
   });
 
   it("ADMINISTRATEUR : pilotage restreint, pas d'onglets super-admin, pas de Dossiers", () => {
@@ -73,12 +73,21 @@ describe("BackofficeNavigation — matrice d'affichage par rôle (ADR-0015)", ()
     expect(screen.queryByText("Statistiques")).not.toBeInTheDocument();
   });
 
-  it("AMO : pas de pilotage, Dossiers + Statistiques", () => {
-    setup({ role: UserRole.AMO, admin: false, agent: true, path: "/espace-agent/dossiers" });
+  it("AMO : pilotage limité aux stats (Tableau de bord/Acquisition/Demandeurs) + Dossiers, sans onglets sensibles ni Statistiques", () => {
+    // Ouverture des stats nationales (ADR-0017) : l'AMO accède désormais à la
+    // rangée pilotage (onglets stats uniquement), en plus de ses Dossiers.
+    setup({ role: UserRole.AMO, admin: true, agent: true, path: "/espace-agent/dossiers" });
     render(<BackofficeNavigation />);
-    expect(screen.queryByText("Tableau de bord")).not.toBeInTheDocument();
+    // Rangée pilotage : onglets stats visibles, onglets sensibles masqués (minRoles)
+    expect(screen.getByText("Tableau de bord")).toBeInTheDocument();
+    expect(screen.getByText("Acquisition")).toBeInTheDocument();
+    expect(screen.getByText("Demandeurs")).toBeInTheDocument();
+    expect(screen.queryByText("AMO")).not.toBeInTheDocument();
+    expect(screen.queryByText("Agents")).not.toBeInTheDocument();
+    expect(screen.queryByText("Allers Vers")).not.toBeInTheDocument();
+    // Rangée dossiers : onglet unique, plus de Statistiques
     expect(screen.getByText("Dossiers")).toBeInTheDocument();
-    expect(screen.getByText("Statistiques")).toBeInTheDocument();
+    expect(screen.queryByText("Statistiques")).not.toBeInTheDocument();
   });
 
   it("sans rôle : rien", () => {

@@ -15,21 +15,25 @@ vi.mock("@/features/auth/permissions/services/permissions.service", () => ({
 
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
   getScopeFilters: vi.fn(),
+  getStatsScopeFilters: vi.fn(),
 }));
 
-vi.mock("../services/users-tracking.service", () => ({
-  getUsersWithParcours: vi.fn(),
-}));
+// On garde la VRAIE projection `toStatsProjection` (test de sanitisation bout-en-bout),
+// on ne mocke que l'accès DB `getUsersWithParcours`.
+vi.mock("../services/users-tracking.service", async (importActual) => {
+  const actual = await importActual<typeof import("../services/users-tracking.service")>();
+  return { ...actual, getUsersWithParcours: vi.fn() };
+});
 
 // Mock de l'environnement serveur
 vi.mock("@/shared/config/env.config", () => createEnvConfigMock());
 
 // Import des actions APRÈS les mocks
-import { getUsersWithParcours } from "./users-tracking.actions";
+import { getUsersWithParcours, getUsersForStats } from "./users-tracking.actions";
 
 // Import des mocks
 import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
-import { getScopeFilters } from "@/features/auth/permissions/services/agent-scope.service";
+import { getScopeFilters, getStatsScopeFilters } from "@/features/auth/permissions/services/agent-scope.service";
 import { getUsersWithParcours as getUsersWithParcoursService } from "../services/users-tracking.service";
 
 describe("users-tracking.actions", () => {
@@ -221,6 +225,7 @@ describe("users-tracking.actions", () => {
     vi.clearAllMocks();
     // Par défaut, pas de filtre de scope (accès national)
     vi.mocked(getScopeFilters).mockResolvedValue(null);
+    vi.mocked(getStatsScopeFilters).mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -422,6 +427,94 @@ describe("users-tracking.actions", () => {
       // Vérifie que c'est bien USERS_READ qui est demandé (pas USERS_STATS_READ)
       expect(checkBackofficePermission).toHaveBeenCalledWith(BackofficePermission.USERS_READ);
       expect(checkBackofficePermission).not.toHaveBeenCalledWith(BackofficePermission.USERS_STATS_READ);
+    });
+  });
+
+  describe("getUsersForStats (vue agrégée ouverte aux analystes + agents AMO/AV, ADR-0017)", () => {
+    it("vérifie la permission USERS_STATS_READ (pas USERS_READ)", async () => {
+      const mockUser = createMockAuthUser(UserRole.AMO);
+      vi.mocked(checkBackofficePermission).mockResolvedValue({ hasAccess: true, user: mockUser });
+      vi.mocked(getUsersWithParcoursService).mockResolvedValue([]);
+
+      await getUsersForStats();
+
+      expect(checkBackofficePermission).toHaveBeenCalledWith(BackofficePermission.USERS_STATS_READ);
+      expect(checkBackofficePermission).not.toHaveBeenCalledWith(BackofficePermission.USERS_READ);
+    });
+
+    it("refuse si la permission est absente (sans toucher la DB)", async () => {
+      vi.mocked(checkBackofficePermission).mockResolvedValue({
+        hasAccess: false,
+        reason: "Permission insuffisante pour consulter les statistiques",
+        errorCode: AccessErrorCode.INSUFFICIENT_PERMISSIONS,
+      });
+
+      const result = await getUsersForStats();
+
+      expect(result.success).toBe(false);
+      expect(getStatsScopeFilters).not.toHaveBeenCalled();
+      expect(getUsersWithParcoursService).not.toHaveBeenCalled();
+    });
+
+    it("utilise le scope STATS (getStatsScopeFilters) et le passe au service, pas getScopeFilters", async () => {
+      const mockUser = createMockAuthUser(UserRole.AMO);
+      vi.mocked(checkBackofficePermission).mockResolvedValue({ hasAccess: true, user: mockUser });
+      // Scope stats national pour un AMO (jamais scopé à son entreprise).
+      vi.mocked(getStatsScopeFilters).mockResolvedValue(null);
+      vi.mocked(getUsersWithParcoursService).mockResolvedValue([]);
+
+      await getUsersForStats();
+
+      expect(getStatsScopeFilters).toHaveBeenCalled();
+      expect(getScopeFilters).not.toHaveBeenCalled();
+      expect(getUsersWithParcoursService).toHaveBeenCalledWith(null);
+    });
+
+    it("SÉCURITÉ : anonymise entièrement le demandeur avant envoi (ni PII, ni token, ni adresse, ni identifiants DS)", async () => {
+      const mockUser = createMockAuthUser(UserRole.AMO);
+      vi.mocked(checkBackofficePermission).mockResolvedValue({ hasAccess: true, user: mockUser });
+      // Utilisateur COMPLET (token, adresse, coordonnées, emails entreprise, dossiers DS).
+      vi.mocked(getUsersWithParcoursService).mockResolvedValue([createMockUserWithFullParcours()]);
+
+      const result = await getUsersForStats();
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      const u = result.data[0];
+
+      // Identité demandeur retirée
+      expect(u.user.fcId).toBeNull();
+      expect(u.user.email).toBeNull();
+      expect(u.user.name).toBeNull();
+      expect(u.user.firstName).toBeNull();
+      expect(u.user.telephone).toBeNull();
+
+      // Données localisantes retirées de la simulation
+      expect(u.rgaSimulation?.logement.adresse).toBe("");
+      expect(u.rgaSimulation?.logement.coordonnees).toBe("");
+      expect(u.rgaSimulation?.logement.clef_ban).toBe("");
+      expect(u.rgaSimulation?.logement.rnb).toBe("");
+
+      // Validation AMO : token secret + PII + contacts entreprise retirés
+      expect(u.amoValidation?.token).toBeNull();
+      expect(u.amoValidation?.commentaire).toBeNull();
+      expect(u.amoValidation?.userData.prenom).toBeNull();
+      expect(u.amoValidation?.userData.adresseLogement).toBeNull();
+      expect(u.amoValidation?.amo.emails).toBe("");
+      expect(u.amoValidation?.amo.siret).toBeNull();
+      expect(u.amoValidation?.emailTracking.brevoMessageId).toBeNull();
+
+      // Identifiants DS individuels retirés
+      expect(u.dossiers.eligibilite?.dsId).toBeNull();
+      expect(u.dossiers.eligibilite?.dsNumber).toBeNull();
+
+      // MAIS les champs agrégeables sont conservés
+      expect(u.rgaSimulation?.logement.code_departement).toBe("75");
+      expect(u.rgaSimulation?.menage.revenu_rga).toBe(45000);
+      expect(u.amoValidation?.statut).toBe(StatutValidationAmo.LOGEMENT_ELIGIBLE);
+      expect(u.amoValidation?.amo.nom).toBe("AMO Test");
+      expect(u.dossiers.eligibilite?.dsStatus).toBe("accepte");
+      expect(u.parcours?.currentStep).toBe(Step.FACTURES);
     });
   });
 

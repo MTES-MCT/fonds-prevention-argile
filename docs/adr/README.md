@@ -44,5 +44,6 @@ purement cosmétique.
 | 0014 | [Périmètre de données du rôle ANALYSTE (national vs DDT départemental)](0014-perimetre-donnees-role-analyste.md)                        | Accepté |
 | 0015 | [Navigation backoffice unifiée (deux rangées pilotées par rôle)](0015-navigation-backoffice-unifiee.md)                                 | Accepté |
 | 0016 | [Ré-ouverture d'une demande refusée par l'AMO (service partagé, audit, permission)](0016-reouverture-demande-refusee.md)                | Accepté |
+| 0017 | [Ouverture des statistiques nationales aux agents AMO / Allers-Vers (overlay permission)](0017-ouverture-stats-nationales-agents.md)    | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->

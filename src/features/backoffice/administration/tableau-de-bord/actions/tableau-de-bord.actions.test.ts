@@ -109,6 +109,31 @@ describe("getAutresDemandesArchiveesAction (surface nominative scopée)", () => 
     expect(getAutresDemandesArchiveesDetail).toHaveBeenCalledWith("30j", undefined, undefined, ["30", "34"]);
   });
 
+  // ADR-0017 : les agents AMO / Allers-Vers ont désormais STATS_READ (stats nationales),
+  // et un `scope.departements` non vide (leur territoire). Cette surface étant NOMINATIVE,
+  // ils ne doivent JAMAIS y accéder malgré leurs départements — seul le rôle ANALYSTE
+  // ouvre la branche territoriale.
+  it.each([UserRole.AMO, UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS])(
+    "%s avec un territoire : aucune donnée nominative, service jamais appelé (anti-fuite ADR-0017)",
+    async (role) => {
+      vi.mocked(checkBackofficePermission).mockResolvedValue({
+        hasAccess: true,
+        user: createMockAuthUser(role, { agentId: "agent-1" }),
+      });
+      vi.mocked(getCurrentUser).mockResolvedValue(createMockAuthUser(role, { agentId: "agent-1" }));
+      // Scope avec des départements (comme un vrai AMO/AV) : ne doit PAS ouvrir le nominatif.
+      vi.mocked(calculateAgentScope).mockResolvedValue(makeScope({ departements: ["30", "34"] }));
+
+      const result = await getAutresDemandesArchiveesAction("30j");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual({ total: 0, demandes: [] });
+      }
+      expect(getAutresDemandesArchiveesDetail).not.toHaveBeenCalled();
+    }
+  );
+
   it("ANALYSTE national (sans département) : aucune donnée nominative, service jamais appelé", async () => {
     vi.mocked(checkBackofficePermission).mockResolvedValue({
       hasAccess: true,

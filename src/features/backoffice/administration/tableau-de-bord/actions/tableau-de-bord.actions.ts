@@ -4,6 +4,7 @@ import { checkBackofficePermission } from "@/features/auth/permissions/services/
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
+import { UserRole } from "@/shared/domain/value-objects";
 import {
   getTableauDeBordStats,
   getMatomoSimulationsStats,
@@ -127,10 +128,12 @@ export async function getAutresDemandesArchiveesAction(
   }
 
   try {
-    // Surface nominative (noms des demandeurs archives) : restreindre au perimetre.
-    // Admin = national ; analyste departemental = ses departements ; analyste national
-    // ou sans perimetre = aucune donnee individuelle (ADR-0014). getScopeFilters ne
-    // suffit pas ici car il confond admin-national et analyste-national (tous deux null).
+    // Surface NOMINATIVE (noms des demandeurs archives) : restreindre au perimetre.
+    // Admin = national ; analyste DEPARTEMENTAL = ses departements ; tout autre
+    // (analyste national, AMO / Allers-Vers habilites aux stats nationales) = aucune
+    // donnee individuelle (ADR-0014). On teste explicitement le role ANALYSTE : un
+    // agent AMO/AV a bien un `scope.departements` (son territoire), mais ne doit
+    // JAMAIS acceder au nominatif (ADR-0017) — d'ou le refus malgre des departements.
     const user = await getCurrentUser();
     if (!user) {
       return { success: false, error: "Non authentifie" };
@@ -146,10 +149,10 @@ export async function getAutresDemandesArchiveesAction(
     let scopeDepartements: string[] | null;
     if (scope.canViewAllDossiers) {
       scopeDepartements = null; // national (admins)
-    } else if (scope.departements.length > 0) {
-      scopeDepartements = scope.departements; // analyste departemental
+    } else if (user.role === UserRole.ANALYSTE && scope.departements.length > 0) {
+      scopeDepartements = scope.departements; // analyste departemental (suivi DDT)
     } else {
-      // analyste national / sans perimetre : aucune donnee nominative
+      // analyste national, AMO / Allers-Vers, sans perimetre : aucune donnee nominative
       return { success: true, data: { total: 0, demandes: [] } };
     }
 

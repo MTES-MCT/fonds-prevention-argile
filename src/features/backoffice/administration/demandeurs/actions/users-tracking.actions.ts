@@ -2,15 +2,22 @@
 
 import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
-import { getUsersWithParcours as getUsersWithParcoursService } from "../services/users-tracking.service";
-import { getScopeFilters } from "@/features/auth/permissions/services/agent-scope.service";
+import {
+  getUsersWithParcours as getUsersWithParcoursService,
+  toStatsProjection,
+} from "../services/users-tracking.service";
+import { getScopeFilters, getStatsScopeFilters } from "@/features/auth/permissions/services/agent-scope.service";
 import type { ActionResult } from "@/shared/types";
 import type { UserWithParcoursDetails } from "../domain/types/user-with-parcours.types";
 
 /**
- * Récupère les données users simplifiées pour les statistiques (analystes)
- * Permissions : USERS_STATS_READ
- * Filtrage : Selon le scope de l'agent (entreprise AMO, départements)
+ * Récupère les données demandeurs AGRÉGÉES pour les statistiques.
+ * Permissions : USERS_STATS_READ (analystes + agents AMO/Allers-Vers, cf. ADR-0017).
+ * Périmètre : national, sauf analyste départemental (restreint à son territoire).
+ *
+ * Sécurité : le scope stats est distinct du scope dossiers (jamais par entreprise),
+ * et chaque demandeur est réduit à une projection sans PII ni donnée localisante
+ * (`toStatsProjection`) — pas de nom/adresse/token/identifiants DS côté client.
  */
 export async function getUsersForStats(): Promise<ActionResult<UserWithParcoursDetails[]>> {
   const permissionCheck = await checkBackofficePermission(BackofficePermission.USERS_STATS_READ);
@@ -23,34 +30,16 @@ export async function getUsersForStats(): Promise<ActionResult<UserWithParcoursD
   }
 
   try {
-    // Récupérer les filtres selon le scope de l'utilisateur
-    const scopeFilters = await getScopeFilters();
+    const scopeFilters = await getStatsScopeFilters();
 
     const users = await getUsersWithParcoursService(scopeFilters);
 
-    // Anonymiser les données sensibles pour les analystes
-    const anonymizedUsers = users.map((user) => ({
-      ...user,
-      user: {
-        ...user.user,
-        email: null, // Masquer l'email
-        telephone: null, // Masquer le téléphone
-      },
-      amoValidation: user.amoValidation
-        ? {
-            ...user.amoValidation,
-            userData: {
-              ...user.amoValidation.userData,
-              email: null,
-              telephone: null,
-            },
-          }
-        : null,
-    }));
+    // Projection agrégée : retire toute donnée nominative / sensible avant envoi client.
+    const statsUsers = users.map(toStatsProjection);
 
     return {
       success: true,
-      data: anonymizedUsers,
+      data: statsUsers,
     };
   } catch (error) {
     console.error("Erreur getUsersForStats:", error);

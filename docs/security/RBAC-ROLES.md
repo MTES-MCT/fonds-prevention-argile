@@ -52,11 +52,11 @@ Groupes : `ADMIN_ROLES` (super-admin + admin), `AGENT_ROLES` (tous sauf
 
 Deux grands espaces back-office, gardés au niveau des `layout.tsx` / `page.tsx`.
 
-| Espace / route                                  | Rôles autorisés                                                                                | Espace de repli                             |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `/mon-compte`, `/mes-dossiers`, `/mes-demandes` | `PARTICULIER` (FranceConnect)                                                                  | `/connexion`                                |
-| `/administration/*`                             | `SUPER_ADMINISTRATEUR`, `ADMINISTRATEUR`, `ANALYSTE`                                           | AMO/AV → `/espace-agent`                    |
-| `/espace-agent/*`                               | `AMO`, `ALLERS_VERS`, `AMO_ET_ALLERS_VERS`, `ANALYSTE` (départemental), `SUPER_ADMINISTRATEUR` | admin/analyste national → `/administration` |
+| Espace / route                                  | Rôles autorisés                                                                                                                            | Espace de repli                             |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| `/mon-compte`, `/mes-dossiers`, `/mes-demandes` | `PARTICULIER` (FranceConnect)                                                                                                              | `/connexion`                                |
+| `/administration/*`                             | `SUPER_ADMINISTRATEUR`, `ADMINISTRATEUR`, `ANALYSTE`, **`AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS`** (onglets stats seulement, ADR-0017) | `PARTICULIER` → `/connexion`                |
+| `/espace-agent/*`                               | `AMO`, `ALLERS_VERS`, `AMO_ET_ALLERS_VERS`, `ANALYSTE` (départemental), `SUPER_ADMINISTRATEUR`                                             | admin/analyste national → `/administration` |
 
 Redirection par défaut après connexion (selon rôle) : admins/analystes →
 `/administration` ; AMO/AV → `/espace-agent` ; particulier → `/mon-compte`.
@@ -71,7 +71,9 @@ Gardes principales :
 - Espace agent : `src/app/(backoffice)/espace-agent/layout.tsx`
   (`checkProConnectAccess` + `getCurrentAgent` + `checkRoleAccess([...])`).
 - Administration : `src/app/(backoffice)/administration/page.tsx`
-  (`checkAgentAccess` puis redirection des AMO/AV).
+  (`checkAgentAccess` ; tout agent rend le tableau de bord depuis ADR-0017, les
+  onglets sensibles restant gardés par page). Les sous-pages sensibles gardent leur
+  propre garde de rôle (`isAdminRole` / `isSuperAdminRole`).
 - Garde entreprise AMO : `src/app/(backoffice)/components/AmoGuard.tsx` — bloque
   un `AMO` / `AMO_ET_ALLERS_VERS` sans entreprise rattachée.
 - Routes : `src/features/auth/domain/value-objects/configs/routes.config.ts`.
@@ -85,25 +87,31 @@ que sur les préfixes backoffice (garde de chemin, car le `Header` est partagé 
 site public). La nav n'est qu'un affichage : la barrière reste les gardes de layout /
 page / Server Actions.
 
-| Rôle                     | Rangée 1 — Pilotage                                                                                 | Rangée 2 — Dossiers    |
-| ------------------------ | --------------------------------------------------------------------------------------------------- | ---------------------- |
-| `SUPER_ADMINISTRATEUR`   | Tableau de bord, Acquisition, Demandeurs, Agents, AMO, Allers Vers, Notes, Synchros, Diagnostics DN | Dossiers, Statistiques |
-| `ADMINISTRATEUR`         | Tableau de bord, Acquisition, Demandeurs, AMO, Allers Vers                                          | —                      |
-| `ANALYSTE` national      | Tableau de bord, Acquisition, Demandeurs                                                            | —                      |
-| `ANALYSTE` départemental | Tableau de bord, Acquisition, Demandeurs                                                            | Dossiers (sans Stats)  |
-| `AMO`                    | —                                                                                                   | Dossiers, Statistiques |
-| `ALLERS_VERS`            | —                                                                                                   | Dossiers, Statistiques |
-| `AMO_ET_ALLERS_VERS`     | —                                                                                                   | Dossiers, Statistiques |
+> Depuis ADR-0017, la Rangée 2 n'a plus qu'un onglet **Dossiers** : l'ancienne page
+> « Statistiques » de l'espace agent (scopée à l'entreprise) est supprimée, remplacée
+> par les stats **nationales** de la Rangée 1 (Tableau de bord / Acquisition / Demandeurs),
+> désormais ouvertes aux agents AMO / Allers-Vers.
 
-- `canAccessAdministration` = `SUPER_ADMINISTRATEUR` / `ADMINISTRATEUR` / `ANALYSTE`.
-  Le filtrage par onglet de la rangée 1 reste celui de `ADMIN_NAV_TABS.minRoles`.
+| Rôle                     | Rangée 1 — Pilotage                                                                                 | Rangée 2 — Dossiers |
+| ------------------------ | --------------------------------------------------------------------------------------------------- | ------------------- |
+| `SUPER_ADMINISTRATEUR`   | Tableau de bord, Acquisition, Demandeurs, Agents, AMO, Allers Vers, Notes, Synchros, Diagnostics DN | Dossiers            |
+| `ADMINISTRATEUR`         | Tableau de bord, Acquisition, Demandeurs, AMO, Allers Vers                                          | —                   |
+| `ANALYSTE` national      | Tableau de bord, Acquisition, Demandeurs                                                            | —                   |
+| `ANALYSTE` départemental | Tableau de bord, Acquisition, Demandeurs                                                            | Dossiers            |
+| `AMO`                    | Tableau de bord, Acquisition, Demandeurs                                                            | Dossiers            |
+| `ALLERS_VERS`            | Tableau de bord, Acquisition, Demandeurs                                                            | Dossiers            |
+| `AMO_ET_ALLERS_VERS`     | Tableau de bord, Acquisition, Demandeurs                                                            | Dossiers            |
+
+- `canAccessAdministration` = `SUPER_ADMINISTRATEUR` / `ADMINISTRATEUR` / `ANALYSTE` /
+  **`AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS`** (ADR-0017). Le filtrage par onglet de
+  la rangée 1 reste celui de `ADMIN_NAV_TABS.minRoles` : les AMO/AV n'y voient que les
+  trois onglets stats (Tableau de bord, Acquisition, Demandeurs), les onglets sensibles
+  restant masqués.
 - `canAccessEspaceAgent` = `SUPER_ADMINISTRATEUR` / `AMO` / `ALLERS_VERS` /
   `AMO_ET_ALLERS_VERS`, **ou** `ANALYSTE` avec au moins un département. Aligné sur la
   garde du layout espace-agent. Les deux booléens sont calculés côté serveur et exposés
   via `/api/auth/check` (le statut départemental d'un analyste vit en base, pas dans le
   rôle).
-- `Statistiques` masqué pour `ANALYSTE` (onglet AMO-centré ; ses stats sont dans
-  `/administration`).
 
 ---
 
@@ -141,10 +149,19 @@ Repères de permissions par rôle :
   inerte pour lui — la garde est au niveau de l'action, pas par masquage. Voir
   [ADR-0014](../adr/0014-perimetre-donnees-role-analyste.md).
 - **AMO** : dossiers AMO (lecture + stats), création de dossier, commentaires
-  (création + édition/suppression des siens).
+  (création + édition/suppression des siens). **+ stats NATIONALES** (`STATS_READ`,
+  `USERS_STATS_READ`) : Tableau de bord, Acquisition et Demandeurs agrégés à l'échelle
+  nationale (ADR-0017) — jamais la liste nominative (`USERS_READ`/`USERS_DETAIL_READ`).
 - **ALLERS_VERS** : prospects (vue + détail + stats), création de dossier,
-  commentaires.
-- **AMO_ET_ALLERS_VERS** : union AMO + Allers-Vers.
+  commentaires. **+ stats NATIONALES** (idem AMO, ADR-0017).
+- **AMO_ET_ALLERS_VERS** : union AMO + Allers-Vers, **+ stats NATIONALES** (idem).
+
+> **Scope stats ≠ scope dossiers (ADR-0017).** L'ouverture des stats aux agents ne
+> touche PAS leur périmètre de dossiers (toujours territorial / par entreprise). Un
+> **scope stats** national dédié (`getStatsScopeFilters`) est utilisé par les surfaces
+> statistiques ; il ne renvoie jamais de filtre par entreprise. La page Demandeurs leur
+> sert une **projection anonymisée** (`toStatsProjection`) : ni nom/prénom, ni email/tél,
+> ni adresse/coordonnées, ni token AMO, ni identifiants DS.
 
 ---
 
@@ -161,6 +178,10 @@ données. Calculé dans
 | ALLERS_VERS         | non       | non                | oui               | ses départements / EPCI                         |
 | AMO_ET_ALLERS_VERS  | non       | oui                | oui               | union entreprise AMO + territoire AV            |
 | ANALYSTE            | non       | non                | non               | national (stats) si aucun dept, sinon ses depts |
+
+> La colonne « Périmètre » décrit le scope **dossiers**. Le scope **stats** est
+> distinct (ADR-0017) : national pour AMO / ALLERS_VERS / AMO_ET_ALLERS_VERS et
+> l'analyste national, territorial pour l'analyste départemental. Voir §4.
 
 Distinctions clés :
 
@@ -255,16 +276,18 @@ QUI/QUAND est écrit dans `parcours_actions` (type `dossier_reouvert`).
 
 ## 7. Fichiers clés
 
-| Rôle                             | Fichier                                                                                               |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Enum des rôles                   | `src/shared/domain/value-objects/user-role.enum.ts`                                                   |
-| Service de permissions           | `src/features/auth/permissions/services/permissions.service.ts`                                       |
-| Matrice permissions / onglets    | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                              |
-| Périmètre données agent          | `src/features/auth/permissions/services/agent-scope.service.ts`                                       |
-| Service RBAC (onglets)           | `src/features/auth/permissions/services/rbac.service.ts`                                              |
-| Config des routes / redirections | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                     |
-| Aiguillage auth                  | `src/middleware.ts`                                                                                   |
-| Garde espace agent               | `src/app/(backoffice)/espace-agent/layout.tsx`                                                        |
-| Garde administration             | `src/app/(backoffice)/administration/page.tsx`                                                        |
-| Garde entreprise AMO             | `src/app/(backoffice)/components/AmoGuard.tsx`                                                        |
-| Garde ré-ouverture demande       | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts` |
+| Rôle                             | Fichier                                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Enum des rôles                   | `src/shared/domain/value-objects/user-role.enum.ts`                                                          |
+| Service de permissions           | `src/features/auth/permissions/services/permissions.service.ts`                                              |
+| Matrice permissions / onglets    | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                                     |
+| Périmètre données agent          | `src/features/auth/permissions/services/agent-scope.service.ts`                                              |
+| Scope stats national (ADR-0017)  | `agent-scope.service.ts` (`getStatsScopeFilters`, `canViewNationalStats`)                                    |
+| Projection stats anonymisée      | `src/features/backoffice/administration/demandeurs/services/users-tracking.service.ts` (`toStatsProjection`) |
+| Service RBAC (onglets)           | `src/features/auth/permissions/services/rbac.service.ts`                                                     |
+| Config des routes / redirections | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                            |
+| Aiguillage auth                  | `src/middleware.ts`                                                                                          |
+| Garde espace agent               | `src/app/(backoffice)/espace-agent/layout.tsx`                                                               |
+| Garde administration             | `src/app/(backoffice)/administration/page.tsx`                                                               |
+| Garde entreprise AMO             | `src/app/(backoffice)/components/AmoGuard.tsx`                                                               |
+| Garde ré-ouverture demande       | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`        |

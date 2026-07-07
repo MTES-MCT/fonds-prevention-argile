@@ -1,19 +1,18 @@
 import { checkAgentAccess, ROUTES } from "@/features/auth";
 import { AccesNonAutoriseAdmin } from "@/shared/components";
 import { redirect } from "next/navigation";
-import { UserRole } from "@/shared/domain/value-objects";
 import UsersTrackingPanel from "./components/UsersTrackingPanel";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 /**
- * Page de suivi des demandeurs
+ * Page de suivi des demandeurs.
  *
- * Accessible par les roles :
- * - SUPER_ADMINISTRATEUR
- * - ADMINISTRATEUR
- * - ANALYSTE
+ * Accessible à tout agent (ADR-0017). La distinction fine se fait par permission
+ * dans le panneau : les admins (`USERS_DETAIL_READ`) voient la liste NOMINATIVE ;
+ * les autres agents (`USERS_STATS_READ` : analyste, AMO, Allers-Vers) ne voient que
+ * les onglets STATS agrégés/anonymisés — jamais l'identité des demandeurs.
  */
 export default async function DemandeursPage() {
   const access = await checkAgentAccess();
@@ -24,15 +23,6 @@ export default async function DemandeursPage() {
 
   if (!access.hasAccess) {
     return <AccesNonAutoriseAdmin />;
-  }
-
-  // Si AMO ou AMO_ET_ALLERS_VERS ou ALLERS_VERS : rediriger vers l'espace agent dedie
-  if (
-    access.user?.role === UserRole.AMO ||
-    access.user?.role === UserRole.AMO_ET_ALLERS_VERS ||
-    access.user?.role === UserRole.ALLERS_VERS
-  ) {
-    redirect(ROUTES.backoffice.espaceAgent.root);
   }
 
   return <UsersTrackingPanel />;

@@ -15,7 +15,7 @@ vi.mock("@/features/auth/permissions/services/permissions.service", () => ({
 }));
 
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
-  getScopeFilters: vi.fn(),
+  getStatsScopeFilters: vi.fn(),
 }));
 
 vi.mock("../services/statistiques.service", () => ({
@@ -27,7 +27,7 @@ vi.mock("@/shared/config/env.config", () => createEnvConfigMock());
 
 // Import des actions à tester APRÈS le mock des dépendances
 import { checkBackofficePermission } from "@/features/auth/permissions/services/permissions.service";
-import { getScopeFilters } from "@/features/auth/permissions/services/agent-scope.service";
+import { getStatsScopeFilters } from "@/features/auth/permissions/services/agent-scope.service";
 import { getStatistiques } from "../services/statistiques.service";
 import { getStatistiquesAction } from "./get-statistiques.action";
 
@@ -35,7 +35,7 @@ describe("statistiques.actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Par défaut, pas de filtre de scope (accès national)
-    vi.mocked(getScopeFilters).mockResolvedValue(null);
+    vi.mocked(getStatsScopeFilters).mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -61,7 +61,7 @@ describe("statistiques.actions", () => {
         expect(result.data.nombreComptesCreés).toBe(150);
       }
       expect(checkBackofficePermission).toHaveBeenCalledWith(BackofficePermission.STATS_READ);
-      expect(getScopeFilters).toHaveBeenCalled();
+      expect(getStatsScopeFilters).toHaveBeenCalled();
       expect(getStatistiques).toHaveBeenCalledWith(null, undefined, undefined, undefined);
     });
 
@@ -82,7 +82,7 @@ describe("statistiques.actions", () => {
         expect(result.data).toEqual(mockStats);
       }
       expect(checkBackofficePermission).toHaveBeenCalled();
-      expect(getScopeFilters).toHaveBeenCalled();
+      expect(getStatsScopeFilters).toHaveBeenCalled();
     });
 
     it("devrait autoriser l'accès pour ANALYSTE", async () => {
@@ -102,7 +102,7 @@ describe("statistiques.actions", () => {
         expect(result.data).toEqual(mockStats);
       }
       expect(checkBackofficePermission).toHaveBeenCalledWith(BackofficePermission.STATS_READ);
-      expect(getScopeFilters).toHaveBeenCalled();
+      expect(getStatsScopeFilters).toHaveBeenCalled();
     });
 
     it("devrait refuser l'accès pour AMO", async () => {
@@ -118,7 +118,7 @@ describe("statistiques.actions", () => {
       if (!result.success) {
         expect(result.error).toBe("Permission insuffisante pour consulter les statistiques");
       }
-      expect(getScopeFilters).not.toHaveBeenCalled();
+      expect(getStatsScopeFilters).not.toHaveBeenCalled();
       expect(getStatistiques).not.toHaveBeenCalled();
     });
 
@@ -135,7 +135,7 @@ describe("statistiques.actions", () => {
       if (!result.success) {
         expect(result.error).toBe("Permission insuffisante pour consulter les statistiques");
       }
-      expect(getScopeFilters).not.toHaveBeenCalled();
+      expect(getStatsScopeFilters).not.toHaveBeenCalled();
       expect(getStatistiques).not.toHaveBeenCalled();
     });
 
@@ -146,8 +146,9 @@ describe("statistiques.actions", () => {
         user: mockUser,
       });
 
-      const scopeFilters = { entrepriseAmoIds: ["entreprise-123"] };
-      vi.mocked(getScopeFilters).mockResolvedValue(scopeFilters);
+      // Analyste départemental : scope stats restreint à ses départements (jamais par entreprise).
+      const scopeFilters = { departements: ["75"] };
+      vi.mocked(getStatsScopeFilters).mockResolvedValue(scopeFilters);
 
       const mockStats = createMockStatistiques();
       vi.mocked(getStatistiques).mockResolvedValue(mockStats);
@@ -293,7 +294,7 @@ describe("statistiques.actions", () => {
       const result = await getStatistiquesAction();
 
       expect(result.success).toBe(false);
-      expect(getScopeFilters).not.toHaveBeenCalled();
+      expect(getStatsScopeFilters).not.toHaveBeenCalled();
       expect(getStatistiques).not.toHaveBeenCalled();
     });
 

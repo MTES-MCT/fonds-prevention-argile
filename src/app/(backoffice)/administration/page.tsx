@@ -2,18 +2,16 @@ import { checkAgentAccess, ROUTES } from "@/features/auth";
 import { AccesNonAutoriseAdmin } from "@/shared/components";
 import { redirect } from "next/navigation";
 import { TableauDeBord } from "./tableau-de-bord/TableauDeBord";
-import { UserRole } from "@/shared/domain/value-objects";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 /**
- * Page d'administration - Tableau de bord
+ * Page d'administration - Tableau de bord (agrégats nationaux).
  *
- * Accessible par les rôles :
- * - SUPER_ADMINISTRATEUR
- * - ADMINISTRATEUR
- * - ANALYSTE
+ * Accessible à tout agent (ADR-0017) : admins, analyste, et agents AMO /
+ * Allers-Vers (stats nationales ouvertes). Les données restent agrégées et
+ * non nominatives ; la garde fine des surfaces sensibles est ailleurs.
  */
 export default async function AdminPage() {
   // Vérifier que l'utilisateur est un agent
@@ -27,16 +25,6 @@ export default async function AdminPage() {
   // Si connecté mais pas agent : afficher erreur 403
   if (!access.hasAccess) {
     return <AccesNonAutoriseAdmin />;
-  }
-
-  // Si AMO ou AMO_ET_ALLERS_VERS : rediriger vers l'espace agent dédié
-  if (access.user?.role === UserRole.AMO || access.user?.role === UserRole.AMO_ET_ALLERS_VERS) {
-    redirect(ROUTES.backoffice.espaceAgent.root);
-  }
-
-  // Si ALLERS_VERS : rediriger vers l'espace agent dédié
-  if (access.user?.role === UserRole.ALLERS_VERS) {
-    redirect(ROUTES.backoffice.espaceAgent.root);
   }
 
   return <TableauDeBord />;

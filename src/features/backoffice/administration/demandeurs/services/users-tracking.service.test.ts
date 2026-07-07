@@ -13,7 +13,8 @@ vi.mock("@/shared/database/client", () => {
   return { db: { select: () => chain } };
 });
 
-import { getUsersWithParcours } from "./users-tracking.service";
+import { getUsersWithParcours, toStatsProjection } from "./users-tracking.service";
+import type { UserWithParcoursDetails } from "../domain/types/user-with-parcours.types";
 
 function row(userId: string, codeDepartement: string) {
   return {
@@ -42,5 +43,41 @@ describe("getUsersWithParcours — filtrage territorial", () => {
   it("ne renvoie rien si noAccess", async () => {
     const users = await getUsersWithParcours({ noAccess: true });
     expect(users).toEqual([]);
+  });
+});
+
+describe("toStatsProjection — anonymisation des cas nuls (ADR-0017)", () => {
+  it("gère un demandeur minimal (parcours/validation/simulation absents) sans planter", () => {
+    const minimal = {
+      user: {
+        id: "u-1",
+        fcId: "fc-secret",
+        email: "a@b.fr",
+        name: "D.",
+        firstName: "Jean",
+        telephone: "0600000000",
+        sourceAcquisition: null,
+        sourceAcquisitionPrecision: null,
+        partnerSource: null,
+        lastLogin: new Date("2024-01-01"),
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
+      },
+      parcours: null,
+      rgaSimulation: null,
+      amoValidation: null,
+      dossiers: { eligibilite: null, diagnostic: null, devis: null, factures: null },
+    } as UserWithParcoursDetails;
+
+    const projected = toStatsProjection(minimal);
+
+    // Identité retirée même sur un objet minimal
+    expect(projected.user.fcId).toBeNull();
+    expect(projected.user.firstName).toBeNull();
+    expect(projected.user.email).toBeNull();
+    // Les branches nulles restent nulles (pas d'accès à des sous-champs undefined)
+    expect(projected.rgaSimulation).toBeNull();
+    expect(projected.amoValidation).toBeNull();
+    expect(projected.dossiers.eligibilite).toBeNull();
   });
 });

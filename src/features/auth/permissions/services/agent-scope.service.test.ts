@@ -31,14 +31,21 @@ vi.mock("@/shared/database/repositories/parcours-prevention.repository", async (
   };
 });
 
+vi.mock("@/features/auth/services/user.service", () => ({
+  getCurrentUser: vi.fn(),
+}));
+
 import { agentPermissionsRepository, allersVersRepository, entreprisesAmoRepo } from "@/shared/database";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import { getCurrentUser } from "@/features/auth/services/user.service";
 import {
   calculateAgentScope,
   canAccessDossier,
   canReopenRefusedDemande,
+  canViewNationalStats,
   canViewStatsForTerritory,
   getScopeFilterConditions,
+  getStatsScopeFilters,
   isAmoConfigured,
   verifyProspectTerritoryAccess,
 } from "./agent-scope.service";
@@ -744,6 +751,70 @@ describe("agent-scope.service", () => {
       });
 
       expect(error).toBe("Parcours non trouvé");
+    });
+  });
+
+  describe("canViewNationalStats (ADR-0017)", () => {
+    it.each([
+      UserRole.SUPER_ADMINISTRATEUR,
+      UserRole.ADMINISTRATEUR,
+      UserRole.ANALYSTE,
+      UserRole.AMO,
+      UserRole.ALLERS_VERS,
+      UserRole.AMO_ET_ALLERS_VERS,
+    ])("autorise les stats nationales pour %s", (role) => {
+      expect(canViewNationalStats(role)).toBe(true);
+    });
+
+    it("refuse PARTICULIER et un rôle inconnu", () => {
+      expect(canViewNationalStats(UserRole.PARTICULIER)).toBe(false);
+      expect(canViewNationalStats("ROLE_INCONNU")).toBe(false);
+    });
+  });
+
+  describe("getStatsScopeFilters (scope STATS distinct du scope DOSSIERS, ADR-0017)", () => {
+    const mockUser = (role: UserRole, agentId = "agent-1") =>
+      ({ id: "u-1", agentId, role, entrepriseAmoId: "entreprise-1", allersVersId: "av-1" }) as never;
+
+    it("refuse (noAccess) si non authentifié", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValue(null as never);
+      expect(await getStatsScopeFilters()).toEqual({ noAccess: true });
+    });
+
+    it("refuse (noAccess) pour PARTICULIER", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValue(mockUser(UserRole.PARTICULIER));
+      expect(await getStatsScopeFilters()).toEqual({ noAccess: true });
+    });
+
+    it.each([UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR])(
+      "renvoie null (national) pour l'admin %s",
+      async (role) => {
+        vi.mocked(getCurrentUser).mockResolvedValue(mockUser(role));
+        expect(await getStatsScopeFilters()).toBeNull();
+      }
+    );
+
+    it.each([UserRole.AMO, UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS])(
+      "renvoie null (national) pour l'agent %s — JAMAIS scopé à son entreprise/territoire",
+      async (role) => {
+        vi.mocked(getCurrentUser).mockResolvedValue(mockUser(role));
+        const filters = await getStatsScopeFilters();
+        expect(filters).toBeNull();
+        // Sécurité : aucun filtre par entreprise ne doit fuiter dans le scope stats.
+        expect(agentPermissionsRepository.getDepartementsByAgentId).not.toHaveBeenCalled();
+      }
+    );
+
+    it("renvoie null (national) pour un ANALYSTE sans département", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValue(mockUser(UserRole.ANALYSTE));
+      vi.mocked(agentPermissionsRepository.getDepartementsByAgentId).mockResolvedValue([]);
+      expect(await getStatsScopeFilters()).toBeNull();
+    });
+
+    it("restreint aux départements pour un ANALYSTE départemental (suivi DDT)", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValue(mockUser(UserRole.ANALYSTE));
+      vi.mocked(agentPermissionsRepository.getDepartementsByAgentId).mockResolvedValue(["33", "40"]);
+      expect(await getStatsScopeFilters()).toEqual({ departements: ["33", "40"] });
     });
   });
 });
