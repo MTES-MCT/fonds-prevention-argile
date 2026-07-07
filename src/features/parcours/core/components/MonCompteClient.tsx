@@ -14,6 +14,7 @@ import { AmoMode } from "../../amo/domain/value-objects/departements-amo";
 import { getStepBadgeLabel } from "../../amo/domain/value-objects/step-list";
 import { useAmoMode } from "../../amo/hooks";
 import { DSStatus } from "../../dossiers-ds/domain";
+import type { PiecesByStep } from "../../dossiers-ds/domain/pieces-justificatives";
 import {
   CalloutAmoEnAttente,
   CalloutAmoLogementNonEligible,
@@ -43,7 +44,7 @@ import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/P
 import { useMigrateRGAToDB } from "../hooks";
 import { formatDate } from "@/shared/utils";
 
-export default function MonCompteClient() {
+export default function MonCompteClient({ piecesByStep }: { piecesByStep?: PiecesByStep }) {
   // Migration RGA si nécessaire (après connexion FC)
   useMigrateRGAToDB();
 
@@ -219,7 +220,7 @@ export default function MonCompteClient() {
       </section>
 
       {/* Sections communes */}
-      <StepDetailSection />
+      <StepDetailSection piecesByStep={piecesByStep} />
 
       {/* Section "Pour en savoir plus" si logement non éligible */}
       {(statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE || isQualifiedNonEligible) && (

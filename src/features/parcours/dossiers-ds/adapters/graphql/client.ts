@@ -211,6 +211,14 @@ export class DemarchesSimplifieesClient {
             ... on MultipleDropDownListChampDescriptor {
               options
             }
+            ... on PieceJustificativeChampDescriptor {
+              fileTemplate {
+                filename
+                url
+                contentType
+                byteSize
+              }
+            }
             ... on RepetitionChampDescriptor {
               champDescriptors {
                 __typename
@@ -218,6 +226,14 @@ export class DemarchesSimplifieesClient {
                 label
                 description
                 required
+                ... on PieceJustificativeChampDescriptor {
+                  fileTemplate {
+                    filename
+                    url
+                    contentType
+                    byteSize
+                  }
+                }
               }
             }
           }

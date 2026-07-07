@@ -39,6 +39,15 @@ export interface ChampDescriptor {
   required: boolean;
   options?: string[];
   champDescriptors?: ChampDescriptor[];
+  // Modèle téléchargeable, présent uniquement sur PieceJustificativeChampDescriptor.
+  fileTemplate?: FileTemplate | null;
+}
+
+export interface FileTemplate {
+  filename: string;
+  url: string;
+  contentType?: string;
+  byteSize?: number;
 }
 
 export interface Dossier {

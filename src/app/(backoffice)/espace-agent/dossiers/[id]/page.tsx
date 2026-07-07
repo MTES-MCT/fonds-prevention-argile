@@ -10,6 +10,7 @@ import { ActionsRealisees } from "../../shared";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
 import { DossierStatusBadge } from "./components/DossierStatusBadge";
 import { PiecesJustificatives } from "./components/PiecesJustificatives";
+import { getPiecesJustificativesForStep } from "@/features/parcours/dossiers-ds/services/pieces-justificatives.service";
 import { GagnezDuTempsTravaux } from "./components/GagnezDuTempsTravaux";
 import { ArchiveDossierButton } from "./components/ArchiveDossierButton";
 import { ReouvrirDemandeButton } from "./components/ReouvrirDemandeButton";
@@ -46,6 +47,9 @@ export default async function DossierDetailPage({ params }: PageProps) {
 
   const dossier = result.data;
   const nomComplet = formatNomComplet(dossier.demandeur.prenom, dossier.demandeur.nom);
+
+  // Pièces à prévoir pour l'étape courante, tirées de la démarche DN correspondante.
+  const piecesJustificatives = await getPiecesJustificativesForStep(dossier.currentStep);
 
   // Bouton "Ré-ouvrir" : visible sur une demande refusée, pour les rôles habilités
   // (le périmètre fin entreprise/territoire est revérifié côté action).
@@ -167,7 +171,10 @@ export default async function DossierDetailPage({ params }: PageProps) {
                 </div>
               )}
               <div className="fr-mb-4w">
-                <PiecesJustificatives />
+                <PiecesJustificatives
+                  pieces={piecesJustificatives}
+                  stepLabel={DOSSIER_STEP_LABELS[dossier.currentStep]}
+                />
               </div>
               <div className="fr-mb-4w">
                 <InfoLogement

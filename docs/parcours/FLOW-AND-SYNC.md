@@ -488,6 +488,35 @@ n'a rien finalisé côté DN, fréquent et souvent normal).
 > réussie, le parcours **quitte** l'état sync-erreur au prochain chargement. L'historique
 > `sync_run_entries` reste conservé.
 
+### 7.5 Pièces justificatives à prévoir : source DN dynamique (+ modèles)
+
+La liste des pièces justificatives « à prévoir pour la prochaine étape » (affichée sur le
+détail dossier AMO **et sur les cartes d'étapes à venir du parcours demandeur**,
+`/mon-compte`) n'est plus codée en dur : elle est tirée
+**dynamiquement de la démarche DN** de l'étape courante via
+`getPiecesJustificativesForStep(step)`
+(`dossiers-ds/services/pieces-justificatives.service.ts`). Le service lit
+`activeRevision.champDescriptors` (query `getDemarcheSchema` enrichie du fragment
+`... on PieceJustificativeChampDescriptor { fileTemplate { filename url … } }`), ne garde
+que les descripteurs de pièce, et expose `label / description / required / modele`
+(modèle téléchargeable DN) + une **aide éditoriale** statique (« où l'obtenir » :
+impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
+
+- Résolution étape → démarche : `resolveDemarcheNumberForStep` (amont éligibilité →
+  démarche éligibilité, sinon 1:1).
+- Cache : appel DN enveloppé dans `unstable_cache` (revalidate 6 h, tag `ds-pieces`) —
+  les schémas DN bougent rarement.
+- Résilience : sur erreur DN ou liste vide, repli sur `PIECES_FALLBACK`
+  (`pieces-fallback.const.ts`) — jamais de section vide.
+- Surface demandeur : `/mon-compte` (Server Component) précharge les pièces des étapes à
+  venir via `getPiecesJustificativesByStep` et les passe en prop `piecesByStep` jusqu'aux
+  cartes `StepDetail<Step>`, qui rendent le composant repliable `PiecesAPrevoir` (élément
+  natif `<details>`, pas de JS DSFR).
+- Vérification / inventaire : `pnpm ds:fetch-pieces` liste, par démarche configurée, les
+  pièces et l'URL de leur modèle (confirme la présence de `fileTemplate`).
+- Surface agent restante (hors périmètre) : `GagnezDuTemps` (pages `demandes/[id]` et
+  `prospects/[id]`) porte encore une liste codée en dur — à converger ultérieurement.
+
 ---
 
 ## 8. Fichiers clés
@@ -506,6 +535,8 @@ n'a rien finalisé côté DN, fréquent et souvent normal).
 | Service sync DS                                | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                                |
 | Service sync batch (CRON)                      | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`                    |
 | Vérif permissions / état démarches DS          | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                         |
+| Pièces justificatives (service dynamique DN)   | `dossiers-ds/services/pieces-justificatives.service.ts`, `domain/pieces-justificatives/*`      |
+| Probe pièces + modèles DN                      | `scripts/ops/ds/fetch-pieces-justificatives.ts` (`pnpm ds:fetch-pieces`)                       |
 | Reset dossier éligibilité sync-erreur          | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`) |
 | Sonde lecture-seule dossiers DN                | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                        |
 | Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                            |
