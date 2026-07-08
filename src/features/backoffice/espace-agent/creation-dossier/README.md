@@ -202,6 +202,14 @@ L'envoi a lieu dans `creation-dossier.service.ts` lorsque `createDossierAllerVer
 
 À la fin de la création, l'agent est redirigé vers la page liste pertinente selon son rôle (cf. `getPostCreationRedirectUrl`).
 
+## Renvoi de l'invitation (demandeur non réclamé)
+
+L'email d'invitation n'était envoyé qu'une fois, à la création. Si le demandeur ne clique jamais le lien (mail perdu, spam, incompréhension), son stub reste à l'étape `INVITATION` sans moyen de relance. Un bouton **« Renvoyer l'email d'invitation »** est désormais affiché sur le détail prospect (`prospects/[id]`) quand `!hasUserClaimed && invitationSentAt`.
+
+- Service : `services/renvoyer-invitation.service.ts` (`renvoyerInvitationClaim`) — **réutilise** le `claimToken` existant s'il est encore valide, **régénère** sinon (TTL frais via `userRepo.setClaimToken`), puis rappelle `sendClaimDossierEmail`. Gardes métier : dossier créé par un agent, non archivé, demandeur non réclamé (`fcId`/`claimedAt` nuls).
+- Action : `prospects/actions/renvoyer-invitation.actions.ts` — accès aligné sur le détail prospect (`verifyProspectTerritoryAccess`, hors territoire = refus) + audit `parcours_actions` (type `invitation_renvoyee`).
+- UI : `prospects/[id]/components/RenvoyerInvitationButton.tsx`.
+
 ## Limites connues & TODO
 
 - **Stubs orphelins** : si le demandeur ne clique jamais sur le lien et n'a pas le même email FC, le stub reste indéfiniment. Pas de cleanup automatique. Envisager une tâche de purge > 6 mois.
