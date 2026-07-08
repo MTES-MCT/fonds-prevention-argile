@@ -8,6 +8,7 @@ import { prefillClient } from "../../dossiers-ds/adapters";
 import { createDossierForCurrentStep, getDossierByStep } from "../../dossiers-ds/services";
 import { parcoursRepo, userRepo } from "@/shared/database";
 import { DS_FIELDS_ELIGIBILITE } from "../../dossiers-ds/domain";
+import { DS_FIELD_IDS } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
 import { createDebugLogger } from "@/shared/utils";
 import { PartialRGASimulationData } from "@/features/simulateur";
 
@@ -133,14 +134,13 @@ export async function createEligibiliteDossier(
 
     // Ajouter les informations de l'AMO au prefill uniquement si une AMO est sélectionnée
     if (amo) {
-      prefillData[`champ_Q2hhbXAtNTQxOTQyOQ==`] = amo.siret;
-      prefillData[`champ_Q2hhbXAtNTQxOTQzMg==`] = amo.adresse;
-      prefillData.champ_amo_email = amo.emails.split(";")[0].trim();
-      if (amo.telephone) {
-        prefillData.champ_amo_telephone = amo.telephone;
-      }
+      prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.SIRET_AMO}`] = amo.siret;
+      prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.EMAIL_AMO}`] = amo.emails.split(";")[0].trim();
       if (amo.adresse) {
-        prefillData.champ_amo_adresse = amo.adresse;
+        prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.ADRESSE_AMO}`] = amo.adresse;
+      }
+      if (amo.telephone) {
+        prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`] = amo.telephone;
       }
     }
 
