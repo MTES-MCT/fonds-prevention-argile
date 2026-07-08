@@ -103,6 +103,9 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 - À chaque fin de fonctionnalité (groupe de commits / PR), **bumper la version** dans
   `package.json` selon SemVer : `feat` → minor (`1.17.0` → `1.18.0`), `fix`/`chore` →
   patch. Inclure le bump dans le même lot de commits que la feature.
+- À chaque fin de fonctionnalité (groupe de commits / PR), **mettre à jour le `README.md`
+  si nécessaire** (nouvelle commande, variable d'env, prérequis, changement d'usage
+  visible). Si rien de pertinent ne change côté README, ne pas y toucher.
 
 ### Documentation à chaque PR / groupe de commits / fonctionnalité
 
