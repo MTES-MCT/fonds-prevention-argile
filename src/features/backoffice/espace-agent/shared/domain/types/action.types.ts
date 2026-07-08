@@ -15,6 +15,11 @@ export const ACTION_TYPE_COMMENTAIRE_LIBRE = "commentaire_libre";
  * refusée par l'AMO. Tracée dans l'historique pour savoir qui a ré-ouvert et quand.
  */
 export const ACTION_TYPE_DOSSIER_REOUVERT = "dossier_reouvert";
+/**
+ * Action système : renvoi de l'email d'invitation "claim dossier" à un demandeur
+ * dont le dossier a été pré-créé par un agent et qui ne l'a pas encore réclamé.
+ */
+export const ACTION_TYPE_INVITATION_RENVOYEE = "invitation_renvoyee";
 /** Valeur de type d'action "Autre" (nécessite une précision) */
 export const ACTION_TYPE_AUTRE = "autre";
 
@@ -83,7 +88,10 @@ export const ACTION_LABELS_BY_VALUE: Record<string, string> = ACTION_TYPE_GROUPS
     return acc;
   },
   // Types système hors formulaire : pas dans ACTION_TYPE_GROUPS, mais affichables dans l'historique.
-  { [ACTION_TYPE_DOSSIER_REOUVERT]: "Demande ré-ouverte" } as Record<string, string>
+  {
+    [ACTION_TYPE_DOSSIER_REOUVERT]: "Demande ré-ouverte",
+    [ACTION_TYPE_INVITATION_RENVOYEE]: "Invitation renvoyée",
+  } as Record<string, string>
 );
 
 /** Liste plate de toutes les valeurs de type d'action (pour validation) */

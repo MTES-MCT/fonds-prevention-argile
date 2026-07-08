@@ -11,6 +11,7 @@ import { ActionsRealisees } from "../../shared";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { ArchiveProspectButton } from "./components/ArchiveProspectButton";
 import { CalloutSimulationAEffectuer } from "./components/CalloutSimulationAEffectuer";
+import { RenvoyerInvitationButton } from "./components/RenvoyerInvitationButton";
 import { QualificationSection } from "./components/qualification/QualificationSection";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
@@ -144,6 +145,10 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
         {/* Section informations */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
+            {/* Invitation envoyée mais compte pas encore réclamé → renvoi possible. */}
+            {!prospect.hasUserClaimed && prospect.invitationSentAt && (
+              <RenvoyerInvitationButton parcoursId={prospect.parcoursId} email={prospect.particulier.email} />
+            )}
             {!prospect.hasSimulation && (
               <CalloutSimulationAEffectuer parcoursId={prospect.parcoursId} hasUserClaimed={prospect.hasUserClaimed} />
             )}

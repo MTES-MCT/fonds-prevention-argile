@@ -157,6 +157,15 @@ export class UserRepository extends BaseRepository<User> {
   }
 
   /**
+   * (Ré)affecte un claim token à un user stub existant.
+   * Utilisé au renvoi d'invitation quand le token d'origine a expiré : régénère
+   * un lien de rattachement (TTL frais). Ne touche pas au reste du stub.
+   */
+  async setClaimToken(userId: string, token: string, expiresAt: Date): Promise<void> {
+    await db.update(users).set({ claimToken: token, claimTokenExpiresAt: expiresAt }).where(eq(users.id, userId));
+  }
+
+  /**
    * Rattache un user stub à un compte FranceConnect.
    * Met le fcId + date de claim, invalide le token.
    */
