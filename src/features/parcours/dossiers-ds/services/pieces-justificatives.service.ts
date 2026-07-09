@@ -117,8 +117,10 @@ export async function getFreshModeleUrl(demarcheNumber: number, champId: string)
   return piece?.fileTemplate?.url ?? null;
 }
 
+// `v2` : invalide les entrées cachées avant le passage aux URLs proxy (elles
+// contenaient l'URL temporaire DN directe → 403 « Unauthorized temp url invalide »).
 const getCachedPieces = (demarcheNumber: number) =>
-  unstable_cache(() => fetchPiecesFromDN(demarcheNumber), ["ds-pieces", String(demarcheNumber)], {
+  unstable_cache(() => fetchPiecesFromDN(demarcheNumber), ["ds-pieces", "v2", String(demarcheNumber)], {
     revalidate: REVALIDATE_SECONDS,
     tags: [CACHE_TAG],
   })();
