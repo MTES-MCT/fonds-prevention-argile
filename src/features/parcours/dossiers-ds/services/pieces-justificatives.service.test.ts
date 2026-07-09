@@ -28,7 +28,12 @@ vi.mock("../adapters/graphql/client", () => ({
   graphqlClient: { getDemarcheSchema: vi.fn() },
 }));
 
-import { getPiecesJustificativesForStep, resolveDemarcheNumberForStep } from "./pieces-justificatives.service";
+import {
+  getConfiguredDemarcheNumbers,
+  getFreshModeleUrl,
+  getPiecesJustificativesForStep,
+  resolveDemarcheNumberForStep,
+} from "./pieces-justificatives.service";
 import { PIECES_FALLBACK } from "../domain/pieces-justificatives";
 import { graphqlClient } from "../adapters/graphql/client";
 
@@ -97,7 +102,8 @@ describe("getPiecesJustificativesForStep", () => {
       id: "champ-2",
       required: false,
       description: "À faire remplir par le mandataire.",
-      modele: { filename: "cerfa.pdf", url: "https://dn/cerfa.pdf" },
+      // URL proxy interne, pas l'URL temporaire DN (qui expire vite → 403 si cachée).
+      modele: { filename: "cerfa.pdf", url: `/api/ds/piece-modele?demarche=${IDS.eligibilite}&champ=champ-2` },
     });
   });
 
@@ -147,5 +153,46 @@ describe("getPiecesJustificativesForStep", () => {
     const [piece] = await getPiecesJustificativesForStep(Step.ELIGIBILITE);
 
     expect(Object.keys(piece).sort()).toEqual(["aide", "description", "id", "label", "modele", "required"].sort());
+  });
+});
+
+describe("getConfiguredDemarcheNumbers", () => {
+  it("renvoie les 4 démarches configurées comme whitelist", () => {
+    const numbers = getConfiguredDemarcheNumbers();
+    expect(numbers.has(Number(IDS.eligibilite))).toBe(true);
+    expect(numbers.has(Number(IDS.diagnostic))).toBe(true);
+    expect(numbers.has(Number(IDS.devis))).toBe(true);
+    expect(numbers.has(Number(IDS.factures))).toBe(true);
+    expect(numbers.has(999999)).toBe(false);
+  });
+});
+
+describe("getFreshModeleUrl", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renvoie l'URL temporaire fraîche du champ demandé (lue en direct, non cachée)", async () => {
+    mockedSchema.mockResolvedValue(schemaWith([pieceIdentite, pieceCerfa]));
+
+    const url = await getFreshModeleUrl(Number(IDS.eligibilite), "champ-2");
+
+    expect(url).toBe("https://dn/cerfa.pdf");
+    expect(mockedSchema).toHaveBeenCalledWith(Number(IDS.eligibilite));
+  });
+
+  it("renvoie null si le champ est introuvable", async () => {
+    mockedSchema.mockResolvedValue(schemaWith([pieceCerfa]));
+    expect(await getFreshModeleUrl(Number(IDS.eligibilite), "inconnu")).toBeNull();
+  });
+
+  it("renvoie null si le champ n'a pas de modèle", async () => {
+    mockedSchema.mockResolvedValue(schemaWith([pieceIdentite]));
+    expect(await getFreshModeleUrl(Number(IDS.eligibilite), "champ-1")).toBeNull();
+  });
+
+  it("renvoie null si la démarche est injoignable", async () => {
+    mockedSchema.mockResolvedValue(null);
+    expect(await getFreshModeleUrl(Number(IDS.eligibilite), "champ-2")).toBeNull();
   });
 });

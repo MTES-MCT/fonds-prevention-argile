@@ -17,6 +17,33 @@ const PIECE_TYPENAME = "PieceJustificativeChampDescriptor";
 const REVALIDATE_SECONDS = 60 * 60 * 6;
 const CACHE_TAG = "ds-pieces";
 
+/** Route proxy qui régénère l'URL temporaire du modèle DN au moment du clic. */
+export const MODELE_PROXY_PATH = "/api/ds/piece-modele";
+
+/**
+ * URL interne (proxy) du modèle d'une pièce. On ne sert jamais l'URL `fileTemplate`
+ * de DN directement : c'est un lien temporaire signé (Swift TempURL) qui expire vite,
+ * alors que la liste des pièces est mise en cache 6 h → on servirait un lien périmé
+ * (« Unauthorized temp url invalide »). Le proxy régénère l'URL fraîche à chaque clic.
+ */
+export function buildModeleProxyUrl(demarcheNumber: number, champId: string): string {
+  const params = new URLSearchParams({ demarche: String(demarcheNumber), champ: champId });
+  return `${MODELE_PROXY_PATH}?${params.toString()}`;
+}
+
+/** Numéros de démarche configurés — whitelist pour la route proxy (anti open-proxy). */
+export function getConfiguredDemarcheNumbers(): Set<number> {
+  const env = getServerEnv();
+  return new Set(
+    [
+      env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE,
+      env.DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC,
+      env.DEMARCHES_SIMPLIFIEES_ID_DEVIS,
+      env.DEMARCHES_SIMPLIFIEES_ID_FACTURES,
+    ].map((id) => parseInt(id, 10))
+  );
+}
+
 /**
  * Résout le numéro de démarche DN à interroger pour l'étape donnée.
  * Toutes les étapes en amont de l'éligibilité (invitation, choix AMO) visent la
@@ -48,10 +75,11 @@ function collectPieceDescriptors(champDescriptors: ChampDescriptor[]): ChampDesc
   return pieces;
 }
 
-function toPieceJustificative(champ: ChampDescriptor): PieceJustificative {
+function toPieceJustificative(champ: ChampDescriptor, demarcheNumber: number): PieceJustificative {
+  // L'URL exposée est le proxy interne (stable, cachable) — jamais l'URL temporaire DN.
   const modele =
     champ.fileTemplate?.url && champ.fileTemplate.filename
-      ? { filename: champ.fileTemplate.filename, url: champ.fileTemplate.url }
+      ? { filename: champ.fileTemplate.filename, url: buildModeleProxyUrl(demarcheNumber, champ.id) }
       : undefined;
   return {
     id: champ.id,
@@ -73,7 +101,20 @@ async function fetchPiecesFromDN(demarcheNumber: number): Promise<PieceJustifica
     throw new Error(`Schéma démarche ${demarcheNumber} indisponible`);
   }
   const champDescriptors = demarche.activeRevision?.champDescriptors ?? [];
-  return collectPieceDescriptors(champDescriptors).map(toPieceJustificative);
+  return collectPieceDescriptors(champDescriptors).map((champ) => toPieceJustificative(champ, demarcheNumber));
+}
+
+/**
+ * URL fraîche du modèle (fileTemplate) d'une pièce donnée, lue en direct depuis DN.
+ * Volontairement NON cachée : le lien temporaire DN expire vite, on le régénère à
+ * chaque appel. Renvoie null si la démarche/le champ est introuvable ou sans modèle.
+ */
+export async function getFreshModeleUrl(demarcheNumber: number, champId: string): Promise<string | null> {
+  const demarche = await graphqlClient.getDemarcheSchema(demarcheNumber);
+  if (!demarche) return null;
+  const champDescriptors = demarche.activeRevision?.champDescriptors ?? [];
+  const piece = collectPieceDescriptors(champDescriptors).find((champ) => champ.id === champId);
+  return piece?.fileTemplate?.url ?? null;
 }
 
 const getCachedPieces = (demarcheNumber: number) =>
