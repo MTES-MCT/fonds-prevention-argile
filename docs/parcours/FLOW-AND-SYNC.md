@@ -506,6 +506,17 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
   démarche éligibilité, sinon 1:1).
 - Cache : appel DN enveloppé dans `unstable_cache` (revalidate 6 h, tag `ds-pieces`) —
   les schémas DN bougent rarement.
+- **Modèle téléchargeable via proxy (pas l'URL DN directe)** : `fileTemplate.url` est un
+  lien temporaire signé (Swift TempURL) qui **expire en quelques heures**. Le mettre en
+  cache 6 h faisait servir des liens périmés → **403 « Unauthorized temp url invalide »**
+  sur toutes les PJ. Le service n'expose donc plus l'URL DN mais une **URL proxy interne**
+  stable (`buildModeleProxyUrl` → `/api/ds/piece-modele?demarche=<n>&champ=<id>`). La route
+  (`src/app/api/ds/piece-modele/route.ts`, `force-dynamic`) régénère l'URL DN fraîche au
+  clic (`getFreshModeleUrl`, non cachée) et redirige en 302 `no-store`. La démarche est
+  restreinte à la whitelist configurée (`getConfiguredDemarcheNumbers`) et la cible du 302
+  provient de DN, pas de l'entrée utilisateur → pas d'open redirect. Les composants
+  (`PiecesAPrevoir`, `PiecesJustificatives`) rendent `piece.modele.url` tel quel : aucun
+  changement UI.
 - Résilience : sur erreur DN ou liste vide, repli sur `PIECES_FALLBACK`
   (`pieces-fallback.const.ts`) — jamais de section vide.
 - Surface demandeur : `/mon-compte` (Server Component) précharge les pièces des étapes à
@@ -536,6 +547,7 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Service sync batch (CRON)                      | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`                    |
 | Vérif permissions / état démarches DS          | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                         |
 | Pièces justificatives (service dynamique DN)   | `dossiers-ds/services/pieces-justificatives.service.ts`, `domain/pieces-justificatives/*`      |
+| Proxy modèle PJ (URL temporaire DN régénérée)  | `src/app/api/ds/piece-modele/route.ts` (`buildModeleProxyUrl` / `getFreshModeleUrl`)           |
 | Probe pièces + modèles DN                      | `scripts/ops/ds/fetch-pieces-justificatives.ts` (`pnpm ds:fetch-pieces`)                       |
 | Reset dossier éligibilité sync-erreur          | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`) |
 | Sonde lecture-seule dossiers DN                | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                        |
