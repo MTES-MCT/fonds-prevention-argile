@@ -61,8 +61,7 @@ function PieceItem({ piece }: { piece: PieceJustificative }) {
             href={piece.modele.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="fr-link fr-link--sm fr-icon-download-line fr-link--icon-left"
-            download>
+            className="fr-link fr-link--sm fr-icon-download-line fr-link--icon-left">
             Télécharger le modèle
           </a>
         </p>
