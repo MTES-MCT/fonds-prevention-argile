@@ -7,13 +7,21 @@ import { renvoyerInvitationAction } from "@/features/backoffice/espace-agent/pro
 interface RenvoyerInvitationButtonProps {
   parcoursId: string;
   email: string;
+  /**
+   * `callout` (défaut) : callout jaune complet + bouton — pour le détail prospect,
+   * où aucun message d'invitation n'est affiché par ailleurs.
+   * `inline` : bouton + feedback seuls — pour le détail dossier AMO, où
+   * `InfoDossierCallout` affiche déjà le message d'invitation.
+   */
+  variant?: "callout" | "inline";
 }
 
 /**
- * Callout + bouton affiché quand le demandeur a été invité par un agent mais n'a
- * pas encore créé son compte (user stub non réclamé). Renvoie l'email d'invitation.
+ * Bouton de renvoi de l'email d'invitation "claim dossier" à un demandeur
+ * pré-créé par un agent et non encore réclamé. Partagé entre le détail prospect
+ * (AV pur) et le détail dossier (AMO).
  */
-export function RenvoyerInvitationButton({ parcoursId, email }: RenvoyerInvitationButtonProps) {
+export function RenvoyerInvitationButton({ parcoursId, email, variant = "callout" }: RenvoyerInvitationButtonProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -31,6 +39,31 @@ export function RenvoyerInvitationButton({ parcoursId, email }: RenvoyerInvitati
     });
   };
 
+  const button = (
+    <button
+      type="button"
+      className="fr-btn fr-btn--sm fr-icon-mail-line fr-btn--icon-left"
+      onClick={handleClick}
+      disabled={isPending}>
+      {isPending ? "Envoi en cours..." : "Renvoyer l'email d'invitation"}
+    </button>
+  );
+
+  const alert = feedback && (
+    <div className={`fr-alert fr-alert--${feedback.type} fr-alert--sm fr-mt-2w`} role="alert">
+      <p>{feedback.message}</p>
+    </div>
+  );
+
+  if (variant === "inline") {
+    return (
+      <div className="fr-mt-2w">
+        {button}
+        {alert}
+      </div>
+    );
+  }
+
   return (
     <div className="fr-callout fr-icon-mail-line fr-callout--yellow-moutarde fr-mb-4w">
       <h3 className="fr-callout__title fr-text--md">Le demandeur n&apos;a pas encore créé son compte</h3>
@@ -38,18 +71,8 @@ export function RenvoyerInvitationButton({ parcoursId, email }: RenvoyerInvitati
         Il a été invité par email à créer son compte via FranceConnect mais ne l&apos;a pas encore fait. Vous pouvez lui
         renvoyer l&apos;email d&apos;invitation.
       </p>
-      <button
-        type="button"
-        className="fr-btn fr-btn--sm fr-icon-mail-line fr-btn--icon-left"
-        onClick={handleClick}
-        disabled={isPending}>
-        {isPending ? "Envoi en cours..." : "Renvoyer l'email d'invitation"}
-      </button>
-      {feedback && (
-        <div className={`fr-alert fr-alert--${feedback.type} fr-alert--sm fr-mt-2w`} role="alert">
-          <p>{feedback.message}</p>
-        </div>
-      )}
+      {button}
+      {alert}
     </div>
   );
 }
