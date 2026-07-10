@@ -204,11 +204,16 @@ L'envoi a lieu dans `creation-dossier.service.ts` lorsque `createDossierAllerVer
 
 ## Renvoi de l'invitation (demandeur non réclamé)
 
-L'email d'invitation n'était envoyé qu'une fois, à la création. Si le demandeur ne clique jamais le lien (mail perdu, spam, incompréhension), son stub reste à l'étape `INVITATION` sans moyen de relance. Un bouton **« Renvoyer l'email d'invitation »** est désormais affiché sur le détail prospect (`prospects/[id]`) quand `!hasUserClaimed && invitationSentAt`.
+L'email d'invitation n'était envoyé qu'une fois, à la création. Si le demandeur ne clique jamais le lien (mail perdu, spam, incompréhension), son stub reste à l'étape `INVITATION` sans moyen de relance. Un bouton **« Renvoyer l'email d'invitation »** est désormais affiché sur les **deux** surfaces de détail où atterrit une invitation non réclamée :
+
+- **Détail prospect** (`prospects/[id]`, AV pur sans validation AMO) : callout complet quand `!hasUserClaimed && invitationSentAt`.
+- **Détail dossier** (`dossiers/[id]`, invitation créée en mode `amo` → validation AMO présente) : bouton inline sous `InfoDossierCallout` quand `currentStep === INVITATION` et validation != `LOGEMENT_NON_ELIGIBLE`. Sur cette page, `INVITATION` équivaut à « non réclamé » (le claim fait sortir de l'étape via `validateInvitation`).
+
+Détails techniques :
 
 - Service : `services/renvoyer-invitation.service.ts` (`renvoyerInvitationClaim`) — **réutilise** le `claimToken` existant s'il est encore valide, **régénère** sinon (TTL frais via `userRepo.setClaimToken`), puis rappelle `sendClaimDossierEmail`. Gardes métier : dossier créé par un agent, non archivé, demandeur non réclamé (`fcId`/`claimedAt` nuls).
-- Action : `prospects/actions/renvoyer-invitation.actions.ts` — accès aligné sur le détail prospect (`verifyProspectTerritoryAccess`, hors territoire = refus) + audit `parcours_actions` (type `invitation_renvoyee`).
-- UI : `prospects/[id]/components/RenvoyerInvitationButton.tsx`.
+- Action : `prospects/actions/renvoyer-invitation.actions.ts` — accès aligné sur le détail (`verifyProspectTerritoryAccess`, hors territoire = refus) + audit `parcours_actions` (type `invitation_renvoyee`).
+- UI : composant partagé `espace-agent/shared/components/RenvoyerInvitationButton.tsx` (prop `variant` : `callout` pour le prospect, `inline` pour le dossier).
 
 ## Limites connues & TODO
 
