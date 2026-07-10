@@ -5,8 +5,17 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { formatNomComplet } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { DOSSIER_STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain";
-import { InfoDemandeur, InfoLogement, ParcoursDemandeur, AFaire, QualificationAllersVers } from "../../shared";
+import {
+  InfoDemandeur,
+  InfoLogement,
+  ParcoursDemandeur,
+  AFaire,
+  QualificationAllersVers,
+  RenvoyerInvitationButton,
+} from "../../shared";
 import { ActionsRealisees } from "../../shared";
+import { Step } from "@/shared/domain/value-objects/step.enum";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
 import { DossierStatusBadge } from "./components/DossierStatusBadge";
 import { PiecesJustificatives } from "./components/PiecesJustificatives";
@@ -135,6 +144,16 @@ export default async function DossierDetailPage({ params }: PageProps) {
               validationStatut={dossier.validationStatut}
               instructedAt={dossier.instructedAt}
             />
+            {/* Invitation en attente (étape INVITATION = stub non réclamé) → renvoi possible,
+                sauf dossier non éligible archivé. Le callout ci-dessus porte déjà le message. */}
+            {dossier.currentStep === Step.INVITATION &&
+              dossier.validationStatut !== StatutValidationAmo.LOGEMENT_NON_ELIGIBLE && (
+                <RenvoyerInvitationButton
+                  variant="inline"
+                  parcoursId={dossier.parcoursId}
+                  email={dossier.demandeur.email ?? ""}
+                />
+              )}
             <div className="fr-mt-4w">
               <ActionsRealisees parcoursId={dossier.parcoursId} />
             </div>

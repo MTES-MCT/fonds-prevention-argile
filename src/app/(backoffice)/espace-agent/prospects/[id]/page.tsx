@@ -11,7 +11,7 @@ import { ActionsRealisees } from "../../shared";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { ArchiveProspectButton } from "./components/ArchiveProspectButton";
 import { CalloutSimulationAEffectuer } from "./components/CalloutSimulationAEffectuer";
-import { RenvoyerInvitationButton } from "./components/RenvoyerInvitationButton";
+import { RenvoyerInvitationButton } from "../../shared";
 import { QualificationSection } from "./components/qualification/QualificationSection";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";

@@ -12,8 +12,10 @@ import {
   GagnezDuTemps,
   AFaire,
   QualificationAllersVers,
+  RenvoyerInvitationButton,
 } from "../../shared";
 import { ActionsRealisees } from "../../shared";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import { ReponseAccompagnement } from "./components/ReponseAccompagnement";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
@@ -108,6 +110,10 @@ export default async function DemandeDetailPage({ params }: PageProps) {
         {/* Section en-tête : Réponse + InfoDemandeur */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
+            {/* Invitation en attente (étape INVITATION = stub non réclamé) → renvoi possible. */}
+            {demande.currentStep === Step.INVITATION && (
+              <RenvoyerInvitationButton parcoursId={demande.parcoursId} email={demande.demandeur.email ?? ""} />
+            )}
             <ReponseAccompagnement demandeId={demande.id} statutActuel={demande.statut} />
             <div className="fr-mt-4w">
               <ActionsRealisees parcoursId={demande.parcoursId} />
@@ -165,7 +171,13 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                   flexDirection: "column",
                   gap: "2rem",
                 }}>
-                <ParcoursDemandeur currentStep={demande.currentStep} currentStatus={Status.TODO} dsStatus={null} dates={demande.dates} creator={demande.creator} />
+                <ParcoursDemandeur
+                  currentStep={demande.currentStep}
+                  currentStatus={Status.TODO}
+                  dsStatus={null}
+                  dates={demande.dates}
+                  creator={demande.creator}
+                />
                 <AFaire
                   items={[
                     "Contacter le demandeur",
