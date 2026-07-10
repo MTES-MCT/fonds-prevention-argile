@@ -208,6 +208,7 @@ L'email d'invitation n'était envoyé qu'une fois, à la création. Si le demand
 
 - **Détail prospect** (`prospects/[id]`, AV pur sans validation AMO) : callout complet quand `!hasUserClaimed && invitationSentAt`.
 - **Détail dossier** (`dossiers/[id]`, invitation créée en mode `amo` → validation AMO présente) : bouton inline sous `InfoDossierCallout` quand `currentStep === INVITATION` et validation != `LOGEMENT_NON_ELIGIBLE`. Sur cette page, `INVITATION` équivaut à « non réclamé » (le claim fait sortir de l'étape via `validateInvitation`).
+- **Détail demande** (`demandes/[id]`, invitation AMO créée sans simulation → validation `EN_ATTENTE`) : callout complet quand `currentStep === INVITATION`.
 
 Détails techniques :
 
