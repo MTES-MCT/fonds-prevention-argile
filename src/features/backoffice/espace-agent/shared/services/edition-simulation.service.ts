@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
+import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 
 export interface DossierSimulationData {
   /** ID de la validation AMO (dossier/demande) — null pour les prospects */
@@ -62,20 +63,41 @@ export async function getDossierSimulationData(id: string): Promise<ActionResult
       .limit(1);
 
     if (dossier) {
-      // Vérifier que le statut permet l'édition (en attente ou validé)
-      const editableStatuts = [StatutValidationAmo.EN_ATTENTE, StatutValidationAmo.LOGEMENT_ELIGIBLE];
+      // Statuts éditables. SANS_AMO inclus : un dossier sans accompagnement AMO
+      // progresse quand même dans le parcours (piloté par l'Aller-vers territorial)
+      // et reste éditable — cohérent avec STATUTS_CONSULTABLES du détail dossier.
+      const editableStatuts = [
+        StatutValidationAmo.EN_ATTENTE,
+        StatutValidationAmo.LOGEMENT_ELIGIBLE,
+        StatutValidationAmo.SANS_AMO,
+      ];
       if (!editableStatuts.includes(dossier.validation.statut as StatutValidationAmo)) {
         return { success: false, error: "Ce dossier ne permet pas l'édition des données de simulation" };
       }
 
-      // Vérifier ownership entreprise (sauf admins)
+      // Contrôle d'accès (sauf admins), aligné sur getDossierDetail :
+      // - dossier AVEC entreprise AMO : ownership entreprise (l'AMO destinataire) ;
+      // - dossier SANS entreprise (sans_amo) : accès territorial (Aller-vers / hybride
+      //   du territoire) via verifyProspectTerritoryAccess, sinon un agent AV — qui
+      //   n'a pas d'entrepriseAmoId — était rejeté en 404 sur « Vérifier son éligibilité ».
       if (!isAdmin) {
-        if (!user.entrepriseAmoId) {
-          return { success: false, error: "Votre compte agent n'est pas configuré" };
-        }
-
-        if (dossier.validation.entrepriseAmoId !== user.entrepriseAmoId) {
-          return { success: false, error: "Ce dossier ne vous est pas destiné" };
+        if (dossier.validation.entrepriseAmoId) {
+          if (!user.entrepriseAmoId) {
+            return { success: false, error: "Votre compte agent n'est pas configuré" };
+          }
+          if (dossier.validation.entrepriseAmoId !== user.entrepriseAmoId) {
+            return { success: false, error: "Ce dossier ne vous est pas destiné" };
+          }
+        } else {
+          const territoryError = await verifyProspectTerritoryAccess(dossier.parcours.id, {
+            id: user.agentId ?? "",
+            role: user.role as UserRole,
+            entrepriseAmoId: user.entrepriseAmoId ?? null,
+            allersVersId: user.allersVersId ?? null,
+          });
+          if (territoryError) {
+            return { success: false, error: territoryError };
+          }
         }
       }
 

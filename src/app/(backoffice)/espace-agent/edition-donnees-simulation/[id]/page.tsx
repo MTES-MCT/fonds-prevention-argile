@@ -15,14 +15,16 @@ interface PageProps {
  * Détermine les infos de navigation selon le type d'entrée (dossier, demande, prospect).
  */
 function getBreadcrumbInfo(id: string, statut: string | null) {
-  if (statut === StatutValidationAmo.LOGEMENT_ELIGIBLE) {
+  // Vrai prospect : aucune validation AMO (statut null), id = parcoursId.
+  if (statut === null) {
     return {
-      sectionLabel: "Vos dossiers",
-      sectionHref: ROUTES.backoffice.espaceAmo.dossiers,
-      detailHref: ROUTES.backoffice.espaceAmo.dossier(id),
+      sectionLabel: "Nouveau prospect",
+      sectionHref: ROUTES.backoffice.espaceAgent.prospects,
+      detailHref: ROUTES.backoffice.espaceAgent.prospect(id),
     };
   }
 
+  // Demande d'accompagnement en attente de r\u00e9ponse AMO.
   if (statut === StatutValidationAmo.EN_ATTENTE) {
     return {
       sectionLabel: "Demandes d\u2019accompagnement",
@@ -31,11 +33,11 @@ function getBreadcrumbInfo(id: string, statut: string | null) {
     };
   }
 
-  // Prospect (statut === null)
+  // Toute autre validation (\u00e9ligible, sans AMO, refus\u00e9e) : espace dossiers.
   return {
-    sectionLabel: "Nouveau prospect",
-    sectionHref: ROUTES.backoffice.espaceAgent.prospects,
-    detailHref: ROUTES.backoffice.espaceAgent.prospect(id),
+    sectionLabel: "Vos dossiers",
+    sectionHref: ROUTES.backoffice.espaceAmo.dossiers,
+    detailHref: ROUTES.backoffice.espaceAmo.dossier(id),
   };
 }
 
