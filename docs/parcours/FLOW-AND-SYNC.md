@@ -132,6 +132,40 @@ non répondue. La question n'est obligatoire que sur le chemin éligible+accompa
 champ est en lecture seule une fois la réponse enregistrée et visible côté super-admin
 sur le détail de la demande/du dossier.
 
+### 2.7 Arrêt de l'accompagnement (demandeur ou AMO) — ADR-0018
+
+Contrairement au détachement ops (§2.5), l'arrêt est ici **déclenchable depuis l'UI**, des
+deux côtés. La mutation est la même dans tous les cas : le service partagé `detacherAmo`
+(`detachement-amo.service.ts`), extrait du script `pnpm fix:detacher-amo`. État cible
+inchangé : `sans_amo` / `aucun` / `entreprise_amo_id NULL` → le responsable bascule sur
+l'aller-vers du territoire. **`archived_at` n'est jamais posé** : le dossier poursuit en
+autonomie. Voir [ADR-0018](../adr/0018-arret-accompagnement-amo.md).
+
+**Côté demandeur** (lien « Annuler » dans Ma liste) — arbre de décision :
+
+| Condition                                                    | Effet                                              |
+| ------------------------------------------------------------ | -------------------------------------------------- |
+| Dossier d'éligibilité DN `en_instruction`                    | **bloqué** (plus de changement possible)           |
+| `en_attente` (l'AMO n'a pas encore validé)                   | détachement immédiat + mail d'info à l'AMO         |
+| `logement_eligible` **et** `est_mandataire_financier ≠ true` | détachement immédiat + mail d'info à l'AMO         |
+| `logement_eligible` **et** `est_mandataire_financier = true` | `demande_arret_at` posé + mail de demande d'accord |
+
+`est_mandataire_financier = null` vaut **non-mandataire** (on ne bloque pas sur une donnée
+absente). Prédicats purs partagés UI ↔ service : `peutAnnulerAccompagnement`,
+`requiertAccordAmo` (`domain/value-objects/arretAccompagnement.ts`).
+
+**Côté AMO** (menu « Gérer » → « Ne plus accompagner », ou bandeau « Je donne ma réponse »
+quand `demande_arret_at` est posé) : soit l'AMO arrête (raisons obligatoires → détachement),
+soit elle poursuit (`demande_arret_at` remis à NULL). Garde : `assertCanActAsResponsable`.
+
+> **Effet de bord assumé** : détacher pose `entreprise_amo_id = NULL`, donc l'AMO **perd
+> immédiatement l'accès au dossier**. La server action doit lire la validation et
+> construire le snapshot d'auteur **avant** la mutation, et l'UI rediriger vers le listing.
+
+Audit dans `parcours_actions` (types système, aucune migration) : `accompagnement_arrete`,
+`arret_accompagnement_demande`, `arret_accompagnement_refuse`. Les actions du demandeur ont
+`agent_id = NULL` et `author_structure_type = "DEMANDEUR"`.
+
 ---
 
 ## 3. Architecture de la synchronisation
@@ -581,7 +615,9 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                            |
 | Création dossier devis-travaux (3 annotations) | `src/features/parcours/core/services/devis.service.ts`                                         |
 | Validation AMO (auto-progression CHOIX_AMO)    | `src/features/parcours/amo/services/amo-validation.service.ts`                                 |
-| Détachement AMO (passage en sans AMO)          | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                    |
+| Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                |
+| Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                    |
+| Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                           |
 | Endpoint CRON                                  | `src/app/api/cron/sync-parcours/route.ts`                                                      |
 | Workflow CRON GitHub Actions                   | `.github/workflows/cron-sync-parcours.yml`                                                     |
 | Server actions admin                           | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`         |
