@@ -145,6 +145,7 @@ autonomie. Voir [ADR-0018](../adr/0018-arret-accompagnement-amo.md).
 
 | Condition                                                    | Effet                                              |
 | ------------------------------------------------------------ | -------------------------------------------------- |
+| Département en mode AMO **obligatoire**                      | **bloqué** (l'autonomie n'y existe pas)            |
 | Dossier d'éligibilité DN `en_instruction`                    | **bloqué** (plus de changement possible)           |
 | `en_attente` (l'AMO n'a pas encore validé)                   | détachement immédiat + mail d'info à l'AMO         |
 | `logement_eligible` **et** `est_mandataire_financier ≠ true` | détachement immédiat + mail d'info à l'AMO         |
@@ -153,6 +154,10 @@ autonomie. Voir [ADR-0018](../adr/0018-arret-accompagnement-amo.md).
 `est_mandataire_financier = null` vaut **non-mandataire** (on ne bloque pas sur une donnée
 absente). Prédicats purs partagés UI ↔ service : `peutAnnulerAccompagnement`,
 `requiertAccordAmo` (`domain/value-objects/arretAccompagnement.ts`).
+
+> L'annulation n'existe qu'en mode **FACULTATIF** : là où l'AMO est obligatoire (par défaut
+> 03/36/47/54/81), le lien est masqué et le service refuse — même garde que
+> `skipAmoStepForUser`, dupliquée pour que les deux chemins vers l'autonomie ne divergent pas.
 
 **Côté AMO** (menu « Gérer » → « Ne plus accompagner », ou bandeau « Je donne ma réponse »
 quand `demande_arret_at` est posé) : soit l'AMO arrête (raisons obligatoires → détachement),

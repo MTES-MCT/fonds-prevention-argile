@@ -4,6 +4,7 @@ import { useParcours } from "../../context/useParcours";
 import { Step } from "../../domain";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 import { useAmoMode } from "@/features/parcours/amo/hooks";
+import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import {
   getStepListItems,
   peutAnnulerAccompagnement,
@@ -26,7 +27,10 @@ export default function MaListe() {
 
   const items = getStepListItems(amoMode, statutAmo, currentStep, lastDSStatus === DSStatus.ACCEPTE);
 
+  // L'annulation n'existe qu'en mode FACULTATIF : ailleurs l'AMO est imposé par le
+  // département (même garde que `skipAmoStepForUser`, revérifiée côté serveur).
   const peutAnnuler =
+    amoMode === AmoMode.FACULTATIF &&
     statutAmo !== null &&
     validationAmoComplete !== null &&
     peutAnnulerAccompagnement({

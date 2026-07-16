@@ -6,7 +6,8 @@ import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { Step } from "../../core";
 import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
 import { StatutValidationAmo, peutAnnulerAccompagnement, requiertAccordAmo } from "../domain/value-objects";
-import { validateEmailsList } from "../utils/amo.utils";
+import { AmoMode, getAmoMode } from "../domain/value-objects/departements-amo";
+import { getCodeDepartementFromCodeInsee, normalizeCodeInsee, validateEmailsList } from "../utils/amo.utils";
 import {
   sendArretAccompagnementInfoEmail,
   sendArretAccompagnementValidationEmail,
@@ -87,6 +88,12 @@ export async function annulerAccompagnementDemandeur(params: {
   }
   if (validation.statut === StatutValidationAmo.SANS_AMO) {
     return { success: false, error: "Vous gérez déjà vos démarches en autonomie" };
+  }
+
+  // Même garde que `skipAmoStepForUser` : là où l'AMO est obligatoire, pas d'autonomie.
+  const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData?.logement?.commune);
+  if (codeInsee && getAmoMode(getCodeDepartementFromCodeInsee(codeInsee)) !== AmoMode.FACULTATIF) {
+    return { success: false, error: "L'AMO est obligatoire pour ce département" };
   }
 
   const dossierEligibilite = await getDossierByStep(parcoursId, Step.ELIGIBILITE);

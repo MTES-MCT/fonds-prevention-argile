@@ -47,6 +47,7 @@ Les gardes de permission vivent dans les server actions, pas dans le service.
 
 | Condition                                                | Effet                                              |
 | -------------------------------------------------------- | -------------------------------------------------- |
+| Département où l'AMO est **obligatoire**                 | bloqué (l'autonomie n'y existe pas)                |
 | Éligibilité DN `en_instruction`                          | bloqué (plus de changement possible)               |
 | Statut `en_attente` (AMO pas encore validante)           | détachement immédiat + mail d'info                 |
 | `logement_eligible` et `est_mandataire_financier ≠ true` | détachement immédiat + mail d'info                 |
@@ -57,6 +58,12 @@ feature) est traité comme **non-mandataire** : on ne bloque pas un demandeur su
 donnée absente. Le prédicat est pur et partagé UI ↔ service
 (`peutAnnulerAccompagnement`, `requiertAccordAmo`) pour éviter que l'écran et le serveur
 divergent.
+
+L'annulation est **réservée aux départements en mode `FACULTATIF`** : là où l'AMO est
+obligatoire (`NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE`, par défaut 03/36/47/54/81),
+l'autonomie n'existe pas. C'est exactement la garde que porte déjà `skipAmoStepForUser` —
+la dupliquer ici évite que les deux chemins de « passage en autonomie » divergent. Côté
+UI, `MaListe` masque le lien sur le même critère.
 
 ## Options envisagées
 

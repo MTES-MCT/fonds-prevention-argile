@@ -32,7 +32,10 @@ function mockSelectOnce(rows: unknown[]) {
   } as any);
 }
 
-const parcours = { id: "p1", userId: "u1" };
+// Commune 75001 -> département 75, facultatif (les obligatoires par défaut : 3, 36, 47, 54, 81).
+const parcours = { id: "p1", userId: "u1", rgaSimulationData: { logement: { commune: "75001" } } };
+/** Indre (36) : AMO obligatoire → aucune autonomie possible. */
+const parcoursAmoObligatoire = { ...parcours, rgaSimulationData: { logement: { commune: "36044" } } };
 const validationMandataire = {
   id: "val-1",
   statut: StatutValidationAmo.LOGEMENT_ELIGIBLE,
@@ -131,6 +134,17 @@ describe("annulerAccompagnementDemandeur", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("déjà en attente");
+  });
+
+  it("refuse l'annulation dans un département où l'AMO est obligatoire", async () => {
+    mockSelectOnce([parcoursAmoObligatoire]);
+    mockSelectOnce([validationMandataire]);
+
+    const result = await annulerAccompagnementDemandeur({ parcoursId: "p1" });
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("obligatoire pour ce département");
+    expect(detacherAmo).not.toHaveBeenCalled();
   });
 
   it("refuse si le parcours est déjà sans AMO", async () => {
