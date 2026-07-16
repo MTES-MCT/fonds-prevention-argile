@@ -15,13 +15,22 @@ interface ActionMenuItem {
 interface ActionMenuProps {
   items: ActionMenuItem[];
   ariaLabel?: string;
+  /** Libellé du déclencheur. Par défaut « ⋯ » (usage en cellule de tableau). */
+  triggerLabel?: string;
+  /** Classes DSFR du déclencheur. Par défaut un bouton tertiaire discret. */
+  triggerClassName?: string;
 }
 
 /**
  * Menu d'actions generique (bouton "..." + dropdown)
  * Reutilisable dans tout le backoffice
  */
-export function ActionMenu({ items, ariaLabel = "Actions" }: ActionMenuProps) {
+export function ActionMenu({
+  items,
+  ariaLabel = "Actions",
+  triggerLabel,
+  triggerClassName = "fr-btn fr-btn--tertiary-no-outline fr-btn--sm",
+}: ActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState<{ top: number; right: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -78,13 +87,14 @@ export function ActionMenu({ items, ariaLabel = "Actions" }: ActionMenuProps) {
     <div style={{ display: "inline-block" }}>
       <button
         ref={buttonRef}
-        className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm"
+        className={triggerClassName}
         aria-label={ariaLabel}
         title={ariaLabel}
+        aria-expanded={isOpen}
         onClick={toggle}
         type="button"
-        style={{ padding: "0.25rem" }}>
-        ⋯
+        style={triggerLabel ? undefined : { padding: "0.25rem" }}>
+        {triggerLabel ?? "⋯"}
       </button>
 
       {isOpen &&

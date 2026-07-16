@@ -24,6 +24,40 @@ export interface AnnulerAccompagnementResult {
 }
 
 /**
+ * L'AMO mandataire refuse la demande d'arrêt : elle poursuit l'accompagnement.
+ * Efface simplement la demande en attente — le dossier reste inchangé par ailleurs.
+ *
+ * Pur domaine : la garde (responsable du dossier) vit dans la server action.
+ */
+export async function refuserDemandeArret(params: {
+  parcoursId: string;
+}): Promise<ActionResult<{ demandeurPrenom: string; demandeurNom: string }>> {
+  const { parcoursId } = params;
+
+  const [validation] = await db
+    .select()
+    .from(parcoursAmoValidations)
+    .where(eq(parcoursAmoValidations.parcoursId, parcoursId))
+    .limit(1);
+  if (!validation) {
+    return { success: false, error: "Aucune validation AMO sur ce dossier" };
+  }
+  if (!validation.demandeArretAt) {
+    return { success: false, error: "Aucune demande d'arrêt en attente sur ce dossier" };
+  }
+
+  await db
+    .update(parcoursAmoValidations)
+    .set({ demandeArretAt: null, updatedAt: new Date() })
+    .where(eq(parcoursAmoValidations.id, validation.id));
+
+  return {
+    success: true,
+    data: { demandeurPrenom: validation.userPrenom ?? "", demandeurNom: validation.userNom ?? "" },
+  };
+}
+
+/**
  * Annulation de l'accompagnement à l'initiative du demandeur.
  *
  * Deux issues, selon l'engagement de l'AMO :

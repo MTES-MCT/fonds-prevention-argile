@@ -21,10 +21,12 @@ import { DossierStatusBadge } from "./components/DossierStatusBadge";
 import { PiecesJustificatives } from "@/features/parcours/dossiers-ds/components";
 import { getPiecesJustificativesForStep } from "@/features/parcours/dossiers-ds/services/pieces-justificatives.service";
 import { GagnezDuTempsTravaux } from "./components/GagnezDuTempsTravaux";
-import { ArchiveDossierButton } from "./components/ArchiveDossierButton";
+import { GererDossierMenu } from "./components/GererDossierMenu";
+import { DemandeArretAlert } from "./components/DemandeArretAlert";
 import { ReouvrirDemandeButton } from "./components/ReouvrirDemandeButton";
 import { STATUTS_REFUSES } from "@/features/backoffice/espace-agent/dossiers/domain/types/amo-dossiers.types";
 import { ROLES_REOUVERTURE } from "@/features/backoffice/espace-agent/dossiers/domain/reouverture";
+import { ROLES_ARRET_ACCOMPAGNEMENT } from "@/features/backoffice/espace-agent/dossiers/domain/arret-accompagnement";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
@@ -68,6 +70,18 @@ export default async function DossierDetailPage({ params }: PageProps) {
     const agentResult = await getCurrentAgent();
     canReouvrir = agentResult.success && ROLES_REOUVERTURE.includes(agentResult.data.role);
   }
+
+  // « Ne plus accompagner » : réservé à l'AMO de l'entreprise rattachée (le périmètre
+  // fin est revérifié côté action via assertCanActAsResponsable).
+  const agentCourant = await getCurrentAgent();
+  const peutArreterAccompagnement =
+    agentCourant.success &&
+    ROLES_ARRET_ACCOMPAGNEMENT.includes(agentCourant.data.role) &&
+    dossier.entrepriseAmoId !== null &&
+    agentCourant.data.entrepriseAmoId === dossier.entrepriseAmoId;
+
+  // Le demandeur a demandé l'arrêt : l'AMO mandataire doit se prononcer.
+  const arretADecider = dossier.demandeArretAt !== null && peutArreterAccompagnement;
 
   // Récupérer la dernière qualification aller-vers
   const latestQualification = await qualificationService.getLatestQualification(dossier.parcoursId);
@@ -128,7 +142,11 @@ export default async function DossierDetailPage({ params }: PageProps) {
               {canReouvrir ? (
                 <ReouvrirDemandeButton parcoursId={dossier.parcoursId} />
               ) : (
-                <ArchiveDossierButton parcoursId={dossier.parcoursId} />
+                <GererDossierMenu
+                  parcoursId={dossier.parcoursId}
+                  demandeurNom={nomComplet}
+                  peutArreterAccompagnement={peutArreterAccompagnement}
+                />
               )}
             </div>
           </div>
@@ -137,6 +155,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
         {/* Section en-tête : Callout + InfoDemandeur */}
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-8">
+            {arretADecider && <DemandeArretAlert parcoursId={dossier.parcoursId} demandeurNom={nomComplet} />}
             <InfoDossierCallout
               currentStep={dossier.currentStep}
               currentStatus={dossier.currentStatus}
