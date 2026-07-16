@@ -18,8 +18,6 @@ interface InfoDemandeurProps {
   suiviDepuis?: Date;
   /** Lien vers la page d'édition des données de simulation (optionnel) */
   editSimulationHref?: string;
-  /** Responsable courant du dossier. Omis = ligne masquée. */
-  responsableNom?: string | null;
   /** Éligibilité attestée par l'AMO. Omis = ligne masquée. */
   eligibiliteConfirmee?: boolean;
   /** AMO rattachée (`null` = autonomie). Omis = ligne masquée. */
@@ -33,7 +31,6 @@ export function InfoDemandeur({
   demandeur,
   suiviDepuis,
   editSimulationHref,
-  responsableNom,
   eligibiliteConfirmee,
   amo,
 }: InfoDemandeurProps) {
@@ -112,12 +109,6 @@ export function InfoDemandeur({
                 </span>
               )}
             </dd>
-          </>
-        )}
-        {responsableNom && (
-          <>
-            <dt className="fr-text">Responsable :</dt>
-            <dd className="fr-m-0">{responsableNom}</dd>
           </>
         )}
         {eligibiliteConfirmee !== undefined && (
