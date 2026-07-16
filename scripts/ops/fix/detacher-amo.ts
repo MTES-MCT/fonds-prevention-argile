@@ -6,24 +6,21 @@
  * --------
  * Une demandeuse avait choisi un AMO quand celui-ci était obligatoire. Depuis la
  * modification de l'arrêté, l'AMO est facultatif : elle souhaite poursuivre seule.
- * Aucun écran ne permet d'annuler l'accompagnement une fois l'AMO choisi → opération
- * manuelle.
  *
- * Ce script reproduit l'état cible du flux « renoncer à l'AMO » (`skipAmoStepForUser`,
- * `amo-selection.service.ts`) mais en partant d'un AMO DÉJÀ choisi (ou déjà validé),
- * ce que le flux UI ne couvre pas : `parcours_amo_validations` passe en `SANS_AMO`,
- * `entreprise_amo_id` est détaché, le tracking email est purgé, et les tokens de
- * validation encore actifs sont invalidés (le lien email AMO ne doit plus rien valider).
+ * Ce script est un mince wrapper CLI autour du service `detacherAmo`
+ * (`src/features/parcours/amo/services/detachement-amo.service.ts`), le même que celui
+ * appelé par l'UI (annulation demandeur / « Ne plus accompagner » côté AMO). La logique
+ * métier (gardes, transaction, invalidation des tokens, avance d'étape) vit dans le
+ * service ; ici on ne fait que cibler le parcours, afficher un diagnostic et déclencher.
+ *
+ * Ce que fait le détachement :
+ *   - validation : statut -> sans_amo, entreprise détachée, attributionMode -> aucun,
+ *     purge commentaire / valideeAt / mandataire financier / demande d'arrêt / tracking
+ *   - tokens AMO actifs -> invalidés (le lien email AMO ne doit plus rien valider)
+ *   - étape : encore à choix_amo -> eligibilite/todo ; au-delà -> inchangée
  *
  * Le responsable du parcours « sans AMO » devient l'aller-vers du territoire (résolution
  * habituelle par `rgaSimulationData`) — rien à écrire de plus côté parcours.
- *
- * Progression d'étape
- *   - Si le parcours est encore à `choix_amo` (todo OU en_instruction, l'AMO n'a pas
- *     encore validé) → on avance à `eligibilite / todo`, exactement comme le « skip » UI.
- *   - Si le parcours a déjà dépassé `choix_amo` (AMO validé, éligibilité en cours…) →
- *     on NE touche PAS à l'étape : on se contente de détacher l'AMO. Le dossier en cours
- *     devient « sans AMO » et suit son cours.
  *
  * Niveaux d'engagement
  *   (rien)     dry-run : affiche l'état + le plan, aucune écriture
@@ -45,7 +42,7 @@
 
 import "../lib/env";
 import { and, desc, eq, ilike, isNull } from "drizzle-orm";
-import { createOpsDb } from "../lib/db";
+import { db, rawClient } from "@/shared/database/client";
 import {
   parcoursPrevention,
   parcoursAmoValidations,
@@ -54,9 +51,8 @@ import {
   users,
 } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
-import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
-import { Status } from "@/shared/domain/value-objects/status.enum";
+import { detacherAmo } from "@/features/parcours/amo/services/detachement-amo.service";
 import { getArg, hasFlag } from "../lib/args";
 
 const APPLY = hasFlag("apply");
@@ -67,8 +63,6 @@ if (!PARCOURS_ID && !NOM) {
   console.error("Ciblage requis : --parcours-id=<uuid> ou --nom=<nom>");
   process.exit(1);
 }
-
-const { db, client } = createOpsDb();
 
 function line() {
   console.log("=".repeat(72));
@@ -94,7 +88,7 @@ async function main() {
 
     if (matches.length === 0) {
       console.error(`Aucun parcours pour un nom contenant "${NOM}".`);
-      await client.end();
+      await rawClient.end();
       process.exit(1);
     }
     if (matches.length > 1) {
@@ -104,7 +98,7 @@ async function main() {
           `  ${m.parcours.id}  ${m.prenom ?? ""} ${m.nom ?? ""} <${m.email ?? "?"}>  ${m.parcours.currentStep}/${m.parcours.currentStatus}`
         );
       }
-      await client.end();
+      await rawClient.end();
       process.exit(1);
     }
     parcoursRow = matches[0].parcours;
@@ -112,7 +106,7 @@ async function main() {
 
   if (!parcoursRow) {
     console.error("Parcours introuvable.");
-    await client.end();
+    await rawClient.end();
     process.exit(1);
   }
   const parcoursId = parcoursRow.id;
@@ -137,22 +131,22 @@ async function main() {
   console.log(`AMO         : ${entreprise ? `${entreprise.nom} (${entreprise.id})` : "<aucune>"}`);
   console.log();
 
-  // --- 3. Garde-fous ---
+  // --- 3. Garde-fous (mêmes conditions que le service, pour un dry-run lisible) ---
   if (!validation) {
     console.error("ABANDON : aucune validation AMO sur ce parcours. Rien à détacher.");
-    await client.end();
+    await rawClient.end();
     process.exit(1);
   }
   if (validation.statut === StatutValidationAmo.SANS_AMO && !validation.entrepriseAmoId) {
     console.error("ABANDON : ce parcours est déjà « sans AMO ». Rien à faire.");
-    await client.end();
+    await rawClient.end();
     process.exit(1);
   }
   if (parcoursRow.archivedAt) {
     console.error(
       `ABANDON : parcours archivé (archived_at=${parcoursRow.archivedAt.toISOString()}). Le désarchiver d'abord.`
     );
-    await client.end();
+    await rawClient.end();
     process.exit(1);
   }
 
@@ -165,7 +159,7 @@ async function main() {
 
   console.log("PLAN :");
   console.log(`  validation '${validation.statut}' -> 'sans_amo' (attributionMode -> 'aucun', entreprise détachée)`);
-  console.log(`  purge : commentaire, valideeAt, tracking email, brevoMessageId`);
+  console.log(`  purge : commentaire, valideeAt, mandataire financier, demande d'arrêt, tracking email`);
   console.log(`  tokens AMO actifs -> invalidés (usedAt = now)${pendingTokens ? "" : " — aucun token actif"}`);
   if (avanceEligibilite) {
     console.log(`  étape '${parcoursRow.currentStep}/${parcoursRow.currentStatus}' -> 'eligibilite/todo'`);
@@ -179,43 +173,18 @@ async function main() {
   if (!APPLY) {
     console.log("Mode dry-run — aucune écriture. Commande pour appliquer :");
     console.log(`  pnpm fix:detacher-amo --parcours-id=${parcoursId} --apply`);
-    await client.end();
+    await rawClient.end();
     return;
   }
 
-  // --- 5. Application (transaction) ---
-  await db.transaction(async (tx) => {
-    await tx
-      .update(parcoursAmoValidations)
-      .set({
-        entrepriseAmoId: null,
-        statut: StatutValidationAmo.SANS_AMO,
-        attributionMode: AttributionAmoMode.AUCUN,
-        commentaire: null,
-        valideeAt: null,
-        brevoMessageId: null,
-        emailSentAt: null,
-        emailDeliveredAt: null,
-        emailOpenedAt: null,
-        emailClickedAt: null,
-        emailBounceType: null,
-        emailBounceReason: null,
-      })
-      .where(eq(parcoursAmoValidations.id, validation.id));
+  // --- 5. Application (déléguée au service partagé) ---
+  const result = await detacherAmo({ parcoursId });
 
-    // Tue les liens email AMO encore actifs (sinon l'AMO pourrait valider après coup).
-    await tx
-      .update(amoValidationTokens)
-      .set({ usedAt: new Date() })
-      .where(and(eq(amoValidationTokens.parcoursAmoValidationId, validation.id), isNull(amoValidationTokens.usedAt)));
-
-    if (avanceEligibilite) {
-      await tx
-        .update(parcoursPrevention)
-        .set({ currentStep: Step.ELIGIBILITE, currentStatus: Status.TODO })
-        .where(eq(parcoursPrevention.id, parcoursId));
-    }
-  });
+  if (!result.success) {
+    console.error(`ÉCHEC : ${result.error}`);
+    await rawClient.end();
+    process.exit(1);
+  }
 
   console.log("OK — AMO détaché, parcours basculé en « sans AMO ».");
 
@@ -236,17 +205,17 @@ async function main() {
   line();
   console.log("ÉTAT FINAL :");
   console.log(
-    `  step/status : ${after?.step}/${after?.status}${avanceEligibilite ? "   (attendu eligibilite/todo)" : "   (inchangé)"}`
+    `  step/status : ${after?.step}/${after?.status}${result.data.etapeAvancee ? "   (attendu eligibilite/todo)" : "   (inchangé)"}`
   );
   console.log(`  validation  : ${after?.validationStatut}   (attendu sans_amo)`);
   console.log(`  entreprise  : ${after?.entrepriseAmoId ?? "NULL"}   (attendu NULL)`);
   line();
 
-  await client.end();
+  await rawClient.end();
 }
 
 main().catch((err) => {
   console.error("Erreur fatale :", err);
-  client.end();
+  rawClient.end();
   process.exit(1);
 });
