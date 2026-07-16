@@ -182,6 +182,12 @@ export default async function DossierDetailPage({ params }: PageProps) {
               <InfoDemandeur
                 demandeur={dossier.demandeur}
                 suiviDepuis={dossier.suiviDepuis ?? undefined}
+                eligibiliteConfirmee={dossier.validationStatut === StatutValidationAmo.LOGEMENT_ELIGIBLE}
+                amo={
+                  dossier.amoNom
+                    ? { nom: dossier.amoNom, estMandataireFinancier: dossier.estMandataireFinancier }
+                    : null
+                }
                 editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)}
               />
             </div>
