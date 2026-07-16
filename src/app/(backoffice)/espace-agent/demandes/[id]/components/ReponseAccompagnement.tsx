@@ -214,20 +214,23 @@ export function ReponseAccompagnement({
               </div>
             </fieldset>
 
-            <div className="fr-input-group">
-              <label className="fr-label" htmlFor="note-complementaire-input">
-                Note complémentaire
-                <span className="fr-hint-text">Optionnelle</span>
-              </label>
-              <textarea
-                className="fr-input"
-                id="note-complementaire-input"
-                rows={3}
-                value={noteComplementaire}
-                onChange={(e) => setNoteComplementaire(e.target.value)}
-                disabled={isSubmitting}
-              />
-            </div>
+            {/* Note affichée seulement une fois la question mandataire répondue (cf. maquette). */}
+            {mandataireFinancier !== null && (
+              <div className="fr-input-group">
+                <label className="fr-label" htmlFor="note-complementaire-input">
+                  Note complémentaire
+                  <span className="fr-hint-text">Optionnelle</span>
+                </label>
+                <textarea
+                  className="fr-input"
+                  id="note-complementaire-input"
+                  rows={3}
+                  value={noteComplementaire}
+                  onChange={(e) => setNoteComplementaire(e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
+            )}
           </>
         )}
 
