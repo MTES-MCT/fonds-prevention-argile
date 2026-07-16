@@ -32,6 +32,9 @@ export const parcoursAmoValidations = pgTable(
     // Renseigné quand l'AMO valide et accompagne (LOGEMENT_ELIGIBLE) ; null sinon.
     estMandataireFinancier: boolean("est_mandataire_financier"),
 
+    // Non-NULL = le demandeur a demandé l'arrêt et attend la réponse de l'AMO mandataire.
+    demandeArretAt: timestamp("demande_arret_at", { mode: "date" }),
+
     // Données personnelles temporaires
     userPrenom: text("user_prenom"),
     userNom: text("user_nom"),

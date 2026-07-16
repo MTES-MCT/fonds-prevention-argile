@@ -1,0 +1,1 @@
+ALTER TABLE "parcours_amo_validations" ADD COLUMN "demande_arret_at" timestamp;
