@@ -115,6 +115,23 @@ Le responsable bascule sur l'aller-vers du territoire (résolution par
 d'audit `parcours_actions` (action ops). À distinguer de la ré-ouverture (§2.4), qui
 remet une demande **refusée** en attente de validation AMO — ici on **retire** l'AMO.
 
+### 2.6 Mandataire financier (saisie à l'éligibilité)
+
+Quand un agent atteste l'éligibilité **et** accompagne le demandeur, on capture si sa
+structure est le **mandataire financier** du dossier (Oui/Non) + une **note
+complémentaire** optionnelle. Deux surfaces, deux tables :
+
+- **Validation AMO** (`approveValidation`, statut `LOGEMENT_ELIGIBLE`) →
+  `parcours_amo_validations.est_mandataire_financier` (booléen nullable) ; la note
+  réutilise la colonne existante `commentaire`.
+- **Qualification Allers-Vers** (`qualifyProspect`, décision `eligible`) →
+  `prospect_qualifications.est_mandataire_financier` ; la note réutilise `note`.
+
+Le booléen est **nullable** : `null` = question non posée (autre statut/décision) ou
+non répondue. La question n'est obligatoire que sur le chemin éligible+accompagne. Le
+champ est en lecture seule une fois la réponse enregistrée et visible côté super-admin
+sur le détail de la demande/du dossier.
+
 ---
 
 ## 3. Architecture de la synchronisation
