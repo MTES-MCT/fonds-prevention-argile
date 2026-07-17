@@ -25,30 +25,26 @@ const AIDE_RULES: AideRule[] = [
   {
     keywords: ["piece d'identite", "piece d identite", "piece d’identite"],
     aide: {
-      texte: "Carte nationale d'identité ou passeport en cours de validité. Renouvellement possible via l'ANTS.",
-      liens: [{ label: "ants.gouv.fr", href: "https://ants.gouv.fr" }],
+      texte: "Carte nationale d'identité ou passeport en cours de validité.",
     },
   },
   {
     keywords: ["avis d'imposition", "avis d imposition", "avis d’imposition"],
     aide: {
       texte:
-        "Téléchargeable depuis votre espace particulier sur impots.gouv.fr (rubrique « Documents »). Un avis par foyer fiscal du logement.",
+        "Téléchargeable depuis votre espace particulier sur impots.gouv.fr (rubrique « Documents »).",
       liens: [{ label: "impots.gouv.fr", href: "https://www.impots.gouv.fr/accueil" }],
     },
   },
   {
     keywords: ["justificatif de propriete", "taxe fonciere"],
     aide: {
-      texte:
-        "Acte de propriété (acte notarié) ou avis de taxe foncière. La taxe foncière est disponible dans votre espace impots.gouv.fr ; l'acte notarié auprès de votre notaire.",
-      liens: [{ label: "impots.gouv.fr", href: "https://www.impots.gouv.fr/accueil" }],
     },
   },
   {
     keywords: ["releve d'identite bancaire", "releve d identite bancaire", "rib"],
     aide: {
-      texte: "Disponible dans votre application ou votre espace bancaire en ligne.",
+      texte: "Disponible dans l'application ou l'espace bancaire en ligne.",
     },
   },
   {
@@ -60,27 +56,16 @@ const AIDE_RULES: AideRule[] = [
   {
     keywords: ["assureur", "catastrophe naturelle", "indemnisation"],
     aide: {
-      texte:
-        "Attestation à demander à votre assureur, indiquant votre situation vis-à-vis du régime des catastrophes naturelles.",
     },
   },
   {
     keywords: ["mandat", "cerfa"],
     aide: {
-      texte:
-        "Téléchargez le modèle ci-dessus, faites-le remplir et signer par le mandataire, puis joignez-le avec sa pièce d'identité.",
-      liens: [
-        {
-          label: "CERFA mandat (service-public)",
-          href: "https://www.formulaires.service-public.gouv.fr/gf/cerfa_17596.do",
-        },
-      ],
     },
   },
   {
     keywords: ["attestation sur l'honneur", "attestation sur l honneur", "attestation sur l’honneur"],
     aide: {
-      texte: "Utilisez le modèle fourni ci-dessus, à compléter et signer.",
     },
   },
   {
@@ -98,7 +83,7 @@ const AIDE_RULES: AideRule[] = [
   {
     keywords: ["devis"],
     aide: {
-      texte: "Établi par votre AMO ou l'entreprise retenue pour les travaux.",
+      texte: "Établis par votre AMO ou les entreprises retenues.",
     },
   },
 ];

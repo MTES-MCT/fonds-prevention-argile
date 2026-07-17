@@ -137,6 +137,7 @@ export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }:
         <p className="fr-text--bold fr-mb-2w">Comment ça marche ?</p>
         <ul className="fr-mb-4w">
           <li>Nous avons informé votre AMO local afin qu'il vous accompagne dans votre projet.</li>
+          <li>Il devrait vous appeler et/ou vous envoyer un mail dans les prochains jours, soyez vigilents !</li>
           <li>
             Dès qu'il aura validé votre dossier, vous recevrez une notification sur votre adresse email
             {user?.email ? ` ${user.email}` : ""}.

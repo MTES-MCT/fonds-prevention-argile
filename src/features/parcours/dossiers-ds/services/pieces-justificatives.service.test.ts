@@ -107,12 +107,12 @@ describe("getPiecesJustificativesForStep", () => {
     });
   });
 
-  it("enrichit d'une aide éditoriale quand le libellé matche (ex. CERFA / mandat)", async () => {
-    mockedSchema.mockResolvedValue(schemaWith([pieceCerfa]));
+  it("enrichit d'une aide éditoriale quand le libellé matche (ex. pièce d'identité)", async () => {
+    mockedSchema.mockResolvedValue(schemaWith([pieceIdentite]));
 
     const [piece] = await getPiecesJustificativesForStep(Step.ELIGIBILITE);
 
-    expect(piece.aide?.liens?.[0]?.href).toContain("cerfa_17596");
+    expect(piece.aide?.texte).toContain("Carte nationale d'identité");
   });
 
   it("récupère aussi les pièces nichées dans un bloc répétable", async () => {
