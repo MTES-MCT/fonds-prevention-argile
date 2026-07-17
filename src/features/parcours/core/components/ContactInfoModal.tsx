@@ -213,12 +213,15 @@ export default function ContactInfoModal({
 
                 <h2 id="modal-contact-info-title" className="fr-modal__title">
                   <span className="fr-icon-arrow-right-line fr-mr-1w" aria-hidden="true" />
-                  Comment vous contacter ?
+                  Restez joignables !
                 </h2>
 
                 <p>
-                  Ces informations sont confidentielles et destinées à votre conseiller local mandaté par l&apos;État.
-                  Il pourra vous contacter pour faciliter la complétion de votre dossier.
+                  Un conseiller local mandaté par l&apos;État devrait vous contacter dans les prochains jours pour préciser votre demande.
+                  Le numéro peut être masqué, n'hésitez pas à répondre pour faire avancer votre dossier plus rapidement. 
+                </p>
+                <p> 
+                Ces informations sont confidentielles et uniquement utilisées pour traiter votre demande et vous accompagner. 
                 </p>
 
                 <div className="fr-form-group">
