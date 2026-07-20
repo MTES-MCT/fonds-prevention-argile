@@ -55,7 +55,7 @@ const ETAPE_LABEL_ORDER: string[] = [
  * L'ordre suit le parcours métier (pas l'ordre alphabétique).
  */
 const EN_ATTENTE_FILTRABLES: ReadonlyArray<{ value: DossierEtat; label: string }> = [
-  { value: "AV_QUALIFICATION", label: "AV" },
+  { value: "AV_QUALIFICATION", label: "Aller-Vers" },
   { value: "EN_ATTENTE_AMO", label: "AMO" },
   { value: "MENAGE", label: "Ménage" },
   { value: "DDT", label: "DDT" },

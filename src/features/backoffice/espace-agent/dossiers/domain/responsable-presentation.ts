@@ -83,7 +83,7 @@ export function getEtatBadge(etat: DossierEtat, codeDepartement: string | null):
   switch (etat) {
     case "AV_QUALIFICATION":
       return {
-        label: `AV${codeDepartement ? ` ${codeDepartement}` : ""}`,
+        label: `Aller-Vers${codeDepartement ? ` ${codeDepartement}` : ""}`,
         colorClass: "fr-badge--warning",
       };
     case "EN_ATTENTE_AMO":

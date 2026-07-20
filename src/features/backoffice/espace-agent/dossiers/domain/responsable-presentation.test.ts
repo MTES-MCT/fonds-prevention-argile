@@ -29,7 +29,7 @@ describe("getDossierStepLabel", () => {
 describe("getEtatBadge", () => {
   it("formate AV_QUALIFICATION avec son département", () => {
     const badge = getEtatBadge("AV_QUALIFICATION", "36");
-    expect(badge.label).toBe("AV 36");
+    expect(badge.label).toBe("Aller-Vers 36");
     expect(badge.colorClass).toContain("warning");
   });
 
@@ -39,7 +39,7 @@ describe("getEtatBadge", () => {
   });
 
   it("formate AV_QUALIFICATION sans département (label court)", () => {
-    expect(getEtatBadge("AV_QUALIFICATION", null).label).toBe("AV");
+    expect(getEtatBadge("AV_QUALIFICATION", null).label).toBe("Aller-Vers");
   });
 
   it("retourne 'Ménage' pour MENAGE", () => {
