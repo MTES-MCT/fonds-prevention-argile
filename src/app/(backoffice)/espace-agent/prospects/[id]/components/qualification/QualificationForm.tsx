@@ -13,6 +13,7 @@ interface QualificationInitialValues {
   decision: QualificationDecision;
   actionsRealisees: string[];
   raisonsIneligibilite: string[] | null;
+  estMandataireFinancier: boolean | null;
   note: string | null;
 }
 
@@ -202,6 +203,9 @@ export function QualificationForm({
   const [decision, setDecision] = useState<QualificationDecision | "">(initialValues?.decision ?? "");
   const [raisonsIneligibilite, setRaisonsIneligibilite] = useState<string[]>(initRaisons?.normalized ?? []);
   const [autreRaisonPrecision, setAutreRaisonPrecision] = useState(initRaisons?.precision ?? "");
+  const [mandataireFinancier, setMandataireFinancier] = useState<boolean | null>(
+    initialValues?.estMandataireFinancier ?? null
+  );
   const [note, setNote] = useState(initialValues?.note ?? "");
   const [error, setError] = useState<string | null>(null);
 
@@ -257,6 +261,10 @@ export function QualificationForm({
     if (value !== QualificationDecision.NON_ELIGIBLE) {
       setRaisonsIneligibilite([]);
     }
+    // La question mandataire financier ne concerne que le cas éligible.
+    if (value !== QualificationDecision.ELIGIBLE) {
+      setMandataireFinancier(null);
+    }
   }
 
   /** Validation du formulaire → ouvre la modale de confirmation */
@@ -270,6 +278,10 @@ export function QualificationForm({
     }
     if (decision === QualificationDecision.NON_ELIGIBLE && raisonsIneligibilite.length === 0) {
       setError("Veuillez sélectionner au moins une raison d'inéligibilité.");
+      return;
+    }
+    if (decision === QualificationDecision.ELIGIBLE && mandataireFinancier === null) {
+      setError("Veuillez indiquer si votre structure est le mandataire financier.");
       return;
     }
 
@@ -290,6 +302,8 @@ export function QualificationForm({
         parcoursId,
         decision,
         raisonsIneligibilite: decision === QualificationDecision.NON_ELIGIBLE ? finalRaisons : undefined,
+        estMandataireFinancier:
+          decision === QualificationDecision.ELIGIBLE ? (mandataireFinancier ?? undefined) : undefined,
         note: note.trim() || undefined,
       });
 
@@ -342,6 +356,45 @@ export function QualificationForm({
             </div>
           ))}
         </fieldset>
+
+        {/* Mandataire financier — uniquement si éligible */}
+        {decision === QualificationDecision.ELIGIBLE && (
+          <fieldset className="fr-fieldset fr-mt-3w" aria-labelledby="mandataire-legend">
+            <legend className="fr-fieldset__legend fr-text--bold" id="mandataire-legend">
+              Votre structure est-elle le mandataire financier ?
+            </legend>
+            <div className="fr-fieldset__element">
+              <div className="fr-radio-group">
+                <input
+                  type="radio"
+                  id="mandataire-oui"
+                  name="mandataire-financier"
+                  checked={mandataireFinancier === true}
+                  onChange={() => setMandataireFinancier(true)}
+                  disabled={isPending}
+                />
+                <label className="fr-label" htmlFor="mandataire-oui">
+                  Oui, ma structure est le mandataire financier
+                </label>
+              </div>
+            </div>
+            <div className="fr-fieldset__element">
+              <div className="fr-radio-group">
+                <input
+                  type="radio"
+                  id="mandataire-non"
+                  name="mandataire-financier"
+                  checked={mandataireFinancier === false}
+                  onChange={() => setMandataireFinancier(false)}
+                  disabled={isPending}
+                />
+                <label className="fr-label" htmlFor="mandataire-non">
+                  Non
+                </label>
+              </div>
+            </div>
+          </fieldset>
+        )}
 
         {/* Raisons d'inéligibilité — liste déroulante multi-select (conditionnel) */}
         {decision === QualificationDecision.NON_ELIGIBLE && (

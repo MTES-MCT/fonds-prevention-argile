@@ -3,6 +3,7 @@ import {
   parcoursAmoValidations,
   parcoursPrevention,
   dossiersDemarchesSimplifiees,
+  entreprisesAmo,
   users,
 } from "@/shared/database/schema";
 import { eq, and } from "drizzle-orm";
@@ -41,10 +42,13 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
         validation: parcoursAmoValidations,
         parcours: parcoursPrevention,
         user: users,
+        amoNom: entreprisesAmo.nom,
       })
       .from(parcoursAmoValidations)
       .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
       .innerJoin(users, eq(users.id, parcoursPrevention.userId))
+      // leftJoin : un dossier en autonomie (SANS_AMO) n'a pas d'entreprise rattachée.
+      .leftJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
       .where(eq(parcoursAmoValidations.id, dossierId))
       .limit(1);
 
@@ -160,6 +164,10 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       currentStatus: dossier.parcours.currentStatus as Status,
       dsStatus: dossierDS?.dsStatus ?? null,
       validationStatut: dossier.validation.statut,
+      entrepriseAmoId: dossier.validation.entrepriseAmoId,
+      amoNom: dossier.amoNom,
+      estMandataireFinancier: dossier.validation.estMandataireFinancier,
+      demandeArretAt: dossier.validation.demandeArretAt,
       instructedAt: dossierDS?.instructedAt ?? null,
       parcoursCreatedAt: dossier.parcours.createdAt,
       lastUpdatedAt: dossier.parcours.updatedAt,

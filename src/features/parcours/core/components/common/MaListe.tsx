@@ -1,9 +1,17 @@
+import { useState } from "react";
 import Link from "next/link";
 import { useParcours } from "../../context/useParcours";
 import { Step } from "../../domain";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 import { useAmoMode } from "@/features/parcours/amo/hooks";
-import { getStepListItems, type StepListItem } from "@/features/parcours/amo/domain/value-objects";
+import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import {
+  getStepListItems,
+  peutAnnulerAccompagnement,
+  requiertAccordAmo,
+  type StepListItem,
+} from "@/features/parcours/amo/domain/value-objects";
+import { AnnulerAccompagnementModal } from "@/features/parcours/amo/components/steps/AnnulerAccompagnementModal";
 
 const COMPLETED_STYLE: React.CSSProperties = {
   textDecoration: "line-through",
@@ -12,24 +20,63 @@ const COMPLETED_STYLE: React.CSSProperties = {
 };
 
 export default function MaListe() {
-  const { currentStep, statutAmo, getDossierUrl, lastDSStatus } = useParcours();
+  const { currentStep, statutAmo, getDossierUrl, lastDSStatus, validationAmoComplete, getDSStatusByStep } =
+    useParcours();
   const amoMode = useAmoMode();
+  const [isAnnulerOpen, setIsAnnulerOpen] = useState(false);
 
   const items = getStepListItems(amoMode, statutAmo, currentStep, lastDSStatus === DSStatus.ACCEPTE);
 
+  // L'annulation n'existe qu'en mode FACULTATIF : ailleurs l'AMO est imposé par le
+  // département (même garde que `skipAmoStepForUser`, revérifiée côté serveur).
+  const peutAnnuler =
+    amoMode === AmoMode.FACULTATIF &&
+    statutAmo !== null &&
+    validationAmoComplete !== null &&
+    peutAnnulerAccompagnement({
+      statut: statutAmo,
+      demandeArretAt: validationAmoComplete.demandeArretAt,
+      eligibiliteDsStatus: getDSStatusByStep(Step.ELIGIBILITE) ?? null,
+    });
+  const arretEnAttente = Boolean(validationAmoComplete?.demandeArretAt);
+  const accordAmoRequis =
+    statutAmo !== null && requiertAccordAmo(statutAmo, validationAmoComplete?.estMandataireFinancier ?? null);
+
   return (
-    <div className="fr-card">
-      <div className="fr-card__body">
-        <h2 className="fr-card__title">Ma liste</h2>
-        <div className="fr-card__desc">
-          <ol type="1" className="fr-list space-y-2">
-            {items.map((item) => (
-              <li key={item.key}>{renderItemLink(item, getDossierUrl)}</li>
-            ))}
-          </ol>
+    <>
+      <div className="fr-card">
+        <div className="fr-card__body">
+          <h2 className="fr-card__title">Ma liste</h2>
+          <div className="fr-card__desc">
+            <ol type="1" className="fr-list space-y-2">
+              {items.map((item) => (
+                <li key={item.key}>
+                  {renderItemLink(item, getDossierUrl)}
+                  {item.key === "choix-accompagnement" && peutAnnuler && (
+                    <button
+                      type="button"
+                      className="fr-link fr-link--sm fr-ml-1w"
+                      onClick={() => setIsAnnulerOpen(true)}>
+                      Annuler
+                    </button>
+                  )}
+                  {item.key === "choix-accompagnement" && arretEnAttente && (
+                    <span className="fr-text--xs fr-text-mention--grey fr-ml-1w">Arrêt demandé</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       </div>
-    </div>
+
+      <AnnulerAccompagnementModal
+        isOpen={isAnnulerOpen}
+        onClose={() => setIsAnnulerOpen(false)}
+        accordAmoRequis={accordAmoRequis}
+        entrepriseAmo={validationAmoComplete?.entrepriseAmo ?? null}
+      />
+    </>
   );
 }
 

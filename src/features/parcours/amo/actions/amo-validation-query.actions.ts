@@ -31,6 +31,8 @@ export async function getValidationAmo(): Promise<ActionResult<ValidationAmoComp
         commentaire: parcoursAmoValidations.commentaire,
         choisieAt: parcoursAmoValidations.choisieAt,
         valideeAt: parcoursAmoValidations.valideeAt,
+        estMandataireFinancier: parcoursAmoValidations.estMandataireFinancier,
+        demandeArretAt: parcoursAmoValidations.demandeArretAt,
         entrepriseAmo: {
           id: entreprisesAmo.id,
           nom: entreprisesAmo.nom,
@@ -42,7 +44,9 @@ export async function getValidationAmo(): Promise<ActionResult<ValidationAmoComp
         },
       })
       .from(parcoursAmoValidations)
-      .innerJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
+      // leftJoin : une validation SANS_AMO n'a pas d'entreprise rattachée. Un innerJoin
+      // la masquait entièrement, rendant l'état « en autonomie » invisible côté demandeur.
+      .leftJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
       .where(eq(parcoursAmoValidations.parcoursId, parcours.id))
       .limit(1);
 

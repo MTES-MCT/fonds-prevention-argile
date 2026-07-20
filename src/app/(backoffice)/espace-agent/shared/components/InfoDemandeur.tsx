@@ -6,18 +6,34 @@ import { SOURCE_ACQUISITION_LABELS } from "@/shared/domain/value-objects";
 import { formatNomComplet, formatDate } from "@/shared/utils";
 import Link from "next/dist/client/link";
 
+/** AMO rattachée au dossier ; `null` = le demandeur est en autonomie. */
+export interface InfoDemandeurAmo {
+  nom: string;
+  estMandataireFinancier: boolean | null;
+}
+
 interface InfoDemandeurProps {
   demandeur: InfoDemandeurType;
   /** Date depuis laquelle le dossier est suivi (optionnel, affiché sous le titre) */
   suiviDepuis?: Date;
   /** Lien vers la page d'édition des données de simulation (optionnel) */
   editSimulationHref?: string;
+  /** Éligibilité attestée par l'AMO. Omis = ligne masquée. */
+  eligibiliteConfirmee?: boolean;
+  /** AMO rattachée (`null` = autonomie). Omis = ligne masquée. */
+  amo?: InfoDemandeurAmo | null;
 }
 
 /**
  * Composant affichant les informations du demandeur
  */
-export function InfoDemandeur({ demandeur, suiviDepuis, editSimulationHref }: InfoDemandeurProps) {
+export function InfoDemandeur({
+  demandeur,
+  suiviDepuis,
+  editSimulationHref,
+  eligibiliteConfirmee,
+  amo,
+}: InfoDemandeurProps) {
   const [emailCopied, setEmailCopied] = useState(false);
 
   const handleCopyEmail = async () => {
@@ -91,6 +107,41 @@ export function InfoDemandeur({ demandeur, suiviDepuis, editSimulationHref }: In
                 <span className="fr-text--sm fr-text--mention-grey fr-ml-1w">
                   ({demandeur.sourceAcquisitionPrecision})
                 </span>
+              )}
+            </dd>
+          </>
+        )}
+        {eligibiliteConfirmee !== undefined && (
+          <>
+            <dt className="fr-text">Éligibilité :</dt>
+            <dd className="fr-m-0">
+              <p className={`fr-badge fr-badge--sm ${eligibiliteConfirmee ? "fr-badge--success" : "fr-badge--info"}`}>
+                {eligibiliteConfirmee ? "CONFIRMÉE" : "À CONFIRMER"}
+              </p>
+              {editSimulationHref && (
+                <Link
+                  href={editSimulationHref}
+                  className="fr-link fr-link--sm fr-icon-edit-line fr-ml-1w"
+                  title="Vérifier ou modifier les données d'éligibilité"
+                  aria-label="Vérifier ou modifier les données d'éligibilité"
+                />
+              )}
+            </dd>
+          </>
+        )}
+        {amo !== undefined && (
+          <>
+            <dt className="fr-text">AMO :</dt>
+            <dd className="fr-m-0">
+              {amo === null ? (
+                <p className="fr-badge fr-badge--sm fr-badge--info">EN AUTONOMIE</p>
+              ) : (
+                <>
+                  {amo.nom}
+                  {amo.estMandataireFinancier === true && (
+                    <p className="fr-badge fr-badge--sm fr-badge--blue-ecume fr-mt-1v">MANDATAIRE FINANCIER</p>
+                  )}
+                </>
               )}
             </dd>
           </>

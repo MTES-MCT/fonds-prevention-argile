@@ -3,12 +3,12 @@ import { Step } from "../domain/value-objects/step";
 import { getParcoursComplet } from "./parcours-state.service";
 import { mapRGAToDSFormat, validateRGADataForDS } from "../../dossiers-ds/mappers/rga-to-ds.mapper";
 import { Status } from "../domain";
-import { getAmoChoisie } from "../../amo/actions";
+import { getAmoChoisie, getValidationAmo } from "../../amo/actions";
 import { prefillClient } from "../../dossiers-ds/adapters";
 import { createDossierForCurrentStep, getDossierByStep } from "../../dossiers-ds/services";
 import { parcoursRepo, userRepo } from "@/shared/database";
 import { DS_FIELDS_ELIGIBILITE } from "../../dossiers-ds/domain";
-import { DS_FIELD_IDS } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
+import { DS_FIELD_IDS, DS_OPTIONS_MANDATAIRE } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
 import { createDebugLogger } from "@/shared/utils";
 import { PartialRGASimulationData } from "@/features/simulateur";
 
@@ -141,6 +141,14 @@ export async function createEligibiliteDossier(
       }
       if (amo.telephone) {
         prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`] = amo.telephone;
+      }
+
+      // Uniquement quand l'AMO s'est déclarée mandataire financier : c'est le seul cas
+      // déductible. Un « non » ne dit pas s'il existe un autre mandataire (proche,
+      // représentant légal) ni si l'AMO est mandataire non financier → on laisse vide.
+      const validationResult = await getValidationAmo();
+      if (validationResult.success && validationResult.data?.estMandataireFinancier === true) {
+        prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`] = DS_OPTIONS_MANDATAIRE.FINANCIER;
       }
     }
 

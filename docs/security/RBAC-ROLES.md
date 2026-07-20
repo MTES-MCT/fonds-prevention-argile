@@ -274,6 +274,22 @@ refuserait normalement l'AV). `ANALYSTE` et `ADMINISTRATEUR` sont exclus. Garde
 (`reouvrirDemandeAction`) = rôle habilité **+** `canReopenRefusedDemande(scope, …)` ; l'audit
 QUI/QUAND est écrit dans `parcours_actions` (type `dossier_reouvert`).
 
+### 6.1.1 Arrêt de l'accompagnement (garde stricte, à l'inverse)
+
+L'action « Ne plus accompagner » ([ADR-0018](../adr/0018-arret-accompagnement-amo.md))
+utilise au contraire la garde **standard** `assertCanActAsResponsable` : seul l'**AMO
+responsable courant** du dossier peut arrêter son propre accompagnement (`ROLES_ARRET_ACCOMPAGNEMENT`
+= `AMO`, `AMO_ET_ALLERS_VERS`). `ALLERS_VERS`, `ANALYSTE`, `ADMINISTRATEUR` et le
+super-admin en lecture seule sont **exclus** — contrairement à la ré-ouverture, aucun
+élargissement n'est justifié ici. Même garde pour le refus d'une demande d'arrêt.
+
+> Effet de bord : le détachement pose `entreprise_amo_id = NULL`, donc l'AMO **perd
+> l'accès** au dossier juste après son action (`canAccessDossier` refuse un dossier sans
+> entreprise) et l'aller-vers du territoire en devient responsable.
+
+Côté demandeur, l'annulation n'a pas de garde de rôle : l'action résout le parcours via
+`userId` de session (modèle `skipAmoStepForUser`), elle est donc scopée par construction.
+
 ## 6.2 Édition des données de simulation alignée sur le détail dossier
 
 Le bouton « Vérifier son éligibilité » (édition du formulaire de simulation, page
@@ -297,19 +313,20 @@ Les statuts éditables incluent `SANS_AMO` (aligné sur `STATUTS_CONSULTABLES`).
 
 ## 7. Fichiers clés
 
-| Rôle                             | Fichier                                                                                                           |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Enum des rôles                   | `src/shared/domain/value-objects/user-role.enum.ts`                                                               |
-| Service de permissions           | `src/features/auth/permissions/services/permissions.service.ts`                                                   |
-| Matrice permissions / onglets    | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                                          |
-| Périmètre données agent          | `src/features/auth/permissions/services/agent-scope.service.ts`                                                   |
-| Scope stats national (ADR-0017)  | `agent-scope.service.ts` (`getStatsScopeFilters`, `canViewNationalStats`)                                         |
-| Projection stats anonymisée      | `src/features/backoffice/administration/demandeurs/services/users-tracking.service.ts` (`toStatsProjection`)      |
-| Service RBAC (onglets)           | `src/features/auth/permissions/services/rbac.service.ts`                                                          |
-| Config des routes / redirections | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                 |
-| Aiguillage auth                  | `src/middleware.ts`                                                                                               |
-| Garde espace agent               | `src/app/(backoffice)/espace-agent/layout.tsx`                                                                    |
-| Garde administration             | `src/app/(backoffice)/administration/page.tsx`                                                                    |
-| Garde entreprise AMO             | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                    |
-| Garde ré-ouverture demande       | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`             |
-| Garde édition simulation         | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`) |
+| Rôle                             | Fichier                                                                                                                 |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Enum des rôles                   | `src/shared/domain/value-objects/user-role.enum.ts`                                                                     |
+| Service de permissions           | `src/features/auth/permissions/services/permissions.service.ts`                                                         |
+| Matrice permissions / onglets    | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                                                |
+| Périmètre données agent          | `src/features/auth/permissions/services/agent-scope.service.ts`                                                         |
+| Scope stats national (ADR-0017)  | `agent-scope.service.ts` (`getStatsScopeFilters`, `canViewNationalStats`)                                               |
+| Projection stats anonymisée      | `src/features/backoffice/administration/demandeurs/services/users-tracking.service.ts` (`toStatsProjection`)            |
+| Service RBAC (onglets)           | `src/features/auth/permissions/services/rbac.service.ts`                                                                |
+| Config des routes / redirections | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                       |
+| Aiguillage auth                  | `src/middleware.ts`                                                                                                     |
+| Garde espace agent               | `src/app/(backoffice)/espace-agent/layout.tsx`                                                                          |
+| Garde administration             | `src/app/(backoffice)/administration/page.tsx`                                                                          |
+| Garde entreprise AMO             | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                          |
+| Garde ré-ouverture demande       | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                   |
+| Garde arrêt d'accompagnement     | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts` |
+| Garde édition simulation         | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)       |

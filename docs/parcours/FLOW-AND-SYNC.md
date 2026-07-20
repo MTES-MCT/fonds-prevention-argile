@@ -115,6 +115,74 @@ Le responsable bascule sur l'aller-vers du territoire (résolution par
 d'audit `parcours_actions` (action ops). À distinguer de la ré-ouverture (§2.4), qui
 remet une demande **refusée** en attente de validation AMO — ici on **retire** l'AMO.
 
+### 2.6 Mandataire financier (saisie à l'éligibilité)
+
+Quand un agent atteste l'éligibilité **et** accompagne le demandeur, on capture si sa
+structure est le **mandataire financier** du dossier (Oui/Non) + une **note
+complémentaire** optionnelle. Deux surfaces, deux tables :
+
+- **Validation AMO** (`approveValidation`, statut `LOGEMENT_ELIGIBLE`) →
+  `parcours_amo_validations.est_mandataire_financier` (booléen nullable) ; la note
+  réutilise la colonne existante `commentaire`.
+- **Qualification Allers-Vers** (`qualifyProspect`, décision `eligible`) →
+  `prospect_qualifications.est_mandataire_financier` ; la note réutilise `note`.
+
+Le booléen est **nullable** : `null` = question non posée (autre statut/décision) ou
+non répondue. La question n'est obligatoire que sur le chemin éligible+accompagne. Le
+champ est en lecture seule une fois la réponse enregistrée et visible côté super-admin
+sur le détail de la demande/du dossier.
+
+**Report vers Démarches Numériques.** La démarche d'éligibilité porte un champ
+« Avez-vous un mandataire, et si oui, est-il financier ? » (`MANDATAIRE_FINANCIER`,
+liste à 3 options). Il est prérempli à la création du dossier **uniquement quand
+`est_mandataire_financier = true`**, avec la valeur `« Mandataire financier »`.
+
+> Ce champ DN appartient à la section « représentant légal / mandataire **du demandeur** »,
+> pas à la section AMO : un `false` côté AMO ne dit ni s'il existe un autre mandataire
+> (proche, représentant légal), ni si l'AMO est mandataire _non_ financier. On laisse donc
+> le champ vide sur `false` comme sur `null` — le demandeur répond lui-même. Préremplir
+> « Mandataire financier » a par ailleurs une conséquence : la PJ « Relevé d'identité
+> bancaire du mandataire financier » est obligatoire côté DN.
+
+### 2.7 Arrêt de l'accompagnement (demandeur ou AMO) — ADR-0018
+
+Contrairement au détachement ops (§2.5), l'arrêt est ici **déclenchable depuis l'UI**, des
+deux côtés. La mutation est la même dans tous les cas : le service partagé `detacherAmo`
+(`detachement-amo.service.ts`), extrait du script `pnpm fix:detacher-amo`. État cible
+inchangé : `sans_amo` / `aucun` / `entreprise_amo_id NULL` → le responsable bascule sur
+l'aller-vers du territoire. **`archived_at` n'est jamais posé** : le dossier poursuit en
+autonomie. Voir [ADR-0018](../adr/0018-arret-accompagnement-amo.md).
+
+**Côté demandeur** (lien « Annuler » dans Ma liste) — arbre de décision :
+
+| Condition                                                    | Effet                                              |
+| ------------------------------------------------------------ | -------------------------------------------------- |
+| Département en mode AMO **obligatoire**                      | **bloqué** (l'autonomie n'y existe pas)            |
+| Dossier d'éligibilité DN `en_instruction`                    | **bloqué** (plus de changement possible)           |
+| `en_attente` (l'AMO n'a pas encore validé)                   | détachement immédiat + mail d'info à l'AMO         |
+| `logement_eligible` **et** `est_mandataire_financier ≠ true` | détachement immédiat + mail d'info à l'AMO         |
+| `logement_eligible` **et** `est_mandataire_financier = true` | `demande_arret_at` posé + mail de demande d'accord |
+
+`est_mandataire_financier = null` vaut **non-mandataire** (on ne bloque pas sur une donnée
+absente). Prédicats purs partagés UI ↔ service : `peutAnnulerAccompagnement`,
+`requiertAccordAmo` (`domain/value-objects/arretAccompagnement.ts`).
+
+> L'annulation n'existe qu'en mode **FACULTATIF** : là où l'AMO est obligatoire (par défaut
+> 03/36/47/54/81), le lien est masqué et le service refuse — même garde que
+> `skipAmoStepForUser`, dupliquée pour que les deux chemins vers l'autonomie ne divergent pas.
+
+**Côté AMO** (menu « Gérer » → « Ne plus accompagner », ou bandeau « Je donne ma réponse »
+quand `demande_arret_at` est posé) : soit l'AMO arrête (raisons obligatoires → détachement),
+soit elle poursuit (`demande_arret_at` remis à NULL). Garde : `assertCanActAsResponsable`.
+
+> **Effet de bord assumé** : détacher pose `entreprise_amo_id = NULL`, donc l'AMO **perd
+> immédiatement l'accès au dossier**. La server action doit lire la validation et
+> construire le snapshot d'auteur **avant** la mutation, et l'UI rediriger vers le listing.
+
+Audit dans `parcours_actions` (types système, aucune migration) : `accompagnement_arrete`,
+`arret_accompagnement_demande`, `arret_accompagnement_refuse`. Les actions du demandeur ont
+`agent_id = NULL` et `author_structure_type = "DEMANDEUR"`.
+
 ---
 
 ## 3. Architecture de la synchronisation
@@ -564,7 +632,9 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                            |
 | Création dossier devis-travaux (3 annotations) | `src/features/parcours/core/services/devis.service.ts`                                         |
 | Validation AMO (auto-progression CHOIX_AMO)    | `src/features/parcours/amo/services/amo-validation.service.ts`                                 |
-| Détachement AMO (passage en sans AMO)          | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                    |
+| Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                |
+| Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                    |
+| Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                           |
 | Endpoint CRON                                  | `src/app/api/cron/sync-parcours/route.ts`                                                      |
 | Workflow CRON GitHub Actions                   | `.github/workflows/cron-sync-parcours.yml`                                                     |
 | Server actions admin                           | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`         |

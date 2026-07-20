@@ -10,6 +10,7 @@ interface QualifyProspectParams {
   decision: QualificationDecision;
   actionsRealisees?: string[];
   raisonsIneligibilite?: string[];
+  estMandataireFinancier?: boolean;
   note?: string;
 }
 
@@ -25,7 +26,8 @@ export class QualificationService {
    * - "a_qualifier" → pas de changement de situation_particulier
    */
   async qualifyProspect(params: QualifyProspectParams): Promise<ProspectQualification> {
-    const { parcoursId, agentId, decision, actionsRealisees, raisonsIneligibilite, note } = params;
+    const { parcoursId, agentId, decision, actionsRealisees, raisonsIneligibilite, estMandataireFinancier, note } =
+      params;
 
     // 1. Vérifier que le parcours existe
     const parcours = await parcoursPreventionRepository.findById(parcoursId);
@@ -40,6 +42,7 @@ export class QualificationService {
       decision,
       actionsRealisees: actionsRealisees ?? [],
       raisonsIneligibilite: raisonsIneligibilite ?? null,
+      estMandataireFinancier: estMandataireFinancier ?? null,
       note: note ?? null,
     });
 

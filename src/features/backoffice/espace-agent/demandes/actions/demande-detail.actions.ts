@@ -1,10 +1,7 @@
 "use server";
 
 import { ActionResult } from "@/shared/types/action-result.types";
-import {
-  approveValidation,
-  rejectEligibility,
-} from "@/features/parcours/amo/services/amo-validation.service";
+import { approveValidation, rejectEligibility } from "@/features/parcours/amo/services/amo-validation.service";
 import { getDemandeDetail } from "../services/demande-detail.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
@@ -78,7 +75,8 @@ export async function getDemandeDetailAction(demandeId: string): Promise<ActionR
  */
 export async function accepterAccompagnement(
   demandeId: string,
-  commentaire?: string
+  commentaire?: string,
+  estMandataireFinancier?: boolean
 ): Promise<ActionResult<{ message: string; alreadyProcessed: boolean; valideeAt: Date }>> {
   try {
     const readOnlyError = await assertNotSuperAdminReadOnly();
@@ -90,7 +88,7 @@ export async function accepterAccompagnement(
       return { success: false, error: ownershipCheck.error };
     }
 
-    const result = await approveValidation(demandeId, commentaire);
+    const result = await approveValidation(demandeId, commentaire, estMandataireFinancier);
     return result;
   } catch (error) {
     console.error("Erreur accepterAccompagnement:", error);

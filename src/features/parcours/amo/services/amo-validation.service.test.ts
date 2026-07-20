@@ -112,6 +112,44 @@ describe("amo-validation.service", () => {
       expect(db.update).toHaveBeenCalledTimes(3);
     });
 
+    it("persiste estMandataireFinancier et le commentaire (note) dans la validation", async () => {
+      const setSpy = vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: validationId, parcoursId }]),
+        }),
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(db.update).mockReturnValueOnce({ set: setSpy } as any);
+      mockUpdateNoReturning(); // token
+      mockUpdateReturning([{ id: parcoursId }]); // parcours
+
+      const result = await approveValidation(validationId, "Eu au téléphone, projet motivé", true);
+
+      expect(result.success).toBe(true);
+      expect(setSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          estMandataireFinancier: true,
+          commentaire: "Eu au téléphone, projet motivé",
+        })
+      );
+    });
+
+    it("met estMandataireFinancier à null quand l'AMO ne répond pas", async () => {
+      const setSpy = vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: validationId, parcoursId }]),
+        }),
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(db.update).mockReturnValueOnce({ set: setSpy } as any);
+      mockUpdateNoReturning();
+      mockUpdateReturning([{ id: parcoursId }]);
+
+      await approveValidation(validationId);
+
+      expect(setSpy).toHaveBeenCalledWith(expect.objectContaining({ estMandataireFinancier: null }));
+    });
+
     it("est idempotent : un second appel sur une validation déjà traitée retourne alreadyProcessed:true", async () => {
       const alreadyValideeAt = new Date("2026-05-22T11:37:00Z");
       // 1. UPDATE validation conditional → 0 row (déjà validée)
@@ -156,9 +194,7 @@ describe("amo-validation.service", () => {
       if (result.success) {
         expect(result.data.alreadyProcessed).toBe(false);
       }
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("déjà progressé hors CHOIX_AMO/INVITATION")
-      );
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("déjà progressé hors CHOIX_AMO/INVITATION"));
 
       warnSpy.mockRestore();
     });

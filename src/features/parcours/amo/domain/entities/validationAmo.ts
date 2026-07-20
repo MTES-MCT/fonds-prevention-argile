@@ -23,7 +23,9 @@ export interface ValidationAmo {
 }
 
 /**
- * Validation AMO avec infos complètes de l'entreprise
+ * Validation AMO avec infos complètes de l'entreprise.
+ *
+ * `entrepriseAmo` est null quand le parcours est « sans AMO » (autonomie).
  */
 export interface ValidationAmoComplete {
   id: string;
@@ -32,7 +34,11 @@ export interface ValidationAmoComplete {
   commentaire: string | null;
   choisieAt: Date;
   valideeAt: Date | null;
-  entrepriseAmo: Amo;
+  /** null = question non posée ou non répondue (traité comme non-mandataire). */
+  estMandataireFinancier: boolean | null;
+  /** Non-null = arrêt demandé, en attente de la réponse de l'AMO mandataire. */
+  demandeArretAt: Date | null;
+  entrepriseAmo: Amo | null;
 }
 
 /**

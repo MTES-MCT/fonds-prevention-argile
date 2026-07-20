@@ -43,6 +43,14 @@ export interface DossierDetail {
   dsStatus: DSStatus | null;
   /** Statut de la validation AMO (pour distinguer en_attente / éligible / non éligible côté UI). */
   validationStatut: StatutValidationAmo;
+  /** Entreprise AMO rattachée, null si le dossier est en autonomie (SANS_AMO). */
+  entrepriseAmoId: string | null;
+  /** Nom de l'entreprise AMO rattachée, null si autonomie. */
+  amoNom: string | null;
+  /** L'AMO s'est-elle déclarée mandataire financier ? null = non renseigné. */
+  estMandataireFinancier: boolean | null;
+  /** Non-null = le demandeur a demandé l'arrêt et attend la réponse de l'AMO mandataire. */
+  demandeArretAt: Date | null;
   /** Date de passage en instruction (null si jamais passé en instruction) */
   instructedAt: Date | null;
   /** Date de création du parcours */

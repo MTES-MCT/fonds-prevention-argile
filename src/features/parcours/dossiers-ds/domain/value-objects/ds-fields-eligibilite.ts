@@ -79,6 +79,13 @@ export const DS_FIELDS_ELIGIBILITE: Record<string, DSField> = {
     type: DSFieldType.TEXT,
   },
 
+  "Q2hhbXAtNjQ3MDQ5Nw==": {
+    id: "Q2hhbXAtNjQ3MDQ5Nw==",
+    label: "Mandataire (et s'il est financier)",
+    section: DSSection.REPRESENTANT,
+    type: DSFieldType.DROPDOWN,
+  },
+
   // === SECTION 3: AMO ===
   "Q2hhbXAtNTQxOTQyOQ==": {
     id: "Q2hhbXAtNTQxOTQyOQ==",

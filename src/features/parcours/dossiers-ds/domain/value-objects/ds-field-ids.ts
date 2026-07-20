@@ -3,6 +3,10 @@
  */
 export const DS_FIELD_IDS = {
   ELIGIBILITE: {
+    // Section « 2. Identification du représentant légal ou du mandataire » : porte sur le
+    // mandataire du DEMANDEUR, pas sur l'AMO. On ne le préremplit que si l'AMO s'est
+    // déclarée mandataire financier — seul cas où la réponse est déductible sans ambiguïté.
+    MANDATAIRE_FINANCIER: "Q2hhbXAtNjQ3MDQ5Nw==",
     SIRET_AMO: "Q2hhbXAtNTQxOTQyOQ==",
     ADRESSE_AMO: "Q2hhbXAtNTQxOTQzMg==",
     EMAIL_AMO: "Q2hhbXAtNTQxOTQ2Mg==",
@@ -32,6 +36,16 @@ export const DS_FIELD_IDS = {
     COMMUNE: "Q2hhbXAtNjU2MzY2Mg==", // routage par département
   },
   FACTURES: {},
+} as const;
+
+/**
+ * Options de la liste déroulante « Avez-vous un mandataire, et si oui, est-il financier ? ».
+ * Libellés contractuels côté DN : toute divergence fait rejeter la valeur au préremplissage.
+ */
+export const DS_OPTIONS_MANDATAIRE = {
+  AUCUN: "Pas de mandataire",
+  NON_FINANCIER: "Mandataire non financier",
+  FINANCIER: "Mandataire financier",
 } as const;
 
 /**

@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createEligibiliteDossier } from "./eligibilite.service";
 import { getParcoursComplet } from "./parcours-state.service";
-import { getAmoChoisie } from "../../amo/actions";
+import { getAmoChoisie, getValidationAmo } from "../../amo/actions";
 import { mapRGAToDSFormat } from "../../dossiers-ds/mappers/rga-to-ds.mapper";
 import { prefillClient } from "../../dossiers-ds/adapters";
 import { createDossierForCurrentStep, getDossierByStep } from "../../dossiers-ds/services";
 import { userRepo } from "@/shared/database";
 import { Status } from "../domain/value-objects/status";
 import { Step } from "../domain/value-objects/step";
-import { DS_FIELD_IDS } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
+import { DS_FIELD_IDS, DS_OPTIONS_MANDATAIRE } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
 
 vi.mock("./parcours-state.service", () => ({
   getParcoursComplet: vi.fn(),
@@ -16,6 +16,7 @@ vi.mock("./parcours-state.service", () => ({
 
 vi.mock("../../amo/actions", () => ({
   getAmoChoisie: vi.fn(),
+  getValidationAmo: vi.fn(),
 }));
 
 vi.mock("../../dossiers-ds/mappers/rga-to-ds.mapper", () => ({
@@ -48,7 +49,11 @@ const AMO = {
   telephone: "0102030405",
 };
 
-async function runWithAmo(amoOverrides: Partial<typeof AMO> | null) {
+async function runWithAmo(amoOverrides: Partial<typeof AMO> | null, estMandataireFinancier: boolean | null = null) {
+  vi.mocked(getValidationAmo).mockResolvedValue({
+    success: true,
+    data: { estMandataireFinancier },
+  } as never);
   vi.mocked(getParcoursComplet).mockResolvedValue({
     parcours: { id: "parcours-1", currentStep: Step.ELIGIBILITE, status: Status.TODO },
   } as never);
@@ -115,5 +120,30 @@ describe("createEligibiliteDossier — prefill AMO", () => {
     expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.EMAIL_AMO}`);
     expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.ADRESSE_AMO}`);
     expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`);
+  });
+
+  it("préremplit « Mandataire financier » quand l'AMO s'est déclarée mandataire", async () => {
+    const payload = await runWithAmo({}, true);
+
+    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`]).toBe(DS_OPTIONS_MANDATAIRE.FINANCIER);
+  });
+
+  it("laisse le champ mandataire vide quand l'AMO a répondu « non »", async () => {
+    // Un « non » ne dit pas s'il existe un autre mandataire : on ne répond pas à sa place.
+    const payload = await runWithAmo({}, false);
+
+    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`);
+  });
+
+  it("laisse le champ mandataire vide quand la question n'a pas été posée (null)", async () => {
+    const payload = await runWithAmo({}, null);
+
+    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`);
+  });
+
+  it("n'écrit pas le champ mandataire sans AMO, même si la validation le dit mandataire", async () => {
+    const payload = await runWithAmo(null, true);
+
+    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`);
   });
 });

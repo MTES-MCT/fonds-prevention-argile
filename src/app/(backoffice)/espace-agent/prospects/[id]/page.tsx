@@ -165,6 +165,7 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
                       decision: latestQualification.decision as QualificationDecision,
                       actionsRealisees: latestQualification.actionsRealisees,
                       raisonsIneligibilite: latestQualification.raisonsIneligibilite,
+                      estMandataireFinancier: latestQualification.estMandataireFinancier,
                       note: latestQualification.note,
                       createdAt: latestQualification.createdAt.toISOString(),
                     }

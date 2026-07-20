@@ -4,9 +4,10 @@
  */
 
 /**
- * Type de structure de l'agent auteur de l'action
+ * Type de structure de l'auteur de l'action.
+ * `DEMANDEUR` : action déclenchée par le particulier lui-même (agent_id null).
  */
-export type StructureType = "AMO" | "ALLERS_VERS" | "DDT" | "ADMINISTRATION";
+export type StructureType = "AMO" | "ALLERS_VERS" | "DDT" | "ADMINISTRATION" | "DEMANDEUR";
 
 /** Valeur de type d'action correspondant à l'ancienne note libre */
 export const ACTION_TYPE_COMMENTAIRE_LIBRE = "commentaire_libre";
@@ -20,6 +21,18 @@ export const ACTION_TYPE_DOSSIER_REOUVERT = "dossier_reouvert";
  * dont le dossier a été pré-créé par un agent et qui ne l'a pas encore réclamé.
  */
 export const ACTION_TYPE_INVITATION_RENVOYEE = "invitation_renvoyee";
+/**
+ * Action système : l'accompagnement AMO a été arrêté (par l'AMO, ou par le demandeur
+ * passé en autonomie). Le message porte les raisons.
+ */
+export const ACTION_TYPE_ACCOMPAGNEMENT_ARRETE = "accompagnement_arrete";
+/**
+ * Action système : le demandeur a demandé l'arrêt de l'accompagnement et attend la
+ * réponse de son AMO mandataire financier.
+ */
+export const ACTION_TYPE_ARRET_DEMANDE = "arret_accompagnement_demande";
+/** Action système : l'AMO mandataire a refusé la demande d'arrêt et poursuit l'accompagnement. */
+export const ACTION_TYPE_ARRET_REFUSE = "arret_accompagnement_refuse";
 /** Valeur de type d'action "Autre" (nécessite une précision) */
 export const ACTION_TYPE_AUTRE = "autre";
 
@@ -91,6 +104,9 @@ export const ACTION_LABELS_BY_VALUE: Record<string, string> = ACTION_TYPE_GROUPS
   {
     [ACTION_TYPE_DOSSIER_REOUVERT]: "Demande ré-ouverte",
     [ACTION_TYPE_INVITATION_RENVOYEE]: "Invitation renvoyée",
+    [ACTION_TYPE_ACCOMPAGNEMENT_ARRETE]: "Arrêt de l'accompagnement",
+    [ACTION_TYPE_ARRET_DEMANDE]: "Demande d'arrêt de l'accompagnement",
+    [ACTION_TYPE_ARRET_REFUSE]: "Refus de l'arrêt de l'accompagnement",
   } as Record<string, string>
 );
 

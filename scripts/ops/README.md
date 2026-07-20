@@ -47,7 +47,7 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 | [`reouvrir-demande.ts`](#reouvrir-demande)                       | **écrit** | Ré-ouvre une demande refusée par l'AMO (changement d'avis) : statut refusé -> en_attente + token frais (+ email)                | `pnpm fix:reouvrir-demande`                            |
 | [`detacher-amo.ts`](#detacher-amo)                               | **écrit** | Détache l'AMO d'un parcours (passage en « sans AMO ») : AMO choisi avant l'arrêté, le demandeur veut continuer seul             | `pnpm fix:detacher-amo`                                |
 | [`debug-matomo-events.ts`](#debug-matomo-events)                 | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur)                                                                 | `tsx scripts/ops/debug/debug-matomo-events.ts`         |
-| [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Récupère le schéma GraphQL d'une démarche DS (utile pour itérer sur les mappings)                                               | `tsx scripts/ops/ds/fetch-demarche-schema.ts`          |
+| [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Dump les champs + annotations d'une démarche DS avec leurs IDs (alimente `ds-field-ids.ts`)                                     | `pnpm ds:fetch-schema <numero>`                        |
 | [`check-ds-permissions.ts`](#check-ds-permissions)               | read-only | Vérifie que le token GraphQL a accès à chaque démarche configurée (sinon synchro KO)                                            | `pnpm ds:check-permissions`                            |
 | [`extend-expired-tokens.sql`](#extend-expired-tokens)            | **écrit** | Repousse la date d'expiration des tokens AMO expirés                                                                            | `psql -f scripts/ops/sql/extend-expired-tokens.sql`    |
 | [`cleanup-staging.sql`](#cleanup-staging)                        | **écrit** | Nettoyage destructif d'une BDD staging (TRUNCATE des tables transactionnelles)                                                  | `psql -f scripts/ops/sql/cleanup-staging.sql`          |
@@ -215,7 +215,20 @@ tsx scripts/ops/debug/debug-matomo-events.ts --since=2026-04-09
 
 ### fetch-demarche-schema
 
-Récupère le schéma GraphQL d'une démarche DS (champs publics) pour vérifier les mappings côté code.
+Dump le schéma complet d'une démarche DS : **champs publics ET annotations privées**, avec
+pour chacun `id` (base64 `Champ-<stable_id>`), `label`, type et options. Se termine par un
+bloc `=== RESUME IDS (copier-coller) ===` directement exploitable pour alimenter
+[`ds-field-ids.ts`](../../src/features/parcours/dossiers-ds/domain/value-objects/ds-field-ids.ts).
+
+```bash
+pnpm ds:fetch-schema 126061                                 # numéro de démarche requis
+```
+
+Les IDs de champs sont **stables au clonage** d'une démarche : vérifié en juillet 2026,
+l'éligibilité staging (146377) et prod (126061) exposent exactement les mêmes IDs, ce qui
+justifie de les coder en dur. Attention en revanche aux **annotations privées ajoutées à la
+main**, qui elles divergent (« Lien vers le dossier FPA » : `…NjY4NzQ3NQ==` en staging vs
+`…NjY4NzQ1Mg==` en prod) — les revérifier par environnement avant de s'y fier.
 
 ### check-ds-permissions
 
