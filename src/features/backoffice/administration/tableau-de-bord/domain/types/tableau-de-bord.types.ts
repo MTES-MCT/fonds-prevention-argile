@@ -114,14 +114,17 @@ export interface TableauDeBordStats {
   topCommunes: CommuneSimulationsStats[];
 }
 
-/** Stats Matomo chargees de facon asynchrone (separement des stats BDD) */
+/**
+ * Stats Matomo chargees de facon asynchrone (separement des stats BDD).
+ * null = Matomo injoignable (affiche "Indisponible"), a distinguer d'une valeur a 0.
+ */
 export interface MatomoSimulationsStats {
-  simulationsMatomo: StatAvecVariation;
-  simulationsEligibles: StatAvecVariation;
-  simulationsNonEligibles: StatAvecVariation;
-  simulationsSansInscription: StatAvecVariation;
-  tauxTransformation: StatAvecVariation;
-  visiteursUniques: StatAvecVariation;
+  simulationsMatomo: StatAvecVariation | null;
+  simulationsEligibles: StatAvecVariation | null;
+  simulationsNonEligibles: StatAvecVariation | null;
+  simulationsSansInscription: StatAvecVariation | null;
+  tauxTransformation: StatAvecVariation | null;
+  visiteursUniques: StatAvecVariation | null;
 }
 
 export type PeriodeId = "7j" | "30j" | "90j" | "6m" | "12m" | "tout";

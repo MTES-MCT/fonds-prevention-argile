@@ -118,7 +118,6 @@ export function TableauDeBord() {
   const simulationsValue = matomoSimuStats?.simulationsMatomo ?? null;
   const tauxValue = matomoSimuStats?.tauxTransformation ?? null;
 
-
   return (
     <>
       {/* En-tête + filtres — fond blanc */}
@@ -161,7 +160,7 @@ export function TableauDeBord() {
             <DashboardStatCard
               value={formatMatomoValue(matomoSimuStats?.visiteursUniques, matomoLoaded)}
               label="Visiteurs uniques sur le site"
-              variation={matomoSimuStats?.visiteursUniques.variation ?? null}
+              variation={matomoSimuStats?.visiteursUniques?.variation ?? null}
               loading={false}
               compact
               tooltip="Donnees Matomo (VisitsSummary)"

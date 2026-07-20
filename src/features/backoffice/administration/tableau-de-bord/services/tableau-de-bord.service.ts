@@ -103,6 +103,18 @@ interface SimulationsMatomoResult {
 }
 
 /**
+ * Trace une panne Matomo et renvoie null, pour la distinguer d'un vrai zero cote UI.
+ */
+async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promise<T | null> {
+  try {
+    return await promise;
+  } catch (error) {
+    console.error(`[matomo] echec ${contexte}:`, error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+/**
  * Récupère le nombre de simulations terminées depuis Matomo (eligible + non eligible).
  * Utilise les events par département si un code département est spécifié.
  */
@@ -1235,34 +1247,53 @@ export async function getMatomoSimulationsStats(
 
   // Comptes crees BDD (filtrés par partenaire via users.partner_source) + visiteurs uniques Matomo (en parallele)
   const [currentMatomo, comptes, prevMatomo, prevComptes, currentVisitors, prevVisitors] = await Promise.all([
-    getSimulationsMatomo(debut, fin, codeDepartement, partner).catch(() => matomoFallback),
+    logMatomoFailure(getSimulationsMatomo(debut, fin, codeDepartement, partner), "simulations (periode courante)"),
     countComptesCrees(debut, fin, codeDepartement, partner),
     previousRange
-      ? getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement, partner).catch(
-          () => matomoFallback
+      ? logMatomoFailure(
+          getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement, partner),
+          "simulations (periode precedente)"
         )
       : Promise.resolve(matomoFallback),
     previousRange
       ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement, partner)
       : Promise.resolve(0),
-    getUniqueVisitors(debut, fin, codeDepartement, partner).catch(() => 0),
+    logMatomoFailure(getUniqueVisitors(debut, fin, codeDepartement, partner), "visiteurs (periode courante)"),
     previousRange
-      ? getUniqueVisitors(previousRange.debut, previousRange.fin, codeDepartement, partner).catch(() => 0)
+      ? logMatomoFailure(
+          getUniqueVisitors(previousRange.debut, previousRange.fin, codeDepartement, partner),
+          "visiteurs (periode precedente)"
+        )
       : Promise.resolve(0),
   ]);
 
   const variationVisiteurs =
-    previousRange && prevVisitors > 0 ? calculerVariation(currentVisitors, prevVisitors) : null;
+    previousRange && currentVisitors !== null && prevVisitors !== null && prevVisitors > 0
+      ? calculerVariation(currentVisitors, prevVisitors)
+      : null;
+
+  const visiteursUniques = currentVisitors === null ? null : { valeur: currentVisitors, variation: variationVisiteurs };
+
+  if (currentMatomo === null) {
+    // Matomo injoignable : null (et non 0) pour que l'UI affiche "Indisponible".
+    return {
+      simulationsMatomo: null,
+      simulationsEligibles: null,
+      simulationsNonEligibles: null,
+      simulationsSansInscription: null,
+      tauxTransformation: null,
+      visiteursUniques,
+    };
+  }
 
   if (currentMatomo.total === 0) {
-    // Matomo indisponible pour les simulations — on retourne quand meme les visiteurs uniques
     return {
       simulationsMatomo: { valeur: 0, variation: null },
       simulationsEligibles: { valeur: 0, variation: null },
       simulationsNonEligibles: { valeur: 0, variation: null },
       simulationsSansInscription: { valeur: 0, variation: null },
       tauxTransformation: { valeur: 0, variation: null },
-      visiteursUniques: { valeur: currentVisitors, variation: variationVisiteurs },
+      visiteursUniques,
     };
   }
 
@@ -1275,7 +1306,7 @@ export async function getMatomoSimulationsStats(
   let variationSansInscription: number | null = null;
   let variationTaux: number | null = null;
 
-  if (previousRange && prevMatomo.total > 0) {
+  if (previousRange && prevMatomo !== null && prevMatomo.total > 0) {
     variationEligibles = calculerVariation(currentMatomo.eligible, prevMatomo.eligible);
     variationNonEligibles = calculerVariation(currentMatomo.nonEligible, prevMatomo.nonEligible);
     variationTotal = calculerVariation(currentMatomo.total, prevMatomo.total);
@@ -1293,7 +1324,7 @@ export async function getMatomoSimulationsStats(
     simulationsNonEligibles: { valeur: currentMatomo.nonEligible, variation: variationNonEligibles },
     simulationsSansInscription: { valeur: sansInscription, variation: variationSansInscription },
     tauxTransformation: { valeur: taux, variation: variationTaux },
-    visiteursUniques: { valeur: currentVisitors, variation: variationVisiteurs },
+    visiteursUniques,
   };
 }
 
