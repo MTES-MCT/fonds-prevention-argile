@@ -131,6 +131,7 @@ export const createMockStatistiques = (override?: Partial<Statistiques>): Statis
   visiteursUniques: 4200,
   variationVisiteursUniques: 10,
   visitesParJour: createMockVisitesParJour(),
+  granulariteVisites: "day",
   tauxRebond: 45,
   variationTauxRebond: -2,
 
@@ -155,6 +156,7 @@ export const createEmptyStatistiques = (): Statistiques => ({
   visiteursUniques: 0,
   variationVisiteursUniques: null,
   visitesParJour: [],
+  granulariteVisites: "day",
   tauxRebond: 0,
   variationTauxRebond: null,
   funnelSimulateurRGA: createEmptyFunnelStatistiques(),
@@ -180,6 +182,7 @@ export const createMockStatistiquesElevees = (): Statistiques => ({
     ...v,
     visites: Math.floor(Math.random() * 500) + 200,
   })),
+  granulariteVisites: "day",
   funnelSimulateurRGA: createMockFunnelStatistiques({
     visiteursInitiaux: 10000,
     conversionsEligibles: 3500,

@@ -1,4 +1,5 @@
 import { FunnelStatistiques } from "./matomo-funnels.types";
+import { GranulariteVisites } from "./matomo.types";
 
 /**
  * Statistiques globales de l'application
@@ -57,9 +58,14 @@ export interface Statistiques {
   variationVisiteursUniques: number | null;
 
   /**
-   * Nombre de visites par jour
+   * Nombre de visites par point temporel (granularité selon `granulariteVisites`)
    */
   visitesParJour: VisiteParJour[];
+
+  /**
+   * Granularité effective des points de `visitesParJour`
+   */
+  granulariteVisites: GranulariteVisites;
 
   /**
    * Taux de rebond global (en pourcentage, ex: 45 pour 45%)

@@ -28,6 +28,8 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
     return () => clearTimeout(timer);
   }, [chartLoaded]);
 
+  const granularite = stats?.granulariteVisites ?? "day";
+
   // Trier les visites par date
   const visitesTriees = useMemo(() => {
     if (!stats?.visitesParJour?.length) return [];
@@ -38,8 +40,11 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
   const chartData = useMemo(() => {
     if (!visitesTriees.length) return null;
 
+    // "week"/"month" : chaque point est le début d'une semaine/mois, pas un jour isolé
     const datesFormatees = visitesTriees.map((v) =>
-      new Date(v.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })
+      granularite === "month"
+        ? new Date(v.date).toLocaleDateString("fr-FR", { month: "short", year: "2-digit" })
+        : new Date(v.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })
     );
     const visitesValues = visitesTriees.map((v) => v.visites);
 
@@ -47,7 +52,9 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
       x: `[[${datesFormatees.map((d) => `"${d}"`).join(", ")}]]`,
       y: `[[${visitesValues.join(", ")}]]`,
     };
-  }, [visitesTriees]);
+  }, [visitesTriees, granularite]);
+
+  const labelGranularite = granularite === "week" ? "par semaine" : granularite === "month" ? "par mois" : "par jour";
 
   return (
     <div>
@@ -104,7 +111,7 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
             </span>
           </h2>
           <p className="fr-text--sm fr-mb-0 fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
-            Visiteurs uniques du site vitrine, par jour
+            Visiteurs uniques du site vitrine, {labelGranularite}
           </p>
         </div>
         <div className="fr-p-2w">
