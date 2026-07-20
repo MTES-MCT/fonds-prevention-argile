@@ -393,4 +393,17 @@ describe("EligibilityService", () => {
       expect(result?.menage.personnes).toBe(2);
     });
   });
+
+  describe("toPartialRGASimulationData", () => {
+    it("conserve les données d'une simulation incomplète (early exit agent)", () => {
+      const answers: PartialRGASimulationData = {
+        logement: { type: "appartement", code_departement: "16" },
+      };
+      const result = EligibilityService.toPartialRGASimulationData(answers);
+
+      expect(result.logement?.type).toBe("appartement");
+      expect(result.logement?.code_departement).toBe("16");
+      expect(result.simulatedAt).toBeDefined();
+    });
+  });
 });

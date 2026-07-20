@@ -56,8 +56,13 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
   const handleSaveAndExit = () => {
     setError(null);
     startTransition(async () => {
-      const fullRgaData = EligibilityService.toRGASimulationData(answers);
-      if (!fullRgaData) {
+      // Un early exit laisse la simulation incomplète : on enregistre ce qui a
+      // été renseigné plutôt que de bloquer la création du dossier.
+      const rgaData = isEligible
+        ? EligibilityService.toRGASimulationData(answers)
+        : EligibilityService.toPartialRGASimulationData(answers);
+
+      if (!rgaData) {
         setError("Données de simulation incomplètes");
         return;
       }
@@ -69,7 +74,7 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
           email: demandeur.email,
           telephone: demandeur.telephone || undefined,
         },
-        rgaSimulationDataAgent: fullRgaData,
+        rgaSimulationDataAgent: rgaData,
         // Cas éligible : envoi auto du mail d'invitation. Sinon : pas d'envoi.
         sendEmail: isEligible,
         intent,
@@ -95,6 +100,7 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
     // le simulateur dans l'état initial (TYPE_LOGEMENT, history vide, editMode=true)
     // pour relancer immédiatement la simulation.
     useSimulateurStore.getState().setEditMode(true);
+    useSimulateurStore.getState().setEarlyExit(true, SimulateurStep.ADRESSE);
     useSimulateurStore.setState((state) => ({
       simulation: {
         ...state.simulation,

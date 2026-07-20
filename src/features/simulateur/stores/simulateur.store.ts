@@ -12,8 +12,16 @@ const SIMULATEUR_STORAGE_KEY = "fonds-argile-simulateur";
  */
 interface SimulateurState {
   simulation: SimulationState;
-  /** Mode édition (agent AMO/allers-vers) — désactive les early exits. */
+  /** Mode édition (agent AMO/allers-vers) — préserve les réponses au retour arrière. */
   editMode: boolean;
+  /** Arrête la simulation dès qu'un critère est éliminatoire. */
+  earlyExit: boolean;
+  /**
+   * Retarde l'early exit jusqu'à ce que cette étape soit répondue. Utilisé par
+   * le wizard agent : sans adresse, le dossier créé n'est rattachable à aucun
+   * territoire et devient invisible pour l'aller-vers qui vient de le créer.
+   */
+  deferEarlyExitUntil: SimulateurStep | null;
   isHydrated: boolean;
 
   start: () => void;
@@ -21,6 +29,7 @@ interface SimulateurState {
   goBack: () => void;
   reset: () => void;
   setEditMode: (editMode: boolean) => void;
+  setEarlyExit: (earlyExit: boolean, deferUntil?: SimulateurStep | null) => void;
   setHydrated: () => void;
 }
 
@@ -41,6 +50,8 @@ export const useSimulateurStore = create<SimulateurState>()(
     (set, get) => ({
       simulation: SimulationService.create(),
       editMode: false,
+      earlyExit: true,
+      deferEarlyExitUntil: null,
       isHydrated: false,
 
       start: () => {
@@ -50,10 +61,11 @@ export const useSimulateurStore = create<SimulateurState>()(
       },
 
       submitAnswer: (answers: PartialRGASimulationData) => {
-        const { editMode } = get();
+        const { earlyExit, deferEarlyExitUntil } = get();
         set((state) => ({
           simulation: SimulationService.submitAnswer(state.simulation, answers, {
-            skipEarlyExit: editMode,
+            skipEarlyExit: !earlyExit,
+            deferEarlyExitUntil: deferEarlyExitUntil ?? undefined,
           }),
         }));
       },
@@ -68,11 +80,20 @@ export const useSimulateurStore = create<SimulateurState>()(
       },
 
       reset: () => {
-        set({ simulation: SimulationService.reset(), editMode: false });
+        set({
+          simulation: SimulationService.reset(),
+          editMode: false,
+          earlyExit: true,
+          deferEarlyExitUntil: null,
+        });
       },
 
       setEditMode: (editMode: boolean) => {
         set({ editMode });
+      },
+
+      setEarlyExit: (earlyExit: boolean, deferUntil: SimulateurStep | null = null) => {
+        set({ earlyExit, deferEarlyExitUntil: deferUntil });
       },
 
       setHydrated: () => {
@@ -115,3 +136,4 @@ export const selectIsEligible = (state: SimulateurState) => SimulationService.is
 export const selectIsIntro = (state: SimulateurState) => state.simulation.currentStep === SimulateurStep.INTRO;
 export const selectIsResultat = (state: SimulateurState) => state.simulation.currentStep === SimulateurStep.RESULTAT;
 export const selectEditMode = (state: SimulateurState) => state.editMode;
+export const selectEarlyExit = (state: SimulateurState) => state.earlyExit;

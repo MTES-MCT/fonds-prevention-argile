@@ -39,11 +39,13 @@ export const SimulationService = {
    * Soumet une réponse et passe à l'étape suivante (ou early exit)
    * @param options.skipEarlyExit - En mode édition, ne pas faire d'early exit.
    *   L'éligibilité est évaluée seulement à la dernière étape (REVENUS → RESULTAT).
+   * @param options.deferEarlyExitUntil - N'arme l'early exit qu'une fois cette
+   *   étape répondue (cf. `isEarlyExitArmed`).
    */
   submitAnswer(
     state: SimulationState,
     answerUpdates: PartialRGASimulationData,
-    options?: { skipEarlyExit?: boolean }
+    options?: { skipEarlyExit?: boolean; deferEarlyExitUntil?: SimulateurStep }
   ): SimulationState {
     // Fusionner les réponses
     const newAnswers = mergeAnswers(state.answers, answerUpdates);
@@ -52,7 +54,8 @@ export const SimulationService = {
     const isLastStep = nextStep === SimulateurStep.RESULTAT;
 
     // En mode édition, on n'évalue l'éligibilité qu'à la dernière étape
-    const shouldEvaluate = !options?.skipEarlyExit || isLastStep;
+    const shouldEvaluate =
+      (!options?.skipEarlyExit && isEarlyExitArmed(state, options?.deferEarlyExitUntil)) || isLastStep;
 
     if (shouldEvaluate) {
       // En mode édition, utiliser evaluateForEdition (sans early-exit, critères null non-bloquants)
@@ -155,6 +158,16 @@ export const SimulationService = {
     return state.result?.eligible === true;
   },
 };
+
+/**
+ * L'early exit est armé si l'étape de report a déjà été répondue (présente dans
+ * l'historique) ou est celle qu'on vient de soumettre. Sans report, il est
+ * toujours armé.
+ */
+function isEarlyExitArmed(state: SimulationState, deferUntil?: SimulateurStep): boolean {
+  if (!deferUntil) return true;
+  return state.currentStep === deferUntil || state.history.includes(deferUntil);
+}
 
 /**
  * Fusionne les réponses de manière profonde

@@ -128,7 +128,7 @@ describe("createDossierByAgent", () => {
     });
 
     const [, simulationData] = vi.mocked(parcoursRepo.updateRGADataAgent).mock.calls[0];
-    expect(simulationData.logement.adresse).toBe("12 rue des Lilas, Issoudun");
+    expect(simulationData.logement?.adresse).toBe("12 rue des Lilas, Issoudun");
 
     expect(result.claimUrl).toBe("http://localhost:3000/claim-dossier/token-abc");
     expect(result.emailSent).toBe(true);
@@ -269,6 +269,29 @@ describe("createDossierByAgent", () => {
       expect(qualificationService.qualifyProspect).not.toHaveBeenCalled();
       // Mail skipé
       expect(sendClaimDossierEmail).not.toHaveBeenCalled();
+      expect(result.emailSent).toBe(false);
+    });
+
+    it("persiste une simulation partielle (early exit) sans perdre le rattachement territorial", async () => {
+      // Simulation coupée juste après l'adresse : ni revenus, ni assurance, etc.
+      const simPartielle = {
+        logement: { adresse: "X", type: "appartement", code_departement: "16", commune: "16015" },
+        simulatedAt: new Date().toISOString(),
+      };
+
+      const result = await createDossierByAgent({
+        ...baseParams,
+        intent: "av",
+        rgaSimulationDataAgent: simPartielle as never,
+      });
+
+      const [, simulationData] = vi.mocked(parcoursRepo.updateRGADataAgent).mock.calls[0];
+      expect(simulationData.logement?.code_departement).toBe("16");
+      expect(simulationData.logement?.commune).toBe("16015");
+
+      expect(qualificationService.qualifyProspect).toHaveBeenCalledWith(
+        expect.objectContaining({ decision: QualificationDecision.NON_ELIGIBLE })
+      );
       expect(result.emailSent).toBe(false);
     });
   });
