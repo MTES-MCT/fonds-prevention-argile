@@ -4,11 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SimulateurProvider } from "@/features/simulateur/components/shared/SimulateurContext";
 import { SimulateurFormulaire } from "@/features/simulateur/components/SimulateurFormulaire";
-import {
-  useSimulateurStore,
-  selectCurrentStep,
-  selectIsEligible,
-} from "@/features/simulateur/stores/simulateur.store";
+import { useSimulateurStore, selectCurrentStep, selectIsEligible } from "@/features/simulateur/stores/simulateur.store";
 import { SimulateurStep } from "@/features/simulateur/domain/value-objects/simulateur-step.enum";
 import { useCreationDossierStore, type WizardIntent } from "../stores/creation-dossier.store";
 import { ResultInvitation } from "./ResultInvitation";
@@ -42,6 +38,7 @@ export function SimulateurEditionInvitation({ intent }: SimulateurEditionInvitat
   const router = useRouter();
   const reset = useSimulateurStore((state) => state.reset);
   const setEditMode = useSimulateurStore((state) => state.setEditMode);
+  const setEarlyExit = useSimulateurStore((state) => state.setEarlyExit);
   const setIntent = useCreationDossierStore((s) => s.setIntent);
   const [isReady, setIsReady] = useState(false);
 
@@ -55,6 +52,9 @@ export function SimulateurEditionInvitation({ intent }: SimulateurEditionInvitat
   useEffect(() => {
     reset();
     setEditMode(true);
+    // L'agent au téléphone n'a pas les infos suivantes dès qu'un critère bloque :
+    // on coupe court, mais pas avant l'adresse (rattachement territorial du dossier).
+    setEarlyExit(true, SimulateurStep.ADRESSE);
     useSimulateurStore.getState().setHydrated();
 
     useSimulateurStore.setState((state) => ({
@@ -70,6 +70,7 @@ export function SimulateurEditionInvitation({ intent }: SimulateurEditionInvitat
 
     return () => {
       setEditMode(false);
+      setEarlyExit(true);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -95,6 +95,7 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
     // le simulateur dans l'état initial (TYPE_LOGEMENT, history vide, editMode=true)
     // pour relancer immédiatement la simulation.
     useSimulateurStore.getState().setEditMode(true);
+    useSimulateurStore.getState().setEarlyExit(true, SimulateurStep.ADRESSE);
     useSimulateurStore.setState((state) => ({
       simulation: {
         ...state.simulation,

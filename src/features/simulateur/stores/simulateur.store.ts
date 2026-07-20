@@ -16,6 +16,12 @@ interface SimulateurState {
   editMode: boolean;
   /** Arrête la simulation dès qu'un critère est éliminatoire. */
   earlyExit: boolean;
+  /**
+   * Retarde l'early exit jusqu'à ce que cette étape soit répondue. Utilisé par
+   * le wizard agent : sans adresse, le dossier créé n'est rattachable à aucun
+   * territoire et devient invisible pour l'aller-vers qui vient de le créer.
+   */
+  deferEarlyExitUntil: SimulateurStep | null;
   isHydrated: boolean;
 
   start: () => void;
@@ -23,7 +29,7 @@ interface SimulateurState {
   goBack: () => void;
   reset: () => void;
   setEditMode: (editMode: boolean) => void;
-  setEarlyExit: (earlyExit: boolean) => void;
+  setEarlyExit: (earlyExit: boolean, deferUntil?: SimulateurStep | null) => void;
   setHydrated: () => void;
 }
 
@@ -45,6 +51,7 @@ export const useSimulateurStore = create<SimulateurState>()(
       simulation: SimulationService.create(),
       editMode: false,
       earlyExit: true,
+      deferEarlyExitUntil: null,
       isHydrated: false,
 
       start: () => {
@@ -54,10 +61,11 @@ export const useSimulateurStore = create<SimulateurState>()(
       },
 
       submitAnswer: (answers: PartialRGASimulationData) => {
-        const { earlyExit } = get();
+        const { earlyExit, deferEarlyExitUntil } = get();
         set((state) => ({
           simulation: SimulationService.submitAnswer(state.simulation, answers, {
             skipEarlyExit: !earlyExit,
+            deferEarlyExitUntil: deferEarlyExitUntil ?? undefined,
           }),
         }));
       },
@@ -72,15 +80,20 @@ export const useSimulateurStore = create<SimulateurState>()(
       },
 
       reset: () => {
-        set({ simulation: SimulationService.reset(), editMode: false, earlyExit: true });
+        set({
+          simulation: SimulationService.reset(),
+          editMode: false,
+          earlyExit: true,
+          deferEarlyExitUntil: null,
+        });
       },
 
       setEditMode: (editMode: boolean) => {
         set({ editMode });
       },
 
-      setEarlyExit: (earlyExit: boolean) => {
-        set({ earlyExit });
+      setEarlyExit: (earlyExit: boolean, deferUntil: SimulateurStep | null = null) => {
+        set({ earlyExit, deferEarlyExitUntil: deferUntil });
       },
 
       setHydrated: () => {
