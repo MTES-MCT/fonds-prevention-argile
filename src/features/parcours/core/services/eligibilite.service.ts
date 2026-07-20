@@ -11,6 +11,7 @@ import { DS_FIELDS_ELIGIBILITE } from "../../dossiers-ds/domain";
 import { DS_FIELD_IDS } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
 import { createDebugLogger } from "@/shared/utils";
 import { PartialRGASimulationData } from "@/features/simulateur";
+import { getServerEnv } from "@/shared/config/env.config";
 
 const debug = createDebugLogger("ELIGIBILITE");
 
@@ -26,7 +27,9 @@ interface EligibiliteResult {
 }
 
 /**
- * Crée un dossier d'éligibilité avec les données RGA
+ * Crée un dossier d'éligibilité avec les données RGA.
+ * Préremplit aussi l'annotation privée « Lien vers le dossier sur le fonds de
+ * prévention argile » (comme diagnostic/devis).
  */
 export async function createEligibiliteDossier(
   userId: string,
@@ -149,6 +152,11 @@ export async function createEligibiliteDossier(
     if (user?.telephone) {
       prefillData[`champ_Q2hhbXAtNTQyMjQ0MA==`] = user.telephone;
     }
+
+    // Annotation privée : lien vers le dossier back-office FPA (comme diagnostic/devis)
+    const env = getServerEnv();
+    const fpaLink = `${env.BASE_URL}/espace-agent/dossiers/${parcoursData.parcours.id}`;
+    prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.ANNOTATION_LIEN_FPA}`] = fpaLink;
 
     // Logger tous les champs mappés
     debug.log("Données mappées pour DS (prefill):");

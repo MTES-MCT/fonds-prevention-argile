@@ -40,6 +40,10 @@ vi.mock("@/shared/database", () => ({
   userRepo: { findById: vi.fn() },
 }));
 
+vi.mock("@/shared/config/env.config", () => ({
+  getServerEnv: vi.fn(() => ({ BASE_URL: "https://app.test" })),
+}));
+
 const AMO = {
   nom: "AMO Test",
   siret: "12345678900011",
@@ -115,5 +119,13 @@ describe("createEligibiliteDossier — prefill AMO", () => {
     expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.EMAIL_AMO}`);
     expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.ADRESSE_AMO}`);
     expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`);
+  });
+
+  it("préremplit l'annotation privée « lien vers le dossier FPA » (comme diagnostic/devis)", async () => {
+    const payload = await runWithAmo({});
+
+    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.ANNOTATION_LIEN_FPA}`]).toBe(
+      "https://app.test/espace-agent/dossiers/parcours-1"
+    );
   });
 });

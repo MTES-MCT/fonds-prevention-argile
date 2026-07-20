@@ -12,6 +12,10 @@ export const DS_FIELD_IDS = {
     ANNEE_CONSTRUCTION: "Q2hhbXAtNTU0MjU2OA==",
     ZONE_EXPOSITION: "Q2hhbXAtNTUxMDk4Mw==",
     NOMBRE_NIVEAUX: "Q2hhbXAtNTQxNzM0OA==",
+    // Annotation privée (instructeur) — même ID que DIAGNOSTIC/DEVIS (Champ-6352089),
+    // à confirmer sur la démarche éligibilité via `pnpm tsx scripts/ops/ds/fetch-demarche-schema.ts <numero>`
+    // si le préremplissage échoue silencieusement côté DS.
+    ANNOTATION_LIEN_FPA: "Q2hhbXAtNjM1MjA4OQ==",
   },
   // Autres démarches
   DIAGNOSTIC: {
