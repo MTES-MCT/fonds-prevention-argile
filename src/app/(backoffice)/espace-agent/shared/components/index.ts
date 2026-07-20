@@ -6,7 +6,6 @@ export * from "./RepartitionCardTile";
 export * from "./InfoDemandeur";
 export * from "./InfoLogement";
 export * from "./ParcoursDemandeur";
-export * from "./GagnezDuTemps";
 export * from "./AFaire";
 export * from "./Actions";
 export * from "./QualificationAllersVers";
