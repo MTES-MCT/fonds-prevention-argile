@@ -78,6 +78,7 @@ describe("StatistiquesService", () => {
         { date: "2025-01-01", visites: 50 },
         { date: "2025-01-02", visites: 60 },
       ],
+      granulariteVisites: "day",
       tauxRebond: 45,
       variationTauxRebond: -3,
     });
@@ -150,6 +151,7 @@ describe("StatistiquesService", () => {
           { date: "2025-01-01", visites: 50 },
           { date: "2025-01-02", visites: 60 },
         ],
+        granulariteVisites: "day",
         tauxRebond: 45,
         variationTauxRebond: -3,
         // Stats Funnel
@@ -200,6 +202,7 @@ describe("StatistiquesService", () => {
         visiteursUniques: 0,
         variationVisiteursUniques: null,
         visitesParJour: [],
+        granulariteVisites: "day",
         tauxRebond: 0,
         variationTauxRebond: null,
       });
@@ -230,6 +233,7 @@ describe("StatistiquesService", () => {
         visiteursUniques: 0,
         variationVisiteursUniques: null,
         visitesParJour: [],
+        granulariteVisites: "day",
         tauxRebond: 0,
         variationTauxRebond: null,
         funnelSimulateurRGA: {
@@ -298,6 +302,7 @@ describe("StatistiquesService", () => {
         visiteursUniques: 0,
         variationVisiteursUniques: null,
         visitesParJour: [],
+        granulariteVisites: "day",
         tauxRebond: 0,
         variationTauxRebond: null,
       });

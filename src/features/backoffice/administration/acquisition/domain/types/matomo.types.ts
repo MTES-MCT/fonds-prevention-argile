@@ -1,4 +1,11 @@
 /**
+ * Granularité des points de `visitesParJour`, adaptée à la durée de la période
+ * pour éviter de demander à Matomo une archive par jour sur de longues plages
+ * (cf. gotcha "Matomo timeout sur périodes longues").
+ */
+export type GranulariteVisites = "day" | "week" | "month";
+
+/**
  * Statistiques Matomo (analytics web)
  */
 export interface MatomoStatistiques {
@@ -23,9 +30,14 @@ export interface MatomoStatistiques {
   variationVisiteursUniques: number | null;
 
   /**
-   * Nombre de visites par jour (30 derniers jours)
+   * Nombre de visites par point temporel (granularité selon `granulariteVisites`)
    */
   visitesParJour: VisiteParJour[];
+
+  /**
+   * Granularité effective des points de `visitesParJour`
+   */
+  granulariteVisites: GranulariteVisites;
 
   /**
    * Taux de rebond global (en pourcentage, ex: 45 pour 45%)

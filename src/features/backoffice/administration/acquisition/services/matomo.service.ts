@@ -1,5 +1,5 @@
 import { fetchMatomoVisits, fetchMatomoBounceRate, fetchMatomoUniqueVisitors } from "../adapters/matomo-api.adapter";
-import type { MatomoStatistiques, VisiteParJour } from "../domain/types/matomo.types";
+import type { MatomoStatistiques, VisiteParJour, GranulariteVisites } from "../domain/types/matomo.types";
 import {
   PERIODES,
   SERVICE_START_DATE,
@@ -16,9 +16,35 @@ function computeVariation(current: number, previous: number): number | null {
 }
 
 /**
+ * Granularité de `VisitsSummary.getVisits` selon la durée de période.
+ * Sur "day", Matomo doit calculer/renvoyer une archive par jour de la plage — jusqu'à ~365
+ * archives pour "12m"/"tout", ce qui peut être très lent si elles ne sont pas pré-archivées
+ * (même cause que le timeout déjà connu sur les Funnels). On élargit la granularité pour les
+ * longues périodes afin de réduire le nombre de sous-archives demandées en un seul appel.
+ */
+function getGranulariteForPeriode(periodeId?: PeriodeId): GranulariteVisites {
+  if (periodeId === "90j" || periodeId === "6m") return "week";
+  if (periodeId === "12m" || periodeId === "tout") return "month";
+  return "day";
+}
+
+/**
+ * Extrait une date exploitable par `new Date(...)` d'une clé Matomo.
+ * En `period=day`, la clé est une date simple ("2026-01-05"). En `period=week`/`month`
+ * sur un `date=range`, Matomo renvoie la sous-période sous forme "début,fin"
+ * ("2026-01-05,2026-01-11") — sans cette extraction, `new Date("2026-01-05,2026-01-11")`
+ * vaut "Invalid Date" et casse le tri/l'affichage du graphique.
+ */
+function extractDateDebut(matomoDateKey: string): string {
+  return matomoDateKey.split(",")[0];
+}
+
+/**
  * Récupère les statistiques Matomo pour une période donnée, avec variations
  */
 export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: string): Promise<MatomoStatistiques> {
+  const granularite = getGranulariteForPeriode(periodeId);
+
   try {
     const fin = new Date();
     const periode = periodeId ? PERIODES.find((p) => p.id === periodeId) : null;
@@ -35,17 +61,17 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
     // Récupérer les visites + visiteurs uniques + taux de rebond en parallele (période courante + précédente)
     const [visitsData, tauxRebond, uniqueVisitors, previousVisitsData, previousTauxRebond, previousUniqueVisitors] =
       await Promise.all([
-        fetchMatomoVisits("day", period, segment),
+        fetchMatomoVisits(granularite, period, segment),
         fetchMatomoBounceRate("range", period, segment),
         fetchMatomoUniqueVisitors("range", period, segment),
-        previousPeriod ? fetchMatomoVisits("day", previousPeriod, segment) : Promise.resolve(null),
+        previousPeriod ? fetchMatomoVisits(granularite, previousPeriod, segment) : Promise.resolve(null),
         previousPeriod ? fetchMatomoBounceRate("range", previousPeriod, segment) : Promise.resolve(null),
         previousPeriod ? fetchMatomoUniqueVisitors("range", previousPeriod, segment) : Promise.resolve(0),
       ]);
 
-    // Transformer les données - La structure est { "date": nombre }
+    // Transformer les données - La structure est { "date": nombre } (day) ou { "début,fin": nombre } (week/month)
     const visitesParJour: VisiteParJour[] = Object.entries(visitsData).map(([date, visites]) => ({
-      date,
+      date: extractDateDebut(date),
       visites: typeof visites === "number" ? visites : 0,
     }));
 
@@ -79,6 +105,7 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
       visiteursUniques: uniqueVisitors,
       variationVisiteursUniques,
       visitesParJour,
+      granulariteVisites: granularite,
       tauxRebond,
       variationTauxRebond,
     };
@@ -91,6 +118,7 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
       visiteursUniques: 0,
       variationVisiteursUniques: null,
       visitesParJour: [],
+      granulariteVisites: granularite,
       tauxRebond: 0,
       variationTauxRebond: null,
     };
