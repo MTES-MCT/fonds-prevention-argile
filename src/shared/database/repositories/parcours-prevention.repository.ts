@@ -7,7 +7,7 @@ import { dossiersDemarchesSimplifiees } from "../schema/dossiers-demarches-simpl
 import { BaseRepository, PaginationParams, PaginationResult } from "./base.repository";
 import type { ParcoursPrevention, NewParcoursPrevention } from "../schema/parcours-prevention";
 import { getNextStep, Status, Step } from "@/features/parcours/core";
-import { RGASimulationData } from "@/shared/domain/types";
+import { PartialRGASimulationData, RGASimulationData } from "@/shared/domain/types";
 import { getDemandeurFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
@@ -349,15 +349,17 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   /**
-   * Sauvegarde les données RGA éditées par un agent (AMO ou allers-vers)
+   * Sauvegarde les données RGA éditées par un agent (AMO ou allers-vers).
+   * Accepte un objet partiel : une simulation agent coupée par un early exit
+   * non éligible n'a pas tous les champs (les lecteurs downstream chaînent en optionnel).
    */
   async updateRGADataAgent(
     parcoursId: string,
-    rgaData: RGASimulationData,
+    rgaData: RGASimulationData | PartialRGASimulationData,
     agentId: string
   ): Promise<ParcoursPrevention | null> {
     return await this.update(parcoursId, {
-      rgaSimulationDataAgent: rgaData,
+      rgaSimulationDataAgent: rgaData as RGASimulationData,
       rgaSimulationAgentEditedAt: new Date(),
       rgaSimulationAgentEditedBy: agentId,
     });

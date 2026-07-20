@@ -1,4 +1,4 @@
-import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
+import type { PartialRGASimulationData, RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 
 /**
  * Détails structurés d'une adresse BAN, suffisants pour faire matcher un
@@ -38,8 +38,11 @@ export interface CreateDossierByAgentParams {
    * dossier sera invisible pour les AV avec filtre territorial.
    */
   adresseBienDetails?: AdresseBienDetails;
-  /** Données de simulation remplies par l'agent (parcours 2). */
-  rgaSimulationDataAgent?: RGASimulationData;
+  /**
+   * Données de simulation remplies par l'agent (parcours 2). Partielles quand
+   * la simulation a été coupée par un early exit non éligible.
+   */
+  rgaSimulationDataAgent?: RGASimulationData | PartialRGASimulationData;
   /** Envoie un email d'invitation au demandeur avec un lien de claim. */
   sendEmail: boolean;
   /**

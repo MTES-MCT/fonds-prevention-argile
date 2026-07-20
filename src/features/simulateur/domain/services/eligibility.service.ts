@@ -98,6 +98,18 @@ export const EligibilityService = {
       simulatedAt: new Date().toISOString(),
     } as RGASimulationData;
   },
+
+  /**
+   * Variante sans exigence de complétude, pour une simulation interrompue par
+   * un early exit (agent). La colonne JSONB tolère l'objet partiel et les
+   * lecteurs downstream utilisent de l'optional chaining.
+   */
+  toPartialRGASimulationData(answers: PartialRGASimulationData): PartialRGASimulationData {
+    return {
+      ...answers,
+      simulatedAt: new Date().toISOString(),
+    };
+  },
 };
 
 /**
