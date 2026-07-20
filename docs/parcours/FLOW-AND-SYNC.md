@@ -132,6 +132,18 @@ non répondue. La question n'est obligatoire que sur le chemin éligible+accompa
 champ est en lecture seule une fois la réponse enregistrée et visible côté super-admin
 sur le détail de la demande/du dossier.
 
+**Report vers Démarches Numériques.** La démarche d'éligibilité porte un champ
+« Avez-vous un mandataire, et si oui, est-il financier ? » (`MANDATAIRE_FINANCIER`,
+liste à 3 options). Il est prérempli à la création du dossier **uniquement quand
+`est_mandataire_financier = true`**, avec la valeur `« Mandataire financier »`.
+
+> Ce champ DN appartient à la section « représentant légal / mandataire **du demandeur** »,
+> pas à la section AMO : un `false` côté AMO ne dit ni s'il existe un autre mandataire
+> (proche, représentant légal), ni si l'AMO est mandataire _non_ financier. On laisse donc
+> le champ vide sur `false` comme sur `null` — le demandeur répond lui-même. Préremplir
+> « Mandataire financier » a par ailleurs une conséquence : la PJ « Relevé d'identité
+> bancaire du mandataire financier » est obligatoire côté DN.
+
 ### 2.7 Arrêt de l'accompagnement (demandeur ou AMO) — ADR-0018
 
 Contrairement au détachement ops (§2.5), l'arrêt est ici **déclenchable depuis l'UI**, des
