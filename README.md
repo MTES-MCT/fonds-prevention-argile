@@ -31,6 +31,7 @@ Configurez les variables selon votre environnement. Les principales variables in
 - `NODE_ENV` : Environnement d'exécution (`development` ou `production`)
 - `NEXT_PUBLIC_MATOMO_SITE_ID` : ID Matomo pour l'analytics
 - `NEXT_PUBLIC_MATOMO_URL` : URL de l'instance Matomo
+- `MATOMO_API_TOKEN` : Token d'API Matomo (Reporting API) alimentant les statistiques du back-office. **Obligatoire côté serveur** : s'il est absent, expiré ou révoqué, les tuiles Matomo de `/administration` affichent « Indisponible »
 - `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY` : Clé d'API pour récupérer les informations de la plateforme Démarches Simplifiées via GraphQL
 - `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL` : URL de l'API GRAPHQL de la plateforme Démarches Simplifiées
 - `DEMARCHES_SIMPLIFIEES_REST_API_URL` : URL de l'API Rest de la plateforme Démarches Simplifiées
