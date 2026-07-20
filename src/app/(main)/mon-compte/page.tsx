@@ -5,9 +5,11 @@ import { redirect } from "next/navigation";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { getPiecesJustificativesByStep } from "@/features/parcours/dossiers-ds/services/pieces-justificatives.service";
 
-// Étapes à venir dont on pré-charge les pièces (source DN, en cache). Le currentStep
-// n'est connu que côté client : on fournit toutes les étapes, chaque carte prend la sienne.
-const STEPS_AVEC_PIECES = [Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES];
+// Étapes dont on pré-charge les pièces (source DN, en cache). Le currentStep n'est connu
+// que côté client : on fournit toutes les étapes, chacune prend la sienne.
+// CHOIX_AMO est inclus pour que le demandeur anticipe les pièces d'éligibilité pendant
+// l'attente de validation AMO (résolu sur la démarche éligibilité côté service).
+const STEPS_AVEC_PIECES = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES];
 
 export default async function MonComptePage() {
   const access = await checkParticulierAccess();

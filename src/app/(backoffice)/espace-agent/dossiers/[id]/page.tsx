@@ -18,7 +18,7 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
 import { DossierStatusBadge } from "./components/DossierStatusBadge";
-import { PiecesJustificatives } from "./components/PiecesJustificatives";
+import { PiecesJustificatives } from "@/features/parcours/dossiers-ds/components";
 import { getPiecesJustificativesForStep } from "@/features/parcours/dossiers-ds/services/pieces-justificatives.service";
 import { GagnezDuTempsTravaux } from "./components/GagnezDuTempsTravaux";
 import { ArchiveDossierButton } from "./components/ArchiveDossierButton";

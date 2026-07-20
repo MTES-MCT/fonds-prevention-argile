@@ -519,14 +519,23 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
   changement UI.
 - Résilience : sur erreur DN ou liste vide, repli sur `PIECES_FALLBACK`
   (`pieces-fallback.const.ts`) — jamais de section vide.
-- Surface demandeur : `/mon-compte` (Server Component) précharge les pièces des étapes à
-  venir via `getPiecesJustificativesByStep` et les passe en prop `piecesByStep` jusqu'aux
-  cartes `StepDetail<Step>`, qui rendent le composant repliable `PiecesAPrevoir` (élément
-  natif `<details>`, pas de JS DSFR).
+- Surface demandeur : `/mon-compte` (Server Component) précharge les pièces via
+  `getPiecesJustificativesByStep` et les passe en prop `piecesByStep` à `MonCompteClient`.
+  Deux rendus complémentaires, jamais en doublon :
+  - **étape courante** — carte `PiecesJustificatives` dépliée, juste sous le callout
+    principal (« Les pièces à préparer dès maintenant ») ;
+  - **étapes à venir** — cartes `StepDetail<Step>`, composant repliable `PiecesAPrevoir`
+    (élément natif `<details>`, pas de JS DSFR), rendu seulement si `isStepBeforeCurrent`.
+    `CHOIX_AMO` fait partie des étapes préchargées : `resolveDemarcheNumberForStep` le
+    mappe sur la démarche éligibilité, si bien que le demandeur peut réunir ses pièces
+    pendant l'attente de validation AMO.
+- Surface agent : `PiecesJustificatives` (`dossiers-ds/components/`, partagé avec le
+  demandeur) sur `dossiers/[id]`, `demandes/[id]` et `prospects/[id]`, alimenté par
+  `getPiecesJustificativesForStep(currentStep)`. L'ancien `GagnezDuTemps` (liste codée en
+  dur, doublon dérivant du formulaire DN) a été supprimé ; à ne pas confondre avec
+  `GagnezDuTempsTravaux` (travaux éligibles), toujours en place sur `dossiers/[id]`.
 - Vérification / inventaire : `pnpm ds:fetch-pieces` liste, par démarche configurée, les
   pièces et l'URL de leur modèle (confirme la présence de `fileTemplate`).
-- Surface agent restante (hors périmètre) : `GagnezDuTemps` (pages `demandes/[id]` et
-  `prospects/[id]`) porte encore une liste codée en dur — à converger ultérieurement.
 
 ---
 
@@ -547,6 +556,7 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Service sync batch (CRON)                      | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`                    |
 | Vérif permissions / état démarches DS          | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                         |
 | Pièces justificatives (service dynamique DN)   | `dossiers-ds/services/pieces-justificatives.service.ts`, `domain/pieces-justificatives/*`      |
+| Composant PJ partagé (agent + demandeur)       | `dossiers-ds/components/PiecesJustificatives.tsx`                                              |
 | Proxy modèle PJ (URL temporaire DN régénérée)  | `src/app/api/ds/piece-modele/route.ts` (`buildModeleProxyUrl` / `getFreshModeleUrl`)           |
 | Probe pièces + modèles DN                      | `scripts/ops/ds/fetch-pieces-justificatives.ts` (`pnpm ds:fetch-pieces`)                       |
 | Reset dossier éligibilité sync-erreur          | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`) |

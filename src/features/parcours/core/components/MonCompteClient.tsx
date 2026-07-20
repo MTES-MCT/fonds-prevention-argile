@@ -15,6 +15,7 @@ import { getStepBadgeLabel } from "../../amo/domain/value-objects/step-list";
 import { useAmoMode } from "../../amo/hooks";
 import { DSStatus } from "../../dossiers-ds/domain";
 import type { PiecesByStep } from "../../dossiers-ds/domain/pieces-justificatives";
+import { PiecesJustificatives } from "../../dossiers-ds/components";
 import {
   CalloutAmoEnAttente,
   CalloutAmoLogementNonEligible,
@@ -214,6 +215,16 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
 
             <div className="fr-col-12 fr-col-md-4 flex justify-center md:justify-start self-start">
               <MaListe />
+            </div>
+          </div>
+
+          {/* Pièces de l'étape en cours : ce que le demandeur doit réunir maintenant. */}
+          <div className="fr-grid-row">
+            <div className="fr-col-12 fr-col-md-8">
+              <PiecesJustificatives
+                pieces={currentStep ? piecesByStep?.[currentStep] : undefined}
+                titre="Les pièces à préparer dès maintenant"
+              />
             </div>
           </div>
         </div>

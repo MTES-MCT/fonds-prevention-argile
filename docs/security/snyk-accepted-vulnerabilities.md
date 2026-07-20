@@ -149,6 +149,19 @@ CRLF injection et origin validation error. **devDependency uniquement** (transit
 - **Dev** : `vite` High (`server.fs.deny` bypass, `<=7.3.4`) — override déjà `^7.3.2` mais
   bloqué à 7.3.2 par `minimumReleaseAge` ; à débloquer avec le refresh Next 16. Hors scope.
 
+## Refresh — juillet 2026 (branche `feat/pj-dynamiques-parcours-demandeur`)
+
+Branche UI sans ajout de dépendance. `pnpm audit` : **1 high, 5 moderate, 1 low**, toutes
+transitives et déjà connues sauf deux dérives devDep, acceptées ci-dessous.
+
+| Dépendance vulnérable | Sévérité | Type   | Chemin                                         | Justification                                                                                                                                     |
+| --------------------- | -------- | ------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `js-yaml` <=4.1.1     | Moderate | devDep | `eslint > @eslint/eslintrc > js-yaml`          | DoS quadratique sur clés de merge ; n'entre que sur la config ESLint du repo (pas d'input externe), non déployé en prod. Résolu par ESLint 10     |
+| `vite` <=7.3.4        | Moderate | devDep | `vitest > vite`, `@vitejs/plugin-react > vite` | Même paquet que la High déjà acceptée (`server.fs.deny` bypass) ; serveur de dev/test uniquement, jamais exposé. Débloqué avec le refresh Next 16 |
+
+Les autres (`protocol-buffers-schema`, `postcss`, `uuid`, `diff`, `vite` High) sont
+inchangées — voir les tableaux ci-dessus.
+
 ## Prochaine revue
 
 - **`vite`** : passer à `>=7.3.5` dès que `minimumReleaseAge` le permet (élimine la High devDep restante).

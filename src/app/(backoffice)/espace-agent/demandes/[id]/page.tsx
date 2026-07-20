@@ -9,13 +9,14 @@ import {
   InfoDemandeur,
   InfoLogement,
   ParcoursDemandeur,
-  GagnezDuTemps,
   AFaire,
   QualificationAllersVers,
   RenvoyerInvitationButton,
 } from "../../shared";
 import { ActionsRealisees } from "../../shared";
-import { Step } from "@/shared/domain/value-objects/step.enum";
+import { Step, STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
+import { PiecesJustificatives } from "@/features/parcours/dossiers-ds/components";
+import { getPiecesJustificativesForStep } from "@/features/parcours/dossiers-ds/services/pieces-justificatives.service";
 import { ReponseAccompagnement } from "./components/ReponseAccompagnement";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
@@ -50,6 +51,9 @@ export default async function DemandeDetailPage({ params }: PageProps) {
 
   const demande = result.data;
   const nomComplet = formatNomComplet(demande.demandeur.prenom, demande.demandeur.nom);
+
+  // Pièces à prévoir pour l'étape courante, tirées de la démarche DN correspondante.
+  const piecesJustificatives = await getPiecesJustificativesForStep(demande.currentStep);
 
   // Récupérer la dernière qualification aller-vers
   const latestQualification = await qualificationService.getLatestQualification(demande.parcoursId);
@@ -134,7 +138,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
       <section className="fr-background-alt--blue-france fr-py-4w">
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
-            {/* Colonne gauche : QualificationAllersVers + InfoLogement + GagnezDuTemps */}
+            {/* Colonne gauche : QualificationAllersVers + InfoLogement + PiecesJustificatives */}
             <div className="fr-col-12 fr-col-md-8">
               {latestQualification && (
                 <div className="fr-mb-4w">
@@ -158,7 +162,10 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                 />
               </div>
               <div>
-                <GagnezDuTemps />
+                <PiecesJustificatives
+                  pieces={piecesJustificatives}
+                  stepLabel={STEP_LABELS_NUMBERED[demande.currentStep]}
+                />
               </div>
             </div>
 

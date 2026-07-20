@@ -5,7 +5,9 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { formatNomComplet, formatDateShort } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
-import { InfoDemandeur, InfoLogement, ParcoursDemandeur, GagnezDuTemps, AFaire } from "../../shared";
+import { InfoDemandeur, InfoLogement, ParcoursDemandeur, AFaire } from "../../shared";
+import { PiecesJustificatives } from "@/features/parcours/dossiers-ds/components";
+import { getPiecesJustificativesForStep } from "@/features/parcours/dossiers-ds/services/pieces-justificatives.service";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { ActionsRealisees } from "../../shared";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
@@ -54,6 +56,9 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
 
   const prospect = result.data;
   const nomComplet = formatNomComplet(prospect.particulier.prenom, prospect.particulier.nom);
+
+  // Pièces à prévoir pour l'étape courante, tirées de la démarche DN correspondante.
+  const piecesJustificatives = await getPiecesJustificativesForStep(prospect.currentStep);
 
   // Récupérer la dernière qualification
   const latestQualification = await qualificationService.getLatestQualification(prospect.parcoursId);
@@ -196,7 +201,10 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
                 />
               </div>
               <div>
-                <GagnezDuTemps />
+                <PiecesJustificatives
+                  pieces={piecesJustificatives}
+                  stepLabel={STEP_LABELS_NUMBERED[prospect.currentStep]}
+                />
               </div>
             </div>
 

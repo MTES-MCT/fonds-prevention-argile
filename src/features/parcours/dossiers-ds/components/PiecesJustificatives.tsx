@@ -1,9 +1,11 @@
 import type { PieceJustificative } from "@/features/parcours/dossiers-ds/domain/pieces-justificatives";
 
 interface PiecesJustificativesProps {
-  pieces: PieceJustificative[];
+  pieces?: PieceJustificative[];
   /** Libellé de l'étape concernée, affiché en sous-titre. */
   stepLabel?: string;
+  /** Titre de la carte, à adapter selon la surface (agent ou demandeur). */
+  titre?: string;
 }
 
 /**
@@ -11,7 +13,13 @@ interface PiecesJustificativesProps {
  * (libellé, obligatoire, description, modèle téléchargeable) + aide éditoriale.
  * La source de vérité est la démarche DN ; voir pieces-justificatives.service.
  */
-export function PiecesJustificatives({ pieces, stepLabel }: PiecesJustificativesProps) {
+export function PiecesJustificatives({
+  pieces,
+  stepLabel,
+  titre = "Pièces justificatives à prévoir",
+}: PiecesJustificativesProps) {
+  if (!pieces || pieces.length === 0) return null;
+
   const middle = Math.ceil(pieces.length / 2);
   const colonnes = [pieces.slice(0, middle), pieces.slice(middle)];
 
@@ -22,7 +30,7 @@ export function PiecesJustificatives({ pieces, stepLabel }: PiecesJustificatives
           <div className="fr-mb-2w">
             <h3 className="fr-card__title fr-mb-1v">
               <span className="fr-icon-file-text-line fr-mr-2v" aria-hidden="true"></span>
-              Pièces justificatives à prévoir
+              {titre}
             </h3>
             {stepLabel && <p className="fr-text--sm fr-mb-0">Pour l&apos;étape : {stepLabel}</p>}
           </div>
