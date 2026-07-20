@@ -12,10 +12,10 @@ Avant cette feature, un parcours ne pouvait exister qu'après connexion du deman
 
 Deux entrées vers le wizard, selon le rôle de l'agent :
 
-| Page | Bouton « + Nouveau dossier » | Rôles | URL cible |
-|---|---|---|---|
-| `/espace-agent/dossiers` | ✅ | AMO + AMO_ET_ALLERS_VERS | `/dossiers/nouveau?intent=amo` |
-| `/espace-agent/prospects` | ✅ | ALLERS_VERS + AMO_ET_ALLERS_VERS | `/dossiers/nouveau?intent=av` |
+| Page                      | Bouton « + Nouveau dossier » | Rôles                            | URL cible                      |
+| ------------------------- | ---------------------------- | -------------------------------- | ------------------------------ |
+| `/espace-agent/dossiers`  | ✅                           | AMO + AMO_ET_ALLERS_VERS         | `/dossiers/nouveau?intent=amo` |
+| `/espace-agent/prospects` | ✅                           | ALLERS_VERS + AMO_ET_ALLERS_VERS | `/dossiers/nouveau?intent=av`  |
 
 Le param URL **`?intent=av\|amo`** détermine le « chapeau » sous lequel l'agent agit :
 
@@ -134,6 +134,7 @@ L'étape 3/4 du wizard avec simulation affiche les 10 étapes du simulateur **in
 ### 1. Mode `embedded` du `SimulateurContext`
 
 Le `SimulateurContext` expose un prop `embedded?: boolean`. Quand il vaut `true` :
+
 - `SimulateurLayout` rend **uniquement** le contenu de l'étape (title + subtitle + children), sans son wrapping externe (carte grise, formTitle "Simulateur d'éligibilité au Fonds Prévention Argile", lien "Besoin d'aide ?", ProgressBar interne).
 - Le simulateur s'intègre ainsi visuellement dans la carte du wizard parent qui fournit son propre stepper.
 
@@ -142,6 +143,7 @@ Le simulateur public et l'édition AMO n'utilisent pas `embedded` → leur rendu
 ### 2. Composant `SimulateurEditionInvitation`
 
 Variante de `SimulateurEdition` pour le contexte invitation, qui :
+
 - Pose `embedded: true` sur le `SimulateurProvider`.
 - **Skip l'écran INTRO** : initialise le store directement à `TYPE_LOGEMENT` avec `history: []` (via `useSimulateurStore.setState` direct). Évite à l'agent de cliquer sur "Démarrer" puisqu'il sait déjà ce qu'il fait.
 - Désactive le bouton "Précédent" natif du simulateur sur la 1ère étape (conséquence de `history: []` qui rend `canGoBack = false`).
@@ -151,6 +153,7 @@ Variante de `SimulateurEdition` pour le contexte invitation, qui :
 `SimulateurEditionInvitation` **partage le store singleton `useSimulateurStore`** avec le simulateur public et le mode édition AMO (clé sessionStorage unique `fonds-argile-simulateur`).
 
 **Pourquoi pas un store dédié ?** Une factory + Context Provider permettrait d'isoler chaque contexte. Trade-off rejeté : surface API trop large (3 fichiers du simulateur public à refactorer, Provider obligatoire partout, risque de régression). En pratique :
+
 - Le simulateur public est utilisé par des **demandeurs** ; le wizard invitation par des **agents**. Pas de scénario de concurrence réaliste.
 - Le mode édition AMO partage **déjà** ce store singleton depuis sa création (commit `6a19aa12`, février 2026). On prolonge l'usage existant.
 - `reset()` + `setEditMode(true)` au mount + `setEditMode(false)` au démontage isolent les sessions dans le temps.
@@ -161,16 +164,24 @@ Le `SimulateurContext` expose un callback `onBackBeyondFirstStep?: () => void` c
 
 Le simulateur public et l'édition AMO ne définissent pas `onBackBeyondFirstStep` → comportement inchangé (pas de bouton Précédent sur la 1ère étape).
 
+### 5. Early exit dès un critère non éligible (ADR-0019)
+
+L'agent est souvent au téléphone avec le demandeur, qui cesse de communiquer ses informations dès qu'il se sait inéligible. Le wizard active donc `setEarlyExit(true, SimulateurStep.ADRESSE)` : la simulation s'arrête au premier critère bloquant, et l'écran `ResultInvitation` permet de créer le dossier immédiatement.
+
+- **`earlyExit` est un flag distinct de `editMode`** : l'édition AMO (`SimulateurEdition`) pose `setEarlyExit(false)` — un critère non re-saisi ne doit pas y couper la saisie.
+- **L'exit est différé jusqu'à `ADRESSE`** : sans `code_departement` / `epci`, `matchesTerritoire` échoue et le dossier deviendrait invisible pour l'aller-vers qui vient de le créer.
+- **La simulation partielle est persistée** via `EligibilityService.toPartialRGASimulationData` (pas de gate de complétude). Le serveur archive déjà correctement ce cas — aucun changement dans `createDossierByAgent`.
+
 ## Contrôle d'accès (AMO + Aller-vers)
 
 La création de dossier est ouverte aux agents AMO **et** Aller-vers, via une permission dédiée `DOSSIERS_CREATE` (catalogue : `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`).
 
-| Rôle | `DOSSIERS_CREATE` |
-|---|---|
-| `AMO` | ✅ |
-| `ALLERS_VERS` | ✅ |
-| `AMO_ET_ALLERS_VERS` | ✅ |
-| `ADMINISTRATEUR` / `ANALYSTE` / `SUPER_ADMINISTRATEUR` (lecture seule) | ❌ |
+| Rôle                                                                   | `DOSSIERS_CREATE` |
+| ---------------------------------------------------------------------- | ----------------- |
+| `AMO`                                                                  | ✅                |
+| `ALLERS_VERS`                                                          | ✅                |
+| `AMO_ET_ALLERS_VERS`                                                   | ✅                |
+| `ADMINISTRATEUR` / `ANALYSTE` / `SUPER_ADMINISTRATEUR` (lecture seule) | ❌                |
 
 Pourquoi une permission dédiée plutôt que `PROSPECTS_VIEW` (utilisée auparavant) : `PROSPECTS_VIEW` représente la lecture des prospects de territoire AV. Étendre cette permission à AMO aurait élargi par accident son périmètre de visibilité (liste prospects, stats prospects, etc.). `DOSSIERS_CREATE` cible uniquement l'écriture de création de dossier.
 
@@ -226,19 +237,19 @@ Détails techniques :
 
 ## Pointeurs de code
 
-| Rôle | Fichier |
-|---|---|
-| Schéma BDD | `src/shared/database/schema/users.ts`, `src/shared/database/schema/parcours-prevention.ts` |
-| Repos | `src/shared/database/repositories/user.repository.ts` (findByClaimToken, createStub, claimStub, upsertFromFranceConnect), `src/shared/database/repositories/parcours-prevention.repository.ts` (findOrCreateForUser, matchesTerritoire) |
-| Service | `services/creation-dossier.service.ts`, `services/inviter-name.service.ts` |
-| Server action | `actions/create-dossier-aller-vers.action.ts` (création atomique + envoi email optionnel), `actions/post-creation-redirect.ts` (URL post-création par rôle) |
-| Store wizard | `stores/creation-dossier.store.ts` |
-| Composants wizard | `components/CreationDossierWizard.tsx`, `components/steps/*` |
-| Page wizard | `src/app/(backoffice)/espace-agent/dossiers/nouveau/page.tsx` |
-| Email template | `src/shared/email/templates/claim-dossier.template.tsx` |
-| Email action | `src/shared/email/actions/send-claim-dossier.actions.ts` |
-| Route claim public | `src/app/(main)/claim-dossier/[token]/route.ts` (Route Handler : pose le cookie + redirige FC) + `src/app/(main)/claim-dossier/invalide/page.tsx` (UI erreur) |
-| Callback FC modifié | `src/features/auth/adapters/franceconnect/franceconnect.service.ts` (`consumeClaimToken`, `handleFranceConnectCallback`) |
-| Callout page prospect | `src/app/(backoffice)/espace-agent/prospects/[id]/components/CalloutSimulationAEffectuer.tsx` |
+| Rôle                                | Fichier                                                                                                                                                                                                                                                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schéma BDD                          | `src/shared/database/schema/users.ts`, `src/shared/database/schema/parcours-prevention.ts`                                                                                                                                                                        |
+| Repos                               | `src/shared/database/repositories/user.repository.ts` (findByClaimToken, createStub, claimStub, upsertFromFranceConnect), `src/shared/database/repositories/parcours-prevention.repository.ts` (findOrCreateForUser, matchesTerritoire)                           |
+| Service                             | `services/creation-dossier.service.ts`, `services/inviter-name.service.ts`                                                                                                                                                                                        |
+| Server action                       | `actions/create-dossier-aller-vers.action.ts` (création atomique + envoi email optionnel), `actions/post-creation-redirect.ts` (URL post-création par rôle)                                                                                                       |
+| Store wizard                        | `stores/creation-dossier.store.ts`                                                                                                                                                                                                                                |
+| Composants wizard                   | `components/CreationDossierWizard.tsx`, `components/steps/*`                                                                                                                                                                                                      |
+| Page wizard                         | `src/app/(backoffice)/espace-agent/dossiers/nouveau/page.tsx`                                                                                                                                                                                                     |
+| Email template                      | `src/shared/email/templates/claim-dossier.template.tsx`                                                                                                                                                                                                           |
+| Email action                        | `src/shared/email/actions/send-claim-dossier.actions.ts`                                                                                                                                                                                                          |
+| Route claim public                  | `src/app/(main)/claim-dossier/[token]/route.ts` (Route Handler : pose le cookie + redirige FC) + `src/app/(main)/claim-dossier/invalide/page.tsx` (UI erreur)                                                                                                     |
+| Callback FC modifié                 | `src/features/auth/adapters/franceconnect/franceconnect.service.ts` (`consumeClaimToken`, `handleFranceConnectCallback`)                                                                                                                                          |
+| Callout page prospect               | `src/app/(backoffice)/espace-agent/prospects/[id]/components/CalloutSimulationAEffectuer.tsx`                                                                                                                                                                     |
 | Simulateur invitation (étape 3-4/4) | `components/SimulateurEditionInvitation.tsx` (sans props : lit `useCreationDossierStore` + `useSimulateurStore`), `components/ResultInvitation.tsx` (création du dossier au clic final), `src/app/(backoffice)/espace-agent/dossiers/nouveau/simulation/page.tsx` |
-| Mode embedded simulateur (partagé) | `src/features/simulateur/components/shared/SimulateurContext.tsx` (props `embedded`, `onBackBeyondFirstStep`), `src/features/simulateur/components/shared/SimulateurLayout.tsx`, `src/features/simulateur/components/shared/NavigationButtons.tsx` |
+| Mode embedded simulateur (partagé)  | `src/features/simulateur/components/shared/SimulateurContext.tsx` (props `embedded`, `onBackBeyondFirstStep`), `src/features/simulateur/components/shared/SimulateurLayout.tsx`, `src/features/simulateur/components/shared/NavigationButtons.tsx`                |
