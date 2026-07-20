@@ -12,8 +12,10 @@ const SIMULATEUR_STORAGE_KEY = "fonds-argile-simulateur";
  */
 interface SimulateurState {
   simulation: SimulationState;
-  /** Mode édition (agent AMO/allers-vers) — désactive les early exits. */
+  /** Mode édition (agent AMO/allers-vers) — préserve les réponses au retour arrière. */
   editMode: boolean;
+  /** Arrête la simulation dès qu'un critère est éliminatoire. */
+  earlyExit: boolean;
   isHydrated: boolean;
 
   start: () => void;
@@ -21,6 +23,7 @@ interface SimulateurState {
   goBack: () => void;
   reset: () => void;
   setEditMode: (editMode: boolean) => void;
+  setEarlyExit: (earlyExit: boolean) => void;
   setHydrated: () => void;
 }
 
@@ -41,6 +44,7 @@ export const useSimulateurStore = create<SimulateurState>()(
     (set, get) => ({
       simulation: SimulationService.create(),
       editMode: false,
+      earlyExit: true,
       isHydrated: false,
 
       start: () => {
@@ -50,10 +54,10 @@ export const useSimulateurStore = create<SimulateurState>()(
       },
 
       submitAnswer: (answers: PartialRGASimulationData) => {
-        const { editMode } = get();
+        const { earlyExit } = get();
         set((state) => ({
           simulation: SimulationService.submitAnswer(state.simulation, answers, {
-            skipEarlyExit: editMode,
+            skipEarlyExit: !earlyExit,
           }),
         }));
       },
@@ -68,11 +72,15 @@ export const useSimulateurStore = create<SimulateurState>()(
       },
 
       reset: () => {
-        set({ simulation: SimulationService.reset(), editMode: false });
+        set({ simulation: SimulationService.reset(), editMode: false, earlyExit: true });
       },
 
       setEditMode: (editMode: boolean) => {
         set({ editMode });
+      },
+
+      setEarlyExit: (earlyExit: boolean) => {
+        set({ earlyExit });
       },
 
       setHydrated: () => {
@@ -115,3 +123,4 @@ export const selectIsEligible = (state: SimulateurState) => SimulationService.is
 export const selectIsIntro = (state: SimulateurState) => state.simulation.currentStep === SimulateurStep.INTRO;
 export const selectIsResultat = (state: SimulateurState) => state.simulation.currentStep === SimulateurStep.RESULTAT;
 export const selectEditMode = (state: SimulateurState) => state.editMode;
+export const selectEarlyExit = (state: SimulateurState) => state.earlyExit;

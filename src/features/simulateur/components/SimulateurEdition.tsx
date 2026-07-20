@@ -37,13 +37,16 @@ export function SimulateurEdition({
   const reset = useSimulateurStore((state) => state.reset);
   const start = useSimulateurStore((state) => state.start);
   const setEditMode = useSimulateurStore((state) => state.setEditMode);
+  const setEarlyExit = useSimulateurStore((state) => state.setEarlyExit);
 
   useEffect(() => {
     // Reset d'abord pour partir d'un état propre
     reset();
 
-    // Activer le mode édition (désactive les early exits, préserve les réponses au retour arrière)
+    // Mode édition : préserve les réponses au retour arrière
     setEditMode(true);
+    // L'AMO ne re-saisit pas forcément tout : un critère non évalué ne doit pas couper la saisie.
+    setEarlyExit(false);
 
     // Démarrer (passe de intro → étape 1)
     start();
@@ -69,6 +72,7 @@ export function SimulateurEdition({
     // Nettoyer le mode édition au démontage
     return () => {
       setEditMode(false);
+      setEarlyExit(true);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
