@@ -29,6 +29,17 @@ function getGranulariteForPeriode(periodeId?: PeriodeId): GranulariteVisites {
 }
 
 /**
+ * Extrait une date exploitable par `new Date(...)` d'une clé Matomo.
+ * En `period=day`, la clé est une date simple ("2026-01-05"). En `period=week`/`month`
+ * sur un `date=range`, Matomo renvoie la sous-période sous forme "début,fin"
+ * ("2026-01-05,2026-01-11") — sans cette extraction, `new Date("2026-01-05,2026-01-11")`
+ * vaut "Invalid Date" et casse le tri/l'affichage du graphique.
+ */
+function extractDateDebut(matomoDateKey: string): string {
+  return matomoDateKey.split(",")[0];
+}
+
+/**
  * Récupère les statistiques Matomo pour une période donnée, avec variations
  */
 export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: string): Promise<MatomoStatistiques> {
@@ -58,9 +69,9 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
         previousPeriod ? fetchMatomoUniqueVisitors("range", previousPeriod, segment) : Promise.resolve(0),
       ]);
 
-    // Transformer les données - La structure est { "date": nombre }
+    // Transformer les données - La structure est { "date": nombre } (day) ou { "début,fin": nombre } (week/month)
     const visitesParJour: VisiteParJour[] = Object.entries(visitsData).map(([date, visites]) => ({
-      date,
+      date: extractDateDebut(date),
       visites: typeof visites === "number" ? visites : 0,
     }));
 
