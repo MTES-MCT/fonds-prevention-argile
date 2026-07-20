@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { getServerEnv, getClientEnv } from "@/shared/config/env.config";
 import type { MatomoVisitsResponse, MatomoEventActionResponse } from "../domain/types/matomo.types";
 import type { MatomoFunnelFlowTableResponse } from "../domain/types/matomo-funnels.types";
@@ -79,13 +80,14 @@ function getMatomoConfig(): MatomoConfig {
   };
 }
 
+const MATOMO_TIMEOUT_MS = 10_000;
+const MATOMO_CACHE_TTL_SECONDS = 3600;
+export const MATOMO_CACHE_TAG = "matomo-api";
+
 /**
- * Requete générique vers l'API Matomo
- * @param params
- * @param apiUrl
- * @returns
+ * Appel HTTP brut vers l'API Matomo, sans cache.
  */
-async function fetchMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): Promise<T> {
+async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): Promise<T> {
   const filteredParams = Object.fromEntries(
     Object.entries(params).filter(([, value]) => value !== undefined)
   ) as Record<string, string>;
@@ -98,7 +100,9 @@ async function fetchMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): P
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: searchParams.toString(),
-    next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(MATOMO_TIMEOUT_MS),
+    // Le cache est gere par unstable_cache en amont, qui ne memorise pas les erreurs.
+    cache: "no-store",
   });
 
   if (!response.ok) {
@@ -109,12 +113,34 @@ async function fetchMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): P
 
   const data = await response.json();
 
+  // Matomo repond HTTP 200 meme sur erreur d'authentification : le verdict est dans le corps.
   if (data?.result === "error") {
     console.error(`Erreur API Matomo (${params.method}):`, data.message);
     throw new Error(`Erreur API Matomo: ${data.message}`);
   }
 
   return data as T;
+}
+
+// Le token est relu ici plutot que passe en argument pour ne pas finir dans la cle de cache.
+const fetchMatomoApiCached = unstable_cache(
+  async (params: Record<string, string | undefined>, apiUrl: string): Promise<unknown> => {
+    const { apiToken } = getMatomoConfig();
+    return requestMatomoApi({ ...params, token_auth: apiToken } as MatomoRequestParams, apiUrl);
+  },
+  ["matomo-api"],
+  { revalidate: MATOMO_CACHE_TTL_SECONDS, tags: [MATOMO_CACHE_TAG] }
+);
+
+/**
+ * Requete générique vers l'API Matomo, avec cache 1 h des seules reponses valides.
+ * @param params
+ * @param apiUrl
+ * @returns
+ */
+async function fetchMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): Promise<T> {
+  const cacheableParams: Record<string, string | undefined> = { ...params, token_auth: undefined };
+  return (await fetchMatomoApiCached(cacheableParams, apiUrl)) as T;
 }
 
 /**
