@@ -99,10 +99,13 @@ Deux déclencheurs :
   échouer la qualification.
 
 > **Résolution territoriale user-first (fallback agent).** `assignAmoAutomatiqueForUser` et
-> `selectAmoForUser` résolvent commune / EPCI / adresse via
+> `selectAmoForUser` résolvent **commune / EPCI** via
 > `getDemandeurFirstSimulation` (`rgaSimulationData ?? rgaSimulationDataAgent`), et non plus
 > `rgaSimulationData` seul — sinon un dossier créé par un Aller-vers (données uniquement
 > côté agent, ménage n'ayant pas encore simulé) échouait à l'auto-attribution.
+> L'**adresse** suit la même convention **uniquement dans l'auto-attribution**
+> (`assignAmoAutomatiqueForUser` lit `logement.adresse`) ; `selectAmoForUser` la reçoit en
+> paramètre, elle n'en dérive pas.
 
 > **Rattrapage des dossiers déjà bloqués** : `pnpm fix:lier-amo-oblig`
 > (`scripts/ops/fix/lier-amo-oblig.ts`, dry-run par défaut, `--apply`, ciblage

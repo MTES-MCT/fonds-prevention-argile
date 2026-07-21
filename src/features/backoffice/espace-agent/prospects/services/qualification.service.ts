@@ -72,9 +72,10 @@ export class QualificationService {
 
   /**
    * Met le dossier en lien direct avec l'AMO du territoire si le département impose
-   * un AMO (obligatoire / AV-AMO fusionnés). Best-effort : idempotent côté service
-   * (`assignAmoAutomatiqueForUser` no-op si validation existante ou étape ≠ choix_amo),
-   * et un échec ne doit jamais faire échouer la qualification déjà enregistrée.
+   * un AMO (obligatoire / AV-AMO fusionnés). Best-effort : `assignAmoAutomatiqueForUser`
+   * est idempotent (no-op success si une validation existe déjà) et gardé à l'étape
+   * choix_amo (renvoie success:false sinon) — cet échec est ignoré (loggé) et ne doit
+   * jamais faire échouer la qualification déjà enregistrée.
    */
   private async autoLinkAmoIfObligatoire(
     parcours: NonNullable<Awaited<ReturnType<typeof parcoursPreventionRepository.findById>>>
