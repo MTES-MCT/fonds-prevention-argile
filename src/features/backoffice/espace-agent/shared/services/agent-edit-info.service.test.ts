@@ -45,6 +45,21 @@ describe("buildAgentEditInfo — baseline snapshot", () => {
     expect(result).toBeNull();
   });
 
+  it("détecte un changement de mitoyenneté (critère absent de l'ancienne liste)", async () => {
+    const base = { logement: { mitoyen: false }, rga: {}, menage: {} } as unknown as RGASimulationData;
+    const edited = { logement: { mitoyen: true }, rga: {}, menage: {} } as unknown as RGASimulationData;
+
+    const result = await buildAgentEditInfo({
+      rgaSimulationData: null,
+      rgaSimulationDataAgentBaseline: base,
+      rgaSimulationDataAgent: edited,
+      rgaSimulationAgentEditedAt: new Date(),
+      rgaSimulationAgentEditedBy: "agent-1",
+    });
+
+    expect(result?.originalDisplayValues.mitoyennete).toBe("NON");
+  });
+
   it("préfère le baseline à la simulation demandeur quand les deux existent", async () => {
     const result = await buildAgentEditInfo({
       rgaSimulationData: sim(2),

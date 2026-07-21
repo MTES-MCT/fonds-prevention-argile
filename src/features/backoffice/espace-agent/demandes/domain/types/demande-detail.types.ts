@@ -25,10 +25,18 @@ export interface InfoDemandeur {
  * Informations sur le logement (basées sur RGASimulationData)
  */
 export interface InfoLogement {
+  /** Type de logement */
+  typeLogement: "maison" | "appartement" | null;
   /** Année de construction */
   anneeConstruction: string | null;
   /** Nombre de niveaux */
   nombreNiveaux: string | null;
+  /** Mitoyenneté */
+  mitoyen: boolean | null;
+  /** Couverture par une assurance */
+  assure: boolean | null;
+  /** Propriétaire occupant */
+  proprietaireOccupant: boolean | null;
   /** État de la maison */
   etatMaison: string | null;
   /** Zone d'exposition au risque argile */
