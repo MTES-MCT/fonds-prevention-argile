@@ -4,6 +4,7 @@ import {
   handleProConnectError,
 } from "@/features/auth/adapters/proconnect/proconnect.service";
 import { getAndClearRedirectUrl } from "@/features/auth";
+import { getDefaultRedirect } from "@/features/auth/services/redirects.service";
 import { DEFAULT_REDIRECTS, ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { getServerEnv } from "@/shared/config/env.config";
 
@@ -46,9 +47,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL(`${ROUTES.connexion.agent}?error=${errorCode}`, baseUrl));
     }
 
-    // Récupérer l'URL de redirection sauvegardée (si existe)
+    // URL intentionnelle prioritaire ; sinon redirection par défaut selon le rôle
+    // (agents terrain AMO/AV → dossiers, admins/analystes → administration).
     const redirectUrl = await getAndClearRedirectUrl();
-    const finalRedirect = redirectUrl || DEFAULT_REDIRECTS.administrateur;
+    const finalRedirect =
+      redirectUrl || (result.role ? getDefaultRedirect(result.role) : DEFAULT_REDIRECTS.administrateur);
 
     return NextResponse.redirect(new URL(finalRedirect, baseUrl));
   } catch (err) {

@@ -241,7 +241,7 @@ export async function handleProConnectCallback(code: string, state: string): Pro
     // 9. Créer la session avec l'agentId et son rôle
     await createProConnectSession(agent.id, agent.role, tokens.id_token, agent.givenName, agent.usualName || "");
 
-    return { success: true };
+    return { success: true, role: agent.role };
   } catch (error) {
     console.error("[ProConnect] Erreur callback:", error);
     return {
