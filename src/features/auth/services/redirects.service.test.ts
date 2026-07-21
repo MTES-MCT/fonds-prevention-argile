@@ -17,6 +17,18 @@ describe("redirects.service", () => {
       expect(getDefaultRedirect(ROLES.AMO)).toBe(DEFAULT_REDIRECTS.amo);
     });
 
+    it("devrait retourner /espace-agent pour le rôle ALLERS_VERS", () => {
+      expect(getDefaultRedirect(ROLES.ALLERS_VERS)).toBe(DEFAULT_REDIRECTS.allers_vers);
+    });
+
+    it("devrait retourner /espace-agent pour le rôle AMO_ET_ALLERS_VERS", () => {
+      expect(getDefaultRedirect(ROLES.AMO_ET_ALLERS_VERS)).toBe(DEFAULT_REDIRECTS.amo_et_allers_vers);
+    });
+
+    it("devrait retourner /administration pour le rôle ANALYSTE", () => {
+      expect(getDefaultRedirect(ROLES.ANALYSTE)).toBe(DEFAULT_REDIRECTS.analyste);
+    });
+
     it("devrait retourner /mon-compte pour le rôle PARTICULIER", () => {
       expect(getDefaultRedirect(ROLES.PARTICULIER)).toBe(DEFAULT_REDIRECTS.particulier);
     });
