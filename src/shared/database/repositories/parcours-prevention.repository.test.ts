@@ -140,6 +140,7 @@ describe("ParcoursPreventionRepository — invitation", () => {
     rgaDataDeletedAt: null,
     rgaDataDeletionReason: null,
     rgaSimulationDataAgent: null,
+    rgaSimulationDataAgentBaseline: null,
     rgaSimulationAgentEditedAt: null,
     rgaSimulationAgentEditedBy: null,
     archivedAt: null,

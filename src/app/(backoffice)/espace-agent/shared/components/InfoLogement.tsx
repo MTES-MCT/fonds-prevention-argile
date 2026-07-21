@@ -162,6 +162,58 @@ export function InfoLogement({
       )}
 
       <ul className="fr-ml-3w fr-text--sm">
+        {/* Type de logement */}
+        {logement.typeLogement && (
+          <li className="fr-mb-2v">
+            Type de logement{" "}
+            <FieldValue
+              fieldKey="typeLogement"
+              agentEditInfo={agentEditInfo}
+              className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+              {logement.typeLogement === "maison" ? "MAISON" : "APPARTEMENT"}
+            </FieldValue>
+          </li>
+        )}
+
+        {/* Mitoyenneté */}
+        {logement.mitoyen !== null && (
+          <li className="fr-mb-2v">
+            Mitoyenneté{" "}
+            <FieldValue
+              fieldKey="mitoyennete"
+              agentEditInfo={agentEditInfo}
+              className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+              {logement.mitoyen ? "OUI" : "NON"}
+            </FieldValue>
+          </li>
+        )}
+
+        {/* Assurance */}
+        {logement.assure !== null && (
+          <li className="fr-mb-2v">
+            Assurance{" "}
+            <FieldValue
+              fieldKey="assurance"
+              agentEditInfo={agentEditInfo}
+              className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+              {logement.assure ? "OUI" : "NON"}
+            </FieldValue>
+          </li>
+        )}
+
+        {/* Propriétaire occupant */}
+        {logement.proprietaireOccupant !== null && (
+          <li className="fr-mb-2v">
+            Propriétaire occupant{" "}
+            <FieldValue
+              fieldKey="proprietaireOccupant"
+              agentEditInfo={agentEditInfo}
+              className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+              {logement.proprietaireOccupant ? "OUI" : "NON"}
+            </FieldValue>
+          </li>
+        )}
+
         {/* Risque argile */}
         {logement.zoneExposition && (
           <li className="fr-mb-2v">

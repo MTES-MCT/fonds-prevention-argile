@@ -306,7 +306,17 @@ détail dossier** (§6). `getDossierSimulationData` gate donc, pour les non-admi
 - dossier **sans** entreprise (statut `SANS_AMO`) → **accès territorial** via
   `verifyProspectTerritoryAccess` (Aller-vers / hybride couvrant le territoire).
 
-Les statuts éditables incluent `SANS_AMO` (aligné sur `STATUTS_CONSULTABLES`).
+Les statuts éditables incluent `SANS_AMO` **et `LOGEMENT_NON_ELIGIBLE`** (aligné sur
+`STATUTS_CONSULTABLES`, lecture et écriture désormais alignées) : un dossier devenu non
+éligible reste corrigeable. L'**écriture** (`updateSimulationDataAction`) applique la même
+autorisation que la lecture — ownership entreprise pour un dossier avec AMO, sinon
+`verifyProspectTerritoryAccess` — sinon un Aller-vers (sans `entrepriseAmoId`) pouvait
+**ouvrir** l'édition d'un dossier `SANS_AMO` mais échouait à la **sauvegarde**. À la sauvegarde, `updateSimulationDataAction` **recalcule
+l'éligibilité** et met à jour le statut de validation dans les deux sens
+(`LOGEMENT_ELIGIBLE ↔ LOGEMENT_NON_ELIGIBLE`) + archive / dé-archive le parcours — miroir
+de la création, mais **uniquement pour les dossiers déjà tranchés** (pas `EN_ATTENTE` /
+`SANS_AMO`) et **sans renvoyer le mail d'invitation**. Voir
+[ADR-0020](../adr/0020-correction-simulation-agent-post-eligibilite.md).
 
 > **Bug corrigé (juillet 2026) — 404 « Vérifier son éligibilité » pour un Aller-vers.** Un dossier
 > `SANS_AMO` est **consultable** (le détail s'ouvre) mais l'édition de simulation n'acceptait que

@@ -91,8 +91,12 @@ describe("demande-detail.actions", () => {
           sourceAcquisitionPrecision: null,
         },
         logement: {
+          typeLogement: "maison" as const,
           anneeConstruction: "2000",
           nombreNiveaux: "2",
+          mitoyen: false,
+          assure: true,
+          proprietaireOccupant: true,
           etatMaison: "saine",
           zoneExposition: "moyen" as const,
           indemnisationPasseeRGA: false,

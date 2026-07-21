@@ -274,6 +274,13 @@
       "when": 1784212472088,
       "tag": "0038_fat_spacker_dave",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1784625785764,
+      "tag": "0039_stiff_makkari",
+      "breakpoints": true
     }
   ]
 }

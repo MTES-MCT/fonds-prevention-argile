@@ -43,6 +43,7 @@ const parcoursRefuse = {
   currentStep: Step.CHOIX_AMO,
   rgaSimulationData: null,
   rgaSimulationDataAgent: null,
+  rgaSimulationDataAgentBaseline: null,
 };
 const validationRefusee = {
   id: "val-1",

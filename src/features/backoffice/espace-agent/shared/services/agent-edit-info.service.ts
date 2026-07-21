@@ -22,29 +22,50 @@ interface ComparisonField {
  */
 const COMPARISON_FIELDS: ComparisonField[] = [
   {
+    infoLogementKey: "typeLogement",
+    getValue: (d) => d.logement?.type,
+    // Placeholder si baseline partiel (early exit) : ne pas afficher un faux "avant".
+    formatValue: (v) => (v == null ? "—" : v === "maison" ? "MAISON" : "APPARTEMENT"),
+  },
+  {
+    infoLogementKey: "mitoyennete",
+    getValue: (d) => d.logement?.mitoyen,
+    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
+  },
+  {
+    infoLogementKey: "assurance",
+    getValue: (d) => d.rga?.assure,
+    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
+  },
+  {
+    infoLogementKey: "proprietaireOccupant",
+    getValue: (d) => d.logement?.proprietaire_occupant,
+    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
+  },
+  {
     infoLogementKey: "zoneExposition",
     getValue: (d) => d.logement?.zone_dexposition,
-    formatValue: (v) => String(v).toUpperCase(),
+    formatValue: (v) => (v == null ? "—" : String(v).toUpperCase()),
   },
   {
     infoLogementKey: "anneeConstruction",
     getValue: (d) => d.logement?.annee_de_construction,
-    formatValue: (v) => String(v),
+    formatValue: (v) => (v == null ? "—" : String(v)),
   },
   {
     infoLogementKey: "nombreNiveaux",
     getValue: (d) => d.logement?.niveaux,
-    formatValue: (v) => `${v} ${Number(v) > 1 ? "NIVEAUX" : "NIVEAU"}`,
+    formatValue: (v) => (v == null ? "—" : `${v} ${Number(v) > 1 ? "NIVEAUX" : "NIVEAU"}`),
   },
   {
     infoLogementKey: "etatMaison",
     getValue: (d) => d.rga?.sinistres,
-    formatValue: (v) => String(v).toUpperCase(),
+    formatValue: (v) => (v == null ? "—" : String(v).toUpperCase()),
   },
   {
     infoLogementKey: "indemnisationPasseeRGA",
     getValue: (d) => d.rga?.indemnise_indemnise_rga,
-    formatValue: (v) => (v ? "OUI" : "NON"),
+    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
   },
   {
     infoLogementKey: "montantIndemnisation",
@@ -59,7 +80,7 @@ const COMPARISON_FIELDS: ComparisonField[] = [
   {
     infoLogementKey: "nombreHabitants",
     getValue: (d) => d.menage?.personnes,
-    formatValue: (v) => `${v} ${Number(v) > 1 ? "HABITANTS" : "HABITANT"}`,
+    formatValue: (v) => (v == null ? "—" : `${v} ${Number(v) > 1 ? "HABITANTS" : "HABITANT"}`),
   },
   {
     infoLogementKey: "niveauRevenu",
@@ -86,6 +107,7 @@ const COMPARISON_FIELDS: ComparisonField[] = [
 export async function buildAgentEditInfo(parcours: {
   rgaSimulationData: RGASimulationData | null;
   rgaSimulationDataAgent: RGASimulationData | null;
+  rgaSimulationDataAgentBaseline?: RGASimulationData | null;
   rgaSimulationAgentEditedAt: Date | null;
   rgaSimulationAgentEditedBy: string | null;
 }): Promise<AgentEditInfo | null> {
@@ -94,10 +116,13 @@ export async function buildAgentEditInfo(parcours: {
     return null;
   }
 
-  const initial = parcours.rgaSimulationData;
+  // Baseline = snapshot d'origine (posé à la 1re correction) si présent, sinon la
+  // simulation demandeur. Le snapshot couvre les dossiers créés par agent, où le
+  // slot demandeur (`rgaSimulationData`) est vide et où l'ancien diff renvoyait null.
+  const initial = parcours.rgaSimulationDataAgentBaseline ?? parcours.rgaSimulationData;
   const edited = parcours.rgaSimulationDataAgent;
 
-  // Si pas de données initiales, on ne peut pas faire de diff
+  // Si pas de baseline exploitable, on ne peut pas faire de diff
   if (!initial) {
     return null;
   }

@@ -1,0 +1,1 @@
+ALTER TABLE "parcours_prevention" ADD COLUMN "rga_simulation_data_agent_baseline" jsonb;

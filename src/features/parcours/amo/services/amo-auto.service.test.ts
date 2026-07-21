@@ -76,6 +76,7 @@ function buildMockParcours(codeInsee: string, codeEpci: string = "") {
     rgaDataDeletionReason: null,
     situationParticulier: SituationParticulier.PROSPECT,
     rgaSimulationDataAgent: null,
+    rgaSimulationDataAgentBaseline: null,
     rgaSimulationAgentEditedAt: null,
     rgaSimulationAgentEditedBy: null,
     archivedAt: null,

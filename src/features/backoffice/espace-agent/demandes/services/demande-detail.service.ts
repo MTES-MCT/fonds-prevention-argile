@@ -94,8 +94,12 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
     const coords = parseCoordinatesString(rgaData?.logement?.coordonnees);
     const niveauRevenu = calculateNiveauRevenuFromRga(rgaData);
     const logement: InfoLogement = {
+      typeLogement: rgaData?.logement?.type ?? null,
       anneeConstruction: rgaData?.logement?.annee_de_construction || null,
       nombreNiveaux: rgaData?.logement?.niveaux?.toString() || null,
+      mitoyen: rgaData?.logement?.mitoyen ?? null,
+      assure: rgaData?.rga?.assure ?? null,
+      proprietaireOccupant: rgaData?.logement?.proprietaire_occupant ?? null,
       etatMaison: rgaData?.rga?.sinistres || null,
       zoneExposition: rgaData?.logement?.zone_dexposition || null,
       indemnisationPasseeRGA: rgaData?.rga?.indemnise_indemnise_rga ?? null,

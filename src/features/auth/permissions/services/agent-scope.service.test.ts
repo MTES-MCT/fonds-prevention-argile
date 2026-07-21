@@ -345,6 +345,7 @@ describe("agent-scope.service", () => {
     const parcours75 = {
       rgaSimulationData: { logement: { code_departement: "75" } },
       rgaSimulationDataAgent: null,
+      rgaSimulationDataAgentBaseline: null,
     } as unknown as ParcoursPrevention;
 
     const adminScope: AgentScope = {
@@ -404,6 +405,7 @@ describe("agent-scope.service", () => {
       const parcours33 = {
         rgaSimulationData: { logement: { code_departement: "33" } },
         rgaSimulationDataAgent: null,
+        rgaSimulationDataAgentBaseline: null,
       } as unknown as ParcoursPrevention;
       expect(canReopenRefusedDemande(avScope, { entrepriseAmoId: null, parcours: parcours33 })).toBe(false);
     });
@@ -620,6 +622,7 @@ describe("agent-scope.service", () => {
       return {
         rgaSimulationData: null,
         rgaSimulationDataAgent: null,
+        rgaSimulationDataAgentBaseline: null,
         ...sims,
       } as ParcoursPrevention;
     }

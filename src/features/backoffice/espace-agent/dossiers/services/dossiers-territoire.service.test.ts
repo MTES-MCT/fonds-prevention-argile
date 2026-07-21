@@ -70,6 +70,7 @@ function makeRow(overrides: Record<string, unknown> = {}) {
       logement: { commune_nom: "Châteauroux", code_departement: "36", epci: "200001" },
     },
     rgaSimulationDataAgent: null,
+    rgaSimulationDataAgentBaseline: null,
     userPrenom: "Alice",
     userNom: "Martin",
     userEmail: "alice@test.fr",

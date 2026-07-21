@@ -135,6 +135,71 @@ branche. Règles :
 - Français, accents. Pas d'emojis.
 - Si la branche ne touche rien de visible côté UI, l'indiquer : « rien à tester côté UI ».
 
+### Revue Copilot avant merge (à chaque PR)
+
+Une fois la branche prête et validée (`pnpm validate` vert), **ne pas merger directement**.
+Le cycle de revue est le suivant :
+
+1. **Claude demande à l'utilisateur de créer la PR** (Claude ne push pas et ne crée pas la
+   PR — cf. règle « Ne jamais `git push` »). Claude peut préparer un titre et un corps de PR.
+2. **L'utilisateur crée la PR et attend le retour de Copilot** (revue automatique
+   « Overview » + commentaires de Copilot sur la PR).
+3. **L'utilisateur donne le go** à Claude une fois le retour Copilot disponible.
+4. **Claude récupère les commentaires Copilot et filtre les périmés** (cf. « Détecter les
+   retours périmés » ci-dessous) : on ne traite que les fils **encore vivants**
+   (`isOutdated == false && isResolved == false`).
+5. **Triage tiéré** (c'est ce qui remplace l'ancien « compte rendu avant toute
+   modification »). Claude sort un **tableau de triage compact** des fils vivants
+   (`fichier:ligne · verdict · action en 1 ligne`), puis :
+   - **Bas-risque / dans le périmètre** (placeholder, garde manquante, typo, test
+     manquant, bump, petite cohérence) → Claude **corrige directement en lot**, puis fait
+     un **résumé APRÈS** (le même tableau, annoté « fait »). Pas d'attente.
+   - **Architectural / élargit le périmètre / point contesté** (transaction, refactor
+     transverse, changement de contrat, faux positif à argumenter) → \*\*compte rendu AVANT
+     - attendre le go\*\* explicite. Justifier ce qui est écarté.
+
+   En cas de doute sur la catégorie, traiter comme « architectural » (compte rendu avant).
+
+6. **Après les corrections**, re-lancer `pnpm validate` si du code a changé, et **regrouper
+   le lot en commits logiques**.
+7. **Push avant de relancer Copilot** : ne JAMAIS re-demander une revue Copilot sur un head
+   non poussé — sinon Copilot review du code périmé et re-signale du déjà-corrigé (round
+   gaspillé). Séquence : lot de fixes → push → **une** re-demande → traiter tous les fils
+   vivants en une passe → push. Éviter le ping-pong 1 commentaire/commit.
+8. On ne merge qu'une fois ce tour terminé.
+
+> Claude n'attend jamais Copilot de lui-même : il **rend la main à l'utilisateur** pour la
+> création de PR, le push et l'attente de la revue, puis reprend sur le **go** explicite.
+> Rappel : Copilot ne fait que **commenter**, il n'`APPROVE` jamais — une règle « 1 approving
+> review » exige donc une **approbation humaine**, indépendante de Copilot.
+
+**Détecter les retours périmés (outdated) vs vivants.** Un commentaire Copilot peut viser
+du code déjà modifié depuis. Les fils de revue GitHub portent deux drapeaux (`isOutdated`,
+`isResolved`) exposés par l'API GraphQL — les utiliser plutôt que de deviner :
+
+```bash
+gh api graphql -f query='
+{ repository(owner: "MTES-MCT", name: "fonds-prevention-argile") {
+    pullRequest(number: <PR>) {
+      reviewThreads(first: 50) { nodes {
+        isResolved isOutdated path line
+        comments(first: 1) { nodes { author { login } body } }
+      } } } } }' \
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[]
+        | select(.comments.nodes[0].author.login=="copilot-pull-request-reviewer")
+        | {outdated: .isOutdated, resolved: .isResolved, path, line, body: (.comments.nodes[0].body[0:80])}'
+```
+
+Règle de tri :
+
+- **`isOutdated == false && isResolved == false`** → **retour vivant**, pointe encore le code
+  courant : à traiter dans le compte rendu.
+- **`isOutdated == true`** → le code sous le commentaire a changé depuis (souvent déjà
+  corrigé ou déplacé) : à considérer comme traité, mais y jeter un œil pour confirmer que le
+  changement répond bien au fond du commentaire (l'`isOutdated` est positionnel, pas
+  sémantique).
+- **`isResolved == true`** → fil explicitement résolu : ignorer.
+
 ## Commits : simples et conventionnels
 
 Suivre **Conventional Commits** : un titre court, une seule ligne de description.
