@@ -135,6 +135,26 @@ branche. Règles :
 - Français, accents. Pas d'emojis.
 - Si la branche ne touche rien de visible côté UI, l'indiquer : « rien à tester côté UI ».
 
+### Revue Copilot avant merge (à chaque PR)
+
+Une fois la branche prête et validée (`pnpm validate` vert), **ne pas merger directement**.
+Le cycle de revue est le suivant :
+
+1. **Claude demande à l'utilisateur de créer la PR** (Claude ne push pas et ne crée pas la
+   PR — cf. règle « Ne jamais `git push` »). Claude peut préparer un titre et un corps de PR.
+2. **L'utilisateur crée la PR et attend le retour de Copilot** (revue automatique
+   « Overview » + commentaires de Copilot sur la PR).
+3. **L'utilisateur donne le go** à Claude une fois le retour Copilot disponible.
+4. **Claude lit les recommandations de Copilot** (par ex. via `gh pr view <n> --comments`
+   ou `gh api` sur les reviews/commentaires), les **évalue une par une**, **ajuste le code
+   si pertinent**, et **justifie explicitement** ce qui est écarté (faux positif, hors
+   périmètre, choix assumé).
+5. On ne merge qu'une fois ce tour terminé (nouveaux commits + re-`pnpm validate` si du code
+   a changé).
+
+> Claude n'attend jamais Copilot de lui-même : il **rend la main à l'utilisateur** pour la
+> création de PR et l'attente de la revue, puis reprend sur le **go** explicite.
+
 ## Commits : simples et conventionnels
 
 Suivre **Conventional Commits** : un titre court, une seule ligne de description.
