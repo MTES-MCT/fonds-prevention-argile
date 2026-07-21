@@ -14,7 +14,6 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/shared/database/repositories/parcours-prevention.repository", () => ({
   parcoursPreventionRepository: {
     updateRGADataAgent: vi.fn(async () => ({ id: "parcours-1" })),
-    updateSituationParticulier: vi.fn(async () => ({ id: "parcours-1" })),
   },
 }));
 vi.mock("../services/eligibilite-agent.service", () => ({
@@ -25,19 +24,20 @@ vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
   verifyProspectTerritoryAccess: vi.fn(async () => null),
 }));
 
-// db.select → renvoie une ligne validation/parcours ; db.update → capture le .set().
-const updateSetSpy = vi.fn(() => ({ where: vi.fn(async () => undefined) }));
+// db.select → ligne validation/parcours ; db.transaction(cb) → exécute cb avec un
+// tx dont on capture les .update().set().
+const txSetSpy = vi.fn(() => ({ where: vi.fn(async () => undefined) }));
+const txUpdateSpy = vi.fn(() => ({ set: txSetSpy }));
 vi.mock("@/shared/database/client", () => ({
   db: {
     select: vi.fn(),
-    update: vi.fn(() => ({ set: updateSetSpy })),
+    transaction: vi.fn(async (cb: (tx: unknown) => Promise<void>) => cb({ update: txUpdateSpy })),
   },
 }));
 
 import { updateSimulationDataAction } from "./update-simulation-data.action";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { db } from "@/shared/database/client";
-import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 import { evaluateAgentSimulation } from "../services/eligibilite-agent.service";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 
@@ -71,7 +71,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     } as any);
   });
 
-  it("bascule LOGEMENT_ELIGIBLE → LOGEMENT_NON_ELIGIBLE et archive", async () => {
+  it("bascule LOGEMENT_ELIGIBLE → LOGEMENT_NON_ELIGIBLE et archive (dans une transaction)", async () => {
     mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE);
     vi.mocked(evaluateAgentSimulation).mockReturnValue({
       result: { eligible: false } as never,
@@ -82,14 +82,16 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     const result = await updateSimulationDataAction("validation-1", rgaData);
 
     expect(result.success).toBe(true);
-    expect(updateSetSpy).toHaveBeenCalledWith(
+    expect(db.transaction).toHaveBeenCalledTimes(1);
+    expect(txSetSpy).toHaveBeenCalledWith(
       expect.objectContaining({ statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE })
     );
-    expect(parcoursPreventionRepository.updateSituationParticulier).toHaveBeenCalledWith(
-      "parcours-1",
-      SituationParticulier.ARCHIVE,
-      "note-archivage",
-      "agent-1"
+    expect(txSetSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        situationParticulier: SituationParticulier.ARCHIVE,
+        archiveReason: "note-archivage",
+        archivedBy: "agent-1",
+      })
     );
   });
 
@@ -104,16 +106,13 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     const result = await updateSimulationDataAction("validation-1", rgaData);
 
     expect(result.success).toBe(true);
-    expect(updateSetSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ statut: StatutValidationAmo.LOGEMENT_ELIGIBLE })
-    );
-    expect(parcoursPreventionRepository.updateSituationParticulier).toHaveBeenCalledWith(
-      "parcours-1",
-      SituationParticulier.PROSPECT
+    expect(txSetSpy).toHaveBeenCalledWith(expect.objectContaining({ statut: StatutValidationAmo.LOGEMENT_ELIGIBLE }));
+    expect(txSetSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ situationParticulier: SituationParticulier.PROSPECT, archivedAt: null })
     );
   });
 
-  it("ne réécrit rien quand le verdict est inchangé (reste éligible)", async () => {
+  it("ne réécrit ni statut ni archivage quand le verdict est inchangé (reste éligible)", async () => {
     mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE);
     vi.mocked(evaluateAgentSimulation).mockReturnValue({
       result: { eligible: true } as never,
@@ -124,9 +123,9 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     const result = await updateSimulationDataAction("validation-1", rgaData);
 
     expect(result.success).toBe(true);
-    // Pas de transition → pas d'écrasement de valideeAt ni d'archivedAt.
-    expect(db.update).not.toHaveBeenCalled();
-    expect(parcoursPreventionRepository.updateSituationParticulier).not.toHaveBeenCalled();
+    // Seule l'écriture de simulation a lieu (pas de transition) → aucun set de statut.
+    expect(txSetSpy).toHaveBeenCalledTimes(1);
+    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
   });
 
   it("ne touche pas au statut d'un dossier EN_ATTENTE (validation AMO à venir)", async () => {
@@ -140,8 +139,8 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     const result = await updateSimulationDataAction("validation-1", rgaData);
 
     expect(result.success).toBe(true);
-    expect(db.update).not.toHaveBeenCalled();
-    expect(parcoursPreventionRepository.updateSituationParticulier).not.toHaveBeenCalled();
+    expect(txSetSpy).toHaveBeenCalledTimes(1);
+    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
   });
 
   it("ne touche pas au statut d'un dossier SANS_AMO", async () => {
@@ -155,7 +154,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     const result = await updateSimulationDataAction("validation-1", rgaData);
 
     expect(result.success).toBe(true);
-    expect(db.update).not.toHaveBeenCalled();
+    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
   });
 });
 
@@ -186,10 +185,10 @@ describe("updateSimulationDataAction — autorisation SANS_AMO (Aller-vers)", ()
       "parcours-1",
       expect.objectContaining({ role: UserRole.ALLERS_VERS, allersVersId: "av-1" })
     );
-    expect(parcoursPreventionRepository.updateRGADataAgent).toHaveBeenCalled();
+    expect(db.transaction).toHaveBeenCalledTimes(1);
   });
 
-  it("refuse l'écriture hors territoire", async () => {
+  it("refuse l'écriture hors territoire (aucune écriture)", async () => {
     mockValidationRow(StatutValidationAmo.SANS_AMO, null);
     vi.mocked(verifyProspectTerritoryAccess).mockResolvedValue("Ce prospect n'est pas dans votre territoire");
 
@@ -197,6 +196,6 @@ describe("updateSimulationDataAction — autorisation SANS_AMO (Aller-vers)", ()
 
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toBe("Ce prospect n'est pas dans votre territoire");
-    expect(parcoursPreventionRepository.updateRGADataAgent).not.toHaveBeenCalled();
+    expect(db.transaction).not.toHaveBeenCalled();
   });
 });

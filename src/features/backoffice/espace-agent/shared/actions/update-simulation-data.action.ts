@@ -117,26 +117,32 @@ export async function updateSimulationDataAction(
         }
       }
 
-      // Sauvegarde. Le baseline (données AVANT 1re correction) alimente le diff
-      // du détail dossier — indispensable pour les dossiers créés par agent où
-      // `rgaSimulationData` (slot demandeur) est vide.
-      const updated = await parcoursPreventionRepository.updateRGADataAgent(dossier.parcours.id, rgaData, agent.id, {
-        baseline: computeAgentEditBaseline(dossier.parcours),
-      });
-
-      if (!updated) {
-        return { success: false, error: "Erreur lors de la mise à jour" };
-      }
-
-      // Recalcul du statut d'éligibilité (miroir de la création). On ne re-décide
-      // que pour un dossier dont l'éligibilité était déjà tranchée : EN_ATTENTE
-      // (validation AMO à venir) et SANS_AMO ne sont pas auto-décidés par une
-      // simple correction de simulation — c'est le geste de validation / qualification
-      // qui les tranche. Le mail d'invitation n'est PAS renvoyé (artefact de création,
-      // le demandeur a pu déjà réclamer le dossier).
+      // Écriture atomique : la simulation, le statut de validation et l'archivage
+      // doivent rester cohérents. Sans transaction, un échec intermédiaire laisserait
+      // la simu à jour mais le statut/archivage désynchronisés. Pattern inline-tx
+      // aligné sur `detachement-amo.service.ts` (les repos n'acceptent pas de `tx`).
+      const now = new Date();
       const decidedStatuts = [StatutValidationAmo.LOGEMENT_ELIGIBLE, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE];
       const statutCourant = dossier.validation.statut as StatutValidationAmo;
-      if (decidedStatuts.includes(statutCourant)) {
+
+      await db.transaction(async (tx) => {
+        // 1. Simulation agent + baseline (données AVANT 1re correction) pour le diff.
+        await tx
+          .update(parcoursPrevention)
+          .set({
+            rgaSimulationDataAgent: rgaData,
+            rgaSimulationDataAgentBaseline: computeAgentEditBaseline(dossier.parcours),
+            rgaSimulationAgentEditedAt: now,
+            rgaSimulationAgentEditedBy: agent.id,
+          })
+          .where(eq(parcoursPrevention.id, dossier.parcours.id));
+
+        // 2. Recalcul du statut d'éligibilité (miroir de la création). On ne re-décide
+        //    que pour un dossier déjà tranché : EN_ATTENTE (validation AMO à venir) et
+        //    SANS_AMO ne sont pas auto-décidés par une simple correction. Le mail
+        //    d'invitation n'est PAS renvoyé (artefact de création, dossier peut-être déjà réclamé).
+        if (!decidedStatuts.includes(statutCourant)) return;
+
         const verdict = evaluateAgentSimulation(rgaData);
         const nouveauStatut = verdict.isEligible
           ? StatutValidationAmo.LOGEMENT_ELIGIBLE
@@ -144,31 +150,39 @@ export async function updateSimulationDataAction(
             ? StatutValidationAmo.LOGEMENT_NON_ELIGIBLE
             : null;
 
-        // Effets de bord (réécriture statut/valideeAt, archivage/dé-archivage) UNIQUEMENT
-        // sur un vrai changement de verdict : sinon chaque sauvegarde écraserait valideeAt,
-        // ferait glisser archivedAt, ou dé-archiverait un dossier archivé pour une autre raison.
-        if (nouveauStatut && nouveauStatut !== statutCourant) {
-          await db
-            .update(parcoursAmoValidations)
-            .set({ statut: nouveauStatut, valideeAt: new Date() })
-            .where(eq(parcoursAmoValidations.id, dossier.validation.id));
+        // Effets de bord UNIQUEMENT sur un vrai changement de verdict : sinon chaque
+        // sauvegarde écraserait valideeAt, ferait glisser archivedAt, ou dé-archiverait
+        // un dossier archivé pour une autre raison.
+        if (!nouveauStatut || nouveauStatut === statutCourant) return;
 
-          if (verdict.isNonEligible) {
-            await parcoursPreventionRepository.updateSituationParticulier(
-              dossier.parcours.id,
-              SituationParticulier.ARCHIVE,
-              buildEligibiliteArchiveNote(verdict.result, "edition"),
-              agent.id
-            );
-          } else {
-            // Redevenu éligible → dé-archivage (nettoie archivedAt/reason/by).
-            await parcoursPreventionRepository.updateSituationParticulier(
-              dossier.parcours.id,
-              SituationParticulier.PROSPECT
-            );
-          }
+        await tx
+          .update(parcoursAmoValidations)
+          .set({ statut: nouveauStatut, valideeAt: now })
+          .where(eq(parcoursAmoValidations.id, dossier.validation.id));
+
+        if (verdict.isNonEligible) {
+          await tx
+            .update(parcoursPrevention)
+            .set({
+              situationParticulier: SituationParticulier.ARCHIVE,
+              archivedAt: now,
+              archiveReason: buildEligibiliteArchiveNote(verdict.result, "edition"),
+              archivedBy: agent.id,
+            })
+            .where(eq(parcoursPrevention.id, dossier.parcours.id));
+        } else {
+          // Redevenu éligible → dé-archivage (nettoie archivedAt/reason/by).
+          await tx
+            .update(parcoursPrevention)
+            .set({
+              situationParticulier: SituationParticulier.PROSPECT,
+              archivedAt: null,
+              archiveReason: null,
+              archivedBy: null,
+            })
+            .where(eq(parcoursPrevention.id, dossier.parcours.id));
         }
-      }
+      });
 
       // Invalider le cache de toutes les pages de l'espace agent
       revalidatePath("/espace-agent", "layout");
