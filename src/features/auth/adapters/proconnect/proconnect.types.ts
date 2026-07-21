@@ -2,6 +2,7 @@
  * Types pour l'intégration ProConnect
  * Basés sur la spécification OpenID Connect pour agents publics
  */
+import type { UserRole } from "../../domain/types";
 
 /**
  * Réponse du endpoint /token
@@ -85,4 +86,6 @@ export interface ProConnectCallbackResult {
   success: boolean;
   error?: string;
   shouldLogout?: boolean;
+  // Rôle de l'agent authentifié, pour aiguiller la redirection post-login.
+  role?: UserRole;
 }

@@ -15,8 +15,14 @@ export function getDefaultRedirect(role: UserRole): string {
       return DEFAULT_REDIRECTS.super_administrateur;
     case UserRoleEnum.ADMINISTRATEUR:
       return DEFAULT_REDIRECTS.administrateur;
+    case UserRoleEnum.ANALYSTE:
+      return DEFAULT_REDIRECTS.analyste;
     case UserRoleEnum.AMO:
       return DEFAULT_REDIRECTS.amo;
+    case UserRoleEnum.ALLERS_VERS:
+      return DEFAULT_REDIRECTS.allers_vers;
+    case UserRoleEnum.AMO_ET_ALLERS_VERS:
+      return DEFAULT_REDIRECTS.amo_et_allers_vers;
     case UserRoleEnum.PARTICULIER:
       return DEFAULT_REDIRECTS.particulier;
     default:

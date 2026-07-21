@@ -134,7 +134,10 @@ export const DEFAULT_REDIRECTS = {
   super_administrateur: ROUTES.backoffice.administration.root,
   administrateur: ROUTES.backoffice.administration.root,
   analyste: ROUTES.backoffice.administration.root,
+  // Agents terrain : atterrissage direct sur la page dossiers (espace-agent → /espace-agent/dossiers).
   amo: ROUTES.backoffice.espaceAmo.root,
+  allers_vers: ROUTES.backoffice.espaceAmo.root,
+  amo_et_allers_vers: ROUTES.backoffice.espaceAmo.root,
 
   // Particulier
   particulier: ROUTES.particulier.monCompte,
