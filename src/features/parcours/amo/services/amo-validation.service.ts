@@ -144,7 +144,10 @@ export async function approveValidation(
           [BREVO_ATTRS.AMO_STATUT]: StatutValidationAmo.LOGEMENT_ELIGIBLE,
           ...(estMandataireFinancier !== undefined ? { [BREVO_ATTRS.EST_MANDATAIRE]: estMandataireFinancier } : {}),
         },
-        eventProperties: { decision: "eligible", est_mandataire: !!estMandataireFinancier },
+        eventProperties: {
+          decision: "eligible",
+          ...(estMandataireFinancier !== undefined ? { est_mandataire: estMandataireFinancier } : {}),
+        },
       });
     }
 
