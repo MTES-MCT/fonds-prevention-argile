@@ -99,10 +99,9 @@ async function main() {
         continue;
       }
 
-      let dateTraitement: string | null | undefined;
+      let dossierDs: Awaited<ReturnType<typeof graphqlClient.getDossier>>;
       try {
-        const dossierDs = await graphqlClient.getDossier(Number(d.dsNumber));
-        dateTraitement = dossierDs?.dateTraitement;
+        dossierDs = await graphqlClient.getDossier(Number(d.dsNumber));
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         // « not found » = dossier purgé/supprimé côté DS : rien à backfiller, ce n'est pas
@@ -114,8 +113,17 @@ async function main() {
         continue;
       }
 
+      // getDossier renvoie null quand DS répond sans erreur mais dossier introuvable → GONE.
+      if (!dossierDs) {
+        console.log(`  ${ds}  GONE (dossier introuvable côté DS)`);
+        bump("GONE");
+        if (SLEEP_MS > 0) await sleep(SLEEP_MS);
+        continue;
+      }
+
+      const dateTraitement = dossierDs.dateTraitement;
       if (!dateTraitement) {
-        console.log(`  ${ds}  NO_DATE (DS sans dateTraitement — dossier disparu ou non traité)`);
+        console.log(`  ${ds}  NO_DATE (DS répond mais dossier non traité)`);
         bump("NO_DATE");
         if (SLEEP_MS > 0) await sleep(SLEEP_MS);
         continue;
