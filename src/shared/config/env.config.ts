@@ -123,6 +123,10 @@ const serverSchema = z.object({
   // Redirection des mails sortants (staging). Cf. README.
   EMAIL_DEV_INBOX: z.string().email().optional(),
 
+  // ID de la liste Brevo "cycle de vie" (contacts poussés en flux). Distincte par
+  // environnement (liste staging vs prod). Optionnelle : absente = synchro désactivée.
+  BREVO_CONTACT_LIST_ID: z.coerce.number().int().positive().optional(),
+
   RGA_ENCRYPTION_KEY: z.string().min(32),
   JWT_SECRET: z.string().min(32),
   BASE_URL: z.string().url().default("http://localhost:3000"),
