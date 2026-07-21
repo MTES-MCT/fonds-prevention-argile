@@ -16,6 +16,7 @@ import { AmoMode, getAmoMode } from "../domain/value-objects/departements-amo";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { Status, Step } from "../../core";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
+import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 
 /**
  * Paramètres pour la sélection d'un AMO
@@ -128,15 +129,17 @@ export async function selectAmoForUser(
     };
   }
 
-  // Vérifier que le parcours a les données RGA
-  if (!parcours.rgaSimulationData?.logement?.commune) {
+  // Résolution territoriale user-first (fallback agent) : un dossier créé par un
+  // Aller-vers peut n'avoir que rgaSimulationDataAgent tant que le ménage n'a pas simulé.
+  const logement = getDemandeurFirstLogement(parcours);
+  if (!logement?.commune) {
     return {
       success: false,
       error: "Simulation RGA non complétée (code INSEE manquant)",
     };
   }
 
-  const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData.logement.commune);
+  const codeInsee = normalizeCodeInsee(logement.commune);
   if (!codeInsee) {
     return {
       success: false,
@@ -145,9 +148,7 @@ export async function selectAmoForUser(
   }
 
   // Extraire le code EPCI (si disponible)
-  const codeEpci = parcours.rgaSimulationData.logement.epci
-    ? String(parcours.rgaSimulationData.logement.epci).trim()
-    : null;
+  const codeEpci = logement.epci ? String(logement.epci).trim() : null;
 
   // Vérifier que l'AMO couvre le territoire
   const amoCovers = await checkAmoCoversTerritory(entrepriseAmoId, codeInsee, codeEpci);
@@ -286,10 +287,7 @@ export async function selectAmoForUser(
  * Récupère le 1er AMO couvrant le territoire du parcours.
  * Logique EPCI > département (alignée sur `getAmosDisponibles`).
  */
-async function findFirstAmoForTerritory(
-  codeInsee: string,
-  codeEpci: string | null
-): Promise<{ id: string } | null> {
+async function findFirstAmoForTerritory(codeInsee: string, codeEpci: string | null): Promise<{ id: string } | null> {
   if (codeEpci) {
     const [amoEpci] = await db
       .select({ id: entreprisesAmo.id })
@@ -341,7 +339,10 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
     return { success: true, data: { message: "AMO déjà attribuée", token: "" } };
   }
 
-  const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData?.logement?.commune);
+  // Résolution territoriale user-first (fallback agent), cohérente avec selectAmoForUser :
+  // permet l'auto-attribution sur un dossier Aller-vers sans simulation demandeur.
+  const logement = getDemandeurFirstLogement(parcours);
+  const codeInsee = normalizeCodeInsee(logement?.commune);
   if (!codeInsee) {
     return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
   }
@@ -362,9 +363,7 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
     attributionMode = AttributionAmoMode.MANUEL;
   }
 
-  const codeEpci = parcours.rgaSimulationData?.logement?.epci
-    ? String(parcours.rgaSimulationData.logement.epci).trim()
-    : null;
+  const codeEpci = logement?.epci ? String(logement.epci).trim() : null;
 
   const amo = await findFirstAmoForTerritory(codeInsee, codeEpci);
   if (!amo) {
@@ -399,7 +398,7 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
     return { success: false, error: "Coordonnées du demandeur incomplètes (téléphone)" };
   }
 
-  const adresseLogement = parcours.rgaSimulationData?.logement?.adresse;
+  const adresseLogement = logement?.adresse;
   if (!adresseLogement) {
     return { success: false, error: "Adresse du logement manquante dans la simulation RGA" };
   }
