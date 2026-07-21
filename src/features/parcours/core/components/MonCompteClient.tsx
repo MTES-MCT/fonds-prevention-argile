@@ -16,6 +16,7 @@ import { useAmoMode } from "../../amo/hooks";
 import { DSStatus } from "../../dossiers-ds/domain";
 import type { PiecesByStep } from "../../dossiers-ds/domain/pieces-justificatives";
 import { PiecesJustificatives } from "../../dossiers-ds/components";
+import { DossierTimeline } from "../../dossiers-ds/components/DossierTimeline";
 import {
   CalloutAmoEnAttente,
   CalloutAmoLogementNonEligible,
@@ -75,9 +76,8 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
     isLoading: isLoadingParcours,
   } = useParcours();
 
-  const currentStepInstructedAt = currentStep
-    ? (dossiers?.find((d) => d.demarcheEtape === currentStep)?.instructedAt ?? null)
-    : null;
+  const currentStepDossier = currentStep ? dossiers?.find((d) => d.demarcheEtape === currentStep) : undefined;
+  const currentStepInstructedAt = currentStepDossier?.instructedAt ?? null;
 
   const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
 
@@ -211,6 +211,13 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
                 refresh={refresh}
                 contactInfoVersion={contactInfoVersion}
               />
+
+              {/* Suivi des dates clés du dossier de l'étape courante (étapes DS uniquement) */}
+              {currentStepDossier && (
+                <div className="fr-mt-2w">
+                  <DossierTimeline dossier={currentStepDossier} title="Suivi de votre dossier" />
+                </div>
+              )}
             </div>
 
             <div className="fr-col-12 fr-col-md-4 flex justify-center md:justify-start self-start">

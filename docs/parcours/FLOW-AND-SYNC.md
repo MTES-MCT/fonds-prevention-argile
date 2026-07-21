@@ -228,7 +228,9 @@ Source : `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`.
 
 Note : `REFUSE` repasse en `EN_INSTRUCTION` interne (et non `VALIDE`) — c'est volontaire, un dossier refusé n'avance pas l'étape.
 
-Note : un `ds_status = null` (dossier créé non déposé) n'a pas d'entrée de mapping — `recomputeParcoursStatus` l'ignore et laisse `current_status` inchangé. `EN_CONSTRUCTION` (déposé) reste mappé en `TODO` interne : un dépôt en attente d'instruction n'avance pas encore l'étape côté parcours. Les dates `submitted_at` (passage en construction = dépôt) et `instructed_at` (passage en instruction) sont écrites par la sync via le mapper de colonne Drizzle (`Date` typée — ne jamais interpoler un `Date` dans un `sql` brut, cela fait planter l'UPDATE). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
+Note : un `ds_status = null` (dossier créé non déposé) n'a pas d'entrée de mapping — `recomputeParcoursStatus` l'ignore et laisse `current_status` inchangé. `EN_CONSTRUCTION` (déposé) reste mappé en `TODO` interne : un dépôt en attente d'instruction n'avance pas encore l'étape côté parcours. Les dates `submitted_at` (passage en construction = dépôt), `instructed_at` (passage en instruction) et `processed_at` (décision DDT) sont écrites par la sync via le mapper de colonne Drizzle (`Date` typée — ne jamais interpoler un `Date` dans un `sql` brut, cela fait planter l'UPDATE). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
+
+Note : `processed_at` est la **date de décision DDT**, sourcée du champ DS `dateTraitement` (et non d'un `new Date()` au moment où la sync détecte l'état). Elle est renseignée pour **tout état final** : `ACCEPTE`, `REFUSE` et `CLASSE_SANS_SUITE` (auparavant elle n'était écrite que sur `ACCEPTE`). Comme les autres dates, elle est immuable (écrite via spread conditionnel, jamais écrasée par `null`). Côté UI, `processed_at` alimente la timeline des dossiers (`DossierTimeline`) avec le libellé « Validé le … » (accepté) ou « Refusé le … » (refusé / classé sans suite).
 
 ### 3.3 Déclencheurs de sync
 
@@ -239,6 +241,54 @@ Note : un `ds_status = null` (dossier créé non déposé) n'a pas d'entrée de 
 | **UI demandeur** (au refresh, manuel, ou navigation)                | `syncUserDossierStatus(step)` ou `syncAllUserDossiers()` | Le parcours du demandeur connecté |
 
 Tous appellent `recomputeParcoursStatus` après la phase de sync — soit en interne (`syncAllDossiers`, `runSyncBatch`), soit en explicite (`syncUserDossierStatus`). Tous appellent ensuite `moveToNextStep` : le CRON (et le manuel) dans `runSyncBatch`, l'UI demandeur dans `syncUserDossierStatus` / `syncAllUserDossiers`. `moveToNextStep` est idempotent et no-op si l'étape courante n'est pas `valide` (voir §6.1).
+
+### 3.4 Affichage des dates clés (timeline) côté demandeur et agent
+
+Les dates `created_at` (brouillon créé), `submitted_at` (déposé), `instructed_at` (en
+instruction) et `processed_at` (validé / refusé) d'un dossier DS sont rendues par le
+composant partagé `DossierTimeline`
+(`src/features/parcours/dossiers-ds/components/DossierTimeline.tsx`), qui n'affiche que les
+jalons franchis (date présente) :
+
+- **Côté demandeur** (`MonCompteClient`) : sous le callout de l'étape courante (étapes DS
+  uniquement ; `choix_amo` n'a pas de dossier DS donc pas de timeline).
+- **Côté agent** (`ParcoursDemandeur`, page détail dossier) : sous chaque étape DS du
+  « Parcours du demandeur ». Les dates par étape sont assemblées dans
+  `getDossierDetail` (`dossiersTimeline`).
+
+### 3.5 Backfill de processed_at (one-shot après le changement de sémantique)
+
+Le passage de `processed_at` à « date de décision DS, tout état final » (§3.2) ne se voit
+**immédiatement** que sur les dossiers re-synchronisés. La sync (CRON ou bouton « Lancer
+maintenant ») rattrape les **parcours actifs** (elle réécrit les dates même à statut
+inchangé). Elle ne repasse en revanche **jamais** sur :
+
+- les parcours **complétés / archivés** (exclus de `findActiveForSync`) — leur `processed_at`
+  garde l'ancienne date de détection ;
+- les dossiers **REFUSE / CLASSE_SANS_SUITE** historiques — jamais datés (restés `null`).
+
+Pour ces cas, lancer le script de backfill (lecture DS de `dateTraitement`, écriture
+`processed_at` uniquement si null ou divergent). Dry-run par défaut :
+
+```bash
+pnpm ds:backfill-processed-at                      # dry-run, anonymisé, tous les dossiers finaux
+pnpm ds:backfill-processed-at --apply              # écrit en base
+pnpm ds:backfill-processed-at --parcours-id=<uuid> --apply
+pnpm ds:backfill-processed-at --no-anonymize       # numéros DS en clair (debug ciblé)
+```
+
+Les numéros DS des logs sont **anonymisés par défaut** (hash, sel aléatoire par run), important
+sur une copie de prod ; `--no-anonymize` les affiche en clair. Le script ne logge ni nom, ni
+email, ni identifiant de parcours.
+
+Verdicts : `FILL` (null → date DS), `CORRECT` (date locale ≠ DS → réécrit), `OK` (no-op),
+`NO_DATE` (DS répond sans `dateTraitement` : non traité, ignoré), `GONE` (DS « not found » :
+dossier purgé/supprimé, ignoré — pas une erreur), `ERREUR` (sondage DS échoué :
+unauthorized/réseau, ignoré). Script : `scripts/ops/ds/backfill-processed-at.ts`.
+
+**Ordre de déploiement recommandé** : déployer → « Lancer une synchro maintenant » (couvre
+les actifs) → `pnpm ds:backfill-processed-at` en dry-run pour mesurer le reste, puis
+`--apply`.
 
 ---
 
@@ -629,6 +679,7 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Probe pièces + modèles DN                      | `scripts/ops/ds/fetch-pieces-justificatives.ts` (`pnpm ds:fetch-pieces`)                       |
 | Reset dossier éligibilité sync-erreur          | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`) |
 | Sonde lecture-seule dossiers DN                | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                        |
+| Backfill processed_at depuis dateTraitement    | `scripts/ops/ds/backfill-processed-at.ts` (`pnpm ds:backfill-processed-at`)                    |
 | Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                            |
 | Création dossier devis-travaux (3 annotations) | `src/features/parcours/core/services/devis.service.ts`                                         |
 | Validation AMO (auto-progression CHOIX_AMO)    | `src/features/parcours/amo/services/amo-validation.service.ts`                                 |

@@ -3,6 +3,7 @@ import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { formatDate, daysBetween } from "@/shared/utils";
 import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
+import { DossierTimeline, type DossierTimelineData } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
 
 interface ParcoursDateProgression {
   compteCreatedAt: Date;
@@ -28,6 +29,8 @@ interface ParcoursDemandeurProps {
   lastUpdatedAt?: Date;
   /** Agent qui a pré-créé le compte (av-add-dossier). Null = auto-création demandeur. */
   creator?: ParcoursCreatorInfo | null;
+  /** Dates clés (brouillon/dépôt/instruction/décision) du dossier DS, par étape. */
+  dossiersTimeline?: Partial<Record<Step, DossierTimelineData>>;
 }
 
 interface StepConfig {
@@ -135,7 +138,15 @@ function CurrentStepBadge({
 /**
  * Composant affichant le parcours du demandeur
  */
-export function ParcoursDemandeur({ currentStep, currentStatus, dsStatus, dates, lastUpdatedAt, creator }: ParcoursDemandeurProps) {
+export function ParcoursDemandeur({
+  currentStep,
+  currentStatus,
+  dsStatus,
+  dates,
+  lastUpdatedAt,
+  creator,
+  dossiersTimeline,
+}: ParcoursDemandeurProps) {
   const hasInvitation = !!dates.invitationSentAt;
   const stepsConfig = buildStepsConfig(hasInvitation);
   const currentStepIndex = stepsConfig.findIndex((s) => s.step === currentStep);
@@ -169,6 +180,8 @@ export function ParcoursDemandeur({ currentStep, currentStatus, dsStatus, dates,
                 const isPending = index > currentStepIndex;
                 const stepDate = dates[stepConfig.dateKey];
                 const processedDate = stepConfig.processedDateKey ? dates[stepConfig.processedDateKey] : undefined;
+                // Timeline détaillée du dossier DS (étapes DS uniquement), affichée dès qu'elle est franchie.
+                const timeline = stepConfig.step ? dossiersTimeline?.[stepConfig.step] : undefined;
 
                 return (
                   <li key={index} className="fr-mb-2w">
@@ -207,6 +220,13 @@ export function ParcoursDemandeur({ currentStep, currentStatus, dsStatus, dates,
                       <div className="fr-text--sm text-gray-500 fr-ml-3v">
                         Invité par {creator.displayName}
                         {creator.structureNom && ` — ${creator.structureNom}`}
+                      </div>
+                    )}
+
+                    {/* Dates clés du dossier DS (brouillon/dépôt/instruction/décision) */}
+                    {timeline && (
+                      <div className="fr-ml-3v fr-mt-1v text-gray-500">
+                        <DossierTimeline dossier={timeline} />
                       </div>
                     )}
                   </li>

@@ -21,6 +21,7 @@ import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/se
 import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import { STATUTS_CONSULTABLES } from "../domain/types";
+import type { DossierTimelineData } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
 
 /**
  * Récupère le détail d'un dossier suivi.
@@ -126,10 +127,23 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
     };
 
     // Récupérer les dates de soumission et de traitement des dossiers DS par step
-    const [datesByStep, processedDatesByStep] = await Promise.all([
+    const [datesByStep, processedDatesByStep, allDossiersDS] = await Promise.all([
       dossierDemarchesSimplifieesRepository.getSubmittedDatesByStep(dossier.parcours.id),
       dossierDemarchesSimplifieesRepository.getProcessedDatesByStep(dossier.parcours.id),
+      dossierDemarchesSimplifieesRepository.findByParcoursId(dossier.parcours.id),
     ]);
+
+    // Dates clés (brouillon/dépôt/instruction/décision) par étape pour la timeline détaillée.
+    const dossiersTimeline: Partial<Record<Step, DossierTimelineData>> = {};
+    for (const d of allDossiersDS) {
+      dossiersTimeline[d.step as Step] = {
+        etatDs: d.dsStatus,
+        createdAt: d.createdAt,
+        submittedAt: d.submittedAt,
+        instructedAt: d.instructedAt,
+        processedAt: d.processedAt,
+      };
+    }
 
     // Construire l'objet des dates de progression
     const dates: ParcoursDateProgression = {
@@ -173,6 +187,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       lastUpdatedAt: dossier.parcours.updatedAt,
       suiviDepuis: dossier.validation.valideeAt,
       dates,
+      dossiersTimeline,
       agentEditInfo,
       creator,
     };

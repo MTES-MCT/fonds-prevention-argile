@@ -9,6 +9,7 @@ import type {
   AgentEditInfo,
 } from "@/features/backoffice/espace-agent/demandes/domain/types/demande-detail.types";
 import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
+import type { DossierTimelineData } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
 
 /**
  * Types pour la page détail d'un dossier suivi
@@ -63,6 +64,8 @@ export interface DossierDetail {
   dateIndemnisation?: DateIndemnisation;
   /** Dates de progression du parcours par étape */
   dates: ParcoursDateProgression;
+  /** Dates clés (brouillon/dépôt/instruction/décision) du dossier DS, par étape */
+  dossiersTimeline: Partial<Record<Step, DossierTimelineData>>;
   /** Informations sur les modifications agent (si données éditées) */
   agentEditInfo?: AgentEditInfo | null;
   /** Agent qui a pré-créé le compte (av-add-dossier), null sinon. */
