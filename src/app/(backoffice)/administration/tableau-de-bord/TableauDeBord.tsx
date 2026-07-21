@@ -114,9 +114,9 @@ export function TableauDeBord() {
     };
   }, [periodeId, codeDepartement]);
 
-  // Simulations et taux : Matomo uniquement (pas de fallback BDD pour eviter de sous-compter)
+  // Simulations : Matomo uniquement (pas de fallback BDD pour eviter de sous-compter)
   const simulationsValue = matomoSimuStats?.simulationsMatomo ?? null;
-  const tauxValue = matomoSimuStats?.tauxTransformation ?? null;
+  const simulationsEligiblesValue = matomoSimuStats?.simulationsEligibles ?? null;
 
   return (
     <>
@@ -174,6 +174,14 @@ export function TableauDeBord() {
               tooltip="Donnees Matomo"
             />
             <DashboardStatCard
+              value={formatMatomoValue(simulationsEligiblesValue, matomoLoaded)}
+              label="Simulations éligibles"
+              variation={simulationsEligiblesValue?.variation ?? null}
+              loading={false}
+              compact
+              tooltip="Donnees Matomo"
+            />
+            <DashboardStatCard
               value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Comptes créés"
               variation={stats?.comptesCrees.variation ?? null}
@@ -181,25 +189,8 @@ export function TableauDeBord() {
               compact
               tooltip="Données base de données"
             />
-            <DashboardStatCard
-              value={formatMatomoValue(tauxValue, matomoLoaded, "%")}
-              label="Transfo. simu. → comptes créés"
-              variation={tauxValue?.variation ?? null}
-              variationType="points"
-              loading={false}
-              compact
-              tooltip="Calcule : comptes crees / simulations terminees (Matomo)"
-            />
           </div>
           <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
-            <DashboardStatCard
-              value={stats?.demandesAmoEnvoyees.valeur.toLocaleString("fr-FR") ?? "..."}
-              label="Demandes AMO envoyées"
-              variation={stats?.demandesAmoEnvoyees.variation ?? null}
-              loading={loading}
-              compact
-              tooltip="Données base de données"
-            />
             <DashboardStatCard
               value={stats?.reponsesAmoEnAttente.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Réponses d'AMO en attente"
@@ -209,21 +200,28 @@ export function TableauDeBord() {
               tooltip="Données base de données"
             />
             <DashboardStatCard
-              value={stats?.dossiersDemarcheNumerique.valeur.toLocaleString("fr-FR") ?? "..."}
-              label="Dossiers Démarche Numérique"
-              variation={stats?.dossiersDemarcheNumerique.variation ?? null}
+              value={stats?.dossiersEnAttenteDepot.valeur.toLocaleString("fr-FR") ?? "..."}
+              label="En cours de dépôt"
+              variation={stats?.dossiersEnAttenteDepot.variation ?? null}
+              loading={loading}
+              compact
+              tooltip="Étape éligibilité, dossier pas encore déposé"
+            />
+            <DashboardStatCard
+              value={stats?.dossiersDeposesDN.valeur.toLocaleString("fr-FR") ?? "..."}
+              label="Dossiers déposés sur Démarches Numérique"
+              variation={stats?.dossiersDeposesDN.variation ?? null}
               loading={loading}
               compact
               tooltip="Données base de données"
             />
             <DashboardStatCard
-              value={stats?.demandesArchivees.valeur.toLocaleString("fr-FR") ?? "..."}
-              label="Dossiers sortis du parcours"
-              variation={stats?.demandesArchivees.variation ?? null}
-              invertColors
+              value={stats?.dossiersInstruitsValides.valeur.toLocaleString("fr-FR") ?? "..."}
+              label="Dossiers instruits et validés par la DDT"
+              variation={stats?.dossiersInstruitsValides.variation ?? null}
               loading={loading}
               compact
-              tooltip="Archives manuelles + non eligibles"
+              tooltip="Données base de données"
             />
           </div>
 

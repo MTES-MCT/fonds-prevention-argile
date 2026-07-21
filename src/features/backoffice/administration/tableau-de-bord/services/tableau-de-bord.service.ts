@@ -1,4 +1,4 @@
-import { count, and, gte, lt, eq, isNotNull, inArray, desc, sql } from "drizzle-orm";
+import { count, and, gte, lt, eq, isNotNull, isNull, inArray, desc, sql } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import {
   parcoursPrevention,
@@ -10,6 +10,8 @@ import {
 } from "@/shared/database/schema";
 import { prospectQualifications } from "@/shared/database/schema/prospect-qualifications";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import { Step } from "@/shared/domain/value-objects/step.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types/qualification.types";
 import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
 import { getAgentFirstSimulation, getDemandeurFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
@@ -424,6 +426,121 @@ async function countDossiersDN(
     .select({ count: count() })
     .from(dossiersDemarchesSimplifiees)
     .where(and(gte(dossiersDemarchesSimplifiees.createdAt, debut), lt(dossiersDemarchesSimplifiees.createdAt, fin)));
+  return result[0]?.count ?? 0;
+}
+
+/**
+ * Compte les dossiers d'eligibilite dont l'etape courante est toujours ELIGIBILITE
+ * et qui n'ont pas encore ete deposes (submittedAt null, cf. ADR-0009 : un dossier
+ * cree mais non depose reste en TODO). Scope sur la date de creation du dossier.
+ */
+async function countDossiersEnAttenteDepot(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<number> {
+  const conditions = [
+    eq(parcoursPrevention.currentStep, Step.ELIGIBILITE),
+    eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE),
+    isNull(dossiersDemarchesSimplifiees.submittedAt),
+    gte(dossiersDemarchesSimplifiees.createdAt, debut),
+    lt(dossiersDemarchesSimplifiees.createdAt, fin),
+  ];
+
+  if (codeDepartement) {
+    conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+    conditions.push(whereDepartement(codeDepartement));
+  }
+  const partnerCond = whereParcoursPartner(partner);
+  if (partnerCond) conditions.push(partnerCond);
+
+  const result = await db
+    .select({ count: count() })
+    .from(dossiersDemarchesSimplifiees)
+    .innerJoin(parcoursPrevention, eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id))
+    .where(and(...conditions));
+
+  return result[0]?.count ?? 0;
+}
+
+/**
+ * Compte les dossiers effectivement deposes sur Demarches Numerique (tous steps
+ * confondus). Scope sur la date de depot (submittedAt), pas la date de creation
+ * du dossier — un dossier cree mais jamais depose ne compte pas.
+ */
+async function countDossiersDeposesDN(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<number> {
+  const conditions = [
+    isNotNull(dossiersDemarchesSimplifiees.submittedAt),
+    gte(dossiersDemarchesSimplifiees.submittedAt, debut),
+    lt(dossiersDemarchesSimplifiees.submittedAt, fin),
+  ];
+
+  if (codeDepartement || partner) {
+    if (codeDepartement) {
+      conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+      conditions.push(whereDepartement(codeDepartement));
+    }
+    const partnerCond = whereParcoursPartner(partner);
+    if (partnerCond) conditions.push(partnerCond);
+
+    const result = await db
+      .select({ count: count() })
+      .from(dossiersDemarchesSimplifiees)
+      .innerJoin(parcoursPrevention, eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id))
+      .where(and(...conditions));
+    return result[0]?.count ?? 0;
+  }
+
+  const result = await db
+    .select({ count: count() })
+    .from(dossiersDemarchesSimplifiees)
+    .where(and(...conditions));
+  return result[0]?.count ?? 0;
+}
+
+/**
+ * Compte les dossiers instruits et valides par la DDT (ds_status = ACCEPTE), tous
+ * steps confondus. Scope sur la date de traitement DS (processedAt).
+ */
+async function countDossiersInstruitsValides(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string,
+  partner?: PartnerKey | null
+): Promise<number> {
+  const conditions = [
+    eq(dossiersDemarchesSimplifiees.dsStatus, DSStatus.ACCEPTE),
+    isNotNull(dossiersDemarchesSimplifiees.processedAt),
+    gte(dossiersDemarchesSimplifiees.processedAt, debut),
+    lt(dossiersDemarchesSimplifiees.processedAt, fin),
+  ];
+
+  if (codeDepartement || partner) {
+    if (codeDepartement) {
+      conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+      conditions.push(whereDepartement(codeDepartement));
+    }
+    const partnerCond = whereParcoursPartner(partner);
+    if (partnerCond) conditions.push(partnerCond);
+
+    const result = await db
+      .select({ count: count() })
+      .from(dossiersDemarchesSimplifiees)
+      .innerJoin(parcoursPrevention, eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id))
+      .where(and(...conditions));
+    return result[0]?.count ?? 0;
+  }
+
+  const result = await db
+    .select({ count: count() })
+    .from(dossiersDemarchesSimplifiees)
+    .where(and(...conditions));
   return result[0]?.count ?? 0;
 }
 
@@ -1139,6 +1256,9 @@ export async function getTableauDeBordStats(
     demandesAmo,
     reponsesAttente,
     dossiersDN,
+    enAttenteDepot,
+    dossiersDeposesDN,
+    dossiersInstruitsValides,
     archivees,
     alertes,
     demandesArchiveesDetail,
@@ -1152,6 +1272,9 @@ export async function getTableauDeBordStats(
     countDemandesAmo(debut, fin, codeDepartement, partner),
     countReponsesAmoEnAttente(debut, fin, codeDepartement, partner),
     countDossiersDN(debut, fin, codeDepartement, partner),
+    countDossiersEnAttenteDepot(debut, fin, codeDepartement, partner),
+    countDossiersDeposesDN(debut, fin, codeDepartement, partner),
+    countDossiersInstruitsValides(debut, fin, codeDepartement, partner),
     countDemandesArchivees(debut, fin, codeDepartement, partner),
     detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement, partner),
     getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement, partner),
@@ -1172,6 +1295,9 @@ export async function getTableauDeBordStats(
     demandesAmo: null as number | null,
     reponsesAttente: null as number | null,
     dossiersDN: null as number | null,
+    enAttenteDepot: null as number | null,
+    dossiersDeposesDN: null as number | null,
+    dossiersInstruitsValides: null as number | null,
     archivees: null as number | null,
   };
 
@@ -1183,6 +1309,9 @@ export async function getTableauDeBordStats(
       prevDemandesAmo,
       prevReponsesAttente,
       prevDossiersDN,
+      prevEnAttenteDepot,
+      prevDossiersDeposesDN,
+      prevDossiersInstruitsValides,
       prevArchivees,
     ] = await Promise.all([
       countSimulations(previousRange.debut, previousRange.fin, codeDepartement, partner),
@@ -1191,6 +1320,9 @@ export async function getTableauDeBordStats(
       countDemandesAmo(previousRange.debut, previousRange.fin, codeDepartement, partner),
       countReponsesAmoEnAttente(previousRange.debut, previousRange.fin, codeDepartement, partner),
       countDossiersDN(previousRange.debut, previousRange.fin, codeDepartement, partner),
+      countDossiersEnAttenteDepot(previousRange.debut, previousRange.fin, codeDepartement, partner),
+      countDossiersDeposesDN(previousRange.debut, previousRange.fin, codeDepartement, partner),
+      countDossiersInstruitsValides(previousRange.debut, previousRange.fin, codeDepartement, partner),
       countDemandesArchivees(previousRange.debut, previousRange.fin, codeDepartement, partner),
     ]);
 
@@ -1206,6 +1338,9 @@ export async function getTableauDeBordStats(
       demandesAmo: calculerVariation(demandesAmo, prevDemandesAmo),
       reponsesAttente: calculerVariation(reponsesAttente, prevReponsesAttente),
       dossiersDN: calculerVariation(dossiersDN, prevDossiersDN),
+      enAttenteDepot: calculerVariation(enAttenteDepot, prevEnAttenteDepot),
+      dossiersDeposesDN: calculerVariation(dossiersDeposesDN, prevDossiersDeposesDN),
+      dossiersInstruitsValides: calculerVariation(dossiersInstruitsValides, prevDossiersInstruitsValides),
       archivees: calculerVariation(archivees, prevArchivees),
     };
   }
@@ -1222,6 +1357,9 @@ export async function getTableauDeBordStats(
     demandesAmoEnvoyees: { valeur: demandesAmo, variation: variations.demandesAmo },
     reponsesAmoEnAttente: { valeur: reponsesAttente, variation: variations.reponsesAttente },
     dossiersDemarcheNumerique: { valeur: dossiersDN, variation: variations.dossiersDN },
+    dossiersEnAttenteDepot: { valeur: enAttenteDepot, variation: variations.enAttenteDepot },
+    dossiersDeposesDN: { valeur: dossiersDeposesDN, variation: variations.dossiersDeposesDN },
+    dossiersInstruitsValides: { valeur: dossiersInstruitsValides, variation: variations.dossiersInstruitsValides },
     demandesArchivees: { valeur: archivees, variation: variations.archivees },
     alertes,
     demandesArchiveesDetail,
