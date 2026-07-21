@@ -1,4 +1,4 @@
-type ColSize = "half" | "third";
+type ColSize = "full" | "half" | "third";
 
 interface ContactCardProps {
   id: string;
@@ -38,6 +38,8 @@ function getColClass(colSize: ColSize): string {
   switch (colSize) {
     case "third":
       return "fr-col-12 fr-col-md-6 fr-col-lg-4";
+    case "full":
+      return "fr-col-12";
     case "half":
     default:
       return "fr-col-12 fr-col-md-6";

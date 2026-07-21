@@ -68,7 +68,7 @@ export default function StepDetailAmo() {
                   adresse={validationAmoComplete.entrepriseAmo.adresse}
                   horaires={validationAmoComplete.entrepriseAmo.horaires}
                   selectable={false}
-                  colSize="half"
+                  colSize="full"
                 />
               </div>
             )}
