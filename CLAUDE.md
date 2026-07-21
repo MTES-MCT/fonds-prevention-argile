@@ -146,18 +146,32 @@ Le cycle de revue est le suivant :
    « Overview » + commentaires de Copilot sur la PR).
 3. **L'utilisateur donne le go** à Claude une fois le retour Copilot disponible.
 4. **Claude récupère les commentaires Copilot et filtre les périmés** (cf. « Détecter les
-   retours périmés » ci-dessous) : on ne traite que les fils **encore vivants**.
-5. **Claude fait un COMPTE RENDU SYSTÉMATIQUE _avant_ toute modification** : pour chaque
-   retour vivant, un verdict (valide / faux positif / hors périmètre / choix assumé), la
-   correction envisagée et son ampleur. **Aucune correction n'est appliquée tant que ce
-   compte rendu n'a pas été présenté.** (L'utilisateur peut donner un go global sur le
-   compte rendu, mais le compte rendu passe toujours en premier.)
-6. **Après validation du compte rendu, Claude applique les corrections** retenues, justifie
-   ce qui est écarté, et re-lance `pnpm validate` si du code a changé.
-7. On ne merge qu'une fois ce tour terminé.
+   retours périmés » ci-dessous) : on ne traite que les fils **encore vivants**
+   (`isOutdated == false && isResolved == false`).
+5. **Triage tiéré** (c'est ce qui remplace l'ancien « compte rendu avant toute
+   modification »). Claude sort un **tableau de triage compact** des fils vivants
+   (`fichier:ligne · verdict · action en 1 ligne`), puis :
+   - **Bas-risque / dans le périmètre** (placeholder, garde manquante, typo, test
+     manquant, bump, petite cohérence) → Claude **corrige directement en lot**, puis fait
+     un **résumé APRÈS** (le même tableau, annoté « fait »). Pas d'attente.
+   - **Architectural / élargit le périmètre / point contesté** (transaction, refactor
+     transverse, changement de contrat, faux positif à argumenter) → \*\*compte rendu AVANT
+     - attendre le go\*\* explicite. Justifier ce qui est écarté.
+
+   En cas de doute sur la catégorie, traiter comme « architectural » (compte rendu avant).
+
+6. **Après les corrections**, re-lancer `pnpm validate` si du code a changé, et **regrouper
+   le lot en commits logiques**.
+7. **Push avant de relancer Copilot** : ne JAMAIS re-demander une revue Copilot sur un head
+   non poussé — sinon Copilot review du code périmé et re-signale du déjà-corrigé (round
+   gaspillé). Séquence : lot de fixes → push → **une** re-demande → traiter tous les fils
+   vivants en une passe → push. Éviter le ping-pong 1 commentaire/commit.
+8. On ne merge qu'une fois ce tour terminé.
 
 > Claude n'attend jamais Copilot de lui-même : il **rend la main à l'utilisateur** pour la
-> création de PR et l'attente de la revue, puis reprend sur le **go** explicite.
+> création de PR, le push et l'attente de la revue, puis reprend sur le **go** explicite.
+> Rappel : Copilot ne fait que **commenter**, il n'`APPROVE` jamais — une règle « 1 approving
+> review » exige donc une **approbation humaine**, indépendante de Copilot.
 
 **Détecter les retours périmés (outdated) vs vivants.** Un commentaire Copilot peut viser
 du code déjà modifié depuis. Les fils de revue GitHub portent deux drapeaux (`isOutdated`,
