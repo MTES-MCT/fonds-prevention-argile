@@ -95,9 +95,12 @@ export function ContactCard({
           {telephone && <p className="fr-text--sm text-gray-500 fr-mb-0">{telephone}</p>}
           {adresse && <p className="fr-text--sm fr-mb-0 text-gray-500">{adresse}</p>}
           {horaires && (
-            <p className="fr-text--sm fr-mb-0 text-gray-500" style={{ whiteSpace: "pre-line" }}>
-              Horaires : {horaires}
-            </p>
+            <div className="fr-mt-2v">
+              <p className="fr-text--xs fr-text--bold uppercase fr-mb-1v text-gray-500">Horaires</p>
+              <p className="fr-text--sm fr-mb-0 text-gray-500" style={{ whiteSpace: "pre-line" }}>
+                {horaires}
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -127,8 +130,11 @@ export function ContactCard({
             {telephone && <span className="fr-text--sm fr-text--light text-gray-500 block">{telephone}</span>}
             {adresse && <span className="fr-text--sm fr-text--light block text-gray-500">{adresse}</span>}
             {horaires && (
-              <span className="fr-text--sm fr-text--light block text-gray-500" style={{ whiteSpace: "pre-line" }}>
-                Horaires : {horaires}
+              <span className="block fr-mt-2v">
+                <span className="fr-text--xs fr-text--bold uppercase text-gray-500 block">Horaires</span>
+                <span className="fr-text--sm fr-text--light block text-gray-500" style={{ whiteSpace: "pre-line" }}>
+                  {horaires}
+                </span>
               </span>
             )}
           </label>

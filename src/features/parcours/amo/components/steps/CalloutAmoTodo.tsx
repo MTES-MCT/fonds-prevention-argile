@@ -341,7 +341,10 @@ export default function CalloutAmoTodo({ onSuccess, refresh, contactInfoVersion 
                             {selectedAmo.telephone && <div>{selectedAmo.telephone}</div>}
                             {selectedAmo.adresse && <div>{selectedAmo.adresse}</div>}
                             {selectedAmo.horaires && (
-                              <div style={{ whiteSpace: "pre-line" }}>Horaires : {selectedAmo.horaires}</div>
+                              <div className="fr-mt-1v">
+                                <p className="fr-text--xs fr-text--bold uppercase fr-mb-1v">Horaires</p>
+                                <div style={{ whiteSpace: "pre-line" }}>{selectedAmo.horaires}</div>
+                              </div>
                             )}
                           </div>
                         </div>
