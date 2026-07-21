@@ -47,5 +47,6 @@ purement cosmétique.
 | 0017 | [Ouverture des statistiques nationales aux agents AMO / Allers-Vers (overlay permission)](0017-ouverture-stats-nationales-agents.md)    | Accepté |
 | 0018 | [Arrêt de l'accompagnement AMO et mandataire financier](0018-arret-accompagnement-amo.md)                                               | Accepté |
 | 0019 | [Early exit du simulateur lors d'une création de dossier par un agent](0019-early-exit-simulateur-agent.md)                             | Accepté |
+| 0020 | [Correction d'une simulation agent après verdict d'éligibilité](0020-correction-simulation-agent-post-eligibilite.md)                   | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->
