@@ -120,13 +120,19 @@ export async function updateSimulationDataAction(
       // qui les tranche. Le mail d'invitation n'est PAS renvoyé (artefact de création,
       // le demandeur a pu déjà réclamer le dossier).
       const decidedStatuts = [StatutValidationAmo.LOGEMENT_ELIGIBLE, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE];
-      if (decidedStatuts.includes(dossier.validation.statut as StatutValidationAmo)) {
+      const statutCourant = dossier.validation.statut as StatutValidationAmo;
+      if (decidedStatuts.includes(statutCourant)) {
         const verdict = evaluateAgentSimulation(rgaData);
-        if (verdict.isEligible || verdict.isNonEligible) {
-          const nouveauStatut = verdict.isEligible
-            ? StatutValidationAmo.LOGEMENT_ELIGIBLE
-            : StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
+        const nouveauStatut = verdict.isEligible
+          ? StatutValidationAmo.LOGEMENT_ELIGIBLE
+          : verdict.isNonEligible
+            ? StatutValidationAmo.LOGEMENT_NON_ELIGIBLE
+            : null;
 
+        // Effets de bord (réécriture statut/valideeAt, archivage/dé-archivage) UNIQUEMENT
+        // sur un vrai changement de verdict : sinon chaque sauvegarde écraserait valideeAt,
+        // ferait glisser archivedAt, ou dé-archiverait un dossier archivé pour une autre raison.
+        if (nouveauStatut && nouveauStatut !== statutCourant) {
           await db
             .update(parcoursAmoValidations)
             .set({ statut: nouveauStatut, valideeAt: new Date() })

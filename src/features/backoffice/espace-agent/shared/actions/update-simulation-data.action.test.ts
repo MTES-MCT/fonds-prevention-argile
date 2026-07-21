@@ -109,6 +109,22 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     );
   });
 
+  it("ne réécrit rien quand le verdict est inchangé (reste éligible)", async () => {
+    mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE);
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: { eligible: true } as never,
+      isEligible: true,
+      isNonEligible: false,
+    });
+
+    const result = await updateSimulationDataAction("validation-1", rgaData);
+
+    expect(result.success).toBe(true);
+    // Pas de transition → pas d'écrasement de valideeAt ni d'archivedAt.
+    expect(db.update).not.toHaveBeenCalled();
+    expect(parcoursPreventionRepository.updateSituationParticulier).not.toHaveBeenCalled();
+  });
+
   it("ne touche pas au statut d'un dossier EN_ATTENTE (validation AMO à venir)", async () => {
     mockValidationRow(StatutValidationAmo.EN_ATTENTE);
     vi.mocked(evaluateAgentSimulation).mockReturnValue({
