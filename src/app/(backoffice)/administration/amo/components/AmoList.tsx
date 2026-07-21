@@ -65,6 +65,7 @@ export function AmoList({ onEdit, refreshTrigger, canEdit }: AmoListProps) {
                       <th scope="col">Emails</th>
                       <th scope="col">Téléphone</th>
                       <th scope="col">Adresse</th>
+                      <th scope="col">Horaires</th>
                       <th scope="col">Codes INSEE spécifiques</th>
                       {canEdit && <th scope="col">Actions</th>}
                     </tr>
@@ -83,6 +84,15 @@ export function AmoList({ onEdit, refreshTrigger, canEdit }: AmoListProps) {
                         </td>
                         <td>{amo.telephone || "-"}</td>
                         <td className="fr-text--sm">{amo.adresse || "-"}</td>
+                        <td className="fr-text--sm">
+                          {amo.horaires?.trim() ? (
+                            <span className="fr-badge fr-badge--sm fr-badge--success" title={amo.horaires}>
+                              Renseignés
+                            </span>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
                         <td className="fr-text--sm">
                           {amo.communes && amo.communes.length > 0
                             ? amo.communes.map((c) => c.codeInsee).join(", ")
