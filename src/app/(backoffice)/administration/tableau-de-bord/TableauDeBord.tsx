@@ -209,7 +209,7 @@ export function TableauDeBord() {
             />
             <DashboardStatCard
               value={stats?.dossiersDeposesDN.valeur.toLocaleString("fr-FR") ?? "..."}
-              label="Dossiers déposés sur Démarches Numérique"
+              label="Dossiers déposés sur DN"
               variation={stats?.dossiersDeposesDN.variation ?? null}
               loading={loading}
               compact
@@ -217,7 +217,7 @@ export function TableauDeBord() {
             />
             <DashboardStatCard
               value={stats?.dossiersInstruitsValides.valeur.toLocaleString("fr-FR") ?? "..."}
-              label="Dossiers instruits et validés par la DDT"
+              label="Dossiers acceptés par la DDT"
               variation={stats?.dossiersInstruitsValides.variation ?? null}
               loading={loading}
               compact
