@@ -122,6 +122,15 @@ describe("getDossierSimulationData — accès à l'édition de simulation", () =
     if (!result.success) expect(result.error).toBe("Ce dossier ne vous est pas destiné");
   });
 
+  it("AUTORISE la correction d'un dossier devenu non éligible (LOGEMENT_NON_ELIGIBLE)", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, { entrepriseAmoId: "amo-A" }));
+    mockValidationRow(StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, "amo-A");
+
+    const result = await getDossierSimulationData("validation-1");
+
+    expect(result.success).toBe(true);
+  });
+
   it("refuse un statut non éditable (accompagnement refusé)", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.ALLERS_VERS, { allersVersId: "av-1" }));
     mockValidationRow(StatutValidationAmo.ACCOMPAGNEMENT_REFUSE, null);

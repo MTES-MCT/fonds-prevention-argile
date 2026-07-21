@@ -66,9 +66,12 @@ export async function getDossierSimulationData(id: string): Promise<ActionResult
       // Statuts éditables. SANS_AMO inclus : un dossier sans accompagnement AMO
       // progresse quand même dans le parcours (piloté par l'Aller-vers territorial)
       // et reste éditable — cohérent avec STATUTS_CONSULTABLES du détail dossier.
+      // LOGEMENT_NON_ELIGIBLE inclus : l'agent doit pouvoir corriger une saisie
+      // erronée qui a rendu le dossier non éligible (la sauvegarde recalcule le statut).
       const editableStatuts = [
         StatutValidationAmo.EN_ATTENTE,
         StatutValidationAmo.LOGEMENT_ELIGIBLE,
+        StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
         StatutValidationAmo.SANS_AMO,
       ];
       if (!editableStatuts.includes(dossier.validation.statut as StatutValidationAmo)) {

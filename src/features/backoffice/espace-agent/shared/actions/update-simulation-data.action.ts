@@ -61,8 +61,15 @@ export async function updateSimulationDataAction(
       .limit(1);
 
     if (dossier) {
-      // Vérifier que le statut permet l'édition (en attente ou validé)
-      const editableStatuts = [StatutValidationAmo.EN_ATTENTE, StatutValidationAmo.LOGEMENT_ELIGIBLE];
+      // Statuts éditables — alignés sur getDossierSimulationData (lecture).
+      // LOGEMENT_NON_ELIGIBLE inclus pour corriger une saisie erronée ; SANS_AMO
+      // pour les dossiers sans accompagnement AMO pilotés par l'Aller-vers.
+      const editableStatuts = [
+        StatutValidationAmo.EN_ATTENTE,
+        StatutValidationAmo.LOGEMENT_ELIGIBLE,
+        StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
+        StatutValidationAmo.SANS_AMO,
+      ];
       if (!editableStatuts.includes(dossier.validation.statut as StatutValidationAmo)) {
         return { success: false, error: "Ce dossier ne permet pas l'édition des données de simulation" };
       }
