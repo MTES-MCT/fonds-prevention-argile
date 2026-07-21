@@ -38,7 +38,7 @@ export default function AllerVersLocal() {
     <div className="text-left md:text-right">
       <p className="fr-text--xs fr-text--bold uppercase fr-mb-1w">
         <span className="fr-icon-question-line fr-icon--sm fr-mr-1v" aria-hidden="true" />
-        Mon conseiller local
+        Ce conseiller répond gratuitement à vos questions
       </p>
       <p className="fr-mb-1v fr-text--xs" style={greyStyle}>
         {av.nom}
