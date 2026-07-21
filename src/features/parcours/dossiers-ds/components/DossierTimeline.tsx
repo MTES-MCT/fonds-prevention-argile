@@ -3,9 +3,9 @@ import { DSStatus } from "../domain/value-objects/ds-status";
 import { isDSAccepted, isDSRejected } from "../domain/value-objects/ds-status";
 
 /**
- * Sous-ensemble des champs d'un dossier DS nécessaires à la timeline.
- * Volontairement structurel (pas `DossierDS`) pour accepter aussi bien l'entité
- * demandeur (`DossierDS`) que le DTO agent (`DossierInfo`), qui exposent les mêmes dates.
+ * Sous-ensemble des champs de dates d'un dossier DS nécessaires à la timeline.
+ * Structurellement compatible avec l'entité demandeur `DossierDS` ; côté agent, l'objet est
+ * construit explicitement (mapping `dsStatus` -> `etatDs`) dans `getDossierDetail`.
  */
 export interface DossierTimelineData {
   etatDs: DSStatus | null;
