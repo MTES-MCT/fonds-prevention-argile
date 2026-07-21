@@ -60,6 +60,22 @@ describe("buildAgentEditInfo — baseline snapshot", () => {
     expect(result?.originalDisplayValues.mitoyennete).toBe("NON");
   });
 
+  it("affiche « — » plutôt qu'un faux « avant » quand le baseline est partiel", async () => {
+    // Baseline early exit : `assure` absent. L'agent renseigne assure=true.
+    const base = { logement: {}, rga: {}, menage: {} } as unknown as RGASimulationData;
+    const edited = { logement: {}, rga: { assure: true }, menage: {} } as unknown as RGASimulationData;
+
+    const result = await buildAgentEditInfo({
+      rgaSimulationData: null,
+      rgaSimulationDataAgentBaseline: base,
+      rgaSimulationDataAgent: edited,
+      rgaSimulationAgentEditedAt: new Date(),
+      rgaSimulationAgentEditedBy: "agent-1",
+    });
+
+    expect(result?.originalDisplayValues.assurance).toBe("—");
+  });
+
   it("préfère le baseline à la simulation demandeur quand les deux existent", async () => {
     const result = await buildAgentEditInfo({
       rgaSimulationData: sim(2),

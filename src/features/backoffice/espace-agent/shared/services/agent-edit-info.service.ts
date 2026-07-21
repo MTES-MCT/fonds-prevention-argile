@@ -24,22 +24,23 @@ const COMPARISON_FIELDS: ComparisonField[] = [
   {
     infoLogementKey: "typeLogement",
     getValue: (d) => d.logement?.type,
-    formatValue: (v) => (v === "maison" ? "MAISON" : "APPARTEMENT"),
+    // Placeholder si baseline partiel (early exit) : ne pas afficher un faux "avant".
+    formatValue: (v) => (v == null ? "—" : v === "maison" ? "MAISON" : "APPARTEMENT"),
   },
   {
     infoLogementKey: "mitoyennete",
     getValue: (d) => d.logement?.mitoyen,
-    formatValue: (v) => (v ? "OUI" : "NON"),
+    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
   },
   {
     infoLogementKey: "assurance",
     getValue: (d) => d.rga?.assure,
-    formatValue: (v) => (v ? "OUI" : "NON"),
+    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
   },
   {
     infoLogementKey: "proprietaireOccupant",
     getValue: (d) => d.logement?.proprietaire_occupant,
-    formatValue: (v) => (v ? "OUI" : "NON"),
+    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
   },
   {
     infoLogementKey: "zoneExposition",
