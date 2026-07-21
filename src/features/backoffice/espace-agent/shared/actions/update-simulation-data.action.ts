@@ -8,9 +8,11 @@ import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.acti
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { UserRole } from "@/shared/domain/value-objects";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import type { ActionResult } from "@/shared/types";
+import { evaluateAgentSimulation, buildEligibiliteArchiveNote } from "../services/eligibilite-agent.service";
 
 /**
  * Server action pour sauvegarder les données de simulation éditées par un agent.
@@ -90,6 +92,42 @@ export async function updateSimulationDataAction(
 
       if (!updated) {
         return { success: false, error: "Erreur lors de la mise à jour" };
+      }
+
+      // Recalcul du statut d'éligibilité (miroir de la création). On ne re-décide
+      // que pour un dossier dont l'éligibilité était déjà tranchée : EN_ATTENTE
+      // (validation AMO à venir) et SANS_AMO ne sont pas auto-décidés par une
+      // simple correction de simulation — c'est le geste de validation / qualification
+      // qui les tranche. Le mail d'invitation n'est PAS renvoyé (artefact de création,
+      // le demandeur a pu déjà réclamer le dossier).
+      const decidedStatuts = [StatutValidationAmo.LOGEMENT_ELIGIBLE, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE];
+      if (decidedStatuts.includes(dossier.validation.statut as StatutValidationAmo)) {
+        const verdict = evaluateAgentSimulation(rgaData);
+        if (verdict.isEligible || verdict.isNonEligible) {
+          const nouveauStatut = verdict.isEligible
+            ? StatutValidationAmo.LOGEMENT_ELIGIBLE
+            : StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
+
+          await db
+            .update(parcoursAmoValidations)
+            .set({ statut: nouveauStatut, valideeAt: new Date() })
+            .where(eq(parcoursAmoValidations.id, dossier.validation.id));
+
+          if (verdict.isNonEligible) {
+            await parcoursPreventionRepository.updateSituationParticulier(
+              dossier.parcours.id,
+              SituationParticulier.ARCHIVE,
+              buildEligibiliteArchiveNote(verdict.result, "edition"),
+              agent.id
+            );
+          } else {
+            // Redevenu éligible → dé-archivage (nettoie archivedAt/reason/by).
+            await parcoursPreventionRepository.updateSituationParticulier(
+              dossier.parcours.id,
+              SituationParticulier.PROSPECT
+            );
+          }
+        }
       }
 
       // Invalider le cache de toutes les pages de l'espace agent

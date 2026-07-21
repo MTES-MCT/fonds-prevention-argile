@@ -4,8 +4,11 @@ import { parcoursAmoValidations } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
-import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
 import { mapEligibilityReasonToRaisonIneligibilite } from "@/features/simulateur/domain/utils/eligibility-reason-to-raison.utils";
+import {
+  evaluateAgentSimulation,
+  buildEligibiliteArchiveNote,
+} from "@/features/backoffice/espace-agent/shared/services/eligibilite-agent.service";
 import { generateSecureRandomString } from "@/features/auth/utils/oauth.utils";
 import { getServerEnv } from "@/shared/config/env.config";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
@@ -56,9 +59,7 @@ function buildMinimalAgentSimulation(adresseBien: string, details?: AdresseBienD
  * Le dossier est rattaché à un user "stub" (sans fcId) et à un claim token
  * unique permettant au demandeur de le récupérer en se connectant via FC.
  */
-export async function createDossierByAgent(
-  params: CreateDossierByAgentParams
-): Promise<CreateDossierByAgentResult> {
+export async function createDossierByAgent(params: CreateDossierByAgentParams): Promise<CreateDossierByAgentResult> {
   const {
     agentId,
     demandeur,
@@ -100,11 +101,9 @@ export async function createDossierByAgent(
   }
 
   // 4 bis. Évaluation d'éligibilité une fois, utilisée par les branches en aval
-  //         (claim AMO + auto-archivage non éligible).
-  const eligibilityResult = rgaSimulationDataAgent
-    ? EligibilityService.evaluate(rgaSimulationDataAgent).result
-    : null;
-  const isNonEligible = eligibilityResult?.eligible === false;
+  //         (claim AMO + auto-archivage non éligible). Helper partagé avec
+  //         `updateSimulationDataAction` pour ne pas diverger.
+  const { result: eligibilityResult, isEligible, isNonEligible } = evaluateAgentSimulation(rgaSimulationDataAgent);
 
   // 4 ter. Claim AMO auto, **uniquement en mode `amo`** (entrée /dossiers).
   // En mode `av` (entrée /prospects), même si l'agent a un `entrepriseAmoId`
@@ -116,16 +115,13 @@ export async function createDossierByAgent(
   const shouldClaimAmo = !!agent?.entrepriseAmoId && intent === "amo";
   if (shouldClaimAmo && agent?.entrepriseAmoId) {
     const fullName = `${demandeur.prenom} ${demandeur.nom}`.trim();
-    const adresseLogement =
-      adresseBien ??
-      (rgaSimulationDataAgent?.logement?.adresse as string | undefined) ??
-      "";
+    const adresseLogement = adresseBien ?? (rgaSimulationDataAgent?.logement?.adresse as string | undefined) ?? "";
 
     let statut: StatutValidationAmo = StatutValidationAmo.EN_ATTENTE;
     let valideeAt: Date | null = null;
     let commentaire = `Invitation créée par ${fullName ? fullName + " — " : ""}agent AMO`;
 
-    if (eligibilityResult?.eligible === true) {
+    if (isEligible) {
       statut = StatutValidationAmo.LOGEMENT_ELIGIBLE;
       valideeAt = new Date();
       commentaire += " (simulation éligible)";
@@ -159,16 +155,10 @@ export async function createDossierByAgent(
   //   à archiver explicitement le parcours pour que `archivedAt` soit set (sinon
   //   le dashboard admin qui filtre dessus ne voit pas le dossier comme archivé).
   if (isNonEligible) {
-    // Inclure le libellé exact de la raison dans la note pour que l'agent voie
-    // pourquoi le dossier a été archivé (le tag `raisonsIneligibilite` peut
-    // retomber sur "autre" pour certaines raisons sans mapping direct, ex.
-    // DEMANDE_CATNAT_EN_COURS).
-    const reasonLabel = eligibilityResult?.reason
-      ? EligibilityService.getReasonMessage(eligibilityResult.reason)
-      : "";
-    const archiveNote = reasonLabel
-      ? `Non éligible (simulation auto à la création) — ${reasonLabel}`
-      : "Non éligible (simulation auto à la création)";
+    // Note avec le libellé exact de la raison pour que l'agent voie pourquoi le
+    // dossier a été archivé (le tag `raisonsIneligibilite` peut retomber sur
+    // "autre" pour certaines raisons sans mapping direct, ex. DEMANDE_CATNAT_EN_COURS).
+    const archiveNote = buildEligibiliteArchiveNote(eligibilityResult, "creation");
 
     if (intent === "av") {
       await qualificationService.qualifyProspect({
@@ -180,12 +170,7 @@ export async function createDossierByAgent(
         note: archiveNote,
       });
     } else {
-      await parcoursRepo.updateSituationParticulier(
-        parcours.id,
-        SituationParticulier.ARCHIVE,
-        archiveNote,
-        agentId
-      );
+      await parcoursRepo.updateSituationParticulier(parcours.id, SituationParticulier.ARCHIVE, archiveNote, agentId);
     }
   }
 
