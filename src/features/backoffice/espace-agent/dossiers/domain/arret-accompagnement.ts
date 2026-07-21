@@ -10,6 +10,7 @@ export const ROLES_ARRET_ACCOMPAGNEMENT: string[] = [UserRole.AMO, UserRole.AMO_
 
 /** Raisons proposées à l'AMO qui cesse d'accompagner (multi-sélection, cf. maquette). */
 export const RAISONS_ARRET_ACCOMPAGNEMENT = [
+  "Le demandeur ne souhaite plus être accompagné",
   "Reste à charge trop élevé",
   "Le demandeur a abandonné le projet",
   "Le demandeur ne donne pas de réponse",

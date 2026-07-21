@@ -144,6 +144,17 @@ liste à 3 options). Il est prérempli à la création du dossier **uniquement q
 > « Mandataire financier » a par ailleurs une conséquence : la PJ « Relevé d'identité
 > bancaire du mandataire financier » est obligatoire côté DN.
 
+**Préremplissage = création seulement, jamais mise à jour (QA juillet 2026).** Si le
+demandeur annule son accompagnement AMO après coup, on ne « corrige » pas le dossier DN
+(vider le SIRET, remettre « Pas de mandataire ») : ce n'est **pas faisable par API**. Le
+préremplissage REST ne sait que **créer** un dossier (`createPrefillDossier`), et les
+mutations DN côté instructeur ne touchent que les annotations privées / messages / états —
+**jamais les champs publics** (SIRET, mandataire), qui appartiennent au demandeur une fois
+qu'il a pris la main. Décision produit : ne rien faire côté DN sur annulation. Le cas
+fréquent est déjà propre — annuler **avant** d'avoir créé le dossier d'éligibilité fait que
+`createEligibiliteDossier` préremplira sans AMO le moment venu. Seul un dossier déjà créé
+garde des infos AMO obsolètes, à corriger manuellement côté formulaire.
+
 ### 2.7 Arrêt de l'accompagnement (demandeur ou AMO) — ADR-0018
 
 Contrairement au détachement ops (§2.5), l'arrêt est ici **déclenchable depuis l'UI**, des

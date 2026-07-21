@@ -240,6 +240,13 @@ Règles :
 - **Une seule ligne** de description (pas de listes à puces, pas de paragraphes).
 - Préférer le **pourquoi** au quoi (le diff montre déjà le quoi).
 - **Aucune mention d'auteur ou de co-auteur** dans le corps du commit (pas de `Co-Authored-By`, pas de `Generated with`, etc.). L'auteur git suffit.
+- **Toujours travailler sur une branche dédiée, jamais committer sur `main`.** Avant le
+  premier commit d'un lot de travail, vérifier la branche courante (`git branch --show-current`) :
+  si c'est `main` (ou toute branche protégée), créer d'abord une branche dédiée
+  (`git checkout -b <type>/<sujet>`, ex. `feat/arret-accompagnement`) et committer dessus.
+  Ceci vaut aussi pour les retours QA sur une feature déjà mergée : repartir d'une branche
+  neuve depuis `main` à jour. Si un commit a atterri sur `main` par erreur, le déplacer sur
+  une branche (`git branch <feat>` puis `git branch -f main origin/main`) sans jamais push.
 - **Par défaut, découper le travail en commits logiques** au fil de l'implémentation,
   sans attendre de demande explicite (un commit par changement cohérent : ex. schéma +
   migration, feature back, feature front, doc + bump de version). Préférer plusieurs
