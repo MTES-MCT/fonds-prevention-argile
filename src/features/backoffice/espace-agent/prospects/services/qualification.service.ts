@@ -2,6 +2,10 @@ import { parcoursPreventionRepository } from "@/shared/database/repositories/par
 import { prospectQualificationsRepo } from "@/shared/database/repositories/prospect-qualifications.repository";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
+import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
+import { assignAmoAutomatiqueForUser } from "@/features/parcours/amo/services/amo-selection.service";
+import { isAmoAttributionAutomatique } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { QualificationDecision } from "../domain/types";
 
 interface QualifyProspectParams {
@@ -49,6 +53,10 @@ export class QualificationService {
     // 3. Mettre à jour situation_particulier selon la décision
     if (decision === QualificationDecision.ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(parcoursId, SituationParticulier.ELIGIBLE);
+      // En département à AMO obligatoire (ou AV/AMO fusionnés), la validation de
+      // l'Aller-vers met directement le dossier en lien avec l'AMO unique du
+      // territoire — sans attendre que le ménage fasse sa demande d'accompagnement.
+      await this.autoLinkAmoIfObligatoire(parcours);
     } else if (decision === QualificationDecision.NON_ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(
         parcoursId,
@@ -60,6 +68,29 @@ export class QualificationService {
     // "a_qualifier" → pas de changement de situation_particulier
 
     return qualification;
+  }
+
+  /**
+   * Met le dossier en lien direct avec l'AMO du territoire si le département impose
+   * un AMO (obligatoire / AV-AMO fusionnés). Best-effort : idempotent côté service
+   * (`assignAmoAutomatiqueForUser` no-op si validation existante ou étape ≠ choix_amo),
+   * et un échec ne doit jamais faire échouer la qualification déjà enregistrée.
+   */
+  private async autoLinkAmoIfObligatoire(
+    parcours: NonNullable<Awaited<ReturnType<typeof parcoursPreventionRepository.findById>>>
+  ): Promise<void> {
+    try {
+      const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
+      if (!codeInsee) return;
+      if (!isAmoAttributionAutomatique(getCodeDepartementFromCodeInsee(codeInsee))) return;
+
+      const result = await assignAmoAutomatiqueForUser(parcours.userId);
+      if (!result.success) {
+        console.warn(`[qualifyProspect] auto-lien AMO non appliqué (parcours ${parcours.id}): ${result.error}`);
+      }
+    } catch (error) {
+      console.error(`[qualifyProspect] échec auto-lien AMO (parcours ${parcours.id}):`, error);
+    }
   }
 
   /**
