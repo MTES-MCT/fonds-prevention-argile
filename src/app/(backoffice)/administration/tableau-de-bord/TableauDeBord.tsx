@@ -163,7 +163,7 @@ export function TableauDeBord() {
               variation={matomoSimuStats?.visiteursUniques?.variation ?? null}
               loading={false}
               compact
-              tooltip="Donnees Matomo (VisitsSummary)"
+              tooltip="Données Matomo (VisitsSummary)"
             />
             <DashboardStatCard
               value={formatMatomoValue(simulationsValue, matomoLoaded)}
@@ -171,7 +171,7 @@ export function TableauDeBord() {
               variation={simulationsValue?.variation ?? null}
               loading={false}
               compact
-              tooltip="Donnees Matomo"
+              tooltip="Données Matomo"
             />
             <DashboardStatCard
               value={formatMatomoValue(simulationsEligiblesValue, matomoLoaded)}
@@ -179,7 +179,7 @@ export function TableauDeBord() {
               variation={simulationsEligiblesValue?.variation ?? null}
               loading={false}
               compact
-              tooltip="Donnees Matomo"
+              tooltip="Données Matomo"
             />
             <DashboardStatCard
               value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
