@@ -97,6 +97,7 @@ export async function updateAmo(
     emails: string;
     telephone?: string;
     adresse?: string;
+    horaires?: string | null;
     communes?: string[];
     epci?: string[];
   }

@@ -8,6 +8,7 @@ export interface AmoExcelRow {
   emails: string;
   telephone: string;
   adresse: string;
+  horaires?: string;
   codes_insee?: string;
 }
 

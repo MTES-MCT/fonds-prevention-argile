@@ -54,6 +54,7 @@ export async function getAmoChoisie(): Promise<ActionResult<Amo | null>> {
         emails: entreprisesAmo.emails,
         telephone: entreprisesAmo.telephone,
         adresse: entreprisesAmo.adresse,
+        horaires: entreprisesAmo.horaires,
       })
       .from(parcoursAmoValidations)
       .innerJoin(entreprisesAmo, eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))

@@ -206,6 +206,7 @@ describe("ActionsService", () => {
         emails: "test@amo.fr",
         telephone: "0123456789",
         adresse: "123 rue test",
+        horaires: null,
       });
       vi.mocked(parcoursActionsRepo.create).mockResolvedValue({
         id: "action-1",
@@ -404,6 +405,7 @@ describe("ActionsService — accès et neutralité éligibilité", () => {
       emails: "test@amo.fr",
       telephone: "0123456789",
       adresse: "1 rue test",
+      horaires: null,
     });
     vi.mocked(parcoursActionsRepo.create).mockImplementation(async (data) => ({
       id: "action-x",

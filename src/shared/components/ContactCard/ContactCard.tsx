@@ -6,6 +6,8 @@ interface ContactCardProps {
   emails?: string | string[] | null;
   telephone?: string | null;
   adresse?: string | null;
+  /** Horaires d'ouverture en texte libre (1-2 lignes) */
+  horaires?: string | null;
   isSelected?: boolean;
   onSelect?: (id: string) => void;
   selectable?: boolean;
@@ -68,6 +70,7 @@ export function ContactCard({
   emails,
   telephone,
   adresse,
+  horaires,
   isSelected = false,
   onSelect,
   selectable = true,
@@ -89,6 +92,11 @@ export function ContactCard({
           )}
           {telephone && <p className="fr-text--sm text-gray-500 fr-mb-0">{telephone}</p>}
           {adresse && <p className="fr-text--sm fr-mb-0 text-gray-500">{adresse}</p>}
+          {horaires && (
+            <p className="fr-text--sm fr-mb-0 text-gray-500" style={{ whiteSpace: "pre-line" }}>
+              Horaires : {horaires}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -116,6 +124,11 @@ export function ContactCard({
             )}
             {telephone && <span className="fr-text--sm fr-text--light text-gray-500 block">{telephone}</span>}
             {adresse && <span className="fr-text--sm fr-text--light block text-gray-500">{adresse}</span>}
+            {horaires && (
+              <span className="fr-text--sm fr-text--light block text-gray-500" style={{ whiteSpace: "pre-line" }}>
+                Horaires : {horaires}
+              </span>
+            )}
           </label>
         </div>
       </div>

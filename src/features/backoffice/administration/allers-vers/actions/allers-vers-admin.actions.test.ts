@@ -38,14 +38,18 @@ import { importAllersVersFromExcel } from "@/features/backoffice/administration/
 
 describe("allers-vers-admin.actions", () => {
   // Helper pour créer un Allers Vers de test
-  const createMockAllersVers = (override?: Partial<AllersVers>): AllersVers => ({
-    id: "av-123",
-    nom: "Structure Test",
-    emails: ["contact@structure.fr", "info@structure.fr"],
-    telephone: "0123456789",
-    adresse: "1 rue de la Structure, 75001 Paris",
-    ...override,
-  });
+  const createMockAllersVers = (override?: Partial<AllersVers>) => {
+    const { horaires, ...restOverride } = override ?? {};
+    return {
+      id: "av-123",
+      nom: "Structure Test",
+      emails: ["contact@structure.fr", "info@structure.fr"],
+      telephone: "0123456789",
+      adresse: "1 rue de la Structure, 75001 Paris",
+      ...restOverride,
+      horaires: horaires ?? null,
+    };
+  };
 
   // Helper pour créer un File avec arrayBuffer mocké pour les tests
   const createMockFile = (content: string, filename: string, type?: string): File => {

@@ -6,6 +6,7 @@ export interface AllersVersImportRow {
   emails: string;
   telephone: string;
   adresse: string;
+  horaires?: string;
   departements: string;
   epci: string;
 }

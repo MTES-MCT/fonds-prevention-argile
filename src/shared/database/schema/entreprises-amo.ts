@@ -14,6 +14,8 @@ export const entreprisesAmo = pgTable(
     emails: text("emails").notNull(), // Format: "email1@test.fr;email2@test.fr"
     telephone: varchar("telephone", { length: 20 }).notNull(),
     adresse: varchar("adresse", { length: 500 }).notNull(),
+    // Horaires d'ouverture en texte libre (1-2 lignes), ex: "Du mardi au vendredi 8h30 - 12h / 13h - 17h30"
+    horaires: text("horaires"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .notNull()

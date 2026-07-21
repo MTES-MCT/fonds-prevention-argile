@@ -155,6 +155,7 @@ export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }:
                 emails={amoChoisie.emails}
                 telephone={amoChoisie.telephone}
                 adresse={amoChoisie.adresse}
+                horaires={amoChoisie.horaires}
                 selectable={false}
                 colSize="half"
               />

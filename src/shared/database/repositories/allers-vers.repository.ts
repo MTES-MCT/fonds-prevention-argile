@@ -10,6 +10,7 @@ export type AllersVersWithRelations = {
   emails: string[];
   telephone: string;
   adresse: string;
+  horaires: string | null;
   departements: { codeDepartement: string }[];
   epci: { codeEpci: string }[];
 };
@@ -45,6 +46,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
         emails: allersVers.emails,
         telephone: allersVers.telephone,
         adresse: allersVers.adresse,
+        horaires: allersVers.horaires,
         codeDepartement: allersVersDepartements.codeDepartement,
         codeEpci: allersVersEpci.codeEpci,
       })
@@ -64,6 +66,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
           emails: row.emails,
           telephone: row.telephone,
           adresse: row.adresse,
+          horaires: row.horaires,
           departements: [],
           epci: [],
         });
@@ -92,6 +95,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
       emails: data.emails!,
       telephone: data.telephone || "",
       adresse: data.adresse || "",
+      horaires: data.horaires ?? null,
     };
 
     const [created] = await db.insert(allersVers).values(insertData).returning();
@@ -112,6 +116,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
     if (data.emails !== undefined) updateData.emails = data.emails;
     if (data.telephone !== undefined) updateData.telephone = data.telephone || "";
     if (data.adresse !== undefined) updateData.adresse = data.adresse || "";
+    if (data.horaires !== undefined) updateData.horaires = data.horaires;
 
     const [updated] = await db.update(allersVers).set(updateData).where(eq(allersVers.id, id)).returning();
 
@@ -234,6 +239,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
         emails: allersVers.emails,
         telephone: allersVers.telephone,
         adresse: allersVers.adresse,
+        horaires: allersVers.horaires,
       })
       .from(allersVers)
       .innerJoin(allersVersDepartements, eq(allersVers.id, allersVersDepartements.allersVersId))
@@ -252,6 +258,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
         emails: allersVers.emails,
         telephone: allersVers.telephone,
         adresse: allersVers.adresse,
+        horaires: allersVers.horaires,
       })
       .from(allersVers)
       .innerJoin(allersVersEpci, eq(allersVers.id, allersVersEpci.allersVersId))

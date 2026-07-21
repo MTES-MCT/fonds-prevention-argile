@@ -122,6 +122,7 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
     if (data.emails !== undefined) updateData.emails = data.emails;
     if (data.telephone !== undefined) updateData.telephone = data.telephone || "";
     if (data.adresse !== undefined) updateData.adresse = data.adresse || "";
+    if (data.horaires !== undefined) updateData.horaires = data.horaires;
 
     const [updated] = await db.update(entreprisesAmo).set(updateData).where(eq(entreprisesAmo.id, id)).returning();
 

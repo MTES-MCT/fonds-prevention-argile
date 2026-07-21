@@ -51,8 +51,13 @@ export default function AllerVersLocal() {
         </p>
       )}
       {av.telephone && (
-        <p className="fr-text--xs fr-mb-0" style={greyStyle}>
+        <p className={`fr-text--xs ${av.horaires ? "fr-mb-1v" : "fr-mb-0"}`} style={greyStyle}>
           {av.telephone}
+        </p>
+      )}
+      {av.horaires && (
+        <p className="fr-text--xs fr-mb-0" style={{ ...greyStyle, whiteSpace: "pre-line" }}>
+          Horaires : {av.horaires}
         </p>
       )}
     </div>

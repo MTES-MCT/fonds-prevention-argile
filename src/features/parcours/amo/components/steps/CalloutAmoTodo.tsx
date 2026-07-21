@@ -228,6 +228,7 @@ export default function CalloutAmoTodo({ onSuccess, refresh, contactInfoVersion 
                 emails={allerVers.emails}
                 telephone={allerVers.telephone}
                 adresse={allerVers.adresse}
+                horaires={allerVers.horaires}
                 selectable={false}
               />
             ))}
@@ -286,6 +287,7 @@ export default function CalloutAmoTodo({ onSuccess, refresh, contactInfoVersion 
                 emails={amo.emails}
                 telephone={amo.telephone}
                 adresse={amo.adresse}
+                horaires={amo.horaires}
                 isSelected={selectedAmoId === amo.id}
                 onSelect={handleAmoSelection}
                 selectable={true}
@@ -338,6 +340,9 @@ export default function CalloutAmoTodo({ onSuccess, refresh, contactInfoVersion 
                             {selectedAmo.emails && <div>{selectedAmo.emails.split(";").join(", ")}</div>}
                             {selectedAmo.telephone && <div>{selectedAmo.telephone}</div>}
                             {selectedAmo.adresse && <div>{selectedAmo.adresse}</div>}
+                            {selectedAmo.horaires && (
+                              <div style={{ whiteSpace: "pre-line" }}>Horaires : {selectedAmo.horaires}</div>
+                            )}
                           </div>
                         </div>
                       </div>
