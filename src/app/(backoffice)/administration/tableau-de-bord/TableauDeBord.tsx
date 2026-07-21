@@ -192,12 +192,16 @@ export function TableauDeBord() {
           </div>
           <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
             <DashboardStatCard
-              value={stats?.reponsesAmoEnAttente.valeur.toLocaleString("fr-FR") ?? "..."}
+              value={
+                stats
+                  ? `${stats.reponsesAmoEnAttente.valeur.toLocaleString("fr-FR")} / ${stats.demandesAmoEnvoyees.valeur.toLocaleString("fr-FR")}`
+                  : "..."
+              }
               label="Réponses d'AMO en attente"
               variation={stats?.reponsesAmoEnAttente.variation ?? null}
               loading={loading}
               compact
-              tooltip="Données base de données"
+              tooltip="Réponses en attente / demandes AMO envoyées sur la période"
             />
             <DashboardStatCard
               value={stats?.dossiersEnAttenteDepot.valeur.toLocaleString("fr-FR") ?? "..."}
