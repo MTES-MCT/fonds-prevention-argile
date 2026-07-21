@@ -13,6 +13,7 @@ import { parcoursPreventionRepository } from "@/shared/database/repositories/par
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import type { ActionResult } from "@/shared/types";
 import { evaluateAgentSimulation, buildEligibiliteArchiveNote } from "../services/eligibilite-agent.service";
+import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 
 /**
  * Baseline du diff agent = données effectives AVANT la 1re correction. Idempotent :
@@ -91,14 +92,28 @@ export async function updateSimulationDataAction(
         return { success: false, error: "Ce dossier ne permet pas l'édition des données de simulation" };
       }
 
-      // Vérifier ownership entreprise (sauf admins)
+      // Autorisation alignée sur la lecture (getDossierSimulationData), sinon
+      // désalignement lecture/écriture : dossier AVEC entreprise AMO → ownership
+      // entreprise ; dossier SANS entreprise (SANS_AMO) → accès territorial (un
+      // Aller-vers n'a pas d'entrepriseAmoId et serait refusé à tort).
       if (!isAdmin) {
-        if (!agent.entrepriseAmoId) {
-          return { success: false, error: "Votre compte agent n'est pas configuré" };
-        }
-
-        if (dossier.validation.entrepriseAmoId !== agent.entrepriseAmoId) {
-          return { success: false, error: "Ce dossier ne vous est pas destiné" };
+        if (dossier.validation.entrepriseAmoId) {
+          if (!agent.entrepriseAmoId) {
+            return { success: false, error: "Votre compte agent n'est pas configuré" };
+          }
+          if (dossier.validation.entrepriseAmoId !== agent.entrepriseAmoId) {
+            return { success: false, error: "Ce dossier ne vous est pas destiné" };
+          }
+        } else {
+          const territoryError = await verifyProspectTerritoryAccess(dossier.parcours.id, {
+            id: agent.id,
+            role: agent.role as UserRole,
+            entrepriseAmoId: agent.entrepriseAmoId ?? null,
+            allersVersId: agent.allersVersId ?? null,
+          });
+          if (territoryError) {
+            return { success: false, error: territoryError };
+          }
         }
       }
 

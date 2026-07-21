@@ -76,6 +76,22 @@ describe("buildAgentEditInfo — baseline snapshot", () => {
     expect(result?.originalDisplayValues.assurance).toBe("—");
   });
 
+  it("affiche « — » aussi sur les champs préexistants quand le baseline est partiel", async () => {
+    // Baseline early exit sans zone_dexposition ; l'agent la renseigne.
+    const base = { logement: {}, rga: {}, menage: {} } as unknown as RGASimulationData;
+    const edited = { logement: { zone_dexposition: "fort" }, rga: {}, menage: {} } as unknown as RGASimulationData;
+
+    const result = await buildAgentEditInfo({
+      rgaSimulationData: null,
+      rgaSimulationDataAgentBaseline: base,
+      rgaSimulationDataAgent: edited,
+      rgaSimulationAgentEditedAt: new Date(),
+      rgaSimulationAgentEditedBy: "agent-1",
+    });
+
+    expect(result?.originalDisplayValues.zoneExposition).toBe("—");
+  });
+
   it("préfère le baseline à la simulation demandeur quand les deux existent", async () => {
     const result = await buildAgentEditInfo({
       rgaSimulationData: sim(2),

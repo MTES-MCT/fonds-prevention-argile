@@ -45,27 +45,27 @@ const COMPARISON_FIELDS: ComparisonField[] = [
   {
     infoLogementKey: "zoneExposition",
     getValue: (d) => d.logement?.zone_dexposition,
-    formatValue: (v) => String(v).toUpperCase(),
+    formatValue: (v) => (v == null ? "—" : String(v).toUpperCase()),
   },
   {
     infoLogementKey: "anneeConstruction",
     getValue: (d) => d.logement?.annee_de_construction,
-    formatValue: (v) => String(v),
+    formatValue: (v) => (v == null ? "—" : String(v)),
   },
   {
     infoLogementKey: "nombreNiveaux",
     getValue: (d) => d.logement?.niveaux,
-    formatValue: (v) => `${v} ${Number(v) > 1 ? "NIVEAUX" : "NIVEAU"}`,
+    formatValue: (v) => (v == null ? "—" : `${v} ${Number(v) > 1 ? "NIVEAUX" : "NIVEAU"}`),
   },
   {
     infoLogementKey: "etatMaison",
     getValue: (d) => d.rga?.sinistres,
-    formatValue: (v) => String(v).toUpperCase(),
+    formatValue: (v) => (v == null ? "—" : String(v).toUpperCase()),
   },
   {
     infoLogementKey: "indemnisationPasseeRGA",
     getValue: (d) => d.rga?.indemnise_indemnise_rga,
-    formatValue: (v) => (v ? "OUI" : "NON"),
+    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
   },
   {
     infoLogementKey: "montantIndemnisation",
@@ -80,7 +80,7 @@ const COMPARISON_FIELDS: ComparisonField[] = [
   {
     infoLogementKey: "nombreHabitants",
     getValue: (d) => d.menage?.personnes,
-    formatValue: (v) => `${v} ${Number(v) > 1 ? "HABITANTS" : "HABITANT"}`,
+    formatValue: (v) => (v == null ? "—" : `${v} ${Number(v) > 1 ? "HABITANTS" : "HABITANT"}`),
   },
   {
     infoLogementKey: "niveauRevenu",

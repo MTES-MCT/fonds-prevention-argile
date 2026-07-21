@@ -308,7 +308,10 @@ détail dossier** (§6). `getDossierSimulationData` gate donc, pour les non-admi
 
 Les statuts éditables incluent `SANS_AMO` **et `LOGEMENT_NON_ELIGIBLE`** (aligné sur
 `STATUTS_CONSULTABLES`, lecture et écriture désormais alignées) : un dossier devenu non
-éligible reste corrigeable. À la sauvegarde, `updateSimulationDataAction` **recalcule
+éligible reste corrigeable. L'**écriture** (`updateSimulationDataAction`) applique la même
+autorisation que la lecture — ownership entreprise pour un dossier avec AMO, sinon
+`verifyProspectTerritoryAccess` — sinon un Aller-vers (sans `entrepriseAmoId`) pouvait
+**ouvrir** l'édition d'un dossier `SANS_AMO` mais échouait à la **sauvegarde**. À la sauvegarde, `updateSimulationDataAction` **recalcule
 l'éligibilité** et met à jour le statut de validation dans les deux sens
 (`LOGEMENT_ELIGIBLE ↔ LOGEMENT_NON_ELIGIBLE`) + archive / dé-archive le parcours — miroir
 de la création, mais **uniquement pour les dossiers déjà tranchés** (pas `EN_ATTENTE` /
