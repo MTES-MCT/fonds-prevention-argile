@@ -5,6 +5,7 @@ import { DS_TO_INTERNAL_STATUS, DSStatus } from "../domain/value-objects/ds-stat
 import { parcoursRepo } from "@/shared/database/repositories";
 import type { ActionResult } from "@/shared/types";
 import type { Status } from "@/shared/domain/value-objects/status.enum";
+import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
 
 /**
  * Service de synchronisation des statuts DS.
@@ -76,6 +77,17 @@ export async function syncDossierStatus(
 
   if (newStatus !== oldStatus) {
     await updateDossierStatus(localDossier.id, newStatus, dates);
+
+    // Synchro Brevo (flux) : évènement d'update DN. Best-effort, uniquement sur
+    // changement réel de ds_status (même condition que sync_run_entries).
+    await emitBrevoEvent(parcoursId, BREVO_EVENTS.DN_UPDATE, {
+      attributes: { [BREVO_ATTRS.DS_STATUT]: newStatus },
+      eventProperties: {
+        step,
+        old_ds_status: String(oldStatus ?? ""),
+        new_ds_status: newStatus,
+      },
+    });
 
     return {
       success: true,

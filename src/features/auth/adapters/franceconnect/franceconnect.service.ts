@@ -11,6 +11,7 @@ import { userRepo, parcoursRepo } from "@/shared/database/repositories";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
 import { getOrCreateParcours } from "@/features/parcours/core/services";
+import { emitBrevoEvent, BREVO_EVENTS } from "@/shared/email/brevo";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
 
@@ -230,6 +231,7 @@ export async function handleFranceConnectCallback(
     });
 
     // 6. Initialiser le parcours si première connexion
+    const parcoursExisted = (await parcoursRepo.findByUserId(user.id)) !== null;
     const parcours = await getOrCreateParcours(user.id);
 
     // 6bis. Si parcours en INVITATION (dossier pré-créé par un agent) → valider
@@ -251,6 +253,12 @@ export async function handleFranceConnectCallback(
         await parcoursRepo.updateRGAData(parcours.id, parcoursRow.rgaSimulationDataAgent);
       }
       await parcoursRepo.validateInvitation(parcours.id);
+    }
+
+    // 6ter. Synchro Brevo (flux) : évènement d'inscription à la première création
+    //       du parcours. Best-effort — n'échoue jamais la connexion.
+    if (!parcoursExisted) {
+      await emitBrevoEvent(parcours.id, BREVO_EVENTS.DEMANDEUR_CREE);
     }
 
     // 7. Créer la session avec l'userId
