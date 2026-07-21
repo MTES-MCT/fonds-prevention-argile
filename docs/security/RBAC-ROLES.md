@@ -59,7 +59,12 @@ Deux grands espaces back-office, gardés au niveau des `layout.tsx` / `page.tsx`
 | `/espace-agent/*`                               | `AMO`, `ALLERS_VERS`, `AMO_ET_ALLERS_VERS`, `ANALYSTE` (départemental), `SUPER_ADMINISTRATEUR`                                             | admin/analyste national → `/administration` |
 
 Redirection par défaut après connexion (selon rôle) : admins/analystes →
-`/administration` ; AMO/AV → `/espace-agent` ; particulier → `/mon-compte`.
+`/administration` ; `AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS` → `/espace-agent`
+(qui redirige aussitôt vers `/espace-agent/dossiers`, la page dossiers) ; particulier
+→ `/mon-compte`. L'aiguillage se fait dans le callback ProConnect
+(`api/auth/pc/callback`) via `getDefaultRedirect(role)` — une URL intentionnelle
+sauvegardée reste prioritaire. Avant, le callback envoyait **tout** agent vers
+`/administration` quel que soit son rôle.
 
 > Un `ANALYSTE` avec au moins un département (mode « suivi DDT ») accède aussi à
 > l'espace agent pour consulter les dossiers de son territoire et y ajouter des
