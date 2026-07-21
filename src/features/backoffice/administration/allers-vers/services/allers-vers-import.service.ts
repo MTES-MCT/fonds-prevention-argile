@@ -46,6 +46,7 @@ async function parseExcelFile(buffer: ArrayBuffer): Promise<AllersVersImportRow[
       emails: rowData.emails || "",
       telephone: cleanPhoneNumber(rowData.telephone || ""),
       adresse: rowData.adresse || "",
+      horaires: rowData.horaires || "",
       departements: rowData.departements || "",
       epci: rowData.epci || "",
     });
@@ -183,6 +184,7 @@ export async function importAllersVersFromExcel(
           emails: emails,
           telephone: row.telephone?.trim() || "",
           adresse: row.adresse?.trim() || "",
+          horaires: row.horaires?.trim() || null,
         });
 
         if (departements.length > 0) {

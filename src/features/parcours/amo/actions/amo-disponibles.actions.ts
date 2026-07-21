@@ -64,6 +64,7 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
             emails: entreprisesAmo.emails,
             telephone: entreprisesAmo.telephone,
             adresse: entreprisesAmo.adresse,
+            horaires: entreprisesAmo.horaires,
           })
           .from(entreprisesAmo)
           .innerJoin(entreprisesAmoEpci, eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId))
@@ -88,6 +89,7 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
         emails: entreprisesAmo.emails,
         telephone: entreprisesAmo.telephone,
         adresse: entreprisesAmo.adresse,
+        horaires: entreprisesAmo.horaires,
       })
       .from(entreprisesAmo)
       .where(like(entreprisesAmo.departements, `%${codeDepartement}%`));
@@ -133,6 +135,7 @@ export async function getAllAmos(): Promise<ActionResult<Array<Amo & { communes:
         emails: entreprisesAmo.emails,
         telephone: entreprisesAmo.telephone,
         adresse: entreprisesAmo.adresse,
+        horaires: entreprisesAmo.horaires,
         codeInsee: entreprisesAmoCommunes.codeInsee,
         codeEpci: entreprisesAmoEpci.codeEpci,
       })
@@ -154,6 +157,7 @@ export async function getAllAmos(): Promise<ActionResult<Array<Amo & { communes:
           emails: row.emails,
           telephone: row.telephone,
           adresse: row.adresse,
+          horaires: row.horaires,
           communes: [],
           epci: [],
         });

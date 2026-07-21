@@ -26,6 +26,7 @@ export function AllersVersEditModal({ allersVers, onClose, onSuccess }: AllersVe
     emails: Array.isArray(allersVers.emails) ? allersVers.emails.join("; ") : allersVers.emails,
     telephone: allersVers.telephone || "",
     adresse: allersVers.adresse || "",
+    horaires: allersVers.horaires || "",
     epci: allersVers.epci?.map((e) => e.codeEpci).join(", ") || "",
   });
 
@@ -57,6 +58,7 @@ export function AllersVersEditModal({ allersVers, onClose, onSuccess }: AllersVe
         emails: emailsArray,
         telephone: formData.telephone,
         adresse: formData.adresse,
+        horaires: formData.horaires,
         departements: departementsArray,
         epci: epciArray,
       });
@@ -184,6 +186,21 @@ export function AllersVersEditModal({ allersVers, onClose, onSuccess }: AllersVe
                       value={formData.adresse}
                       onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
                     />
+                  </div>
+
+                  <div className="fr-input-group">
+                    <label className="fr-label" htmlFor={`${modalId}-horaires`}>
+                      Horaires d'ouverture
+                    </label>
+                    <textarea
+                      className="fr-input"
+                      id={`${modalId}-horaires`}
+                      rows={2}
+                      placeholder={"Lundi 13h - 17h30\nDu mardi au vendredi 8h30 - 12h / 13h - 17h30"}
+                      value={formData.horaires}
+                      onChange={(e) => setFormData({ ...formData, horaires: e.target.value })}
+                    />
+                    <p className="fr-hint-text">Texte libre, 1 à 2 lignes. Affiché aux demandeurs.</p>
                   </div>
 
                   <div className="fr-input-group">

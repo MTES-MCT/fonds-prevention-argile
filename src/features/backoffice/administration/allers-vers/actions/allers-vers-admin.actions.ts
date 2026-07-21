@@ -107,6 +107,7 @@ export async function updateAllersVersAction(
     emails: string[];
     telephone: string;
     adresse: string;
+    horaires?: string | null;
     departements: string[];
     epci: string[];
   }
@@ -129,6 +130,7 @@ export async function updateAllersVersAction(
       emails: data.emails,
       telephone: data.telephone,
       adresse: data.adresse,
+      horaires: data.horaires === undefined ? undefined : data.horaires?.trim() || null,
     });
 
     if (!updated) {

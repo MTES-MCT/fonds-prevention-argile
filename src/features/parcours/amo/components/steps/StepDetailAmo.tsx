@@ -4,6 +4,7 @@ import { Step } from "../../../core/domain";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
 import { useAmoMode } from "@/features/parcours/amo/hooks";
 import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { ContactCard } from "@/shared/components/ContactCard/ContactCard";
 
 export default function StepDetailAmo() {
   const { currentStep, statutAmo, validationAmoComplete } = useParcours();
@@ -58,15 +59,18 @@ export default function StepDetailAmo() {
         {isChooseAmoLinkDisabled && !isSansAmo && (
           <>
             {validationAmoComplete && validationAmoComplete.entrepriseAmo && (
-              <p className="fr-text--sm">
-                {validationAmoComplete.entrepriseAmo.nom}
-                <br />
-                {validationAmoComplete.entrepriseAmo.emails.toString()}
-                <br />
-                {validationAmoComplete.entrepriseAmo.telephone}
-                <br />
-                {validationAmoComplete.entrepriseAmo.adresse}
-              </p>
+              <div className="fr-grid-row">
+                <ContactCard
+                  id={validationAmoComplete.entrepriseAmo.id}
+                  nom={validationAmoComplete.entrepriseAmo.nom}
+                  emails={validationAmoComplete.entrepriseAmo.emails}
+                  telephone={validationAmoComplete.entrepriseAmo.telephone}
+                  adresse={validationAmoComplete.entrepriseAmo.adresse}
+                  horaires={validationAmoComplete.entrepriseAmo.horaires}
+                  selectable={false}
+                  colSize="full"
+                />
+              </div>
             )}
           </>
         )}

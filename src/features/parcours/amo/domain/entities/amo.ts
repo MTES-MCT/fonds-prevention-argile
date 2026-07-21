@@ -9,6 +9,8 @@ export interface Amo {
   emails: string; // Format: "email1@test.fr;email2@test.fr"
   telephone: string;
   adresse: string;
+  /** Horaires d'ouverture en texte libre (1-2 lignes), ex: "Du mardi au vendredi 8h30 - 12h / 13h - 17h30" */
+  horaires?: string | null;
 }
 
 /**

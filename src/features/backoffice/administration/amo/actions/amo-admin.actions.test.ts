@@ -36,6 +36,7 @@ describe("amo-admin.actions", () => {
     emails: "contact@amo-test.fr;support@amo-test.fr",
     telephone: "0123456789",
     adresse: "1 rue de Test, 75001 Paris",
+    horaires: null,
     ...override,
   });
 

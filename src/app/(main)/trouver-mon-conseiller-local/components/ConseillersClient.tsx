@@ -52,6 +52,7 @@ function ConseillersGrid({ conseillers }: { conseillers: AllersVersWithRelations
           emails={conseiller.emails}
           telephone={conseiller.telephone}
           adresse={conseiller.adresse}
+          horaires={conseiller.horaires}
           selectable={false}
           colSize="third"
         />

@@ -12,6 +12,7 @@ export interface UpdateAmoData {
   emails: string;
   telephone?: string;
   adresse?: string;
+  horaires?: string | null;
   communes?: string[];
   epci?: string[];
 }
@@ -33,6 +34,7 @@ export async function updateAmo(amoId: string, data: UpdateAmoData): Promise<Amo
     emails: data.emails,
     telephone: data.telephone?.trim() || "",
     adresse: data.adresse?.trim() || "",
+    horaires: data.horaires === undefined ? undefined : data.horaires?.trim() || null,
   });
 
   if (!updated) {

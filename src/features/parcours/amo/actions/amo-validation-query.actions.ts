@@ -41,6 +41,7 @@ export async function getValidationAmo(): Promise<ActionResult<ValidationAmoComp
           emails: entreprisesAmo.emails,
           telephone: entreprisesAmo.telephone,
           adresse: entreprisesAmo.adresse,
+          horaires: entreprisesAmo.horaires,
         },
       })
       .from(parcoursAmoValidations)

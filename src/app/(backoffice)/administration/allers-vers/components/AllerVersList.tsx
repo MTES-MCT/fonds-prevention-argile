@@ -63,6 +63,7 @@ export function AllerVersList({ onEdit, refreshTrigger, canEdit }: AllersVersLis
                       <th scope="col">Emails</th>
                       <th scope="col">Téléphone</th>
                       <th scope="col">Adresse</th>
+                      <th scope="col">Horaires</th>
                       {canEdit && <th scope="col">Actions</th>}
                     </tr>
                   </thead>
@@ -85,6 +86,15 @@ export function AllerVersList({ onEdit, refreshTrigger, canEdit }: AllersVersLis
                         </td>
                         <td>{av.telephone || "-"}</td>
                         <td className="fr-text--sm">{av.adresse || "-"}</td>
+                        <td className="fr-text--sm">
+                          {av.horaires?.trim() ? (
+                            <span className="fr-badge fr-badge--sm fr-badge--success" title={av.horaires}>
+                              Renseignés
+                            </span>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
                         {canEdit && (
                           <td>
                             <button

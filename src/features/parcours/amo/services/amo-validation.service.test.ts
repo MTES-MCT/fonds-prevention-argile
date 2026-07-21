@@ -275,6 +275,7 @@ describe("amo-validation.service", () => {
       departements: "75",
       telephone: "0123456789",
       adresse: "1 rue AMO",
+      horaires: null,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

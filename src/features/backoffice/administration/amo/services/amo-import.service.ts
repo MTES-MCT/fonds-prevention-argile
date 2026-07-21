@@ -11,6 +11,7 @@ interface AmoRow {
   emails: string;
   telephone: string;
   adresse: string;
+  horaires: string;
   codes_insee: string;
 }
 
@@ -97,6 +98,7 @@ async function parseExcelFile(buffer: ArrayBuffer): Promise<AmoRow[]> {
       emails: rowData.emails || "",
       telephone: rowData.telephone || "",
       adresse: rowData.adresse || "",
+      horaires: rowData.horaires || "",
       codes_insee: rowData.codes_insee || "",
     });
   });
@@ -213,6 +215,7 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
           emails: emailsList.join(";"),
           telephone: formatTelephone(row.telephone),
           adresse: String(row.adresse || "").trim(),
+          horaires: String(row.horaires || "").trim() || null,
         })
         .onConflictDoUpdate({
           target: entreprisesAmo.siret,
@@ -222,6 +225,7 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
             emails: emailsList.join(";"),
             telephone: formatTelephone(row.telephone),
             adresse: String(row.adresse || "").trim(),
+            horaires: String(row.horaires || "").trim() || null,
             updatedAt: new Date(),
           },
         })

@@ -115,6 +115,7 @@ describe("CalloutAmoTodo", () => {
     emails: "test@amo.fr",
     telephone: "0123456789",
     adresse: "1 rue AMO",
+    horaires: null,
   });
 
   // Helper pour créer un Allers Vers mock
@@ -124,6 +125,7 @@ describe("CalloutAmoTodo", () => {
     emails: ["contact@allervers.fr"],
     telephone: "0123456789",
     adresse: "1 rue Allers Vers",
+    horaires: null,
   });
 
   describe("Cas 1 : État de chargement", () => {
