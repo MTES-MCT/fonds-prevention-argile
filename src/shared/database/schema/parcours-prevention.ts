@@ -42,6 +42,10 @@ export const parcoursPrevention = pgTable("parcours_prevention", {
 
   // Données de simulation éditées par un agent (AMO ou allers-vers), prioritaires sur les données initiales
   rgaSimulationDataAgent: jsonb("rga_simulation_data_agent").$type<RGASimulationData>(),
+  // Snapshot des données AVANT la 1re correction agent, pour afficher le diff
+  // ancien -> nouveau sur le détail dossier (buildAgentEditInfo). Ne participe PAS
+  // à la résolution territoriale (getDemandeurFirstSimulation / getEffectiveRGAData).
+  rgaSimulationDataAgentBaseline: jsonb("rga_simulation_data_agent_baseline").$type<RGASimulationData>(),
   rgaSimulationAgentEditedAt: timestamp("rga_simulation_agent_edited_at", {
     mode: "date",
   }),

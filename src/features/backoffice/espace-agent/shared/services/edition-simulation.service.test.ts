@@ -50,6 +50,7 @@ const mockValidationRow = (statut: StatutValidationAmo, entrepriseAmoId: string 
                   id: "parcours-1",
                   rgaSimulationData: null,
                   rgaSimulationDataAgent: null,
+                  rgaSimulationDataAgentBaseline: null,
                 },
                 user: { id: "user-x", prenom: "Jean", nom: "Dupont" },
               },

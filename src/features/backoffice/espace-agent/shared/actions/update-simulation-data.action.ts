@@ -15,6 +15,21 @@ import type { ActionResult } from "@/shared/types";
 import { evaluateAgentSimulation, buildEligibiliteArchiveNote } from "../services/eligibilite-agent.service";
 
 /**
+ * Baseline du diff agent = données effectives AVANT la 1re correction. Idempotent :
+ * si un baseline existe déjà, on le conserve (les corrections suivantes comparent
+ * toujours à l'état d'origine).
+ */
+function computeAgentEditBaseline(parcours: {
+  rgaSimulationDataAgentBaseline: RGASimulationData | null;
+  rgaSimulationDataAgent: RGASimulationData | null;
+  rgaSimulationData: RGASimulationData | null;
+}): RGASimulationData | null {
+  return (
+    parcours.rgaSimulationDataAgentBaseline ?? parcours.rgaSimulationDataAgent ?? parcours.rgaSimulationData ?? null
+  );
+}
+
+/**
  * Server action pour sauvegarder les données de simulation éditées par un agent.
  * Accepte un ID de validation AMO (dossier/demande) ou un ID de parcours (prospect).
  *
@@ -87,8 +102,12 @@ export async function updateSimulationDataAction(
         }
       }
 
-      // Sauvegarde
-      const updated = await parcoursPreventionRepository.updateRGADataAgent(dossier.parcours.id, rgaData, agent.id);
+      // Sauvegarde. Le baseline (données AVANT 1re correction) alimente le diff
+      // du détail dossier — indispensable pour les dossiers créés par agent où
+      // `rgaSimulationData` (slot demandeur) est vide.
+      const updated = await parcoursPreventionRepository.updateRGADataAgent(dossier.parcours.id, rgaData, agent.id, {
+        baseline: computeAgentEditBaseline(dossier.parcours),
+      });
 
       if (!updated) {
         return { success: false, error: "Erreur lors de la mise à jour" };
@@ -147,7 +166,9 @@ export async function updateSimulationDataAction(
     }
 
     // Sauvegarde pour prospect
-    const updated = await parcoursPreventionRepository.updateRGADataAgent(parcours.id, rgaData, agent.id);
+    const updated = await parcoursPreventionRepository.updateRGADataAgent(parcours.id, rgaData, agent.id, {
+      baseline: computeAgentEditBaseline(parcours),
+    });
 
     if (!updated) {
       return { success: false, error: "Erreur lors de la mise à jour" };

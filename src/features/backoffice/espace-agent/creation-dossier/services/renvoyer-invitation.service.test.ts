@@ -25,6 +25,7 @@ const baseParcours = {
   archivedAt: null,
   rgaSimulationData: { logement: {} },
   rgaSimulationDataAgent: null,
+  rgaSimulationDataAgentBaseline: null,
 };
 
 const baseStub = {

@@ -356,13 +356,20 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   async updateRGADataAgent(
     parcoursId: string,
     rgaData: RGASimulationData | PartialRGASimulationData,
-    agentId: string
+    agentId: string,
+    opts?: { baseline?: RGASimulationData | PartialRGASimulationData | null }
   ): Promise<ParcoursPrevention | null> {
-    return await this.update(parcoursId, {
+    const updateData: Partial<NewParcoursPrevention> = {
       rgaSimulationDataAgent: rgaData as RGASimulationData,
       rgaSimulationAgentEditedAt: new Date(),
       rgaSimulationAgentEditedBy: agentId,
-    });
+    };
+    // Snapshot d'origine (1re correction) pour le diff du détail dossier. Écrit
+    // seulement si un baseline est fourni ; la création ne le pose pas (null).
+    if (opts?.baseline !== undefined) {
+      updateData.rgaSimulationDataAgentBaseline = (opts.baseline as RGASimulationData) ?? null;
+    }
+    return await this.update(parcoursId, updateData);
   }
 
   /**

@@ -43,6 +43,7 @@ const parcours75 = {
   id: PARCOURS_ID,
   rgaSimulationData: { logement: { code_departement: "75" } },
   rgaSimulationDataAgent: null,
+  rgaSimulationDataAgentBaseline: null,
 };
 
 const baseScope = {

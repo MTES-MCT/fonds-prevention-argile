@@ -86,6 +86,7 @@ const COMPARISON_FIELDS: ComparisonField[] = [
 export async function buildAgentEditInfo(parcours: {
   rgaSimulationData: RGASimulationData | null;
   rgaSimulationDataAgent: RGASimulationData | null;
+  rgaSimulationDataAgentBaseline?: RGASimulationData | null;
   rgaSimulationAgentEditedAt: Date | null;
   rgaSimulationAgentEditedBy: string | null;
 }): Promise<AgentEditInfo | null> {
@@ -94,10 +95,13 @@ export async function buildAgentEditInfo(parcours: {
     return null;
   }
 
-  const initial = parcours.rgaSimulationData;
+  // Baseline = snapshot d'origine (posé à la 1re correction) si présent, sinon la
+  // simulation demandeur. Le snapshot couvre les dossiers créés par agent, où le
+  // slot demandeur (`rgaSimulationData`) est vide et où l'ancien diff renvoyait null.
+  const initial = parcours.rgaSimulationDataAgentBaseline ?? parcours.rgaSimulationData;
   const edited = parcours.rgaSimulationDataAgent;
 
-  // Si pas de données initiales, on ne peut pas faire de diff
+  // Si pas de baseline exploitable, on ne peut pas faire de diff
   if (!initial) {
     return null;
   }
