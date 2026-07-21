@@ -434,7 +434,7 @@ async function countDossiersDN(
  * et qui n'ont pas encore ete deposes (submittedAt null, cf. ADR-0009 : un dossier
  * cree mais non depose reste en TODO). Scope sur la date de creation du dossier.
  */
-async function countDossiersEnAttenteDepot(
+export async function countDossiersEnAttenteDepot(
   debut: Date,
   fin: Date,
   codeDepartement?: string,
@@ -469,7 +469,7 @@ async function countDossiersEnAttenteDepot(
  * confondus). Scope sur la date de depot (submittedAt), pas la date de creation
  * du dossier — un dossier cree mais jamais depose ne compte pas.
  */
-async function countDossiersDeposesDN(
+export async function countDossiersDeposesDN(
   debut: Date,
   fin: Date,
   codeDepartement?: string,
@@ -508,7 +508,7 @@ async function countDossiersDeposesDN(
  * Compte les dossiers instruits et valides par la DDT (ds_status = ACCEPTE), tous
  * steps confondus. Scope sur la date de traitement DS (processedAt).
  */
-async function countDossiersInstruitsValides(
+export async function countDossiersInstruitsValides(
   debut: Date,
   fin: Date,
   codeDepartement?: string,
