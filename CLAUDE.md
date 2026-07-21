@@ -145,15 +145,46 @@ Le cycle de revue est le suivant :
 2. **L'utilisateur crée la PR et attend le retour de Copilot** (revue automatique
    « Overview » + commentaires de Copilot sur la PR).
 3. **L'utilisateur donne le go** à Claude une fois le retour Copilot disponible.
-4. **Claude lit les recommandations de Copilot** (par ex. via `gh pr view <n> --comments`
-   ou `gh api` sur les reviews/commentaires), les **évalue une par une**, **ajuste le code
-   si pertinent**, et **justifie explicitement** ce qui est écarté (faux positif, hors
-   périmètre, choix assumé).
-5. On ne merge qu'une fois ce tour terminé (nouveaux commits + re-`pnpm validate` si du code
-   a changé).
+4. **Claude récupère les commentaires Copilot et filtre les périmés** (cf. « Détecter les
+   retours périmés » ci-dessous) : on ne traite que les fils **encore vivants**.
+5. **Claude fait un COMPTE RENDU SYSTÉMATIQUE _avant_ toute modification** : pour chaque
+   retour vivant, un verdict (valide / faux positif / hors périmètre / choix assumé), la
+   correction envisagée et son ampleur. **Aucune correction n'est appliquée tant que ce
+   compte rendu n'a pas été présenté.** (L'utilisateur peut donner un go global sur le
+   compte rendu, mais le compte rendu passe toujours en premier.)
+6. **Après validation du compte rendu, Claude applique les corrections** retenues, justifie
+   ce qui est écarté, et re-lance `pnpm validate` si du code a changé.
+7. On ne merge qu'une fois ce tour terminé.
 
 > Claude n'attend jamais Copilot de lui-même : il **rend la main à l'utilisateur** pour la
 > création de PR et l'attente de la revue, puis reprend sur le **go** explicite.
+
+**Détecter les retours périmés (outdated) vs vivants.** Un commentaire Copilot peut viser
+du code déjà modifié depuis. Les fils de revue GitHub portent deux drapeaux (`isOutdated`,
+`isResolved`) exposés par l'API GraphQL — les utiliser plutôt que de deviner :
+
+```bash
+gh api graphql -f query='
+{ repository(owner: "MTES-MCT", name: "fonds-prevention-argile") {
+    pullRequest(number: <PR>) {
+      reviewThreads(first: 50) { nodes {
+        isResolved isOutdated path line
+        comments(first: 1) { nodes { author { login } body } }
+      } } } } }' \
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[]
+        | select(.comments.nodes[0].author.login=="copilot-pull-request-reviewer")
+        | {outdated: .isOutdated, resolved: .isResolved, path, line, body: (.comments.nodes[0].body[0:80])}'
+```
+
+Règle de tri :
+
+- **`isOutdated == false && isResolved == false`** → **retour vivant**, pointe encore le code
+  courant : à traiter dans le compte rendu.
+- **`isOutdated == true`** → le code sous le commentaire a changé depuis (souvent déjà
+  corrigé ou déplacé) : à considérer comme traité, mais y jeter un œil pour confirmer que le
+  changement répond bien au fond du commentaire (l'`isOutdated` est positionnel, pas
+  sémantique).
+- **`isResolved == true`** → fil explicitement résolu : ignorer.
 
 ## Commits : simples et conventionnels
 
