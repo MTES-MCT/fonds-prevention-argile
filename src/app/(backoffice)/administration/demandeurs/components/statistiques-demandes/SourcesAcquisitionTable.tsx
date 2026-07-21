@@ -3,8 +3,11 @@
 import { useMemo, useId } from "react";
 import { VariationBadge } from "@/app/(backoffice)/administration/tableau-de-bord/shared/VariationBadge";
 import { SourceAcquisition } from "@/shared/domain/value-objects/source-acquisition.enum";
-import { filterUsersByDepartement } from "../filters/departements/departementFilter.utils";
+import { extractDepartement, filterUsersByDepartement } from "../filters/departements/departementFilter.utils";
+import { getDepartementName, toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
+import { formatNomComplet } from "@/shared/utils";
 import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import { SourcesAutreDrawer, type SourceAutreEntry } from "./SourcesAutreDrawer";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
@@ -42,6 +45,32 @@ export function SourcesAcquisitionTable({
   codeDepartement,
 }: SourcesAcquisitionTableProps) {
   const tooltipId = useId();
+  const rawId = useId();
+  const drawerId = `drawer-sources-autre-${rawId.replace(/:/g, "-")}`;
+
+  function openDrawer() {
+    const dialog = document.getElementById(drawerId);
+    if (dialog) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).dsfr?.(dialog)?.modal?.disclose();
+    }
+  }
+
+  const autresEntries = useMemo((): SourceAutreEntry[] => {
+    return filteredUsers
+      .filter((u) => u.user.sourceAcquisition === SourceAcquisition.AUTRE)
+      .map((u) => {
+        const departementCode = extractDepartement(u);
+        return {
+          id: u.user.id,
+          demandeur: formatNomComplet(u.user.firstName, u.user.name),
+          departement: departementCode
+            ? `${toOfficialCodeDepartement(departementCode)} - ${getDepartementName(departementCode)}`
+            : null,
+          sourcePrecision: u.user.sourceAcquisitionPrecision?.trim() || "Non précisé",
+        };
+      });
+  }, [filteredUsers]);
 
   const rows = useMemo(() => {
     const total = filteredUsers.length;
@@ -132,6 +161,14 @@ export function SourcesAcquisitionTable({
                           title={row.label}
                           style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 0 }}>
                           {row.label}
+                          {row.source === SourceAcquisition.AUTRE && (
+                            <>
+                              {" "}
+                              <button type="button" className="fr-link fr-text--sm" onClick={openDrawer}>
+                                Voir le détail
+                              </button>
+                            </>
+                          )}
                         </td>
                         <td className="fr-text--sm" style={{ textAlign: "right" }}>
                           <strong>{row.count.toLocaleString("fr-FR")}</strong> ({row.pourcentage}%)
@@ -148,6 +185,9 @@ export function SourcesAcquisitionTable({
           </div>
         </div>
       </div>
+
+      {/* Drawer du détail de la source "Autre" */}
+      {autresEntries.length > 0 && <SourcesAutreDrawer drawerId={drawerId} entries={autresEntries} />}
     </div>
   );
 }

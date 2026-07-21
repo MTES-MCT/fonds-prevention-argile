@@ -106,6 +106,12 @@ export interface TableauDeBordStats {
   demandesAmoEnvoyees: StatAvecVariation;
   reponsesAmoEnAttente: StatAvecVariation;
   dossiersDemarcheNumerique: StatAvecVariation;
+  /** Dossiers à l'étape éligibilité créés mais pas encore déposés (cf. ADR-0009) */
+  dossiersEnAttenteDepot: StatAvecVariation;
+  /** Dossiers réellement déposés sur Démarches Numérique (submittedAt non null), tous steps */
+  dossiersDeposesDN: StatAvecVariation;
+  /** Dossiers instruits et validés par la DDT (ds_status = ACCEPTE), tous steps */
+  dossiersInstruitsValides: StatAvecVariation;
   demandesArchivees: StatAvecVariation;
   alertes: AlerteTendance[];
   demandesArchiveesDetail: DemandesArchiveesStats;
