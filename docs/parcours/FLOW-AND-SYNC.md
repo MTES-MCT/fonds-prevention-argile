@@ -79,6 +79,40 @@ TODO ──(dépôt usager, sync ds=en_construction)──► TODO* ──(sync 
 
 L'étape `choix_amo` **n'a pas de dossier DS**. La progression vers `eligibilite` est pilotée par la validation AMO via webhook email Brevo, pas par une sync DS. Conséquence pour le code de sync : `recomputeParcoursStatus` est no-op si `current_step = choix_amo` (pas de dossier de l'étape courante).
 
+#### 2.3.1 Auto-attribution de l'AMO en département obligatoire (et AV/AMO fusionnés)
+
+En département à AMO **obligatoire** (ou **AV/AMO fusionnés**), le demandeur ne choisit pas
+son AMO : l'AMO unique du territoire est **auto-attribué**. Le service
+`assignAmoAutomatiqueForUser` crée la `parcours_amo_validations` (`statut = en_attente`,
+`attribution_mode = auto_obligatoire` / `auto_av_amo`), envoie l'email à l'AMO et passe le
+parcours en `en_instruction`. Il est **idempotent** (no-op si une validation existe déjà) et
+**gardé** à l'étape `choix_amo`.
+
+Deux déclencheurs :
+
+- **Ménage** — à l'arrivée sur `/mon-compte` à l'étape `choix_amo` (`CalloutAmoEnAttente`,
+  `useEffect`).
+- **Aller-vers** — dès qu'un agent **qualifie le prospect éligible** (`qualifyProspect`,
+  branche `ELIGIBLE`) : le dossier est mis **directement** en lien avec l'AMO, sans attendre
+  que le ménage fasse sa demande d'accompagnement. En département **facultatif**, aucun lien
+  n'est créé (le ménage choisit lui-même). Best-effort : un échec de l'auto-lien ne fait pas
+  échouer la qualification.
+
+> **Résolution territoriale user-first (fallback agent).** `assignAmoAutomatiqueForUser` et
+> `selectAmoForUser` résolvent **commune / EPCI** via
+> `getDemandeurFirstSimulation` (`rgaSimulationData ?? rgaSimulationDataAgent`), et non plus
+> `rgaSimulationData` seul — sinon un dossier créé par un Aller-vers (données uniquement
+> côté agent, ménage n'ayant pas encore simulé) échouait à l'auto-attribution.
+> L'**adresse** suit la même convention **uniquement dans l'auto-attribution**
+> (`assignAmoAutomatiqueForUser` lit `logement.adresse`) ; `selectAmoForUser` la reçoit en
+> paramètre, elle n'en dérive pas.
+
+> **Rattrapage des dossiers déjà bloqués** : `pnpm fix:lier-amo-oblig`
+> (`scripts/ops/fix/lier-amo-oblig.ts`, dry-run par défaut, `--apply`, ciblage
+> `--parcours-id`). Sans cible = inventaire de tous les dossiers `eligible` en `choix_amo`
+> sans validation dans un département à attribution automatique ; avec cible = un dossier
+> précis. Délègue au même service `assignAmoAutomatiqueForUser`.
+
 ### 2.4 Ré-ouverture d'une demande refusée (changement d'avis)
 
 Une demande refusée par l'AMO (`parcours_amo_validations.statut = logement_non_eligible`,
@@ -696,6 +730,8 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Validation AMO (auto-progression CHOIX_AMO)    | `src/features/parcours/amo/services/amo-validation.service.ts`                                 |
 | Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                |
 | Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                    |
+| Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)  |
+| Rattrapage lien AMO obligatoire (script ops)   | `scripts/ops/fix/lier-amo-oblig.ts` (`pnpm fix:lier-amo-oblig`)                                |
 | Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                           |
 | Endpoint CRON                                  | `src/app/api/cron/sync-parcours/route.ts`                                                      |
 | Workflow CRON GitHub Actions                   | `.github/workflows/cron-sync-parcours.yml`                                                     |
