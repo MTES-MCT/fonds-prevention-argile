@@ -5,7 +5,7 @@ chaque évènement métier. L'orchestration (timing des envois, choix des templa
 parcours de relance) vit dans les **Automations Brevo** (UI, sans déploiement) ; le code
 ne fait que **peupler la donnée**.
 
-> Décision d'architecture : [ADR-0021](adr/0021-synchro-contacts-brevo-cycle-de-vie.md).
+> Décision d'architecture : [ADR-0021](../adr/0021-synchro-contacts-brevo-cycle-de-vie.md).
 > Envois transactionnels (validation AMO, invitation, arrêt d'accompagnement) : voir
 > `src/shared/email/` — indépendants de ce pipeline.
 

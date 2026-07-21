@@ -12,16 +12,8 @@ function put(attrs: BrevoAttributes, key: string, value: string | number | boole
   attrs[key] = value;
 }
 
-/**
- * Construit les attributs de contact Brevo depuis l'état courant user + parcours.
- *
- * `resolvedEmail` = email réellement poussé comme identité du contact ; s'il diffère
- * du vrai email (cas staging sous-adressé), on stocke le vrai dans EMAIL_REEL (debug).
- *
- * Les attributs AMO (`A_AMO`, `AMO_STATUT`, `EST_MANDATAIRE`) et `DS_STATUT` ne sont
- * pas dérivés ici (coûteux en requêtes) : les hooks qui en ont le contexte les
- * passent en override. `A_AMO` par défaut `false` (nouveau demandeur sans AMO).
- */
+// Attributs Brevo depuis user + parcours ; `resolvedEmail` != vrai email (staging) -> EMAIL_REEL.
+// Attributs AMO / DS_STATUT passés en override par les hooks. Voir docs/emails/BREVO-LIFECYCLE.md.
 export function buildContactAttributes(
   user: User,
   parcours: ParcoursPrevention,

@@ -1,13 +1,8 @@
 import { getServerEnv, isLocal, isProduction } from "@/shared/config/env.config";
 import type { User } from "@/shared/database/schema/users";
 
-/**
- * Contrat app -> Brevo pour la synchro de contacts en flux (V0).
- *
- * Ce fichier est la source de vérité des noms d'attributs et d'évènements Brevo.
- * Les attributs DOIVENT exister côté compte Brevo (sinon ignorés silencieusement) :
- * voir docs/emails/BREVO-LIFECYCLE.md pour la liste à créer dans l'UI.
- */
+// Contrat app -> Brevo (attributs/évènements) : source de vérité, voir docs/emails/BREVO-LIFECYCLE.md.
+// Les attributs doivent exister côté compte Brevo, sinon ignorés silencieusement.
 
 // Attributs de contact (clés en MAJUSCULES, requis par l'API Brevo).
 export const BREVO_ATTRS = {
