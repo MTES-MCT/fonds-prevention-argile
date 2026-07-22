@@ -67,6 +67,8 @@ describe("getDossierPrecisionLabel", () => {
       Status.TODO,
       null,
       { statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE },
+      null,
+      null,
       null
     );
     expect(text).toBe("Logement non éligible.");
@@ -79,6 +81,8 @@ describe("getDossierPrecisionLabel", () => {
       Status.TODO,
       null,
       { statut: StatutValidationAmo.ACCOMPAGNEMENT_REFUSE },
+      null,
+      null,
       null
     );
     expect(text).toBe("Accompagnement refusé.");
@@ -91,6 +95,8 @@ describe("getDossierPrecisionLabel", () => {
       Status.EN_INSTRUCTION,
       null,
       { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      null,
+      null,
       null
     );
     expect(text).toMatch(/En instruction/);
@@ -103,21 +109,53 @@ describe("getDossierPrecisionLabel", () => {
       Status.TODO,
       null,
       { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      null,
+      null,
       null
     );
     expect(text).toMatch(/diagnostic/i);
   });
 
-  it("renvoie 'remplir' (premier dépôt) quand EN_CONSTRUCTION sans instructedAt", () => {
+  it("renvoie 'remplir' (aucun brouillon créé) pour une éligibilité TODO sans dossier", () => {
+    const text = getDossierPrecisionLabel(
+      "MENAGE",
+      Step.ELIGIBILITE,
+      Status.TODO,
+      null,
+      { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      null,
+      null,
+      null
+    );
+    expect(text).toBe("Le demandeur doit remplir le formulaire d'éligibilité.");
+  });
+
+  it("renvoie 'brouillon créé' avec la date de création quand le dossier existe sans dépôt", () => {
+    const text = getDossierPrecisionLabel(
+      "MENAGE",
+      Step.ELIGIBILITE,
+      Status.TODO,
+      null,
+      { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      new Date("2026-01-05T10:00:00Z"),
+      null,
+      null
+    );
+    expect(text).toBe("Brouillon d'éligibilité créé le 05/01/2026. Le demandeur doit le déposer.");
+  });
+
+  it("renvoie 'dossier déposé' avec la date de dépôt quand EN_CONSTRUCTION sans instructedAt", () => {
     const text = getDossierPrecisionLabel(
       "MENAGE",
       Step.ELIGIBILITE,
       Status.TODO,
       DSStatus.EN_CONSTRUCTION,
       { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      new Date("2026-01-05T10:00:00Z"),
+      new Date("2026-01-12T10:00:00Z"),
       null
     );
-    expect(text).toBe("Le demandeur doit remplir le formulaire d'éligibilité.");
+    expect(text).toBe("Dossier d'éligibilité déposé le 12/01/2026, en attente d'instruction par la DDT.");
   });
 
   it("renvoie 'corriger' pour un dossier d'éligibilité renvoyé en construction par la DDT", () => {
@@ -127,6 +165,8 @@ describe("getDossierPrecisionLabel", () => {
       Status.TODO,
       DSStatus.EN_CONSTRUCTION,
       { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      new Date("2026-01-05T10:00:00Z"),
+      new Date("2026-01-06T10:00:00Z"),
       new Date("2026-01-10T10:00:00Z")
     );
     expect(text).toBe("Le demandeur doit corriger son formulaire d'éligibilité.");
@@ -139,18 +179,29 @@ describe("getDossierPrecisionLabel", () => {
       Status.TODO,
       DSStatus.EN_CONSTRUCTION,
       { statut: StatutValidationAmo.LOGEMENT_ELIGIBLE },
+      null,
+      null,
       new Date("2026-01-10T10:00:00Z")
     );
     expect(text).toBe("Le demandeur doit corriger son diagnostic.");
   });
 
   it("renvoie 'En attente de qualification' pour AV_QUALIFICATION", () => {
-    const text = getDossierPrecisionLabel("AV_QUALIFICATION", Step.INVITATION, Status.TODO, null, null, null);
+    const text = getDossierPrecisionLabel(
+      "AV_QUALIFICATION",
+      Step.INVITATION,
+      Status.TODO,
+      null,
+      null,
+      null,
+      null,
+      null
+    );
     expect(text).toMatch(/qualification/i);
   });
 
   it("renvoie 'Dossier archivé' pour ARCHIVE", () => {
-    const text = getDossierPrecisionLabel("ARCHIVE", Step.ELIGIBILITE, Status.TODO, null, null, null);
+    const text = getDossierPrecisionLabel("ARCHIVE", Step.ELIGIBILITE, Status.TODO, null, null, null, null, null);
     expect(text).toBe("Dossier archivé.");
   });
 });

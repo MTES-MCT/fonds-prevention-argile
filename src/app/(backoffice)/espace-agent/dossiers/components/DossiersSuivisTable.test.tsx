@@ -16,6 +16,8 @@ function makeDossier(): DossierItem {
     situationParticulier: SituationParticulier.PROSPECT,
     validation: null,
     dsStatus: null,
+    dossierCreatedAt: null,
+    submittedAt: null,
     instructedAt: null,
     createdByAgentId: null,
     archivedAt: null,

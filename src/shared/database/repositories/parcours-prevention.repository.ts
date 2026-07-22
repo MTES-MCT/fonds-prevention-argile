@@ -421,6 +421,8 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         validationValideeAt: parcoursAmoValidations.valideeAt,
         // Dossier DS de l'étape courante (null si absent)
         dsStatus: dossiersDemarchesSimplifiees.dsStatus,
+        dossierCreatedAt: dossiersDemarchesSimplifiees.createdAt,
+        submittedAt: dossiersDemarchesSimplifiees.submittedAt,
         instructedAt: dossiersDemarchesSimplifiees.instructedAt,
       })
       .from(parcoursPrevention)
