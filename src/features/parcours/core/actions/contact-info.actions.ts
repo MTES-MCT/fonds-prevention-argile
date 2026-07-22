@@ -13,7 +13,13 @@ interface ContactInfo {
   sourceAcquisitionPrecision: string | null;
 }
 
-const SOURCES_AVEC_PRECISION = [SourceAcquisition.AUTRE, SourceAcquisition.AMO, SourceAcquisition.ALLER_VERS];
+const SOURCES_AVEC_PRECISION = [
+  SourceAcquisition.AUTRE,
+  SourceAcquisition.AMO,
+  SourceAcquisition.ALLER_VERS,
+  SourceAcquisition.ASSURANCE,
+  SourceAcquisition.SITE_GOUVERNEMENTAL,
+];
 
 const updateContactInfoSchema = z
   .object({

@@ -1,16 +1,17 @@
-interface SourceAutreCardProps {
+interface SourceDetailCardProps {
   demandeur: string;
   departement: string | null;
   sourcePrecision: string;
 }
 
 /**
- * Carte individuelle affichant le détail d'une source "Autre" : demandeur, département,
+ * Carte individuelle affichant le détail d'une réponse "source d'acquisition" avec
+ * précision libre (Autre, Assurance, Site gouvernemental) : demandeur, département,
  * et texte libre saisi par le demandeur.
  *
  * Layout calqué sur DemandeArchiveeCard (drawer "Demandes archivées").
  */
-export function SourceAutreCard({ demandeur, departement, sourcePrecision }: SourceAutreCardProps) {
+export function SourceDetailCard({ demandeur, departement, sourcePrecision }: SourceDetailCardProps) {
   return (
     <div
       className="fr-mb-3w fr-p-2w"

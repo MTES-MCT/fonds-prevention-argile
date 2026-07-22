@@ -191,7 +191,13 @@ export default function ContactInfoModal({
     }
   };
 
-  const showPrecisionField = selectValue === SourceAcquisition.AUTRE && !dynamicOptions.has(selectValue);
+  const SOURCES_AVEC_PRECISION_LIBRE = [
+    SourceAcquisition.AUTRE,
+    SourceAcquisition.ASSURANCE,
+    SourceAcquisition.SITE_GOUVERNEMENTAL,
+  ];
+  const showPrecisionField =
+    SOURCES_AVEC_PRECISION_LIBRE.includes(selectValue as SourceAcquisition) && !dynamicOptions.has(selectValue);
 
   return (
     <dialog ref={dialogRef} id="modal-contact-info" className="fr-modal" aria-labelledby="modal-contact-info-title">
