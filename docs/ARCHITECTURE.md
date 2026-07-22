@@ -118,14 +118,15 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 
 ## 6. Intégrations externes
 
-| Service               | Usage                                            | Adapter / config                                 |
-| --------------------- | ------------------------------------------------ | ------------------------------------------------ |
-| FranceConnect         | Identité demandeurs                              | `src/features/auth/adapters/franceconnect/`      |
-| ProConnect            | Identité agents                                  | `src/features/auth/adapters/proconnect/`         |
-| Démarches Simplifiées | Dossiers (GraphQL lecture + REST préremplissage) | `src/features/parcours/dossiers-ds/adapters/`    |
-| Brevo / Mailhog       | Emails (prod / dev)                              | `src/shared/email/`                              |
-| Matomo                | Analytics                                        | `@socialgouv/matomo-next`                        |
-| Géorisques / RGA      | Données risque                                   | `src/features/seo/`, `scripts/import/rga-zones/` |
+| Service               | Usage                                            | Adapter / config                                                  |
+| --------------------- | ------------------------------------------------ | ----------------------------------------------------------------- |
+| FranceConnect         | Identité demandeurs                              | `src/features/auth/adapters/franceconnect/`                       |
+| ProConnect            | Identité agents                                  | `src/features/auth/adapters/proconnect/`                          |
+| Démarches Simplifiées | Dossiers (GraphQL lecture + REST préremplissage) | `src/features/parcours/dossiers-ds/adapters/`                     |
+| Brevo / Mailhog       | Emails transactionnels (prod / dev)              | `src/shared/email/`                                               |
+| Brevo Contacts        | Synchro contacts + évènements (cycle de vie)     | `src/shared/email/brevo/` (voir `docs/emails/BREVO-LIFECYCLE.md`) |
+| Matomo                | Analytics                                        | `@socialgouv/matomo-next`                                         |
+| Géorisques / RGA      | Données risque                                   | `src/features/seo/`, `scripts/import/rga-zones/`                  |
 
 > Démarches Simplifiées = `demarche.numerique.gouv.fr` (nouveau nom de
 > `demarches-simplifiees.fr`, même backend). Une seule instance : les 3 URLs de

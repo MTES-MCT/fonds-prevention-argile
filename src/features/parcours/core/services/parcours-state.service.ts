@@ -16,7 +16,7 @@ import { buildDemarcheUrl } from "../../dossiers-ds/utils/ds-url.utils";
  * Crée ou récupère le parcours d'un utilisateur
  */
 export async function getOrCreateParcours(userId: string): Promise<Parcours> {
-  const parcours = await parcoursRepo.findOrCreateForUser(userId);
+  const { parcours } = await parcoursRepo.findOrCreateForUser(userId);
 
   return {
     id: parcours.id,

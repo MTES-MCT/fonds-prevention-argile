@@ -37,6 +37,7 @@ Configurez les variables selon votre environnement. Les principales variables in
 - `DEMARCHES_SIMPLIFIEES_REST_API_URL` : URL de l'API Rest de la plateforme Démarches Simplifiées
 - `DEMARCHES_SIMPLIFIEES_ID_DEMARCHE` : Identifiant de la démarche liée au Fonds prévention argile dans la plateforme Démarches Simplifiées
 - `DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE` : Nom de la démarche liée au Fonds prévention argile dans la plateforme Démarches Simplifiées
+- `BREVO_CONTACT_LIST_ID` : ID de la liste Brevo « cycle de vie » où les contacts sont poussés en flux (inscription, réponse AMO, update DN). **Distinct par environnement** (liste staging vs prod). Optionnel : absent = synchro de contacts désactivée. Voir [docs/emails/BREVO-LIFECYCLE.md](docs/emails/BREVO-LIFECYCLE.md)
 
 ### Configuration AMO par département (arrêté 2026)
 
@@ -311,6 +312,7 @@ Au boot, le log `[EMAIL] DEV REDIRECT ACTIVE (env=staging) → ...` confirme l'a
 - L'app **refuse de démarrer** si `EMAIL_DEV_INBOX` est setée en production.
 - Seul le domaine `@beta.gouv.fr` est accepté comme destination (allowlist hardcodée). Pour ajouter un domaine : modifier `ALLOWED_DEV_INBOX_DOMAINS` dans le code.
 - En local, Mailhog ([localhost:8025](http://localhost:8025)) reste actif ; `EMAIL_DEV_INBOX` n'agit que sur la branche Brevo.
+- **Contacts Brevo (Automations)** : une Automation Brevo envoie ses mails **depuis Brevo**, hors de ce redirect. En staging, la synchro de contacts pousse donc l'identité du contact comme **sous-adresse** de `EMAIL_DEV_INBOX` (`marie+u<userId>@beta.gouv.fr`) → tout mail d'Automation retombe dans la boîte de test, jamais chez un citoyen. Nécessite que la boîte accepte le sous-adressage `+`. Voir [docs/emails/BREVO-LIFECYCLE.md](docs/emails/BREVO-LIFECYCLE.md).
 
 **Pourquoi pas Mailhog sur staging ?** Pour garder Brevo (templates, deliverability, bounces, rate limits) réellement dans la boucle — sinon staging perd sa raison d'être. À reconsidérer si le quota Brevo sature.
 

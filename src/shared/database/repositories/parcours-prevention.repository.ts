@@ -230,21 +230,43 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
    * `createdByAgentId` trace l'agent créateur (utile pour les dossiers
    * pré-créés par un Aller-vers).
    */
-  async findOrCreateForUser(userId: string, opts?: { createdByAgentId?: string }): Promise<ParcoursPrevention> {
+  async findOrCreateForUser(
+    userId: string,
+    opts?: { createdByAgentId?: string }
+  ): Promise<{ parcours: ParcoursPrevention; created: boolean }> {
     const existing = await this.findByUserId(userId);
 
     if (existing) {
-      return existing;
+      return { parcours: existing, created: false };
     }
 
     const initialStep = opts?.createdByAgentId ? Step.INVITATION : Step.CHOIX_AMO;
 
-    return await this.create({
-      userId,
-      currentStep: initialStep,
-      currentStatus: Status.TODO,
-      createdByAgentId: opts?.createdByAgentId ?? null,
-    });
+    // Insert atomique (unique user_id) : sur deux connexions concurrentes, un seul obtient
+    // created=true ; le perdant du onConflictDoNothing refetch. Évite un double évènement Brevo.
+    const [inserted] = await db
+      .insert(parcoursPrevention)
+      .values({
+        userId,
+        currentStep: initialStep,
+        currentStatus: Status.TODO,
+        createdByAgentId: opts?.createdByAgentId ?? null,
+      })
+      .onConflictDoNothing({ target: parcoursPrevention.userId })
+      .returning();
+
+    if (inserted) {
+      return { parcours: inserted, created: true };
+    }
+
+    const existingAfterConflict = await this.findByUserId(userId);
+    if (!existingAfterConflict) {
+      // Cas impossible en théorie : conflit d'insertion mais aucune ligne existante
+      // (suppression concurrente / incohérence). On échoue clairement plutôt que de
+      // propager un parcours invalide.
+      throw new Error(`findOrCreateForUser: conflit d'insertion sans parcours existant (user ${userId})`);
+    }
+    return { parcours: existingAfterConflict, created: false };
   }
 
   /**

@@ -8,6 +8,7 @@ import { StatutValidationAmo } from "../domain/value-objects";
 import { ValidationAmoData } from "../domain/entities";
 import { Status, Step } from "../../core";
 import { normalizeCodeInsee } from "../utils/amo.utils";
+import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
 
 /**
  * Service de gestion des validations AMO (approve/reject/get)
@@ -44,7 +45,8 @@ export async function approveValidation(
   estMandataireFinancier?: boolean
 ): Promise<ActionResult<ApproveValidationData>> {
   try {
-    return await db.transaction(async (tx) => {
+    let parcoursIdForSync: string | null = null;
+    const result = await db.transaction<ActionResult<ApproveValidationData>>(async (tx) => {
       const now = new Date();
 
       // 1. UPDATE conditionnel : ne marque la validation comme validée que si
@@ -91,6 +93,8 @@ export async function approveValidation(
         };
       }
 
+      parcoursIdForSync = validation.parcoursId;
+
       // 2. Marquer le token comme utilisé (idempotent : un même UPDATE deux fois
       //    écrit la même valeur).
       await tx
@@ -131,6 +135,23 @@ export async function approveValidation(
         },
       };
     });
+
+    // Synchro Brevo (flux) hors transaction : réponse AMO éligible. Best-effort.
+    if (result.success && !result.data.alreadyProcessed && parcoursIdForSync) {
+      await emitBrevoEvent(parcoursIdForSync, BREVO_EVENTS.AMO_REPONSE, {
+        attributes: {
+          [BREVO_ATTRS.A_AMO]: true,
+          [BREVO_ATTRS.AMO_STATUT]: StatutValidationAmo.LOGEMENT_ELIGIBLE,
+          ...(estMandataireFinancier !== undefined ? { [BREVO_ATTRS.EST_MANDATAIRE]: estMandataireFinancier } : {}),
+        },
+        eventProperties: {
+          decision: "eligible",
+          ...(estMandataireFinancier !== undefined ? { est_mandataire: estMandataireFinancier } : {}),
+        },
+      });
+    }
+
+    return result;
   } catch (error) {
     console.error("Erreur approveValidation:", error);
     return {
@@ -157,7 +178,8 @@ export async function rejectEligibility(
   commentaire: string
 ): Promise<ActionResult<RejectValidationData>> {
   try {
-    return await db.transaction(async (tx) => {
+    let parcoursIdForSync: string | null = null;
+    const result = await db.transaction<ActionResult<RejectValidationData>>(async (tx) => {
       const now = new Date();
 
       const [validation] = await tx
@@ -202,6 +224,8 @@ export async function rejectEligibility(
         .set({ usedAt: now })
         .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
 
+      parcoursIdForSync = validation.parcoursId;
+
       // Reset du status parcours à TODO, conditionné sur step = CHOIX_AMO pour
       // ne pas perturber un parcours qui aurait été progressé par ailleurs.
       await tx
@@ -220,6 +244,19 @@ export async function rejectEligibility(
         },
       };
     });
+
+    // Synchro Brevo (flux) hors transaction : réponse AMO non éligible. Best-effort.
+    if (result.success && !result.data.alreadyProcessed && parcoursIdForSync) {
+      await emitBrevoEvent(parcoursIdForSync, BREVO_EVENTS.AMO_REPONSE, {
+        attributes: {
+          [BREVO_ATTRS.A_AMO]: true,
+          [BREVO_ATTRS.AMO_STATUT]: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
+        },
+        eventProperties: { decision: "non_eligible" },
+      });
+    }
+
+    return result;
   } catch (error) {
     console.error("Erreur rejectEligibility:", error);
     return {

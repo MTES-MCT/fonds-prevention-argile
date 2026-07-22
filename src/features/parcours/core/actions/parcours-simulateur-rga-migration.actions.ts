@@ -5,6 +5,7 @@ import type { ActionResult } from "@/shared/types";
 import type { RGASimulationData, PartialRGASimulationData } from "@/shared/domain/types";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
+import { emitBrevoEvent, BREVO_EVENTS } from "@/shared/email/brevo";
 
 /**
  * Migre les données du simulateur RGA depuis localStorage vers la base de données
@@ -63,6 +64,11 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
 
     // 5. Sauvegarder en base de données (écrase l'ancienne simulation si existante)
     await parcoursRepo.updateRGAData(parcours.id, rgaSimulationData);
+
+    // 6. Synchro Brevo (flux) : la simulation vient d'être rattachée au parcours, on
+    //    repousse le contact pour que INSEE/DEPARTEMENT remontent (absents au demandeur_cree,
+    //    qui part avant cette migration). Best-effort — n'échoue jamais la migration.
+    await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_MAJ);
 
     return {
       success: true,
