@@ -2,7 +2,7 @@ import content from "../content/content.json";
 
 export default function FaqSection() {
   return (
-    <section className="fr-container-fluid fr-py-10w">
+    <section id="faq" className="fr-container-fluid fr-py-10w section-anchor">
       <div className="fr-container">
         <div className="fr-grid-row fr-grid-row--gutters">
           {/* Zone gauche - 1/3 */}

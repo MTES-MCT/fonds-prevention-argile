@@ -3,7 +3,9 @@ import PlafondsSubventionsTable from "./PlafondsSubventionsTable";
 
 export default function MontantDesAidesSection() {
   return (
-    <section className="fr-container-fluid fr-py-10w bg-[var(--background-alt-blue-france)]">
+    <section
+      id="montant-des-aides"
+      className="fr-container-fluid fr-py-10w bg-[var(--background-alt-blue-france)] section-anchor">
       <div className="fr-container">
         <h2>{content.montant_des_aides_section.title}</h2>
         <p>

@@ -5,7 +5,7 @@ import { phaseBadgeClassName, phaseLabel } from "../../travaux-eligibles/utils/p
 
 export default function QuelsSontTravauxEligiblesSection() {
   return (
-    <section className="fr-container-fluid fr-py-10w">
+    <section id="travaux-eligibles" className="fr-container-fluid fr-py-10w section-anchor">
       <div className="fr-container">
         <h2>{content.quels_sont_travaux_eligibles_section.title}</h2>
         <p>{content.quels_sont_travaux_eligibles_section.subtitle}</p>
