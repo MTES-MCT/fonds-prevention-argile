@@ -22,6 +22,7 @@ export interface DossiersFiltersState {
   responsable: Set<string>;
   etape: Set<string>;
   enAttente: Set<string>;
+  precision: Set<string>;
 }
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -51,6 +52,7 @@ export function parseDossiersFilters(params: URLSearchParams, defaultScope: Scop
     responsable: new Set(params.getAll("resp")),
     etape: new Set(params.getAll("etape")),
     enAttente: new Set(params.getAll("attente")),
+    precision: new Set(params.getAll("precision")),
   };
 }
 
@@ -72,6 +74,7 @@ export function serializeDossiersFilters(state: DossiersFiltersState, defaultSco
   for (const v of state.responsable) params.append("resp", v);
   for (const v of state.etape) params.append("etape", v);
   for (const v of state.enAttente) params.append("attente", v);
+  for (const v of state.precision) params.append("precision", v);
 
   return params.toString();
 }

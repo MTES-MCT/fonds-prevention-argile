@@ -14,7 +14,13 @@ import {
   type DossiersTerritoireData,
 } from "@/features/backoffice/espace-agent/dossiers/actions/get-dossiers-territoire-data.action";
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types";
-import { getDossierStepLabel, getResponsableDisplayName } from "@/features/backoffice/espace-agent/dossiers/domain";
+import {
+  getDossierStepLabel,
+  getResponsableDisplayName,
+  getDossierPrecisionCategorie,
+  PRECISION_CATEGORIE_LABELS,
+  type PrecisionCategorie,
+} from "@/features/backoffice/espace-agent/dossiers/domain";
 import type { DossierEtat } from "@/features/parcours/core/domain/services/dossier-etat.service";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DossiersSuivisHeader } from "./DossiersSuivisHeader";
@@ -63,6 +69,40 @@ const EN_ATTENTE_FILTRABLES: ReadonlyArray<{ value: DossierEtat; label: string }
 ];
 
 /**
+ * Whitelist du filtre par colonne « Précisions ». Ne reprend que les catégories qui
+ * affinent réellement le bucket « Ménage » (À faire / Correction / Validé / sous-états
+ * éligibilité) : les autres catégories (av_qualification, en_attente_amo, ddt_instruction,
+ * refuse, archive...) sont déjà couvertes par le filtre « En attente de » et n'apporteraient
+ * rien de plus ici.
+ */
+const PRECISION_FILTRABLES: ReadonlyArray<{ value: PrecisionCategorie; label: string }> = [
+  { value: "eligibilite_a_remplir", label: PRECISION_CATEGORIE_LABELS.eligibilite_a_remplir },
+  { value: "eligibilite_brouillon", label: PRECISION_CATEGORIE_LABELS.eligibilite_brouillon },
+  { value: "eligibilite_depose", label: PRECISION_CATEGORIE_LABELS.eligibilite_depose },
+  { value: "correction", label: PRECISION_CATEGORIE_LABELS.correction },
+  { value: "todo", label: PRECISION_CATEGORIE_LABELS.todo },
+  { value: "valide", label: PRECISION_CATEGORIE_LABELS.valide },
+];
+
+/**
+ * Catégorie de précision d'un dossier (cf. `getDossierPrecisionCategorie`), utilisée
+ * pour le filtre par colonne « Précisions » (le texte affiché contient des dates,
+ * il n'est donc pas filtrable directement — voir `PrecisionCategorie`).
+ */
+function precisionCategorieOf(d: DossierItem): PrecisionCategorie {
+  return getDossierPrecisionCategorie(
+    d.etat,
+    d.currentStep,
+    d.currentStatus,
+    d.dsStatus,
+    d.validation,
+    d.dossierCreatedAt,
+    d.submittedAt,
+    d.instructedAt
+  );
+}
+
+/**
  * Panel unifié des dossiers — tags Mes/Tous, filtre EPCI et recherche.
  */
 export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", prenom }: DossiersPanelProps) {
@@ -102,6 +142,7 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
   const responsableFilter = filters.responsable;
   const etapeFilter = filters.etape;
   const enAttenteFilter = filters.enAttente;
+  const precisionFilter = filters.precision;
 
   // Recherche : état local pour une saisie fluide et un filtrage instantané,
   // poussé vers l'URL en différé (debounce) et re-semé quand l'URL change depuis
@@ -166,9 +207,12 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
         etapeFilter.size > 0
           ? byResponsable.filter((d) => etapeFilter.has(getDossierStepLabel(d.currentStep, d.validation)))
           : byResponsable;
-      return enAttenteFilter.size > 0 ? byEtape.filter((d) => enAttenteFilter.has(d.etat)) : byEtape;
+      const byEnAttente = enAttenteFilter.size > 0 ? byEtape.filter((d) => enAttenteFilter.has(d.etat)) : byEtape;
+      return precisionFilter.size > 0
+        ? byEnAttente.filter((d) => precisionFilter.has(precisionCategorieOf(d)))
+        : byEnAttente;
     },
-    [epciFilter, search, responsableFilter, etapeFilter, enAttenteFilter]
+    [epciFilter, search, responsableFilter, etapeFilter, enAttenteFilter, precisionFilter]
   );
 
   // Compteurs contextuels affichés dans les deux tags. Les deux suivent les
@@ -201,11 +245,13 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
     const responsables = new Set<string>();
     const etapes = new Set<string>();
     const etatsPresents = new Set<DossierEtat>();
+    const precisionsPresentes = new Set<PrecisionCategorie>();
     for (const d of visible) {
       const r = getResponsableDisplayName(d.responsable);
       if (r !== "—") responsables.add(r);
       etapes.add(getDossierStepLabel(d.currentStep, d.validation));
       etatsPresents.add(d.etat);
+      precisionsPresentes.add(precisionCategorieOf(d));
     }
     const toOptions = (values: Set<string>) =>
       Array.from(values)
@@ -219,6 +265,10 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
       responsables: toOptions(responsables),
       etapes: toEtapeOptions(etapes),
       enAttente: EN_ATTENTE_FILTRABLES.filter((opt) => etatsPresents.has(opt.value)).map(({ value, label }) => ({
+        value,
+        label,
+      })),
+      precision: PRECISION_FILTRABLES.filter((opt) => precisionsPresentes.has(opt.value)).map(({ value, label }) => ({
         value,
         label,
       })),
@@ -275,7 +325,8 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
     epciFilter !== "" ||
     responsableFilter.size > 0 ||
     etapeFilter.size > 0 ||
-    enAttenteFilter.size > 0;
+    enAttenteFilter.size > 0 ||
+    precisionFilter.size > 0;
   const resultsLabel =
     activeScope === "mine"
       ? `${visible.length} résultat${visible.length > 1 ? "s" : ""} dans vos dossiers`
@@ -437,12 +488,15 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
                 responsableOptions={filterOptions.responsables}
                 etapeOptions={filterOptions.etapes}
                 enAttenteOptions={filterOptions.enAttente}
+                precisionOptions={filterOptions.precision}
                 responsableFilter={responsableFilter}
                 etapeFilter={etapeFilter}
                 enAttenteFilter={enAttenteFilter}
+                precisionFilter={precisionFilter}
                 onResponsableFilterChange={(next) => setFilters({ responsable: next, page: 1 })}
                 onEtapeFilterChange={(next) => setFilters({ etape: next, page: 1 })}
                 onEnAttenteFilterChange={(next) => setFilters({ enAttente: next, page: 1 })}
+                onPrecisionFilterChange={(next) => setFilters({ precision: next, page: 1 })}
               />
               <Pagination
                 currentPage={currentPage}

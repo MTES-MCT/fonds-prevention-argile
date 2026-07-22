@@ -148,6 +148,86 @@ export function getDossierPrecisionLabel(
 }
 
 /**
+ * Catégorie de précision, pour le filtre par colonne « Précisions ». Un tag par
+ * branche de `getDossierPrecisionLabel` (mêmes conditions, ordre identique) : la
+ * phrase affichée varie (dates, étape) mais la catégorie reste stable, ce qui la
+ * rend filtrable contrairement au texte libre.
+ */
+export type PrecisionCategorie =
+  | "logement_non_eligible"
+  | "accompagnement_refuse"
+  | "av_qualification"
+  | "en_attente_amo"
+  | "ddt_instruction"
+  | "refuse_ddt"
+  | "valide"
+  | "correction"
+  | "eligibilite_a_remplir"
+  | "eligibilite_brouillon"
+  | "eligibilite_depose"
+  | "todo"
+  | "refuse"
+  | "archive";
+
+export const PRECISION_CATEGORIE_LABELS: Record<PrecisionCategorie, string> = {
+  logement_non_eligible: "Logement non éligible",
+  accompagnement_refuse: "Accompagnement refusé",
+  av_qualification: "Qualification Aller-Vers",
+  en_attente_amo: "Réponse AMO en attente",
+  ddt_instruction: "En instruction DDT",
+  refuse_ddt: "Refusé par la DDT",
+  valide: "Étape validée",
+  correction: "Correction demandée",
+  eligibilite_a_remplir: "Éligibilité à remplir",
+  eligibilite_brouillon: "Brouillon éligibilité créé",
+  eligibilite_depose: "Éligibilité déposée",
+  todo: "À faire",
+  refuse: "Dossier refusé",
+  archive: "Dossier archivé",
+};
+
+export function getDossierPrecisionCategorie(
+  etat: DossierEtat,
+  currentStep: Step,
+  currentStatus: Status,
+  dsStatus: DSStatus | null,
+  validation: { statut: StatutValidationAmo } | null,
+  dossierCreatedAt: Date | null,
+  submittedAt: Date | null,
+  instructedAt: Date | null
+): PrecisionCategorie {
+  if (validation?.statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
+    return "logement_non_eligible";
+  }
+  if (validation?.statut === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE) {
+    return "accompagnement_refuse";
+  }
+
+  switch (etat) {
+    case "AV_QUALIFICATION":
+      return "av_qualification";
+    case "EN_ATTENTE_AMO":
+      return "en_attente_amo";
+    case "DDT":
+      return "ddt_instruction";
+    case "MENAGE":
+      if (dsStatus === DSStatus.REFUSE) return "refuse_ddt";
+      if (currentStatus === Status.VALIDE) return "valide";
+      if (dsStatus === DSStatus.EN_CONSTRUCTION && instructedAt != null) return "correction";
+      if (currentStep === Step.ELIGIBILITE) {
+        if (!dossierCreatedAt) return "eligibilite_a_remplir";
+        if (!submittedAt) return "eligibilite_brouillon";
+        return "eligibilite_depose";
+      }
+      return "todo";
+    case "REFUSE":
+      return "refuse";
+    case "ARCHIVE":
+      return "archive";
+  }
+}
+
+/**
  * Précision fine de l'étape éligibilité dans le bucket « todo » (pas encore instruit) :
  * distingue pas de brouillon / brouillon créé / dossier déposé, avec la date de la
  * dernière action correspondante (cf. ADR-0009 pour la sémantique créé vs déposé).
