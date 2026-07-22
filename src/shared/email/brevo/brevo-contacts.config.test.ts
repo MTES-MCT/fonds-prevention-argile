@@ -7,6 +7,7 @@ vi.mock("@/shared/config/env.config", () => ({
   isLocal: vi.fn(),
   isProduction: vi.fn(),
   getServerEnv: vi.fn(),
+  assertEmailDevInboxSafety: vi.fn(),
 }));
 
 const mockedIsLocal = vi.mocked(isLocal);
@@ -33,7 +34,11 @@ describe("brevo-contacts.config", () => {
   });
 
   afterEach(() => {
-    process.env = { ...ORIGINAL_ENV };
+    // Restaure par mutation (ne pas réassigner process.env : comportement spécial Node).
+    for (const key of ["BREVO_API_KEY", "EMAIL_DEV_INBOX"] as const) {
+      if (key in ORIGINAL_ENV) process.env[key] = ORIGINAL_ENV[key];
+      else delete process.env[key];
+    }
   });
 
   describe("resolveBrevoContactEmail", () => {

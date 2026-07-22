@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { approveValidation, rejectEligibility, getValidationByToken } from "./amo-validation.service";
 import { db } from "@/shared/database/client";
 import { getAmoById } from "./amo-query.service";
-import type { StatutValidationAmo } from "../domain/value-objects";
+import { StatutValidationAmo } from "../domain/value-objects";
+import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
 
 // Mock des dépendances
 vi.mock("@/shared/database/client", () => ({
@@ -22,6 +23,13 @@ vi.mock("./amo-query.service", () => ({
 vi.mock("@/shared/email/actions/send-email.actions", () => ({
   sendValidationAmoEmail: vi.fn(),
 }));
+
+vi.mock("@/shared/email/brevo", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/email/brevo")>()),
+  emitBrevoEvent: vi.fn(),
+}));
+
+const mockedEmit = vi.mocked(emitBrevoEvent);
 
 // Mock de crypto.randomUUID
 vi.stubGlobal("crypto", {
@@ -110,6 +118,13 @@ describe("amo-validation.service", () => {
       }
       expect(db.transaction).toHaveBeenCalledTimes(1);
       expect(db.update).toHaveBeenCalledTimes(3);
+      expect(mockedEmit).toHaveBeenCalledWith(parcoursId, BREVO_EVENTS.AMO_REPONSE, {
+        attributes: {
+          [BREVO_ATTRS.A_AMO]: true,
+          [BREVO_ATTRS.AMO_STATUT]: StatutValidationAmo.LOGEMENT_ELIGIBLE,
+        },
+        eventProperties: { decision: "eligible" },
+      });
     });
 
     it("persiste estMandataireFinancier et le commentaire (note) dans la validation", async () => {
@@ -132,6 +147,14 @@ describe("amo-validation.service", () => {
           commentaire: "Eu au téléphone, projet motivé",
         })
       );
+      expect(mockedEmit).toHaveBeenCalledWith(parcoursId, BREVO_EVENTS.AMO_REPONSE, {
+        attributes: {
+          [BREVO_ATTRS.A_AMO]: true,
+          [BREVO_ATTRS.AMO_STATUT]: StatutValidationAmo.LOGEMENT_ELIGIBLE,
+          [BREVO_ATTRS.EST_MANDATAIRE]: true,
+        },
+        eventProperties: { decision: "eligible", est_mandataire: true },
+      });
     });
 
     it("met estMandataireFinancier à null quand l'AMO ne répond pas", async () => {
@@ -167,6 +190,8 @@ describe("amo-validation.service", () => {
       }
       // Pas d'UPDATE supplémentaire (ni token ni parcours)
       expect(db.update).toHaveBeenCalledTimes(1);
+      // alreadyProcessed → pas d'évènement Brevo
+      expect(mockedEmit).not.toHaveBeenCalled();
     });
 
     it("retourne 'Validation non trouvée' si l'ID n'existe pas", async () => {
@@ -218,6 +243,13 @@ describe("amo-validation.service", () => {
         expect(result.data.alreadyProcessed).toBe(false);
       }
       expect(db.update).toHaveBeenCalledTimes(3);
+      expect(mockedEmit).toHaveBeenCalledWith(parcoursId, BREVO_EVENTS.AMO_REPONSE, {
+        attributes: {
+          [BREVO_ATTRS.A_AMO]: true,
+          [BREVO_ATTRS.AMO_STATUT]: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
+        },
+        eventProperties: { decision: "non_eligible" },
+      });
     });
 
     it("est idempotent : un second appel retourne alreadyProcessed:true", async () => {
