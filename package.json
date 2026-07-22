@@ -52,6 +52,7 @@
     "fix:eligibilite-sync-error": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts",
     "fix:clean-faux-depots": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/clean-faux-depots-submitted-at.ts",
     "fix:relink-eligibilite": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/relink-eligibilite-dossier.ts",
+    "fix:reclasser-source-autre": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reclasser-source-autre.ts",
     "rga:import": "tsx scripts/import/rga-zones/import-rga-zones.ts"
   },
   "dependencies": {

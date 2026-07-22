@@ -20,12 +20,16 @@ interface ContactInfoModalProps {
 }
 
 const SOURCE_OPTIONS: SourceAcquisition[] = [
-  SourceAcquisition.FLYERS,
   SourceAcquisition.MEDIAS,
   SourceAcquisition.BULLETIN_COMMUNAL,
+  SourceAcquisition.ASSURANCE,
+  SourceAcquisition.MOTEUR_RECHERCHE, 
+  SourceAcquisition.SITE_GOUVERNEMENTAL,
+  SourceAcquisition.PROCHE, 
   SourceAcquisition.PROS_BATIMENT_IMMOBILIER,
+  SourceAcquisition.RESEAUX_SOCIAUX,
+  SourceAcquisition.FLYERS,
   SourceAcquisition.REUNION_PUBLIQUE_SALON,
-  SourceAcquisition.MOTEUR_RECHERCHE,
   SourceAcquisition.AUTRE,
 ];
 
