@@ -105,7 +105,18 @@ opt-out et lien de désinscription requis avant toute Automation d'envoi en prod
 
 ---
 
-## 7. Fichiers clés
+## 7. Observabilité (logs serveur)
+
+- **Erreurs** : toujours loggées (`console.error`, ex. `[BREVO_CONTACTS] upsertContact échec: …`) —
+  visibles dans les logs Scalingo sans rien activer.
+- **Trace détaillée** (diagnostic staging) : `DEBUG_BREVO_CONTACTS=true` active un journal
+  complet du flux — début d'émission, raison de no-op (synchro désactivée, email non
+  résoluble), email (masqué en production), **clés** d'attributs (jamais les valeurs, anti-PII),
+  et résultat `{ upserted, tracked }`. À désactiver hors debug (verbeux).
+
+---
+
+## 8. Fichiers clés
 
 | Rôle                                              | Fichier                                            |
 | ------------------------------------------------- | -------------------------------------------------- |
