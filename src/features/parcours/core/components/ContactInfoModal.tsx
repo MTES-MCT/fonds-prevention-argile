@@ -20,12 +20,16 @@ interface ContactInfoModalProps {
 }
 
 const SOURCE_OPTIONS: SourceAcquisition[] = [
-  SourceAcquisition.FLYERS,
   SourceAcquisition.MEDIAS,
   SourceAcquisition.BULLETIN_COMMUNAL,
-  SourceAcquisition.PROS_BATIMENT_IMMOBILIER,
-  SourceAcquisition.REUNION_PUBLIQUE_SALON,
+  SourceAcquisition.ASSURANCE,
   SourceAcquisition.MOTEUR_RECHERCHE,
+  SourceAcquisition.SITE_GOUVERNEMENTAL,
+  SourceAcquisition.PROCHE,
+  SourceAcquisition.PROS_BATIMENT_IMMOBILIER,
+  SourceAcquisition.RESEAUX_SOCIAUX,
+  SourceAcquisition.FLYERS,
+  SourceAcquisition.REUNION_PUBLIQUE_SALON,
   SourceAcquisition.AUTRE,
 ];
 
@@ -187,7 +191,13 @@ export default function ContactInfoModal({
     }
   };
 
-  const showPrecisionField = selectValue === SourceAcquisition.AUTRE && !dynamicOptions.has(selectValue);
+  const SOURCES_AVEC_PRECISION_LIBRE = [
+    SourceAcquisition.AUTRE,
+    SourceAcquisition.ASSURANCE,
+    SourceAcquisition.SITE_GOUVERNEMENTAL,
+  ];
+  const showPrecisionField =
+    SOURCES_AVEC_PRECISION_LIBRE.includes(selectValue as SourceAcquisition) && !dynamicOptions.has(selectValue);
 
   return (
     <dialog ref={dialogRef} id="modal-contact-info" className="fr-modal" aria-labelledby="modal-contact-info-title">
@@ -217,11 +227,13 @@ export default function ContactInfoModal({
                 </h2>
 
                 <p>
-                  Un conseiller local mandaté par l&apos;État devrait vous contacter dans les prochains jours pour préciser votre demande.
-                  Le numéro peut être masqué, n'hésitez pas à répondre pour faire avancer votre dossier plus rapidement. 
+                  Un conseiller local mandaté par l&apos;État devrait vous contacter dans les prochains jours pour
+                  préciser votre demande. Le numéro peut être masqué, n'hésitez pas à répondre pour faire avancer votre
+                  dossier plus rapidement.
                 </p>
-                <p> 
-                Ces informations sont confidentielles et uniquement utilisées pour traiter votre demande et vous accompagner. 
+                <p>
+                  Ces informations sont confidentielles et uniquement utilisées pour traiter votre demande et vous
+                  accompagner.
                 </p>
 
                 <div className="fr-form-group">

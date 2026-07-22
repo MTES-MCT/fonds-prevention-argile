@@ -7,7 +7,7 @@ import { extractDepartement, filterUsersByDepartement } from "../filters/departe
 import { getDepartementName, toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
 import { formatNomComplet } from "@/shared/utils";
 import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
-import { SourcesAutreDrawer, type SourceAutreEntry } from "./SourcesAutreDrawer";
+import { SourceDetailDrawer, type SourceDetailEntry } from "./SourceDetailDrawer";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
@@ -19,12 +19,23 @@ const SOURCE_LABELS_STATS: Record<SourceAcquisition, string> = {
   [SourceAcquisition.ECFR]: "Un acteur local (ECFR)",
   [SourceAcquisition.FLYERS]: "Flyers",
   [SourceAcquisition.MEDIAS]: "Médias",
-  [SourceAcquisition.BULLETIN_COMMUNAL]: "Bulletin de votre commune",
+  [SourceAcquisition.ASSURANCE]: "Assurance",
+  [SourceAcquisition.PROCHE]: "Un proche",
+  [SourceAcquisition.SITE_GOUVERNEMENTAL]: "Site gouvernemental",
+  [SourceAcquisition.RESEAUX_SOCIAUX]: "Réseaux sociaux",
+  [SourceAcquisition.BULLETIN_COMMUNAL]: "Mairie",
   [SourceAcquisition.PROS_BATIMENT_IMMOBILIER]: "Professionnels du bâtiment / immobilier",
   [SourceAcquisition.REUNION_PUBLIQUE_SALON]: "Réunion publique / salon",
   [SourceAcquisition.MOTEUR_RECHERCHE]: "Moteur de recherche",
   [SourceAcquisition.AUTRE]: "Autre",
 };
+
+/** Sources à précision libre : un bouton "Voir le détail" + drawer sont proposés pour chacune. */
+const SOURCES_AVEC_DETAIL = [
+  SourceAcquisition.AUTRE,
+  SourceAcquisition.ASSURANCE,
+  SourceAcquisition.SITE_GOUVERNEMENTAL,
+];
 
 interface SourcesAcquisitionTableProps {
   filteredUsers: UserWithParcoursDetails[];
@@ -46,30 +57,39 @@ export function SourcesAcquisitionTable({
 }: SourcesAcquisitionTableProps) {
   const tooltipId = useId();
   const rawId = useId();
-  const drawerId = `drawer-sources-autre-${rawId.replace(/:/g, "-")}`;
+  const drawerIdBase = `drawer-sources-${rawId.replace(/:/g, "-")}`;
 
-  function openDrawer() {
-    const dialog = document.getElementById(drawerId);
+  function drawerIdFor(source: SourceAcquisition) {
+    return `${drawerIdBase}-${source}`;
+  }
+
+  function openDrawer(source: SourceAcquisition) {
+    const dialog = document.getElementById(drawerIdFor(source));
     if (dialog) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).dsfr?.(dialog)?.modal?.disclose();
     }
   }
 
-  const autresEntries = useMemo((): SourceAutreEntry[] => {
-    return filteredUsers
-      .filter((u) => u.user.sourceAcquisition === SourceAcquisition.AUTRE)
-      .map((u) => {
-        const departementCode = extractDepartement(u);
-        return {
-          id: u.user.id,
-          demandeur: formatNomComplet(u.user.firstName, u.user.name),
-          departement: departementCode
-            ? `${toOfficialCodeDepartement(departementCode)} - ${getDepartementName(departementCode)}`
-            : null,
-          sourcePrecision: u.user.sourceAcquisitionPrecision?.trim() || "Non précisé",
-        };
-      });
+  const entriesBySource = useMemo(() => {
+    const map = new Map<SourceAcquisition, SourceDetailEntry[]>();
+    for (const source of SOURCES_AVEC_DETAIL) {
+      const entries = filteredUsers
+        .filter((u) => u.user.sourceAcquisition === source)
+        .map((u) => {
+          const departementCode = extractDepartement(u);
+          return {
+            id: u.user.id,
+            demandeur: formatNomComplet(u.user.firstName, u.user.name),
+            departement: departementCode
+              ? `${toOfficialCodeDepartement(departementCode)} - ${getDepartementName(departementCode)}`
+              : null,
+            sourcePrecision: u.user.sourceAcquisitionPrecision?.trim() || "Non précisé",
+          };
+        });
+      map.set(source, entries);
+    }
+    return map;
   }, [filteredUsers]);
 
   const rows = useMemo(() => {
@@ -161,10 +181,13 @@ export function SourcesAcquisitionTable({
                           title={row.label}
                           style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 0 }}>
                           {row.label}
-                          {row.source === SourceAcquisition.AUTRE && (
+                          {SOURCES_AVEC_DETAIL.includes(row.source) && (
                             <>
                               {" "}
-                              <button type="button" className="fr-link fr-text--sm" onClick={openDrawer}>
+                              <button
+                                type="button"
+                                className="fr-link fr-text--sm"
+                                onClick={() => openDrawer(row.source)}>
                                 Voir le détail
                               </button>
                             </>
@@ -186,8 +209,19 @@ export function SourcesAcquisitionTable({
         </div>
       </div>
 
-      {/* Drawer du détail de la source "Autre" */}
-      {autresEntries.length > 0 && <SourcesAutreDrawer drawerId={drawerId} entries={autresEntries} />}
+      {/* Drawers du détail des sources à précision libre */}
+      {SOURCES_AVEC_DETAIL.map((source) => {
+        const entries = entriesBySource.get(source) ?? [];
+        if (entries.length === 0) return null;
+        return (
+          <SourceDetailDrawer
+            key={source}
+            drawerId={drawerIdFor(source)}
+            sourceLabel={SOURCE_LABELS_STATS[source]}
+            entries={entries}
+          />
+        );
+      })}
     </div>
   );
 }
