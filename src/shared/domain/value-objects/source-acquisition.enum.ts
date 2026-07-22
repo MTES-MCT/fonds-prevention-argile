@@ -2,6 +2,8 @@ export enum SourceAcquisition {
   DDT = "ddt",
   AMO = "amo",
   ALLER_VERS = "aller_vers",
+  // Valeur historique, plus proposée dans le modal mais conservée pour mapper les anciennes lignes.
+  ECFR = "ecfr",
   FLYERS = "flyers",
   MEDIAS = "medias",
   ASSURANCE = "assurance",
@@ -19,6 +21,7 @@ export const SOURCE_ACQUISITION_LABELS: Record<SourceAcquisition, string> = {
   [SourceAcquisition.DDT]: "DDT (Direction Départementale des Territoires)",
   [SourceAcquisition.AMO]: "AMO (Assistant à Maîtrise d'Ouvrage)",
   [SourceAcquisition.ALLER_VERS]: "Conseiller local",
+  [SourceAcquisition.ECFR]: "Un acteur local (ECFR)",
   [SourceAcquisition.FLYERS]: "Flyers",
   [SourceAcquisition.MEDIAS]: "Médias",
   [SourceAcquisition.BULLETIN_COMMUNAL]: "Mairie",

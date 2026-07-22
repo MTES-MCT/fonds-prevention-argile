@@ -16,6 +16,7 @@ const SOURCE_LABELS_STATS: Record<SourceAcquisition, string> = {
   [SourceAcquisition.DDT]: "DDT (Direction Départementale des Territoires)",
   [SourceAcquisition.AMO]: "AMO (Assistant à Maîtrise d'Ouvrage)",
   [SourceAcquisition.ALLER_VERS]: "Aller-vers",
+  [SourceAcquisition.ECFR]: "Un acteur local (ECFR)",
   [SourceAcquisition.FLYERS]: "Flyers",
   [SourceAcquisition.MEDIAS]: "Médias",
   [SourceAcquisition.ASSURANCE]: "Assurance",

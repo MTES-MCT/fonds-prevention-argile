@@ -62,6 +62,7 @@ export const sourceAcquisitionPgEnum = pgEnum("source_acquisition", [
   SourceAcquisition.DDT,
   SourceAcquisition.AMO,
   SourceAcquisition.ALLER_VERS,
+  SourceAcquisition.ECFR,
   SourceAcquisition.FLYERS,
   SourceAcquisition.ASSURANCE,
   SourceAcquisition.SITE_GOUVERNEMENTAL,
