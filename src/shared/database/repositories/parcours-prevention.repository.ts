@@ -421,6 +421,8 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         validationValideeAt: parcoursAmoValidations.valideeAt,
         // Dossier DS de l'étape courante (null si absent)
         dsStatus: dossiersDemarchesSimplifiees.dsStatus,
+        dossierCreatedAt: dossiersDemarchesSimplifiees.createdAt,
+        submittedAt: dossiersDemarchesSimplifiees.submittedAt,
         instructedAt: dossiersDemarchesSimplifiees.instructedAt,
       })
       .from(parcoursPrevention)
@@ -434,7 +436,9 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         )
       )
       .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(parcoursPrevention.updatedAt));
+      // Tri secondaire sur le dossier DS : sans unicité (parcours_id, step), le dédup ci-dessous
+      // doit garder la ligne DS la plus récente (dates / dsStatus cohérents), pas une au hasard.
+      .orderBy(desc(parcoursPrevention.updatedAt), desc(dossiersDemarchesSimplifiees.updatedAt));
 
     const territoire = results.filter((r) => matchesTerritoire(getDemandeurFirstSimulation(r), departements, epcis));
 

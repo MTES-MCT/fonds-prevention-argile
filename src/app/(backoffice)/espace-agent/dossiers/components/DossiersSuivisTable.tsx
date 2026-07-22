@@ -34,12 +34,15 @@ interface DossiersSuivisTableProps {
   responsableOptions?: FilterOption[];
   etapeOptions?: FilterOption[];
   enAttenteOptions?: FilterOption[];
+  precisionOptions?: FilterOption[];
   responsableFilter?: Set<string>;
   etapeFilter?: Set<string>;
   enAttenteFilter?: Set<string>;
+  precisionFilter?: Set<string>;
   onResponsableFilterChange?: (next: Set<string>) => void;
   onEtapeFilterChange?: (next: Set<string>) => void;
   onEnAttenteFilterChange?: (next: Set<string>) => void;
+  onPrecisionFilterChange?: (next: Set<string>) => void;
 }
 
 /**
@@ -53,12 +56,15 @@ export function DossiersSuivisTable({
   responsableOptions = [],
   etapeOptions = [],
   enAttenteOptions = [],
+  precisionOptions = [],
   responsableFilter,
   etapeFilter,
   enAttenteFilter,
+  precisionFilter,
   onResponsableFilterChange,
   onEtapeFilterChange,
   onEnAttenteFilterChange,
+  onPrecisionFilterChange,
 }: DossiersSuivisTableProps) {
   const router = useRouter();
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -140,7 +146,17 @@ export function DossiersSuivisTable({
                       </span>
                     </th>
                     <th scope="col" style={{ minWidth: "320px" }}>
-                      Précisions
+                      <span className="flex items-center justify-between gap-2">
+                        Précisions
+                        {onPrecisionFilterChange && precisionFilter && (
+                          <ColumnFilterButton
+                            ariaLabel="Filtrer par précision"
+                            options={precisionOptions}
+                            selected={precisionFilter}
+                            onChange={onPrecisionFilterChange}
+                          />
+                        )}
+                      </span>
                     </th>
                     <th scope="col" style={{ minWidth: "240px" }}>
                       Dernière action
@@ -173,6 +189,8 @@ export function DossiersSuivisTable({
                         dossier.currentStatus,
                         dossier.dsStatus,
                         dossier.validation,
+                        dossier.dossierCreatedAt,
+                        dossier.submittedAt,
                         dossier.instructedAt
                       );
                       const responsableLabel = getResponsableDisplayName(dossier.responsable);

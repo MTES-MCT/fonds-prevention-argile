@@ -142,6 +142,8 @@ function toDossierItemSansResponsable(row: Row): DossierItemSansResponsable {
         }
       : null,
     dsStatus: row.dsStatus ?? null,
+    dossierCreatedAt: row.dossierCreatedAt ?? null,
+    submittedAt: row.submittedAt ?? null,
     instructedAt: row.instructedAt ?? null,
     createdByAgentId: row.createdByAgentId,
     archivedAt: row.archivedAt,

@@ -11,6 +11,7 @@ const baseState: DossiersFiltersState = {
   responsable: new Set(),
   etape: new Set(),
   enAttente: new Set(),
+  precision: new Set(),
 };
 
 describe("parseDossiersFilters", () => {
@@ -21,7 +22,7 @@ describe("parseDossiersFilters", () => {
 
   it("lit toutes les valeurs présentes", () => {
     const params = new URLSearchParams(
-      "scope=all&q=dupont&epci=200054807&sort=asc&page=3&size=50&resp=AMO+A&resp=AMO+B&etape=Devis&attente=DDT"
+      "scope=all&q=dupont&epci=200054807&sort=asc&page=3&size=50&resp=AMO+A&resp=AMO+B&etape=Devis&attente=DDT&precision=todo"
     );
     const result = parseDossiersFilters(params, "mine");
     expect(result).toEqual({
@@ -34,6 +35,7 @@ describe("parseDossiersFilters", () => {
       responsable: new Set(["AMO A", "AMO B"]),
       etape: new Set(["Devis"]),
       enAttente: new Set(["DDT"]),
+      precision: new Set(["todo"]),
     });
   });
 
@@ -60,12 +62,18 @@ describe("serializeDossiersFilters", () => {
 
   it("sérialise les Set en clés répétées", () => {
     const qs = serializeDossiersFilters(
-      { ...baseState, responsable: new Set(["AMO A", "AMO B"]), enAttente: new Set(["DDT"]) },
+      {
+        ...baseState,
+        responsable: new Set(["AMO A", "AMO B"]),
+        enAttente: new Set(["DDT"]),
+        precision: new Set(["todo", "correction"]),
+      },
       "all"
     );
     const params = new URLSearchParams(qs);
     expect(params.getAll("resp")).toEqual(["AMO A", "AMO B"]);
     expect(params.getAll("attente")).toEqual(["DDT"]);
+    expect(params.getAll("precision")).toEqual(["todo", "correction"]);
   });
 
   it("est l'inverse de parse (round-trip)", () => {
@@ -79,6 +87,7 @@ describe("serializeDossiersFilters", () => {
       responsable: new Set(["AMO A", "AMO B"]),
       etape: new Set(["Éligibilité"]),
       enAttente: new Set(["AMO", "DDT"]),
+      precision: new Set(["eligibilite_depose"]),
     };
     const qs = serializeDossiersFilters(state, "mine");
     expect(parseDossiersFilters(new URLSearchParams(qs), "mine")).toEqual(state);
