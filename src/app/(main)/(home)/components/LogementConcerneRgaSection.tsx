@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function LogementConcerneRgaSection() {
   return (
-    <section className="fr-container-fluid fr-py-10w">
+    <section id="logement-concerne" className="fr-container-fluid fr-py-10w section-anchor">
       <div className="fr-container">
         <div className="fr-grid-row items-center gap-6 md:gap-0">
           {/* Zone texte */}

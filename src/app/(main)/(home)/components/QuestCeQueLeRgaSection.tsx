@@ -6,7 +6,7 @@ import { Feature } from "@/shared/components";
 
 export default function QuestCeQueLeRgaSection() {
   return (
-    <section className="fr-container-fluid fr-py-10w">
+    <section id="quest-ce-que-le-rga" className="fr-container-fluid fr-py-10w section-anchor">
       <div className="fr-container">
         {/* Zone Hero Qu'est-ce que le RGA */}
         <div className="fr-grid-row items-center gap-6 md:gap-0">

@@ -85,6 +85,24 @@ td.dossiers-table__sticky-col {
   background-color: var(--background-default-grey) !important;
 }
 
+/* ===================================
+   Ancres de section (liens directs vers une section de page, ex: /#faq)
+   Décale le point d'arrivée du scroll pour ne pas passer sous le header sticky.
+   Le header DSFR change de hauteur selon l'écran (mobile : logo + bouton menu sur
+   une ligne ; desktop : logo + titre de service + tagline, souvent sur 2 lignes) —
+   deux paliers, alignés sur le breakpoint `md` déjà utilisé dans le projet (fr-col-md-*).
+   Valeurs à ajuster après vérification visuelle sur la hauteur réelle du header.
+   =================================== */
+.section-anchor {
+  scroll-margin-top: 80px;
+}
+
+@media (min-width: 48em) {
+  .section-anchor {
+    scroll-margin-top: 110px;
+  }
+}
+
 .pc-connect:before {
   width: 3.375em !important;
   background-size: 3.375em 3em !important;

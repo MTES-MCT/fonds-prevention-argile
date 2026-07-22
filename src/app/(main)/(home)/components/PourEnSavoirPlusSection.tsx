@@ -4,7 +4,9 @@ import Link from "next/link";
 
 export default function PourEnSavoirPlusSection() {
   return (
-    <section className="fr-container-fluid fr-py-10w bg-[var(--background-alt-grey)]">
+    <section
+      id="pour-en-savoir-plus"
+      className="fr-container-fluid fr-py-10w bg-[var(--background-alt-grey)] section-anchor">
       <PourEnSavoirPlusSectionContent />
     </section>
   );

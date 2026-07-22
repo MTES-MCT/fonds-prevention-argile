@@ -38,7 +38,7 @@ function CritereCard({ title, subtitle, items }: { title: string; subtitle: stri
 export default function CommentBeneficierAideEtatSection() {
   const c = content.comment_beneficier_aide_etat_section;
   return (
-    <section className="fr-container-fluid fr-py-10w">
+    <section id="comment-beneficier-aide-etat" className="fr-container-fluid fr-py-10w section-anchor">
       <div className="fr-container">
         <h2>{c.title}</h2>
         <p>{c.intro_text}</p>

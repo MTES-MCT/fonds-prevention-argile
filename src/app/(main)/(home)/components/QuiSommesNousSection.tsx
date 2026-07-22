@@ -3,7 +3,9 @@ import Image from "next/image";
 
 export default function QuiSommesNousSection() {
   return (
-    <section className="fr-container-fluid fr-py-10w bg-[var(--background-alt-blue-france)]">
+    <section
+      id="qui-sommes-nous"
+      className="fr-container-fluid fr-py-10w bg-[var(--background-alt-blue-france)] section-anchor">
       <div className="fr-container">
         <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--center">
           {/* Zone gauche - Qui sommes nous */}
