@@ -50,20 +50,20 @@ Point d'entrée unique : `emitBrevoEvent(parcoursId, eventName, { attributes?, e
 Les `contact_properties` sont **ignorées si l'attribut n'existe pas** côté compte Brevo.
 Source de vérité des noms : `src/shared/email/brevo/brevo-contacts.config.ts` (`BREVO_ATTRS`).
 
-| Attribut               | Type    | Alimenté par                                                                 |
-| ---------------------- | ------- | ---------------------------------------------------------------------------- |
-| `PRENOM`, `NOM`        | Texte   | tous les flux                                                                |
-| `DATE_INSCRIPTION`     | Date    | tous (date de création du parcours)                                          |
-| `SITUATION`            | Texte   | tous (`prospect`/`particulier`)                                              |
-| `ETAPE`                | Texte   | tous (étape courante du parcours)                                            |
-| `STATUT`               | Texte   | tous (`todo`/`en_instruction`/`valide`)                                      |
-| `A_AMO`                | Booléen | base `false`, passé `true` par `amo_reponse`                                 |
-| `AMO_STATUT`           | Texte   | `amo_reponse`                                                                |
-| `EST_MANDATAIRE`       | Booléen | `amo_reponse` (éligible + mandataire)                                        |
-| `DS_STATUT`            | Texte   | `dn_update`                                                                  |
-| `DEPARTEMENT`, `INSEE` | Texte   | tous (depuis `rgaSimulationData`)                                            |
-| `SOURCE_ACQUISITION`   | Texte   | tous                                                                         |
-| `EMAIL_REEL`           | Texte   | **staging seulement** — vrai email quand le contact est sous-adressé (debug) |
+| Attribut               | Type    | Alimenté par                                                                                      |
+| ---------------------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `PRENOM`, `NOM`        | Texte   | tous les flux                                                                                     |
+| `DATE_INSCRIPTION`     | Date    | tous (date de création du parcours)                                                               |
+| `SITUATION`            | Texte   | tous (`prospect`/`particulier`)                                                                   |
+| `ETAPE`                | Texte   | tous (étape courante du parcours)                                                                 |
+| `STATUT`               | Texte   | tous (`todo`/`en_instruction`/`valide`)                                                           |
+| `A_AMO`                | Booléen | `false` à `demandeur_cree`, `true` à `amo_reponse` (jamais en base : un `dn_update` l'écraserait) |
+| `AMO_STATUT`           | Texte   | `amo_reponse`                                                                                     |
+| `EST_MANDATAIRE`       | Booléen | `amo_reponse` (éligible + mandataire)                                                             |
+| `DS_STATUT`            | Texte   | `dn_update`                                                                                       |
+| `DEPARTEMENT`, `INSEE` | Texte   | tous (depuis `rgaSimulationData`)                                                                 |
+| `SOURCE_ACQUISITION`   | Texte   | tous                                                                                              |
+| `EMAIL_REEL`           | Texte   | **staging seulement** — vrai email quand le contact est sous-adressé (debug)                      |
 
 Évènements (`BREVO_EVENTS`) : `demandeur_cree`, `amo_reponse`, `dn_update`.
 

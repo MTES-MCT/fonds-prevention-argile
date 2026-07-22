@@ -29,7 +29,7 @@ const parcours = (over: Partial<ParcoursPrevention> = {}): ParcoursPrevention =>
   }) as unknown as ParcoursPrevention;
 
 describe("buildContactAttributes", () => {
-  it("mappe les champs de base + A_AMO=false par défaut", () => {
+  it("mappe les champs de base", () => {
     const attrs = buildContactAttributes(user(), parcours(), "jean@gmail.com");
     expect(attrs).toMatchObject({
       [BREVO_ATTRS.PRENOM]: "Jean",
@@ -38,10 +38,27 @@ describe("buildContactAttributes", () => {
       [BREVO_ATTRS.SITUATION]: "prospect",
       [BREVO_ATTRS.ETAPE]: "choix_amo",
       [BREVO_ATTRS.STATUT]: "todo",
-      [BREVO_ATTRS.A_AMO]: false,
       [BREVO_ATTRS.DEPARTEMENT]: "36",
       [BREVO_ATTRS.INSEE]: "36044",
     });
+  });
+
+  it("n'inclut pas A_AMO dans la base (posé par les hooks, sinon un dn_update l'écraserait)", () => {
+    const attrs = buildContactAttributes(user(), parcours(), "jean@gmail.com");
+    expect(attrs[BREVO_ATTRS.A_AMO]).toBeUndefined();
+  });
+
+  it("priorise les données agent (getEffectiveRGAData) pour l'INSEE/département", () => {
+    const attrs = buildContactAttributes(
+      user(),
+      parcours({
+        rgaSimulationData: { logement: { commune: "36044" } } as never,
+        rgaSimulationDataAgent: { logement: { commune: "75056" } } as never,
+      }),
+      "jean@gmail.com"
+    );
+    expect(attrs[BREVO_ATTRS.INSEE]).toBe("75056");
+    expect(attrs[BREVO_ATTRS.DEPARTEMENT]).toBe("75");
   });
 
   it("renormalise un INSEE stocké en nombre (récupère les zéros initiaux) et en dérive le département", () => {

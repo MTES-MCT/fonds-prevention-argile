@@ -3,6 +3,7 @@ import type { ParcoursPrevention } from "@/shared/database/schema/parcours-preve
 import { BREVO_ATTRS } from "./brevo-contacts.config";
 import type { BrevoAttributes } from "./brevo-contacts.adapter";
 import { normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
+import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 
 /**
  * Ajoute une paire au dict d'attributs si la valeur est renseignée
@@ -14,7 +15,8 @@ function put(attrs: BrevoAttributes, key: string, value: string | number | boole
 }
 
 // Attributs Brevo depuis user + parcours ; `resolvedEmail` != vrai email (staging) -> EMAIL_REEL.
-// Attributs AMO / DS_STATUT passés en override par les hooks. Voir docs/emails/BREVO-LIFECYCLE.md.
+// N'inclut aucun attribut d'état AMO (A_AMO...) : posés par les hooks quand la valeur est connue,
+// sinon un dn_update écraserait le A_AMO=true d'un amo_reponse. Voir docs/emails/BREVO-LIFECYCLE.md.
 export function buildContactAttributes(
   user: User,
   parcours: ParcoursPrevention,
@@ -28,12 +30,11 @@ export function buildContactAttributes(
   put(attrs, BREVO_ATTRS.SITUATION, parcours.situationParticulier);
   put(attrs, BREVO_ATTRS.ETAPE, parcours.currentStep);
   put(attrs, BREVO_ATTRS.STATUT, parcours.currentStatus);
-  put(attrs, BREVO_ATTRS.A_AMO, false);
   put(attrs, BREVO_ATTRS.SOURCE_ACQUISITION, user.sourceAcquisition);
 
-  // JSONB peut stocker un nombre (perte des zéros initiaux) : on renormalise l'INSEE
-  // sur 5 chiffres et on en dérive le département (2, ou 3 en outre-mer) pour un format stable.
-  const sim = parcours.rgaSimulationData ?? parcours.rgaSimulationDataAgent;
+  // Données RGA effectives (agent prioritaire, cf. getEffectiveRGAData). JSONB peut stocker un
+  // nombre : on renormalise l'INSEE sur 5 chiffres et on en dérive le département (2, 3 en outre-mer).
+  const sim = getEffectiveRGAData(parcours);
   const insee = normalizeCodeInsee(sim?.logement?.commune);
   put(attrs, BREVO_ATTRS.INSEE, insee ?? undefined);
   put(

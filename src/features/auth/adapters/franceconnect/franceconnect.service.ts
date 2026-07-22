@@ -10,7 +10,7 @@ import { JWTPayload } from "../../domain/entities";
 import { userRepo, parcoursRepo } from "@/shared/database/repositories";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
-import { emitBrevoEvent, BREVO_EVENTS } from "@/shared/email/brevo";
+import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
 
@@ -254,7 +254,11 @@ export async function handleFranceConnectCallback(
     // 6ter. Synchro Brevo (flux) : évènement d'inscription à la première création
     //       du parcours. Best-effort — n'échoue jamais la connexion.
     if (created) {
-      await emitBrevoEvent(parcours.id, BREVO_EVENTS.DEMANDEUR_CREE);
+      // A_AMO=false explicite : connu à la création (pas d'AMO), et posé ici plutôt
+      // qu'en base pour ne pas écraser un A_AMO=true ultérieur (amo_reponse).
+      await emitBrevoEvent(parcours.id, BREVO_EVENTS.DEMANDEUR_CREE, {
+        attributes: { [BREVO_ATTRS.A_AMO]: false },
+      });
     }
 
     // 7. Créer la session avec l'userId
