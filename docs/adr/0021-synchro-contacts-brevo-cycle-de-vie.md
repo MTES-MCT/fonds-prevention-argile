@@ -23,12 +23,13 @@ Deux orchestrations possibles :
 (attributs) et enregistre un **évènement** Brevo à chaque transition métier. Le timing des
 envois, les templates et les parcours de relance vivent dans les **Automations Brevo** (UI).
 
-### 1. Un seul appel par flux (Events API v5)
+### 1. Upsert du contact puis évènement (2 appels)
 
-Le SDK `@getbrevo/brevo` v5 expose `client.event.createEvent`, dont `contact_properties`
-met à jour les attributs du contact **dans le même appel** que l'évènement. On upsert donc
-le contact dans la liste (`contacts.createContact`, `updateEnabled`) puis on enregistre
-l'évènement. Point d'entrée unique `emitBrevoEvent(parcoursId, eventName, options)`.
+À chaque flux : `contacts.createContact` (`updateEnabled`) pour upserter le contact **et
+l'ajouter à la liste** cycle de vie, puis `event.createEvent` pour enregistrer l'évènement.
+Le SDK v5 permettrait de porter les attributs dans `contact_properties` de l'évènement (1
+seul appel), mais `createEvent` ne gère pas l'appartenance à une liste : on garde les 2
+appels. Point d'entrée unique `emitBrevoEvent(parcoursId, eventName, options)`.
 
 ### 2. Trois hooks best-effort
 
