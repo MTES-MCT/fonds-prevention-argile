@@ -25,17 +25,21 @@ Automations soient branchées ou non. C'est ce découplage qui rend les évoluti
 
 ---
 
-## 2. Les 3 flux (hooks best-effort)
+## 2. Les 4 flux (hooks best-effort)
 
 Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
 
-| Déclencheur        | Fichier                                                         | `event_name`     | `event_properties`                                       |
-| ------------------ | --------------------------------------------------------------- | ---------------- | -------------------------------------------------------- |
-| Création demandeur | `features/auth/adapters/franceconnect/franceconnect.service.ts` | `demandeur_cree` | —                                                        |
-| Réponse AMO        | `features/parcours/amo/services/amo-validation.service.ts`      | `amo_reponse`    | `decision` (`eligible`/`non_eligible`), `est_mandataire` |
-| Update DN          | `features/parcours/dossiers-ds/services/ds-sync.service.ts`     | `dn_update`      | `step`, `old_ds_status`, `new_ds_status`                 |
+| Déclencheur          | Fichier                                                                       | `event_name`     | `event_properties`                                       |
+| -------------------- | ----------------------------------------------------------------------------- | ---------------- | -------------------------------------------------------- |
+| Création demandeur   | `features/auth/adapters/franceconnect/franceconnect.service.ts`               | `demandeur_cree` | —                                                        |
+| Simulation rattachée | `features/parcours/core/actions/parcours-simulateur-rga-migration.actions.ts` | `simulation_maj` | —                                                        |
+| Réponse AMO          | `features/parcours/amo/services/amo-validation.service.ts`                    | `amo_reponse`    | `decision` (`eligible`/`non_eligible`), `est_mandataire` |
+| Update DN            | `features/parcours/dossiers-ds/services/ds-sync.service.ts`                   | `dn_update`      | `step`, `old_ds_status`, `new_ds_status`                 |
 
-- `demandeur_cree` ne part **qu'à la première création** du parcours (pas à chaque login).
+- `demandeur_cree` ne part **qu'à la première création** du parcours (pas à chaque login), donc
+  **avant** que la simulation ne soit rattachée → INSEE/DEPARTEMENT y sont absents.
+- `simulation_maj` part quand la simulation localStorage est migrée sur le parcours (post-login) :
+  c'est lui qui fait remonter INSEE/DEPARTEMENT côté Brevo.
 - `dn_update` ne part **que sur changement réel** de `ds_status` (même condition que
   `sync_run_entries`). Le hook est au niveau bas de `syncDossierStatus` → couvre à la fois
   le CRON de sync et la sync UI demandeur.
@@ -50,22 +54,22 @@ Point d'entrée unique : `emitBrevoEvent(parcoursId, eventName, { attributes?, e
 Les `contact_properties` sont **ignorées si l'attribut n'existe pas** côté compte Brevo.
 Source de vérité des noms : `src/shared/email/brevo/brevo-contacts.config.ts` (`BREVO_ATTRS`).
 
-| Attribut               | Type    | Alimenté par                                                                                      |
-| ---------------------- | ------- | ------------------------------------------------------------------------------------------------- |
-| `PRENOM`, `NOM`        | Texte   | tous les flux                                                                                     |
-| `DATE_INSCRIPTION`     | Date    | tous (date de création du parcours)                                                               |
-| `SITUATION`            | Texte   | tous (`prospect`/`particulier`)                                                                   |
-| `ETAPE`                | Texte   | tous (étape courante du parcours)                                                                 |
-| `STATUT`               | Texte   | tous (`todo`/`en_instruction`/`valide`)                                                           |
-| `A_AMO`                | Booléen | `false` à `demandeur_cree`, `true` à `amo_reponse` (jamais en base : un `dn_update` l'écraserait) |
-| `AMO_STATUT`           | Texte   | `amo_reponse`                                                                                     |
-| `EST_MANDATAIRE`       | Booléen | `amo_reponse` (éligible + mandataire)                                                             |
-| `DS_STATUT`            | Texte   | `dn_update`                                                                                       |
-| `DEPARTEMENT`, `INSEE` | Texte   | tous (depuis `rgaSimulationData`)                                                                 |
-| `SOURCE_ACQUISITION`   | Texte   | tous                                                                                              |
-| `EMAIL_REEL`           | Texte   | **staging seulement** — vrai email quand le contact est sous-adressé (debug)                      |
+| Attribut               | Type    | Alimenté par                                                                                              |
+| ---------------------- | ------- | --------------------------------------------------------------------------------------------------------- |
+| `PRENOM`, `NOM`        | Texte   | tous les flux                                                                                             |
+| `DATE_INSCRIPTION`     | Date    | tous (date de création du parcours)                                                                       |
+| `SITUATION`            | Texte   | tous (`prospect`/`particulier`)                                                                           |
+| `ETAPE`                | Texte   | tous (étape courante du parcours)                                                                         |
+| `STATUT`               | Texte   | tous (`todo`/`en_instruction`/`valide`)                                                                   |
+| `A_AMO`                | Booléen | `false` à `demandeur_cree`, `true` à `amo_reponse` (jamais en base : un `dn_update` l'écraserait)         |
+| `AMO_STATUT`           | Texte   | `amo_reponse`                                                                                             |
+| `EST_MANDATAIRE`       | Booléen | `amo_reponse` (éligible + mandataire)                                                                     |
+| `DS_STATUT`            | Texte   | `dn_update`                                                                                               |
+| `DEPARTEMENT`, `INSEE` | Texte   | dès que la simulation existe (`simulation_maj`, puis `amo_reponse`/`dn_update`) — pas au `demandeur_cree` |
+| `SOURCE_ACQUISITION`   | Texte   | tous                                                                                                      |
+| `EMAIL_REEL`           | Texte   | **staging seulement** — vrai email quand le contact est sous-adressé (debug)                              |
 
-Évènements (`BREVO_EVENTS`) : `demandeur_cree`, `amo_reponse`, `dn_update`.
+Évènements (`BREVO_EVENTS`) : `demandeur_cree`, `simulation_maj`, `amo_reponse`, `dn_update`.
 
 ---
 

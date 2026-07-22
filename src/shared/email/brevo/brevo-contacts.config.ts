@@ -26,6 +26,7 @@ export const BREVO_ATTRS = {
 // Évènements poussés en flux. Servent de déclencheurs d'Automation côté Brevo.
 export const BREVO_EVENTS = {
   DEMANDEUR_CREE: "demandeur_cree",
+  SIMULATION_MAJ: "simulation_maj",
   AMO_REPONSE: "amo_reponse",
   DN_UPDATE: "dn_update",
 } as const;

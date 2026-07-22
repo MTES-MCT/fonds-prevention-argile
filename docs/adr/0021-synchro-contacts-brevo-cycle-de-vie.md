@@ -31,9 +31,11 @@ Le SDK v5 permettrait de porter les attributs dans `contact_properties` de l'év
 seul appel), mais `createEvent` ne gère pas l'appartenance à une liste : on garde les 2
 appels. Point d'entrée unique `emitBrevoEvent(parcoursId, eventName, options)`.
 
-### 2. Trois hooks best-effort
+### 2. Quatre hooks best-effort
 
-`demandeur_cree` (inscription FC, 1re création du parcours), `amo_reponse`
+`demandeur_cree` (inscription FC, 1re création du parcours), `simulation_maj` (migration de
+la simulation localStorage sur le parcours post-login — fait remonter INSEE/DEPARTEMENT,
+absents au `demandeur_cree` qui part avant), `amo_reponse`
 (`approveValidation`/`rejectEligibility`), `dn_update` (`syncDossierStatus`, sur
 changement réel de `ds_status` — couvre CRON + sync UI). Un échec Brevo n'échoue **jamais**
 le flux métier (log seulement), comme les envois transactionnels existants.
