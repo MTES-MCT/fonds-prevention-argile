@@ -143,8 +143,8 @@ async function main() {
   await rawClient.end();
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error("Erreur fatale :", err);
-  rawClient.end();
+  await rawClient.end();
   process.exit(1);
 });
