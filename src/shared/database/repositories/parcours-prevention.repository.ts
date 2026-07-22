@@ -242,9 +242,8 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
 
     const initialStep = opts?.createdByAgentId ? Step.INVITATION : Step.CHOIX_AMO;
 
-    // Insert atomique : deux connexions concurrentes sur une 1re création ne peuvent
-    // toutes deux renvoyer created=true (contrainte unique user_id) — le perdant du
-    // onConflictDoNothing repasse par un refetch. Évite un double évènement Brevo.
+    // Insert atomique (unique user_id) : sur deux connexions concurrentes, un seul obtient
+    // created=true ; le perdant du onConflictDoNothing refetch. Évite un double évènement Brevo.
     const [inserted] = await db
       .insert(parcoursPrevention)
       .values({

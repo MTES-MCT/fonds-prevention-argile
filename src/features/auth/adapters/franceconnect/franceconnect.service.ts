@@ -229,9 +229,8 @@ export async function handleFranceConnectCallback(
       claimToken,
     });
 
-    // 6. Initialiser le parcours si première connexion. `created` vient d'un insert
-    //    atomique (onConflictDoNothing) → fiable même sur deux callbacks concurrents,
-    //    contrairement à une pré-lecture (qui pouvait émettre 2× l'évènement Brevo).
+    // 6. Initialiser le parcours. `created` vient d'un insert atomique (onConflictDoNothing),
+    //    fiable même sur deux callbacks concurrents — évite un double évènement Brevo.
     const { parcours, created } = await parcoursRepo.findOrCreateForUser(user.id);
 
     // 6bis. Si parcours en INVITATION (dossier pré-créé par un agent) → valider
