@@ -261,7 +261,13 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
     }
 
     const existingAfterConflict = await this.findByUserId(userId);
-    return { parcours: existingAfterConflict as ParcoursPrevention, created: false };
+    if (!existingAfterConflict) {
+      // Cas impossible en théorie : conflit d'insertion mais aucune ligne existante
+      // (suppression concurrente / incohérence). On échoue clairement plutôt que de
+      // propager un parcours invalide.
+      throw new Error(`findOrCreateForUser: conflit d'insertion sans parcours existant (user ${userId})`);
+    }
+    return { parcours: existingAfterConflict, created: false };
   }
 
   /**
