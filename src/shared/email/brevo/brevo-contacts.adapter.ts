@@ -66,7 +66,7 @@ export async function trackEvent(
       identifiers: { email_id: email },
       ...(eventProperties ? { event_properties: eventProperties } : {}),
     });
-    debug.log("event envoyé", { eventName, email });
+    debug.log("event envoyé", { eventName });
     return true;
   } catch (error) {
     console.error(`[BREVO_CONTACTS] trackEvent(${eventName}) échec:`, error instanceof Error ? error.message : error);

@@ -2,8 +2,9 @@ import type { User } from "@/shared/database/schema/users";
 import type { ParcoursPrevention } from "@/shared/database/schema/parcours-prevention";
 import { BREVO_ATTRS } from "./brevo-contacts.config";
 import type { BrevoAttributes } from "./brevo-contacts.adapter";
-import { normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
+import { normalizeCodeInsee, getCodeDepartementFromCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
+import { isProduction } from "@/shared/config/env.config";
 
 /**
  * Ajoute une paire au dict d'attributs si la valeur est renseignée
@@ -32,19 +33,16 @@ export function buildContactAttributes(
   put(attrs, BREVO_ATTRS.STATUT, parcours.currentStatus);
   put(attrs, BREVO_ATTRS.SOURCE_ACQUISITION, user.sourceAcquisition);
 
-  // Données RGA effectives (agent prioritaire, cf. getEffectiveRGAData). JSONB peut stocker un
-  // nombre : on renormalise l'INSEE sur 5 chiffres et on en dérive le département (2, 3 en outre-mer).
+  // Données RGA effectives (agent prioritaire). JSONB peut stocker un nombre : normalizeCodeInsee
+  // renormalise sur 5 chiffres, puis on dérive le département via le helper partagé/testé.
   const sim = getEffectiveRGAData(parcours);
   const insee = normalizeCodeInsee(sim?.logement?.commune);
   put(attrs, BREVO_ATTRS.INSEE, insee ?? undefined);
-  put(
-    attrs,
-    BREVO_ATTRS.DEPARTEMENT,
-    insee ? (/^9[78]/.test(insee) ? insee.slice(0, 3) : insee.slice(0, 2)) : undefined
-  );
+  put(attrs, BREVO_ATTRS.DEPARTEMENT, insee ? getCodeDepartementFromCodeInsee(insee) : undefined);
 
+  // EMAIL_REEL = debug staging uniquement, jamais le vrai email en production.
   const realEmail = user.emailContact ?? user.email;
-  if (realEmail && realEmail !== resolvedEmail) {
+  if (!isProduction() && realEmail && realEmail !== resolvedEmail) {
     put(attrs, BREVO_ATTRS.EMAIL_REEL, realEmail);
   }
 

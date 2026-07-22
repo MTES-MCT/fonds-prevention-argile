@@ -1,4 +1,4 @@
-import { getServerEnv, isLocal, isProduction } from "@/shared/config/env.config";
+import { assertEmailDevInboxSafety, getServerEnv, isLocal, isProduction } from "@/shared/config/env.config";
 import type { User } from "@/shared/database/schema/users";
 
 // Contrat app -> Brevo (attributs/évènements) : source de vérité, voir docs/emails/BREVO-LIFECYCLE.md.
@@ -80,5 +80,8 @@ export function resolveBrevoContactEmail(user: Pick<User, "id" | "email" | "emai
 
   const inbox = process.env.EMAIL_DEV_INBOX;
   if (!inbox) return null;
+  // Revalide au point d'usage (domaine autorisé / interdit en prod) même si getServerEnv
+  // l'a déjà fait au boot — défense en profondeur avant de sous-adresser.
+  assertEmailDevInboxSafety(isProduction(), inbox);
   return toSubAddress(inbox, user.id);
 }
