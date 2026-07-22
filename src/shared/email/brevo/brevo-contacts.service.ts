@@ -3,26 +3,17 @@ import { trackEvent, upsertContact, type BrevoAttributes } from "./brevo-contact
 import { isBrevoContactSyncEnabled, resolveBrevoContactEmail, type BrevoEventName } from "./brevo-contacts.config";
 import { buildContactAttributes } from "./contact-mapping";
 
-/**
- * Synchro de contact Brevo en flux (V0).
- *
- * Point d'entrée unique des hooks métier : upsert le contact (attributs + liste)
- * puis enregistre l'évènement. Entièrement best-effort — n'échoue jamais le flux
- * appelant (inscription, validation AMO, sync DS).
- */
+// Point d'entrée unique des hooks Brevo (best-effort). Voir docs/emails/BREVO-LIFECYCLE.md.
 
 interface EmitOptions {
-  /** Attributs spécifiques à l'évènement, mergés par-dessus les attributs de base. */
+  // Attributs spécifiques à l'évènement, mergés par-dessus les attributs de base.
   attributes?: BrevoAttributes;
-  /** Propriétés de l'évènement (détail de la transition). */
+  // Propriétés de l'évènement (détail de la transition).
   eventProperties?: Record<string, string | number | boolean>;
 }
 
-/**
- * Pousse le contact d'un parcours vers Brevo et enregistre `eventName`.
- * No-op silencieux si la synchro est désactivée (local) ou l'email non résoluble
- * (staging sans boîte de test) — voir `resolveBrevoContactEmail`.
- */
+// Upsert le contact + enregistre l'évènement. No-op si synchro désactivée ou email
+// non résoluble (local / staging sans boîte de test), cf. resolveBrevoContactEmail.
 export async function emitBrevoEvent(
   parcoursId: string,
   eventName: BrevoEventName,
