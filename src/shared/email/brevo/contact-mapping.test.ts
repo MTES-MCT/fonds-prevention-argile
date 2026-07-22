@@ -44,6 +44,16 @@ describe("buildContactAttributes", () => {
     });
   });
 
+  it("renormalise un INSEE stocké en nombre (récupère les zéros initiaux) et en dérive le département", () => {
+    const attrs = buildContactAttributes(
+      user(),
+      parcours({ rgaSimulationData: { logement: { commune: 1234 } } as never }),
+      "jean@gmail.com"
+    );
+    expect(attrs[BREVO_ATTRS.INSEE]).toBe("01234");
+    expect(attrs[BREVO_ATTRS.DEPARTEMENT]).toBe("01");
+  });
+
   it("EMAIL_REEL présent quand l'email poussé diffère du vrai (staging sous-adressé)", () => {
     const attrs = buildContactAttributes(user(), parcours(), "marie+uu1@beta.gouv.fr");
     expect(attrs[BREVO_ATTRS.EMAIL_REEL]).toBe("jean@gmail.com");

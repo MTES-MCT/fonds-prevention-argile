@@ -2,6 +2,7 @@ import type { User } from "@/shared/database/schema/users";
 import type { ParcoursPrevention } from "@/shared/database/schema/parcours-prevention";
 import { BREVO_ATTRS } from "./brevo-contacts.config";
 import type { BrevoAttributes } from "./brevo-contacts.adapter";
+import { normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 
 /**
  * Ajoute une paire au dict d'attributs si la valeur est renseignée
@@ -30,9 +31,16 @@ export function buildContactAttributes(
   put(attrs, BREVO_ATTRS.A_AMO, false);
   put(attrs, BREVO_ATTRS.SOURCE_ACQUISITION, user.sourceAcquisition);
 
+  // JSONB peut stocker un nombre (perte des zéros initiaux) : on renormalise l'INSEE
+  // sur 5 chiffres et on en dérive le département (2, ou 3 en outre-mer) pour un format stable.
   const sim = parcours.rgaSimulationData ?? parcours.rgaSimulationDataAgent;
-  put(attrs, BREVO_ATTRS.DEPARTEMENT, sim?.logement?.code_departement);
-  put(attrs, BREVO_ATTRS.INSEE, sim?.logement?.commune);
+  const insee = normalizeCodeInsee(sim?.logement?.commune);
+  put(attrs, BREVO_ATTRS.INSEE, insee ?? undefined);
+  put(
+    attrs,
+    BREVO_ATTRS.DEPARTEMENT,
+    insee ? (/^9[78]/.test(insee) ? insee.slice(0, 3) : insee.slice(0, 2)) : undefined
+  );
 
   const realEmail = user.emailContact ?? user.email;
   if (realEmail && realEmail !== resolvedEmail) {
