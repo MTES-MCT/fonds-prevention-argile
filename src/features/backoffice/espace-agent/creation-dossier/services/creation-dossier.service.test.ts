@@ -93,7 +93,8 @@ describe("createDossierByAgent", () => {
       updatedAt: new Date(),
     });
     vi.mocked(parcoursRepo.findOrCreateForUser).mockResolvedValue({
-      id: "parcours-1",
+      parcours: { id: "parcours-1" },
+      created: true,
     } as never);
     vi.mocked(parcoursRepo.updateRGADataAgent).mockResolvedValue({} as never);
     vi.mocked(sendClaimDossierEmail).mockResolvedValue({

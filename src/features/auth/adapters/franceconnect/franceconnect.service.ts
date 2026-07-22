@@ -10,7 +10,6 @@ import { JWTPayload } from "../../domain/entities";
 import { userRepo, parcoursRepo } from "@/shared/database/repositories";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
-import { getOrCreateParcours } from "@/features/parcours/core/services";
 import { emitBrevoEvent, BREVO_EVENTS } from "@/shared/email/brevo";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
@@ -230,9 +229,10 @@ export async function handleFranceConnectCallback(
       claimToken,
     });
 
-    // 6. Initialiser le parcours si première connexion
-    const parcoursExisted = (await parcoursRepo.findByUserId(user.id)) !== null;
-    const parcours = await getOrCreateParcours(user.id);
+    // 6. Initialiser le parcours si première connexion. `created` vient d'un insert
+    //    atomique (onConflictDoNothing) → fiable même sur deux callbacks concurrents,
+    //    contrairement à une pré-lecture (qui pouvait émettre 2× l'évènement Brevo).
+    const { parcours, created } = await parcoursRepo.findOrCreateForUser(user.id);
 
     // 6bis. Si parcours en INVITATION (dossier pré-créé par un agent) → valider
     if (parcours.currentStep === Step.INVITATION) {
@@ -241,23 +241,19 @@ export async function handleFranceConnectCallback(
       // demandeur n'ait pas à la refaire. Pour le parcours "sans simulation"
       // (données minimales : seulement l'adresse), on laisse `rgaSimulationData`
       // null → l'écran "Éligibilité manquante" invite le demandeur à la remplir.
-      // L'entité `Parcours` retournée par `getOrCreateParcours` n'expose pas
-      // `rgaSimulationDataAgent`, on relit la ligne brute via le repo.
-      const parcoursRow = await parcoursRepo.findById(parcours.id);
       if (
-        parcoursRow &&
-        !parcoursRow.rgaSimulationData &&
-        parcoursRow.rgaSimulationDataAgent &&
-        isSimulationComplete(parcoursRow.rgaSimulationDataAgent)
+        !parcours.rgaSimulationData &&
+        parcours.rgaSimulationDataAgent &&
+        isSimulationComplete(parcours.rgaSimulationDataAgent)
       ) {
-        await parcoursRepo.updateRGAData(parcours.id, parcoursRow.rgaSimulationDataAgent);
+        await parcoursRepo.updateRGAData(parcours.id, parcours.rgaSimulationDataAgent);
       }
       await parcoursRepo.validateInvitation(parcours.id);
     }
 
     // 6ter. Synchro Brevo (flux) : évènement d'inscription à la première création
     //       du parcours. Best-effort — n'échoue jamais la connexion.
-    if (!parcoursExisted) {
+    if (created) {
       await emitBrevoEvent(parcours.id, BREVO_EVENTS.DEMANDEUR_CREE);
     }
 

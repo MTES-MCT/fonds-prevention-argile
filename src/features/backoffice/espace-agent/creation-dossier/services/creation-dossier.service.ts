@@ -85,7 +85,7 @@ export async function createDossierByAgent(params: CreateDossierByAgentParams): 
   });
 
   // 3. Création du parcours associé (tracé sur l'agent)
-  const parcours = await parcoursRepo.findOrCreateForUser(user.id, {
+  const { parcours } = await parcoursRepo.findOrCreateForUser(user.id, {
     createdByAgentId: agentId,
   });
 

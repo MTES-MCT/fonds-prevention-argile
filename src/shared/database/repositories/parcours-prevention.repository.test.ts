@@ -14,9 +14,15 @@ const dbSelectChain = {
   where: vi.fn(() => dbSelectChain),
   limit: vi.fn(async () => [] as unknown[]),
 };
+const dbInsertChain = {
+  values: vi.fn(() => dbInsertChain),
+  onConflictDoNothing: vi.fn(() => dbInsertChain),
+  returning: vi.fn(async () => [] as unknown[]),
+};
 vi.mock("../client", () => ({
   db: {
     select: vi.fn(() => dbSelectChain),
+    insert: vi.fn(() => dbInsertChain),
   },
 }));
 
@@ -154,31 +160,61 @@ describe("ParcoursPreventionRepository — invitation", () => {
 
   beforeEach(() => {
     repo = new ParcoursPreventionRepository();
+    dbInsertChain.values.mockClear();
+    dbInsertChain.onConflictDoNothing.mockClear();
+    dbInsertChain.returning.mockReset();
+    dbInsertChain.returning.mockResolvedValue([] as unknown[]);
   });
 
   describe("findOrCreateForUser", () => {
-    it("démarre à INVITATION quand createdByAgentId est fourni", async () => {
+    it("insère avec INVITATION quand createdByAgentId est fourni (created=true)", async () => {
       vi.spyOn(repo, "findByUserId").mockResolvedValue(null);
-      const create = vi.spyOn(repo, "create").mockResolvedValue(baseParcours);
+      dbInsertChain.returning.mockResolvedValueOnce([{ ...baseParcours, currentStep: Step.INVITATION }]);
 
-      await repo.findOrCreateForUser("user-1", { createdByAgentId: "agent-1" });
+      const { created } = await repo.findOrCreateForUser("user-1", { createdByAgentId: "agent-1" });
 
-      expect(create).toHaveBeenCalledWith(
+      expect(created).toBe(true);
+      expect(dbInsertChain.values).toHaveBeenCalledWith(
         expect.objectContaining({ currentStep: Step.INVITATION, createdByAgentId: "agent-1" })
       );
     });
 
-    it("démarre à CHOIX_AMO sans createdByAgentId", async () => {
+    it("insère avec CHOIX_AMO sans createdByAgentId (created=true)", async () => {
       vi.spyOn(repo, "findByUserId").mockResolvedValue(null);
-      const create = vi
-        .spyOn(repo, "create")
-        .mockResolvedValue({ ...baseParcours, currentStep: Step.CHOIX_AMO, createdByAgentId: null });
+      dbInsertChain.returning.mockResolvedValueOnce([
+        { ...baseParcours, currentStep: Step.CHOIX_AMO, createdByAgentId: null },
+      ]);
 
-      await repo.findOrCreateForUser("user-1");
+      const { created } = await repo.findOrCreateForUser("user-1");
 
-      expect(create).toHaveBeenCalledWith(
+      expect(created).toBe(true);
+      expect(dbInsertChain.values).toHaveBeenCalledWith(
         expect.objectContaining({ currentStep: Step.CHOIX_AMO, createdByAgentId: null })
       );
+    });
+
+    it("created=false et aucun insert si le parcours existe déjà", async () => {
+      vi.spyOn(repo, "findByUserId").mockResolvedValue(baseParcours);
+
+      const { parcours, created } = await repo.findOrCreateForUser("user-1");
+
+      expect(created).toBe(false);
+      expect(parcours).toBe(baseParcours);
+      expect(dbInsertChain.values).not.toHaveBeenCalled();
+    });
+
+    it("created=false sur conflit concurrent (onConflictDoNothing → refetch)", async () => {
+      const findByUserId = vi
+        .spyOn(repo, "findByUserId")
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(baseParcours);
+      dbInsertChain.returning.mockResolvedValueOnce([]);
+
+      const { parcours, created } = await repo.findOrCreateForUser("user-1");
+
+      expect(created).toBe(false);
+      expect(parcours).toBe(baseParcours);
+      expect(findByUserId).toHaveBeenCalledTimes(2);
     });
   });
 
