@@ -23,9 +23,9 @@ const SOURCE_OPTIONS: SourceAcquisition[] = [
   SourceAcquisition.MEDIAS,
   SourceAcquisition.BULLETIN_COMMUNAL,
   SourceAcquisition.ASSURANCE,
-  SourceAcquisition.MOTEUR_RECHERCHE, 
+  SourceAcquisition.MOTEUR_RECHERCHE,
   SourceAcquisition.SITE_GOUVERNEMENTAL,
-  SourceAcquisition.PROCHE, 
+  SourceAcquisition.PROCHE,
   SourceAcquisition.PROS_BATIMENT_IMMOBILIER,
   SourceAcquisition.RESEAUX_SOCIAUX,
   SourceAcquisition.FLYERS,
@@ -227,11 +227,13 @@ export default function ContactInfoModal({
                 </h2>
 
                 <p>
-                  Un conseiller local mandaté par l&apos;État devrait vous contacter dans les prochains jours pour préciser votre demande.
-                  Le numéro peut être masqué, n'hésitez pas à répondre pour faire avancer votre dossier plus rapidement. 
+                  Un conseiller local mandaté par l&apos;État devrait vous contacter dans les prochains jours pour
+                  préciser votre demande. Le numéro peut être masqué, n'hésitez pas à répondre pour faire avancer votre
+                  dossier plus rapidement.
                 </p>
-                <p> 
-                Ces informations sont confidentielles et uniquement utilisées pour traiter votre demande et vous accompagner. 
+                <p>
+                  Ces informations sont confidentielles et uniquement utilisées pour traiter votre demande et vous
+                  accompagner.
                 </p>
 
                 <div className="fr-form-group">
