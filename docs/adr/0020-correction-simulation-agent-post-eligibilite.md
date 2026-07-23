@@ -99,3 +99,33 @@ la simulation redevient éligible ne s'applique **qu'aux archivages pour inélig
 (note préfixée `« Non éligible »`, prédicat `isEligibiliteArchiveReason`). Un archivage
 **manuel** (abandon, non-réponse, reste à charge…) n'est jamais annulé automatiquement.
 Idempotence : on n'archive pas un dossier déjà archivé (`archivedAt` ne glisse pas).
+
+**Cible du dé-archivage** : mutualisée avec le dé-archivage manuel via
+`situationApresReactivation(hasAmoResponsable)` — `ELIGIBLE` si un AMO est responsable
+(dossier avec entreprise), `PROSPECT` sinon (Aller-vers / vrai prospect). Évite qu'un
+dossier AMO redevienne `PROSPECT`.
+
+**Durcissement RBAC du chemin prospect (revue Codex).** Le fallback « par `parcoursId` »
+(vrai prospect sans validation) — lecture `getDossierSimulationData` **et** écriture
+`updateSimulationDataAction` — n'avait **aucune** garde : n'importe quel agent pouvait
+éditer/archiver un parcours arbitraire, et un dossier **portant** une validation pouvait
+être traité comme prospect (contournement des gardes d'ownership/statut). Gardes ajoutées,
+symétriques lecture/écriture :
+
+1. **rejet si une validation existe** pour ce `parcoursId` (l'appelant doit passer par
+   l'id de validation) ;
+2. **capacité `canViewDossiersWithoutAmo`** requise (ALLERS_VERS / hybride) — un AMO pur
+   est exclu des prospects, même sur son territoire (`verifyProspectTerritoryAccess` ne
+   gate pas cette capacité, qu'il faut donc vérifier explicitement) ;
+3. **contrôle territorial** (`verifyProspectTerritoryAccess`), aligné sur le listing.
+
+L'écriture prospect passe désormais par une **transaction unique** (simulation + archivage),
+comme le chemin dossier, au lieu de deux écritures repository séquentielles.
+
+> **Reste hors périmètre** (dette pré-existante, non régressée par cette branche) :
+> `verifyProspectTerritoryAccess` ne vérifie pas `canViewDossiersWithoutAmo` en interne —
+> un AMO pur peut donc atteindre un dossier `SANS_AMO` de son territoire via le **détail**.
+> Le contournement est ici fermé localement (point 2) ; le durcissement central de
+> `verifyProspectTerritoryAccess` est à traiter séparément. Le verrouillage concurrent
+> (`FOR UPDATE`) et une éventuelle colonne `archive_origin` structurée sont également
+> différés.

@@ -304,7 +304,12 @@ détail dossier** (§6). `getDossierSimulationData` gate donc, pour les non-admi
 - dossier **avec** entreprise AMO → **ownership entreprise** (`entrepriseAmoId` de la validation
   == celui de l'agent) ;
 - dossier **sans** entreprise (statut `SANS_AMO`) → **accès territorial** via
-  `verifyProspectTerritoryAccess` (Aller-vers / hybride couvrant le territoire).
+  `verifyProspectTerritoryAccess` (Aller-vers / hybride couvrant le territoire) ;
+- **vrai prospect sans validation** (chemin fallback par `parcoursId`, lecture **et**
+  écriture) → garde propre : rejet si une validation existe (pas de contournement via le
+  `parcoursId`), capacité `canViewDossiersWithoutAmo` requise (un AMO pur est exclu, car
+  `verifyProspectTerritoryAccess` ne gate pas cette capacité), puis contrôle territorial.
+  Voir l'amendement de [ADR-0020](../adr/0020-correction-simulation-agent-post-eligibilite.md).
 
 Les statuts éditables incluent `SANS_AMO` **et `LOGEMENT_NON_ELIGIBLE`** (aligné sur
 `STATUTS_CONSULTABLES`, lecture et écriture désormais alignées) : un dossier devenu non
