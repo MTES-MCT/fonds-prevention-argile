@@ -1,8 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getDemandeDetailAction, accepterAccompagnement, refuserDemandeNonEligible } from "./demande-detail.actions";
+import {
+  getDemandeDetailAction,
+  accepterAccompagnement,
+  refuserDemandeNonEligible,
+  refuserAccompagnementEligible,
+} from "./demande-detail.actions";
 import { getDemandeDetail } from "../services/demande-detail.service";
-import { approveValidation, rejectEligibility } from "@/features/parcours/amo/services/amo-validation.service";
+import {
+  approveValidation,
+  rejectEligibility,
+  declineAccompagnementEligible,
+} from "@/features/parcours/amo/services/amo-validation.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
+import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -13,6 +23,19 @@ import type { AuthUser } from "@/features/auth/domain/entities";
 vi.mock("../services/demande-detail.service");
 vi.mock("@/features/parcours/amo/services/amo-validation.service");
 vi.mock("@/features/auth/services/user.service");
+vi.mock("@/features/backoffice/shared/actions/agent.actions");
+// L'audit parcours_actions est best-effort : on neutralise ses dépendances DB.
+vi.mock("@/shared/database/repositories", () => ({
+  parcoursActionsRepo: { create: vi.fn() },
+}));
+vi.mock("@/features/backoffice/espace-agent/shared/services/author-snapshot", () => ({
+  buildAuthorSnapshot: vi.fn().mockResolvedValue({
+    authorName: "Test Agent",
+    authorStructure: "Entreprise Test",
+    authorStructureType: "AMO",
+  }),
+}));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/features/backoffice/shared/actions/super-admin-access", () => ({
   assertNotSuperAdminReadOnly: vi.fn(),
 }));
@@ -180,7 +203,12 @@ describe("demande-detail.actions", () => {
 
       vi.mocked(approveValidation).mockResolvedValue({
         success: true,
-        data: { message: "Validation acceptée", alreadyProcessed: false, valideeAt: new Date() },
+        data: {
+          message: "Validation acceptée",
+          alreadyProcessed: false,
+          valideeAt: new Date(),
+          parcoursId: "parcours-123",
+        },
       });
 
       const result = await accepterAccompagnement("demande-123", "Commentaire test", true);
@@ -227,7 +255,12 @@ describe("demande-detail.actions", () => {
 
       vi.mocked(rejectEligibility).mockResolvedValue({
         success: true,
-        data: { message: "Demande refusée", alreadyProcessed: false, valideeAt: new Date() },
+        data: {
+          message: "Demande refusée",
+          alreadyProcessed: false,
+          valideeAt: new Date(),
+          parcoursId: "parcours-123",
+        },
       });
 
       const result = await refuserDemandeNonEligible("demande-123", "Le logement n'est pas dans une zone RGA");
@@ -265,6 +298,76 @@ describe("demande-detail.actions", () => {
       if (!result.success) {
         expect(result.error).toContain("minimum 10 caractères");
       }
+    });
+  });
+
+  describe("refuserAccompagnementEligible", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockAgent = (id = "agent-1") =>
+      vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: { id } as any });
+
+    it("archive et refuse l'accompagnement pour un AMO propriétaire", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, "amo-123"));
+      mockDemandeOwner("amo-123");
+      mockAgent("agent-1");
+      vi.mocked(declineAccompagnementEligible).mockResolvedValue({
+        success: true,
+        data: { message: "archivé", alreadyProcessed: false, valideeAt: new Date(), parcoursId: "parcours-123" },
+      });
+
+      const result = await refuserAccompagnementEligible("demande-123", "Le demandeur ne donne pas de réponse", "note");
+
+      expect(result.success).toBe(true);
+      expect(declineAccompagnementEligible).toHaveBeenCalledWith(
+        "demande-123",
+        "Le demandeur ne donne pas de réponse",
+        "note",
+        "agent-1"
+      );
+      // parcoursId ne doit pas fuiter vers le client.
+      if (result.success) {
+        expect(result.data).not.toHaveProperty("parcoursId");
+      }
+    });
+
+    it("refuse une raison d'archivage vide", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, "amo-123"));
+      mockDemandeOwner("amo-123");
+
+      const result = await refuserAccompagnementEligible("demande-123", "   ");
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toContain("raison d'archivage");
+      expect(declineAccompagnementEligible).not.toHaveBeenCalled();
+    });
+
+    it("DENY : AMO d'une autre entreprise", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, "amo-123"));
+      mockDemandeOwner("amo-999");
+
+      const result = await refuserAccompagnementEligible("demande-123", "Autre");
+
+      expect(result.success).toBe(false);
+      expect(declineAccompagnementEligible).not.toHaveBeenCalled();
+    });
+
+    it("DENY : ALLERS_VERS (rôle non AMO)", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.ALLERS_VERS));
+
+      const result = await refuserAccompagnementEligible("demande-123", "Autre");
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toBe("Accès réservé aux AMO");
+      expect(declineAccompagnementEligible).not.toHaveBeenCalled();
+    });
+
+    it("DENY : super-admin en lecture seule", async () => {
+      vi.mocked(assertNotSuperAdminReadOnly).mockResolvedValue("Lecture seule");
+
+      const result = await refuserAccompagnementEligible("demande-123", "Autre");
+
+      expect(result.success).toBe(false);
+      expect(declineAccompagnementEligible).not.toHaveBeenCalled();
     });
   });
 

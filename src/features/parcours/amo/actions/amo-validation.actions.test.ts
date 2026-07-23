@@ -85,7 +85,7 @@ describe("amo-validation.actions - Sécurité", () => {
         mockUser(UserRole.SUPER_ADMINISTRATEUR);
         vi.mocked(approveValidation).mockResolvedValue({
           success: true,
-          data: { message: "OK", alreadyProcessed: false, valideeAt: new Date() },
+          data: { message: "OK", alreadyProcessed: false, valideeAt: new Date(), parcoursId: "parcours-123" },
         });
 
         const result = await validerLogementEligible("validation-123");
@@ -100,7 +100,7 @@ describe("amo-validation.actions - Sécurité", () => {
         mockUser(UserRole.ADMINISTRATEUR);
         vi.mocked(approveValidation).mockResolvedValue({
           success: true,
-          data: { message: "OK", alreadyProcessed: false, valideeAt: new Date() },
+          data: { message: "OK", alreadyProcessed: false, valideeAt: new Date(), parcoursId: "parcours-123" },
         });
 
         const result = await validerLogementEligible("validation-123", "Commentaire");
@@ -116,7 +116,7 @@ describe("amo-validation.actions - Sécurité", () => {
         mockValidationInDb("entreprise-123");
         vi.mocked(approveValidation).mockResolvedValue({
           success: true,
-          data: { message: "OK", alreadyProcessed: false, valideeAt: new Date() },
+          data: { message: "OK", alreadyProcessed: false, valideeAt: new Date(), parcoursId: "parcours-123" },
         });
 
         const result = await validerLogementEligible("validation-123");
@@ -212,7 +212,7 @@ describe("amo-validation.actions - Sécurité", () => {
       mockValidationInDb("entreprise-123");
       vi.mocked(rejectEligibility).mockResolvedValue({
         success: true,
-        data: { message: "Refusé", alreadyProcessed: false, valideeAt: new Date() },
+        data: { message: "Refusé", alreadyProcessed: false, valideeAt: new Date(), parcoursId: "parcours-123" },
       });
 
       const result = await refuserLogementNonEligible(

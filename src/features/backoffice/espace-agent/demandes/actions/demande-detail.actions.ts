@@ -1,15 +1,51 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { ActionResult } from "@/shared/types/action-result.types";
-import { approveValidation, rejectEligibility } from "@/features/parcours/amo/services/amo-validation.service";
+import {
+  approveValidation,
+  rejectEligibility,
+  declineAccompagnementEligible,
+} from "@/features/parcours/amo/services/amo-validation.service";
 import { getDemandeDetail } from "../services/demande-detail.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
+import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
+import { buildAuthorSnapshot } from "@/features/backoffice/espace-agent/shared/services/author-snapshot";
+import { parcoursActionsRepo } from "@/shared/database/repositories";
+import {
+  ACTION_TYPE_ELIGIBILITE_ACCEPTEE,
+  ACTION_TYPE_ELIGIBILITE_REFUSEE,
+  ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE,
+} from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { UserRole } from "@/shared/domain/value-objects";
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations } from "@/shared/database/schema";
 import { eq, ne, asc, and as drizzleAnd } from "drizzle-orm";
 import type { DemandeDetail } from "../domain/types";
+
+/**
+ * Trace le choix d'éligibilité de l'AMO dans l'historique (`parcours_actions`).
+ * Best-effort : un échec d'audit ne doit pas invalider la décision déjà enregistrée.
+ */
+async function logDecisionAction(parcoursId: string, actionType: string, message?: string | null): Promise<void> {
+  try {
+    const agentResult = await getCurrentAgent();
+    if (!agentResult.success) return;
+    const snapshot = await buildAuthorSnapshot(agentResult.data);
+    await parcoursActionsRepo.create({
+      parcoursId,
+      agentId: agentResult.data.id,
+      actionType,
+      message: message || null,
+      authorName: snapshot.authorName,
+      authorStructure: snapshot.authorStructure,
+      authorStructureType: snapshot.authorStructureType,
+    });
+  } catch (error) {
+    console.error("[logDecisionAction] audit best-effort échoué:", error);
+  }
+}
 
 /**
  * Vérifie que l'agent AMO connecté est bien propriétaire de la demande
@@ -89,6 +125,9 @@ export async function accepterAccompagnement(
     }
 
     const result = await approveValidation(demandeId, commentaire, estMandataireFinancier);
+    if (result.success && !result.data.alreadyProcessed) {
+      await logDecisionAction(result.data.parcoursId, ACTION_TYPE_ELIGIBILITE_ACCEPTEE, commentaire || null);
+    }
     return result;
   } catch (error) {
     console.error("Erreur accepterAccompagnement:", error);
@@ -125,12 +164,74 @@ export async function refuserDemandeNonEligible(
     }
 
     const result = await rejectEligibility(demandeId, commentaire);
+    if (result.success && !result.data.alreadyProcessed) {
+      await logDecisionAction(result.data.parcoursId, ACTION_TYPE_ELIGIBILITE_REFUSEE, commentaire);
+    }
     return result;
   } catch (error) {
     console.error("Erreur refuserDemandeNonEligible:", error);
     return {
       success: false,
       error: "Erreur lors du refus pour non éligibilité",
+    };
+  }
+}
+
+/**
+ * Demandeur éligible, mais l'AMO refuse de l'accompagner (ex. injoignable).
+ * Archive le dossier avec la raison saisie (modale « Archiver ») et trace l'action.
+ */
+export async function refuserAccompagnementEligible(
+  demandeId: string,
+  archiveReason: string,
+  note?: string
+): Promise<ActionResult<{ message: string; alreadyProcessed: boolean; valideeAt: Date }>> {
+  try {
+    const readOnlyError = await assertNotSuperAdminReadOnly();
+    if (readOnlyError) return { success: false, error: readOnlyError };
+
+    const ownershipCheck = await verifyAmoOwnership(demandeId);
+    if (!ownershipCheck.success) {
+      return { success: false, error: ownershipCheck.error };
+    }
+
+    const reason = archiveReason?.trim();
+    if (!reason) {
+      return { success: false, error: "Une raison d'archivage est requise" };
+    }
+
+    const agentResult = await getCurrentAgent();
+    if (!agentResult.success) {
+      return { success: false, error: agentResult.error };
+    }
+
+    const noteClean = note?.trim() || null;
+    const result = await declineAccompagnementEligible(demandeId, reason, noteClean, agentResult.data.id);
+    if (!result.success) return result;
+
+    if (!result.data.alreadyProcessed) {
+      await logDecisionAction(
+        result.data.parcoursId,
+        ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE,
+        noteClean ? `${reason} — ${noteClean}` : reason
+      );
+      revalidatePath("/espace-agent", "layout");
+    }
+
+    // Ne pas exposer parcoursId au client.
+    return {
+      success: true,
+      data: {
+        message: result.data.message,
+        alreadyProcessed: result.data.alreadyProcessed,
+        valideeAt: result.data.valideeAt,
+      },
+    };
+  } catch (error) {
+    console.error("Erreur refuserAccompagnementEligible:", error);
+    return {
+      success: false,
+      error: "Erreur lors du refus d'accompagnement",
     };
   }
 }
