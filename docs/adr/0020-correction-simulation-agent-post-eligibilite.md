@@ -129,3 +129,24 @@ comme le chemin dossier, au lieu de deux écritures repository séquentielles.
 > `verifyProspectTerritoryAccess` est à traiter séparément. Le verrouillage concurrent
 > (`FOR UPDATE`) et une éventuelle colonne `archive_origin` structurée sont également
 > différés.
+
+### Cohérence des surfaces « demande » avec l'archivage
+
+Archiver une demande `EN_ATTENTE` sans trancher son statut de validation crée une
+divergence : `archivedAt` est posé mais `statut` reste `EN_ATTENTE`. Or les surfaces
+« demande » décidaient de l'affichage **uniquement** sur le statut, sans regarder
+`archivedAt` (contrairement au listing dossiers, qui passe par `getDossierEtat` où
+`archivedAt` prime). Symptôme : une demande archivée restait comptée « à traiter » et sa
+page `/espace-agent/demandes/[id]` affichait encore le bloc « choix de l'AMO ».
+
+**Règle appliquée : `archivedAt` prime sur les surfaces demande.**
+
+- Listing/compteur « demandes à traiter » (`amo-accueil.service`) : exclut `archivedAt IS NOT NULL`.
+- Routage du listing dossiers (`DossiersSuivisTable`) : un item archivé pointe vers
+  `/dossiers/[id]` (archive-aware), jamais `/demandes/[id]`.
+- Page `/demandes/[id]` : garde qui redirige vers `/dossiers/[id]` si archivé (défense en
+  profondeur contre l'accès direct par URL). `getDemandeDetail` expose désormais `archivedAt`.
+
+On ne bascule pas `EN_ATTENTE → LOGEMENT_NON_ELIGIBLE` : le retour à l'éligibilité
+retomberait en `LOGEMENT_ELIGIBLE` (= « validé par l'AMO ») sans que l'AMO ait répondu.
+Garder `EN_ATTENTE` + faire primer `archivedAt` préserve le cycle de validation AMO.
