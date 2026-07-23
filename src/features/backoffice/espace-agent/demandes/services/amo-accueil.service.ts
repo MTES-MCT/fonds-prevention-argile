@@ -77,9 +77,7 @@ async function getDemandesATraiter(entrepriseAmoId: string | null): Promise<Dema
     .from(parcoursAmoValidations)
     .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
     .innerJoin(users, eq(users.id, parcoursPrevention.userId))
-    .where(
-      and(entrepriseAmoFilter(entrepriseAmoId), eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE))
-    )
+    .where(and(entrepriseAmoFilter(entrepriseAmoId), eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE)))
     .orderBy(asc(parcoursAmoValidations.createdAt));
 
   return results.map((row) => {
