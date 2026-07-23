@@ -4,6 +4,7 @@ import { parcoursRepo } from "@/shared/database/repositories";
 import { emitBrevoEvent, BREVO_EVENTS } from "@/shared/email/brevo";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { migrateSimulationDataToDatabase } from "./parcours-simulateur-rga-migration.actions";
+import { isSameSimulationContent } from "../utils/simulation-comparison";
 
 vi.mock("@/features/auth/server", () => ({ getSession: vi.fn() }));
 vi.mock("@/shared/database/repositories", () => ({
@@ -31,12 +32,40 @@ describe("migrateSimulationDataToDatabase", () => {
     mockedIsComplete.mockReturnValue(false);
   });
 
-  it("émet simulation_maj après avoir migré la simulation", async () => {
+  it("émet simulation_enregistree après avoir migré une simulation nouvelle", async () => {
     const res = await migrateSimulationDataToDatabase(rgaData);
 
     expect(res.success).toBe(true);
     expect(mockedUpdateRGAData).toHaveBeenCalledWith("p1", expect.objectContaining({ logement: { commune: "36044" } }));
-    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_MAJ);
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE);
+  });
+
+  it("idempotent : ne réécrit ni n'émet quand le contenu est identique (hors simulatedAt)", async () => {
+    mockedFindByUserId.mockResolvedValue({
+      id: "p1",
+      rgaSimulationDataAgent: null,
+      rgaSimulationData: { logement: { commune: "36044" }, simulatedAt: "2026-07-21T00:00:00Z" },
+    } as never);
+
+    const res = await migrateSimulationDataToDatabase(rgaData);
+
+    expect(res.success).toBe(true);
+    expect(mockedUpdateRGAData).not.toHaveBeenCalled();
+    expect(mockedEmit).not.toHaveBeenCalled();
+  });
+
+  it("émet quand le contenu de la simulation a changé", async () => {
+    mockedFindByUserId.mockResolvedValue({
+      id: "p1",
+      rgaSimulationDataAgent: null,
+      rgaSimulationData: { logement: { commune: "75056" }, simulatedAt: "2026-07-21T00:00:00Z" },
+    } as never);
+
+    const res = await migrateSimulationDataToDatabase(rgaData);
+
+    expect(res.success).toBe(true);
+    expect(mockedUpdateRGAData).toHaveBeenCalled();
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE);
   });
 
   it("ne migre ni n'émet quand une simulation agent complète existe déjà", async () => {
@@ -57,5 +86,29 @@ describe("migrateSimulationDataToDatabase", () => {
 
     expect(res.success).toBe(false);
     expect(mockedEmit).not.toHaveBeenCalled();
+  });
+});
+
+describe("isSameSimulationContent", () => {
+  it("ignore simulatedAt", () => {
+    const a = { logement: { commune: "36044" }, simulatedAt: "2026-07-21T00:00:00Z" } as never;
+    const b = { logement: { commune: "36044" }, simulatedAt: "2026-07-22T10:00:00Z" } as never;
+    expect(isSameSimulationContent(a, b)).toBe(true);
+  });
+
+  it("indépendant de l'ordre des clés", () => {
+    const a = { logement: { commune: "36044", type: "maison" } } as never;
+    const b = { logement: { type: "maison", commune: "36044" } } as never;
+    expect(isSameSimulationContent(a, b)).toBe(true);
+  });
+
+  it("détecte un vrai changement de contenu", () => {
+    const a = { logement: { commune: "36044" } } as never;
+    const b = { logement: { commune: "75056" } } as never;
+    expect(isSameSimulationContent(a, b)).toBe(false);
+  });
+
+  it("null/absent = changement (1er rattachement)", () => {
+    expect(isSameSimulationContent(null, { logement: {} } as never)).toBe(false);
   });
 });

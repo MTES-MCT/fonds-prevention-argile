@@ -6,6 +6,7 @@ import type { RGASimulationData, PartialRGASimulationData } from "@/shared/domai
 import { parcoursRepo } from "@/shared/database/repositories";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { emitBrevoEvent, BREVO_EVENTS } from "@/shared/email/brevo";
+import { isSameSimulationContent } from "../utils/simulation-comparison";
 
 /**
  * Migre les données du simulateur RGA depuis localStorage vers la base de données
@@ -62,13 +63,18 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
       simulatedAt: new Date().toISOString(),
     } as RGASimulationData;
 
-    // 5. Sauvegarder en base de données (écrase l'ancienne simulation si existante)
+    // 5. Idempotence : une re-migration à l'identique (localStorage non purgé, autre
+    //    session/appareil) ne doit ni réécrire ni ré-émettre l'évènement.
+    if (isSameSimulationContent(parcours.rgaSimulationData, rgaSimulationData)) {
+      return { success: true, data: undefined };
+    }
+
+    // 6. Sauvegarder en base de données (écrase l'ancienne simulation si existante)
     await parcoursRepo.updateRGAData(parcours.id, rgaSimulationData);
 
-    // 6. Synchro Brevo (flux) : la simulation vient d'être rattachée au parcours, on
-    //    repousse le contact pour que INSEE/DEPARTEMENT remontent (absents au demandeur_cree,
-    //    qui part avant cette migration). Best-effort — n'échoue jamais la migration.
-    await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_MAJ);
+    // 7. Synchro Brevo (flux) : simulation enregistrée sur le parcours → repousse le contact
+    //    pour que INSEE/DEPARTEMENT remontent (absents au demandeur_cree). Best-effort.
+    await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_ENREGISTREE);
 
     return {
       success: true,
