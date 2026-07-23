@@ -14,11 +14,15 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/shared/database/repositories/parcours-prevention.repository", () => ({
   parcoursPreventionRepository: {
     updateRGADataAgent: vi.fn(async () => ({ id: "parcours-1" })),
+    updateSituationParticulier: vi.fn(async () => undefined),
   },
 }));
 vi.mock("../services/eligibilite-agent.service", () => ({
   evaluateAgentSimulation: vi.fn(),
   buildEligibiliteArchiveNote: vi.fn(() => "note-archivage"),
+  isEligibiliteArchiveReason: vi.fn(
+    (r: string | null | undefined) => typeof r === "string" && r.startsWith("Non éligible")
+  ),
 }));
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
   verifyProspectTerritoryAccess: vi.fn(async () => null),
@@ -40,8 +44,13 @@ import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.acti
 import { db } from "@/shared/database/client";
 import { evaluateAgentSimulation } from "../services/eligibilite-agent.service";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
+import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 
-const mockValidationRow = (statut: StatutValidationAmo, entrepriseAmoId: string | null = "amo-A") => {
+const mockValidationRow = (
+  statut: StatutValidationAmo,
+  entrepriseAmoId: string | null = "amo-A",
+  parcoursExtra: Record<string, unknown> = {}
+) => {
   vi.mocked(db.select).mockReturnValue({
     from: vi.fn().mockReturnValue({
       innerJoin: vi.fn().mockReturnValue({
@@ -49,7 +58,7 @@ const mockValidationRow = (statut: StatutValidationAmo, entrepriseAmoId: string 
           limit: vi.fn().mockResolvedValue([
             {
               validation: { id: "validation-1", statut, entrepriseAmoId },
-              parcours: { id: "parcours-1" },
+              parcours: { id: "parcours-1", archivedAt: null, archiveReason: null, ...parcoursExtra },
             },
           ]),
         }),
@@ -57,6 +66,29 @@ const mockValidationRow = (statut: StatutValidationAmo, entrepriseAmoId: string 
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
+};
+
+// Fallback prospect : 1re requête (validation) vide, 2e (parcours) renvoie la ligne.
+const mockProspectRow = (parcoursExtra: Record<string, unknown> = {}) => {
+  vi.mocked(db.select)
+    .mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) }),
+        }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+    .mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi
+            .fn()
+            .mockResolvedValue([{ id: "parcours-1", archivedAt: null, archiveReason: null, ...parcoursExtra }]),
+        }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
 };
 
 const rgaData = { logement: { adresse: "X" } } as unknown as RGASimulationData;
@@ -96,7 +128,11 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
   });
 
   it("bascule LOGEMENT_NON_ELIGIBLE → LOGEMENT_ELIGIBLE et dé-archive", async () => {
-    mockValidationRow(StatutValidationAmo.LOGEMENT_NON_ELIGIBLE);
+    // Dossier archivé POUR inéligibilité (note préfixée « Non éligible ») → dé-archivable.
+    mockValidationRow(StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, "amo-A", {
+      archivedAt: new Date(),
+      archiveReason: "Non éligible (simulation corrigée par un agent) — critère X",
+    });
     vi.mocked(evaluateAgentSimulation).mockReturnValue({
       result: { eligible: true } as never,
       isEligible: true,
@@ -128,7 +164,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
   });
 
-  it("ne touche pas au statut d'un dossier EN_ATTENTE (validation AMO à venir)", async () => {
+  it("archive un dossier EN_ATTENTE devenu inéligible SANS trancher la validation AMO", async () => {
     mockValidationRow(StatutValidationAmo.EN_ATTENTE);
     vi.mocked(evaluateAgentSimulation).mockReturnValue({
       result: { eligible: false } as never,
@@ -139,11 +175,19 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     const result = await updateSimulationDataAction("validation-1", rgaData);
 
     expect(result.success).toBe(true);
-    expect(txSetSpy).toHaveBeenCalledTimes(1);
+    // Archivage du parcours (honore la promesse UI)…
+    expect(txSetSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        situationParticulier: SituationParticulier.ARCHIVE,
+        archiveReason: "note-archivage",
+        archivedBy: "agent-1",
+      })
+    );
+    // …mais sans auto-décider la validation AMO (pas de flip de statut).
     expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
   });
 
-  it("ne touche pas au statut d'un dossier SANS_AMO", async () => {
+  it("archive un dossier SANS_AMO devenu inéligible SANS trancher la validation", async () => {
     mockValidationRow(StatutValidationAmo.SANS_AMO);
     vi.mocked(evaluateAgentSimulation).mockReturnValue({
       result: { eligible: false } as never,
@@ -154,6 +198,9 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     const result = await updateSimulationDataAction("validation-1", rgaData);
 
     expect(result.success).toBe(true);
+    expect(txSetSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ situationParticulier: SituationParticulier.ARCHIVE, archivedBy: "agent-1" })
+    );
     expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
   });
 });
@@ -197,5 +244,69 @@ describe("updateSimulationDataAction — autorisation SANS_AMO (Aller-vers)", ()
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toBe("Ce prospect n'est pas dans votre territoire");
     expect(db.transaction).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateSimulationDataAction — fallback prospect (sans validation AMO)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getCurrentAgent).mockResolvedValue({
+      success: true,
+      data: { id: "agent-1", role: UserRole.ALLERS_VERS, entrepriseAmoId: null, allersVersId: "av-1" },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  });
+
+  it("archive le prospect devenu inéligible", async () => {
+    mockProspectRow();
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: { eligible: false } as never,
+      isEligible: false,
+      isNonEligible: true,
+    });
+
+    const result = await updateSimulationDataAction("parcours-1", rgaData);
+
+    expect(result.success).toBe(true);
+    expect(parcoursPreventionRepository.updateSituationParticulier).toHaveBeenCalledWith(
+      "parcours-1",
+      SituationParticulier.ARCHIVE,
+      "note-archivage",
+      "agent-1"
+    );
+  });
+
+  it("dé-archive un prospect redevenu éligible archivé pour inéligibilité", async () => {
+    mockProspectRow({
+      archivedAt: new Date(),
+      archiveReason: "Non éligible (simulation corrigée par un agent) — critère X",
+    });
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: { eligible: true } as never,
+      isEligible: true,
+      isNonEligible: false,
+    });
+
+    const result = await updateSimulationDataAction("parcours-1", rgaData);
+
+    expect(result.success).toBe(true);
+    expect(parcoursPreventionRepository.updateSituationParticulier).toHaveBeenCalledWith(
+      "parcours-1",
+      SituationParticulier.PROSPECT
+    );
+  });
+
+  it("ne dé-archive pas un prospect archivé manuellement (raison ≠ inéligibilité)", async () => {
+    mockProspectRow({ archivedAt: new Date(), archiveReason: "Le demandeur a abandonné le projet" });
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: { eligible: true } as never,
+      isEligible: true,
+      isNonEligible: false,
+    });
+
+    const result = await updateSimulationDataAction("parcours-1", rgaData);
+
+    expect(result.success).toBe(true);
+    expect(parcoursPreventionRepository.updateSituationParticulier).not.toHaveBeenCalled();
   });
 });

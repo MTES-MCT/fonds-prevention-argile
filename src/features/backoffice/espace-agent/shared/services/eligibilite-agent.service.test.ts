@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { evaluateAgentSimulation, buildEligibiliteArchiveNote } from "./eligibilite-agent.service";
+import {
+  evaluateAgentSimulation,
+  buildEligibiliteArchiveNote,
+  isEligibiliteArchiveReason,
+} from "./eligibilite-agent.service";
 import { EligibilityReason } from "@/features/simulateur/domain/value-objects/eligibility-reason.enum";
 
 describe("evaluateAgentSimulation", () => {
@@ -27,5 +31,21 @@ describe("buildEligibiliteArchiveNote", () => {
 
   it("reste lisible sans raison", () => {
     expect(buildEligibiliteArchiveNote(null, "edition")).toBe("Non éligible (simulation corrigée par un agent)");
+  });
+});
+
+describe("isEligibiliteArchiveReason", () => {
+  it("reconnaît les notes d'archivage pour inéligibilité (création / édition)", () => {
+    expect(isEligibiliteArchiveReason(buildEligibiliteArchiveNote(null, "creation"))).toBe(true);
+    expect(isEligibiliteArchiveReason(buildEligibiliteArchiveNote(null, "edition"))).toBe(true);
+    // Aligné aussi sur la note de qualification prospect (« Non éligible au dispositif »).
+    expect(isEligibiliteArchiveReason("Non éligible au dispositif")).toBe(true);
+  });
+
+  it("ignore un archivage manuel et les valeurs vides", () => {
+    expect(isEligibiliteArchiveReason("Le demandeur a abandonné le projet")).toBe(false);
+    expect(isEligibiliteArchiveReason("Reste à charge trop élevé")).toBe(false);
+    expect(isEligibiliteArchiveReason(null)).toBe(false);
+    expect(isEligibiliteArchiveReason(undefined)).toBe(false);
   });
 });

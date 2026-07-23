@@ -12,7 +12,11 @@ import { SituationParticulier } from "@/shared/domain/value-objects/situation-pa
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import type { ActionResult } from "@/shared/types";
-import { evaluateAgentSimulation, buildEligibiliteArchiveNote } from "../services/eligibilite-agent.service";
+import {
+  evaluateAgentSimulation,
+  buildEligibiliteArchiveNote,
+  isEligibiliteArchiveReason,
+} from "../services/eligibilite-agent.service";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 
 /**
@@ -124,6 +128,7 @@ export async function updateSimulationDataAction(
       const now = new Date();
       const decidedStatuts = [StatutValidationAmo.LOGEMENT_ELIGIBLE, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE];
       const statutCourant = dossier.validation.statut as StatutValidationAmo;
+      const wasArchived = Boolean(dossier.parcours.archivedAt);
 
       await db.transaction(async (tx) => {
         // 1. Simulation agent + baseline (données AVANT 1re correction) pour le diff.
@@ -137,30 +142,36 @@ export async function updateSimulationDataAction(
           })
           .where(eq(parcoursPrevention.id, dossier.parcours.id));
 
-        // 2. Recalcul du statut d'éligibilité (miroir de la création). On ne re-décide
-        //    que pour un dossier déjà tranché : EN_ATTENTE (validation AMO à venir) et
-        //    SANS_AMO ne sont pas auto-décidés par une simple correction. Le mail
-        //    d'invitation n'est PAS renvoyé (artefact de création, dossier peut-être déjà réclamé).
-        if (!decidedStatuts.includes(statutCourant)) return;
-
+        // 2. Recalcul du verdict d'éligibilité (miroir de la création). Sans verdict
+        //    tranché (simulation incomplète, aucun critère bloquant) → rien d'autre.
         const verdict = evaluateAgentSimulation(rgaData);
-        const nouveauStatut = verdict.isEligible
-          ? StatutValidationAmo.LOGEMENT_ELIGIBLE
-          : verdict.isNonEligible
-            ? StatutValidationAmo.LOGEMENT_NON_ELIGIBLE
-            : null;
+        if (!verdict.isEligible && !verdict.isNonEligible) return;
 
-        // Effets de bord UNIQUEMENT sur un vrai changement de verdict : sinon chaque
-        // sauvegarde écraserait valideeAt, ferait glisser archivedAt, ou dé-archiverait
-        // un dossier archivé pour une autre raison.
-        if (!nouveauStatut || nouveauStatut === statutCourant) return;
+        // 2a. Décision de validation AMO : réservée aux dossiers DÉJÀ tranchés. EN_ATTENTE
+        //     (validation AMO à venir) et SANS_AMO ne sont PAS auto-décidés par une
+        //     correction — l'AMO / l'Aller-vers gardent la main sur la décision. Flip sur
+        //     vrai changement de verdict seulement (sinon on écraserait valideeAt).
+        //     Le mail d'invitation n'est PAS renvoyé (artefact de création).
+        if (decidedStatuts.includes(statutCourant)) {
+          const nouveauStatut = verdict.isEligible
+            ? StatutValidationAmo.LOGEMENT_ELIGIBLE
+            : StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
+          if (nouveauStatut !== statutCourant) {
+            await tx
+              .update(parcoursAmoValidations)
+              .set({ statut: nouveauStatut, valideeAt: now })
+              .where(eq(parcoursAmoValidations.id, dossier.validation.id));
+          }
+        }
 
-        await tx
-          .update(parcoursAmoValidations)
-          .set({ statut: nouveauStatut, valideeAt: now })
-          .where(eq(parcoursAmoValidations.id, dossier.validation.id));
-
-        if (verdict.isNonEligible) {
+        // 2b. Archivage / dé-archivage du parcours : sur TOUS les statuts éditables
+        //     (EN_ATTENTE, SANS_AMO, LOGEMENT_*), pour honorer la promesse UI
+        //     (« déplacé dans Archivés » dès l'inéligibilité). La catégorie « Archivés »
+        //     est pilotée par archivedAt (getDossierEtat), indépendamment du statut de
+        //     validation. Idempotent : on n'archive pas un dossier déjà archivé
+        //     (archivedAt ne glisse pas) et on ne dé-archive QUE ce qui a été archivé
+        //     pour inéligibilité — jamais un archivage manuel (abandon, non-réponse…).
+        if (verdict.isNonEligible && !wasArchived) {
           await tx
             .update(parcoursPrevention)
             .set({
@@ -170,7 +181,7 @@ export async function updateSimulationDataAction(
               archivedBy: agent.id,
             })
             .where(eq(parcoursPrevention.id, dossier.parcours.id));
-        } else {
+        } else if (verdict.isEligible && wasArchived && isEligibiliteArchiveReason(dossier.parcours.archiveReason)) {
           // Redevenu éligible → dé-archivage (nettoie archivedAt/reason/by).
           await tx
             .update(parcoursPrevention)
@@ -207,6 +218,26 @@ export async function updateSimulationDataAction(
 
     if (!updated) {
       return { success: false, error: "Erreur lors de la mise à jour" };
+    }
+
+    // Archivage / dé-archivage du prospect selon le verdict recalculé — même règle que
+    // pour un dossier (honore la promesse UI « déplacé dans Archivés »). On n'archive pas
+    // deux fois et on ne dé-archive qu'un archivage pour inéligibilité.
+    const prospectVerdict = evaluateAgentSimulation(rgaData);
+    const prospectWasArchived = Boolean(parcours.archivedAt);
+    if (prospectVerdict.isNonEligible && !prospectWasArchived) {
+      await parcoursPreventionRepository.updateSituationParticulier(
+        parcours.id,
+        SituationParticulier.ARCHIVE,
+        buildEligibiliteArchiveNote(prospectVerdict.result, "edition"),
+        agent.id
+      );
+    } else if (
+      prospectVerdict.isEligible &&
+      prospectWasArchived &&
+      isEligibiliteArchiveReason(parcours.archiveReason)
+    ) {
+      await parcoursPreventionRepository.updateSituationParticulier(parcours.id, SituationParticulier.PROSPECT);
     }
 
     // Invalider le cache de toutes les pages de l'espace agent
