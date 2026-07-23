@@ -121,7 +121,7 @@
       "items": [
         { "text": "Votre maison n'est <strong>pas ou peu sinistrée</strong>" },
         {
-          "text": "Votre maison n'a pas de fissures ou a des fissures dont l'écartement est supérieur à 5 mm sur :",
+          "text": "Votre maison n'a pas de fissures dont l'écartement est supérieur à 5 mm sur :",
           "sublist": [
             "Les murs extérieurs et intérieurs",
             "Les doublages et les cloisons,",
