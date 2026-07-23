@@ -75,3 +75,27 @@ sur l'un d'eux est maintenant visible.
   prospect (données utiles, sans effet de bord).
 - Le scope du recalcul est volontairement limité aux dossiers déjà tranchés : les
   workflows de validation AMO (`EN_ATTENTE`) et sans-AMO ne sont pas modifiés.
+
+## Amendement (2026-07-23) : découplage archivage / décision de validation
+
+Le scope ci-dessus couplait deux effets sous une même garde `decidedStatuts` : la
+**décision de validation** (flip de statut) **et** l'**archivage**. Conséquence : sur un
+dossier `EN_ATTENTE` / `SANS_AMO` ou un prospect, une simulation corrigée devenue
+inéligible n'archivait rien — alors que la modale de confirmation promet « Le dossier sera
+déplacé dans la catégorie Archivés ». UI et backend divergeaient.
+
+**Décision** : découpler les deux effets dans `updateSimulationDataAction`.
+
+- **Décision de validation** (flip `LOGEMENT_ELIGIBLE ↔ LOGEMENT_NON_ELIGIBLE`) : inchangée,
+  **réservée aux dossiers déjà tranchés**. On n'auto-décide toujours pas un `EN_ATTENTE`
+  (validation AMO à venir) ni un `SANS_AMO` — l'AMO / l'Aller-vers gardent la main.
+- **Archivage** : étendu à **tous les statuts éditables** et au **chemin prospect**. Suffit
+  de poser `archivedAt` (+ `situationParticulier = ARCHIVE` + note), car la catégorie
+  « Archivés » est pilotée par `archivedAt` dans `getDossierEtat`, indépendamment du statut
+  de validation. On ne préempte donc pas la décision AMO tout en honorant la promesse UI.
+
+**Garde anti-régression sur le dé-archivage** : le retour automatique à l'état actif quand
+la simulation redevient éligible ne s'applique **qu'aux archivages pour inéligibilité**
+(note préfixée `« Non éligible »`, prédicat `isEligibiliteArchiveReason`). Un archivage
+**manuel** (abandon, non-réponse, reste à charge…) n'est jamais annulé automatiquement.
+Idempotence : on n'archive pas un dossier déjà archivé (`archivedAt` ne glisse pas).
