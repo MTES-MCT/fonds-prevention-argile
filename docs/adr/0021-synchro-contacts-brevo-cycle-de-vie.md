@@ -33,7 +33,7 @@ appels. Point d'entrée unique `emitBrevoEvent(parcoursId, eventName, options)`.
 
 ### 2. Quatre hooks best-effort
 
-`demandeur_cree` (inscription FC, 1re création du parcours), `simulation_maj` (migration de
+`demandeur_cree` (inscription FC, 1re création du parcours), `simulation_enregistree` (migration de
 la simulation localStorage sur le parcours post-login — fait remonter INSEE/DEPARTEMENT,
 absents au `demandeur_cree` qui part avant), `amo_reponse`
 (`approveValidation`/`rejectEligibility`), `dn_update` (`syncDossierStatus`, sur
