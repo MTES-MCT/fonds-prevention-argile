@@ -204,6 +204,26 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
   });
 
+  it("idempotence : dossier déjà archivé et toujours inéligible → n'écrit pas archivedAt", async () => {
+    mockValidationRow(StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, "amo-A", {
+      archivedAt: new Date(),
+      archiveReason: "Non éligible (simulation corrigée par un agent) — critère X",
+    });
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: { eligible: false } as never,
+      isEligible: false,
+      isNonEligible: true,
+    });
+
+    const result = await updateSimulationDataAction("validation-1", rgaData);
+
+    expect(result.success).toBe(true);
+    // Statut inchangé (déjà NON_ELIGIBLE) + pas de ré-archivage → seule la simulation est écrite.
+    expect(txSetSpy).toHaveBeenCalledTimes(1);
+    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ archivedAt: expect.anything() }));
+    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ situationParticulier: expect.anything() }));
+  });
+
   it("persiste une simulation indécise sans statut ni archivage (dossier déjà tranché)", async () => {
     mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE);
     vi.mocked(evaluateAgentSimulation).mockReturnValue({
@@ -266,6 +286,10 @@ describe("updateSimulationDataAction — autorisation SANS_AMO (Aller-vers)", ()
 describe("updateSimulationDataAction — fallback prospect (sans validation AMO)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // clearAllMocks ne vide PAS la file mockReturnValueOnce : un test admin (qui saute la
+    // requête existingValidation) laisserait une valeur non consommée, désynchronisant la
+    // file db.select des tests suivants. mockReset la vide.
+    vi.mocked(db.select).mockReset();
     vi.mocked(getCurrentAgent).mockResolvedValue({
       success: true,
       data: { id: "agent-1", role: UserRole.ALLERS_VERS, entrepriseAmoId: null, allersVersId: "av-1" },
@@ -339,8 +363,15 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
   });
 
   it("refuse un AMO pur (capacité dossiers sans AMO absente)", async () => {
+    // Vrai agent AMO (rôle + entreprise), pas un AV avec capacité forcée.
+    vi.mocked(getCurrentAgent).mockResolvedValue({
+      success: true,
+      data: { id: "agent-amo", role: UserRole.AMO, entrepriseAmoId: "amo-A", allersVersId: null },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
     mockProspectRow();
-    vi.mocked(calculateAgentScope).mockResolvedValueOnce({
+    // Scope AMO : porte un territoire (via entreprise) mais PAS la capacité sans-AMO.
+    vi.mocked(calculateAgentScope).mockResolvedValue({
       canViewDossiersWithoutAmo: false,
       departements: ["01"],
       epcis: [],
@@ -355,7 +386,47 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
     const result = await updateSimulationDataAction("parcours-1", rgaData);
 
     expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toBe("Ce dossier ne vous est pas destiné");
     expect(db.transaction).not.toHaveBeenCalled();
+  });
+
+  it("ADMINISTRATEUR : bypass assumé des gardes fallback (voit tout, national)", async () => {
+    // Comportement by-design pré-existant (isAdmin = SUPER_ADMIN | ADMINISTRATEUR) : un
+    // admin national court-circuite les gardes fallback. Test de verrouillage, pas de fuite.
+    vi.mocked(getCurrentAgent).mockResolvedValue({
+      success: true,
+      data: { id: "agent-admin", role: UserRole.ADMINISTRATEUR, entrepriseAmoId: null, allersVersId: null },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    mockProspectRow();
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: { eligible: false } as never,
+      isEligible: false,
+      isNonEligible: true,
+    });
+
+    const result = await updateSimulationDataAction("parcours-1", rgaData);
+
+    expect(result.success).toBe(true);
+    // Gardes non appelées (bypass admin) mais archivage bien appliqué.
+    expect(calculateAgentScope).not.toHaveBeenCalled();
+    expect(txSetSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ situationParticulier: SituationParticulier.ARCHIVE })
+    );
+  });
+
+  it("échec de la transaction → échec de l'action (pas de faux succès)", async () => {
+    mockProspectRow();
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: { eligible: false } as never,
+      isEligible: false,
+      isNonEligible: true,
+    });
+    vi.mocked(db.transaction).mockRejectedValueOnce(new Error("écriture archivage échouée"));
+
+    const result = await updateSimulationDataAction("parcours-1", rgaData);
+
+    expect(result.success).toBe(false);
   });
 
   it("refuse si une validation AMO existe pour ce parcours (pas de contournement via parcoursId)", async () => {
