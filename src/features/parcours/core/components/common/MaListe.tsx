@@ -12,6 +12,7 @@ import {
   type StepListItem,
 } from "@/features/parcours/amo/domain/value-objects";
 import { AnnulerAccompagnementModal } from "@/features/parcours/amo/components/steps/AnnulerAccompagnementModal";
+import { DossierTimeline } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
 
 const COMPLETED_STYLE: React.CSSProperties = {
   textDecoration: "line-through",
@@ -20,12 +21,15 @@ const COMPLETED_STYLE: React.CSSProperties = {
 };
 
 export default function MaListe() {
-  const { currentStep, statutAmo, getDossierUrl, lastDSStatus, validationAmoComplete, getDSStatusByStep } =
+  const { currentStep, statutAmo, getDossierUrl, lastDSStatus, validationAmoComplete, getDSStatusByStep, dossiers } =
     useParcours();
   const amoMode = useAmoMode();
   const [isAnnulerOpen, setIsAnnulerOpen] = useState(false);
 
   const items = getStepListItems(amoMode, statutAmo, currentStep, lastDSStatus === DSStatus.ACCEPTE);
+  // Dates clés (brouillon/dépôt/instruction/décision) du dossier d'éligibilité,
+  // affichées sous l'item correspondant de la liste (cf. ParcoursDemandeur côté agent).
+  const eligibiliteDossier = dossiers?.find((d) => d.demarcheEtape === Step.ELIGIBILITE);
 
   // L'annulation n'existe qu'en mode FACULTATIF : ailleurs l'AMO est imposé par le
   // département (même garde que `skipAmoStepForUser`, revérifiée côté serveur).
@@ -62,6 +66,11 @@ export default function MaListe() {
                   )}
                   {item.key === "choix-accompagnement" && arretEnAttente && (
                     <span className="fr-text--xs fr-text-mention--grey fr-ml-1w">Arrêt demandé</span>
+                  )}
+                  {item.key === "eligibilite" && eligibiliteDossier && (
+                    <div className="fr-ml-3v fr-mt-1v text-gray-500">
+                      <DossierTimeline dossier={eligibiliteDossier} />
+                    </div>
                   )}
                 </li>
               ))}
