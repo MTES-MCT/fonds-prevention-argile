@@ -241,7 +241,8 @@ Effet (service `declineAccompagnementEligible`, `amo-validation.service.ts`, en 
 `archived_by`). La raison est saisie via la modale « Archiver » (`ARCHIVE_REASONS`, jamais préfixée
 « Non éligible »). Le dossier bascule dans les **Archivés** (`archivedAt` prime dans `getDossierEtat`) ;
 l'aller-vers du territoire en devient responsable. Retour arrière : ré-ouverture (ADR-0016, qui gère
-déjà `accompagnement_refuse`) ou dé-archivage manuel — pas de routage automatique.
+déjà `accompagnement_refuse`) ou dé-archivage manuel — pas de routage automatique. Voir
+[ADR-0022](../adr/0022-refus-accompagnement-demandeur-eligible.md).
 
 > `ACCOMPAGNEMENT_REFUSE` est **consultable** (`STATUTS_CONSULTABLES`) mais **non éditable**
 > (`editableStatuts` de l'édition simulation) : le dossier archivé n'est pas corrigeable via

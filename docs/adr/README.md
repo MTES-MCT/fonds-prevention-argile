@@ -49,5 +49,6 @@ purement cosmétique.
 | 0019 | [Early exit du simulateur lors d'une création de dossier par un agent](0019-early-exit-simulateur-agent.md)                             | Accepté |
 | 0020 | [Correction d'une simulation agent après verdict d'éligibilité](0020-correction-simulation-agent-post-eligibilite.md)                   | Accepté |
 | 0021 | [Synchro de contacts Brevo pilotée par les Automations (cycle de vie)](0021-synchro-contacts-brevo-cycle-de-vie.md)                     | Accepté |
+| 0022 | [Refus d'accompagnement d'un demandeur éligible par l'AMO](0022-refus-accompagnement-demandeur-eligible.md)                             | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->
