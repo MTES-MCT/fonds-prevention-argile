@@ -44,7 +44,7 @@ const makeAgent = (role: UserRole, entrepriseAmoId?: string | null): AuthUser =>
 });
 
 // La requête détail renvoie une ligne (validation/parcours/user).
-const mockDemandeRow = (entrepriseAmoId: string | null) => {
+const mockDemandeRow = (entrepriseAmoId: string | null, archivedAt: Date | null = null) => {
   vi.mocked(db.select).mockReturnValue({
     from: vi.fn().mockReturnValue({
       innerJoin: vi.fn().mockReturnValue({
@@ -59,7 +59,13 @@ const mockDemandeRow = (entrepriseAmoId: string | null) => {
                   choisieAt: new Date(),
                   commentaire: null,
                 },
-                parcours: { id: "parcours-1", createdByAgentId: null, createdAt: new Date(), currentStep: "choix_amo" },
+                parcours: {
+                  id: "parcours-1",
+                  createdByAgentId: null,
+                  createdAt: new Date(),
+                  currentStep: "choix_amo",
+                  archivedAt,
+                },
                 user: { id: "user-x", prenom: "Jean", nom: "Dupont" },
               },
             ]),
@@ -109,6 +115,17 @@ describe("getDemandeDetail — garde de lecture (§7)", () => {
       "parcours-1",
       expect.objectContaining({ role: UserRole.ANALYSTE })
     );
+  });
+
+  it("remonte archivedAt (pour la redirection archive-aware de la page demande)", async () => {
+    const archiveDate = new Date("2026-07-20");
+    vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, "amo-1"));
+    mockDemandeRow("amo-1", archiveDate);
+
+    const result = await getDemandeDetail("demande-1");
+
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.archivedAt).toEqual(archiveDate);
   });
 
   it("ANALYSTE hors de son territoire : refusé (scope territoire, pas « réservé AMO »)", async () => {

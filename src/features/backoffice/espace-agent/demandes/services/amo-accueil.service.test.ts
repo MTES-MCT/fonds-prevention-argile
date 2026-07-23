@@ -9,12 +9,12 @@ vi.mock("@/shared/database/client", () => ({
   },
 }));
 
-// Helper pour mocker les chaînes Drizzle
+// Helper pour mocker les chaînes Drizzle. Les counts joignent désormais parcours_prevention
+// (pour filtrer archivedAt), d'où l'étape innerJoin.
 const mockDbSelectCount = (countValue: number) => {
   const mockWhere = vi.fn().mockResolvedValue([{ count: countValue }]);
-  const mockFrom = vi.fn().mockReturnValue({
-    where: mockWhere,
-  });
+  const mockInnerJoin = vi.fn().mockReturnValue({ where: mockWhere });
+  const mockFrom = vi.fn().mockReturnValue({ innerJoin: mockInnerJoin });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return { from: mockFrom } as any;
@@ -222,7 +222,8 @@ describe("AmoAccueilService", () => {
       // Arrange - Tableaux vides pour les counts
       const mockEmptyCount = () => {
         const mockWhere = vi.fn().mockResolvedValue([]);
-        const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+        const mockInnerJoin = vi.fn().mockReturnValue({ where: mockWhere });
+        const mockFrom = vi.fn().mockReturnValue({ innerJoin: mockInnerJoin });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return { from: mockFrom } as any;
       };

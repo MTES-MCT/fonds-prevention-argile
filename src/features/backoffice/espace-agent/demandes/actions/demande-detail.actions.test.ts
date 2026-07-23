@@ -135,6 +135,7 @@ describe("demande-detail.actions", () => {
           rnbId: "RNB123456",
         },
         statut: "EN_ATTENTE",
+        archivedAt: null,
         dateCreation: new Date(),
         commentaire: null,
         estMandataireFinancier: null,

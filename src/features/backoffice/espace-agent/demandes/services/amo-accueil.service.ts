@@ -1,4 +1,4 @@
-import { count, eq, and, asc } from "drizzle-orm";
+import { count, eq, and, asc, isNull } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations, parcoursPrevention, users } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
@@ -41,8 +41,15 @@ async function getNombreDemandesEnAttente(entrepriseAmoId: string | null): Promi
   const result = await db
     .select({ count: count() })
     .from(parcoursAmoValidations)
+    .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
     .where(
-      and(entrepriseAmoFilter(entrepriseAmoId), eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE))
+      and(
+        entrepriseAmoFilter(entrepriseAmoId),
+        eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE),
+        // Une demande archivée (simulation devenue non éligible) n'est plus « à traiter » :
+        // archivedAt prime, cohérent avec getDossierEtat.
+        isNull(parcoursPrevention.archivedAt)
+      )
     );
 
   return result[0]?.count ?? 0;
@@ -52,10 +59,12 @@ async function getNombreDossiersSuivis(entrepriseAmoId: string | null): Promise<
   const result = await db
     .select({ count: count() })
     .from(parcoursAmoValidations)
+    .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
     .where(
       and(
         entrepriseAmoFilter(entrepriseAmoId),
-        eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE)
+        eq(parcoursAmoValidations.statut, StatutValidationAmo.LOGEMENT_ELIGIBLE),
+        isNull(parcoursPrevention.archivedAt)
       )
     );
 
@@ -77,7 +86,13 @@ async function getDemandesATraiter(entrepriseAmoId: string | null): Promise<Dema
     .from(parcoursAmoValidations)
     .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, parcoursAmoValidations.parcoursId))
     .innerJoin(users, eq(users.id, parcoursPrevention.userId))
-    .where(and(entrepriseAmoFilter(entrepriseAmoId), eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE)))
+    .where(
+      and(
+        entrepriseAmoFilter(entrepriseAmoId),
+        eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE),
+        isNull(parcoursPrevention.archivedAt)
+      )
+    )
     .orderBy(asc(parcoursAmoValidations.createdAt));
 
   return results.map((row) => {
