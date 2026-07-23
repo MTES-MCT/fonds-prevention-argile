@@ -46,6 +46,7 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 | [`fix-missing-epci.ts`](#fix-missing-epci)                       | **écrit** | Backfill du code EPCI sur les parcours qui en sont dépourvus (via `geo.api.gouv.fr`)                                            | `pnpm fix:epci`                                        |
 | [`reouvrir-demande.ts`](#reouvrir-demande)                       | **écrit** | Ré-ouvre une demande refusée par l'AMO (changement d'avis) : statut refusé -> en_attente + token frais (+ email)                | `pnpm fix:reouvrir-demande`                            |
 | [`detacher-amo.ts`](#detacher-amo)                               | **écrit** | Détache l'AMO d'un parcours (passage en « sans AMO ») : AMO choisi avant l'arrêté, le demandeur veut continuer seul             | `pnpm fix:detacher-amo`                                |
+| [`purge-comptes-test-fc.ts`](#purge-comptes-test-fc)             | **écrit** | Supprime (cascade) les comptes demandeurs de test FranceConnect du CSV mocké FC low — staging/local uniquement, refus en prod   | `pnpm fix:purge-comptes-test-fc`                       |
 | [`debug-matomo-events.ts`](#debug-matomo-events)                 | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur)                                                                 | `tsx scripts/ops/debug/debug-matomo-events.ts`         |
 | [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Dump les champs + annotations d'une démarche DS avec leurs IDs (alimente `ds-field-ids.ts`)                                     | `pnpm ds:fetch-schema <numero>`                        |
 | [`check-ds-permissions.ts`](#check-ds-permissions)               | read-only | Vérifie que le token GraphQL a accès à chaque démarche configurée (sinon synchro KO)                                            | `pnpm ds:check-permissions`                            |
@@ -197,6 +198,36 @@ pnpm fix:detacher-amo --parcours-id=<uuid> --apply     # applique
 ```
 
 **Prérequis** : `.env.local` avec `DATABASE_URL` (l'API DS n'est pas sollicitée).
+
+### purge-comptes-test-fc
+
+Supprime les comptes demandeurs de **test FranceConnect** (et tout leur historique) issus
+du CSV des citoyens mockés de l'IdP FC « low »
+([`base.csv`](https://github.com/france-connect/sources/blob/main/docker/volumes/fcp-low/mocks/idp/databases/citizen/base.csv)).
+Ces comptes n'existent qu'en integration/low (staging + local) : la connexion FC y passe
+par un IdP mocké, la prod utilise le vrai FranceConnect. Le CSV est lu **en live** à
+chaque exécution (pas de snapshot commité). La correspondance se fait sur l'**email** FC
+(seul champ commun : le CSV n'expose pas de `sub`/`fcId`).
+
+Effet : `db.delete(users)` sur les emails matchés, dans une transaction. La cascade DB
+efface `parcours_prevention` puis `dossiers_demarches_simplifiees`,
+`parcours_amo_validations` (→ `amo_validation_tokens`), `parcours_actions`,
+`prospect_qualifications`, `sync_run_entries`. `agents`, `entreprises_amo` et `sync_runs`
+ne sont pas touchés. Dry-run par défaut (liste + cascade prévisualisées, emails
+anonymisés).
+
+> **Garde-fou** : refus catégorique si `NEXT_PUBLIC_APP_ENV === "production"` (aucun
+> override). À ne lancer qu'en staging ou local.
+
+```bash
+pnpm fix:purge-comptes-test-fc                          # dry-run
+pnpm fix:purge-comptes-test-fc --apply                  # supprime
+pnpm fix:purge-comptes-test-fc --email=test@yopmail.com --apply   # un seul compte
+pnpm fix:purge-comptes-test-fc --no-anonymize           # emails/noms en clair
+```
+
+**Prérequis** : `.env.local` avec `DATABASE_URL` + `NEXT_PUBLIC_APP_ENV` ; accès réseau à
+raw.githubusercontent.com pour le CSV.
 
 ### debug-matomo-events
 
