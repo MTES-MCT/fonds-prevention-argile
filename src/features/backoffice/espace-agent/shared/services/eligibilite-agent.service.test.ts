@@ -45,6 +45,8 @@ describe("isEligibiliteArchiveReason", () => {
   it("ignore un archivage manuel et les valeurs vides", () => {
     expect(isEligibiliteArchiveReason("Le demandeur a abandonné le projet")).toBe(false);
     expect(isEligibiliteArchiveReason("Reste à charge trop élevé")).toBe(false);
+    // Raison manuelle proche sémantiquement mais NON préfixée « Non éligible » → manuelle.
+    expect(isEligibiliteArchiveReason("Le demandeur n'est pas éligible")).toBe(false);
     expect(isEligibiliteArchiveReason(null)).toBe(false);
     expect(isEligibiliteArchiveReason(undefined)).toBe(false);
   });

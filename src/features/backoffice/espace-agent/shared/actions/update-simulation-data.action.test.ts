@@ -11,12 +11,6 @@ vi.mock("@/features/backoffice/shared/actions/agent.actions", () => ({
   getCurrentAgent: vi.fn(),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/shared/database/repositories/parcours-prevention.repository", () => ({
-  parcoursPreventionRepository: {
-    updateRGADataAgent: vi.fn(async () => ({ id: "parcours-1" })),
-    updateSituationParticulier: vi.fn(async () => undefined),
-  },
-}));
 vi.mock("../services/eligibilite-agent.service", () => ({
   evaluateAgentSimulation: vi.fn(),
   buildEligibiliteArchiveNote: vi.fn(() => "note-archivage"),
@@ -26,6 +20,7 @@ vi.mock("../services/eligibilite-agent.service", () => ({
 }));
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
   verifyProspectTerritoryAccess: vi.fn(async () => null),
+  calculateAgentScope: vi.fn(async () => ({ canViewDossiersWithoutAmo: true, departements: ["01"], epcis: [] })),
 }));
 
 // db.select → ligne validation/parcours ; db.transaction(cb) → exécute cb avec un
@@ -43,8 +38,10 @@ import { updateSimulationDataAction } from "./update-simulation-data.action";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { db } from "@/shared/database/client";
 import { evaluateAgentSimulation } from "../services/eligibilite-agent.service";
-import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
-import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import {
+  verifyProspectTerritoryAccess,
+  calculateAgentScope,
+} from "@/features/auth/permissions/services/agent-scope.service";
 
 const mockValidationRow = (
   statut: StatutValidationAmo,
@@ -68,8 +65,18 @@ const mockValidationRow = (
   } as any);
 };
 
-// Fallback prospect : 1re requête (validation) vide, 2e (parcours) renvoie la ligne.
-const mockProspectRow = (parcoursExtra: Record<string, unknown> = {}) => {
+// Fallback prospect : 3 requêtes db.select successives —
+// 1) validation par id (vide) ; 2) parcours par id ; 3) validation existante par parcoursId.
+const mockProspectRow = (
+  parcoursExtra: Record<string, unknown> = {},
+  existingValidationRows: Array<{ id: string }> = []
+) => {
+  const noInnerJoin = (rows: unknown[]) =>
+    ({
+      from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(rows) }) }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as any;
+
   vi.mocked(db.select)
     .mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
@@ -79,16 +86,8 @@ const mockProspectRow = (parcoursExtra: Record<string, unknown> = {}) => {
       }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
-    .mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi
-            .fn()
-            .mockResolvedValue([{ id: "parcours-1", archivedAt: null, archiveReason: null, ...parcoursExtra }]),
-        }),
-      }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    .mockReturnValueOnce(noInnerJoin([{ id: "parcours-1", archivedAt: null, archiveReason: null, ...parcoursExtra }]))
+    .mockReturnValueOnce(noInnerJoin(existingValidationRows));
 };
 
 const rgaData = { logement: { adresse: "X" } } as unknown as RGASimulationData;
@@ -143,8 +142,9 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
 
     expect(result.success).toBe(true);
     expect(txSetSpy).toHaveBeenCalledWith(expect.objectContaining({ statut: StatutValidationAmo.LOGEMENT_ELIGIBLE }));
+    // Dossier avec entreprise AMO → réactivation en ELIGIBLE (aligné sur le dé-archivage manuel).
     expect(txSetSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ situationParticulier: SituationParticulier.PROSPECT, archivedAt: null })
+      expect.objectContaining({ situationParticulier: SituationParticulier.ELIGIBLE, archivedAt: null })
     );
   });
 
@@ -203,6 +203,22 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     );
     expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
   });
+
+  it("persiste une simulation indécise sans statut ni archivage (dossier déjà tranché)", async () => {
+    mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE);
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: null,
+      isEligible: false,
+      isNonEligible: false,
+    });
+
+    const result = await updateSimulationDataAction("validation-1", rgaData);
+
+    expect(result.success).toBe(true);
+    expect(txSetSpy).toHaveBeenCalledTimes(1);
+    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
+    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ situationParticulier: expect.anything() }));
+  });
 });
 
 describe("updateSimulationDataAction — autorisation SANS_AMO (Aller-vers)", () => {
@@ -255,9 +271,18 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
       data: { id: "agent-1", role: UserRole.ALLERS_VERS, entrepriseAmoId: null, allersVersId: "av-1" },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
+    // Reset explicite : clearAllMocks ne réinitialise pas les implémentations, et un test
+    // d'un autre bloc a posé un mockResolvedValue persistant (fuite entre describes).
+    vi.mocked(verifyProspectTerritoryAccess).mockResolvedValue(null);
+    vi.mocked(calculateAgentScope).mockResolvedValue({
+      canViewDossiersWithoutAmo: true,
+      departements: ["01"],
+      epcis: [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
   });
 
-  it("archive le prospect devenu inéligible", async () => {
+  it("archive le prospect devenu inéligible (transaction atomique)", async () => {
     mockProspectRow();
     vi.mocked(evaluateAgentSimulation).mockReturnValue({
       result: { eligible: false } as never,
@@ -268,15 +293,17 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
     const result = await updateSimulationDataAction("parcours-1", rgaData);
 
     expect(result.success).toBe(true);
-    expect(parcoursPreventionRepository.updateSituationParticulier).toHaveBeenCalledWith(
-      "parcours-1",
-      SituationParticulier.ARCHIVE,
-      "note-archivage",
-      "agent-1"
+    expect(db.transaction).toHaveBeenCalledTimes(1);
+    expect(txSetSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        situationParticulier: SituationParticulier.ARCHIVE,
+        archiveReason: "note-archivage",
+        archivedBy: "agent-1",
+      })
     );
   });
 
-  it("dé-archive un prospect redevenu éligible archivé pour inéligibilité", async () => {
+  it("dé-archive (en PROSPECT) un prospect redevenu éligible archivé pour inéligibilité", async () => {
     mockProspectRow({
       archivedAt: new Date(),
       archiveReason: "Non éligible (simulation corrigée par un agent) — critère X",
@@ -290,9 +317,8 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
     const result = await updateSimulationDataAction("parcours-1", rgaData);
 
     expect(result.success).toBe(true);
-    expect(parcoursPreventionRepository.updateSituationParticulier).toHaveBeenCalledWith(
-      "parcours-1",
-      SituationParticulier.PROSPECT
+    expect(txSetSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ situationParticulier: SituationParticulier.PROSPECT, archivedAt: null })
     );
   });
 
@@ -307,6 +333,73 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
     const result = await updateSimulationDataAction("parcours-1", rgaData);
 
     expect(result.success).toBe(true);
-    expect(parcoursPreventionRepository.updateSituationParticulier).not.toHaveBeenCalled();
+    // Seule l'écriture de simulation a lieu, aucun changement de situation.
+    expect(txSetSpy).toHaveBeenCalledTimes(1);
+    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ situationParticulier: expect.anything() }));
+  });
+
+  it("refuse un AMO pur (capacité dossiers sans AMO absente)", async () => {
+    mockProspectRow();
+    vi.mocked(calculateAgentScope).mockResolvedValueOnce({
+      canViewDossiersWithoutAmo: false,
+      departements: ["01"],
+      epcis: [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: { eligible: false } as never,
+      isEligible: false,
+      isNonEligible: true,
+    });
+
+    const result = await updateSimulationDataAction("parcours-1", rgaData);
+
+    expect(result.success).toBe(false);
+    expect(db.transaction).not.toHaveBeenCalled();
+  });
+
+  it("refuse si une validation AMO existe pour ce parcours (pas de contournement via parcoursId)", async () => {
+    mockProspectRow({}, [{ id: "validation-x" }]);
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: { eligible: false } as never,
+      isEligible: false,
+      isNonEligible: true,
+    });
+
+    const result = await updateSimulationDataAction("parcours-1", rgaData);
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toBe("Ce dossier ne vous est pas destiné");
+    expect(db.transaction).not.toHaveBeenCalled();
+  });
+
+  it("refuse un prospect hors territoire", async () => {
+    mockProspectRow();
+    vi.mocked(verifyProspectTerritoryAccess).mockResolvedValueOnce("Ce prospect n'est pas dans votre territoire");
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: { eligible: false } as never,
+      isEligible: false,
+      isNonEligible: true,
+    });
+
+    const result = await updateSimulationDataAction("parcours-1", rgaData);
+
+    expect(result.success).toBe(false);
+    expect(db.transaction).not.toHaveBeenCalled();
+  });
+
+  it("persiste une simulation indécise sans toucher à la situation (prospect)", async () => {
+    mockProspectRow();
+    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+      result: null,
+      isEligible: false,
+      isNonEligible: false,
+    });
+
+    const result = await updateSimulationDataAction("parcours-1", rgaData);
+
+    expect(result.success).toBe(true);
+    expect(txSetSpy).toHaveBeenCalledTimes(1);
+    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ situationParticulier: expect.anything() }));
   });
 });
