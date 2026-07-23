@@ -228,6 +228,33 @@ Audit dans `parcours_actions` (types système, aucune migration) : `accompagneme
 `arret_accompagnement_demande`, `arret_accompagnement_refuse`. Les actions du demandeur ont
 `agent_id = NULL` et `author_structure_type = "DEMANDEUR"`.
 
+### 2.8 Refus d'accompagnement d'un demandeur éligible (AMO)
+
+Depuis l'écran « Le demandeur est-il éligible au dispositif ? » (détail d'une demande AMO),
+l'AMO dispose d'un **troisième choix** : « éligible, mais ma structure ne va pas l'accompagner »
+(ex. demandeur injoignable). À distinguer des deux autres : accepter (`LOGEMENT_ELIGIBLE`) et
+non éligible (`LOGEMENT_NON_ELIGIBLE`).
+
+Effet (service `declineAccompagnementEligible`, `amo-validation.service.ts`, en une transaction) :
+`parcours_amo_validations.statut = ACCOMPAGNEMENT_REFUSE` (`valideeAt` posé, token invalidé) **et**
+**archivage** du parcours (`situation_particulier = archive`, `archived_at`, `archive_reason`,
+`archived_by`). La raison est saisie via la modale « Archiver » (`ARCHIVE_REASONS`, jamais préfixée
+« Non éligible »). Le dossier bascule dans les **Archivés** (`archivedAt` prime dans `getDossierEtat`) ;
+l'aller-vers du territoire en devient responsable. Retour arrière : ré-ouverture (ADR-0016, qui gère
+déjà `accompagnement_refuse`) ou dé-archivage manuel — pas de routage automatique.
+
+> `ACCOMPAGNEMENT_REFUSE` est **consultable** (`STATUTS_CONSULTABLES`) mais **non éditable**
+> (`editableStatuts` de l'édition simulation) : le dossier archivé n'est pas corrigeable via
+> « Vérifier son éligibilité » — asymétrie assumée (le dossier est garé).
+
+**Audit du choix d'éligibilité (`parcours_actions`).** Les trois décisions AMO tracent désormais
+une action système (best-effort, aucune migration) : `eligibilite_acceptee`,
+`eligibilite_refusee_non_eligible`, `accompagnement_refuse_eligible`. Les types système d'audit
+portent un **emoji préfixe** dans leur libellé (`ACTION_LABELS_BY_VALUE`), cohérent avec les
+libellés du formulaire — rattrapé au passage pour `accompagnement_arrete`,
+`arret_accompagnement_demande`, `arret_accompagnement_refuse`, `dossier_reouvert`,
+`invitation_renvoyee`.
+
 ---
 
 ## 3. Architecture de la synchronisation

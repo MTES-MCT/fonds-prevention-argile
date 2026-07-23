@@ -328,20 +328,21 @@ de la création, mais **uniquement pour les dossiers déjà tranchés** (pas `EN
 
 ## 7. Fichiers clés
 
-| Rôle                             | Fichier                                                                                                                 |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Enum des rôles                   | `src/shared/domain/value-objects/user-role.enum.ts`                                                                     |
-| Service de permissions           | `src/features/auth/permissions/services/permissions.service.ts`                                                         |
-| Matrice permissions / onglets    | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                                                |
-| Périmètre données agent          | `src/features/auth/permissions/services/agent-scope.service.ts`                                                         |
-| Scope stats national (ADR-0017)  | `agent-scope.service.ts` (`getStatsScopeFilters`, `canViewNationalStats`)                                               |
-| Projection stats anonymisée      | `src/features/backoffice/administration/demandeurs/services/users-tracking.service.ts` (`toStatsProjection`)            |
-| Service RBAC (onglets)           | `src/features/auth/permissions/services/rbac.service.ts`                                                                |
-| Config des routes / redirections | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                       |
-| Aiguillage auth                  | `src/middleware.ts`                                                                                                     |
-| Garde espace agent               | `src/app/(backoffice)/espace-agent/layout.tsx`                                                                          |
-| Garde administration             | `src/app/(backoffice)/administration/page.tsx`                                                                          |
-| Garde entreprise AMO             | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                          |
-| Garde ré-ouverture demande       | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                   |
-| Garde arrêt d'accompagnement     | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts` |
-| Garde édition simulation         | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)       |
+| Rôle                                  | Fichier                                                                                                                 |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Enum des rôles                        | `src/shared/domain/value-objects/user-role.enum.ts`                                                                     |
+| Service de permissions                | `src/features/auth/permissions/services/permissions.service.ts`                                                         |
+| Matrice permissions / onglets         | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                                                |
+| Périmètre données agent               | `src/features/auth/permissions/services/agent-scope.service.ts`                                                         |
+| Scope stats national (ADR-0017)       | `agent-scope.service.ts` (`getStatsScopeFilters`, `canViewNationalStats`)                                               |
+| Projection stats anonymisée           | `src/features/backoffice/administration/demandeurs/services/users-tracking.service.ts` (`toStatsProjection`)            |
+| Service RBAC (onglets)                | `src/features/auth/permissions/services/rbac.service.ts`                                                                |
+| Config des routes / redirections      | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                       |
+| Aiguillage auth                       | `src/middleware.ts`                                                                                                     |
+| Garde espace agent                    | `src/app/(backoffice)/espace-agent/layout.tsx`                                                                          |
+| Garde administration                  | `src/app/(backoffice)/administration/page.tsx`                                                                          |
+| Garde entreprise AMO                  | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                          |
+| Garde ré-ouverture demande            | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                   |
+| Garde arrêt d'accompagnement          | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts` |
+| Garde refus accompagnement (éligible) | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                   |
+| Garde édition simulation              | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)       |
