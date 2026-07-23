@@ -18,6 +18,7 @@ import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { db } from "@/shared/database/client";
 import type { AuthUser } from "@/features/auth/domain/entities";
+import type { Agent } from "@/shared/database/schema/agents";
 
 // Mock des modules
 vi.mock("../services/demande-detail.service");
@@ -302,9 +303,9 @@ describe("demande-detail.actions", () => {
   });
 
   describe("refuserAccompagnementEligible", () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Agent minimal : seul `id` est lu par l'action (archivedBy).
     const mockAgent = (id = "agent-1") =>
-      vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: { id } as any });
+      vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: { id } as unknown as Agent });
 
     it("archive et refuse l'accompagnement pour un AMO propriétaire", async () => {
       vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, "amo-123"));
