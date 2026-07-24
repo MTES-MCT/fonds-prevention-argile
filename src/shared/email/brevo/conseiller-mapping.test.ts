@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { BREVO_ATTRS } from "./brevo-contacts.config";
 
 const { resolveResponsableForParcours, entreprisesAmoRepo, allersVersRepository } = vi.hoisted(() => ({
   resolveResponsableForParcours: vi.fn(),
@@ -15,14 +16,44 @@ vi.mock("@/shared/database/repositories", () => ({
   allersVersRepository,
 }));
 
-import { buildConseillerEventProperties } from "./conseiller-mapping";
+import { buildConseillerAttributes, buildConseillerAttributesFromAmo } from "./conseiller-mapping";
 
-describe("buildConseillerEventProperties", () => {
+describe("buildConseillerAttributesFromAmo", () => {
+  it("mappe les attributs à partir d'une AMO déjà en main (premier email valide)", () => {
+    const attrs = buildConseillerAttributesFromAmo({
+      nom: "Entreprise A",
+      emails: "contact@amo-a.fr;autre@amo-a.fr",
+      telephone: "0102030405",
+      horaires: "Du lundi au vendredi 9h-17h",
+    });
+
+    expect(attrs).toEqual({
+      [BREVO_ATTRS.CONSEILLER_TYPE]: "AMO",
+      [BREVO_ATTRS.CONSEILLER_NOM]: "Entreprise A",
+      [BREVO_ATTRS.CONSEILLER_EMAIL]: "contact@amo-a.fr",
+      [BREVO_ATTRS.CONSEILLER_TELEPHONE]: "0102030405",
+      [BREVO_ATTRS.CONSEILLER_HORAIRES]: "Du lundi au vendredi 9h-17h",
+    });
+  });
+
+  it("omet les horaires absents plutôt que d'écraser Brevo avec une valeur vide", () => {
+    const attrs = buildConseillerAttributesFromAmo({
+      nom: "Entreprise A",
+      emails: "contact@amo-a.fr",
+      telephone: "0102030405",
+      horaires: null,
+    });
+
+    expect(attrs[BREVO_ATTRS.CONSEILLER_HORAIRES]).toBeUndefined();
+  });
+});
+
+describe("buildConseillerAttributes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("retourne les attributs de l'AMO responsable (premier email valide de la liste)", async () => {
+  it("retourne les attributs de l'AMO responsable", async () => {
     resolveResponsableForParcours.mockResolvedValue({
       type: "AMO",
       entrepriseId: "amo-1",
@@ -32,23 +63,23 @@ describe("buildConseillerEventProperties", () => {
     entreprisesAmoRepo.findById.mockResolvedValue({
       id: "amo-1",
       nom: "Entreprise A",
-      emails: "contact@amo-a.fr;autre@amo-a.fr",
+      emails: "contact@amo-a.fr",
       telephone: "0102030405",
       horaires: "Du lundi au vendredi 9h-17h",
     });
 
-    const props = await buildConseillerEventProperties("p1");
+    const attrs = await buildConseillerAttributes("p1");
 
-    expect(props).toEqual({
-      conseiller_type: "AMO",
-      conseiller_nom: "Entreprise A",
-      conseiller_email: "contact@amo-a.fr",
-      conseiller_telephone: "0102030405",
-      conseiller_horaires: "Du lundi au vendredi 9h-17h",
+    expect(attrs).toEqual({
+      [BREVO_ATTRS.CONSEILLER_TYPE]: "AMO",
+      [BREVO_ATTRS.CONSEILLER_NOM]: "Entreprise A",
+      [BREVO_ATTRS.CONSEILLER_EMAIL]: "contact@amo-a.fr",
+      [BREVO_ATTRS.CONSEILLER_TELEPHONE]: "0102030405",
+      [BREVO_ATTRS.CONSEILLER_HORAIRES]: "Du lundi au vendredi 9h-17h",
     });
   });
 
-  it("retourne les attributs de l'Aller-vers responsable et omet les horaires absents", async () => {
+  it("retourne les attributs de l'Aller-vers responsable", async () => {
     resolveResponsableForParcours.mockResolvedValue({
       type: "AV",
       structureId: "av-1",
@@ -63,22 +94,22 @@ describe("buildConseillerEventProperties", () => {
       horaires: null,
     });
 
-    const props = await buildConseillerEventProperties("p1");
+    const attrs = await buildConseillerAttributes("p1");
 
-    expect(props).toEqual({
-      conseiller_type: "ALLERS_VERS",
-      conseiller_nom: "ADIL 36",
-      conseiller_email: "contact@adil36.fr",
-      conseiller_telephone: "0102030405",
+    expect(attrs).toEqual({
+      [BREVO_ATTRS.CONSEILLER_TYPE]: "ALLERS_VERS",
+      [BREVO_ATTRS.CONSEILLER_NOM]: "ADIL 36",
+      [BREVO_ATTRS.CONSEILLER_EMAIL]: "contact@adil36.fr",
+      [BREVO_ATTRS.CONSEILLER_TELEPHONE]: "0102030405",
     });
   });
 
   it("retourne un objet vide si aucun responsable n'est résolu (parcours introuvable)", async () => {
     resolveResponsableForParcours.mockResolvedValue(null);
 
-    const props = await buildConseillerEventProperties("p1");
+    const attrs = await buildConseillerAttributes("p1");
 
-    expect(props).toEqual({});
+    expect(attrs).toEqual({});
     expect(entreprisesAmoRepo.findById).not.toHaveBeenCalled();
     expect(allersVersRepository.findById).not.toHaveBeenCalled();
   });
@@ -86,9 +117,9 @@ describe("buildConseillerEventProperties", () => {
   it("retourne un objet vide si le responsable est INDETERMINE", async () => {
     resolveResponsableForParcours.mockResolvedValue({ type: "INDETERMINE" });
 
-    const props = await buildConseillerEventProperties("p1");
+    const attrs = await buildConseillerAttributes("p1");
 
-    expect(props).toEqual({});
+    expect(attrs).toEqual({});
   });
 
   it("retourne un objet vide si l'entreprise AMO résolue n'existe plus", async () => {
@@ -100,9 +131,9 @@ describe("buildConseillerEventProperties", () => {
     });
     entreprisesAmoRepo.findById.mockResolvedValue(null);
 
-    const props = await buildConseillerEventProperties("p1");
+    const attrs = await buildConseillerAttributes("p1");
 
-    expect(props).toEqual({});
+    expect(attrs).toEqual({});
   });
 
   it("retourne un objet vide si l'Aller-vers résolu n'existe plus", async () => {
@@ -114,8 +145,8 @@ describe("buildConseillerEventProperties", () => {
     });
     allersVersRepository.findById.mockResolvedValue(null);
 
-    const props = await buildConseillerEventProperties("p1");
+    const attrs = await buildConseillerAttributes("p1");
 
-    expect(props).toEqual({});
+    expect(attrs).toEqual({});
   });
 });

@@ -3,6 +3,7 @@ import { selectAmoForUser } from "./amo-selection.service";
 import { db } from "@/shared/database/client";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
+import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
 import { Status, Step } from "../../core";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { StatutValidationAmo } from "../domain/value-objects";
@@ -25,6 +26,11 @@ vi.mock("@/shared/database/repositories", () => ({
 
 vi.mock("@/shared/email/actions/send-email.actions", () => ({
   sendValidationAmoEmail: vi.fn(),
+}));
+
+vi.mock("@/shared/email/brevo", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/email/brevo")>()),
+  emitBrevoEvent: vi.fn(),
 }));
 
 // Mock de crypto.randomUUID
@@ -104,6 +110,8 @@ describe("amo-selection.service", () => {
       id: "amo-456",
       nom: "AMO Test",
       emails: "contact@amo-test.fr",
+      telephone: "0102030405",
+      horaires: "Du lundi au vendredi 9h-17h",
     };
 
     const mockValidation = {
@@ -208,6 +216,44 @@ describe("amo-selection.service", () => {
         expect(result.data.token).toBe("mock-uuid-token");
       }
       expect(parcoursRepo.updateStatus).toHaveBeenCalledWith(mockParcours.id, Status.EN_INSTRUCTION);
+    });
+
+    it("rafraîchit les attributs du conseiller (AMO) sur le contact Brevo", async () => {
+      let selectCallCount = 0;
+      vi.mocked(db.select).mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount === 1) {
+          return {
+            from: vi.fn().mockReturnValue({
+              leftJoin: vi.fn().mockReturnThis(),
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
+              }),
+            }),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any;
+        }
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAmo]),
+            }),
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+      });
+
+      await selectAmoForUser(userId, validParams);
+
+      expect(emitBrevoEvent).toHaveBeenCalledWith(mockParcours.id, BREVO_EVENTS.AMO_DEFINI, {
+        attributes: {
+          [BREVO_ATTRS.CONSEILLER_TYPE]: "AMO",
+          [BREVO_ATTRS.CONSEILLER_NOM]: "AMO Test",
+          [BREVO_ATTRS.CONSEILLER_EMAIL]: "contact@amo-test.fr",
+          [BREVO_ATTRS.CONSEILLER_TELEPHONE]: "0102030405",
+          [BREVO_ATTRS.CONSEILLER_HORAIRES]: "Du lundi au vendredi 9h-17h",
+        },
+      });
     });
 
     it("devrait échouer si le prénom est vide", async () => {
