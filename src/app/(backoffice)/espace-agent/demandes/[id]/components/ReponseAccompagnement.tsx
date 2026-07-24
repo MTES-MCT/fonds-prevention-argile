@@ -180,13 +180,13 @@ export function ReponseAccompagnement({
             disabled={isSubmitting || alreadyProcessed}>
             <option value="">Votre réponse</option>
             <option value={StatutValidationAmo.LOGEMENT_ELIGIBLE}>
-              J&apos;accompagne ce demandeur et j&apos;atteste qu&apos;il est éligible
+              &#9989; J&apos;accompagne ce demandeur et j&apos;atteste qu&apos;il est éligible
             </option>
             <option value={StatutValidationAmo.ACCOMPAGNEMENT_REFUSE}>
-              &#9888;&#65039; Le demandeur est éligible, mais ma structure ne va pas l&apos;accompagner
+              &#9888;&#65039; Le demandeur est peut-être éligible, mais ma structure ne va pas l&apos;accompagner
             </option>
             <option value={StatutValidationAmo.LOGEMENT_NON_ELIGIBLE}>
-              J&apos;ai pris contact avec ce demandeur, mais il n&apos;est pas éligible
+              &#10060; J&apos;ai pris contact avec ce demandeur, mais il n&apos;est pas éligible
             </option>
           </select>
         </div>
