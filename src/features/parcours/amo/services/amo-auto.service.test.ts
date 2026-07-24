@@ -26,6 +26,11 @@ vi.mock("@/shared/email/actions/send-email.actions", () => ({
   sendValidationAmoEmail: vi.fn(),
 }));
 
+vi.mock("@/shared/email/brevo", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/email/brevo")>()),
+  emitBrevoEvent: vi.fn(),
+}));
+
 vi.stubGlobal("crypto", {
   randomUUID: vi.fn(() => "mock-uuid-token"),
 });

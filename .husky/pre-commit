@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Husky invoque toujours ce script via `sh` (.husky/_/h fait `sh -e "$script"`), qui
+# ignore le shebang ci-dessus. Sur les systèmes où /bin/sh n'est pas bash (ex: dash),
+# la syntaxe tableau plus bas casse — on se relance donc explicitement sous bash.
+if [ -z "$BASH_VERSION" ]; then
+    exec bash "$0" "$@"
+fi
+
 # Variables d'environnement pour personnaliser
 TALISMAN_HOME=${TALISMAN_HOME:-"$HOME/.talisman"}
 SKIP_TALISMAN=${SKIP_TALISMAN:-false}

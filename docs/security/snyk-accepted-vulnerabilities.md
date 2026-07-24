@@ -162,12 +162,32 @@ transitives et déjà connues sauf deux dérives devDep, acceptées ci-dessous.
 Les autres (`protocol-buffers-schema`, `postcss`, `uuid`, `diff`, `vite` High) sont
 inchangées — voir les tableaux ci-dessus.
 
+## Refresh — juillet 2026 (branche `update-brevo`)
+
+`pnpm audit --prod` (déclenché par l'ajout d'un event Brevo, sans nouvelle dépendance)
+révélait 6 High/Moderate sur `next` (DoS Server Actions, SSRF Server Actions, SSRF
+rewrites) apparues depuis le dernier audit : `next` était toujours pinné en `15.5.18`
+(`<15.5.21`, patché). **Corrigé à la source** : bump patch `next` 15.5.18 → 15.5.21
+(même mineure, aucune API dépréciée touchée). Vérification : `pnpm typecheck` + `pnpm lint`
++ suite de tests verte + `pnpm audit --prod` repassé de 14 à 6 vulnérabilités.
+
+### Restantes après le bump (acceptées)
+
+| Dépendance vulnérable        | Sévérité | Type    | Chemin                        | Justification                                                                                                                                                          |
+| ----------------------------- | -------- | ------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `brace-expansion` <2.1.2      | High     | runtime | `exceljs > archiver > … > minimatch > brace-expansion` | DoS regex sur motifs `{}` — glob interne à `archiver` lors de la génération de zip/xlsx, jamais construit depuis une entrée utilisateur (même famille que `minimatch`/`uuid` déjà acceptés sur `exceljs`) |
+| `sharp` <0.35.0 (libvips)      | High     | runtime | `next > sharp` (optionalDep bundlée) | CVE-2026-33327/33328/35590/35591 — sert uniquement à l'optimisation `next/image` sur des images de notre propre bundle (pas d'upload libre exposé à cette pipeline) ; version pilotée par `next`, pas overridable sans risque de casser l'optimiseur d'image interne |
+| PostCSS <=8.5.11 (arbitrary file read) | High | build | `next > postcss` (bundlée, interne au build) | Instance PostCSS interne à Next (notre propre `postcss` direct est déjà en 8.5.15, non vulnérable) ; exploitable seulement via un `sourceMappingURL` dans du CSS transformé — nos fichiers CSS sont internes (Tailwind), jamais fournis par un tiers |
+
+Les Moderate déjà connues (`protocol-buffers-schema`, `postcss` XSS `<8.5.10`, `uuid`)
+restent inchangées — voir tableaux ci-dessus.
+
 ## Prochaine revue
 
 - **`vite`** : passer à `>=7.3.5` dès que `minimumReleaseAge` le permet (élimine la High devDep restante).
 - **Lors de l'upgrade Next 16** (PR dédiée) : réévaluer next, eslint-config-next,
-  ESLint 10 et le `postcss` bundlé par Next ; migrer le script `lint` vers le CLI ESLint.
+  ESLint 10 et le `postcss`/`sharp` bundlés par Next ; migrer le script `lint` vers le CLI ESLint.
 - **`esbuild`** : à partir du **2026-06-18** (fin du `minimumReleaseAge`), passer l'override
   `esbuild: ^0.25.0` → `^0.28.1` dans `pnpm-workspace.yaml` puis `pnpm install` — élimine la
   seule High runtime restante.
-- **Vérifier trimestriellement** les fix upstream pour `exceljs` (tmp, uuid) et `maplibre-gl`.
+- **Vérifier trimestriellement** les fix upstream pour `exceljs` (tmp, uuid, brace-expansion) et `maplibre-gl`.

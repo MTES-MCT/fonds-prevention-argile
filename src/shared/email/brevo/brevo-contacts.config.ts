@@ -19,6 +19,13 @@ export const BREVO_ATTRS = {
   DEPARTEMENT: "DEPARTEMENT",
   INSEE: "INSEE",
   SOURCE_ACQUISITION: "SOURCE_ACQUISITION",
+  // Conseiller local (AMO ou Aller-vers) responsable du parcours — peut changer en
+  // cours de route (cf. BREVO_EVENTS.AMO_DEFINI), utilisé pour personnaliser les mails.
+  CONSEILLER_TYPE: "CONSEILLER_TYPE",
+  CONSEILLER_NOM: "CONSEILLER_NOM",
+  CONSEILLER_EMAIL: "CONSEILLER_EMAIL",
+  CONSEILLER_TELEPHONE: "CONSEILLER_TELEPHONE",
+  CONSEILLER_HORAIRES: "CONSEILLER_HORAIRES",
   // Debug staging uniquement : vrai email quand le contact est sous-adressé.
   EMAIL_REEL: "EMAIL_REEL",
 } as const;
@@ -27,6 +34,7 @@ export const BREVO_ATTRS = {
 export const BREVO_EVENTS = {
   DEMANDEUR_CREE: "demandeur_cree",
   SIMULATION_ENREGISTREE: "simulation_enregistree",
+  AMO_DEFINI: "amo_defini",
   AMO_REPONSE: "amo_reponse",
   DN_UPDATE: "dn_update",
 } as const;

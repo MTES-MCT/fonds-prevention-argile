@@ -5,7 +5,7 @@ import type { ActionResult } from "@/shared/types";
 import type { RGASimulationData, PartialRGASimulationData } from "@/shared/domain/types";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
-import { emitBrevoEvent, BREVO_EVENTS } from "@/shared/email/brevo";
+import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributes } from "@/shared/email/brevo";
 import { isSameSimulationContent } from "../utils/simulation-comparison";
 
 /**
@@ -74,7 +74,13 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
 
     // 7. Synchro Brevo (flux) : simulation enregistrée sur le parcours → repousse le contact
     //    pour que INSEE/DEPARTEMENT remontent (absents au demandeur_cree). Best-effort.
-    await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_ENREGISTREE);
+    //    CONSEILLER_* : c'est le premier instant où le territoire est connu, donc où
+    //    l'Aller-vers responsable devient résolvable (démarrage obligatoire → AMO auto-attribué
+    //    peu après via amo_defini, mais rien ne couvrait le cas AMO facultatif jusqu'ici).
+    const conseillerAttributes = await buildConseillerAttributes(parcours.id);
+    await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_ENREGISTREE, {
+      attributes: conseillerAttributes,
+    });
 
     return {
       success: true,
