@@ -8,12 +8,24 @@ import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.acti
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { UserRole } from "@/shared/domain/value-objects";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
-import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
-import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import {
+  SituationParticulier,
+  situationApresReactivation,
+} from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import type { ActionResult } from "@/shared/types";
-import { evaluateAgentSimulation, buildEligibiliteArchiveNote } from "../services/eligibilite-agent.service";
-import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
+import {
+  evaluateAgentSimulation,
+  buildEligibiliteArchiveNote,
+  isEligibiliteArchiveReason,
+} from "../services/eligibilite-agent.service";
+import {
+  verifyProspectTerritoryAccess,
+  calculateAgentScope,
+} from "@/features/auth/permissions/services/agent-scope.service";
+import { parcoursActionsRepo } from "@/shared/database/repositories";
+import { buildAuthorSnapshot } from "../services/author-snapshot";
+import { ACTION_TYPE_ELIGIBILITE_REFUSEE } from "../domain/types/action.types";
 
 /**
  * Baseline du diff agent = données effectives AVANT la 1re correction. Idempotent :
@@ -124,6 +136,10 @@ export async function updateSimulationDataAction(
       const now = new Date();
       const decidedStatuts = [StatutValidationAmo.LOGEMENT_ELIGIBLE, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE];
       const statutCourant = dossier.validation.statut as StatutValidationAmo;
+      const wasArchived = Boolean(dossier.parcours.archivedAt);
+
+      // Calculé dans la transaction, utilisé après coup pour l'audit (parcours_actions).
+      let didRefuserNonEligible = false;
 
       await db.transaction(async (tx) => {
         // 1. Simulation agent + baseline (données AVANT 1re correction) pour le diff.
@@ -137,30 +153,40 @@ export async function updateSimulationDataAction(
           })
           .where(eq(parcoursPrevention.id, dossier.parcours.id));
 
-        // 2. Recalcul du statut d'éligibilité (miroir de la création). On ne re-décide
-        //    que pour un dossier déjà tranché : EN_ATTENTE (validation AMO à venir) et
-        //    SANS_AMO ne sont pas auto-décidés par une simple correction. Le mail
-        //    d'invitation n'est PAS renvoyé (artefact de création, dossier peut-être déjà réclamé).
-        if (!decidedStatuts.includes(statutCourant)) return;
-
+        // 2. Recalcul du verdict d'éligibilité (miroir de la création). Sans verdict
+        //    tranché (simulation incomplète, aucun critère bloquant) → rien d'autre.
         const verdict = evaluateAgentSimulation(rgaData);
-        const nouveauStatut = verdict.isEligible
-          ? StatutValidationAmo.LOGEMENT_ELIGIBLE
-          : verdict.isNonEligible
-            ? StatutValidationAmo.LOGEMENT_NON_ELIGIBLE
-            : null;
+        if (!verdict.isEligible && !verdict.isNonEligible) return;
 
-        // Effets de bord UNIQUEMENT sur un vrai changement de verdict : sinon chaque
-        // sauvegarde écraserait valideeAt, ferait glisser archivedAt, ou dé-archiverait
-        // un dossier archivé pour une autre raison.
-        if (!nouveauStatut || nouveauStatut === statutCourant) return;
+        // 2a. Décision de validation AMO. Un verdict NON ÉLIGIBLE tranche TOUJOURS le
+        //     dossier (EN_ATTENTE et SANS_AMO compris) : la simulation est la source de
+        //     vérité du critère d'éligibilité, donc un agent qui la corrige en non-éligible
+        //     doit refuser l'accompagnement, quel que soit l'état d'avancement de la
+        //     validation AMO. Un verdict ÉLIGIBLE, à l'inverse, ne re-décide QUE les
+        //     dossiers déjà tranchés : on ne valide jamais à la place de l'AMO un dossier
+        //     encore EN_ATTENTE/SANS_AMO. Flip sur vrai changement de verdict seulement
+        //     (sinon on écraserait valideeAt). Le mail d'invitation n'est pas renvoyé.
+        if (verdict.isNonEligible || decidedStatuts.includes(statutCourant)) {
+          const nouveauStatut = verdict.isEligible
+            ? StatutValidationAmo.LOGEMENT_ELIGIBLE
+            : StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
+          if (nouveauStatut !== statutCourant) {
+            await tx
+              .update(parcoursAmoValidations)
+              .set({ statut: nouveauStatut, valideeAt: now })
+              .where(eq(parcoursAmoValidations.id, dossier.validation.id));
+            didRefuserNonEligible = verdict.isNonEligible;
+          }
+        }
 
-        await tx
-          .update(parcoursAmoValidations)
-          .set({ statut: nouveauStatut, valideeAt: now })
-          .where(eq(parcoursAmoValidations.id, dossier.validation.id));
-
-        if (verdict.isNonEligible) {
+        // 2b. Archivage / dé-archivage du parcours : sur TOUS les statuts éditables
+        //     (EN_ATTENTE, SANS_AMO, LOGEMENT_*), pour honorer la promesse UI
+        //     (« déplacé dans Archivés » dès l'inéligibilité). La catégorie « Archivés »
+        //     est pilotée par archivedAt (getDossierEtat), indépendamment du statut de
+        //     validation. Idempotent : on n'archive pas un dossier déjà archivé
+        //     (archivedAt ne glisse pas) et on ne dé-archive QUE ce qui a été archivé
+        //     pour inéligibilité — jamais un archivage manuel (abandon, non-réponse…).
+        if (verdict.isNonEligible && !wasArchived) {
           await tx
             .update(parcoursPrevention)
             .set({
@@ -170,12 +196,13 @@ export async function updateSimulationDataAction(
               archivedBy: agent.id,
             })
             .where(eq(parcoursPrevention.id, dossier.parcours.id));
-        } else {
-          // Redevenu éligible → dé-archivage (nettoie archivedAt/reason/by).
+        } else if (verdict.isEligible && wasArchived && isEligibiliteArchiveReason(dossier.parcours.archiveReason)) {
+          // Redevenu éligible → dé-archivage (nettoie archivedAt/reason/by). Cible alignée
+          // sur le dé-archivage manuel : ELIGIBLE si un AMO est responsable, PROSPECT sinon.
           await tx
             .update(parcoursPrevention)
             .set({
-              situationParticulier: SituationParticulier.PROSPECT,
+              situationParticulier: situationApresReactivation(Boolean(dossier.validation.entrepriseAmoId)),
               archivedAt: null,
               archiveReason: null,
               archivedBy: null,
@@ -183,6 +210,21 @@ export async function updateSimulationDataAction(
             .where(eq(parcoursPrevention.id, dossier.parcours.id));
         }
       });
+
+      // Audit : trace le refus automatique dans l'historique du dossier (hors transaction,
+      // même pattern que reouvrirDemandeAction — best-effort, ne bloque pas la sauvegarde).
+      if (didRefuserNonEligible) {
+        const snapshot = await buildAuthorSnapshot(agent);
+        await parcoursActionsRepo.create({
+          parcoursId: dossier.parcours.id,
+          agentId: agent.id,
+          actionType: ACTION_TYPE_ELIGIBILITE_REFUSEE,
+          message: "Accompagnement refusé automatiquement suite à la correction de la simulation (non éligible).",
+          authorName: snapshot.authorName,
+          authorStructure: snapshot.authorStructure,
+          authorStructureType: snapshot.authorStructureType,
+        });
+      }
 
       // Invalider le cache de toutes les pages de l'espace agent
       revalidatePath("/espace-agent", "layout");
@@ -193,21 +235,98 @@ export async function updateSimulationDataAction(
       };
     }
 
-    // 4. Fallback : essayer par ID de parcours (prospect)
+    // 4. Fallback : parcours SANS validation AMO (vrai prospect créé par un Aller-vers).
     const [parcours] = await db.select().from(parcoursPrevention).where(eq(parcoursPrevention.id, id)).limit(1);
 
     if (!parcours) {
       return { success: false, error: "Dossier non trouvé" };
     }
 
-    // Sauvegarde pour prospect
-    const updated = await parcoursPreventionRepository.updateRGADataAgent(parcours.id, rgaData, agent.id, {
-      baseline: computeAgentEditBaseline(parcours),
-    });
+    // Autorisation (sauf admins) — sans garde ici, n'importe quel agent pouvait éditer
+    // et archiver un parcours arbitraire via son parcoursId (contournement des gardes
+    // d'ownership du chemin validation). Un prospect est par définition « sans AMO ».
+    if (!isAdmin) {
+      // a. Refuser si une validation existe : l'appelant doit passer par l'id de
+      //    validation (et ses gardes ownership/statut), pas contourner via le parcoursId.
+      const [existingValidation] = await db
+        .select({ id: parcoursAmoValidations.id })
+        .from(parcoursAmoValidations)
+        .where(eq(parcoursAmoValidations.parcoursId, parcours.id))
+        .limit(1);
+      if (existingValidation) {
+        return { success: false, error: "Ce dossier ne vous est pas destiné" };
+      }
 
-    if (!updated) {
-      return { success: false, error: "Erreur lors de la mise à jour" };
+      // b. Accès aux dossiers sans AMO réservé aux rôles qui le portent
+      //    (ALLERS_VERS / AMO_ET_ALLERS_VERS) — un AMO pur ne voit pas les prospects,
+      //    même sur son territoire (verifyProspectTerritoryAccess ne gate pas cette capacité).
+      const scope = await calculateAgentScope({
+        id: agent.id,
+        role: agent.role as UserRole,
+        entrepriseAmoId: agent.entrepriseAmoId ?? null,
+        allersVersId: agent.allersVersId ?? null,
+      });
+      if (!scope.canViewDossiersWithoutAmo) {
+        return { success: false, error: "Ce dossier ne vous est pas destiné" };
+      }
+
+      // c. Territoire (aligné sur le listing prospects).
+      const territoryError = await verifyProspectTerritoryAccess(parcours.id, {
+        id: agent.id,
+        role: agent.role as UserRole,
+        entrepriseAmoId: agent.entrepriseAmoId ?? null,
+        allersVersId: agent.allersVersId ?? null,
+      });
+      if (territoryError) {
+        return { success: false, error: territoryError };
+      }
     }
+
+    // Écriture atomique (simulation + archivage), même exigence de cohérence que le
+    // chemin dossier — sinon la simu peut être persistée sans l'archivage promis par l'UI.
+    const now = new Date();
+    const prospectVerdict = evaluateAgentSimulation(rgaData);
+    const prospectWasArchived = Boolean(parcours.archivedAt);
+    const prospectArchiveReason = parcours.archiveReason;
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(parcoursPrevention)
+        .set({
+          rgaSimulationDataAgent: rgaData,
+          rgaSimulationDataAgentBaseline: computeAgentEditBaseline(parcours),
+          rgaSimulationAgentEditedAt: now,
+          rgaSimulationAgentEditedBy: agent.id,
+        })
+        .where(eq(parcoursPrevention.id, parcours.id));
+
+      if (prospectVerdict.isNonEligible && !prospectWasArchived) {
+        await tx
+          .update(parcoursPrevention)
+          .set({
+            situationParticulier: SituationParticulier.ARCHIVE,
+            archivedAt: now,
+            archiveReason: buildEligibiliteArchiveNote(prospectVerdict.result, "edition"),
+            archivedBy: agent.id,
+          })
+          .where(eq(parcoursPrevention.id, parcours.id));
+      } else if (
+        prospectVerdict.isEligible &&
+        prospectWasArchived &&
+        isEligibiliteArchiveReason(prospectArchiveReason)
+      ) {
+        // Prospect (jamais d'AMO responsable) → réactivation en PROSPECT.
+        await tx
+          .update(parcoursPrevention)
+          .set({
+            situationParticulier: situationApresReactivation(false),
+            archivedAt: null,
+            archiveReason: null,
+            archivedBy: null,
+          })
+          .where(eq(parcoursPrevention.id, parcours.id));
+      }
+    });
 
     // Invalider le cache de toutes les pages de l'espace agent
     revalidatePath("/espace-agent", "layout");

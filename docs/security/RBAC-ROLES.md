@@ -304,19 +304,32 @@ détail dossier** (§6). `getDossierSimulationData` gate donc, pour les non-admi
 - dossier **avec** entreprise AMO → **ownership entreprise** (`entrepriseAmoId` de la validation
   == celui de l'agent) ;
 - dossier **sans** entreprise (statut `SANS_AMO`) → **accès territorial** via
-  `verifyProspectTerritoryAccess` (Aller-vers / hybride couvrant le territoire).
+  `verifyProspectTerritoryAccess` (Aller-vers / hybride couvrant le territoire) ;
+- **vrai prospect sans validation** (chemin fallback par `parcoursId`, lecture **et**
+  écriture) → garde propre : rejet si une validation existe (pas de contournement via le
+  `parcoursId`), capacité `canViewDossiersWithoutAmo` requise (un AMO pur est exclu, car
+  `verifyProspectTerritoryAccess` ne gate pas cette capacité), puis contrôle territorial.
+  Voir l'amendement de [ADR-0020](../adr/0020-correction-simulation-agent-post-eligibilite.md).
 
 Les statuts éditables incluent `SANS_AMO` **et `LOGEMENT_NON_ELIGIBLE`** (aligné sur
 `STATUTS_CONSULTABLES`, lecture et écriture désormais alignées) : un dossier devenu non
 éligible reste corrigeable. L'**écriture** (`updateSimulationDataAction`) applique la même
 autorisation que la lecture — ownership entreprise pour un dossier avec AMO, sinon
 `verifyProspectTerritoryAccess` — sinon un Aller-vers (sans `entrepriseAmoId`) pouvait
-**ouvrir** l'édition d'un dossier `SANS_AMO` mais échouait à la **sauvegarde**. À la sauvegarde, `updateSimulationDataAction` **recalcule
-l'éligibilité** et met à jour le statut de validation dans les deux sens
-(`LOGEMENT_ELIGIBLE ↔ LOGEMENT_NON_ELIGIBLE`) + archive / dé-archive le parcours — miroir
-de la création, mais **uniquement pour les dossiers déjà tranchés** (pas `EN_ATTENTE` /
-`SANS_AMO`) et **sans renvoyer le mail d'invitation**. Voir
-[ADR-0020](../adr/0020-correction-simulation-agent-post-eligibilite.md).
+**ouvrir** l'édition d'un dossier `SANS_AMO` mais échouait à la **sauvegarde**. À la sauvegarde,
+`updateSimulationDataAction` **recalcule l'éligibilité**, avec deux effets **découplés** :
+
+- **Décision de validation** (flip `LOGEMENT_ELIGIBLE ↔ LOGEMENT_NON_ELIGIBLE` + `valideeAt`)
+  → **uniquement pour les dossiers déjà tranchés** (pas `EN_ATTENTE` / `SANS_AMO`, qui ne sont
+  pas auto-décidés : l'AMO / l'Aller-vers gardent la main), **sans renvoyer le mail d'invitation**.
+- **Archivage / dé-archivage** du parcours → sur **tous les statuts éditables** (`EN_ATTENTE`,
+  `SANS_AMO`, `LOGEMENT_*`) **et le chemin prospect** : une simulation devenue inéligible archive
+  le dossier (`archivedAt` + note `« Non éligible … »`), honorant la promesse UI (« déplacé dans
+  Archivés »). La catégorie « Archivés » est pilotée par `archivedAt` (`getDossierEtat`),
+  indépendamment du statut de validation. Le dé-archivage automatique (retour à l'éligibilité)
+  ne concerne **que** les dossiers archivés pour inéligibilité (note préfixée `« Non éligible »`,
+  `isEligibiliteArchiveReason`) — **jamais** un archivage manuel (abandon, non-réponse, reste à
+  charge…). Voir [ADR-0020](../adr/0020-correction-simulation-agent-post-eligibilite.md).
 
 > **Bug corrigé (juillet 2026) — 404 « Vérifier son éligibilité » pour un Aller-vers.** Un dossier
 > `SANS_AMO` est **consultable** (le détail s'ouvre) mais l'édition de simulation n'acceptait que

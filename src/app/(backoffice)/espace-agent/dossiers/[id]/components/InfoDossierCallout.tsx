@@ -206,12 +206,13 @@ export function InfoDossierCallout({
   let message: CalloutMessage;
 
   if (validationStatut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
-    // Dossier archivé automatiquement à la création parce que la simulation
-    // a déterminé que le demandeur n'est pas éligible.
+    // Dossier archivé automatiquement (à la création ou lors d'une correction de
+    // simulation par un agent) parce que la simulation a déterminé que le demandeur
+    // n'est pas éligible.
     message = {
       title: "Dossier archivé — non éligible",
       description:
-        "La simulation a déterminé que ce dossier n'est pas éligible au dispositif. Il a été archivé automatiquement à la création.",
+        "La simulation a déterminé que ce dossier n'est pas éligible au dispositif. Il a été archivé automatiquement.",
       hint: "Les raisons d'inéligibilité sont consultables dans les détails du dossier.",
       variant: "red-marianne",
     };

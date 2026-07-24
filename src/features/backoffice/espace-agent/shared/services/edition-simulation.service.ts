@@ -7,7 +7,10 @@ import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
-import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
+import {
+  verifyProspectTerritoryAccess,
+  calculateAgentScope,
+} from "@/features/auth/permissions/services/agent-scope.service";
 
 export interface DossierSimulationData {
   /** ID de la validation AMO (dossier/demande) — null pour les prospects */
@@ -137,8 +140,43 @@ export async function getDossierSimulationData(id: string): Promise<ActionResult
       return { success: false, error: "Dossier non trouvé" };
     }
 
-    // Pour les prospects, vérifier que l'agent allers-vers a accès au territoire
-    // (la vérification territoriale est déjà faite en amont par la page prospect)
+    // Autorisation (sauf admins) — la page prospect vérifie le territoire en amont, mais
+    // cette lecture est atteignable directement par URL : elle doit se garder elle-même,
+    // exactement comme l'écriture (updateSimulationDataAction). Un prospect est sans AMO.
+    if (!isAdmin) {
+      // a. Un vrai prospect n'a pas de validation : sinon l'appelant doit passer par l'id
+      //    de validation (gardes ownership/statut), pas contourner via le parcoursId.
+      const [existingValidation] = await db
+        .select({ id: parcoursAmoValidations.id })
+        .from(parcoursAmoValidations)
+        .where(eq(parcoursAmoValidations.parcoursId, prospect.parcours.id))
+        .limit(1);
+      if (existingValidation) {
+        return { success: false, error: "Ce dossier ne vous est pas destiné" };
+      }
+
+      // b. Capacité « dossiers sans AMO » (ALLERS_VERS / hybride) — un AMO pur est exclu.
+      const scope = await calculateAgentScope({
+        id: user.agentId ?? "",
+        role: user.role as UserRole,
+        entrepriseAmoId: user.entrepriseAmoId ?? null,
+        allersVersId: user.allersVersId ?? null,
+      });
+      if (!scope.canViewDossiersWithoutAmo) {
+        return { success: false, error: "Ce dossier ne vous est pas destiné" };
+      }
+
+      // c. Territoire (aligné sur le listing prospects).
+      const territoryError = await verifyProspectTerritoryAccess(prospect.parcours.id, {
+        id: user.agentId ?? "",
+        role: user.role as UserRole,
+        entrepriseAmoId: user.entrepriseAmoId ?? null,
+        allersVersId: user.allersVersId ?? null,
+      });
+      if (territoryError) {
+        return { success: false, error: territoryError };
+      }
+    }
 
     const rgaData = getEffectiveRGAData({
       rgaSimulationData: prospect.parcours.rgaSimulationData as RGASimulationData | null,

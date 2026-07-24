@@ -31,6 +31,13 @@ export function evaluateAgentSimulation(
 }
 
 /**
+ * Préfixe commun à toutes les notes d'archivage émises par un recalcul d'éligibilité
+ * (création, édition agent, qualification prospect). Sert de marqueur pour distinguer
+ * un archivage « pour inéligibilité » d'un archivage manuel (abandon, non-réponse…).
+ */
+export const ELIGIBILITE_ARCHIVE_PREFIX = "Non éligible";
+
+/**
  * Note d'archivage lisible incluant le libellé exact de la raison d'inéligibilité,
  * pour que l'agent voie pourquoi le dossier a été archivé.
  */
@@ -38,7 +45,17 @@ export function buildEligibiliteArchiveNote(result: EligibilityResult | null, or
   const reasonLabel = result?.reason ? EligibilityService.getReasonMessage(result.reason) : "";
   const base =
     origine === "creation"
-      ? "Non éligible (simulation auto à la création)"
-      : "Non éligible (simulation corrigée par un agent)";
+      ? `${ELIGIBILITE_ARCHIVE_PREFIX} (simulation auto à la création)`
+      : `${ELIGIBILITE_ARCHIVE_PREFIX} (simulation corrigée par un agent)`;
   return reasonLabel ? `${base} — ${reasonLabel}` : base;
+}
+
+/**
+ * Vrai si la note d'archivage provient d'un recalcul d'éligibilité (préfixe
+ * « Non éligible ») — donc dé-archivable automatiquement quand la simulation
+ * redevient éligible. Un archivage manuel (abandon, non-réponse, reste à charge…)
+ * ne matche pas et n'est jamais annulé automatiquement.
+ */
+export function isEligibiliteArchiveReason(reason: string | null | undefined): boolean {
+  return typeof reason === "string" && reason.startsWith(ELIGIBILITE_ARCHIVE_PREFIX);
 }

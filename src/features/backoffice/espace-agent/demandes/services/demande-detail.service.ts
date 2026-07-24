@@ -146,6 +146,7 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       demandeur,
       logement,
       statut: demande.validation.statut,
+      archivedAt: demande.parcours.archivedAt,
       dateCreation: demande.validation.choisieAt,
       commentaire: demande.validation.commentaire,
       estMandataireFinancier: demande.validation.estMandataireFinancier,

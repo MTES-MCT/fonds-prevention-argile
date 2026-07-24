@@ -75,3 +75,107 @@ sur l'un d'eux est maintenant visible.
   prospect (données utiles, sans effet de bord).
 - Le scope du recalcul est volontairement limité aux dossiers déjà tranchés : les
   workflows de validation AMO (`EN_ATTENTE`) et sans-AMO ne sont pas modifiés.
+
+## Amendement (2026-07-23) : découplage archivage / décision de validation
+
+Le scope ci-dessus couplait deux effets sous une même garde `decidedStatuts` : la
+**décision de validation** (flip de statut) **et** l'**archivage**. Conséquence : sur un
+dossier `EN_ATTENTE` / `SANS_AMO` ou un prospect, une simulation corrigée devenue
+inéligible n'archivait rien — alors que la modale de confirmation promet « Le dossier sera
+déplacé dans la catégorie Archivés ». UI et backend divergeaient.
+
+**Décision** : découpler les deux effets dans `updateSimulationDataAction`.
+
+- **Décision de validation** (flip `LOGEMENT_ELIGIBLE ↔ LOGEMENT_NON_ELIGIBLE`) : inchangée,
+  **réservée aux dossiers déjà tranchés**. On n'auto-décide toujours pas un `EN_ATTENTE`
+  (validation AMO à venir) ni un `SANS_AMO` — l'AMO / l'Aller-vers gardent la main.
+- **Archivage** : étendu à **tous les statuts éditables** et au **chemin prospect**. Suffit
+  de poser `archivedAt` (+ `situationParticulier = ARCHIVE` + note), car la catégorie
+  « Archivés » est pilotée par `archivedAt` dans `getDossierEtat`, indépendamment du statut
+  de validation. On ne préempte donc pas la décision AMO tout en honorant la promesse UI.
+
+**Garde anti-régression sur le dé-archivage** : le retour automatique à l'état actif quand
+la simulation redevient éligible ne s'applique **qu'aux archivages pour inéligibilité**
+(note préfixée `« Non éligible »`, prédicat `isEligibiliteArchiveReason`). Un archivage
+**manuel** (abandon, non-réponse, reste à charge…) n'est jamais annulé automatiquement.
+Idempotence : on n'archive pas un dossier déjà archivé (`archivedAt` ne glisse pas).
+
+**Cible du dé-archivage** : mutualisée avec le dé-archivage manuel via
+`situationApresReactivation(hasAmoResponsable)` — `ELIGIBLE` si un AMO est responsable
+(dossier avec entreprise), `PROSPECT` sinon (Aller-vers / vrai prospect). Évite qu'un
+dossier AMO redevienne `PROSPECT`.
+
+**Durcissement RBAC du chemin prospect (revue Codex).** Le fallback « par `parcoursId` »
+(vrai prospect sans validation) — lecture `getDossierSimulationData` **et** écriture
+`updateSimulationDataAction` — n'avait **aucune** garde : n'importe quel agent pouvait
+éditer/archiver un parcours arbitraire, et un dossier **portant** une validation pouvait
+être traité comme prospect (contournement des gardes d'ownership/statut). Gardes ajoutées,
+symétriques lecture/écriture :
+
+1. **rejet si une validation existe** pour ce `parcoursId` (l'appelant doit passer par
+   l'id de validation) ;
+2. **capacité `canViewDossiersWithoutAmo`** requise (ALLERS_VERS / hybride) — un AMO pur
+   est exclu des prospects, même sur son territoire (`verifyProspectTerritoryAccess` ne
+   gate pas cette capacité, qu'il faut donc vérifier explicitement) ;
+3. **contrôle territorial** (`verifyProspectTerritoryAccess`), aligné sur le listing.
+
+L'écriture prospect passe désormais par une **transaction unique** (simulation + archivage),
+comme le chemin dossier, au lieu de deux écritures repository séquentielles.
+
+> **Reste hors périmètre** (dette pré-existante, non régressée par cette branche) :
+> `verifyProspectTerritoryAccess` ne vérifie pas `canViewDossiersWithoutAmo` en interne —
+> un AMO pur peut donc atteindre un dossier `SANS_AMO` de son territoire via le **détail**.
+> Le contournement est ici fermé localement (point 2) ; le durcissement central de
+> `verifyProspectTerritoryAccess` est à traiter séparément. Le verrouillage concurrent
+> (`FOR UPDATE`) et une éventuelle colonne `archive_origin` structurée sont également
+> différés.
+
+### Cohérence des surfaces « demande » avec l'archivage
+
+Archiver une demande `EN_ATTENTE` sans trancher son statut de validation crée une
+divergence : `archivedAt` est posé mais `statut` reste `EN_ATTENTE`. Or les surfaces
+« demande » décidaient de l'affichage **uniquement** sur le statut, sans regarder
+`archivedAt` (contrairement au listing dossiers, qui passe par `getDossierEtat` où
+`archivedAt` prime). Symptôme : une demande archivée restait comptée « à traiter » et sa
+page `/espace-agent/demandes/[id]` affichait encore le bloc « choix de l'AMO ».
+
+**Règle appliquée : `archivedAt` prime sur les surfaces demande.**
+
+- Listing/compteur « demandes à traiter » (`amo-accueil.service`) : exclut `archivedAt IS NOT NULL`.
+- Routage du listing dossiers (`DossiersSuivisTable`) : un item archivé pointe vers
+  `/dossiers/[id]` (archive-aware), jamais `/demandes/[id]`.
+- Page `/demandes/[id]` : garde qui redirige vers `/dossiers/[id]` si archivé (défense en
+  profondeur contre l'accès direct par URL). `getDemandeDetail` expose désormais `archivedAt`.
+
+On ne bascule pas `EN_ATTENTE → LOGEMENT_NON_ELIGIBLE` : le retour à l'éligibilité
+retomberait en `LOGEMENT_ELIGIBLE` (= « validé par l'AMO ») sans que l'AMO ait répondu.
+Garder `EN_ATTENTE` + faire primer `archivedAt` préserve le cycle de validation AMO.
+
+## Amendement (2026-07-24) : le verdict non éligible tranche toujours la validation
+
+Le paragraphe ci-dessus s'est révélé incorrect à l'usage : `InfoDossierCallout` (détail
+dossier) décide de l'affichage sur `validationStatut`, **pas** sur `archivedAt` — il ne
+connaît que le cas `LOGEMENT_NON_ELIGIBLE` pour afficher le callout « Dossier archivé ».
+Résultat : un dossier `EN_ATTENTE` corrigé en non-éligible était bien archivé en base,
+mais restait affiché « En attente de validation par l'AMO » (le statut ne bougeait pas),
+contredisant l'archivage réel.
+
+**Décision** : un verdict **non éligible** tranche désormais **toujours** la validation
+AMO (`statut → LOGEMENT_NON_ELIGIBLE`), quel que soit le statut de départ (`EN_ATTENTE`,
+`SANS_AMO` compris) — la simulation est la source de vérité du critère d'éligibilité, donc
+une correction qui la rend non éligible doit refuser l'accompagnement, sans attendre un
+geste de validation qui n'a plus lieu d'être. La restriction inverse est **conservée** : un
+verdict **éligible** ne re-décide toujours que les dossiers **déjà tranchés**
+(`LOGEMENT_ELIGIBLE`/`LOGEMENT_NON_ELIGIBLE`) — on ne valide jamais à la place de l'AMO un
+dossier encore `EN_ATTENTE`/`SANS_AMO`. L'asymétrie est volontaire : refuser un dossier au
+vu d'un critère éliminatoire ne usurpe l'avis de personne ; le valider le ferait.
+
+**Audit** : ce refus automatique est tracé dans l'historique du dossier
+(`parcours_actions`, type système `refus_non_eligible_auto`, label « Accompagnement refusé
+(non éligible) »), au même titre que les autres actions système (`dossier_reouvert`,
+`invitation_renvoyee`…). Écrit hors transaction après le commit (best-effort), même
+pattern que `reouvrirDemandeAction`.
+
+**Callout** : le texte de `InfoDossierCallout` pour `LOGEMENT_NON_ELIGIBLE` ne mentionne
+plus « à la création », puisqu'il couvre désormais aussi l'archivage déclenché par une
+correction d'agent.

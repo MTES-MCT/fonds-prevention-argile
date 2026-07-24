@@ -50,6 +50,15 @@ export default async function DemandeDetailPage({ params }: PageProps) {
   }
 
   const demande = result.data;
+
+  // Une demande archivée (simulation devenue non éligible) n'est plus au stade « choix
+  // AMO » : cette page afficherait à tort le bloc de validation. On renvoie vers la page
+  // de suivi, archive-aware (affiche le motif). Défense en profondeur contre l'accès direct
+  // par URL — le listing route déjà les archivés vers /dossiers/[id].
+  if (demande.archivedAt) {
+    redirect(ROUTES.backoffice.espaceAmo.dossier(id));
+  }
+
   const nomComplet = formatNomComplet(demande.demandeur.prenom, demande.demandeur.nom);
 
   // Pièces à prévoir pour l'étape courante, tirées de la démarche DN correspondante.

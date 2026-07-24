@@ -8,6 +8,7 @@ import type { AuthUser } from "@/features/auth/domain/entities";
 vi.mock("@/features/auth/services/user.service", () => ({ getCurrentUser: vi.fn() }));
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
   verifyProspectTerritoryAccess: vi.fn(),
+  calculateAgentScope: vi.fn(),
 }));
 vi.mock("@/shared/database/client", () => ({ db: { select: vi.fn() } }));
 vi.mock("@/shared/config/env.config", () => createEnvConfigMock());
@@ -18,7 +19,10 @@ vi.mock("@/features/parcours/core/services/rga-data.service", () => ({
 
 import { getDossierSimulationData } from "./edition-simulation.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
-import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
+import {
+  verifyProspectTerritoryAccess,
+  calculateAgentScope,
+} from "@/features/auth/permissions/services/agent-scope.service";
 import { db } from "@/shared/database/client";
 
 const makeAgent = (
@@ -63,10 +67,57 @@ const mockValidationRow = (statut: StatutValidationAmo, entrepriseAmoId: string 
   } as any);
 };
 
+// Fallback prospect (sans validation) : 3 requêtes db.select successives —
+// 1) validation par id (vide) ; 2) parcours + user par id ; 3) validation existante par parcoursId.
+const mockProspectRead = (existingValidationRows: Array<{ id: string }> = []) => {
+  vi.mocked(db.select)
+    .mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) }),
+          }),
+        }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+    .mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              {
+                parcours: {
+                  id: "parcours-1",
+                  rgaSimulationData: null,
+                  rgaSimulationDataAgent: null,
+                },
+                user: { prenom: "Jean", nom: "Dupont" },
+              },
+            ]),
+          }),
+        }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+    .mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(existingValidationRows) }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+};
+
 describe("getDossierSimulationData — accès à l'édition de simulation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(verifyProspectTerritoryAccess).mockResolvedValue(null);
+    vi.mocked(calculateAgentScope).mockResolvedValue({
+      canViewDossiersWithoutAmo: true,
+      departements: ["01"],
+      epcis: [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
   });
 
   it("refuse un utilisateur non authentifié", async () => {
@@ -150,5 +201,55 @@ describe("getDossierSimulationData — accès à l'édition de simulation", () =
 
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toBe("Accès réservé aux agents");
+  });
+
+  it("fallback prospect — ALLERS_VERS de son territoire : AUTORISÉ", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.ALLERS_VERS, { allersVersId: "av-1" }));
+    mockProspectRead();
+
+    const result = await getDossierSimulationData("parcours-1");
+
+    expect(result.success).toBe(true);
+    expect(verifyProspectTerritoryAccess).toHaveBeenCalledWith(
+      "parcours-1",
+      expect.objectContaining({ role: UserRole.ALLERS_VERS, allersVersId: "av-1" })
+    );
+  });
+
+  it("fallback prospect — AMO pur : REFUSÉ (capacité dossiers sans AMO absente)", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, { entrepriseAmoId: "amo-A" }));
+    mockProspectRead();
+    vi.mocked(calculateAgentScope).mockResolvedValueOnce({
+      canViewDossiersWithoutAmo: false,
+      departements: ["01"],
+      epcis: [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    const result = await getDossierSimulationData("parcours-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toBe("Ce dossier ne vous est pas destiné");
+  });
+
+  it("fallback prospect — une validation existe pour ce parcours : REFUSÉ (contournement)", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.ALLERS_VERS, { allersVersId: "av-1" }));
+    mockProspectRead([{ id: "validation-x" }]);
+
+    const result = await getDossierSimulationData("parcours-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toBe("Ce dossier ne vous est pas destiné");
+  });
+
+  it("fallback prospect — hors territoire : REFUSÉ", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.ALLERS_VERS, { allersVersId: "av-1" }));
+    mockProspectRead();
+    vi.mocked(verifyProspectTerritoryAccess).mockResolvedValueOnce("Ce prospect n'est pas dans votre territoire");
+
+    const result = await getDossierSimulationData("parcours-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toBe("Ce prospect n'est pas dans votre territoire");
   });
 });

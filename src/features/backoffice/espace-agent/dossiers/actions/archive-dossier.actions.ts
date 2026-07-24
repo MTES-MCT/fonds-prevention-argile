@@ -5,7 +5,10 @@ import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.acti
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { assertCanActAsResponsable } from "@/features/auth/permissions/services/responsable-permissions.service";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
-import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import {
+  SituationParticulier,
+  situationApresReactivation,
+} from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { ActionResult } from "@/shared/types";
 
 /**
@@ -62,8 +65,7 @@ export async function unarchiveDossierAction(parcoursId: string): Promise<Action
     if (!guard.ok) return { success: false, error: guard.error };
 
     // Cible : ELIGIBLE si un AMO est responsable, PROSPECT sinon (workflow AV).
-    const target =
-      guard.responsable.type === "AMO" ? SituationParticulier.ELIGIBLE : SituationParticulier.PROSPECT;
+    const target = situationApresReactivation(guard.responsable.type === "AMO");
     await parcoursPreventionRepository.updateSituationParticulier(parcoursId, target);
 
     revalidatePath("/espace-agent", "layout");

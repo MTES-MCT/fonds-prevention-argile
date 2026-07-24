@@ -201,10 +201,14 @@ export function DossiersSuivisTable({
                       // - EN_ATTENTE mais agent NON responsable (AV / autre AMO du territoire)
                       //   → page de suivi /dossiers/[id] en consultation (l'accès /demandes
                       //   est réservé à l'AMO propriétaire, sinon 404).
+                      // - EN_ATTENTE mais ARCHIVÉ (simulation devenue non éligible) → /dossiers/[id]
+                      //   (archive-aware, affiche le motif) ; /demandes montrerait à tort le choix AMO.
                       // - validation traitée (éligible/refusée) → page de suivi /dossiers/[id].
                       // - pas de validation → page prospect (parcoursId).
                       const detailHref = dossier.validation
-                        ? statutValidation === StatutValidationAmo.EN_ATTENTE && dossier.canActAsResponsable
+                        ? statutValidation === StatutValidationAmo.EN_ATTENTE &&
+                          dossier.canActAsResponsable &&
+                          !isArchived
                           ? ROUTES.backoffice.espaceAmo.demande(dossier.validation.id)
                           : ROUTES.backoffice.espaceAmo.dossier(dossier.validation.id)
                         : `/espace-agent/prospects/${dossier.parcoursId}`;

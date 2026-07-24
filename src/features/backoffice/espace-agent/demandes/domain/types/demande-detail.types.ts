@@ -127,6 +127,8 @@ export interface DemandeDetail {
   logement: InfoLogement;
   /** Statut actuel de la demande */
   statut: string;
+  /** Date d'archivage du parcours (non éligible), ou null. Prime sur le statut EN_ATTENTE. */
+  archivedAt: Date | null;
   /** Date de création de la demande */
   dateCreation: Date;
   /** Commentaire éventuel de l'AMO */
