@@ -13,6 +13,7 @@ import { generateSecureRandomString } from "@/features/auth/utils/oauth.utils";
 import { getServerEnv } from "@/shared/config/env.config";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { sendClaimDossierEmail } from "@/shared/email/actions/send-claim-dossier.actions";
+import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS, buildConseillerAttributes } from "@/shared/email/brevo";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import {
@@ -173,6 +174,16 @@ export async function createDossierByAgent(params: CreateDossierByAgentParams): 
       await parcoursRepo.updateSituationParticulier(parcours.id, SituationParticulier.ARCHIVE, archiveNote, agentId);
     }
   }
+
+  // 4 quinquies. Synchro Brevo (flux) : dossier pré-créé par un conseiller, avant que le
+  // demandeur n'ait de compte FranceConnect actif (distinct de `demandeur_cree`, qui
+  // part séparément quand il réclame ce dossier). Best-effort.
+  await emitBrevoEvent(parcours.id, BREVO_EVENTS.DOSSIER_CREE_PAR_CONSEILLER, {
+    attributes: {
+      [BREVO_ATTRS.CREE_PAR_CONSEILLER]: true,
+      ...(await buildConseillerAttributes(parcours.id)),
+    },
+  });
 
   // 5. Envoi optionnel du mail d'invitation.
   // On skip le mail si la simulation a déterminé que le demandeur est non

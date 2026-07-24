@@ -203,6 +203,11 @@ export class UserRepository extends BaseRepository<User> {
    * 3. Sinon, stub unique avec le même email → rattachement par email.
    * 4. Sinon, création d'un nouvel utilisateur.
    *
+   * `isNewAccount` distingue le cas 2 (retour d'un compte déjà actif) des cas 1/3/4
+   * (le compte devient actif pour la première fois — première création OU premier
+   * rattachement d'un stub pré-créé par un agent). Sert de déclencheur pour l'évènement
+   * Brevo `demandeur_cree` (« compte créé »), à ne pousser qu'une seule fois par compte.
+   *
    * @param options.partnerSource - Slug partenaire (ex: "maif") provenant du cookie posé sur le simulateur.
    *   Persisté UNIQUEMENT à la création du user (pas écrasé sur les login suivants pour
    *   conserver l'attribution d'origine).
@@ -211,14 +216,14 @@ export class UserRepository extends BaseRepository<User> {
   async upsertFromFranceConnect(
     userInfo: FranceConnectUserInfo,
     options?: { partnerSource?: string | null; claimToken?: string }
-  ): Promise<User> {
+  ): Promise<{ user: User; isNewAccount: boolean }> {
     const fcId = userInfo.sub;
 
     // 1. Rattachement explicite via claim token
     if (options?.claimToken) {
       const stub = await this.findByClaimToken(options.claimToken);
       if (stub) {
-        return await this.claimStub(stub.id, userInfo);
+        return { user: await this.claimStub(stub.id, userInfo), isNewAccount: true };
       }
       // Token invalide/expiré : on continue avec le flux normal.
     }
@@ -245,19 +250,19 @@ export class UserRepository extends BaseRepository<User> {
         throw new Error("Failed to update user last login");
       }
 
-      return updated;
+      return { user: updated, isNewAccount: false };
     }
 
     // 3. Fallback : stub unique avec le même email
     if (userInfo.email) {
       const stubByEmail = await this.findByEmailWithoutFcId(userInfo.email);
       if (stubByEmail) {
-        return await this.claimStub(stubByEmail.id, userInfo);
+        return { user: await this.claimStub(stubByEmail.id, userInfo), isNewAccount: true };
       }
     }
 
     // 4. Nouvel utilisateur (avec partnerSource persisté à la création)
-    return await this.create({
+    const created = await this.create({
       fcId,
       email: userInfo.email,
       nom: userInfo.preferred_username || userInfo.family_name,
@@ -266,6 +271,7 @@ export class UserRepository extends BaseRepository<User> {
       lastLogin: new Date(),
       partnerSource: options?.partnerSource ?? null,
     });
+    return { user: created, isNewAccount: true };
   }
 
   /**

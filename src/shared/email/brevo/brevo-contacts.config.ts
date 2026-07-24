@@ -26,12 +26,20 @@ export const BREVO_ATTRS = {
   CONSEILLER_EMAIL: "CONSEILLER_EMAIL",
   CONSEILLER_TELEPHONE: "CONSEILLER_TELEPHONE",
   CONSEILLER_HORAIRES: "CONSEILLER_HORAIRES",
+  // Vrai si le dossier a été initié par un conseiller (AMO/Aller-vers) pour le compte du
+  // demandeur, plutôt qu'auto-inscrit. Posé une fois pour toutes, ne change jamais.
+  CREE_PAR_CONSEILLER: "CREE_PAR_CONSEILLER",
   // Debug staging uniquement : vrai email quand le contact est sous-adressé.
   EMAIL_REEL: "EMAIL_REEL",
 } as const;
 
 // Évènements poussés en flux. Servent de déclencheurs d'Automation côté Brevo.
 export const BREVO_EVENTS = {
+  // Dossier pré-créé par un conseiller (AMO/Aller-vers), avant que le demandeur n'ait de
+  // compte FranceConnect actif. `demandeur_cree` part séparément quand le demandeur
+  // réclame ce dossier (ou s'inscrit lui-même) — les deux évènements ne se recouvrent
+  // jamais (cf. `isNewAccount` dans `upsertFromFranceConnect`).
+  DOSSIER_CREE_PAR_CONSEILLER: "dossier_cree_par_conseiller",
   DEMANDEUR_CREE: "demandeur_cree",
   SIMULATION_ENREGISTREE: "simulation_enregistree",
   AMO_DEFINI: "amo_defini",

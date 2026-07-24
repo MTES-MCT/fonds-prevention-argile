@@ -49,6 +49,13 @@ vi.mock("@/shared/email/actions/send-claim-dossier.actions", () => ({
   sendClaimDossierEmail: vi.fn(),
 }));
 
+vi.mock("@/shared/email/brevo", () => ({
+  emitBrevoEvent: vi.fn(),
+  BREVO_EVENTS: { DOSSIER_CREE_PAR_CONSEILLER: "dossier_cree_par_conseiller" },
+  BREVO_ATTRS: { CREE_PAR_CONSEILLER: "CREE_PAR_CONSEILLER" },
+  buildConseillerAttributes: vi.fn().mockResolvedValue({}),
+}));
+
 vi.mock("@/features/auth/utils/oauth.utils", () => ({
   generateSecureRandomString: vi.fn(() => "token-abc"),
 }));
@@ -64,6 +71,7 @@ vi.mock("./inviter-name.service", () => ({
 import { userRepo, parcoursRepo, agentsRepo } from "@/shared/database/repositories";
 import { db } from "@/shared/database/client";
 import { sendClaimDossierEmail } from "@/shared/email/actions/send-claim-dossier.actions";
+import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributes } from "@/shared/email/brevo";
 import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { EligibilityReason } from "@/features/simulateur/domain/value-objects/eligibility-reason.enum";
@@ -133,6 +141,17 @@ describe("createDossierByAgent", () => {
 
     expect(result.claimUrl).toBe("http://localhost:3000/claim-dossier/token-abc");
     expect(result.emailSent).toBe(true);
+  });
+
+  it("émet dossier_cree_par_conseiller avec CREE_PAR_CONSEILLER=true et les attributs conseiller", async () => {
+    vi.mocked(buildConseillerAttributes).mockResolvedValueOnce({ CONSEILLER_TYPE: "ALLERS_VERS" });
+
+    await createDossierByAgent(baseParams);
+
+    expect(buildConseillerAttributes).toHaveBeenCalledWith("parcours-1");
+    expect(emitBrevoEvent).toHaveBeenCalledWith("parcours-1", BREVO_EVENTS.DOSSIER_CREE_PAR_CONSEILLER, {
+      attributes: { CREE_PAR_CONSEILLER: true, CONSEILLER_TYPE: "ALLERS_VERS" },
+    });
   });
 
   it("persiste la simulation fournie par l'agent (parcours 2)", async () => {
