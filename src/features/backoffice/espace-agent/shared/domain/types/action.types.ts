@@ -33,6 +33,15 @@ export const ACTION_TYPE_ACCOMPAGNEMENT_ARRETE = "accompagnement_arrete";
 export const ACTION_TYPE_ARRET_DEMANDE = "arret_accompagnement_demande";
 /** Action système : l'AMO mandataire a refusé la demande d'arrêt et poursuit l'accompagnement. */
 export const ACTION_TYPE_ARRET_REFUSE = "arret_accompagnement_refuse";
+/** Action système : l'AMO atteste l'éligibilité et accepte d'accompagner le demandeur. */
+export const ACTION_TYPE_ELIGIBILITE_ACCEPTEE = "eligibilite_acceptee";
+/** Action système : l'AMO déclare le demandeur non éligible (demande archivée). */
+export const ACTION_TYPE_ELIGIBILITE_REFUSEE = "eligibilite_refusee_non_eligible";
+/**
+ * Action système : demandeur éligible mais l'AMO refuse de l'accompagner (ex. injoignable).
+ * Le dossier est archivé avec une raison.
+ */
+export const ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE = "accompagnement_refuse_eligible";
 /** Valeur de type d'action "Autre" (nécessite une précision) */
 export const ACTION_TYPE_AUTRE = "autre";
 
@@ -101,12 +110,16 @@ export const ACTION_LABELS_BY_VALUE: Record<string, string> = ACTION_TYPE_GROUPS
     return acc;
   },
   // Types système hors formulaire : pas dans ACTION_TYPE_GROUPS, mais affichables dans l'historique.
+  // Emoji préfixe pour rester cohérent avec les libellés du formulaire (ACTION_TYPE_GROUPS).
   {
-    [ACTION_TYPE_DOSSIER_REOUVERT]: "Demande ré-ouverte",
-    [ACTION_TYPE_INVITATION_RENVOYEE]: "Invitation renvoyée",
-    [ACTION_TYPE_ACCOMPAGNEMENT_ARRETE]: "Arrêt de l'accompagnement",
-    [ACTION_TYPE_ARRET_DEMANDE]: "Demande d'arrêt de l'accompagnement",
-    [ACTION_TYPE_ARRET_REFUSE]: "Refus de l'arrêt de l'accompagnement",
+    [ACTION_TYPE_DOSSIER_REOUVERT]: "🔄 Demande ré-ouverte",
+    [ACTION_TYPE_INVITATION_RENVOYEE]: "📨 Invitation renvoyée",
+    [ACTION_TYPE_ACCOMPAGNEMENT_ARRETE]: "🚫 Arrêt de l'accompagnement",
+    [ACTION_TYPE_ARRET_DEMANDE]: "✋ Demande d'arrêt de l'accompagnement",
+    [ACTION_TYPE_ARRET_REFUSE]: "↩️ Refus de l'arrêt de l'accompagnement",
+    [ACTION_TYPE_ELIGIBILITE_ACCEPTEE]: "✅ Éligible — accompagnement accepté",
+    [ACTION_TYPE_ELIGIBILITE_REFUSEE]: "❌ Demandeur non éligible",
+    [ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE]: "⚠️ Éligible — accompagnement refusé",
   } as Record<string, string>
 );
 

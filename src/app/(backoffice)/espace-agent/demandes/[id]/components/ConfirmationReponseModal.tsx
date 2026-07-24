@@ -111,6 +111,21 @@ export function ConfirmationReponseModal({
           },
         };
 
+      case StatutValidationAmo.ACCOMPAGNEMENT_REFUSE:
+        return {
+          icon: "fr-icon-archive-line",
+          title: "Demande archivée",
+          description:
+            "Le demandeur reste éligible, mais votre structure ne l'accompagne pas : le dossier a été archivé.",
+          hint: "L'aller-vers de son territoire pourra reprendre le dossier si le demandeur souhaite poursuivre.",
+          secondaryButton: {
+            label: "Retour à l'accueil",
+            href: ROUTES.backoffice.espaceAmo.root,
+            icon: "fr-icon-arrow-left-line",
+            isSecondary: true,
+          },
+        };
+
       default:
         return null;
     }

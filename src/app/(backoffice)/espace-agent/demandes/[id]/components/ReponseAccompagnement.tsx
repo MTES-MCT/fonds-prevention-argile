@@ -6,8 +6,10 @@ import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospe
 import {
   accepterAccompagnement,
   refuserDemandeNonEligible,
+  refuserAccompagnementEligible,
   getNextDemandeurEnAttente,
 } from "@/features/backoffice/espace-agent/demandes/actions";
+import { ArchiveModal } from "../../../shared/components/ArchiveModal";
 import { ConfirmationReponseModal } from "./ConfirmationReponseModal";
 
 interface ReponseAccompagnementProps {
@@ -49,6 +51,8 @@ export function ReponseAccompagnement({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmedChoix, setConfirmedChoix] = useState<StatutValidationAmo | null>(null);
   const [nextDemandeId, setNextDemandeId] = useState<string | null>(null);
+  // Modale d'archivage (chemin "éligible mais je n'accompagne pas").
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
 
   const alreadyProcessed = statutActuel !== StatutValidationAmo.EN_ATTENTE;
 
@@ -58,6 +62,14 @@ export function ReponseAccompagnement({
 
     if (!choix) {
       setError("Veuillez sélectionner une réponse");
+      return;
+    }
+
+    // Éligible mais pas d'accompagnement : on délègue à la modale d'archivage
+    // (raison obligatoire), qui appelle refuserAccompagnementEligible.
+    if (choix === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE) {
+      setError(null);
+      setIsArchiveOpen(true);
       return;
     }
 
@@ -168,13 +180,25 @@ export function ReponseAccompagnement({
             disabled={isSubmitting || alreadyProcessed}>
             <option value="">Votre réponse</option>
             <option value={StatutValidationAmo.LOGEMENT_ELIGIBLE}>
-              J&apos;accompagne ce demandeur et j&apos;atteste qu&apos;il est éligible
+              &#9989; J&apos;accompagne ce demandeur et j&apos;atteste qu&apos;il est éligible
+            </option>
+            <option value={StatutValidationAmo.ACCOMPAGNEMENT_REFUSE}>
+              &#9888;&#65039; Le demandeur est peut-être éligible, mais ma structure ne va pas l&apos;accompagner
             </option>
             <option value={StatutValidationAmo.LOGEMENT_NON_ELIGIBLE}>
-              J&apos;ai pris contact avec ce demandeur, mais il n&apos;est pas éligible
+              &#10060; J&apos;ai pris contact avec ce demandeur, mais il n&apos;est pas éligible
             </option>
           </select>
         </div>
+
+        {choix === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE && !alreadyProcessed && (
+          <div className="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w">
+            <p>
+              Le demandeur reste éligible, mais votre structure ne l&apos;accompagne pas. En confirmant, le dossier sera
+              archivé : une raison vous sera demandée.
+            </p>
+          </div>
+        )}
 
         {choix === StatutValidationAmo.LOGEMENT_ELIGIBLE && !alreadyProcessed && (
           <>
@@ -310,6 +334,27 @@ export function ReponseAccompagnement({
           </div>
         )}
       </div>
+
+      {/* Modale d'archivage : chemin "éligible mais je n'accompagne pas" */}
+      <ArchiveModal
+        isOpen={isArchiveOpen}
+        onClose={() => setIsArchiveOpen(false)}
+        parcoursId={demandeId}
+        archiveAction={async (id, reason) => {
+          const r = await refuserAccompagnementEligible(id, reason);
+          return r.success ? { success: true, data: undefined } : r;
+        }}
+        description="Le demandeur reste éligible, mais votre structure ne l'accompagne pas : le dossier sera archivé. L'aller-vers de son territoire pourra le reprendre."
+        onSuccess={async () => {
+          setIsArchiveOpen(false);
+          const nextResult = await getNextDemandeurEnAttente(demandeId);
+          if (nextResult.success && nextResult.data) {
+            setNextDemandeId(nextResult.data.nextDemandeId);
+          }
+          setConfirmedChoix(StatutValidationAmo.ACCOMPAGNEMENT_REFUSE);
+          setIsModalOpen(true);
+        }}
+      />
 
       {/* Modale de confirmation */}
       {confirmedChoix && (

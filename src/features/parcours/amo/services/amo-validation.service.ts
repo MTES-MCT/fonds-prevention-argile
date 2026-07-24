@@ -9,6 +9,7 @@ import { ValidationAmoData } from "../domain/entities";
 import { Status, Step } from "../../core";
 import { normalizeCodeInsee } from "../utils/amo.utils";
 import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
+import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 
 /**
  * Service de gestion des validations AMO (approve/reject/get)
@@ -31,6 +32,7 @@ interface ApproveValidationData {
   message: string;
   alreadyProcessed: boolean;
   valideeAt: Date;
+  parcoursId: string;
 }
 
 /**
@@ -74,6 +76,7 @@ export async function approveValidation(
           .select({
             id: parcoursAmoValidations.id,
             valideeAt: parcoursAmoValidations.valideeAt,
+            parcoursId: parcoursAmoValidations.parcoursId,
           })
           .from(parcoursAmoValidations)
           .where(eq(parcoursAmoValidations.id, validationId))
@@ -89,6 +92,7 @@ export async function approveValidation(
             message: "Demande déjà traitée",
             alreadyProcessed: true,
             valideeAt: existing.valideeAt as Date,
+            parcoursId: existing.parcoursId,
           },
         };
       }
@@ -132,6 +136,7 @@ export async function approveValidation(
           message: "Logement validé comme éligible",
           alreadyProcessed: false,
           valideeAt: now,
+          parcoursId: validation.parcoursId,
         },
       };
     });
@@ -165,6 +170,7 @@ interface RejectValidationData {
   message: string;
   alreadyProcessed: boolean;
   valideeAt: Date;
+  parcoursId: string;
 }
 
 /**
@@ -200,6 +206,7 @@ export async function rejectEligibility(
           .select({
             id: parcoursAmoValidations.id,
             valideeAt: parcoursAmoValidations.valideeAt,
+            parcoursId: parcoursAmoValidations.parcoursId,
           })
           .from(parcoursAmoValidations)
           .where(eq(parcoursAmoValidations.id, validationId))
@@ -215,6 +222,7 @@ export async function rejectEligibility(
             message: "Demande déjà traitée",
             alreadyProcessed: true,
             valideeAt: existing.valideeAt as Date,
+            parcoursId: existing.parcoursId,
           },
         };
       }
@@ -241,6 +249,7 @@ export async function rejectEligibility(
           message: "Logement refusé : non éligible",
           alreadyProcessed: false,
           valideeAt: now,
+          parcoursId: validation.parcoursId,
         },
       };
     });
@@ -262,6 +271,126 @@ export async function rejectEligibility(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erreur lors du refus",
+    };
+  }
+}
+
+interface DeclineAccompagnementData {
+  message: string;
+  alreadyProcessed: boolean;
+  valideeAt: Date;
+  parcoursId: string;
+}
+
+/**
+ * Demandeur éligible, mais l'AMO refuse de l'accompagner (ex. injoignable).
+ *
+ * Pose `statut = ACCOMPAGNEMENT_REFUSE` et **archive** le parcours (raison saisie via
+ * la modale « Archiver »), dans une seule transaction. Le dossier bascule dans les
+ * archives (`archivedAt` prime dans `getDossierEtat`) ; l'aller-vers du territoire
+ * en devient responsable. Un retour arrière passe par la ré-ouverture (ADR-0016).
+ *
+ * `archiveReason` provient des `ARCHIVE_REASONS` (jamais préfixé « Non éligible »),
+ * pour ne pas être happé par le dé-archivage automatique d'éligibilité.
+ */
+export async function declineAccompagnementEligible(
+  validationId: string,
+  archiveReason: string,
+  note: string | null | undefined,
+  archivedByAgentId: string
+): Promise<ActionResult<DeclineAccompagnementData>> {
+  try {
+    let parcoursIdForSync: string | null = null;
+    const result = await db.transaction<ActionResult<DeclineAccompagnementData>>(async (tx) => {
+      const now = new Date();
+
+      const [validation] = await tx
+        .update(parcoursAmoValidations)
+        .set({
+          statut: StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
+          commentaire: note || null,
+          valideeAt: now,
+        })
+        .where(and(eq(parcoursAmoValidations.id, validationId), isNull(parcoursAmoValidations.valideeAt)))
+        .returning({
+          id: parcoursAmoValidations.id,
+          parcoursId: parcoursAmoValidations.parcoursId,
+        });
+
+      if (!validation) {
+        const [existing] = await tx
+          .select({
+            id: parcoursAmoValidations.id,
+            valideeAt: parcoursAmoValidations.valideeAt,
+            parcoursId: parcoursAmoValidations.parcoursId,
+          })
+          .from(parcoursAmoValidations)
+          .where(eq(parcoursAmoValidations.id, validationId))
+          .limit(1);
+
+        if (!existing) {
+          return { success: false, error: "Validation non trouvée" };
+        }
+
+        return {
+          success: true,
+          data: {
+            message: "Demande déjà traitée",
+            alreadyProcessed: true,
+            valideeAt: existing.valideeAt as Date,
+            parcoursId: existing.parcoursId,
+          },
+        };
+      }
+
+      await tx
+        .update(amoValidationTokens)
+        .set({ usedAt: now })
+        .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
+
+      parcoursIdForSync = validation.parcoursId;
+
+      // Archive le parcours + reset du statut interne (le parcours est encore à
+      // CHOIX_AMO au moment de la réponse). archivedAt prime pour l'affichage.
+      await tx
+        .update(parcoursPrevention)
+        .set({
+          situationParticulier: SituationParticulier.ARCHIVE,
+          archivedAt: now,
+          archiveReason,
+          archivedBy: archivedByAgentId,
+          currentStatus: Status.TODO,
+        })
+        .where(eq(parcoursPrevention.id, validation.parcoursId));
+
+      return {
+        success: true,
+        data: {
+          message: "Demandeur éligible, accompagnement refusé : dossier archivé",
+          alreadyProcessed: false,
+          valideeAt: now,
+          parcoursId: validation.parcoursId,
+        },
+      };
+    });
+
+    // Synchro Brevo (flux) hors transaction : réponse AMO, accompagnement refusé. Best-effort.
+    if (result.success && !result.data.alreadyProcessed && parcoursIdForSync) {
+      await emitBrevoEvent(parcoursIdForSync, BREVO_EVENTS.AMO_REPONSE, {
+        attributes: {
+          [BREVO_ATTRS.A_AMO]: true,
+          [BREVO_ATTRS.AMO_STATUT]: StatutValidationAmo.ACCOMPAGNEMENT_REFUSE,
+        },
+        eventProperties: { decision: "accompagnement_refuse" },
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Erreur declineAccompagnementEligible:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur lors du refus d'accompagnement",
     };
   }
 }
