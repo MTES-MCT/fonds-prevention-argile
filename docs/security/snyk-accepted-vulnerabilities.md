@@ -199,14 +199,28 @@ ci-dessus (postcss ×2, brace-expansion). `pnpm audit` complet (devDep incluses)
 `vite` High/Moderate, `js-yaml` High/Moderate et `diff` Low, déjà couverts par les
 justifications existantes.
 
+## Refresh — juillet 2026 (branche `update-brevo`, rebasée sur `remove-crisp`)
+
+`pnpm audit --prod` (déclenché par l'ajout d'un event Brevo, sans nouvelle dépendance)
+révélait 6 High/Moderate sur `next@15.5.18` (DoS Server Actions, SSRF Server Actions,
+SSRF rewrites), avec `brace-expansion`, `sharp` et `postcss` (arbitrary file read)
+acceptés en transitif. **Ce refresh est superseded par celui de la branche
+`remove-crisp` ci-dessus**, rebasée en amont : le bump `next` → 15.5.22 (au lieu du
+15.5.21 initialement visé ici) corrige aussi le lot DoS/SSRF Server Actions identifié
+par cette branche, et les overrides `sharp` (`^0.35.0`) et `brace-expansion` (`^2.1.2`)
+couvrent déjà les deux CVE que cette branche listait comme acceptées — elles ne le
+sont donc plus, voir tableau « Nouvelles vulnérabilités acceptées » ci-dessus. Seul le
+`postcss` (arbitrary file read, bundlé par Next) reste accepté, pour la même raison
+dans les deux branches (non overridable sans upgrade Next 16).
+
 ## Prochaine revue
 
 - **`brace-expansion`** : passer l'override `^2.1.2` → `^5.0.8` dans `pnpm-workspace.yaml`
   dès le **2026-07-30** (fin du `minimumReleaseAge`) — élimine la dernière High runtime.
 - **`vite`** : passer à `>=7.3.5` dès que `minimumReleaseAge` le permet (élimine la High devDep restante).
 - **Lors de l'upgrade Next 16** (PR dédiée) : réévaluer next, eslint-config-next,
-  ESLint 10 et le `postcss` bundlé par Next ; migrer le script `lint` vers le CLI ESLint.
+  ESLint 10 et le `postcss`/`sharp` bundlés par Next ; migrer le script `lint` vers le CLI ESLint.
 - **`esbuild`** : à partir du **2026-06-18** (fin du `minimumReleaseAge`), passer l'override
   `esbuild: ^0.25.0` → `^0.28.1` dans `pnpm-workspace.yaml` puis `pnpm install` — élimine la
   seule High runtime restante.
-- **Vérifier trimestriellement** les fix upstream pour `exceljs` (tmp, uuid) et `maplibre-gl`.
+- **Vérifier trimestriellement** les fix upstream pour `exceljs` (tmp, uuid, brace-expansion) et `maplibre-gl`.
