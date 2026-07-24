@@ -149,4 +149,12 @@ describe("buildConseillerAttributes", () => {
 
     expect(attrs).toEqual({});
   });
+
+  it("best-effort : retourne un objet vide si la résolution jette (ne fait jamais échouer l'appelant)", async () => {
+    resolveResponsableForParcours.mockRejectedValue(new Error("DB down"));
+
+    const attrs = await buildConseillerAttributes("p1");
+
+    expect(attrs).toEqual({});
+  });
 });

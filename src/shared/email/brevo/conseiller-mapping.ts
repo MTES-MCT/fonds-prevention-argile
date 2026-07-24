@@ -51,29 +51,38 @@ export function buildConseillerAttributesFromAmo(amo: {
  * Résout le conseiller local (AMO ou Aller-vers) responsable du parcours et retourne
  * ses coordonnées comme attributs de contact Brevo. Objet vide si aucun conseiller
  * n'est encore résolvable à cet instant (ex: pas de simulation/territoire).
+ *
+ * Best-effort comme le reste du pipeline Brevo (cf. `emitBrevoEvent`) : une erreur de
+ * résolution (DB, territoire incohérent...) ne doit jamais faire échouer le flux
+ * métier appelant (connexion FranceConnect, migration de simulation...).
  */
 export async function buildConseillerAttributes(parcoursId: string): Promise<BrevoAttributes> {
-  const responsable = await resolveResponsableForParcours(parcoursId);
-  if (!responsable) return {};
+  try {
+    const responsable = await resolveResponsableForParcours(parcoursId);
+    if (!responsable) return {};
 
-  if (responsable.type === RESPONSABLE_TYPE.AMO) {
-    const amo = await entreprisesAmoRepo.findById(responsable.entrepriseId);
-    if (!amo) return {};
-    return buildConseillerAttributesFromAmo(amo);
+    if (responsable.type === RESPONSABLE_TYPE.AMO) {
+      const amo = await entreprisesAmoRepo.findById(responsable.entrepriseId);
+      if (!amo) return {};
+      return buildConseillerAttributesFromAmo(amo);
+    }
+
+    if (responsable.type === RESPONSABLE_TYPE.AV) {
+      if (!responsable.structureId) return {};
+      const av = await allersVersRepository.findById(responsable.structureId);
+      if (!av) return {};
+      return buildAttrs({
+        type: "ALLERS_VERS",
+        nom: av.nom,
+        email: av.emails[0],
+        telephone: av.telephone,
+        horaires: av.horaires,
+      });
+    }
+
+    return {};
+  } catch (error) {
+    console.error("[BREVO_CONTACTS] buildConseillerAttributes échec:", error instanceof Error ? error.message : error);
+    return {};
   }
-
-  if (responsable.type === RESPONSABLE_TYPE.AV) {
-    if (!responsable.structureId) return {};
-    const av = await allersVersRepository.findById(responsable.structureId);
-    if (!av) return {};
-    return buildAttrs({
-      type: "ALLERS_VERS",
-      nom: av.nom,
-      email: av.emails[0],
-      telephone: av.telephone,
-      horaires: av.horaires,
-    });
-  }
-
-  return {};
 }

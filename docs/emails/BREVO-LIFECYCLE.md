@@ -38,17 +38,23 @@ Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
 | Update DN              | `features/parcours/dossiers-ds/services/ds-sync.service.ts`                   | `dn_update`              | `step`, `old_ds_status`, `new_ds_status`                 |
 
 - `demandeur_cree` ne part **qu'à la première création** du parcours (pas à chaque login), donc
-  **avant** que la simulation ne soit rattachée → INSEE/DEPARTEMENT y sont absents. Il pousse
-  quand même les attributs `CONSEILLER_*` (§3) s'ils sont déjà résolvables (flux de pré-création
-  d'un dossier par un agent AMO/Aller-vers).
+  **avant** que la simulation ne soit rattachée → INSEE/DEPARTEMENT (et donc `CONSEILLER_*`, qui en
+  dépendent) sont **quasi toujours absents à ce stade** pour un parcours démarré côté site (le
+  simulateur tourne avant la connexion FranceConnect, la simulation n'est migrée en base qu'à
+  `simulation_enregistree`, juste après). Le hook pousse quand même `CONSEILLER_*` (§3) au cas où
+  ils sont déjà résolvables — flux de pré-création d'un dossier par un agent AMO/Aller-vers
+  (`rgaSimulationDataAgent` déjà présent).
+- `simulation_enregistree` part quand la simulation localStorage est enregistrée sur le parcours
+  (post-login) : il fait remonter INSEE/DEPARTEMENT, et donc **c'est le premier instant réel où le
+  territoire — et donc `CONSEILLER_*` — devient résolvable** (Aller-vers de l'EPCI/département par
+  défaut ; l'attribution AMO auto en département obligatoire arrive un peu après, via `amo_defini`).
+  **Idempotent** : une re-migration à l'identique (hors `simulatedAt`) ne le ré-émet pas
+  (`isSameSimulationContent`).
 - `amo_defini` part quand une AMO est attachée au parcours (choix manuel du demandeur ou
   auto-attribution — `assignAmoAutomatiqueForUser` délègue à `selectAmoForUser`, donc un seul hook
   couvre les deux). Rafraîchit les attributs `CONSEILLER_*` sur le contact : le responsable peut
   changer en cours de parcours (Aller-vers territorial → AMO), le mail de bienvenue n'étant pas la
   seule surface qui doit rester à jour.
-- `simulation_enregistree` part quand la simulation localStorage est enregistrée sur le parcours
-  (post-login) : il fait remonter INSEE/DEPARTEMENT. **Idempotent** : une re-migration à l'identique
-  (hors `simulatedAt`) ne le ré-émet pas (`isSameSimulationContent`).
 - `dn_update` ne part **que sur changement réel** de `ds_status` (même condition que
   `sync_run_entries`). Le hook est au niveau bas de `syncDossierStatus` → couvre à la fois
   le CRON de sync et la sync UI demandeur.
@@ -76,7 +82,7 @@ Source de vérité des noms : `src/shared/email/brevo/brevo-contacts.config.ts` 
 | `DS_STATUT`            | Texte   | `dn_update`                                                                                                       |
 | `DEPARTEMENT`, `INSEE` | Texte   | dès que la simulation existe (`simulation_enregistree`, puis `amo_reponse`/`dn_update`) — pas au `demandeur_cree` |
 | `SOURCE_ACQUISITION`   | Texte   | tous                                                                                                              |
-| `CONSEILLER_TYPE`      | Texte   | `demandeur_cree` (si déjà résolvable) et `amo_defini` — `AMO` ou `ALLERS_VERS`                                    |
+| `CONSEILLER_TYPE`      | Texte   | `demandeur_cree` (si déjà résolvable), `simulation_enregistree` et `amo_defini` — `AMO` ou `ALLERS_VERS`          |
 | `CONSEILLER_NOM`       | Texte   | idem — nom de la structure responsable                                                                            |
 | `CONSEILLER_EMAIL`     | Texte   | idem — 1er email de contact de la structure                                                                       |
 | `CONSEILLER_TELEPHONE` | Texte   | idem                                                                                                               |
