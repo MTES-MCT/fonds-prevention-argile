@@ -10,7 +10,7 @@ import { JWTPayload } from "../../domain/entities";
 import { userRepo, parcoursRepo } from "@/shared/database/repositories";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
-import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
+import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS, buildConseillerEventProperties } from "@/shared/email/brevo";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
 
@@ -255,8 +255,14 @@ export async function handleFranceConnectCallback(
     if (created) {
       // A_AMO=false explicite : connu à la création (pas d'AMO), et posé ici plutôt
       // qu'en base pour ne pas écraser un A_AMO=true ultérieur (amo_reponse).
+      // conseiller_* : AMO ou Aller-vers déjà rattaché (flux de pré-création par un agent),
+      // pour personnaliser le mail de bienvenue avec les coordonnées du conseiller local.
+      const conseillerEventProperties = await buildConseillerEventProperties(parcours.id);
       await emitBrevoEvent(parcours.id, BREVO_EVENTS.DEMANDEUR_CREE, {
         attributes: { [BREVO_ATTRS.A_AMO]: false },
+        ...(Object.keys(conseillerEventProperties).length > 0
+          ? { eventProperties: conseillerEventProperties }
+          : {}),
       });
     }
 

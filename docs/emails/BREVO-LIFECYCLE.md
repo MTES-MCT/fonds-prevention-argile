@@ -31,13 +31,20 @@ Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
 
 | Déclencheur            | Fichier                                                                       | `event_name`             | `event_properties`                                       |
 | ---------------------- | ----------------------------------------------------------------------------- | ------------------------ | -------------------------------------------------------- |
-| Création demandeur     | `features/auth/adapters/franceconnect/franceconnect.service.ts`               | `demandeur_cree`         | —                                                        |
+| Création demandeur     | `features/auth/adapters/franceconnect/franceconnect.service.ts`               | `demandeur_cree`         | `conseiller_type`/`conseiller_nom`/`conseiller_email`/`conseiller_telephone`/`conseiller_horaires` (si déjà résolvable) |
 | Simulation enregistrée | `features/parcours/core/actions/parcours-simulateur-rga-migration.actions.ts` | `simulation_enregistree` | —                                                        |
 | Réponse AMO            | `features/parcours/amo/services/amo-validation.service.ts`                    | `amo_reponse`            | `decision` (`eligible`/`non_eligible`), `est_mandataire` |
 | Update DN              | `features/parcours/dossiers-ds/services/ds-sync.service.ts`                   | `dn_update`              | `step`, `old_ds_status`, `new_ds_status`                 |
 
 - `demandeur_cree` ne part **qu'à la première création** du parcours (pas à chaque login), donc
   **avant** que la simulation ne soit rattachée → INSEE/DEPARTEMENT y sont absents.
+- `conseiller_*` (`demandeur_cree`) : coordonnées du conseiller local déjà rattaché au parcours
+  (AMO responsable, sinon Aller-vers territorial — règle « sticky », cf.
+  `docs/security/RBAC-ROLES.md` §6), résolues via `resolveResponsableForParcours` puis
+  `buildConseillerEventProperties` (`src/shared/email/brevo/conseiller-mapping.ts`). Utilisées côté
+  Brevo pour personnaliser le mail de bienvenue. Absentes si aucun conseiller n'est encore
+  résolvable à cet instant (cas normal d'un demandeur qui s'inscrit lui-même, sans simulation ni
+  validation AMO à la création).
 - `simulation_enregistree` part quand la simulation localStorage est enregistrée sur le parcours
   (post-login) : il fait remonter INSEE/DEPARTEMENT. **Idempotent** : une re-migration à l'identique
   (hors `simulatedAt`) ne le ré-émet pas (`isSameSimulationContent`).
@@ -99,6 +106,10 @@ email) tout en livrant tout dans la boîte de test.
       par app Scalingo.
 - [ ] Vérifier que la boîte `EMAIL_DEV_INBOX` accepte le sous-adressage `+`.
 - [ ] Construire/valider les Automations **d'abord sur la liste staging**, puis dupliquer en prod.
+- [ ] Mail de bienvenue (`demandeur_cree`) : personnaliser le template avec les `event_properties`
+      `conseiller_type`/`conseiller_nom`/`conseiller_email`/`conseiller_telephone`/`conseiller_horaires`
+      quand présentes (ex. `{{event.eventdata.conseiller_nom}}`), avec un repli générique si absentes
+      (demandeur inscrit sans conseiller déjà rattaché).
 
 ---
 
@@ -128,4 +139,5 @@ opt-out et lien de désinscription requis avant toute Automation d'envoi en prod
 | Contrat (attributs/évènements) + résolution email | `src/shared/email/brevo/brevo-contacts.config.ts`  |
 | Adapter Contacts + Events                         | `src/shared/email/brevo/brevo-contacts.adapter.ts` |
 | Mapping user+parcours → attributs                 | `src/shared/email/brevo/contact-mapping.ts`        |
+| Mapping conseiller local → `event_properties`     | `src/shared/email/brevo/conseiller-mapping.ts`     |
 | Point d'entrée `emitBrevoEvent`                   | `src/shared/email/brevo/brevo-contacts.service.ts` |
