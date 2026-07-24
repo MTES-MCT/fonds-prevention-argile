@@ -22,6 +22,16 @@ vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
   verifyProspectTerritoryAccess: vi.fn(async () => null),
   calculateAgentScope: vi.fn(async () => ({ canViewDossiersWithoutAmo: true, departements: ["01"], epcis: [] })),
 }));
+vi.mock("@/shared/database/repositories", () => ({
+  parcoursActionsRepo: { create: vi.fn(async () => undefined) },
+}));
+vi.mock("../services/author-snapshot", () => ({
+  buildAuthorSnapshot: vi.fn(async () => ({
+    authorName: "Agent Test",
+    authorStructure: null,
+    authorStructureType: "ADMINISTRATION",
+  })),
+}));
 
 // db.select → ligne validation/parcours ; db.transaction(cb) → exécute cb avec un
 // tx dont on capture les .update().set().
@@ -42,6 +52,8 @@ import {
   verifyProspectTerritoryAccess,
   calculateAgentScope,
 } from "@/features/auth/permissions/services/agent-scope.service";
+import { parcoursActionsRepo } from "@/shared/database/repositories";
+import { ACTION_TYPE_ELIGIBILITE_REFUSEE } from "../domain/types/action.types";
 
 const mockValidationRow = (
   statut: StatutValidationAmo,
@@ -124,6 +136,9 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
         archivedBy: "agent-1",
       })
     );
+    expect(parcoursActionsRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ parcoursId: "parcours-1", actionType: ACTION_TYPE_ELIGIBILITE_REFUSEE })
+    );
   });
 
   it("bascule LOGEMENT_NON_ELIGIBLE → LOGEMENT_ELIGIBLE et dé-archive", async () => {
@@ -146,6 +161,8 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     expect(txSetSpy).toHaveBeenCalledWith(
       expect.objectContaining({ situationParticulier: SituationParticulier.ELIGIBLE, archivedAt: null })
     );
+    // Un retour à l'éligibilité n'est pas un refus : aucune action d'audit "refus" tracée.
+    expect(parcoursActionsRepo.create).not.toHaveBeenCalled();
   });
 
   it("ne réécrit ni statut ni archivage quand le verdict est inchangé (reste éligible)", async () => {
@@ -164,7 +181,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
   });
 
-  it("archive un dossier EN_ATTENTE devenu inéligible SANS trancher la validation AMO", async () => {
+  it("archive un dossier EN_ATTENTE devenu inéligible ET refuse l'accompagnement (flip de statut)", async () => {
     mockValidationRow(StatutValidationAmo.EN_ATTENTE);
     vi.mocked(evaluateAgentSimulation).mockReturnValue({
       result: { eligible: false } as never,
@@ -183,11 +200,18 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
         archivedBy: "agent-1",
       })
     );
-    // …mais sans auto-décider la validation AMO (pas de flip de statut).
-    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
+    // … ET refus de l'accompagnement : un verdict non éligible tranche TOUJOURS la
+    // validation AMO, même EN_ATTENTE — la simulation fait foi sur le critère d'éligibilité.
+    expect(txSetSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE })
+    );
+    // Action d'audit tracée dans l'historique du dossier.
+    expect(parcoursActionsRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ parcoursId: "parcours-1", actionType: ACTION_TYPE_ELIGIBILITE_REFUSEE })
+    );
   });
 
-  it("archive un dossier SANS_AMO devenu inéligible SANS trancher la validation", async () => {
+  it("archive un dossier SANS_AMO devenu inéligible ET refuse l'accompagnement (flip de statut)", async () => {
     mockValidationRow(StatutValidationAmo.SANS_AMO);
     vi.mocked(evaluateAgentSimulation).mockReturnValue({
       result: { eligible: false } as never,
@@ -201,7 +225,12 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     expect(txSetSpy).toHaveBeenCalledWith(
       expect.objectContaining({ situationParticulier: SituationParticulier.ARCHIVE, archivedBy: "agent-1" })
     );
-    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
+    expect(txSetSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE })
+    );
+    expect(parcoursActionsRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ parcoursId: "parcours-1", actionType: ACTION_TYPE_ELIGIBILITE_REFUSEE })
+    );
   });
 
   it("idempotence : dossier déjà archivé et toujours inéligible → n'écrit pas archivedAt", async () => {

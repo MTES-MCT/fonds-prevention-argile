@@ -150,3 +150,32 @@ page `/espace-agent/demandes/[id]` affichait encore le bloc « choix de l'AMO »
 On ne bascule pas `EN_ATTENTE → LOGEMENT_NON_ELIGIBLE` : le retour à l'éligibilité
 retomberait en `LOGEMENT_ELIGIBLE` (= « validé par l'AMO ») sans que l'AMO ait répondu.
 Garder `EN_ATTENTE` + faire primer `archivedAt` préserve le cycle de validation AMO.
+
+## Amendement (2026-07-24) : le verdict non éligible tranche toujours la validation
+
+Le paragraphe ci-dessus s'est révélé incorrect à l'usage : `InfoDossierCallout` (détail
+dossier) décide de l'affichage sur `validationStatut`, **pas** sur `archivedAt` — il ne
+connaît que le cas `LOGEMENT_NON_ELIGIBLE` pour afficher le callout « Dossier archivé ».
+Résultat : un dossier `EN_ATTENTE` corrigé en non-éligible était bien archivé en base,
+mais restait affiché « En attente de validation par l'AMO » (le statut ne bougeait pas),
+contredisant l'archivage réel.
+
+**Décision** : un verdict **non éligible** tranche désormais **toujours** la validation
+AMO (`statut → LOGEMENT_NON_ELIGIBLE`), quel que soit le statut de départ (`EN_ATTENTE`,
+`SANS_AMO` compris) — la simulation est la source de vérité du critère d'éligibilité, donc
+une correction qui la rend non éligible doit refuser l'accompagnement, sans attendre un
+geste de validation qui n'a plus lieu d'être. La restriction inverse est **conservée** : un
+verdict **éligible** ne re-décide toujours que les dossiers **déjà tranchés**
+(`LOGEMENT_ELIGIBLE`/`LOGEMENT_NON_ELIGIBLE`) — on ne valide jamais à la place de l'AMO un
+dossier encore `EN_ATTENTE`/`SANS_AMO`. L'asymétrie est volontaire : refuser un dossier au
+vu d'un critère éliminatoire ne usurpe l'avis de personne ; le valider le ferait.
+
+**Audit** : ce refus automatique est tracé dans l'historique du dossier
+(`parcours_actions`, type système `refus_non_eligible_auto`, label « Accompagnement refusé
+(non éligible) »), au même titre que les autres actions système (`dossier_reouvert`,
+`invitation_renvoyee`…). Écrit hors transaction après le commit (best-effort), même
+pattern que `reouvrirDemandeAction`.
+
+**Callout** : le texte de `InfoDossierCallout` pour `LOGEMENT_NON_ELIGIBLE` ne mentionne
+plus « à la création », puisqu'il couvre désormais aussi l'archivage déclenché par une
+correction d'agent.

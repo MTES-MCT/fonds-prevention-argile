@@ -23,6 +23,9 @@ import {
   verifyProspectTerritoryAccess,
   calculateAgentScope,
 } from "@/features/auth/permissions/services/agent-scope.service";
+import { parcoursActionsRepo } from "@/shared/database/repositories";
+import { buildAuthorSnapshot } from "../services/author-snapshot";
+import { ACTION_TYPE_ELIGIBILITE_REFUSEE } from "../domain/types/action.types";
 
 /**
  * Baseline du diff agent = données effectives AVANT la 1re correction. Idempotent :
@@ -135,6 +138,9 @@ export async function updateSimulationDataAction(
       const statutCourant = dossier.validation.statut as StatutValidationAmo;
       const wasArchived = Boolean(dossier.parcours.archivedAt);
 
+      // Calculé dans la transaction, utilisé après coup pour l'audit (parcours_actions).
+      let didRefuserNonEligible = false;
+
       await db.transaction(async (tx) => {
         // 1. Simulation agent + baseline (données AVANT 1re correction) pour le diff.
         await tx
@@ -152,12 +158,15 @@ export async function updateSimulationDataAction(
         const verdict = evaluateAgentSimulation(rgaData);
         if (!verdict.isEligible && !verdict.isNonEligible) return;
 
-        // 2a. Décision de validation AMO : réservée aux dossiers DÉJÀ tranchés. EN_ATTENTE
-        //     (validation AMO à venir) et SANS_AMO ne sont PAS auto-décidés par une
-        //     correction — l'AMO / l'Aller-vers gardent la main sur la décision. Flip sur
-        //     vrai changement de verdict seulement (sinon on écraserait valideeAt).
-        //     Le mail d'invitation n'est PAS renvoyé (artefact de création).
-        if (decidedStatuts.includes(statutCourant)) {
+        // 2a. Décision de validation AMO. Un verdict NON ÉLIGIBLE tranche TOUJOURS le
+        //     dossier (EN_ATTENTE et SANS_AMO compris) : la simulation est la source de
+        //     vérité du critère d'éligibilité, donc un agent qui la corrige en non-éligible
+        //     doit refuser l'accompagnement, quel que soit l'état d'avancement de la
+        //     validation AMO. Un verdict ÉLIGIBLE, à l'inverse, ne re-décide QUE les
+        //     dossiers déjà tranchés : on ne valide jamais à la place de l'AMO un dossier
+        //     encore EN_ATTENTE/SANS_AMO. Flip sur vrai changement de verdict seulement
+        //     (sinon on écraserait valideeAt). Le mail d'invitation n'est pas renvoyé.
+        if (verdict.isNonEligible || decidedStatuts.includes(statutCourant)) {
           const nouveauStatut = verdict.isEligible
             ? StatutValidationAmo.LOGEMENT_ELIGIBLE
             : StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
@@ -166,6 +175,7 @@ export async function updateSimulationDataAction(
               .update(parcoursAmoValidations)
               .set({ statut: nouveauStatut, valideeAt: now })
               .where(eq(parcoursAmoValidations.id, dossier.validation.id));
+            didRefuserNonEligible = verdict.isNonEligible;
           }
         }
 
@@ -200,6 +210,21 @@ export async function updateSimulationDataAction(
             .where(eq(parcoursPrevention.id, dossier.parcours.id));
         }
       });
+
+      // Audit : trace le refus automatique dans l'historique du dossier (hors transaction,
+      // même pattern que reouvrirDemandeAction — best-effort, ne bloque pas la sauvegarde).
+      if (didRefuserNonEligible) {
+        const snapshot = await buildAuthorSnapshot(agent);
+        await parcoursActionsRepo.create({
+          parcoursId: dossier.parcours.id,
+          agentId: agent.id,
+          actionType: ACTION_TYPE_ELIGIBILITE_REFUSEE,
+          message: "Accompagnement refusé automatiquement suite à la correction de la simulation (non éligible).",
+          authorName: snapshot.authorName,
+          authorStructure: snapshot.authorStructure,
+          authorStructureType: snapshot.authorStructureType,
+        });
+      }
 
       // Invalider le cache de toutes les pages de l'espace agent
       revalidatePath("/espace-agent", "layout");
