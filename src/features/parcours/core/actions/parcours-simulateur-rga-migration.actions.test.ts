@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getSession } from "@/features/auth/server";
 import { parcoursRepo } from "@/shared/database/repositories";
-import { emitBrevoEvent, BREVO_EVENTS } from "@/shared/email/brevo";
+import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributes } from "@/shared/email/brevo";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { migrateSimulationDataToDatabase } from "./parcours-simulateur-rga-migration.actions";
 import { isSameSimulationContent } from "../utils/simulation-comparison";
@@ -14,6 +14,7 @@ vi.mock("@/features/simulateur/domain/rules/navigation", () => ({ isSimulationCo
 vi.mock("@/shared/email/brevo", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/shared/email/brevo")>()),
   emitBrevoEvent: vi.fn(),
+  buildConseillerAttributes: vi.fn(),
 }));
 
 const mockedSession = vi.mocked(getSession);
@@ -21,6 +22,7 @@ const mockedFindByUserId = vi.mocked(parcoursRepo.findByUserId);
 const mockedUpdateRGAData = vi.mocked(parcoursRepo.updateRGAData);
 const mockedIsComplete = vi.mocked(isSimulationComplete);
 const mockedEmit = vi.mocked(emitBrevoEvent);
+const mockedBuildConseillerAttributes = vi.mocked(buildConseillerAttributes);
 
 const rgaData = { logement: { commune: "36044" } } as never;
 
@@ -30,6 +32,7 @@ describe("migrateSimulationDataToDatabase", () => {
     mockedSession.mockResolvedValue({ userId: "u1" } as never);
     mockedFindByUserId.mockResolvedValue({ id: "p1", rgaSimulationDataAgent: null } as never);
     mockedIsComplete.mockReturnValue(false);
+    mockedBuildConseillerAttributes.mockResolvedValue({});
   });
 
   it("émet simulation_enregistree après avoir migré une simulation nouvelle", async () => {
@@ -37,7 +40,18 @@ describe("migrateSimulationDataToDatabase", () => {
 
     expect(res.success).toBe(true);
     expect(mockedUpdateRGAData).toHaveBeenCalledWith("p1", expect.objectContaining({ logement: { commune: "36044" } }));
-    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE);
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE, { attributes: {} });
+  });
+
+  it("rafraîchit les attributs conseiller (territoire tout juste connu) avec simulation_enregistree", async () => {
+    mockedBuildConseillerAttributes.mockResolvedValue({ CONSEILLER_TYPE: "ALLERS_VERS", CONSEILLER_NOM: "ADIL 36" });
+
+    await migrateSimulationDataToDatabase(rgaData);
+
+    expect(mockedBuildConseillerAttributes).toHaveBeenCalledWith("p1");
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE, {
+      attributes: { CONSEILLER_TYPE: "ALLERS_VERS", CONSEILLER_NOM: "ADIL 36" },
+    });
   });
 
   it("idempotent : ne réécrit ni n'émet quand le contenu est identique (hors simulatedAt)", async () => {
@@ -65,7 +79,7 @@ describe("migrateSimulationDataToDatabase", () => {
 
     expect(res.success).toBe(true);
     expect(mockedUpdateRGAData).toHaveBeenCalled();
-    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE);
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE, { attributes: {} });
   });
 
   it("ne migre ni n'émet quand une simulation agent complète existe déjà", async () => {

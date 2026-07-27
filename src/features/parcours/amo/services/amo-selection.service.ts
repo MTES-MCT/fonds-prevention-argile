@@ -17,6 +17,7 @@ import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.action
 import { Status, Step } from "../../core";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
+import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributesFromAmo } from "@/shared/email/brevo";
 
 /**
  * Paramètres pour la sélection d'un AMO
@@ -230,11 +231,13 @@ export async function selectAmoForUser(
     expiresAt,
   });
 
-  // Récupérer les infos de l'AMO pour l'email
+  // Récupérer les infos de l'AMO pour l'email (+ téléphone/horaires pour la synchro Brevo)
   const [amo] = await db
     .select({
       nom: entreprisesAmo.nom,
       emails: entreprisesAmo.emails,
+      telephone: entreprisesAmo.telephone,
+      horaires: entreprisesAmo.horaires,
     })
     .from(entreprisesAmo)
     .where(eq(entreprisesAmo.id, entrepriseAmoId))
@@ -273,6 +276,13 @@ export async function selectAmoForUser(
 
   // Passer le parcours en EN_INSTRUCTION
   await parcoursRepo.updateStatus(parcours.id, Status.EN_INSTRUCTION);
+
+  // Synchro Brevo (flux) : rafraîchit les attributs du conseiller sur le contact — le
+  // responsable peut changer en cours de parcours (AV -> AMO ici). Couvre aussi bien
+  // la sélection manuelle que l'auto-attribution (assignAmoAutomatiqueForUser délègue ici).
+  await emitBrevoEvent(parcours.id, BREVO_EVENTS.AMO_DEFINI, {
+    attributes: buildConseillerAttributesFromAmo(amo),
+  });
 
   return {
     success: true,

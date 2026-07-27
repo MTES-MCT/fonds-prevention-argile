@@ -50,7 +50,7 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
     repo = new UserRepository();
   });
 
-  it("prioritaire : claim token valide → claimStub", async () => {
+  it("prioritaire : claim token valide → claimStub, isNewAccount=true", async () => {
     const claimStub = vi.spyOn(repo, "claimStub").mockResolvedValue({ ...stubUser, fcId: "fc-sub-abc" });
     const findByClaimToken = vi.spyOn(repo, "findByClaimToken").mockResolvedValue(stubUser);
     const findByFcId = vi.spyOn(repo, "findByFcId");
@@ -60,10 +60,11 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
     expect(findByClaimToken).toHaveBeenCalledWith("token-valid");
     expect(claimStub).toHaveBeenCalledWith(stubUser.id, fcInfo);
     expect(findByFcId).not.toHaveBeenCalled();
-    expect(result.fcId).toBe("fc-sub-abc");
+    expect(result.user.fcId).toBe("fc-sub-abc");
+    expect(result.isNewAccount).toBe(true);
   });
 
-  it("claim token invalide → fallback sur findByFcId", async () => {
+  it("claim token invalide → fallback sur findByFcId, isNewAccount=false", async () => {
     vi.spyOn(repo, "findByClaimToken").mockResolvedValue(null);
     const findByFcId = vi.spyOn(repo, "findByFcId").mockResolvedValue(existingFcUser);
     const update = vi.spyOn(repo, "update").mockResolvedValue(existingFcUser);
@@ -72,20 +73,22 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
 
     expect(findByFcId).toHaveBeenCalledWith("fc-sub-abc");
     expect(update).toHaveBeenCalled();
-    expect(result.id).toBe(existingFcUser.id);
+    expect(result.user.id).toBe(existingFcUser.id);
+    expect(result.isNewAccount).toBe(false);
   });
 
-  it("sans token, fcId connu → update du user existant", async () => {
+  it("sans token, fcId connu → update du user existant, isNewAccount=false", async () => {
     const findByClaimToken = vi.spyOn(repo, "findByClaimToken");
     vi.spyOn(repo, "findByFcId").mockResolvedValue(existingFcUser);
     vi.spyOn(repo, "update").mockResolvedValue(existingFcUser);
 
-    await repo.upsertFromFranceConnect(fcInfo);
+    const result = await repo.upsertFromFranceConnect(fcInfo);
 
     expect(findByClaimToken).not.toHaveBeenCalled();
+    expect(result.isNewAccount).toBe(false);
   });
 
-  it("sans token, fcId inconnu, stub email match → claimStub par email", async () => {
+  it("sans token, fcId inconnu, stub email match → claimStub par email, isNewAccount=true", async () => {
     vi.spyOn(repo, "findByFcId").mockResolvedValue(null);
     const findByEmail = vi.spyOn(repo, "findByEmailWithoutFcId").mockResolvedValue(stubUser);
     const claimStub = vi.spyOn(repo, "claimStub").mockResolvedValue({ ...stubUser, fcId: "fc-sub-abc" });
@@ -94,10 +97,11 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
 
     expect(findByEmail).toHaveBeenCalledWith("alice@example.com");
     expect(claimStub).toHaveBeenCalledWith(stubUser.id, fcInfo);
-    expect(result.fcId).toBe("fc-sub-abc");
+    expect(result.user.fcId).toBe("fc-sub-abc");
+    expect(result.isNewAccount).toBe(true);
   });
 
-  it("sans token, fcId inconnu, pas de stub email → création normale", async () => {
+  it("sans token, fcId inconnu, pas de stub email → création normale, isNewAccount=true", async () => {
     vi.spyOn(repo, "findByFcId").mockResolvedValue(null);
     vi.spyOn(repo, "findByEmailWithoutFcId").mockResolvedValue(null);
     const create = vi.spyOn(repo, "create").mockResolvedValue({ ...existingFcUser, id: "user-new" });
@@ -110,7 +114,8 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
         email: "alice@example.com",
       })
     );
-    expect(result.id).toBe("user-new");
+    expect(result.user.id).toBe("user-new");
+    expect(result.isNewAccount).toBe(true);
   });
 
   it("userInfo sans email → pas de fallback email", async () => {

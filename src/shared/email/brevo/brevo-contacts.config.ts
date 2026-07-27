@@ -19,14 +19,34 @@ export const BREVO_ATTRS = {
   DEPARTEMENT: "DEPARTEMENT",
   INSEE: "INSEE",
   SOURCE_ACQUISITION: "SOURCE_ACQUISITION",
+  // parcours_prevention.id — permet de reconstituer côté Brevo le lien vers le dossier
+  // du demandeur dans l'espace agent (ex. /espace-agent/prospects/{id} côté Aller-vers).
+  // Toujours disponible dès la création du parcours, avant même toute résolution AMO/AV.
+  PARCOURS_ID: "PARCOURS_ID",
+  // Conseiller local (AMO ou Aller-vers) responsable du parcours — peut changer en
+  // cours de route (cf. BREVO_EVENTS.AMO_DEFINI), utilisé pour personnaliser les mails.
+  CONSEILLER_TYPE: "CONSEILLER_TYPE",
+  CONSEILLER_NOM: "CONSEILLER_NOM",
+  CONSEILLER_EMAIL: "CONSEILLER_EMAIL",
+  CONSEILLER_TELEPHONE: "CONSEILLER_TELEPHONE",
+  CONSEILLER_HORAIRES: "CONSEILLER_HORAIRES",
+  // Vrai si le dossier a été initié par un conseiller (AMO/Aller-vers) pour le compte du
+  // demandeur, plutôt qu'auto-inscrit. Posé une fois pour toutes, ne change jamais.
+  CREE_PAR_CONSEILLER: "CREE_PAR_CONSEILLER",
   // Debug staging uniquement : vrai email quand le contact est sous-adressé.
   EMAIL_REEL: "EMAIL_REEL",
 } as const;
 
 // Évènements poussés en flux. Servent de déclencheurs d'Automation côté Brevo.
 export const BREVO_EVENTS = {
+  // Dossier pré-créé par un conseiller (AMO/Aller-vers), avant que le demandeur n'ait de
+  // compte FranceConnect actif. `demandeur_cree` part séparément quand le demandeur
+  // réclame ce dossier (ou s'inscrit lui-même) — les deux évènements ne se recouvrent
+  // jamais (cf. `isNewAccount` dans `upsertFromFranceConnect`).
+  DOSSIER_CREE_PAR_CONSEILLER: "dossier_cree_par_conseiller",
   DEMANDEUR_CREE: "demandeur_cree",
   SIMULATION_ENREGISTREE: "simulation_enregistree",
+  AMO_DEFINI: "amo_defini",
   AMO_REPONSE: "amo_reponse",
   DN_UPDATE: "dn_update",
 } as const;

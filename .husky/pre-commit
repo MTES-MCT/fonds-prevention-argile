@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# Husky invoque toujours ce script via `sh` (.husky/_/h fait `sh -e "$script"`), qui
+# ignore le shebang ci-dessus. Sur les systèmes où /bin/sh n'est pas bash (ex: dash),
+# la syntaxe tableau plus bas casse — on se relance donc explicitement sous bash.
+if [ -z "$BASH_VERSION" ]; then
+    exec bash "$0" "$@"
+fi
+
 # Variables d'environnement pour personnaliser
 TALISMAN_HOME=${TALISMAN_HOME:-"$HOME/.talisman"}
 SKIP_TALISMAN=${SKIP_TALISMAN:-false}
@@ -55,16 +62,22 @@ else
     echo "    Install from: https://github.com/thoughtworks/talisman"
     echo ""
 
-    # En mode interactif uniquement
-    if [ -t 0 ]; then
-        read -r -p "Continue without secret detection? (y/N) " REPLY
-        case "$REPLY" in
-            [Yy]) ;;
-            *) exit 1 ;;
-        esac
+    # En mode interactif uniquement. On tente de lire depuis /dev/tty (le vrai terminal)
+    # plutôt que de se fier à `-t 0` : certains clients git (GitKraken, VS Code, IDE...)
+    # présentent un stdin qui ressemble à un TTY sans transmettre de vraie frappe — `read`
+    # reçoit alors une réponse vide, interprétée comme "non", et bloque le commit à tort.
+    # `-r /dev/tty` ne suffit pas non plus : le fichier peut être "lisible" (permissions) sans
+    # qu'aucun terminal contrôlant ne soit réellement attaché (process détaché, CI...), auquel
+    # cas l'ouverture échoue au runtime ("No such device or address"). On tente donc directement
+    # la lecture et on se rabat sur "continuer" si la redirection échoue.
+    if read -p "Continue without secret detection? (y/N) " -n 1 -r 2>/dev/null < /dev/tty; then
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
     else
-        # Non-interactif (GitKraken) - avertir mais continuer
-        echo "    ⚠️  Continuing without secret detection (non-interactive mode)"
+        # Pas de terminal accessible (CI, hook lancé sans TTY) - avertir mais continuer
+        echo "    ⚠️  Continuing without secret detection (no interactive terminal available)"
         exit 0
     fi
 fi

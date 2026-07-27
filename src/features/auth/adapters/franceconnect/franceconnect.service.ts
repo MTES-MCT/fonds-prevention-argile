@@ -10,7 +10,7 @@ import { JWTPayload } from "../../domain/entities";
 import { userRepo, parcoursRepo } from "@/shared/database/repositories";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
-import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
+import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS, buildConseillerAttributes } from "@/shared/email/brevo";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
 
@@ -224,14 +224,16 @@ export async function handleFranceConnectCallback(
     // 5. Créer ou récupérer l'utilisateur en base
     // - partnerSource : sauvegardé à la création (et backfillé si absent), pas écrasé sur les login suivants.
     // - claimToken : si présent, rattache le user stub pré-créé par un agent AV au compte FC.
-    const user = await userRepo.upsertFromFranceConnect(userInfo, {
+    // - isNewAccount : vrai à la 1ère création OU au 1er rattachement d'un stub pré-créé par un
+    //   agent (jamais vrai pour un retour sur un compte déjà actif) — déclencheur `demandeur_cree`.
+    const { user, isNewAccount } = await userRepo.upsertFromFranceConnect(userInfo, {
       partnerSource: options?.partnerSource ?? null,
       claimToken,
     });
 
-    // 6. Initialiser le parcours. `created` vient d'un insert atomique (onConflictDoNothing),
-    //    fiable même sur deux callbacks concurrents — évite un double évènement Brevo.
-    const { parcours, created } = await parcoursRepo.findOrCreateForUser(user.id);
+    // 6. Initialiser le parcours (idempotent, insert atomique onConflictDoNothing — fiable
+    //    même sur deux callbacks concurrents).
+    const { parcours } = await parcoursRepo.findOrCreateForUser(user.id);
 
     // 6bis. Si parcours en INVITATION (dossier pré-créé par un agent) → valider
     if (parcours.currentStep === Step.INVITATION) {
@@ -250,13 +252,23 @@ export async function handleFranceConnectCallback(
       await parcoursRepo.validateInvitation(parcours.id);
     }
 
-    // 6ter. Synchro Brevo (flux) : évènement d'inscription à la première création
-    //       du parcours. Best-effort — n'échoue jamais la connexion.
-    if (created) {
+    // 6ter. Synchro Brevo (flux) : évènement de compte créé, au premier compte actif
+    //       (1ère inscription OU 1er rattachement d'un dossier pré-créé par un agent).
+    //       Best-effort — n'échoue jamais la connexion.
+    if (isNewAccount) {
       // A_AMO=false explicite : connu à la création (pas d'AMO), et posé ici plutôt
       // qu'en base pour ne pas écraser un A_AMO=true ultérieur (amo_reponse).
+      // CREE_PAR_CONSEILLER : `claimedAt` n'est posé que par `claimStub` (rattachement d'un
+      // stub pré-créé par un conseiller) — jamais sur une inscription autonome.
+      // CONSEILLER_* : AMO ou Aller-vers déjà rattaché, pour personnaliser le mail de
+      // bienvenue avec les coordonnées du conseiller local.
+      const conseillerAttributes = await buildConseillerAttributes(parcours.id);
       await emitBrevoEvent(parcours.id, BREVO_EVENTS.DEMANDEUR_CREE, {
-        attributes: { [BREVO_ATTRS.A_AMO]: false },
+        attributes: {
+          [BREVO_ATTRS.A_AMO]: false,
+          [BREVO_ATTRS.CREE_PAR_CONSEILLER]: user.claimedAt !== null,
+          ...conseillerAttributes,
+        },
       });
     }
 
