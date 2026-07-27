@@ -1,7 +1,7 @@
 # Vulnérabilités Snyk — Acceptées
 
 Date d'audit initial : mars 2026 (Snyk)
-Dernier refresh : juin 2026 (`pnpm audit`, voir section dédiée)
+Dernier refresh : juillet 2026 (`pnpm audit`, voir section dédiée)
 Auditeur : Samir + Claude
 
 ## Décision
@@ -162,8 +162,47 @@ transitives et déjà connues sauf deux dérives devDep, acceptées ci-dessous.
 Les autres (`protocol-buffers-schema`, `postcss`, `uuid`, `diff`, `vite` High) sont
 inchangées — voir les tableaux ci-dessus.
 
+## Refresh — juillet 2026 (branche `remove-crisp`)
+
+Audit déclenché par le remplacement du widget Crisp (sans lien avec les CVE elles-mêmes).
+`pnpm audit --prod` remontait 16 vulnérabilités (8 high / 8 moderate) sur `next@15.5.18`,
+absentes du dernier refresh car apparues depuis (DoS Image Optimization, fuite d'endpoints
+Server Functions, CVE libvips via `sharp`). Vérification post-fix : `pnpm validate` (typecheck
+
+- lint + 1463 tests) + `pnpm audit --prod` vert sur les points corrigés.
+
+### Corrigées à la source
+
+- **`next` 15.5.18 → 15.5.22** (bump patch, sans breaking change) : corrige toutes les CVE
+  `next` propres (`>=15.5.0 <15.5.21`) — DoS Image Optimization SVG, fuite d'endpoints Server
+  Functions non authentifiés, et les CVE `next@15.5.10` précédemment acceptées (voir refresh
+  mars 2026) — désormais obsolètes.
+- **`sharp`** (override `pnpm-workspace.yaml`, transitif via `next` pour l'Image Optimization
+  API) : `0.34.5 → ^0.35.0`. Corrige `CVE-2026-33327/33328/35590/35591` (libvips).
+- **`brace-expansion`** (override déjà en place, transitif via `minimatch` → `exceljs>archiver`
+  côté prod et `eslint` côté dev) : `^2.0.3 → ^2.1.2`. Corrige la DoS par expansion
+  exponentielle (`GHSA-3jxr-9vmj-r5cp`).
+
+### Nouvelles vulnérabilités acceptées
+
+| Dépendance vulnérable          | Sévérité | Type    | Chemin                                        | Justification                                                                                                                                                                                                                                                                                                   |
+| ------------------------------ | -------- | ------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `postcss` <8.5.18 (2 CVE High) | High     | build   | `next > postcss` (bundlé)                     | Lecture de fichier arbitraire + path traversal via `sourceMappingURL` dans un commentaire CSS. PostCSS est bundlé par Next 15 (notre `postcss` direct est déjà en 8.5.15+) ; aucune CSS externe/attaquant n'est traitée par ce pipeline. Résolu par Next 16 (même famille que les CVE `postcss` déjà acceptées) |
+| `brace-expansion` <=5.0.7      | High     | runtime | `exceljs > archiver > … > minimatch`          | DoS par expansion non bornée (OOM). Pas d'input utilisateur sur les patterns glob d'`exceljs` (déjà la justification retenue pour le `minimatch` de cette même chaîne). Fix disponible (`5.0.8`) mais bloqué par `minimumReleaseAge` (publié 2026-07-23) jusqu'au **2026-07-30**                                |
+| `js-yaml` (2e CVE, High)       | High     | devDep  | `eslint > @eslint/eslintrc > js-yaml`         | DoS quadratique via chaînes de clés de merge YAML — même paquet/chemin que la Moderate déjà acceptée (refresh juillet PJ). Config ESLint du repo uniquement, non déployé en prod. Résolu par ESLint 10                                                                                                          |
+| `launch-editor` (NTLMv2)       | Moderate | devDep  | `@vitejs/plugin-react > vite > launch-editor` | Divulgation de hash NTLMv2 via chemin UNC — spécifique à un poste de dev Windows ; le serveur Vite (dev/test) n'est jamais exposé. Non applicable à l'infra de déploiement (Scalingo Linux)                                                                                                                     |
+
+### Reste après ce fix (`pnpm audit --prod`)
+
+3 moderate inchangées (`protocol-buffers-schema`, `postcss` XSS, `uuid`) + les 3 High
+ci-dessus (postcss ×2, brace-expansion). `pnpm audit` complet (devDep incluses) ajoute
+`vite` High/Moderate, `js-yaml` High/Moderate et `diff` Low, déjà couverts par les
+justifications existantes.
+
 ## Prochaine revue
 
+- **`brace-expansion`** : passer l'override `^2.1.2` → `^5.0.8` dans `pnpm-workspace.yaml`
+  dès le **2026-07-30** (fin du `minimumReleaseAge`) — élimine la dernière High runtime.
 - **`vite`** : passer à `>=7.3.5` dès que `minimumReleaseAge` le permet (élimine la High devDep restante).
 - **Lors de l'upgrade Next 16** (PR dédiée) : réévaluer next, eslint-config-next,
   ESLint 10 et le `postcss` bundlé par Next ; migrer le script `lint` vers le CLI ESLint.

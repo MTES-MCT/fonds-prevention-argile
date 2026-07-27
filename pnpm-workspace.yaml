@@ -40,8 +40,11 @@ overrides:
   flatted: "^3.4.2"
   # ReDoS / method injection (transitif via eslint-config-next et vite)
   picomatch: "^4.0.4"
-  # Zero-step sequence ReDoS (transitif via minimatch)
-  brace-expansion: "^2.0.3"
+  # Zero-step sequence ReDoS + DoS exponentielle (transitif via minimatch,
+  # exceljs>archiver côté prod). Le 2e CVE (expansion non bornée, fix en 5.0.8)
+  # reste accepté : bloqué par minimumReleaseAge jusqu'au 2026-07-30, voir
+  # docs/security/snyk-accepted-vulnerabilities.md
+  brace-expansion: "^2.1.2"
   # Prototype pollution via merge (transitif via eslint)
   js-yaml: "^4.1.1"
   # ReDoS $data (transitif via eslint)
@@ -55,6 +58,9 @@ overrides:
   # CRLF injection, origin validation error, DoS WebSocket, TLS bypass SOCKS5
   # (transitif via jsdom -> vitest, devDep test uniquement)
   undici: "^7.28.0"
+  # CVE libvips (CVE-2026-33327/33328/35590/35591) — transitif via next (image
+  # optimization), non exploitable sans input attaquant mais patché à la source
+  sharp: "^0.35.0"
 
 trustPolicyExclude:
   # Types-only, runtime-safe. Voir https://github.com/nodejs/undici/issues/4666
