@@ -27,9 +27,11 @@ export default function LaSuiteMessages() {
       const windowWithWidget = window as WindowWithLaSuiteWidget;
 
       // Éviter la double initialisation
-      if (windowWithWidget._lasuite_widget) return;
+      if (windowWithWidget._stmsg_widget) return;
 
-      windowWithWidget._lasuite_widget = [
+      // loader.js lit/écrit exclusivement window._stmsg_widget (vérifié dans son code
+      // source), pas "_lasuite_widget" comme indiqué dans l'exemple fourni par l'ANCT.
+      windowWithWidget._stmsg_widget = [
         [
           "loader",
           "init",

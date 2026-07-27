@@ -75,6 +75,11 @@ channel = "..."` en dur) : le `channel_id` de staging et celui de production viv
 - Si La Suite Messages a une disponibilité différente de Crisp, un incident sur ce service
   tiers désactive le widget (dégradation silencieuse déjà présente avec Crisp : simple `try/
 catch` + log console, pas de fallback UI).
+- **Le nom de variable globale documenté par l'ANCT est erroné.** L'exemple fourni utilise
+  `window._lasuite_widget`, mais le `loader.js` réellement servi (vérifié en lisant son code
+  source) lit/écrit exclusivement `window._stmsg_widget` — sans quoi le widget ne s'initialise
+  jamais (aucune erreur console, bouton absent). Corrigé dans le composant ; à surveiller si
+  l'ANCT fait évoluer le contrat du loader sans le documenter.
 
 ### Migration (si applicable)
 

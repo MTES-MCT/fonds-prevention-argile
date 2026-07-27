@@ -4,15 +4,17 @@ interface LaSuiteWidgetCommand {
   widget: string;
 }
 
+// Nom de variable imposé par loader.js (contrat réel du script, distinct du
+// nom "_lasuite_widget" indiqué dans la doc/l'exemple fourni par l'ANCT).
 type LaSuiteWidgetQueue = ["loader", "init", LaSuiteWidgetCommand][];
 
 interface WindowWithLaSuiteWidget extends Window {
-  _lasuite_widget?: LaSuiteWidgetQueue;
+  _stmsg_widget?: LaSuiteWidgetQueue;
 }
 
 declare global {
   interface Window {
-    _lasuite_widget?: LaSuiteWidgetQueue;
+    _stmsg_widget?: LaSuiteWidgetQueue;
   }
 }
 
