@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import type { Step } from "../../core/domain/value-objects/step";
 import { DSStatus } from "../domain/value-objects/ds-status";
 import type { ActionResult } from "@/shared/types";
+import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
 
 /**
  * Service de gestion des dossiers Démarches Simplifiées
@@ -35,6 +36,14 @@ export async function createDossierForCurrentStep(
         dsUrl: params.dsUrl,
       })
       .returning();
+
+    // Synchro Brevo (flux) : dossier DN créé en brouillon (déposé plus tard, ds_status
+    // encore NULL). Réutilise DN_UPDATE avec old/new vides plutôt qu'un évènement dédié —
+    // best-effort, cf. `emitBrevoEvent`.
+    await emitBrevoEvent(parcoursId, BREVO_EVENTS.DN_UPDATE, {
+      attributes: { [BREVO_ATTRS.DS_STATUT]: "" },
+      eventProperties: { step, old_ds_status: "", new_ds_status: "" },
+    });
 
     return {
       success: true,

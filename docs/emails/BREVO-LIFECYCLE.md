@@ -18,14 +18,14 @@ ne fait que **peupler la donnée**.
 | Résout l'email du contact par environnement (anti-fuite)        | Crée les **attributs** de contact (voir §3)                          |
 | Mappe `user`+`parcours` → attributs                             | Crée la **liste** cycle de vie (1 par env) → `BREVO_CONTACT_LIST_ID` |
 | Upsert du contact dans la liste + enregistrement de l'évènement | Construit les **templates** hébergés                                 |
-| 6 hooks best-effort (§2)                                        | Construit les **Automations** (déclenchées par évènement/attribut)   |
+| 7 hooks best-effort (§2)                                        | Construit les **Automations** (déclenchées par évènement/attribut)   |
 
 Le code **ne dépend pas** de l'existence d'une Automation : il remplit la liste, que des
 Automations soient branchées ou non. C'est ce découplage qui rend les évolutions rapides.
 
 ---
 
-## 2. Les 6 flux (hooks best-effort)
+## 2. Les 7 flux (hooks best-effort)
 
 Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
 
@@ -36,6 +36,7 @@ Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
 | Simulation enregistrée         | `features/parcours/core/actions/parcours-simulateur-rga-migration.actions.ts`                                     | `simulation_enregistree`      | —                                                        |
 | AMO définie                    | `features/parcours/amo/services/amo-selection.service.ts` (`selectAmoForUser`)                                    | `amo_defini`                  | —                                                        |
 | Réponse AMO                    | `features/parcours/amo/services/amo-validation.service.ts`                                                        | `amo_reponse`                 | `decision` (`eligible`/`non_eligible`), `est_mandataire` |
+| Dossier DN créé (brouillon)    | `features/parcours/dossiers-ds/services/dossier-ds.service.ts` (`createDossierForCurrentStep`)                    | `dn_update`                   | `step`, `old_ds_status` (`""`), `new_ds_status` (`""`)   |
 | Update DN                      | `features/parcours/dossiers-ds/services/ds-sync.service.ts`                                                       | `dn_update`                   | `step`, `old_ds_status`, `new_ds_status`                 |
 
 - `dossier_cree_par_conseiller` part quand un conseiller (AMO ou Aller-vers) pré-crée un dossier pour un
@@ -63,9 +64,19 @@ Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
   couvre les deux). Rafraîchit les attributs `CONSEILLER_*` sur le contact : le responsable peut
   changer en cours de parcours (Aller-vers territorial → AMO), le mail de bienvenue n'étant pas la
   seule surface qui doit rester à jour.
-- `dn_update` ne part **que sur changement réel** de `ds_status` (même condition que
-  `sync_run_entries`). Le hook est au niveau bas de `syncDossierStatus` → couvre à la fois
-  le CRON de sync et la sync UI demandeur.
+- `dn_update` part de **deux endroits** distincts, tous deux best-effort :
+  - à la **création** du dossier DN (`createDossierForCurrentStep`, brouillon local, avant
+    tout dépôt — `ds_status` reste `NULL` en base à ce stade) : `old_ds_status`/`new_ds_status`
+    sont poussés vides (`""`), et `DS_STATUT` est remis à `""` sur le contact — attention, ceci
+    écrase un `DS_STATUT` d'une étape précédente déjà tranchée (ex. éligibilité `accepte`) si un
+    nouveau dossier (diagnostic) est créé juste après ; assumé pour l'instant, à surveiller côté
+    Automation si ça pose problème en pratique ;
+  - au **changement réel** de `ds_status` détecté par la sync (même condition que
+    `sync_run_entries`), au niveau bas de `syncDossierStatus` → couvre à la fois le CRON de
+    sync et la sync UI demandeur.
+    Une Automation qui veut distinguer les deux doit filtrer sur `new_ds_status` (vide = création,
+    non vide = transition réelle) — `old_ds_status` seul ne suffit pas : le tout premier `dn_update`
+    de transition (dépôt, `NULL → en_construction`) a lui aussi `old_ds_status` vide.
 
 Point d'entrée unique : `emitBrevoEvent(parcoursId, eventName, { attributes?, eventProperties? })`
 (`src/shared/email/brevo/`).
