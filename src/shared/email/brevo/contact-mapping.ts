@@ -32,6 +32,7 @@ export function buildContactAttributes(
   put(attrs, BREVO_ATTRS.ETAPE, parcours.currentStep);
   put(attrs, BREVO_ATTRS.STATUT, parcours.currentStatus);
   put(attrs, BREVO_ATTRS.SOURCE_ACQUISITION, user.sourceAcquisition);
+  put(attrs, BREVO_ATTRS.PARCOURS_ID, parcours.id);
 
   // Données RGA effectives (agent prioritaire). JSONB peut stocker un nombre : normalizeCodeInsee
   // renormalise sur 5 chiffres, puis on dérive le département via le helper partagé/testé.

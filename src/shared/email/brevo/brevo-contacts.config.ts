@@ -19,6 +19,10 @@ export const BREVO_ATTRS = {
   DEPARTEMENT: "DEPARTEMENT",
   INSEE: "INSEE",
   SOURCE_ACQUISITION: "SOURCE_ACQUISITION",
+  // parcours_prevention.id — permet de reconstituer côté Brevo le lien vers le dossier
+  // du demandeur dans l'espace agent (ex. /espace-agent/prospects/{id} côté Aller-vers).
+  // Toujours disponible dès la création du parcours, avant même toute résolution AMO/AV.
+  PARCOURS_ID: "PARCOURS_ID",
   // Conseiller local (AMO ou Aller-vers) responsable du parcours — peut changer en
   // cours de route (cf. BREVO_EVENTS.AMO_DEFINI), utilisé pour personnaliser les mails.
   CONSEILLER_TYPE: "CONSEILLER_TYPE",
