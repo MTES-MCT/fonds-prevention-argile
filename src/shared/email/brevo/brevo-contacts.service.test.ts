@@ -22,6 +22,11 @@ vi.mock("./brevo-contacts.config", async (importOriginal) => ({
   isBrevoContactSyncEnabled: vi.fn(),
   resolveBrevoContactEmail: vi.fn(),
 }));
+// buildContactAttributes (exercé réellement ici) appelle resolveAdminUrl -> db (client
+// réel) : mocké pour ne pas exiger une config DB dans ce test unitaire.
+vi.mock("@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service", () => ({
+  resolveAdminUrl: vi.fn().mockResolvedValue(null),
+}));
 
 const mockedEnabled = vi.mocked(isBrevoContactSyncEnabled);
 const mockedResolveEmail = vi.mocked(resolveBrevoContactEmail);

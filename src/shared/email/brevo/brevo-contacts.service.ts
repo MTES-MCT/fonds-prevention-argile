@@ -54,7 +54,7 @@ export async function emitBrevoEvent(
       return;
     }
 
-    const attributes = { ...buildContactAttributes(user, parcours, email), ...options?.attributes };
+    const attributes = { ...(await buildContactAttributes(user, parcours, email)), ...options?.attributes };
     // Clés d'attributs seulement (pas les valeurs) pour éviter toute PII dans les logs.
     debug.log(`emit ${eventName}`, { email: maskEmail(email), attributs: Object.keys(attributes) });
 

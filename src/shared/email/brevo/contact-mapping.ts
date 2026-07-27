@@ -5,6 +5,7 @@ import type { BrevoAttributes } from "./brevo-contacts.adapter";
 import { normalizeCodeInsee, getCodeDepartementFromCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import { isProduction } from "@/shared/config/env.config";
+import { resolveAdminUrl } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 
 /**
  * Ajoute une paire au dict d'attributs si la valeur est renseignée
@@ -18,11 +19,11 @@ function put(attrs: BrevoAttributes, key: string, value: string | number | boole
 // Attributs Brevo depuis user + parcours ; `resolvedEmail` != vrai email (staging) -> EMAIL_REEL.
 // N'inclut aucun attribut d'état AMO (A_AMO...) : posés par les hooks quand la valeur est connue,
 // sinon un dn_update écraserait le A_AMO=true d'un amo_reponse. Voir docs/emails/BREVO-LIFECYCLE.md.
-export function buildContactAttributes(
+export async function buildContactAttributes(
   user: User,
   parcours: ParcoursPrevention,
   resolvedEmail: string
-): BrevoAttributes {
+): Promise<BrevoAttributes> {
   const attrs: BrevoAttributes = {};
 
   put(attrs, BREVO_ATTRS.PRENOM, user.prenom);
@@ -33,6 +34,15 @@ export function buildContactAttributes(
   put(attrs, BREVO_ATTRS.STATUT, parcours.currentStatus);
   put(attrs, BREVO_ATTRS.SOURCE_ACQUISITION, user.sourceAcquisition);
   put(attrs, BREVO_ATTRS.PARCOURS_ID, parcours.id);
+
+  // Best-effort : ne doit jamais faire échouer le push Brevo (même politique que le
+  // reste du pipeline, cf. `emitBrevoEvent`).
+  try {
+    const adminUrl = await resolveAdminUrl(parcours.id);
+    put(attrs, BREVO_ATTRS.ADMIN_URL, adminUrl ?? undefined);
+  } catch (error) {
+    console.error("[BREVO_CONTACTS] resolveAdminUrl échec:", error instanceof Error ? error.message : error);
+  }
 
   // Données RGA effectives (agent prioritaire). JSONB peut stocker un nombre : normalizeCodeInsee
   // renormalise sur 5 chiffres, puis on dérive le département via le helper partagé/testé.

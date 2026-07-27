@@ -1,8 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { buildContactAttributes } from "./contact-mapping";
 import { BREVO_ATTRS } from "./brevo-contacts.config";
 import type { User } from "@/shared/database/schema/users";
 import type { ParcoursPrevention } from "@/shared/database/schema/parcours-prevention";
+
+vi.mock("@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service", () => ({
+  resolveAdminUrl: vi.fn().mockResolvedValue("https://fonds-prevention-argile.beta.gouv.fr/espace-agent/dossiers/v1"),
+}));
 
 const user = (over: Partial<User> = {}): User =>
   ({
@@ -29,8 +33,8 @@ const parcours = (over: Partial<ParcoursPrevention> = {}): ParcoursPrevention =>
   }) as unknown as ParcoursPrevention;
 
 describe("buildContactAttributes", () => {
-  it("mappe les champs de base", () => {
-    const attrs = buildContactAttributes(user(), parcours(), "jean@gmail.com");
+  it("mappe les champs de base", async () => {
+    const attrs = await buildContactAttributes(user(), parcours(), "jean@gmail.com");
     expect(attrs).toMatchObject({
       [BREVO_ATTRS.PRENOM]: "Jean",
       [BREVO_ATTRS.NOM]: "Dupont",
@@ -40,16 +44,18 @@ describe("buildContactAttributes", () => {
       [BREVO_ATTRS.STATUT]: "todo",
       [BREVO_ATTRS.DEPARTEMENT]: "36",
       [BREVO_ATTRS.INSEE]: "36044",
+      [BREVO_ATTRS.PARCOURS_ID]: "p1",
+      [BREVO_ATTRS.ADMIN_URL]: "https://fonds-prevention-argile.beta.gouv.fr/espace-agent/dossiers/v1",
     });
   });
 
-  it("n'inclut pas A_AMO dans la base (posé par les hooks, sinon un dn_update l'écraserait)", () => {
-    const attrs = buildContactAttributes(user(), parcours(), "jean@gmail.com");
+  it("n'inclut pas A_AMO dans la base (posé par les hooks, sinon un dn_update l'écraserait)", async () => {
+    const attrs = await buildContactAttributes(user(), parcours(), "jean@gmail.com");
     expect(attrs[BREVO_ATTRS.A_AMO]).toBeUndefined();
   });
 
-  it("priorise les données agent (getEffectiveRGAData) pour l'INSEE/département", () => {
-    const attrs = buildContactAttributes(
+  it("priorise les données agent (getEffectiveRGAData) pour l'INSEE/département", async () => {
+    const attrs = await buildContactAttributes(
       user(),
       parcours({
         rgaSimulationData: { logement: { commune: "36044" } } as never,
@@ -61,8 +67,8 @@ describe("buildContactAttributes", () => {
     expect(attrs[BREVO_ATTRS.DEPARTEMENT]).toBe("75");
   });
 
-  it("renormalise un INSEE stocké en nombre (récupère les zéros initiaux) et en dérive le département", () => {
-    const attrs = buildContactAttributes(
+  it("renormalise un INSEE stocké en nombre (récupère les zéros initiaux) et en dérive le département", async () => {
+    const attrs = await buildContactAttributes(
       user(),
       parcours({ rgaSimulationData: { logement: { commune: 1234 } } as never }),
       "jean@gmail.com"
@@ -71,18 +77,18 @@ describe("buildContactAttributes", () => {
     expect(attrs[BREVO_ATTRS.DEPARTEMENT]).toBe("01");
   });
 
-  it("EMAIL_REEL présent quand l'email poussé diffère du vrai (staging sous-adressé)", () => {
-    const attrs = buildContactAttributes(user(), parcours(), "marie+uu1@beta.gouv.fr");
+  it("EMAIL_REEL présent quand l'email poussé diffère du vrai (staging sous-adressé)", async () => {
+    const attrs = await buildContactAttributes(user(), parcours(), "marie+uu1@beta.gouv.fr");
     expect(attrs[BREVO_ATTRS.EMAIL_REEL]).toBe("jean@gmail.com");
   });
 
-  it("EMAIL_REEL absent en production (email poussé == vrai)", () => {
-    const attrs = buildContactAttributes(user(), parcours(), "jean@gmail.com");
+  it("EMAIL_REEL absent en production (email poussé == vrai)", async () => {
+    const attrs = await buildContactAttributes(user(), parcours(), "jean@gmail.com");
     expect(attrs[BREVO_ATTRS.EMAIL_REEL]).toBeUndefined();
   });
 
-  it("omet les champs vides plutôt que d'écraser Brevo", () => {
-    const attrs = buildContactAttributes(
+  it("omet les champs vides plutôt que d'écraser Brevo", async () => {
+    const attrs = await buildContactAttributes(
       user({ prenom: null }),
       parcours({ rgaSimulationData: null }),
       "jean@gmail.com"

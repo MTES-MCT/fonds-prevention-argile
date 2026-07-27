@@ -19,10 +19,15 @@ export const BREVO_ATTRS = {
   DEPARTEMENT: "DEPARTEMENT",
   INSEE: "INSEE",
   SOURCE_ACQUISITION: "SOURCE_ACQUISITION",
-  // parcours_prevention.id — permet de reconstituer côté Brevo le lien vers le dossier
-  // du demandeur dans l'espace agent (ex. /espace-agent/prospects/{id} côté Aller-vers).
-  // Toujours disponible dès la création du parcours, avant même toute résolution AMO/AV.
+  // parcours_prevention.id — gardé pour rétrocompatibilité (voir ADMIN_URL ci-dessous,
+  // qui calcule désormais l'URL complète côté serveur). Toujours disponible dès la
+  // création du parcours, avant même toute résolution AMO/AV.
   PARCOURS_ID: "PARCOURS_ID",
+  // URL complète vers la fiche de suivi du dossier dans l'espace agent, déjà résolue
+  // côté serveur (prospect / demande en attente / dossier suivi selon l'état — voir
+  // `resolveAdminUrl`, source de vérité unique). Poussée sur tous les évènements, comme
+  // PARCOURS_ID.
+  ADMIN_URL: "ADMIN_URL",
   // Conseiller local (AMO ou Aller-vers) responsable du parcours — peut changer en
   // cours de route (cf. BREVO_EVENTS.AMO_DEFINI), utilisé pour personnaliser les mails.
   CONSEILLER_TYPE: "CONSEILLER_TYPE",
