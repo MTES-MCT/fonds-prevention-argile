@@ -5,7 +5,7 @@ export { default as Notice } from "./Notice/Notice";
 export type { NoticeProps } from "./Notice/Notice";
 export { default as Feature } from "./Feature/Feature";
 export { default as Alert } from "./Alert/Alert";
-export { default as Crisp } from "./Crisp/Crisp";
+export { default as LaSuiteMessages } from "./LaSuiteMessages/LaSuiteMessages";
 export { default as DsfrProvider } from "./DsfrProvider/DsfrProvider";
 export { default as PostLogoutRedirect } from "./PostLogoutRedirect/PostLogoutRedirect";
 export * from "./Header/Header";

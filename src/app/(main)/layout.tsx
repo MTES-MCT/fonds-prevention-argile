@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { AuthProvider } from "@/features/auth/client";
-import { Crisp, Footer, Header, Matomo, PostLogoutRedirect } from "@/shared/components";
+import { Footer, Header, LaSuiteMessages, Matomo, PostLogoutRedirect } from "@/shared/components";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -12,7 +12,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <PostLogoutRedirect />
       <AuthProvider>
         <Matomo />
-        <Crisp />
+        <LaSuiteMessages />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

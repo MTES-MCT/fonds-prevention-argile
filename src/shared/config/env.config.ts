@@ -156,7 +156,7 @@ const clientSchema = z.object({
   NEXT_PUBLIC_MATOMO_URL: z.string().url().optional(),
   NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID: z.string().min(1).optional(),
-  NEXT_PUBLIC_CRISP_WEBSITE_ID: z.string().min(1).optional(),
+  NEXT_PUBLIC_LASUITE_MESSAGES_CHANNEL_ID: z.string().min(1).optional(),
 });
 
 // Schéma de validation des variables d'environnement partagées
@@ -234,7 +234,7 @@ export function getClientEnv() {
       NEXT_PUBLIC_MATOMO_URL: process.env.NEXT_PUBLIC_MATOMO_URL,
       NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID: process.env.NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID,
       NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID: process.env.NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID,
-      NEXT_PUBLIC_CRISP_WEBSITE_ID: process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID,
+      NEXT_PUBLIC_LASUITE_MESSAGES_CHANNEL_ID: process.env.NEXT_PUBLIC_LASUITE_MESSAGES_CHANNEL_ID,
     };
 
     const result = clientSchema.safeParse(envObject);

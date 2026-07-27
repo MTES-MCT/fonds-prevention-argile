@@ -185,7 +185,7 @@ Le simulateur RGA permet à un particulier de :
 - [ ] Descendre en bas de la page
 - [ ] ✅ **Validation :** Callout "Besoin d'aide ?" visible
 - [ ] ✅ Email de contact présent
-- [ ] ✅ Mention du tchat Crisp
+- [ ] ✅ Widget de messagerie (La Suite Messages) visible
 
 **Test de l'overlay de traitement :**
 
