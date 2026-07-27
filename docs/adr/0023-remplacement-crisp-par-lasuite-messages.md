@@ -80,6 +80,11 @@ catch` + log console, pas de fallback UI).
   source) lit/écrit exclusivement `window._stmsg_widget` — sans quoi le widget ne s'initialise
   jamais (aucune erreur console, bouton absent). Corrigé dans le composant ; à surveiller si
   l'ANCT fait évoluer le contrat du loader sans le documenter.
+- **Libellés en français passés explicitement.** Le widget est en anglais par défaut
+  (aucune détection de langue navigateur/serveur côté loader.js/feedback.js) : les libellés
+  (bouton rond, titre, placeholders, bouton d'envoi) sont surchargés en dur via les
+  paramètres `label`/`closeLabel` (niveau loader) et `title`/`placeholder`/
+  `emailPlaceholder`/`submitText`/`successText`/`closeLabel` (niveau widget feedback).
 
 ### Migration (si applicable)
 

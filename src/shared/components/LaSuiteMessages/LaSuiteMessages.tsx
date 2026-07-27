@@ -36,9 +36,17 @@ export default function LaSuiteMessages() {
           "loader",
           "init",
           {
+            label: "Donner votre avis",
+            closeLabel: "Fermer le widget",
             params: {
               api: WIDGET_API_URL,
               channel: channelId,
+              title: "Votre avis nous intéresse",
+              placeholder: "Partagez votre retour...",
+              emailPlaceholder: "Votre email...",
+              submitText: "Envoyer",
+              successText: "Merci pour votre retour !",
+              closeLabel: "Fermer le formulaire de retour",
             },
             script: WIDGET_SCRIPT_URL,
             widget: "feedback",

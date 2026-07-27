@@ -1,5 +1,19 @@
 interface LaSuiteWidgetCommand {
-  params: { api: string; channel: string };
+  // aria-label du bouton rond replié/déplié (lu par loader.js lui-même, distinct
+  // du closeLabel imbriqué dans params ci-dessous, propre au panneau feedback.js).
+  label?: string;
+  closeLabel?: string;
+  params: {
+    api: string;
+    channel: string;
+    title?: string;
+    placeholder?: string;
+    emailPlaceholder?: string;
+    submitText?: string;
+    successText?: string;
+    successText2?: string;
+    closeLabel?: string;
+  };
   script: string;
   widget: string;
 }
