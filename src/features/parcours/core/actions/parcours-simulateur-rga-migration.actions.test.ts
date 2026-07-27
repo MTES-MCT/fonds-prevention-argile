@@ -11,6 +11,14 @@ vi.mock("@/shared/database/repositories", () => ({
   parcoursRepo: { findByUserId: vi.fn(), updateRGAData: vi.fn() },
 }));
 vi.mock("@/features/simulateur/domain/rules/navigation", () => ({ isSimulationComplete: vi.fn() }));
+// La barrière @/shared/email/brevo réimportée via importOriginal ci-dessous tire tout
+// son graphe de dépendances réel (contact-mapping -> admin-url-resolver, conseiller-mapping
+// -> responsable-resolver -> repositories), qui touche le client DB réel au chargement du
+// module quelle que soit la façon dont il est importé plus bas dans le graphe — mocker le
+// fichier racine suffit (même pattern que amo-selection/amo-auto/amo-validation.service.test.ts).
+// Aucun de ces exports n'est appelé pour de vrai ici : buildConseillerAttributes est mocké
+// juste en dessous.
+vi.mock("@/shared/database/client", () => ({ db: {} }));
 vi.mock("@/shared/email/brevo", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/shared/email/brevo")>()),
   emitBrevoEvent: vi.fn(),
