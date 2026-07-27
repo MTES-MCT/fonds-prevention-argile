@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Variables d'environnement pour personnaliser
 TALISMAN_HOME=${TALISMAN_HOME:-"$HOME/.talisman"}
@@ -10,38 +10,34 @@ if [ "$SKIP_TALISMAN" = "true" ]; then
     exit 0
 fi
 
-# Fonction pour trouver Talisman
+# Fonction pour trouver Talisman (POSIX sh : pas de tableaux bash, husky exécute
+# toujours les hooks via `sh`, pas via le shebang du script)
 find_talisman() {
-    local candidates=(
-        # Chemins Windows (pour GitKraken Windows)
-        "/c/Users/$USER/.talisman/talisman.exe"
-        "/mnt/c/Users/$USER/.talisman/talisman.exe"
-        "$USERPROFILE/.talisman/talisman.exe"
-        # Chemins WSL/Linux
-        "$HOME/.talisman/talisman"
-        "$TALISMAN_HOME/talisman"
-        # Chemins système
-        "/usr/local/bin/talisman"
+    for path in \
+        "/c/Users/$USER/.talisman/talisman.exe" \
+        "/mnt/c/Users/$USER/.talisman/talisman.exe" \
+        "$USERPROFILE/.talisman/talisman.exe" \
+        "$HOME/.talisman/talisman" \
+        "$TALISMAN_HOME/talisman" \
+        "/usr/local/bin/talisman" \
         "/usr/bin/talisman"
-    )
-    
-    for path in "${candidates[@]}"; do
+    do
         if [ -f "$path" ] && [ -x "$path" ]; then
             echo "$path"
             return 0
         fi
     done
-    
+
     # Chercher dans le PATH
     if command -v talisman >/dev/null 2>&1; then
         echo "talisman"
         return 0
     fi
-    
+
     return 1
 }
 
-TALISMAN=$(find_talisman)
+TALISMAN=$(find_talisman) || true
 
 if [ -n "$TALISMAN" ]; then
     echo "🔍 Running Talisman security scan..."
@@ -58,14 +54,14 @@ else
     echo "    Secret detection is DISABLED"
     echo "    Install from: https://github.com/thoughtworks/talisman"
     echo ""
-    
+
     # En mode interactif uniquement
     if [ -t 0 ]; then
-        read -p "Continue without secret detection? (y/N) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
-        fi
+        read -r -p "Continue without secret detection? (y/N) " REPLY
+        case "$REPLY" in
+            [Yy]) ;;
+            *) exit 1 ;;
+        esac
     else
         # Non-interactif (GitKraken) - avertir mais continuer
         echo "    ⚠️  Continuing without secret detection (non-interactive mode)"
