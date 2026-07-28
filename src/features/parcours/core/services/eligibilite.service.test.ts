@@ -122,7 +122,7 @@ describe("createEligibiliteDossier — prefill AMO", () => {
     expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`);
   });
 
-  it("préremplit « Mandataire financier » quand l'AMO s'est déclarée mandataire", async () => {
+  it("préremplit « Mandataire administratif et financier » quand l'AMO s'est déclarée mandataire", async () => {
     const payload = await runWithAmo({}, true);
 
     expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`]).toBe(DS_OPTIONS_MANDATAIRE.FINANCIER);

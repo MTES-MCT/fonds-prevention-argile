@@ -44,8 +44,8 @@ export const DS_FIELD_IDS = {
  */
 export const DS_OPTIONS_MANDATAIRE = {
   AUCUN: "Pas de mandataire",
-  NON_FINANCIER: "Mandataire non financier",
-  FINANCIER: "Mandataire financier",
+  NON_FINANCIER: "Mandataire administratif",
+  FINANCIER: "Mandataire administratif et financier",
 } as const;
 
 /**

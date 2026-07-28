@@ -169,14 +169,16 @@ sur le détail de la demande/du dossier.
 **Report vers Démarches Numériques.** La démarche d'éligibilité porte un champ
 « Avez-vous un mandataire, et si oui, est-il financier ? » (`MANDATAIRE_FINANCIER`,
 liste à 3 options). Il est prérempli à la création du dossier **uniquement quand
-`est_mandataire_financier = true`**, avec la valeur `« Mandataire financier »`.
+`est_mandataire_financier = true`**, avec la valeur `« Mandataire administratif et financier »`
+(libellé contractuel côté DN — cf. `DS_OPTIONS_MANDATAIRE`, toute divergence fait rejeter la
+valeur au préremplissage puisque c'est une liste déroulante, pas un enum/ID stable).
 
 > Ce champ DN appartient à la section « représentant légal / mandataire **du demandeur** »,
 > pas à la section AMO : un `false` côté AMO ne dit ni s'il existe un autre mandataire
 > (proche, représentant légal), ni si l'AMO est mandataire _non_ financier. On laisse donc
 > le champ vide sur `false` comme sur `null` — le demandeur répond lui-même. Préremplir
-> « Mandataire financier » a par ailleurs une conséquence : la PJ « Relevé d'identité
-> bancaire du mandataire financier » est obligatoire côté DN.
+> « Mandataire administratif et financier » a par ailleurs une conséquence : la PJ « Relevé
+> d'identité bancaire du mandataire financier » est obligatoire côté DN.
 
 **Préremplissage = création seulement, jamais mise à jour (QA juillet 2026).** Si le
 demandeur annule son accompagnement AMO après coup, on ne « corrige » pas le dossier DN
