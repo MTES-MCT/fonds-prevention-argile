@@ -4,8 +4,9 @@
 export const DS_FIELD_IDS = {
   ELIGIBILITE: {
     // Section « 2. Identification du représentant légal ou du mandataire » : porte sur le
-    // mandataire du DEMANDEUR, pas sur l'AMO. On ne le préremplit que si l'AMO s'est
-    // déclarée mandataire financier — seul cas où la réponse est déductible sans ambiguïté.
+    // mandataire du DEMANDEUR, pas sur l'AMO. Toujours prérempli (3 choix, cf.
+    // DS_OPTIONS_MANDATAIRE) : un AMO accompagnant est de facto mandataire administratif,
+    // le volet financier suit la déclaration explicite de l'AMO (est_mandataire_financier).
     MANDATAIRE_FINANCIER: "Q2hhbXAtNjQ3MDQ5Nw==",
     SIRET_AMO: "Q2hhbXAtNTQxOTQyOQ==",
     ADRESSE_AMO: "Q2hhbXAtNTQxOTQzMg==",
@@ -44,8 +45,8 @@ export const DS_FIELD_IDS = {
  */
 export const DS_OPTIONS_MANDATAIRE = {
   AUCUN: "Pas de mandataire",
-  NON_FINANCIER: "Mandataire non financier",
-  FINANCIER: "Mandataire financier",
+  NON_FINANCIER: "Mandataire administratif",
+  FINANCIER: "Mandataire administratif et financier",
 } as const;
 
 /**
