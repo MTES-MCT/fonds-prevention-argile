@@ -122,28 +122,31 @@ describe("createEligibiliteDossier — prefill AMO", () => {
     expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`);
   });
 
-  it("préremplit « Mandataire administratif et financier » quand l'AMO s'est déclarée mandataire", async () => {
+  it("préremplit « Mandataire administratif et financier » quand l'AMO s'est déclarée mandataire financier", async () => {
     const payload = await runWithAmo({}, true);
 
     expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`]).toBe(DS_OPTIONS_MANDATAIRE.FINANCIER);
   });
 
-  it("laisse le champ mandataire vide quand l'AMO a répondu « non »", async () => {
-    // Un « non » ne dit pas s'il existe un autre mandataire : on ne répond pas à sa place.
+  it("préremplit « Mandataire administratif » (AMO présent) quand l'AMO a répondu « non » sur le volet financier", async () => {
     const payload = await runWithAmo({}, false);
 
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`);
+    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`]).toBe(
+      DS_OPTIONS_MANDATAIRE.NON_FINANCIER
+    );
   });
 
-  it("laisse le champ mandataire vide quand la question n'a pas été posée (null)", async () => {
+  it("préremplit « Mandataire administratif » (AMO présent) quand la question financière n'a pas été posée (null)", async () => {
     const payload = await runWithAmo({}, null);
 
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`);
+    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`]).toBe(
+      DS_OPTIONS_MANDATAIRE.NON_FINANCIER
+    );
   });
 
-  it("n'écrit pas le champ mandataire sans AMO, même si la validation le dit mandataire", async () => {
+  it("préremplit « Pas de mandataire » sans AMO, même si une validation orpheline le dit mandataire financier", async () => {
     const payload = await runWithAmo(null, true);
 
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`);
+    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`]).toBe(DS_OPTIONS_MANDATAIRE.AUCUN);
   });
 });

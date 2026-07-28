@@ -142,14 +142,20 @@ export async function createEligibiliteDossier(
       if (amo.telephone) {
         prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`] = amo.telephone;
       }
+    }
 
-      // Uniquement quand l'AMO s'est déclarée mandataire financier : c'est le seul cas
-      // déductible. Un « non » ne dit pas s'il existe un autre mandataire (proche,
-      // représentant légal) ni si l'AMO est mandataire non financier → on laisse vide.
+    // Question mandataire toujours préremplie (3 choix) : un AMO qui accompagne le
+    // demandeur est de facto son mandataire administratif ; le volet financier reste
+    // la déclaration explicite de l'AMO (est_mandataire_financier). Sans AMO (SANS_AMO
+    // / « je gère seul »), aucun mandataire.
+    if (!amo) {
+      prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`] = DS_OPTIONS_MANDATAIRE.AUCUN;
+    } else {
       const validationResult = await getValidationAmo();
-      if (validationResult.success && validationResult.data?.estMandataireFinancier === true) {
-        prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`] = DS_OPTIONS_MANDATAIRE.FINANCIER;
-      }
+      const estMandataireFinancier = validationResult.success && validationResult.data?.estMandataireFinancier === true;
+      prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`] = estMandataireFinancier
+        ? DS_OPTIONS_MANDATAIRE.FINANCIER
+        : DS_OPTIONS_MANDATAIRE.NON_FINANCIER;
     }
 
     // Ajouter le téléphone du demandeur
