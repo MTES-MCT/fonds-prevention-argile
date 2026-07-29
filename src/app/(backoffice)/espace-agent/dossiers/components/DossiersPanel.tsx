@@ -196,7 +196,8 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
         ? byEpci.filter((d) => {
             const nom = `${d.particulier.prenom} ${d.particulier.nom}`.toLowerCase();
             const commune = d.logement.commune?.toLowerCase() ?? "";
-            return nom.includes(q) || commune.includes(q);
+            const email = d.particulier.email.toLowerCase();
+            return nom.includes(q) || commune.includes(q) || email.includes(q);
           })
         : byEpci;
       const byResponsable =
@@ -418,7 +419,7 @@ export function DossiersPanel({ canCreateDossier = false, defaultScope = "all", 
                 className="fr-input"
                 id="dossiers-search"
                 type="search"
-                placeholder="Rechercher (nom, commune...)"
+                placeholder="Rechercher (nom, email, commune...)"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
