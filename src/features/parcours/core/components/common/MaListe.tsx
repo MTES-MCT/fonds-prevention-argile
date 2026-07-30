@@ -94,7 +94,7 @@ function renderItemLink(item: StepListItem, getDossierUrl: (step: Step) => strin
   if (item.isAmoAnchor) {
     if (item.state === "completed") {
       return (
-        <span className="fr-link" style={COMPLETED_STYLE}>
+        <span  style={COMPLETED_STYLE}>
           {item.label} <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true" />
         </span>
       );
@@ -107,7 +107,7 @@ function renderItemLink(item: StepListItem, getDossierUrl: (step: Step) => strin
       );
     }
     return (
-      <a aria-disabled="true" role="link" className="fr-link">
+      <a aria-disabled="true" role="link" >
         {item.label}
       </a>
     );
