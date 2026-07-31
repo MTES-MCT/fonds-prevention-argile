@@ -136,7 +136,11 @@ Service : `src/features/auth/permissions/services/permissions.service.ts` et
 
 Repères de permissions par rôle :
 
-- **SUPER_ADMINISTRATEUR** : toutes.
+- **SUPER_ADMINISTRATEUR** : toutes en lecture ; en écriture, seulement les commentaires/actions
+  de suivi sur un dossier (portée nationale, propres commentaires modifiables/supprimables) —
+  voir [§6.1.2](#612-commentairesactions-ouverts-au-super-admin-deuxième-exception-au-read-only).
+  Le reste de l'espace agent reste en lecture seule (`assertNotSuperAdminReadOnly`), à
+  l'exception de la ré-ouverture d'une demande refusée ([§6.1](#61-ré-ouverture-dune-demande-refusée-garde-élargie)).
 - **ADMINISTRATEUR** : stats, users, AMO (R/W/import/delete), allers-vers
   (R/W/import/delete), étapes (éligibilité/diagnostic/devis/factures en lecture),
   commentaires (lecture globale). Pas la gestion des agents.
@@ -294,6 +298,25 @@ super-admin en lecture seule sont **exclus** — contrairement à la ré-ouvertu
 
 Côté demandeur, l'annulation n'a pas de garde de rôle : l'action résout le parcours via
 `userId` de session (modèle `skipAmoStepForUser`), elle est donc scopée par construction.
+
+### 6.1.2 Commentaires/actions ouverts au super-admin (deuxième exception au read-only)
+
+Comme la ré-ouverture (§6.1), la création/édition/suppression de commentaires
+(`createActionAction` / `updateActionAction` / `deleteActionAction`,
+`espace-agent/shared/actions/dossier-actions.actions.ts`) **n'appelle pas**
+`assertNotSuperAdminReadOnly` : le super-admin peut désormais logguer des actions sur
+n'importe quel dossier (portée nationale, `COMMENTAIRES_READ_ALL`), au même titre qu'un
+`ANALYSTE` départemental sur son territoire. La permission `COMMENTAIRES_*` était déjà
+présente dans `ROLE_PERMISSIONS[SUPER_ADMINISTRATEUR]` (= toutes les permissions) ; seul
+le garde-fou applicatif bloquait l'écriture. L'édition/suppression restent limitées à ses
+**propres** commentaires via `canEditAction` (`agentId` de l'auteur), comme pour tout
+agent — aucun traitement de faveur au-delà de l'ouverture de la création.
+
+**Ce qui reste bloqué** (`assertNotSuperAdminReadOnly` toujours appelé, DENY) : gestion de
+l'éligibilité (accepter/refuser une demande, refuser un accompagnement éligible), arrêt/refus
+d'accompagnement, archivage/désarchivage, création de dossier, qualification prospect, édition
+des données de simulation. Le super-admin ne gère donc que le **suivi** (commentaires/actions),
+jamais les décisions structurantes du dossier.
 
 ## 6.2 Édition des données de simulation alignée sur le détail dossier
 
