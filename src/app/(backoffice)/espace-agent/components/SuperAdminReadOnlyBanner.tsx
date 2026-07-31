@@ -4,7 +4,8 @@ export default function SuperAdminReadOnlyBanner() {
       <div className="fr-container">
         <div className="fr-notice__body">
           <p className="fr-notice__title">
-            Vue agent depuis "Super administrateur" — lecture seule. Les actions d&apos;écriture sont désactivées dans l&apos;espace agent.
+            Vue agent depuis "Super administrateur" — lecture seule, hors ajout de commentaires/actions de suivi sur un
+            dossier.
           </p>
         </div>
       </div>
