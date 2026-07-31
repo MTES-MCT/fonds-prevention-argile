@@ -1,7 +1,6 @@
 "use server";
 
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
-import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { actionsService } from "../services/actions.service";
 import type {
   ActionsListResult,
@@ -44,9 +43,9 @@ export async function getActionsAction(parcoursId: string): Promise<ActionsListR
  */
 export async function createActionAction(parcoursId: string, data: ActionFormData): Promise<CreateActionResult> {
   try {
-    const readOnlyError = await assertNotSuperAdminReadOnly();
-    if (readOnlyError) return { success: false, error: readOnlyError };
-
+    // Exception assumée au read-only super-admin : les commentaires/actions lui sont
+    // ouverts (portée nationale, sur ses propres commentaires) — on ne passe donc pas
+    // par assertNotSuperAdminReadOnly.
     const agentResult = await getCurrentAgent();
     if (!agentResult.success || !agentResult.data) {
       return { success: false, error: "Vous devez être connecté pour créer une action." };
@@ -66,9 +65,7 @@ export async function createActionAction(parcoursId: string, data: ActionFormDat
  */
 export async function updateActionAction(actionId: string, message: string): Promise<UpdateActionResult> {
   try {
-    const readOnlyError = await assertNotSuperAdminReadOnly();
-    if (readOnlyError) return { success: false, error: readOnlyError };
-
+    // Exception assumée au read-only super-admin, cf. createActionAction ci-dessus.
     const agentResult = await getCurrentAgent();
     if (!agentResult.success || !agentResult.data) {
       return { success: false, error: "Vous devez être connecté pour modifier une action." };
@@ -88,9 +85,7 @@ export async function updateActionAction(actionId: string, message: string): Pro
  */
 export async function deleteActionAction(actionId: string): Promise<DeleteActionResult> {
   try {
-    const readOnlyError = await assertNotSuperAdminReadOnly();
-    if (readOnlyError) return { success: false, error: readOnlyError };
-
+    // Exception assumée au read-only super-admin, cf. createActionAction ci-dessus.
     const agentResult = await getCurrentAgent();
     if (!agentResult.success || !agentResult.data) {
       return { success: false, error: "Vous devez être connecté pour supprimer une action." };

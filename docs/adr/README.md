@@ -51,5 +51,6 @@ purement cosmétique.
 | 0021 | [Synchro de contacts Brevo pilotée par les Automations (cycle de vie)](0021-synchro-contacts-brevo-cycle-de-vie.md)                     | Accepté |
 | 0022 | [Refus d'accompagnement d'un demandeur éligible par l'AMO](0022-refus-accompagnement-demandeur-eligible.md)                             | Accepté |
 | 0023 | [Remplacement de Crisp par le widget « Messages » de La Suite numérique](0023-remplacement-crisp-par-lasuite-messages.md)               | Accepté |
+| 0024 | [Commentaires/actions ouverts au super-admin dans l'espace agent](0024-commentaires-super-admin-espace-agent.md)                        | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->

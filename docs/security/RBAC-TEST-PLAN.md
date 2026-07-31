@@ -172,15 +172,15 @@ cellules négatives** recensées. Les agrégats nationaux consultables par l'`AN
 
 ### MEDIUM — scope individuel partiel / DENY admin partiel
 
-| Surface                                           | Fichier                                                           | Sensibilité | Cellules négatives                          | Couvert ?           |
-| ------------------------------------------------- | ----------------------------------------------------------------- | ----------- | ------------------------------------------- | ------------------- |
-| Accepter/Refuser accompagnement (lecture seule)   | `espace-agent/demandes/actions/demande-detail.actions.ts:79`      | individual  | SUPER_ADMINISTRATEUR → DENY (RO)            | OUI (testé)         |
-| Commentaires create/update/delete (lecture seule) | `espace-agent/shared/actions/dossier-actions.actions.ts:45`       | individual  | SUPER_ADMINISTRATEUR → DENY (RO)            | PARTIEL (générique) |
-| Agents CRUD                                       | `administration/agents/actions/agents.actions.ts`                 | individual  | PARTICULIER → DENY                          | NON                 |
-| AMO CRUD                                          | `administration/amo/actions/amo-admin.actions.ts`                 | aggregate   | non-authentifié → DENY                      | NON                 |
-| Allers-Vers CRUD                                  | `administration/allers-vers/actions/allers-vers-admin.actions.ts` | aggregate   | ANALYSTE / ALLERS_VERS / AMO → DENY         | PARTIEL             |
-| Synchronisations List/Trigger                     | `administration/synchronisations/actions/sync-runs.actions.ts`    | aggregate   | ADMINISTRATEUR / ANALYSTE / non-auth → DENY | NON                 |
-| AmoGuard — entreprise non configurée              | `app/(backoffice)/components/AmoGuard.tsx`                        | individual  | AMO / AMO_ET_AV sans entrepriseAmoId → DENY | NON                 |
+| Surface                                         | Fichier                                                           | Sensibilité | Cellules négatives                                                                                                                                                             | Couvert ?   |
+| ----------------------------------------------- | ----------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| Accepter/Refuser accompagnement (lecture seule) | `espace-agent/demandes/actions/demande-detail.actions.ts:79`      | individual  | SUPER_ADMINISTRATEUR → DENY (RO)                                                                                                                                               | OUI (testé) |
+| Commentaires create/update/delete               | `espace-agent/shared/actions/dossier-actions.actions.ts:45`       | individual  | SUPER_ADMINISTRATEUR → **ALLOW** (portée nationale, propres commentaires — exception assumée, §6.1.2) ; édition/suppression d'un commentaire d'autrui → DENY (`canEditAction`) | OUI (testé) |
+| Agents CRUD                                     | `administration/agents/actions/agents.actions.ts`                 | individual  | PARTICULIER → DENY                                                                                                                                                             | NON         |
+| AMO CRUD                                        | `administration/amo/actions/amo-admin.actions.ts`                 | aggregate   | non-authentifié → DENY                                                                                                                                                         | NON         |
+| Allers-Vers CRUD                                | `administration/allers-vers/actions/allers-vers-admin.actions.ts` | aggregate   | ANALYSTE / ALLERS_VERS / AMO → DENY                                                                                                                                            | PARTIEL     |
+| Synchronisations List/Trigger                   | `administration/synchronisations/actions/sync-runs.actions.ts`    | aggregate   | ADMINISTRATEUR / ANALYSTE / non-auth → DENY                                                                                                                                    | NON         |
+| AmoGuard — entreprise non configurée            | `app/(backoffice)/components/AmoGuard.tsx`                        | individual  | AMO / AMO_ET_AV sans entrepriseAmoId → DENY                                                                                                                                    | NON         |
 
 ### Cellules négatives déjà couvertes (référence)
 

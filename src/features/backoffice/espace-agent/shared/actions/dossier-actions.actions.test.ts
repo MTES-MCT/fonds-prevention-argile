@@ -15,10 +15,6 @@ vi.mock("@/features/backoffice/shared/actions/agent.actions", () => ({
   getCurrentAgent: vi.fn(),
 }));
 
-vi.mock("@/features/backoffice/shared/actions/super-admin-access", () => ({
-  assertNotSuperAdminReadOnly: vi.fn().mockResolvedValue(null),
-}));
-
 vi.mock("../services/actions.service", () => ({
   actionsService: {
     getActionsForParcours: vi.fn(),
@@ -45,6 +41,13 @@ describe("dossier-actions.actions", () => {
     lastLogin: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+  };
+
+  const mockSuperAdminAgent = {
+    ...mockAgent,
+    id: "super-admin-1",
+    role: UserRole.SUPER_ADMINISTRATEUR as typeof UserRole.SUPER_ADMINISTRATEUR,
+    entrepriseAmoId: null,
   };
 
   const mockActionDetail: ActionDetail = {
@@ -139,6 +142,21 @@ describe("dossier-actions.actions", () => {
 
       expect(result).toEqual(mockResult);
     });
+
+    it("un super-administrateur peut créer une action (exception assumée au read-only)", async () => {
+      vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: mockSuperAdminAgent });
+      vi.mocked(actionsService.createAction).mockResolvedValue({ success: true, action: mockActionDetail });
+
+      const result = await createActionAction("parcours-1", { actionType: "appel_effectue", message: "Test" });
+
+      expect(actionsService.createAction).toHaveBeenCalledWith(
+        "parcours-1",
+        "super-admin-1",
+        UserRole.SUPER_ADMINISTRATEUR,
+        { actionType: "appel_effectue", message: "Test" }
+      );
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("updateActionAction", () => {
@@ -160,6 +178,21 @@ describe("dossier-actions.actions", () => {
 
       expect(actionsService.updateAction).toHaveBeenCalledWith("action-1", "agent-1", UserRole.AMO, "Updated message");
     });
+
+    it("un super-administrateur peut modifier une action (exception assumée au read-only)", async () => {
+      vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: mockSuperAdminAgent });
+      vi.mocked(actionsService.updateAction).mockResolvedValue({ success: true, action: mockActionDetail });
+
+      const result = await updateActionAction("action-1", "Updated message");
+
+      expect(actionsService.updateAction).toHaveBeenCalledWith(
+        "action-1",
+        "super-admin-1",
+        UserRole.SUPER_ADMINISTRATEUR,
+        "Updated message"
+      );
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("deleteActionAction", () => {
@@ -180,6 +213,20 @@ describe("dossier-actions.actions", () => {
       await deleteActionAction("action-1");
 
       expect(actionsService.deleteAction).toHaveBeenCalledWith("action-1", "agent-1", UserRole.AMO);
+    });
+
+    it("un super-administrateur peut supprimer une action (exception assumée au read-only)", async () => {
+      vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: mockSuperAdminAgent });
+      vi.mocked(actionsService.deleteAction).mockResolvedValue({ success: true });
+
+      const result = await deleteActionAction("action-1");
+
+      expect(actionsService.deleteAction).toHaveBeenCalledWith(
+        "action-1",
+        "super-admin-1",
+        UserRole.SUPER_ADMINISTRATEUR
+      );
+      expect(result.success).toBe(true);
     });
   });
 });
