@@ -67,6 +67,11 @@ export default function RootLayout({
         <meta content="telephone=no,date=no,address=no,email=no,url=no" name="format-detection" />
         <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport" />
         <meta content="#000091" name="theme-color" />
+        {/* Le DSFR force data-fr-scheme="light" mais ne déclare color-scheme que pour le
+            thème sombre (dsfr.module.js) : sans ce tag, Safari applique son rendu natif
+            sombre (select, cases à cocher, scrollbars) selon l'OS, texte illisible sur
+            fond DSFR resté clair. Chrome ne le fait pas, d'où l'écart observé. */}
+        <meta content="light" name="color-scheme" />
 
         {/* DSFR Favicons */}
         <link href="/dsfr/favicon/apple-touch-icon.png" rel="apple-touch-icon" />

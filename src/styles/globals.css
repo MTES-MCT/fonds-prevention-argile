@@ -1,6 +1,13 @@
 /* Tailwind CSS */
 @import "tailwindcss";
 
+/* Site figé en thème clair (data-fr-scheme="light" dans layout.tsx) : sans ce
+   color-scheme, Safari rend les contrôles natifs (select, checkbox, scrollbars)
+   en sombre selon l'OS alors que le reste de la page reste clair, texte illisible. */
+:root {
+  color-scheme: light;
+}
+
 /**
  * Fix bug DSFR v1.14.2 - Navigation dropdown positioning
  * Date: 14/11/2025
