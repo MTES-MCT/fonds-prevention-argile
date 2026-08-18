@@ -60,6 +60,13 @@ export const ADMIN_NAV_TABS: AdminNavTab[] = [
     minRoles: [UserRole.SUPER_ADMINISTRATEUR],
   },
   {
+    id: "activite",
+    label: "Activité",
+    href: "/administration/activite",
+    icon: "fr-icon-pulse-line",
+    minRoles: [UserRole.SUPER_ADMINISTRATEUR],
+  },
+  {
     id: "synchronisations",
     label: "Synchros",
     href: "/administration/synchronisations",
