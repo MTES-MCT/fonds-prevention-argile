@@ -99,6 +99,30 @@ async function countActionsParType(debut: Date, fin: Date, codeDepartement?: str
 }
 
 /**
+ * Compte les demandeurs distincts (parcours_prevention.user_id) touchés par au
+ * moins une action sur la periode. Jointure systematique (pas seulement en cas
+ * de filtre departement) car user_id vit sur parcours_prevention, pas sur
+ * parcours_actions.
+ */
+async function countDemandeursDistincts(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
+  const conditions = [gte(parcoursActions.createdAt, debut), lt(parcoursActions.createdAt, fin)];
+
+  if (codeDepartement) {
+    conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+    conditions.push(whereDepartement(codeDepartement));
+  }
+
+  const rows = await db
+    .select({ userId: parcoursPrevention.userId })
+    .from(parcoursActions)
+    .innerJoin(parcoursPrevention, eq(parcoursActions.parcoursId, parcoursPrevention.id))
+    .where(and(...conditions))
+    .groupBy(parcoursPrevention.userId);
+
+  return rows.length;
+}
+
+/**
  * Recupere le nombre d'actions par type sur une periode, avec l'evolution par
  * rapport a la periode precedente de meme duree (null pour "Depuis le debut").
  */
@@ -106,12 +130,17 @@ export async function getActiviteStats(periodeId: PeriodeId, codeDepartement?: s
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 
-  const [distribution, distributionPrecedente] = await Promise.all([
-    countActionsParType(debut, fin, codeDepartement),
-    previousRange
-      ? countActionsParType(previousRange.debut, previousRange.fin, codeDepartement)
-      : Promise.resolve(new Map<string, number>()),
-  ]);
+  const [distribution, distributionPrecedente, demandeursDistinctsActuel, demandeursDistinctsPrecedent] =
+    await Promise.all([
+      countActionsParType(debut, fin, codeDepartement),
+      previousRange
+        ? countActionsParType(previousRange.debut, previousRange.fin, codeDepartement)
+        : Promise.resolve(new Map<string, number>()),
+      countDemandeursDistincts(debut, fin, codeDepartement),
+      previousRange
+        ? countDemandeursDistincts(previousRange.debut, previousRange.fin, codeDepartement)
+        : Promise.resolve(0),
+    ]);
 
   let totalActuel = 0;
   for (const c of distribution.values()) totalActuel += c;
@@ -133,6 +162,10 @@ export async function getActiviteStats(periodeId: PeriodeId, codeDepartement?: s
     total: {
       valeur: totalActuel,
       variation: previousRange ? calculerVariation(totalActuel, totalPrecedent) : null,
+    },
+    demandeursDistincts: {
+      valeur: demandeursDistinctsActuel,
+      variation: previousRange ? calculerVariation(demandeursDistinctsActuel, demandeursDistinctsPrecedent) : null,
     },
     parType,
   };

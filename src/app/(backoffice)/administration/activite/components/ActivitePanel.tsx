@@ -91,11 +91,20 @@ export default function ActivitePanel() {
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
             <DashboardStatCard
+              className="fr-col-12 fr-col-md-6"
               value={stats?.total.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Total des actions enregistrées"
               variation={stats?.total.variation ?? null}
               loading={loading}
               tooltip="Données base de données (parcours_actions)"
+            />
+            <DashboardStatCard
+              className="fr-col-12 fr-col-md-6"
+              value={stats?.demandeursDistincts.valeur.toLocaleString("fr-FR") ?? "..."}
+              label="Demandeurs distincts concernés"
+              variation={stats?.demandeursDistincts.variation ?? null}
+              loading={loading}
+              tooltip="Nombre de demandeurs distincts sur lesquels au moins une action a été réalisée (parcours_actions × parcours_prevention)"
             />
           </div>
 

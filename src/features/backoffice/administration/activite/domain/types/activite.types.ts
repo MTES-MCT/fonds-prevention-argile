@@ -14,5 +14,6 @@ export interface ActionTypeStat {
 
 export interface ActiviteStats {
   total: StatAvecVariation;
+  demandeursDistincts: StatAvecVariation;
   parType: ActionTypeStat[];
 }

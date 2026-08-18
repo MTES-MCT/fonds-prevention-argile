@@ -19,7 +19,11 @@ const grantRole = (role: UserRole) =>
 describe("activite.actions — réservé SUPER_ADMINISTRATEUR", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getActiviteStats).mockResolvedValue({ total: { valeur: 0, variation: null }, parType: [] });
+    vi.mocked(getActiviteStats).mockResolvedValue({
+      total: { valeur: 0, variation: null },
+      demandeursDistincts: { valeur: 0, variation: null },
+      parType: [],
+    });
   });
 
   it("refuse un utilisateur non authentifié", async () => {
