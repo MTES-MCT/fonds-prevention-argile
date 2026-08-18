@@ -97,15 +97,15 @@ page / Server Actions.
 > par les stats **nationales** de la Rangée 1 (Tableau de bord / Acquisition / Demandeurs),
 > désormais ouvertes aux agents AMO / Allers-Vers.
 
-| Rôle                     | Rangée 1 — Pilotage                                                                                 | Rangée 2 — Dossiers |
-| ------------------------ | --------------------------------------------------------------------------------------------------- | ------------------- |
-| `SUPER_ADMINISTRATEUR`   | Tableau de bord, Acquisition, Demandeurs, Agents, AMO, Allers Vers, Notes, Synchros, Diagnostics DN | Dossiers            |
-| `ADMINISTRATEUR`         | Tableau de bord, Acquisition, Demandeurs, AMO, Allers Vers                                          | —                   |
-| `ANALYSTE` national      | Tableau de bord, Acquisition, Demandeurs                                                            | —                   |
-| `ANALYSTE` départemental | Tableau de bord, Acquisition, Demandeurs                                                            | Dossiers            |
-| `AMO`                    | Tableau de bord, Acquisition, Demandeurs                                                            | Dossiers            |
-| `ALLERS_VERS`            | Tableau de bord, Acquisition, Demandeurs                                                            | Dossiers            |
-| `AMO_ET_ALLERS_VERS`     | Tableau de bord, Acquisition, Demandeurs                                                            | Dossiers            |
+| Rôle                     | Rangée 1 — Pilotage                                                                                           | Rangée 2 — Dossiers |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `SUPER_ADMINISTRATEUR`   | Tableau de bord, Acquisition, Demandeurs, Agents, AMO, Allers Vers, Notes, Activité, Synchros, Diagnostics DN | Dossiers            |
+| `ADMINISTRATEUR`         | Tableau de bord, Acquisition, Demandeurs, AMO, Allers Vers                                                    | —                   |
+| `ANALYSTE` national      | Tableau de bord, Acquisition, Demandeurs                                                                      | —                   |
+| `ANALYSTE` départemental | Tableau de bord, Acquisition, Demandeurs                                                                      | Dossiers            |
+| `AMO`                    | Tableau de bord, Acquisition, Demandeurs                                                                      | Dossiers            |
+| `ALLERS_VERS`            | Tableau de bord, Acquisition, Demandeurs                                                                      | Dossiers            |
+| `AMO_ET_ALLERS_VERS`     | Tableau de bord, Acquisition, Demandeurs                                                                      | Dossiers            |
 
 - `canAccessAdministration` = `SUPER_ADMINISTRATEUR` / `ADMINISTRATEUR` / `ANALYSTE` /
   **`AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS`** (ADR-0017). Le filtrage par onglet de
