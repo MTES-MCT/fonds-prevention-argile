@@ -1,6 +1,6 @@
 import { count, and, gte, lt, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/shared/database/client";
-import { parcoursActions, parcoursPrevention } from "@/shared/database/schema";
+import { parcoursActions, parcoursPrevention, users } from "@/shared/database/schema";
 import { normalizeCodeDepartement } from "@/shared/constants/departements.constants";
 import { ACTION_LABELS_BY_VALUE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { PERIODES, SERVICE_START_DATE } from "../../tableau-de-bord/domain/types/tableau-de-bord.types";
@@ -123,6 +123,43 @@ async function countDemandeursDistincts(debut: Date, fin: Date, codeDepartement?
 }
 
 /**
+ * Delai moyen (en heures) entre l'inscription (users.created_at) et la premiere
+ * action recue, pour les demandeurs inscrits sur la periode donnee (et non les
+ * actions elles-memes). Les demandeurs sans aucune action sont exclus (inner join).
+ */
+async function getDelaiMoyenPremiereReponseHeures(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string
+): Promise<number | null> {
+  const conditions = [gte(users.createdAt, debut), lt(users.createdAt, fin)];
+
+  if (codeDepartement) {
+    conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+    conditions.push(whereDepartement(codeDepartement));
+  }
+
+  const rows = await db
+    .select({
+      inscriptionAt: users.createdAt,
+      premiereActionAt: sql<Date>`min(${parcoursActions.createdAt})`,
+    })
+    .from(users)
+    .innerJoin(parcoursPrevention, eq(parcoursPrevention.userId, users.id))
+    .innerJoin(parcoursActions, eq(parcoursActions.parcoursId, parcoursPrevention.id))
+    .where(and(...conditions))
+    .groupBy(users.id, users.createdAt);
+
+  if (rows.length === 0) return null;
+
+  const diffsHeures = rows.map(
+    (r) => (new Date(r.premiereActionAt).getTime() - r.inscriptionAt.getTime()) / (1000 * 60 * 60)
+  );
+
+  return diffsHeures.reduce((a, b) => a + b, 0) / diffsHeures.length;
+}
+
+/**
  * Recupere le nombre d'actions par type sur une periode, avec l'evolution par
  * rapport a la periode precedente de meme duree (null pour "Depuis le debut").
  */
@@ -130,17 +167,27 @@ export async function getActiviteStats(periodeId: PeriodeId, codeDepartement?: s
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
 
-  const [distribution, distributionPrecedente, demandeursDistinctsActuel, demandeursDistinctsPrecedent] =
-    await Promise.all([
-      countActionsParType(debut, fin, codeDepartement),
-      previousRange
-        ? countActionsParType(previousRange.debut, previousRange.fin, codeDepartement)
-        : Promise.resolve(new Map<string, number>()),
-      countDemandeursDistincts(debut, fin, codeDepartement),
-      previousRange
-        ? countDemandeursDistincts(previousRange.debut, previousRange.fin, codeDepartement)
-        : Promise.resolve(0),
-    ]);
+  const [
+    distribution,
+    distributionPrecedente,
+    demandeursDistinctsActuel,
+    demandeursDistinctsPrecedent,
+    delaiMoyenActuel,
+    delaiMoyenPrecedent,
+  ] = await Promise.all([
+    countActionsParType(debut, fin, codeDepartement),
+    previousRange
+      ? countActionsParType(previousRange.debut, previousRange.fin, codeDepartement)
+      : Promise.resolve(new Map<string, number>()),
+    countDemandeursDistincts(debut, fin, codeDepartement),
+    previousRange
+      ? countDemandeursDistincts(previousRange.debut, previousRange.fin, codeDepartement)
+      : Promise.resolve(0),
+    getDelaiMoyenPremiereReponseHeures(debut, fin, codeDepartement),
+    previousRange
+      ? getDelaiMoyenPremiereReponseHeures(previousRange.debut, previousRange.fin, codeDepartement)
+      : Promise.resolve(null),
+  ]);
 
   let totalActuel = 0;
   for (const c of distribution.values()) totalActuel += c;
@@ -166,6 +213,13 @@ export async function getActiviteStats(periodeId: PeriodeId, codeDepartement?: s
     demandeursDistincts: {
       valeur: demandeursDistinctsActuel,
       variation: previousRange ? calculerVariation(demandeursDistinctsActuel, demandeursDistinctsPrecedent) : null,
+    },
+    delaiMoyenPremiereReponse: {
+      valeurHeures: delaiMoyenActuel,
+      variation:
+        previousRange && delaiMoyenActuel !== null && delaiMoyenPrecedent !== null
+          ? calculerVariation(delaiMoyenActuel, delaiMoyenPrecedent)
+          : null,
     },
     parType,
   };

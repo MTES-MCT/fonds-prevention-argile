@@ -19,6 +19,7 @@ describe("activite.actions", () => {
     vi.mocked(getActiviteStats).mockResolvedValue({
       total: { valeur: 0, variation: null },
       demandeursDistincts: { valeur: 0, variation: null },
+      delaiMoyenPremiereReponse: { valeurHeures: null, variation: null },
       parType: [],
     });
   });
