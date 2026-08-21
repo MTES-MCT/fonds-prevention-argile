@@ -123,15 +123,11 @@ async function countDemandeursDistincts(debut: Date, fin: Date, codeDepartement?
 }
 
 /**
- * Delai moyen (en heures) entre l'inscription (users.created_at) et la premiere
- * action recue, pour les demandeurs inscrits sur la periode donnee (et non les
- * actions elles-memes). Les demandeurs sans aucune action sont exclus (inner join).
+ * Compte les demandeurs inscrits sur la periode (users.created_at), avec
+ * filtrage departement optionnel. Jointure systematique sur parcours_prevention
+ * (chaque demandeur inscrit a un parcours, cf. relation 1:1 documentee).
  */
-async function getDelaiMoyenPremiereReponseHeures(
-  debut: Date,
-  fin: Date,
-  codeDepartement?: string
-): Promise<number | null> {
+async function countDemandeursInscrits(debut: Date, fin: Date, codeDepartement?: string): Promise<number> {
   const conditions = [gte(users.createdAt, debut), lt(users.createdAt, fin)];
 
   if (codeDepartement) {
@@ -140,6 +136,31 @@ async function getDelaiMoyenPremiereReponseHeures(
   }
 
   const rows = await db
+    .select({ id: users.id })
+    .from(users)
+    .innerJoin(parcoursPrevention, eq(parcoursPrevention.userId, users.id))
+    .where(and(...conditions));
+
+  return rows.length;
+}
+
+/**
+ * Pour chaque demandeur inscrit sur la periode ayant recu au moins une action,
+ * la date d'inscription et la date de sa premiere action (min).
+ */
+async function getPremiereReponseRows(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string
+): Promise<{ inscriptionAt: Date; premiereActionAt: Date }[]> {
+  const conditions = [gte(users.createdAt, debut), lt(users.createdAt, fin)];
+
+  if (codeDepartement) {
+    conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+    conditions.push(whereDepartement(codeDepartement));
+  }
+
+  return db
     .select({
       inscriptionAt: users.createdAt,
       premiereActionAt: sql<Date>`min(${parcoursActions.createdAt})`,
@@ -149,14 +170,33 @@ async function getDelaiMoyenPremiereReponseHeures(
     .innerJoin(parcoursActions, eq(parcoursActions.parcoursId, parcoursPrevention.id))
     .where(and(...conditions))
     .groupBy(users.id, users.createdAt);
+}
 
-  if (rows.length === 0) return null;
+/**
+ * Delai moyen (en heures) entre l'inscription et la premiere action, et nombre
+ * de demandeurs inscrits sur la periode n'ayant recu aucune action a ce jour.
+ * Les demandeurs sans reponse sont exclus du delai moyen (biais d'optimisme
+ * assume) mais comptabilises a part pour donner ce contexte.
+ */
+async function getPremiereReponsePeriode(
+  debut: Date,
+  fin: Date,
+  codeDepartement?: string
+): Promise<{ delaiMoyenHeures: number | null; sansReponse: number }> {
+  const [inscrits, rows] = await Promise.all([
+    countDemandeursInscrits(debut, fin, codeDepartement),
+    getPremiereReponseRows(debut, fin, codeDepartement),
+  ]);
 
-  const diffsHeures = rows.map(
-    (r) => (new Date(r.premiereActionAt).getTime() - r.inscriptionAt.getTime()) / (1000 * 60 * 60)
-  );
+  let delaiMoyenHeures: number | null = null;
+  if (rows.length > 0) {
+    const diffsHeures = rows.map(
+      (r) => (new Date(r.premiereActionAt).getTime() - r.inscriptionAt.getTime()) / (1000 * 60 * 60)
+    );
+    delaiMoyenHeures = diffsHeures.reduce((a, b) => a + b, 0) / diffsHeures.length;
+  }
 
-  return diffsHeures.reduce((a, b) => a + b, 0) / diffsHeures.length;
+  return { delaiMoyenHeures, sansReponse: Math.max(inscrits - rows.length, 0) };
 }
 
 /**
@@ -172,8 +212,8 @@ export async function getActiviteStats(periodeId: PeriodeId, codeDepartement?: s
     distributionPrecedente,
     demandeursDistinctsActuel,
     demandeursDistinctsPrecedent,
-    delaiMoyenActuel,
-    delaiMoyenPrecedent,
+    premiereReponseActuelle,
+    premiereReponsePrecedente,
   ] = await Promise.all([
     countActionsParType(debut, fin, codeDepartement),
     previousRange
@@ -183,10 +223,10 @@ export async function getActiviteStats(periodeId: PeriodeId, codeDepartement?: s
     previousRange
       ? countDemandeursDistincts(previousRange.debut, previousRange.fin, codeDepartement)
       : Promise.resolve(0),
-    getDelaiMoyenPremiereReponseHeures(debut, fin, codeDepartement),
+    getPremiereReponsePeriode(debut, fin, codeDepartement),
     previousRange
-      ? getDelaiMoyenPremiereReponseHeures(previousRange.debut, previousRange.fin, codeDepartement)
-      : Promise.resolve(null),
+      ? getPremiereReponsePeriode(previousRange.debut, previousRange.fin, codeDepartement)
+      : Promise.resolve({ delaiMoyenHeures: null, sansReponse: 0 }),
   ]);
 
   let totalActuel = 0;
@@ -215,11 +255,19 @@ export async function getActiviteStats(periodeId: PeriodeId, codeDepartement?: s
       variation: previousRange ? calculerVariation(demandeursDistinctsActuel, demandeursDistinctsPrecedent) : null,
     },
     delaiMoyenPremiereReponse: {
-      valeurHeures: delaiMoyenActuel,
+      valeurHeures: premiereReponseActuelle.delaiMoyenHeures,
       variation:
-        previousRange && delaiMoyenActuel !== null && delaiMoyenPrecedent !== null
-          ? calculerVariation(delaiMoyenActuel, delaiMoyenPrecedent)
+        previousRange &&
+        premiereReponseActuelle.delaiMoyenHeures !== null &&
+        premiereReponsePrecedente.delaiMoyenHeures !== null
+          ? calculerVariation(premiereReponseActuelle.delaiMoyenHeures, premiereReponsePrecedente.delaiMoyenHeures)
           : null,
+    },
+    demandeursSansReponse: {
+      valeur: premiereReponseActuelle.sansReponse,
+      variation: previousRange
+        ? calculerVariation(premiereReponseActuelle.sansReponse, premiereReponsePrecedente.sansReponse)
+        : null,
     },
     parType,
   };

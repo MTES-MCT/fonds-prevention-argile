@@ -20,6 +20,7 @@ describe("activite.actions", () => {
       total: { valeur: 0, variation: null },
       demandeursDistincts: { valeur: 0, variation: null },
       delaiMoyenPremiereReponse: { valeurHeures: null, variation: null },
+      demandeursSansReponse: { valeur: 0, variation: null },
       parType: [],
     });
   });

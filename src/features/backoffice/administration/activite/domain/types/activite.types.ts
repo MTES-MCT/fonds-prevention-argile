@@ -22,5 +22,7 @@ export interface ActiviteStats {
   total: StatAvecVariation;
   demandeursDistincts: StatAvecVariation;
   delaiMoyenPremiereReponse: DelaiMoyenStat;
+  /** Demandeurs inscrits sur la periode n'ayant recu aucune action a ce jour */
+  demandeursSansReponse: StatAvecVariation;
   parType: ActionTypeStat[];
 }
