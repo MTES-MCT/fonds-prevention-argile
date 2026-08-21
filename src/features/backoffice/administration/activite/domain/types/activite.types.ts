@@ -12,8 +12,17 @@ export interface ActionTypeStat {
   variation: number | null;
 }
 
+export interface DelaiMoyenStat {
+  /** Delai moyen en heures entre l'inscription et la premiere action, null si aucune donnee */
+  valeurHeures: number | null;
+  variation: number | null;
+}
+
 export interface ActiviteStats {
   total: StatAvecVariation;
   demandeursDistincts: StatAvecVariation;
+  delaiMoyenPremiereReponse: DelaiMoyenStat;
+  /** Demandeurs inscrits sur la periode n'ayant recu aucune action a ce jour */
+  demandeursSansReponse: StatAvecVariation;
   parType: ActionTypeStat[];
 }

@@ -15,6 +15,15 @@ import {
   selectCodeDepartement,
 } from "@/features/backoffice/administration/stores/administration-filters.store";
 
+function formatDelaiMoyen(heures: number): string {
+  if (heures < 24) {
+    return `${Math.round(heures)} h`;
+  }
+  const jours = Math.floor(heures / 24);
+  const heuresRestantes = Math.round(heures % 24);
+  return heuresRestantes > 0 ? `${jours} j ${heuresRestantes} h` : `${jours} j`;
+}
+
 export default function ActivitePanel() {
   const periodeId = useAdministrationFiltersStore(selectPeriodeId);
   const codeDepartement = useAdministrationFiltersStore(selectCodeDepartement);
@@ -91,7 +100,6 @@ export default function ActivitePanel() {
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
             <DashboardStatCard
-              className="fr-col-12 fr-col-md-6"
               value={stats?.total.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Total des actions enregistrées"
               variation={stats?.total.variation ?? null}
@@ -99,12 +107,31 @@ export default function ActivitePanel() {
               tooltip="Données base de données (parcours_actions)"
             />
             <DashboardStatCard
-              className="fr-col-12 fr-col-md-6"
               value={stats?.demandeursDistincts.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Demandeurs distincts concernés"
               variation={stats?.demandeursDistincts.variation ?? null}
               loading={loading}
               tooltip="Nombre de demandeurs distincts sur lesquels au moins une action a été réalisée (parcours_actions × parcours_prevention)"
+            />
+            <DashboardStatCard
+              value={
+                stats?.delaiMoyenPremiereReponse.valeurHeures != null
+                  ? formatDelaiMoyen(stats.delaiMoyenPremiereReponse.valeurHeures)
+                  : "—"
+              }
+              label="Délais moyen de 1ère réponse"
+              variation={stats?.delaiMoyenPremiereReponse.variation ?? null}
+              invertColors
+              loading={loading}
+              tooltip="Délai moyen entre l'inscription et la première action, pour les demandeurs inscrits sur la période sélectionnée et ayant reçu une réponse. Les demandeurs sans réponse sont exclus de ce calcul (voir la case ci-contre)"
+            />
+            <DashboardStatCard
+              value={stats?.demandeursSansReponse.valeur.toLocaleString("fr-FR") ?? "..."}
+              label="Demandeurs sans réponse"
+              variation={stats?.demandeursSansReponse.variation ?? null}
+              invertColors
+              loading={loading}
+              tooltip="Demandeurs inscrits sur la période sélectionnée n'ayant reçu aucune action à ce jour"
             />
           </div>
 
