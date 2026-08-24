@@ -56,14 +56,14 @@ import { createRedactor } from "../lib/anonymize";
 import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
-import { getArg, hasFlag } from "../lib/args";
+import { getArg, getNumberArg, hasFlag } from "../lib/args";
 import { sleep, getErrorByParcours, classifyDnError } from "./_shared";
 
 // --- Args ---
 const APPLY = hasFlag("apply");
 const ANONYMIZE = hasFlag("anonymize");
 const PARCOURS_ID_FILTER = getArg("parcours-id");
-const SLEEP_MS = Number(getArg("sleep") ?? "200");
+const SLEEP_MS = getNumberArg("sleep", 200);
 
 const { redactUuid, redactEmail } = createRedactor(ANONYMIZE);
 const { db, client } = createOpsDb();

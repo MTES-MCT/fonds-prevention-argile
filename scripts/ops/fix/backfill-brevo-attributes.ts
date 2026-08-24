@@ -59,12 +59,12 @@ import {
 import { buildContactAttributes } from "@/shared/email/brevo/contact-mapping";
 import { buildConseillerAttributes } from "@/shared/email/brevo/conseiller-mapping";
 import { upsertContact, type BrevoAttributes } from "@/shared/email/brevo/brevo-contacts.adapter";
-import { getArg, hasFlag } from "../lib/args";
+import { getArg, getNumberArg, hasFlag } from "../lib/args";
 import { createRedactor } from "../lib/anonymize";
 
 const APPLY = hasFlag("apply");
 const PARCOURS_ID = getArg("parcours-id");
-const SLEEP_MS = Number(getArg("sleep") ?? "150");
+const SLEEP_MS = getNumberArg("sleep", 150);
 const ANONYMIZE = !hasFlag("no-anonymize");
 
 const { redactEmail, redactUuid } = createRedactor(ANONYMIZE);

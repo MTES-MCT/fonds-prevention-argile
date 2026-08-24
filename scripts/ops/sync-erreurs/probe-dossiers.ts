@@ -50,7 +50,7 @@ import { createRedactor } from "../lib/anonymize";
 import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
-import { getArg, hasFlag } from "../lib/args";
+import { getArg, getNumberArg, hasFlag } from "../lib/args";
 import { sleep, norm, getErrorByParcours, buildEmailIndex } from "./_shared";
 
 // --- Args ---
@@ -58,17 +58,12 @@ const FROM_SYNC_ERRORS = hasFlag("from-sync-errors");
 const NUMBERS_ARG = getArg("numbers");
 const EMAIL_CROSSCHECK = hasFlag("email-crosscheck");
 const ANONYMIZE = !hasFlag("no-anonymize"); // anonymisé par défaut
-const SLEEP_MS = Number(getArg("sleep") ?? "200");
+const SLEEP_MS = getNumberArg("sleep", 200);
 
 const { redactEmail, redactUuid, redactName } = createRedactor(ANONYMIZE);
 
 type Categorie =
-  | "SUPPRIME_OU_INTROUVABLE"
-  | "INEXISTANT"
-  | "DEPOSE_NON_INSTRUIT"
-  | "EN_INSTRUCTION"
-  | "TRAITE"
-  | "ERREUR_API";
+  "SUPPRIME_OU_INTROUVABLE" | "INEXISTANT" | "DEPOSE_NON_INSTRUIT" | "EN_INSTRUCTION" | "TRAITE" | "ERREUR_API";
 
 interface Cible {
   dsNumber: string;

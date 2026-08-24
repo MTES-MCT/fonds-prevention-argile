@@ -41,13 +41,13 @@ import { createOpsDb } from "../lib/db";
 import { graphqlClient } from "@/features/parcours/dossiers-ds/adapters/graphql/client";
 import { dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import { getArg, hasFlag } from "../lib/args";
+import { getArg, getNumberArg, hasFlag } from "../lib/args";
 import { sleep } from "../sync-erreurs/_shared";
 import { createRedactor } from "../lib/anonymize";
 
 const APPLY = hasFlag("apply");
 const PARCOURS_ID = getArg("parcours-id");
-const SLEEP_MS = Number(getArg("sleep") ?? "200");
+const SLEEP_MS = getNumberArg("sleep", 200);
 const ANONYMIZE = !hasFlag("no-anonymize"); // anonymisé par défaut
 
 const { redactDsNumber } = createRedactor(ANONYMIZE);
