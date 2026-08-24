@@ -29,8 +29,8 @@ importers:
         specifier: 5.0.4
         version: 5.0.4
       '@gouvfr/dsfr':
-        specifier: 1.14.4
-        version: 1.14.4
+        specifier: 1.15.2
+        version: 1.15.2
       '@gouvfr/dsfr-chart':
         specifier: 2.1.1
         version: 2.1.1
@@ -326,11 +326,11 @@ packages:
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild-kit/esm-loader@2.6.5':
     resolution: {integrity: sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -549,8 +549,8 @@ packages:
     resolution: {integrity: sha512-+d31EVpxqfA/O5xrPZzOTF8C4usHCVmt+fk00twyMyDp8Tpcz8J7hP4s4a6M+OgkOwnOriRoV5ET55gJmWoIZA==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
 
-  '@gouvfr/dsfr@1.14.4':
-    resolution: {integrity: sha512-Ca17apmTyAF2tMFwMcLwQN7fTlbfMFeyYSLUIUmjoSg1XVF4vDDkbvvKBpWJWaoTLDSFZBbvvHzcDyxw9wSkLA==}
+  '@gouvfr/dsfr@1.15.2':
+    resolution: {integrity: sha512-IrV/a/eV6KE06Az8Ky3wN2h0INka+ntk5UWuJg/T+ST7/tMUvIWC8fZi9azx+2YsqMFGgAkocIHxeVbPoLHAUQ==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
 
   '@humanfs/core@0.19.1':
@@ -2187,6 +2187,7 @@ packages:
   eslint@9.39.0:
     resolution: {integrity: sha512-iy2GE3MHrYTL5lrCtMZ0X1KLEKKUjmK0kzwcnefhR66txcEmXZD2YWgR5GNdcEwkNx3a0siYkSvl0vIC+Svjmg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -4001,7 +4002,7 @@ snapshots:
 
   '@gouvfr/dsfr-chart@2.1.1': {}
 
-  '@gouvfr/dsfr@1.14.4': {}
+  '@gouvfr/dsfr@1.15.2': {}
 
   '@humanfs/core@0.19.1': {}
 
