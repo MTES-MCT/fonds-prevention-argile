@@ -5,9 +5,12 @@ Toolkit de diagnostic et remédiation des parcours bloqués en `eligibilite/todo
 
 Guide complet (cas, sous-cas, playbook) : [docs/parcours/SYNC-ERREURS-ET-REMEDIATION.md](../../../docs/parcours/SYNC-ERREURS-ET-REMEDIATION.md).
 
-Tous les scripts : **dry-run par défaut**, `--apply` pour écrire, `--anonymize` pour masquer
-les PII. Ils chargent l'env via `../lib/db` (dotenv) ; ceux qui appellent DN importent
-`graphqlClient` **après** pour garantir l'ordre de chargement.
+Tous les scripts : **dry-run par défaut**, `--anonymize` pour masquer les PII. `--apply`
+écrit — **sauf `fix:eligibilite-sync-error`, dont le `--apply` est gelé** (refus + sortie en
+erreur, cf. [ADR-0026](../../../docs/adr/0026-gel-reset-eligibilite-not-found.md) et l'encadré
+en bas de page) : il ne reste utilisable qu'en dry-run, comme diagnostic. Ils chargent l'env
+via `../lib/db` (dotenv) ; ceux qui appellent DN importent `graphqlClient` **après** pour
+garantir l'ordre de chargement.
 
 | Script                              | Alias                             | Rôle                                                            |
 | ----------------------------------- | --------------------------------- | --------------------------------------------------------------- |
