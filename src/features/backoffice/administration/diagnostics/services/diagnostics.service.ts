@@ -47,7 +47,12 @@ interface RawRow {
   userEmail: string | null;
 }
 
-function classify(r: RawRow, syncError: string | undefined): DiagnosticState {
+/** Exportée pour les tests : la règle de classement est le cœur métier du diagnostic. */
+export function classify(r: RawRow, syncError: string | undefined): DiagnosticState {
+  // Prérempli jamais observé côté DN (aucune sync réussie, aucun dépôt) : DN le masque à
+  // l'API instructeur tant qu'il n'est pas transmis. État normal, pas une anomalie (ADR-0026).
+  const prefillNonObserve = !!r.dossierId && !r.lastSyncAt && !r.submittedAt;
+
   if (syncError) {
     // Vraie anomalie technique (token non instructeur, réseau) : le verdict DN persisté le dit.
     if (r.dnProbeState === "unauthorized" || r.dnProbeState === "api_error") return DiagnosticState.SYNC_ANOMALIE;
@@ -64,6 +69,8 @@ function classify(r: RawRow, syncError: string | undefined): DiagnosticState {
     return DiagnosticState.SANS_DOSSIER;
   }
 
+  if (prefillNonObserve) return DiagnosticState.DOSSIER_DN_NON_CREE;
+  // Reste ici le faux dépôt legacy : `submitted_at` posé à la création sans sync (pré-#216).
   if (r.dsNumber && !r.lastSyncAt) return DiagnosticState.JAMAIS_SYNCHRONISE;
 
   switch (r.dsStatus) {

@@ -19,7 +19,7 @@ export enum DiagnosticState {
   JAMAIS_SYNCHRONISE = "jamais_synchronise",
   /** Déposé depuis plus du seuil sans avoir été pris en instruction : ne bouge plus. */
   BLOQUE = "bloque",
-  /** Le demandeur a cliqué « Remplir » mais n'a pas (encore) créé/finalisé son dossier côté DN. Fréquent. */
+  /** Prérempli créé, jamais transmis : invisible de l'API instructeur. Normal et fréquent (ADR-0026). */
   DOSSIER_DN_NON_CREE = "dossier_dn_non_cree",
   // --- États normaux du dossier de l'étape courante ---
   /** Dossier créé mais jamais déposé par l'usager (brouillon). */
@@ -76,9 +76,9 @@ export const DIAGNOSTIC_STATE_META: Record<
     severity: "warning",
   },
   [DiagnosticState.DOSSIER_DN_NON_CREE]: {
-    label: "Dossier DN non créé",
+    label: "Prérempli non déposé",
     description:
-      "Le demandeur a cliqué « Remplir le formulaire » mais n'a pas (encore) créé/finalisé son dossier sur Démarches Numériques (rien côté DN). Fréquent et souvent normal : récent = peut encore aboutir ; ancien = abandon à nettoyer.",
+      "Le demandeur a cliqué « Remplir le formulaire » mais n'a pas encore transmis son dossier : DN masque un prérempli non déposé à l'API instructeur, d'où l'absence de nouvelles. État NORMAL, et non la preuve d'un dossier disparu — ne jamais supprimer sur ce seul signal (ADR-0026). Récent = peut encore aboutir ; ancien = abandon probable.",
     severity: "info",
   },
   [DiagnosticState.BROUILLON]: {
@@ -125,6 +125,7 @@ export const DIAGNOSTIC_STATE_ORDER: DiagnosticState[] = [
   DiagnosticState.ORPHELIN,
   DiagnosticState.JAMAIS_SYNCHRONISE,
   DiagnosticState.BLOQUE,
+  // États normaux à partir d'ici : « Prérempli non déposé » n'est plus une anomalie (ADR-0026).
   DiagnosticState.DOSSIER_DN_NON_CREE,
   DiagnosticState.BROUILLON,
   DiagnosticState.DEPOSE_EN_ATTENTE,
