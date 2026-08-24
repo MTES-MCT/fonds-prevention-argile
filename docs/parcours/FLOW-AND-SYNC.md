@@ -346,6 +346,16 @@ Source : `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`.
 
 Note : `REFUSE` repasse en `EN_INSTRUCTION` interne (et non `VALIDE`) — c'est volontaire, un dossier refusé n'avance pas l'étape.
 
+Note : **un prérempli non déposé n'est pas une erreur de sync** ([ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md)).
+DN masque à l'API instructeur un dossier que l'usager n'a pas transmis : `getDossier` répond
+`Dossier not found`. Quand le dossier local n'a **ni `last_sync_at` ni `submitted_at`**,
+`syncDossierStatus` enregistre le verdict `not_found` dans `dn_probe_state` et retourne un
+succès (`notObserved: true`) — aucune entrée `sync_run_entries.error`, aucun rouge dans le
+diagnostic (état « Prérempli non déposé », severity `info`). L'erreur n'est conservée que pour
+un dossier **déjà observé** qui disparaît, ou pour une vraie erreur technique. La classification
+s'appuie sur `extensions.code` de la réponse GraphQL (`DsGraphQLError`), pas sur le libellé du
+message.
+
 Note : un `ds_status = null` (dossier créé non déposé) n'a pas d'entrée de mapping — `recomputeParcoursStatus` l'ignore et laisse `current_status` inchangé. `EN_CONSTRUCTION` (déposé) reste mappé en `TODO` interne : un dépôt en attente d'instruction n'avance pas encore l'étape côté parcours. Les dates `submitted_at` (passage en construction = dépôt), `instructed_at` (passage en instruction) et `processed_at` (décision DDT) sont écrites par la sync via le mapper de colonne Drizzle (`Date` typée — ne jamais interpoler un `Date` dans un `sql` brut, cela fait planter l'UPDATE). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
 
 Note : `processed_at` est la **date de décision DDT**, sourcée du champ DS `dateTraitement` (et non d'un `new Date()` au moment où la sync détecte l'état). Elle est renseignée pour **tout état final** : `ACCEPTE`, `REFUSE` et `CLASSE_SANS_SUITE` (auparavant elle n'était écrite que sur `ACCEPTE`). Comme les autres dates, elle est immuable (écrite via spread conditionnel, jamais écrasée par `null`). Côté UI, `processed_at` alimente la timeline des dossiers (`DossierTimeline`) avec le libellé « Validé le … » (accepté) ou « Refusé le … » (refusé / classé sans suite).

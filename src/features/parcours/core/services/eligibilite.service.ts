@@ -216,6 +216,7 @@ export async function createEligibiliteDossier(
       dsNumber: createResponse.dossier_number.toString(),
       dsDemarcheId: demarcheId,
       dsUrl: createResponse.dossier_url,
+      dsId: createResponse.dossier_id,
     });
 
     if (!dossierResult.success) {

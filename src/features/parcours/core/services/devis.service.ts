@@ -127,6 +127,7 @@ export async function createDevisDossier(userId: string): Promise<ActionResult<D
       dsNumber: createResponse.dossier_number.toString(),
       dsDemarcheId: demarcheId,
       dsUrl: createResponse.dossier_url,
+      dsId: createResponse.dossier_id,
     });
 
     if (!dossierResult.success) {

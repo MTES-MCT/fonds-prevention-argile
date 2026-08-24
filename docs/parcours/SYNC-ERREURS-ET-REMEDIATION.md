@@ -66,23 +66,26 @@ ds:probe-dossiers --from-sync-errors --email-crosscheck` produit ce décompte di
 
 ### Détail des états et verdicts
 
-Quand la synchro échoue (erreur **active**), le diagnostic distingue **trois états** (en
-base, sans appel DN), en s'appuyant sur le verdict DN persisté `dn_probe_state` :
+Le diagnostic distingue **trois états** (en base, sans appel DN), en s'appuyant sur le verdict
+DN persisté `dn_probe_state`. Depuis [ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md),
+seuls les deux premiers naissent d'une **erreur de sync** : un prérempli non déposé n'en produit
+plus (la sync retourne un succès `notObserved`), il est classé sur ses seules colonnes locales.
 
-| État diagnostic                                       | Condition en base                                               | Sévérité | Sens                                                                                    |
-| ----------------------------------------------------- | --------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------- |
-| **Anomalie de synchro** (`SYNC_ANOMALIE`)             | `dn_probe_state` = `unauthorized` / `api_error`                 | error    | vrai pépin technique (token, réseau) — **à investiguer**                                |
-| **Dossier déposé disparu** (`DOSSIER_DEPOSE_DISPARU`) | `last_sync_at` ET `submitted_at`, pas d'`instructed_at`         | warning  | dépôt réel confirmé puis disparu côté DN — **rare**                                     |
-| **Dossier DN non créé** (`DOSSIER_DN_NON_CREE`)       | autres cas (jamais confirmé : `not_found`, `last_sync_at` null) | info     | le demandeur a cliqué « Remplir » mais rien créé côté DN — **fréquent, souvent normal** |
+| État diagnostic                                       | Condition en base                                       | Sévérité | Sens                                                                                        |
+| ----------------------------------------------------- | ------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------- |
+| **Anomalie de synchro** (`SYNC_ANOMALIE`)             | `dn_probe_state` = `unauthorized` / `api_error`         | error    | vrai pépin technique (token, réseau) — **à investiguer**                                    |
+| **Dossier déposé disparu** (`DOSSIER_DEPOSE_DISPARU`) | `last_sync_at` ET `submitted_at`, pas d'`instructed_at` | warning  | dépôt réel confirmé puis disparu côté DN — **rare**                                         |
+| **Prérempli non déposé** (`DOSSIER_DN_NON_CREE`)      | ni `last_sync_at` ni `submitted_at`                     | info     | pas encore transmis, donc masqué par DN à l'API instructeur — **normal, le gros du volume** |
 
 > **Pourquoi `last_sync_at` et pas seulement `submitted_at` ?** `submitted_at` seul **n'est
 > pas fiable** : avant la PR #216, il était posé **à la création** du dossier (faux dépôt
 > legacy), pas au dépôt réel. Le **seul** signal d'un vrai dépôt est `last_sync_at`
 > renseigné (= une sync a confirmé le dossier côté DN). Voir §6.
 
-> **Pourquoi « non créé » est en `info` (pas en rouge) ?** C'est le **gros du volume** et
-> c'est **souvent normal** (drop-off du funnel : clic « Remplir » sans aller au bout sur DN).
-> On ne garde le rouge que pour la vraie **anomalie technique**.
+> **Pourquoi « prérempli non déposé » est en `info` (pas en rouge) ?** Parce que ce n'est pas
+> une anomalie : DN masque à l'API instructeur tout dossier non transmis, donc l'absence de
+> nouvelles est l'état **attendu** tant que l'usager n'a pas déposé. C'est aussi le gros du
+> volume (105 cas sur 116 en août 2026). Le rouge est réservé à la vraie **anomalie technique**.
 
 > **Pourquoi `last_sync_at` et pas seulement `submitted_at` ?** `submitted_at` seul **n'est
 > pas fiable** : avant la PR #216, il était posé **à la création** du dossier (faux dépôt
