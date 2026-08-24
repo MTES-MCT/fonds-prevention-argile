@@ -1,8 +1,17 @@
 # Vulnérabilités Snyk — Acceptées
 
 Date d'audit initial : mars 2026 (Snyk)
-Dernier refresh : juillet 2026 (`pnpm audit`, voir section dédiée)
+Dernier refresh : août 2026 (`pnpm audit`, voir section dédiée)
 Auditeur : Samir + Claude
+
+> **Ce document est chronologique : seule la dernière section « Refresh » fait foi.** Les
+> sections antérieures conservent l'historique des décisions à leur date et peuvent citer
+> comme « acceptée » une vulnérabilité corrigée depuis. Les entrées périmées portent un
+> encart le signalant.
+>
+> **État courant (août 2026) — une seule vulnérabilité acceptée** : `uuid` <11.1.1
+> (Moderate, transitif via `exceljs`). Tout le reste est corrigé à la source. Voir
+> [Refresh — août 2026](#refresh--août-2026-branche-chorebump-deps-securite).
 
 ## Décision
 
@@ -75,6 +84,10 @@ Toutes transitives, sans path d'exploitation directe (0 High après l'override `
 | `postcss` <8.5.10         | Moderate | build   | `@socialgouv/matomo-next > next > postcss`  | PostCSS bundlé par Next 15 ; notre `postcss` direct = 8.5.15 ; résolu par Next 16             |
 | `uuid` <11.1.1            | Moderate | runtime | `exceljs > uuid`                            | exceljs appelle `uuidv4()` sans buffer → faille non atteignable ; override v11 = major risqué |
 | `diff` (jsdiff DoS)       | Low      | devDep  | `ts-node > diff`                            | Non déployé en prod                                                                           |
+
+> **Périmé depuis le [refresh d'août 2026](#refresh--août-2026-branche-chorebump-deps-securite)** :
+> `postcss`, `protocol-buffers-schema` et `diff` ne sont plus acceptés (overrides `postcss` /
+> `protocol-buffers-schema`, retrait de `ts-node`). Seul `uuid` reste accepté.
 
 ## Refresh CVE — juin 2026 (branche `fix/cve`)
 
@@ -192,6 +205,12 @@ Server Functions, CVE libvips via `sharp`). Vérification post-fix : `pnpm valid
 | `js-yaml` (2e CVE, High)       | High     | devDep  | `eslint > @eslint/eslintrc > js-yaml`         | DoS quadratique via chaînes de clés de merge YAML — même paquet/chemin que la Moderate déjà acceptée (refresh juillet PJ). Config ESLint du repo uniquement, non déployé en prod. Résolu par ESLint 10                                                                                                          |
 | `launch-editor` (NTLMv2)       | Moderate | devDep  | `@vitejs/plugin-react > vite > launch-editor` | Divulgation de hash NTLMv2 via chemin UNC — spécifique à un poste de dev Windows ; le serveur Vite (dev/test) n'est jamais exposé. Non applicable à l'infra de déploiement (Scalingo Linux)                                                                                                                     |
 
+> **Périmé depuis le [refresh d'août 2026](#refresh--août-2026-branche-chorebump-deps-securite)** :
+> aucune ligne de ce tableau n'est encore acceptée. La justification « résolu par Next 16 »
+> du `postcss` bundlé était **erronée** — un override pnpm suffit (voir le refresh d'août).
+> `brace-expansion` (`^2.1.4`) et `js-yaml` (`^4.3.1`) sont également corrigés par override ;
+> `launch-editor` a purement disparu de l'arbre, `vite@7.3.6` ne le tirant plus.
+
 ### Reste après ce fix (`pnpm audit --prod`)
 
 3 moderate inchangées (`protocol-buffers-schema`, `postcss` XSS, `uuid`) + les 3 High
@@ -209,9 +228,14 @@ acceptés en transitif. **Ce refresh est superseded par celui de la branche
 15.5.21 initialement visé ici) corrige aussi le lot DoS/SSRF Server Actions identifié
 par cette branche, et les overrides `sharp` (`^0.35.0`) et `brace-expansion` (`^2.1.2`)
 couvrent déjà les deux CVE que cette branche listait comme acceptées — elles ne le
-sont donc plus, voir tableau « Nouvelles vulnérabilités acceptées » ci-dessus. Seul le
-`postcss` (arbitrary file read, bundlé par Next) reste accepté, pour la même raison
-dans les deux branches (non overridable sans upgrade Next 16).
+sont donc plus, voir tableau « Nouvelles vulnérabilités acceptées » ci-dessus. Restait
+alors le `postcss` (arbitrary file read, bundlé par Next), accepté au motif qu'il
+n'était « pas overridable sans upgrade Next 16 ».
+
+> **Corrigé depuis** — [refresh d'août 2026](#refresh--août-2026-branche-chorebump-deps-securite) :
+> ce motif était faux. `next` déclare `postcss` en dépendance normale (`8.4.31`), donc un
+> override pnpm s'applique sans attendre Next 16. L'override `postcss: ^8.5.26` est en place
+> et **`postcss` ne fait plus partie des vulnérabilités acceptées**, ni en prod ni en dev.
 
 ## Refresh — août 2026 (branche `chore/bump-deps-securite`)
 
