@@ -1,41 +1,46 @@
-import { pgTable, uuid, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, varchar, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { dsStatusPgEnum, stepPgEnum } from "../enums/enums";
 
 // Table des dossiers Démarches Simplifiées
-export const dossiersDemarchesSimplifiees = pgTable("dossiers_demarches_simplifiees", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  parcoursId: uuid("parcours_id")
-    .notNull()
-    .references(() => parcoursPrevention.id, { onDelete: "cascade" }),
+export const dossiersDemarchesSimplifiees = pgTable(
+  "dossiers_demarches_simplifiees",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    parcoursId: uuid("parcours_id")
+      .notNull()
+      .references(() => parcoursPrevention.id, { onDelete: "cascade" }),
 
-  step: stepPgEnum("step").notNull(),
+    step: stepPgEnum("step").notNull(),
 
-  // Références DS uniquement
-  dsNumber: varchar("ds_number", { length: 50 }).unique(), // Unique directement
-  dsId: varchar("ds_id", { length: 50 }),
-  dsDemarcheId: varchar("ds_demarche_id", { length: 50 }).notNull(),
+    // Références DS uniquement
+    dsNumber: varchar("ds_number", { length: 50 }).unique(), // Unique directement
+    dsId: varchar("ds_id", { length: 50 }),
+    dsDemarcheId: varchar("ds_demarche_id", { length: 50 }).notNull(),
 
-  dsStatus: dsStatusPgEnum("ds_status"),
+    dsStatus: dsStatusPgEnum("ds_status"),
 
-  submittedAt: timestamp("submitted_at", { mode: "date" }),
-  instructedAt: timestamp("instructed_at", { mode: "date" }),
-  processedAt: timestamp("processed_at", { mode: "date" }),
+    submittedAt: timestamp("submitted_at", { mode: "date" }),
+    instructedAt: timestamp("instructed_at", { mode: "date" }),
+    processedAt: timestamp("processed_at", { mode: "date" }),
 
-  dsUrl: varchar("ds_url", { length: 500 }),
+    dsUrl: varchar("ds_url", { length: 500 }),
 
-  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { mode: "date" })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-  lastSyncAt: timestamp("last_sync_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    lastSyncAt: timestamp("last_sync_at", { mode: "date" }),
 
-  // Verdict DN observé au dernier sondage de la sync (état réel côté DN)
-  dnProbeState: varchar("dn_probe_state", { length: 30 }),
-  dnProbeAt: timestamp("dn_probe_at", { mode: "date" }),
-});
+    // Verdict DN observé au dernier sondage de la sync (état réel côté DN)
+    dnProbeState: varchar("dn_probe_state", { length: 30 }),
+    dnProbeAt: timestamp("dn_probe_at", { mode: "date" }),
+  },
+  // Un seul pointeur par (parcours, étape) : `getDossierByStep` serait sinon indéterministe.
+  (t) => [unique("dossiers_ds_parcours_step_unique").on(t.parcoursId, t.step)]
+);
 
 // Relations : un dossier appartient à un parcours
 export const dossiersDemarchesSimplifieeesRelations = relations(dossiersDemarchesSimplifiees, ({ one }) => ({

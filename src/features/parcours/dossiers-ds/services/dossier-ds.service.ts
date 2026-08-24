@@ -1,6 +1,6 @@
 import { db } from "@/shared/database/client";
 import { dossiersDemarchesSimplifiees } from "@/shared/database/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import type { Step } from "../../core/domain/value-objects/step";
 import { DSStatus } from "../domain/value-objects/ds-status";
 import type { ActionResult } from "@/shared/types";
@@ -14,6 +14,8 @@ interface CreateDossierDSParams {
   dsNumber: string;
   dsDemarcheId: string;
   dsUrl?: string;
+  /** Identifiant GraphQL du dossier renvoyé par l'API de préremplissage (ADR-0026). */
+  dsId?: string;
 }
 
 /**
@@ -34,6 +36,7 @@ export async function createDossierForCurrentStep(
         dsNumber: params.dsNumber,
         dsDemarcheId: params.dsDemarcheId,
         dsUrl: params.dsUrl,
+        dsId: params.dsId,
       })
       .returning();
 
@@ -74,10 +77,13 @@ export async function recordDnProbeState(dossierId: string, state: string): Prom
  * Récupère un dossier DS par étape
  */
 export async function getDossierByStep(parcoursId: string, step: Step) {
+  // `ORDER BY` explicite : la contrainte unique (parcours_id, step) rend le doublon impossible,
+  // mais un LIMIT 1 sans ordre resterait indéterministe si elle venait à sauter.
   const [dossier] = await db
     .select()
     .from(dossiersDemarchesSimplifiees)
     .where(and(eq(dossiersDemarchesSimplifiees.parcoursId, parcoursId), eq(dossiersDemarchesSimplifiees.step, step)))
+    .orderBy(desc(dossiersDemarchesSimplifiees.createdAt))
     .limit(1);
 
   return dossier || null;
