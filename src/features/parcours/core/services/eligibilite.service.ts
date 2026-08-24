@@ -9,8 +9,11 @@ import { createDossierForCurrentStep, getDossierByStep } from "../../dossiers-ds
 import { parcoursRepo, userRepo } from "@/shared/database";
 import { DS_FIELDS_ELIGIBILITE } from "../../dossiers-ds/domain";
 import { DS_FIELD_IDS, DS_OPTIONS_MANDATAIRE } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
+import { getAnnotationLienFpaEligibilite } from "../../dossiers-ds/domain/value-objects/ds-annotations";
 import { createDebugLogger } from "@/shared/utils";
 import { PartialRGASimulationData } from "@/features/simulateur";
+import { getServerEnv } from "@/shared/config/env.config";
+import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 
 const debug = createDebugLogger("ELIGIBILITE");
 
@@ -162,6 +165,14 @@ export async function createEligibiliteDossier(
     const user = await userRepo.findById(userId);
     if (user?.telephone) {
       prefillData[`champ_Q2hhbXAtNTQyMjQ0MA==`] = user.telephone;
+    }
+
+    // Annotation privée : lien back-office FPA, pour que la DDT accède au suivi
+    // (actions, commentaires, simulation) depuis le dossier DN.
+    const annotationLienFpa = getAnnotationLienFpaEligibilite(Number(prefillClient.getDemarcheId(Step.ELIGIBILITE)));
+    if (annotationLienFpa) {
+      prefillData[`champ_${annotationLienFpa}`] =
+        `${getServerEnv().BASE_URL}${ROUTES.backoffice.espaceAgent.dossier(parcoursData.parcours.id)}`;
     }
 
     // Logger tous les champs mappés
