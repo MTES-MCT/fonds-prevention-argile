@@ -9,12 +9,17 @@ Tous les scripts : **dry-run par défaut**, `--apply` pour écrire, `--anonymize
 les PII. Ils chargent l'env via `../lib/db` (dotenv) ; ceux qui appellent DN importent
 `graphqlClient` **après** pour garantir l'ordre de chargement.
 
-| Script                              | Alias                             | Rôle                                                         |
-| ----------------------------------- | --------------------------------- | ------------------------------------------------------------ |
-| `probe-dossiers.ts`                 | `pnpm ds:probe-dossiers`          | Sonde DN **lecture seule** (verdicts + cross-check email)    |
-| `reset-eligibilite-sync-error.ts`   | `pnpm fix:eligibilite-sync-error` | **Reset** des dossiers confirmés disparus côté DN (drop-off) |
-| `relink-eligibilite-dossier.ts`     | `pnpm fix:relink-eligibilite`     | **Relink** d'un mismatch (dossier réel sous un autre numéro) |
-| `clean-faux-depots-submitted-at.ts` | `pnpm fix:clean-faux-depots`      | Nettoyage des faux `submitted_at` legacy (pré-#216)          |
+| Script                              | Alias                             | Rôle                                                            |
+| ----------------------------------- | --------------------------------- | --------------------------------------------------------------- |
+| `probe-dossiers.ts`                 | `pnpm ds:probe-dossiers`          | Sonde DN **lecture seule** (verdicts + cross-check email)       |
+| `reset-eligibilite-sync-error.ts`   | `pnpm fix:eligibilite-sync-error` | **GELÉ** (`--apply` refusé, ADR-0026) — dry-run diagnostic seul |
+| `relink-eligibilite-dossier.ts`     | `pnpm fix:relink-eligibilite`     | **Relink** d'un mismatch (dossier réel sous un autre numéro)    |
+| `clean-faux-depots-submitted-at.ts` | `pnpm fix:clean-faux-depots`      | Nettoyage des faux `submitted_at` legacy (pré-#216)             |
 
-Ordre recommandé : **probe** → resync (UI) → **relink** → **reset** → **clean**. Détails et
-cas résolus : voir le playbook (§4 de la doc).
+Ordre recommandé : **probe** → resync (UI) → **relink** → **clean**. Détails et cas résolus :
+voir le playbook (§4 de la doc).
+
+> Le **reset est gelé** ([ADR-0026](../../../docs/adr/0026-gel-reset-eligibilite-not-found.md)) :
+> un prérempli non déposé est invisible de l'API instructeur et répond `Dossier not found`
+> comme un dossier purgé, donc le verdict GONE ne prouve rien. Supprimer la ligne orpheline
+> le dossier que l'usager déposera plus tard. Réparer par **relink**, jamais par suppression.
