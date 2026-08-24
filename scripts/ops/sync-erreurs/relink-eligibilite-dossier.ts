@@ -36,7 +36,7 @@ import { createRedactor } from "../lib/anonymize";
 import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
-import { getArg, hasFlag } from "../lib/args";
+import { getArg, getNumberArg, hasFlag } from "../lib/args";
 import { sleep, norm, getErrorByParcours, isNotFound, buildEmailIndex } from "./_shared";
 
 const APPLY = hasFlag("apply");
@@ -44,7 +44,7 @@ const ANONYMIZE = hasFlag("anonymize");
 const FROM_SYNC_ERRORS = hasFlag("from-sync-errors");
 const PARCOURS_ID = getArg("parcours-id");
 const TO_DS_NUMBER = getArg("to-ds-number");
-const SLEEP_MS = Number(getArg("sleep") ?? "200");
+const SLEEP_MS = getNumberArg("sleep", 200);
 
 const { redactUuid, redactEmail } = createRedactor(ANONYMIZE);
 const { db, client } = createOpsDb();

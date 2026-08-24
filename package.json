@@ -1,6 +1,6 @@
 {
   "name": "fonds-prevention-argile",
-  "version": "1.47.2",
+  "version": "1.48.0",
   "private": true,
   "packageManager": "pnpm@11.10.0",
   "engines": {
@@ -54,6 +54,7 @@
     "fix:relink-eligibilite": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/relink-eligibilite-dossier.ts",
     "fix:reclasser-source-autre": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reclasser-source-autre.ts",
     "fix:purge-comptes-test-fc": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/purge-comptes-test-fc.ts",
+    "fix:backfill-brevo": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/backfill-brevo-attributes.ts",
     "rga:import": "tsx scripts/import/rga-zones/import-rga-zones.ts"
   },
   "dependencies": {

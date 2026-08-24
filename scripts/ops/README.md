@@ -47,6 +47,7 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 | [`reouvrir-demande.ts`](#reouvrir-demande)                       | **écrit** | Ré-ouvre une demande refusée par l'AMO (changement d'avis) : statut refusé -> en_attente + token frais (+ email)                | `pnpm fix:reouvrir-demande`                            |
 | [`detacher-amo.ts`](#detacher-amo)                               | **écrit** | Détache l'AMO d'un parcours (passage en « sans AMO ») : AMO choisi avant l'arrêté, le demandeur veut continuer seul             | `pnpm fix:detacher-amo`                                |
 | [`purge-comptes-test-fc.ts`](#purge-comptes-test-fc)             | **écrit** | Supprime (cascade) les comptes demandeurs de test FranceConnect du CSV mocké FC low — staging/local uniquement, refus en prod   | `pnpm fix:purge-comptes-test-fc`                       |
+| [`backfill-brevo-attributes.ts`](#backfill-brevo-attributes)     | **écrit** | Recalcule et pousse (upsert, sans rejouer les évènements) l'état complet des attributs Brevo pour tous les contacts             | `pnpm fix:backfill-brevo`                              |
 | [`debug-matomo-events.ts`](#debug-matomo-events)                 | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur)                                                                 | `tsx scripts/ops/debug/debug-matomo-events.ts`         |
 | [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Dump les champs + annotations d'une démarche DS avec leurs IDs (alimente `ds-field-ids.ts`)                                     | `pnpm ds:fetch-schema <numero>`                        |
 | [`check-ds-permissions.ts`](#check-ds-permissions)               | read-only | Vérifie que le token GraphQL a accès à chaque démarche configurée (sinon synchro KO)                                            | `pnpm ds:check-permissions`                            |
@@ -228,6 +229,34 @@ pnpm fix:purge-comptes-test-fc --no-anonymize           # emails/noms en clair
 
 **Prérequis** : `.env.local` avec `DATABASE_URL` + `NEXT_PUBLIC_APP_ENV` ; accès réseau à
 raw.githubusercontent.com pour le CSV.
+
+### backfill-brevo-attributes
+
+Recalcule et pousse (upsert de contact, **jamais** de `trackEvent` — les évènements
+historiques ne sont pas rejoués) l'état courant complet des attributs Brevo pour tous les
+parcours. Contexte : les attributs ne sont poussés qu'au moment d'un évènement métier, donc
+un contact créé avant l'ajout d'un attribut au contrat (ex. `CONSEILLER_*`, `ADMIN_URL`)
+reste figé sur les anciennes données, ce qui fait planter les Automations qui comptent
+dessus (cf. [docs/emails/BREVO-LIFECYCLE.md](../../docs/emails/BREVO-LIFECYCLE.md)).
+
+Réutilise les mêmes fonctions que les hooks live (`buildContactAttributes`,
+`buildConseillerAttributes`) pour les attributs génériques, et redérive depuis la vérité DB
+actuelle les attributs d'état normalement posés par les hooks événementiels (`A_AMO` /
+`AMO_STATUT` / `EST_MANDATAIRE` depuis `parcours_amo_validations.statut`, `DS_STATUT` depuis
+le dossier DS de l'étape courante, `CREE_PAR_CONSEILLER` depuis `created_by_agent_id`). No-op
+propre si la synchro Brevo est désactivée. Dry-run par défaut.
+
+```bash
+pnpm fix:backfill-brevo                          # dry-run, tous les parcours
+pnpm fix:backfill-brevo --apply
+pnpm fix:backfill-brevo --parcours-id=<uuid> --apply
+pnpm fix:backfill-brevo --sleep=300              # ralentit (défaut 150ms entre upserts)
+pnpm fix:backfill-brevo --no-anonymize           # emails en clair
+```
+
+**Prérequis** : `.env.local` complet (`DATABASE_URL` + `BREVO_API_KEY` +
+`BREVO_CONTACT_LIST_ID` + reste de la config serveur, lue via `getServerEnv()` par
+`resolveAdminUrl`).
 
 ### debug-matomo-events
 

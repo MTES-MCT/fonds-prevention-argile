@@ -32,13 +32,13 @@ import { createRedactor } from "../lib/anonymize";
 import { STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { classifyDossierAnomaly } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-anomaly";
-import { getArg, hasFlag } from "../lib/args";
+import { getArg, getNumberArg, hasFlag } from "../lib/args";
 
 // --- Args ---
 const CHECK_DS = hasFlag("check-ds");
 const CSV_PATH = getArg("csv");
 const ANONYMIZE = hasFlag("anonymize");
-const OLDER_THAN_DAYS = getArg("older-than") ? Number(getArg("older-than")) : 0;
+const OLDER_THAN_DAYS = getNumberArg("older-than", 0);
 
 // Statuts audités : les deux par défaut, restreignables via --only=
 const ONLY = getArg("only");
