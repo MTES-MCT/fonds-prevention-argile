@@ -1,4 +1,4 @@
-import { graphqlClient } from "../adapters/graphql/client";
+import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import { getDossierByStep, updateDossierStatus, recordDnProbeState } from "./dossier-ds.service";
 import type { Step } from "../../core/domain/value-objects/step";
 import { DS_TO_INTERNAL_STATUS, DSStatus } from "../domain/value-objects/ds-status";
@@ -20,6 +20,16 @@ interface SyncResult {
   updated: boolean;
   oldStatus?: DSStatus;
   newStatus?: DSStatus;
+  /** Prérempli encore invisible de l'API instructeur : état normal, pas une erreur (ADR-0026). */
+  notObserved?: boolean;
+}
+
+/**
+ * Un dossier jamais confirmé côté DN (aucune sync réussie, aucun dépôt) est un prérempli que
+ * l'usager n'a pas encore transmis : DN le masque à l'API instructeur, d'où le « not found ».
+ */
+function isPrefillNonObserve(dossier: { lastSyncAt: Date | null; submittedAt: Date | null }): boolean {
+  return !dossier.lastSyncAt && !dossier.submittedAt;
 }
 
 /**
@@ -45,8 +55,15 @@ export async function syncDossierStatus(
     dsResult = await graphqlClient.getDossierStatus(Number(dsNumber));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    const code = error instanceof DsGraphQLError ? error.code : undefined;
+    const probeState = probeStateFromError(message, code);
     // Trace le verdict DN même en erreur (pour le diagnostic en lecture DB).
-    await recordDnProbeState(localDossier.id, probeStateFromError(message));
+    await recordDnProbeState(localDossier.id, probeState);
+
+    if (probeState === "not_found" && isPrefillNonObserve(localDossier)) {
+      return { success: true, data: { updated: false, notObserved: true } };
+    }
+
     console.error(`Erreur syncDossierStatus (step=${step}, dsNumber=${dsNumber}):`, error);
     return {
       success: false,
@@ -56,9 +73,14 @@ export async function syncDossierStatus(
 
   if (!dsResult) {
     await recordDnProbeState(localDossier.id, "not_found");
+
+    if (isPrefillNonObserve(localDossier)) {
+      return { success: true, data: { updated: false, notObserved: true } };
+    }
+
     return {
       success: false,
-      error: `Dossier ${dsNumber} introuvable côté DS (numéro inexistant ou brouillon non déposé)`,
+      error: `Dossier ${dsNumber} introuvable côté DS (déposé puis disparu côté DN)`,
     };
   }
 
@@ -114,8 +136,11 @@ export async function syncDossierStatus(
   };
 }
 
-/** Normalise un message d'erreur DN en verdict de sondage. */
-function probeStateFromError(message: string): string {
+/** Normalise une erreur DN en verdict de sondage : `extensions.code` d'abord, message en repli. */
+function probeStateFromError(message: string, code?: string): string {
+  if (code === "not_found") return "not_found";
+  if (code === "unauthorized") return "unauthorized";
+
   const m = message.toLowerCase();
   if (m.includes("not found") || m.includes("not_found")) return "not_found";
   if (m.includes("unauthorized")) return "unauthorized";

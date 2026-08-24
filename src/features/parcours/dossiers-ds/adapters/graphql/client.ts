@@ -8,6 +8,20 @@ import type {
   DossiersFilters,
 } from "./types";
 
+/**
+ * Erreur GraphQL DN portant son `extensions.code` (ex. `not_found`), pour classer sans
+ * dépendre du libellé du message — cf. ADR-0026.
+ */
+export class DsGraphQLError extends Error {
+  readonly code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "DsGraphQLError";
+    this.code = code;
+  }
+}
+
 export class DemarchesSimplifieesClient {
   private apiUrl: string;
   private apiKey: string;
@@ -49,8 +63,9 @@ export class DemarchesSimplifieesClient {
 
       if (result.errors?.length) {
         const errorMessages = result.errors.map((e) => e.message).join(", ");
+        const code = result.errors[0]?.extensions?.code;
         console.error("GraphQL errors:", result.errors);
-        throw new Error(`GraphQL errors: ${errorMessages}`);
+        throw new DsGraphQLError(`GraphQL errors: ${errorMessages}`, typeof code === "string" ? code : undefined);
       }
 
       if (!result.data) {
@@ -295,8 +310,9 @@ export class DemarchesSimplifieesClient {
     `;
 
     // On ne capture PAS l'erreur ici : une erreur API (unauthorized, réseau...) doit
-    // remonter pour être tracée. `data.dossier` vaut null uniquement quand le dossier
-    // est réellement introuvable (réponse DS sans erreur).
+    // remonter pour être tracée. `null` (comme `not_found`) signifie « invisible de l'API
+    // instructeur » — un prérempli non déposé en fait partie, ce n'est pas une preuve de
+    // suppression (ADR-0026).
     const data = await this.executeQuery<{ dossier: Dossier }>(query, {
       number: dossierNumber,
     });

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { syncDossierStatus } from "./ds-sync.service";
 import { getDossierByStep, updateDossierStatus, recordDnProbeState } from "./dossier-ds.service";
-import { graphqlClient } from "../adapters/graphql/client";
+import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
@@ -12,11 +12,17 @@ vi.mock("./dossier-ds.service", () => ({
   recordDnProbeState: vi.fn(),
 }));
 
-vi.mock("../adapters/graphql/client", () => ({
-  graphqlClient: {
-    getDossierStatus: vi.fn(),
-  },
-}));
+vi.mock("../adapters/graphql/client", () => {
+  class DsGraphQLError extends Error {
+    readonly code?: string;
+    constructor(message: string, code?: string) {
+      super(message);
+      this.name = "DsGraphQLError";
+      this.code = code;
+    }
+  }
+  return { graphqlClient: { getDossierStatus: vi.fn() }, DsGraphQLError };
+});
 
 // La barrière @/shared/email/brevo réimportée via importOriginal ci-dessous tire tout son
 // graphe de dépendances réel (contact-mapping -> admin-url-resolver, conseiller-mapping ->
@@ -137,5 +143,63 @@ describe("syncDossierStatus — évènement Brevo dn_update", () => {
     await syncDossierStatus("p1", Step.ELIGIBILITE, "456");
 
     expect(mockedEmit).not.toHaveBeenCalled();
+  });
+});
+
+// Cf. ADR-0026 : DN masque un prérempli non transmis à l'API instructeur, qui répond
+// « not found » comme pour un dossier purgé. Un tel dossier ne doit plus être compté en erreur.
+describe("syncDossierStatus — prérempli non déposé (ADR-0026)", () => {
+  const prefillNonObserve = { id: "d1", dsStatus: null, lastSyncAt: null, submittedAt: null };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedUpdateDossierStatus.mockResolvedValue({ success: true, data: { updated: true } });
+    mockedRecordDnProbeState.mockResolvedValue(undefined);
+  });
+
+  it("ne signale pas d'erreur quand DN répond not_found sur un dossier jamais observé", async () => {
+    mockedGetDossierByStep.mockResolvedValue(prefillNonObserve as never);
+    mockedGetDossierStatus.mockRejectedValue(new DsGraphQLError("GraphQL errors: Dossier not found", "not_found"));
+
+    const result = await syncDossierStatus("p1", Step.ELIGIBILITE, "123");
+
+    if (!result.success) throw new Error(`attendu en succès, reçu : ${result.error}`);
+    expect(result.data.notObserved).toBe(true);
+    expect(mockedRecordDnProbeState).toHaveBeenCalledWith("d1", "not_found");
+  });
+
+  it("traite le null de DN comme un prérempli non déposé, pas comme une disparition", async () => {
+    mockedGetDossierByStep.mockResolvedValue(prefillNonObserve as never);
+    mockedGetDossierStatus.mockResolvedValue(null);
+
+    const result = await syncDossierStatus("p1", Step.ELIGIBILITE, "123");
+
+    if (!result.success) throw new Error(`attendu en succès, reçu : ${result.error}`);
+    expect(result.data.notObserved).toBe(true);
+  });
+
+  it("signale bien une erreur quand un dossier DÉJÀ observé disparaît", async () => {
+    mockedGetDossierByStep.mockResolvedValue({
+      id: "d2",
+      dsStatus: DSStatus.EN_CONSTRUCTION,
+      lastSyncAt: new Date("2026-07-01T00:00:00Z"),
+      submittedAt: new Date("2026-07-01T00:00:00Z"),
+    } as never);
+    mockedGetDossierStatus.mockRejectedValue(new DsGraphQLError("GraphQL errors: Dossier not found", "not_found"));
+
+    const result = await syncDossierStatus("p1", Step.ELIGIBILITE, "456");
+
+    if (result.success) throw new Error("attendu en échec : un dossier déjà observé qui disparaît");
+    expect(result.error).toContain("456");
+  });
+
+  it("classe sur extensions.code, sans dépendre du libellé du message", async () => {
+    mockedGetDossierByStep.mockResolvedValue(prefillNonObserve as never);
+    mockedGetDossierStatus.mockRejectedValue(new DsGraphQLError("GraphQL errors: accès refusé", "unauthorized"));
+
+    const result = await syncDossierStatus("p1", Step.ELIGIBILITE, "789");
+
+    expect(mockedRecordDnProbeState).toHaveBeenCalledWith("d1", "unauthorized");
+    expect(result.success).toBe(false);
   });
 });
