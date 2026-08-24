@@ -169,7 +169,31 @@ opt-out et lien de désinscription requis avant toute Automation d'envoi en prod
 
 ---
 
-## 8. Fichiers clés
+## 8. Backfill des contacts existants (script ops)
+
+Les attributs ne sont poussés qu'au moment d'un **évènement** (§2). Un contact dont le dernier
+évènement est antérieur à l'ajout d'un attribut au contrat (§3) reste donc figé sur les anciennes
+données — ex. `CONSEILLER_*` ou `ADMIN_URL` absents chez un demandeur inscrit avant leur mise en
+place, ce qui fait planter les Automations qui comptent dessus.
+
+`pnpm fix:backfill-brevo` recalcule et **upsert** l'état courant complet de chaque contact, sans
+jamais rejouer `trackEvent` (aucun évènement historique n'est re-tiré, donc aucune Automation
+n'est déclenchée). Il réutilise `buildContactAttributes` / `buildConseillerAttributes` — les mêmes
+fonctions que les hooks live — et redérive depuis la base les attributs d'état normalement posés
+par les hooks événementiels : `A_AMO` / `AMO_STATUT` / `EST_MANDATAIRE` (depuis
+`parcours_amo_validations.statut`), `DS_STATUT` (dossier DS de l'étape courante) et
+`CREE_PAR_CONSEILLER` (`parcours.created_by_agent_id`).
+
+Dry-run par défaut ; voir [`scripts/ops/README.md`](../../scripts/ops/README.md#backfill-brevo-attributes)
+pour les options (`--apply`, `--parcours-id`, `--sleep`, `--no-anonymize`) et les prérequis.
+
+> `DS_STATUT` suit la même convention que le hook `dn_update` : il reflète le dossier de l'**étape
+> courante** et vaut `""` si ce dossier n'est pas encore déposé — un contact revenu à une étape non
+> déposée voit donc son `DS_STATUT` remis à vide, exactement comme en flux live (§2).
+
+---
+
+## 9. Fichiers clés
 
 | Rôle                                                                | Fichier                                                                                      |
 | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
@@ -180,3 +204,4 @@ opt-out et lien de désinscription requis avant toute Automation d'envoi en prod
 | Point d'entrée `emitBrevoEvent`                                     | `src/shared/email/brevo/brevo-contacts.service.ts`                                           |
 | Dossier créé par un conseiller (hook `dossier_cree_par_conseiller`) | `src/features/backoffice/espace-agent/creation-dossier/services/creation-dossier.service.ts` |
 | Compte créé / rattachement stub (`isNewAccount`)                    | `src/shared/database/repositories/user.repository.ts` (`upsertFromFranceConnect`)            |
+| Backfill des attributs (sans rejeu d'évènements)                    | `scripts/ops/fix/backfill-brevo-attributes.ts` (`pnpm fix:backfill-brevo`)                   |
