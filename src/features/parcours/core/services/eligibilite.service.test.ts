@@ -93,42 +93,35 @@ describe("createEligibiliteDossier — prefill AMO", () => {
     vi.clearAllMocks();
   });
 
-  it("mappe l'AMO sur les vrais IDs de champs DN (siret, email, adresse, téléphone)", async () => {
+  it("mappe le SIRET de l'AMO sur son ID de champ DN", async () => {
     const payload = await runWithAmo({});
 
     expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.SIRET_AMO}`]).toBe(AMO.siret);
-    // Premier email uniquement (la liste est séparée par ";")
-    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.EMAIL_AMO}`]).toBe("contact@amo.fr");
-    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.ADRESSE_AMO}`]).toBe(AMO.adresse);
-    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`]).toBe(AMO.telephone);
   });
 
-  it("n'utilise plus de clés inventées et n'écrit l'adresse qu'une seule fois", async () => {
+  // Adresse, email et téléphone ont été retirés du formulaire DN : les préremplir
+  // n'avait plus aucun effet, DN ignorant silencieusement un champ_ inconnu (ADR-0025).
+  it("n'envoie plus l'adresse, l'email ni le téléphone de l'AMO", async () => {
+    const payload = await runWithAmo({});
+
+    const valeurs = Object.values(payload).map(String);
+    expect(valeurs).not.toContain(AMO.adresse);
+    expect(valeurs).not.toContain(AMO.telephone);
+    expect(valeurs.some((v) => v.includes("@amo.fr"))).toBe(false);
+  });
+
+  it("n'utilise plus de clés inventées", async () => {
     const payload = await runWithAmo({});
 
     expect(payload).not.toHaveProperty("champ_amo_email");
     expect(payload).not.toHaveProperty("champ_amo_telephone");
     expect(payload).not.toHaveProperty("champ_amo_adresse");
-    // Une seule clé porte l'adresse de l'AMO
-    const adresseKeys = Object.entries(payload).filter(([, v]) => v === AMO.adresse);
-    expect(adresseKeys).toHaveLength(1);
-  });
-
-  it("omet téléphone et adresse quand ils sont absents", async () => {
-    const payload = await runWithAmo({ telephone: "", adresse: "" });
-
-    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.EMAIL_AMO}`]).toBe("contact@amo.fr");
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`);
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.ADRESSE_AMO}`);
   });
 
   it("n'ajoute aucun champ AMO en mode « je gère seul » (pas d'AMO)", async () => {
     const payload = await runWithAmo(null);
 
     expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.SIRET_AMO}`);
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.EMAIL_AMO}`);
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.ADRESSE_AMO}`);
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`);
   });
 
   it("préremplit « Mandataire administratif et financier » quand l'AMO s'est déclarée mandataire financier", async () => {

@@ -221,6 +221,11 @@ qu'on croit remplie. Relever un id avec `pnpm ds:fetch-schema <numero>`.
 > démarche visée. Les champs publics d'éligibilité sont, eux, identiques prod/préprod
 > (hérités du clone) — `DS_FIELD_IDS` reste valide pour eux.
 
+> Même piège dans l'autre sens : adresse, email et téléphone de l'AMO ont été **retirés
+> du formulaire DN** sans que le préremplissage cesse de les envoyer — trois écritures
+> mortes pendant des mois, sans erreur. Supprimées (ADR-0025) ; seul le SIRET subsiste
+> dans la section AMO.
+
 **Le lien écrit est un permalien parcours.** Les trois services écrivent
 `${BASE_URL}/espace-agent/dossiers/<parcoursId>`, alors que la route résout normalement un
 `parcours_amo_validations.id`. C'est intentionnel : le parcours id est le seul identifiant

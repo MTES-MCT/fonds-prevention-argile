@@ -93,10 +93,24 @@ sur le modèle de `pieces-justificatives.service.ts` (avec `unstable_cache`).
 
 ## Conséquences
 
+### Nettoyage associé — trois préremplissages AMO morts
+
+Le sondage des schémas a révélé un cas déjà silencieux du même phénomène : `ADRESSE_AMO`
+(`…NTQxOTQzMg==`), `EMAIL_AMO` (`…NTQxOTQ2Mg==`) et `TELEPHONE_AMO` (`…NTQxOTQ2NA==`)
+**n'existent dans aucune des deux démarches** — la section « Identification de l'AMO » ne
+contient plus que le SIRET. `createEligibiliteDossier` les écrivait pourtant à chaque
+création, sans effet et sans erreur, entretenant l'illusion que les coordonnées de l'AMO
+parvenaient à l'instructeur. Les trois écritures et leurs constantes sont supprimées.
+
+`ds-fields-eligibilite.ts` conserve ses descripteurs : ce catalogue ne sert qu'à libeller
+les logs de debug et n'intervient pas dans le préremplissage.
+
 ### Positives
 
 - La DDT accède au suivi FPA (actions, commentaires, simulation) depuis le dossier DN,
   sur les trois démarches.
+- Le préremplissage d'éligibilité ne contient plus de champ mort : ce qu'il écrit
+  correspond à ce que l'instructeur voit.
 - Les liens FPA déjà écrits dans DN sur diagnostic et devis cessent de renvoyer un 404,
   sans rien réécrire côté DN (ce qui est de toute façon impossible par API).
 - Une démarche non répertoriée est signalée dans les logs au lieu d'échouer en silence.

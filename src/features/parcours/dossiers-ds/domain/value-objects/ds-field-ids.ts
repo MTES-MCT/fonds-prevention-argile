@@ -8,10 +8,9 @@ export const DS_FIELD_IDS = {
     // DS_OPTIONS_MANDATAIRE) : un AMO accompagnant est de facto mandataire administratif,
     // le volet financier suit la déclaration explicite de l'AMO (est_mandataire_financier).
     MANDATAIRE_FINANCIER: "Q2hhbXAtNjQ3MDQ5Nw==",
+    // Seul champ AMO restant dans la démarche : adresse, email et téléphone de l'AMO ont
+    // été retirés du formulaire DN, leurs ids ne correspondent plus à rien (ADR-0025).
     SIRET_AMO: "Q2hhbXAtNTQxOTQyOQ==",
-    ADRESSE_AMO: "Q2hhbXAtNTQxOTQzMg==",
-    EMAIL_AMO: "Q2hhbXAtNTQxOTQ2Mg==",
-    TELEPHONE_AMO: "Q2hhbXAtNTQxOTQ2NA==",
     ADRESSE_MAISON_TEXTE: "Q2hhbXAtNTYzNjA2NA==",
     COMMUNE: "Q2hhbXAtNTY0ODQ3NA==",
     ANNEE_CONSTRUCTION: "Q2hhbXAtNTU0MjU2OA==",

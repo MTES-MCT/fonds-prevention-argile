@@ -135,16 +135,10 @@ export async function createEligibiliteDossier(
     debug.log("Mapping RGA → DS...");
     const prefillData = mapRGAToDSFormat(rgaData);
 
-    // Ajouter les informations de l'AMO au prefill uniquement si une AMO est sélectionnée
+    // Le SIRET est le seul champ AMO encore présent dans la démarche : adresse, email et
+    // téléphone en ont été retirés côté DN, leur préremplissage était mort (cf. ADR-0025).
     if (amo) {
       prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.SIRET_AMO}`] = amo.siret;
-      prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.EMAIL_AMO}`] = amo.emails.split(";")[0].trim();
-      if (amo.adresse) {
-        prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.ADRESSE_AMO}`] = amo.adresse;
-      }
-      if (amo.telephone) {
-        prefillData[`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`] = amo.telephone;
-      }
     }
 
     // Question mandataire toujours préremplie (3 choix) : un AMO qui accompagne le
