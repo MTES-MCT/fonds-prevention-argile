@@ -546,7 +546,6 @@ C'est la mesure la plus défensive du projet. Concrètement :
 
 | Package         | Pourquoi                                                                                          |
 | --------------- | ------------------------------------------------------------------------------------------------- |
-| `argon2`        | Hashing de mot de passe (auth ProConnect). Postinstall `node-gyp-build` qui résout des prebuilts. |
 | `esbuild`       | Bundler de Vitest et Next. Postinstall qui télécharge le binaire Go pour la plateforme courante.  |
 | `sharp`         | Traitement d'images (génération d'images OG, vignettes). Postinstall qui résout des bindings C++. |
 | `unrs-resolver` | Resolver transitif (stack Next/Oxc). Postinstall qui sélectionne le bon binaire natif Rust.       |

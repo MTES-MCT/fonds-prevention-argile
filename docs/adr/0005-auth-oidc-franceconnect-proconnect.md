@@ -37,7 +37,7 @@ Nous utilisons deux fournisseurs OIDC selon la population, et une **gestion de s
 ### Option C — Mots de passe locaux pour les agents
 
 - Avantages : simple, pas de dépendance OIDC pour les agents.
-- Inconvénients : gestion de secrets, hash, reset, sécurité à notre charge ; non aligné avec ProConnect. (argon2 ne subsiste que comme fallback legacy/test.)
+- Inconvénients : gestion de secrets, hash, reset, sécurité à notre charge ; non aligné avec ProConnect. (La dépendance `argon2` a depuis été retirée, faute d'usage applicatif.)
 
 ## Conséquences
 

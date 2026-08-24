@@ -31,7 +31,7 @@ trustPolicy: no-downgrade
 overrides:
   # Force vite patché pour CVE path traversal / fs.deny bypass
   # (transitif via vitest + @vitejs/plugin-react)
-  vite: "^7.3.2"
+  vite: "^7.3.6"
   # CVE path traversal arbitrary file write (transitif via vite)
   rollup: "^4.59.0"
   # ReDoS (transitif via eslint, drizzle-kit, etc.)
@@ -40,27 +40,33 @@ overrides:
   flatted: "^3.4.2"
   # ReDoS / method injection (transitif via eslint-config-next et vite)
   picomatch: "^4.0.4"
-  # Zero-step sequence ReDoS + DoS exponentielle (transitif via minimatch,
-  # exceljs>archiver côté prod). Le 2e CVE (expansion non bornée, fix en 5.0.8)
-  # reste accepté : bloqué par minimumReleaseAge jusqu'au 2026-07-30, voir
-  # docs/security/snyk-accepted-vulnerabilities.md
-  brace-expansion: "^2.1.2"
-  # Prototype pollution via merge (transitif via eslint)
-  js-yaml: "^4.1.1"
+  # Zero-step sequence ReDoS + DoS exponentielle non bornée (transitif via
+  # minimatch, exceljs>archiver côté prod). 2.1.4 reste sur la ligne 2.x : la 5.x
+  # est un major, inutile ici puisque le correctif est backporté.
+  brace-expansion: "^2.1.4"
+  # Prototype pollution via merge + DoS quadratique sur clés de merge
+  # (transitif via eslint)
+  js-yaml: "^4.3.1"
   # ReDoS $data (transitif via eslint)
   ajv: "^6.14.0"
-  # Arbitrary requests via dev server (transitif via drizzle-kit)
-  # NB: CVE Deno binary-integrity (<0.28.1) non-exploitable en Node ; bump vers ^0.28.1
-  # bloqué par minimumReleaseAge (0.28.1 publié le 2026-06-11) jusqu'au 2026-06-18.
-  esbuild: "^0.25.0"
+  # Arbitrary requests via dev server + binary-integrity (transitif via drizzle-kit, tsx)
+  esbuild: "^0.28.2"
   # Path traversal via prefix/postfix non assainis (transitif via exceljs)
   tmp: "^0.2.6"
   # CRLF injection, origin validation error, DoS WebSocket, TLS bypass SOCKS5
   # (transitif via jsdom -> vitest, devDep test uniquement)
-  undici: "^7.28.0"
+  undici: "^7.29.0"
   # CVE libvips (CVE-2026-33327/33328/35590/35591) — transitif via next (image
   # optimization), non exploitable sans input attaquant mais patché à la source
   sharp: "^0.35.0"
+  # next épingle postcss@8.4.31 : lecture de fichier arbitraire via sourceMappingURL,
+  # XSS </style> et 2 autres CVE, dont 2 High, en dépendance de PRODUCTION.
+  # L'override aligne le postcss bundlé sur notre dep directe (même majeur 8.x).
+  postcss: "^8.5.26"
+  # DoS via ID non cryptographiquement sûr (transitif via postcss)
+  nanoid: "^3.3.18"
+  # Parsing de schéma protobuf non borné (transitif via maplibre-gl)
+  protocol-buffers-schema: "^3.6.1"
 
 trustPolicyExclude:
   # Types-only, runtime-safe. Voir https://github.com/nodejs/undici/issues/4666
@@ -76,7 +82,6 @@ trustPolicyExclude:
 # Approbation explicite des scripts d'install natif (pnpm 11+).
 # Note : remplace `onlyBuiltDependencies` (ancien mécanisme pnpm 9-10, ignoré en 11).
 allowBuilds:
-  argon2: true
   esbuild: true
   sharp: true
   unrs-resolver: true

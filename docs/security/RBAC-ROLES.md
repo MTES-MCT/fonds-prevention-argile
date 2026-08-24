@@ -22,7 +22,8 @@ Le `middleware.ts` aiguille selon la route demandée : `/mon-compte`,
 choses** : `checkProConnectAccess()` (bonne méthode d'auth) **et** le rôle.
 
 > `AUTH_METHODS.PASSWORD` existe encore dans les constantes mais n'est pas utilisé
-> en production (fallback legacy/test ; argon2 n'a pas d'usage applicatif réel).
+> en production (fallback legacy/test). La dépendance `argon2` a été retirée : aucun code
+> applicatif ne hashait de mot de passe.
 
 Source : `src/middleware.ts`, `src/features/auth/domain/value-objects/constants.ts`.
 
