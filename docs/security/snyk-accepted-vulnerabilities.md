@@ -213,14 +213,52 @@ sont donc plus, voir tableau « Nouvelles vulnérabilités acceptées » ci-dess
 `postcss` (arbitrary file read, bundlé par Next) reste accepté, pour la même raison
 dans les deux branches (non overridable sans upgrade Next 16).
 
+## Refresh — août 2026 (branche `chore/bump-deps-securite`)
+
+Purge de l'arriéré : le groupe `security` de Dependabot ([#311](https://github.com/MTES-MCT/fonds-prevention-argile/pull/311),
+17 packages patch/minor) plus les overrides transitifs dont l'échéance `minimumReleaseAge`
+était écoulée. `pnpm audit` passe de **19 à 1** vulnérabilité (prod : **10 → 1**).
+Vérification : `pnpm validate` (typecheck + lint + 1694 tests + talisman) et build prod verts.
+
+### Corrigées à la source (overrides `pnpm-workspace.yaml`)
+
+| Override                            | Avant     | Après     | CVE éliminées                                                                                     |
+| ----------------------------------- | --------- | --------- | ------------------------------------------------------------------------------------------------- |
+| `postcss` (nouveau)                 | —         | `^8.5.26` | 4 (dont 2 High) — **prod** : lecture de fichier arbitraire via `sourceMappingURL`, XSS `</style>` |
+| `nanoid` (nouveau)                  | —         | `^3.3.18` | 2 High — **prod**, transitif via le `postcss` bundlé par next                                     |
+| `protocol-buffers-schema` (nouveau) | —         | `^3.6.1`  | 1 Moderate — **prod**, transitif via `maplibre-gl`                                                |
+| `brace-expansion`                   | `^2.1.2`  | `^2.1.4`  | 2 High — **prod**, transitif via `exceljs > archiver`                                             |
+| `js-yaml`                           | `^4.1.1`  | `^4.3.1`  | 3 (dont 2 High) — devDep `eslint`                                                                 |
+| `undici`                            | `^7.28.0` | `^7.29.0` | 5 — devDep `jsdom`                                                                                |
+| `esbuild`                           | `^0.25.0` | `^0.28.2` | échéance `minimumReleaseAge` écoulée depuis le 2026-06-18                                         |
+| `vite`                              | `^7.3.2`  | `^7.3.6`  | 2 (dont 1 High) — devDep, voir piège ci-dessous                                                   |
+
+> **Piège pnpm — un override ne s'applique pas à une peer auto-installée.** `vite` restait
+> bloqué à 7.3.2 malgré l'override : il n'est tiré que comme `peerDependency` de `vitest` et
+> `@vitejs/plugin-react`, et `pnpm install --force` / `pnpm update -r --depth=Infinity` n'y
+> changeaient rien. Le refresh de juin avait attribué ce blocage à `minimumReleaseAge` — c'était
+> une fausse piste (7.3.6 date du 2026-06-25). Correctif : déclarer `vite` en **devDependency
+> explicite** (`7.3.6`) en plus de l'override.
+
+### Dépendances mortes retirées
+
+`argon2` (aucun hash de mot de passe dans le code : pas de colonne `password`, pas de service)
+et `ts-node` (tous les scripts passent par `tsx`). Retire un build natif au postinstall
+(entrée `allowBuilds` supprimée) et la dernière CVE devDep (`diff`, Low, via `ts-node`).
+
+### Reste accepté (`pnpm audit`, 1 vulnérabilité)
+
+| Dépendance vulnérable | Sévérité | Type    | Chemin           | Justification                                                                                            |
+| --------------------- | -------- | ------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
+| `uuid` <11.1.1        | Moderate | runtime | `exceljs > uuid` | Inchangé : exceljs appelle `uuidv4()` sans buffer → faille non atteignable ; override v11 = major risqué |
+
 ## Prochaine revue
 
-- **`brace-expansion`** : passer l'override `^2.1.2` → `^5.0.8` dans `pnpm-workspace.yaml`
-  dès le **2026-07-30** (fin du `minimumReleaseAge`) — élimine la dernière High runtime.
-- **`vite`** : passer à `>=7.3.5` dès que `minimumReleaseAge` le permet (élimine la High devDep restante).
-- **Lors de l'upgrade Next 16** (PR dédiée) : réévaluer next, eslint-config-next,
-  ESLint 10 et le `postcss`/`sharp` bundlés par Next ; migrer le script `lint` vers le CLI ESLint.
-- **`esbuild`** : à partir du **2026-06-18** (fin du `minimumReleaseAge`), passer l'override
-  `esbuild: ^0.25.0` → `^0.28.1` dans `pnpm-workspace.yaml` puis `pnpm install` — élimine la
-  seule High runtime restante.
+- **Lors de l'upgrade Next 16** (PR dédiée) : réévaluer next, eslint-config-next, ESLint 10,
+  `@vitejs/plugin-react` 6 et `jsdom` 30 ; migrer le script `lint` vers le CLI ESLint. L'override
+  `postcss` pourra probablement sauter (Next 16 embarque un postcss récent).
+- **`@react-email/components`** : le package est marqué **deprecated** par l'upstream — prévoir
+  une PR de migration ou de remplacement.
+- **`brace-expansion`** : la ligne 5.x existe (`5.0.9`) mais reste un major ; `^2.1.4` embarque
+  déjà les correctifs, pas d'urgence.
 - **Vérifier trimestriellement** les fix upstream pour `exceljs` (tmp, uuid, brace-expansion) et `maplibre-gl`.
