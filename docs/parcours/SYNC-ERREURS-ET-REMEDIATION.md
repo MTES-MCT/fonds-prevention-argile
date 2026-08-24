@@ -7,6 +7,15 @@ d'un dossier Démarches Numériques (DN) introuvable.
 > Complète [FLOW-AND-SYNC.md](FLOW-AND-SYNC.md) (§3 sync, §7 pièges DN). À lire avant
 > d'utiliser les scripts `ds:probe-dossiers` et `fix:eligibilite-sync-error`.
 
+> **AVERTISSEMENT (2026-08-24) — le reset est GELÉ, cf. [ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md).**
+> Un prérempli **non encore déposé** est invisible de l'API instructeur DN et répond
+> `Dossier not found` **exactement comme un dossier purgé**. Le verdict **GONE de ce guide
+> n'est donc pas concluant**, et le reset a supprimé des pointeurs vivants (parcours
+> `c3ffd5bb` : dossier #32052358 « not found » en juin, supprimé, puis déposé le 25/06 et
+> accepté le 09/07 — devenu invisible de l'app). `fix:eligibilite-sync-error --apply` refuse
+> désormais de s'exécuter. Tout ce qui suit sur le reset est conservé pour l'historique mais
+> **ne doit pas être appliqué** ; la réparation passe par le **relink**.
+
 ---
 
 ## 1. C'est quoi une « sync erreur » ?
@@ -45,6 +54,10 @@ Le sur-ensemble « sync erreur » se décompose, selon le **verdict DN réel** (
 | **B3** — déposé puis purgé/expiré        | not_found + ABSENT                        | `last_sync_at` renseigné                 | **reset**              | —                            |
 | **Erreur de sondage**                    | unauthorized / api_error                  | —                                        | `ds:check-permissions` | —                            |
 | **(transverse)** faux dépôt legacy       | n'importe                                 | `submitted_at` set + `last_sync_at` NULL | —                      | **`fix:clean-faux-depots`**  |
+
+> Les lignes **reset** de ce tableau sont **gelées** ([ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md)) :
+> B1 et B3 ne sont pas distinguables d'un prérempli simplement pas encore déposé. Ne rien
+> supprimer ; seul le **relink** (B2) répare aujourd'hui.
 
 `clean` ne répare pas le parcours (c'est `reset`) : il efface le `submitted_at` trompeur posé
 à la création par le code pré-#216 (cf. §6), qui fausse diagnostic et stats. `pnpm
@@ -146,7 +159,7 @@ pnpm ds:probe-dossiers --numbers=28621590,32006324
   dossiers par email usager, et marque chaque GONE `ABSENT` ou `EXISTE_SOUS_AUTRE_NUMERO`.
 - Récap final avec ventilation des catégories et des GONE.
 
-### `pnpm fix:eligibilite-sync-error` — reset AUTO-VÉRIFIANT
+### `pnpm fix:eligibilite-sync-error` — reset AUTO-VÉRIFIANT (GELÉ, ADR-0026)
 
 Remet un demandeur bloqué « comme si l'AMO venait de valider » : supprime la ligne
 `dossiers_demarches_simplifiees` de l'étape éligibilité, en laissant le parcours en
@@ -166,9 +179,11 @@ chaque candidat et ne supprime **que** les dossiers que DN confirme disparus :
 ```bash
 pnpm fix:eligibilite-sync-error                      # dry-run (sonde DN, montre le plan)
 pnpm fix:eligibilite-sync-error --anonymize          # dry-run anonymisé
-pnpm fix:eligibilite-sync-error --parcours-id=<uuid> --apply   # un seul cas
-pnpm fix:eligibilite-sync-error --apply              # supprime tous les GONE
+pnpm fix:eligibilite-sync-error --parcours-id=<uuid> # dry-run ciblé
 ```
+
+> `--apply` **refuse de s'exécuter** (sortie en erreur) : le verdict GONE ne distingue pas un
+> prérempli en attente d'un dossier purgé. Seul le dry-run reste utile, comme diagnostic.
 
 Ne touche **ni** à la validation AMO (déjà `LOGEMENT_ELIGIBLE`), **ni** à
 `sync_run_entries` (historique conservé).
@@ -251,8 +266,9 @@ Au déploiement, `dn_probe_state` est vide → colonne « Verdict DN » = **Non 
 1. **Relink** (mismatches B2) **en premier** : `pnpm fix:relink-eligibilite --from-sync-errors`
    → `--apply` → **re-sync**. _Pourquoi en premier : un mismatch est « not found », le reset le
    supprimerait à tort ; le relink le rend « existe » et le reset l'épargne ensuite._
-2. **Reset** (drop-offs B1 + purgés B3) : `pnpm fix:eligibilite-sync-error` → `--apply`.
-   _Sûr : re-vérifie DN, ne supprime que les GONE confirmés._
+2. ~~**Reset** (drop-offs B1 + purgés B3)~~ — **GELÉ** ([ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md)).
+   `--apply` refuse de s'exécuter : « GONE » ne distingue pas un prérempli en attente d'un
+   dossier purgé, et la suppression orpheline le dossier déposé plus tard. Dry-run seul.
 3. **Clean** (faux dépôts legacy, transverse) : `pnpm fix:clean-faux-depots` → `--apply`.
    \_Indépendant : ne répare pas le parcours, nettoie les `submitted_at` trompeurs (diagnostic
    - stats). Lançable quand on veut.\_

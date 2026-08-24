@@ -675,6 +675,12 @@ Détection préventive : `pnpm ds:check-permissions` (statut `UNAUTHORIZED`).
 > Guide simplifié dédié (cas, sous-cas, scripts, playbook) :
 > [SYNC-ERREURS-ET-REMEDIATION.md](SYNC-ERREURS-ET-REMEDIATION.md).
 
+> **GELÉ depuis le 2026-08-24 ([ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md))** :
+> un prérempli non déposé est **invisible de l'API instructeur** et répond `Dossier not found`
+> comme un dossier purgé — le verdict « disparu » n'est donc pas concluant et le reset a
+> supprimé des pointeurs vivants. `--apply` refuse de s'exécuter ; réparer par **relink**
+> (`pnpm fix:relink-eligibilite`). Section conservée pour comprendre l'outil, pas pour l'appliquer.
+
 Quand le lien DS n'a jamais été fait correctement (token non instructeur, démarche non
 publiée, dossier introuvable), le dossier d'éligibilité est « fantôme » : jamais
 déposable, jamais synchronisable. Le parcours reste bloqué en `eligibilite/todo` et
@@ -794,7 +800,7 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Composant PJ partagé (agent + demandeur)       | `dossiers-ds/components/PiecesJustificatives.tsx`                                              |
 | Proxy modèle PJ (URL temporaire DN régénérée)  | `src/app/api/ds/piece-modele/route.ts` (`buildModeleProxyUrl` / `getFreshModeleUrl`)           |
 | Probe pièces + modèles DN                      | `scripts/ops/ds/fetch-pieces-justificatives.ts` (`pnpm ds:fetch-pieces`)                       |
-| Reset dossier éligibilité sync-erreur          | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`) |
+| Reset dossier éligibilité (GELÉ, ADR-0026)     | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`) |
 | Sonde lecture-seule dossiers DN                | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                        |
 | Backfill processed_at depuis dateTraitement    | `scripts/ops/ds/backfill-processed-at.ts` (`pnpm ds:backfill-processed-at`)                    |
 | Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                            |

@@ -14,8 +14,13 @@
  * formulaire d'éligibilité" réapparaît et `createEligibiliteDossier` génère un NOUVEAU
  * lien prefill ("commencer"), et non "reprendre" le dossier cassé.
  *
+ * GELÉ (ADR-0026) — `--apply` est DÉSACTIVÉ : un prérempli non déposé est invisible de l'API
+ * instructeur et répond « Dossier not found » comme un dossier purgé, donc le verdict GONE
+ * ci-dessous ne prouve rien. Le dry-run reste ouvert (diagnostic) ; réparer via
+ * `pnpm fix:relink-eligibilite`.
+ *
  * SÉCURITÉ — vérification DN par dossier (lecture seule) AVANT toute suppression :
- *   GONE    DN « Dossier not found » ou dossier inexistant → pointeur mort → RESET autorisé
+ *   GONE    DN « Dossier not found » ou dossier inexistant → verdict NON concluant (cf. gel)
  *   EXISTS  le dossier existe encore côté DN (en construction / en instruction / traité)
  *           → VRAIE donnée, jamais supprimé : la prochaine sync réussie le rattrapera
  *   PROBE_ERREUR  erreur DN autre que « not found » (unauthorized, réseau…) → jamais
@@ -26,7 +31,7 @@
  *
  * Niveaux d'engagement :
  *   (rien)   dry-run : sonde DN, affiche le plan, aucune écriture
- *   --apply  supprime les lignes des dossiers confirmés GONE par DN
+ *   --apply  DÉSACTIVÉ (gel) : le script refuse et sort en erreur
  *
  * Filtres / options :
  *   --parcours-id=<uuid>  limite à un seul parcours (cas isolé / debug)
@@ -36,7 +41,6 @@
  * Usage :
  *   pnpm fix:eligibilite-sync-error                      # dry-run (sonde DN)
  *   pnpm fix:eligibilite-sync-error --anonymize          # dry-run anonymisé
- *   pnpm fix:eligibilite-sync-error --apply              # supprime les GONE
  *   pnpm fix:eligibilite-sync-error --parcours-id=<uuid> # cible
  *
  * Prérequis : .env.local avec DATABASE_URL + DEMARCHES_SIMPLIFIEES_GRAPHQL_API_* .
@@ -168,7 +172,32 @@ function line(c: Candidate): string {
   return `[${redactUuid(c.parcoursId)}] ${redactEmail(c.email)} — ${num} local(ds_status=${c.localDsStatus ?? "null"})`;
 }
 
+/** Gel du `--apply` (ADR-0026) : « Dossier not found » ne prouve pas la disparition. */
+async function refuseApply(): Promise<never> {
+  console.error("=".repeat(72));
+  console.error("RESET GELÉ — l'option --apply est désactivée");
+  console.error("=".repeat(72));
+  console.error(
+    "Un dossier prérempli non encore déposé est INVISIBLE de l'API instructeur DN :\n" +
+      "`getDossier` répond « Dossier not found » exactement comme pour un dossier purgé.\n" +
+      "Le verdict GONE de ce script ne prouve donc pas la disparition, et supprimer la ligne\n" +
+      "orpheline le dossier que l'usager déposera plus tard via son lien encore valide.\n" +
+      "\n" +
+      "Cas de référence : parcours c3ffd5bb (dossier #32052358 « not found » du 18 au 21 juin,\n" +
+      "supprimé par ce script, puis déposé le 25 juin et accepté le 9 juillet — invisible depuis).\n" +
+      "\n" +
+      "Le mode DRY-RUN reste ouvert (diagnostic). Pour réparer un cas : pnpm fix:relink-eligibilite.\n" +
+      "Voir docs/adr/0026-gel-reset-eligibilite-not-found.md et\n" +
+      "docs/parcours/SYNC-ERREURS-ET-REMEDIATION.md."
+  );
+  console.error("=".repeat(72));
+  await client.end();
+  process.exit(1);
+}
+
 async function main() {
+  if (APPLY) await refuseApply();
+
   console.log("=".repeat(72));
   console.log(`RESET ÉLIGIBILITÉ SYNC-ERREUR — ${APPLY ? "APPLY" : "DRY-RUN"}${ANONYMIZE ? " (anonymisé)" : ""}`);
   console.log("=".repeat(72));
@@ -214,7 +243,12 @@ async function main() {
   }
 
   if (!APPLY) {
-    console.log(`Mode dry-run — aucune écriture. Relancer avec --apply pour supprimer ${gone.length} dossier(s) GONE.`);
+    console.log(
+      `Mode dry-run — aucune écriture. ${gone.length} dossier(s) GONE : verdict NON concluant ` +
+        "(un prérempli non déposé répond aussi « not found »). Le reset est gelé (ADR-0026) ; " +
+        "sonder avec `pnpm ds:probe-dossiers --from-sync-errors --email-crosscheck` et réparer " +
+        "les mismatches avec `pnpm fix:relink-eligibilite`."
+    );
     await client.end();
     return;
   }
