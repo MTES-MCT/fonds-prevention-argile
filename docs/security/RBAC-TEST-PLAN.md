@@ -170,6 +170,7 @@ cellules négatives** recensées. Les agrégats nationaux consultables par l'`AN
 | EspaceAgent Layout — rejet FranceConnect                                  | `app/(backoffice)/espace-agent/layout.tsx`                                                     | individual  | FranceConnect (mauvaise méthode) → DENY                                                    | OUI (testé)                                                      |
 | Middleware auth & redirection                                             | `src/middleware.ts`                                                                            | none        | AMO→/espace-amo ; non-auth→/connexion/agent → DENY                                         | OUI (testé)                                                      |
 | Ré-ouverture demande refusée                                              | `dossiers/actions/reouvrir-demande.actions.ts`                                                 | individual  | ANALYSTE / non-auth / AMO autre entreprise / AV hors territoire → DENY                     | OUI (action + prédicat `canReopenRefusedDemande`)                |
+| Permalien parcours sur le détail dossier (ADR-0025)                       | `espace-agent/dossiers/[id]/page.tsx` + `services/admin-url-resolver.service.ts`               | none        | non-auth → DENY ; accès refusé sur un id de validation → 404, jamais de redirection        | OUI (`page.test.tsx`, `admin-url-resolver.service.test.ts`)      |
 
 ### MEDIUM — scope individuel partiel / DENY admin partiel
 

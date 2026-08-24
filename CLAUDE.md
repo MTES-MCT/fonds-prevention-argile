@@ -283,6 +283,7 @@ Lors de la compaction automatique ou manuelle (`/compact`), TOUJOURS préserver 
 - Les modales DSFR ne s'ouvrent pas avec l'attribut HTML `open` — utiliser `window.dsfr(modal).modal.disclose()`
 - L'API Matomo Funnels timeout sur les périodes longues — limiter à 7 jours
 - `VisitsSummary.getVisits` en `period=day` sur un range long force Matomo à calculer une archive par jour (jusqu'à ~365 pour "12m"/"tout") : même cause que le timeout Funnels. `getMatomoStatistiques` (`matomo.service.ts`) adapte donc la granularité à la durée sélectionnée (`day` ≤30j, `week` pour 90j/6m, `month` pour 12m/tout) via `getGranulariteForPeriode` — ne pas revenir à `"day"` en dur sans réévaluer ce risque
+- Les ids de champs DN ne sont communs entre environnements que pour les champs **antérieurs au clonage** de la démarche. Un champ ou une annotation ajouté à la main après coup a un id propre à chaque démarche (cas de l'annotation « lien FPA » d'éligibilité, ADR-0025). Toujours vérifier avec `pnpm ds:fetch-schema <numero>` avant de coder un id en dur — DN **ignore silencieusement** un `champ_` inconnu, le préremplissage échoue sans aucune erreur
 - L'API Matomo répond **HTTP 200 même sur erreur d'authentification** (le verdict est dans le corps : `{"result":"error"}`) — ne jamais se fier au seul `response.ok`, et ne pas mettre ces réponses en cache HTTP
 
 ## Documentation contextuelle

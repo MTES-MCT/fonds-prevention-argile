@@ -173,11 +173,11 @@ divergence fait rejeter la valeur au préremplissage puisque c'est une liste dé
 pas un enum/ID stable). **Toujours prérempli** à la création du dossier, avec exactement
 une des 3 valeurs :
 
-| Situation                                                | Valeur envoyée                          |
-| --------------------------------------------------------- | ---------------------------------------- |
-| Pas d'AMO (`SANS_AMO` / « je gère seul »)                  | `Pas de mandataire`                      |
-| AMO accompagnant, `est_mandataire_financier = true`        | `Mandataire administratif et financier`  |
-| AMO accompagnant, `est_mandataire_financier = false`/`null` | `Mandataire administratif`               |
+| Situation                                                   | Valeur envoyée                          |
+| ----------------------------------------------------------- | --------------------------------------- |
+| Pas d'AMO (`SANS_AMO` / « je gère seul »)                   | `Pas de mandataire`                     |
+| AMO accompagnant, `est_mandataire_financier = true`         | `Mandataire administratif et financier` |
+| AMO accompagnant, `est_mandataire_financier = false`/`null` | `Mandataire administratif`              |
 
 > Un AMO qui accompagne le demandeur est considéré **de facto mandataire administratif**
 > (décision assumée : pas de déclaration explicite séparée pour ce volet, contrairement au
@@ -197,6 +197,37 @@ qu'il a pris la main. Décision produit : ne rien faire côté DN sur annulation
 fréquent est déjà propre — annuler **avant** d'avoir créé le dossier d'éligibilité fait que
 `createEligibiliteDossier` préremplira sans AMO le moment venu. Seul un dossier déjà créé
 garde des infos AMO obsolètes, à corriger manuellement côté formulaire.
+
+### 2.6.1 Annotation privée « Lien vers le dossier FPA » — ADR-0025
+
+Les trois démarches (éligibilité, diagnostic, devis) portent une annotation privée
+« Lien vers le dossier sur le fonds de prévention argile », préremplie à la création avec
+l'URL du back-office : la DDT ouvre le suivi FPA (actions, commentaires, simulation)
+directement depuis le dossier DN.
+
+Deux règles à connaître, toutes deux conséquences du « création seulement » ci-dessus.
+
+**L'id de champ dépend de la démarche pour l'éligibilité.** DN conserve les ids au clonage
+d'une démarche — d'où un id commun à diagnostic et devis, prod et préprod confondues
+(`DS_FIELD_IDS.*.ANNOTATION_LIEN_FPA`). L'annotation d'éligibilité, elle, a été ajoutée à
+la main **après** le clonage : son id diffère entre prod (126061) et préprod (146377). Elle
+vit donc dans une map indexée par numéro de démarche, `DS_ANNOTATION_LIEN_FPA_ELIGIBILITE`
+(`domain/value-objects/ds-annotations.ts`), lue via `getAnnotationLienFpaEligibilite()`.
+Sur une démarche non répertoriée : `console.warn` et **aucune clé écrite** — DN avale
+silencieusement un `champ_` inconnu, on préfère une trace dans les logs à une annotation
+qu'on croit remplie. Relever un id avec `pnpm ds:fetch-schema <numero>`.
+
+> Corollaire : ne jamais coder en dur un id de champ DN sans l'avoir vérifié sur **la**
+> démarche visée. Les champs publics d'éligibilité sont, eux, identiques prod/préprod
+> (hérités du clone) — `DS_FIELD_IDS` reste valide pour eux.
+
+**Le lien écrit est un permalien parcours.** Les trois services écrivent
+`${BASE_URL}/espace-agent/dossiers/<parcoursId>`, alors que la route résout normalement un
+`parcours_amo_validations.id`. C'est intentionnel : le parcours id est le seul identifiant
+stable et toujours présent (un prospect n'a pas encore de validation), et le lien étant
+figé à vie dans DN, la cible doit être résolue **au clic** — la page tente
+`resolveEspaceAgentPath(id)` et redirige vers le dossier, la demande ou le prospect. C'est
+aussi ce qui répare les liens diagnostic/devis déjà écrits, qui renvoyaient un 404.
 
 ### 2.7 Arrêt de l'accompagnement (demandeur ou AMO) — ADR-0018
 
@@ -400,17 +431,17 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 
 **`sync_runs`** — un enregistrement par run.
 
-| Colonne                  | Type                               |
+| Colonne | Type |
 | ------------------------ | ---------------------------------- | ------- | ----- | ----- |
-| `id`                     | uuid                               |
-| `started_at`             | timestamp                          |
-| `finished_at`            | timestamp (null = en cours)        |
-| `status`                 | `success                           | partial | error | null` |
-| `triggered_by`           | `cron                              | manual` |
-| `total_parcours_scanned` | int                                |
-| `total_parcours_updated` | int                                |
-| `total_errors`           | int                                |
-| `error_summary`          | text (20 premières erreurs concat) |
+| `id` | uuid |
+| `started_at` | timestamp |
+| `finished_at` | timestamp (null = en cours) |
+| `status` | `success                           | partial | error | null` |
+| `triggered_by` | `cron                              | manual` |
+| `total_parcours_scanned` | int |
+| `total_parcours_updated` | int |
+| `total_errors` | int |
+| `error_summary` | text (20 premières erreurs concat) |
 
 **`sync_run_entries`** — une entrée par parcours **modifié** (ou en erreur) durant un run. Les parcours sans changement ne génèrent **pas** d'entrée pour ne pas alourdir la table.
 
@@ -581,8 +612,7 @@ Le seuil de 30 min est volontairement généreux par rapport au `maxDuration = 5
 
 ```ts
 type SyncRunResult =
-  | { skipped: false; runId; status; totalScanned; totalUpdated; totalErrors }
-  | { skipped: true; reason; existingRunId };
+  { skipped: false; runId; status; totalScanned; totalUpdated; totalErrors } | { skipped: true; reason; existingRunId };
 ```
 
 ### 6.9 Sleep 150 ms entre parcours
@@ -765,6 +795,8 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                            |
 | Création dossier devis-travaux (3 annotations) | `src/features/parcours/core/services/devis.service.ts`                                         |
 | Validation AMO (auto-progression CHOIX_AMO)    | `src/features/parcours/amo/services/amo-validation.service.ts`                                 |
+| Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)       |
+| Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                      |
 | Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                |
 | Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                    |
 | Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)  |
