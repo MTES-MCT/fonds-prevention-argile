@@ -243,6 +243,22 @@ Le prédicat unique de territorialité est
 (`parcoursPreventionRepository.getParcoursByTerritoire`) et par le contrôle
 d'accès (`verifyProspectTerritoryAccess`).
 
+### Permalien parcours sur le détail dossier (ADR-0025)
+
+`/espace-agent/dossiers/[id]` accepte **deux formes d'identifiant** : l'id de validation
+AMO (cas normal, lien interne) et, en repli, un **id de parcours** — le permalien utilisé
+par les systèmes externes qui ne peuvent pas être mis à jour après coup (annotations DN,
+attributs Brevo). Quand le segment n'est pas une validation consultable, la page appelle
+`resolveEspaceAgentPath(parcoursId)` et **redirige** vers la cible réelle (dossier, demande
+ou prospect), résolue au clic.
+
+Impact RBAC : **aucun élargissement**. La résolution ne renvoie qu'un chemin, jamais une
+donnée de dossier ; l'autorisation reste intégralement portée par la page cible
+(`getDossierDetail` / `getProspectDetail` → `verifyProspectTerritoryAccess`). Un agent hors
+territoire suivant un permalien est donc redirigé puis refusé, exactement comme s'il avait
+tapé l'URL du dossier. Seul effet de bord assumé : un agent authentifié peut distinguer
+« cet uuid est un parcours » (redirection) de « uuid inconnu » (404).
+
 ### Bug corrigé (juin 2026) — 404 sur les dossiers sans AMO
 
 **Symptôme** : des dossiers « en attente d'AV » / « en formulaire d'éligibilité »
@@ -383,3 +399,4 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Garde arrêt d'accompagnement          | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts` |
 | Garde refus accompagnement (éligible) | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                   |
 | Garde édition simulation              | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)       |
+| Résolution du permalien parcours      | `dossiers/services/admin-url-resolver.service.ts` (`resolveEspaceAgentPath`) — chemin seul, aucune donnée               |

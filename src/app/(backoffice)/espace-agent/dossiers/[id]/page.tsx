@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getDossierDetail } from "@/features/backoffice/espace-agent/dossiers/services/dossier-detail.service";
+import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
@@ -53,6 +54,12 @@ export default async function DossierDetailPage({ params }: PageProps) {
   const result = await getDossierDetail(id);
 
   if (!result.success || !result.data) {
+    // Permalien : les systèmes externes (annotations DN, Brevo) référencent le parcours,
+    // seul id stable et toujours présent. La cible réelle est résolue au clic.
+    const cible = await resolveEspaceAgentPath(id);
+    if (cible !== null && cible !== ROUTES.backoffice.espaceAgent.dossier(id)) {
+      redirect(cible);
+    }
     notFound();
   }
 

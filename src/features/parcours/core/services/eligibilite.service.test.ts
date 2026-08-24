@@ -41,6 +41,10 @@ vi.mock("@/shared/database", () => ({
   userRepo: { findById: vi.fn() },
 }));
 
+vi.mock("@/shared/config/env.config", () => ({
+  getServerEnv: vi.fn(() => ({ BASE_URL: "https://app.test" })),
+}));
+
 const AMO = {
   nom: "AMO Test",
   siret: "12345678900011",
@@ -49,7 +53,12 @@ const AMO = {
   telephone: "0102030405",
 };
 
-async function runWithAmo(amoOverrides: Partial<typeof AMO> | null, estMandataireFinancier: boolean | null = null) {
+async function runWithAmo(
+  amoOverrides: Partial<typeof AMO> | null,
+  estMandataireFinancier: boolean | null = null,
+  demarcheNumber = "126061"
+) {
+  vi.mocked(prefillClient.getDemarcheId).mockReturnValue(demarcheNumber);
   vi.mocked(getValidationAmo).mockResolvedValue({
     success: true,
     data: { estMandataireFinancier },
@@ -84,42 +93,35 @@ describe("createEligibiliteDossier — prefill AMO", () => {
     vi.clearAllMocks();
   });
 
-  it("mappe l'AMO sur les vrais IDs de champs DN (siret, email, adresse, téléphone)", async () => {
+  it("mappe le SIRET de l'AMO sur son ID de champ DN", async () => {
     const payload = await runWithAmo({});
 
     expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.SIRET_AMO}`]).toBe(AMO.siret);
-    // Premier email uniquement (la liste est séparée par ";")
-    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.EMAIL_AMO}`]).toBe("contact@amo.fr");
-    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.ADRESSE_AMO}`]).toBe(AMO.adresse);
-    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`]).toBe(AMO.telephone);
   });
 
-  it("n'utilise plus de clés inventées et n'écrit l'adresse qu'une seule fois", async () => {
+  // Adresse, email et téléphone ont été retirés du formulaire DN : les préremplir
+  // n'avait plus aucun effet, DN ignorant silencieusement un champ_ inconnu (ADR-0025).
+  it("n'envoie plus l'adresse, l'email ni le téléphone de l'AMO", async () => {
+    const payload = await runWithAmo({});
+
+    const valeurs = Object.values(payload).map(String);
+    expect(valeurs).not.toContain(AMO.adresse);
+    expect(valeurs).not.toContain(AMO.telephone);
+    expect(valeurs.some((v) => v.includes("@amo.fr"))).toBe(false);
+  });
+
+  it("n'utilise plus de clés inventées", async () => {
     const payload = await runWithAmo({});
 
     expect(payload).not.toHaveProperty("champ_amo_email");
     expect(payload).not.toHaveProperty("champ_amo_telephone");
     expect(payload).not.toHaveProperty("champ_amo_adresse");
-    // Une seule clé porte l'adresse de l'AMO
-    const adresseKeys = Object.entries(payload).filter(([, v]) => v === AMO.adresse);
-    expect(adresseKeys).toHaveLength(1);
-  });
-
-  it("omet téléphone et adresse quand ils sont absents", async () => {
-    const payload = await runWithAmo({ telephone: "", adresse: "" });
-
-    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.EMAIL_AMO}`]).toBe("contact@amo.fr");
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`);
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.ADRESSE_AMO}`);
   });
 
   it("n'ajoute aucun champ AMO en mode « je gère seul » (pas d'AMO)", async () => {
     const payload = await runWithAmo(null);
 
     expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.SIRET_AMO}`);
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.EMAIL_AMO}`);
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.ADRESSE_AMO}`);
-    expect(payload).not.toHaveProperty(`champ_${DS_FIELD_IDS.ELIGIBILITE.TELEPHONE_AMO}`);
   });
 
   it("préremplit « Mandataire administratif et financier » quand l'AMO s'est déclarée mandataire financier", async () => {
@@ -131,22 +133,61 @@ describe("createEligibiliteDossier — prefill AMO", () => {
   it("préremplit « Mandataire administratif » (AMO présent) quand l'AMO a répondu « non » sur le volet financier", async () => {
     const payload = await runWithAmo({}, false);
 
-    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`]).toBe(
-      DS_OPTIONS_MANDATAIRE.NON_FINANCIER
-    );
+    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`]).toBe(DS_OPTIONS_MANDATAIRE.NON_FINANCIER);
   });
 
   it("préremplit « Mandataire administratif » (AMO présent) quand la question financière n'a pas été posée (null)", async () => {
     const payload = await runWithAmo({}, null);
 
-    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`]).toBe(
-      DS_OPTIONS_MANDATAIRE.NON_FINANCIER
-    );
+    expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`]).toBe(DS_OPTIONS_MANDATAIRE.NON_FINANCIER);
   });
 
   it("préremplit « Pas de mandataire » sans AMO, même si une validation orpheline le dit mandataire financier", async () => {
     const payload = await runWithAmo(null, true);
 
     expect(payload[`champ_${DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER}`]).toBe(DS_OPTIONS_MANDATAIRE.AUCUN);
+  });
+});
+
+describe("createEligibiliteDossier — annotation privée « lien FPA »", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("préremplit l'annotation avec l'id de la démarche de prod", async () => {
+    const payload = await runWithAmo({}, null, "126061");
+
+    expect(payload["champ_Q2hhbXAtNjY4NzQ1Mg=="]).toBe("https://app.test/espace-agent/dossiers/parcours-1");
+  });
+
+  it("préremplit l'annotation avec l'id de la démarche de préprod", async () => {
+    const payload = await runWithAmo({}, null, "146377");
+
+    expect(payload["champ_Q2hhbXAtNjY4NzQ3NQ=="]).toBe("https://app.test/espace-agent/dossiers/parcours-1");
+  });
+
+  it("préremplit l'annotation même sans AMO (dossier en autonomie)", async () => {
+    const payload = await runWithAmo(null, null, "126061");
+
+    expect(payload["champ_Q2hhbXAtNjY4NzQ1Mg=="]).toBe("https://app.test/espace-agent/dossiers/parcours-1");
+  });
+
+  // DS avale silencieusement un champ_ inconnu : sans garde, on croirait l'annotation remplie.
+  it("n'écrit aucune clé et loggue un warn sur une démarche non répertoriée", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const payload = await runWithAmo({}, null, "999999");
+
+    expect(Object.values(payload).filter((v) => String(v).includes("/espace-agent/"))).toHaveLength(0);
+    expect(warn.mock.calls.some((call) => String(call[0]).includes("999999"))).toBe(true);
+
+    warn.mockRestore();
+  });
+
+  // L'erreur d'origine de la PR #272 : l'id de diagnostic/devis, inexistant sur éligibilité.
+  it("n'utilise pas l'id d'annotation de diagnostic/devis", async () => {
+    const payload = await runWithAmo({}, null, "126061");
+
+    expect(payload).not.toHaveProperty("champ_Q2hhbXAtNjM1MjA4OQ==");
   });
 });
