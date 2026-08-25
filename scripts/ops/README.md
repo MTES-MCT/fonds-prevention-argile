@@ -48,6 +48,7 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 | [`detacher-amo.ts`](#detacher-amo)                               | **écrit** | Détache l'AMO d'un parcours (passage en « sans AMO ») : AMO choisi avant l'arrêté, le demandeur veut continuer seul             | `pnpm fix:detacher-amo`                                |
 | [`purge-comptes-test-fc.ts`](#purge-comptes-test-fc)             | **écrit** | Supprime (cascade) les comptes demandeurs de test FranceConnect du CSV mocké FC low — staging/local uniquement, refus en prod   | `pnpm fix:purge-comptes-test-fc`                       |
 | [`backfill-brevo-attributes.ts`](#backfill-brevo-attributes)     | **écrit** | Recalcule et pousse (upsert, sans rejouer les évènements) l'état complet des attributs Brevo pour tous les contacts             | `pnpm fix:backfill-brevo`                              |
+| [`backfill-actions-audit.ts`](#backfill-actions-audit)           | **écrit** | Rejoue dans `parcours_actions` les réponses Aller-vers et les archivages passés, à leur date d'origine                          | `pnpm fix:backfill-actions-audit`                      |
 | [`debug-matomo-events.ts`](#debug-matomo-events)                 | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur)                                                                 | `tsx scripts/ops/debug/debug-matomo-events.ts`         |
 | [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Dump les champs + annotations d'une démarche DS avec leurs IDs (alimente `ds-field-ids.ts`)                                     | `pnpm ds:fetch-schema <numero>`                        |
 | [`check-ds-permissions.ts`](#check-ds-permissions)               | read-only | Vérifie que le token GraphQL a accès à chaque démarche configurée (sinon synchro KO)                                            | `pnpm ds:check-permissions`                            |
@@ -257,6 +258,26 @@ pnpm fix:backfill-brevo --no-anonymize           # emails en clair
 **Prérequis** : `.env.local` complet (`DATABASE_URL` + `BREVO_API_KEY` +
 `BREVO_CONTACT_LIST_ID` + reste de la config serveur, lue via `getServerEnv()` par
 `resolveAdminUrl`).
+
+### backfill-actions-audit
+
+Rattrape l'historique des évènements qui n'écrivaient pas encore d'action (ADR-0028) :
+réponses des Aller-vers (`prospect_qualifications`) et archivages
+(`parcours_prevention.archived_at`). Les tables sources gardent la **date d'origine**, que le
+script réutilise — les actions ne sont pas datées du jour du rattrapage.
+
+Idempotent : aucune écriture si une action du même type existe déjà à la même date, ni si une
+action encadre déjà l'archivage (la décision qui a archivé porte l'information). Non
+rattrapables et comptés comme tels : un dé-archivage passé (aucune trace en base) et un
+archivage sans `archived_by` (pas d'auteur, donc pas de snapshot). Dry-run par défaut.
+
+```bash
+pnpm fix:backfill-actions-audit                            # dry-run, tous les parcours
+pnpm fix:backfill-actions-audit --apply
+pnpm fix:backfill-actions-audit --parcours-id=<uuid> --apply
+```
+
+**Prérequis** : `.env.local` (ou vars Scalingo) avec la config DB.
 
 ### debug-matomo-events
 

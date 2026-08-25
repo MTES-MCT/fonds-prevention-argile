@@ -329,6 +329,14 @@ le garde-fou applicatif bloquait l'écriture. L'édition/suppression restent lim
 **propres** commentaires via `canEditAction` (`agentId` de l'auteur), comme pour tout
 agent — aucun traitement de faveur au-delà de l'ouverture de la création.
 
+> **Actions système en lecture seule (ADR-0028).** L'ownership `canEditAction` ne suffit plus :
+> les actions écrites automatiquement par l'application (décisions d'éligibilité, qualification
+> Aller-vers, arrêt d'accompagnement, ré-ouverture, (dés)archivage — cf. `ACTION_TYPES_SYSTEME`)
+> sont **ni modifiables ni supprimables**, y compris par leur auteur et par le super-admin.
+> Garde côté service (`ActionsService.updateAction` / `deleteAction`), menu masqué côté UI
+> (`ActionItem`). Motif : ces actions constituent la piste d'audit du dossier et alimentent les
+> indicateurs de délai — les laisser réécrivables les rendait inexploitables.
+
 **Ce qui reste bloqué** (`assertNotSuperAdminReadOnly` toujours appelé, DENY) : gestion de
 l'éligibilité (accepter/refuser une demande, refuser un accompagnement éligible), arrêt/refus
 d'accompagnement, archivage/désarchivage, création de dossier, qualification prospect, édition
