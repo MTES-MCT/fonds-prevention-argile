@@ -339,6 +339,46 @@ libellés du formulaire — rattrapé au passage pour `accompagnement_arrete`,
 `arret_accompagnement_demande`, `arret_accompagnement_refuse`, `dossier_reouvert`,
 `invitation_renvoyee`.
 
+### 2.9 Actions système : réponse AV, réponse AMO, (dés)archivage — ADR-0028
+
+Toute décision structurante d'un professionnel écrit une action dans `parcours_actions`,
+via le helper unique `logSystemAction` (`shared/services/action-audit.service.ts`, best-effort :
+un audit raté n'invalide jamais la mutation). C'est la seule source des indicateurs de délai
+de `/administration/activite` — ce qui n'est pas tracé n'est pas mesuré.
+
+| Évènement                                     | Type d'action                                                      | Écrit depuis                                            |
+| --------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- |
+| Décision d'éligibilité AMO (×3)               | `eligibilite_*`, `accompagnement_refuse_eligible`                  | `demandes/actions/demande-detail.actions.ts` (§2.8)     |
+| **Qualification Aller-vers** (×3)             | `av_qualification_{eligible,a_qualifier,non_eligible}`             | `prospects/services/qualification.service.ts`           |
+| **Archivage / dé-archivage manuel**           | `dossier_archive` / `dossier_desarchive`                           | `dossiers/actions/archive-dossier.actions.ts`           |
+| Archivage / dé-archivage auto (correction)    | idem (+ `eligibilite_refusee_non_eligible` si décision AMO)        | `shared/actions/update-simulation-data.action.ts`       |
+| Archivage à la création (mode `amo`)          | `dossier_archive`                                                  | `creation-dossier/services/creation-dossier.service.ts` |
+| Arrêt d'accompagnement, ré-ouverture, relance | `accompagnement_arrete`, `dossier_reouvert`, `invitation_renvoyee` | cf. §2.4, §2.7                                          |
+
+Trois règles à connaître :
+
+- **Le point d'écriture dépend de l'évènement.** La qualification AV est tracée dans le
+  **service** (elle couvre ainsi la création de dossier AV, qui l'appelle), l'archivage dans
+  les **server actions**. Ne jamais loguer dans `updateSituationParticulier` : la méthode est
+  appelée par 6+ chemins qui tracent déjà leur décision → doublons garantis.
+- **Pas de double trace.** Une qualification « non éligible » archive le dossier : elle porte
+  déjà l'information, aucun `dossier_archive` n'est ajouté par-dessus.
+- **Les actions système sont en lecture seule** (`ACTION_TYPES_SYSTEME` / `isActionSysteme`) :
+  ni modifiables ni supprimables, même par leur auteur (`ActionsService`, menu masqué dans
+  `ActionItem`). Sans ce verrou, la mesure des délais serait réécrivable.
+
+> **Rattrapage de l'historique** : `pnpm fix:backfill-actions-audit` (dry-run par défaut,
+> `--apply`, `--parcours-id`) rejoue les actions manquantes depuis `prospect_qualifications` et
+> `parcours_prevention.archived_at`, **à la date d'origine** de l'évènement. Idempotent. Deux
+> cas restent non rattrapables : un dé-archivage passé (`archived_at` remis à `NULL`, aucune
+> trace) et un archivage sans `archived_by` (pas d'auteur, donc pas de snapshot) — le script
+> les compte sans les inventer.
+
+> **Effet sur les stats** : ouvrir ces évènements aux actions fait mécaniquement **baisser**
+> `delaiMoyenPremiereReponse` et `demandeursSansReponse` (`/administration/activite`). C'est un
+> gain de mesure, pas de rapidité : la série d'avant août 2026 n'est pas comparable à celle
+> d'après.
+
 ---
 
 ## 3. Architecture de la synchronisation
@@ -860,6 +900,8 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                                         |
 | Création dossier devis-travaux (3 annotations) | `src/features/parcours/core/services/devis.service.ts`                                                      |
 | Validation AMO (auto-progression CHOIX_AMO)    | `src/features/parcours/amo/services/amo-validation.service.ts`                                              |
+| Écriture des actions système (helper unique)   | `backoffice/espace-agent/shared/services/action-audit.service.ts` (`logSystemAction`)                       |
+| Rattrapage des actions d'audit (script ops)    | `scripts/ops/fix/backfill-actions-audit.ts` (`pnpm fix:backfill-actions-audit`)                             |
 | Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)                    |
 | Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
 | Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                             |
