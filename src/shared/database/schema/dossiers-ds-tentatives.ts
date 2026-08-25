@@ -13,6 +13,8 @@ export const dossiersDsTentatives = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
 
+    // CASCADE assumé malgré le caractère append-only : la suppression d'un parcours (RGPD)
+    // doit emporter ses tentatives. Rien d'autre ne supprime jamais une ligne d'ici.
     parcoursId: uuid("parcours_id")
       .notNull()
       .references(() => parcoursPrevention.id, { onDelete: "cascade" }),
@@ -24,10 +26,6 @@ export const dossiersDsTentatives = pgTable(
     dsId: varchar("ds_id", { length: 50 }),
     dsDemarcheId: varchar("ds_demarche_id", { length: 50 }),
 
-    // URL de préremplissage : porte le `prefill_token`, qui permet de réclamer le brouillon.
-    // Traitée comme un secret — purgée au dépôt, jamais recopiée dans un log (ADR-0027).
-    dsUrl: varchar("ds_url", { length: 500 }),
-
     // prefill | reconciliation | manuel | backfill_pointeur | backfill_sync_error
     origine: varchar("origine", { length: 30 }).notNull(),
 
@@ -37,6 +35,8 @@ export const dossiersDsTentatives = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
+  // Le registre ne conserve QUE l'identité du dossier : l'URL de préremplissage porte le
+  // `prefill_token` (un secret) et vit uniquement sur le pointeur courant, cf. ADR-0027.
   // Plusieurs tentatives par (parcours, étape) sont normales : index non unique.
   (t) => [index("dossiers_ds_tentatives_parcours_step_idx").on(t.parcoursId, t.step)]
 );

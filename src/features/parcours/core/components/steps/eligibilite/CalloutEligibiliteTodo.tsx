@@ -103,7 +103,13 @@ export default function CalloutEligibiliteTodo() {
         return;
       }
 
-      await handleSubmit();
+      // handleSubmit ouvre sa propre fenêtre, mais nous ne sommes plus dans le geste
+      // utilisateur synchrone : Safari la bloquerait. L'usager relance donc lui-même
+      // depuis le bouton principal, désormais fonctionnel.
+      setRegenerationMessage(
+        "Un nouveau formulaire peut être créé : cliquez sur « Remplir le formulaire d'éligibilité »."
+      );
+      await refresh();
     } catch (err) {
       console.error("Erreur lors de la régénération:", err);
       setError("Une erreur inattendue s'est produite. Veuillez réessayer.");

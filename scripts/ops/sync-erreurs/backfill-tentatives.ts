@@ -10,8 +10,8 @@
  *                         utiliser seul pour rattacher automatiquement.
  *
  * Idempotent : `ds_number` est unique, un numéro déjà connu n'est ni dupliqué ni réécrit.
- * L'URL de préremplissage n'est reprise que pour les dossiers NON déposés — elle porte le
- * `prefill_token` et n'a plus d'usage une fois le dossier transmis.
+ * Le registre ne conserve que l'identité du dossier : l'URL de préremplissage porte le
+ * `prefill_token` et reste sur le seul pointeur courant (ADR-0027).
  *
  * Usage :
  *   pnpm ds:backfill-tentatives           # dry-run (compte et ventile)
@@ -43,7 +43,6 @@ interface Tentative {
   origine: string;
   dsId: string | null;
   dsDemarcheId: string | null;
-  dsUrl: string | null;
 }
 
 async function main() {
@@ -64,7 +63,6 @@ async function main() {
       dsNumber: dossiersDemarchesSimplifiees.dsNumber,
       dsId: dossiersDemarchesSimplifiees.dsId,
       dsDemarcheId: dossiersDemarchesSimplifiees.dsDemarcheId,
-      dsUrl: dossiersDemarchesSimplifiees.dsUrl,
       submittedAt: dossiersDemarchesSimplifiees.submittedAt,
     })
     .from(dossiersDemarchesSimplifiees)
@@ -83,8 +81,6 @@ async function main() {
       origine: ORIGINE_TENTATIVE.BACKFILL_POINTEUR,
       dsId: p.dsId,
       dsDemarcheId: p.dsDemarcheId,
-      // Le lien prefill n'a plus d'usage une fois le dossier déposé : on ne le recopie pas.
-      dsUrl: p.submittedAt ? null : p.dsUrl,
     });
   }
   const nbPointeurs = aInserer.length;
@@ -111,7 +107,6 @@ async function main() {
         origine: ORIGINE_TENTATIVE.BACKFILL_SYNC_ERROR,
         dsId: null,
         dsDemarcheId: null,
-        dsUrl: null,
       });
     }
   }

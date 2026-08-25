@@ -15,7 +15,6 @@ interface RecordTentativeParams {
   origine: OrigineTentative;
   dsId?: string | null;
   dsDemarcheId?: string | null;
-  dsUrl?: string | null;
 }
 
 /**
@@ -38,7 +37,6 @@ export const dossiersDsTentativesRepository = {
         origine: params.origine,
         dsId: params.dsId ?? null,
         dsDemarcheId: params.dsDemarcheId ?? null,
-        dsUrl: params.dsUrl ?? null,
       })
       .onConflictDoNothing({ target: dossiersDsTentatives.dsNumber });
   },
@@ -60,13 +58,5 @@ export const dossiersDsTentativesRepository = {
       .where(eq(dossiersDsTentatives.dsNumber, dsNumber))
       .limit(1);
     return row ?? null;
-  },
-
-  /**
-   * Efface l'URL de préremplissage (qui porte le `prefill_token`) sans toucher au numéro :
-   * une fois le dossier déposé, le lien n'a plus d'usage et ne doit plus être conservé.
-   */
-  async purgerUrl(dsNumber: string): Promise<void> {
-    await db.update(dossiersDsTentatives).set({ dsUrl: null }).where(eq(dossiersDsTentatives.dsNumber, dsNumber));
   },
 };

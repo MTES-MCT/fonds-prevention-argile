@@ -96,7 +96,6 @@ export async function regenererLienPrefill(userId: string): Promise<ActionResult
     origine: ORIGINE_TENTATIVE.PREFILL,
     dsId: dossier.dsId,
     dsDemarcheId: dossier.dsDemarcheId,
-    dsUrl: dossier.dsUrl,
   });
 
   // Un ancien brouillon a-t-il été déposé depuis ? Alors il n'y a rien à recréer.

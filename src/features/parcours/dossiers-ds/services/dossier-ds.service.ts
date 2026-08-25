@@ -52,7 +52,6 @@ export async function createDossierForCurrentStep(
           origine: ORIGINE_TENTATIVE.PREFILL,
           dsId: params.dsId,
           dsDemarcheId: params.dsDemarcheId,
-          dsUrl: params.dsUrl,
         },
         tx
       );

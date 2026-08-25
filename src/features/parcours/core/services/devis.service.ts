@@ -47,7 +47,7 @@ export async function createDevisDossier(userId: string): Promise<ActionResult<D
     // Idempotence : si un dossier existe déjà pour cette étape, le retourner.
     const existing = await getDossierByStep(parcoursData.parcours.id, Step.DEVIS);
     if (existing) {
-      debug.log("Dossier devis déjà existant, renvoi de l'URL:", existing.dsUrl);
+      debug.log("Dossier devis déjà existant, n° :", existing.dsNumber);
       return {
         success: true,
         data: {
@@ -108,7 +108,6 @@ export async function createDevisDossier(userId: string): Promise<ActionResult<D
     const createResponse = await prefillClient.createPrefillDossier(prefillData, Step.DEVIS);
 
     debug.log("=== RÉPONSE DS ===");
-    debug.log("  dossier_url:", createResponse.dossier_url);
     debug.log("  dossier_number:", createResponse.dossier_number);
     debug.log("  dossier_id:", createResponse.dossier_id);
     debug.log("A vérifier côté DS : annotations privées + commune et adresse préremplies.");

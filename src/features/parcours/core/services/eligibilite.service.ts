@@ -85,7 +85,7 @@ export async function createEligibiliteDossier(
     // (le current_status ne sert plus de verrou anti-doublon, cf. ADR-0009).
     const existing = await getDossierByStep(parcoursData.parcours.id, Step.ELIGIBILITE);
     if (existing) {
-      debug.log("Dossier éligibilité déjà existant, renvoi de l'URL:", existing.dsUrl);
+      debug.log("Dossier éligibilité déjà existant, n° :", existing.dsNumber);
       return {
         success: true,
         data: {
@@ -192,8 +192,8 @@ export async function createEligibiliteDossier(
     debug.log("Envoi à Démarches Simplifiées...");
     const createResponse = await prefillClient.createPrefillDossier(prefillData, Step.ELIGIBILITE);
 
+    // Jamais l'URL : elle porte le `prefill_token`, qui permet de réclamer le brouillon (ADR-0027).
     debug.log("Réponse de DS:", {
-      dossier_url: createResponse.dossier_url,
       dossier_number: createResponse.dossier_number,
       dossier_id: createResponse.dossier_id,
     });
