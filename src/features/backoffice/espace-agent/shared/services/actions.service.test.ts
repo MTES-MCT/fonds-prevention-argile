@@ -317,7 +317,72 @@ describe("ActionsService", () => {
 
       expect(result.success).toBe(true);
       expect(result.action?.message).toBe("Updated");
-      expect(parcoursActionsRepo.updateMessage).toHaveBeenCalledWith("action-1", "Updated");
+      expect(parcoursActionsRepo.updateMessage).toHaveBeenCalledWith("action-1", "Updated", undefined);
+    });
+
+    it("met à jour la date de RDV quand elle est fournie", async () => {
+      vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(true);
+      vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
+      vi.mocked(parcoursActionsRepo.updateMessage).mockResolvedValue({
+        id: "action-1",
+        parcoursId: "parcours-1",
+        agentId: "agent-1",
+        actionType: "expert_rdv_1",
+        actionPrecision: null,
+        rdvDate: "2026-09-01",
+        authorName: "Jean Dupont",
+        authorStructure: "AMO Test",
+        authorStructureType: "AMO",
+        message: "Updated",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        editedAt: new Date(),
+      });
+      vi.mocked(parcoursActionsRepo.findByIdWithDetails).mockResolvedValue({ ...mockAction, message: "Updated" });
+
+      const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "Updated", "2026-09-01");
+
+      expect(result.success).toBe(true);
+      expect(parcoursActionsRepo.updateMessage).toHaveBeenCalledWith("action-1", "Updated", "2026-09-01");
+    });
+
+    it("efface la date de RDV quand une chaîne vide est fournie", async () => {
+      vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(true);
+      vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
+      vi.mocked(parcoursActionsRepo.updateMessage).mockResolvedValue({
+        id: "action-1",
+        parcoursId: "parcours-1",
+        agentId: "agent-1",
+        actionType: "expert_rdv_1",
+        actionPrecision: null,
+        rdvDate: null,
+        authorName: "Jean Dupont",
+        authorStructure: "AMO Test",
+        authorStructureType: "AMO",
+        message: "Updated",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        editedAt: new Date(),
+      });
+      vi.mocked(parcoursActionsRepo.findByIdWithDetails).mockResolvedValue({ ...mockAction, message: "Updated" });
+
+      await service.updateAction("action-1", "agent-1", UserRole.AMO, "Updated", "");
+
+      expect(parcoursActionsRepo.updateMessage).toHaveBeenCalledWith("action-1", "Updated", "");
+    });
+
+    it("refuse une date de RDV mal formée", async () => {
+      vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(true);
+      vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
+
+      const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "Updated", "01/09/2026");
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toBe("Date de RDV invalide.");
+      expect(parcoursActionsRepo.updateMessage).not.toHaveBeenCalled();
     });
   });
 

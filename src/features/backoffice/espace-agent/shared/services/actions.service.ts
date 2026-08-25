@@ -139,10 +139,18 @@ export class ActionsService {
   }
 
   /**
-   * Met à jour le commentaire d'une action existante
-   * Seul l'auteur de l'action peut le modifier
+   * Met à jour le commentaire (et, pour les actions expert_rdv_1/2/3, la date
+   * de RDV) d'une action existante. Seul l'auteur de l'action peut la modifier.
+   * `rdvDate` : undefined = ne pas toucher la colonne, "" = effacer la date,
+   * "YYYY-MM-DD" = la mettre à jour.
    */
-  async updateAction(actionId: string, agentId: string, role: UserRole, message: string): Promise<UpdateActionResult> {
+  async updateAction(
+    actionId: string,
+    agentId: string,
+    role: UserRole,
+    message: string,
+    rdvDate?: string
+  ): Promise<UpdateActionResult> {
     if (!hasPermission(role, BackofficePermission.COMMENTAIRES_UPDATE_OWN)) {
       return {
         success: false,
@@ -168,8 +176,12 @@ export class ActionsService {
       return { success: false, error: "Le commentaire ne peut pas dépasser 5000 caractères." };
     }
 
+    if (rdvDate !== undefined && rdvDate.length > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(rdvDate)) {
+      return { success: false, error: "Date de RDV invalide." };
+    }
+
     try {
-      await parcoursActionsRepo.updateMessage(actionId, message.trim());
+      await parcoursActionsRepo.updateMessage(actionId, message.trim(), rdvDate);
 
       const actionDetail = await parcoursActionsRepo.findByIdWithDetails(actionId);
 

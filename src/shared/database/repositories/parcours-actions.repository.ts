@@ -56,12 +56,14 @@ export class ParcoursActionsRepository extends BaseRepository<ParcoursAction> {
   }
 
   /**
-   * Met à jour le commentaire (message) d'une action
+   * Met à jour le commentaire (message) d'une action, et sa date de RDV si
+   * fournie. `rdvDate` : undefined = ne pas toucher la colonne, "" = l'effacer.
    */
-  async updateMessage(id: string, message: string): Promise<ParcoursAction | null> {
+  async updateMessage(id: string, message: string, rdvDate?: string): Promise<ParcoursAction | null> {
     return this.update(id, {
       message,
       editedAt: new Date(),
+      ...(rdvDate !== undefined && { rdvDate: rdvDate.length > 0 ? rdvDate : null }),
     });
   }
 

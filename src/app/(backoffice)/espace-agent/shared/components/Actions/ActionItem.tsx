@@ -82,6 +82,8 @@ export function ActionItem({ action, currentAgentId, onUpdated, onDeleted }: Act
             parcoursId={action.parcoursId}
             actionId={action.id}
             initialMessage={action.message ?? ""}
+            initialActionType={action.actionType}
+            initialRdvDate={action.rdvDate}
             onSuccess={handleUpdateSuccess}
             onCancel={() => setIsEditing(false)}
           />
