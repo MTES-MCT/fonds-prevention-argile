@@ -166,6 +166,12 @@ export class DemarchesSimplifieesClient {
                 label
                 stringValue
               }
+              # Porte le lien FPA (donc le parcoursId) : clé de rattachement, cf. ADR-0027.
+              annotations {
+                id
+                label
+                stringValue
+              }
             }
           }
         }
