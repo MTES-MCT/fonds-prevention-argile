@@ -114,6 +114,12 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 > `users` (demandeur FranceConnect) et `agents` (ProConnect) sont deux tables
 > distinctes : le citoyen et l'agent ne partagent pas la même identité.
 
+> `dossiers_demarches_simplifiees` est le **pointeur courant** vers le dossier DN d'une étape,
+> pas l'historique des dossiers créés. La distinction entre **tentative** (brouillon prérempli,
+> plusieurs possibles, jamais autoritaire) et **dossier confirmé** (déposé, unique) est posée
+> par [ADR-0027](adr/0027-tentative-prefill-vs-dossier-confirme.md) ; le registre des tentatives
+> arrive en phase 3.
+
 ---
 
 ## 6. Intégrations externes

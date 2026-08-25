@@ -28,6 +28,14 @@ Chaque parcours a deux niveaux d'état complémentaires :
 | Parcours interne | `parcours_prevention.current_status`       | Dérivé du dossier de `current_step` |
 | Parcours interne | `parcours_prevention.current_step`         | Logique métier (progression)        |
 
+> **Tentative vs dossier confirmé ([ADR-0027](../adr/0027-tentative-prefill-vs-dossier-confirme.md)).**
+> Une ligne `dossiers_demarches_simplifiees` est un **pointeur**, pas le dossier du demandeur.
+> Tant que rien n'est déposé, elle ne désigne qu'une **tentative** : un brouillon prérempli
+> invisible de l'API instructeur, qui peut avoir été réclamé par un autre compte ou purgé. Le
+> **dossier confirmé** n'existe qu'au dépôt, et c'est lui seul qui fait foi. Modèle cible :
+> conserver toutes les tentatives (aucun numéro DN n'est jamais effacé) et rattacher au dépôt
+> via l'annotation FPA. Mise en œuvre en cours, phases 3 à 6.
+
 - **`ds_status`** ∈ `null | EN_CONSTRUCTION | EN_INSTRUCTION | ACCEPTE | REFUSE | CLASSE_SANS_SUITE | NON_ACCESSIBLE` — c'est DS qui décide. `null` = dossier créé dans DS mais **pas encore déposé** ; `EN_CONSTRUCTION` = **déposé**, en attente d'instruction (et non « brouillon »). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
 - **`current_status`** ∈ `todo | en_instruction | valide` — dérivé via `DS_TO_INTERNAL_STATUS` (voir §3.2).
 - **`current_step`** ∈ les 5 étapes — change uniquement sur appel explicite à `moveToNextStep`.
