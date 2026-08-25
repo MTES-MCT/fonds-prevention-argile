@@ -1,5 +1,6 @@
 import { db } from "@/shared/database/client";
-import { dossiersDemarchesSimplifiees } from "@/shared/database/schema";
+import { dossiersDemarchesSimplifiees, ORIGINE_TENTATIVE } from "@/shared/database/schema";
+import { dossiersDsTentativesRepo } from "@/shared/database/repositories";
 import { eq, and, desc } from "drizzle-orm";
 import type { Step } from "../../core/domain/value-objects/step";
 import { DSStatus } from "../domain/value-objects/ds-status";
@@ -28,17 +29,36 @@ export async function createDossierForCurrentStep(
   params: CreateDossierDSParams
 ): Promise<ActionResult<{ dossierId: string }>> {
   try {
-    const [dossier] = await db
-      .insert(dossiersDemarchesSimplifiees)
-      .values({
-        parcoursId,
-        step,
-        dsNumber: params.dsNumber,
-        dsDemarcheId: params.dsDemarcheId,
-        dsUrl: params.dsUrl,
-        dsId: params.dsId,
-      })
-      .returning();
+    // Pointeur et registre dans la même transaction : un pointeur sans tentative connue
+    // doit être impossible, sinon le numéro se perd au premier remplacement (ADR-0027).
+    const dossier = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(dossiersDemarchesSimplifiees)
+        .values({
+          parcoursId,
+          step,
+          dsNumber: params.dsNumber,
+          dsDemarcheId: params.dsDemarcheId,
+          dsUrl: params.dsUrl,
+          dsId: params.dsId,
+        })
+        .returning();
+
+      await dossiersDsTentativesRepo.record(
+        {
+          parcoursId,
+          step,
+          dsNumber: params.dsNumber,
+          origine: ORIGINE_TENTATIVE.PREFILL,
+          dsId: params.dsId,
+          dsDemarcheId: params.dsDemarcheId,
+          dsUrl: params.dsUrl,
+        },
+        tx
+      );
+
+      return row;
+    });
 
     // Synchro Brevo (flux) : dossier DN créé en brouillon (déposé plus tard, ds_status
     // encore NULL). Réutilise DN_UPDATE avec old/new vides plutôt qu'un évènement dédié —
