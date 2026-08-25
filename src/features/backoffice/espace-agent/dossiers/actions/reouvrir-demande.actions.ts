@@ -4,11 +4,11 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations } from "@/shared/database/schema";
-import { parcoursRepo, parcoursActionsRepo } from "@/shared/database/repositories";
+import { parcoursRepo } from "@/shared/database/repositories";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { calculateAgentScope, canReopenRefusedDemande } from "@/features/auth/permissions/services/agent-scope.service";
 import { reouvrirDemandeRefusee } from "@/features/parcours/amo/services/reouverture-demande.service";
-import { buildAuthorSnapshot } from "@/features/backoffice/espace-agent/shared/services/author-snapshot";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 import { ACTION_TYPE_DOSSIER_REOUVERT } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { ROLES_REOUVERTURE } from "@/features/backoffice/espace-agent/dossiers/domain/reouverture";
 import type { ActionResult } from "@/shared/types";
@@ -59,15 +59,11 @@ export async function reouvrirDemandeAction(parcoursId: string): Promise<ActionR
     if (!result.success) return { success: false, error: result.error };
 
     // Audit : qui a ré-ouvert et quand.
-    const snapshot = await buildAuthorSnapshot(agent);
-    await parcoursActionsRepo.create({
+    await logSystemAction({
       parcoursId,
-      agentId: agent.id,
+      author: { agent },
       actionType: ACTION_TYPE_DOSSIER_REOUVERT,
       message: `Demande ré-ouverte${result.data.emailSent ? " (email de validation renvoyé à l'AMO)" : ""}.`,
-      authorName: snapshot.authorName,
-      authorStructure: snapshot.authorStructure,
-      authorStructureType: snapshot.authorStructureType,
     });
 
     revalidatePath("/espace-agent", "layout");

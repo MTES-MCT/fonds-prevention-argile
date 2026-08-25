@@ -2,12 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/features/auth/server";
-import { parcoursRepo, parcoursActionsRepo } from "@/shared/database/repositories";
+import { parcoursRepo } from "@/shared/database/repositories";
 import type { ActionResult } from "@/shared/types/action-result.types";
 import {
   ACTION_TYPE_ACCOMPAGNEMENT_ARRETE,
   ACTION_TYPE_ARRET_DEMANDE,
 } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 import {
   annulerAccompagnementDemandeur,
   type ArretAccompagnementOutcome,
@@ -40,17 +41,14 @@ export async function annulerMonAccompagnement(): Promise<ActionResult<{ outcome
     const { outcome, amoNom, demandeurPrenom, demandeurNom } = result.data;
 
     // Audit visible des professionnels : l'auteur est le demandeur, pas un agent.
-    await parcoursActionsRepo.create({
+    await logSystemAction({
       parcoursId: parcours.id,
-      agentId: null,
+      author: { demandeur: { nom: `${demandeurPrenom} ${demandeurNom}` } },
       actionType: outcome === "detache" ? ACTION_TYPE_ACCOMPAGNEMENT_ARRETE : ACTION_TYPE_ARRET_DEMANDE,
       message:
         outcome === "detache"
           ? "Le demandeur a choisi de poursuivre ses démarches en autonomie."
           : `Le demandeur demande l'arrêt de l'accompagnement. L'accord de ${amoNom || "l'AMO"} (mandataire financier) est requis.`,
-      authorName: `${demandeurPrenom} ${demandeurNom}`.trim() || "Le demandeur",
-      authorStructure: null,
-      authorStructureType: "DEMANDEUR",
     });
 
     revalidatePath("/mon-compte");
