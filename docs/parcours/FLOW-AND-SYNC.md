@@ -39,6 +39,13 @@ Chaque parcours a deux niveaux d'état complémentaires :
 > FPA, qui porte le `parcoursId` : `pnpm ds:reconcilier` (dry-run par défaut). Aucun conflit
 > n'est tranché automatiquement — deux dossiers déposés pour une même étape remontent pour
 > arbitrage.
+>
+> Côté demandeur, « Ce lien ne fonctionne plus ? » (`regenererLienPrefill`) sonde d'abord les
+> numéros déjà connus — si l'un a été déposé entre-temps, on rattache au lieu de recréer — puis
+> retire le pointeur pour qu'un nouveau prérempli soit créé. **Retirer le pointeur ne perd plus
+> rien** : le numéro reste au registre, et la réconciliation le rattrapera s'il finit déposé.
+> C'est ce qui distingue ce secours du reset gelé par [ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md),
+> qui effaçait la seule trace du numéro.
 
 - **`ds_status`** ∈ `null | EN_CONSTRUCTION | EN_INSTRUCTION | ACCEPTE | REFUSE | CLASSE_SANS_SUITE | NON_ACCESSIBLE` — c'est DS qui décide. `null` = dossier créé dans DS mais **pas encore déposé** ; `EN_CONSTRUCTION` = **déposé**, en attente d'instruction (et non « brouillon »). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
 - **`current_status`** ∈ `todo | en_instruction | valide` — dérivé via `DS_TO_INTERNAL_STATUS` (voir §3.2).
@@ -819,6 +826,7 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Amorçage du registre                           | `scripts/ops/sync-erreurs/backfill-tentatives.ts` (`pnpm ds:backfill-tentatives`)                           |
 | Réconciliation au dépôt (annotation FPA)       | `dossiers-ds/services/reconciliation.service.ts`, `dossiers-ds/utils/annotation-fpa.utils.ts`               |
 | Réconciliation (script ops)                    | `scripts/ops/sync-erreurs/reconcilier-dossiers.ts` (`pnpm ds:reconcilier`)                                  |
+| Secours « ce lien ne fonctionne plus »         | `dossiers-ds/services/regeneration.service.ts`, `actions/regeneration.actions.ts`                           |
 | Schéma historique CRON                         | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts`                                            |
 | Repository parcours                            | `src/shared/database/repositories/parcours-prevention.repository.ts`                                        |
 | Repository sync_runs                           | `src/shared/database/repositories/sync-run.repository.ts`                                                   |
