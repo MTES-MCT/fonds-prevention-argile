@@ -4,8 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { assertCanActAsResponsable } from "@/features/auth/permissions/services/responsable-permissions.service";
-import { parcoursActionsRepo } from "@/shared/database/repositories";
-import { buildAuthorSnapshot } from "@/features/backoffice/espace-agent/shared/services/author-snapshot";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 import {
   ACTION_TYPE_ACCOMPAGNEMENT_ARRETE,
   ACTION_TYPE_ARRET_REFUSE,
@@ -46,20 +45,15 @@ export async function arreterAccompagnementAction(parcoursId: string, raisons: s
       return { success: false, error: "Merci de préciser au moins une raison" };
     }
 
-    // Snapshot AVANT la mutation : après détachement, l'agent n'est plus rattaché au dossier.
-    const snapshot = await buildAuthorSnapshot(agent);
-
     const result = await detacherAmo({ parcoursId });
     if (!result.success) return { success: false, error: result.error };
 
-    await parcoursActionsRepo.create({
+    // Auteur = l'agent lu AVANT la mutation : après détachement il n'est plus rattaché au dossier.
+    await logSystemAction({
       parcoursId,
-      agentId: agent.id,
+      author: { agent },
       actionType: ACTION_TYPE_ACCOMPAGNEMENT_ARRETE,
       message: raisonsPropres.join(" - "),
-      authorName: snapshot.authorName,
-      authorStructure: snapshot.authorStructure,
-      authorStructureType: snapshot.authorStructureType,
     });
 
     revalidatePath("/espace-agent", "layout");
@@ -96,15 +90,11 @@ export async function refuserArretAccompagnementAction(parcoursId: string): Prom
     const result = await refuserDemandeArret({ parcoursId });
     if (!result.success) return { success: false, error: result.error };
 
-    const snapshot = await buildAuthorSnapshot(agent);
-    await parcoursActionsRepo.create({
+    await logSystemAction({
       parcoursId,
-      agentId: agent.id,
+      author: { agent },
       actionType: ACTION_TYPE_ARRET_REFUSE,
       message: "L'accompagnement se poursuit : la demande d'arrêt du demandeur a été refusée.",
-      authorName: snapshot.authorName,
-      authorStructure: snapshot.authorStructure,
-      authorStructureType: snapshot.authorStructureType,
     });
 
     revalidatePath("/espace-agent", "layout");

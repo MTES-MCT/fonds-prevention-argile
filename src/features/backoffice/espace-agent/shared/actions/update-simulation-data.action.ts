@@ -23,8 +23,7 @@ import {
   verifyProspectTerritoryAccess,
   calculateAgentScope,
 } from "@/features/auth/permissions/services/agent-scope.service";
-import { parcoursActionsRepo } from "@/shared/database/repositories";
-import { buildAuthorSnapshot } from "../services/author-snapshot";
+import { logSystemAction } from "../services/action-audit.service";
 import { ACTION_TYPE_ELIGIBILITE_REFUSEE } from "../domain/types/action.types";
 
 /**
@@ -214,15 +213,11 @@ export async function updateSimulationDataAction(
       // Audit : trace le refus automatique dans l'historique du dossier (hors transaction,
       // même pattern que reouvrirDemandeAction — best-effort, ne bloque pas la sauvegarde).
       if (didRefuserNonEligible) {
-        const snapshot = await buildAuthorSnapshot(agent);
-        await parcoursActionsRepo.create({
+        await logSystemAction({
           parcoursId: dossier.parcours.id,
-          agentId: agent.id,
+          author: { agent },
           actionType: ACTION_TYPE_ELIGIBILITE_REFUSEE,
           message: "Accompagnement refusé automatiquement suite à la correction de la simulation (non éligible).",
-          authorName: snapshot.authorName,
-          authorStructure: snapshot.authorStructure,
-          authorStructureType: snapshot.authorStructureType,
         });
       }
 

@@ -1,11 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { parcoursActionsRepo } from "@/shared/database/repositories";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import { renvoyerInvitationClaim } from "@/features/backoffice/espace-agent/creation-dossier/services/renvoyer-invitation.service";
-import { buildAuthorSnapshot } from "@/features/backoffice/espace-agent/shared/services/author-snapshot";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 import { ACTION_TYPE_INVITATION_RENVOYEE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { UserRole } from "@/shared/domain/value-objects";
 import type { ActionResult } from "@/shared/types";
@@ -40,15 +39,11 @@ export async function renvoyerInvitationAction(parcoursId: string): Promise<Acti
     }
 
     // Audit : qui a renvoyé l'invitation et quand.
-    const snapshot = await buildAuthorSnapshot(agent);
-    await parcoursActionsRepo.create({
+    await logSystemAction({
       parcoursId,
-      agentId: agent.id,
+      author: { agent },
       actionType: ACTION_TYPE_INVITATION_RENVOYEE,
       message: "Email d'invitation renvoyé au demandeur.",
-      authorName: snapshot.authorName,
-      authorStructure: snapshot.authorStructure,
-      authorStructureType: snapshot.authorStructureType,
     });
 
     revalidatePath("/espace-agent", "layout");
