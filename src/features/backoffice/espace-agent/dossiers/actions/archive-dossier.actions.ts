@@ -5,6 +5,11 @@ import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.acti
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { assertCanActAsResponsable } from "@/features/auth/permissions/services/responsable-permissions.service";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
+import {
+  ACTION_TYPE_DOSSIER_ARCHIVE,
+  ACTION_TYPE_DOSSIER_DESARCHIVE,
+} from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import {
   SituationParticulier,
   situationApresReactivation,
@@ -37,6 +42,14 @@ export async function archiveDossierAction(parcoursId: string, archiveReason: st
       agent.id
     );
 
+    // Audit : `archived_at` ne garde qu'un état courant, l'action garde l'historique.
+    await logSystemAction({
+      parcoursId,
+      author: { agent },
+      actionType: ACTION_TYPE_DOSSIER_ARCHIVE,
+      message: archiveReason,
+    });
+
     revalidatePath("/espace-agent", "layout");
     return { success: true, data: undefined };
   } catch (error) {
@@ -67,6 +80,14 @@ export async function unarchiveDossierAction(parcoursId: string): Promise<Action
     // Cible : ELIGIBLE si un AMO est responsable, PROSPECT sinon (workflow AV).
     const target = situationApresReactivation(guard.responsable.type === "AMO");
     await parcoursPreventionRepository.updateSituationParticulier(parcoursId, target);
+
+    // Le dé-archivage efface `archive_reason` : sans cette trace, on perdrait la date.
+    await logSystemAction({
+      parcoursId,
+      author: { agent },
+      actionType: ACTION_TYPE_DOSSIER_DESARCHIVE,
+      message: "Dossier remis dans le suivi actif.",
+    });
 
     revalidatePath("/espace-agent", "layout");
     return { success: true, data: undefined };

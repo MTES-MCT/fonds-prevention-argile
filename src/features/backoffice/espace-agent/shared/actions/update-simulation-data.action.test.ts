@@ -53,7 +53,7 @@ import {
   calculateAgentScope,
 } from "@/features/auth/permissions/services/agent-scope.service";
 import { parcoursActionsRepo } from "@/shared/database/repositories";
-import { ACTION_TYPE_ELIGIBILITE_REFUSEE } from "../domain/types/action.types";
+import { ACTION_TYPE_ELIGIBILITE_REFUSEE, ACTION_TYPE_DOSSIER_DESARCHIVE } from "../domain/types/action.types";
 
 const mockValidationRow = (
   statut: StatutValidationAmo,
@@ -161,8 +161,13 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     expect(txSetSpy).toHaveBeenCalledWith(
       expect.objectContaining({ situationParticulier: SituationParticulier.ELIGIBLE, archivedAt: null })
     );
-    // Un retour à l'éligibilité n'est pas un refus : aucune action d'audit "refus" tracée.
-    expect(parcoursActionsRepo.create).not.toHaveBeenCalled();
+    // Un retour à l'éligibilité n'est pas un refus : on trace le dé-archivage, pas un refus.
+    expect(parcoursActionsRepo.create).not.toHaveBeenCalledWith(
+      expect.objectContaining({ actionType: ACTION_TYPE_ELIGIBILITE_REFUSEE })
+    );
+    expect(parcoursActionsRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ parcoursId: "parcours-1", actionType: ACTION_TYPE_DOSSIER_DESARCHIVE })
+    );
   });
 
   it("ne réécrit ni statut ni archivage quand le verdict est inchangé (reste éligible)", async () => {
