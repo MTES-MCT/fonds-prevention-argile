@@ -98,6 +98,13 @@ Deux déclencheurs :
   n'est créé (le ménage choisit lui-même). Best-effort : un échec de l'auto-lien ne fait pas
   échouer la qualification.
 
+> **Le téléphone du demandeur n'est pas requis** (août 2026). Un dossier créé par un Aller-vers
+> n'en a pas forcément, et il ne figure pas dans l'email envoyé à l'AMO : l'exiger bloquait
+> l'auto-attribution **en silence** (échec best-effort), laissant le dossier invisible de l'AMO
+> — constaté en prod sur un dossier de l'Indre. `selectAmoForUser` n'écrit `users.telephone`
+> que si une valeur est fournie, pour ne pas écraser un numéro existant. Le formulaire de choix
+> AMO côté demandeur continue, lui, de l'exiger.
+
 > **Résolution territoriale user-first (fallback agent).** `assignAmoAutomatiqueForUser` et
 > `selectAmoForUser` résolvent **commune / EPCI** via
 > `getDemandeurFirstSimulation` (`rgaSimulationData ?? rgaSimulationDataAgent`), et non plus

@@ -328,28 +328,40 @@ describe("amo-selection.service", () => {
       }
     });
 
-    it("devrait échouer si le téléphone est vide", async () => {
-      const result = await selectAmoForUser(userId, {
-        ...validParams,
-        userTelephone: "  ",
+    // Le téléphone n'est plus exigé : un dossier créé par un Aller-vers n'en a pas, et il ne
+    // figure pas dans l'email envoyé à l'AMO. L'exiger bloquait l'attribution en silence.
+    it("devrait réussir sans téléphone, sans écraser le numéro existant du demandeur", async () => {
+      let selectCallCount = 0;
+      vi.mocked(db.select).mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount === 1) {
+          return {
+            from: vi.fn().mockReturnValue({
+              leftJoin: vi.fn().mockReturnThis(),
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
+              }),
+            }),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any;
+        }
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAmo]),
+            }),
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Le téléphone est requis");
-      }
-    });
+      const result = await selectAmoForUser(userId, { ...validParams, userTelephone: null });
 
-    it("devrait échouer si le téléphone est absent", async () => {
-      const result = await selectAmoForUser(userId, {
-        ...validParams,
-        userTelephone: "",
-      });
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Le téléphone est requis");
-      }
+      expect(result.success).toBe(true);
+      expect(vi.mocked(db.insert).mock.results[0].value.values).toHaveBeenCalledWith(
+        expect.objectContaining({ userTelephone: null })
+      );
+      expect(vi.mocked(db.update).mock.results[0].value.set.mock.calls[0][0]).not.toHaveProperty("telephone");
     });
 
     it("devrait échouer si l'adresse du logement est vide", async () => {
