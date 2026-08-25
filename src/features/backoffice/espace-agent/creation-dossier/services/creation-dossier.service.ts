@@ -23,6 +23,8 @@ import {
   CLAIM_TOKEN_TTL_MS,
 } from "../domain/types";
 import { getInviterName } from "./inviter-name.service";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
+import { ACTION_TYPE_DOSSIER_ARCHIVE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 
 /**
  * Construit des données de simulation minimales à partir d'une adresse saisie
@@ -172,6 +174,13 @@ export async function createDossierByAgent(params: CreateDossierByAgentParams): 
       });
     } else {
       await parcoursRepo.updateSituationParticulier(parcours.id, SituationParticulier.ARCHIVE, archiveNote, agentId);
+      // Mode `av` : `qualifyProspect` trace déjà sa décision, pas de doublon ici.
+      await logSystemAction({
+        parcoursId: parcours.id,
+        author: { agentId },
+        actionType: ACTION_TYPE_DOSSIER_ARCHIVE,
+        message: `${archiveNote} (à la création du dossier)`,
+      });
     }
   }
 
