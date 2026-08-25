@@ -1,0 +1,1 @@
+ALTER TABLE "parcours_actions" ADD COLUMN "rdv_date" date;
