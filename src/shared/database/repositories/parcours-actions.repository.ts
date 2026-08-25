@@ -278,6 +278,7 @@ export class ParcoursActionsRepository extends BaseRepository<ParcoursAction> {
       parcoursId: row.action.parcoursId,
       actionType: row.action.actionType,
       actionPrecision: row.action.actionPrecision,
+      rdvDate: row.action.rdvDate,
       message: row.action.message,
       createdAt: row.action.createdAt,
       updatedAt: row.action.updatedAt,

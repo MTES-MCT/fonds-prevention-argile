@@ -9,6 +9,7 @@ import {
   ACTION_TYPE_GROUPS,
   ACTION_TYPE_AUTRE,
   ACTION_TYPE_COMMENTAIRE_LIBRE,
+  ACTION_TYPES_WITH_RDV_DATE,
 } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 
 interface ActionFormProps {
@@ -32,6 +33,7 @@ export function ActionForm({ parcoursId, actionId, initialMessage = "", onSucces
 
   const [actionType, setActionType] = useState<string>("");
   const [precision, setPrecision] = useState("");
+  const [rdvDate, setRdvDate] = useState("");
   const [message, setMessage] = useState(initialMessage);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +86,7 @@ export function ActionForm({ parcoursId, actionId, initialMessage = "", onSucces
             actionType,
             message: message.trim() || undefined,
             actionPrecision: precision.trim() || undefined,
+            rdvDate: rdvDate || undefined,
           });
 
       if (result.success) {
@@ -153,6 +156,24 @@ export function ActionForm({ parcoursId, actionId, initialMessage = "", onSucces
                 onChange={(e) => setPrecision(e.target.value)}
                 disabled={isSubmitting}
                 placeholder="Précisez l'action réalisée"
+              />
+            </div>
+          )}
+
+          {/* Date du RDV si Expert : RDV n°1/2/3 */}
+          {ACTION_TYPES_WITH_RDV_DATE.includes(actionType) && (
+            <div className="fr-input-group">
+              <label className="fr-label" htmlFor="action-rdv-date">
+                Date du RDV
+                <span className="fr-hint-text">Optionnelle</span>
+              </label>
+              <input
+                className="fr-input"
+                type="date"
+                id="action-rdv-date"
+                value={rdvDate}
+                onChange={(e) => setRdvDate(e.target.value)}
+                disabled={isSubmitting}
               />
             </div>
           )}

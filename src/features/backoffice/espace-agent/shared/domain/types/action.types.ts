@@ -89,6 +89,7 @@ export const ACTION_TYPE_GROUPS = [
       { value: "expert_devis_recu", label: "\u{1F9D1} Expert : devis reçu" },
       { value: "expert_rdv_1", label: "\u{1F9D1} Expert : RDV n°1" },
       { value: "expert_rdv_2", label: "\u{1F9D1} Expert : RDV n°2" },
+      { value: "expert_rdv_3", label: "\u{1F9D1} Expert : RDV n°3" },
       { value: "expert_attente_retour", label: "\u{1F9D1} Expert : attente retour" },
     ],
   },
@@ -126,6 +127,9 @@ export const ACTION_LABELS_BY_VALUE: Record<string, string> = ACTION_TYPE_GROUPS
 /** Liste plate de toutes les valeurs de type d'action (pour validation) */
 export const ACTION_TYPE_VALUES: string[] = ACTION_TYPE_GROUPS.flatMap((g) => g.items.map((i) => i.value));
 
+/** Types d'action portant une date de RDV optionnelle (peut être dans le passé) */
+export const ACTION_TYPES_WITH_RDV_DATE = ["expert_rdv_1", "expert_rdv_2", "expert_rdv_3"];
+
 /**
  * Détails d'une action avec informations de l'agent auteur (pour affichage)
  */
@@ -134,6 +138,8 @@ export interface ActionDetail {
   parcoursId: string;
   actionType: string;
   actionPrecision: string | null;
+  /** Date du RDV (format YYYY-MM-DD), renseignée uniquement pour ACTION_TYPES_WITH_RDV_DATE */
+  rdvDate: string | null;
   message: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -155,6 +161,8 @@ export interface ActionFormData {
   actionType: string;
   message?: string;
   actionPrecision?: string;
+  /** Date du RDV (format YYYY-MM-DD), pour ACTION_TYPES_WITH_RDV_DATE */
+  rdvDate?: string;
 }
 
 /**

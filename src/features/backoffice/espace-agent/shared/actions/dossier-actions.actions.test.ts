@@ -55,6 +55,7 @@ describe("dossier-actions.actions", () => {
     parcoursId: "parcours-1",
     actionType: "appel_effectue",
     actionPrecision: null,
+    rdvDate: null,
     message: "Test message",
     createdAt: new Date(),
     updatedAt: new Date(),

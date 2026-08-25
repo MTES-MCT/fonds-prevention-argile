@@ -80,6 +80,7 @@ export class ActionsService {
     const { actionType } = data;
     const message = data.message?.trim() ?? "";
     const actionPrecision = data.actionPrecision?.trim() ?? "";
+    const rdvDate = data.rdvDate?.trim() ?? "";
 
     // Validation du type d'action
     if (!actionType || !ACTION_TYPE_VALUES.includes(actionType)) {
@@ -100,6 +101,10 @@ export class ActionsService {
       return { success: false, error: "Le commentaire ne peut pas dépasser 5000 caractères." };
     }
 
+    if (rdvDate.length > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(rdvDate)) {
+      return { success: false, error: "Date de RDV invalide." };
+    }
+
     try {
       const agent = await agentsRepo.findById(agentId);
       if (!agent) {
@@ -113,6 +118,7 @@ export class ActionsService {
         agentId,
         actionType,
         actionPrecision: actionPrecision.length > 0 ? actionPrecision : null,
+        rdvDate: rdvDate.length > 0 ? rdvDate : null,
         message: message.length > 0 ? message : null,
         authorName,
         authorStructure,
