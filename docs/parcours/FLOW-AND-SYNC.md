@@ -35,8 +35,10 @@ Chaque parcours a deux niveaux d'état complémentaires :
 > **dossier confirmé** n'existe qu'au dépôt, et c'est lui seul qui fait foi. Le registre
 > `dossiers_ds_tentatives` conserve tout numéro DN connu du parcours — écrit dans la même
 > transaction que le pointeur, jamais supprimé : remplacer un pointeur ne perd plus rien.
-> Amorçage : `pnpm ds:backfill-tentatives`. Le rattachement automatique au dépôt via
-> l'annotation FPA arrive en phase 4.
+> Amorçage : `pnpm ds:backfill-tentatives`. Le rattachement au dépôt se fait via l'annotation
+> FPA, qui porte le `parcoursId` : `pnpm ds:reconcilier` (dry-run par défaut). Aucun conflit
+> n'est tranché automatiquement — deux dossiers déposés pour une même étape remontent pour
+> arbitrage.
 
 - **`ds_status`** ∈ `null | EN_CONSTRUCTION | EN_INSTRUCTION | ACCEPTE | REFUSE | CLASSE_SANS_SUITE | NON_ACCESSIBLE` — c'est DS qui décide. `null` = dossier créé dans DS mais **pas encore déposé** ; `EN_CONSTRUCTION` = **déposé**, en attente d'instruction (et non « brouillon »). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
 - **`current_status`** ∈ `todo | en_instruction | valide` — dérivé via `DS_TO_INTERNAL_STATUS` (voir §3.2).
@@ -815,6 +817,8 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Schéma dossiers DS (pointeur courant)          | `src/shared/database/schema/dossiers-demarches-simplifiees.ts`                                              |
 | Registre des tentatives (ADR-0027)             | `src/shared/database/schema/dossiers-ds-tentatives.ts`, `repositories/dossiers-ds-tentatives.repository.ts` |
 | Amorçage du registre                           | `scripts/ops/sync-erreurs/backfill-tentatives.ts` (`pnpm ds:backfill-tentatives`)                           |
+| Réconciliation au dépôt (annotation FPA)       | `dossiers-ds/services/reconciliation.service.ts`, `dossiers-ds/utils/annotation-fpa.utils.ts`               |
+| Réconciliation (script ops)                    | `scripts/ops/sync-erreurs/reconcilier-dossiers.ts` (`pnpm ds:reconcilier`)                                  |
 | Schéma historique CRON                         | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts`                                            |
 | Repository parcours                            | `src/shared/database/repositories/parcours-prevention.repository.ts`                                        |
 | Repository sync_runs                           | `src/shared/database/repositories/sync-run.repository.ts`                                                   |
