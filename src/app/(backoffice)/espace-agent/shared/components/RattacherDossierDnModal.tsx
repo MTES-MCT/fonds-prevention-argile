@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useId } from "react";
 import { rattacherDossierDnAction } from "@/features/backoffice/espace-agent/dossiers/actions/rattacher-dossier-dn.actions";
 
 interface RattacherDossierDnModalProps {
@@ -16,53 +16,94 @@ interface RattacherDossierDnModalProps {
  * l'annotation qui permettrait de le retrouver automatiquement (ADR-0027).
  */
 export function RattacherDossierDnModal({ isOpen, onClose, parcoursId, onSuccess }: RattacherDossierDnModalProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [dsNumber, setDsNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const uniqueId = useId();
+  const modalId = `modal-rattacher-dn-${uniqueId}`;
 
-  if (!isOpen) return null;
+  // Ouverture/fermeture via l'API DSFR : l'attribut HTML `open` ne suffit pas.
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const modalInstance = (window as any).dsfr?.(dialog)?.modal;
+    if (!modalInstance) return;
+
+    if (isOpen) {
+      modalInstance.disclose();
+    } else {
+      modalInstance.conceal();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const handleConceal = () => {
+      setError(null);
+      onClose();
+    };
+
+    dialog.addEventListener("dsfr.conceal", handleConceal);
+    return () => {
+      dialog.removeEventListener("dsfr.conceal", handleConceal);
+    };
+  }, [onClose]);
 
   async function handleSubmit() {
-    setError(null);
     setIsSubmitting(true);
+    setError(null);
 
     try {
       const result = await rattacherDossierDnAction(parcoursId, dsNumber);
+
       if (result.success) {
         setDsNumber("");
+        const dialog = dialogRef.current;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const modalInstance = dialog ? (window as any).dsfr?.(dialog)?.modal : null;
+        if (modalInstance) modalInstance.conceal();
         onSuccess();
       } else {
-        setError(result.error);
+        setError(result.error || "Erreur lors du rattachement");
       }
+    } catch {
+      setError("Une erreur est survenue");
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <dialog open className="fr-modal fr-modal--opened" aria-labelledby="rattacher-dn-titre">
+    <dialog ref={dialogRef} id={modalId} className="fr-modal" aria-labelledby={`${modalId}-title`}>
       <div className="fr-container fr-container--fluid fr-container-md">
         <div className="fr-grid-row fr-grid-row--center">
-          <div className="fr-col-12 fr-col-md-8 fr-col-lg-6">
+          <div className="fr-col-12 fr-col-md-10 fr-col-lg-8">
             <div className="fr-modal__body">
               <div className="fr-modal__header">
-                <button type="button" className="fr-btn--close fr-btn" onClick={onClose}>
+                <button aria-controls={modalId} title="Fermer" type="button" className="fr-btn--close fr-btn">
                   Fermer
                 </button>
               </div>
 
               <div className="fr-modal__content">
-                <h2 id="rattacher-dn-titre" className="fr-modal__title">
-                  Rattacher un dossier Démarches Numériques
-                </h2>
+                <h1 id={`${modalId}-title`} className="fr-modal__title">
+                  Rattacher un dossier D&eacute;marches Num&eacute;riques
+                </h1>
 
                 <p>
-                  À utiliser quand le demandeur a déposé son dossier sans passer par le lien du Fonds Prévention Argile
-                  : son dossier existe côté Démarches Numériques, mais rien ne le relie à ce parcours.
+                  &Agrave; utiliser quand le demandeur a d&eacute;pos&eacute; son dossier sans passer par le lien du
+                  Fonds Pr&eacute;vention Argile : son dossier existe c&ocirc;t&eacute; D&eacute;marches
+                  Num&eacute;riques, mais rien ne le relie &agrave; ce parcours.
                 </p>
                 <p className="fr-text--sm">
-                  Le numéro figure en haut du dossier côté Démarches Numériques. Le dossier doit avoir été
-                  <strong> transmis</strong> : un brouillon non déposé n'est pas visible de notre côté.
+                  Le num&eacute;ro figure en haut du dossier c&ocirc;t&eacute; D&eacute;marches Num&eacute;riques. Le
+                  dossier doit avoir &eacute;t&eacute; <strong>transmis</strong> : un brouillon non d&eacute;pos&eacute;
+                  n&apos;est pas visible de notre c&ocirc;t&eacute;.
                 </p>
 
                 {error && (
@@ -72,11 +113,11 @@ export function RattacherDossierDnModal({ isOpen, onClose, parcoursId, onSuccess
                 )}
 
                 <div className="fr-input-group">
-                  <label className="fr-label" htmlFor="rattacher-dn-numero">
-                    Numéro du dossier
+                  <label className="fr-label" htmlFor={`${modalId}-numero`}>
+                    Num&eacute;ro du dossier
                   </label>
                   <input
-                    id="rattacher-dn-numero"
+                    id={`${modalId}-numero`}
                     className="fr-input"
                     type="text"
                     inputMode="numeric"
@@ -93,13 +134,13 @@ export function RattacherDossierDnModal({ isOpen, onClose, parcoursId, onSuccess
                     <button
                       type="button"
                       className="fr-btn"
-                      onClick={handleSubmit}
-                      disabled={isSubmitting || dsNumber.trim().length === 0}>
-                      {isSubmitting ? "Vérification…" : "Rattacher"}
+                      disabled={isSubmitting || dsNumber.trim().length === 0}
+                      onClick={handleSubmit}>
+                      {isSubmitting ? "Vérification..." : "Rattacher"}
                     </button>
                   </li>
                   <li>
-                    <button type="button" className="fr-btn fr-btn--secondary" onClick={onClose}>
+                    <button type="button" className="fr-btn fr-btn--secondary" aria-controls={modalId}>
                       Annuler
                     </button>
                   </li>
