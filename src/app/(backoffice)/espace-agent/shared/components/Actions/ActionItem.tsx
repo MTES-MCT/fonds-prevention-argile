@@ -6,6 +6,7 @@ import {
   ACTION_LABELS_BY_VALUE,
   ACTION_TYPE_AUTRE,
   ACTION_TYPES_WITH_RDV_DATE,
+  isActionSysteme,
   type ActionDetail,
 } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { formatRelativeTimeShort, formatSqlDate } from "@/shared/utils/date.utils";
@@ -45,7 +46,8 @@ export function ActionItem({ action, currentAgentId, onUpdated, onDeleted }: Act
     actionLabel = `${actionLabel} — RDV le ${formatSqlDate(action.rdvDate)}`;
   }
 
-  const isOwnAction = currentAgentId === action.agent.id;
+  // Les actions écrites par l'application sont une piste d'audit : pas de menu d'édition.
+  const isEditable = currentAgentId === action.agent.id && !isActionSysteme(action.actionType);
 
   async function handleDelete() {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette action ?")) {
@@ -110,7 +112,7 @@ export function ActionItem({ action, currentAgentId, onUpdated, onDeleted }: Act
           <span className="fr-text--sm" style={{ whiteSpace: "pre-wrap" }}>
             {action.message || "—"}
           </span>
-          {isOwnAction && (
+          {isEditable && (
             <ActionMenu
               items={[
                 { label: "Modifier", onClick: () => setIsEditing(true) },

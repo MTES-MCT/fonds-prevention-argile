@@ -10,12 +10,17 @@ import {
   ACTION_TYPE_COMMENTAIRE_LIBRE,
   ACTION_TYPE_AUTRE,
   ACTION_TYPES_WITH_RDV_DATE,
+  isActionSysteme,
   type ActionsListResult,
   type ActionFormData,
   type CreateActionResult,
   type UpdateActionResult,
   type DeleteActionResult,
 } from "../domain/types/action.types";
+
+/** Une action système est la piste d'audit du dossier : personne ne la réécrit. */
+const ACTION_SYSTEME_LECTURE_SEULE =
+  "Cette action a été enregistrée automatiquement par l'application : elle ne peut être ni modifiée ni supprimée.";
 
 /**
  * Service métier pour la gestion des actions réalisées sur les parcours
@@ -168,6 +173,10 @@ export class ActionsService {
       return { success: false, error: "Cette action n'existe pas ou a déjà été supprimée." };
     }
 
+    if (isActionSysteme(existing.actionType)) {
+      return { success: false, error: ACTION_SYSTEME_LECTURE_SEULE };
+    }
+
     const canEdit = await parcoursActionsRepo.canEditAction(actionId, agentId);
     if (!canEdit) {
       return { success: false, error: "Vous ne pouvez modifier que vos propres actions." };
@@ -221,9 +230,13 @@ export class ActionsService {
       };
     }
 
-    const actionExists = await parcoursActionsRepo.exists(actionId);
-    if (!actionExists) {
+    const existing = await parcoursActionsRepo.findById(actionId);
+    if (!existing) {
       return { success: false, error: "Cette action n'existe pas ou a déjà été supprimée." };
+    }
+
+    if (isActionSysteme(existing.actionType)) {
+      return { success: false, error: ACTION_SYSTEME_LECTURE_SEULE };
     }
 
     const canDelete = await parcoursActionsRepo.canEditAction(actionId, agentId);
