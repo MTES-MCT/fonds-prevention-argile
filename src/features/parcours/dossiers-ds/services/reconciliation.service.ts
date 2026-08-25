@@ -11,6 +11,7 @@ import type { Step } from "@/shared/domain/value-objects/step.enum";
 import type { ActionResult } from "@/shared/types";
 import { graphqlClient } from "../adapters/graphql/client";
 import { extraireParcoursIdDepuisAnnotations } from "../utils/annotation-fpa.utils";
+import { resolveDemarcheNumberForStep } from "./pieces-justificatives.service";
 
 /**
  * Réconciliation des dossiers DÉPOSÉS avec leur parcours (ADR-0027).
@@ -158,7 +159,15 @@ export async function rattacherDossierManuel(params: {
     return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.dossier_deja_confirme };
   }
 
-  await appliquerRattachement({ parcoursId: params.parcoursId, step: params.step, dsNumber }, ORIGINE_TENTATIVE.MANUEL);
+  await appliquerRattachement(
+    {
+      parcoursId: params.parcoursId,
+      step: params.step,
+      dsNumber,
+      dsDemarcheId: String(resolveDemarcheNumberForStep(params.step)),
+    },
+    ORIGINE_TENTATIVE.MANUEL
+  );
   return { success: true, data: { dsNumber } };
 }
 
@@ -197,7 +206,7 @@ async function collecterCandidats(
 
 /** Repointe l'étape vers le dossier réel et remet son état à zéro : la sync le recopiera. */
 async function appliquerRattachement(
-  candidat: { parcoursId: string; step: Step; dsNumber: string },
+  candidat: { parcoursId: string; step: Step; dsNumber: string; dsDemarcheId: string },
   origine: OrigineTentative
 ): Promise<void> {
   await db.transaction(async (tx) => {
@@ -229,6 +238,15 @@ async function appliquerRattachement(
           dsUrl: null,
         })
         .where(eq(dossiersDemarchesSimplifiees.id, existant.id));
+    } else {
+      // Pas de pointeur : c'est le cas des parcours dont la ligne avait été supprimée par
+      // l'ancien reset. On le recrée, sinon leur dossier resterait invisible de l'app.
+      await tx.insert(dossiersDemarchesSimplifiees).values({
+        parcoursId: candidat.parcoursId,
+        step: candidat.step,
+        dsNumber: candidat.dsNumber,
+        dsDemarcheId: candidat.dsDemarcheId,
+      });
     }
 
     await dossiersDsTentativesRepo.record(
@@ -237,7 +255,7 @@ async function appliquerRattachement(
         step: candidat.step,
         dsNumber: candidat.dsNumber,
         origine,
-        dsDemarcheId: existant?.dsDemarcheId ?? null,
+        dsDemarcheId: existant?.dsDemarcheId ?? candidat.dsDemarcheId,
       },
       tx
     );
@@ -316,7 +334,12 @@ export async function reconcilierDemarche(options: {
 
     if (apply && verdict === "rattachement" && candidat.parcoursId) {
       await appliquerRattachement(
-        { parcoursId: candidat.parcoursId, step: candidat.step, dsNumber: candidat.dsNumber },
+        {
+          parcoursId: candidat.parcoursId,
+          step: candidat.step,
+          dsNumber: candidat.dsNumber,
+          dsDemarcheId: String(demarcheNumber),
+        },
         ORIGINE_TENTATIVE.RECONCILIATION
       );
       rattachementsAppliques++;
