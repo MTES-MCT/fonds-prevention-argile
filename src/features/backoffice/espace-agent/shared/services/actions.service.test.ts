@@ -10,6 +10,8 @@ import {
   ACTION_TYPE_VALUES,
   ACTION_TYPE_AUTRE,
   ACTION_TYPE_COMMENTAIRE_LIBRE,
+  ACTION_TYPE_ELIGIBILITE_ACCEPTEE,
+  ACTION_TYPE_DOSSIER_ARCHIVE,
   type ActionDetail,
 } from "../domain/types/action.types";
 
@@ -23,7 +25,6 @@ vi.mock("@/shared/database/repositories", () => ({
     update: vi.fn(),
     updateMessage: vi.fn(),
     canEditAction: vi.fn(),
-    exists: vi.fn(),
     delete: vi.fn(),
   },
   agentsRepo: {
@@ -48,6 +49,24 @@ vi.mock("@/features/auth/permissions/services/rbac.service", () => ({
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
   verifyProspectTerritoryAccess: vi.fn(),
 }));
+
+/** Ligne `parcours_actions` telle que lue par le service avant modification/suppression. */
+const storedAction = (overrides: Partial<ParcoursAction> = {}): ParcoursAction => ({
+  id: "action-1",
+  parcoursId: "parcours-1",
+  agentId: "agent-1",
+  actionType: "commentaire_libre",
+  actionPrecision: null,
+  rdvDate: null,
+  authorName: "Jean Dupont",
+  authorStructure: "AMO Test",
+  authorStructureType: "AMO",
+  message: "Test message",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  editedAt: null,
+  ...overrides,
+});
 
 describe("ActionsService", () => {
   let service: ActionsService;
@@ -302,23 +321,6 @@ describe("ActionsService", () => {
   });
 
   describe("updateAction", () => {
-    const storedAction = (overrides: Partial<ParcoursAction> = {}): ParcoursAction => ({
-      id: "action-1",
-      parcoursId: "parcours-1",
-      agentId: "agent-1",
-      actionType: "commentaire_libre",
-      actionPrecision: null,
-      rdvDate: null,
-      authorName: "Jean Dupont",
-      authorStructure: "AMO Test",
-      authorStructureType: "AMO",
-      message: "Test message",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      editedAt: null,
-      ...overrides,
-    });
-
     /** Action existante, éditable par son auteur, dont la mise à jour aboutit. */
     function mockActionEditable(overrides: Partial<ParcoursAction> = {}) {
       vi.mocked(hasPermission).mockReturnValue(true);
@@ -359,6 +361,20 @@ describe("ActionsService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("vos propres actions");
+    });
+
+    it("refuse de modifier une action système, même à son auteur", async () => {
+      vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursActionsRepo.findById).mockResolvedValue(
+        storedAction({ actionType: ACTION_TYPE_DOSSIER_ARCHIVE })
+      );
+      vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
+
+      const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "Réécriture");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("automatiquement");
+      expect(parcoursActionsRepo.updateMessage).not.toHaveBeenCalled();
     });
 
     it("met à jour une action valide", async () => {
@@ -450,7 +466,7 @@ describe("ActionsService", () => {
 
     it("refuse si l'action n'existe pas", async () => {
       vi.mocked(hasPermission).mockReturnValue(true);
-      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(false);
+      vi.mocked(parcoursActionsRepo.findById).mockResolvedValue(null);
 
       const result = await service.deleteAction("action-inexistante", "agent-1", UserRole.AMO);
 
@@ -461,7 +477,7 @@ describe("ActionsService", () => {
 
     it("supprime une action valide", async () => {
       vi.mocked(hasPermission).mockReturnValue(true);
-      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(true);
+      vi.mocked(parcoursActionsRepo.findById).mockResolvedValue(storedAction());
       vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
       vi.mocked(parcoursActionsRepo.delete).mockResolvedValue(true);
 
@@ -471,9 +487,23 @@ describe("ActionsService", () => {
       expect(parcoursActionsRepo.delete).toHaveBeenCalledWith("action-1");
     });
 
+    it("refuse de supprimer une action système, même à son auteur", async () => {
+      vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursActionsRepo.findById).mockResolvedValue(
+        storedAction({ actionType: ACTION_TYPE_ELIGIBILITE_ACCEPTEE })
+      );
+      vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
+
+      const result = await service.deleteAction("action-1", "agent-1", UserRole.AMO);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("automatiquement");
+      expect(parcoursActionsRepo.delete).not.toHaveBeenCalled();
+    });
+
     it("retourne une erreur si la suppression échoue", async () => {
       vi.mocked(hasPermission).mockReturnValue(true);
-      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(true);
+      vi.mocked(parcoursActionsRepo.findById).mockResolvedValue(storedAction());
       vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
       vi.mocked(parcoursActionsRepo.delete).mockResolvedValue(false);
 
