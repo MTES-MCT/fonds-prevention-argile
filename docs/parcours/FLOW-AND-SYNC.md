@@ -32,9 +32,11 @@ Chaque parcours a deux niveaux d'état complémentaires :
 > Une ligne `dossiers_demarches_simplifiees` est un **pointeur**, pas le dossier du demandeur.
 > Tant que rien n'est déposé, elle ne désigne qu'une **tentative** : un brouillon prérempli
 > invisible de l'API instructeur, qui peut avoir été réclamé par un autre compte ou purgé. Le
-> **dossier confirmé** n'existe qu'au dépôt, et c'est lui seul qui fait foi. Modèle cible :
-> conserver toutes les tentatives (aucun numéro DN n'est jamais effacé) et rattacher au dépôt
-> via l'annotation FPA. Mise en œuvre en cours, phases 3 à 6.
+> **dossier confirmé** n'existe qu'au dépôt, et c'est lui seul qui fait foi. Le registre
+> `dossiers_ds_tentatives` conserve tout numéro DN connu du parcours — écrit dans la même
+> transaction que le pointeur, jamais supprimé : remplacer un pointeur ne perd plus rien.
+> Amorçage : `pnpm ds:backfill-tentatives`. Le rattachement automatique au dépôt via
+> l'annotation FPA arrive en phase 4.
 
 - **`ds_status`** ∈ `null | EN_CONSTRUCTION | EN_INSTRUCTION | ACCEPTE | REFUSE | CLASSE_SANS_SUITE | NON_ACCESSIBLE` — c'est DS qui décide. `null` = dossier créé dans DS mais **pas encore déposé** ; `EN_CONSTRUCTION` = **déposé**, en attente d'instruction (et non « brouillon »). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
 - **`current_status`** ∈ `todo | en_instruction | valide` — dérivé via `DS_TO_INTERNAL_STATUS` (voir §3.2).
@@ -807,39 +809,41 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 
 ## 8. Fichiers clés
 
-| Rôle                                           | Fichier                                                                                        |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Schéma parcours                                | `src/shared/database/schema/parcours-prevention.ts`                                            |
-| Schéma dossiers DS                             | `src/shared/database/schema/dossiers-demarches-simplifiees.ts`                                 |
-| Schéma historique CRON                         | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts`                               |
-| Repository parcours                            | `src/shared/database/repositories/parcours-prevention.repository.ts`                           |
-| Repository sync_runs                           | `src/shared/database/repositories/sync-run.repository.ts`                                      |
-| Enums step / status                            | `src/shared/domain/value-objects/step.enum.ts`, `status.enum.ts`, `ds-status.enum.ts`          |
-| Mapping DS → interne                           | `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`                          |
-| Permissions / garde-fous                       | `src/features/parcours/core/services/parcours-permissions.service.ts`                          |
-| Progression d'étape                            | `src/features/parcours/core/services/parcours-progression.service.ts`                          |
-| Service sync DS                                | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                                |
-| Service sync batch (CRON)                      | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`                    |
-| Vérif permissions / état démarches DS          | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                         |
-| Pièces justificatives (service dynamique DN)   | `dossiers-ds/services/pieces-justificatives.service.ts`, `domain/pieces-justificatives/*`      |
-| Composant PJ partagé (agent + demandeur)       | `dossiers-ds/components/PiecesJustificatives.tsx`                                              |
-| Proxy modèle PJ (URL temporaire DN régénérée)  | `src/app/api/ds/piece-modele/route.ts` (`buildModeleProxyUrl` / `getFreshModeleUrl`)           |
-| Probe pièces + modèles DN                      | `scripts/ops/ds/fetch-pieces-justificatives.ts` (`pnpm ds:fetch-pieces`)                       |
-| Reset dossier éligibilité (GELÉ, ADR-0026)     | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`) |
-| Sonde lecture-seule dossiers DN                | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                        |
-| Backfill processed_at depuis dateTraitement    | `scripts/ops/ds/backfill-processed-at.ts` (`pnpm ds:backfill-processed-at`)                    |
-| Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                            |
-| Création dossier devis-travaux (3 annotations) | `src/features/parcours/core/services/devis.service.ts`                                         |
-| Validation AMO (auto-progression CHOIX_AMO)    | `src/features/parcours/amo/services/amo-validation.service.ts`                                 |
-| Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)       |
-| Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                      |
-| Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                |
-| Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                    |
-| Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)  |
-| Rattrapage lien AMO obligatoire (script ops)   | `scripts/ops/fix/lier-amo-oblig.ts` (`pnpm fix:lier-amo-oblig`)                                |
-| Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                           |
-| Endpoint CRON                                  | `src/app/api/cron/sync-parcours/route.ts`                                                      |
-| Workflow CRON GitHub Actions                   | `.github/workflows/cron-sync-parcours.yml`                                                     |
-| Server actions admin                           | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`         |
-| Page liste runs                                | `src/app/(backoffice)/administration/synchronisations/page.tsx`                                |
-| Page détail run                                | `src/app/(backoffice)/administration/synchronisations/[id]/page.tsx`                           |
+| Rôle                                           | Fichier                                                                                                     |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Schéma parcours                                | `src/shared/database/schema/parcours-prevention.ts`                                                         |
+| Schéma dossiers DS (pointeur courant)          | `src/shared/database/schema/dossiers-demarches-simplifiees.ts`                                              |
+| Registre des tentatives (ADR-0027)             | `src/shared/database/schema/dossiers-ds-tentatives.ts`, `repositories/dossiers-ds-tentatives.repository.ts` |
+| Amorçage du registre                           | `scripts/ops/sync-erreurs/backfill-tentatives.ts` (`pnpm ds:backfill-tentatives`)                           |
+| Schéma historique CRON                         | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts`                                            |
+| Repository parcours                            | `src/shared/database/repositories/parcours-prevention.repository.ts`                                        |
+| Repository sync_runs                           | `src/shared/database/repositories/sync-run.repository.ts`                                                   |
+| Enums step / status                            | `src/shared/domain/value-objects/step.enum.ts`, `status.enum.ts`, `ds-status.enum.ts`                       |
+| Mapping DS → interne                           | `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`                                       |
+| Permissions / garde-fous                       | `src/features/parcours/core/services/parcours-permissions.service.ts`                                       |
+| Progression d'étape                            | `src/features/parcours/core/services/parcours-progression.service.ts`                                       |
+| Service sync DS                                | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                                             |
+| Service sync batch (CRON)                      | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`                                 |
+| Vérif permissions / état démarches DS          | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                                      |
+| Pièces justificatives (service dynamique DN)   | `dossiers-ds/services/pieces-justificatives.service.ts`, `domain/pieces-justificatives/*`                   |
+| Composant PJ partagé (agent + demandeur)       | `dossiers-ds/components/PiecesJustificatives.tsx`                                                           |
+| Proxy modèle PJ (URL temporaire DN régénérée)  | `src/app/api/ds/piece-modele/route.ts` (`buildModeleProxyUrl` / `getFreshModeleUrl`)                        |
+| Probe pièces + modèles DN                      | `scripts/ops/ds/fetch-pieces-justificatives.ts` (`pnpm ds:fetch-pieces`)                                    |
+| Reset dossier éligibilité (GELÉ, ADR-0026)     | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`)              |
+| Sonde lecture-seule dossiers DN                | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                                     |
+| Backfill processed_at depuis dateTraitement    | `scripts/ops/ds/backfill-processed-at.ts` (`pnpm ds:backfill-processed-at`)                                 |
+| Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                                         |
+| Création dossier devis-travaux (3 annotations) | `src/features/parcours/core/services/devis.service.ts`                                                      |
+| Validation AMO (auto-progression CHOIX_AMO)    | `src/features/parcours/amo/services/amo-validation.service.ts`                                              |
+| Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)                    |
+| Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
+| Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                             |
+| Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                                 |
+| Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |
+| Rattrapage lien AMO obligatoire (script ops)   | `scripts/ops/fix/lier-amo-oblig.ts` (`pnpm fix:lier-amo-oblig`)                                             |
+| Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                                        |
+| Endpoint CRON                                  | `src/app/api/cron/sync-parcours/route.ts`                                                                   |
+| Workflow CRON GitHub Actions                   | `.github/workflows/cron-sync-parcours.yml`                                                                  |
+| Server actions admin                           | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`                      |
+| Page liste runs                                | `src/app/(backoffice)/administration/synchronisations/page.tsx`                                             |
+| Page détail run                                | `src/app/(backoffice)/administration/synchronisations/[id]/page.tsx`                                        |

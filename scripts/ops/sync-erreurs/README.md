@@ -18,6 +18,7 @@ garantir l'ordre de chargement.
 | `reset-eligibilite-sync-error.ts`   | `pnpm fix:eligibilite-sync-error` | **GELÉ** (`--apply` refusé, ADR-0026) — dry-run diagnostic seul |
 | `relink-eligibilite-dossier.ts`     | `pnpm fix:relink-eligibilite`     | **Relink** d'un mismatch (dossier réel sous un autre numéro)    |
 | `clean-faux-depots-submitted-at.ts` | `pnpm fix:clean-faux-depots`      | Nettoyage des faux `submitted_at` legacy (pré-#216)             |
+| `backfill-tentatives.ts`            | `pnpm ds:backfill-tentatives`     | Amorce le registre des tentatives DN (ADR-0027)                 |
 
 Ordre recommandé : **probe** → resync (UI) → **relink** → **clean**. Détails et cas résolus :
 voir le playbook (§4 de la doc).
