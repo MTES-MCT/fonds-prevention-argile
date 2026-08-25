@@ -193,6 +193,38 @@ describe("assignAmoAutomatiqueForUser", () => {
       error: "Aucun AMO disponible pour le territoire du demandeur",
     });
   });
+
+  // Un dossier créé par un Aller-vers n'a pas de téléphone : l'exiger bloquait l'attribution
+  // en silence (la qualification est best-effort). Le contrôle suivant, l'adresse, tient lui.
+  it("n'exige pas le téléphone du demandeur", async () => {
+    const parcours = buildMockParcours("36001");
+    parcours.rgaSimulationData.logement.adresse = "";
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours);
+
+    let selectCallCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      selectCallCount++;
+      const rows =
+        selectCallCount === 1
+          ? [] // aucune validation existante
+          : selectCallCount === 2
+            ? [{ id: "amo-1" }] // AMO du département
+            : [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }];
+      return {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(rows) }),
+        }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
+    });
+
+    const result = await assignAmoAutomatiqueForUser(userId);
+
+    expect(result).toEqual({
+      success: false,
+      error: "Adresse du logement manquante dans la simulation RGA",
+    });
+  });
 });
 
 describe("skipAmoStepForUser", () => {

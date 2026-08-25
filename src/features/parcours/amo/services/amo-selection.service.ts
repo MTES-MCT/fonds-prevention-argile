@@ -27,7 +27,8 @@ export interface SelectAmoParams {
   userPrenom: string;
   userNom: string;
   userEmail: string;
-  userTelephone: string;
+  /** Optionnel : le formulaire demandeur l'exige, pas l'auto-attribution (cf. `assignAmoAutomatiqueForUser`). */
+  userTelephone?: string | null;
   adresseLogement: string;
 }
 
@@ -54,9 +55,6 @@ function validatePersonalData(params: SelectAmoParams): string | null {
   }
   if (!params.userEmail?.trim()) {
     return "L'email est requis";
-  }
-  if (!params.userTelephone?.trim()) {
-    return "Le téléphone est requis";
   }
   return null;
 }
@@ -114,7 +112,8 @@ export async function selectAmoForUser(
     return { success: false, error: validationError };
   }
 
-  const { entrepriseAmoId, userPrenom, userNom, userEmail, userTelephone, adresseLogement } = params;
+  const { entrepriseAmoId, userPrenom, userNom, userEmail, adresseLogement } = params;
+  const telephone = params.userTelephone?.trim() || null;
 
   // Récupérer le parcours de l'utilisateur
   const parcours = await parcoursRepo.findByUserId(userId);
@@ -160,12 +159,13 @@ export async function selectAmoForUser(
     };
   }
 
-  // Mettre à jour l'email de contact et le téléphone de l'utilisateur
+  // Mettre à jour l'email de contact et le téléphone de l'utilisateur.
+  // Le téléphone n'est écrit que s'il est fourni : sinon on écraserait un numéro existant.
   await db
     .update(users)
     .set({
       emailContact: userEmail.trim(),
-      telephone: userTelephone.trim(),
+      ...(telephone ? { telephone } : {}),
     })
     .where(eq(users.id, userId));
 
@@ -181,7 +181,7 @@ export async function selectAmoForUser(
       userPrenom: userPrenom.trim(),
       userNom: userNom.trim(),
       userEmail: userEmail.trim(),
-      userTelephone: userTelephone.trim(),
+      userTelephone: telephone,
       adresseLogement: adresseLogement.trim(),
     })
     .onConflictDoUpdate({
@@ -196,7 +196,7 @@ export async function selectAmoForUser(
         userPrenom: userPrenom.trim(),
         userNom: userNom.trim(),
         userEmail: userEmail.trim(),
-        userTelephone: userTelephone.trim(),
+        userTelephone: telephone,
         adresseLogement: adresseLogement.trim(),
         // Reset du tracking email (nouvelle tentative)
         brevoMessageId: null,
@@ -404,10 +404,8 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
   if (!userEmail) {
     return { success: false, error: "Coordonnées du demandeur incomplètes (email)" };
   }
-  if (!user.telephone) {
-    return { success: false, error: "Coordonnées du demandeur incomplètes (téléphone)" };
-  }
-
+  // Pas de garde sur le téléphone : il est absent des dossiers créés par un Aller-vers et
+  // ne figure pas dans l'email envoyé à l'AMO — l'exiger bloquait l'attribution en silence.
   const adresseLogement = logement?.adresse;
   if (!adresseLogement) {
     return { success: false, error: "Adresse du logement manquante dans la simulation RGA" };
