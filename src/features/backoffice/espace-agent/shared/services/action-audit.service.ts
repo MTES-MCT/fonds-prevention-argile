@@ -13,6 +13,8 @@ interface LogSystemActionParams {
   author: SystemActionAuthor;
   actionType: string;
   message?: string | null;
+  /** Date de l'évènement, à ne fournir que pour rejouer l'historique (backfill ops). */
+  occurredAt?: Date;
 }
 
 /**
@@ -26,6 +28,7 @@ export async function logSystemAction({
   author,
   actionType,
   message,
+  occurredAt,
 }: LogSystemActionParams): Promise<boolean> {
   try {
     let agentId: string | null = null;
@@ -55,6 +58,7 @@ export async function logSystemAction({
       authorName: snapshot.authorName,
       authorStructure: snapshot.authorStructure,
       authorStructureType: snapshot.authorStructureType,
+      ...(occurredAt ? { createdAt: occurredAt } : {}),
     });
 
     return true;

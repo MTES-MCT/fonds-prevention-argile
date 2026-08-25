@@ -57,6 +57,7 @@
     "fix:reclasser-source-autre": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reclasser-source-autre.ts",
     "fix:purge-comptes-test-fc": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/purge-comptes-test-fc.ts",
     "fix:backfill-brevo": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/backfill-brevo-attributes.ts",
+    "fix:backfill-actions-audit": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/backfill-actions-audit.ts",
     "rga:import": "tsx scripts/import/rga-zones/import-rga-zones.ts"
   },
   "dependencies": {
