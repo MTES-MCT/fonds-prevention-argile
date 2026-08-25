@@ -7,6 +7,8 @@ import { assignAmoAutomatiqueForUser } from "@/features/parcours/amo/services/am
 import { isAmoAttributionAutomatique } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { QualificationDecision } from "../domain/types";
+import { ACTION_TYPE_BY_DECISION, buildQualificationAuditMessage } from "../domain/qualification-audit";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 
 interface QualifyProspectParams {
   parcoursId: string;
@@ -66,6 +68,18 @@ export class QualificationService {
       );
     }
     // "a_qualifier" → pas de changement de situation_particulier
+
+    // Audit : la réponse de l'Aller-vers doit apparaître dans l'historique du dossier,
+    // sinon le délai de réponse n'est mesurable nulle part. Ici (service) et non dans la
+    // server action, pour couvrir aussi la création de dossier AV non éligible.
+    // Une décision « non éligible » archive le dossier : pas de `dossier_archive` en plus,
+    // la qualification porte déjà l'information.
+    await logSystemAction({
+      parcoursId,
+      author: { agentId },
+      actionType: ACTION_TYPE_BY_DECISION[decision],
+      message: buildQualificationAuditMessage({ decision, raisonsIneligibilite, estMandataireFinancier, note }),
+    });
 
     return qualification;
   }

@@ -5,6 +5,12 @@ import { prospectQualificationsRepo } from "@/shared/database/repositories/prosp
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 import { assignAmoAutomatiqueForUser } from "@/features/parcours/amo/services/amo-selection.service";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
+import {
+  ACTION_TYPE_AV_QUALIFICATION_ELIGIBLE,
+  ACTION_TYPE_AV_QUALIFICATION_A_QUALIFIER,
+  ACTION_TYPE_AV_QUALIFICATION_NON_ELIGIBLE,
+} from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 
 vi.mock("@/shared/database/repositories/prospect-qualifications.repository", () => ({
   prospectQualificationsRepo: {
@@ -21,6 +27,10 @@ vi.mock("@/shared/database/repositories/parcours-prevention.repository", () => (
 
 vi.mock("@/features/parcours/amo/services/amo-selection.service", () => ({
   assignAmoAutomatiqueForUser: vi.fn(async () => ({ success: true, data: { message: "AMO liée", token: "t" } })),
+}));
+
+vi.mock("@/features/backoffice/espace-agent/shared/services/action-audit.service", () => ({
+  logSystemAction: vi.fn(async () => true),
 }));
 
 describe("qualificationService.qualifyProspect", () => {
@@ -57,6 +67,63 @@ describe("qualificationService.qualifyProspect", () => {
 
     expect(prospectQualificationsRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({ estMandataireFinancier: null })
+    );
+  });
+});
+
+describe("qualificationService.qualifyProspect — audit de la réponse Aller-vers", () => {
+  const parcoursId = "parcours-123";
+  const agentId = "agent-456";
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue({ id: parcoursId } as never);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(prospectQualificationsRepo.create).mockImplementation(async (data: any) => data);
+  });
+
+  it("trace la qualification éligible avec l'engagement de mandataire financier", async () => {
+    await qualificationService.qualifyProspect({
+      parcoursId,
+      agentId,
+      decision: QualificationDecision.ELIGIBLE,
+      estMandataireFinancier: true,
+      note: "Visite faite le 12/08",
+    });
+
+    expect(logSystemAction).toHaveBeenCalledWith({
+      parcoursId,
+      author: { agentId },
+      actionType: ACTION_TYPE_AV_QUALIFICATION_ELIGIBLE,
+      message: "Mandataire financier : oui — Visite faite le 12/08",
+    });
+  });
+
+  it("trace la qualification non éligible avec les raisons en clair", async () => {
+    await qualificationService.qualifyProspect({
+      parcoursId,
+      agentId,
+      decision: QualificationDecision.NON_ELIGIBLE,
+      raisonsIneligibilite: ["appartement", "autre:sinistre non RGA"],
+    });
+
+    expect(logSystemAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: ACTION_TYPE_AV_QUALIFICATION_NON_ELIGIBLE,
+        message: "Raisons : Appartement, Autre : sinistre non RGA",
+      })
+    );
+  });
+
+  it("trace la décision « à qualifier » sans message quand aucune note n'est saisie", async () => {
+    await qualificationService.qualifyProspect({
+      parcoursId,
+      agentId,
+      decision: QualificationDecision.A_QUALIFIER,
+    });
+
+    expect(logSystemAction).toHaveBeenCalledWith(
+      expect.objectContaining({ actionType: ACTION_TYPE_AV_QUALIFICATION_A_QUALIFIER, message: null })
     );
   });
 });
