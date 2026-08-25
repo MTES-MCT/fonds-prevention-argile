@@ -1,8 +1,14 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/shared/database/client";
-import { dossiersDemarchesSimplifiees, ORIGINE_TENTATIVE, parcoursPrevention } from "@/shared/database/schema";
+import {
+  dossiersDemarchesSimplifiees,
+  ORIGINE_TENTATIVE,
+  parcoursPrevention,
+  type OrigineTentative,
+} from "@/shared/database/schema";
 import { dossiersDsTentativesRepo } from "@/shared/database/repositories";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
+import type { ActionResult } from "@/shared/types";
 import { graphqlClient } from "../adapters/graphql/client";
 import { extraireParcoursIdDepuisAnnotations } from "../utils/annotation-fpa.utils";
 
@@ -91,6 +97,71 @@ function totauxVides(): Record<VerdictReconciliation, number> {
   };
 }
 
+export type RefusRattachementManuel =
+  "numero_invalide" | "introuvable_cote_dn" | "deja_rattache_ailleurs" | "dossier_deja_confirme";
+
+export const MESSAGES_RATTACHEMENT_MANUEL: Record<RefusRattachementManuel, string> = {
+  numero_invalide: "Le numéro de dossier doit être composé de chiffres uniquement.",
+  introuvable_cote_dn: "Aucun dossier déposé ne porte ce numéro côté Démarches Numériques.",
+  deja_rattache_ailleurs: "Ce numéro est déjà rattaché à un autre demandeur.",
+  dossier_deja_confirme: "Ce parcours a déjà un dossier déposé pour cette étape : à trancher avant de rattacher.",
+};
+
+/**
+ * Rattachement manuel d'un dossier DN à un parcours, par son numéro (ADR-0027).
+ * Recours pour les dossiers créés hors de notre lien : sans annotation FPA, la
+ * réconciliation automatique ne peut pas les retrouver.
+ */
+export async function rattacherDossierManuel(params: {
+  parcoursId: string;
+  step: Step;
+  dsNumber: string;
+}): Promise<ActionResult<{ dsNumber: string }>> {
+  const dsNumber = params.dsNumber.trim();
+  if (!/^\d+$/.test(dsNumber)) {
+    return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.numero_invalide };
+  }
+
+  // Le dossier doit exister côté DN : un brouillon non déposé y est invisible, on ne rattache
+  // donc que du réel.
+  let existeCoteDn = false;
+  try {
+    existeCoteDn = !!(await graphqlClient.getDossierStatus(Number(dsNumber)));
+  } catch {
+    existeCoteDn = false;
+  }
+  if (!existeCoteDn) {
+    return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.introuvable_cote_dn };
+  }
+
+  const tentative = await dossiersDsTentativesRepo.findByDsNumber(dsNumber);
+  if (tentative && tentative.parcoursId !== params.parcoursId) {
+    return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.deja_rattache_ailleurs };
+  }
+
+  const [pointeur] = await db
+    .select({
+      dsNumber: dossiersDemarchesSimplifiees.dsNumber,
+      submittedAt: dossiersDemarchesSimplifiees.submittedAt,
+      lastSyncAt: dossiersDemarchesSimplifiees.lastSyncAt,
+    })
+    .from(dossiersDemarchesSimplifiees)
+    .where(
+      and(
+        eq(dossiersDemarchesSimplifiees.parcoursId, params.parcoursId),
+        eq(dossiersDemarchesSimplifiees.step, params.step)
+      )
+    )
+    .limit(1);
+
+  if (pointeur && pointeur.dsNumber !== dsNumber && (pointeur.submittedAt || pointeur.lastSyncAt)) {
+    return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.dossier_deja_confirme };
+  }
+
+  await appliquerRattachement({ parcoursId: params.parcoursId, step: params.step, dsNumber }, ORIGINE_TENTATIVE.MANUEL);
+  return { success: true, data: { dsNumber } };
+}
+
 /** Pagination complète des dossiers d'une démarche (DN plafonne à 100 par page). */
 async function collecterCandidats(
   demarcheNumber: number,
@@ -125,7 +196,10 @@ async function collecterCandidats(
 }
 
 /** Repointe l'étape vers le dossier réel et remet son état à zéro : la sync le recopiera. */
-async function appliquerRattachement(candidat: CandidatReconciliation & { parcoursId: string }): Promise<void> {
+async function appliquerRattachement(
+  candidat: { parcoursId: string; step: Step; dsNumber: string },
+  origine: OrigineTentative
+): Promise<void> {
   await db.transaction(async (tx) => {
     const [existant] = await tx
       .select({ id: dossiersDemarchesSimplifiees.id, dsDemarcheId: dossiersDemarchesSimplifiees.dsDemarcheId })
@@ -162,7 +236,7 @@ async function appliquerRattachement(candidat: CandidatReconciliation & { parcou
         parcoursId: candidat.parcoursId,
         step: candidat.step,
         dsNumber: candidat.dsNumber,
-        origine: ORIGINE_TENTATIVE.RECONCILIATION,
+        origine,
         dsDemarcheId: existant?.dsDemarcheId ?? null,
       },
       tx
@@ -241,7 +315,10 @@ export async function reconcilierDemarche(options: {
     lignes.push({ ...candidat, verdict, pointeurAvant: ctx.pointeurDsNumber });
 
     if (apply && verdict === "rattachement" && candidat.parcoursId) {
-      await appliquerRattachement({ ...candidat, parcoursId: candidat.parcoursId });
+      await appliquerRattachement(
+        { parcoursId: candidat.parcoursId, step: candidat.step, dsNumber: candidat.dsNumber },
+        ORIGINE_TENTATIVE.RECONCILIATION
+      );
       rattachementsAppliques++;
     }
   }

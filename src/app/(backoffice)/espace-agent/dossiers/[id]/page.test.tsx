@@ -23,6 +23,11 @@ vi.mock("@/features/backoffice/shared/actions/agent.actions", () => ({ getCurren
 vi.mock("@/features/backoffice/espace-agent/prospects/services/qualification.service", () => ({
   qualificationService: { getByParcoursId: vi.fn() },
 }));
+// Le menu « Gérer » tire l'action de rattachement DN, dont le client GraphQL lit l'env à
+// la construction du singleton — inutile pour tester le routage de la page.
+vi.mock("@/features/parcours/dossiers-ds/adapters/graphql/client", () => ({
+  graphqlClient: { getDossierStatus: vi.fn(), getDemarcheDossiers: vi.fn() },
+}));
 vi.mock("@/shared/database/repositories/agents.repository", () => ({ agentsRepository: {} }));
 vi.mock("@/shared/database/repositories/allers-vers.repository", () => ({ allersVersRepository: {} }));
 

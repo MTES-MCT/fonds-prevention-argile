@@ -827,6 +827,7 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Réconciliation au dépôt (annotation FPA)       | `dossiers-ds/services/reconciliation.service.ts`, `dossiers-ds/utils/annotation-fpa.utils.ts`               |
 | Réconciliation (script ops)                    | `scripts/ops/sync-erreurs/reconcilier-dossiers.ts` (`pnpm ds:reconcilier`)                                  |
 | Secours « ce lien ne fonctionne plus »         | `dossiers-ds/services/regeneration.service.ts`, `actions/regeneration.actions.ts`                           |
+| Rattachement manuel par numéro (AMO/admin)     | `espace-agent/dossiers/actions/rattacher-dossier-dn.actions.ts` (`rattacherDossierManuel`)                  |
 | Schéma historique CRON                         | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts`                                            |
 | Repository parcours                            | `src/shared/database/repositories/parcours-prevention.repository.ts`                                        |
 | Repository sync_runs                           | `src/shared/database/repositories/sync-run.repository.ts`                                                   |

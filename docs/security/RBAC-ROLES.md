@@ -398,5 +398,6 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Garde ré-ouverture demande            | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                   |
 | Garde arrêt d'accompagnement          | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts` |
 | Garde refus accompagnement (éligible) | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                   |
+| Garde rattachement dossier DN         | `espace-agent/dossiers/actions/rattacher-dossier-dn.actions.ts` — ownership entreprise, sinon territorial               |
 | Garde édition simulation              | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)       |
 | Résolution du permalien parcours      | `dossiers/services/admin-url-resolver.service.ts` (`resolveEspaceAgentPath`) — chemin seul, aucune donnée               |
