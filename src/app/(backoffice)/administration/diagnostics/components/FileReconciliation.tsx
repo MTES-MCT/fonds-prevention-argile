@@ -1,7 +1,6 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import Link from "next/link";
 import { resoudreObservationAction } from "@/features/backoffice/administration/diagnostics/actions/reconciliation.actions";
 import { rattacherDossierDnAction } from "@/features/backoffice/espace-agent/dossiers/actions/rattacher-dossier-dn.actions";
 import { InspectionDossierDn } from "./InspectionDossierDn";
@@ -111,7 +110,13 @@ export function FileReconciliation({ observations, messageVide, variante, onReso
                     <td>
                       {/* Le demandeur est connu (files d'arbitrage) : rien à rapprocher. */}
                       {o.parcoursId ? (
-                        <Link href={`/espace-agent/dossiers/${o.parcoursId}`}>{demandeurLabel(o)}</Link>
+                        <a
+                          href={`/espace-agent/dossiers/${o.parcoursId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={`${demandeurLabel(o)} - ouvre une nouvelle fenêtre`}>
+                          {demandeurLabel(o)}
+                        </a>
                       ) : candidats.length === 0 ? (
                         <span className="fr-text--xs">Aucune correspondance trouvée</span>
                       ) : (
@@ -124,7 +129,13 @@ export function FileReconciliation({ observations, messageVide, variante, onReso
                           <ul className="fr-raw-list">
                             {candidats.map((c) => (
                               <li key={c.parcoursId} className="fr-mb-1w">
-                                <Link href={`/espace-agent/dossiers/${c.parcoursId}`}>{nomCandidat(c)}</Link>
+                                <a
+                                  href={`/espace-agent/dossiers/${c.parcoursId}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title={`${nomCandidat(c)} - ouvre une nouvelle fenêtre`}>
+                                  {nomCandidat(c)}
+                                </a>
                                 <div className="fr-text--xs fr-mb-0">
                                   {c.motifs.map((m) => MOTIF_LABELS[m]).join(", ") || "correspondance partielle"}
                                 </div>

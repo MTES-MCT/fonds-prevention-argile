@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { inspecterDossierDnAction } from "@/features/backoffice/administration/diagnostics/actions/reconciliation.actions";
 import { MOTIF_LABELS, type InspectionDossier } from "@/features/parcours/dossiers-ds/domain/types/inspection.types";
 
@@ -71,9 +70,9 @@ export function InspectionDossierDn({ dsNumber }: { dsNumber: string }) {
         <ul className="fr-text--xs">
           {candidats.map((c) => (
             <li key={c.parcoursId}>
-              <Link href={`/espace-agent/dossiers/${c.parcoursId}`}>
+              <a href={`/espace-agent/dossiers/${c.parcoursId}`} target="_blank" rel="noopener noreferrer">
                 {[c.prenom, c.nom].filter(Boolean).join(" ") || c.email || c.parcoursId.slice(0, 8)}
-              </Link>{" "}
+              </a>{" "}
               — {c.motifs.map((m) => MOTIF_LABELS[m]).join(", ") || "correspondance partielle"}
               {c.adresse && <span> · {c.adresse}</span>}
             </li>
