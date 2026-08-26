@@ -5,6 +5,7 @@ import { hasPermission } from "@/features/auth/permissions/services/rbac.service
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
+import type { ParcoursAction } from "@/shared/database/schema/parcours-actions";
 import {
   ACTION_TYPE_VALUES,
   ACTION_TYPE_AUTRE,
@@ -17,6 +18,7 @@ vi.mock("@/shared/database/repositories", () => ({
   parcoursActionsRepo: {
     findByParcoursId: vi.fn(),
     create: vi.fn(),
+    findById: vi.fn(),
     findByIdWithDetails: vi.fn(),
     update: vi.fn(),
     updateMessage: vi.fn(),
@@ -261,6 +263,34 @@ describe("ActionsService", () => {
   });
 
   describe("updateAction", () => {
+    const storedAction = (overrides: Partial<ParcoursAction> = {}): ParcoursAction => ({
+      id: "action-1",
+      parcoursId: "parcours-1",
+      agentId: "agent-1",
+      actionType: "commentaire_libre",
+      actionPrecision: null,
+      rdvDate: null,
+      authorName: "Jean Dupont",
+      authorStructure: "AMO Test",
+      authorStructureType: "AMO",
+      message: "Test message",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      editedAt: null,
+      ...overrides,
+    });
+
+    /** Action existante, éditable par son auteur, dont la mise à jour aboutit. */
+    function mockActionEditable(overrides: Partial<ParcoursAction> = {}) {
+      vi.mocked(hasPermission).mockReturnValue(true);
+      vi.mocked(parcoursActionsRepo.findById).mockResolvedValue(storedAction(overrides));
+      vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
+      vi.mocked(parcoursActionsRepo.updateMessage).mockResolvedValue(
+        storedAction({ ...overrides, editedAt: new Date() })
+      );
+      vi.mocked(parcoursActionsRepo.findByIdWithDetails).mockResolvedValue({ ...mockAction, message: "Updated" });
+    }
+
     it("refuse la modification sans permission", async () => {
       vi.mocked(hasPermission).mockReturnValue(false);
 
@@ -272,7 +302,7 @@ describe("ActionsService", () => {
 
     it("refuse si l'action n'existe pas", async () => {
       vi.mocked(hasPermission).mockReturnValue(true);
-      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(false);
+      vi.mocked(parcoursActionsRepo.findById).mockResolvedValue(null);
 
       const result = await service.updateAction("action-inexistante", "agent-1", UserRole.AMO, "Updated");
 
@@ -283,7 +313,7 @@ describe("ActionsService", () => {
 
     it("refuse si l'agent n'est pas l'auteur", async () => {
       vi.mocked(hasPermission).mockReturnValue(true);
-      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(true);
+      vi.mocked(parcoursActionsRepo.findById).mockResolvedValue(storedAction());
       vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(false);
 
       const result = await service.updateAction("action-1", "agent-2", UserRole.AMO, "Updated");
@@ -293,25 +323,7 @@ describe("ActionsService", () => {
     });
 
     it("met à jour une action valide", async () => {
-      vi.mocked(hasPermission).mockReturnValue(true);
-      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(true);
-      vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
-      vi.mocked(parcoursActionsRepo.updateMessage).mockResolvedValue({
-        id: "action-1",
-        parcoursId: "parcours-1",
-        agentId: "agent-1",
-        actionType: "commentaire_libre",
-        actionPrecision: null,
-        rdvDate: null,
-        authorName: "Jean Dupont",
-        authorStructure: "AMO Test",
-        authorStructureType: "AMO",
-        message: "Updated",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        editedAt: new Date(),
-      });
-      vi.mocked(parcoursActionsRepo.findByIdWithDetails).mockResolvedValue({ ...mockAction, message: "Updated" });
+      mockActionEditable();
 
       const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "Updated");
 
@@ -321,25 +333,7 @@ describe("ActionsService", () => {
     });
 
     it("met à jour la date de RDV quand elle est fournie", async () => {
-      vi.mocked(hasPermission).mockReturnValue(true);
-      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(true);
-      vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
-      vi.mocked(parcoursActionsRepo.updateMessage).mockResolvedValue({
-        id: "action-1",
-        parcoursId: "parcours-1",
-        agentId: "agent-1",
-        actionType: "expert_rdv_1",
-        actionPrecision: null,
-        rdvDate: "2026-09-01",
-        authorName: "Jean Dupont",
-        authorStructure: "AMO Test",
-        authorStructureType: "AMO",
-        message: "Updated",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        editedAt: new Date(),
-      });
-      vi.mocked(parcoursActionsRepo.findByIdWithDetails).mockResolvedValue({ ...mockAction, message: "Updated" });
+      mockActionEditable({ actionType: "expert_rdv_1" });
 
       const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "Updated", "2026-09-01");
 
@@ -348,35 +342,34 @@ describe("ActionsService", () => {
     });
 
     it("efface la date de RDV quand une chaîne vide est fournie", async () => {
-      vi.mocked(hasPermission).mockReturnValue(true);
-      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(true);
-      vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
-      vi.mocked(parcoursActionsRepo.updateMessage).mockResolvedValue({
-        id: "action-1",
-        parcoursId: "parcours-1",
-        agentId: "agent-1",
-        actionType: "expert_rdv_1",
-        actionPrecision: null,
-        rdvDate: null,
-        authorName: "Jean Dupont",
-        authorStructure: "AMO Test",
-        authorStructureType: "AMO",
-        message: "Updated",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        editedAt: new Date(),
-      });
-      vi.mocked(parcoursActionsRepo.findByIdWithDetails).mockResolvedValue({ ...mockAction, message: "Updated" });
+      mockActionEditable({ actionType: "expert_rdv_1", rdvDate: "2026-09-01" });
 
       await service.updateAction("action-1", "agent-1", UserRole.AMO, "Updated", "");
 
       expect(parcoursActionsRepo.updateMessage).toHaveBeenCalledWith("action-1", "Updated", "");
     });
 
+    it("accepte un commentaire vide sur une action RDV (date seule)", async () => {
+      mockActionEditable({ actionType: "expert_rdv_3" });
+
+      const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "", "2026-09-01");
+
+      expect(result.success).toBe(true);
+      expect(parcoursActionsRepo.updateMessage).toHaveBeenCalledWith("action-1", "", "2026-09-01");
+    });
+
+    it("refuse un commentaire vide sur une action sans date de RDV", async () => {
+      mockActionEditable({ actionType: "appel_effectue" });
+
+      const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "   ");
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toBe("Le commentaire ne peut pas être vide.");
+      expect(parcoursActionsRepo.updateMessage).not.toHaveBeenCalled();
+    });
+
     it("refuse une date de RDV mal formée", async () => {
-      vi.mocked(hasPermission).mockReturnValue(true);
-      vi.mocked(parcoursActionsRepo.exists).mockResolvedValue(true);
-      vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
+      mockActionEditable({ actionType: "expert_rdv_1" });
 
       const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "Updated", "01/09/2026");
 

@@ -74,6 +74,9 @@ export function ActionForm({
       return;
     }
 
+    // Une action RDV peut n'avoir que sa date : le commentaire y reste optionnel, comme à la création.
+    const messageRequisEnEdition = !ACTION_TYPES_WITH_RDV_DATE.includes(currentActionType);
+
     if (!isEditMode) {
       if (!actionType) {
         setError("Veuillez sélectionner une action.");
@@ -87,7 +90,7 @@ export function ActionForm({
         setError("Veuillez préciser l'action réalisée.");
         return;
       }
-    } else if (!message.trim()) {
+    } else if (messageRequisEnEdition && !message.trim()) {
       setError("Le commentaire ne peut pas être vide.");
       return;
     }

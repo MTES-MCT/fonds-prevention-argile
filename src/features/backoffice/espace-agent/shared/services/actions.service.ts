@@ -8,6 +8,7 @@ import {
   ACTION_TYPE_VALUES,
   ACTION_TYPE_COMMENTAIRE_LIBRE,
   ACTION_TYPE_AUTRE,
+  ACTION_TYPES_WITH_RDV_DATE,
   type ActionsListResult,
   type ActionFormData,
   type CreateActionResult,
@@ -158,8 +159,8 @@ export class ActionsService {
       };
     }
 
-    const actionExists = await parcoursActionsRepo.exists(actionId);
-    if (!actionExists) {
+    const existing = await parcoursActionsRepo.findById(actionId);
+    if (!existing) {
       return { success: false, error: "Cette action n'existe pas ou a déjà été supprimée." };
     }
 
@@ -168,7 +169,10 @@ export class ActionsService {
       return { success: false, error: "Vous ne pouvez modifier que vos propres actions." };
     }
 
-    if (!message || message.trim().length === 0) {
+    // Une action RDV peut n'avoir que sa date : le commentaire y reste optionnel, comme à la création.
+    const isRdvAction = ACTION_TYPES_WITH_RDV_DATE.includes(existing.actionType);
+
+    if (!isRdvAction && (!message || message.trim().length === 0)) {
       return { success: false, error: "Le commentaire ne peut pas être vide." };
     }
 

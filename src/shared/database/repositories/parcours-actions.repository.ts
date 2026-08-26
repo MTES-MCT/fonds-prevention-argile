@@ -61,7 +61,8 @@ export class ParcoursActionsRepository extends BaseRepository<ParcoursAction> {
    */
   async updateMessage(id: string, message: string, rdvDate?: string): Promise<ParcoursAction | null> {
     return this.update(id, {
-      message,
+      // Un commentaire vidé revient à null, comme à la création.
+      message: message.length > 0 ? message : null,
       editedAt: new Date(),
       ...(rdvDate !== undefined && { rdvDate: rdvDate.length > 0 ? rdvDate : null }),
     });
