@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { checkAgentAccess, ROUTES } from "@/features/auth";
 import { AccesNonAutoriseAdmin } from "@/shared/components";
 import { isSuperAdminRole } from "@/shared/domain/value-objects/user-role.enum";
-import DiagnosticsPanel from "./components/DiagnosticsPanel";
+import DiagnosticsTabs from "./components/DiagnosticsTabs";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -21,5 +21,5 @@ export default async function DiagnosticsPage() {
     return <AccesNonAutoriseAdmin />;
   }
 
-  return <DiagnosticsPanel />;
+  return <DiagnosticsTabs />;
 }

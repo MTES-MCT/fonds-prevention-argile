@@ -210,3 +210,55 @@ export interface DemarcheSante {
   status: DemarcheSanteStatus;
   errorDetail: string | null;
 }
+
+/**
+ * Regroupement des verdicts de réconciliation en files de travail (ADR-0027).
+ * L'écran n'expose que deux questions : qu'est-ce qui doit être rattaché, et qu'est-ce qui
+ * demande un arbitrage. Le reste n'a rien à signaler.
+ */
+export const VERDICTS_A_RATTACHER = ["rattachement", "sans_annotation"] as const;
+
+export const VERDICTS_A_ARBITRER = [
+  "conflit_autre_parcours",
+  "conflit_dossier_confirme",
+  "conflit_plusieurs_deposes",
+  "annotation_ambigue",
+  "annotation_modifiee",
+  "parcours_inconnu",
+] as const;
+
+export const VERDICT_LABELS: Record<string, { label: string; explication: string }> = {
+  rattachement: {
+    label: "Rattachement proposé",
+    explication: "Ce dossier déposé correspond à un parcours sans dossier confirmé : il peut être rattaché.",
+  },
+  sans_annotation: {
+    label: "Sans lien FPA",
+    explication:
+      "Dossier créé hors du parcours FPA (ou avant l'ajout du lien) : rien ne permet de retrouver son demandeur automatiquement. À rattacher par son numéro.",
+  },
+  conflit_autre_parcours: {
+    label: "Numéro déjà rattaché ailleurs",
+    explication: "Ce numéro appartient déjà à un autre demandeur. À vérifier avant toute action.",
+  },
+  conflit_dossier_confirme: {
+    label: "Deux dossiers pour une étape",
+    explication: "Le parcours a déjà un dossier déposé sous un autre numéro. Il faut choisir lequel fait foi.",
+  },
+  conflit_plusieurs_deposes: {
+    label: "Plusieurs dépôts pour un parcours",
+    explication: "Plusieurs dossiers déposés visent le même parcours. Un doublon côté DN, à trancher.",
+  },
+  annotation_ambigue: {
+    label: "Lien FPA contradictoire",
+    explication: "Deux annotations pointent des parcours différents : le lien a probablement été retouché.",
+  },
+  annotation_modifiee: {
+    label: "Lien FPA modifié",
+    explication: "Démarches Numériques signale que le lien prérempli a été modifié à la main : il ne fait plus foi.",
+  },
+  parcours_inconnu: {
+    label: "Parcours introuvable",
+    explication: "Le lien pointe vers un parcours qui n'existe plus.",
+  },
+};

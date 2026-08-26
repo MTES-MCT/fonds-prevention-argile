@@ -123,6 +123,23 @@ l'usager a un dossier **sous un autre numéro** dans la démarche éligibilité 
   de numéro** (le `ds_number` stocké ≠ celui réellement utilisé). C'est **récupérable par
   relink** (mettre à jour `ds_number`), surtout **PAS par reset** (qui ferait un doublon).
 
+### Les deux files de travail (ADR-0027)
+
+Depuis la réconciliation, `/administration/diagnostics` s'ouvre sur **deux onglets qui appellent
+une action**, alimentés par la table `ds_reconciliation_observations` :
+
+- **À rattacher** — dossiers déposés sans lien vers un parcours (créés hors FPA, ou antérieurs à
+  l'annotation), et rattachements proposés mais pas encore appliqués. Le rattachement se fait
+  depuis le détail dossier, menu « Gérer ».
+- **À arbitrer** — deux dossiers déposés pour une même étape, lien FPA retouché ou contradictoire,
+  numéro revendiqué par deux parcours. Décision humaine obligatoire, jamais automatique.
+
+Le bouton « Analyser » balaye une démarche en lecture seule et remplit ces files : il n'applique
+aucun rattachement. L'écriture reste explicite, via `pnpm ds:reconcilier --apply`.
+
+Un troisième onglet, **États des parcours**, conserve la vue détaillée par état — utile au
+diagnostic, mais ce n'est plus le point d'entrée : la majorité de ses états sont normaux.
+
 ### Où voir ces sous-cas dans l'UI
 
 - **Liste** (`/administration/diagnostics`) : DB-only (aucun appel DN), donc les états
