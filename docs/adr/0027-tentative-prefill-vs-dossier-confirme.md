@@ -86,6 +86,15 @@ ne l'est pas.
 une action (« accéder à mon formulaire ») au lieu de décrire une situation (« reprendre mon
 dossier »). C'est cette confusion qui a affiché « Reprendre » sur des dossiers inexistants.
 
+### Le super-admin peut rattacher (troisième exception au read-only)
+
+Le rattachement manuel d'un dossier DN est ouvert au **super-administrateur**, au même titre
+que les commentaires ([ADR-0024](0024-commentaires-super-admin-espace-agent.md)) et la
+ré-ouverture ([ADR-0016](0016-reouverture-demande-refusee.md)). C'est une exception assumée :
+la mutation touche la source de vérité d'un dossier, mais sans elle le seul recours est une
+intervention SQL en production — ce que cette PR cherche précisément à supprimer. La garde
+`assertNotSuperAdminReadOnly` n'est donc **pas** appelée par `rattacherDossierDnAction`.
+
 ### Ce que nous renonçons explicitement à faire
 
 - voir un brouillon avant son dépôt, ou savoir s'il a été ouvert, réclamé, ou purgé ;

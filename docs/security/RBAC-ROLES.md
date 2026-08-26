@@ -335,6 +335,16 @@ d'accompagnement, archivage/désarchivage, création de dossier, qualification p
 des données de simulation. Le super-admin ne gère donc que le **suivi** (commentaires/actions),
 jamais les décisions structurantes du dossier.
 
+### 6.1.3 Rattachement d'un dossier DN ouvert au super-admin (troisième exception)
+
+Le rattachement manuel d'un dossier Démarches Numériques par son numéro
+(`rattacherDossierDnAction`, [ADR-0027](../adr/0027-tentative-prefill-vs-dossier-confirme.md))
+n'appelle **pas** `assertNotSuperAdminReadOnly`. Rôles habilités : `SUPER_ADMINISTRATEUR`,
+`AMO`, `ALLERS_VERS`, `AMO_ET_ALLERS_VERS`, avec le périmètre du détail dossier (ownership
+entreprise si le dossier a une AMO, contrôle territorial sinon). L'exception est assumée :
+sans elle, réparer un dossier créé hors du lien FPA imposerait une intervention SQL en
+production. L'audit QUI/QUAND est écrit dans `parcours_actions` (type `dossier_dn_rattache`).
+
 ## 6.2 Édition des données de simulation alignée sur le détail dossier
 
 Le bouton « Vérifier son éligibilité » (édition du formulaire de simulation, page
