@@ -312,9 +312,24 @@ Priorité de traitement : les dossiers **acceptés ou en instruction** d'abord. 
 qu'FPA ignore, c'est un demandeur dont le parcours n'avance pas alors que son droit est acquis.
 Les `en_construction` très anciens sont le plus souvent des tests ou des abandons.
 
-- **À arbitrer** — deux dépôts pour une même étape, lien FPA retouché, numéro revendiqué deux
-  fois. Trancher côté DN (classement sans suite du doublon, par exemple), puis « Marquer comme
-  traité ».
+**À arbitrer** — le rattachement automatique s'est arrêté volontairement : il y a une décision
+métier à prendre, et aucune règle ne peut la prendre à notre place.
+
+| Situation                                  | Ce que ça veut dire                                                      | Ce qu'on fait                                                                    |
+| ------------------------------------------ | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| **Deux dossiers pour une étape**           | Le parcours a déjà un dossier déposé sous un autre numéro                | Choisir lequel fait foi, classer l'autre sans suite côté DN, puis rattacher      |
+| **Plusieurs dépôts pour un même parcours** | Plusieurs dossiers déposés portent le même lien FPA                      | Idem : trancher côté DN, le survivant se rattachera au balayage suivant          |
+| **Numéro déjà rattaché ailleurs**          | Ce numéro appartient à un autre demandeur (souvent un compte en double)  | Vérifier les deux parcours et décider lequel garder — jamais de rattachement ici |
+| **Lien FPA modifié / contradictoire**      | DN signale la valeur préremplie comme retouchée, ou deux liens divergent | Vérifier à qui appartient réellement le dossier, puis rattacher à la main        |
+| **Parcours introuvable**                   | Le lien pointe un parcours supprimé depuis                               | Rien à rattacher : écarter                                                       |
+
+Les deux boutons de la file **ne modifient aucune donnée** : ils referment l'observation, rien
+de plus. « Marquer comme traité » signifie « j'ai tranché ailleurs », « Écarter » signifie
+« ce cas ne nous concerne pas ». Le vrai arbitrage se fait côté DN, ou via le rattachement
+manuel une fois le doublon écarté.
+
+> Un cas refermé se **rouvre tout seul** si un balayage ultérieur lui trouve un verdict
+> différent. Refermer sans avoir traité ne fait donc que repousser le problème.
 
 Pour un rattachement en masse, le script fait la même chose que l'interface :
 
