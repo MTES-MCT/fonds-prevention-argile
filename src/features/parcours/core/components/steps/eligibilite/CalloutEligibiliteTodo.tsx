@@ -153,7 +153,7 @@ export default function CalloutEligibiliteTodo() {
         </p>
         <button
           onClick={handleSubmit}
-          disabled={isLoading || isRegenerating}
+          disabled={isRegenerating}
           className="fr-btn fr-btn--icon-right fr-icon-external-link-line">
           Remplir le formulaire d'éligibilité
         </button>
@@ -179,7 +179,7 @@ export default function CalloutEligibiliteTodo() {
               </p>
               <button
                 onClick={handleRegenerer}
-                disabled={isLoading || isRegenerating}
+                disabled={isRegenerating}
                 className="fr-btn fr-btn--secondary fr-btn--sm">
                 {isRegenerating ? "Vérification en cours…" : "Créer un nouveau formulaire"}
               </button>
