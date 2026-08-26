@@ -3,6 +3,7 @@ import { buildAuthorSnapshot } from "./author-snapshot";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
+import { isSqlDateString } from "@/shared/utils/date.utils";
 import type { UserRole } from "@/shared/domain/value-objects";
 import {
   ACTION_TYPE_VALUES,
@@ -102,8 +103,13 @@ export class ActionsService {
       return { success: false, error: "Le commentaire ne peut pas dépasser 5000 caractères." };
     }
 
-    if (rdvDate.length > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(rdvDate)) {
-      return { success: false, error: "Date de RDV invalide." };
+    if (rdvDate.length > 0) {
+      if (!ACTION_TYPES_WITH_RDV_DATE.includes(actionType)) {
+        return { success: false, error: "Ce type d'action ne peut pas porter de date de RDV." };
+      }
+      if (!isSqlDateString(rdvDate)) {
+        return { success: false, error: "Date de RDV invalide." };
+      }
     }
 
     try {
@@ -180,8 +186,13 @@ export class ActionsService {
       return { success: false, error: "Le commentaire ne peut pas dépasser 5000 caractères." };
     }
 
-    if (rdvDate !== undefined && rdvDate.length > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(rdvDate)) {
-      return { success: false, error: "Date de RDV invalide." };
+    if (rdvDate !== undefined && rdvDate.length > 0) {
+      if (!isRdvAction) {
+        return { success: false, error: "Ce type d'action ne peut pas porter de date de RDV." };
+      }
+      if (!isSqlDateString(rdvDate)) {
+        return { success: false, error: "Date de RDV invalide." };
+      }
     }
 
     try {

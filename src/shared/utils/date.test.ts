@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { dateToSqlString, formatDate, formatDateTime, parseFrenchDateToSql, sqlStringToDate } from "./date.utils";
+import {
+  dateToSqlString,
+  formatDate,
+  formatDateTime,
+  isSqlDateString,
+  parseFrenchDateToSql,
+  sqlStringToDate,
+} from "./date.utils";
 
 describe("Date utilities", () => {
   describe("formatDate", () => {
@@ -91,6 +98,25 @@ describe("Date utilities", () => {
     it("should pad single digit months and days", () => {
       const date = new Date("2025-01-05T00:00:00Z");
       expect(dateToSqlString(date)).toBe("2025-01-05");
+    });
+  });
+
+  describe("isSqlDateString", () => {
+    it("should accept a valid YYYY-MM-DD date", () => {
+      expect(isSqlDateString("2026-09-01")).toBe(true);
+      expect(isSqlDateString("2024-02-29")).toBe(true);
+    });
+
+    it("should reject a malformed date", () => {
+      expect(isSqlDateString("01/09/2026")).toBe(false);
+      expect(isSqlDateString("2026-9-1")).toBe(false);
+      expect(isSqlDateString("")).toBe(false);
+    });
+
+    it("should reject a date that does not exist in the calendar", () => {
+      expect(isSqlDateString("2026-02-31")).toBe(false);
+      expect(isSqlDateString("2026-13-01")).toBe(false);
+      expect(isSqlDateString("2025-02-29")).toBe(false);
     });
   });
 

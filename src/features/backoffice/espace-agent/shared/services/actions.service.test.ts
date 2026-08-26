@@ -198,6 +198,45 @@ describe("ActionsService", () => {
       expect(result.error).toContain("5000 caractères");
     });
 
+    it("refuse une date de RDV mal formée", async () => {
+      vi.mocked(hasPermission).mockReturnValue(true);
+
+      const result = await service.createAction("parcours-1", "agent-1", UserRole.AMO, {
+        actionType: "expert_rdv_1",
+        rdvDate: "01/09/2026",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Date de RDV invalide.");
+      expect(parcoursActionsRepo.create).not.toHaveBeenCalled();
+    });
+
+    it("refuse une date de RDV inexistante au calendrier", async () => {
+      vi.mocked(hasPermission).mockReturnValue(true);
+
+      const result = await service.createAction("parcours-1", "agent-1", UserRole.AMO, {
+        actionType: "expert_rdv_2",
+        rdvDate: "2026-02-31",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Date de RDV invalide.");
+      expect(parcoursActionsRepo.create).not.toHaveBeenCalled();
+    });
+
+    it("refuse une date de RDV sur un type d'action non concerné", async () => {
+      vi.mocked(hasPermission).mockReturnValue(true);
+
+      const result = await service.createAction("parcours-1", "agent-1", UserRole.AMO, {
+        actionType: "appel_effectue",
+        rdvDate: "2026-09-01",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("ne peut pas porter de date de RDV");
+      expect(parcoursActionsRepo.create).not.toHaveBeenCalled();
+    });
+
     it("crée une action avec snapshot auteur AMO", async () => {
       vi.mocked(hasPermission).mockReturnValue(true);
       vi.mocked(agentsRepo.findById).mockResolvedValue(baseAgent);
@@ -375,6 +414,26 @@ describe("ActionsService", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) expect(result.error).toBe("Date de RDV invalide.");
+      expect(parcoursActionsRepo.updateMessage).not.toHaveBeenCalled();
+    });
+
+    it("refuse une date de RDV inexistante au calendrier", async () => {
+      mockActionEditable({ actionType: "expert_rdv_1" });
+
+      const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "Updated", "2026-02-31");
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toBe("Date de RDV invalide.");
+      expect(parcoursActionsRepo.updateMessage).not.toHaveBeenCalled();
+    });
+
+    it("refuse une date de RDV sur un type d'action non concerné", async () => {
+      mockActionEditable({ actionType: "appel_effectue" });
+
+      const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "Updated", "2026-09-01");
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toContain("ne peut pas porter de date de RDV");
       expect(parcoursActionsRepo.updateMessage).not.toHaveBeenCalled();
     });
   });
