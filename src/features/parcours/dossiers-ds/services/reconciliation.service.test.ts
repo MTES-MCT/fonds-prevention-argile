@@ -12,6 +12,7 @@ vi.mock("@/shared/database/repositories", () => ({
 // Le singleton du client GraphQL lit l'env DN à la construction : inutile ici, la règle testée
 // est pure.
 vi.mock("../adapters/graphql/client", () => ({ graphqlClient: { getDemarcheDossiers: vi.fn() } }));
+vi.mock("./inspection.service", () => ({ inspecterDossierDn: vi.fn() }));
 
 const PARCOURS = "c3ffd5bb-7b8b-4d0d-a5b6-1ff91cabc975";
 
@@ -154,6 +155,24 @@ describe("observationsAPersister", () => {
     const lignes = [ligne("conflit_plusieurs_deposes"), ligne("sans_annotation"), ligne("annotation_modifiee")];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(observationsAPersister(lignes as any, false)).toHaveLength(3);
+  });
+
+  it("attache au dossier orphelin les demandeurs qui lui correspondent", () => {
+    const candidats = [{ parcoursId: PARCOURS, motifs: ["telephone"] }];
+    const observations = observationsAPersister(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      [ligne("sans_annotation")] as any,
+      false,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      new Map([["32052358", candidats as any]])
+    );
+
+    expect(observations[0].candidats).toEqual(candidats);
+  });
+
+  it("n'invente pas de candidat pour un dossier qu'aucun rapprochement ne couvre", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(observationsAPersister([ligne("sans_annotation")] as any, false)[0].candidats).toBeNull();
   });
 
   it("garde un rattachement proposé en observation, mais pas une fois appliqué", () => {

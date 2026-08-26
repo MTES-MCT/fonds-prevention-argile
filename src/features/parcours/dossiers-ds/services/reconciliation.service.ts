@@ -14,6 +14,8 @@ import { graphqlClient } from "../adapters/graphql/client";
 import { lireAnnotationFpa } from "../utils/annotation-fpa.utils";
 import { getAnnotationLienFpaId } from "../domain/value-objects/ds-annotations";
 import { resolveDemarcheNumberForStep } from "./pieces-justificatives.service";
+import { inspecterDossierDn } from "./inspection.service";
+import type { CandidatDemandeur } from "../domain/types/inspection.types";
 
 /**
  * Réconciliation des dossiers DÉPOSÉS avec leur parcours (ADR-0027).
@@ -108,7 +110,8 @@ export interface LigneRapport extends CandidatReconciliation {
  */
 export function observationsAPersister(
   lignes: LigneRapport[],
-  rattachementsAppliques: boolean
+  rattachementsAppliques: boolean,
+  candidatsParDossier: Map<string, CandidatDemandeur[]> = new Map()
 ): Array<{
   dsNumber: string;
   parcoursId: string | null;
@@ -116,6 +119,7 @@ export function observationsAPersister(
   verdict: string;
   dsState: string | null;
   detail: string | null;
+  candidats: CandidatDemandeur[] | null;
 }> {
   return lignes
     .filter((l) => l.verdict !== "deja_a_jour" && !(rattachementsAppliques && l.verdict === "rattachement"))
@@ -126,7 +130,36 @@ export function observationsAPersister(
       verdict: l.verdict,
       dsState: l.state,
       detail: l.pointeurAvant ? `Pointeur au moment du constat : #${l.pointeurAvant}` : null,
+      candidats: candidatsParDossier.get(l.dsNumber) ?? null,
     }));
+}
+
+/**
+ * Plafond de rapprochements par balayage. Chaque orphelin coûte un appel DN : sur une démarche
+ * saine ils se comptent sur les doigts d'une main, mais un incident pourrait en produire des
+ * centaines et transformer une analyse en attente interminable.
+ */
+const MAX_RAPPROCHEMENTS = 30;
+
+/**
+ * Cherche à qui appartiennent les dossiers qu'aucune annotation ne rattache. Fait ici, au
+ * balayage, plutôt qu'au clic : l'agent ouvre la file avec les correspondances déjà trouvées.
+ * Best-effort — un échec DN laisse la ligne sans candidat, jamais en erreur.
+ */
+async function rapprocherOrphelins(lignes: LigneRapport[]): Promise<Map<string, CandidatDemandeur[]>> {
+  const orphelins = lignes.filter((l) => l.verdict === "sans_annotation").slice(0, MAX_RAPPROCHEMENTS);
+  const parDossier = new Map<string, CandidatDemandeur[]>();
+
+  for (const ligne of orphelins) {
+    try {
+      const inspection = await inspecterDossierDn(ligne.dsNumber);
+      if (inspection) parDossier.set(ligne.dsNumber, inspection.candidats);
+    } catch (error) {
+      console.error(`Rapprochement impossible pour le dossier ${ligne.dsNumber}:`, error);
+    }
+  }
+
+  return parDossier;
 }
 
 export interface RapportReconciliation {
@@ -504,7 +537,8 @@ export async function reconcilierDemarche(options: {
     }
   }
 
-  await dsObservationsRepo.upsertMany(observationsAPersister(lignes, peutEcrire));
+  const candidatsParDossier = await rapprocherOrphelins(lignes);
+  await dsObservationsRepo.upsertMany(observationsAPersister(lignes, peutEcrire, candidatsParDossier));
 
   // Symétrique : ce qui n'a plus rien à signaler sort de la file. Sans ça, une observation
   // faite avant une correction resterait ouverte pour toujours.

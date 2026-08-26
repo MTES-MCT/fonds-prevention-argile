@@ -292,15 +292,23 @@ Si le message annonce une analyse **interrompue**, les résultats sont partiels 
 
 **À rattacher** — un dossier existe côté DN mais aucun parcours ne le suit. Pour chaque ligne :
 
-1. Cliquer **« Identifier »** : l'écran interroge DN et affiche l'identité déclarée, le compte
-   usager, les champs du formulaire, puis **les demandeurs qui correspondent** — par adresse de
-   logement, téléphone, e-mail ou nom, du plus concordant au moins concordant.
-2. À défaut de candidat, ouvrir le dossier côté DN (le numéro est cliquable) et chercher à la
-   main dans l'espace agent ou dans les demandeurs.
-3. **S'il existe** : ouvrir son dossier → « Gérer » → « Rattacher un dossier DN », saisir le
-   numéro. L'étape est déduite de la démarche du dossier, pas du parcours : un dossier
-   d'éligibilité rattaché depuis un parcours plus avancé reste une éligibilité. L'observation
-   se referme toute seule, et une note d'audit est écrite dans l'historique du dossier.
+1. **L'analyse a déjà cherché à qui appartient le dossier** : la colonne « Demandeur probable »
+   affiche les demandeurs qui correspondent — par adresse de logement, téléphone, e-mail ou nom,
+   du plus concordant au moins concordant. Ce rapprochement est fait au balayage, pour les seuls
+   dossiers orphelins (plafonné à 30 par analyse), et conservé avec l'observation.
+2. **Un seul demandeur correspond** : le bouton **« Rattacher »** suffit. **Plusieurs
+   correspondent** : un avertissement le signale et il faut choisir explicitement lequel — la
+   correspondance est un indice, pas une preuve (l'e-mail peut être celui de l'AMO, deux
+   personnes peuvent porter le même nom). **« Voir le détail »** déplie ce que DN déclare pour
+   vérifier avant de trancher.
+3. **Aucun candidat** : ouvrir le dossier côté DN (le numéro est cliquable) et chercher à la main
+   dans l'espace agent. Le rattachement reste possible depuis le dossier du demandeur → « Gérer »
+   → « Rattacher un dossier DN ».
+
+   Quel que soit le chemin, l'étape est déduite de la démarche du dossier, pas du parcours : un
+   dossier d'éligibilité rattaché depuis un parcours plus avancé reste une éligibilité.
+   L'observation se referme toute seule et une note d'audit est écrite dans l'historique du
+   dossier.
 
    **S'il a déjà un dossier pour cette étape**, deux cas selon son état : tant qu'il n'a jamais
    été observé déposé (un prérempli), le rattachement le **remplace** — l'ancien numéro reste au

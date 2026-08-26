@@ -20,8 +20,10 @@ const AIDE_ONGLET: Record<Onglet, { titre: string; contenu: ReactNode }> = {
     contenu: (
       <>
         <p className="fr-mb-1v">
-          Ouvrez le dossier pour relever le nom et l&apos;adresse e-mail du demandeur, cherchez-le dans l&apos;espace
-          agent, puis rattachez-le depuis son dossier : <strong>Gérer → Rattacher un dossier DN</strong>.
+          L&apos;analyse cherche pour vous à qui appartient chaque dossier, en comparant adresse, téléphone, e-mail et
+          identité. Quand un seul demandeur correspond, le bouton <strong>Rattacher</strong> suffit. Quand plusieurs
+          correspondent, choisissez lequel : la correspondance est un indice, pas une preuve — vérifiez avec
+          <strong> Voir le détail</strong> avant de trancher.
         </p>
         <p className="fr-mb-1v">
           <strong>Si le demandeur a déjà un dossier pour cette étape</strong>, tout dépend de son état : tant qu&apos;il
@@ -30,8 +32,8 @@ const AIDE_ONGLET: Record<Onglet, { titre: string; contenu: ReactNode }> = {
           même étape se tranchent dans l&apos;onglet « À arbitrer ».
         </p>
         <p className="fr-mb-0">
-          Si le demandeur n&apos;existe pas chez nous — dossier de test, démarche remplie hors dispositif — écartez la
-          ligne. Traitez en priorité les dossiers acceptés ou en instruction : ce sont des demandeurs dont le parcours
+          Si aucun demandeur ne correspond — dossier de test, démarche remplie hors dispositif — écartez la ligne.
+          Traitez en priorité les dossiers acceptés ou en instruction : ce sont des demandeurs dont le parcours
           n&apos;avance pas alors que leur droit est acquis.
         </p>
       </>
@@ -47,8 +49,9 @@ const AIDE_ONGLET: Record<Onglet, { titre: string; contenu: ReactNode }> = {
         </p>
         <p className="fr-mb-0">
           Tranchez d&apos;abord côté Démarches Numériques (classement sans suite du doublon, par exemple), puis
-          rattachez le dossier retenu. <strong>Les deux boutons ci-dessous ne modifient aucune donnée</strong> : ils
-          referment le signalement. Un cas refermé se rouvre si une prochaine analyse lui trouve un autre verdict.
+          rattachez le dossier retenu.{" "}
+          <strong>« Marquer comme traité » et « Écarter » ne modifient aucune donnée</strong> : ils referment le
+          signalement. Un cas refermé se rouvre si une prochaine analyse lui trouve un autre verdict.
         </p>
       </>
     ),
@@ -199,6 +202,7 @@ export default function DiagnosticsTabs() {
                 <FileReconciliation
                   observations={files?.aRattacher ?? []}
                   messageVide="Aucun dossier en attente de rattachement."
+                  variante="rattacher"
                   onResolved={charger}
                 />
               )}
@@ -207,6 +211,7 @@ export default function DiagnosticsTabs() {
                 <FileReconciliation
                   observations={files?.aArbitrer ?? []}
                   messageVide="Aucun conflit à arbitrer."
+                  variante="arbitrer"
                   onResolved={charger}
                 />
               )}

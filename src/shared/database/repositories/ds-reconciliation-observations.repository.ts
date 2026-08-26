@@ -9,6 +9,7 @@ import {
   type ResolutionObservation,
 } from "../schema";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
+import type { CandidatDemandeur } from "@/features/parcours/dossiers-ds/domain/types/inspection.types";
 
 /** Postgres plafonne le nombre de paramètres d'une requête : on découpe par précaution. */
 const TAILLE_LOT = 500;
@@ -20,6 +21,7 @@ interface ObservationAEnregistrer {
   verdict: string;
   dsState: string | null;
   detail: string | null;
+  candidats?: CandidatDemandeur[] | null;
 }
 
 /** Une observation enrichie du demandeur concerné, pour l'affichage back-office. */
@@ -52,6 +54,8 @@ export const dsReconciliationObservationsRepository = {
             verdict: sql`excluded.verdict`,
             dsState: sql`excluded.ds_state`,
             detail: sql`excluded.detail`,
+            // Un balayage qui ne recalcule pas les candidats ne doit pas effacer les précédents.
+            candidats: sql`coalesce(excluded.candidats, ${dsReconciliationObservations.candidats})`,
             observedAt: new Date(),
             // Le verdict a changé depuis la résolution : le cas redevient ouvert.
             resolvedAt: sql`CASE WHEN ${dsReconciliationObservations.verdict} = excluded.verdict THEN ${dsReconciliationObservations.resolvedAt} ELSE NULL END`,

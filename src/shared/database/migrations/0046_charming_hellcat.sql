@@ -1,0 +1,1 @@
+ALTER TABLE "ds_reconciliation_observations" ADD COLUMN "candidats" jsonb;

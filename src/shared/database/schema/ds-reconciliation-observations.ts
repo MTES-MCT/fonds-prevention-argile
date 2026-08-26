@@ -1,8 +1,9 @@
-import { pgTable, uuid, timestamp, varchar, text, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, varchar, text, jsonb, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { agents } from "./agents";
 import { stepPgEnum } from "../enums/enums";
+import type { CandidatDemandeur } from "@/features/parcours/dossiers-ds/domain/types/inspection.types";
 
 /**
  * Ce que la réconciliation a constaté sur un dossier DN déposé, et ce qu'il en a été fait
@@ -30,6 +31,12 @@ export const dsReconciliationObservations = pgTable(
     dsState: varchar("ds_state", { length: 30 }),
     /** Contexte utile à l'arbitrage : numéro du pointeur au moment du constat, par exemple. */
     detail: text("detail"),
+
+    /**
+     * Demandeurs qui correspondent au dossier, calculés au balayage (ADR-0027). Stockés pour
+     * que la file les affiche sans re-interroger DN à chaque ouverture.
+     */
+    candidats: jsonb("candidats").$type<CandidatDemandeur[]>(),
 
     observedAt: timestamp("observed_at", { mode: "date" }).notNull().defaultNow(),
 
