@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   analyserReconciliationAction,
   listerFilesReconciliationAction,
@@ -12,6 +12,52 @@ import { FileReconciliation } from "./FileReconciliation";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 
 type Onglet = "rattacher" | "arbitrer" | "etats";
+
+/** Ce que chaque onglet contient et ce qu'on est censé y faire. */
+const AIDE_ONGLET: Record<Onglet, { titre: string; contenu: ReactNode }> = {
+  rattacher: {
+    titre: "Des dossiers existent côté Démarches Numériques sans qu'aucun parcours ne les suive",
+    contenu: (
+      <>
+        <p className="fr-mb-1v">
+          Ouvrez le dossier pour relever le nom et l&apos;adresse e-mail du demandeur, cherchez-le dans l&apos;espace
+          agent, puis rattachez-le depuis son dossier : <strong>Gérer → Rattacher un dossier DN</strong>.
+        </p>
+        <p className="fr-mb-0">
+          Si le demandeur n&apos;existe pas chez nous — dossier de test, démarche remplie hors dispositif — écartez la
+          ligne. Traitez en priorité les dossiers acceptés ou en instruction : ce sont des demandeurs dont le parcours
+          n&apos;avance pas alors que leur droit est acquis.
+        </p>
+      </>
+    ),
+  },
+  arbitrer: {
+    titre: "Le rattachement s'est arrêté volontairement : il y a une décision à prendre",
+    contenu: (
+      <>
+        <p className="fr-mb-1v">
+          Deux dossiers déposés pour une même étape, un lien FPA modifié à la main, ou un numéro déjà rattaché à un
+          autre demandeur. Aucune règle ne peut trancher à votre place.
+        </p>
+        <p className="fr-mb-0">
+          Tranchez d&apos;abord côté Démarches Numériques (classement sans suite du doublon, par exemple), puis
+          rattachez le dossier retenu. <strong>Les deux boutons ci-dessous ne modifient aucune donnée</strong> : ils
+          referment le signalement. Un cas refermé se rouvre si une prochaine analyse lui trouve un autre verdict.
+        </p>
+      </>
+    ),
+  },
+  etats: {
+    titre: "Vue détaillée de l'état de chaque parcours actif",
+    contenu: (
+      <p className="fr-mb-0">
+        Calculée en base, sans interroger Démarches Numériques. La plupart de ces états sont <strong>normaux</strong> —
+        un prérempli non déposé, notamment, est invisible de l&apos;API et ne signale aucun problème. À utiliser pour
+        investiguer un cas précis, pas comme liste de travail.
+      </p>
+    ),
+  },
+};
 
 const STEPS_ANALYSABLES = [Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS];
 
@@ -111,6 +157,11 @@ export default function DiagnosticsTabs() {
             </ul>
 
             <div className="fr-tabs__panel fr-tabs__panel--selected" role="tabpanel">
+              <div className="fr-callout fr-callout--blue-ecume fr-mb-3w">
+                <h3 className="fr-callout__title fr-text--md">{AIDE_ONGLET[onglet].titre}</h3>
+                <div className="fr-callout__text fr-text--sm">{AIDE_ONGLET[onglet].contenu}</div>
+              </div>
+
               {onglet !== "etats" && (
                 <div className="fr-mb-3w">
                   <p className="fr-text--sm fr-mb-1w">
