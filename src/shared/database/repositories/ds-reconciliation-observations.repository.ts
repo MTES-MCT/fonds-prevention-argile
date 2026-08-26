@@ -57,8 +57,11 @@ export const dsReconciliationObservationsRepository = {
             // Un balayage qui ne recalcule pas les candidats ne doit pas effacer les précédents.
             candidats: sql`coalesce(excluded.candidats, ${dsReconciliationObservations.candidats})`,
             observedAt: new Date(),
-            // Le verdict a changé depuis la résolution : le cas redevient ouvert.
+            // Le verdict a changé depuis la résolution : le cas redevient ouvert, et la
+            // résolution qui l'avait refermé ne le décrit plus — elle part avec.
             resolvedAt: sql`CASE WHEN ${dsReconciliationObservations.verdict} = excluded.verdict THEN ${dsReconciliationObservations.resolvedAt} ELSE NULL END`,
+            resolvedBy: sql`CASE WHEN ${dsReconciliationObservations.verdict} = excluded.verdict THEN ${dsReconciliationObservations.resolvedBy} ELSE NULL END`,
+            resolution: sql`CASE WHEN ${dsReconciliationObservations.verdict} = excluded.verdict THEN ${dsReconciliationObservations.resolution} ELSE NULL END`,
           },
         });
     }
