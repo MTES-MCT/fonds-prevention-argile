@@ -146,10 +146,8 @@ export class ActionsService {
   }
 
   /**
-   * Met à jour le commentaire (et, pour les actions expert_rdv_1/2/3, la date
-   * de RDV) d'une action existante. Seul l'auteur de l'action peut la modifier.
-   * `rdvDate` : undefined = ne pas toucher la colonne, "" = effacer la date,
-   * "YYYY-MM-DD" = la mettre à jour.
+   * Met à jour une action existante (commentaire, date de RDV), réservée à son auteur.
+   * `rdvDate` : undefined = ne pas toucher la colonne, "" = effacer la date.
    */
   async updateAction(
     actionId: string,

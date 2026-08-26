@@ -61,9 +61,7 @@ export async function createActionAction(parcoursId: string, data: ActionFormDat
 }
 
 /**
- * Met à jour le commentaire (et, pour les actions expert_rdv_1/2/3, la date de
- * RDV) d'une action existante. `rdvDate` : undefined = ne pas toucher la
- * colonne, "" = effacer la date, "YYYY-MM-DD" = la mettre à jour.
+ * Met à jour une action existante (commentaire, date de RDV).
  */
 export async function updateActionAction(
   actionId: string,
