@@ -6,7 +6,7 @@ import {
   parcoursPrevention,
   type OrigineTentative,
 } from "@/shared/database/schema";
-import { dossiersDsTentativesRepo } from "@/shared/database/repositories";
+import { dossiersDsTentativesRepo, dsObservationsRepo } from "@/shared/database/repositories";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { ActionResult } from "@/shared/types";
 import { graphqlClient } from "../adapters/graphql/client";
@@ -88,6 +88,34 @@ export function decideRattachement(candidat: CandidatReconciliation, ctx: Contex
 export interface LigneRapport extends CandidatReconciliation {
   verdict: VerdictReconciliation;
   pointeurAvant: string | null;
+}
+
+/**
+ * Ce qui mérite d'être conservé pour le back-office : tout sauf le bruit.
+ * « Déjà à jour » n'a rien à signaler, et un rattachement effectivement appliqué s'est
+ * refermé de lui-même — le garder ouvert ferait une file qui ne se vide jamais.
+ */
+export function observationsAPersister(
+  lignes: LigneRapport[],
+  rattachementsAppliques: boolean
+): Array<{
+  dsNumber: string;
+  parcoursId: string | null;
+  step: Step;
+  verdict: string;
+  dsState: string | null;
+  detail: string | null;
+}> {
+  return lignes
+    .filter((l) => l.verdict !== "deja_a_jour" && !(rattachementsAppliques && l.verdict === "rattachement"))
+    .map((l) => ({
+      dsNumber: l.dsNumber,
+      parcoursId: l.parcoursId,
+      step: l.step,
+      verdict: l.verdict,
+      dsState: l.state,
+      detail: l.pointeurAvant ? `Pointeur au moment du constat : #${l.pointeurAvant}` : null,
+    }));
 }
 
 export interface RapportReconciliation {
@@ -437,6 +465,8 @@ export async function reconcilierDemarche(options: {
       rattachementsAppliques++;
     }
   }
+
+  await dsObservationsRepo.upsertMany(observationsAPersister(lignes, peutEcrire));
 
   return {
     lignes,

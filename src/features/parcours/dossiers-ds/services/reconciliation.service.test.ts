@@ -1,9 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
-import { decideRattachement, type ContexteRattachement } from "./reconciliation.service";
+import { decideRattachement, observationsAPersister, type ContexteRattachement } from "./reconciliation.service";
 import { lireAnnotationFpa } from "../utils/annotation-fpa.utils";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 
 vi.mock("@/shared/database/client", () => ({ db: {} }));
+vi.mock("@/shared/database/repositories", () => ({
+  dossiersDsTentativesRepo: { findByDsNumber: vi.fn(), record: vi.fn() },
+  dsObservationsRepo: { upsertMany: vi.fn() },
+}));
 
 // Le singleton du client GraphQL lit l'env DN à la construction : inutile ici, la règle testée
 // est pure.
@@ -120,5 +124,35 @@ describe("lireAnnotationFpa", () => {
   it("ignore une valeur qui n'est pas un uuid valide", () => {
     const annotations = [{ champDescriptorId: DESCRIPTEUR, stringValue: "/espace-agent/dossiers/pas-un-uuid" }];
     expect(lireAnnotationFpa(annotations, DESCRIPTEUR).parcoursId).toBeNull();
+  });
+});
+
+// La file du back-office ne doit contenir que ce qui demande une action humaine.
+describe("observationsAPersister", () => {
+  const ligne = (verdict: string) => ({
+    dsNumber: "32052358",
+    step: Step.ELIGIBILITE,
+    state: "accepte",
+    parcoursId: PARCOURS,
+    verdict,
+    pointeurAvant: null,
+  });
+
+  it("écarte les dossiers déjà à jour", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(observationsAPersister([ligne("deja_a_jour")] as any, false)).toHaveLength(0);
+  });
+
+  it("garde les conflits et les dossiers sans annotation", () => {
+    const lignes = [ligne("conflit_plusieurs_deposes"), ligne("sans_annotation"), ligne("annotation_modifiee")];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(observationsAPersister(lignes as any, false)).toHaveLength(3);
+  });
+
+  it("garde un rattachement proposé en observation, mais pas une fois appliqué", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(observationsAPersister([ligne("rattachement")] as any, false)).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(observationsAPersister([ligne("rattachement")] as any, true)).toHaveLength(0);
   });
 });

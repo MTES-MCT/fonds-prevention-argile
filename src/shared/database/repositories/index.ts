@@ -6,6 +6,8 @@ export { parcoursPreventionRepository as parcoursRepo } from "./parcours-prevent
 export { parcoursActionsRepo } from "./parcours-actions.repository";
 export { dossierDemarchesSimplifieesRepository as dossierDsRepo } from "./dossiers-demarches-simplifiees.repository";
 export { dossiersDsTentativesRepository as dossiersDsTentativesRepo } from "./dossiers-ds-tentatives.repository";
+export { dsReconciliationObservationsRepository as dsObservationsRepo } from "./ds-reconciliation-observations.repository";
+export type { ObservationAvecDemandeur } from "./ds-reconciliation-observations.repository";
 export { entreprisesAmoRepository as entreprisesAmoRepo } from "./entreprises-amo.repository";
 export { agentsRepository as agentsRepo } from "./agents.repository";
 export { agentPermissionsRepository } from "./agent-permissions.repository";

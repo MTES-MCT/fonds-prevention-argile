@@ -17,6 +17,7 @@ vi.mock("@/features/backoffice/espace-agent/shared/services/author-snapshot", ()
 vi.mock("@/shared/database/repositories", () => ({
   parcoursRepo: { findById: vi.fn() },
   parcoursActionsRepo: { create: vi.fn() },
+  dsObservationsRepo: { resoudre: vi.fn() },
 }));
 // Le dossier appartient à l'entreprise "entreprise-123".
 vi.mock("@/shared/database/client", () => ({

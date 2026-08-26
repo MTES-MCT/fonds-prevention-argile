@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations } from "@/shared/database/schema";
-import { parcoursRepo, parcoursActionsRepo } from "@/shared/database/repositories";
+import { parcoursRepo, parcoursActionsRepo, dsObservationsRepo } from "@/shared/database/repositories";
+import { RESOLUTION_OBSERVATION } from "@/shared/database/schema";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import {
   calculateAgentScope,
@@ -91,6 +92,9 @@ export async function rattacherDossierDnAction(parcoursId: string, dsNumber: str
       authorStructure: snapshot.authorStructure,
       authorStructureType: snapshot.authorStructureType,
     });
+
+    // Le cas sort de la file de rattachement du back-office.
+    await dsObservationsRepo.resoudre(result.data.dsNumber, RESOLUTION_OBSERVATION.RATTACHE, agent.id);
 
     revalidatePath(`/espace-agent/dossiers/${parcoursId}`);
     return { success: true, data: undefined };
