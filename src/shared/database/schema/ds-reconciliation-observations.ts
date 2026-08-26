@@ -62,6 +62,8 @@ export const RESOLUTION_OBSERVATION = {
   ARBITRE: "arbitre",
   /** Sans suite : dossier hors périmètre, doublon abandonné, test… */
   ECARTE: "ecarte",
+  /** Refermé par un balayage : le cas n'a plus rien à signaler. */
+  AUTO: "auto",
 } as const;
 
 export type ResolutionObservation = (typeof RESOLUTION_OBSERVATION)[keyof typeof RESOLUTION_OBSERVATION];

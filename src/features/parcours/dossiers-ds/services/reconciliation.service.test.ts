@@ -6,7 +6,7 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 vi.mock("@/shared/database/client", () => ({ db: {} }));
 vi.mock("@/shared/database/repositories", () => ({
   dossiersDsTentativesRepo: { findByDsNumber: vi.fn(), record: vi.fn() },
-  dsObservationsRepo: { upsertMany: vi.fn() },
+  dsObservationsRepo: { upsertMany: vi.fn(), refermerReglees: vi.fn() },
 }));
 
 // Le singleton du client GraphQL lit l'env DN à la construction : inutile ici, la règle testée

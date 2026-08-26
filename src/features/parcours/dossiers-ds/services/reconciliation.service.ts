@@ -504,6 +504,14 @@ export async function reconcilierDemarche(options: {
 
   await dsObservationsRepo.upsertMany(observationsAPersister(lignes, peutEcrire));
 
+  // Symétrique : ce qui n'a plus rien à signaler sort de la file. Sans ça, une observation
+  // faite avant une correction resterait ouverte pour toujours.
+  await dsObservationsRepo.refermerReglees(
+    lignes
+      .filter((l) => l.verdict === "deja_a_jour" || (peutEcrire && l.verdict === "rattachement"))
+      .map((l) => l.dsNumber)
+  );
+
   return {
     lignes,
     totaux,

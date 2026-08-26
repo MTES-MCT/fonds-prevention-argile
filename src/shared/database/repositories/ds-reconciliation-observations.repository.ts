@@ -4,6 +4,7 @@ import {
   dsReconciliationObservations,
   parcoursPrevention,
   users,
+  RESOLUTION_OBSERVATION,
   type DsReconciliationObservation,
   type ResolutionObservation,
 } from "../schema";
@@ -90,6 +91,24 @@ export const dsReconciliationObservationsRepository = {
       .groupBy(dsReconciliationObservations.verdict);
 
     return Object.fromEntries(rows.map((r) => [r.verdict, r.total]));
+  },
+
+  /**
+   * Referme les observations dont le dossier n'a plus rien à signaler. Sans ça, un cas réglé
+   * entre deux balayages resterait ouvert indéfiniment et la file ne se viderait jamais.
+   */
+  async refermerReglees(dsNumbers: string[]): Promise<number> {
+    if (dsNumbers.length === 0) return 0;
+
+    const fermees = await db
+      .update(dsReconciliationObservations)
+      .set({ resolvedAt: new Date(), resolvedBy: null, resolution: RESOLUTION_OBSERVATION.AUTO })
+      .where(
+        and(inArray(dsReconciliationObservations.dsNumber, dsNumbers), isNull(dsReconciliationObservations.resolvedAt))
+      )
+      .returning({ id: dsReconciliationObservations.id });
+
+    return fermees.length;
   },
 
   /** Referme un cas : rattaché, arbitré ou écarté. */

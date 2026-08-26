@@ -108,7 +108,13 @@ export async function resoudreObservationAction(
   const guard = await ensureSuperAdmin();
   if (!guard.ok) return { success: false, error: guard.error };
 
-  if (!Object.values(RESOLUTION_OBSERVATION).includes(resolution)) {
+  // `auto` est réservé aux balayages : un humain arbitre ou écarte, il ne « referme » pas.
+  const resolutionsManuelles: ResolutionObservation[] = [
+    RESOLUTION_OBSERVATION.ARBITRE,
+    RESOLUTION_OBSERVATION.ECARTE,
+    RESOLUTION_OBSERVATION.RATTACHE,
+  ];
+  if (!resolutionsManuelles.includes(resolution)) {
     return { success: false, error: "Résolution inconnue" };
   }
 
