@@ -1,15 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm:*)",
-      "Bash(git status)",
-      "Bash(git diff*)",
-      "Bash(git log*)",
-      "Bash(git branch*)",
-      "Bash(git show*)",
-      "Bash(ls:*)"
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm validate)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm test)",
+      "Bash(pnpm build)",
+      "Bash(pnpm audit)",
+      "Bash(pnpm audit --prod)",
+      "Bash(pnpm format:check)",
+      "Bash(pnpm talisman:check)",
+      "Bash(pnpm db:generate)",
+      "Bash(pnpm why:*)"
     ],
     "deny": [
+      "Bash(git commit --no-verify)",
+      "Edit(.claude/hooks/**)",
+      "Write(.claude/hooks/**)",
+      "Edit(.husky/**)",
+      "Write(.husky/**)",
       "Read(.env)",
       "Read(.env.*)",
       "Read(**/.env)",
