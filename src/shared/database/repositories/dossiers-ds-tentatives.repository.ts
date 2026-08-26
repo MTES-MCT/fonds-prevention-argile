@@ -55,7 +55,7 @@ export const dossiersDsTentativesRepository = {
       throw new TentativeConflitError(params.dsNumber, existant.parcoursId, existant.step);
     }
 
-    await executor
+    const insere = await executor
       .insert(dossiersDsTentatives)
       .values({
         parcoursId: params.parcoursId,
@@ -65,7 +65,22 @@ export const dossiersDsTentativesRepository = {
         dsId: params.dsId ?? null,
         dsDemarcheId: params.dsDemarcheId ?? null,
       })
-      .onConflictDoNothing({ target: dossiersDsTentatives.dsNumber });
+      .onConflictDoNothing({ target: dossiersDsTentatives.dsNumber })
+      .returning({ id: dossiersDsTentatives.id });
+
+    // Rien inséré alors que le contrôle initial ne voyait rien : une écriture concurrente est
+    // passée entre les deux. On relit pour ne pas avaler un conflit de propriétaire.
+    if (insere.length === 0 && !existant) {
+      const [concurrent] = await executor
+        .select({ parcoursId: dossiersDsTentatives.parcoursId, step: dossiersDsTentatives.step })
+        .from(dossiersDsTentatives)
+        .where(eq(dossiersDsTentatives.dsNumber, params.dsNumber))
+        .limit(1);
+
+      if (concurrent && (concurrent.parcoursId !== params.parcoursId || concurrent.step !== params.step)) {
+        throw new TentativeConflitError(params.dsNumber, concurrent.parcoursId, concurrent.step);
+      }
+    }
   },
 
   /** Toutes les tentatives connues d'une étape, la plus récente d'abord. */

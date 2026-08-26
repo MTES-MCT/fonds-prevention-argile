@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../client";
 import {
   dsReconciliationObservations,
@@ -9,6 +9,9 @@ import {
   type ResolutionObservation,
 } from "../schema";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
+
+/** Postgres plafonne le nombre de paramètres d'une requête : on découpe par précaution. */
+const TAILLE_LOT = 500;
 
 interface ObservationAEnregistrer {
   dsNumber: string;
@@ -34,34 +37,31 @@ export const dsReconciliationObservationsRepository = {
   async upsertMany(observations: ObservationAEnregistrer[]): Promise<void> {
     if (observations.length === 0) return;
 
-    for (const o of observations) {
+    // Un seul INSERT par lot : un balayage de démarche entière en produit plusieurs centaines.
+    for (let i = 0; i < observations.length; i += TAILLE_LOT) {
+      const lot = observations.slice(i, i + TAILLE_LOT);
+
       await db
         .insert(dsReconciliationObservations)
-        .values({
-          dsNumber: o.dsNumber,
-          parcoursId: o.parcoursId,
-          step: o.step,
-          verdict: o.verdict,
-          dsState: o.dsState,
-          detail: o.detail,
-        })
+        .values(lot)
         .onConflictDoUpdate({
           target: dsReconciliationObservations.dsNumber,
           set: {
-            parcoursId: o.parcoursId,
-            step: o.step,
-            verdict: o.verdict,
-            dsState: o.dsState,
-            detail: o.detail,
+            parcoursId: sql`excluded.parcours_id`,
+            step: sql`excluded.step`,
+            verdict: sql`excluded.verdict`,
+            dsState: sql`excluded.ds_state`,
+            detail: sql`excluded.detail`,
             observedAt: new Date(),
             // Le verdict a changé depuis la résolution : le cas redevient ouvert.
-            resolvedAt: sql`CASE WHEN ${dsReconciliationObservations.verdict} = ${o.verdict} THEN ${dsReconciliationObservations.resolvedAt} ELSE NULL END`,
+            resolvedAt: sql`CASE WHEN ${dsReconciliationObservations.verdict} = excluded.verdict THEN ${dsReconciliationObservations.resolvedAt} ELSE NULL END`,
           },
         });
     }
   },
 
-  /** Observations encore ouvertes pour les verdicts demandés, du plus ancien au plus récent. */
+  /** Observations encore ouvertes pour les verdicts demandés, les plus anciennes d'abord :
+   * un cas qui traîne depuis longtemps est un demandeur qui attend depuis longtemps. */
   async listerOuvertes(verdicts: string[]): Promise<ObservationAvecDemandeur[]> {
     if (verdicts.length === 0) return [];
 
@@ -77,7 +77,7 @@ export const dsReconciliationObservationsRepository = {
       .where(
         and(inArray(dsReconciliationObservations.verdict, verdicts), isNull(dsReconciliationObservations.resolvedAt))
       )
-      .orderBy(desc(dsReconciliationObservations.observedAt));
+      .orderBy(asc(dsReconciliationObservations.observedAt));
 
     return rows.map((r) => ({ ...r.observation, demandeurNom: r.nom, demandeurPrenom: r.prenom }));
   },

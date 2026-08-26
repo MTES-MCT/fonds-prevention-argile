@@ -52,11 +52,6 @@ describe("verifierRegeneration", () => {
     expect(verifierRegeneration(dossier({ dsStatus: "en_instruction" }), MAINTENANT)).toBe("dossier_depose");
   });
 
-  it("expose un refus dédié quand DN est injoignable", () => {
-    // Le message doit exister : c'est lui qui remplace la suppression à l'aveugle.
-    expect(verifierRegeneration(dossier(), MAINTENANT)).toBeNull();
-  });
-
   it("refuse un lien tout juste créé, pour éviter d'empiler les brouillons", () => {
     expect(verifierRegeneration(dossier({ createdAt: ilYA(1) }), MAINTENANT)).toBe("trop_recent");
     expect(

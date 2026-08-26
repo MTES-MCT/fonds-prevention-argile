@@ -43,10 +43,10 @@ export const ACTION_TYPE_ELIGIBILITE_REFUSEE = "eligibilite_refusee_non_eligible
  */
 export const ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE = "accompagnement_refuse_eligible";
 /** Valeur de type d'action "Autre" (nécessite une précision) */
+export const ACTION_TYPE_AUTRE = "autre";
+
 /** Rattachement manuel d'un dossier DN par son numéro (ADR-0027). */
 export const ACTION_TYPE_DOSSIER_DN_RATTACHE = "dossier_dn_rattache";
-
-export const ACTION_TYPE_AUTRE = "autre";
 
 /**
  * Liste groupée des types d'action proposés dans le formulaire (cf. maquette).

@@ -23,7 +23,9 @@ import { resolveDemarcheNumberForStep } from "./pieces-justificatives.service";
  * `parcoursId` — quel que soit le compte DN utilisé, l'ordinateur, ou le nombre de brouillons
  * abandonnés en route. C'est ce lien-là qu'on rétablit ici.
  *
- * Par défaut le service n'écrit RIEN : il rend un rapport. L'écriture est explicite (`apply`).
+ * Par défaut, aucun dossier n'est modifié : `apply` seul autorise le repointage. Le balayage
+ * enregistre en revanche toujours ses constats dans `ds_reconciliation_observations`, qui
+ * alimente les files du back-office.
  */
 
 /** Ce que le service décide de faire d'un dossier déposé. */
