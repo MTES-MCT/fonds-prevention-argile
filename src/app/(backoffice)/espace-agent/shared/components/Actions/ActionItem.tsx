@@ -8,7 +8,7 @@ import {
   ACTION_TYPES_WITH_RDV_DATE,
   type ActionDetail,
 } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
-import { formatDate, formatRelativeTimeShort } from "@/shared/utils/date.utils";
+import { formatRelativeTimeShort, formatSqlDate } from "@/shared/utils/date.utils";
 import { ActionForm } from "./ActionForm";
 import { ActionMenu } from "../ActionMenu";
 
@@ -42,7 +42,7 @@ export function ActionItem({ action, currentAgentId, onUpdated, onDeleted }: Act
     actionLabel = `${actionLabel} : ${action.actionPrecision}`;
   }
   if (ACTION_TYPES_WITH_RDV_DATE.includes(action.actionType) && action.rdvDate) {
-    actionLabel = `${actionLabel} — RDV le ${formatDate(action.rdvDate)}`;
+    actionLabel = `${actionLabel} — RDV le ${formatSqlDate(action.rdvDate)}`;
   }
 
   const isOwnAction = currentAgentId === action.agent.id;

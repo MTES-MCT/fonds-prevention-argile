@@ -3,6 +3,7 @@ import {
   dateToSqlString,
   formatDate,
   formatDateTime,
+  formatSqlDate,
   isSqlDateString,
   parseFrenchDateToSql,
   sqlStringToDate,
@@ -117,6 +118,19 @@ describe("Date utilities", () => {
       expect(isSqlDateString("2026-02-31")).toBe(false);
       expect(isSqlDateString("2026-13-01")).toBe(false);
       expect(isSqlDateString("2025-02-29")).toBe(false);
+    });
+  });
+
+  describe("formatSqlDate", () => {
+    it("should format a SQL date without timezone shift", () => {
+      expect(formatSqlDate("2026-09-01")).toBe("01/09/2026");
+      expect(formatSqlDate("2026-01-31")).toBe("31/01/2026");
+    });
+
+    it("should return the default value for null or invalid input", () => {
+      expect(formatSqlDate(null)).toBe("—");
+      expect(formatSqlDate(undefined)).toBe("—");
+      expect(formatSqlDate("2026-02-31")).toBe("—");
     });
   });
 

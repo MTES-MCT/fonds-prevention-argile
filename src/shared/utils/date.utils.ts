@@ -139,6 +139,21 @@ export function isSqlDateString(value: string): boolean {
 }
 
 /**
+ * Formate une date SQL (YYYY-MM-DD) en JJ/MM/AAAA.
+ * Ne passe pas par `Date` : `new Date("2026-09-01")` vaut minuit UTC et s'affiche la veille
+ * dans un fuseau négatif (Antilles, Guyane).
+ *
+ * @example
+ * formatSqlDate("2026-09-01") // "01/09/2026"
+ */
+export function formatSqlDate(dateString: string | null | undefined): string {
+  if (!dateString || !isSqlDateString(dateString)) return DEFAULT_VALUE;
+
+  const [year, month, day] = dateString.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+/**
  * Convertit un string SQL (YYYY-MM-DD) en Date
  *
  * @example
