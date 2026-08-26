@@ -21,8 +21,9 @@ garantir l'ordre de chargement.
 | `backfill-tentatives.ts`            | `pnpm ds:backfill-tentatives`     | Amorce le registre des tentatives DN (ADR-0027)                    |
 | `reconcilier-dossiers.ts`           | `pnpm ds:reconcilier`             | Rattache les dossiers déposés à leur parcours via l'annotation FPA |
 
-Ordre recommandé : **probe** → resync (UI) → **relink** → **clean**. Détails et cas résolus :
-voir le playbook (§4 de la doc).
+Ordre recommandé : **backfill** (registre) → **analyse** (interface ou `ds:reconcilier`) →
+traitement des deux files → resync (UI). `probe` et `relink` restent utiles pour un cas isolé.
+Détails : voir le playbook (§4 de la doc).
 
 > Le **reset est gelé** ([ADR-0026](../../../docs/adr/0026-gel-reset-eligibilite-not-found.md)) :
 > un prérempli non déposé est invisible de l'API instructeur et répond `Dossier not found`

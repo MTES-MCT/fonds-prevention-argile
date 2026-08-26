@@ -255,58 +255,80 @@ Après relink : **relancer une synchro** pour recopier l'état réel.
 
 ## 4. Playbook (prod)
 
-Bout en bout. L'ordre n'est pas neutre (**relink avant reset**).
+Depuis [ADR-0027](../adr/0027-tentative-prefill-vs-dossier-confirme.md), la remédiation ne
+supprime plus rien : on **enregistre** tous les numéros connus, on **rattache** ce qui a été
+déposé, et on ne tranche à la main que ce qui l'exige.
 
-### 1. Déploiement
+### 1. Déployer et migrer
 
-- Déployer la branche, puis **appliquer la migration** (`pnpm db:migrate`) → colonnes
-  `dn_probe_*`. **Bloquant** : sans ça la vue diagnostic plante (`column dn_probe_state does
-not exist`).
-- Vérifier que `/administration/diagnostics` charge.
+```bash
+pnpm db:migrate
+```
 
-### 2. Remplir la « vérité DN » + régler les cas A
+Bloquant : sans les tables `dossiers_ds_tentatives` et `ds_reconciliation_observations`, la
+page diagnostics ne charge pas.
 
-Au déploiement, `dn_probe_state` est vide → colonne « Verdict DN » = **Non sondé** partout.
+### 2. Amorcer le registre des numéros
 
-- Cliquer **« Lancer une synchro maintenant »** (`/administration/synchronisations`) : elle
-  **resynchronise ET écrit `dn_probe_state`** en une passe.
-- Effet : les cas **A (existe côté DN)** se **corrigent tout seuls** (le miroir rattrape →
-  ils quittent la sync-erreur) et le « Verdict DN » se remplit pour tous. _(Le CRON ferait
-  pareil en quelques heures.)_
+```bash
+pnpm ds:backfill-tentatives          # dry-run : compte et ventile
+pnpm ds:backfill-tentatives --apply
+```
 
-### 3. Lire le diagnostic — état des lieux
+Deux sources : les pointeurs courants (fiables) et les numéros retrouvés dans
+`sync_run_entries.error` (indices — pointeurs supprimés par l'ancien reset). Idempotent,
+rejouable sans effet cumulatif. **À faire avant toute analyse** : sans lui, les dossiers dont
+le pointeur a disparu ressortiraient à tort comme inconnus.
 
-- Vue UI : filtrer les « sync erreur », lire la colonne **Verdict DN** (existe → résiduel à
-  resync ; disparu → à traiter). « Analyser » pour le détail d'un dossier.
-- Liste chiffrée + actionnable : `pnpm ds:probe-dossiers --from-sync-errors --email-crosscheck`
-  → section **PLAN D'ACTION** (combien de resync / reset / relink / clean / erreur).
+### 3. Analyser, depuis l'interface
 
-### 4. Exécuter les scripts — **dans cet ordre**, dry-run puis `--apply`
+`/administration/diagnostics`, bouton « Analyser » de l'étape voulue. Le balayage interroge DN
+en lecture seule et remplit les deux files. Il n'applique aucun rattachement.
 
-1. **Relink** (mismatches B2) **en premier** : `pnpm fix:relink-eligibilite --from-sync-errors`
-   → `--apply` → **re-sync**. _Pourquoi en premier : un mismatch est « not found », le reset le
-   supprimerait à tort ; le relink le rend « existe » et le reset l'épargne ensuite._
-2. ~~**Reset** (drop-offs B1 + purgés B3)~~ — **GELÉ** ([ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md)).
-   `--apply` refuse de s'exécuter : « GONE » ne distingue pas un prérempli en attente d'un
-   dossier purgé, et la suppression orpheline le dossier déposé plus tard. Dry-run seul.
-3. **Clean** (faux dépôts legacy, transverse) : `pnpm fix:clean-faux-depots` → `--apply`.
-   \_Indépendant : ne répare pas le parcours, nettoie les `submitted_at` trompeurs (diagnostic
-   - stats). Lançable quand on veut.\_
-4. **Erreur de sondage** (s'il y en a) : `pnpm ds:check-permissions` (démarche publiée + token
-   instructeur).
+Si le message annonce une analyse **interrompue**, les résultats sont partiels et rien n'a été
+écrit : relancer une fois DN de nouveau joignable.
 
-### 5. Vérifier
+### 4. Traiter les deux files
 
-- Rafraîchir la vue : les parcours traités **quittent la sync-erreur** (fix « erreur active »
-  §2 : dossier supprimé / resyncé → erreur obsolète, plus de « collant »).
-- Re-lancer `pnpm ds:probe-dossiers --from-sync-errors` → le PLAN D'ACTION doit retomber à ~0
-  (le résiduel = nouveaux drop-offs depuis).
+- **À rattacher** — ouvrir le dossier côté DN pour identifier le demandeur, puis le rattacher
+  depuis son parcours (détail dossier → « Gérer » → « Rattacher un dossier DN »). L'observation
+  se referme toute seule.
+- **À arbitrer** — deux dépôts pour une même étape, lien FPA retouché, numéro revendiqué deux
+  fois. Trancher côté DN (classement sans suite du doublon, par exemple), puis « Marquer comme
+  traité ».
 
-### 6. Pérenne
+Pour un rattachement en masse, le script fait la même chose que l'interface :
 
-- Le drop-off **se reproduit** (prefills jamais complétés). Repasser périodiquement par la vue
-  - relancer **reset/clean** au besoin. Le CRON entretient `dn_probe_state` et fait quitter
-    l'erreur aux cas A automatiquement. Pas de logs prod nécessaires.
+```bash
+pnpm ds:reconcilier                  # dry-run
+pnpm ds:reconcilier --apply          # applique les rattachements automatiques
+```
+
+Le **premier passage doit être lancé sans `--since`** : un dossier déposé il y a des mois et
+jamais modifié depuis serait invisible d'un balayage incrémental.
+
+### 5. Resynchroniser
+
+« Lancer une synchro maintenant » (`/administration/synchronisations`) : les dossiers repointés
+récupèrent leur état réel et les parcours avancent.
+
+### 6. Ce qui ne se répare pas comme ça
+
+- Un demandeur dont le lien ne fonctionne plus se débloque **seul**, depuis `/mon-compte`
+  (« Ce lien ne fonctionne plus ? »). Aucune intervention nécessaire.
+- Les dossiers antérieurs au 2026-08-25 n'ont pas d'annotation FPA : ils ne se rattachent
+  jamais automatiquement, seul le numéro déjà connu les identifie. Population figée.
+- `pnpm fix:clean-faux-depots` reste disponible, indépendant du reste : il nettoie les
+  `submitted_at` trompeurs d'avant #216 (diagnostic et stats), sans rien réparer.
+- Une erreur de sondage (`unauthorized`, `api_error`) n'est pas un problème de rattachement :
+  `pnpm ds:check-permissions`.
+
+### 7. Au quotidien
+
+Relancer l'analyse depuis l'interface de temps en temps — la réconciliation n'est pas encore
+branchée sur le CRON. Les files ne se remplissent que de ce qui a été déposé depuis, donc elles
+restent courtes. Le drop-off (préremplis jamais complétés) continue d'exister mais ne demande
+plus rien : ce n'est plus une anomalie, et le demandeur se débloque seul.
 
 ---
 
@@ -318,6 +340,9 @@ Au déploiement, `dn_probe_state` est vide → colonne « Verdict DN » = **Non 
 | Reset auto-vérifiant               | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`) |
 | Relink mismatch                    | `scripts/ops/sync-erreurs/relink-eligibilite-dossier.ts` (`pnpm fix:relink-eligibilite`)       |
 | Nettoyage faux dépôts legacy       | `scripts/ops/sync-erreurs/clean-faux-depots-submitted-at.ts` (`pnpm fix:clean-faux-depots`)    |
+| Amorçage du registre               | `scripts/ops/sync-erreurs/backfill-tentatives.ts` (`pnpm ds:backfill-tentatives`)              |
+| Réconciliation au dépôt            | `scripts/ops/sync-erreurs/reconcilier-dossiers.ts` (`pnpm ds:reconcilier`)                     |
+| Files de travail (back-office)     | `diagnostics/actions/reconciliation.actions.ts`, `app/(backoffice)/.../DiagnosticsTabs.tsx`    |
 | Vérif permissions / publication DN | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                         |
 | Recherche dossier par email (UI)   | `searchEligibiliteByEmail` — page `/administration/diagnostics/[parcoursId]` (« Analyser »)    |
 | Classification diagnostic          | `src/features/backoffice/administration/diagnostics/services/diagnostics.service.ts`           |
