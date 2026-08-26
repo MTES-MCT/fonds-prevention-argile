@@ -292,10 +292,11 @@ Si le message annonce une analyse **interrompue**, les résultats sont partiels 
 
 **À rattacher** — un dossier existe côté DN mais aucun parcours ne le suit. Pour chaque ligne :
 
-1. Ouvrir le dossier côté DN (le numéro est cliquable) et relever **le nom et l'email du
-   demandeur**, dans l'onglet « Demande ».
-2. Le chercher dans l'espace agent (`/espace-agent/dossiers`) ou dans les demandeurs
-   (`/administration/demandeurs`).
+1. Cliquer **« Identifier »** : l'écran interroge DN et affiche l'identité déclarée, le compte
+   usager, les champs du formulaire, puis **les demandeurs qui correspondent** — par adresse de
+   logement, téléphone, e-mail ou nom, du plus concordant au moins concordant.
+2. À défaut de candidat, ouvrir le dossier côté DN (le numéro est cliquable) et chercher à la
+   main dans l'espace agent ou dans les demandeurs.
 3. **S'il existe** : ouvrir son dossier → « Gérer » → « Rattacher un dossier DN », saisir le
    numéro. L'étape est déduite de la démarche du dossier, pas du parcours : un dossier
    d'éligibilité rattaché depuis un parcours plus avancé reste une éligibilité. L'observation

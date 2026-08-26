@@ -10,6 +10,9 @@ vi.mock("@/shared/database/repositories", () => ({
 vi.mock("@/features/parcours/dossiers-ds/services/reconciliation.service", () => ({
   reconcilierDemarche: vi.fn(),
 }));
+vi.mock("@/features/parcours/dossiers-ds/services/inspection.service", () => ({
+  inspecterDossierDn: vi.fn(),
+}));
 vi.mock("@/features/parcours/dossiers-ds/services/pieces-justificatives.service", () => ({
   resolveDemarcheNumberForStep: vi.fn().mockReturnValue(126061),
 }));
@@ -18,7 +21,9 @@ import {
   listerFilesReconciliationAction,
   analyserReconciliationAction,
   resoudreObservationAction,
+  inspecterDossierDnAction,
 } from "./reconciliation.actions";
+import { inspecterDossierDn } from "@/features/parcours/dossiers-ds/services/inspection.service";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { dsObservationsRepo } from "@/shared/database/repositories";
 import { reconcilierDemarche } from "@/features/parcours/dossiers-ds/services/reconciliation.service";
@@ -83,6 +88,20 @@ describe("actions de réconciliation — contrôle d'accès", () => {
     const result = await analyserReconciliationAction(Step.CHOIX_AMO);
     expect(result.success).toBe(false);
     expect(reconcilierDemarche).not.toHaveBeenCalled();
+  });
+
+  it("refuse l'inspection à un administrateur non super-admin", async () => {
+    mockAgent(UserRole.ADMINISTRATEUR);
+    const result = await inspecterDossierDnAction("32052358");
+    expect(result.success).toBe(false);
+    expect(inspecterDossierDn).not.toHaveBeenCalled();
+  });
+
+  it("refuse un numéro de dossier non numérique", async () => {
+    mockAgent(UserRole.SUPER_ADMINISTRATEUR);
+    const result = await inspecterDossierDnAction("32052358; DROP TABLE");
+    expect(result.success).toBe(false);
+    expect(inspecterDossierDn).not.toHaveBeenCalled();
   });
 
   it("refuse une résolution inconnue", async () => {

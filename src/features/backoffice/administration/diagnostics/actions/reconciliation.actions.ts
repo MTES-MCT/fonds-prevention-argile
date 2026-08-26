@@ -7,6 +7,10 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { dsObservationsRepo, type ObservationAvecDemandeur } from "@/shared/database/repositories";
 import { RESOLUTION_OBSERVATION, type ResolutionObservation } from "@/shared/database/schema";
 import { reconcilierDemarche } from "@/features/parcours/dossiers-ds/services/reconciliation.service";
+import {
+  inspecterDossierDn,
+  type InspectionDossier,
+} from "@/features/parcours/dossiers-ds/services/inspection.service";
 import { resolveDemarcheNumberForStep } from "@/features/parcours/dossiers-ds/services/pieces-justificatives.service";
 import {
   VERDICTS_A_RATTACHER,
@@ -97,6 +101,30 @@ export async function analyserReconciliationAction(step: Step): Promise<ActionRe
   } catch (error) {
     console.error("Erreur analyserReconciliationAction:", error);
     return { success: false, error: "Erreur lors de l'analyse des dossiers DN" };
+  }
+}
+
+/**
+ * Rapproche un dossier DN des demandeurs connus, pour épargner l'enquête à la main.
+ * Lecture seule : aucun rattachement n'est fait ici.
+ */
+export async function inspecterDossierDnAction(dsNumber: string): Promise<ActionResult<InspectionDossier>> {
+  const guard = await ensureSuperAdmin();
+  if (!guard.ok) return { success: false, error: guard.error };
+
+  if (!/^\d+$/.test(dsNumber)) {
+    return { success: false, error: "Numéro de dossier invalide" };
+  }
+
+  try {
+    const inspection = await inspecterDossierDn(dsNumber);
+    if (!inspection) {
+      return { success: false, error: "Ce dossier n'est plus accessible côté Démarches Numériques." };
+    }
+    return { success: true, data: inspection };
+  } catch (error) {
+    console.error("Erreur inspecterDossierDnAction:", error);
+    return { success: false, error: "Erreur lors de l'inspection du dossier" };
   }
 }
 

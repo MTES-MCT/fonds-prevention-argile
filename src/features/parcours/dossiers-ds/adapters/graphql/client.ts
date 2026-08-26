@@ -8,6 +8,7 @@ import type {
   DossiersFilters,
   DossierReconciliation,
   DossiersReconciliationConnection,
+  DossierInspection,
 } from "./types";
 
 /**
@@ -274,6 +275,43 @@ export class DemarchesSimplifieesClient {
 
     const data = await this.executeQuery<{ dossier: DossierReconciliation }>(query, { number: dossierNumber });
     return data.dossier;
+  }
+
+  /**
+   * Tout ce que DN sait d'un dossier et qui peut servir à retrouver son demandeur :
+   * compte usager, identité déclarée, et champs du formulaire (ADR-0027).
+   */
+  async getDossierPourInspection(dossierNumber: number): Promise<DossierInspection | null> {
+    const query = `
+      query GetDossierInspection($number: Int!) {
+        dossier(number: $number) {
+          number
+          state
+          dateDepot
+          deposeParUnTiers
+          nomMandataire
+          prenomMandataire
+          usager { email }
+          demandeur {
+            __typename
+            ... on PersonnePhysique { nom prenom }
+          }
+          champs {
+            champDescriptorId
+            label
+            stringValue
+          }
+        }
+      }
+    `;
+
+    try {
+      const data = await this.executeQuery<{ dossier: DossierInspection }>(query, { number: dossierNumber });
+      return data.dossier;
+    } catch (error) {
+      console.error(`Inspection DN impossible pour le dossier ${dossierNumber}:`, error);
+      return null;
+    }
   }
 
   /**

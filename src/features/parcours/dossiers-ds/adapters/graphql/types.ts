@@ -153,6 +153,19 @@ export interface DossiersReconciliationConnection {
   nodes: DossierReconciliation[];
 }
 
+/** Projection d'inspection : ce qui aide un humain à identifier le demandeur d'un dossier. */
+export interface DossierInspection {
+  number: number;
+  state: DossierState;
+  dateDepot?: string;
+  deposeParUnTiers?: boolean;
+  nomMandataire?: string | null;
+  prenomMandataire?: string | null;
+  usager?: { email: string };
+  demandeur?: { __typename?: string; nom?: string | null; prenom?: string | null };
+  champs?: Array<{ champDescriptorId: string; label: string; stringValue?: string | null }>;
+}
+
 export interface DossiersConnection {
   pageInfo: PageInfo;
   nodes: Dossier[];
