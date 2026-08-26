@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, text, varchar, date } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { agents } from "./agents";
@@ -22,6 +22,8 @@ export const parcoursActions = pgTable("parcours_actions", {
   actionType: text("action_type").notNull(),
   // Précision libre lorsque actionType = "autre"
   actionPrecision: text("action_precision"),
+  // Date du RDV, saisie optionnelle pour les actions expert_rdv_1/2/3 (peut être dans le passé)
+  rdvDate: date("rdv_date"),
 
   // Snapshot auteur (dénormalisé, conservé même si l'agent est supprimé)
   authorName: varchar("author_name", { length: 255 }).notNull(),

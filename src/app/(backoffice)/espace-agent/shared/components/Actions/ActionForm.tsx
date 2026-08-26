@@ -9,14 +9,19 @@ import {
   ACTION_TYPE_GROUPS,
   ACTION_TYPE_AUTRE,
   ACTION_TYPE_COMMENTAIRE_LIBRE,
+  ACTION_TYPES_WITH_RDV_DATE,
 } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 
 interface ActionFormProps {
   parcoursId: string;
-  /** Si présent, mode édition du commentaire d'une action existante */
+  /** Si présent, mode édition d'une action existante */
   actionId?: string;
   /** Message initial (mode édition) */
   initialMessage?: string;
+  /** Type de l'action existante (mode édition) — pilote l'affichage du champ date de RDV */
+  initialActionType?: string;
+  /** Date de RDV existante (mode édition) */
+  initialRdvDate?: string | null;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -25,13 +30,25 @@ const MAX_LENGTH = 5000;
 
 /**
  * Formulaire d'ajout d'une action (type d'action + commentaire optionnel),
- * ou d'édition du commentaire d'une action existante.
+ * ou d'édition d'une action existante (commentaire, et date de RDV pour les
+ * actions expert_rdv_1/2/3).
  */
-export function ActionForm({ parcoursId, actionId, initialMessage = "", onSuccess, onCancel }: ActionFormProps) {
+export function ActionForm({
+  parcoursId,
+  actionId,
+  initialMessage = "",
+  initialActionType,
+  initialRdvDate,
+  onSuccess,
+  onCancel,
+}: ActionFormProps) {
   const isEditMode = !!actionId;
 
   const [actionType, setActionType] = useState<string>("");
+  // En édition, le type n'est pas modifiable : on se base sur celui de l'action existante.
+  const currentActionType = isEditMode ? (initialActionType ?? "") : actionType;
   const [precision, setPrecision] = useState("");
+  const [rdvDate, setRdvDate] = useState(initialRdvDate ?? "");
   const [message, setMessage] = useState(initialMessage);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +74,9 @@ export function ActionForm({ parcoursId, actionId, initialMessage = "", onSucces
       return;
     }
 
+    // Une action RDV peut n'avoir que sa date : le commentaire y reste optionnel, comme à la création.
+    const messageRequisEnEdition = !ACTION_TYPES_WITH_RDV_DATE.includes(currentActionType);
+
     if (!isEditMode) {
       if (!actionType) {
         setError("Veuillez sélectionner une action.");
@@ -70,20 +90,24 @@ export function ActionForm({ parcoursId, actionId, initialMessage = "", onSucces
         setError("Veuillez préciser l'action réalisée.");
         return;
       }
-    } else if (!message.trim()) {
+    } else if (messageRequisEnEdition && !message.trim()) {
       setError("Le commentaire ne peut pas être vide.");
       return;
     }
 
     setIsSubmitting(true);
 
+    // undefined = pas d'action RDV concernée (ne pas toucher la date en base) ; "" = date effacée.
+    const rdvDateToSend = ACTION_TYPES_WITH_RDV_DATE.includes(currentActionType) ? rdvDate : undefined;
+
     try {
       const result = isEditMode
-        ? await updateActionAction(actionId, message)
+        ? await updateActionAction(actionId, message, rdvDateToSend)
         : await createActionAction(parcoursId, {
             actionType,
             message: message.trim() || undefined,
             actionPrecision: precision.trim() || undefined,
+            rdvDate: rdvDateToSend || undefined,
           });
 
       if (result.success) {
@@ -157,6 +181,24 @@ export function ActionForm({ parcoursId, actionId, initialMessage = "", onSucces
             </div>
           )}
         </>
+      )}
+
+      {/* Date du RDV si Expert : RDV n°1/2/3 (création ou édition) */}
+      {ACTION_TYPES_WITH_RDV_DATE.includes(currentActionType) && (
+        <div className="fr-input-group">
+          <label className="fr-label" htmlFor="action-rdv-date">
+            Date du RDV
+            <span className="fr-hint-text">Optionnelle</span>
+          </label>
+          <input
+            className="fr-input"
+            type="date"
+            id="action-rdv-date"
+            value={rdvDate}
+            onChange={(e) => setRdvDate(e.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
       )}
 
       {/* 2. Note complémentaire */}

@@ -125,6 +125,35 @@ export function dateToSqlString(date: Date): string {
 }
 
 /**
+ * Vérifie qu'un string est une date SQL (YYYY-MM-DD) réellement existante.
+ * Le re-formatage rejette les dates que `Date` ferait déborder (2026-02-31 -> 03 mars).
+ *
+ * @example
+ * isSqlDateString("2026-02-31") // false
+ */
+export function isSqlDateString(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+  const date = new Date(`${value}T00:00:00Z`);
+  return !isNaN(date.getTime()) && date.toISOString().startsWith(value);
+}
+
+/**
+ * Formate une date SQL (YYYY-MM-DD) en JJ/MM/AAAA.
+ * Ne passe pas par `Date` : `new Date("2026-09-01")` vaut minuit UTC et s'affiche la veille
+ * dans un fuseau négatif (Antilles, Guyane).
+ *
+ * @example
+ * formatSqlDate("2026-09-01") // "01/09/2026"
+ */
+export function formatSqlDate(dateString: string | null | undefined): string {
+  if (!dateString || !isSqlDateString(dateString)) return DEFAULT_VALUE;
+
+  const [year, month, day] = dateString.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+/**
  * Convertit un string SQL (YYYY-MM-DD) en Date
  *
  * @example

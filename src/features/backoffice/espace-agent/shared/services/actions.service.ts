@@ -3,11 +3,13 @@ import { buildAuthorSnapshot } from "./author-snapshot";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
+import { isSqlDateString } from "@/shared/utils/date.utils";
 import type { UserRole } from "@/shared/domain/value-objects";
 import {
   ACTION_TYPE_VALUES,
   ACTION_TYPE_COMMENTAIRE_LIBRE,
   ACTION_TYPE_AUTRE,
+  ACTION_TYPES_WITH_RDV_DATE,
   type ActionsListResult,
   type ActionFormData,
   type CreateActionResult,
@@ -80,6 +82,7 @@ export class ActionsService {
     const { actionType } = data;
     const message = data.message?.trim() ?? "";
     const actionPrecision = data.actionPrecision?.trim() ?? "";
+    const rdvDate = data.rdvDate?.trim() ?? "";
 
     // Validation du type d'action
     if (!actionType || !ACTION_TYPE_VALUES.includes(actionType)) {
@@ -100,6 +103,15 @@ export class ActionsService {
       return { success: false, error: "Le commentaire ne peut pas dépasser 5000 caractères." };
     }
 
+    if (rdvDate.length > 0) {
+      if (!ACTION_TYPES_WITH_RDV_DATE.includes(actionType)) {
+        return { success: false, error: "Ce type d'action ne peut pas porter de date de RDV." };
+      }
+      if (!isSqlDateString(rdvDate)) {
+        return { success: false, error: "Date de RDV invalide." };
+      }
+    }
+
     try {
       const agent = await agentsRepo.findById(agentId);
       if (!agent) {
@@ -113,6 +125,7 @@ export class ActionsService {
         agentId,
         actionType,
         actionPrecision: actionPrecision.length > 0 ? actionPrecision : null,
+        rdvDate: rdvDate.length > 0 ? rdvDate : null,
         message: message.length > 0 ? message : null,
         authorName,
         authorStructure,
@@ -133,10 +146,16 @@ export class ActionsService {
   }
 
   /**
-   * Met à jour le commentaire d'une action existante
-   * Seul l'auteur de l'action peut le modifier
+   * Met à jour une action existante (commentaire, date de RDV), réservée à son auteur.
+   * `rdvDate` : undefined = ne pas toucher la colonne, "" = effacer la date.
    */
-  async updateAction(actionId: string, agentId: string, role: UserRole, message: string): Promise<UpdateActionResult> {
+  async updateAction(
+    actionId: string,
+    agentId: string,
+    role: UserRole,
+    message: string,
+    rdvDate?: string
+  ): Promise<UpdateActionResult> {
     if (!hasPermission(role, BackofficePermission.COMMENTAIRES_UPDATE_OWN)) {
       return {
         success: false,
@@ -144,8 +163,8 @@ export class ActionsService {
       };
     }
 
-    const actionExists = await parcoursActionsRepo.exists(actionId);
-    if (!actionExists) {
+    const existing = await parcoursActionsRepo.findById(actionId);
+    if (!existing) {
       return { success: false, error: "Cette action n'existe pas ou a déjà été supprimée." };
     }
 
@@ -154,7 +173,10 @@ export class ActionsService {
       return { success: false, error: "Vous ne pouvez modifier que vos propres actions." };
     }
 
-    if (!message || message.trim().length === 0) {
+    // Une action RDV peut n'avoir que sa date : le commentaire y reste optionnel, comme à la création.
+    const isRdvAction = ACTION_TYPES_WITH_RDV_DATE.includes(existing.actionType);
+
+    if (!isRdvAction && (!message || message.trim().length === 0)) {
       return { success: false, error: "Le commentaire ne peut pas être vide." };
     }
 
@@ -162,8 +184,17 @@ export class ActionsService {
       return { success: false, error: "Le commentaire ne peut pas dépasser 5000 caractères." };
     }
 
+    if (rdvDate !== undefined && rdvDate.length > 0) {
+      if (!isRdvAction) {
+        return { success: false, error: "Ce type d'action ne peut pas porter de date de RDV." };
+      }
+      if (!isSqlDateString(rdvDate)) {
+        return { success: false, error: "Date de RDV invalide." };
+      }
+    }
+
     try {
-      await parcoursActionsRepo.updateMessage(actionId, message.trim());
+      await parcoursActionsRepo.updateMessage(actionId, message.trim(), rdvDate);
 
       const actionDetail = await parcoursActionsRepo.findByIdWithDetails(actionId);
 

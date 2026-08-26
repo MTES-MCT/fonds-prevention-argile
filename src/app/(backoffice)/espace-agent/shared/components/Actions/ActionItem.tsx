@@ -5,9 +5,10 @@ import { deleteActionAction } from "@/features/backoffice/espace-agent/shared/ac
 import {
   ACTION_LABELS_BY_VALUE,
   ACTION_TYPE_AUTRE,
+  ACTION_TYPES_WITH_RDV_DATE,
   type ActionDetail,
 } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
-import { formatRelativeTimeShort } from "@/shared/utils/date.utils";
+import { formatRelativeTimeShort, formatSqlDate } from "@/shared/utils/date.utils";
 import { ActionForm } from "./ActionForm";
 import { ActionMenu } from "../ActionMenu";
 
@@ -35,10 +36,13 @@ export function ActionItem({ action, currentAgentId, onUpdated, onDeleted }: Act
   const structureLabel = action.agent.structureName || action.agent.structureType;
   const relativeTime = formatRelativeTimeShort(action.createdAt);
 
-  // Libellé de l'action (avec précision si "Autre")
+  // Libellé de l'action (avec précision si "Autre", ou date du RDV pour Expert : RDV n°1/2/3)
   let actionLabel = ACTION_LABELS_BY_VALUE[action.actionType] ?? action.actionType;
   if (action.actionType === ACTION_TYPE_AUTRE && action.actionPrecision) {
     actionLabel = `${actionLabel} : ${action.actionPrecision}`;
+  }
+  if (ACTION_TYPES_WITH_RDV_DATE.includes(action.actionType) && action.rdvDate) {
+    actionLabel = `${actionLabel} — RDV le ${formatSqlDate(action.rdvDate)}`;
   }
 
   const isOwnAction = currentAgentId === action.agent.id;
@@ -78,6 +82,8 @@ export function ActionItem({ action, currentAgentId, onUpdated, onDeleted }: Act
             parcoursId={action.parcoursId}
             actionId={action.id}
             initialMessage={action.message ?? ""}
+            initialActionType={action.actionType}
+            initialRdvDate={action.rdvDate}
             onSuccess={handleUpdateSuccess}
             onCancel={() => setIsEditing(false)}
           />

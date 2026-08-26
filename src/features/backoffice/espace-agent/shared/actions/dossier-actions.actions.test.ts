@@ -55,6 +55,7 @@ describe("dossier-actions.actions", () => {
     parcoursId: "parcours-1",
     actionType: "appel_effectue",
     actionPrecision: null,
+    rdvDate: null,
     message: "Test message",
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -176,7 +177,13 @@ describe("dossier-actions.actions", () => {
 
       await updateActionAction("action-1", "Updated message");
 
-      expect(actionsService.updateAction).toHaveBeenCalledWith("action-1", "agent-1", UserRole.AMO, "Updated message");
+      expect(actionsService.updateAction).toHaveBeenCalledWith(
+        "action-1",
+        "agent-1",
+        UserRole.AMO,
+        "Updated message",
+        undefined
+      );
     });
 
     it("un super-administrateur peut modifier une action (exception assumée au read-only)", async () => {
@@ -189,7 +196,8 @@ describe("dossier-actions.actions", () => {
         "action-1",
         "super-admin-1",
         UserRole.SUPER_ADMINISTRATEUR,
-        "Updated message"
+        "Updated message",
+        undefined
       );
       expect(result.success).toBe(true);
     });

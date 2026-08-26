@@ -56,12 +56,14 @@ export class ParcoursActionsRepository extends BaseRepository<ParcoursAction> {
   }
 
   /**
-   * Met à jour le commentaire (message) d'une action
+   * Met à jour le commentaire d'une action. `rdvDate` : undefined = colonne intacte, "" = effacée.
    */
-  async updateMessage(id: string, message: string): Promise<ParcoursAction | null> {
+  async updateMessage(id: string, message: string, rdvDate?: string): Promise<ParcoursAction | null> {
     return this.update(id, {
-      message,
+      // Un commentaire vidé revient à null, comme à la création.
+      message: message.length > 0 ? message : null,
       editedAt: new Date(),
+      ...(rdvDate !== undefined && { rdvDate: rdvDate.length > 0 ? rdvDate : null }),
     });
   }
 
@@ -278,6 +280,7 @@ export class ParcoursActionsRepository extends BaseRepository<ParcoursAction> {
       parcoursId: row.action.parcoursId,
       actionType: row.action.actionType,
       actionPrecision: row.action.actionPrecision,
+      rdvDate: row.action.rdvDate,
       message: row.action.message,
       createdAt: row.action.createdAt,
       updatedAt: row.action.updatedAt,

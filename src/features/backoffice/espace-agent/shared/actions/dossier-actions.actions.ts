@@ -61,9 +61,13 @@ export async function createActionAction(parcoursId: string, data: ActionFormDat
 }
 
 /**
- * Met à jour le commentaire d'une action existante
+ * Met à jour une action existante (commentaire, date de RDV).
  */
-export async function updateActionAction(actionId: string, message: string): Promise<UpdateActionResult> {
+export async function updateActionAction(
+  actionId: string,
+  message: string,
+  rdvDate?: string
+): Promise<UpdateActionResult> {
   try {
     // Exception assumée au read-only super-admin, cf. createActionAction ci-dessus.
     const agentResult = await getCurrentAgent();
@@ -73,7 +77,7 @@ export async function updateActionAction(actionId: string, message: string): Pro
 
     const agent = agentResult.data;
 
-    return await actionsService.updateAction(actionId, agent.id, agent.role, message);
+    return await actionsService.updateAction(actionId, agent.id, agent.role, message, rdvDate);
   } catch (error) {
     console.error("Erreur lors de la mise à jour de l'action:", error);
     return { success: false, error: "Une erreur est survenue lors de la mise à jour de l'action." };
