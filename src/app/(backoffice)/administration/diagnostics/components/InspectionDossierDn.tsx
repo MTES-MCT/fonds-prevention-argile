@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { inspecterDossierDnAction } from "@/features/backoffice/administration/diagnostics/actions/reconciliation.actions";
-import { MOTIF_LABELS, type InspectionDossier } from "@/features/parcours/dossiers-ds/services/inspection.service";
+import { MOTIF_LABELS, type InspectionDossier } from "@/features/parcours/dossiers-ds/domain/types/inspection.types";
 
 /**
  * Ce que DN sait d'un dossier orphelin, et les demandeurs qui lui ressemblent.

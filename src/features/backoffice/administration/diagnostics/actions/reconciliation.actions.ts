@@ -7,10 +7,8 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { dsObservationsRepo, type ObservationAvecDemandeur } from "@/shared/database/repositories";
 import { RESOLUTION_OBSERVATION, type ResolutionObservation } from "@/shared/database/schema";
 import { reconcilierDemarche } from "@/features/parcours/dossiers-ds/services/reconciliation.service";
-import {
-  inspecterDossierDn,
-  type InspectionDossier,
-} from "@/features/parcours/dossiers-ds/services/inspection.service";
+import { inspecterDossierDn } from "@/features/parcours/dossiers-ds/services/inspection.service";
+import type { InspectionDossier } from "@/features/parcours/dossiers-ds/domain/types/inspection.types";
 import { resolveDemarcheNumberForStep } from "@/features/parcours/dossiers-ds/services/pieces-justificatives.service";
 import {
   VERDICTS_A_RATTACHER,
