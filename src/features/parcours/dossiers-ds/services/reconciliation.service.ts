@@ -10,7 +10,7 @@ import { dossiersDsTentativesRepo } from "@/shared/database/repositories";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
 import type { ActionResult } from "@/shared/types";
 import { graphqlClient } from "../adapters/graphql/client";
-import { extraireParcoursIdDepuisAnnotations } from "../utils/annotation-fpa.utils";
+import { extraireParcoursIdsDepuisAnnotations } from "../utils/annotation-fpa.utils";
 import { resolveDemarcheNumberForStep } from "./pieces-justificatives.service";
 
 /**
@@ -32,6 +32,7 @@ export type VerdictReconciliation =
   | "conflit_dossier_confirme"
   | "conflit_plusieurs_deposes"
   | "sans_annotation"
+  | "annotation_ambigue"
   | "parcours_inconnu";
 
 export interface CandidatReconciliation {
@@ -39,6 +40,8 @@ export interface CandidatReconciliation {
   step: Step;
   state: string;
   parcoursId: string | null;
+  /** Plusieurs annotations portent des parcours différents : annotation retouchée à la main. */
+  annotationAmbigue?: boolean;
 }
 
 /** État local nécessaire pour trancher, lu en base. */
@@ -59,6 +62,8 @@ export interface ContexteRattachement {
  * On ne tranche jamais automatiquement un conflit : il remonte pour arbitrage humain.
  */
 export function decideRattachement(candidat: CandidatReconciliation, ctx: ContexteRattachement): VerdictReconciliation {
+  // Une annotation retouchée n'est plus une source fiable : arbitrage humain.
+  if (candidat.annotationAmbigue) return "annotation_ambigue";
   if (!candidat.parcoursId) return "sans_annotation";
   if (!ctx.parcoursExiste) return "parcours_inconnu";
 
@@ -99,6 +104,7 @@ function totauxVides(): Record<VerdictReconciliation, number> {
     conflit_dossier_confirme: 0,
     conflit_plusieurs_deposes: 0,
     sans_annotation: 0,
+    annotation_ambigue: 0,
     parcours_inconnu: 0,
   };
 }
@@ -227,11 +233,13 @@ async function collecterCandidats(
     }
 
     for (const node of conn.nodes) {
+      const parcoursIds = extraireParcoursIdsDepuisAnnotations(node.annotations);
       candidats.push({
         dsNumber: String(node.number),
         step,
         state: node.state,
-        parcoursId: extraireParcoursIdDepuisAnnotations(node.annotations),
+        parcoursId: parcoursIds.length === 1 ? parcoursIds[0] : null,
+        annotationAmbigue: parcoursIds.length > 1,
       });
     }
 

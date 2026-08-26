@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import { decideRattachement, type ContexteRattachement } from "./reconciliation.service";
-import { extraireParcoursIdDepuisAnnotations } from "../utils/annotation-fpa.utils";
+import {
+  extraireParcoursIdDepuisAnnotations,
+  extraireParcoursIdsDepuisAnnotations,
+} from "../utils/annotation-fpa.utils";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 
 vi.mock("@/shared/database/client", () => ({ db: {} }));
@@ -58,6 +61,10 @@ describe("decideRattachement", () => {
     expect(decideRattachement({ ...candidat, parcoursId: null }, ctx())).toBe("sans_annotation");
   });
 
+  it("refuse de trancher quand deux annotations pointent des parcours différents", () => {
+    expect(decideRattachement({ ...candidat, annotationAmbigue: true }, ctx())).toBe("annotation_ambigue");
+  });
+
   it("classe à part une annotation pointant un parcours inconnu", () => {
     expect(decideRattachement(candidat, ctx({ parcoursExiste: false }))).toBe("parcours_inconnu");
   });
@@ -76,6 +83,17 @@ describe("extraireParcoursIdDepuisAnnotations", () => {
     expect(extraireParcoursIdDepuisAnnotations(undefined)).toBeNull();
     expect(extraireParcoursIdDepuisAnnotations([])).toBeNull();
     expect(extraireParcoursIdDepuisAnnotations([{ stringValue: "https://exemple.fr/autre-chose" }])).toBeNull();
+  });
+
+  it("remonte les parcours distincts quand plusieurs annotations divergent", () => {
+    const autre = "11111111-1111-1111-1111-111111111111";
+    const annotations = [
+      { stringValue: `https://fpa.gouv.fr/espace-agent/dossiers/${PARCOURS}` },
+      { stringValue: `https://fpa.gouv.fr/espace-agent/dossiers/${autre}` },
+    ];
+    expect(extraireParcoursIdsDepuisAnnotations(annotations)).toHaveLength(2);
+    // Ambigu : la fonction « une seule valeur » ne tranche pas.
+    expect(extraireParcoursIdDepuisAnnotations(annotations)).toBeNull();
   });
 
   it("ignore une valeur qui n'est pas un uuid valide", () => {
