@@ -9,6 +9,7 @@ import {
 import { Step, STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
 import DiagnosticsPanel from "./DiagnosticsPanel";
 import { FileReconciliation } from "./FileReconciliation";
+import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 
 type Onglet = "rattacher" | "arbitrer" | "etats";
 
@@ -71,75 +72,93 @@ export default function DiagnosticsTabs() {
 
   return (
     <>
-      {erreur && (
-        <div className="fr-alert fr-alert--error fr-mb-2w">
-          <p>{erreur}</p>
+      <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
+        <div className="fr-container">
+          <AdminBreadcrumb currentPageLabel="Diagnostics DN" />
+          <div className="fr-mb-4w">
+            <h1 className="fr-h2 fr-mb-1v">Diagnostics DN</h1>
+            <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
+              Ce qui demande une action sur les dossiers Démarches Numériques : ce qu&apos;il faut rattacher à un
+              parcours, et ce qu&apos;il faut arbitrer. Réservé aux super-administrateurs.
+            </p>
+          </div>
         </div>
-      )}
+      </section>
 
-      <div className="fr-tabs">
-        <ul className="fr-tabs__list" role="tablist" aria-label="Diagnostic Démarches Numériques">
-          {onglets.map((o) => (
-            <li key={o.id} role="presentation">
-              <button
-                type="button"
-                className="fr-tabs__tab"
-                role="tab"
-                aria-selected={onglet === o.id}
-                tabIndex={onglet === o.id ? 0 : -1}
-                onClick={() => setOnglet(o.id)}>
-                {o.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-
-        <div className="fr-tabs__panel fr-tabs__panel--selected" role="tabpanel">
-          {onglet !== "etats" && (
-            <div className="fr-mb-3w">
-              <p className="fr-text--sm fr-mb-1w">
-                L&apos;analyse interroge Démarches Numériques et remplit ces deux files. Elle ne modifie aucun dossier.
-              </p>
-              <ul className="fr-btns-group fr-btns-group--sm fr-btns-group--inline">
-                {STEPS_ANALYSABLES.map((step) => (
-                  <li key={step}>
-                    <button
-                      type="button"
-                      className="fr-btn fr-btn--secondary fr-btn--sm"
-                      disabled={analyseEnCours !== null}
-                      onClick={() => analyser(step)}>
-                      {analyseEnCours === step ? "Analyse en cours…" : `Analyser ${STEP_LABELS[step]}`}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              {messageAnalyse && (
-                <div className="fr-alert fr-alert--info fr-alert--sm fr-mt-2w">
-                  <p>{messageAnalyse}</p>
-                </div>
-              )}
+      <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
+        <div className="fr-container">
+          {erreur && (
+            <div className="fr-alert fr-alert--error fr-mb-2w">
+              <p>{erreur}</p>
             </div>
           )}
 
-          {onglet === "rattacher" && (
-            <FileReconciliation
-              observations={files?.aRattacher ?? []}
-              messageVide="Aucun dossier en attente de rattachement."
-              onResolved={charger}
-            />
-          )}
+          <div className="fr-tabs">
+            <ul className="fr-tabs__list" role="tablist" aria-label="Diagnostic Démarches Numériques">
+              {onglets.map((o) => (
+                <li key={o.id} role="presentation">
+                  <button
+                    type="button"
+                    className="fr-tabs__tab"
+                    role="tab"
+                    aria-selected={onglet === o.id}
+                    tabIndex={onglet === o.id ? 0 : -1}
+                    onClick={() => setOnglet(o.id)}>
+                    {o.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
 
-          {onglet === "arbitrer" && (
-            <FileReconciliation
-              observations={files?.aArbitrer ?? []}
-              messageVide="Aucun conflit à arbitrer."
-              onResolved={charger}
-            />
-          )}
+            <div className="fr-tabs__panel fr-tabs__panel--selected" role="tabpanel">
+              {onglet !== "etats" && (
+                <div className="fr-mb-3w">
+                  <p className="fr-text--sm fr-mb-1w">
+                    L&apos;analyse interroge Démarches Numériques et remplit ces deux files. Elle ne modifie aucun
+                    dossier.
+                  </p>
+                  <ul className="fr-btns-group fr-btns-group--sm fr-btns-group--inline">
+                    {STEPS_ANALYSABLES.map((step) => (
+                      <li key={step}>
+                        <button
+                          type="button"
+                          className="fr-btn fr-btn--secondary fr-btn--sm"
+                          disabled={analyseEnCours !== null}
+                          onClick={() => analyser(step)}>
+                          {analyseEnCours === step ? "Analyse en cours…" : `Analyser ${STEP_LABELS[step]}`}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  {messageAnalyse && (
+                    <div className="fr-alert fr-alert--info fr-alert--sm fr-mt-2w">
+                      <p>{messageAnalyse}</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
-          {onglet === "etats" && <DiagnosticsPanel />}
+              {onglet === "rattacher" && (
+                <FileReconciliation
+                  observations={files?.aRattacher ?? []}
+                  messageVide="Aucun dossier en attente de rattachement."
+                  onResolved={charger}
+                />
+              )}
+
+              {onglet === "arbitrer" && (
+                <FileReconciliation
+                  observations={files?.aArbitrer ?? []}
+                  messageVide="Aucun conflit à arbitrer."
+                  onResolved={charger}
+                />
+              )}
+
+              {onglet === "etats" && <DiagnosticsPanel embedded />}
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
     </>
   );
 }
