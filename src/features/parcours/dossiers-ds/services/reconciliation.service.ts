@@ -1,7 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import {
   dossiersDemarchesSimplifiees,
+  dossiersDsTentatives,
   ORIGINE_TENTATIVE,
   parcoursPrevention,
   type OrigineTentative,
@@ -59,6 +60,8 @@ export interface ContexteRattachement {
   parcoursIdDuNumero: string | null;
   /** Plusieurs dossiers déposés portent le même parcoursId sur cette étape. */
   plusieursCandidats: boolean;
+  /** Ce numéro est déjà rattaché chez nous (pointeur ou registre), annotation ou pas. */
+  numeroDejaConnu: boolean;
 }
 
 /**
@@ -69,7 +72,13 @@ export function decideRattachement(candidat: CandidatReconciliation, ctx: Contex
   // Une annotation retouchée ou divergente n'est plus une source fiable : arbitrage humain.
   if (candidat.annotationAmbigue) return "annotation_ambigue";
   if (candidat.annotationModifiee) return "annotation_modifiee";
-  if (!candidat.parcoursId) return "sans_annotation";
+
+  if (!candidat.parcoursId) {
+    // Sans annotation, on sait quand même à qui est le dossier si son numéro est déjà chez
+    // nous : c'est le cas de tous les dossiers antérieurs à l'ajout de l'annotation. Ne
+    // restent en file manuelle que ceux créés entièrement hors du parcours FPA.
+    return ctx.numeroDejaConnu ? "deja_a_jour" : "sans_annotation";
+  }
   if (!ctx.parcoursExiste) return "parcours_inconnu";
 
   // Un numéro n'appartient qu'à un seul parcours : on ne le vole jamais à un autre.
@@ -308,6 +317,27 @@ async function collecterCandidats(
   return { candidats, complet: false, raison: `plafond de ${maxPages} pages atteint`, pages };
 }
 
+/** Numéros DN déjà rattachés chez nous, pointeurs et registre confondus. */
+async function chargerNumerosConnus(dsNumbers: string[]): Promise<Set<string>> {
+  if (dsNumbers.length === 0) return new Set();
+
+  const [pointeurs, tentatives] = await Promise.all([
+    db
+      .select({ dsNumber: dossiersDemarchesSimplifiees.dsNumber })
+      .from(dossiersDemarchesSimplifiees)
+      .where(inArray(dossiersDemarchesSimplifiees.dsNumber, dsNumbers)),
+    db
+      .select({ dsNumber: dossiersDsTentatives.dsNumber })
+      .from(dossiersDsTentatives)
+      .where(inArray(dossiersDsTentatives.dsNumber, dsNumbers)),
+  ]);
+
+  const connus = new Set<string>();
+  for (const p of pointeurs) if (p.dsNumber) connus.add(p.dsNumber);
+  for (const t of tentatives) connus.add(t.dsNumber);
+  return connus;
+}
+
 /** Repointe l'étape vers le dossier réel et remet son état à zéro : la sync le recopiera. */
 async function appliquerRattachement(
   candidat: { parcoursId: string; step: Step; dsNumber: string; dsDemarcheId: string },
@@ -402,6 +432,10 @@ export async function reconcilierDemarche(options: {
     if (c.parcoursId) parNombreDeCandidats.set(c.parcoursId, (parNombreDeCandidats.get(c.parcoursId) ?? 0) + 1);
   }
 
+  // Préchargé en deux requêtes plutôt qu'une par candidat : sur une démarche entière, la
+  // très grande majorité des dossiers déposés nous sont déjà connus.
+  const numerosConnus = await chargerNumerosConnus(candidats.map((c) => c.dsNumber));
+
   const lignes: LigneRapport[] = [];
   const totaux = totauxVides();
   let rattachementsAppliques = 0;
@@ -413,6 +447,7 @@ export async function reconcilierDemarche(options: {
       pointeurConfirme: false,
       parcoursIdDuNumero: null,
       plusieursCandidats: false,
+      numeroDejaConnu: numerosConnus.has(candidat.dsNumber),
     };
 
     if (candidat.parcoursId) {
@@ -445,6 +480,7 @@ export async function reconcilierDemarche(options: {
         pointeurConfirme: !!(pointeur?.submittedAt || pointeur?.lastSyncAt),
         parcoursIdDuNumero: tentative?.parcoursId ?? null,
         plusieursCandidats: (parNombreDeCandidats.get(candidat.parcoursId) ?? 0) > 1,
+        numeroDejaConnu: numerosConnus.has(candidat.dsNumber),
       };
     }
 

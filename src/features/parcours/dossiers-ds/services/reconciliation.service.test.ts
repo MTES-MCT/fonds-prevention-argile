@@ -24,6 +24,7 @@ function ctx(overrides: Partial<ContexteRattachement> = {}): ContexteRattachemen
     pointeurConfirme: false,
     parcoursIdDuNumero: null,
     plusieursCandidats: false,
+    numeroDejaConnu: false,
     ...overrides,
   };
 }
@@ -58,8 +59,14 @@ describe("decideRattachement", () => {
     expect(decideRattachement(candidat, ctx({ plusieursCandidats: true }))).toBe("conflit_plusieurs_deposes");
   });
 
-  it("classe à part un dossier déposé sans annotation FPA", () => {
+  it("classe à part un dossier déposé sans annotation FPA et inconnu de nous", () => {
     expect(decideRattachement({ ...candidat, parcoursId: null }, ctx())).toBe("sans_annotation");
+  });
+
+  it("ne signale rien pour un dossier sans annotation dont le numéro nous est déjà connu", () => {
+    // Cas de tous les dossiers antérieurs à l'ajout de l'annotation : rattachés depuis
+    // toujours, ils n'ont rien à faire dans une file de travail.
+    expect(decideRattachement({ ...candidat, parcoursId: null }, ctx({ numeroDejaConnu: true }))).toBe("deja_a_jour");
   });
 
   it("refuse de trancher quand deux annotations pointent des parcours différents", () => {
