@@ -4,7 +4,7 @@ FROM node:24-alpine
 RUN apk upgrade --no-cache
 
 # Installer pnpm globalement avec npm (aligne sur packageManager du repo)
-RUN npm install -g pnpm@11.5.2
+RUN npm install -g pnpm@11.24.0
 
 WORKDIR /app
 

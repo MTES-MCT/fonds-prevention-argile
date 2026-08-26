@@ -9,6 +9,7 @@ import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import type { createOpsDb } from "../lib/db";
 import { parcoursPrevention, syncRunEntries } from "@/shared/database/schema";
 import type { DemarchesSimplifieesClient } from "@/features/parcours/dossiers-ds/adapters/graphql/client";
+import type { Step } from "@/shared/domain/value-objects/step.enum";
 
 export type OpsDb = ReturnType<typeof createOpsDb>["db"];
 export type DnClient = DemarchesSimplifieesClient;
@@ -20,6 +21,22 @@ export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Normalise un email pour comparaison (minuscule, trim) ; null si vide. */
 export const norm = (e?: string | null): string | null => e?.toLowerCase().trim() || null;
+
+/**
+ * Extrait les couples (étape, numéro DN) cités dans un message d'erreur de sync, du type
+ * `eligibilite: Sync dossier 32052358 échouée: ...`. Plusieurs erreurs peuvent être
+ * concaténées dans une même entrée, d'où l'itération. Seul moyen de retrouver un numéro
+ * dont le pointeur a été supprimé (cf. ADR-0027, backfill du registre).
+ */
+export function extraireNumerosDepuisErreur(message: string): Array<{ step: Step; dsNumber: string }> {
+  const out: Array<{ step: Step; dsNumber: string }> = [];
+  const re = /([a-z_]+): Sync dossier (\d+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(message)) !== null) {
+    out.push({ step: m[1] as Step, dsNumber: m[2] });
+  }
+  return out;
+}
 
 /** Normalise un message d'erreur DN en verdict de sondage. */
 export function classifyDnError(message: string): "not_found" | "unauthorized" | "api_error" {

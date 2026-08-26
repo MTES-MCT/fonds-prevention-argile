@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ROUTES } from "@/features/auth/domain/value-objects";
 import { ArchiveModal } from "../../../shared/components/ArchiveModal";
 import { ArretAccompagnementModal } from "../../../shared/components/ArretAccompagnementModal";
+import { RattacherDossierDnModal } from "../../../shared/components/RattacherDossierDnModal";
 import { ActionMenu } from "../../../shared/components";
 
 interface GererDossierMenuProps {
@@ -29,6 +30,7 @@ export function GererDossierMenu({
   const router = useRouter();
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isArretOpen, setIsArretOpen] = useState(ouvrirArretAuMontage);
+  const [isRattacherOpen, setIsRattacherOpen] = useState(false);
 
   // Après archivage comme après arrêt, l'agent n'a plus le dossier dans son périmètre.
   function backToListing() {
@@ -45,6 +47,11 @@ export function GererDossierMenu({
         triggerClassName="fr-btn fr-btn--secondary fr-btn--sm fr-icon-arrow-down-s-line fr-btn--icon-right"
         items={[
           { label: "Archiver", icon: "fr-icon-archive-line", onClick: () => setIsArchiveOpen(true) },
+          {
+            label: "Rattacher un dossier DN",
+            icon: "fr-icon-links-line",
+            onClick: () => setIsRattacherOpen(true),
+          },
           ...(peutArreterAccompagnement
             ? [
                 {
@@ -63,6 +70,16 @@ export function GererDossierMenu({
         onClose={() => setIsArchiveOpen(false)}
         parcoursId={parcoursId}
         onSuccess={backToListing}
+      />
+
+      <RattacherDossierDnModal
+        isOpen={isRattacherOpen}
+        onClose={() => setIsRattacherOpen(false)}
+        parcoursId={parcoursId}
+        onSuccess={() => {
+          setIsRattacherOpen(false);
+          router.refresh();
+        }}
       />
 
       <ArretAccompagnementModal

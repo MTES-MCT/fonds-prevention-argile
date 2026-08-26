@@ -1,0 +1,104 @@
+import { and, desc, eq } from "drizzle-orm";
+import type { PgTransaction } from "drizzle-orm/pg-core";
+import { db } from "../client";
+import { dossiersDsTentatives, type DossierDsTentative, type OrigineTentative } from "../schema";
+import type { Step } from "@/shared/domain/value-objects/step.enum";
+
+/** Exécuteur : le client global, ou une transaction en cours. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Executor = typeof db | PgTransaction<any, any, any>;
+
+interface RecordTentativeParams {
+  parcoursId: string;
+  step: Step;
+  dsNumber: string;
+  origine: OrigineTentative;
+  dsId?: string | null;
+  dsDemarcheId?: string | null;
+}
+
+/** Un numéro DN déjà connu d'un AUTRE parcours (ou d'une autre étape) : jamais silencieux. */
+export class TentativeConflitError extends Error {
+  constructor(
+    readonly dsNumber: string,
+    readonly parcoursIdExistant: string,
+    readonly stepExistante: string
+  ) {
+    super(`Le numéro DN ${dsNumber} est déjà rattaché à un autre parcours ou une autre étape`);
+    this.name = "TentativeConflitError";
+  }
+}
+
+/**
+ * Registre append-only des numéros DN connus d'un parcours (ADR-0027).
+ * Aucune méthode de suppression : un numéro entré ici n'en sort jamais.
+ */
+export const dossiersDsTentativesRepository = {
+  /**
+   * Enregistre une tentative. Idempotent sur `ds_number` : un numéro déjà connu n'est ni
+   * dupliqué ni réécrit — sa provenance d'origine et sa date de découverte font foi.
+   * Accepte une transaction pour être écrite avec le pointeur dans le même commit.
+   */
+  async record(params: RecordTentativeParams, executor: Executor = db): Promise<void> {
+    // `onConflictDoNothing` seul masquerait un conflit de propriétaire : on vérifie donc à qui
+    // appartient déjà ce numéro avant de laisser passer l'idempotence (ADR-0027).
+    const [existant] = await executor
+      .select({
+        parcoursId: dossiersDsTentatives.parcoursId,
+        step: dossiersDsTentatives.step,
+      })
+      .from(dossiersDsTentatives)
+      .where(eq(dossiersDsTentatives.dsNumber, params.dsNumber))
+      .limit(1);
+
+    if (existant && (existant.parcoursId !== params.parcoursId || existant.step !== params.step)) {
+      throw new TentativeConflitError(params.dsNumber, existant.parcoursId, existant.step);
+    }
+
+    const insere = await executor
+      .insert(dossiersDsTentatives)
+      .values({
+        parcoursId: params.parcoursId,
+        step: params.step,
+        dsNumber: params.dsNumber,
+        origine: params.origine,
+        dsId: params.dsId ?? null,
+        dsDemarcheId: params.dsDemarcheId ?? null,
+      })
+      .onConflictDoNothing({ target: dossiersDsTentatives.dsNumber })
+      .returning({ id: dossiersDsTentatives.id });
+
+    // Rien inséré alors que le contrôle initial ne voyait rien : une écriture concurrente est
+    // passée entre les deux. On relit pour ne pas avaler un conflit de propriétaire.
+    if (insere.length === 0 && !existant) {
+      const [concurrent] = await executor
+        .select({ parcoursId: dossiersDsTentatives.parcoursId, step: dossiersDsTentatives.step })
+        .from(dossiersDsTentatives)
+        .where(eq(dossiersDsTentatives.dsNumber, params.dsNumber))
+        .limit(1);
+
+      if (concurrent && (concurrent.parcoursId !== params.parcoursId || concurrent.step !== params.step)) {
+        throw new TentativeConflitError(params.dsNumber, concurrent.parcoursId, concurrent.step);
+      }
+    }
+  },
+
+  /** Toutes les tentatives connues d'une étape, la plus récente d'abord. */
+  async findByParcoursStep(parcoursId: string, step: Step): Promise<DossierDsTentative[]> {
+    return db
+      .select()
+      .from(dossiersDsTentatives)
+      .where(and(eq(dossiersDsTentatives.parcoursId, parcoursId), eq(dossiersDsTentatives.step, step)))
+      .orderBy(desc(dossiersDsTentatives.createdAt));
+  },
+
+  /** Le parcours auquel un numéro DN est rattaché, s'il est déjà connu. */
+  async findByDsNumber(dsNumber: string): Promise<DossierDsTentative | null> {
+    const [row] = await db
+      .select()
+      .from(dossiersDsTentatives)
+      .where(eq(dossiersDsTentatives.dsNumber, dsNumber))
+      .limit(1);
+    return row ?? null;
+  },
+};

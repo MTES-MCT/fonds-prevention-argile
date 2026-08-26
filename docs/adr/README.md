@@ -54,5 +54,6 @@ purement cosmétique.
 | 0024 | [Commentaires/actions ouverts au super-admin dans l'espace agent](0024-commentaires-super-admin-espace-agent.md)                        | Accepté |
 | 0025 | [Lien FPA dans les annotations DN — ids par démarche et permalien parcours](0025-lien-fpa-annotation-eligibilite.md)                    | Accepté |
 | 0026 | [Gel du reset destructif — « Dossier not found » ne prouve pas la disparition](0026-gel-reset-eligibilite-not-found.md)                 | Accepté |
+| 0027 | [Tentative de préremplissage vs dossier confirmé](0027-tentative-prefill-vs-dossier-confirme.md)                                        | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->

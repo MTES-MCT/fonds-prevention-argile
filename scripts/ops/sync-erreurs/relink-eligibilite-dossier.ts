@@ -33,7 +33,13 @@ import { createOpsDb } from "../lib/db";
 import { DEMARCHE_IDS } from "../lib/env";
 import { graphqlClient } from "@/features/parcours/dossiers-ds/adapters/graphql/client";
 import { createRedactor } from "../lib/anonymize";
-import { parcoursPrevention, users, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
+import {
+  parcoursPrevention,
+  users,
+  dossiersDemarchesSimplifiees,
+  dossiersDsTentatives,
+  ORIGINE_TENTATIVE,
+} from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { getArg, getNumberArg, hasFlag } from "../lib/args";
@@ -115,7 +121,19 @@ async function dsNumberTracked(toNumber: string, excludeDossierId: string): Prom
 }
 
 /** Repointe le dossier vers le vrai numéro et remet les colonnes d'état à NULL (sync rebâtira). */
-async function applyRelink(dossierId: string, toNumber: string): Promise<boolean> {
+async function applyRelink(dossierId: string, toNumber: string, parcoursId: string): Promise<boolean> {
+  // Le registre doit connaître tout numéro rattaché, sinon l'invariant « un pointeur a
+  // toujours sa tentative » ne tient plus (ADR-0027).
+  await db
+    .insert(dossiersDsTentatives)
+    .values({
+      parcoursId,
+      step: Step.ELIGIBILITE,
+      dsNumber: toNumber,
+      origine: ORIGINE_TENTATIVE.MANUEL,
+    })
+    .onConflictDoNothing({ target: dossiersDsTentatives.dsNumber });
+
   const updated = await db
     .update(dossiersDemarchesSimplifiees)
     .set({
@@ -284,7 +302,7 @@ async function main() {
   let failed = 0;
   for (const r of relinks) {
     try {
-      const done = await applyRelink(r.dossierId, r.toNumber);
+      const done = await applyRelink(r.dossierId, r.toNumber, r.parcoursId);
       if (done) {
         ok++;
         console.log(`  OK relink ${redactUuid(r.parcoursId)} : #${r.fromNumber} → #${r.toNumber}`);

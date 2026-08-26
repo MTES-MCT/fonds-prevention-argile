@@ -102,17 +102,24 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 
 ### Tables principales
 
-| Domaine          | Tables                                                                                             |
-| ---------------- | -------------------------------------------------------------------------------------------------- |
-| Parcours         | `users`, `parcours_prevention`, `dossiers_demarches_simplifiees`, `parcours_actions`               |
-| AMO              | `parcours_amo_validations`, `amo_validation_tokens`, `entreprises_amo`, `entreprises_amo_communes` |
-| Agents           | `agents`, `agent_permissions`                                                                      |
-| Allers-vers      | `allers_vers`, `allers_vers_departements`, `allers_vers_epci`, `prospect_qualifications`           |
-| Référentiels géo | `catastrophes_naturelles`, `rga_zones` (PostGIS)                                                   |
-| Synchronisation  | `sync_runs`, `sync_run_entries`                                                                    |
+| Domaine          | Tables                                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------------------------- |
+| Parcours         | `users`, `parcours_prevention`, `dossiers_demarches_simplifiees`, `dossiers_ds_tentatives`, `parcours_actions` |
+| AMO              | `parcours_amo_validations`, `amo_validation_tokens`, `entreprises_amo`, `entreprises_amo_communes`             |
+| Agents           | `agents`, `agent_permissions`                                                                                  |
+| Allers-vers      | `allers_vers`, `allers_vers_departements`, `allers_vers_epci`, `prospect_qualifications`                       |
+| Référentiels géo | `catastrophes_naturelles`, `rga_zones` (PostGIS)                                                               |
+| Synchronisation  | `sync_runs`, `sync_run_entries`                                                                                |
 
 > `users` (demandeur FranceConnect) et `agents` (ProConnect) sont deux tables
 > distinctes : le citoyen et l'agent ne partagent pas la même identité.
+
+> `dossiers_demarches_simplifiees` est le **pointeur courant** vers le dossier DN d'une étape,
+> pas l'historique des dossiers créés. La distinction entre **tentative** (brouillon prérempli,
+> plusieurs possibles, jamais autoritaire) et **dossier confirmé** (déposé, unique) est posée
+> par [ADR-0027](adr/0027-tentative-prefill-vs-dossier-confirme.md). Le registre
+> `dossiers_ds_tentatives` conserve **définitivement** tout numéro DN connu du parcours :
+> écrit dans la même transaction que le pointeur, jamais supprimé.
 
 ---
 

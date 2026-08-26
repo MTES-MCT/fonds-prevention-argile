@@ -14,6 +14,8 @@ export * from "./users";
 export * from "./parcours-prevention";
 export * from "./parcours-actions";
 export * from "./dossiers-demarches-simplifiees";
+export * from "./dossiers-ds-tentatives";
+export * from "./ds-reconciliation-observations";
 export * from "./entreprises-amo";
 export * from "./entreprises-amo-communes";
 export * from "./entreprises-amo-epci";

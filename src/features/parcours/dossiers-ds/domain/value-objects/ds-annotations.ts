@@ -1,3 +1,6 @@
+import { Step } from "@/shared/domain/value-objects/step.enum";
+import { DS_FIELD_IDS } from "./ds-field-ids";
+
 /**
  * Annotations privées (instructeur) dont l'id dépend de la démarche.
  *
@@ -33,4 +36,15 @@ export function getAnnotationLienFpaEligibilite(demarcheNumber: number): string 
     return null;
   }
   return champId;
+}
+
+/**
+ * Id du descripteur de l'annotation « lien FPA » pour une étape donnée. Diagnostic et devis
+ * partagent le même id (antérieur au clonage) ; l'éligibilité dépend de la démarche.
+ */
+export function getAnnotationLienFpaId(step: Step, demarcheNumber: number): string | null {
+  if (step === Step.ELIGIBILITE) return getAnnotationLienFpaEligibilite(demarcheNumber);
+  if (step === Step.DIAGNOSTIC) return DS_FIELD_IDS.DIAGNOSTIC.ANNOTATION_LIEN_FPA;
+  if (step === Step.DEVIS) return DS_FIELD_IDS.DEVIS.ANNOTATION_LIEN_FPA;
+  return null;
 }

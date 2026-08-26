@@ -12,15 +12,18 @@ en bas de page) : il ne reste utilisable qu'en dry-run, comme diagnostic. Ils ch
 via `../lib/db` (dotenv) ; ceux qui appellent DN importent `graphqlClient` **après** pour
 garantir l'ordre de chargement.
 
-| Script                              | Alias                             | Rôle                                                            |
-| ----------------------------------- | --------------------------------- | --------------------------------------------------------------- |
-| `probe-dossiers.ts`                 | `pnpm ds:probe-dossiers`          | Sonde DN **lecture seule** (verdicts + cross-check email)       |
-| `reset-eligibilite-sync-error.ts`   | `pnpm fix:eligibilite-sync-error` | **GELÉ** (`--apply` refusé, ADR-0026) — dry-run diagnostic seul |
-| `relink-eligibilite-dossier.ts`     | `pnpm fix:relink-eligibilite`     | **Relink** d'un mismatch (dossier réel sous un autre numéro)    |
-| `clean-faux-depots-submitted-at.ts` | `pnpm fix:clean-faux-depots`      | Nettoyage des faux `submitted_at` legacy (pré-#216)             |
+| Script                              | Alias                             | Rôle                                                               |
+| ----------------------------------- | --------------------------------- | ------------------------------------------------------------------ |
+| `probe-dossiers.ts`                 | `pnpm ds:probe-dossiers`          | Sonde DN **lecture seule** (verdicts + cross-check email)          |
+| `reset-eligibilite-sync-error.ts`   | `pnpm fix:eligibilite-sync-error` | **GELÉ** (`--apply` refusé, ADR-0026) — dry-run diagnostic seul    |
+| `relink-eligibilite-dossier.ts`     | `pnpm fix:relink-eligibilite`     | **Relink** d'un mismatch (dossier réel sous un autre numéro)       |
+| `clean-faux-depots-submitted-at.ts` | `pnpm fix:clean-faux-depots`      | Nettoyage des faux `submitted_at` legacy (pré-#216)                |
+| `backfill-tentatives.ts`            | `pnpm ds:backfill-tentatives`     | Amorce le registre des tentatives DN (ADR-0027)                    |
+| `reconcilier-dossiers.ts`           | `pnpm ds:reconcilier`             | Rattache les dossiers déposés à leur parcours via l'annotation FPA |
 
-Ordre recommandé : **probe** → resync (UI) → **relink** → **clean**. Détails et cas résolus :
-voir le playbook (§4 de la doc).
+Ordre recommandé : **backfill** (registre) → **analyse** (interface ou `ds:reconcilier`) →
+traitement des deux files → resync (UI). `probe` et `relink` restent utiles pour un cas isolé.
+Détails : voir le playbook (§4 de la doc).
 
 > Le **reset est gelé** ([ADR-0026](../../../docs/adr/0026-gel-reset-eligibilite-not-found.md)) :
 > un prérempli non déposé est invisible de l'API instructeur et répond `Dossier not found`

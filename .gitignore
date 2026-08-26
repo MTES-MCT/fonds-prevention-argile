@@ -32,6 +32,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment Variables
+# Tout fichier d'env est ignoré par défaut, y compris les copies de travail
+# (« .env copy.local », « .env.old »…) qui échappaient aux motifs nommés.
+.env*
+!.env.example
 .env
 .env.local
 .env.*.local

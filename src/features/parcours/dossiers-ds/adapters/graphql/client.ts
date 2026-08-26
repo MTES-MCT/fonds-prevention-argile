@@ -6,6 +6,9 @@ import type {
   GraphQLResponse,
   QueryVariables,
   DossiersFilters,
+  DossierReconciliation,
+  DossiersReconciliationConnection,
+  DossierInspection,
 } from "./types";
 
 /**
@@ -166,6 +169,12 @@ export class DemarchesSimplifieesClient {
                 label
                 stringValue
               }
+              # Porte le lien FPA (donc le parcoursId) : clé de rattachement, cf. ADR-0027.
+              annotations {
+                id
+                label
+                stringValue
+              }
             }
           }
         }
@@ -191,6 +200,116 @@ export class DemarchesSimplifieesClient {
       return data.demarche?.dossiers || null;
     } catch (error) {
       console.error(`Failed to fetch dossiers for demarche ${number}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Dossiers d'une démarche, projection minimale pour la réconciliation (ADR-0027).
+   * Volontairement plus pauvre que `getDemarcheDossiers` : sur une démarche entière, on ne
+   * ramène ni les champs ni l'email usager, dont la réconciliation n'a aucun usage.
+   */
+  async getDossiersPourReconciliation(
+    number: number,
+    filters?: DossiersFilters
+  ): Promise<DossiersReconciliationConnection | null> {
+    const query = `
+      query GetDossiersReconciliation($number: Int!, $first: Int, $after: String, $updatedSince: ISO8601DateTime) {
+        demarche(number: $number) {
+          dossiers(first: $first, after: $after, updatedSince: $updatedSince, order: ASC) {
+            pageInfo { hasNextPage endCursor }
+            nodes {
+              id
+              number
+              state
+              archived
+              dateDepot
+              dateDerniereModification
+              annotations {
+                champDescriptorId
+                stringValue
+                prefilled
+                prefilledValueModified
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    try {
+      const data = await this.executeQuery<{
+        demarche: { dossiers: DossiersReconciliationConnection };
+      }>(query, { number, first: filters?.first ?? 100, after: filters?.after, updatedSince: filters?.updatedSince });
+
+      return data.demarche?.dossiers || null;
+    } catch (error) {
+      console.error(`Échec du balayage de réconciliation (démarche ${number}):`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Un dossier avec sa démarche et ses annotations, pour le rattachement manuel : c'est la
+   * démarche qui donne l'étape réelle, pas l'étape courante du parcours (ADR-0027).
+   */
+  async getDossierPourRattachement(dossierNumber: number): Promise<DossierReconciliation | null> {
+    const query = `
+      query GetDossierRattachement($number: Int!) {
+        dossier(number: $number) {
+          id
+          number
+          state
+          archived
+          dateDepot
+          demarche { number }
+          annotations {
+            champDescriptorId
+            stringValue
+            prefilled
+            prefilledValueModified
+          }
+        }
+      }
+    `;
+
+    const data = await this.executeQuery<{ dossier: DossierReconciliation }>(query, { number: dossierNumber });
+    return data.dossier;
+  }
+
+  /**
+   * Tout ce que DN sait d'un dossier et qui peut servir à retrouver son demandeur :
+   * compte usager, identité déclarée, et champs du formulaire (ADR-0027).
+   */
+  async getDossierPourInspection(dossierNumber: number): Promise<DossierInspection | null> {
+    const query = `
+      query GetDossierInspection($number: Int!) {
+        dossier(number: $number) {
+          number
+          state
+          dateDepot
+          deposeParUnTiers
+          nomMandataire
+          prenomMandataire
+          usager { email }
+          demandeur {
+            __typename
+            ... on PersonnePhysique { nom prenom }
+          }
+          champs {
+            champDescriptorId
+            label
+            stringValue
+          }
+        }
+      }
+    `;
+
+    try {
+      const data = await this.executeQuery<{ dossier: DossierInspection }>(query, { number: dossierNumber });
+      return data.dossier;
+    } catch (error) {
+      console.error(`Inspection DN impossible pour le dossier ${dossierNumber}:`, error);
       return null;
     }
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import {
   listDiagnosticsAction,
@@ -59,7 +59,31 @@ function daysAgoLabel(d: Date | string | null): string {
   return n <= 0 ? "aujourd'hui" : `il y a ${n} j`;
 }
 
-export default function DiagnosticsPanel() {
+/**
+ * Enveloppe de section : pleine largeur avec son propre conteneur quand la vue est autonome,
+ * simple bloc quand elle est rendue dans un onglet, qui fournit déjà le conteneur.
+ */
+function Section({
+  embedded,
+  className,
+  style,
+  children,
+}: {
+  embedded: boolean;
+  className: string;
+  style?: CSSProperties;
+  children: ReactNode;
+}) {
+  if (embedded) return <div className="fr-mb-4w">{children}</div>;
+  return (
+    <section className={className} style={style}>
+      <div className="fr-container">{children}</div>
+    </section>
+  );
+}
+
+/** `embedded` : rendu dans l'onglet « États des parcours », sans en-tête ni conteneur propre. */
+export default function DiagnosticsPanel({ embedded = false }: { embedded?: boolean }) {
   const [diagnostics, setDiagnostics] = useState<DiagnosticsResult | null>(null);
   const [sante, setSante] = useState<DemarcheSante[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,247 +128,249 @@ export default function DiagnosticsPanel() {
 
   return (
     <>
-      <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
-        <div className="fr-container">
-          <AdminBreadcrumb currentPageLabel="Diagnostics DN" />
-          <div className="fr-grid-row fr-grid-row--middle fr-mb-4w">
-            <div className="fr-col">
-              <h1 className="fr-h2 fr-mb-1v">Diagnostics DN</h1>
-              <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
-                État Démarches Numériques du dossier de l&apos;étape courante de chaque parcours actif (détection en
-                base, sans appel DN) et santé des démarches. Réservé aux super-administrateurs.
-              </p>
-            </div>
-            <div className="fr-col-auto" style={{ textAlign: "right" }}>
-              <button
-                type="button"
-                className="fr-btn fr-btn--secondary fr-mr-2w"
-                onClick={runProbe}
-                disabled={isProbing || isLoading}
-                title="Rafraîchit le « Verdict DN » en interrogeant DN en direct (sous-population en sync-erreur). Ne resynchronise pas le parcours : pour corriger un « Existe côté DN », utiliser « Lancer une synchro maintenant ».">
-                <span className="fr-icon-radar-line fr-icon--sm mr-2" aria-hidden="true" />
-                {isProbing ? "Sondage DN…" : "Sonder DN (erreurs)"}
-              </button>
-              <button type="button" className="fr-btn fr-btn--secondary" onClick={load} disabled={isLoading}>
-                <span className="fr-icon-refresh-line fr-icon--sm mr-2" aria-hidden="true" />
-                Rafraîchir
-              </button>
-            </div>
+      <Section
+        embedded={embedded}
+        className="fr-container-fluid fr-pt-4w"
+        style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
+        {!embedded && <AdminBreadcrumb currentPageLabel="Diagnostics DN" />}
+        <div className="fr-grid-row fr-grid-row--middle fr-mb-4w">
+          <div className="fr-col">
+            {!embedded && (
+              <>
+                <h1 className="fr-h2 fr-mb-1v">Diagnostics DN</h1>
+                <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
+                  État Démarches Numériques du dossier de l&apos;étape courante de chaque parcours actif (détection en
+                  base, sans appel DN) et santé des démarches. Réservé aux super-administrateurs.
+                </p>
+              </>
+            )}
           </div>
+          <div className="fr-col-auto" style={{ textAlign: "right" }}>
+            <button
+              type="button"
+              className="fr-btn fr-btn--secondary fr-mr-2w"
+              onClick={runProbe}
+              disabled={isProbing || isLoading}
+              title="Rafraîchit le « Verdict DN » en interrogeant DN en direct (sous-population en sync-erreur). Ne resynchronise pas le parcours : pour corriger un « Existe côté DN », utiliser « Lancer une synchro maintenant ».">
+              <span className="fr-icon-radar-line fr-icon--sm mr-2" aria-hidden="true" />
+              {isProbing ? "Sondage DN…" : "Sonder DN (erreurs)"}
+            </button>
+            <button type="button" className="fr-btn fr-btn--secondary" onClick={load} disabled={isLoading}>
+              <span className="fr-icon-refresh-line fr-icon--sm mr-2" aria-hidden="true" />
+              Rafraîchir
+            </button>
+          </div>
+        </div>
 
-          <details className="fr-mb-4w fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
-            <summary style={{ cursor: "pointer" }}>Comment lire ce tableau ?</summary>
-            <div className="fr-mt-1v" style={{ maxWidth: 880 }}>
-              <p className="fr-mb-1v">Deux lectures, deux sources qui peuvent diverger (et c&apos;est normal) :</p>
-              <ul className="fr-mb-1v">
-                <li>
-                  <strong>État</strong> : classification calculée <strong>en base</strong> (historique de
-                  synchronisation + état local). Aucun appel DN. <em>Âge</em> et <em>Détail</em> reflètent aussi
-                  l&apos;historique (dernière erreur), pas le live.
-                </li>
-                <li>
-                  <strong>Verdict DN</strong> : état <strong>réel côté Démarches Numériques</strong> au dernier sondage
-                  ou sync (<code>dn_probe_state</code>). « Sonder DN (erreurs) » le <strong>rafraîchit</strong> en
-                  direct, mais ne resynchronise pas.
-                </li>
-              </ul>
-              <p className="fr-mb-1v">Quand les deux divergent sur un « Sync erreur » :</p>
-              <ul className="fr-mb-0">
-                <li>
-                  <strong>+ Existe côté DN</strong> → le dossier est vivant (souvent réapparu) : il faut{" "}
-                  <strong>relancer une synchro</strong> (« Lancer une synchro maintenant »). Le miroir local rattrape et
-                  le parcours quitte l&apos;erreur. <strong>Pas de reset.</strong>
-                </li>
-                <li>
-                  <strong>+ Disparu côté DN</strong> → pointeur mort (drop-off ou dossier purgé) :{" "}
-                  <strong>reset</strong> (script <code>fix:eligibilite-sync-error</code>) ; voir « Analyser » pour un
-                  éventuel dossier sous un autre numéro.
-                </li>
-              </ul>
-            </div>
-          </details>
+        <details className="fr-mb-4w fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
+          <summary style={{ cursor: "pointer" }}>Comment lire ce tableau ?</summary>
+          <div className="fr-mt-1v" style={{ maxWidth: 880 }}>
+            <p className="fr-mb-1v">Deux lectures, deux sources qui peuvent diverger (et c&apos;est normal) :</p>
+            <ul className="fr-mb-1v">
+              <li>
+                <strong>État</strong> : classification calculée <strong>en base</strong> (historique de synchronisation
+                + état local). Aucun appel DN. <em>Âge</em> et <em>Détail</em> reflètent aussi l&apos;historique
+                (dernière erreur), pas le live.
+              </li>
+              <li>
+                <strong>Verdict DN</strong> : état <strong>réel côté Démarches Numériques</strong> au dernier sondage ou
+                sync (<code>dn_probe_state</code>). « Sonder DN (erreurs) » le <strong>rafraîchit</strong> en direct,
+                mais ne resynchronise pas.
+              </li>
+            </ul>
+            <p className="fr-mb-1v">Quand les deux divergent sur un « Sync erreur » :</p>
+            <ul className="fr-mb-0">
+              <li>
+                <strong>+ Existe côté DN</strong> → le dossier est vivant (souvent réapparu) : il faut{" "}
+                <strong>relancer une synchro</strong> (« Lancer une synchro maintenant »). Le miroir local rattrape et
+                le parcours quitte l&apos;erreur. <strong>Pas de reset.</strong>
+              </li>
+              <li>
+                <strong>+ Disparu côté DN</strong> → pointeur mort (drop-off ou dossier purgé) : <strong>reset</strong>{" "}
+                (script <code>fix:eligibilite-sync-error</code>) ; voir « Analyser » pour un éventuel dossier sous un
+                autre numéro.
+              </li>
+            </ul>
+          </div>
+        </details>
 
-          {error && (
-            <div className="fr-alert fr-alert--error fr-mb-4w">
-              <p>{error}</p>
-            </div>
-          )}
+        {error && (
+          <div className="fr-alert fr-alert--error fr-mb-4w">
+            <p>{error}</p>
+          </div>
+        )}
 
-          {probeMsg && (
-            <div className="fr-alert fr-alert--info fr-alert--sm fr-mb-4w">
-              <p>{probeMsg}</p>
-            </div>
-          )}
+        {probeMsg && (
+          <div className="fr-alert fr-alert--info fr-alert--sm fr-mb-4w">
+            <p>{probeMsg}</p>
+          </div>
+        )}
 
-          {/* Santé des démarches */}
-          {sante && (
-            <div className="fr-mb-4w">
-              <h2 className="fr-h6 fr-mb-2v">Santé des démarches</h2>
-              {sante.map((d) => {
-                const a = SANTE_ALERT[d.status];
-                const url = a.hasLink && d.demarcheNumber ? getDemarcheAdminUrl(d.demarcheNumber) : null;
-                const showNumber = d.demarcheNumber && d.status !== DemarcheSanteStatus.NON_DISPONIBLE;
-                return (
-                  <div key={d.step} className={`fr-alert fr-alert--sm ${a.cls} fr-mb-2v`}>
-                    <p>
-                      <strong>{STEP_LABELS[d.step]}</strong> : {a.label}
-                      {showNumber ? ` (#${d.demarcheNumber})` : ""}
-                      {d.errorDetail ? ` — ${d.errorDetail}` : ""}
-                      {url ? (
-                        <>
-                          {" — "}
-                          <a href={url} target="_blank" rel="noopener noreferrer">
-                            Ouvrir la démarche
-                          </a>
-                        </>
-                      ) : null}
-                    </p>
-                  </div>
-                );
-              })}
-              <p className="fr-text--xs fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
-                « non créée » : la démarche n&apos;existe pas encore côté Démarches Numériques (étape pas encore
-                ouverte).
-              </p>
-            </div>
-          )}
+        {/* Santé des démarches */}
+        {sante && (
+          <div className="fr-mb-4w">
+            <h2 className="fr-h6 fr-mb-2v">Santé des démarches</h2>
+            {sante.map((d) => {
+              const a = SANTE_ALERT[d.status];
+              const url = a.hasLink && d.demarcheNumber ? getDemarcheAdminUrl(d.demarcheNumber) : null;
+              const showNumber = d.demarcheNumber && d.status !== DemarcheSanteStatus.NON_DISPONIBLE;
+              return (
+                <div key={d.step} className={`fr-alert fr-alert--sm ${a.cls} fr-mb-2v`}>
+                  <p>
+                    <strong>{STEP_LABELS[d.step]}</strong> : {a.label}
+                    {showNumber ? ` (#${d.demarcheNumber})` : ""}
+                    {d.errorDetail ? ` — ${d.errorDetail}` : ""}
+                    {url ? (
+                      <>
+                        {" — "}
+                        <a href={url} target="_blank" rel="noopener noreferrer">
+                          Ouvrir la démarche
+                        </a>
+                      </>
+                    ) : null}
+                  </p>
+                </div>
+              );
+            })}
+            <p className="fr-text--xs fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
+              « non créée » : la démarche n&apos;existe pas encore côté Démarches Numériques (étape pas encore ouverte).
+            </p>
+          </div>
+        )}
 
-          {/* Filtres par état + compteurs (tous les états, même à 0) */}
-          {diagnostics && (
-            <div className="fr-mb-2w">
-              <ul className="fr-tags-group">
-                <li>
+        {/* Filtres par état + compteurs (tous les états, même à 0) */}
+        {diagnostics && (
+          <div className="fr-mb-2w">
+            <ul className="fr-tags-group">
+              <li>
+                <button
+                  type="button"
+                  className={`fr-tag ${filter === "all" ? "fr-tag--dismiss" : ""}`}
+                  aria-pressed={filter === "all"}
+                  onClick={() => setFilter("all")}>
+                  Tout ({diagnostics.total})
+                </button>
+              </li>
+              {DIAGNOSTIC_STATE_ORDER.map((s) => (
+                <li key={s}>
                   <button
                     type="button"
-                    className={`fr-tag ${filter === "all" ? "fr-tag--dismiss" : ""}`}
-                    aria-pressed={filter === "all"}
-                    onClick={() => setFilter("all")}>
-                    Tout ({diagnostics.total})
+                    className={`fr-tag ${filter === s ? "fr-tag--dismiss" : ""}`}
+                    aria-pressed={filter === s}
+                    onClick={() => setFilter(s)}>
+                    {DIAGNOSTIC_STATE_META[s].label} ({diagnostics.counts[s]})
                   </button>
                 </li>
-                {DIAGNOSTIC_STATE_ORDER.map((s) => (
-                  <li key={s}>
-                    <button
-                      type="button"
-                      className={`fr-tag ${filter === s ? "fr-tag--dismiss" : ""}`}
-                      aria-pressed={filter === s}
-                      onClick={() => setFilter(s)}>
-                      {DIAGNOSTIC_STATE_META[s].label} ({diagnostics.counts[s]})
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              {filter !== "all" && (
-                <p className="fr-text--sm fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
-                  {DIAGNOSTIC_STATE_META[filter].description}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
+              ))}
+            </ul>
+            {filter !== "all" && (
+              <p className="fr-text--sm fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
+                {DIAGNOSTIC_STATE_META[filter].description}
+              </p>
+            )}
+          </div>
+        )}
+      </Section>
 
-      <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
-        <div className="fr-container">
-          {isLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="text-gray-500">Chargement...</div>
-            </div>
-          ) : visibleRows.length === 0 ? (
-            <div className="fr-callout">
-              <p className="fr-callout__text">Aucun parcours pour ce filtre.</p>
-            </div>
-          ) : (
-            <div className="fr-table fr-table--bordered">
-              <div className="fr-table__wrapper">
-                <div className="fr-table__container">
-                  <div className="fr-table__content">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Demandeur</th>
-                          <th>Étape / statut</th>
-                          <th>État</th>
-                          <th>Dossier DN</th>
-                          <th>Verdict DN</th>
-                          <th>Âge (j)</th>
-                          <th>Détail</th>
-                          <th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleRows.map((r) => {
-                          const meta = DIAGNOSTIC_STATE_META[r.state];
-                          return (
-                            <tr key={`${r.state}-${r.parcoursId}`}>
-                              <td>{userLabel(r)}</td>
-                              <td>
-                                {STEP_LABELS[r.currentStep]} / {r.currentStatus}
-                              </td>
-                              <td>
-                                <span className={`fr-badge fr-badge--sm ${SEVERITY_BADGE[meta.severity]}`}>
-                                  {meta.label}
-                                </span>
-                              </td>
-                              <td>
-                                {r.dsNumber ? (
-                                  <>
-                                    <a
-                                      href={getDossierDsDemandeUrl(Number(r.dsNumber))}
-                                      target="_blank"
-                                      rel="noopener noreferrer">
-                                      #{r.dsNumber}
-                                    </a>{" "}
-                                    ({r.dsStatus ?? "?"})
-                                  </>
-                                ) : (
-                                  "-"
-                                )}
-                              </td>
-                              <td style={{ fontSize: "0.8rem" }}>
+      <Section embedded={embedded} className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-gray-500">Chargement...</div>
+          </div>
+        ) : visibleRows.length === 0 ? (
+          <div className="fr-callout">
+            <p className="fr-callout__text">Aucun parcours pour ce filtre.</p>
+          </div>
+        ) : (
+          <div className="fr-table fr-table--bordered">
+            <div className="fr-table__wrapper">
+              <div className="fr-table__container">
+                <div className="fr-table__content">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Demandeur</th>
+                        <th>Étape / statut</th>
+                        <th>État</th>
+                        <th>Dossier DN</th>
+                        <th>Verdict DN</th>
+                        <th>Âge (j)</th>
+                        <th>Détail</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleRows.map((r) => {
+                        const meta = DIAGNOSTIC_STATE_META[r.state];
+                        return (
+                          <tr key={`${r.state}-${r.parcoursId}`}>
+                            <td>{userLabel(r)}</td>
+                            <td>
+                              {STEP_LABELS[r.currentStep]} / {r.currentStatus}
+                            </td>
+                            <td>
+                              <span className={`fr-badge fr-badge--sm ${SEVERITY_BADGE[meta.severity]}`}>
+                                {meta.label}
+                              </span>
+                            </td>
+                            <td>
+                              {r.dsNumber ? (
+                                <>
+                                  <a
+                                    href={getDossierDsDemandeUrl(Number(r.dsNumber))}
+                                    target="_blank"
+                                    rel="noopener noreferrer">
+                                    #{r.dsNumber}
+                                  </a>{" "}
+                                  ({r.dsStatus ?? "?"})
+                                </>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                            <td style={{ fontSize: "0.8rem" }}>
+                              <span
+                                className={`fr-badge fr-badge--sm ${SEVERITY_BADGE[DN_VERDICT_META[r.dnVerdict].severity]}`}>
+                                {DN_VERDICT_META[r.dnVerdict].label}
+                              </span>
+                              {r.dnProbeState && (
                                 <span
-                                  className={`fr-badge fr-badge--sm ${SEVERITY_BADGE[DN_VERDICT_META[r.dnVerdict].severity]}`}>
-                                  {DN_VERDICT_META[r.dnVerdict].label}
+                                  style={{ display: "block", color: "var(--text-mention-grey)" }}
+                                  title={r.dnProbeAt ? new Date(r.dnProbeAt).toLocaleString("fr-FR") : ""}>
+                                  {r.dnProbeState}
+                                  {r.dnProbeAt ? ` · ${daysAgoLabel(r.dnProbeAt)}` : ""}
                                 </span>
-                                {r.dnProbeState && (
-                                  <span
-                                    style={{ display: "block", color: "var(--text-mention-grey)" }}
-                                    title={r.dnProbeAt ? new Date(r.dnProbeAt).toLocaleString("fr-FR") : ""}>
-                                    {r.dnProbeState}
-                                    {r.dnProbeAt ? ` · ${daysAgoLabel(r.dnProbeAt)}` : ""}
-                                  </span>
-                                )}
-                              </td>
-                              <td>{r.ageDays ?? "-"}</td>
-                              <td
-                                style={{
-                                  maxWidth: 320,
-                                  fontSize: "0.8rem",
-                                  color: "var(--text-mention-grey)",
-                                  whiteSpace: "normal",
-                                  overflowWrap: "anywhere",
-                                }}>
-                                {r.detail ?? "-"}
-                              </td>
-                              <td>
-                                <Link
-                                  href={`/administration/diagnostics/${r.parcoursId}`}
-                                  className="fr-btn fr-btn--secondary fr-btn--sm">
-                                  Analyser
-                                </Link>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                              )}
+                            </td>
+                            <td>{r.ageDays ?? "-"}</td>
+                            <td
+                              style={{
+                                maxWidth: 320,
+                                fontSize: "0.8rem",
+                                color: "var(--text-mention-grey)",
+                                whiteSpace: "normal",
+                                overflowWrap: "anywhere",
+                              }}>
+                              {r.detail ?? "-"}
+                            </td>
+                            <td>
+                              <Link
+                                href={`/administration/diagnostics/${r.parcoursId}`}
+                                className="fr-btn fr-btn--secondary fr-btn--sm">
+                                Analyser
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        )}
+      </Section>
     </>
   );
 }

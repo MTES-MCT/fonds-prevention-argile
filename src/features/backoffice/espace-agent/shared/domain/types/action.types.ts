@@ -45,6 +45,9 @@ export const ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE = "accompagnement_refuse
 /** Valeur de type d'action "Autre" (nécessite une précision) */
 export const ACTION_TYPE_AUTRE = "autre";
 
+/** Rattachement manuel d'un dossier DN par son numéro (ADR-0027). */
+export const ACTION_TYPE_DOSSIER_DN_RATTACHE = "dossier_dn_rattache";
+
 /**
  * Liste groupée des types d'action proposés dans le formulaire (cf. maquette).
  * Le groupe `null` correspond aux options affichées hors libellé de groupe.
@@ -121,6 +124,7 @@ export const ACTION_LABELS_BY_VALUE: Record<string, string> = ACTION_TYPE_GROUPS
     [ACTION_TYPE_ELIGIBILITE_ACCEPTEE]: "✅ Éligible — accompagnement accepté",
     [ACTION_TYPE_ELIGIBILITE_REFUSEE]: "❌ Demandeur non éligible",
     [ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE]: "⚠️ Éligible — accompagnement refusé",
+    [ACTION_TYPE_DOSSIER_DN_RATTACHE]: "🔗 Dossier DN rattaché",
   } as Record<string, string>
 );
 
