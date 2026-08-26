@@ -84,6 +84,11 @@ export interface RapportReconciliation {
   lignes: LigneRapport[];
   totaux: Record<VerdictReconciliation, number>;
   rattachementsAppliques: number;
+  /** Le balayage a-t-il vu TOUS les dossiers du périmètre demandé ? */
+  scanComplet: boolean;
+  /** Pourquoi le balayage s'est arrêté avant la fin, le cas échéant. */
+  scanIncompletRaison?: string;
+  pagesLues: number;
 }
 
 function totauxVides(): Record<VerdictReconciliation, number> {
@@ -135,8 +140,19 @@ export async function rattacherDossierManuel(params: {
     return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.introuvable_cote_dn };
   }
 
+  // Les deux tables portent chacune leur unicité sur `ds_number` : il faut interroger les deux,
+  // sinon un numéro déjà pointé ailleurs mais absent du registre passerait (ADR-0027).
   const tentative = await dossiersDsTentativesRepo.findByDsNumber(dsNumber);
   if (tentative && tentative.parcoursId !== params.parcoursId) {
+    return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.deja_rattache_ailleurs };
+  }
+
+  const [pointeurAilleurs] = await db
+    .select({ parcoursId: dossiersDemarchesSimplifiees.parcoursId })
+    .from(dossiersDemarchesSimplifiees)
+    .where(eq(dossiersDemarchesSimplifiees.dsNumber, dsNumber))
+    .limit(1);
+  if (pointeurAilleurs && pointeurAilleurs.parcoursId !== params.parcoursId) {
     return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.deja_rattache_ailleurs };
   }
 
@@ -159,25 +175,44 @@ export async function rattacherDossierManuel(params: {
     return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.dossier_deja_confirme };
   }
 
-  await appliquerRattachement(
-    {
-      parcoursId: params.parcoursId,
-      step: params.step,
-      dsNumber,
-      dsDemarcheId: String(resolveDemarcheNumberForStep(params.step)),
-    },
-    ORIGINE_TENTATIVE.MANUEL
-  );
+  try {
+    await appliquerRattachement(
+      {
+        parcoursId: params.parcoursId,
+        step: params.step,
+        dsNumber,
+        dsDemarcheId: String(resolveDemarcheNumberForStep(params.step)),
+      },
+      ORIGINE_TENTATIVE.MANUEL
+    );
+  } catch (error) {
+    console.error("rattacherDossierManuel : rattachement refusé", error);
+    return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.deja_rattache_ailleurs };
+  }
+
   return { success: true, data: { dsNumber } };
 }
 
-/** Pagination complète des dossiers d'une démarche (DN plafonne à 100 par page). */
+interface Collecte {
+  candidats: CandidatReconciliation[];
+  complet: boolean;
+  raison?: string;
+  pages: number;
+}
+
+/**
+ * Pagination des dossiers d'une démarche (DN plafonne à 100 par page).
+ *
+ * La complétude est remontée explicitement : un scan tronqué ne doit JAMAIS servir de base à
+ * un rattachement. Un second dossier déposé pourrait se trouver dans les pages manquantes, et
+ * ce qui aurait dû être un conflit deviendrait un rattachement automatique erroné.
+ */
 async function collecterCandidats(
   demarcheNumber: number,
   step: Step,
   updatedSince?: string,
   maxPages = 100
-): Promise<CandidatReconciliation[]> {
+): Promise<Collecte> {
   const candidats: CandidatReconciliation[] = [];
   let after: string | undefined;
   let pages = 0;
@@ -185,7 +220,11 @@ async function collecterCandidats(
   while (pages < maxPages) {
     pages++;
     const conn = await graphqlClient.getDemarcheDossiers(demarcheNumber, { first: 100, after, updatedSince });
-    if (!conn) break;
+    // Le client convertit toute erreur DN en `null` : impossible de distinguer une démarche
+    // vide d'un appel en échec, donc on considère le scan incomplet.
+    if (!conn) {
+      return { candidats, complet: false, raison: `appel DN sans réponse (page ${pages})`, pages };
+    }
 
     for (const node of conn.nodes) {
       candidats.push({
@@ -196,12 +235,15 @@ async function collecterCandidats(
       });
     }
 
-    if (!conn.pageInfo.hasNextPage) break;
+    if (!conn.pageInfo.hasNextPage) return { candidats, complet: true, pages };
+
     after = conn.pageInfo.endCursor ?? undefined;
-    if (!after) break;
+    if (!after) {
+      return { candidats, complet: false, raison: `curseur absent alors qu'il reste des pages (page ${pages})`, pages };
+    }
   }
 
-  return candidats;
+  return { candidats, complet: false, raison: `plafond de ${maxPages} pages atteint`, pages };
 }
 
 /** Repointe l'étape vers le dossier réel et remet son état à zéro : la sync le recopiera. */
@@ -210,6 +252,18 @@ async function appliquerRattachement(
   origine: OrigineTentative
 ): Promise<void> {
   await db.transaction(async (tx) => {
+    // Un numéro pointé par un autre parcours ne doit jamais être volé : la contrainte unique
+    // le rattraperait, mais avec une erreur SQL opaque au lieu d'un refus métier.
+    const [pointeurAilleurs] = await tx
+      .select({ parcoursId: dossiersDemarchesSimplifiees.parcoursId })
+      .from(dossiersDemarchesSimplifiees)
+      .where(eq(dossiersDemarchesSimplifiees.dsNumber, candidat.dsNumber))
+      .limit(1);
+
+    if (pointeurAilleurs && pointeurAilleurs.parcoursId !== candidat.parcoursId) {
+      throw new Error(`Le numéro DN ${candidat.dsNumber} est déjà le dossier d'un autre parcours`);
+    }
+
     const [existant] = await tx
       .select({ id: dossiersDemarchesSimplifiees.id, dsDemarcheId: dossiersDemarchesSimplifiees.dsDemarcheId })
       .from(dossiersDemarchesSimplifiees)
@@ -274,7 +328,11 @@ export async function reconcilierDemarche(options: {
 }): Promise<RapportReconciliation> {
   const { demarcheNumber, step, updatedSince, apply = false } = options;
 
-  const candidats = await collecterCandidats(demarcheNumber, step, updatedSince);
+  const collecte = await collecterCandidats(demarcheNumber, step, updatedSince);
+  const candidats = collecte.candidats;
+
+  // Échec fermé : sur un scan tronqué on rend le rapport (utile au diagnostic) sans rien écrire.
+  const peutEcrire = apply && collecte.complet;
 
   // Un même parcours visé par plusieurs dossiers déposés = conflit, jamais un choix arbitraire.
   const parNombreDeCandidats = new Map<string, number>();
@@ -332,7 +390,7 @@ export async function reconcilierDemarche(options: {
     totaux[verdict] += 1;
     lignes.push({ ...candidat, verdict, pointeurAvant: ctx.pointeurDsNumber });
 
-    if (apply && verdict === "rattachement" && candidat.parcoursId) {
+    if (peutEcrire && verdict === "rattachement" && candidat.parcoursId) {
       await appliquerRattachement(
         {
           parcoursId: candidat.parcoursId,
@@ -346,5 +404,12 @@ export async function reconcilierDemarche(options: {
     }
   }
 
-  return { lignes, totaux, rattachementsAppliques };
+  return {
+    lignes,
+    totaux,
+    rattachementsAppliques,
+    scanComplet: collecte.complet,
+    scanIncompletRaison: collecte.raison,
+    pagesLues: collecte.pages,
+  };
 }

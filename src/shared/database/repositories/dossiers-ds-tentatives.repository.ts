@@ -17,6 +17,18 @@ interface RecordTentativeParams {
   dsDemarcheId?: string | null;
 }
 
+/** Un numéro DN déjà connu d'un AUTRE parcours (ou d'une autre étape) : jamais silencieux. */
+export class TentativeConflitError extends Error {
+  constructor(
+    readonly dsNumber: string,
+    readonly parcoursIdExistant: string,
+    readonly stepExistante: string
+  ) {
+    super(`Le numéro DN ${dsNumber} est déjà rattaché à un autre parcours ou une autre étape`);
+    this.name = "TentativeConflitError";
+  }
+}
+
 /**
  * Registre append-only des numéros DN connus d'un parcours (ADR-0027).
  * Aucune méthode de suppression : un numéro entré ici n'en sort jamais.
@@ -28,6 +40,21 @@ export const dossiersDsTentativesRepository = {
    * Accepte une transaction pour être écrite avec le pointeur dans le même commit.
    */
   async record(params: RecordTentativeParams, executor: Executor = db): Promise<void> {
+    // `onConflictDoNothing` seul masquerait un conflit de propriétaire : on vérifie donc à qui
+    // appartient déjà ce numéro avant de laisser passer l'idempotence (ADR-0027).
+    const [existant] = await executor
+      .select({
+        parcoursId: dossiersDsTentatives.parcoursId,
+        step: dossiersDsTentatives.step,
+      })
+      .from(dossiersDsTentatives)
+      .where(eq(dossiersDsTentatives.dsNumber, params.dsNumber))
+      .limit(1);
+
+    if (existant && (existant.parcoursId !== params.parcoursId || existant.step !== params.step)) {
+      throw new TentativeConflitError(params.dsNumber, existant.parcoursId, existant.step);
+    }
+
     await executor
       .insert(dossiersDsTentatives)
       .values({

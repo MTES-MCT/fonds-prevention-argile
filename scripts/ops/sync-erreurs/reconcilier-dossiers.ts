@@ -59,7 +59,19 @@ async function main() {
     apply: APPLY,
   });
 
-  console.log(`Dossiers déposés examinés : ${rapport.lignes.length}`);
+  if (!rapport.scanComplet) {
+    console.error("=".repeat(72));
+    console.error(`SCAN INCOMPLET — ${rapport.scanIncompletRaison} (après ${rapport.pagesLues} page(s))`);
+    console.error(
+      "Aucune écriture n'a été faite : un dossier manquant pourrait transformer un conflit en\n" +
+        "rattachement automatique erroné. Relancer une fois DN de nouveau joignable."
+    );
+    console.error("=".repeat(72));
+    await client.end();
+    process.exit(1);
+  }
+
+  console.log(`Dossiers déposés examinés : ${rapport.lignes.length} (${rapport.pagesLues} page(s), scan complet)`);
   console.log();
   for (const [verdict, n] of Object.entries(rapport.totaux)) {
     if (n > 0) console.log(`  ${verdict.padEnd(26)} : ${n}`);
@@ -76,12 +88,12 @@ async function main() {
     console.log();
   }
 
-  const sansAnnotation = rapport.totaux.sans_annotation;
-  if (sansAnnotation > 0) {
-    console.log(
-      `${sansAnnotation} dossier(s) déposé(s) sans lien FPA : créés hors de notre parcours, ` +
-        "à rattacher manuellement par leur numéro."
-    );
+  const sansAnnotation = rapport.lignes.filter((l) => l.verdict === "sans_annotation");
+  if (sansAnnotation.length > 0) {
+    console.log("--- SANS LIEN FPA (créés hors de notre parcours, à rattacher par leur numéro) ---");
+    for (const l of sansAnnotation) {
+      console.log(`  #${l.dsNumber} (${l.state})`);
+    }
     console.log();
   }
 
