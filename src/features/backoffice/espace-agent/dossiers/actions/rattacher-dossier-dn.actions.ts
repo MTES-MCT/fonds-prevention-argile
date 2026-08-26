@@ -76,11 +76,9 @@ export async function rattacherDossierDnAction(parcoursId: string, dsNumber: str
       }
     }
 
-    const result = await rattacherDossierManuel({
-      parcoursId,
-      step: parcours.currentStep,
-      dsNumber,
-    });
+    // L'étape est déduite de la démarche du dossier DN, pas du parcours : un dossier
+    // d'éligibilité rattaché depuis un parcours au diagnostic doit rester une éligibilité.
+    const result = await rattacherDossierManuel({ parcoursId, dsNumber });
     if (!result.success) return { success: false, error: result.error };
 
     const snapshot = await buildAuthorSnapshot(agent);
@@ -88,7 +86,7 @@ export async function rattacherDossierDnAction(parcoursId: string, dsNumber: str
       parcoursId,
       agentId: agent.id,
       actionType: ACTION_TYPE_DOSSIER_DN_RATTACHE,
-      message: `Dossier Démarches Numériques n° ${result.data.dsNumber} rattaché manuellement à l'étape ${parcours.currentStep}.`,
+      message: `Dossier Démarches Numériques n° ${result.data.dsNumber} rattaché manuellement à l'étape ${result.data.step}.`,
       authorName: snapshot.authorName,
       authorStructure: snapshot.authorStructure,
       authorStructureType: snapshot.authorStructureType,

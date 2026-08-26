@@ -62,15 +62,16 @@ supprimés en juin par un reset qui croyait, à tort, ces dossiers disparus
 Le rattachement se fait **au dépôt**, jamais avant : un balayage périodique des dossiers
 modifiés (`updatedSince`) lit l'annotation FPA, en extrait le `parcoursId` et rapproche.
 
-| Situation                                                         | Résolution                                                      |
-| ----------------------------------------------------------------- | --------------------------------------------------------------- |
-| Candidat déposé, annotation valide, aucun dossier confirmé        | rattachement automatique                                        |
-| Candidat déjà confirmé sous le même numéro                        | mise à jour idempotente                                         |
-| Pointeur courant = tentative jamais observée, candidat déposé     | le candidat gagne ; l'ancienne tentative reste au registre      |
-| Plusieurs candidats déposés, ou un autre dossier déjà confirmé    | **conflit, arbitrage humain** — jamais « le plus récent gagne » |
-| Numéro déjà rattaché à un autre parcours                          | refus, incident journalisé — on ne le « vole » jamais           |
-| Annotation modifiée par un instructeur (`prefilledValueModified`) | rattachement manuel                                             |
-| Dossier déposé sans annotation FPA                                | file de traitement manuel — jamais ignoré en silence            |
+| Situation                                                      | Résolution                                                      |
+| -------------------------------------------------------------- | --------------------------------------------------------------- |
+| Candidat déposé, annotation valide, aucun dossier confirmé     | rattachement automatique                                        |
+| Candidat déjà confirmé sous le même numéro                     | mise à jour idempotente                                         |
+| Pointeur courant = tentative jamais observée, candidat déposé  | le candidat gagne ; l'ancienne tentative reste au registre      |
+| Plusieurs candidats déposés, ou un autre dossier déjà confirmé | **conflit, arbitrage humain** — jamais « le plus récent gagne » |
+| Numéro déjà rattaché à un autre parcours                       | refus, incident journalisé — on ne le « vole » jamais           |
+| Annotation modifiée à la main (`prefilledValueModified`)       | rattachement manuel                                             |
+| Deux annotations pointant des parcours différents              | rattachement manuel                                             |
+| Dossier déposé sans annotation FPA                             | file de traitement manuel — jamais ignoré en silence            |
 
 L'email usager n'est **pas** une clé de rattachement : il peut être celui de l'AMO, être
 partagé, ou avoir changé. Il ne sert que d'indice pour un humain.
@@ -153,8 +154,10 @@ de faire qu'elles n'aient plus de conséquence.
 
 - Le rattachement automatique **dépend d'une capacité DN non documentée** : le préremplissage
   d'une annotation privée. Elle fonctionne (ADR-0025) mais n'est garantie par aucun contrat, et
-  DN ignore silencieusement un champ inconnu. À vérifier en production avant de bâtir dessus,
-  et à surveiller ensuite.
+  DN ignore silencieusement un champ inconnu. **Reste à confirmer sur un dossier déposé créé
+  après le déploiement d'ADR-0025** : sur `#32052358`, antérieur, l'annotation est vide.
+- L'annotation est identifiée par son `champDescriptorId` (`Q2hhbXAtNjY4NzQ1Mg==` en prod pour
+  l'éligibilité), pas par son libellé ni par l'id d'instance, qui change d'un dossier à l'autre.
 - Les dossiers antérieurs à ADR-0025 n'ont pas d'annotation : ils relèvent du traitement manuel.
 - Un conflit non arbitré laisse un parcours en attente d'une décision humaine.
 

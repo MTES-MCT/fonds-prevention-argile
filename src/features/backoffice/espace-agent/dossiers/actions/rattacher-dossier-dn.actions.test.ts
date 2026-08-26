@@ -62,7 +62,10 @@ describe("rattacherDossierDnAction — contrôle d'accès", () => {
     vi.clearAllMocks();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(parcoursRepo.findById).mockResolvedValue({ id: PARCOURS_ID, currentStep: Step.ELIGIBILITE } as any);
-    vi.mocked(rattacherDossierManuel).mockResolvedValue({ success: true, data: { dsNumber: "32052358" } });
+    vi.mocked(rattacherDossierManuel).mockResolvedValue({
+      success: true,
+      data: { dsNumber: "32052358", step: Step.ELIGIBILITE },
+    });
     vi.mocked(calculateAgentScope).mockResolvedValue({ ...baseScope });
   });
 
@@ -92,9 +95,7 @@ describe("rattacherDossierDnAction — contrôle d'accès", () => {
     const result = await rattacherDossierDnAction(PARCOURS_ID, "32052358");
 
     expect(result.success).toBe(true);
-    expect(rattacherDossierManuel).toHaveBeenCalledWith(
-      expect.objectContaining({ parcoursId: PARCOURS_ID, dsNumber: "32052358" })
-    );
+    expect(rattacherDossierManuel).toHaveBeenCalledWith({ parcoursId: PARCOURS_ID, dsNumber: "32052358" });
   });
 
   it("autorise un rôle national sans contrôle de périmètre", async () => {

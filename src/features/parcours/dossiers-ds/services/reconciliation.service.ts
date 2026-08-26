@@ -7,10 +7,11 @@ import {
   type OrigineTentative,
 } from "@/shared/database/schema";
 import { dossiersDsTentativesRepo } from "@/shared/database/repositories";
-import type { Step } from "@/shared/domain/value-objects/step.enum";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { ActionResult } from "@/shared/types";
 import { graphqlClient } from "../adapters/graphql/client";
-import { extraireParcoursIdsDepuisAnnotations } from "../utils/annotation-fpa.utils";
+import { lireAnnotationFpa } from "../utils/annotation-fpa.utils";
+import { getAnnotationLienFpaId } from "../domain/value-objects/ds-annotations";
 import { resolveDemarcheNumberForStep } from "./pieces-justificatives.service";
 
 /**
@@ -33,6 +34,7 @@ export type VerdictReconciliation =
   | "conflit_plusieurs_deposes"
   | "sans_annotation"
   | "annotation_ambigue"
+  | "annotation_modifiee"
   | "parcours_inconnu";
 
 export interface CandidatReconciliation {
@@ -40,8 +42,10 @@ export interface CandidatReconciliation {
   step: Step;
   state: string;
   parcoursId: string | null;
-  /** Plusieurs annotations portent des parcours différents : annotation retouchée à la main. */
+  /** Plusieurs annotations portent des parcours différents : dossier dupliqué ou retouché. */
   annotationAmbigue?: boolean;
+  /** DN signale la valeur préremplie comme modifiée à la main : elle ne fait plus foi. */
+  annotationModifiee?: boolean;
 }
 
 /** État local nécessaire pour trancher, lu en base. */
@@ -62,8 +66,9 @@ export interface ContexteRattachement {
  * On ne tranche jamais automatiquement un conflit : il remonte pour arbitrage humain.
  */
 export function decideRattachement(candidat: CandidatReconciliation, ctx: ContexteRattachement): VerdictReconciliation {
-  // Une annotation retouchée n'est plus une source fiable : arbitrage humain.
+  // Une annotation retouchée ou divergente n'est plus une source fiable : arbitrage humain.
   if (candidat.annotationAmbigue) return "annotation_ambigue";
+  if (candidat.annotationModifiee) return "annotation_modifiee";
   if (!candidat.parcoursId) return "sans_annotation";
   if (!ctx.parcoursExiste) return "parcours_inconnu";
 
@@ -105,19 +110,33 @@ function totauxVides(): Record<VerdictReconciliation, number> {
     conflit_plusieurs_deposes: 0,
     sans_annotation: 0,
     annotation_ambigue: 0,
+    annotation_modifiee: 0,
     parcours_inconnu: 0,
   };
 }
 
 export type RefusRattachementManuel =
-  "numero_invalide" | "introuvable_cote_dn" | "deja_rattache_ailleurs" | "dossier_deja_confirme";
+  | "numero_invalide"
+  | "introuvable_cote_dn"
+  | "deja_rattache_ailleurs"
+  | "dossier_deja_confirme"
+  | "demarche_inconnue"
+  | "annotation_autre_parcours";
 
 export const MESSAGES_RATTACHEMENT_MANUEL: Record<RefusRattachementManuel, string> = {
   numero_invalide: "Le numéro de dossier doit être composé de chiffres uniquement.",
   introuvable_cote_dn: "Aucun dossier déposé ne porte ce numéro côté Démarches Numériques.",
   deja_rattache_ailleurs: "Ce numéro est déjà rattaché à un autre demandeur.",
   dossier_deja_confirme: "Ce parcours a déjà un dossier déposé pour cette étape : à trancher avant de rattacher.",
+  demarche_inconnue: "Ce dossier appartient à une démarche qui ne fait pas partie du parcours FPA.",
+  annotation_autre_parcours: "Ce dossier porte déjà le lien d'un autre demandeur : à vérifier avant de rattacher.",
 };
+
+/** Étape correspondant à une démarche DN, ou `null` si elle n'est pas configurée. */
+function stepDeLaDemarche(demarcheNumber: number): Step | null {
+  const steps = [Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES];
+  return steps.find((s) => resolveDemarcheNumberForStep(s) === demarcheNumber) ?? null;
+}
 
 /**
  * Rattachement manuel d'un dossier DN à un parcours, par son numéro (ADR-0027).
@@ -126,9 +145,8 @@ export const MESSAGES_RATTACHEMENT_MANUEL: Record<RefusRattachementManuel, strin
  */
 export async function rattacherDossierManuel(params: {
   parcoursId: string;
-  step: Step;
   dsNumber: string;
-}): Promise<ActionResult<{ dsNumber: string }>> {
+}): Promise<ActionResult<{ dsNumber: string; step: Step }>> {
   const dsNumber = params.dsNumber.trim();
   if (!/^\d+$/.test(dsNumber)) {
     return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.numero_invalide };
@@ -136,14 +154,28 @@ export async function rattacherDossierManuel(params: {
 
   // Le dossier doit exister côté DN : un brouillon non déposé y est invisible, on ne rattache
   // donc que du réel.
-  let existeCoteDn = false;
+  let dossierDn: Awaited<ReturnType<typeof graphqlClient.getDossierPourRattachement>> = null;
   try {
-    existeCoteDn = !!(await graphqlClient.getDossierStatus(Number(dsNumber)));
+    dossierDn = await graphqlClient.getDossierPourRattachement(Number(dsNumber));
   } catch {
-    existeCoteDn = false;
+    dossierDn = null;
   }
-  if (!existeCoteDn) {
+  if (!dossierDn) {
     return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.introuvable_cote_dn };
+  }
+
+  // L'étape vient de la démarche du dossier, jamais de l'étape courante du parcours : sinon un
+  // dossier d'éligibilité pourrait être enregistré comme diagnostic (ADR-0027).
+  const demarcheNumber = dossierDn.demarche?.number;
+  const step = demarcheNumber ? stepDeLaDemarche(demarcheNumber) : null;
+  if (!step || !demarcheNumber) {
+    return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.demarche_inconnue };
+  }
+
+  // Si le dossier porte déjà un lien FPA vers un AUTRE parcours, on ne le vole pas.
+  const lecture = lireAnnotationFpa(dossierDn.annotations, getAnnotationLienFpaId(step, demarcheNumber));
+  if (lecture.parcoursId && lecture.parcoursId !== params.parcoursId) {
+    return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.annotation_autre_parcours };
   }
 
   // Les deux tables portent chacune leur unicité sur `ds_number` : il faut interroger les deux,
@@ -170,10 +202,7 @@ export async function rattacherDossierManuel(params: {
     })
     .from(dossiersDemarchesSimplifiees)
     .where(
-      and(
-        eq(dossiersDemarchesSimplifiees.parcoursId, params.parcoursId),
-        eq(dossiersDemarchesSimplifiees.step, params.step)
-      )
+      and(eq(dossiersDemarchesSimplifiees.parcoursId, params.parcoursId), eq(dossiersDemarchesSimplifiees.step, step))
     )
     .limit(1);
 
@@ -183,12 +212,7 @@ export async function rattacherDossierManuel(params: {
 
   try {
     await appliquerRattachement(
-      {
-        parcoursId: params.parcoursId,
-        step: params.step,
-        dsNumber,
-        dsDemarcheId: String(resolveDemarcheNumberForStep(params.step)),
-      },
+      { parcoursId: params.parcoursId, step, dsNumber, dsDemarcheId: String(demarcheNumber) },
       ORIGINE_TENTATIVE.MANUEL
     );
   } catch (error) {
@@ -196,7 +220,7 @@ export async function rattacherDossierManuel(params: {
     return { success: false, error: MESSAGES_RATTACHEMENT_MANUEL.deja_rattache_ailleurs };
   }
 
-  return { success: true, data: { dsNumber } };
+  return { success: true, data: { dsNumber, step } };
 }
 
 interface Collecte {
@@ -219,13 +243,14 @@ async function collecterCandidats(
   updatedSince?: string,
   maxPages = 100
 ): Promise<Collecte> {
+  const descripteurAttendu = getAnnotationLienFpaId(step, demarcheNumber);
   const candidats: CandidatReconciliation[] = [];
   let after: string | undefined;
   let pages = 0;
 
   while (pages < maxPages) {
     pages++;
-    const conn = await graphqlClient.getDemarcheDossiers(demarcheNumber, { first: 100, after, updatedSince });
+    const conn = await graphqlClient.getDossiersPourReconciliation(demarcheNumber, { first: 100, after, updatedSince });
     // Le client convertit toute erreur DN en `null` : impossible de distinguer une démarche
     // vide d'un appel en échec, donc on considère le scan incomplet.
     if (!conn) {
@@ -233,13 +258,14 @@ async function collecterCandidats(
     }
 
     for (const node of conn.nodes) {
-      const parcoursIds = extraireParcoursIdsDepuisAnnotations(node.annotations);
+      const lecture = lireAnnotationFpa(node.annotations, descripteurAttendu);
       candidats.push({
         dsNumber: String(node.number),
         step,
         state: node.state,
-        parcoursId: parcoursIds.length === 1 ? parcoursIds[0] : null,
-        annotationAmbigue: parcoursIds.length > 1,
+        parcoursId: lecture.parcoursId,
+        annotationAmbigue: lecture.ambigue,
+        annotationModifiee: lecture.modifiee,
       });
     }
 

@@ -1,9 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { decideRattachement, type ContexteRattachement } from "./reconciliation.service";
-import {
-  extraireParcoursIdDepuisAnnotations,
-  extraireParcoursIdsDepuisAnnotations,
-} from "../utils/annotation-fpa.utils";
+import { lireAnnotationFpa } from "../utils/annotation-fpa.utils";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 
 vi.mock("@/shared/database/client", () => ({ db: {} }));
@@ -65,38 +62,63 @@ describe("decideRattachement", () => {
     expect(decideRattachement({ ...candidat, annotationAmbigue: true }, ctx())).toBe("annotation_ambigue");
   });
 
+  it("refuse de trancher quand l'annotation a été modifiée à la main", () => {
+    expect(decideRattachement({ ...candidat, annotationModifiee: true }, ctx())).toBe("annotation_modifiee");
+  });
+
   it("classe à part une annotation pointant un parcours inconnu", () => {
     expect(decideRattachement(candidat, ctx({ parcoursExiste: false }))).toBe("parcours_inconnu");
   });
 });
 
-describe("extraireParcoursIdDepuisAnnotations", () => {
-  it("extrait le parcoursId de l'URL du lien FPA", () => {
+const DESCRIPTEUR = "Q2hhbXAtNjY4NzQ1Mg==";
+const lien = (id: string) => `https://fonds-prevention-argile.beta.gouv.fr/espace-agent/dossiers/${id}`;
+
+describe("lireAnnotationFpa", () => {
+  it("lit le parcoursId de l'annotation identifiée par son descripteur", () => {
     const annotations = [
-      { stringValue: "Autre annotation" },
-      { stringValue: `https://fonds-prevention-argile.beta.gouv.fr/espace-agent/dossiers/${PARCOURS}` },
+      { champDescriptorId: "autre", stringValue: lien("11111111-1111-1111-1111-111111111111") },
+      { champDescriptorId: DESCRIPTEUR, stringValue: lien(PARCOURS) },
     ];
-    expect(extraireParcoursIdDepuisAnnotations(annotations)).toBe(PARCOURS);
+    // Le descripteur écarte l'annotation parasite : on ne lit QUE la bonne.
+    expect(lireAnnotationFpa(annotations, DESCRIPTEUR)).toEqual({
+      parcoursId: PARCOURS,
+      ambigue: false,
+      modifiee: false,
+    });
+  });
+
+  it("signale une valeur préremplie modifiée à la main", () => {
+    const annotations = [{ champDescriptorId: DESCRIPTEUR, stringValue: lien(PARCOURS), prefilledValueModified: true }];
+    expect(lireAnnotationFpa(annotations, DESCRIPTEUR).modifiee).toBe(true);
+  });
+
+  it("signale l'ambiguïté quand deux annotations divergent", () => {
+    const annotations = [
+      { champDescriptorId: DESCRIPTEUR, stringValue: lien(PARCOURS) },
+      { champDescriptorId: DESCRIPTEUR, stringValue: lien("11111111-1111-1111-1111-111111111111") },
+    ];
+    const lecture = lireAnnotationFpa(annotations, DESCRIPTEUR);
+    expect(lecture.ambigue).toBe(true);
+    expect(lecture.parcoursId).toBeNull();
+  });
+
+  it("retombe sur la reconnaissance du chemin si le descripteur est inconnu", () => {
+    const annotations = [{ champDescriptorId: "peu-importe", stringValue: lien(PARCOURS) }];
+    expect(lireAnnotationFpa(annotations, null).parcoursId).toBe(PARCOURS);
   });
 
   it("renvoie null sans annotation, ou sans lien FPA dedans", () => {
-    expect(extraireParcoursIdDepuisAnnotations(undefined)).toBeNull();
-    expect(extraireParcoursIdDepuisAnnotations([])).toBeNull();
-    expect(extraireParcoursIdDepuisAnnotations([{ stringValue: "https://exemple.fr/autre-chose" }])).toBeNull();
-  });
-
-  it("remonte les parcours distincts quand plusieurs annotations divergent", () => {
-    const autre = "11111111-1111-1111-1111-111111111111";
-    const annotations = [
-      { stringValue: `https://fpa.gouv.fr/espace-agent/dossiers/${PARCOURS}` },
-      { stringValue: `https://fpa.gouv.fr/espace-agent/dossiers/${autre}` },
-    ];
-    expect(extraireParcoursIdsDepuisAnnotations(annotations)).toHaveLength(2);
-    // Ambigu : la fonction « une seule valeur » ne tranche pas.
-    expect(extraireParcoursIdDepuisAnnotations(annotations)).toBeNull();
+    expect(lireAnnotationFpa(undefined, DESCRIPTEUR).parcoursId).toBeNull();
+    expect(lireAnnotationFpa([], DESCRIPTEUR).parcoursId).toBeNull();
+    expect(
+      lireAnnotationFpa([{ champDescriptorId: DESCRIPTEUR, stringValue: "https://exemple.fr/x" }], DESCRIPTEUR)
+        .parcoursId
+    ).toBeNull();
   });
 
   it("ignore une valeur qui n'est pas un uuid valide", () => {
-    expect(extraireParcoursIdDepuisAnnotations([{ stringValue: "/espace-agent/dossiers/pas-un-uuid" }])).toBeNull();
+    const annotations = [{ champDescriptorId: DESCRIPTEUR, stringValue: "/espace-agent/dossiers/pas-un-uuid" }];
+    expect(lireAnnotationFpa(annotations, DESCRIPTEUR).parcoursId).toBeNull();
   });
 });

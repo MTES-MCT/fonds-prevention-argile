@@ -124,6 +124,35 @@ export interface Attachment {
   contentType?: string;
 }
 
+/** Annotation réduite à ce qui sert au rattachement (ADR-0027). */
+export interface AnnotationReconciliation {
+  champDescriptorId: string;
+  stringValue?: string | null;
+  prefilled?: boolean;
+  prefilledValueModified?: boolean;
+}
+
+/**
+ * Projection minimale d'un dossier pour la réconciliation : pas de `champs`, pas d'email
+ * usager, pas de motivation. Balayer une démarche entière ne doit pas ramener de données
+ * personnelles dont on n'a pas l'usage.
+ */
+export interface DossierReconciliation {
+  id: string;
+  number: number;
+  state: DossierState;
+  archived: boolean;
+  dateDepot?: string;
+  dateDerniereModification?: string;
+  demarche?: { number: number };
+  annotations?: AnnotationReconciliation[];
+}
+
+export interface DossiersReconciliationConnection {
+  pageInfo: PageInfo;
+  nodes: DossierReconciliation[];
+}
+
 export interface DossiersConnection {
   pageInfo: PageInfo;
   nodes: Dossier[];
