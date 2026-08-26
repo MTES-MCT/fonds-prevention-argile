@@ -23,6 +23,12 @@ const AIDE_ONGLET: Record<Onglet, { titre: string; contenu: ReactNode }> = {
           Ouvrez le dossier pour relever le nom et l&apos;adresse e-mail du demandeur, cherchez-le dans l&apos;espace
           agent, puis rattachez-le depuis son dossier : <strong>Gérer → Rattacher un dossier DN</strong>.
         </p>
+        <p className="fr-mb-1v">
+          <strong>Si le demandeur a déjà un dossier pour cette étape</strong>, tout dépend de son état : tant qu&apos;il
+          n&apos;a jamais été déposé (un simple formulaire prérempli), le rattachement le remplace et l&apos;ancien
+          numéro reste conservé. S&apos;il a bien été déposé, le rattachement est refusé — deux dossiers réels pour une
+          même étape se tranchent dans l&apos;onglet « À arbitrer ».
+        </p>
         <p className="fr-mb-0">
           Si le demandeur n&apos;existe pas chez nous — dossier de test, démarche remplie hors dispositif — écartez la
           ligne. Traitez en priorité les dossiers acceptés ou en instruction : ce sont des demandeurs dont le parcours

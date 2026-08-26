@@ -300,6 +300,13 @@ Si le message annonce une analyse **interrompue**, les résultats sont partiels 
    numéro. L'étape est déduite de la démarche du dossier, pas du parcours : un dossier
    d'éligibilité rattaché depuis un parcours plus avancé reste une éligibilité. L'observation
    se referme toute seule, et une note d'audit est écrite dans l'historique du dossier.
+
+   **S'il a déjà un dossier pour cette étape**, deux cas selon son état : tant qu'il n'a jamais
+   été observé déposé (un prérempli), le rattachement le **remplace** — l'ancien numéro reste au
+   registre et la réconciliation le rattrapera s'il finit déposé. S'il a été déposé, le
+   rattachement est **refusé** : deux dossiers réels, c'est un arbitrage (voir la file
+   correspondante), pas un rattachement.
+
 4. **S'il n'existe pas** — dossier de test, démarche remplie hors dispositif, doublon
    abandonné — cliquer « Écarter ». Rien n'est modifié côté DN.
 
