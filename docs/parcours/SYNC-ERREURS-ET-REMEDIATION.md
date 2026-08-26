@@ -290,9 +290,28 @@ Si le message annonce une analyse **interrompue**, les résultats sont partiels 
 
 ### 4. Traiter les deux files
 
-- **À rattacher** — ouvrir le dossier côté DN pour identifier le demandeur, puis le rattacher
-  depuis son parcours (détail dossier → « Gérer » → « Rattacher un dossier DN »). L'observation
-  se referme toute seule.
+**À rattacher** — un dossier existe côté DN mais aucun parcours ne le suit. Pour chaque ligne :
+
+1. Ouvrir le dossier côté DN (le numéro est cliquable) et relever **le nom et l'email du
+   demandeur**, dans l'onglet « Demande ».
+2. Le chercher dans l'espace agent (`/espace-agent/dossiers`) ou dans les demandeurs
+   (`/administration/demandeurs`).
+3. **S'il existe** : ouvrir son dossier → « Gérer » → « Rattacher un dossier DN », saisir le
+   numéro. L'étape est déduite de la démarche du dossier, pas du parcours : un dossier
+   d'éligibilité rattaché depuis un parcours plus avancé reste une éligibilité. L'observation
+   se referme toute seule, et une note d'audit est écrite dans l'historique du dossier.
+4. **S'il n'existe pas** — dossier de test, démarche remplie hors dispositif, doublon
+   abandonné — cliquer « Écarter ». Rien n'est modifié côté DN.
+
+Deux refus possibles au rattachement, tous deux volontaires : « ce numéro est déjà rattaché à
+un autre demandeur » (on ne vole jamais un dossier) et « ce parcours a déjà un dossier déposé
+pour cette étape » — deux dossiers réels pour une même étape, c'est un arbitrage, pas un
+rattachement. Dans ce dernier cas, trancher d'abord côté DN (classement sans suite du doublon).
+
+Priorité de traitement : les dossiers **acceptés ou en instruction** d'abord. Un dossier accepté
+qu'FPA ignore, c'est un demandeur dont le parcours n'avance pas alors que son droit est acquis.
+Les `en_construction` très anciens sont le plus souvent des tests ou des abandons.
+
 - **À arbitrer** — deux dépôts pour une même étape, lien FPA retouché, numéro revendiqué deux
   fois. Trancher côté DN (classement sans suite du doublon, par exemple), puis « Marquer comme
   traité ».
