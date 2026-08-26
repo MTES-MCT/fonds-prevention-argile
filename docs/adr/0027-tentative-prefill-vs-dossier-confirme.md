@@ -153,9 +153,12 @@ de faire qu'elles n'aient plus de conséquence.
 ### Négatives / Risques
 
 - Le rattachement automatique **dépend d'une capacité DN non documentée** : le préremplissage
-  d'une annotation privée. Elle fonctionne (ADR-0025) mais n'est garantie par aucun contrat, et
-  DN ignore silencieusement un champ inconnu. **Reste à confirmer sur un dossier déposé créé
-  après le déploiement d'ADR-0025** : sur `#32052358`, antérieur, l'annotation est vide.
+  d'une annotation privée. Vérifié le 2026-08-25 sur les démarches d'éligibilité et de devis
+  (DN affiche « Donnée remplie automatiquement »), mais garanti par aucun contrat : DN ignore
+  silencieusement un champ inconnu, donc à re-vérifier après toute évolution des démarches.
+- Les dossiers créés **avant** le déploiement d'ADR-0025 (prod : 2026-08-25 09:03) n'ont pas
+  d'annotation et ne se rattacheront jamais automatiquement. Population figée, à traiter par
+  rattachement manuel.
 - L'annotation est identifiée par son `champDescriptorId` (`Q2hhbXAtNjY4NzQ1Mg==` en prod pour
   l'éligibilité), pas par son libellé ni par l'id d'instance, qui change d'un dossier à l'autre.
 - Les dossiers antérieurs à ADR-0025 n'ont pas d'annotation : ils relèvent du traitement manuel.
