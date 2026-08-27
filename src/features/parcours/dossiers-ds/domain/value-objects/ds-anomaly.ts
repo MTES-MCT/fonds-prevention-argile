@@ -21,7 +21,9 @@ export enum DsAnomalyType {
   EN_ATTENTE_INSTRUCTEUR = "en_attente_instructeur",
   /** DS est revenu en construction alors qu'on le croyait en instruction (rare). */
   REGRESSION_DS = "regression_ds",
-  /** `not_found` côté DS : dossier purgé, archivé ou mauvais numéro. */
+  /** `not_found` sur un dossier JAMAIS observé déposé : prérempli invisible de l'API. Pas un bug. */
+  PREFILL_NON_DEPOSE = "prefill_non_depose",
+  /** `not_found` sur un dossier déjà observé déposé : celui-là a vraiment disparu. */
   DS_SUPPRIME = "ds_supprime",
   /** `unauthorized` côté DS : le token n'est pas instructeur de la démarche (ADR-0011). */
   DS_INACCESSIBLE = "ds_inaccessible",
@@ -36,14 +38,26 @@ export interface DsCrossCheckInput {
   localStatus: DSStatus | string | null;
   /** Résultat du cross-check DS : soit un `state`, soit une `error`. */
   ds: { state?: string; error?: string };
+  /**
+   * Le dossier a-t-il déjà été observé déposé (submitted_at / last_sync_at / ds_status) ?
+   * Seul discriminant entre un prérempli invisible et un dossier réellement disparu : DN
+   * répond `not_found` pour les deux (ADR-0026).
+   */
+  jamaisObserveDepose?: boolean;
 }
 
 /**
  * Classe un dossier déposé / en instruction selon son statut interne et le vrai statut DS.
  * Distingue le drop-off usager (pas un bug) de la désynchronisation (bug à corriger).
  */
-export function classifyDossierAnomaly({ localStatus, ds }: DsCrossCheckInput): DsAnomalyType {
-  if (ds.error === "not_found") return DsAnomalyType.DS_SUPPRIME;
+export function classifyDossierAnomaly({
+  localStatus,
+  ds,
+  jamaisObserveDepose = false,
+}: DsCrossCheckInput): DsAnomalyType {
+  if (ds.error === "not_found") {
+    return jamaisObserveDepose ? DsAnomalyType.PREFILL_NON_DEPOSE : DsAnomalyType.DS_SUPPRIME;
+  }
   if (ds.error === "unauthorized") return DsAnomalyType.DS_INACCESSIBLE;
   if (ds.error) return DsAnomalyType.DS_ERREUR;
 
@@ -115,10 +129,16 @@ export const DS_ANOMALY_EXPLANATIONS: Record<DsAnomalyType, DsAnomalyExplanation
       "Le dossier est repassé en construction côté Démarches Simplifiées alors qu'on le croyait en instruction (rare). À investiguer côté DS.",
     isBug: true,
   },
-  [DsAnomalyType.DS_SUPPRIME]: {
-    label: "Introuvable côté DS",
+  [DsAnomalyType.PREFILL_NON_DEPOSE]: {
+    label: "Prérempli non déposé",
     explanation:
-      "Le numéro stocké est introuvable côté Démarches Numériques (prefill jamais complété puis purgé, dossier expiré, ou numéro erroné). Voir la recherche par email ci-dessous : un dossier sous un AUTRE numéro = mismatch à relinker ; aucun dossier = drop-off (l'usager n'a rien déposé) → reset.",
+      "Le demandeur a ouvert le formulaire mais ne l'a jamais transmis. DN masque un prérempli à l'API instructeur : son silence est donc attendu, ce n'est PAS la preuve que le dossier a disparu (ADR-0026). Deux causes indiscernables : abandon en cours de route, ou brouillon créé sous un autre compte DN que celui qu'il utilise aujourd'hui. Dans les deux cas, « Réinitialiser le formulaire DN » lui rend un lien neuf.",
+    isBug: false,
+  },
+  [DsAnomalyType.DS_SUPPRIME]: {
+    label: "Dossier déposé disparu",
+    explanation:
+      "Ce dossier avait bien été observé déposé, et DN ne le connaît plus : suppression ou purge côté DN. Rare et anormal, à investiguer au cas par cas — voir la recherche par email ci-dessous pour retrouver un éventuel dossier sous un autre numéro.",
     isBug: true,
   },
   [DsAnomalyType.DS_INACCESSIBLE]: {

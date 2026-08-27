@@ -11,6 +11,8 @@ import type {
   DsEmailHit,
 } from "@/features/backoffice/administration/diagnostics/services/diagnostics-detail.service";
 import { STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
+import { DsAnomalyType } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-anomaly";
+import { AidePrefillNonDepose } from "./AidePrefillNonDepose";
 import { getDossierDsDemandeUrl } from "@/features/parcours/dossiers-ds/utils";
 import { AdminBreadcrumb } from "../../../shared/components/AdminBreadcrumb";
 
@@ -144,6 +146,14 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
                                         style={{ color: "var(--text-mention-grey)", overflowWrap: "break-word" }}>
                                         {d.explanation.explanation}
                                       </p>
+                                      {d.anomalyType === DsAnomalyType.PREFILL_NON_DEPOSE && (
+                                        <AidePrefillNonDepose
+                                          parcoursId={detail.parcoursId}
+                                          emails={[detail.user.emailContact, detail.user.email].filter(
+                                            (e): e is string => !!e
+                                          )}
+                                        />
+                                      )}
                                       {d.timeline && (
                                         <details className="fr-mt-1v">
                                           <summary className="fr-text--xs" style={{ cursor: "pointer" }}>

@@ -102,6 +102,26 @@ recensement des numéros cités dans `sync_run_entries.error` et absents de
 déposés. Ces numéros sont des **indices** de récupération, jamais une base de relink
 automatique : ils ne restituent ni l'URL prefill ni le `ds_id`.
 
+## Amendement (2026-08-27) — le diagnostic ne classe plus un prérempli en anomalie
+
+Le panneau de diagnostic par parcours affichait encore ces dossiers en rouge (« Introuvable côté
+DS », `isBug: true`), avec une explication qui recommandait le reset — antérieure à cet ADR et
+le contredisant. Un relevé en production a montré **131 dossiers `not_found`, tous jamais
+observés déposés, aucune disparition réelle** : la totalité du volume rouge était du bruit.
+
+`classifyDossierAnomaly` prend désormais `jamaisObserveDepose` (aucun `submitted_at`, ni
+`last_sync_at`, ni `ds_status`) et sépare deux verdicts :
+
+- **`PREFILL_NON_DEPOSE`** (`isBug: false`) — le cas normal, celui des 131 ;
+- **`DS_SUPPRIME`** (`isBug: true`) — réservé au dossier **déjà observé déposé** qui disparaît,
+  la seule vraie anomalie.
+
+La remédiation associée n'est pas le reset gelé mais la **réinitialisation** unitaire
+(`reinitialiserDossierEtape`), sûre depuis le registre des tentatives (ADR-0027) : le numéro
+survit au retrait du pointeur. Elle est exposée aux agents (« Gérer → Réinitialiser le
+formulaire DN »), jamais appliquée en masse ni automatiquement — c'est précisément
+l'automatisation aveugle que cet ADR a gelée.
+
 ## Liens
 
 - Script gelé : `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts`

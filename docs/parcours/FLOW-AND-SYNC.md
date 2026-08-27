@@ -46,6 +46,14 @@ Chaque parcours a deux niveaux d'état complémentaires :
 > rien** : le numéro reste au registre, et la réconciliation le rattrapera s'il finit déposé.
 > C'est ce qui distingue ce secours du reset gelé par [ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md),
 > qui effaçait la seule trace du numéro.
+>
+> **Côté agent**, la même mécanique est exposée par « Gérer → Réinitialiser le formulaire DN »
+> (`reinitialiserDossierEtape`, action `reinitialiserDossierDnAction`), proposée uniquement sur
+> une étape jamais transmise. Elle couvre les deux situations indiscernables d'un `not_found` :
+> l'abandon en cours de route, et le brouillon commencé sous un **autre compte DN** que celui
+> utilisé aujourd'hui (e-mail/mot de passe puis FranceConnect, ou l'inverse) — un brouillon
+> étant invisible de l'API instructeur, ni son contenu ni le compte utilisé ne sont
+> observables. Audit dans `parcours_actions` (`dossier_dn_reinitialise`).
 
 - **`ds_status`** ∈ `null | EN_CONSTRUCTION | EN_INSTRUCTION | ACCEPTE | REFUSE | CLASSE_SANS_SUITE | NON_ACCESSIBLE` — c'est DS qui décide. `null` = dossier créé dans DS mais **pas encore déposé** ; `EN_CONSTRUCTION` = **déposé**, en attente d'instruction (et non « brouillon »). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
 - **`current_status`** ∈ `todo | en_instruction | valide` — dérivé via `DS_TO_INTERNAL_STATUS` (voir §3.2).
