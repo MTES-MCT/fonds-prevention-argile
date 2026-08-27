@@ -122,6 +122,7 @@ export async function getParcoursDiagnosticDetail(parcoursId: string): Promise<P
       ? classifyDossierAnomaly({
           localStatus: d.dsStatus,
           ds: dsError ? { error: dsError } : { state: dsState ?? undefined },
+          jamaisObserveDepose: !d.submittedAt && !d.lastSyncAt && !d.dsStatus,
         })
       : null;
 

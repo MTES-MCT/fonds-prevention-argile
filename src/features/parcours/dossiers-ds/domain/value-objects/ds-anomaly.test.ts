@@ -66,8 +66,26 @@ describe("classifyDossierAnomaly", () => {
     );
   });
 
-  it("ds_status null + not_found → introuvable côté DS (drop-off / prefill non complété)", () => {
-    expect(classifyDossierAnomaly({ localStatus: null, ds: { error: "not_found" } })).toBe(DsAnomalyType.DS_SUPPRIME);
+  // Le coeur de l'ADR-0026 : DN répond `not_found` pour un prérempli comme pour un dossier
+  // purgé. Seul « a-t-il déjà été observé déposé » sépare le normal de l'anormal.
+  it("not_found sur un dossier jamais observé déposé → prérempli non déposé, pas un bug", () => {
+    const t = classifyDossierAnomaly({
+      localStatus: null,
+      ds: { error: "not_found" },
+      jamaisObserveDepose: true,
+    });
+    expect(t).toBe(DsAnomalyType.PREFILL_NON_DEPOSE);
+    expect(DS_ANOMALY_EXPLANATIONS[t].isBug).toBe(false);
+  });
+
+  it("not_found sur un dossier déjà observé déposé → vraie disparition", () => {
+    const t = classifyDossierAnomaly({
+      localStatus: DSStatus.EN_INSTRUCTION,
+      ds: { error: "not_found" },
+      jamaisObserveDepose: false,
+    });
+    expect(t).toBe(DsAnomalyType.DS_SUPPRIME);
+    expect(DS_ANOMALY_EXPLANATIONS[t].isBug).toBe(true);
   });
 
   it("ds_status null + DS a le dossier → jamais synchronisé (existe côté DS) → resync", () => {
