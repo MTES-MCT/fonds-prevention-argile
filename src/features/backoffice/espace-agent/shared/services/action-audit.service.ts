@@ -1,6 +1,6 @@
 import { parcoursActionsRepo, agentsRepo } from "@/shared/database/repositories";
 import type { Agent } from "@/shared/database/schema/agents";
-import { buildAuthorSnapshot } from "./author-snapshot";
+import { buildAuthorSnapshot, type AuthorSnapshot } from "./author-snapshot";
 
 /**
  * Auteur d'une action système : un agent (objet déjà chargé ou simple id, résolu ici)
@@ -32,7 +32,7 @@ export async function logSystemAction({
 }: LogSystemActionParams): Promise<boolean> {
   try {
     let agentId: string | null = null;
-    let snapshot;
+    let snapshot: AuthorSnapshot;
 
     if ("demandeur" in author) {
       snapshot = {
