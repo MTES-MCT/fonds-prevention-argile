@@ -6,7 +6,10 @@ import { ROUTES } from "@/features/auth/domain/value-objects";
 import { ArchiveModal } from "../../../shared/components/ArchiveModal";
 import { ArretAccompagnementModal } from "../../../shared/components/ArretAccompagnementModal";
 import { RattacherDossierDnModal } from "../../../shared/components/RattacherDossierDnModal";
-import { ReinitialiserDossierDnModal } from "../../../shared/components/ReinitialiserDossierDnModal";
+import {
+  ReinitialiserDossierDnModal,
+  LIBELLE_FORMULAIRE,
+} from "../../../shared/components/ReinitialiserDossierDnModal";
 import { ActionMenu } from "../../../shared/components";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
 
@@ -72,7 +75,7 @@ export function GererDossierMenu({
           ...(peutAgirSurDossierDn && peutReinitialiserDn
             ? [
                 {
-                  label: "Réinitialiser le formulaire DN",
+                  label: `Réinitialiser le formulaire ${LIBELLE_FORMULAIRE[stepCourante] ?? "DN"}`,
                   icon: "fr-icon-refresh-line",
                   onClick: () => setIsReinitOpen(true),
                 },

@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState, useId } from "react";
 import { reinitialiserDossierDnAction } from "@/features/backoffice/espace-agent/dossiers/actions/reinitialiser-dossier-dn.actions";
-import { STEP_LABELS, type Step } from "@/shared/domain/value-objects/step.enum";
+import { Step, STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
+
+/** Nomme le formulaire visé : « le formulaire d'éligibilité » se lit, « le formulaire éligibilité » non. */
+export const LIBELLE_FORMULAIRE: Partial<Record<Step, string>> = {
+  [Step.ELIGIBILITE]: "d'éligibilité",
+  [Step.DIAGNOSTIC]: "de diagnostic",
+  [Step.DEVIS]: "de devis",
+};
 
 interface ReinitialiserDossierDnModalProps {
   isOpen: boolean;
@@ -103,7 +110,7 @@ export function ReinitialiserDossierDnModal({
 
               <div className="fr-modal__content">
                 <h1 id={`${modalId}-title`} className="fr-modal__title">
-                  R&eacute;initialiser le formulaire {STEP_LABELS[step].toLowerCase()}
+                  R&eacute;initialiser le formulaire {LIBELLE_FORMULAIRE[step]}
                 </h1>
 
                 {rattache ? (
@@ -117,8 +124,13 @@ export function ReinitialiserDossierDnModal({
                 ) : (
                   <>
                     <p>
-                      Le demandeur a ouvert son formulaire mais ne l&apos;a jamais transmis. Deux explications
-                      possibles, que nous ne pouvons pas distinguer :
+                      Seul le formulaire <strong>{STEP_LABELS[step].toLowerCase()}</strong>, celui de
+                      l&apos;&eacute;tape en cours, est concern&eacute; : les &eacute;tapes pr&eacute;c&eacute;dentes ne
+                      sont pas touch&eacute;es.
+                    </p>
+                    <p>
+                      Le demandeur a ouvert ce formulaire mais ne l&apos;a jamais transmis. Deux explications possibles,
+                      que nous ne pouvons pas distinguer :
                     </p>
                     <ul>
                       <li>
