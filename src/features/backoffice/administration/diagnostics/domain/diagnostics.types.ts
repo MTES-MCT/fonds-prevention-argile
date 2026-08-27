@@ -1,4 +1,5 @@
 import type { Step } from "@/shared/domain/value-objects/step.enum";
+import type { CasPrefill } from "./cas-prefill";
 import type { Status } from "@/shared/domain/value-objects/status.enum";
 import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 
@@ -178,6 +179,8 @@ export interface DiagnosticRow {
   dnProbeState: string | null;
   dnProbeAt: Date | null;
   dnVerdict: DnVerdict;
+  /** Conduite à tenir, renseignée uniquement sur un prérempli non déposé. */
+  casPrefill: CasPrefill | null;
 }
 
 export interface DiagnosticsResult {

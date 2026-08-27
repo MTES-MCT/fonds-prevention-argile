@@ -3,6 +3,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/shared/database/client";
 import { parcoursPrevention, dossiersDemarchesSimplifiees, users, syncRunEntries } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import { classerCasPrefill } from "../domain/cas-prefill";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import {
   DiagnosticState,
@@ -42,6 +43,7 @@ interface RawRow {
   dnProbeState: string | null;
   dnProbeAt: Date | null;
   eligAccepteId: string | null;
+  lastLogin: Date | null;
   userNom: string | null;
   userPrenom: string | null;
   userEmail: string | null;
@@ -148,6 +150,7 @@ export async function getParcoursDiagnostics(): Promise<DiagnosticsResult> {
       dnProbeState: dossiersDemarchesSimplifiees.dnProbeState,
       dnProbeAt: dossiersDemarchesSimplifiees.dnProbeAt,
       eligAccepteId: elig.id,
+      lastLogin: users.lastLogin,
       userNom: users.nom,
       userPrenom: users.prenom,
       userEmail: users.email,
@@ -197,6 +200,9 @@ export async function getParcoursDiagnostics(): Promise<DiagnosticsResult> {
   }
 
   const counts = Object.fromEntries(DIAGNOSTIC_STATE_ORDER.map((s) => [s, 0])) as Record<DiagnosticState, number>;
+  // Une seule référence temporelle pour tout le lot : deux lignes voisines ne doivent pas
+  // basculer de cas parce que la milliseconde a changé entre elles.
+  const maintenant = new Date();
 
   const result: DiagnosticRow[] = rows.map((r) => {
     const syncError = resolveActiveError(r, errorByParcours.get(r.parcoursId));
@@ -230,6 +236,15 @@ export async function getParcoursDiagnostics(): Promise<DiagnosticsResult> {
       dnProbeState: r.dnProbeState,
       dnProbeAt: r.dnProbeAt,
       dnVerdict: dnVerdictOf(r.dnProbeState),
+      // Ce qu'il y a à faire, uniquement là où ça a du sens : tous les autres états portent
+      // déjà leur propre conduite à tenir.
+      casPrefill:
+        state === DiagnosticState.DOSSIER_DN_NON_CREE
+          ? classerCasPrefill(
+              { step: r.currentStep, prefillCreatedAt: r.dossierCreatedAt, lastLogin: r.lastLogin },
+              maintenant
+            )
+          : null,
     };
   });
 

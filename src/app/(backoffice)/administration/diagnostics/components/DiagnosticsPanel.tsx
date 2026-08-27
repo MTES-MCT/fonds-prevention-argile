@@ -19,6 +19,11 @@ import {
   type DemarcheSante,
 } from "@/features/backoffice/administration/diagnostics/domain/diagnostics.types";
 import { STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
+import {
+  CasPrefill,
+  CAS_PREFILL_META,
+  CAS_PREFILL_ORDRE,
+} from "@/features/backoffice/administration/diagnostics/domain/cas-prefill";
 import { getDossierDsDemandeUrl } from "@/features/parcours/dossiers-ds/utils";
 import { getSharedEnv } from "@/shared/config/env.config";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
@@ -89,6 +94,8 @@ export default function DiagnosticsPanel({ embedded = false }: { embedded?: bool
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<DiagnosticState | "all">("all");
+  // Sous-tri des préreremplis non déposés : tous partagent le même état, pas la même suite.
+  const [casFilter, setCasFilter] = useState<CasPrefill | "all">("all");
   const [isProbing, setIsProbing] = useState(false);
   const [probeMsg, setProbeMsg] = useState<string | null>(null);
 
@@ -123,8 +130,18 @@ export default function DiagnosticsPanel({ embedded = false }: { embedded?: bool
 
   const visibleRows = useMemo(() => {
     if (!diagnostics) return [];
-    return filter === "all" ? diagnostics.rows : diagnostics.rows.filter((r) => r.state === filter);
-  }, [diagnostics, filter]);
+    const parEtat = filter === "all" ? diagnostics.rows : diagnostics.rows.filter((r) => r.state === filter);
+    return casFilter === "all" ? parEtat : parEtat.filter((r) => r.casPrefill === casFilter);
+  }, [diagnostics, filter, casFilter]);
+
+  // Compteurs du sous-tri, calculés sur les seules lignes « prérempli non déposé ».
+  const comptesCas = useMemo(() => {
+    const vides = Object.fromEntries(CAS_PREFILL_ORDRE.map((c) => [c, 0])) as Record<CasPrefill, number>;
+    for (const r of diagnostics?.rows ?? []) if (r.casPrefill) vides[r.casPrefill] += 1;
+    return vides;
+  }, [diagnostics]);
+
+  const montrerSousTri = filter === DiagnosticState.DOSSIER_DN_NON_CREE;
 
   return (
     <>
@@ -247,7 +264,10 @@ export default function DiagnosticsPanel({ embedded = false }: { embedded?: bool
                   type="button"
                   className={`fr-tag ${filter === "all" ? "fr-tag--dismiss" : ""}`}
                   aria-pressed={filter === "all"}
-                  onClick={() => setFilter("all")}>
+                  onClick={() => {
+                    setFilter("all");
+                    setCasFilter("all");
+                  }}>
                   Tout ({diagnostics.total})
                 </button>
               </li>
@@ -257,7 +277,10 @@ export default function DiagnosticsPanel({ embedded = false }: { embedded?: bool
                     type="button"
                     className={`fr-tag ${filter === s ? "fr-tag--dismiss" : ""}`}
                     aria-pressed={filter === s}
-                    onClick={() => setFilter(s)}>
+                    onClick={() => {
+                      setFilter(s);
+                      setCasFilter("all");
+                    }}>
                     {DIAGNOSTIC_STATE_META[s].label} ({diagnostics.counts[s]})
                   </button>
                 </li>
@@ -267,6 +290,42 @@ export default function DiagnosticsPanel({ embedded = false }: { embedded?: bool
               <p className="fr-text--sm fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
                 {DIAGNOSTIC_STATE_META[filter].description}
               </p>
+            )}
+
+            {montrerSousTri && (
+              <div className="fr-mt-2w">
+                <p className="fr-text--sm fr-mb-1v">
+                  <strong>Que faire de ces dossiers ?</strong> Ils partagent tous le même constat — le formulaire
+                  n&apos;a jamais été transmis — mais pas la même suite à donner.
+                </p>
+                <ul className="fr-tags-group">
+                  <li>
+                    <button
+                      type="button"
+                      className={`fr-tag fr-tag--sm ${casFilter === "all" ? "fr-tag--dismiss" : ""}`}
+                      aria-pressed={casFilter === "all"}
+                      onClick={() => setCasFilter("all")}>
+                      Tous ({diagnostics.counts[DiagnosticState.DOSSIER_DN_NON_CREE]})
+                    </button>
+                  </li>
+                  {CAS_PREFILL_ORDRE.map((c) => (
+                    <li key={c}>
+                      <button
+                        type="button"
+                        className={`fr-tag fr-tag--sm ${casFilter === c ? "fr-tag--dismiss" : ""}`}
+                        aria-pressed={casFilter === c}
+                        onClick={() => setCasFilter(c)}>
+                        {CAS_PREFILL_META[c].label} ({comptesCas[c]})
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {casFilter !== "all" && (
+                  <div className="fr-alert fr-alert--info fr-alert--sm fr-mt-1w">
+                    <p>{CAS_PREFILL_META[casFilter].aFaire}</p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -294,6 +353,7 @@ export default function DiagnosticsPanel({ embedded = false }: { embedded?: bool
                         <th>État</th>
                         <th>Dossier DN</th>
                         <th>Verdict DN</th>
+                        <th>À faire</th>
                         <th>Âge (j)</th>
                         <th>Détail</th>
                         <th>Action</th>
@@ -340,6 +400,17 @@ export default function DiagnosticsPanel({ embedded = false }: { embedded?: bool
                                   {r.dnProbeState}
                                   {r.dnProbeAt ? ` · ${daysAgoLabel(r.dnProbeAt)}` : ""}
                                 </span>
+                              )}
+                            </td>
+                            <td>
+                              {r.casPrefill ? (
+                                <span
+                                  className={`fr-badge fr-badge--sm ${SEVERITY_BADGE[CAS_PREFILL_META[r.casPrefill].severity]}`}
+                                  title={CAS_PREFILL_META[r.casPrefill].aFaire}>
+                                  {CAS_PREFILL_META[r.casPrefill].label}
+                                </span>
+                              ) : (
+                                "-"
                               )}
                             </td>
                             <td>{r.ageDays ?? "-"}</td>
