@@ -30,6 +30,7 @@ import { ROLES_REOUVERTURE } from "@/features/backoffice/espace-agent/dossiers/d
 import { ROLES_ARRET_ACCOMPAGNEMENT } from "@/features/backoffice/espace-agent/dossiers/domain/arret-accompagnement";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { peutAgirSurDossierDn } from "@/features/backoffice/espace-agent/shared/services/dossier-dn-permissions.service";
+import { STEPS_REINITIALISABLES } from "@/features/parcours/dossiers-ds/services/regeneration.service";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
@@ -93,7 +94,10 @@ export default async function DossierDetailPage({ params }: PageProps) {
   const timelineEtapeCourante = dossier.dossiersTimeline[dossier.currentStep];
   const peutAgirSurDn = agentCourant.success && peutAgirSurDossierDn(agentCourant.data.role);
   const peutReinitialiserDn =
-    !!timelineEtapeCourante?.createdAt && !timelineEtapeCourante.submittedAt && !timelineEtapeCourante.etatDs;
+    STEPS_REINITIALISABLES.includes(dossier.currentStep) &&
+    !!timelineEtapeCourante?.createdAt &&
+    !timelineEtapeCourante.submittedAt &&
+    !timelineEtapeCourante.etatDs;
 
   // Le demandeur a demandé l'arrêt : l'AMO mandataire doit se prononcer.
   const arretADecider = dossier.demandeArretAt !== null && peutArreterAccompagnement;

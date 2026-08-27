@@ -290,6 +290,24 @@ Si le message annonce une analyse **interrompue**, les résultats sont partiels 
 
 ### 4. Traiter les deux files
 
+### Trier les préreremplis non déposés (support)
+
+Dans l'onglet **États des parcours**, le filtre « Prérempli non déposé » ouvre un second tri :
+tous ces dossiers partagent le même constat — le formulaire n'a jamais été transmis — mais pas
+la même suite à donner.
+
+| Cas                       | Ce que ça veut dire                                               | À faire                                                                                                                              |
+| ------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Revenu sans déposer**   | Le demandeur est revenu sur FPA après avoir ouvert son formulaire | Priorité : l'appeler, comprendre ce qui bloque, réinitialiser si besoin                                                              |
+| **Sans nouvelles**        | Ni dépôt ni retour depuis plus d'un mois                          | Relance, sinon archiver                                                                                                              |
+| **En cours**              | Entre 7 et 30 jours, aucun retour                                 | Laisser venir                                                                                                                        |
+| **Attend son diagnostic** | Étape diagnostic                                                  | Délai métier normal : le formulaire ne peut être transmis qu'une fois le diagnostic réalisé. Suivre le diagnostic, pas le formulaire |
+| **Trop tôt**              | Moins de 7 jours                                                  | Ne rien faire                                                                                                                        |
+
+Le cas est déduit de l'étape, de la date du prérempli et de la dernière connexion du demandeur
+(`classerCasPrefill`). Il ne dit **pas** si le brouillon existe encore côté DN — ça reste
+inobservable (ADR-0026) — il dit seulement ce qu'il y a à faire.
+
 **À rattacher** — un dossier existe côté DN mais aucun parcours ne le suit. Pour chaque ligne :
 
 1. **L'analyse a déjà cherché à qui appartient le dossier** : la colonne « Demandeur probable »
