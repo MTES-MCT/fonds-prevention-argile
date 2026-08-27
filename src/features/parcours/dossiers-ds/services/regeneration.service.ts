@@ -3,6 +3,7 @@ import { db } from "@/shared/database/client";
 import { dossiersDemarchesSimplifiees, ORIGINE_TENTATIVE } from "@/shared/database/schema";
 import { dossiersDsTentativesRepo, parcoursRepo } from "@/shared/database/repositories";
 import type { ActionResult } from "@/shared/types";
+import type { Step } from "@/shared/domain/value-objects/step.enum";
 import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import { getDossierByStep } from "./dossier-ds.service";
 
@@ -79,12 +80,29 @@ async function rattacher(dossierId: string, dsNumber: string): Promise<void> {
     .where(eq(dossiersDemarchesSimplifiees.id, dossierId));
 }
 
+/**
+ * Réinitialise le formulaire d'une étape : même mécanique pour le demandeur (« ce lien ne
+ * fonctionne plus ») et pour l'agent (« Réinitialiser le formulaire DN »).
+ */
+export async function reinitialiserDossierEtape(
+  parcoursId: string,
+  step: Step
+): Promise<ActionResult<ResultatRegeneration>> {
+  const parcours = await parcoursRepo.findById(parcoursId);
+  if (!parcours) return { success: false, error: "Parcours non trouvé" };
+
+  return reinitialiser(parcours.id, step);
+}
+
 export async function regenererLienPrefill(userId: string): Promise<ActionResult<ResultatRegeneration>> {
   const parcours = await parcoursRepo.findByUserId(userId);
   if (!parcours) return { success: false, error: "Parcours non trouvé" };
 
-  const step = parcours.currentStep;
-  const dossier = await getDossierByStep(parcours.id, step);
+  return reinitialiser(parcours.id, parcours.currentStep);
+}
+
+async function reinitialiser(parcoursId: string, step: Step): Promise<ActionResult<ResultatRegeneration>> {
+  const dossier = await getDossierByStep(parcoursId, step);
 
   const refus = verifierRegeneration(dossier, new Date());
   if (refus) return { success: false, error: MESSAGES[refus] };
@@ -92,7 +110,7 @@ export async function regenererLienPrefill(userId: string): Promise<ActionResult
 
   // Le numéro courant doit être au registre AVANT qu'on retire le pointeur.
   await dossiersDsTentativesRepo.record({
-    parcoursId: parcours.id,
+    parcoursId,
     step,
     dsNumber: dossier.dsNumber,
     origine: ORIGINE_TENTATIVE.PREFILL,
@@ -101,7 +119,7 @@ export async function regenererLienPrefill(userId: string): Promise<ActionResult
   });
 
   // Un ancien brouillon a-t-il été déposé depuis ? Alors il n'y a rien à recréer.
-  const tentatives = await dossiersDsTentativesRepo.findByParcoursStep(parcours.id, step);
+  const tentatives = await dossiersDsTentativesRepo.findByParcoursStep(parcoursId, step);
   for (const tentative of tentatives) {
     try {
       const dn = await graphqlClient.getDossierStatus(Number(tentative.dsNumber));

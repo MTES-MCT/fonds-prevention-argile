@@ -2,11 +2,7 @@
 
 import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
 import { getDossiersByAgent } from "../services/dossiers-territoire.service";
-import type {
-  DossierItem,
-  DossiersTerritoireFilters,
-  EpciChoice,
-} from "../domain/types/dossiers-territoire.types";
+import type { DossierItem, DossiersTerritoireFilters, EpciChoice } from "../domain/types/dossiers-territoire.types";
 import type { ActionResult } from "@/shared/types";
 
 export interface DossiersTerritoireData {

@@ -29,6 +29,7 @@ import { STATUTS_REFUSES } from "@/features/backoffice/espace-agent/dossiers/dom
 import { ROLES_REOUVERTURE } from "@/features/backoffice/espace-agent/dossiers/domain/reouverture";
 import { ROLES_ARRET_ACCOMPAGNEMENT } from "@/features/backoffice/espace-agent/dossiers/domain/arret-accompagnement";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
+import { peutAgirSurDossierDn } from "@/features/backoffice/espace-agent/shared/services/dossier-dn-permissions.service";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
@@ -86,6 +87,13 @@ export default async function DossierDetailPage({ params }: PageProps) {
     ROLES_ARRET_ACCOMPAGNEMENT.includes(agentCourant.data.role) &&
     dossier.entrepriseAmoId !== null &&
     agentCourant.data.entrepriseAmoId === dossier.entrepriseAmoId;
+
+  // Réinitialiser le formulaire DN n'a de sens que sur une étape jamais transmise : sur un
+  // dossier déposé le lien pointe vers le dossier réel, et le service refuserait.
+  const timelineEtapeCourante = dossier.dossiersTimeline[dossier.currentStep];
+  const peutAgirSurDn = agentCourant.success && peutAgirSurDossierDn(agentCourant.data.role);
+  const peutReinitialiserDn =
+    !!timelineEtapeCourante?.createdAt && !timelineEtapeCourante.submittedAt && !timelineEtapeCourante.etatDs;
 
   // Le demandeur a demandé l'arrêt : l'AMO mandataire doit se prononcer.
   const arretADecider = dossier.demandeArretAt !== null && peutArreterAccompagnement;
@@ -153,6 +161,9 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   parcoursId={dossier.parcoursId}
                   demandeurNom={nomComplet}
                   peutArreterAccompagnement={peutArreterAccompagnement}
+                  peutAgirSurDossierDn={peutAgirSurDn}
+                  peutReinitialiserDn={peutReinitialiserDn}
+                  stepCourante={dossier.currentStep}
                 />
               )}
             </div>
