@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { verifierRegeneration, regenererLienPrefill, DELAI_MIN_REGENERATION_MINUTES } from "./regeneration.service";
+import {
+  verifierRegeneration,
+  regenererLienPrefill,
+  reinitialiserDossierEtape,
+  STEPS_REINITIALISABLES,
+  DELAI_MIN_REGENERATION_MINUTES,
+} from "./regeneration.service";
 import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import { dossiersDsTentativesRepo, parcoursRepo } from "@/shared/database/repositories";
 import { getDossierByStep } from "./dossier-ds.service";
@@ -19,7 +25,7 @@ vi.mock("../adapters/graphql/client", () => {
 });
 vi.mock("@/shared/database/repositories", () => ({
   dossiersDsTentativesRepo: { record: vi.fn(), findByParcoursStep: vi.fn() },
-  parcoursRepo: { findByUserId: vi.fn() },
+  parcoursRepo: { findByUserId: vi.fn(), findById: vi.fn() },
 }));
 vi.mock("./dossier-ds.service", () => ({ getDossierByStep: vi.fn() }));
 
@@ -91,4 +97,31 @@ describe("regenererLienPrefill — panne DN", () => {
 
     expect(result.success).toBe(false);
   });
+});
+
+/**
+ * Retirer le pointeur n'est sûr que si le demandeur peut redemander un formulaire : sans CTA
+ * de création côté espace demandeur, on le laisserait sans aucun lien.
+ */
+describe("étapes réinitialisables", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(parcoursRepo.findById).mockResolvedValue({ id: "p1" } as any);
+  });
+
+  it("couvre exactement les étapes dont le formulaire est recréable", () => {
+    expect(STEPS_REINITIALISABLES).toEqual([Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS]);
+  });
+
+  it.each([Step.FACTURES, Step.CHOIX_AMO, Step.INVITATION])(
+    "refuse l'étape %s sans toucher au dossier",
+    async (step) => {
+      const result = await reinitialiserDossierEtape("p1", step);
+
+      expect(result.success).toBe(false);
+      expect(getDossierByStep).not.toHaveBeenCalled();
+      expect(dossiersDsTentativesRepo.record).not.toHaveBeenCalled();
+    }
+  );
 });

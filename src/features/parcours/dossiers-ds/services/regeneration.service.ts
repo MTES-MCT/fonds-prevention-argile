@@ -3,7 +3,7 @@ import { db } from "@/shared/database/client";
 import { dossiersDemarchesSimplifiees, ORIGINE_TENTATIVE } from "@/shared/database/schema";
 import { dossiersDsTentativesRepo, parcoursRepo } from "@/shared/database/repositories";
 import type { ActionResult } from "@/shared/types";
-import type { Step } from "@/shared/domain/value-objects/step.enum";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import { getDossierByStep } from "./dossier-ds.service";
 
@@ -21,7 +21,18 @@ import { getDossierByStep } from "./dossier-ds.service";
 /** Fenêtre anti-rafale : évite qu'un double-clic n'empile les brouillons côté DN. */
 export const DELAI_MIN_REGENERATION_MINUTES = 10;
 
-export type RefusRegeneration = "aucun_dossier" | "dossier_depose" | "trop_recent" | "verification_impossible";
+export type RefusRegeneration =
+  "aucun_dossier" | "dossier_depose" | "trop_recent" | "verification_impossible" | "etape_non_reinitialisable";
+
+/**
+ * Étapes dont le demandeur peut RECRÉER le formulaire lui-même depuis son espace.
+ *
+ * C'est l'invariant du retrait de pointeur : sans CTA de création, on le laisserait sans
+ * aucun lien. `factures` en est exclue — son callout n'affiche un lien que s'il existe déjà,
+ * aucun service ne crée ce dossier — de même que `choix_amo` et `invitation`, qui n'ont pas
+ * de dossier DN.
+ */
+export const STEPS_REINITIALISABLES: Step[] = [Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS];
 
 interface DossierPourRegeneration {
   createdAt: Date;
@@ -51,6 +62,8 @@ const MESSAGES: Record<RefusRegeneration, string> = {
   aucun_dossier: "Aucun formulaire à régénérer pour cette étape.",
   dossier_depose: "Votre dossier a déjà été transmis : votre lien pointe vers le dossier déposé.",
   trop_recent: "Votre lien vient d'être créé. Essayez d'abord de l'ouvrir, puis réessayez dans quelques minutes.",
+  etape_non_reinitialisable:
+    "Le formulaire de cette étape ne peut pas être réinitialisé : le demandeur n'aurait aucun moyen d'en obtenir un nouveau.",
   verification_impossible:
     "Nous n'arrivons pas à joindre Démarches Numériques pour le moment. Réessayez dans quelques minutes.",
 };
@@ -102,6 +115,10 @@ export async function regenererLienPrefill(userId: string): Promise<ActionResult
 }
 
 async function reinitialiser(parcoursId: string, step: Step): Promise<ActionResult<ResultatRegeneration>> {
+  if (!STEPS_REINITIALISABLES.includes(step)) {
+    return { success: false, error: MESSAGES.etape_non_reinitialisable };
+  }
+
   const dossier = await getDossierByStep(parcoursId, step);
 
   const refus = verifierRegeneration(dossier, new Date());

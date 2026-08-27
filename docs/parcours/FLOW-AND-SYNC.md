@@ -49,7 +49,11 @@ Chaque parcours a deux niveaux d'état complémentaires :
 >
 > **Côté agent**, la même mécanique est exposée par « Gérer → Réinitialiser le formulaire DN »
 > (`reinitialiserDossierEtape`, action `reinitialiserDossierDnAction`), proposée uniquement sur
-> une étape jamais transmise. Elle couvre les deux situations indiscernables d'un `not_found` :
+> une étape jamais transmise **et dont le demandeur peut recréer le formulaire**
+> (`STEPS_REINITIALISABLES` = éligibilité, diagnostic, devis). `factures` en est exclue : son
+> callout n'affiche un lien que s'il existe déjà et aucun service ne crée ce dossier — retirer
+> le pointeur y laisserait le demandeur sans aucun lien. Elle couvre les deux situations
+> indiscernables d'un `not_found` :
 > l'abandon en cours de route, et le brouillon commencé sous un **autre compte DN** que celui
 > utilisé aujourd'hui (e-mail/mot de passe puis FranceConnect, ou l'inverse) — un brouillon
 > étant invisible de l'API instructeur, ni son contenu ni le compte utilisé ne sont
