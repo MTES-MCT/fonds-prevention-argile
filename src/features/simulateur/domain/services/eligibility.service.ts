@@ -121,6 +121,7 @@ function getReasonFromChecks(checks: EligibilityChecks): EligibilityReason | nul
   if (checks.zoneForte === false) return EligibilityReason.ZONE_NON_FORTE;
   if (checks.anneeConstruction === false) return EligibilityReason.CONSTRUCTION_RECENTE;
   if (checks.niveaux === false) return EligibilityReason.TROP_DE_NIVEAUX;
+  if (checks.etatMaisonEligible === false) return EligibilityReason.MAISON_TROP_ENDOMMAGEE;
   if (checks.nonMitoyen === false) return EligibilityReason.MAISON_MITOYENNE;
   if (checks.indemnisation === false) return EligibilityReason.DEJA_INDEMNISE;
   if (checks.catnatEnCours === false) return EligibilityReason.DEMANDE_CATNAT_EN_COURS;

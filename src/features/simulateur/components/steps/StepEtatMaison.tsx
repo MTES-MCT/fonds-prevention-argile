@@ -95,10 +95,29 @@ export function StepEtatMaison({
               onChange={() => setSelected("endommagée")}
             />
             <label className="fr-label" htmlFor="etat-endommagee">
-              Endommagée avec des premiers désordres structuraux déjà présents
+              Endommagée
               <span className="fr-hint-text fr-text-default--info">
                 Fissures importantes (<strong>supérieures à 5mm d'écartement</strong>) sur les murs extérieurs et/ou
                 intérieurs, les doublages et les cloisons, les planchers et les plafonds
+              </span>
+            </label>
+          </div>
+        </div>
+        <div className="fr-fieldset__element">
+          <div className="fr-radio-group fr-radio-rich">
+            <input
+              type="radio"
+              id="etat-tres-endommagee"
+              name="etat-maison"
+              value="très endommagée"
+              checked={selected === "très endommagée"}
+              onChange={() => setSelected("très endommagée")}
+            />
+            <label className="fr-label" htmlFor="etat-tres-endommagee">
+              Très endommagée
+              <span className="fr-hint-text fr-text-default--info">
+                Des désordres structuraux sont présents et empêchent l'usage normal de l'habitation (par exemple :
+                portes et/ou fenêtres qui ne ferment plus)
               </span>
             </label>
           </div>

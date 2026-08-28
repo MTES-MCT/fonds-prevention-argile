@@ -7,6 +7,7 @@ import {
   checkZoneForte,
   checkAnneeConstruction,
   checkNiveaux,
+  checkEtatMaison,
   checkNonMitoyen,
   checkIndemnisation,
   checkCatastrophesNaturelles,
@@ -68,6 +69,7 @@ export function evaluateEligibility(answers: PartialRGASimulationData): {
     zoneForte: null,
     anneeConstruction: null,
     niveaux: null,
+    etatMaisonEligible: null,
     nonMitoyen: null,
     indemnisation: null,
     catnatEnCours: null,
@@ -118,7 +120,16 @@ export function evaluateEligibility(answers: PartialRGASimulationData): {
     }
   }
 
-  // Étape 3 - Mitoyenneté
+  // Étape 3 - État de la maison
+  if (answers.rga?.sinistres !== undefined) {
+    const etatMaisonResult = checkEtatMaison(answers.rga.sinistres);
+    checks.etatMaisonEligible = etatMaisonResult.passed;
+    if (!etatMaisonResult.passed) {
+      return { checks, shouldExit: true, failedAtStep: SimulateurStep.ETAT_MAISON };
+    }
+  }
+
+  // Étape 4 - Mitoyenneté
   if (answers.logement?.mitoyen !== undefined) {
     const mitoyenResult = checkNonMitoyen(answers.logement.mitoyen);
     checks.nonMitoyen = mitoyenResult.passed;
@@ -199,6 +210,7 @@ export function evaluateAllChecks(answers: PartialRGASimulationData): Eligibilit
     zoneForte: null,
     anneeConstruction: null,
     niveaux: null,
+    etatMaisonEligible: null,
     nonMitoyen: null,
     indemnisation: null,
     catnatEnCours: null,
@@ -225,6 +237,10 @@ export function evaluateAllChecks(answers: PartialRGASimulationData): Eligibilit
 
   if (answers.logement?.niveaux !== undefined) {
     checks.niveaux = checkNiveaux(answers.logement.niveaux).passed;
+  }
+
+  if (answers.rga?.sinistres !== undefined) {
+    checks.etatMaisonEligible = checkEtatMaison(answers.rga.sinistres).passed;
   }
 
   if (answers.logement?.mitoyen !== undefined) {
