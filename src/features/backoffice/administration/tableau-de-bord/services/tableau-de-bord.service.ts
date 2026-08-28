@@ -1469,6 +1469,7 @@ export async function getMatomoSimulationsStats(
 
 interface EligibiliteCounts {
   avecMicroFissures: number;
+  avecFissuresImportantes: number;
   sansMicroFissures: number;
   dejaIndemnisees: number;
   nonIndemnisees: number;
@@ -1478,6 +1479,7 @@ interface EligibiliteCounts {
 function createEmptyEligibiliteCounts(): EligibiliteCounts {
   return {
     avecMicroFissures: 0,
+    avecFissuresImportantes: 0,
     sansMicroFissures: 0,
     dejaIndemnisees: 0,
     nonIndemnisees: 0,
@@ -1523,12 +1525,15 @@ function computeEligibiliteCounts(
     const evaluation = EligibilityService.evaluate(simData);
     if (!evaluation.result?.eligible) continue;
 
-    // Micro-fissures (sur éligibles)
+    // État de la maison (sur éligibles) : "très endommagée" n'atteint jamais cette branche,
+    // l'éligibilité l'exclut en amont (checkEtatMaison).
     const sinistres = asString(simData?.rga?.sinistres);
     if (sinistres === "saine") {
       counts.sansMicroFissures += 1;
-    } else if (sinistres === "très peu endommagée" || sinistres === "endommagée") {
+    } else if (sinistres === "très peu endommagée") {
       counts.avecMicroFissures += 1;
+    } else if (sinistres === "endommagée") {
+      counts.avecFissuresImportantes += 1;
     }
 
     // Indemnisation antérieure (sur éligibles)
@@ -1627,6 +1632,10 @@ export async function getEligibiliteStats(
     avecMicroFissures: {
       valeur: current.avecMicroFissures,
       variation: prev ? calculerVariation(current.avecMicroFissures, prev.avecMicroFissures) : null,
+    },
+    avecFissuresImportantes: {
+      valeur: current.avecFissuresImportantes,
+      variation: prev ? calculerVariation(current.avecFissuresImportantes, prev.avecFissuresImportantes) : null,
     },
     sansMicroFissures: {
       valeur: current.sansMicroFissures,
