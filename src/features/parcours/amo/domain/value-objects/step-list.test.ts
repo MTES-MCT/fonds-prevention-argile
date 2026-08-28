@@ -23,7 +23,12 @@ describe("getStepListItems", () => {
     });
 
     it("marque l'item AMO completed si le parcours est sur ELIGIBILITE", () => {
-      const items = getStepListItems(AmoMode.OBLIGATOIRE, StatutValidationAmo.LOGEMENT_ELIGIBLE, Step.ELIGIBILITE, false);
+      const items = getStepListItems(
+        AmoMode.OBLIGATOIRE,
+        StatutValidationAmo.LOGEMENT_ELIGIBLE,
+        Step.ELIGIBILITE,
+        false
+      );
       expect(items[0].state).toBe("completed");
       expect(items[1].state).toBe("active"); // ELIGIBILITE active
     });
@@ -62,17 +67,36 @@ describe("getStepListItems", () => {
     });
 
     it("statut LOGEMENT_ELIGIBLE + ELIGIBILITE → choix et attente completed, eligibilite active", () => {
-      const items = getStepListItems(AmoMode.FACULTATIF, StatutValidationAmo.LOGEMENT_ELIGIBLE, Step.ELIGIBILITE, false);
+      const items = getStepListItems(
+        AmoMode.FACULTATIF,
+        StatutValidationAmo.LOGEMENT_ELIGIBLE,
+        Step.ELIGIBILITE,
+        false
+      );
       expect(items).toHaveLength(6);
       expect(items[0].state).toBe("completed");
       expect(items[1].state).toBe("completed");
       expect(items[2].state).toBe("active"); // ELIGIBILITE
     });
+
+    it("demande d'accompagnement après autonomie : EN_ATTENTE alors que currentStep a déjà avancé à ELIGIBILITE → l'item AMO reste actif", () => {
+      // Un demandeur en autonomie (SANS_AMO) a déjà fait avancer son parcours à ELIGIBILITE.
+      // S'il redemande un accompagnement, statutAmo repasse à EN_ATTENTE sans que currentStep
+      // ne revienne à CHOIX_AMO : l'item ne doit pas s'afficher comme déjà répondu.
+      const items = getStepListItems(AmoMode.FACULTATIF, StatutValidationAmo.EN_ATTENTE, Step.ELIGIBILITE, false);
+      expect(items[1].label).toBe("Attendre la réponse de votre AMO");
+      expect(items[1].state).toBe("active");
+    });
   });
 
   describe("État des étapes DS", () => {
     it("avant currentStep = completed, à currentStep = active sauf si DS accepté = completed, après = pending", () => {
-      const items = getStepListItems(AmoMode.OBLIGATOIRE, StatutValidationAmo.LOGEMENT_ELIGIBLE, Step.DIAGNOSTIC, false);
+      const items = getStepListItems(
+        AmoMode.OBLIGATOIRE,
+        StatutValidationAmo.LOGEMENT_ELIGIBLE,
+        Step.DIAGNOSTIC,
+        false
+      );
       // [AMO, ELIGIBILITE, DIAGNOSTIC, DEVIS, FACTURES]
       expect(items[0].state).toBe("completed"); // AMO
       expect(items[1].state).toBe("completed"); // ELIGIBILITE (avant)

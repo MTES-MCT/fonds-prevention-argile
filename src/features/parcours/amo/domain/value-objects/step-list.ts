@@ -23,13 +23,7 @@ const LABEL_DIAGNOSTIC = "Soumettre le diagnostic";
 const LABEL_DEVIS = "Soumettre les devis";
 const LABEL_FACTURES = "Transmettre les factures";
 
-const STEP_ORDER: readonly Step[] = [
-  Step.CHOIX_AMO,
-  Step.ELIGIBILITE,
-  Step.DIAGNOSTIC,
-  Step.DEVIS,
-  Step.FACTURES,
-];
+const STEP_ORDER: readonly Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES];
 
 /**
  * Calcule l'état d'une étape DS par rapport à l'étape courante du parcours.
@@ -63,6 +57,16 @@ function buildDsTail(currentStep: Step | null, isCurrentDSStepAccepte: boolean):
 }
 
 /**
+ * État de l'item "Attendre la réponse de votre AMO" : dépend du statut de la validation,
+ * pas de la position de `currentStep`. Une demande d'accompagnement après autonomie peut
+ * remettre `statutAmo` à `EN_ATTENTE` alors que le parcours a déjà quitté CHOIX_AMO — dans
+ * ce cas l'item doit rester "active" (réponse pas encore reçue), pas "completed".
+ */
+function amoItemState(statutAmo: StatutValidationAmo | null): StepListItem["state"] {
+  return statutAmo === null || statutAmo === StatutValidationAmo.EN_ATTENTE ? "active" : "completed";
+}
+
+/**
  * Retourne la liste des items à afficher dans la sidebar selon le mode AMO et le statut.
  */
 export function getStepListItems(
@@ -80,7 +84,7 @@ export function getStepListItems(
       {
         key: "amo",
         label: LABEL_ATTENTE_REPONSE_AMO,
-        state: onChoixAmo ? "active" : "completed",
+        state: amoItemState(statutAmo),
         isAmoAnchor: true,
       },
       ...dsTail,
@@ -126,7 +130,7 @@ export function getStepListItems(
     {
       key: "amo",
       label: LABEL_ATTENTE_REPONSE_AMO,
-      state: onChoixAmo ? "active" : "completed",
+      state: amoItemState(statutAmo),
       isAmoAnchor: true,
     },
     ...dsTail,
