@@ -14,6 +14,7 @@ const MAPPING: Record<EligibilityReason, RaisonIneligibilite> = {
   [EligibilityReason.DEPARTEMENT_NON_ELIGIBLE]: "hors_zone_perimetre",
   [EligibilityReason.CONSTRUCTION_RECENTE]: "maison_moins_15_ans",
   [EligibilityReason.TROP_DE_NIVEAUX]: "nombre_etages_sup_2",
+  [EligibilityReason.MAISON_TROP_ENDOMMAGEE]: "maison_trop_endommagee",
   [EligibilityReason.MAISON_MITOYENNE]: "maison_mitoyenne",
   [EligibilityReason.REVENUS_TROP_ELEVES]: "hors_plafonds_ressources",
   [EligibilityReason.NON_ASSURE]: "pas_assurance_habitation",

@@ -27,6 +27,9 @@ export interface EligibilityChecks {
   /** 5. Pas plus d'un étage ? */
   niveaux: RuleStatus;
 
+  /** État de la maison pas "très endommagée" ? */
+  etatMaisonEligible: RuleStatus;
+
   /** 6. Non mitoyenne ? */
   nonMitoyen: RuleStatus;
 
@@ -76,6 +79,7 @@ export function createInitialChecks(): EligibilityChecks {
     zoneForte: null,
     anneeConstruction: null,
     niveaux: null,
+    etatMaisonEligible: null,
     nonMitoyen: null,
     indemnisation: null,
     catnatEnCours: null,

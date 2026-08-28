@@ -31,7 +31,7 @@ export interface RGASimulationData {
     indemnise_avant_juillet_2025?: boolean;
     indemnise_avant_juillet_2015?: boolean;
     indemnise_montant_indemnite?: number;
-    sinistres: "saine" | "très peu endommagée" | "endommagée";
+    sinistres: "saine" | "très peu endommagée" | "endommagée" | "très endommagée";
     demande_catnat_en_cours?: boolean;
   };
 
