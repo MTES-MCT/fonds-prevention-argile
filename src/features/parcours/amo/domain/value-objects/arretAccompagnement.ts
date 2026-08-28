@@ -39,3 +39,20 @@ export function peutAnnulerAccompagnement(etat: EtatAnnulationAccompagnement): b
   if (etat.eligibiliteDsStatus === DSStatus.EN_INSTRUCTION) return false;
   return true;
 }
+
+export interface EtatDemandeAccompagnement {
+  statut: StatutValidationAmo;
+  /** Statut DN du dossier d'éligibilité (null si pas encore de dossier). */
+  eligibiliteDsStatus: DSStatus | null;
+}
+
+/**
+ * Symétrique de `peutAnnulerAccompagnement` : un demandeur en autonomie peut changer
+ * d'avis et demander un accompagnement, sauf une fois son formulaire d'éligibilité pris
+ * en instruction par la DDT (même garde que l'annulation).
+ */
+export function peutDemanderAccompagnement(etat: EtatDemandeAccompagnement): boolean {
+  if (etat.statut !== StatutValidationAmo.SANS_AMO) return false;
+  if (etat.eligibiliteDsStatus === DSStatus.EN_INSTRUCTION) return false;
+  return true;
+}

@@ -10,14 +10,21 @@ import {
 } from "@/shared/database/schema";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { ActionResult } from "@/shared/types/action-result.types";
-import { AMO_VALIDATION_TOKEN_VALIDITY_DAYS, StatutValidationAmo } from "../domain/value-objects";
+import {
+  AMO_VALIDATION_TOKEN_VALIDITY_DAYS,
+  StatutValidationAmo,
+  peutDemanderAccompagnement,
+} from "../domain/value-objects";
 import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { AmoMode, getAmoMode } from "../domain/value-objects/departements-amo";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { Status, Step } from "../../core";
+import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributesFromAmo } from "@/shared/email/brevo";
+import type { ParcoursPrevention } from "@/shared/database/schema";
 
 /**
  * Paramètres pour la sélection d'un AMO
@@ -100,11 +107,16 @@ async function checkAmoCoversTerritory(
  *
  * @param attributionMode mode d'attribution de l'AMO (MANUEL par défaut, AUTO_OBLIGATOIRE
  *                        ou AUTO_AV_AMO si appelé depuis l'auto-assignation)
+ * @param options.skipStepGuard ignore la vérification `currentStep === CHOIX_AMO` — utilisé
+ *   par `demanderAccompagnementDemandeur`, où le parcours a déjà avancé à ÉLIGIBILITE.
+ * @param options.skipStatusUpdate n'écrit pas `parcours.currentStatus = EN_INSTRUCTION` —
+ *   idem, l'étape courante n'étant plus CHOIX_AMO, ce champ reste piloté par la sync DS.
  */
 export async function selectAmoForUser(
   userId: string,
   params: SelectAmoParams,
-  attributionMode: AttributionAmoMode = AttributionAmoMode.MANUEL
+  attributionMode: AttributionAmoMode = AttributionAmoMode.MANUEL,
+  options?: { skipStepGuard?: boolean; skipStatusUpdate?: boolean }
 ): Promise<ActionResult<SelectAmoResult>> {
   // Validation des données personnelles
   const validationError = validatePersonalData(params);
@@ -121,8 +133,8 @@ export async function selectAmoForUser(
     return { success: false, error: "Parcours non trouvé" };
   }
 
-  // Vérifier qu'on est bien à l'étape CHOIX_AMO
-  if (parcours.currentStep !== Step.CHOIX_AMO) {
+  // Vérifier qu'on est bien à l'étape CHOIX_AMO (sauf demande d'accompagnement après autonomie)
+  if (!options?.skipStepGuard && parcours.currentStep !== Step.CHOIX_AMO) {
     return {
       success: false,
       error: "Vous n'êtes pas à l'étape de choix de l'AMO",
@@ -274,8 +286,10 @@ export async function selectAmoForUser(
     // On continue quand même, l'email n'est pas bloquant
   }
 
-  // Passer le parcours en EN_INSTRUCTION
-  await parcoursRepo.updateStatus(parcours.id, Status.EN_INSTRUCTION);
+  // Passer le parcours en EN_INSTRUCTION (sauf demande après autonomie, cf. options ci-dessus)
+  if (!options?.skipStatusUpdate) {
+    await parcoursRepo.updateStatus(parcours.id, Status.EN_INSTRUCTION);
+  }
 
   // Synchro Brevo (flux) : rafraîchit les attributs du conseiller sur le contact — le
   // responsable peut changer en cours de parcours (AV -> AMO ici). Couvre aussi bien
@@ -297,7 +311,10 @@ export async function selectAmoForUser(
  * Récupère le 1er AMO couvrant le territoire du parcours.
  * Logique EPCI > département (alignée sur `getAmosDisponibles`).
  */
-async function findFirstAmoForTerritory(codeInsee: string, codeEpci: string | null): Promise<{ id: string } | null> {
+export async function findFirstAmoForTerritory(
+  codeInsee: string,
+  codeEpci: string | null
+): Promise<{ id: string } | null> {
   if (codeEpci) {
     const [amoEpci] = await db
       .select({ id: entreprisesAmo.id })
@@ -319,58 +336,29 @@ async function findFirstAmoForTerritory(codeInsee: string, codeEpci: string | nu
 }
 
 /**
- * Auto-affecte un AMO au parcours d'un utilisateur (modes OBLIGATOIRE et AV_AMO_FUSIONNES).
+ * Résout le 1er AMO couvrant le territoire d'un parcours + les coordonnées de contact du
+ * demandeur, pour toute auto-attribution (initiale ou après autonomie).
  *
- * Idempotent : si une validation existe déjà pour ce parcours, ne fait rien.
- *
- * Récupère :
- * - le département du demandeur depuis rgaSimulationData
- * - le 1er AMO couvrant le territoire (EPCI > département)
- * - l'email/téléphone de contact depuis users (sinon firstName/lastName fallback)
- * Délègue ensuite à `selectAmoForUser` avec le mode d'attribution adéquat.
+ * Résolution territoriale user-first (fallback agent), cohérente avec `selectAmoForUser` :
+ * permet l'auto-attribution sur un dossier Aller-vers sans simulation demandeur.
  */
-export async function assignAmoAutomatiqueForUser(userId: string): Promise<ActionResult<SelectAmoResult>> {
-  const parcours = await parcoursRepo.findByUserId(userId);
-  if (!parcours) {
-    return { success: false, error: "Parcours non trouvé" };
-  }
-
-  if (parcours.currentStep !== Step.CHOIX_AMO) {
-    return { success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" };
-  }
-
-  // Idempotence : une validation existe déjà → no-op
-  const [existing] = await db
-    .select({ id: parcoursAmoValidations.id })
-    .from(parcoursAmoValidations)
-    .where(eq(parcoursAmoValidations.parcoursId, parcours.id))
-    .limit(1);
-  if (existing) {
-    return { success: true, data: { message: "AMO déjà attribuée", token: "" } };
-  }
-
-  // Résolution territoriale user-first (fallback agent), cohérente avec selectAmoForUser :
-  // permet l'auto-attribution sur un dossier Aller-vers sans simulation demandeur.
+async function resolveAmoAndContactForTerritory(
+  userId: string,
+  parcours: ParcoursPrevention
+): Promise<
+  ActionResult<{
+    amoId: string;
+    userPrenom: string;
+    userNom: string;
+    userEmail: string;
+    userTelephone: string | null;
+    adresseLogement: string;
+  }>
+> {
   const logement = getDemandeurFirstLogement(parcours);
   const codeInsee = normalizeCodeInsee(logement?.commune);
   if (!codeInsee) {
     return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
-  }
-
-  const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
-  const mode = getAmoMode(codeDepartement);
-
-  // Détermine le mode d'attribution :
-  //   - OBLIGATOIRE / AV_AMO_FUSIONNES : auto-attribué silencieusement à l'arrivée sur /mon-compte
-  //   - FACULTATIF : appelée après que l'utilisateur a explicitement choisi "Oui" dans
-  //     CalloutChoixAccompagnement → on prend le 1er AMO du territoire (skip de l'étape liste).
-  let attributionMode: AttributionAmoMode;
-  if (mode === AmoMode.OBLIGATOIRE) {
-    attributionMode = AttributionAmoMode.AUTO_OBLIGATOIRE;
-  } else if (mode === AmoMode.AV_AMO_FUSIONNES) {
-    attributionMode = AttributionAmoMode.AUTO_AV_AMO;
-  } else {
-    attributionMode = AttributionAmoMode.MANUEL;
   }
 
   const codeEpci = logement?.epci ? String(logement.epci).trim() : null;
@@ -411,15 +399,78 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
     return { success: false, error: "Adresse du logement manquante dans la simulation RGA" };
   }
 
-  return selectAmoForUser(
-    userId,
-    {
-      entrepriseAmoId: amo.id,
+  return {
+    success: true,
+    data: {
+      amoId: amo.id,
       userPrenom: user.prenom,
       userNom: user.nom,
       userEmail,
       userTelephone: user.telephone,
       adresseLogement,
+    },
+  };
+}
+
+/**
+ * Auto-affecte un AMO au parcours d'un utilisateur (modes OBLIGATOIRE et AV_AMO_FUSIONNES).
+ *
+ * Idempotent : si une validation existe déjà pour ce parcours, ne fait rien.
+ * Délègue ensuite à `selectAmoForUser` avec le mode d'attribution adéquat.
+ */
+export async function assignAmoAutomatiqueForUser(userId: string): Promise<ActionResult<SelectAmoResult>> {
+  const parcours = await parcoursRepo.findByUserId(userId);
+  if (!parcours) {
+    return { success: false, error: "Parcours non trouvé" };
+  }
+
+  if (parcours.currentStep !== Step.CHOIX_AMO) {
+    return { success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" };
+  }
+
+  // Idempotence : une validation existe déjà → no-op
+  const [existing] = await db
+    .select({ id: parcoursAmoValidations.id })
+    .from(parcoursAmoValidations)
+    .where(eq(parcoursAmoValidations.parcoursId, parcours.id))
+    .limit(1);
+  if (existing) {
+    return { success: true, data: { message: "AMO déjà attribuée", token: "" } };
+  }
+
+  const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
+  if (!codeInsee) {
+    return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
+  }
+
+  // Détermine le mode d'attribution :
+  //   - OBLIGATOIRE / AV_AMO_FUSIONNES : auto-attribué silencieusement à l'arrivée sur /mon-compte
+  //   - FACULTATIF : appelée après que l'utilisateur a explicitement choisi "Oui" dans
+  //     CalloutChoixAccompagnement → on prend le 1er AMO du territoire (skip de l'étape liste).
+  const mode = getAmoMode(getCodeDepartementFromCodeInsee(codeInsee));
+  let attributionMode: AttributionAmoMode;
+  if (mode === AmoMode.OBLIGATOIRE) {
+    attributionMode = AttributionAmoMode.AUTO_OBLIGATOIRE;
+  } else if (mode === AmoMode.AV_AMO_FUSIONNES) {
+    attributionMode = AttributionAmoMode.AUTO_AV_AMO;
+  } else {
+    attributionMode = AttributionAmoMode.MANUEL;
+  }
+
+  const resolved = await resolveAmoAndContactForTerritory(userId, parcours);
+  if (!resolved.success) {
+    return resolved;
+  }
+
+  return selectAmoForUser(
+    userId,
+    {
+      entrepriseAmoId: resolved.data.amoId,
+      userPrenom: resolved.data.userPrenom,
+      userNom: resolved.data.userNom,
+      userEmail: resolved.data.userEmail,
+      userTelephone: resolved.data.userTelephone,
+      adresseLogement: resolved.data.adresseLogement,
     },
     attributionMode
   );
@@ -486,5 +537,94 @@ export async function skipAmoStepForUser(userId: string): Promise<ActionResult<{
   return {
     success: true,
     data: { message: "Parcours avancé à l'étape éligibilité sans AMO" },
+  };
+}
+
+export interface DemanderAccompagnementResult {
+  amoNom: string;
+  demandeurPrenom: string;
+  demandeurNom: string;
+}
+
+/**
+ * Demande un accompagnement AMO après avoir choisi l'autonomie (mode FACULTATIF).
+ *
+ * Symétrique de `skipAmoStepForUser` : bascule la validation `SANS_AMO` -> `EN_ATTENTE`
+ * avec le 1er AMO du territoire, sans repasser par CHOIX_AMO — le parcours a déjà avancé à
+ * ÉLIGIBILITE. Le `currentStep`/`currentStatus` du parcours ne sont pas touchés (l'étape
+ * éligibilité reste pilotée par la sync DS, indépendamment de la validation AMO).
+ */
+export async function demanderAccompagnementDemandeur(
+  userId: string
+): Promise<ActionResult<DemanderAccompagnementResult>> {
+  const parcours = await parcoursRepo.findByUserId(userId);
+  if (!parcours) {
+    return { success: false, error: "Parcours non trouvé" };
+  }
+
+  const [validation] = await db
+    .select({ statut: parcoursAmoValidations.statut })
+    .from(parcoursAmoValidations)
+    .where(eq(parcoursAmoValidations.parcoursId, parcours.id))
+    .limit(1);
+  if (!validation || validation.statut !== StatutValidationAmo.SANS_AMO) {
+    return { success: false, error: "Vous gérez déjà vos démarches avec un accompagnement" };
+  }
+
+  const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
+  if (!codeInsee) {
+    return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
+  }
+
+  // Même garde que `skipAmoStepForUser`/`annulerAccompagnementDemandeur` : là où l'AMO est
+  // obligatoire, ce statut SANS_AMO ne devrait de toute façon jamais exister.
+  if (getAmoMode(getCodeDepartementFromCodeInsee(codeInsee)) !== AmoMode.FACULTATIF) {
+    return { success: false, error: "L'AMO est obligatoire pour ce département" };
+  }
+
+  const dossierEligibilite = await getDossierByStep(parcours.id, Step.ELIGIBILITE);
+  const eligibiliteDsStatus = (dossierEligibilite?.dsStatus as DSStatus | null) ?? null;
+  if (!peutDemanderAccompagnement({ statut: validation.statut, eligibiliteDsStatus })) {
+    return {
+      success: false,
+      error: "Votre formulaire d'éligibilité est en cours d'instruction : l'accompagnement ne peut plus être modifié",
+    };
+  }
+
+  const resolved = await resolveAmoAndContactForTerritory(userId, parcours);
+  if (!resolved.success) {
+    return resolved;
+  }
+
+  const selectResult = await selectAmoForUser(
+    userId,
+    {
+      entrepriseAmoId: resolved.data.amoId,
+      userPrenom: resolved.data.userPrenom,
+      userNom: resolved.data.userNom,
+      userEmail: resolved.data.userEmail,
+      userTelephone: resolved.data.userTelephone,
+      adresseLogement: resolved.data.adresseLogement,
+    },
+    AttributionAmoMode.MANUEL,
+    { skipStepGuard: true, skipStatusUpdate: true }
+  );
+  if (!selectResult.success) {
+    return selectResult;
+  }
+
+  const [amo] = await db
+    .select({ nom: entreprisesAmo.nom })
+    .from(entreprisesAmo)
+    .where(eq(entreprisesAmo.id, resolved.data.amoId))
+    .limit(1);
+
+  return {
+    success: true,
+    data: {
+      amoNom: amo?.nom ?? "",
+      demandeurPrenom: resolved.data.userPrenom,
+      demandeurNom: resolved.data.userNom,
+    },
   };
 }

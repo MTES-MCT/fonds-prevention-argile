@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { StatutValidationAmo } from "./statutValidation";
-import { peutAnnulerAccompagnement, requiertAccordAmo } from "./arretAccompagnement";
+import { peutAnnulerAccompagnement, peutDemanderAccompagnement, requiertAccordAmo } from "./arretAccompagnement";
 
 describe("requiertAccordAmo", () => {
   it("exige l'accord quand l'AMO a validé ET est mandataire financier", () => {
@@ -54,5 +54,32 @@ describe("peutAnnulerAccompagnement", () => {
 
   it("bloque si la demande a été refusée par l'AMO (le demandeur re-choisit)", () => {
     expect(peutAnnulerAccompagnement({ ...base, statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE })).toBe(false);
+  });
+});
+
+describe("peutDemanderAccompagnement", () => {
+  const base = {
+    statut: StatutValidationAmo.SANS_AMO,
+    eligibiliteDsStatus: null,
+  };
+
+  it("autorise la demande quand le demandeur est en autonomie", () => {
+    expect(peutDemanderAccompagnement(base)).toBe(true);
+  });
+
+  it("autorise encore si le dossier d'éligibilité est déposé mais pas instruit", () => {
+    expect(peutDemanderAccompagnement({ ...base, eligibiliteDsStatus: DSStatus.EN_CONSTRUCTION })).toBe(true);
+  });
+
+  it("bloque si le formulaire d'éligibilité est en instruction", () => {
+    expect(peutDemanderAccompagnement({ ...base, eligibiliteDsStatus: DSStatus.EN_INSTRUCTION })).toBe(false);
+  });
+
+  it("bloque si le demandeur a déjà un AMO (EN_ATTENTE)", () => {
+    expect(peutDemanderAccompagnement({ ...base, statut: StatutValidationAmo.EN_ATTENTE })).toBe(false);
+  });
+
+  it("bloque si le demandeur a déjà un AMO (LOGEMENT_ELIGIBLE)", () => {
+    expect(peutDemanderAccompagnement({ ...base, statut: StatutValidationAmo.LOGEMENT_ELIGIBLE })).toBe(false);
   });
 });
