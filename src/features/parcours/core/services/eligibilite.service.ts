@@ -10,6 +10,11 @@ import { parcoursRepo, userRepo } from "@/shared/database";
 import { DS_FIELDS_ELIGIBILITE } from "../../dossiers-ds/domain";
 import { DS_FIELD_IDS, DS_OPTIONS_MANDATAIRE } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
 import { getAnnotationLienFpaEligibilite } from "../../dossiers-ds/domain/value-objects/ds-annotations";
+import {
+  getChampEtatMaisonEligibilite,
+  DS_LABELS_ETAT_MAISON,
+} from "../../dossiers-ds/domain/value-objects/ds-champ-etat-maison";
+import { isEtatSinistre } from "@/features/simulateur/domain/value-objects";
 import { createDebugLogger } from "@/shared/utils";
 import { PartialRGASimulationData } from "@/features/simulateur";
 import { getServerEnv } from "@/shared/config/env.config";
@@ -134,6 +139,14 @@ export async function createEligibiliteDossier(
     // 4. Mapper RGA → DS avec ajout des infos AMO si présentes
     debug.log("Mapping RGA → DS...");
     const prefillData = mapRGAToDSFormat(rgaData);
+
+    // État de la maison : champ ajouté après le clonage de la démarche (id par
+    // environnement, cf. ds-champ-etat-maison.ts), remplace les 2 anciennes questions
+    // checkbox « désordres structuraux » / « fissures » retirées du formulaire DN.
+    const champEtatMaison = getChampEtatMaisonEligibilite(Number(prefillClient.getDemarcheId(Step.ELIGIBILITE)));
+    if (champEtatMaison && isEtatSinistre(rgaData.rga?.sinistres)) {
+      prefillData[`champ_${champEtatMaison}`] = DS_LABELS_ETAT_MAISON[rgaData.rga.sinistres];
+    }
 
     // Le SIRET est le seul champ AMO encore présent dans la démarche : adresse, email et
     // téléphone en ont été retirés côté DN, leur préremplissage était mort (cf. ADR-0025).
