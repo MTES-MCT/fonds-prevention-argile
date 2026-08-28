@@ -33,6 +33,11 @@ export const ACTION_TYPE_ACCOMPAGNEMENT_ARRETE = "accompagnement_arrete";
 export const ACTION_TYPE_ARRET_DEMANDE = "arret_accompagnement_demande";
 /** Action système : l'AMO mandataire a refusé la demande d'arrêt et poursuit l'accompagnement. */
 export const ACTION_TYPE_ARRET_REFUSE = "arret_accompagnement_refuse";
+/**
+ * Action système : le demandeur, après avoir choisi l'autonomie, demande à être
+ * accompagné par l'AMO de son territoire.
+ */
+export const ACTION_TYPE_DEMANDE_ACCOMPAGNEMENT = "demande_accompagnement";
 /** Action système : l'AMO atteste l'éligibilité et accepte d'accompagner le demandeur. */
 export const ACTION_TYPE_ELIGIBILITE_ACCEPTEE = "eligibilite_acceptee";
 /** Action système : l'AMO déclare le demandeur non éligible (demande archivée). */
@@ -124,6 +129,7 @@ export const ACTION_LABELS_BY_VALUE: Record<string, string> = ACTION_TYPE_GROUPS
     [ACTION_TYPE_ACCOMPAGNEMENT_ARRETE]: "🚫 Arrêt de l'accompagnement",
     [ACTION_TYPE_ARRET_DEMANDE]: "✋ Demande d'arrêt de l'accompagnement",
     [ACTION_TYPE_ARRET_REFUSE]: "↩️ Refus de l'arrêt de l'accompagnement",
+    [ACTION_TYPE_DEMANDE_ACCOMPAGNEMENT]: "🙋 Demande d'accompagnement (après autonomie)",
     [ACTION_TYPE_ELIGIBILITE_ACCEPTEE]: "✅ Éligible — accompagnement accepté",
     [ACTION_TYPE_ELIGIBILITE_REFUSEE]: "❌ Demandeur non éligible",
     [ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE]: "⚠️ Éligible — accompagnement refusé",

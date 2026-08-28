@@ -339,6 +339,45 @@ libellés du formulaire — rattrapé au passage pour `accompagnement_arrete`,
 `arret_accompagnement_demande`, `arret_accompagnement_refuse`, `dossier_reouvert`,
 `invitation_renvoyee`.
 
+### 2.9 Demande d'accompagnement après autonomie (changement d'avis inverse)
+
+Symétrique de l'arrêt d'accompagnement (§2.7) : un demandeur passé en autonomie
+(`statut = SANS_AMO`, mode FACULTATIF) peut changer d'avis et demander à être accompagné,
+depuis « Ma liste » sur `/mon-compte` (bouton « Demander à être accompagné », affiché à la
+place de « Annuler » sous l'item « Choix de l'accompagnement »).
+
+Contrairement au choix initial (`selectAmoForUser` / `CalloutAmoTodo`), **aucun écran de
+sélection manuelle d'AMO n'est proposé** — ce composant est du code mort en pratique (voir
+`CalloutChoixAccompagnement`, dont le « Oui » appelle déjà `assignAmoAutomatiqueForUser` sans
+liste). La demande attribue donc directement le **1er AMO du territoire**, exactement comme le
+« Oui » du choix initial en mode FACULTATIF.
+
+Service `demanderAccompagnementDemandeur` (`amo-selection.service.ts`), symétrique de
+`skipAmoStepForUser` :
+
+- Garde : `parcours_amo_validations.statut === SANS_AMO`, département en mode `FACULTATIF`,
+  dossier d'éligibilité DN pas encore `EN_INSTRUCTION` (prédicat `peutDemanderAccompagnement`,
+  miroir de `peutAnnulerAccompagnement`).
+- Délègue à `selectAmoForUser` avec deux options ajoutées à cette fonction pour ce cas
+  précis : `skipStepGuard` (le parcours a déjà quitté `CHOIX_AMO` — `skipAmoStepForUser`
+  l'a fait avancer à `ÉLIGIBILITE` au moment de l'autonomie, on ne le fait pas reculer) et
+  `skipStatusUpdate` (**ne pas** écrire `parcours.currentStatus = EN_INSTRUCTION` : ce champ
+  n'a de sens que rattaché à l'étape courante — cf. §3.2 — et resterait piloté par la sync DS
+  de l'étape éligibilité, pas par la validation AMO).
+- Extraction commune avec `assignAmoAutomatiqueForUser` : `resolveAmoAndContactForTerritory`
+  (1er AMO du territoire + coordonnées de contact du demandeur).
+
+**Bug corrigé en marge (`getStepListItems`, `step-list.ts`).** L'item « Attendre la réponse de
+votre AMO » dérivait son état actif/complété de `currentStep === CHOIX_AMO`, une équivalence
+vraie tant que le parcours ne pouvait revenir en arrière (`statut EN_ATTENTE` n'existait qu'à
+`CHOIX_AMO`). Cette fonctionnalité brise l'invariant : `statut` peut redevenir `EN_ATTENTE`
+alors que `currentStep` est déjà `ÉLIGIBILITE`. L'état de l'item est donc désormais dérivé du
+`statutAmo` lui-même (`EN_ATTENTE`/`null` → actif, sinon complété), plus fiable que la position
+de l'étape.
+
+Audit dans `parcours_actions` (type système, aucune migration) : `demande_accompagnement`,
+`agent_id = NULL`, `author_structure_type = "DEMANDEUR"`.
+
 ---
 
 ## 3. Architecture de la synchronisation
@@ -484,17 +523,17 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 
 **`sync_runs`** — un enregistrement par run.
 
-| Colonne | Type |
+| Colonne                  | Type                               |
 | ------------------------ | ---------------------------------- | ------- | ----- | ----- |
-| `id` | uuid |
-| `started_at` | timestamp |
-| `finished_at` | timestamp (null = en cours) |
-| `status` | `success                           | partial | error | null` |
-| `triggered_by` | `cron                              | manual` |
-| `total_parcours_scanned` | int |
-| `total_parcours_updated` | int |
-| `total_errors` | int |
-| `error_summary` | text (20 premières erreurs concat) |
+| `id`                     | uuid                               |
+| `started_at`             | timestamp                          |
+| `finished_at`            | timestamp (null = en cours)        |
+| `status`                 | `success                           | partial | error | null` |
+| `triggered_by`           | `cron                              | manual` |
+| `total_parcours_scanned` | int                                |
+| `total_parcours_updated` | int                                |
+| `total_errors`           | int                                |
+| `error_summary`          | text (20 premières erreurs concat) |
 
 **`sync_run_entries`** — une entrée par parcours **modifié** (ou en erreur) durant un run. Les parcours sans changement ne génèrent **pas** d'entrée pour ne pas alourdir la table.
 
@@ -665,7 +704,8 @@ Le seuil de 30 min est volontairement généreux par rapport au `maxDuration = 5
 
 ```ts
 type SyncRunResult =
-  { skipped: false; runId; status; totalScanned; totalUpdated; totalErrors } | { skipped: true; reason; existingRunId };
+  | { skipped: false; runId; status; totalScanned; totalUpdated; totalErrors }
+  | { skipped: true; reason; existingRunId };
 ```
 
 ### 6.9 Sleep 150 ms entre parcours
@@ -867,6 +907,7 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |
 | Rattrapage lien AMO obligatoire (script ops)   | `scripts/ops/fix/lier-amo-oblig.ts` (`pnpm fix:lier-amo-oblig`)                                             |
 | Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                                        |
+| Demande d'accompagnement après autonomie       | `amo-selection.service.ts` (`demanderAccompagnementDemandeur`), `demande-accompagnement.actions.ts`         |
 | Endpoint CRON                                  | `src/app/api/cron/sync-parcours/route.ts`                                                                   |
 | Workflow CRON GitHub Actions                   | `.github/workflows/cron-sync-parcours.yml`                                                                  |
 | Server actions admin                           | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`                      |

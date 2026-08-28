@@ -1,8 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { assignAmoAutomatiqueForUser, skipAmoStepForUser } from "./amo-selection.service";
+import {
+  assignAmoAutomatiqueForUser,
+  demanderAccompagnementDemandeur,
+  skipAmoStepForUser,
+} from "./amo-selection.service";
 import { db } from "@/shared/database/client";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
+import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { Status, Step } from "../../core";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 
@@ -24,6 +30,10 @@ vi.mock("@/shared/database/repositories", () => ({
 
 vi.mock("@/shared/email/actions/send-email.actions", () => ({
   sendValidationAmoEmail: vi.fn(),
+}));
+
+vi.mock("../../dossiers-ds/services/dossier-ds.service", () => ({
+  getDossierByStep: vi.fn(),
 }));
 
 vi.mock("@/shared/email/brevo", async (importOriginal) => ({
@@ -286,5 +296,111 @@ describe("skipAmoStepForUser", () => {
       })
     );
     expect(parcoursRepo.updateStep).toHaveBeenCalledWith(parcours.id, Step.ELIGIBILITE, Status.TODO);
+  });
+});
+
+describe("demanderAccompagnementDemandeur", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getDossierByStep).mockResolvedValue(null as never);
+  });
+
+  function mockValidationSelect(rows: unknown[]) {
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(rows) }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  }
+
+  it("refuse si le parcours n'existe pas", async () => {
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(null);
+    const result = await demanderAccompagnementDemandeur(userId);
+    expect(result).toEqual({ success: false, error: "Parcours non trouvé" });
+  });
+
+  it("refuse si aucune validation n'existe (jamais choisi l'autonomie)", async () => {
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("82001"));
+    mockValidationSelect([]);
+    const result = await demanderAccompagnementDemandeur(userId);
+    expect(result).toEqual({ success: false, error: "Vous gérez déjà vos démarches avec un accompagnement" });
+  });
+
+  it("refuse si le demandeur a déjà un AMO (statut EN_ATTENTE)", async () => {
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("82001"));
+    mockValidationSelect([{ statut: "en_attente" }]);
+    const result = await demanderAccompagnementDemandeur(userId);
+    expect(result).toEqual({ success: false, error: "Vous gérez déjà vos démarches avec un accompagnement" });
+  });
+
+  it("refuse dans un département où l'AMO est obligatoire (garde défensive)", async () => {
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("36001"));
+    mockValidationSelect([{ statut: "sans_amo" }]);
+    const result = await demanderAccompagnementDemandeur(userId);
+    expect(result).toEqual({ success: false, error: "L'AMO est obligatoire pour ce département" });
+  });
+
+  it("bloque si le formulaire d'éligibilité est déjà en instruction", async () => {
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("82001"));
+    mockValidationSelect([{ statut: "sans_amo" }]);
+    vi.mocked(getDossierByStep).mockResolvedValue({ dsStatus: DSStatus.EN_INSTRUCTION } as never);
+
+    const result = await demanderAccompagnementDemandeur(userId);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("instruction");
+  });
+
+  it("bascule SANS_AMO -> EN_ATTENTE avec le 1er AMO du territoire, sans toucher le statut/l'étape du parcours", async () => {
+    const parcours = buildMockParcours("82001");
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours);
+
+    let selectCallCount = 0;
+    const rowsByCall: Record<number, unknown[]> = {
+      1: [{ statut: "sans_amo" }], // validation existante SANS_AMO
+      2: [{ id: "amo-1" }], // findFirstAmoForTerritory (département)
+      3: [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }],
+      4: [{ id: "amo-1" }], // checkAmoCoversTerritory (dans selectAmoForUser)
+      5: [{ nom: "AMO Test", emails: "contact@amo.fr", telephone: "0102030405", horaires: "9h-17h" }],
+      6: [{ nom: "AMO Test" }], // nom AMO renvoyé par demanderAccompagnementDemandeur
+    };
+    vi.mocked(db.select).mockImplementation(() => {
+      selectCallCount++;
+      return {
+        from: vi.fn().mockReturnValue({
+          leftJoin: vi.fn().mockReturnThis(),
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue(rowsByCall[selectCallCount] ?? []),
+          }),
+        }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
+    });
+    vi.mocked(db.update).mockReturnValue({
+      set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
+        }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    vi.mocked(sendValidationAmoEmail).mockResolvedValue({ success: true, data: { messageId: "msg-1" } });
+
+    const result = await demanderAccompagnementDemandeur(userId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.amoNom).toBe("AMO Test");
+      expect(result.data.demandeurPrenom).toBe("Jean");
+      expect(result.data.demandeurNom).toBe("Dupont");
+    }
+    // Le parcours a déjà quitté CHOIX_AMO : ni le statut ni l'étape ne doivent être touchés,
+    // seule la sync DS de l'étape éligibilité pilote current_status.
+    expect(parcoursRepo.updateStatus).not.toHaveBeenCalled();
+    expect(parcoursRepo.updateStep).not.toHaveBeenCalled();
   });
 });
