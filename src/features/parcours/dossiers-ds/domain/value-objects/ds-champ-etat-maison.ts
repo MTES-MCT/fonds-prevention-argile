@@ -12,8 +12,8 @@ import { EtatSinistre } from "@/features/simulateur/domain/value-objects";
  * nos propres logs (cf. `getChampEtatMaisonEligibilite`).
  */
 export const DS_CHAMP_ETAT_MAISON_ELIGIBILITE: Record<number, string> = {
-  126061: "TODO-PROD",
-  146377: "TODO-PREPROD",
+  126061: "Q2hhbXAtNjg2MTM5OA==",
+  146377: "Q2hhbXAtNjg2MTQzMA==",
 };
 
 /**
