@@ -1,10 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { parcoursActionsRepo } from "@/shared/database/repositories";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { reinitialiserDossierEtape } from "@/features/parcours/dossiers-ds/services/regeneration.service";
-import { buildAuthorSnapshot } from "@/features/backoffice/espace-agent/shared/services/author-snapshot";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 import { verifierAccesDossierDn } from "@/features/backoffice/espace-agent/shared/services/dossier-dn-permissions.service";
 import { ACTION_TYPE_DOSSIER_DN_REINITIALISE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { STEP_LABELS, type Step } from "@/shared/domain/value-objects/step.enum";
@@ -36,18 +35,14 @@ export async function reinitialiserDossierDnAction(
     const result = await reinitialiserDossierEtape(parcoursId, step);
     if (!result.success) return result;
 
-    const snapshot = await buildAuthorSnapshot(agent);
-    await parcoursActionsRepo.create({
+    await logSystemAction({
       parcoursId,
-      agentId: agent.id,
+      author: { agent },
       actionType: ACTION_TYPE_DOSSIER_DN_REINITIALISE,
       message:
         result.data.statut === "rattache"
           ? `Formulaire ${STEP_LABELS[step]} : dossier DN n° ${result.data.dsNumber} retrouvé déposé et rattaché.`
           : `Formulaire ${STEP_LABELS[step]} réinitialisé : le demandeur repart d'un lien neuf.`,
-      authorName: snapshot.authorName,
-      authorStructure: snapshot.authorStructure,
-      authorStructureType: snapshot.authorStructureType,
     });
 
     revalidatePath(`/espace-agent/dossiers/${parcoursId}`);
