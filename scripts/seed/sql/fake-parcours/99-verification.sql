@@ -4,16 +4,16 @@
 
 -- Résumé global
 SELECT 'RÉSUMÉ DES DONNÉES CRÉÉES' as info;
-SELECT 'Utilisateurs' as type, COUNT(*) as nombre FROM users WHERE id::text LIKE '11111111-1111-1111-1111-1111111111%'
-UNION ALL SELECT 'Parcours', COUNT(*) FROM parcours_prevention WHERE id::text LIKE '22222222-2222-2222-2222-2222222222%'
-UNION ALL SELECT 'Validations AMO', COUNT(*) FROM parcours_amo_validations WHERE id::text LIKE '33333333-3333-3333-3333-3333333333%'
-UNION ALL SELECT 'Dossiers DS', COUNT(*) FROM dossiers_demarches_simplifiees WHERE id::text LIKE '44444444-4444-4444-4444-4444444444%';
+SELECT 'Utilisateurs' as type, COUNT(*) as nombre FROM users WHERE id::text LIKE '11111111-1111-4111-8111-1111111111%'
+UNION ALL SELECT 'Parcours', COUNT(*) FROM parcours_prevention WHERE id::text LIKE '22222222-2222-4222-8222-2222222222%'
+UNION ALL SELECT 'Validations AMO', COUNT(*) FROM parcours_amo_validations WHERE id::text LIKE '33333333-3333-4333-8333-3333333333%'
+UNION ALL SELECT 'Dossiers DS', COUNT(*) FROM dossiers_demarches_simplifiees WHERE id::text LIKE '44444444-4444-4444-8444-4444444444%';
 
 -- Répartition par statut de validation
 SELECT 'RÉPARTITION PAR STATUT' as info;
 SELECT statut, COUNT(*) as nombre
 FROM parcours_amo_validations
-WHERE id::text LIKE '33333333-3333-3333-3333-3333333333%'
+WHERE id::text LIKE '33333333-3333-4333-8333-3333333333%'
 GROUP BY statut ORDER BY nombre DESC;
 
 -- Répartition par étape (dossiers suivis uniquement)
@@ -21,7 +21,7 @@ SELECT 'RÉPARTITION PAR ÉTAPE (dossiers suivis)' as info;
 SELECT pp.current_step as etape, COUNT(*) as nombre
 FROM parcours_amo_validations pav
 INNER JOIN parcours_prevention pp ON pp.id = pav.parcours_id
-WHERE pav.id::text LIKE '33333333-3333-3333-3333-3333333333%'
+WHERE pav.id::text LIKE '33333333-3333-4333-8333-3333333333%'
   AND pav.statut = 'logement_eligible'
 GROUP BY pp.current_step ORDER BY nombre DESC;
 
@@ -30,7 +30,7 @@ SELECT 'RÉPARTITION PAR COMMUNE' as info;
 SELECT pp.rga_simulation_data->'logement'->>'commune_nom' as commune, COUNT(*) as nombre
 FROM parcours_amo_validations pav
 INNER JOIN parcours_prevention pp ON pp.id = pav.parcours_id
-WHERE pav.id::text LIKE '33333333-3333-3333-3333-3333333333%'
+WHERE pav.id::text LIKE '33333333-3333-4333-8333-3333333333%'
 GROUP BY pp.rga_simulation_data->'logement'->>'commune_nom'
 ORDER BY nombre DESC;
 
@@ -46,7 +46,7 @@ SELECT
   COUNT(*) as nombre
 FROM parcours_amo_validations pav
 INNER JOIN parcours_prevention pp ON pp.id = pav.parcours_id
-WHERE pav.id::text LIKE '33333333-3333-3333-3333-3333333333%'
+WHERE pav.id::text LIKE '33333333-3333-4333-8333-3333333333%'
 GROUP BY tranche_revenus ORDER BY nombre DESC;
 
 -- Vérification des updated_at pour le badge "jours depuis dernière action"
@@ -70,7 +70,7 @@ SELECT inactivite, nombre FROM (
     END as ordre
   FROM parcours_amo_validations pav
   INNER JOIN parcours_prevention pp ON pp.id = pav.parcours_id
-  WHERE pav.id::text LIKE '33333333-3333-3333-3333-3333333333%'
+  WHERE pav.id::text LIKE '33333333-3333-4333-8333-3333333333%'
     AND pav.statut = 'logement_eligible'
   GROUP BY 1, 3
 ) sub
@@ -91,4 +91,4 @@ SELECT
   EXTRACT(DAY FROM NOW() - pp.updated_at)::int as jours_inactivite
 FROM parcours_amo_validations pav
 INNER JOIN parcours_prevention pp ON pp.id = pav.parcours_id
-WHERE pav.id = '33333333-3333-3333-3333-333333333301';
+WHERE pav.id = '33333333-3333-4333-8333-333333333301';
