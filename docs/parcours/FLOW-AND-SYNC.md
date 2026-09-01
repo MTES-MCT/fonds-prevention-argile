@@ -384,11 +384,24 @@ jusqu'à correction manuelle par l'AMO directement auprès de l'administration.
 Ce reset est **automatique et non confirmé au cas par cas** : la popup « Demander à être
 accompagné » (`DemanderAccompagnementModal`) prévient le demandeur en amont qu'un brouillon
 déjà entamé sous l'ancien lien sera perdu. Le résultat (`formulaireReinitialise: boolean`) est
-propagé jusqu'à l'audit `parcours_actions` (message enrichi si le reset a eu lieu). Le
-changement de callout (retour à « en attente de réponse de l'AMO ») ne nécessite aucun code
-dédié : `statutAmo` passe à `EN_ATTENTE` via `selectAmoForUser`, et `CalloutManager`
-(`MonCompteClient.renderChoixAmoCallout`) route déjà naturellement vers `CalloutAmoEnAttente`
-sur ce statut après le `revalidatePath`/`router.refresh()` existants.
+propagé jusqu'à l'audit `parcours_actions` (message enrichi si le reset a eu lieu).
+
+**Blocage du formulaire tant que l'AMO n'a pas répondu.** `statutAmo` repasse à `EN_ATTENTE`
+alors que `currentStep` reste `ÉLIGIBILITE` — un état que `CalloutManager` (routage par
+`currentStep`) et `getStepListItems` (« Ma liste ») ne géraient pas : sans garde, le callout
+principal (`renderEligibiliteCallout`) et le lien de l'item « eligibilite » dans « Ma liste »
+laisseraient le demandeur remplir/déposer le formulaire fraîchement réinitialisé **avant** la
+réponse de l'AMO, recréant immédiatement le problème que le reset vient de corriger. Deux
+gardes ajoutées, toutes deux déclenchées par `statutAmo === EN_ATTENTE` en dehors de
+`CHOIX_AMO` :
+
+- `CalloutManager` (`MonCompteClient.tsx`) court-circuite `renderEligibiliteCallout` et affiche
+  `CalloutAmoEnAttente` (même callout qu'au choix initial) quand `currentStep === ELIGIBILITE`
+  et `statutAmo === EN_ATTENTE`.
+- `getStepListItems`/`buildDsTail` (`step-list.ts`) force l'item de l'étape courante à
+  `"pending"` (lien désactivé) via le paramètre `blockedByAmoEnAttente`, au lieu de `"active"`.
+  Sans effet sur les autres statuts : à `CHOIX_AMO`, les items DS sont déjà `"pending"` pour
+  tous.
 
 **Bug corrigé en marge (`getStepListItems`, `step-list.ts`).** L'item « Attendre la réponse de
 votre AMO » dérivait son état actif/complété de `currentStep === CHOIX_AMO`, une équivalence
