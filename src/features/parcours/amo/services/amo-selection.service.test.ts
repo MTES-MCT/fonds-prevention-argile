@@ -33,6 +33,14 @@ vi.mock("@/shared/email/brevo", async (importOriginal) => ({
   emitBrevoEvent: vi.fn(),
 }));
 
+// amo-selection.service.ts importe regeneration.service.ts (demanderAccompagnementDemandeur),
+// qui importe le client GraphQL DS : celui-ci s'instancie au chargement du module et exige
+// les env vars serveur, absentes en test.
+vi.mock("../../dossiers-ds/adapters/graphql/client", () => ({
+  graphqlClient: { getDossierStatus: vi.fn() },
+  DsGraphQLError: class DsGraphQLError extends Error {},
+}));
+
 // Mock de crypto.randomUUID
 vi.stubGlobal("crypto", {
   randomUUID: vi.fn(() => "mock-uuid-token"),

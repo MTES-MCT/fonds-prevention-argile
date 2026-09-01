@@ -11,7 +11,9 @@ import { demanderAccompagnementDemandeur } from "../services/amo-selection.servi
  * Demande un accompagnement AMO pour le demandeur connecté, après avoir choisi
  * l'autonomie (mode FACULTATIF uniquement).
  */
-export async function demanderMonAccompagnement(): Promise<ActionResult<{ amoNom: string }>> {
+export async function demanderMonAccompagnement(): Promise<
+  ActionResult<{ amoNom: string; formulaireReinitialise: boolean }>
+> {
   try {
     const session = await getSession();
     if (!session?.userId) {
@@ -28,14 +30,17 @@ export async function demanderMonAccompagnement(): Promise<ActionResult<{ amoNom
       return { success: false, error: result.error };
     }
 
-    const { amoNom, demandeurPrenom, demandeurNom } = result.data;
+    const { amoNom, demandeurPrenom, demandeurNom, formulaireReinitialise } = result.data;
 
     // Audit visible des professionnels : l'auteur est le demandeur, pas un agent.
+    const messageBase = `Le demandeur, après avoir choisi l'autonomie, demande à être accompagné par ${amoNom || "un AMO"}.`;
     await parcoursActionsRepo.create({
       parcoursId: parcours.id,
       agentId: null,
       actionType: ACTION_TYPE_DEMANDE_ACCOMPAGNEMENT,
-      message: `Le demandeur, après avoir choisi l'autonomie, demande à être accompagné par ${amoNom || "un AMO"}.`,
+      message: formulaireReinitialise
+        ? `${messageBase} Son formulaire d'éligibilité n'était pas encore déposé : un nouveau lien de préremplissage a été généré pour intégrer l'AMO.`
+        : messageBase,
       authorName: `${demandeurPrenom} ${demandeurNom}`.trim() || "Le demandeur",
       authorStructure: null,
       authorStructureType: "DEMANDEUR",
@@ -44,7 +49,7 @@ export async function demanderMonAccompagnement(): Promise<ActionResult<{ amoNom
     revalidatePath("/mon-compte");
     revalidatePath("/espace-agent", "layout");
 
-    return { success: true, data: { amoNom } };
+    return { success: true, data: { amoNom, formulaireReinitialise } };
   } catch (error) {
     console.error("Erreur demanderMonAccompagnement:", error);
     return { success: false, error: "Erreur lors de la demande d'accompagnement" };
