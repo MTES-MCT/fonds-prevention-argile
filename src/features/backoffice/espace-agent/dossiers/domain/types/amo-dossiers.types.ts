@@ -25,6 +25,19 @@ export const STATUTS_REFUSES = [StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, Statu
 export const STATUTS_CONSULTABLES = [...STATUTS_SUIVIS, ...STATUTS_REFUSES, StatutValidationAmo.SANS_AMO];
 
 /**
+ * Statuts pour lesquels « Vérifier son éligibilité » (édition de la simulation) est ouvert.
+ * `SANS_AMO` : le dossier progresse sans AMO, piloté par l'Aller-vers territorial.
+ * `LOGEMENT_NON_ELIGIBLE` : une saisie erronée doit rester corrigeable (la sauvegarde
+ * recalcule le statut). `ACCOMPAGNEMENT_REFUSE` en est exclu : le dossier est garé (ADR-0022).
+ */
+export const STATUTS_SIMULATION_EDITABLE = [
+  StatutValidationAmo.EN_ATTENTE,
+  StatutValidationAmo.LOGEMENT_ELIGIBLE,
+  StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
+  StatutValidationAmo.SANS_AMO,
+];
+
+/**
  * Variantes visuelles pour la cellule « Précisions ».
  */
 type PrecisionVariant = "en_construction" | "en_instruction" | "archive";
