@@ -44,7 +44,8 @@ export const SCENARIOS: Scenario[] = [
     id: "demande-amo-en-attente",
     titre: "Demande d'accompagnement en attente de réponse AMO",
     sert_a: "Accepter ou refuser l'éligibilité et vérifier l'action tracée",
-    matches: (d) => d.validation?.statut === StatutValidationAmo.EN_ATTENTE && !d.archivedAt,
+    // Un Aller-vers voit ces demandes sans pouvoir y répondre : seul l'AMO destinataire agit.
+    matches: (d) => d.validation?.statut === StatutValidationAmo.EN_ATTENTE && !d.archivedAt && d.canActAsResponsable,
   },
   {
     id: "dossier-actif-archivable",
