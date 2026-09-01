@@ -53,7 +53,9 @@ const FAKE_PARCOURS_FILES = [
   "03-validations-amo.sql",
   "04-dossiers-ds.sql",
   "05-prospects-sans-amo.sql",
-  "06-test-aucun-amo.sql",
+  // 06-test-aucun-amo.sql : volontairement exclu. C'est un scénario manuel (cf. son en-tête)
+  // qui vide `departements` de TOUTES les AMO couvrant le 36, pour tester « Aucun AMO
+  // disponible ». Exécuté en série, il prive les AMO seedées de territoire.
   "07-commentaires.sql",
   "08-prospect-qualifications.sql",
   "09-archives-dashboard.sql",
@@ -132,13 +134,10 @@ function assertNotProduction(yesStaging: boolean): void {
 
 async function assertRefDataPresent(): Promise<void> {
   const rga = await rawClient<{ count: number }[]>`SELECT count(*)::int AS count FROM rga_zones`;
-  const catnat =
-    await rawClient<{ count: number }[]>`SELECT count(*)::int AS count FROM catastrophes_naturelles`;
+  const catnat = await rawClient<{ count: number }[]>`SELECT count(*)::int AS count FROM catastrophes_naturelles`;
 
   if (!rga[0] || rga[0].count === 0) {
-    throw new Error(
-      "rga_zones vide. Lance d'abord : pnpm rga:import /chemin/vers/AleaRG_2025_Fxx_L93.shp"
-    );
+    throw new Error("rga_zones vide. Lance d'abord : pnpm rga:import /chemin/vers/AleaRG_2025_Fxx_L93.shp");
   }
   if (!catnat[0] || catnat[0].count === 0) {
     throw new Error("catastrophes_naturelles vide. Lance d'abord : pnpm seo:import-catnat");
@@ -204,9 +203,7 @@ async function runVerifyStep(dryRun: boolean): Promise<void> {
 
 async function main(): Promise<void> {
   const args = parseArgs();
-  console.log(
-    `seed:staging — steps=${args.steps.join(",")}${args.dryRun ? " (dry-run)" : ""}\n`
-  );
+  console.log(`seed:staging — steps=${args.steps.join(",")}${args.dryRun ? " (dry-run)" : ""}\n`);
 
   if (args.steps.includes("safety")) assertNotProduction(args.yesStaging);
   if (args.steps.includes("ref-data") && !args.dryRun) await assertRefDataPresent();
