@@ -1,8 +1,10 @@
 -- =============================================================================
 -- Agents — dump du staging au 12 mai 2026
 -- =============================================================================
--- 9 agents (4 super-admins + 2 seed fictifs Géraldine/Jean-Patrick utilisés par
--- fake-parcours/07-commentaires.sql + 3 testeurs réels rattachés à AMO/AV).
+-- 10 agents (4 super-admins + 2 seed fictifs Géraldine/Jean-Patrick utilisés par
+-- fake-parcours/07-commentaires.sql + 4 testeurs rattachés à AMO/AV).
+-- Tous les rôles métier sont rattachés à une structure : un AMO sans entreprise, ou un
+-- aller-vers sans structure, rend l'espace agent inexploitable (scope qui lève ou listing national).
 --
 -- Idempotent : ON CONFLICT (email) DO UPDATE — on ne touche pas à `sub` car
 -- conserver le `sub` existant en local permet de garder une session ProConnect

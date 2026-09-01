@@ -186,7 +186,7 @@ async function runAmoAvStep(dryRun: boolean): Promise<void> {
 }
 
 async function runParcoursStep(dryRun: boolean): Promise<void> {
-  console.log("→ parcours (15 fichiers)");
+  console.log(`→ parcours (${FAKE_PARCOURS_FILES.length} fichiers)`);
   for (const f of FAKE_PARCOURS_FILES) {
     await runSqlFile(`fake-parcours/${f}`, dryRun);
   }

@@ -23,6 +23,11 @@
  *   pnpm qa:cas-de-test --agent=... --markdown           # checklist collable dans Notion
  *   pnpm qa:cas-de-test --agent=... --scenario=dossier-archive --limit=5
  *
+ * Coût de `--comptes` : un listing complet par agent, et le repository charge tous les
+ * parcours avant de filtrer le territoire côté JS. C'est donc en O(agents x volume
+ * national) — négligeable en local (~1,6 s pour 11 comptes et 251 parcours), à ne pas
+ * lancer à l'aveugle sur un gros volume de production.
+ *
  * Prérequis : .env.local (ou vars Scalingo) avec la config DB. Sur staging, lancer dans
  * un conteneur one-off (cf. « Exécution sur Scalingo » du README ops).
  */
@@ -90,7 +95,8 @@ async function findParcoursAvecActionSysteme(parcoursIds: string[]): Promise<Set
  * lisibles (`22222222-2222-2222-…`) qui ne le respectent pas : toute server action validant
  * un `parcoursId` les refuse. Autant le dire ici plutôt que de le découvrir à l'écran.
  */
-const RFC_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const RFC_UUID =
+  /^([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|0{8}-0{4}-0{4}-0{4}-0{12}|f{8}-f{4}-f{4}-f{4}-f{12})$/i;
 
 /** Repère non nominatif du dossier : où il est, et pourquoi il satisfait la précondition. */
 function resume(d: DossierItem): string {

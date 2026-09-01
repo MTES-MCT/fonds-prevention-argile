@@ -51,22 +51,29 @@ export const SCENARIOS: Scenario[] = [
     id: "dossier-actif-archivable",
     titre: "Dossier actif, archivable",
     sert_a: "Archiver avec une raison et vérifier l'action « Dossier archivé »",
-    // Seule la demande en attente est exclue : son écran propose le refus d'accompagnement,
-    // pas la modale « Archiver ». Le détail prospect, lui, la porte (`ArchiveProspectButton`).
-    matches: (d) => !d.archivedAt && d.canActAsResponsable && d.etat !== DOSSIER_ETAT.EN_ATTENTE_AMO,
+    // Exclut les écrans qui ne portent pas la modale « Archiver » : la demande en attente
+    // propose le refus d'accompagnement, et un dossier refusé propose « Ré-ouvrir la demande »
+    // à la place du menu « Gérer ». Le détail prospect, lui, la porte (`ArchiveProspectButton`).
+    matches: (d) =>
+      !d.archivedAt &&
+      d.canActAsResponsable &&
+      d.etat !== DOSSIER_ETAT.EN_ATTENTE_AMO &&
+      d.etat !== DOSSIER_ETAT.REFUSE,
   },
   {
     id: "dossier-archive",
     titre: "Dossier déjà archivé",
     sert_a: "Désarchiver et vérifier que l'action d'archivage reste visible",
-    matches: (d) => d.archivedAt !== null && d.canActAsResponsable,
+    // Un refus d'accompagnement archive aussi le dossier, mais son écran propose la
+    // ré-ouverture et non le dé-archivage : ce n'est pas le bouton qu'on veut tester.
+    matches: (d) => d.archivedAt !== null && d.canActAsResponsable && d.etat !== DOSSIER_ETAT.REFUSE,
   },
   {
     id: "dossier-simulation-editable",
     titre: "Dossier dont la simulation est éditable",
     sert_a: "« Vérifier son éligibilité » : corriger en non éligible, puis revenir en éligible",
     matches: (d) =>
-      d.validation !== null && STATUTS_SIMULATION_EDITABLE.includes(d.validation.statut) && d.canActAsResponsable,
+      d.canActAsResponsable && (d.validation === null || STATUTS_SIMULATION_EDITABLE.includes(d.validation.statut)),
   },
   {
     id: "dossier-avec-action-systeme",
