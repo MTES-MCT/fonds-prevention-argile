@@ -25,6 +25,13 @@ choses** : `checkProConnectAccess()` (bonne méthode d'auth) **et** le rôle.
 > en production (fallback legacy/test). La dépendance `argon2` a été retirée : aucun code
 > applicatif ne hashait de mot de passe.
 
+> **Se connecter en agent hors production** passe donc toujours par ProConnect — en local et sur
+> staging, par son **bac à sable**. Le mot de passe vit chez l'IdP, pas chez nous. Deux étages
+> doivent être satisfaits : l'identité doit exister côté bac à sable, **et** une ligne `agents`
+> doit porter le même email (l'app ne crée jamais d'agent à la volée). Comptes de test et
+> diagnostic des échecs : voir « Se connecter en tant qu'agent en local » dans le
+> [README](../../README.md).
+
 Source : `src/middleware.ts`, `src/features/auth/domain/value-objects/constants.ts`.
 
 ---

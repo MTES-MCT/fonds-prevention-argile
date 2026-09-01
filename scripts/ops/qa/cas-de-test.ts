@@ -38,7 +38,7 @@ import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossi
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import { ACTION_TYPES_SYSTEME } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { getServerEnv } from "@/shared/config/env.config";
-import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
+
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types/dossiers-territoire.types";
 import type { Agent } from "@/shared/database/schema/agents";
 import { SCENARIOS, type Scenario, type ScenarioContext } from "./scenarios";
@@ -98,13 +98,13 @@ function resume(d: DossierItem): string {
 
 async function listerComptes() {
   const agents = await agentsRepo.findAll();
-  const agentsTerrain = agents.filter((a) => a.role !== AGENT_ROLES.ADMINISTRATEUR);
 
-  console.log(`${agentsTerrain.length} comptes agents (hors administrateurs purs).`);
+  console.log(`${agents.length} comptes agents.`);
   console.log("Le volume est celui du listing espace agent : ce que le compte voit vraiment.");
+  console.log("« jamais connecté » = ligne créée en base mais sans identité ProConnect associée.");
   console.log();
 
-  for (const agent of agentsTerrain) {
+  for (const agent of agents) {
     const input = {
       id: agent.id,
       role: agent.role,
@@ -134,8 +134,13 @@ async function listerComptes() {
           .filter(Boolean)
           .join(" + ") || "aucun territoire";
 
+    // Un compte jamais connecté n'a pas d'identité ProConnect : il ne sert pas à tester.
+    const connexion = agent.lastLogin
+      ? `dernier login ${agent.lastLogin.toISOString().slice(0, 10)}`
+      : "JAMAIS CONNECTÉ";
     console.log(`  ${agent.email}`);
     console.log(`      ${agent.role} — ${await describeStructure(agent)} — ${territoire} — ${total} dossiers visibles`);
+    console.log(`      ${connexion}`);
   }
   console.log();
   console.log("Puis : pnpm qa:cas-de-test --agent=<email>");
