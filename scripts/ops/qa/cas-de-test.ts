@@ -84,6 +84,14 @@ async function findParcoursAvecActionSysteme(parcoursIds: string[]): Promise<Set
   return new Set(rows.map((r) => r.parcoursId));
 }
 
+/**
+ * UUID au sens RFC 4122, tel que le valide `z.string().uuid()` depuis Zod 4 (nibble de
+ * version 1-8, nibble de variante 8/9/a/b). Les jeux de données seedés utilisent des ids
+ * lisibles (`22222222-2222-2222-…`) qui ne le respectent pas : toute server action validant
+ * un `parcoursId` les refuse. Autant le dire ici plutôt que de le découvrir à l'écran.
+ */
+const RFC_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 /** Repère non nominatif du dossier : où il est, et pourquoi il satisfait la précondition. */
 function resume(d: DossierItem): string {
   const lieu = [d.logement.commune, d.logement.codeDepartement].filter(Boolean).join(" ");
@@ -93,7 +101,8 @@ function resume(d: DossierItem): string {
     d.validation ? `validation ${d.validation.statut}` : "sans validation AMO",
     d.archivedAt ? "archivé" : "actif",
   ].join(", ");
-  return `${lieu || "commune inconnue"} — ${etat}`;
+  const alerte = RFC_UUID.test(d.parcoursId) ? "" : " — ID DE SEED NON CONFORME, les actions le refuseront";
+  return `${lieu || "commune inconnue"} — ${etat}${alerte}`;
 }
 
 async function listerComptes() {
