@@ -135,6 +135,25 @@ branche. Règles :
 - Français, accents. Pas d'emojis.
 - Si la branche ne touche rien de visible côté UI, l'indiquer : « rien à tester côté UI ».
 
+**Partir de cas réels, pas de préconditions génériques.** Quand la branche touche l'espace
+agent, une étape du type « ouvrir un prospect non qualifié de ton territoire » coûte plus de
+temps à instancier qu'à dérouler. `pnpm qa:cas-de-test` (cf. `scripts/ops/README.md`) résout
+le périmètre réel d'un compte et sort, par scénario, les dossiers concernés avec leur URL :
+
+1. `pnpm qa:cas-de-test --comptes` — choisir le compte de test (et écarter ceux marqués
+   « COMPTE INEXPLOITABLE »).
+2. `pnpm qa:cas-de-test --agent=<email> --markdown` — obtenir les liens directs.
+3. Coller ces liens sous les étapes correspondantes de la checklist.
+
+**Claude n'a pas accès à l'environnement de test** : c'est l'utilisateur qui lance le script
+(one-off Scalingo staging, ou en local avec `DATABASE_URL` de staging — le script est en
+lecture seule) et qui colle la sortie. Claude fabrique alors la checklist définitive en
+associant chaque lien à ses étapes et à ses attendus.
+
+Les cas se consomment (un prospect qualifié n'est plus « à qualifier ») : relancer le script
+à chaque session de test. Ajouter un scénario dans `scripts/ops/qa/scenarios.ts` quand la PR
+introduit un flux dont la précondition n'existe pas encore.
+
 ### Revue Copilot avant merge (à chaque PR)
 
 Une fois la branche prête et validée (`pnpm validate` vert), **ne pas merger directement**.
