@@ -1,11 +1,11 @@
 -- =============================================================================
 -- 08-PROSPECT-QUALIFICATIONS : Qualifications de prospects par l'agent allers-vers
 -- =============================================================================
--- Agent allers-vers : aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa002 (Jean-Patrick Duval)
+-- Agent allers-vers : aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa002 (Jean-Patrick Duval)
 -- Prospects éligibles : 555...531 à 535 (situation_particulier = 'eligible')
 -- Prospects archivés : 555...536 à 538 (situation_particulier = 'archive')
 -- Prospects récents : 555...501 à 510 (situation_particulier = 'prospect')
--- UUID prefix qualifications : 66666666-6666-6666-6666-6666666666xx
+-- UUID prefix qualifications : 66666666-6666-4666-8666-6666666666xx
 
 -- =============================================================================
 -- 3 prospects qualifiés "éligible"
@@ -14,9 +14,9 @@
 -- Prospect 531 : éligible après appel + email
 INSERT INTO prospect_qualifications (id, parcours_id, agent_id, decision, actions_realisees, raisons_ineligibilite, note, created_at, updated_at)
 VALUES (
-  '66666666-6666-6666-6666-666666666601',
-  '55555555-5555-5555-5555-555555555531',
-  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa002',
+  '66666666-6666-4666-8666-666666666601',
+  '55555555-5555-4555-8555-555555555531',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa002',
   'eligible',
   '{"appel_telephonique","email_envoye"}',
   NULL,
@@ -28,9 +28,9 @@ VALUES (
 -- Prospect 532 : éligible après visite à domicile (pas de note)
 INSERT INTO prospect_qualifications (id, parcours_id, agent_id, decision, actions_realisees, raisons_ineligibilite, note, created_at, updated_at)
 VALUES (
-  '66666666-6666-6666-6666-666666666602',
-  '55555555-5555-5555-5555-555555555532',
-  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa002',
+  '66666666-6666-4666-8666-666666666602',
+  '55555555-5555-4555-8555-555555555532',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa002',
   'eligible',
   '{"visite_domicile"}',
   NULL,
@@ -42,9 +42,9 @@ VALUES (
 -- Prospect 533 : éligible après appel + rendez-vous
 INSERT INTO prospect_qualifications (id, parcours_id, agent_id, decision, actions_realisees, raisons_ineligibilite, note, created_at, updated_at)
 VALUES (
-  '66666666-6666-6666-6666-666666666603',
-  '55555555-5555-5555-5555-555555555533',
-  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa002',
+  '66666666-6666-4666-8666-666666666603',
+  '55555555-5555-4555-8555-555555555533',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa002',
   'eligible',
   '{"appel_telephonique","rendez_vous_structure"}',
   NULL,
@@ -60,9 +60,9 @@ VALUES (
 -- Prospect 536 : non éligible — appartement
 INSERT INTO prospect_qualifications (id, parcours_id, agent_id, decision, actions_realisees, raisons_ineligibilite, note, created_at, updated_at)
 VALUES (
-  '66666666-6666-6666-6666-666666666604',
-  '55555555-5555-5555-5555-555555555536',
-  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa002',
+  '66666666-6666-4666-8666-666666666604',
+  '55555555-5555-4555-8555-555555555536',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa002',
   'non_eligible',
   '{"appel_telephonique"}',
   '{"appartement"}',
@@ -74,9 +74,9 @@ VALUES (
 -- Prospect 537 : non éligible — hors zone + maison trop endommagée
 INSERT INTO prospect_qualifications (id, parcours_id, agent_id, decision, actions_realisees, raisons_ineligibilite, note, created_at, updated_at)
 VALUES (
-  '66666666-6666-6666-6666-666666666605',
-  '55555555-5555-5555-5555-555555555537',
-  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa002',
+  '66666666-6666-4666-8666-666666666605',
+  '55555555-5555-4555-8555-555555555537',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa002',
   'non_eligible',
   '{"email_envoye","appel_telephonique"}',
   '{"hors_zone_perimetre","maison_trop_endommagee"}',
@@ -92,9 +92,9 @@ VALUES (
 -- Prospect 501 : à qualifier — pas joignable
 INSERT INTO prospect_qualifications (id, parcours_id, agent_id, decision, actions_realisees, raisons_ineligibilite, note, created_at, updated_at)
 VALUES (
-  '66666666-6666-6666-6666-666666666606',
-  '55555555-5555-5555-5555-555555555501',
-  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa002',
+  '66666666-6666-4666-8666-666666666606',
+  '55555555-5555-4555-8555-555555555501',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa002',
   'a_qualifier',
   '{"appel_telephonique"}',
   NULL,
@@ -111,9 +111,9 @@ VALUES (
 -- Première qualification : non éligible (il y a 15 jours)
 INSERT INTO prospect_qualifications (id, parcours_id, agent_id, decision, actions_realisees, raisons_ineligibilite, note, created_at, updated_at)
 VALUES (
-  '66666666-6666-6666-6666-666666666607',
-  '55555555-5555-5555-5555-555555555534',
-  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa002',
+  '66666666-6666-4666-8666-666666666607',
+  '55555555-5555-4555-8555-555555555534',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa002',
   'non_eligible',
   '{"appel_telephonique"}',
   '{"hors_plafonds_ressources"}',
@@ -125,9 +125,9 @@ VALUES (
 -- Deuxième qualification : re-qualifié éligible après vérification (il y a 4 jours)
 INSERT INTO prospect_qualifications (id, parcours_id, agent_id, decision, actions_realisees, raisons_ineligibilite, note, created_at, updated_at)
 VALUES (
-  '66666666-6666-6666-6666-666666666608',
-  '55555555-5555-5555-5555-555555555534',
-  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa002',
+  '66666666-6666-4666-8666-666666666608',
+  '55555555-5555-4555-8555-555555555534',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa002',
   'eligible',
   '{"appel_telephonique","visite_domicile"}',
   NULL,
@@ -143,6 +143,6 @@ SELECT
   decision,
   COUNT(*) as total
 FROM prospect_qualifications
-WHERE id::text LIKE '66666666-6666-6666-6666-6666666666%'
+WHERE id::text LIKE '66666666-6666-4666-8666-6666666666%'
 GROUP BY decision
 ORDER BY decision;

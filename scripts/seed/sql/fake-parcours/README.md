@@ -80,14 +80,20 @@ Pour supprimer les données de test, exécuter le nettoyage dans `00-init.sql`.
 
 Les UUID utilisent des patterns reconnaissables :
 
-- Users (AMO) : `11111111-1111-1111-1111-111111111101` à `140`
-- Users (Prospects) : `11111111-1111-1111-1111-111111111141` à `170`
-- Parcours (AMO) : `22222222-2222-2222-2222-2222222222XX`
-- Parcours (Prospects) : `55555555-5555-5555-5555-5555555555XX`
-- Validations : `33333333-3333-3333-3333-3333333333XX`
-- Dossiers DS : `44444444-4444-4444-4444-4444444444XX`
-- Commentaires : `77777777-7777-7777-7777-7777777777XX`
-- Agents fictifs : `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaN`
+- Users (AMO) : `11111111-1111-4111-8111-111111111101` à `140`
+- Users (Prospects) : `11111111-1111-4111-8111-111111111141` à `170`
+- Parcours (AMO) : `22222222-2222-4222-8222-2222222222XX`
+- Parcours (Prospects) : `55555555-5555-4555-8555-5555555555XX`
+- Validations : `33333333-3333-4333-8333-3333333333XX`
+- Dossiers DS : `44444444-4444-4444-8444-4444444444XX`
+- Commentaires : `77777777-7777-4777-8777-7777777777XX`
+- Agents fictifs : `aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaN`
+
+> Les nibbles `4` (version) et `8` (variante) ne sont pas décoratifs : sans eux, Zod 4
+> rejette l'id (RFC 4122) et toute server action qui le valide échoue avant traitement —
+> la qualification de prospect notamment. Les patterns `LIKE` de nettoyage et de comptage
+> portent sur ce même préfixe et doivent rester alignés, sinon le seed perd son
+> idempotence. Garde-fou : `scripts/seed/sql/seed-uuid-rfc.test.ts`.
 
 ## Cas d'usage
 
@@ -103,9 +109,9 @@ Les UUID utilisent des patterns reconnaissables :
 
 Les prospects sont répartis par ancienneté pour tester les filtres :
 
-- Prospects récents (dernière action < 7 jours) : IDs `55555555-5555-5555-5555-555555555501` à `510`
-- Prospects moyens (7-30 jours) : IDs `55555555-5555-5555-5555-555555555511` à `520`
-- Prospects anciens (> 30 jours) : IDs `55555555-5555-5555-5555-555555555521` à `530`
+- Prospects récents (dernière action < 7 jours) : IDs `55555555-5555-4555-8555-555555555501` à `510`
+- Prospects moyens (7-30 jours) : IDs `55555555-5555-4555-8555-555555555511` à `520`
+- Prospects anciens (> 30 jours) : IDs `55555555-5555-4555-8555-555555555521` à `530`
 
 ### Tester les commentaires (notes partagées)
 
@@ -120,11 +126,11 @@ Utile pour vérifier que le menu modifier/supprimer n'apparaît que sur ses prop
 
 Le script `13-amo-av-arrete-2026.sql` crée les structures nécessaires pour couvrir les 3 modes :
 
-| Dept | Mode (`getAmoMode`) | Ce qui est créé |
-| ---- | ------------------- | --------------- |
+| Dept | Mode (`getAmoMode`) | Ce qui est créé                                                                |
+| ---- | ------------------- | ------------------------------------------------------------------------------ |
 | `36` | OBLIGATOIRE         | AMO existant (07-commentaires.sql) + lien AV → dept 36 (pour `AllerVersLocal`) |
-| `54` | AV_AMO_FUSIONNES    | Soliha 54 (AMO + AV liés au dept) |
-| `82` | FACULTATIF + AMO    | "AMO Tarn-et-Garonne" |
-| `75` | FACULTATIF SANS AMO | Aucun seed (l'absence d'AMO est ce qu'on teste) |
+| `54` | AV_AMO_FUSIONNES    | Soliha 54 (AMO + AV liés au dept)                                              |
+| `82` | FACULTATIF + AMO    | "AMO Tarn-et-Garonne"                                                          |
+| `75` | FACULTATIF SANS AMO | Aucun seed (l'absence d'AMO est ce qu'on teste)                                |
 
 Le script est idempotent (DELETE préalable + ON CONFLICT DO NOTHING).

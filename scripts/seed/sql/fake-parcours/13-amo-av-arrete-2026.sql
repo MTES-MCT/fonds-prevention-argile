@@ -36,7 +36,7 @@ DELETE FROM entreprises_amo
 -- =============================================================================
 INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse)
 VALUES (
-  '99999999-9999-9999-9999-999999999901',
+  '99999999-9999-4999-8999-999999999901',
   'AMO du Berry Profond (seed test)',
   '99999999900001',
   'Indre 36',
@@ -67,7 +67,7 @@ ON CONFLICT DO NOTHING;
 -- =============================================================================
 INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse)
 VALUES (
-  '99999999-9999-9999-9999-999999999902',
+  '99999999-9999-4999-8999-999999999902',
   'Soliha 54 (seed test)',
   '99999999900002',
   'Meurthe-et-Moselle 54',
@@ -96,7 +96,7 @@ ON CONFLICT DO NOTHING;
 -- =============================================================================
 INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse)
 VALUES (
-  '99999999-9999-9999-9999-999999999903',
+  '99999999-9999-4999-8999-999999999903',
   'AMO Tarn-et-Garonne (seed test)',
   '99999999900003',
   'Tarn-et-Garonne 82',
