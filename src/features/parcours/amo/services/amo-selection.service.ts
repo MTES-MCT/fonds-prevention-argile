@@ -21,6 +21,7 @@ import { AmoMode, getAmoMode } from "../domain/value-objects/departements-amo";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { Status, Step } from "../../core";
 import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
+import { reinitialiserDossierEtape } from "../../dossiers-ds/services/regeneration.service";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributesFromAmo } from "@/shared/email/brevo";
@@ -544,6 +545,8 @@ export interface DemanderAccompagnementResult {
   amoNom: string;
   demandeurPrenom: string;
   demandeurNom: string;
+  /** Le dossier d'éligibilité (préremplissage "Pas de mandataire") a été réinitialisé. */
+  formulaireReinitialise: boolean;
 }
 
 /**
@@ -613,6 +616,15 @@ export async function demanderAccompagnementDemandeur(
     return selectResult;
   }
 
+  // Le dossier d'éligibilité déjà créé sans AMO (préremplissage "Pas de mandataire", pas de
+  // SIRET) ne peut pas être corrigé via l'API DN — préremplissage = création seulement (§2.6
+  // FLOW-AND-SYNC.md). Best-effort : s'il n'est pas encore déposé, on le réinitialise pour
+  // qu'un nouveau prérempli à jour soit recréé au prochain retour du demandeur sur l'étape.
+  // S'il est déjà déposé (ou vient de l'être), la réinitialisation refuse — rien à faire côté
+  // applicatif, le dossier garde des infos AMO obsolètes.
+  const reinitResult = await reinitialiserDossierEtape(parcours.id, Step.ELIGIBILITE);
+  const formulaireReinitialise = reinitResult.success && reinitResult.data.statut === "a_recreer";
+
   const [amo] = await db
     .select({ nom: entreprisesAmo.nom })
     .from(entreprisesAmo)
@@ -625,6 +637,7 @@ export async function demanderAccompagnementDemandeur(
       amoNom: amo?.nom ?? "",
       demandeurPrenom: resolved.data.userPrenom,
       demandeurNom: resolved.data.userNom,
+      formulaireReinitialise,
     },
   };
 }

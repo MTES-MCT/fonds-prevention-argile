@@ -108,6 +108,12 @@ export function DemanderAccompagnementModal({ isOpen, onClose }: DemanderAccompa
                   pour vous accompagner dans vos démarches.
                 </p>
                 <p>Nous lui envoyons un e-mail pour l&apos;informer de votre demande.</p>
+                <p className="fr-text--sm fr-text-mention--grey">
+                  Si vous aviez déjà commencé à remplir votre formulaire d&apos;éligibilité sans accompagnement et
+                  qu&apos;il n&apos;est pas encore transmis, il sera réinitialisé pour intégrer votre AMO : vous
+                  recevrez un nouveau lien et devrez le remplir à nouveau. S&apos;il est déjà transmis, votre AMO
+                  complètera les informations manquantes directement avec l&apos;administration.
+                </p>
               </div>
               <div className="fr-modal__footer">
                 <ul className="fr-btns-group fr-btns-group--right fr-btns-group--inline-reverse fr-btns-group--inline-lg">
