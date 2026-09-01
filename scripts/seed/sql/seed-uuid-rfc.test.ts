@@ -20,6 +20,15 @@ function fichiersSql(dossier: string): string[] {
   });
 }
 
+// Un nettoyage de migration doit citer l'ANCIEN format pour purger les lignes laissees
+// par un environnement pas encore re-seede : ces blocs sont donc exemptes, explicitement
+// et de facon greppable. Ils disparaitront quand tous les environnements auront ete migres.
+const BLOC_HERITAGE = /-- LEGACY-UUID-DEBUT[\s\S]*?-- LEGACY-UUID-FIN/g;
+
+function contenuVerifiable(chemin: string): string {
+  return readFileSync(chemin, "utf8").replace(BLOC_HERITAGE, "");
+}
+
 const fichiers = fichiersSql(__dirname);
 
 describe("uuid des jeux de donnees seedes", () => {
@@ -28,7 +37,7 @@ describe("uuid des jeux de donnees seedes", () => {
   });
 
   it.each(fichiers)("%s ne contient que des uuid conformes RFC 4122", (fichier) => {
-    const contenu = readFileSync(fichier, "utf8");
+    const contenu = contenuVerifiable(fichier);
 
     const nonConformes = [...new Set(contenu.match(UUID_COMPLET) ?? [])].filter(
       (uuid) => !uuidSchema.safeParse(uuid).success
@@ -39,7 +48,7 @@ describe("uuid des jeux de donnees seedes", () => {
   // Les patterns LIKE de nettoyage et de comptage portent sur le prefixe de l'id :
   // ils doivent suivre la meme normalisation, sinon le seed n'est plus idempotent.
   it.each(fichiers)("%s aligne ses prefixes LIKE sur la meme normalisation", (fichier) => {
-    const contenu = readFileSync(fichier, "utf8");
+    const contenu = contenuVerifiable(fichier);
 
     const nonConformes = [...new Set(contenu.match(UUID_PREFIXE) ?? [])].filter(
       (prefixe) => !uuidSchema.safeParse(`${prefixe}000000000000`).success
