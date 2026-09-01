@@ -50,7 +50,13 @@ export const SCENARIOS: Scenario[] = [
     id: "dossier-actif-archivable",
     titre: "Dossier actif, archivable",
     sert_a: "Archiver avec une raison et vérifier l'action « Dossier archivé »",
-    matches: (d) => !d.archivedAt && d.canActAsResponsable && d.etat !== DOSSIER_ETAT.AV_QUALIFICATION,
+    // Exclut les écrans qui ne portent pas la modale « Archiver » : une demande en attente
+    // relève du refus d'accompagnement, un prospect non qualifié de la qualification.
+    matches: (d) =>
+      !d.archivedAt &&
+      d.canActAsResponsable &&
+      d.etat !== DOSSIER_ETAT.AV_QUALIFICATION &&
+      d.etat !== DOSSIER_ETAT.EN_ATTENTE_AMO,
   },
   {
     id: "dossier-archive",

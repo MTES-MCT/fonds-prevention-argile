@@ -145,10 +145,13 @@ le périmètre réel d'un compte et sort, par scénario, les dossiers concernés
 2. `pnpm qa:cas-de-test --agent=<email> --markdown` — obtenir les liens directs.
 3. Coller ces liens sous les étapes correspondantes de la checklist.
 
-**Claude n'a pas accès à l'environnement de test** : c'est l'utilisateur qui lance le script
-(one-off Scalingo staging, ou en local avec `DATABASE_URL` de staging — le script est en
-lecture seule) et qui colle la sortie. Claude fabrique alors la checklist définitive en
-associant chaque lien à ses étapes et à ses attendus.
+Qui lance le script dépend de l'environnement visé :
+
+- **tests en local** (cas courant) : Claude lance le script lui-même sur la base de dev et
+  livre directement une checklist avec les liens dedans — rien à coller ;
+- **tests sur staging** : Claude n'a pas cette base. L'utilisateur lance le script (one-off
+  Scalingo, ou en local avec le `DATABASE_URL` de staging — il est en lecture seule) et colle
+  la sortie ; Claude l'associe alors aux étapes et aux attendus.
 
 Les cas se consomment (un prospect qualifié n'est plus « à qualifier ») : relancer le script
 à chaque session de test. Ajouter un scénario dans `scripts/ops/qa/scenarios.ts` quand la PR
