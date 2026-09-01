@@ -79,13 +79,17 @@ describe("getStepListItems", () => {
       expect(items[2].state).toBe("active"); // ELIGIBILITE
     });
 
-    it("demande d'accompagnement après autonomie : EN_ATTENTE alors que currentStep a déjà avancé à ELIGIBILITE → l'item AMO reste actif", () => {
+    it("demande d'accompagnement après autonomie : EN_ATTENTE alors que currentStep a déjà avancé à ELIGIBILITE → l'item AMO reste actif et le formulaire éligibilité est bloqué", () => {
       // Un demandeur en autonomie (SANS_AMO) a déjà fait avancer son parcours à ELIGIBILITE.
       // S'il redemande un accompagnement, statutAmo repasse à EN_ATTENTE sans que currentStep
-      // ne revienne à CHOIX_AMO : l'item ne doit pas s'afficher comme déjà répondu.
+      // ne revienne à CHOIX_AMO : l'item AMO ne doit pas s'afficher comme déjà répondu, et le
+      // lien vers le formulaire (réinitialisé, cf. §2.9 FLOW-AND-SYNC.md) doit rester bloqué
+      // tant que l'AMO n'a pas confirmé — sinon le demandeur pourrait le remplir avant.
       const items = getStepListItems(AmoMode.FACULTATIF, StatutValidationAmo.EN_ATTENTE, Step.ELIGIBILITE, false);
       expect(items[1].label).toBe("Attendre la réponse de votre AMO");
       expect(items[1].state).toBe("active");
+      expect(items[2].label).toContain("éligibilité");
+      expect(items[2].state).toBe("pending");
     });
   });
 

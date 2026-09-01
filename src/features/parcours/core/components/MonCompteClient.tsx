@@ -270,6 +270,15 @@ function CalloutManager({
     return null;
   }
 
+  // Demande d'accompagnement après autonomie (§2.9 FLOW-AND-SYNC.md) : le parcours est déjà à
+  // ÉLIGIBILITE alors que l'AMO n'a pas encore répondu (statutAmo repasse à EN_ATTENTE sans
+  // reculer l'étape). Sans cette garde, `renderEligibiliteCallout` laisserait le demandeur
+  // remplir/déposer le formulaire (fraîchement réinitialisé) avant que l'AMO n'ait confirmé —
+  // même blocage que le choix initial de l'AMO.
+  if (currentStep === Step.ELIGIBILITE && statutAmo === StatutValidationAmo.EN_ATTENTE) {
+    return <CalloutAmoEnAttente />;
+  }
+
   // Gestion selon l'étape courante
   switch (currentStep) {
     case Step.CHOIX_AMO:
