@@ -367,6 +367,29 @@ Service `demanderAccompagnementDemandeur` (`amo-selection.service.ts`), symétri
 - Extraction commune avec `assignAmoAutomatiqueForUser` : `resolveAmoAndContactForTerritory`
   (1er AMO du territoire + coordonnées de contact du demandeur).
 
+**Correction du dossier d'éligibilité déjà créé sans AMO.** Un demandeur en autonomie a pu
+avancer jusqu'à l'étape éligibilité avant de changer d'avis : son dossier DN existant a alors
+été prérempli sans AMO (`MANDATAIRE_FINANCIER = "Pas de mandataire"`, pas de SIRET, cf. §2.6).
+Comme le préremplissage REST ne sait que **créer** (jamais mettre à jour, même limite que
+l'annulation en §2.6), `demanderAccompagnementDemandeur` réutilise le mécanisme de
+réinitialisation existant côté agent/demandeur (`reinitialiserDossierEtape` /
+`regenererLienPrefill`, `regeneration.service.ts`, cf. §7.4) :
+best-effort, sur l'étape éligibilité, juste après l'attribution de l'AMO. S'il n'est pas encore
+déposé, le pointeur est retiré (numéro conservé dans `dossiers_ds_tentatives`) et un nouveau
+prérempli à jour est recréé au prochain retour du demandeur sur l'étape (`createEligibiliteDossier`,
+idempotence naturelle via `getDossierByStep`). S'il est déjà déposé, la réinitialisation refuse
+(`dossier_depose`) : rien de faisable côté applicatif, le dossier garde des infos AMO obsolètes
+jusqu'à correction manuelle par l'AMO directement auprès de l'administration.
+
+Ce reset est **automatique et non confirmé au cas par cas** : la popup « Demander à être
+accompagné » (`DemanderAccompagnementModal`) prévient le demandeur en amont qu'un brouillon
+déjà entamé sous l'ancien lien sera perdu. Le résultat (`formulaireReinitialise: boolean`) est
+propagé jusqu'à l'audit `parcours_actions` (message enrichi si le reset a eu lieu). Le
+changement de callout (retour à « en attente de réponse de l'AMO ») ne nécessite aucun code
+dédié : `statutAmo` passe à `EN_ATTENTE` via `selectAmoForUser`, et `CalloutManager`
+(`MonCompteClient.renderChoixAmoCallout`) route déjà naturellement vers `CalloutAmoEnAttente`
+sur ce statut après le `revalidatePath`/`router.refresh()` existants.
+
 **Bug corrigé en marge (`getStepListItems`, `step-list.ts`).** L'item « Attendre la réponse de
 votre AMO » dérivait son état actif/complété de `currentStep === CHOIX_AMO`, une équivalence
 vraie tant que le parcours ne pouvait revenir en arrière (`statut EN_ATTENTE` n'existait qu'à
