@@ -311,8 +311,8 @@ export class AgentsRepository extends BaseRepository<Agent> {
 
   /**
    * Authentifie un agent depuis ProConnect
-   * Cherche d'abord par email (pour la première connexion avec sub pending_)
-   * puis met à jour le sub réel lors de la première connexion
+   * Cherche d'abord par sub (connexions suivantes), puis par email pour la première
+   * connexion (le sub en base est encore `pending_`) — auquel cas le sub réel est écrit
    * Retourne null si l'agent n'est pas autorisé (pas en base, ou désactivé)
    */
   async authenticateFromProConnect(proConnectData: ProConnectAgentData): Promise<Agent | null> {

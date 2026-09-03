@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AgentWithPermissions, formatTracesResume } from "@/features/backoffice";
 import type { AgentTracesCount } from "@/shared/database/repositories/agents.repository";
 import type { ListeDiffusion } from "@/features/backoffice/administration/agents/services/listes-diffusion.service";
@@ -29,6 +29,20 @@ export default function AgentDeleteModal({
   isLoading = false,
 }: AgentDeleteModalProps) {
   const [raison, setRaison] = useState("");
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  // Purge le motif à toute fermeture (bouton, Annuler, Échap, clic en dehors) :
+  // sinon il est réutilisé sur l'agent suivant.
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const handleConceal = () => setRaison("");
+    dialog.addEventListener("dsfr.conceal", handleConceal);
+    return () => dialog.removeEventListener("dsfr.conceal", handleConceal);
+    // `agent` conditionne le rendu du <dialog> : sans lui en dépendance, la ref
+    // est encore nulle au premier passage et l'écouteur n'est jamais posé.
+  }, [agent]);
 
   if (!agent) return null;
 
@@ -56,7 +70,7 @@ export default function AgentDeleteModal({
   };
 
   return (
-    <dialog id={modalId} className="fr-modal" aria-labelledby={`${modalId}-title`}>
+    <dialog ref={dialogRef} id={modalId} className="fr-modal" aria-labelledby={`${modalId}-title`}>
       <div className="fr-container fr-container--fluid fr-container-md">
         <div className="fr-grid-row fr-grid-row--center">
           <div className="fr-col-12 fr-col-md-8 fr-col-lg-6">

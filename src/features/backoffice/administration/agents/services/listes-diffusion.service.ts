@@ -71,6 +71,9 @@ export async function findListesDiffusionAvecEmail(email: string): Promise<Liste
 /**
  * Retire l'adresse des listes de diffusion, sauf quand elle y est la dernière :
  * vider la liste couperait silencieusement les mails de la structure.
+ *
+ * `estDerniereAdresse` n'est qu'une indication d'affichage : le verdict est repris
+ * sur la valeur relue juste avant l'UPDATE, la liste ayant pu changer entre-temps.
  */
 export async function retirerEmailDesListes(
   email: string,
@@ -95,6 +98,11 @@ export async function retirerEmailDesListes(
       if (!amo) continue;
 
       const restantes = decouperEmailsAmo(amo.emails).filter((e) => normalise(e) !== cible);
+      if (restantes.length === 0) {
+        conservees.push({ ...liste, estDerniereAdresse: true });
+        continue;
+      }
+
       await executor
         .update(entreprisesAmo)
         .set({ emails: restantes.join(";") })
@@ -107,6 +115,11 @@ export async function retirerEmailDesListes(
       if (!av) continue;
 
       const restantes = av.emails.filter((e) => normalise(e) !== cible);
+      if (restantes.length === 0) {
+        conservees.push({ ...liste, estDerniereAdresse: true });
+        continue;
+      }
+
       await executor.update(allersVers).set({ emails: restantes }).where(eq(allersVers.id, liste.id));
     }
 
