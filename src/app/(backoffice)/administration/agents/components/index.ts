@@ -4,3 +4,4 @@ export { default as AgentFormModal } from "./AgentFormModal";
 export { default as AgentDeleteModal } from "./AgentDeleteModal";
 export { default as AgentDesactiverModal } from "./AgentDesactiverModal";
 export { default as DepartementsSelect } from "./DepartementsSelect";
+export { default as ListesDiffusionImpact } from "./ListesDiffusionImpact";

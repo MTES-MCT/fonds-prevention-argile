@@ -2,11 +2,15 @@
 
 import { useState } from "react";
 import { AgentWithPermissions } from "@/features/backoffice";
+import type { ListeDiffusion } from "@/features/backoffice/administration/agents/services/listes-diffusion.service";
+import ListesDiffusionImpact from "./ListesDiffusionImpact";
 
 interface AgentDesactiverModalProps {
   modalId: string;
   onConfirm: (raison: string) => Promise<void>;
   agent: AgentWithPermissions | null;
+  /** null tant que la recherche dans les listes de diffusion est en cours. */
+  listes: ListeDiffusion[] | null;
   isLoading?: boolean;
 }
 
@@ -14,6 +18,7 @@ export default function AgentDesactiverModal({
   modalId,
   onConfirm,
   agent,
+  listes,
   isLoading = false,
 }: AgentDesactiverModalProps) {
   const [raison, setRaison] = useState("");
@@ -55,13 +60,14 @@ export default function AgentDesactiverModal({
                 <p>
                   Désactiver l'agent <strong>{fullName}</strong> ({agent.agent.email}) ?
                 </p>
-                <div className="fr-alert fr-alert--info fr-alert--sm fr-mt-2w fr-mb-3w">
+                <div className="fr-alert fr-alert--info fr-alert--sm fr-mt-2w fr-mb-2w">
                   <p>
                     Son accès au backoffice est coupé immédiatement, y compris s'il est connecté. Son nom reste affiché
                     sur les actions, commentaires et dossiers qu'il a traités. La désactivation est réversible.
                   </p>
                 </div>
-                <div className="fr-input-group">
+                <ListesDiffusionImpact listes={listes} />
+                <div className="fr-input-group fr-mt-3w">
                   <label className="fr-label" htmlFor={`${modalId}-raison`}>
                     Motif (optionnel)
                     <span className="fr-hint-text">Par exemple : a quitté ses fonctions, changement de poste.</span>

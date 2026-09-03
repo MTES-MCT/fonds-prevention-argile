@@ -13,10 +13,12 @@ import {
   desactiverAgentAction,
   getAgentsAction,
   getAgentTracesAction,
+  getAgentListesDiffusionAction,
   reactiverAgentAction,
   updateAgentAction,
 } from "@/features/backoffice";
 import type { AgentTracesCount } from "@/shared/database/repositories/agents.repository";
+import type { ListeDiffusion } from "@/features/backoffice/administration/agents/services/listes-diffusion.service";
 import { getEntreprisesAmoOptions } from "@/features/backoffice/administration/amo/actions";
 import { getAllersVersOptions } from "@/features/backoffice/administration/allers-vers/actions/allers-vers-admin.actions";
 import { UserRole } from "@/shared/domain/value-objects";
@@ -34,6 +36,25 @@ const STATUT_FILTERS = [
 ] as const;
 
 type StatutFilter = (typeof STATUT_FILTERS)[number]["id"];
+
+/** Compte rendu de l'effet de la désactivation sur les listes de diffusion. */
+function buildDesactivationNotice(resume: { listesRetirees: string[]; listesConservees: string[] }): string {
+  const phrases = ["Agent désactivé."];
+
+  if (resume.listesRetirees.length > 0) {
+    phrases.push(`Adresse retirée de la liste de diffusion de ${resume.listesRetirees.join(", ")}.`);
+  }
+  if (resume.listesConservees.length > 0) {
+    phrases.push(
+      `Adresse conservée dans ${resume.listesConservees.join(", ")} : c'était la dernière de la structure, ajoutez un remplaçant avant de la retirer.`
+    );
+  }
+  if (resume.listesRetirees.length === 0 && resume.listesConservees.length === 0) {
+    phrases.push("Son adresse ne figurait dans aucune liste de diffusion.");
+  }
+
+  return phrases.join(" ");
+}
 
 /** Definition d'un onglet de role */
 interface RoleTab {
@@ -95,6 +116,8 @@ export default function AgentsPanel() {
   // Modal states
   const [selectedAgent, setSelectedAgent] = useState<AgentWithPermissions | null>(null);
   const [traces, setTraces] = useState<AgentTracesCount | null>(null);
+  const [listes, setListes] = useState<ListeDiffusion[] | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const nbDesactives = useMemo(() => agents.filter((a) => a.agent.desactiveAt).length, [agents]);
@@ -167,18 +190,31 @@ export default function AgentsPanel() {
   const handleDelete = async (agent: AgentWithPermissions) => {
     setSelectedAgent(agent);
     setTraces(null);
+    setListes(null);
+    setNotice(null);
 
-    const result = await getAgentTracesAction(agent.agent.id);
-    if (result.success) {
-      setTraces(result.data);
+    const [tracesResult, listesResult] = await Promise.all([
+      getAgentTracesAction(agent.agent.id),
+      getAgentListesDiffusionAction(agent.agent.id),
+    ]);
+
+    if (tracesResult.success) {
+      setTraces(tracesResult.data);
     } else {
-      setError(result.error || "Impossible de vérifier l'historique de l'agent");
+      setError(tracesResult.error || "Impossible de vérifier l'historique de l'agent");
     }
+
+    if (listesResult.success) setListes(listesResult.data);
   };
 
   // Ouvrir le modal de désactivation
-  const handleDesactiver = (agent: AgentWithPermissions) => {
+  const handleDesactiver = async (agent: AgentWithPermissions) => {
     setSelectedAgent(agent);
+    setListes(null);
+    setNotice(null);
+
+    const result = await getAgentListesDiffusionAction(agent.agent.id);
+    if (result.success) setListes(result.data);
   };
 
   const handleDesactiverConfirm = async (raison: string) => {
@@ -186,6 +222,7 @@ export default function AgentsPanel() {
 
     setIsSubmitting(true);
     setError(null);
+    setNotice(null);
 
     try {
       const result = await desactiverAgentAction(selectedAgent.agent.id, raison);
@@ -195,6 +232,7 @@ export default function AgentsPanel() {
         return;
       }
 
+      setNotice(buildDesactivationNotice(result.data));
       await loadData();
     } finally {
       setIsSubmitting(false);
@@ -205,6 +243,7 @@ export default function AgentsPanel() {
   const handleReactiver = async (agent: AgentWithPermissions) => {
     setIsSubmitting(true);
     setError(null);
+    setNotice(null);
 
     try {
       const result = await reactiverAgentAction(agent.agent.id);
@@ -214,6 +253,10 @@ export default function AgentsPanel() {
         return;
       }
 
+      // La réactivation ne réinjecte pas l'adresse : ces listes sont éditoriales.
+      setNotice(
+        "Agent réactivé. Son adresse n'a pas été remise dans les listes de diffusion : ajoutez-la depuis la fiche de la structure si besoin."
+      );
       await loadData();
     } finally {
       setIsSubmitting(false);
@@ -309,8 +352,15 @@ export default function AgentsPanel() {
 
           {/* Erreur */}
           {error && (
-            <div className="fr-alert fr-alert--error">
+            <div className="fr-alert fr-alert--error fr-mb-2w">
               <p>{error}</p>
+            </div>
+          )}
+
+          {/* Compte rendu de la dernière (dés)activation */}
+          {notice && (
+            <div className="fr-alert fr-alert--success fr-mb-2w">
+              <p>{notice}</p>
             </div>
           )}
 
@@ -407,6 +457,7 @@ export default function AgentsPanel() {
         onDesactiver={handleDesactiverConfirm}
         agent={selectedAgent}
         traces={traces}
+        listes={listes}
         isLoading={isSubmitting}
       />
 
@@ -414,6 +465,7 @@ export default function AgentsPanel() {
         modalId={MODAL_DESACTIVER_ID}
         onConfirm={handleDesactiverConfirm}
         agent={selectedAgent}
+        listes={listes}
         isLoading={isSubmitting}
       />
     </>

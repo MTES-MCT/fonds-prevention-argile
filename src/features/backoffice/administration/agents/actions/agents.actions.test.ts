@@ -7,14 +7,11 @@ vi.mock("@/features/auth/server", () => ({
   getSession: vi.fn(),
 }));
 
-vi.mock("@/shared/domain/value-objects", () => ({
+// Mock partiel : le module porte aussi les enums (Step...) que la chaîne de schémas Drizzle
+// charge en vrai depuis les services importés par les actions.
+vi.mock("@/shared/domain/value-objects", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/domain/value-objects")>()),
   isSuperAdminRole: vi.fn(),
-  UserRole: {
-    SUPER_ADMINISTRATEUR: "super_administrateur",
-    ADMINISTRATEUR: "administrateur",
-    AMO: "amo",
-    ANALYSTE: "analyste",
-  },
 }));
 
 vi.mock("../services/agents-admin.service", () => ({
@@ -449,10 +446,19 @@ describe("agents.actions", () => {
       const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
       vi.mocked(getSession).mockResolvedValue(mockSession);
       vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      vi.mocked(agentsAdminService.desactiverAgent).mockResolvedValue({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        agent: {} as any,
+        listesRetirees: [{ type: "amo", id: "amo-1", nom: "Soliha 36", estDerniereAdresse: false }],
+        listesConservees: [],
+      });
 
       const result = await desactiverAgentAction("agent-123", "A quitté ses fonctions");
 
       expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.listesRetirees).toEqual(["Soliha 36"]);
+      }
       expect(agentsAdminService.desactiverAgent).toHaveBeenCalledWith(
         "agent-123",
         mockSession.userId,

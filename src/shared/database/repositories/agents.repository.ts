@@ -1,4 +1,5 @@
 import { eq, sql, SQL, desc, and, isNull } from "drizzle-orm";
+import type { PgTransaction } from "drizzle-orm/pg-core";
 import { db } from "../client";
 import { agents, type Agent, type NewAgent } from "../schema/agents";
 import { entreprisesAmo } from "../schema/entreprises-amo";
@@ -33,6 +34,10 @@ export interface AgentWithEntrepriseAmo extends Agent {
     siret: string;
   } | null;
 }
+
+/** Exécuteur : le client global, ou une transaction en cours. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AgentsExecutor = typeof db | PgTransaction<any, any, any>;
 
 /**
  * Traces nominatives laissées par un agent : ce qu'une suppression effacerait.
@@ -407,8 +412,13 @@ export class AgentsRepository extends BaseRepository<Agent> {
    * Désactive un agent : coupe son accès sans toucher à son historique.
    * No-op (retourne null) si l'agent est déjà désactivé, pour ne pas écraser la date d'origine.
    */
-  async desactiver(agentId: string, desactivePar: string, raison?: string | null): Promise<Agent | null> {
-    const [updatedAgent] = await db
+  async desactiver(
+    agentId: string,
+    desactivePar: string,
+    raison?: string | null,
+    executor: AgentsExecutor = db
+  ): Promise<Agent | null> {
+    const [updatedAgent] = await executor
       .update(agents)
       .set({
         desactiveAt: new Date(),

@@ -1,6 +1,16 @@
 import { agentsRepository, type AgentTracesCount } from "@/shared/database/repositories/agents.repository";
 import type { Agent } from "@/shared/database/schema/agents";
 import { formatTracesResume } from "../domain/value-objects/agent-traces";
+import { db } from "@/shared/database/client";
+import { findListesDiffusionAvecEmail, retirerEmailDesListes, type ListeDiffusion } from "./listes-diffusion.service";
+
+/** Résultat d'une désactivation : l'agent, et l'effet sur les listes de diffusion. */
+export interface DesactivationResult {
+  agent: Agent;
+  listesRetirees: ListeDiffusion[];
+  /** Listes où l'adresse a été gardée faute de destinataire de remplacement. */
+  listesConservees: ListeDiffusion[];
+}
 import { DEPARTEMENTS } from "@/shared/constants/departements.constants";
 import { agentPermissionsRepository, entreprisesAmoRepo, allersVersRepository } from "@/shared/database";
 import { UserRole } from "@/shared/domain/value-objects";
@@ -360,9 +370,14 @@ export async function updateAgent(agentId: string, data: UpdateAgentData): Promi
 }
 
 /**
- * Désactive un agent : coupe son accès en conservant son historique nominatif.
+ * Désactive un agent : coupe son accès en conservant son historique nominatif,
+ * et le retire des listes de diffusion des structures dans la même transaction.
  */
-export async function desactiverAgent(agentId: string, parAgentId: string, raison?: string): Promise<Agent> {
+export async function desactiverAgent(
+  agentId: string,
+  parAgentId: string,
+  raison?: string
+): Promise<DesactivationResult> {
   const existant = await agentsRepository.findById(agentId);
   if (!existant) {
     throw new Error("Agent non trouvé");
@@ -371,12 +386,18 @@ export async function desactiverAgent(agentId: string, parAgentId: string, raiso
     throw new Error("Cet agent est déjà désactivé");
   }
 
-  const agent = await agentsRepository.desactiver(agentId, parAgentId, raison?.trim() || null);
-  if (!agent) {
-    throw new Error("Échec de la désactivation");
-  }
+  const listes = await findListesDiffusionAvecEmail(existant.email);
 
-  return agent;
+  return await db.transaction(async (tx) => {
+    const agent = await agentsRepository.desactiver(agentId, parAgentId, raison?.trim() || null, tx);
+    if (!agent) {
+      throw new Error("Échec de la désactivation");
+    }
+
+    const { retirees, conservees } = await retirerEmailDesListes(existant.email, listes, tx);
+
+    return { agent, listesRetirees: retirees, listesConservees: conservees };
+  });
 }
 
 /**

@@ -16,6 +16,13 @@ import {
 } from "../services/agents-admin.service";
 import { AgentWithPermissions, UpdateAgentData } from "../domain/types";
 import type { AgentTracesCount } from "@/shared/database/repositories/agents.repository";
+import { findListesDiffusionAvecEmail, type ListeDiffusion } from "../services/listes-diffusion.service";
+
+/** Effet d'une désactivation sur les listes de diffusion, par nom de structure. */
+export interface DesactivationSummary {
+  listesRetirees: string[];
+  listesConservees: string[];
+}
 
 /**
  * Récupère tous les agents avec leurs permissions (super admin uniquement)
@@ -285,9 +292,45 @@ export async function getAgentTracesAction(agentId: string): Promise<ActionResul
 }
 
 /**
+ * Listes de diffusion des structures contenant l'adresse de l'agent (super admin uniquement).
+ * Sert à annoncer l'impact du retrait avant de confirmer la désactivation.
+ */
+export async function getAgentListesDiffusionAction(agentId: string): Promise<ActionResult<ListeDiffusion[]>> {
+  try {
+    const session = await getSession();
+
+    if (!session?.userId || !isSuperAdminRole(session.role)) {
+      return {
+        success: false,
+        error: "Accès non autorisé. Réservé aux super administrateurs.",
+      };
+    }
+
+    const agent = await getAgentWithPermissions(agentId);
+    if (!agent) {
+      return { success: false, error: "Agent non trouvé" };
+    }
+
+    return {
+      success: true,
+      data: await findListesDiffusionAvecEmail(agent.agent.email),
+    };
+  } catch (error) {
+    console.error("Erreur getAgentListesDiffusionAction:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    };
+  }
+}
+
+/**
  * Désactive un agent (super admin uniquement) : coupe l'accès, garde l'historique.
  */
-export async function desactiverAgentAction(agentId: string, raison?: string): Promise<ActionResult<void>> {
+export async function desactiverAgentAction(
+  agentId: string,
+  raison?: string
+): Promise<ActionResult<DesactivationSummary>> {
   try {
     const session = await getSession();
 
@@ -306,11 +349,14 @@ export async function desactiverAgentAction(agentId: string, raison?: string): P
       };
     }
 
-    await desactiverAgent(agentId, session.userId, raison);
+    const resultat = await desactiverAgent(agentId, session.userId, raison);
 
     return {
       success: true,
-      data: undefined,
+      data: {
+        listesRetirees: resultat.listesRetirees.map((l) => l.nom),
+        listesConservees: resultat.listesConservees.map((l) => l.nom),
+      },
     };
   } catch (error) {
     console.error("Erreur desactiverAgentAction:", error);

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { AgentWithPermissions, formatTracesResume } from "@/features/backoffice";
 import type { AgentTracesCount } from "@/shared/database/repositories/agents.repository";
+import type { ListeDiffusion } from "@/features/backoffice/administration/agents/services/listes-diffusion.service";
+import ListesDiffusionImpact from "./ListesDiffusionImpact";
 
 interface AgentDeleteModalProps {
   modalId: string;
@@ -12,6 +14,8 @@ interface AgentDeleteModalProps {
   agent: AgentWithPermissions | null;
   /** null tant que le comptage est en cours. */
   traces: AgentTracesCount | null;
+  /** null tant que la recherche dans les listes de diffusion est en cours. */
+  listes: ListeDiffusion[] | null;
   isLoading?: boolean;
 }
 
@@ -21,6 +25,7 @@ export default function AgentDeleteModal({
   onDesactiver,
   agent,
   traces,
+  listes,
   isLoading = false,
 }: AgentDeleteModalProps) {
   const [raison, setRaison] = useState("");
@@ -84,13 +89,14 @@ export default function AgentDeleteModal({
                     <strong>{fullName}</strong> ({agent.agent.email}) a laissé un historique :{" "}
                     <strong>{formatTracesResume(traces)}</strong>.
                   </p>
-                  <div className="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w fr-mb-3w">
+                  <div className="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w fr-mb-2w">
                     <p>
                       Le supprimer effacerait son nom de ces traces. La désactivation coupe son accès immédiatement et
                       conserve l'historique. Elle est réversible.
                     </p>
                   </div>
-                  <div className="fr-input-group">
+                  <ListesDiffusionImpact listes={listes} />
+                  <div className="fr-input-group fr-mt-3w">
                     <label className="fr-label" htmlFor={`${modalId}-raison`}>
                       Motif (optionnel)
                       <span className="fr-hint-text">Par exemple : a quitté ses fonctions, changement de poste.</span>
