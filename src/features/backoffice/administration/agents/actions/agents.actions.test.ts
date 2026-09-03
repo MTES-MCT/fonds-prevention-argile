@@ -25,6 +25,7 @@ vi.mock("../services/agents-admin.service", () => ({
   deleteAgent: vi.fn(),
   desactiverAgent: vi.fn(),
   reactiverAgent: vi.fn(),
+  getAgentTraces: vi.fn(),
 }));
 
 // Mock de l'environnement serveur
@@ -39,6 +40,7 @@ import {
   deleteAgentAction,
   desactiverAgentAction,
   reactiverAgentAction,
+  getAgentTracesAction,
 } from "./agents.actions";
 
 // Import des mocks
@@ -525,6 +527,49 @@ describe("agents.actions", () => {
 
       expect(result.success).toBe(false);
       expect(agentsAdminService.reactiverAgent).not.toHaveBeenCalled();
+    });
+  });
+  describe("getAgentTracesAction", () => {
+    const traces = {
+      actions: 12,
+      qualifications: 0,
+      archivages: 0,
+      dossiersCrees: 5,
+      simulationsEditees: 0,
+      total: 17,
+    };
+
+    it("devrait retourner le comptage pour SUPER_ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      vi.mocked(agentsAdminService.getAgentTraces).mockResolvedValue(traces);
+
+      const result = await getAgentTracesAction("agent-123");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.total).toBe(17);
+      }
+    });
+
+    it("devrait refuser le comptage pour ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+
+      const result = await getAgentTracesAction("agent-123");
+
+      expect(result.success).toBe(false);
+      expect(agentsAdminService.getAgentTraces).not.toHaveBeenCalled();
+    });
+
+    it("devrait refuser le comptage sans session", async () => {
+      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const result = await getAgentTracesAction("agent-123");
+
+      expect(result.success).toBe(false);
+      expect(agentsAdminService.getAgentTraces).not.toHaveBeenCalled();
     });
   });
 });

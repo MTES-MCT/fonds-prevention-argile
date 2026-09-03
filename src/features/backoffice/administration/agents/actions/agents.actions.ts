@@ -12,8 +12,10 @@ import {
   deleteAgent,
   desactiverAgent,
   reactiverAgent,
+  getAgentTraces,
 } from "../services/agents-admin.service";
 import { AgentWithPermissions, UpdateAgentData } from "../domain/types";
+import type { AgentTracesCount } from "@/shared/database/repositories/agents.repository";
 
 /**
  * Récupère tous les agents avec leurs permissions (super admin uniquement)
@@ -247,6 +249,34 @@ export async function updateAgentAction(
     };
   } catch (error) {
     console.error("Erreur updateAgentAction:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    };
+  }
+}
+
+/**
+ * Compte l'historique d'un agent (super admin uniquement).
+ * Sert à la modale de suppression pour proposer la désactivation quand il reste des traces.
+ */
+export async function getAgentTracesAction(agentId: string): Promise<ActionResult<AgentTracesCount>> {
+  try {
+    const session = await getSession();
+
+    if (!session?.userId || !isSuperAdminRole(session.role)) {
+      return {
+        success: false,
+        error: "Accès non autorisé. Réservé aux super administrateurs.",
+      };
+    }
+
+    return {
+      success: true,
+      data: await getAgentTraces(agentId),
+    };
+  } catch (error) {
+    console.error("Erreur getAgentTracesAction:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erreur inconnue",

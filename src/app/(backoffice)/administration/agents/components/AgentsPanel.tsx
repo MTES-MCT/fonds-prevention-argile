@@ -12,9 +12,11 @@ import {
   deleteAgentAction,
   desactiverAgentAction,
   getAgentsAction,
+  getAgentTracesAction,
   reactiverAgentAction,
   updateAgentAction,
 } from "@/features/backoffice";
+import type { AgentTracesCount } from "@/shared/database/repositories/agents.repository";
 import { getEntreprisesAmoOptions } from "@/features/backoffice/administration/amo/actions";
 import { getAllersVersOptions } from "@/features/backoffice/administration/allers-vers/actions/allers-vers-admin.actions";
 import { UserRole } from "@/shared/domain/value-objects";
@@ -92,6 +94,7 @@ export default function AgentsPanel() {
 
   // Modal states
   const [selectedAgent, setSelectedAgent] = useState<AgentWithPermissions | null>(null);
+  const [traces, setTraces] = useState<AgentTracesCount | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const nbDesactives = useMemo(() => agents.filter((a) => a.agent.desactiveAt).length, [agents]);
@@ -159,9 +162,18 @@ export default function AgentsPanel() {
     setSelectedAgent(agent);
   };
 
-  // Ouvrir le modal de suppression
-  const handleDelete = (agent: AgentWithPermissions) => {
+  // Ouvrir le modal de suppression : on compte d'abord l'historique, c'est lui qui
+  // décide si la modale propose la suppression ou bascule sur la désactivation.
+  const handleDelete = async (agent: AgentWithPermissions) => {
     setSelectedAgent(agent);
+    setTraces(null);
+
+    const result = await getAgentTracesAction(agent.agent.id);
+    if (result.success) {
+      setTraces(result.data);
+    } else {
+      setError(result.error || "Impossible de vérifier l'historique de l'agent");
+    }
   };
 
   // Ouvrir le modal de désactivation
@@ -247,17 +259,20 @@ export default function AgentsPanel() {
     }
   };
 
-  // Confirmer la suppression
+  // Confirmer la suppression. Le refus « agent avec historique » remonte du serveur
+  // même si l'UI a déjà basculé : c'est lui la barrière.
   const handleDeleteConfirm = async () => {
     if (!selectedAgent) return;
 
     setIsSubmitting(true);
+    setError(null);
 
     try {
       const result = await deleteAgentAction(selectedAgent.agent.id);
 
       if (!result.success) {
-        throw new Error(result.error);
+        setError(result.error || "Erreur lors de la suppression");
+        return;
       }
 
       await loadData();
@@ -389,7 +404,9 @@ export default function AgentsPanel() {
       <AgentDeleteModal
         modalId={MODAL_DELETE_ID}
         onConfirm={handleDeleteConfirm}
+        onDesactiver={handleDesactiverConfirm}
         agent={selectedAgent}
+        traces={traces}
         isLoading={isSubmitting}
       />
 

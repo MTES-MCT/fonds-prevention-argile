@@ -1,5 +1,6 @@
-import { agentsRepository } from "@/shared/database/repositories/agents.repository";
+import { agentsRepository, type AgentTracesCount } from "@/shared/database/repositories/agents.repository";
 import type { Agent } from "@/shared/database/schema/agents";
+import { formatTracesResume } from "../domain/value-objects/agent-traces";
 import { DEPARTEMENTS } from "@/shared/constants/departements.constants";
 import { agentPermissionsRepository, entreprisesAmoRepo, allersVersRepository } from "@/shared/database";
 import { UserRole } from "@/shared/domain/value-objects";
@@ -399,9 +400,25 @@ export async function reactiverAgent(agentId: string): Promise<Agent> {
 }
 
 /**
- * Supprime un agent et ses permissions
+ * Compte l'historique nominatif laissé par un agent (ce qu'une suppression effacerait).
+ */
+export async function getAgentTraces(agentId: string): Promise<AgentTracesCount> {
+  return await agentsRepository.countTraces(agentId);
+}
+
+/**
+ * Supprime un agent et ses permissions.
+ * Refuse dès qu'il reste une trace nominative : la désactivation est alors la bonne porte.
  */
 export async function deleteAgent(agentId: string): Promise<boolean> {
+  const traces = await agentsRepository.countTraces(agentId);
+  if (traces.total > 0) {
+    throw new Error(
+      `Cet agent a laissé un historique (${formatTracesResume(traces)}). ` +
+        `Le supprimer effacerait ces traces : désactivez-le à la place.`
+    );
+  }
+
   // Les permissions sont supprimées automatiquement via ON DELETE CASCADE
   return await agentsRepository.delete(agentId);
 }
