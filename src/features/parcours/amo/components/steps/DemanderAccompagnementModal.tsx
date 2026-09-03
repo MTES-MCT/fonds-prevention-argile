@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { demanderMonAccompagnement } from "../../actions/demande-accompagnement.actions";
 
 const MODAL_ID = "modal-demander-accompagnement";
@@ -17,7 +16,6 @@ interface DemanderAccompagnementModalProps {
  * même mécanique que le "Oui" de `CalloutChoixAccompagnement`).
  */
 export function DemanderAccompagnementModal({ isOpen, onClose }: DemanderAccompagnementModalProps) {
-  const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,15 +65,17 @@ export function DemanderAccompagnementModal({ isOpen, onClose }: DemanderAccompa
     try {
       const result = await demanderMonAccompagnement();
       if (result.success) {
-        onClose();
-        router.refresh();
+        // Rechargement complet (pas `router.refresh()`) : `statutAmo` vit dans le contexte
+        // client `ParcoursProvider`, alimenté par un fetch séparé (`getValidationAmo`) que
+        // `router.refresh()` ne redéclenche pas — le callout resterait affiché.
+        window.location.reload();
       } else {
         setError(result.error || "Une erreur est survenue");
+        setIsSubmitting(false);
       }
     } catch (err) {
       console.error("Erreur demande accompagnement:", err);
       setError("Une erreur est survenue");
-    } finally {
       setIsSubmitting(false);
     }
   };
