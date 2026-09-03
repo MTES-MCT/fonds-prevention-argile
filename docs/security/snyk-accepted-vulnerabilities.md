@@ -1,7 +1,7 @@
 # Vulnérabilités Snyk — Acceptées
 
 Date d'audit initial : mars 2026 (Snyk)
-Dernier refresh : août 2026 (`pnpm audit`, voir section dédiée)
+Dernier refresh : septembre 2026 (`pnpm audit`, voir section dédiée)
 Auditeur : Samir + Claude
 
 > **Ce document est chronologique : seule la dernière section « Refresh » fait foi.** Les
@@ -9,9 +9,9 @@ Auditeur : Samir + Claude
 > comme « acceptée » une vulnérabilité corrigée depuis. Les entrées périmées portent un
 > encart le signalant.
 >
-> **État courant (août 2026) — une seule vulnérabilité acceptée** : `uuid` <11.1.1
+> **État courant (septembre 2026) — une seule vulnérabilité acceptée** : `uuid` <11.1.1
 > (Moderate, transitif via `exceljs`). Tout le reste est corrigé à la source. Voir
-> [Refresh — août 2026](#refresh--août-2026-branche-chorebump-deps-securite).
+> [Refresh — septembre 2026](#refresh--septembre-2026-branche-featdesactivation-agents).
 
 ## Décision
 
@@ -271,6 +271,32 @@ et `ts-node` (tous les scripts passent par `tsx`). Retire un build natif au post
 (entrée `allowBuilds` supprimée) et la dernière CVE devDep (`diff`, Low, via `ts-node`).
 
 ### Reste accepté (`pnpm audit`, 1 vulnérabilité)
+
+| Dépendance vulnérable | Sévérité | Type    | Chemin           | Justification                                                                                            |
+| --------------------- | -------- | ------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
+| `uuid` <11.1.1        | Moderate | runtime | `exceljs > uuid` | Inchangé : exceljs appelle `uuidv4()` sans buffer → faille non atteignable ; override v11 = major risqué |
+
+## Refresh — septembre 2026 (branche `feat/desactivation-agents`)
+
+Branche sans ajout de dépendance. `pnpm audit --prod` remontait **2 High nouvelles** sur
+`browserslist`, apparues depuis le refresh d'août. Vérification : `pnpm validate` vert.
+
+### Corrigées à la source (override `pnpm-workspace.yaml`)
+
+| Override                 | Avant | Après     | CVE éliminées                                                                                                                           |
+| ------------------------ | ----- | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `browserslist` (nouveau) | —     | `^4.28.8` | 2 High — `GHSA-73wf-gq98-2v4g` (croissance mémoire non bornée, pas d'éviction de cache) et crash / prototype write sur query non fiable |
+
+Chemin transitif : `next > styled-jsx > @babel/core > @babel/helper-compilation-targets >
+browserslist` (et le même via `@socialgouv/matomo-next > next`). Le paquet ne tourne qu'au
+**build** (résolution des cibles navigateurs par Babel), jamais en service de requêtes, et
+aucune query browserslist ne provient d'une entrée utilisateur. Le correctif était néanmoins
+un simple bump patch dans la même mineure (`4.28.8`, publié le 2026-08-08, hors fenêtre
+`minimumReleaseAge`) : corrigé plutôt qu'accepté.
+
+Le checksum de `pnpm-lock.yaml` dans `.talismanrc` a été mis à jour en conséquence.
+
+### Reste accepté (`pnpm audit --prod`, 1 vulnérabilité)
 
 | Dépendance vulnérable | Sévérité | Type    | Chemin           | Justification                                                                                            |
 | --------------------- | -------- | ------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
