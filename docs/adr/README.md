@@ -56,5 +56,6 @@ purement cosmétique.
 | 0026 | [Gel du reset destructif — « Dossier not found » ne prouve pas la disparition](0026-gel-reset-eligibilite-not-found.md)                 | Accepté |
 | 0027 | [Tentative de préremplissage vs dossier confirmé](0027-tentative-prefill-vs-dossier-confirme.md)                                        | Accepté |
 | 0028 | [Actions automatiques sur les décisions AV et les archivages](0028-actions-automatiques-decisions-et-archivage.md)                      | Accepté |
+| 0029 | [Désactivation d'un agent plutôt que suppression](0029-desactivation-agent-plutot-que-suppression.md)                                   | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->

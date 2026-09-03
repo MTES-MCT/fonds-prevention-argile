@@ -54,6 +54,50 @@ Helpers : `isAgentRole`, `isAdminRole`, `isSuperAdminRole`, `isValidRole`.
 Groupes : `ADMIN_ROLES` (super-admin + admin), `AGENT_ROLES` (tous sauf
 `PARTICULIER`).
 
+### 2.1 Agent désactivé — accès révoqué, historique conservé (ADR-0029)
+
+Un agent parti n'est plus supprimé mais **désactivé** : `agents.desactive_at` non nul
+(+ `desactive_par`, `desactive_raison`). Le rôle reste inchangé — **c'est la désactivation,
+pas le rôle, qui coupe l'accès**. Motif : la suppression rendait anonymes « archivé par »,
+« créé par », « qualifié par » et « simulation modifiée par », et échouait carrément dès que
+l'agent avait qualifié un prospect. Voir
+[ADR-0029](../adr/0029-desactivation-agent-plutot-que-suppression.md).
+
+Deux points de coupure, et un seul suffit pour tout le back-office :
+
+- **`getCurrentUser`** (`auth/services/user.service.ts`) retourne `null` si
+  `agent.desactiveAt`. Toutes les gardes (`checkProConnectAccess`, `checkAgentAccess`,
+  `checkRoleAccess`, `checkBackofficePermission`) passent par `checkUserAccess` →
+  `getCurrentUser`, layouts, pages et Server Actions compris. Conséquence voulue : **une
+  session déjà ouverte tombe au rendu suivant**, sans attendre l'expiration du JWT ; le
+  layout espace-agent renvoie vers `/connexion/agent`.
+- **`authenticateFromProConnect`** (`agents.repository.ts`) refuse en tête de fonction, avant
+  les branches `sub` et `email` : un agent désactivé est traité comme un agent inconnu
+  (`return null`), **sans aucune écriture** — ni `lastLogin`, ni rafraîchissement ProConnect.
+  Un `console.warn` trace le refus avec le seul `agentId`, jamais l'email.
+
+> `findBySub` / `findByEmail` ne filtrent **pas** les désactivés, volontairement :
+> `isEmailTaken` s'en sert à la création d'agent, et masquer un désactivé ferait croire
+> l'email libre avant de violer la contrainte d'unicité.
+
+**Suppression conservée, mais gardée.** `deleteAgent` (service, donc valable pour tout
+appelant) compte les traces via `countTraces` — `parcours_actions`,
+`prospect_qualifications` et les trois colonnes agent de `parcours_prevention`
+(`agent_permissions` exclu : configuration en cascade). Zéro trace → suppression réelle ;
+au moins une → refus explicite orientant vers la désactivation. La modale d'administration
+anticipe ce verdict, mais la barrière est côté service.
+
+**Actions et périmètre** : `desactiverAgentAction` / `reactiverAgentAction` /
+`getAgentTracesAction` / `getAgentListesDiffusionAction` sont réservées au
+`SUPER_ADMINISTRATEUR`, et un super-admin ne peut pas se désactiver lui-même.
+
+**Envois groupés.** Le bouton « Copier les emails » de `/administration/agents` exclut
+toujours les agents désactivés, même sous le filtre « Tous ». Les listes de diffusion des
+structures (`entreprises_amo.emails`, `allers_vers.emails`) vivent hors de la table `agents`
+et ne sont synchronisées par rien : la désactivation y retire l'adresse explicitement, dans
+la même transaction — sauf si c'est la **dernière** de la structure, auquel cas elle est
+conservée et signalée (une liste vide couperait tous les mails de la structure en silence).
+
 ---
 
 ## 3. Rôle → espace accessible
@@ -425,6 +469,9 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Service RBAC (onglets)                | `src/features/auth/permissions/services/rbac.service.ts`                                                                |
 | Config des routes / redirections      | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                       |
 | Aiguillage auth                       | `src/middleware.ts`                                                                                                     |
+| Coupure d'accès agent désactivé       | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)              |
+| Garde-fou suppression d'agent         | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`) + `agents.repository.ts` (`countTraces`)       |
+| Retrait des listes de diffusion       | `administration/agents/services/listes-diffusion.service.ts`                                                            |
 | Garde espace agent                    | `src/app/(backoffice)/espace-agent/layout.tsx`                                                                          |
 | Garde administration                  | `src/app/(backoffice)/administration/page.tsx`                                                                          |
 | Garde entreprise AMO                  | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                          |

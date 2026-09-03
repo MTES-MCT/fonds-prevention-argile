@@ -114,6 +114,11 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 > `users` (demandeur FranceConnect) et `agents` (ProConnect) sont deux tables
 > distinctes : le citoyen et l'agent ne partagent pas la même identité.
 
+> Un agent qui quitte ses fonctions est **désactivé** (`agents.desactive_at`), pas supprimé :
+> son nom doit survivre sur les actions, qualifications, archivages et dossiers créés qu'il a
+> laissés. La suppression reste possible pour un agent sans aucune trace. Voir
+> [ADR-0029](adr/0029-desactivation-agent-plutot-que-suppression.md).
+
 > `dossiers_demarches_simplifiees` est le **pointeur courant** vers le dossier DN d'une étape,
 > pas l'historique des dossiers créés. La distinction entre **tentative** (brouillon prérempli,
 > plusieurs possibles, jamais autoritaire) et **dossier confirmé** (déposé, unique) est posée
