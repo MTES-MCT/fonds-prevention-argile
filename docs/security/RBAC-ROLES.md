@@ -25,6 +25,13 @@ choses** : `checkProConnectAccess()` (bonne méthode d'auth) **et** le rôle.
 > en production (fallback legacy/test). La dépendance `argon2` a été retirée : aucun code
 > applicatif ne hashait de mot de passe.
 
+> **Se connecter en agent hors production** passe donc toujours par ProConnect — en local et sur
+> staging, par son **bac à sable**. Le mot de passe vit chez l'IdP, pas chez nous. Deux étages
+> doivent être satisfaits : l'identité doit exister côté bac à sable, **et** une ligne `agents`
+> doit porter le même email (l'app ne crée jamais d'agent à la volée). Comptes de test et
+> diagnostic des échecs : voir « Se connecter en tant qu'agent en local » dans le
+> [README](../../README.md).
+
 Source : `src/middleware.ts`, `src/features/auth/domain/value-objects/constants.ts`.
 
 ---
@@ -328,6 +335,14 @@ présente dans `ROLE_PERMISSIONS[SUPER_ADMINISTRATEUR]` (= toutes les permission
 le garde-fou applicatif bloquait l'écriture. L'édition/suppression restent limitées à ses
 **propres** commentaires via `canEditAction` (`agentId` de l'auteur), comme pour tout
 agent — aucun traitement de faveur au-delà de l'ouverture de la création.
+
+> **Actions système en lecture seule (ADR-0028).** L'ownership `canEditAction` ne suffit plus :
+> les actions écrites automatiquement par l'application (décisions d'éligibilité, qualification
+> Aller-vers, arrêt d'accompagnement, ré-ouverture, (dés)archivage — cf. `ACTION_TYPES_SYSTEME`)
+> sont **ni modifiables ni supprimables**, y compris par leur auteur et par le super-admin.
+> Garde côté service (`ActionsService.updateAction` / `deleteAction`), menu masqué côté UI
+> (`ActionItem`). Motif : ces actions constituent la piste d'audit du dossier et alimentent les
+> indicateurs de délai — les laisser réécrivables les rendait inexploitables.
 
 **Ce qui reste bloqué** (`assertNotSuperAdminReadOnly` toujours appelé, DENY) : gestion de
 l'éligibilité (accepter/refuser une demande, refuser un accompagnement éligible), arrêt/refus

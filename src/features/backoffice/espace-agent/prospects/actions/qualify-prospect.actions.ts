@@ -80,8 +80,10 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
     // 4. Validation Zod
     const parsed = qualifyProspectSchema.safeParse(input);
     if (!parsed.success) {
-      const firstError = parsed.error.issues[0]?.message ?? "Données invalides";
-      return { success: false, error: firstError };
+      // Seuls nos `refine` (code "custom") portent un message en français ; les échecs
+      // techniques de Zod sont en anglais et n'ont rien à faire à l'écran d'un agent.
+      const messageMetier = parsed.error.issues.find((issue) => issue.code === "custom")?.message;
+      return { success: false, error: messageMetier ?? "Données invalides" };
     }
 
     const { parcoursId, decision, actionsRealisees, raisonsIneligibilite, estMandataireFinancier, note } = parsed.data;

@@ -398,9 +398,9 @@ ON CONFLICT (id) DO NOTHING;
 -- pour afficher le nom de la structure dans le drawer
 INSERT INTO parcours_amo_validations (id, parcours_id, entreprise_amo_id, statut, user_prenom, user_nom, user_email, adresse_logement, choisie_at, validee_at, created_at, updated_at)
 VALUES
-  ('88888888-8888-8888-8888-aaaaaaaaa031', '88888888-8888-8888-8888-888888888831', 'dedd84de-da92-4825-aba3-6f2ee43803fe', 'logement_eligible', 'Jean-Eudes', 'Dugenoux', 'jean-eudes.dugenoux@test.fr', '31 rue Seed Archive, 36000 Châteauroux', NOW() - INTERVAL '30 days', NOW() - INTERVAL '28 days', NOW() - INTERVAL '30 days', NOW()),
-  ('88888888-8888-8888-8888-aaaaaaaaa032', '88888888-8888-8888-8888-888888888832', 'dedd84de-da92-4825-aba3-6f2ee43803fe', 'logement_eligible', 'Marie', 'Lefebvre', 'marie.lefebvre@test.fr', '32 rue Seed Archive, 36000 Châteauroux', NOW() - INTERVAL '25 days', NOW() - INTERVAL '23 days', NOW() - INTERVAL '25 days', NOW()),
-  ('88888888-8888-8888-8888-aaaaaaaaa033', '88888888-8888-8888-8888-888888888833', 'dedd84de-da92-4825-aba3-6f2ee43803fe', 'logement_eligible', 'Pierre', 'Martin', 'pierre.martin@test.fr', '33 rue Seed Archive, 36000 Châteauroux', NOW() - INTERVAL '20 days', NOW() - INTERVAL '18 days', NOW() - INTERVAL '20 days', NOW())
+  ('88888888-8888-8888-8888-aaaaaaaaa031', '88888888-8888-8888-8888-888888888831', '5833143c-9397-4a80-a7fc-3c5eb37c7a28', 'logement_eligible', 'Jean-Eudes', 'Dugenoux', 'jean-eudes.dugenoux@test.fr', '31 rue Seed Archive, 36000 Châteauroux', NOW() - INTERVAL '30 days', NOW() - INTERVAL '28 days', NOW() - INTERVAL '30 days', NOW()),
+  ('88888888-8888-8888-8888-aaaaaaaaa032', '88888888-8888-8888-8888-888888888832', '5833143c-9397-4a80-a7fc-3c5eb37c7a28', 'logement_eligible', 'Marie', 'Lefebvre', 'marie.lefebvre@test.fr', '32 rue Seed Archive, 36000 Châteauroux', NOW() - INTERVAL '25 days', NOW() - INTERVAL '23 days', NOW() - INTERVAL '25 days', NOW()),
+  ('88888888-8888-8888-8888-aaaaaaaaa033', '88888888-8888-8888-8888-888888888833', '5833143c-9397-4a80-a7fc-3c5eb37c7a28', 'logement_eligible', 'Pierre', 'Martin', 'pierre.martin@test.fr', '33 rue Seed Archive, 36000 Châteauroux', NOW() - INTERVAL '20 days', NOW() - INTERVAL '18 days', NOW() - INTERVAL '20 days', NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- ===== RENSEIGNER archived_by sur les parcours "autres" (drawer) =====
@@ -435,7 +435,7 @@ WHERE id IN (
 INSERT INTO prospect_qualifications (id, parcours_id, agent_id, decision, actions_realisees, raisons_ineligibilite, created_at)
 VALUES
   -- === Période courante (parcours 01-18) ===
-  ('99999999-9999-4999-8999-999999999901', '88888888-8888-8888-8888-888888888801', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa001', 'non_eligible',
+  ('5833143c-9397-4a80-a7fc-3c5eb37c7a28', '88888888-8888-8888-8888-888888888801', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa001', 'non_eligible',
    ARRAY['visite_domicile'], ARRAY['maison_trop_endommagee'], NOW() - INTERVAL '26 days'),
 
   ('99999999-9999-4999-8999-999999999902', '88888888-8888-8888-8888-888888888802', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa001', 'non_eligible',

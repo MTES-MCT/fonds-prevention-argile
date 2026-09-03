@@ -11,6 +11,7 @@ import {
   verifyProspectTerritoryAccess,
   calculateAgentScope,
 } from "@/features/auth/permissions/services/agent-scope.service";
+import { STATUTS_SIMULATION_EDITABLE } from "@/features/backoffice/espace-agent/dossiers/domain/types/amo-dossiers.types";
 
 export interface DossierSimulationData {
   /** ID de la validation AMO (dossier/demande) — null pour les prospects */
@@ -66,18 +67,7 @@ export async function getDossierSimulationData(id: string): Promise<ActionResult
       .limit(1);
 
     if (dossier) {
-      // Statuts éditables. SANS_AMO inclus : un dossier sans accompagnement AMO
-      // progresse quand même dans le parcours (piloté par l'Aller-vers territorial)
-      // et reste éditable — cohérent avec STATUTS_CONSULTABLES du détail dossier.
-      // LOGEMENT_NON_ELIGIBLE inclus : l'agent doit pouvoir corriger une saisie
-      // erronée qui a rendu le dossier non éligible (la sauvegarde recalcule le statut).
-      const editableStatuts = [
-        StatutValidationAmo.EN_ATTENTE,
-        StatutValidationAmo.LOGEMENT_ELIGIBLE,
-        StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
-        StatutValidationAmo.SANS_AMO,
-      ];
-      if (!editableStatuts.includes(dossier.validation.statut as StatutValidationAmo)) {
+      if (!STATUTS_SIMULATION_EDITABLE.includes(dossier.validation.statut as StatutValidationAmo)) {
         return { success: false, error: "Ce dossier ne permet pas l'édition des données de simulation" };
       }
 

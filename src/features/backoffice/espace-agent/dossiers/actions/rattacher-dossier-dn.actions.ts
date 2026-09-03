@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { parcoursActionsRepo, dsObservationsRepo } from "@/shared/database/repositories";
+import { dsObservationsRepo } from "@/shared/database/repositories";
 import { RESOLUTION_OBSERVATION } from "@/shared/database/schema";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { rattacherDossierManuel } from "@/features/parcours/dossiers-ds/services/reconciliation.service";
-import { buildAuthorSnapshot } from "@/features/backoffice/espace-agent/shared/services/author-snapshot";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 import { verifierAccesDossierDn } from "@/features/backoffice/espace-agent/shared/services/dossier-dn-permissions.service";
 import { ACTION_TYPE_DOSSIER_DN_RATTACHE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import type { ActionResult } from "@/shared/types";
@@ -33,15 +33,11 @@ export async function rattacherDossierDnAction(parcoursId: string, dsNumber: str
     const result = await rattacherDossierManuel({ parcoursId, dsNumber });
     if (!result.success) return { success: false, error: result.error };
 
-    const snapshot = await buildAuthorSnapshot(agent);
-    await parcoursActionsRepo.create({
+    await logSystemAction({
       parcoursId,
-      agentId: agent.id,
+      author: { agent },
       actionType: ACTION_TYPE_DOSSIER_DN_RATTACHE,
       message: `Dossier Démarches Numériques n° ${result.data.dsNumber} rattaché manuellement à l'étape ${result.data.step}.`,
-      authorName: snapshot.authorName,
-      authorStructure: snapshot.authorStructure,
-      authorStructureType: snapshot.authorStructureType,
     });
 
     // Le cas sort de la file de rattachement du back-office.

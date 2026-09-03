@@ -42,6 +42,16 @@ export const ACTION_TYPE_ELIGIBILITE_REFUSEE = "eligibilite_refusee_non_eligible
  * Le dossier est archivé avec une raison.
  */
 export const ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE = "accompagnement_refuse_eligible";
+/** Action système : l'Aller-vers qualifie le prospect éligible (passage possible à l'étape AMO). */
+export const ACTION_TYPE_AV_QUALIFICATION_ELIGIBLE = "av_qualification_eligible";
+/** Action système : l'Aller-vers laisse le prospect « à qualifier » (pas de décision tranchée). */
+export const ACTION_TYPE_AV_QUALIFICATION_A_QUALIFIER = "av_qualification_a_qualifier";
+/** Action système : l'Aller-vers qualifie le prospect non éligible (dossier archivé). */
+export const ACTION_TYPE_AV_QUALIFICATION_NON_ELIGIBLE = "av_qualification_non_eligible";
+/** Action système : archivage manuel du dossier (le message porte la raison). */
+export const ACTION_TYPE_DOSSIER_ARCHIVE = "dossier_archive";
+/** Action système : dé-archivage du dossier (retour dans le suivi actif). */
+export const ACTION_TYPE_DOSSIER_DESARCHIVE = "dossier_desarchive";
 /** Valeur de type d'action "Autre" (nécessite une précision) */
 export const ACTION_TYPE_AUTRE = "autre";
 
@@ -129,8 +139,41 @@ export const ACTION_LABELS_BY_VALUE: Record<string, string> = ACTION_TYPE_GROUPS
     [ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE]: "⚠️ Éligible — accompagnement refusé",
     [ACTION_TYPE_DOSSIER_DN_RATTACHE]: "🔗 Dossier DN rattaché",
     [ACTION_TYPE_DOSSIER_DN_REINITIALISE]: "♻️ Formulaire DN réinitialisé",
+    [ACTION_TYPE_AV_QUALIFICATION_ELIGIBLE]: "✅ Éligible — qualifié par l'Aller-vers",
+    [ACTION_TYPE_AV_QUALIFICATION_A_QUALIFIER]: "⏳ À qualifier — Aller-vers",
+    [ACTION_TYPE_AV_QUALIFICATION_NON_ELIGIBLE]: "⛔ Non éligible — qualifié par l'Aller-vers",
+    [ACTION_TYPE_DOSSIER_ARCHIVE]: "📦 Dossier archivé",
+    [ACTION_TYPE_DOSSIER_DESARCHIVE]: "📤 Dossier désarchivé",
   } as Record<string, string>
 );
+
+/**
+ * Types d'action écrits automatiquement par l'application (hors formulaire).
+ * Ils constituent la piste d'audit du dossier — d'où mesure des délais — et ne sont
+ * donc ni modifiables ni supprimables par leur auteur (cf. `ActionsService`).
+ */
+export const ACTION_TYPES_SYSTEME: ReadonlySet<string> = new Set([
+  ACTION_TYPE_DOSSIER_REOUVERT,
+  ACTION_TYPE_INVITATION_RENVOYEE,
+  ACTION_TYPE_ACCOMPAGNEMENT_ARRETE,
+  ACTION_TYPE_ARRET_DEMANDE,
+  ACTION_TYPE_ARRET_REFUSE,
+  ACTION_TYPE_ELIGIBILITE_ACCEPTEE,
+  ACTION_TYPE_ELIGIBILITE_REFUSEE,
+  ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE,
+  ACTION_TYPE_DOSSIER_DN_RATTACHE,
+  ACTION_TYPE_DOSSIER_DN_REINITIALISE,
+  ACTION_TYPE_AV_QUALIFICATION_ELIGIBLE,
+  ACTION_TYPE_AV_QUALIFICATION_A_QUALIFIER,
+  ACTION_TYPE_AV_QUALIFICATION_NON_ELIGIBLE,
+  ACTION_TYPE_DOSSIER_ARCHIVE,
+  ACTION_TYPE_DOSSIER_DESARCHIVE,
+]);
+
+/** Une action système est une trace d'audit : lecture seule dans l'historique. */
+export function isActionSysteme(actionType: string): boolean {
+  return ACTION_TYPES_SYSTEME.has(actionType);
+}
 
 /** Liste plate de toutes les valeurs de type d'action (pour validation) */
 export const ACTION_TYPE_VALUES: string[] = ACTION_TYPE_GROUPS.flatMap((g) => g.items.map((i) => i.value));

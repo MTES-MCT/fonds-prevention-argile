@@ -10,8 +10,7 @@ import {
 import { getDemandeDetail } from "../services/demande-detail.service";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
-import { buildAuthorSnapshot } from "@/features/backoffice/espace-agent/shared/services/author-snapshot";
-import { parcoursActionsRepo } from "@/shared/database/repositories";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 import {
   ACTION_TYPE_ELIGIBILITE_ACCEPTEE,
   ACTION_TYPE_ELIGIBILITE_REFUSEE,
@@ -26,22 +25,14 @@ import type { DemandeDetail } from "../domain/types";
 
 /**
  * Trace le choix d'éligibilité de l'AMO dans l'historique (`parcours_actions`).
- * Best-effort : un échec d'audit ne doit pas invalider la décision déjà enregistrée.
+ * La résolution de l'agent est protégée ici : `logSystemAction` n'absorbe que ses
+ * propres erreurs, et un audit raté ne doit jamais invalider la décision enregistrée.
  */
 async function logDecisionAction(parcoursId: string, actionType: string, message?: string | null): Promise<void> {
   try {
     const agentResult = await getCurrentAgent();
     if (!agentResult.success) return;
-    const snapshot = await buildAuthorSnapshot(agentResult.data);
-    await parcoursActionsRepo.create({
-      parcoursId,
-      agentId: agentResult.data.id,
-      actionType,
-      message: message || null,
-      authorName: snapshot.authorName,
-      authorStructure: snapshot.authorStructure,
-      authorStructureType: snapshot.authorStructureType,
-    });
+    await logSystemAction({ parcoursId, author: { agent: agentResult.data }, actionType, message });
   } catch (error) {
     console.error("[logDecisionAction] audit best-effort échoué:", error);
   }

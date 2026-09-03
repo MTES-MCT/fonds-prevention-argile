@@ -71,6 +71,45 @@ pnpm start:dev
 
 L'application sera disponible sur [http://localhost:3000](http://localhost:3000)
 
+### Se connecter en tant qu'agent en local (ProConnect bac à sable)
+
+En local, `PC_BASE_URL` pointe vers le **bac à sable ProConnect** (`identite-sandbox.proconnect.gouv.fr`).
+C'est un annuaire d'identités indépendant : il ne connaît ni nos dossiers ni nos agents, et il est
+commun à tous les environnements qui le configurent (local comme staging).
+
+Se connecter demande donc que **deux conditions** soient réunies, et un échec ne se diagnostique
+qu'en sachant laquelle a cédé :
+
+| Étage                             | Ce qu'il vérifie                    | Symptôme en cas d'échec                                              |
+| --------------------------------- | ----------------------------------- | -------------------------------------------------------------------- |
+| Bac à sable ProConnect            | l'identité existe, mot de passe bon | `mot de passe incorrect` / `invalid_credentials`, sans quitter l'IdP |
+| Table `agents` de l'environnement | une ligne porte cet email           | écran ProConnect franchi, puis refus applicatif (« non autorisé »)   |
+
+L'app ne crée **jamais** d'agent à la volée : `createOrUpdateFromProConnect` cherche par `sub`
+puis par email, et refuse si la ligne n'existe pas
+([agents.repository.ts](src/shared/database/repositories/agents.repository.ts)). Un compte qui
+marche sur staging et pas en local, c'est donc presque toujours une ligne `agents` présente là-bas
+et absente ici — les deux bases divergent, l'IdP est le même.
+
+**Comptes utilisables :**
+
+- `user@yopmail.com` — compte natif du bac à sable, documenté par ProConnect. Le **mot de passe
+  est identique à l'email** (`user@yopmail.com`), et non un mot de passe commun. Il est créé par
+  le seed avec le rôle `allers_vers` (structure Adil 36).
+- `userNN@yopmail.com` (ex. `user14@yopmail.com`) — comptes créés à la main dans le bac à sable
+  par l'équipe, avec leur propre mot de passe. Ils ne sont **pas** dans le seed : s'ils manquent
+  en local, il faut ajouter la ligne `agents` correspondante.
+
+Référence : [identifiants des FI de test](https://partenaires.proconnect.gouv.fr/docs/fournisseur-service/identifiants-fi-test).
+La base d'intégration ProConnect est réinitialisée périodiquement : un compte créé à la main peut
+disparaître.
+
+Pour savoir quels comptes existent en base, ce qu'ils voient et lesquels sont inexploitables :
+
+```bash
+pnpm qa:cas-de-test --comptes
+```
+
 ### Scripts disponibles
 
 | Commande             | Description                                         |

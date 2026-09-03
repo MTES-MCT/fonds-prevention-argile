@@ -23,9 +23,12 @@ import {
   verifyProspectTerritoryAccess,
   calculateAgentScope,
 } from "@/features/auth/permissions/services/agent-scope.service";
-import { parcoursActionsRepo } from "@/shared/database/repositories";
-import { buildAuthorSnapshot } from "../services/author-snapshot";
-import { ACTION_TYPE_ELIGIBILITE_REFUSEE } from "../domain/types/action.types";
+import { logSystemAction } from "../services/action-audit.service";
+import {
+  ACTION_TYPE_ELIGIBILITE_REFUSEE,
+  ACTION_TYPE_DOSSIER_ARCHIVE,
+  ACTION_TYPE_DOSSIER_DESARCHIVE,
+} from "../domain/types/action.types";
 
 /**
  * Baseline du diff agent = données effectives AVANT la 1re correction. Idempotent :
@@ -140,6 +143,7 @@ export async function updateSimulationDataAction(
 
       // Calculé dans la transaction, utilisé après coup pour l'audit (parcours_actions).
       let didRefuserNonEligible = false;
+      let didDesarchiver = false;
 
       await db.transaction(async (tx) => {
         // 1. Simulation agent + baseline (données AVANT 1re correction) pour le diff.
@@ -208,21 +212,28 @@ export async function updateSimulationDataAction(
               archivedBy: null,
             })
             .where(eq(parcoursPrevention.id, dossier.parcours.id));
+          didDesarchiver = true;
         }
       });
 
       // Audit : trace le refus automatique dans l'historique du dossier (hors transaction,
       // même pattern que reouvrirDemandeAction — best-effort, ne bloque pas la sauvegarde).
       if (didRefuserNonEligible) {
-        const snapshot = await buildAuthorSnapshot(agent);
-        await parcoursActionsRepo.create({
+        await logSystemAction({
           parcoursId: dossier.parcours.id,
-          agentId: agent.id,
+          author: { agent },
           actionType: ACTION_TYPE_ELIGIBILITE_REFUSEE,
           message: "Accompagnement refusé automatiquement suite à la correction de la simulation (non éligible).",
-          authorName: snapshot.authorName,
-          authorStructure: snapshot.authorStructure,
-          authorStructureType: snapshot.authorStructureType,
+        });
+      }
+
+      // Symétrique : le retour à l'éligibilité efface archivedAt, seule l'action en garde la date.
+      if (didDesarchiver) {
+        await logSystemAction({
+          parcoursId: dossier.parcours.id,
+          author: { agent },
+          actionType: ACTION_TYPE_DOSSIER_DESARCHIVE,
+          message: "Dé-archivé automatiquement suite à la correction de la simulation (redevenu éligible).",
         });
       }
 
@@ -289,6 +300,9 @@ export async function updateSimulationDataAction(
     const prospectWasArchived = Boolean(parcours.archivedAt);
     const prospectArchiveReason = parcours.archiveReason;
 
+    let prospectArchiveNote: string | null = null;
+    let prospectDidDesarchiver = false;
+
     await db.transaction(async (tx) => {
       await tx
         .update(parcoursPrevention)
@@ -301,12 +315,13 @@ export async function updateSimulationDataAction(
         .where(eq(parcoursPrevention.id, parcours.id));
 
       if (prospectVerdict.isNonEligible && !prospectWasArchived) {
+        prospectArchiveNote = buildEligibiliteArchiveNote(prospectVerdict.result, "edition");
         await tx
           .update(parcoursPrevention)
           .set({
             situationParticulier: SituationParticulier.ARCHIVE,
             archivedAt: now,
-            archiveReason: buildEligibiliteArchiveNote(prospectVerdict.result, "edition"),
+            archiveReason: prospectArchiveNote,
             archivedBy: agent.id,
           })
           .where(eq(parcoursPrevention.id, parcours.id));
@@ -325,8 +340,27 @@ export async function updateSimulationDataAction(
             archivedBy: null,
           })
           .where(eq(parcoursPrevention.id, parcours.id));
+        prospectDidDesarchiver = true;
       }
     });
+
+    // Audit du changement d'état (hors transaction, best-effort) : un prospect n'a pas de
+    // validation AMO, donc rien d'autre ne daterait l'archivage automatique.
+    if (prospectArchiveNote) {
+      await logSystemAction({
+        parcoursId: parcours.id,
+        author: { agent },
+        actionType: ACTION_TYPE_DOSSIER_ARCHIVE,
+        message: prospectArchiveNote,
+      });
+    } else if (prospectDidDesarchiver) {
+      await logSystemAction({
+        parcoursId: parcours.id,
+        author: { agent },
+        actionType: ACTION_TYPE_DOSSIER_DESARCHIVE,
+        message: "Dé-archivé automatiquement suite à la correction de la simulation (redevenu éligible).",
+      });
+    }
 
     // Invalider le cache de toutes les pages de l'espace agent
     revalidatePath("/espace-agent", "layout");
