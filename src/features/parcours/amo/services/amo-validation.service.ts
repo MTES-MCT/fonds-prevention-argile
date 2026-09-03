@@ -10,6 +10,7 @@ import { Status, Step } from "../../core";
 import { normalizeCodeInsee } from "../utils/amo.utils";
 import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { reinitialiserDossierEtape } from "../../dossiers-ds/services/regeneration.service";
 
 /**
  * Service de gestion des validations AMO (approve/reject/get)
@@ -154,6 +155,19 @@ export async function approveValidation(
           ...(estMandataireFinancier !== undefined ? { est_mandataire: estMandataireFinancier } : {}),
         },
       });
+
+      // Best-effort, hors transaction : le SIRET AMO et la réponse "mandataire financier"
+      // ne sont connus qu'à cet instant (cf. §2.6/§2.9 FLOW-AND-SYNC.md). Si un dossier
+      // d'éligibilité existe déjà sans ces infos à jour (demande d'accompagnement après
+      // autonomie, ou tentative de reset précédente refusée pour cause de délai anti-rafale)
+      // et n'est pas encore déposé, on le réinitialise pour qu'un nouveau prérempli correct
+      // soit recréé au prochain retour du demandeur sur l'étape. Try/catch dédié : une erreur
+      // ici ne doit jamais faire échouer une validation AMO déjà commitée en base.
+      try {
+        await reinitialiserDossierEtape(parcoursIdForSync, Step.ELIGIBILITE);
+      } catch (error) {
+        console.error("[approveValidation] réinitialisation du dossier éligibilité échouée", error);
+      }
     }
 
     return result;

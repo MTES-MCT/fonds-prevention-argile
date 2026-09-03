@@ -4,6 +4,8 @@ import { db } from "@/shared/database/client";
 import { getAmoById } from "./amo-query.service";
 import { StatutValidationAmo } from "../domain/value-objects";
 import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
+import { reinitialiserDossierEtape } from "../../dossiers-ds/services/regeneration.service";
+import { Step } from "../../core";
 
 // Mock des dépendances
 vi.mock("@/shared/database/client", () => ({
@@ -29,7 +31,15 @@ vi.mock("@/shared/email/brevo", async (importOriginal) => ({
   emitBrevoEvent: vi.fn(),
 }));
 
+// Best-effort déclenché après une validation AMO éligible (§2.9 FLOW-AND-SYNC.md) : mocké
+// entièrement pour ne pas tirer le vrai client GraphQL DS (instanciation exige des env vars
+// serveur absentes en test, cf. amo-selection.service.test.ts).
+vi.mock("../../dossiers-ds/services/regeneration.service", () => ({
+  reinitialiserDossierEtape: vi.fn(),
+}));
+
 const mockedEmit = vi.mocked(emitBrevoEvent);
+const mockedReinitialiser = vi.mocked(reinitialiserDossierEtape);
 
 // Mock de crypto.randomUUID
 vi.stubGlobal("crypto", {
@@ -94,6 +104,7 @@ describe("amo-validation.service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockTransactionPassthrough();
+    mockedReinitialiser.mockResolvedValue({ success: false, error: "Aucun formulaire à régénérer pour cette étape." });
   });
 
   describe("approveValidation", () => {
@@ -125,6 +136,20 @@ describe("amo-validation.service", () => {
         },
         eventProperties: { decision: "eligible" },
       });
+      // Best-effort : le dossier d'éligibilité (SIRET/mandataire désormais connus) est
+      // réinitialisé s'il n'est pas encore déposé, cf. §2.9 FLOW-AND-SYNC.md.
+      expect(mockedReinitialiser).toHaveBeenCalledWith(parcoursId, Step.ELIGIBILITE);
+    });
+
+    it("n'échoue pas si la réinitialisation du dossier éligibilité lève une exception", async () => {
+      mockUpdateReturning([{ id: validationId, parcoursId }]);
+      mockUpdateNoReturning();
+      mockUpdateReturning([{ id: parcoursId }]);
+      mockedReinitialiser.mockRejectedValueOnce(new Error("boom"));
+
+      const result = await approveValidation(validationId, "commentaire test");
+
+      expect(result.success).toBe(true);
     });
 
     it("persiste estMandataireFinancier et le commentaire (note) dans la validation", async () => {
@@ -190,8 +215,9 @@ describe("amo-validation.service", () => {
       }
       // Pas d'UPDATE supplémentaire (ni token ni parcours)
       expect(db.update).toHaveBeenCalledTimes(1);
-      // alreadyProcessed → pas d'évènement Brevo
+      // alreadyProcessed → pas d'évènement Brevo ni de réinitialisation du dossier
       expect(mockedEmit).not.toHaveBeenCalled();
+      expect(mockedReinitialiser).not.toHaveBeenCalled();
     });
 
     it("retourne 'Validation non trouvée' si l'ID n'existe pas", async () => {
