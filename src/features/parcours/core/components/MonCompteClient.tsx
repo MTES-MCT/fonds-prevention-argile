@@ -9,7 +9,10 @@ import { useState, useEffect } from "react";
 import { useParcours } from "../context/useParcours";
 import { getContactInfo } from "../actions/contact-info.actions";
 import { Step } from "../domain";
-import { StatutValidationAmo } from "../../amo/domain/value-objects";
+import {
+  StatutValidationAmo,
+  estFormulaireEligibiliteBloqueParDemandeAccompagnement,
+} from "../../amo/domain/value-objects";
 import { AmoMode } from "../../amo/domain/value-objects/departements-amo";
 import { getStepBadgeLabel } from "../../amo/domain/value-objects/step-list";
 import { useAmoMode } from "../../amo/hooks";
@@ -271,11 +274,10 @@ function CalloutManager({
   }
 
   // Demande d'accompagnement après autonomie (§2.9 FLOW-AND-SYNC.md) : le parcours est déjà à
-  // ÉLIGIBILITE alors que l'AMO n'a pas encore répondu (statutAmo repasse à EN_ATTENTE sans
-  // reculer l'étape). Sans cette garde, `renderEligibiliteCallout` laisserait le demandeur
-  // remplir/déposer le formulaire (fraîchement réinitialisé) avant que l'AMO n'ait confirmé —
-  // même blocage que le choix initial de l'AMO.
-  if (currentStep === Step.ELIGIBILITE && statutAmo === StatutValidationAmo.EN_ATTENTE) {
+  // ÉLIGIBILITE alors que l'AMO n'a pas encore répondu. Sans cette garde, `renderEligibiliteCallout`
+  // laisserait le demandeur remplir/déposer le formulaire (fraîchement réinitialisé) avant que
+  // l'AMO n'ait confirmé — même blocage que le choix initial de l'AMO.
+  if (estFormulaireEligibiliteBloqueParDemandeAccompagnement(statutAmo, currentStep)) {
     return <CalloutAmoEnAttente />;
   }
 

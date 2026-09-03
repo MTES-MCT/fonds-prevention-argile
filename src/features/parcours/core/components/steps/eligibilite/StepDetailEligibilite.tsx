@@ -5,9 +5,10 @@ import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 import type { PieceJustificative } from "@/features/parcours/dossiers-ds/domain/pieces-justificatives";
 import { formatDate } from "@/shared/utils";
 import PiecesAPrevoir from "../../common/PiecesAPrevoir";
+import { estFormulaireEligibiliteBloqueParDemandeAccompagnement } from "@/features/parcours/amo/domain/value-objects";
 
 export default function StepDetailEligibilite({ pieces }: { pieces?: PieceJustificative[] }) {
-  const { currentStep, lastDSStatus, getDossierUrl, dossiers } = useParcours();
+  const { currentStep, lastDSStatus, getDossierUrl, dossiers, statutAmo } = useParcours();
 
   // URL du dossier d'éligibilité
   const dsUrl = getDossierUrl(Step.ELIGIBILITE);
@@ -17,6 +18,13 @@ export default function StepDetailEligibilite({ pieces }: { pieces?: PieceJustif
 
   // Vérifier si l'étape est active (on est à l'étape éligibilité)
   const isStepActive = currentStep === Step.ELIGIBILITE;
+
+  // Demande d'accompagnement après autonomie (§2.9 FLOW-AND-SYNC.md) : le formulaire vient
+  // d'être réinitialisé et ne doit rester accessible qu'une fois l'AMO répondu.
+  const isBloqueParDemandeAccompagnement = estFormulaireEligibiliteBloqueParDemandeAccompagnement(
+    statutAmo,
+    currentStep
+  );
 
   const isStepBeforeCurrent = currentStep ? isStepBefore(currentStep, Step.ELIGIBILITE) : false;
 
@@ -36,9 +44,15 @@ export default function StepDetailEligibilite({ pieces }: { pieces?: PieceJustif
           </p>
         )}
 
-        {isStepActive && (!lastDSStatus || lastDSStatus === DSStatus.NON_ACCESSIBLE) && (
-          <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>
+        {isStepActive && isBloqueParDemandeAccompagnement && (
+          <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">En attente de l'AMO</span>
         )}
+
+        {isStepActive &&
+          !isBloqueParDemandeAccompagnement &&
+          (!lastDSStatus || lastDSStatus === DSStatus.NON_ACCESSIBLE) && (
+            <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>
+          )}
 
         {isStepActive && lastDSStatus === DSStatus.EN_CONSTRUCTION && (
           <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">En attente d'instruction</span>
@@ -77,8 +91,17 @@ export default function StepDetailEligibilite({ pieces }: { pieces?: PieceJustif
           </>
         )}
 
+        {/* Contenu si étape active, en attente de la réponse de l'AMO (demande d'accompagnement
+            après autonomie) : le formulaire vient d'être réinitialisé, pas de lien à proposer. */}
+        {isStepActive && isBloqueParDemandeAccompagnement && (
+          <p>
+            Vous avez demandé à être accompagné : le formulaire d&apos;éligibilité sera à nouveau accessible dès que
+            l&apos;AMO aura répondu à votre demande.
+          </p>
+        )}
+
         {/* Contenu si étape active */}
-        {isStepActive && (
+        {isStepActive && !isBloqueParDemandeAccompagnement && (
           <>
             {/* Contenu si pas encore de statut */}
             {(!lastDSStatus || lastDSStatus === DSStatus.NON_ACCESSIBLE) && (
