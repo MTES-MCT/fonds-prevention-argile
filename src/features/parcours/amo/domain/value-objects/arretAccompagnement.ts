@@ -1,4 +1,5 @@
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "./statutValidation";
 
 /**
@@ -55,4 +56,19 @@ export function peutDemanderAccompagnement(etat: EtatDemandeAccompagnement): boo
   if (etat.statut !== StatutValidationAmo.SANS_AMO) return false;
   if (etat.eligibiliteDsStatus === DSStatus.EN_INSTRUCTION) return false;
   return true;
+}
+
+/**
+ * Le formulaire d'éligibilité doit rester inaccessible entre la demande d'accompagnement
+ * après autonomie et la réponse de l'AMO : `statutAmo` repasse à `EN_ATTENTE` alors que
+ * `currentStep` reste `ÉLIGIBILITE` (le parcours ne recule pas à `CHOIX_AMO`). Sans ce
+ * blocage, le demandeur pourrait remplir/déposer le dossier réinitialisé — avec des infos
+ * AMO encore provisoires — avant même que l'AMO ait confirmé (cf. §2.9 FLOW-AND-SYNC.md).
+ * Prédicat partagé par `CalloutManager`, `getStepListItems` et `StepDetailEligibilite`.
+ */
+export function estFormulaireEligibiliteBloqueParDemandeAccompagnement(
+  statutAmo: StatutValidationAmo | null,
+  currentStep: Step | null
+): boolean {
+  return statutAmo === StatutValidationAmo.EN_ATTENTE && currentStep === Step.ELIGIBILITE;
 }

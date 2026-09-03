@@ -1,6 +1,7 @@
 import { Step, STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { AmoMode } from "./departements-amo";
+import { estFormulaireEligibiliteBloqueParDemandeAccompagnement } from "./arretAccompagnement";
 
 /**
  * Items affichés dans la sidebar `MaListe` côté `/mon-compte`.
@@ -93,7 +94,7 @@ export function getStepListItems(
   currentStep: Step | null,
   isCurrentDSStepAccepte: boolean
 ): StepListItem[] {
-  const blockedByAmoEnAttente = statutAmo === StatutValidationAmo.EN_ATTENTE;
+  const blockedByAmoEnAttente = estFormulaireEligibiliteBloqueParDemandeAccompagnement(statutAmo, currentStep);
   const dsTail = buildDsTail(currentStep, isCurrentDSStepAccepte, blockedByAmoEnAttente);
   const onChoixAmo = currentStep === Step.CHOIX_AMO;
 
