@@ -8,8 +8,11 @@ interface AgentsListProps {
   agents: AgentWithPermissions[];
   onEdit: (agent: AgentWithPermissions) => void;
   onDelete: (agent: AgentWithPermissions) => void;
+  onDesactiver: (agent: AgentWithPermissions) => void;
+  onReactiver: (agent: AgentWithPermissions) => void;
   isLoading?: boolean;
   modalDeleteId: string;
+  modalDesactiverId: string;
   modalFormId: string;
 }
 
@@ -61,8 +64,11 @@ export default function AgentsList({
   agents,
   onEdit,
   onDelete,
+  onDesactiver,
+  onReactiver,
   isLoading = false,
   modalDeleteId,
+  modalDesactiverId,
   modalFormId,
 }: AgentsListProps) {
   if (agents.length === 0) {
@@ -94,14 +100,24 @@ export default function AgentsList({
             const { agent, departements, entrepriseAmo, allersVers } = agentData;
             const fullName = [agent.givenName, agent.usualName].filter(Boolean).join(" ");
             const isPending = agent.sub.startsWith("pending_");
+            const isDesactive = Boolean(agent.desactiveAt);
 
             return (
-              <tr key={agent.id}>
+              <tr key={agent.id} style={isDesactive ? { opacity: 0.6 } : undefined}>
                 {/* Nom */}
                 <td>
                   <div className="flex flex-col">
                     <span className="font-medium">{fullName || "-"}</span>
-                    {isPending && <span className="text-xs text-orange-600">En attente de connexion</span>}
+                    {isPending && !isDesactive && (
+                      <span className="text-xs text-orange-600">En attente de connexion</span>
+                    )}
+                    {isDesactive && (
+                      <span
+                        className="fr-badge fr-badge--sm fr-badge--no-icon fr-badge--warning fr-mt-1v"
+                        title={agent.desactiveRaison ?? undefined}>
+                        Désactivé le {new Date(agent.desactiveAt!).toLocaleDateString("fr-FR")}
+                      </span>
+                    )}
                   </div>
                 </td>
 
@@ -201,6 +217,27 @@ export default function AgentsList({
                       title="Modifier">
                       <span className="fr-icon-edit-line fr-icon--sm" aria-hidden="true" />
                     </button>
+                    {isDesactive ? (
+                      <button
+                        type="button"
+                        className="fr-btn fr-btn--sm fr-btn--secondary"
+                        onClick={() => onReactiver(agentData)}
+                        disabled={isLoading}
+                        title="Réactiver">
+                        <span className="fr-icon-refresh-line fr-icon--sm" aria-hidden="true" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="fr-btn fr-btn--sm fr-btn--secondary"
+                        aria-controls={modalDesactiverId}
+                        data-fr-opened="false"
+                        onClick={() => onDesactiver(agentData)}
+                        disabled={isLoading}
+                        title="Désactiver">
+                        <span className="fr-icon-lock-line fr-icon--sm" aria-hidden="true" />
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="fr-btn fr-btn--sm fr-btn--tertiary-no-outline text-red-600"

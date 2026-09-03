@@ -23,6 +23,8 @@ vi.mock("../services/agents-admin.service", () => ({
   createAgent: vi.fn(),
   updateAgent: vi.fn(),
   deleteAgent: vi.fn(),
+  desactiverAgent: vi.fn(),
+  reactiverAgent: vi.fn(),
 }));
 
 // Mock de l'environnement serveur
@@ -35,6 +37,8 @@ import {
   createAgentAction,
   updateAgentAction,
   deleteAgentAction,
+  desactiverAgentAction,
+  reactiverAgentAction,
 } from "./agents.actions";
 
 // Import des mocks
@@ -436,6 +440,91 @@ describe("agents.actions", () => {
       const result = await deleteAgentAction("agent-123");
 
       expect(result.success).toBe(false);
+    });
+  });
+  describe("desactiverAgentAction", () => {
+    it("devrait autoriser la désactivation pour SUPER_ADMINISTRATEUR", async () => {
+      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
+      vi.mocked(getSession).mockResolvedValue(mockSession);
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const result = await desactiverAgentAction("agent-123", "A quitté ses fonctions");
+
+      expect(result.success).toBe(true);
+      expect(agentsAdminService.desactiverAgent).toHaveBeenCalledWith(
+        "agent-123",
+        mockSession.userId,
+        "A quitté ses fonctions"
+      );
+    });
+
+    it("devrait refuser la désactivation pour ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+
+      const result = await desactiverAgentAction("agent-123");
+
+      expect(result.success).toBe(false);
+      expect(agentsAdminService.desactiverAgent).not.toHaveBeenCalled();
+    });
+
+    it("devrait refuser la désactivation sans session", async () => {
+      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const result = await desactiverAgentAction("agent-123");
+
+      expect(result.success).toBe(false);
+      expect(agentsAdminService.desactiverAgent).not.toHaveBeenCalled();
+    });
+
+    it("devrait refuser qu'un super admin se désactive lui-même", async () => {
+      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
+      vi.mocked(getSession).mockResolvedValue(mockSession);
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const result = await desactiverAgentAction(mockSession.userId);
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("propre compte");
+      }
+      expect(agentsAdminService.desactiverAgent).not.toHaveBeenCalled();
+    });
+
+    it("devrait remonter l'erreur du service", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      vi.mocked(agentsAdminService.desactiverAgent).mockRejectedValue(new Error("Cet agent est déjà désactivé"));
+
+      const result = await desactiverAgentAction("agent-123");
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe("Cet agent est déjà désactivé");
+      }
+    });
+  });
+
+  describe("reactiverAgentAction", () => {
+    it("devrait autoriser la réactivation pour SUPER_ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const result = await reactiverAgentAction("agent-123");
+
+      expect(result.success).toBe(true);
+      expect(agentsAdminService.reactiverAgent).toHaveBeenCalledWith("agent-123");
+    });
+
+    it("devrait refuser la réactivation pour ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+
+      const result = await reactiverAgentAction("agent-123");
+
+      expect(result.success).toBe(false);
+      expect(agentsAdminService.reactiverAgent).not.toHaveBeenCalled();
     });
   });
 });

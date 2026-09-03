@@ -5,11 +5,14 @@ import AgentsList from "./AgentsList";
 import AgentsEmailExport from "./AgentsEmailExport";
 import AgentFormModal, { type AgentFormData, type EntrepriseAmoOption, type AllersVersOption } from "./AgentFormModal";
 import AgentDeleteModal from "./AgentDeleteModal";
+import AgentDesactiverModal from "./AgentDesactiverModal";
 import {
   AgentWithPermissions,
   createAgentAction,
   deleteAgentAction,
+  desactiverAgentAction,
   getAgentsAction,
+  reactiverAgentAction,
   updateAgentAction,
 } from "@/features/backoffice";
 import { getEntreprisesAmoOptions } from "@/features/backoffice/administration/amo/actions";
@@ -18,7 +21,17 @@ import { UserRole } from "@/shared/domain/value-objects";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 
 const MODAL_DELETE_ID = "modal-delete-agent";
+const MODAL_DESACTIVER_ID = "modal-desactiver-agent";
 const MODAL_FORM_ID = "modal-form-agent";
+
+/** Filtre de statut, appliqué avant la répartition par rôle. */
+const STATUT_FILTERS = [
+  { id: "actifs", label: "Actifs" },
+  { id: "desactives", label: "Désactivés" },
+  { id: "tous", label: "Tous" },
+] as const;
+
+type StatutFilter = (typeof STATUT_FILTERS)[number]["id"];
 
 /** Definition d'un onglet de role */
 interface RoleTab {
@@ -75,23 +88,34 @@ export default function AgentsPanel() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("tous");
+  const [statutFilter, setStatutFilter] = useState<StatutFilter>("actifs");
 
   // Modal states
   const [selectedAgent, setSelectedAgent] = useState<AgentWithPermissions | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const nbDesactives = useMemo(() => agents.filter((a) => a.agent.desactiveAt).length, [agents]);
+
+  // Le filtre de statut s'applique avant la répartition par rôle : les compteurs
+  // d'onglets reflètent donc ce que la table affiche réellement.
+  const agentsFiltres = useMemo(() => {
+    if (statutFilter === "actifs") return agents.filter((a) => !a.agent.desactiveAt);
+    if (statutFilter === "desactives") return agents.filter((a) => a.agent.desactiveAt);
+    return agents;
+  }, [agents, statutFilter]);
 
   // Compter les agents par onglet
   const agentsByTab = useMemo(() => {
     const counts: Record<string, AgentWithPermissions[]> = {};
     for (const tab of ROLE_TABS) {
       if (tab.roles.length === 0) {
-        counts[tab.id] = agents;
+        counts[tab.id] = agentsFiltres;
       } else {
-        counts[tab.id] = agents.filter((a) => tab.roles.includes(a.agent.role));
+        counts[tab.id] = agentsFiltres.filter((a) => tab.roles.includes(a.agent.role));
       }
     }
     return counts;
-  }, [agents]);
+  }, [agentsFiltres]);
 
   // Charger les agents, les entreprises AMO et les territoires Allers-Vers
   const loadData = useCallback(async () => {
@@ -138,6 +162,50 @@ export default function AgentsPanel() {
   // Ouvrir le modal de suppression
   const handleDelete = (agent: AgentWithPermissions) => {
     setSelectedAgent(agent);
+  };
+
+  // Ouvrir le modal de désactivation
+  const handleDesactiver = (agent: AgentWithPermissions) => {
+    setSelectedAgent(agent);
+  };
+
+  const handleDesactiverConfirm = async (raison: string) => {
+    if (!selectedAgent) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const result = await desactiverAgentAction(selectedAgent.agent.id, raison);
+
+      if (!result.success) {
+        setError(result.error || "Erreur lors de la désactivation");
+        return;
+      }
+
+      await loadData();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Réactivation : pas de modale, l'action est sans effet de bord et réversible.
+  const handleReactiver = async (agent: AgentWithPermissions) => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const result = await reactiverAgentAction(agent.agent.id);
+
+      if (!result.success) {
+        setError(result.error || "Erreur lors de la réactivation");
+        return;
+      }
+
+      await loadData();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Soumettre le formulaire (création ou modification)
@@ -231,6 +299,29 @@ export default function AgentsPanel() {
             </div>
           )}
 
+          {/* Filtre de statut */}
+          <fieldset className="fr-segmented fr-segmented--sm fr-mb-3w">
+            <legend className="fr-segmented__legend fr-sr-only">Filtrer les agents par statut</legend>
+            <div className="fr-segmented__elements">
+              {STATUT_FILTERS.map((filtre) => (
+                <div key={filtre.id} className="fr-segmented__element">
+                  <input
+                    value={filtre.id}
+                    checked={statutFilter === filtre.id}
+                    type="radio"
+                    id={`segmented-statut-${filtre.id}`}
+                    name="segmented-statut-agents"
+                    onChange={() => setStatutFilter(filtre.id)}
+                  />
+                  <label className="fr-label" htmlFor={`segmented-statut-${filtre.id}`}>
+                    {filtre.label}
+                    {filtre.id === "desactives" && nbDesactives > 0 ? ` (${nbDesactives})` : ""}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </fieldset>
+
           {/* Onglets par rôle */}
           <div className="fr-tabs" style={{ borderBottom: "none" }}>
             <ul className="fr-tabs__list" role="tablist" aria-label="Agents par rôle">
@@ -273,8 +364,11 @@ export default function AgentsPanel() {
                 agents={agentsByTab[activeTab] ?? []}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onDesactiver={handleDesactiver}
+                onReactiver={handleReactiver}
                 isLoading={isSubmitting}
                 modalDeleteId={MODAL_DELETE_ID}
+                modalDesactiverId={MODAL_DESACTIVER_ID}
                 modalFormId={MODAL_FORM_ID}
               />
             </div>
@@ -295,6 +389,13 @@ export default function AgentsPanel() {
       <AgentDeleteModal
         modalId={MODAL_DELETE_ID}
         onConfirm={handleDeleteConfirm}
+        agent={selectedAgent}
+        isLoading={isSubmitting}
+      />
+
+      <AgentDesactiverModal
+        modalId={MODAL_DESACTIVER_ID}
+        onConfirm={handleDesactiverConfirm}
         agent={selectedAgent}
         isLoading={isSubmitting}
       />

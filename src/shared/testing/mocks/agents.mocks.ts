@@ -1,9 +1,14 @@
 import { AgentWithPermissions } from "@/features/backoffice";
 
+/** Surcharge partielle jusque dans `agent`, pour ne renseigner que les champs utiles au test. */
+type AgentWithPermissionsOverride = Partial<Omit<AgentWithPermissions, "agent">> & {
+  agent?: Partial<AgentWithPermissions["agent"]>;
+};
+
 /**
  * Crée un agent de test avec permissions
  */
-export const createMockAgentWithPermissions = (override?: Partial<AgentWithPermissions>): AgentWithPermissions => ({
+export const createMockAgentWithPermissions = (override?: AgentWithPermissionsOverride): AgentWithPermissions => ({
   agent: {
     id: "agent-123",
     sub: "proconnect-sub-123",
@@ -17,6 +22,8 @@ export const createMockAgentWithPermissions = (override?: Partial<AgentWithPermi
     role: "administrateur",
     entrepriseAmoId: null,
     allersVersId: null,
+    desactiveAt: null,
+    desactiveRaison: null,
     lastLogin: null,
     createdAt: new Date("2024-01-01T10:00:00Z"),
     updatedAt: new Date("2024-01-15T10:00:00Z"),
@@ -46,6 +53,8 @@ export const createMockAgentsWithPermissions = (roles: string[]): AgentWithPermi
         role,
         entrepriseAmoId: null,
         allersVersId: null,
+        desactiveAt: null,
+        desactiveRaison: null,
         lastLogin: null,
         createdAt: new Date("2024-01-01T10:00:00Z"),
         updatedAt: new Date("2024-01-15T10:00:00Z"),
@@ -59,7 +68,7 @@ export const createMockAgentsWithPermissions = (roles: string[]): AgentWithPermi
 /**
  * Crée un agent AMO de test avec son entreprise
  */
-export const createMockAmoAgent = (override?: Partial<AgentWithPermissions>): AgentWithPermissions => ({
+export const createMockAmoAgent = (override?: AgentWithPermissionsOverride): AgentWithPermissions => ({
   agent: {
     id: "agent-amo-123",
     sub: "proconnect-sub-amo-123",
@@ -73,6 +82,8 @@ export const createMockAmoAgent = (override?: Partial<AgentWithPermissions>): Ag
     role: "amo",
     entrepriseAmoId: "entreprise-amo-123",
     allersVersId: null,
+    desactiveAt: null,
+    desactiveRaison: null,
     lastLogin: null,
     createdAt: new Date("2024-01-01T10:00:00Z"),
     updatedAt: new Date("2024-01-15T10:00:00Z"),

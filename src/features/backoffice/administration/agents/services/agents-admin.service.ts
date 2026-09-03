@@ -41,6 +41,8 @@ export async function getAllAgentsWithPermissions(): Promise<AgentWithPermission
           role: agentWithAmo.role,
           entrepriseAmoId: agentWithAmo.entrepriseAmoId,
           allersVersId: agentWithAmo.allersVersId,
+          desactiveAt: agentWithAmo.desactiveAt,
+          desactiveRaison: agentWithAmo.desactiveRaison,
           lastLogin: agentWithAmo.lastLogin,
           createdAt: agentWithAmo.createdAt,
           updatedAt: agentWithAmo.updatedAt,
@@ -90,6 +92,8 @@ export async function getAgentWithPermissions(agentId: string): Promise<AgentWit
       role: agentWithAmo.role,
       entrepriseAmoId: agentWithAmo.entrepriseAmoId,
       allersVersId: agentWithAmo.allersVersId,
+      desactiveAt: agentWithAmo.desactiveAt,
+      desactiveRaison: agentWithAmo.desactiveRaison,
       lastLogin: agentWithAmo.lastLogin,
       createdAt: agentWithAmo.createdAt,
       updatedAt: agentWithAmo.updatedAt,
@@ -352,6 +356,46 @@ export async function updateAgent(agentId: string, data: UpdateAgentData): Promi
     entrepriseAmo,
     allersVers,
   };
+}
+
+/**
+ * Désactive un agent : coupe son accès en conservant son historique nominatif.
+ */
+export async function desactiverAgent(agentId: string, parAgentId: string, raison?: string): Promise<Agent> {
+  const existant = await agentsRepository.findById(agentId);
+  if (!existant) {
+    throw new Error("Agent non trouvé");
+  }
+  if (existant.desactiveAt) {
+    throw new Error("Cet agent est déjà désactivé");
+  }
+
+  const agent = await agentsRepository.desactiver(agentId, parAgentId, raison?.trim() || null);
+  if (!agent) {
+    throw new Error("Échec de la désactivation");
+  }
+
+  return agent;
+}
+
+/**
+ * Réactive un agent désactivé.
+ */
+export async function reactiverAgent(agentId: string): Promise<Agent> {
+  const existant = await agentsRepository.findById(agentId);
+  if (!existant) {
+    throw new Error("Agent non trouvé");
+  }
+  if (!existant.desactiveAt) {
+    throw new Error("Cet agent est déjà actif");
+  }
+
+  const agent = await agentsRepository.reactiver(agentId);
+  if (!agent) {
+    throw new Error("Échec de la réactivation");
+  }
+
+  return agent;
 }
 
 /**

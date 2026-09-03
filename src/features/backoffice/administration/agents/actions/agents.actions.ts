@@ -10,6 +10,8 @@ import {
   createAgent,
   updateAgent,
   deleteAgent,
+  desactiverAgent,
+  reactiverAgent,
 } from "../services/agents-admin.service";
 import { AgentWithPermissions, UpdateAgentData } from "../domain/types";
 
@@ -245,6 +247,72 @@ export async function updateAgentAction(
     };
   } catch (error) {
     console.error("Erreur updateAgentAction:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    };
+  }
+}
+
+/**
+ * Désactive un agent (super admin uniquement) : coupe l'accès, garde l'historique.
+ */
+export async function desactiverAgentAction(agentId: string, raison?: string): Promise<ActionResult<void>> {
+  try {
+    const session = await getSession();
+
+    if (!session?.userId || !isSuperAdminRole(session.role)) {
+      return {
+        success: false,
+        error: "Accès non autorisé. Réservé aux super administrateurs.",
+      };
+    }
+
+    // Se désactiver soi-même reviendrait à se verrouiller hors du backoffice.
+    if (session.userId === agentId) {
+      return {
+        success: false,
+        error: "Vous ne pouvez pas désactiver votre propre compte.",
+      };
+    }
+
+    await desactiverAgent(agentId, session.userId, raison);
+
+    return {
+      success: true,
+      data: undefined,
+    };
+  } catch (error) {
+    console.error("Erreur desactiverAgentAction:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    };
+  }
+}
+
+/**
+ * Réactive un agent désactivé (super admin uniquement)
+ */
+export async function reactiverAgentAction(agentId: string): Promise<ActionResult<void>> {
+  try {
+    const session = await getSession();
+
+    if (!session?.userId || !isSuperAdminRole(session.role)) {
+      return {
+        success: false,
+        error: "Accès non autorisé. Réservé aux super administrateurs.",
+      };
+    }
+
+    await reactiverAgent(agentId);
+
+    return {
+      success: true,
+      data: undefined,
+    };
+  } catch (error) {
+    console.error("Erreur reactiverAgentAction:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erreur inconnue",

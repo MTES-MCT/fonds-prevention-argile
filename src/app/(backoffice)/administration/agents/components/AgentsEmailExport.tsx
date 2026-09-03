@@ -12,13 +12,17 @@ interface AgentsEmailExportProps {
 
 /**
  * Extrait les emails uniques (insensible à la casse) des agents, dans l'ordre,
- * en ignorant les valeurs vides.
+ * en ignorant les valeurs vides et les agents désactivés.
  */
-function getUniqueEmails(agents: AgentWithPermissions[]): string[] {
+export function getUniqueEmails(agents: AgentWithPermissions[]): string[] {
   const seen = new Set<string>();
   const emails: string[] = [];
 
   for (const { agent } of agents) {
+    // Un agent parti ne doit jamais atterrir dans une copie de mail, même si le
+    // filtre courant l'affiche.
+    if (agent.desactiveAt) continue;
+
     const email = agent.email?.trim();
     if (!email) continue;
 
