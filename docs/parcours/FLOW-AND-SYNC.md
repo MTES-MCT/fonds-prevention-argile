@@ -383,25 +383,41 @@ jusqu'à correction manuelle par l'AMO directement auprès de l'administration.
 
 Ce reset est **automatique et non confirmé au cas par cas** : la popup « Demander à être
 accompagné » (`DemanderAccompagnementModal`) prévient le demandeur en amont qu'un brouillon
-déjà entamé sous l'ancien lien sera perdu. Le résultat (`formulaireReinitialise: boolean`) est
-propagé jusqu'à l'audit `parcours_actions` (message enrichi si le reset a eu lieu).
+déjà entamé sous l'ancien lien sera perdu, puis fait un **rechargement complet de la page**
+(`window.location.reload()`, pas `router.refresh()`) une fois la demande enregistrée : `statutAmo`
+vit dans le contexte client `ParcoursProvider`, alimenté par un fetch séparé (`getValidationAmo`)
+que `router.refresh()` (qui ne fait que re-render les Server Components) ne redéclenche pas — le
+callout d'attente resterait invisible sans ce rechargement. Le résultat
+(`formulaireReinitialise: boolean`) est propagé jusqu'à l'audit `parcours_actions` (message
+enrichi si le reset a eu lieu).
+
+**Second essai à la validation de l'AMO.** Le SIRET et la réponse « mandataire financier »
+(§2.6) ne sont connus qu'à la validation (`approveValidation`), pas à la demande initiale : un
+reset tenté trop tôt peut échouer (`trop_recent`, fenêtre anti-rafale de 10 min si le dossier
+vient d'être créé). `approveValidation` retente donc le même best-effort
+(`reinitialiserDossierEtape(parcoursId, Step.ELIGIBILITE)`) juste après la transaction de
+validation, dans son propre `try/catch` (une erreur ici ne doit jamais faire échouer une
+validation déjà commitée en base). Sans effet sur le flux initial (pas encore de dossier
+éligibilité à ce stade → `aucun_dossier`, no-op) ; sans effet non plus si le premier essai a déjà
+réinitialisé (pointeur déjà retiré → `aucun_dossier`, no-op).
 
 **Blocage du formulaire tant que l'AMO n'a pas répondu.** `statutAmo` repasse à `EN_ATTENTE`
-alors que `currentStep` reste `ÉLIGIBILITE` — un état que `CalloutManager` (routage par
-`currentStep`) et `getStepListItems` (« Ma liste ») ne géraient pas : sans garde, le callout
-principal (`renderEligibiliteCallout`) et le lien de l'item « eligibilite » dans « Ma liste »
-laisseraient le demandeur remplir/déposer le formulaire fraîchement réinitialisé **avant** la
-réponse de l'AMO, recréant immédiatement le problème que le reset vient de corriger. Deux
-gardes ajoutées, toutes deux déclenchées par `statutAmo === EN_ATTENTE` en dehors de
-`CHOIX_AMO` :
+alors que `currentStep` reste `ÉLIGIBILITE` — un état que trois surfaces indépendantes ne
+géraient pas : sans garde, le demandeur pourrait remplir/déposer le formulaire fraîchement
+réinitialisé **avant** la réponse de l'AMO, recréant immédiatement le problème que le reset
+vient de corriger. Prédicat partagé,
+`estFormulaireEligibiliteBloqueParDemandeAccompagnement(statutAmo, currentStep)`
+(`arretAccompagnement.ts`) — vrai seulement si `statutAmo === EN_ATTENTE` et
+`currentStep === ELIGIBILITE` — pour que les trois surfaces ne puissent pas diverger :
 
 - `CalloutManager` (`MonCompteClient.tsx`) court-circuite `renderEligibiliteCallout` et affiche
-  `CalloutAmoEnAttente` (même callout qu'au choix initial) quand `currentStep === ELIGIBILITE`
-  et `statutAmo === EN_ATTENTE`.
-- `getStepListItems`/`buildDsTail` (`step-list.ts`) force l'item de l'étape courante à
-  `"pending"` (lien désactivé) via le paramètre `blockedByAmoEnAttente`, au lieu de `"active"`.
-  Sans effet sur les autres statuts : à `CHOIX_AMO`, les items DS sont déjà `"pending"` pour
-  tous.
+  `CalloutAmoEnAttente` (même callout qu'au choix initial).
+- `getStepListItems`/`buildDsTail` (`step-list.ts`, « Ma liste ») force l'item de l'étape
+  courante à `"pending"` (lien désactivé) au lieu de `"active"`. Sans effet sur les autres
+  statuts : à `CHOIX_AMO`, les items DS sont déjà `"pending"` pour tous.
+- `StepDetailEligibilite` (carte « 2. Éligibilité » en bas de `/mon-compte`) masque le bouton
+  « Reprendre le formulaire » et tout contenu dérivé de `lastDSStatus`, au profit d'un message
+  d'attente et d'un badge dédié (« En attente de l'AMO »).
 
 **Bug corrigé en marge (`getStepListItems`, `step-list.ts`).** L'item « Attendre la réponse de
 votre AMO » dérivait son état actif/complété de `currentStep === CHOIX_AMO`, une équivalence
