@@ -330,6 +330,13 @@
       "when": 1787743092972,
       "tag": "0046_charming_hellcat",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1788438641877,
+      "tag": "0047_typical_prowler",
+      "breakpoints": true
     }
   ]
 }

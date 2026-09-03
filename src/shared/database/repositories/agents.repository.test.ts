@@ -6,6 +6,7 @@ import { UserRole } from "@/shared/domain/value-objects";
 vi.mock("../client", () => ({
   db: {
     select: vi.fn(),
+    update: vi.fn(),
   },
 }));
 
@@ -99,5 +100,95 @@ describe("AgentsRepository.findByIdWithStructure", () => {
 
     expect(result?.entrepriseAmo).toBeNull();
     expect(result?.allersVers).toBeNull();
+  });
+});
+
+/** Chaîne `db.select({...}).from(t).where(c)` — le `where` est directement awaité. */
+function mockCountChain(counts: number[]) {
+  const from = vi.fn().mockImplementation(() => ({
+    where: vi.fn().mockResolvedValue([{ count: counts.shift() ?? 0 }]),
+  }));
+  return { from };
+}
+
+describe("AgentsRepository.countTraces", () => {
+  let repo: AgentsRepository;
+
+  beforeEach(() => {
+    repo = new AgentsRepository();
+    vi.clearAllMocks();
+  });
+
+  it("totalise les cinq sources d'historique", async () => {
+    // Ordre : actions, qualifications, archivages, dossiers créés, simulations éditées.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(db.select).mockReturnValue(mockCountChain([12, 3, 2, 5, 1]) as any);
+
+    expect(await repo.countTraces("a-1")).toEqual({
+      actions: 12,
+      qualifications: 3,
+      archivages: 2,
+      dossiersCrees: 5,
+      simulationsEditees: 1,
+      total: 23,
+    });
+  });
+
+  it("retourne un total nul pour un agent sans historique", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(db.select).mockReturnValue(mockCountChain([0, 0, 0, 0, 0]) as any);
+
+    expect((await repo.countTraces("a-2")).total).toBe(0);
+  });
+});
+
+describe("AgentsRepository désactivation", () => {
+  let repo: AgentsRepository;
+  let set: ReturnType<typeof vi.fn>;
+
+  function mockUpdateChain(returned: unknown[]) {
+    const returning = vi.fn().mockResolvedValue(returned);
+    const where = vi.fn().mockReturnValue({ returning });
+    set = vi.fn().mockReturnValue({ where });
+    return { set };
+  }
+
+  beforeEach(() => {
+    repo = new AgentsRepository();
+    vi.clearAllMocks();
+  });
+
+  it("horodate la désactivation avec son auteur et sa raison", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(db.update).mockReturnValue(mockUpdateChain([{ id: "a-1" }]) as any);
+
+    const result = await repo.desactiver("a-1", "super-admin-1", "A quitté ses fonctions");
+
+    expect(result).toEqual({ id: "a-1" });
+    expect(set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        desactiveAt: expect.any(Date),
+        desactivePar: "super-admin-1",
+        desactiveRaison: "A quitté ses fonctions",
+      })
+    );
+  });
+
+  it("est un no-op sur un agent déjà désactivé (date d'origine préservée)", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(db.update).mockReturnValue(mockUpdateChain([]) as any);
+
+    expect(await repo.desactiver("a-1", "super-admin-1")).toBeNull();
+  });
+
+  it("remet les trois colonnes à null à la réactivation", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(db.update).mockReturnValue(mockUpdateChain([{ id: "a-1" }]) as any);
+
+    await repo.reactiver("a-1");
+
+    expect(set).toHaveBeenCalledWith(
+      expect.objectContaining({ desactiveAt: null, desactivePar: null, desactiveRaison: null })
+    );
   });
 });

@@ -1,8 +1,11 @@
-import { eq, sql, SQL, desc } from "drizzle-orm";
+import { eq, sql, SQL, desc, and, isNull } from "drizzle-orm";
 import { db } from "../client";
 import { agents, type Agent, type NewAgent } from "../schema/agents";
 import { entreprisesAmo } from "../schema/entreprises-amo";
 import { allersVers } from "../schema/allers-vers";
+import { parcoursActions } from "../schema/parcours-actions";
+import { parcoursPrevention } from "../schema/parcours-prevention";
+import { prospectQualifications } from "../schema/prospect-qualifications";
 import { BaseRepository } from "./base.repository";
 import { AgentRole } from "@/shared/domain/value-objects";
 
@@ -29,6 +32,18 @@ export interface AgentWithEntrepriseAmo extends Agent {
     nom: string;
     siret: string;
   } | null;
+}
+
+/**
+ * Traces nominatives laissées par un agent : ce qu'une suppression effacerait.
+ */
+export interface AgentTracesCount {
+  actions: number;
+  qualifications: number;
+  archivages: number;
+  dossiersCrees: number;
+  simulationsEditees: number;
+  total: number;
 }
 
 export class AgentsRepository extends BaseRepository<Agent> {
@@ -58,6 +73,9 @@ export class AgentsRepository extends BaseRepository<Agent> {
         role: agents.role,
         entrepriseAmoId: agents.entrepriseAmoId,
         allersVersId: agents.allersVersId,
+        desactiveAt: agents.desactiveAt,
+        desactivePar: agents.desactivePar,
+        desactiveRaison: agents.desactiveRaison,
         lastLogin: agents.lastLogin,
         createdAt: agents.createdAt,
         updatedAt: agents.updatedAt,
@@ -85,6 +103,9 @@ export class AgentsRepository extends BaseRepository<Agent> {
       role: row.role,
       entrepriseAmoId: row.entrepriseAmoId,
       allersVersId: row.allersVersId,
+      desactiveAt: row.desactiveAt,
+      desactivePar: row.desactivePar,
+      desactiveRaison: row.desactiveRaison,
       lastLogin: row.lastLogin,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -167,6 +188,9 @@ export class AgentsRepository extends BaseRepository<Agent> {
         role: agents.role,
         entrepriseAmoId: agents.entrepriseAmoId,
         allersVersId: agents.allersVersId,
+        desactiveAt: agents.desactiveAt,
+        desactivePar: agents.desactivePar,
+        desactiveRaison: agents.desactiveRaison,
         lastLogin: agents.lastLogin,
         createdAt: agents.createdAt,
         updatedAt: agents.updatedAt,
@@ -191,6 +215,9 @@ export class AgentsRepository extends BaseRepository<Agent> {
       role: row.role,
       entrepriseAmoId: row.entrepriseAmoId,
       allersVersId: row.allersVersId,
+      desactiveAt: row.desactiveAt,
+      desactivePar: row.desactivePar,
+      desactiveRaison: row.desactiveRaison,
       lastLogin: row.lastLogin,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -366,6 +393,85 @@ export class AgentsRepository extends BaseRepository<Agent> {
       .returning();
 
     return updatedAgent || null;
+  }
+
+  /**
+   * Désactive un agent : coupe son accès sans toucher à son historique.
+   * No-op (retourne null) si l'agent est déjà désactivé, pour ne pas écraser la date d'origine.
+   */
+  async desactiver(agentId: string, desactivePar: string, raison?: string | null): Promise<Agent | null> {
+    const [updatedAgent] = await db
+      .update(agents)
+      .set({
+        desactiveAt: new Date(),
+        desactivePar,
+        desactiveRaison: raison ?? null,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(agents.id, agentId), isNull(agents.desactiveAt)))
+      .returning();
+
+    return updatedAgent || null;
+  }
+
+  /**
+   * Réactive un agent désactivé (rend l'accès ProConnect).
+   */
+  async reactiver(agentId: string): Promise<Agent | null> {
+    const [updatedAgent] = await db
+      .update(agents)
+      .set({
+        desactiveAt: null,
+        desactivePar: null,
+        desactiveRaison: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(agents.id, agentId))
+      .returning();
+
+    return updatedAgent || null;
+  }
+
+  /**
+   * Compte les traces nominatives d'un agent (historique qu'une suppression effacerait).
+   * `agent_permissions` en est exclu : c'est de la configuration, pas de l'historique.
+   */
+  async countTraces(agentId: string): Promise<AgentTracesCount> {
+    const total = () => sql<number>`cast(count(*) as integer)`;
+    const first = (rows: { count: number }[]) => rows[0]?.count ?? 0;
+
+    const [actions, qualifications, archivages, dossiersCrees, simulationsEditees] = await Promise.all([
+      db.select({ count: total() }).from(parcoursActions).where(eq(parcoursActions.agentId, agentId)).then(first),
+      db
+        .select({ count: total() })
+        .from(prospectQualifications)
+        .where(eq(prospectQualifications.agentId, agentId))
+        .then(first),
+      db
+        .select({ count: total() })
+        .from(parcoursPrevention)
+        .where(eq(parcoursPrevention.archivedBy, agentId))
+        .then(first),
+      db
+        .select({ count: total() })
+        .from(parcoursPrevention)
+        .where(eq(parcoursPrevention.createdByAgentId, agentId))
+        .then(first),
+      db
+        .select({ count: total() })
+        .from(parcoursPrevention)
+        .where(eq(parcoursPrevention.rgaSimulationAgentEditedBy, agentId))
+        .then(first),
+    ]);
+
+    return {
+      actions,
+      qualifications,
+      archivages,
+      dossiersCrees,
+      simulationsEditees,
+      total: actions + qualifications + archivages + dossiersCrees + simulationsEditees,
+    };
   }
 
   /**

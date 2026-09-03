@@ -108,7 +108,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
   let qualificationAgentNom = "";
   let qualificationStructureNom = "";
   if (latestQualification) {
-    const agent = await agentsRepository.findById(latestQualification.agentId);
+    const agent = latestQualification.agentId ? await agentsRepository.findById(latestQualification.agentId) : null;
     if (agent) {
       qualificationAgentNom = formatNomComplet(agent.givenName, agent.usualName);
       if (agent.allersVersId) {
