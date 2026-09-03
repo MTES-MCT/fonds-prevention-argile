@@ -7,14 +7,11 @@ vi.mock("@/features/auth/server", () => ({
   getSession: vi.fn(),
 }));
 
-vi.mock("@/shared/domain/value-objects", () => ({
+// Mock partiel : le module porte aussi les enums (Step...) que la chaîne de schémas Drizzle
+// charge en vrai depuis les services importés par les actions.
+vi.mock("@/shared/domain/value-objects", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/domain/value-objects")>()),
   isSuperAdminRole: vi.fn(),
-  UserRole: {
-    SUPER_ADMINISTRATEUR: "super_administrateur",
-    ADMINISTRATEUR: "administrateur",
-    AMO: "amo",
-    ANALYSTE: "analyste",
-  },
 }));
 
 vi.mock("../services/agents-admin.service", () => ({
@@ -23,6 +20,9 @@ vi.mock("../services/agents-admin.service", () => ({
   createAgent: vi.fn(),
   updateAgent: vi.fn(),
   deleteAgent: vi.fn(),
+  desactiverAgent: vi.fn(),
+  reactiverAgent: vi.fn(),
+  getAgentTraces: vi.fn(),
 }));
 
 // Mock de l'environnement serveur
@@ -35,6 +35,9 @@ import {
   createAgentAction,
   updateAgentAction,
   deleteAgentAction,
+  desactiverAgentAction,
+  reactiverAgentAction,
+  getAgentTracesAction,
 } from "./agents.actions";
 
 // Import des mocks
@@ -436,6 +439,143 @@ describe("agents.actions", () => {
       const result = await deleteAgentAction("agent-123");
 
       expect(result.success).toBe(false);
+    });
+  });
+  describe("desactiverAgentAction", () => {
+    it("devrait autoriser la désactivation pour SUPER_ADMINISTRATEUR", async () => {
+      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
+      vi.mocked(getSession).mockResolvedValue(mockSession);
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      vi.mocked(agentsAdminService.desactiverAgent).mockResolvedValue({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        agent: {} as any,
+        listesRetirees: [{ type: "amo", id: "amo-1", nom: "Soliha 36", estDerniereAdresse: false }],
+        listesConservees: [],
+      });
+
+      const result = await desactiverAgentAction("agent-123", "A quitté ses fonctions");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.listesRetirees).toEqual(["Soliha 36"]);
+      }
+      expect(agentsAdminService.desactiverAgent).toHaveBeenCalledWith(
+        "agent-123",
+        mockSession.userId,
+        "A quitté ses fonctions"
+      );
+    });
+
+    it("devrait refuser la désactivation pour ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+
+      const result = await desactiverAgentAction("agent-123");
+
+      expect(result.success).toBe(false);
+      expect(agentsAdminService.desactiverAgent).not.toHaveBeenCalled();
+    });
+
+    it("devrait refuser la désactivation sans session", async () => {
+      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const result = await desactiverAgentAction("agent-123");
+
+      expect(result.success).toBe(false);
+      expect(agentsAdminService.desactiverAgent).not.toHaveBeenCalled();
+    });
+
+    it("devrait refuser qu'un super admin se désactive lui-même", async () => {
+      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
+      vi.mocked(getSession).mockResolvedValue(mockSession);
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const result = await desactiverAgentAction(mockSession.userId);
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("propre compte");
+      }
+      expect(agentsAdminService.desactiverAgent).not.toHaveBeenCalled();
+    });
+
+    it("devrait remonter l'erreur du service", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      vi.mocked(agentsAdminService.desactiverAgent).mockRejectedValue(new Error("Cet agent est déjà désactivé"));
+
+      const result = await desactiverAgentAction("agent-123");
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe("Cet agent est déjà désactivé");
+      }
+    });
+  });
+
+  describe("reactiverAgentAction", () => {
+    it("devrait autoriser la réactivation pour SUPER_ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const result = await reactiverAgentAction("agent-123");
+
+      expect(result.success).toBe(true);
+      expect(agentsAdminService.reactiverAgent).toHaveBeenCalledWith("agent-123");
+    });
+
+    it("devrait refuser la réactivation pour ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+
+      const result = await reactiverAgentAction("agent-123");
+
+      expect(result.success).toBe(false);
+      expect(agentsAdminService.reactiverAgent).not.toHaveBeenCalled();
+    });
+  });
+  describe("getAgentTracesAction", () => {
+    const traces = {
+      actions: 12,
+      qualifications: 0,
+      archivages: 0,
+      dossiersCrees: 5,
+      simulationsEditees: 0,
+      total: 17,
+    };
+
+    it("devrait retourner le comptage pour SUPER_ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      vi.mocked(agentsAdminService.getAgentTraces).mockResolvedValue(traces);
+
+      const result = await getAgentTracesAction("agent-123");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.total).toBe(17);
+      }
+    });
+
+    it("devrait refuser le comptage pour ADMINISTRATEUR", async () => {
+      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.ADMINISTRATEUR));
+      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+
+      const result = await getAgentTracesAction("agent-123");
+
+      expect(result.success).toBe(false);
+      expect(agentsAdminService.getAgentTraces).not.toHaveBeenCalled();
+    });
+
+    it("devrait refuser le comptage sans session", async () => {
+      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+
+      const result = await getAgentTracesAction("agent-123");
+
+      expect(result.success).toBe(false);
+      expect(agentsAdminService.getAgentTraces).not.toHaveBeenCalled();
     });
   });
 });

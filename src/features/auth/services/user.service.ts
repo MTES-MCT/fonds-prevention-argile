@@ -33,6 +33,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     // Note: session.userId contient l'ID de l'agent (UUID), pas le sub ProConnect
     const agent = await agentsRepo.findById(session.userId);
 
+    // Agent désactivé : sa session ouverte tombe ici, toutes les gardes backoffice
+    // passant par checkUserAccess -> getCurrentUser.
+    if (agent?.desactiveAt) return null;
+
     return {
       id: session.userId,
       role: agent?.role ?? session.role, // Utiliser le rôle de la BDD (plus à jour)

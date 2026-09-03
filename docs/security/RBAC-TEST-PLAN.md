@@ -16,18 +16,19 @@ L'objectif est de rendre cet angle mort systématique.
 
 ## 1. Profils à tester explicitement
 
-| Profil                   | Particularité                                    |
-| ------------------------ | ------------------------------------------------ |
-| Non authentifié          | Doit être redirigé vers la connexion             |
-| Mauvaise méthode d'auth  | FranceConnect sur route agent (et inversement)   |
-| `PARTICULIER`            | Son propre parcours uniquement                   |
-| `SUPER_ADMINISTRATEUR`   | Accès global (lecture en espace agent)           |
-| `ADMINISTRATEUR`         | Back-office complet sauf agents                  |
-| `ANALYSTE` national      | Stats nationales, **aucune donnée individuelle** |
-| `ANALYSTE` départemental | Données individuelles **scopées au territoire**  |
-| `AMO`                    | Son entreprise AMO                               |
-| `ALLERS_VERS`            | Dossiers sans AMO de son territoire              |
-| `AMO_ET_ALLERS_VERS`     | Union entreprise AMO + territoire                |
+| Profil                   | Particularité                                                     |
+| ------------------------ | ----------------------------------------------------------------- |
+| Non authentifié          | Doit être redirigé vers la connexion                              |
+| Mauvaise méthode d'auth  | FranceConnect sur route agent (et inversement)                    |
+| `PARTICULIER`            | Son propre parcours uniquement                                    |
+| `SUPER_ADMINISTRATEUR`   | Accès global (lecture en espace agent)                            |
+| `ADMINISTRATEUR`         | Back-office complet sauf agents                                   |
+| `ANALYSTE` national      | Stats nationales, **aucune donnée individuelle**                  |
+| `ANALYSTE` départemental | Données individuelles **scopées au territoire**                   |
+| `AMO`                    | Son entreprise AMO                                                |
+| `ALLERS_VERS`            | Dossiers sans AMO de son territoire                               |
+| `AMO_ET_ALLERS_VERS`     | Union entreprise AMO + territoire                                 |
+| **Agent désactivé**      | `desactive_at` non nul — **DENY partout**, quel que soit son rôle |
 
 ---
 
@@ -171,6 +172,9 @@ cellules négatives** recensées. Les agrégats nationaux consultables par l'`AN
 | Middleware auth & redirection                                             | `src/middleware.ts`                                                                            | none        | AMO→/espace-amo ; non-auth→/connexion/agent → DENY                                         | OUI (testé)                                                      |
 | Ré-ouverture demande refusée                                              | `dossiers/actions/reouvrir-demande.actions.ts`                                                 | individual  | ANALYSTE / non-auth / AMO autre entreprise / AV hors territoire → DENY                     | OUI (action + prédicat `canReopenRefusedDemande`)                |
 | Permalien parcours sur le détail dossier (ADR-0025)                       | `espace-agent/dossiers/[id]/page.tsx` + `services/admin-url-resolver.service.ts`               | none        | non-auth → DENY ; accès refusé sur un id de validation → 404, jamais de redirection        | OUI (`page.test.tsx`, `admin-url-resolver.service.test.ts`)      |
+| Coupure d'accès agent désactivé (ADR-0029)                                | `auth/services/user.service.ts`, `agents.repository.ts` (`authenticateFromProConnect`)         | individual  | agent désactivé → DENY même session ouverte ; connexion ProConnect → DENY sans écriture    | OUI (`user.service.test.ts`, `agents.repository.test.ts`)        |
+| Désactivation / réactivation / comptage de traces (ADR-0029)              | `administration/agents/actions/agents.actions.ts`                                              | individual  | ADMINISTRATEUR / non-auth → DENY ; super-admin sur lui-même → DENY                         | OUI (`agents.actions.test.ts`)                                   |
+| Suppression d'agent avec historique (ADR-0029)                            | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`)                       | individual  | ≥ 1 trace → DENY (bascule désactivation), `repository.delete` jamais appelé                | OUI (`agents-admin.service.test.ts`)                             |
 
 ### MEDIUM — scope individuel partiel / DENY admin partiel
 

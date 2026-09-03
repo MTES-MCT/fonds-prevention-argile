@@ -67,7 +67,7 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
   let qualificationAgentNom = "";
   let qualificationStructureNom = "";
   if (latestQualification) {
-    const agent = await agentsRepository.findById(latestQualification.agentId);
+    const agent = latestQualification.agentId ? await agentsRepository.findById(latestQualification.agentId) : null;
     if (agent) {
       qualificationAgentNom = formatNomComplet(agent.givenName, agent.usualName);
       if (agent.allersVersId) {

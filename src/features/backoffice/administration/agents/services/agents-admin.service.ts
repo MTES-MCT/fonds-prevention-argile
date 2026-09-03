@@ -1,5 +1,16 @@
-import { agentsRepository } from "@/shared/database/repositories/agents.repository";
+import { agentsRepository, type AgentTracesCount } from "@/shared/database/repositories/agents.repository";
 import type { Agent } from "@/shared/database/schema/agents";
+import { formatTracesResume } from "../domain/value-objects/agent-traces";
+import { db } from "@/shared/database/client";
+import { findListesDiffusionAvecEmail, retirerEmailDesListes, type ListeDiffusion } from "./listes-diffusion.service";
+
+/** Résultat d'une désactivation : l'agent, et l'effet sur les listes de diffusion. */
+export interface DesactivationResult {
+  agent: Agent;
+  listesRetirees: ListeDiffusion[];
+  /** Listes où l'adresse a été gardée faute de destinataire de remplacement. */
+  listesConservees: ListeDiffusion[];
+}
 import { DEPARTEMENTS } from "@/shared/constants/departements.constants";
 import { agentPermissionsRepository, entreprisesAmoRepo, allersVersRepository } from "@/shared/database";
 import { UserRole } from "@/shared/domain/value-objects";
@@ -41,6 +52,8 @@ export async function getAllAgentsWithPermissions(): Promise<AgentWithPermission
           role: agentWithAmo.role,
           entrepriseAmoId: agentWithAmo.entrepriseAmoId,
           allersVersId: agentWithAmo.allersVersId,
+          desactiveAt: agentWithAmo.desactiveAt,
+          desactiveRaison: agentWithAmo.desactiveRaison,
           lastLogin: agentWithAmo.lastLogin,
           createdAt: agentWithAmo.createdAt,
           updatedAt: agentWithAmo.updatedAt,
@@ -90,6 +103,8 @@ export async function getAgentWithPermissions(agentId: string): Promise<AgentWit
       role: agentWithAmo.role,
       entrepriseAmoId: agentWithAmo.entrepriseAmoId,
       allersVersId: agentWithAmo.allersVersId,
+      desactiveAt: agentWithAmo.desactiveAt,
+      desactiveRaison: agentWithAmo.desactiveRaison,
       lastLogin: agentWithAmo.lastLogin,
       createdAt: agentWithAmo.createdAt,
       updatedAt: agentWithAmo.updatedAt,
@@ -355,9 +370,76 @@ export async function updateAgent(agentId: string, data: UpdateAgentData): Promi
 }
 
 /**
- * Supprime un agent et ses permissions
+ * Désactive un agent : coupe son accès en conservant son historique nominatif,
+ * et le retire des listes de diffusion des structures dans la même transaction.
+ */
+export async function desactiverAgent(
+  agentId: string,
+  parAgentId: string,
+  raison?: string
+): Promise<DesactivationResult> {
+  const existant = await agentsRepository.findById(agentId);
+  if (!existant) {
+    throw new Error("Agent non trouvé");
+  }
+  if (existant.desactiveAt) {
+    throw new Error("Cet agent est déjà désactivé");
+  }
+
+  const listes = await findListesDiffusionAvecEmail(existant.email);
+
+  return await db.transaction(async (tx) => {
+    const agent = await agentsRepository.desactiver(agentId, parAgentId, raison?.trim() || null, tx);
+    if (!agent) {
+      throw new Error("Échec de la désactivation");
+    }
+
+    const { retirees, conservees } = await retirerEmailDesListes(existant.email, listes, tx);
+
+    return { agent, listesRetirees: retirees, listesConservees: conservees };
+  });
+}
+
+/**
+ * Réactive un agent désactivé.
+ */
+export async function reactiverAgent(agentId: string): Promise<Agent> {
+  const existant = await agentsRepository.findById(agentId);
+  if (!existant) {
+    throw new Error("Agent non trouvé");
+  }
+  if (!existant.desactiveAt) {
+    throw new Error("Cet agent est déjà actif");
+  }
+
+  const agent = await agentsRepository.reactiver(agentId);
+  if (!agent) {
+    throw new Error("Échec de la réactivation");
+  }
+
+  return agent;
+}
+
+/**
+ * Compte l'historique nominatif laissé par un agent (ce qu'une suppression effacerait).
+ */
+export async function getAgentTraces(agentId: string): Promise<AgentTracesCount> {
+  return await agentsRepository.countTraces(agentId);
+}
+
+/**
+ * Supprime un agent et ses permissions.
+ * Refuse dès qu'il reste une trace nominative : la désactivation est alors la bonne porte.
  */
 export async function deleteAgent(agentId: string): Promise<boolean> {
+  const traces = await agentsRepository.countTraces(agentId);
+  if (traces.total > 0) {
+    throw new Error(
+      `Cet agent a laissé un historique (${formatTracesResume(traces)}). ` +
+        `Le supprimer effacerait ces traces : désactivez-le à la place.`
+    );
+  }
+
   // Les permissions sont supprimées automatiquement via ON DELETE CASCADE
   return await agentsRepository.delete(agentId);
 }

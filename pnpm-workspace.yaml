@@ -29,6 +29,9 @@ minimumReleaseAgeExclude:
 trustPolicy: no-downgrade
 
 overrides:
+  # Croissance mémoire non bornée + crash/prototype write sur query non fiable
+  # (transitif via next > styled-jsx > @babel/core, au build)
+  browserslist: "^4.28.8"
   # Force vite patché pour CVE path traversal / fs.deny bypass
   # (transitif via vitest + @vitejs/plugin-react)
   vite: "^7.3.6"

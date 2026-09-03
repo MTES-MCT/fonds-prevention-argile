@@ -113,6 +113,8 @@ async function collectQualifications(): Promise<Planned[]> {
     const decision = row.decision as QualificationDecision;
     const actionType = ACTION_TYPE_BY_DECISION[decision];
     if (!actionType) continue;
+    // Agent supprimé depuis : pas d'auteur à snapshoter, comme les archivages sans archived_by.
+    if (!row.agentId) continue;
     if (await actionDejaTracee(row.parcoursId, actionType, row.createdAt)) continue;
 
     planned.push({

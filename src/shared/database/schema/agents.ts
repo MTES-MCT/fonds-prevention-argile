@@ -1,4 +1,4 @@
-import { pgTable, varchar, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, varchar, timestamp, uuid, text, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { agentRolePgEnum } from "../enums/enums";
 import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
@@ -39,6 +39,12 @@ export const agents = pgTable("agents", {
   allersVersId: uuid("allers_vers_id").references(() => allersVers.id, {
     onDelete: "set null",
   }),
+
+  // Désactivation : null = agent actif. On désactive au lieu de supprimer pour garder
+  // l'historique nominatif (actions, qualifications, archivages) — cf. ADR désactivation agents.
+  desactiveAt: timestamp("desactive_at", { mode: "date" }),
+  desactivePar: uuid("desactive_par").references((): AnyPgColumn => agents.id, { onDelete: "set null" }),
+  desactiveRaison: text("desactive_raison"),
 
   // Timestamps
   lastLogin: timestamp("last_login", { mode: "date" }),

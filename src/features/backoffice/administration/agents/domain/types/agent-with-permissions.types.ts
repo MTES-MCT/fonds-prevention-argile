@@ -34,6 +34,9 @@ export interface AgentWithPermissions {
     role: string;
     entrepriseAmoId: string | null;
     allersVersId: string | null;
+    // null = agent actif. `desactivePar` reste en base pour l'audit, l'UI n'en a pas besoin.
+    desactiveAt: Date | null;
+    desactiveRaison: string | null;
     lastLogin: Date | null;
     createdAt: Date;
     updatedAt: Date;

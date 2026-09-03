@@ -10,8 +10,19 @@ import {
   createAgent,
   updateAgent,
   deleteAgent,
+  desactiverAgent,
+  reactiverAgent,
+  getAgentTraces,
 } from "../services/agents-admin.service";
 import { AgentWithPermissions, UpdateAgentData } from "../domain/types";
+import type { AgentTracesCount } from "@/shared/database/repositories/agents.repository";
+import { findListesDiffusionAvecEmail, type ListeDiffusion } from "../services/listes-diffusion.service";
+
+/** Effet d'une désactivation sur les listes de diffusion, par nom de structure. */
+export interface DesactivationSummary {
+  listesRetirees: string[];
+  listesConservees: string[];
+}
 
 /**
  * Récupère tous les agents avec leurs permissions (super admin uniquement)
@@ -245,6 +256,139 @@ export async function updateAgentAction(
     };
   } catch (error) {
     console.error("Erreur updateAgentAction:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    };
+  }
+}
+
+/**
+ * Compte l'historique d'un agent (super admin uniquement).
+ * Sert à la modale de suppression pour proposer la désactivation quand il reste des traces.
+ */
+export async function getAgentTracesAction(agentId: string): Promise<ActionResult<AgentTracesCount>> {
+  try {
+    const session = await getSession();
+
+    if (!session?.userId || !isSuperAdminRole(session.role)) {
+      return {
+        success: false,
+        error: "Accès non autorisé. Réservé aux super administrateurs.",
+      };
+    }
+
+    return {
+      success: true,
+      data: await getAgentTraces(agentId),
+    };
+  } catch (error) {
+    console.error("Erreur getAgentTracesAction:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    };
+  }
+}
+
+/**
+ * Listes de diffusion des structures contenant l'adresse de l'agent (super admin uniquement).
+ * Sert à annoncer l'impact du retrait avant de confirmer la désactivation.
+ */
+export async function getAgentListesDiffusionAction(agentId: string): Promise<ActionResult<ListeDiffusion[]>> {
+  try {
+    const session = await getSession();
+
+    if (!session?.userId || !isSuperAdminRole(session.role)) {
+      return {
+        success: false,
+        error: "Accès non autorisé. Réservé aux super administrateurs.",
+      };
+    }
+
+    const agent = await getAgentWithPermissions(agentId);
+    if (!agent) {
+      return { success: false, error: "Agent non trouvé" };
+    }
+
+    return {
+      success: true,
+      data: await findListesDiffusionAvecEmail(agent.agent.email),
+    };
+  } catch (error) {
+    console.error("Erreur getAgentListesDiffusionAction:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    };
+  }
+}
+
+/**
+ * Désactive un agent (super admin uniquement) : coupe l'accès, garde l'historique.
+ */
+export async function desactiverAgentAction(
+  agentId: string,
+  raison?: string
+): Promise<ActionResult<DesactivationSummary>> {
+  try {
+    const session = await getSession();
+
+    if (!session?.userId || !isSuperAdminRole(session.role)) {
+      return {
+        success: false,
+        error: "Accès non autorisé. Réservé aux super administrateurs.",
+      };
+    }
+
+    // Se désactiver soi-même reviendrait à se verrouiller hors du backoffice.
+    if (session.userId === agentId) {
+      return {
+        success: false,
+        error: "Vous ne pouvez pas désactiver votre propre compte.",
+      };
+    }
+
+    const resultat = await desactiverAgent(agentId, session.userId, raison);
+
+    return {
+      success: true,
+      data: {
+        listesRetirees: resultat.listesRetirees.map((l) => l.nom),
+        listesConservees: resultat.listesConservees.map((l) => l.nom),
+      },
+    };
+  } catch (error) {
+    console.error("Erreur desactiverAgentAction:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    };
+  }
+}
+
+/**
+ * Réactive un agent désactivé (super admin uniquement)
+ */
+export async function reactiverAgentAction(agentId: string): Promise<ActionResult<void>> {
+  try {
+    const session = await getSession();
+
+    if (!session?.userId || !isSuperAdminRole(session.role)) {
+      return {
+        success: false,
+        error: "Accès non autorisé. Réservé aux super administrateurs.",
+      };
+    }
+
+    await reactiverAgent(agentId);
+
+    return {
+      success: true,
+      data: undefined,
+    };
+  } catch (error) {
+    console.error("Erreur reactiverAgentAction:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erreur inconnue",

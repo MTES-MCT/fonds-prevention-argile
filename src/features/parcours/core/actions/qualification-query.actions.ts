@@ -42,7 +42,7 @@ export async function getMyIneligibiliteData(): Promise<ActionResult<MyIneligibi
       let agentNom = "";
       let structureNom = "";
 
-      const agent = await agentsRepository.findById(qualification.agentId);
+      const agent = qualification.agentId ? await agentsRepository.findById(qualification.agentId) : null;
       if (agent) {
         agentNom = formatNomComplet(agent.givenName, agent.usualName);
         if (agent.allersVersId) {

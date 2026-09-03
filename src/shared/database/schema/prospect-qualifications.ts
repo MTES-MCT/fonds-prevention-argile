@@ -17,9 +17,9 @@ export const prospectQualifications = pgTable(
     parcoursId: uuid("parcours_id")
       .notNull()
       .references(() => parcoursPrevention.id, { onDelete: "cascade" }),
-    agentId: uuid("agent_id")
-      .notNull()
-      .references(() => agents.id, { onDelete: "set null" }),
+    // Nullable : le `set null` était contredit par un NOT NULL, toute suppression d'agent ayant
+    // qualifié un prospect échouait en 23502.
+    agentId: uuid("agent_id").references(() => agents.id, { onDelete: "set null" }),
 
     // Décision de qualification
     decision: text("decision").notNull(), // "eligible" | "a_qualifier" | "non_eligible"
