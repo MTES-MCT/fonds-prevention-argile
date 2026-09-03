@@ -308,11 +308,22 @@ export class AgentsRepository extends BaseRepository<Agent> {
    * Authentifie un agent depuis ProConnect
    * Cherche d'abord par email (pour la première connexion avec sub pending_)
    * puis met à jour le sub réel lors de la première connexion
-   * Retourne null si l'agent n'est pas autorisé (pas en base)
+   * Retourne null si l'agent n'est pas autorisé (pas en base, ou désactivé)
    */
   async authenticateFromProConnect(proConnectData: ProConnectAgentData): Promise<Agent | null> {
     // 1. Vérifier si l'agent existe déjà par sub (connexions suivantes)
     const existingBySub = await this.findBySub(proConnectData.sub);
+
+    // 2. Sinon par email (première connexion, le sub en base est encore pending_)
+    const existingByEmail = existingBySub ? null : await this.findByEmail(proConnectData.email);
+
+    // Un agent désactivé est traité comme un agent inconnu : ni connexion, ni mise à jour
+    // de ses informations ProConnect (lastLogin compris).
+    const existing = existingBySub ?? existingByEmail;
+    if (existing?.desactiveAt) {
+      console.warn("[AUTH] Connexion ProConnect refusée : agent désactivé", { agentId: existing.id });
+      return null;
+    }
 
     if (existingBySub) {
       // Mettre à jour les informations de l'agent existant
@@ -334,9 +345,6 @@ export class AgentsRepository extends BaseRepository<Agent> {
 
       return updatedAgent;
     }
-
-    // 2. Vérifier si l'agent existe par email (première connexion avec sub pending_)
-    const existingByEmail = await this.findByEmail(proConnectData.email);
 
     if (existingByEmail) {
       // Mettre à jour le sub réel et les autres informations

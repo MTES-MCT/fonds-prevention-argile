@@ -269,6 +269,42 @@ describe("user.service", () => {
         expect(result?.entrepriseAmoId).toBeUndefined();
       });
 
+      it("devrait refuser un agent désactivé, session ouverte comprise", async () => {
+        const mockSession: JWTPayload = {
+          userId: "agent-desactive",
+          role: ROLES.AMO,
+          authMethod: AUTH_METHODS.PROCONNECT,
+          firstName: "Partie",
+          lastName: "Agent",
+          exp: Date.now() + 3600000,
+          iat: Date.now(),
+        };
+
+        vi.mocked(getSession).mockResolvedValue(mockSession);
+        vi.mocked(agentsRepo.findById).mockResolvedValue({
+          id: "agent-desactive",
+          sub: "sub-desactive",
+          email: "agent.parti@amo.fr",
+          givenName: "Partie",
+          usualName: "Agent",
+          role: ROLES.AMO,
+          entrepriseAmoId: "entreprise-amo-123",
+          allersVersId: null,
+          desactiveAt: new Date("2026-09-01T10:00:00Z"),
+          desactivePar: "super-admin-1",
+          desactiveRaison: "A quitté ses fonctions",
+          lastLogin: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          uid: null,
+          siret: null,
+          phone: null,
+          organizationalUnit: null,
+        });
+
+        expect(await getCurrentUser()).toBeNull();
+      });
+
       it("devrait retourner les infos pour ANALYSTE ProConnect", async () => {
         const mockSession: JWTPayload = {
           userId: "analyste-123",

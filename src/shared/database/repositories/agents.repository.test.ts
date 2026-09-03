@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { AgentsRepository } from "./agents.repository";
+import type { Agent } from "../schema/agents";
 import { db } from "../client";
 import { UserRole } from "@/shared/domain/value-objects";
 
@@ -190,5 +191,76 @@ describe("AgentsRepository désactivation", () => {
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({ desactiveAt: null, desactivePar: null, desactiveRaison: null })
     );
+  });
+});
+
+describe("AgentsRepository.authenticateFromProConnect", () => {
+  let repo: AgentsRepository;
+
+  const proConnectData = {
+    sub: "sub-1",
+    email: "jean.dupont@gouv.fr",
+    given_name: "Jean",
+    usual_name: "Dupont",
+  };
+
+  function agentFixture(override: Partial<Agent> = {}): Agent {
+    return {
+      id: "a-1",
+      sub: "sub-1",
+      email: "jean.dupont@gouv.fr",
+      givenName: "Jean",
+      usualName: "Dupont",
+      uid: null,
+      siret: null,
+      phone: null,
+      organizationalUnit: null,
+      role: UserRole.AMO,
+      entrepriseAmoId: "amo-1",
+      allersVersId: null,
+      desactiveAt: null,
+      desactivePar: null,
+      desactiveRaison: null,
+      lastLogin: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...override,
+    };
+  }
+
+  beforeEach(() => {
+    repo = new AgentsRepository();
+    vi.clearAllMocks();
+  });
+
+  it("refuse un agent désactivé trouvé par sub, sans écrire en base", async () => {
+    const desactive = agentFixture({ desactiveAt: new Date("2026-09-01T10:00:00Z") });
+    vi.spyOn(repo, "findBySub").mockResolvedValue(desactive);
+    vi.spyOn(repo, "findByEmail").mockResolvedValue(null);
+
+    expect(await repo.authenticateFromProConnect(proConnectData)).toBeNull();
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it("refuse un agent désactivé trouvé par email (sub encore pending_)", async () => {
+    const desactive = agentFixture({ sub: "pending_1", desactiveAt: new Date("2026-09-01T10:00:00Z") });
+    vi.spyOn(repo, "findBySub").mockResolvedValue(null);
+    vi.spyOn(repo, "findByEmail").mockResolvedValue(desactive);
+
+    expect(await repo.authenticateFromProConnect(proConnectData)).toBeNull();
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it("laisse passer un agent actif", async () => {
+    const actif = agentFixture();
+    vi.spyOn(repo, "findBySub").mockResolvedValue(actif);
+    vi.mocked(db.update).mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([actif]) }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    expect(await repo.authenticateFromProConnect(proConnectData)).toEqual(actif);
   });
 });
