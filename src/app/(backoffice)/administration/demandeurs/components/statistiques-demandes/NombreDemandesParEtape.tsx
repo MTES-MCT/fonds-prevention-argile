@@ -15,9 +15,17 @@ const ETAPES = [
 
 interface NombreDemandesParEtapeProps {
   users: UserWithParcoursDetails[];
+  /** @default "Nombre de demandes par étape" */
+  titre?: string;
+  /** @default "Données base de données" */
+  tooltip?: string;
 }
 
-export function NombreDemandesParEtape({ users }: NombreDemandesParEtapeProps) {
+export function NombreDemandesParEtape({
+  users,
+  titre = "Nombre de demandes par étape",
+  tooltip = "Données base de données",
+}: NombreDemandesParEtapeProps) {
   const tooltipId = useId();
   const counts = useMemo(() => {
     const result = ETAPES.map((e) => ({
@@ -27,17 +35,18 @@ export function NombreDemandesParEtape({ users }: NombreDemandesParEtapeProps) {
     return result;
   }, [users]);
 
+  const total = useMemo(() => counts.reduce((acc, c) => acc + c.count, 0), [counts]);
   const max = Math.max(...counts.map((c) => c.count), 1);
 
   return (
     <div>
       <h3 className="fr-h6 fr-mb-2w">
-        Nombre de demandes par étape{" "}
+        {titre} ({total.toLocaleString("fr-FR")}){" "}
         <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
           Information
         </button>
         <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
-          Données base de données
+          {tooltip}
         </span>
       </h3>
       <div

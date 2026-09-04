@@ -8,6 +8,8 @@ import { RepartitionDossiersCards } from "./RepartitionDossiersCards";
 import { SourcesAcquisitionTable } from "./SourcesAcquisitionTable";
 import { EvolutionDemandeurs } from "@/shared/components/EvolutionDemandeurs";
 import { filterUsersByDepartement } from "../filters/departements/departementFilter.utils";
+import { filterUsersByPeriode } from "../filters/periode/periodeFilter.utils";
+import { excludeArchivedUsers, keepOnlyArchivedUsers } from "../filters/archivage/archivageFilter.utils";
 import { getTableauDeBordStatsAction } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
 import { aggregerEvolution } from "@/shared/utils/evolution-temporelle";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
@@ -15,20 +17,6 @@ import type {
   PeriodeId,
   TableauDeBordStats,
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
-import {
-  PERIODES,
-  SERVICE_START_DATE,
-} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
-
-/** Calcule la date de debut pour une periode donnee */
-function getDateDebut(periodeId: PeriodeId): Date {
-  const periode = PERIODES.find((p) => p.id === periodeId);
-  if (!periode || periode.jours === null) {
-    return SERVICE_START_DATE;
-  }
-  const now = new Date();
-  return new Date(now.getTime() - periode.jours * 24 * 60 * 60 * 1000);
-}
 
 interface StatistiquesDemandesTabProps {
   users: UserWithParcoursDetails[];
@@ -55,14 +43,7 @@ export function StatistiquesDemandesTab({ users, periodeId, codeDepartement }: S
 
   // Filtrer les users par periode + departement
   const filteredUsers = useMemo(() => {
-    let filtered = users;
-
-    // Filtre par periode (base sur createdAt du parcours)
-    const dateDebut = getDateDebut(periodeId);
-    filtered = filtered.filter((u) => {
-      const createdAt = u.parcours?.createdAt ?? u.user.createdAt;
-      return createdAt >= dateDebut;
-    });
+    let filtered = filterUsersByPeriode(users, periodeId);
 
     // Filtre par departement
     if (codeDepartement) {
@@ -71,6 +52,11 @@ export function StatistiquesDemandesTab({ users, periodeId, codeDepartement }: S
 
     return filtered;
   }, [users, periodeId, codeDepartement]);
+
+  // Un dossier archivé n'avance plus mais reste sur son dernier `currentStep` : il fausserait
+  // les compteurs "par étape" (nombre de demandes, délais, répartitions) s'il y restait mêlé.
+  const activeUsers = useMemo(() => excludeArchivedUsers(filteredUsers), [filteredUsers]);
+  const archivedOnlyUsers = useMemo(() => keepOnlyArchivedUsers(filteredUsers), [filteredUsers]);
 
   const evolution = useMemo(() => {
     const dates = filteredUsers
@@ -86,24 +72,33 @@ export function StatistiquesDemandesTab({ users, periodeId, codeDepartement }: S
       {/* Graphe d'evolution */}
       <EvolutionDemandeurs evolution={evolution} />
 
-      {/* Nombre de demandes par etape + Delais moyens */}
+      {/* Nombre de demandes par etape + Delais moyens (dossiers archives exclus) */}
       <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
         <div className="fr-col-12 fr-col-lg-6">
-          <NombreDemandesParEtape users={filteredUsers} />
+          <NombreDemandesParEtape users={activeUsers} />
         </div>
         <div className="fr-col-12 fr-col-lg-6">
-          <DelaisMoyensParEtape users={filteredUsers} />
+          <DelaisMoyensParEtape users={activeUsers} />
         </div>
+      </div>
+
+      {/* Nombre de demandes archivees par etape : symetrique du graphe ci-dessus */}
+      <div className="fr-mb-4w">
+        <NombreDemandesParEtape
+          users={archivedOnlyUsers}
+          titre="Nombre de demandes archivées par étape"
+          tooltip="Données base de données — dossiers archivés uniquement (dernière étape atteinte avant l'archivage)"
+        />
       </div>
 
       {/* Repartitions AMO */}
       <div className="fr-mb-4w">
-        <RepartitionAmoCards users={filteredUsers} stats={stats} loading={loading} />
+        <RepartitionAmoCards users={activeUsers} stats={stats} loading={loading} />
       </div>
 
       {/* Repartition dossiers DN */}
       <div className="fr-mb-4w">
-        <RepartitionDossiersCards users={filteredUsers} stats={stats} loading={loading} />
+        <RepartitionDossiersCards users={activeUsers} stats={stats} loading={loading} />
       </div>
 
       {/* Sources d'acquisition */}
