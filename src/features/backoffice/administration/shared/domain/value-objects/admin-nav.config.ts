@@ -32,6 +32,12 @@ export const ADMIN_NAV_TABS: AdminNavTab[] = [
     icon: "fr-icon-user-fill",
   },
   {
+    id: "vulnerabilite",
+    label: "Vulnérabilité",
+    href: "/administration/vulnerabilite",
+    icon: "fr-icon-alert-line",
+  },
+  {
     id: "agents",
     label: "Agents",
     href: "/administration/agents",

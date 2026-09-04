@@ -153,6 +153,7 @@ const serverSchema = z.object({
 const clientSchema = z.object({
   NEXT_PUBLIC_MATOMO_SITE_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_MATOMO_FUNNEL_ID: z.string().min(1).optional(),
+  NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE: z.string().min(1).optional(),
   NEXT_PUBLIC_MATOMO_URL: z.string().url().optional(),
   NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID: z.string().min(1).optional(),
@@ -231,6 +232,7 @@ export function getClientEnv() {
     const envObject = {
       NEXT_PUBLIC_MATOMO_SITE_ID: process.env.NEXT_PUBLIC_MATOMO_SITE_ID,
       NEXT_PUBLIC_MATOMO_FUNNEL_ID: process.env.NEXT_PUBLIC_MATOMO_FUNNEL_ID,
+      NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE: process.env.NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE,
       NEXT_PUBLIC_MATOMO_URL: process.env.NEXT_PUBLIC_MATOMO_URL,
       NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID: process.env.NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID,
       NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID: process.env.NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID,
