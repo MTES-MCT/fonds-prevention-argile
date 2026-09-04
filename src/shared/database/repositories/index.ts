@@ -17,3 +17,4 @@ export { prospectQualificationsRepo } from "./prospect-qualifications.repository
 export { rgaZonesRepository } from "./rga-zones.repository";
 export { syncRunRepository as syncRunRepo } from "./sync-run.repository";
 export type { SyncRunDetail, SyncRunDetailEntry, SyncRunListItem } from "./sync-run.repository";
+export { vulnerabiliteSimulationsRepository as vulnerabiliteSimulationsRepo } from "./vulnerabilite-simulations.repository";

@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useVulnerabiliteFormulaire } from "../hooks/useVulnerabiliteFormulaire";
 import { VulnerabiliteStep } from "../domain/value-objects/vulnerabilite-step.enum";
+import { VULNERABILITE_STEP_EVENTS } from "../domain/value-objects/vulnerabilite-matomo-events";
+import { useVulnerabiliteStore } from "../stores/vulnerabilite.store";
+import { enregistrerResultatVulnerabiliteAction } from "../actions/enregistrer-resultat.actions";
+import { useMatomo } from "@/shared/components/Matomo/useMatomo";
+import type { MatomoCustomDimension } from "@/shared/components/Matomo/useMatomo";
+import { MATOMO_EVENTS } from "@/shared/constants";
+import { getClientEnv } from "@/shared/config/env.config";
 import {
   StepIntro,
   StepAdresseVulnerabilite,
@@ -22,8 +29,9 @@ import { ResultVulnerabilite } from "./results";
 /**
  * Composant orchestrateur du simulateur de vulnérabilité RGA — même rôle que
  * `SimulateurFormulaire` (switch sur l'étape courante), en plus simple : pas de
- * FranceConnect, pas d'early-exit, le résultat est calculé localement (pas d'appel
- * serveur), donc pas besoin de commit vers un store partagé.
+ * FranceConnect, pas d'early-exit. Le résultat est calculé localement, mais tracké
+ * (Matomo) et enregistré de façon anonyme (best-effort) pour les stats d'usage,
+ * cf. `/administration/vulnerabilite`.
  */
 export function VulnerabiliteFormulaire() {
   const {
@@ -40,9 +48,53 @@ export function VulnerabiliteFormulaire() {
     reset,
   } = useVulnerabiliteFormulaire();
 
+  const { trackEvent } = useMatomo();
+  const previousStepRef = useRef<VulnerabiliteStep | null>(null);
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [currentStep]);
+
+  // Tracking Matomo à chaque changement d'étape + enregistrement anonyme du résultat.
+  // Même garde qu'en pattern côté simulateur d'éligibilité (SimulateurFormulaire) : on ne
+  // tracke pas au premier render (réhydratation sessionStorage), seulement les vraies
+  // transitions d'étape.
+  useEffect(() => {
+    const isFirstRender = previousStepRef.current === null;
+    if (previousStepRef.current === currentStep) return;
+    previousStepRef.current = currentStep;
+    if (isFirstRender) return;
+
+    const currentAnswers = useVulnerabiliteStore.getState().vulnerabilite.answers;
+    const codeDepartement = currentAnswers.adresse?.codeDepartement;
+    const deptDimensionId = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
+
+    const dimensions: MatomoCustomDimension[] = [];
+    if (codeDepartement && deptDimensionId) {
+      dimensions.push({ id: Number(deptDimensionId), value: String(codeDepartement) });
+    }
+    const customDimensions = dimensions.length > 0 ? dimensions : undefined;
+
+    if (currentStep === VulnerabiliteStep.RESULTAT) {
+      trackEvent(MATOMO_EVENTS.VULNERABILITE_RESULT, undefined, customDimensions);
+
+      const currentResult = useVulnerabiliteStore.getState().vulnerabilite.result;
+      if (currentResult) {
+        // Fire-and-forget : ne doit jamais bloquer ni faire échouer l'affichage du résultat.
+        enregistrerResultatVulnerabiliteAction(currentAnswers, currentResult).catch(() => {});
+      }
+    } else if (currentStep !== VulnerabiliteStep.INTRO) {
+      const eventName = VULNERABILITE_STEP_EVENTS[currentStep];
+      if (eventName) {
+        trackEvent(eventName, undefined, customDimensions);
+      }
+    }
+  }, [currentStep, trackEvent]);
+
+  const handleStart = () => {
+    trackEvent(MATOMO_EVENTS.VULNERABILITE_START);
+    start();
+  };
 
   if (isLoading) {
     return (
@@ -66,7 +118,7 @@ export function VulnerabiliteFormulaire() {
 
   switch (currentStep) {
     case VulnerabiliteStep.INTRO:
-      return <StepIntro onStart={start} />;
+      return <StepIntro onStart={handleStart} />;
 
     case VulnerabiliteStep.ADRESSE:
       return <StepAdresseVulnerabilite {...stepProps} initialValue={answers.adresse} />;
