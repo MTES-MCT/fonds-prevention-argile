@@ -20,6 +20,7 @@ export function StepHaies({ initialValue, numeroEtape, totalEtapes, canGoBack, o
   return (
     <QuestionStep<ReponseHaies>
       fieldsetName="haies"
+      critereId="haies"
       title="Y a-t-il une haie proche de la maison ?"
       illustration={<SchemaHaies />}
       bullets={[

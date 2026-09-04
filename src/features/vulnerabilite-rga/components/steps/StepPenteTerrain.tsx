@@ -30,6 +30,7 @@ export function StepPenteTerrain({
   return (
     <QuestionStep<ReponsePenteTerrain>
       fieldsetName="pente-terrain"
+      critereId="pente_terrain"
       title="Quelle est la pente du terrain autour de la maison ?"
       subtitle="Regardez si l'eau de pluie s'écoule vers la maison ou s'en éloigne."
       illustration={<SchemaPenteTerrain />}

@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import { VulnerabiliteLayout } from "./VulnerabiliteLayout";
 import { NavigationButtons } from "./NavigationButtons";
+import { ImpactBadge } from "./ImpactBadge";
+import { getImpactScore } from "../../domain/services/scoring.service";
 
 export interface QuestionOption<TValue extends string> {
   value: TValue;
@@ -12,6 +14,8 @@ export interface QuestionOption<TValue extends string> {
 interface QuestionStepProps<TValue extends string> {
   /** Identifiant unique de la question (préfixe des id/name DOM, ex: "pente-terrain"). */
   fieldsetName: string;
+  /** Id du critère dans la grille de pondération (ex: "pente_terrain") — sert à afficher l'impact de la réponse sélectionnée. */
+  critereId: string;
   title: string;
   subtitle?: string;
   illustration: ReactNode;
@@ -34,6 +38,7 @@ interface QuestionStepProps<TValue extends string> {
  */
 export function QuestionStep<TValue extends string>({
   fieldsetName,
+  critereId,
   title,
   subtitle,
   illustration,
@@ -61,22 +66,30 @@ export function QuestionStep<TValue extends string>({
 
       <fieldset className="fr-fieldset" id={`${fieldsetName}-fieldset`}>
         <legend className="fr-fieldset__legend fr-sr-only">{title}</legend>
-        {options.map((option) => (
-          <div className="fr-fieldset__element" key={option.value}>
-            <div className="fr-radio-group fr-radio-rich">
-              <input
-                type="radio"
-                id={`${fieldsetName}-${option.value}`}
-                name={fieldsetName}
-                checked={selected === option.value}
-                onChange={() => onSelect(option.value)}
-              />
-              <label className="fr-label" htmlFor={`${fieldsetName}-${option.value}`}>
-                {option.label}
-              </label>
+        {options.map((option) => {
+          const isSelected = selected === option.value;
+          // Impact affiché UNIQUEMENT sur l'option sélectionnée : montrer un badge sur
+          // chaque option alourdirait l'écran et casserait la simplicité recherchée.
+          const impactScore = isSelected ? getImpactScore(critereId, option.value) : null;
+
+          return (
+            <div className="fr-fieldset__element" key={option.value}>
+              <div className="fr-radio-group fr-radio-rich">
+                <input
+                  type="radio"
+                  id={`${fieldsetName}-${option.value}`}
+                  name={fieldsetName}
+                  checked={isSelected}
+                  onChange={() => onSelect(option.value)}
+                />
+                <label className="fr-label" htmlFor={`${fieldsetName}-${option.value}`}>
+                  {option.label}
+                  {impactScore !== null && <ImpactBadge score={impactScore} />}
+                </label>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </fieldset>
 
       <NavigationButtons

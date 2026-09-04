@@ -27,6 +27,7 @@ export function StepGouttieres({
   return (
     <QuestionStep<ReponseGouttieres>
       fieldsetName="gouttieres"
+      critereId="gouttieres"
       title="Dans quel état sont les gouttières ?"
       illustration={<SchemaGouttieres />}
       bullets={[

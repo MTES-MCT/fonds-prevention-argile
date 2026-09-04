@@ -8,6 +8,7 @@ import {
   SchemaVegetationPiedFacade,
   SchemaEnsoleillement,
 } from "../illustrations";
+import { ImpactBadge } from "../shared/ImpactBadge";
 import type { RecommandationPrioritaire } from "../../domain/services/recommandations.service";
 
 const ILLUSTRATIONS: Record<string, () => React.JSX.Element> = {
@@ -39,7 +40,10 @@ export function RecommandationCard({ recommandation }: RecommandationCardProps) 
             </div>
           )}
           <div>
-            <h4 className="fr-card__title fr-text--md fr-mb-1v">{titre}</h4>
+            <h4 className="fr-card__title fr-text--md fr-mb-1v">
+              {titre}
+              <ImpactBadge score={recommandation.score} />
+            </h4>
             <ul className="fr-text--sm fr-mb-0">
               {bullets.map((bullet, index) => (
                 <li key={index}>{bullet}</li>

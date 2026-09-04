@@ -30,6 +30,7 @@ export function StepEnsoleillement({
   return (
     <QuestionStep<ReponseEnsoleillement>
       fieldsetName="ensoleillement"
+      critereId="ensoleillement"
       title="Quelle est l'exposition de la maison au soleil ?"
       illustration={<SchemaEnsoleillement />}
       bullets={[

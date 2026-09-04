@@ -30,6 +30,7 @@ export function StepArbreProximite({
   return (
     <QuestionStep<ReponseArbreProximite>
       fieldsetName="arbre-proximite"
+      critereId="arbre_proximite"
       title="Y a-t-il un arbre proche des fondations ?"
       subtitle="Un arbre est considéré proche s'il se situe à une distance inférieure à sa hauteur une fois adulte."
       illustration={<SchemaArbreProximite />}
