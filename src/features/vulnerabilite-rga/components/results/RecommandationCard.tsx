@@ -42,7 +42,7 @@ export function RecommandationCard({ recommandation }: RecommandationCardProps) 
           <div>
             <h4 className="fr-card__title fr-text--md fr-mb-1v">
               {titre}
-              <ImpactBadge score={recommandation.score} />
+              <ImpactBadge score={recommandation.score} context="solution" />
             </h4>
             <ul className="fr-text--sm fr-mb-0">
               {bullets.map((bullet, index) => (
