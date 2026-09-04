@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { DemandesArchiveesFullTable } from "./DemandesArchiveesFullTable";
 import { DemandesIneligiblesFullTable } from "./DemandesIneligiblesFullTable";
+import { NombreDemandesParEtape } from "../statistiques-demandes/NombreDemandesParEtape";
+import { filterUsersByDepartement } from "../filters/departements/departementFilter.utils";
+import { filterUsersByPeriode } from "../filters/periode/periodeFilter.utils";
+import { keepOnlyArchivedUsers } from "../filters/archivage/archivageFilter.utils";
 import { getTableauDeBordStatsAction } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
+import type { UserWithParcoursDetails } from "@/features/backoffice";
 import type {
   PeriodeId,
   DemandesArchiveesStats,
@@ -11,14 +16,23 @@ import type {
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
 interface ArchivageIneligibiliteTabProps {
+  users: UserWithParcoursDetails[];
   periodeId: PeriodeId;
   codeDepartement: string;
 }
 
-export function ArchivageIneligibiliteTab({ periodeId, codeDepartement }: ArchivageIneligibiliteTabProps) {
+export function ArchivageIneligibiliteTab({ users, periodeId, codeDepartement }: ArchivageIneligibiliteTabProps) {
   const [archiveesStats, setArchiveesStats] = useState<DemandesArchiveesStats | null>(null);
   const [ineligiblesStats, setIneligiblesStats] = useState<DemandesIneligiblesStats | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const archivedOnlyUsers = useMemo(() => {
+    let filtered = filterUsersByPeriode(users, periodeId);
+    if (codeDepartement) {
+      filtered = filterUsersByDepartement(filtered, codeDepartement);
+    }
+    return keepOnlyArchivedUsers(filtered);
+  }, [users, periodeId, codeDepartement]);
 
   const loadStats = useCallback(async () => {
     setLoading(true);
@@ -57,6 +71,13 @@ export function ArchivageIneligibiliteTab({ periodeId, codeDepartement }: Archiv
 
   return (
     <div className="fr-grid-row fr-grid-row--gutters" style={{ maxWidth: "800px" }}>
+      <div className="fr-col-12">
+        <NombreDemandesParEtape
+          users={archivedOnlyUsers}
+          titre="Nombre de demandes archivées par étape"
+          tooltip="Données base de données — dossiers archivés uniquement (dernière étape atteinte avant l'archivage)"
+        />
+      </div>
       <div className="fr-col-12">{archiveesStats && <DemandesArchiveesFullTable stats={archiveesStats} />}</div>
       <div className="fr-col-12">{ineligiblesStats && <DemandesIneligiblesFullTable stats={ineligiblesStats} />}</div>
     </div>
