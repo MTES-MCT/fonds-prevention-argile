@@ -112,9 +112,19 @@ Quatre décisions structurantes ont dû être prises pour cadrer cette nouvelle 
   lancement — le score affiché est indicatif, ce que rappelle `CalloutExpertRga` sur l'écran de résultat.
 - Duplication volontaire d'un petit layout/navigation avec le simulateur d'éligibilité (cf. option 1).
 
+**Mitigation du risque ci-dessus** : `/vulnerabilite-rga` et `/embed-vulnerabilite-rga` sont déployées en production
+mais volontairement **non indexées** (`export const metadata = { robots: "noindex, nofollow" }` sur les deux pages,
+et les deux chemins ajoutés au `disallow` de `src/app/robots.ts`) tant que la grille n'est pas validée par un expert
+RGA. Le double mécanisme couvre à la fois les moteurs de recherche classiques (respectent la balise meta `noindex`)
+et la plupart des crawlers IA respectueux de `robots.txt` (aucune règle par bot spécifique — `GPTBot`/`CCBot`/etc. —
+n'existe dans ce repo ; en l'absence de bloc dédié, ces bots suivent la règle générique `User-agent: *`, donc le
+`disallow` générique les couvre déjà). Les deux pages ne sont pas non plus listées dans `src/app/sitemap.ts`. À
+retirer (metadata + entrées `robots.ts`) une fois la méthode validée.
+
 ### Migration
 
-Aucune : nouvelle feature, aucun code existant modifié.
+Aucune : nouvelle feature, aucun code existant modifié. Retrait du `noindex`/`disallow` à prévoir une fois la grille
+validée par un expert RGA (cf. « Mitigation » ci-dessus).
 
 ## Liens
 

@@ -17,6 +17,10 @@ export default function robots(): MetadataRoute.Robots {
           "/deconnexion/",
           "/oidc-callback/",
           "/embed-simulateur/",
+          // Grille de pondération non validée par un expert RGA (ADR-0030) : page en
+          // prod mais volontairement non indexée/crawlée tant qu'elle n'est pas validée.
+          "/vulnerabilite-rga/",
+          "/embed-vulnerabilite-rga/",
         ],
       },
     ],

@@ -1,5 +1,14 @@
+import { Metadata } from "next";
 import Link from "next/link";
 import { VulnerabiliteFormulaire } from "@/features/vulnerabilite-rga";
+
+// Grille de pondération non validée par un expert RGA (ADR-0030) : page en prod mais
+// volontairement non indexée tant qu'elle n'est pas validée scientifiquement. Retirer
+// ce champ (et l'entrée correspondante dans src/app/robots.ts) une fois la méthode validée.
+export const metadata: Metadata = {
+  title: "Simulateur de vulnérabilité RGA | Fonds prévention argile",
+  robots: "noindex, nofollow",
+};
 
 export default async function VulnerabiliteRgaPage() {
   return (
