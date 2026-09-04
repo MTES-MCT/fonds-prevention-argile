@@ -5,6 +5,7 @@ import {
   countDossiersEnAttenteDepot,
   countDossiersDeposesDN,
   countDossiersInstruitsValides,
+  countReponsesAmoEnAttente,
 } from "./tableau-de-bord.service";
 
 // Capture la condition WHERE (et le recours a innerJoin) passee au query builder,
@@ -63,6 +64,20 @@ describe("Compteurs DN du tableau de bord — date de reference et filtres", () 
       expect(sql).toContain('"parcours_prevention"."current_step" =');
       expect(sql).toContain('"dossiers_demarches_simplifiees"."step" =');
       expect(params).toContain("eligibilite");
+      // Un dossier archive n'est plus "en attente de depot".
+      expect(sql).toContain('"parcours_prevention"."archived_at" is null');
+    });
+  });
+
+  describe("countReponsesAmoEnAttente — reponses AMO en attente, dossiers archives exclus", () => {
+    it("joint toujours parcours_prevention (meme sans filtre departement/partenaire) et exclut les archives", async () => {
+      const total = await countReponsesAmoEnAttente(debut, fin);
+      const { sql } = compile();
+
+      expect(total).toBe(3);
+      expect(innerJoinCalled).toBe(true);
+      expect(sql).toContain('"parcours_amo_validations"."statut" =');
+      expect(sql).toContain('"parcours_prevention"."archived_at" is null');
     });
   });
 
