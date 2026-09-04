@@ -19,7 +19,7 @@ import { useHasPermission } from "@/features/auth/hooks/usePermissions";
 import { useAuth } from "@/features/auth/client";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { Step } from "@/shared/domain/value-objects/step.enum";
-import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { excludeArchivedUsers, keepOnlyArchivedUsers } from "./filters/archivage/archivageFilter.utils";
 import { Pagination } from "@/shared/components/Pagination/Pagination";
 import { formatNomComplet } from "@/shared/utils";
 import { getDepartementName, toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
@@ -143,17 +143,8 @@ export default function UsersTrackingPanel() {
 
   // Pipeline de filtrage pour "Tous les demandeurs"
   const { activeUsers, archivedUsers } = useMemo(() => {
-    const actifs: UserWithParcoursDetails[] = [];
-    const archives: UserWithParcoursDetails[] = [];
-
-    for (const user of users) {
-      const situation = user.parcours?.situationParticulier;
-      if (situation === SituationParticulier.ARCHIVE) {
-        archives.push(user);
-      } else {
-        actifs.push(user);
-      }
-    }
+    const actifs = excludeArchivedUsers(users);
+    const archives = keepOnlyArchivedUsers(users);
 
     const applyFilters = (list: UserWithParcoursDetails[]) => {
       let filtered = list;
@@ -479,7 +470,11 @@ export default function UsersTrackingPanel() {
             )}
             {activeTab === "archivage" && (
               <div id="tab-archivage-panel" role="tabpanel">
-                <ArchivageIneligibiliteTab periodeId={periodeId} codeDepartement={codeDepartementArchivage} />
+                <ArchivageIneligibiliteTab
+                  users={users}
+                  periodeId={periodeId}
+                  codeDepartement={codeDepartementArchivage}
+                />
               </div>
             )}
             {activeTab === "statistiques" && (
