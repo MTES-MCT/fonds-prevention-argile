@@ -30,6 +30,7 @@ export function StepVegetationPiedFacade({
   return (
     <QuestionStep<ReponseVegetationPiedFacade>
       fieldsetName="vegetation-pied-facade"
+      critereId="vegetation_pied_facade"
       title="Y a-t-il des plantations juste au pied des façades ?"
       subtitle="Potager, rosiers, arbustes ou toute plantation contre le mur, nécessitant un arrosage régulier."
       illustration={<SchemaVegetationPiedFacade />}

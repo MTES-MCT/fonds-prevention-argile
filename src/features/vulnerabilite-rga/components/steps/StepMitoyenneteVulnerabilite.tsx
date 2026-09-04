@@ -27,6 +27,7 @@ export function StepMitoyenneteVulnerabilite({
   return (
     <QuestionStep<ReponseMitoyennete>
       fieldsetName="mitoyennete"
+      critereId="mitoyennete"
       title="La maison est-elle mitoyenne ?"
       illustration={<SchemaMitoyennete />}
       bullets={[

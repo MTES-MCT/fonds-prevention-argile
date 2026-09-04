@@ -30,6 +30,7 @@ export function StepGravierProprete({
   return (
     <QuestionStep<ReponseGravierProprete>
       fieldsetName="gravier-proprete"
+      critereId="gravier_proprete"
       title="Y a-t-il un lit de gravier en pied de façade ?"
       subtitle="Bande de graviers posée directement sur la terre, au ras du mur."
       illustration={<SchemaGravierProprete />}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeScoreResult, getNiveauVulnerabilite } from "./scoring.service";
+import { computeScoreResult, getNiveauVulnerabilite, getImpactScore } from "./scoring.service";
 import type { PartialVulnerabiliteReponses } from "../types/vulnerabilite-reponses.types";
 
 const REPONSES_IDEALES: PartialVulnerabiliteReponses = {
@@ -86,6 +86,23 @@ describe("computeScoreResult", () => {
   it("renvoie 0 si aucune réponse n'est fournie", () => {
     const result = computeScoreResult({});
     expect(result.scoreGlobal).toBe(0);
+  });
+});
+
+describe("getImpactScore", () => {
+  it("renvoie le score de la réponse pour un critère normal", () => {
+    expect(getImpactScore("pente_terrain", "vers_facade")).toBe(100);
+    expect(getImpactScore("pente_terrain", "eloignee_facade")).toBe(0);
+  });
+
+  it("renvoie le score dérivé de ESSENCES_AGRESSIVITE pour arbre_essence", () => {
+    expect(getImpactScore("arbre_essence", "peuplier")).toBe(100);
+    expect(getImpactScore("arbre_essence", "conifere")).toBe(25);
+  });
+
+  it("renvoie null pour un critère ou une réponse inconnue", () => {
+    expect(getImpactScore("critere_inconnu", "x")).toBeNull();
+    expect(getImpactScore("pente_terrain", "reponse_inconnue")).toBeNull();
   });
 });
 

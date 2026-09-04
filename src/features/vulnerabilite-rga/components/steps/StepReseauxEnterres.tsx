@@ -30,6 +30,7 @@ export function StepReseauxEnterres({
   return (
     <QuestionStep<ReponseReseauxEnterres>
       fieldsetName="reseaux-enterres"
+      critereId="reseaux_enterres"
       title="Où passent les canalisations d'eau et d'assainissement enterrées ?"
       subtitle="Réseau d'eau potable, d'évacuation ou de descente de gouttière enterrée."
       illustration={<SchemaReseauxEnterres />}

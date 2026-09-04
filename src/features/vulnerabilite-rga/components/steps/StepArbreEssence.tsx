@@ -33,6 +33,7 @@ export function StepArbreEssence({
   return (
     <QuestionStep<ReponseArbreEssence>
       fieldsetName="arbre-essence"
+      critereId="arbre_essence"
       title="Quelle est l'essence de cet arbre ?"
       subtitle="Certaines essences assèchent le sol beaucoup plus vite que d'autres."
       illustration={<SchemaArbreProximite />}

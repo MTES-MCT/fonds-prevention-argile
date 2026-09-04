@@ -16,9 +16,14 @@ export function RecommandationsList({ recommandations }: RecommandationsListProp
           Aucune vulnérabilité marquée n&apos;a été identifiée sur l&apos;environnement proche de votre logement.
         </p>
       ) : (
-        recommandations.map((recommandation) => (
-          <RecommandationCard key={recommandation.def.id} recommandation={recommandation} />
-        ))
+        <>
+          <p className="fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
+            Classées de la plus impactante à la moins impactante sur votre score.
+          </p>
+          {recommandations.map((recommandation) => (
+            <RecommandationCard key={recommandation.def.id} recommandation={recommandation} />
+          ))}
+        </>
       )}
     </div>
   );

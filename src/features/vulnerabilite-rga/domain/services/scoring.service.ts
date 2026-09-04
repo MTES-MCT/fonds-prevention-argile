@@ -3,6 +3,7 @@ import {
   CRITERES_CONFIG,
   ESSENCES_AGRESSIVITE,
   getCategorieConfig,
+  getCritereConfig,
   type CategorieVulnerabilite,
   type CritereConfig,
 } from "../value-objects/grille-ponderation";
@@ -78,6 +79,18 @@ function getScoreForReponse(critere: CritereConfig, reponse: string): number | n
     return ESSENCES_AGRESSIVITE[reponse]?.score ?? null;
   }
   return critere.bareme.find((b) => b.reponse === reponse)?.score ?? null;
+}
+
+/**
+ * Score 0-100 (0 = idéal, 100 = risque maximal) d'une réponse précise pour un critère,
+ * indépendamment de tout parcours en cours — utilisé pour afficher l'impact d'un choix
+ * au moment où l'utilisateur le sélectionne (`ImpactBadge`), et celui d'une recommandation
+ * sur l'écran de résultat.
+ */
+export function getImpactScore(critereId: string, reponse: string): number | null {
+  const critere = getCritereConfig(critereId);
+  if (!critere) return null;
+  return getScoreForReponse(critere, reponse);
 }
 
 /** Moyenne pondérée ignorant les entrées `score: null` (non répondues/non applicables), dénominateur renormalisé. */
