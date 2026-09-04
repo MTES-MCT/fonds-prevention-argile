@@ -42,9 +42,11 @@ export async function getFunnelSimulateurRGA(): Promise<FunnelStatistiques> {
 }
 
 /**
- * Transforme les données brutes de l'API Matomo en FunnelStatistiques
+ * Transforme les données brutes de l'API Matomo en FunnelStatistiques.
+ * Exportée pour être réutilisée par d'autres funnels (ex: simulateur de vulnérabilité) —
+ * générique : le classement éligible/non-éligible reste à 0 si le funnel n'a pas ces étapes.
  */
-function transformMatomoFunnelData(data: MatomoFunnelFlowTableResponse): FunnelStatistiques {
+export function transformMatomoFunnelData(data: MatomoFunnelFlowTableResponse): FunnelStatistiques {
   if (!Array.isArray(data) || data.length === 0) {
     return {
       etapes: [],
