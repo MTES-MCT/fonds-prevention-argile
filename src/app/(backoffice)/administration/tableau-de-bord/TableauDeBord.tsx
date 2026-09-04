@@ -117,6 +117,13 @@ export function TableauDeBord() {
   // Simulations : Matomo uniquement (pas de fallback BDD pour eviter de sous-compter)
   const simulationsValue = matomoSimuStats?.simulationsMatomo ?? null;
   const simulationsEligiblesValue = matomoSimuStats?.simulationsEligibles ?? null;
+  // Carte fusionnee "Simulation eligible" : "eligibles / terminees", meme forme que
+  // "Reponses d'AMO en attente" (X / Y).
+  const simulationEligibleValue = !matomoLoaded
+    ? "..."
+    : simulationsEligiblesValue && simulationsValue
+      ? `${simulationsEligiblesValue.valeur.toLocaleString("fr-FR")} / ${simulationsValue.valeur.toLocaleString("fr-FR")}`
+      : "Indisponible";
 
   return (
     <>
@@ -166,25 +173,25 @@ export function TableauDeBord() {
               tooltip="Données Matomo (VisitsSummary)"
             />
             <DashboardStatCard
-              value={formatMatomoValue(simulationsValue, matomoLoaded)}
-              label="Simulations terminees"
-              variation={simulationsValue?.variation ?? null}
-              loading={false}
-              compact
-              tooltip="Données Matomo"
-            />
-            <DashboardStatCard
-              value={formatMatomoValue(simulationsEligiblesValue, matomoLoaded)}
-              label="Simulations éligibles"
+              value={simulationEligibleValue}
+              label="Simulation éligible"
               variation={simulationsEligiblesValue?.variation ?? null}
               loading={false}
               compact
-              tooltip="Données Matomo"
+              tooltip="Simulations éligibles / simulations terminées sur la période — données Matomo"
             />
             <DashboardStatCard
               value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
               label="Comptes créés"
               variation={stats?.comptesCrees.variation ?? null}
+              loading={loading}
+              compact
+              tooltip="Données base de données"
+            />
+            <DashboardStatCard
+              value={stats?.demandesArchivees.valeur.toLocaleString("fr-FR") ?? "..."}
+              label="Dossiers archivés"
+              variation={stats?.demandesArchivees.variation ?? null}
               loading={loading}
               compact
               tooltip="Données base de données"
