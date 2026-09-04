@@ -21,16 +21,17 @@ DDD-lite par feature.
 
 ## 2. Features métier (`src/features/`)
 
-| Feature                | Rôle métier                                                                  |
-| ---------------------- | ---------------------------------------------------------------------------- |
-| `auth`                 | Authentification FranceConnect + ProConnect, sessions, rôles et permissions  |
-| `parcours/core`        | Domaine du parcours : étapes, statuts, value-objects, progression            |
-| `parcours/amo`         | Sélection et validation de l'AMO (assistant maîtrise d'ouvrage)              |
-| `parcours/dossiers-ds` | Dossiers Démarches Simplifiées : création/préremplissage, sync, suivi d'état |
-| `simulateur`           | Simulateur RGA (exposition au retrait-gonflement des argiles, éligibilité)   |
-| `rga-map`              | Visualisation cartographique des zones RGA                                   |
-| `seo`                  | Données géographiques et SEO : catastrophes naturelles (catnat), allers-vers |
-| `backoffice`           | Espaces agents : `espace-agent` (suivi dossiers) et `administration`         |
+| Feature                | Rôle métier                                                                                                                                                                 |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth`                 | Authentification FranceConnect + ProConnect, sessions, rôles et permissions                                                                                                 |
+| `parcours/core`        | Domaine du parcours : étapes, statuts, value-objects, progression                                                                                                           |
+| `parcours/amo`         | Sélection et validation de l'AMO (assistant maîtrise d'ouvrage)                                                                                                             |
+| `parcours/dossiers-ds` | Dossiers Démarches Simplifiées : création/préremplissage, sync, suivi d'état                                                                                                |
+| `simulateur`           | Simulateur RGA (exposition au retrait-gonflement des argiles, éligibilité)                                                                                                  |
+| `vulnerabilite-rga`    | Simulateur public de vulnérabilité RGA (`/vulnerabilite-rga`) : grille de pondération centralisée, jauge de score, recommandations — indépendant de `simulateur` (ADR-0030) |
+| `rga-map`              | Visualisation cartographique des zones RGA                                                                                                                                  |
+| `seo`                  | Données géographiques et SEO : catastrophes naturelles (catnat), allers-vers                                                                                                |
+| `backoffice`           | Espaces agents : `espace-agent` (suivi dossiers) et `administration`                                                                                                        |
 
 Sous-modules notables :
 
