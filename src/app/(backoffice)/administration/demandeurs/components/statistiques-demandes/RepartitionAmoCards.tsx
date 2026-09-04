@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { DashboardStatCard } from "@/app/(backoffice)/administration/tableau-de-bord/shared/DashboardStatCard";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { isUserArchive } from "../filters/archivage/archivageFilter.utils";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 import type { TableauDeBordStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
@@ -16,7 +17,12 @@ export function RepartitionAmoCards({ users, stats, loading = false }: Repartiti
   const counts = useMemo(() => {
     const envoyees = users.filter((u) => u.amoValidation !== null).length;
     const validees = users.filter((u) => u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_ELIGIBLE).length;
-    const enAttente = users.filter((u) => u.amoValidation?.statut === StatutValidationAmo.EN_ATTENTE).length;
+    // "En attente" doit rester actionnable : un dossier archivé (arrêt, inéligibilité...)
+    // n'attend plus de réponse. Les autres compteurs restent des faits historiques
+    // (envoyée/validée/refusée), vrais même si le dossier a été archivé depuis.
+    const enAttente = users.filter(
+      (u) => u.amoValidation?.statut === StatutValidationAmo.EN_ATTENTE && !isUserArchive(u)
+    ).length;
     const refusees = users.filter(
       (u) =>
         u.amoValidation?.statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE ||

@@ -91,14 +91,15 @@ export function StatistiquesDemandesTab({ users, periodeId, codeDepartement }: S
         />
       </div>
 
-      {/* Repartitions AMO */}
+      {/* Repartitions AMO — dossiers archives exclus seulement du compteur "en attente"
+          (les autres restent des faits historiques, cf. RepartitionAmoCards) */}
       <div className="fr-mb-4w">
-        <RepartitionAmoCards users={activeUsers} stats={stats} loading={loading} />
+        <RepartitionAmoCards users={filteredUsers} stats={stats} loading={loading} />
       </div>
 
-      {/* Repartition dossiers DN */}
+      {/* Repartition dossiers DN — idem, seul "en cours de creation" exclut les archives */}
       <div className="fr-mb-4w">
-        <RepartitionDossiersCards users={activeUsers} stats={stats} loading={loading} />
+        <RepartitionDossiersCards users={filteredUsers} stats={stats} loading={loading} />
       </div>
 
       {/* Sources d'acquisition */}

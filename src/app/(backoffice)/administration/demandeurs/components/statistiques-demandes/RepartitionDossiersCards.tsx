@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { DashboardStatCard } from "@/app/(backoffice)/administration/tableau-de-bord/shared/DashboardStatCard";
 import { DSStatus } from "@/shared/domain/value-objects";
+import { isUserArchive } from "../filters/archivage/archivageFilter.utils";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 import type { TableauDeBordStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
@@ -20,17 +21,25 @@ export function RepartitionDossiersCards({ users, stats, loading = false }: Repa
     let instruits = 0;
 
     for (const u of users) {
+      // "En cours de création" doit rester actionnable : un dossier archivé (arrêt,
+      // inéligibilité...) jamais déposé est abandonné, pas en cours. Les autres compteurs
+      // restent des faits historiques (déposé/instruit), vrais même après archivage.
+      const archived = isUserArchive(u);
       const allDossiers = [u.dossiers.eligibilite, u.dossiers.diagnostic, u.dossiers.devis, u.dossiers.factures];
       for (const d of allDossiers) {
         if (!d) continue;
 
         if (d.dsNumber !== null && !d.dsStatus) {
-          enCreation++;
+          if (!archived) enCreation++;
         } else if (d.dsStatus === DSStatus.EN_CONSTRUCTION) {
           deposes++;
         } else if (d.dsStatus === DSStatus.EN_INSTRUCTION) {
           enInstruction++;
-        } else if (d.dsStatus === DSStatus.ACCEPTE || d.dsStatus === DSStatus.REFUSE || d.dsStatus === DSStatus.CLASSE_SANS_SUITE) {
+        } else if (
+          d.dsStatus === DSStatus.ACCEPTE ||
+          d.dsStatus === DSStatus.REFUSE ||
+          d.dsStatus === DSStatus.CLASSE_SANS_SUITE
+        ) {
           instruits++;
         }
       }
