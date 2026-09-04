@@ -357,7 +357,7 @@ async function countDemandesAmo(
  * Compte les demandes AMO envoyees sur la periode et encore en attente de reponse.
  * Permet de savoir si les demandes sont gerees assez rapidement.
  */
-async function countReponsesAmoEnAttente(
+export async function countReponsesAmoEnAttente(
   debut: Date,
   fin: Date,
   codeDepartement?: string,
@@ -367,28 +367,22 @@ async function countReponsesAmoEnAttente(
     gte(parcoursAmoValidations.choisieAt, debut),
     lt(parcoursAmoValidations.choisieAt, fin),
     eq(parcoursAmoValidations.statut, StatutValidationAmo.EN_ATTENTE),
+    // Un dossier archivé entre-temps (ex. inéligibilité découverte pendant l'attente AMO) ne
+    // doit plus compter comme une réponse en attente : personne ne va plus la débloquer.
+    isNull(parcoursPrevention.archivedAt),
   ];
 
-  const partnerCond = whereParcoursPartner(partner);
-
-  if (codeDepartement || partnerCond) {
-    if (codeDepartement) {
-      conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
-      conditions.push(whereDepartement(codeDepartement));
-    }
-    if (partnerCond) conditions.push(partnerCond);
-
-    const result = await db
-      .select({ count: count() })
-      .from(parcoursAmoValidations)
-      .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
-      .where(and(...conditions));
-    return result[0]?.count ?? 0;
+  if (codeDepartement) {
+    conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
+    conditions.push(whereDepartement(codeDepartement));
   }
+  const partnerCond = whereParcoursPartner(partner);
+  if (partnerCond) conditions.push(partnerCond);
 
   const result = await db
     .select({ count: count() })
     .from(parcoursAmoValidations)
+    .innerJoin(parcoursPrevention, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
     .where(and(...conditions));
   return result[0]?.count ?? 0;
 }
@@ -444,6 +438,9 @@ export async function countDossiersEnAttenteDepot(
     eq(parcoursPrevention.currentStep, Step.ELIGIBILITE),
     eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE),
     isNull(dossiersDemarchesSimplifiees.submittedAt),
+    // Un dossier archivé (arrêt d'accompagnement, inéligibilité...) n'est plus "en cours" :
+    // il fausserait ce compteur sans jamais en sortir puisqu'il n'avance plus.
+    isNull(parcoursPrevention.archivedAt),
     gte(dossiersDemarchesSimplifiees.createdAt, debut),
     lt(dossiersDemarchesSimplifiees.createdAt, fin),
   ];
