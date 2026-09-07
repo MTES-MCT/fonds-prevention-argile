@@ -24,3 +24,20 @@ export function isValidationAcceptee(statut: StatutValidationAmo): boolean {
 export function isValidationRefusee(statut: StatutValidationAmo): boolean {
   return statut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE || statut === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE;
 }
+
+/**
+ * Logement non éligible, quelle qu'en soit la source : décision d'un AMO, qualification
+ * d'un Aller-vers, ou simulation du demandeur (qui écrit aussi une qualification).
+ * Prédicat partagé par `MaListe`, `CalloutManager` et la section « Pour en savoir plus »,
+ * pour que les trois ne puissent pas diverger.
+ */
+export function estLogementNonEligible(
+  statutAmo: StatutValidationAmo | null,
+  isQualifiedNonEligible: boolean
+): boolean {
+  return (
+    isQualifiedNonEligible ||
+    statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE ||
+    statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
+  );
+}

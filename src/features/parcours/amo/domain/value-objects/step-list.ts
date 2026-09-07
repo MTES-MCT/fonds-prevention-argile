@@ -31,21 +31,21 @@ const STEP_ORDER: readonly Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAG
  * Calcule l'état d'une étape DS par rapport à l'étape courante du parcours.
  * - Avant currentStep → completed (line-through)
  * - À currentStep → completed si DS accepté, sinon active ; pending si l'AMO n'a pas encore
- *   répondu (demande d'accompagnement après autonomie, cf. `blockedByAmoEnAttente`)
+ *   répondu (demande d'accompagnement après autonomie, cf. `etapeCouranteBloquee`)
  * - Après currentStep → pending (disabled)
  */
 function dsItemState(
   step: Step,
   currentStep: Step | null,
   isCurrentDSStepAccepte: boolean,
-  blockedByAmoEnAttente: boolean
+  etapeCouranteBloquee: boolean
 ): StepListItem["state"] {
   const cs = currentStep ?? Step.CHOIX_AMO;
   const stepIdx = STEP_ORDER.indexOf(step);
   const currentIdx = STEP_ORDER.indexOf(cs);
   if (stepIdx < currentIdx) return "completed";
   if (stepIdx > currentIdx) return "pending";
-  if (blockedByAmoEnAttente) return "pending";
+  if (etapeCouranteBloquee) return "pending";
   return isCurrentDSStepAccepte ? "completed" : "active";
 }
 
@@ -57,22 +57,22 @@ const DS_TAIL_ITEMS: ReadonlyArray<{ key: string; label: string; step: Step }> =
 ];
 
 /**
- * `blockedByAmoEnAttente` : le demandeur a redemandé un accompagnement après autonomie
- * (`statutAmo` repasse à EN_ATTENTE alors que `currentStep` a déjà quitté CHOIX_AMO). Le
- * formulaire de l'étape courante vient d'être réinitialisé (§2.10 FLOW-AND-SYNC.md) : on le
- * bloque (lien désactivé) tant que l'AMO n'a pas répondu, comme au choix initial de l'AMO.
- * Sans effet sur les autres statuts : à CHOIX_AMO, `dsTail` est déjà "pending" pour tous.
+ * `etapeCouranteBloquee` : le formulaire de l'étape courante ne doit pas être ouvrable.
+ * Deux cas — demande d'accompagnement après autonomie (§2.10 FLOW-AND-SYNC.md : `statutAmo`
+ * repasse à EN_ATTENTE alors que `currentStep` a déjà quitté CHOIX_AMO, le formulaire vient
+ * d'être réinitialisé) et logement non éligible. Sans effet à CHOIX_AMO, où `dsTail` est
+ * déjà "pending" pour tous.
  */
 function buildDsTail(
   currentStep: Step | null,
   isCurrentDSStepAccepte: boolean,
-  blockedByAmoEnAttente: boolean
+  etapeCouranteBloquee: boolean
 ): StepListItem[] {
   return DS_TAIL_ITEMS.map(({ key, label, step }) => ({
     key,
     label,
     step,
-    state: dsItemState(step, currentStep, isCurrentDSStepAccepte, blockedByAmoEnAttente),
+    state: dsItemState(step, currentStep, isCurrentDSStepAccepte, etapeCouranteBloquee),
   }));
 }
 
@@ -94,14 +94,16 @@ export function getStepListItems(
   statutAmo: StatutValidationAmo | null,
   currentStep: Step | null,
   isCurrentDSStepAccepte: boolean,
-  eligibiliteDsStatus: DSStatus | null
+  eligibiliteDsStatus: DSStatus | null,
+  /** Logement déclaré non éligible : plus aucune étape n'est actionnable. */
+  isNonEligible = false
 ): StepListItem[] {
   const blockedByAmoEnAttente = estFormulaireEligibiliteBloqueParDemandeAccompagnement(
     statutAmo,
     currentStep,
     eligibiliteDsStatus
   );
-  const dsTail = buildDsTail(currentStep, isCurrentDSStepAccepte, blockedByAmoEnAttente);
+  const dsTail = buildDsTail(currentStep, isCurrentDSStepAccepte, blockedByAmoEnAttente || isNonEligible);
   const onChoixAmo = currentStep === Step.CHOIX_AMO;
 
   // Mode OBLIGATOIRE / AV_AMO_FUSIONNES : un seul item AMO ("Attendre la réponse de votre AMO")
