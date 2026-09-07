@@ -1,4 +1,4 @@
-import { gte } from "drizzle-orm";
+import { eq, gte } from "drizzle-orm";
 import { db } from "../client";
 import {
   vulnerabiliteSimulations,
@@ -11,6 +11,12 @@ export class VulnerabiliteSimulationsRepository {
   async create(data: NewVulnerabiliteSimulation): Promise<VulnerabiliteSimulation> {
     const [row] = await db.insert(vulnerabiliteSimulations).values(data).returning();
     return row;
+  }
+
+  /** Utilisé pour résoudre le pointeur `parcours_prevention.vulnerabilite_simulation_id`. */
+  async findById(id: string): Promise<VulnerabiliteSimulation | null> {
+    const [row] = await db.select().from(vulnerabiliteSimulations).where(eq(vulnerabiliteSimulations.id, id));
+    return row ?? null;
   }
 
   /**

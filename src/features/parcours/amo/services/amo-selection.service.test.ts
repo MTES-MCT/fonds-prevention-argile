@@ -112,6 +112,7 @@ describe("amo-selection.service", () => {
       archiveReason: null,
       archivedBy: null,
       createdByAgentId: null,
+      vulnerabiliteSimulationId: null,
     };
 
     const mockAmo = {
