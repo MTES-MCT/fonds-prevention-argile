@@ -73,6 +73,7 @@ export async function getUsersWithParcours(scopeFilters?: ScopeFilters | null): 
       parcoursCreatedAt: parcoursPrevention.createdAt,
       parcoursUpdatedAt: parcoursPrevention.updatedAt,
       parcoursCompletedAt: parcoursPrevention.completedAt,
+      parcoursArchivedAt: parcoursPrevention.archivedAt,
       parcoursRgaSimulationData: parcoursPrevention.rgaSimulationData,
       parcoursRgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
       parcoursRgaSimulationCompletedAt: parcoursPrevention.rgaSimulationCompletedAt,
@@ -191,6 +192,7 @@ export async function getUsersWithParcours(scopeFilters?: ScopeFilters | null): 
               createdAt: row.parcoursCreatedAt!,
               updatedAt: row.parcoursUpdatedAt!,
               completedAt: row.parcoursCompletedAt,
+              archivedAt: row.parcoursArchivedAt,
               rgaSimulationCompletedAt: row.parcoursRgaSimulationCompletedAt,
               rgaDataDeletedAt: row.parcoursRgaDataDeletedAt,
             }

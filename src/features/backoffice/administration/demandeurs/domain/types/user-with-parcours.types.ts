@@ -34,6 +34,8 @@ export interface UserWithParcoursDetails {
     createdAt: Date;
     updatedAt: Date;
     completedAt: Date | null;
+    /** Source de vérité de l'archivage, alignée sur le SQL des stats (cf. getDossierEtat). */
+    archivedAt: Date | null;
     rgaSimulationCompletedAt: Date | null;
     rgaDataDeletedAt: Date | null;
   } | null;

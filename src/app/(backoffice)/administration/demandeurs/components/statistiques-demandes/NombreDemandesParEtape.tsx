@@ -5,7 +5,10 @@ import { StepperStats } from "./StepStatCard";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 
+// Invitation incluse : c'est un `current_step` réel (prospect créé par un Aller-vers), et
+// l'omettre faisait mentir le total affiché dans le titre. Gris = étape préalable, hors des 5 numérotées.
 const ETAPES = [
+  { step: Step.INVITATION, label: "Invitation", color: "#C1C1C1" },
   { step: Step.CHOIX_AMO, label: "AMO", color: "#BAFAEE" },
   { step: Step.ELIGIBILITE, label: "Éligibilité", color: "#8BF8E7" },
   { step: Step.DIAGNOSTIC, label: "Diag.", color: "#79E7D5" },
@@ -15,9 +18,17 @@ const ETAPES = [
 
 interface NombreDemandesParEtapeProps {
   users: UserWithParcoursDetails[];
+  /** @default "Nombre de demandes par étape" */
+  titre?: string;
+  /** @default "Données base de données" */
+  tooltip?: string;
 }
 
-export function NombreDemandesParEtape({ users }: NombreDemandesParEtapeProps) {
+export function NombreDemandesParEtape({
+  users,
+  titre = "Nombre de demandes par étape",
+  tooltip = "Données base de données",
+}: NombreDemandesParEtapeProps) {
   const tooltipId = useId();
   const counts = useMemo(() => {
     const result = ETAPES.map((e) => ({
@@ -27,17 +38,18 @@ export function NombreDemandesParEtape({ users }: NombreDemandesParEtapeProps) {
     return result;
   }, [users]);
 
+  const total = useMemo(() => counts.reduce((acc, c) => acc + c.count, 0), [counts]);
   const max = Math.max(...counts.map((c) => c.count), 1);
 
   return (
     <div>
       <h3 className="fr-h6 fr-mb-2w">
-        Nombre de demandes par étape{" "}
+        {titre} ({total.toLocaleString("fr-FR")}){" "}
         <button aria-describedby={tooltipId} type="button" className="fr-btn--tooltip fr-btn">
           Information
         </button>
         <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
-          Données base de données
+          {tooltip}
         </span>
       </h3>
       <div
