@@ -5,7 +5,10 @@ import { StepperStats } from "./StepStatCard";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 
+// Invitation incluse : c'est un `current_step` réel (prospect créé par un Aller-vers), et
+// l'omettre faisait mentir le total affiché dans le titre. Gris = étape préalable, hors des 5 numérotées.
 const ETAPES = [
+  { step: Step.INVITATION, label: "Invitation", color: "#C1C1C1" },
   { step: Step.CHOIX_AMO, label: "AMO", color: "#BAFAEE" },
   { step: Step.ELIGIBILITE, label: "Éligibilité", color: "#8BF8E7" },
   { step: Step.DIAGNOSTIC, label: "Diag.", color: "#79E7D5" },
