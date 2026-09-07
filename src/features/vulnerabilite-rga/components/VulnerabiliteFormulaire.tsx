@@ -50,20 +50,28 @@ export function VulnerabiliteFormulaire() {
 
   const { trackEvent } = useMatomo();
   const previousStepRef = useRef<VulnerabiliteStep | null>(null);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [currentStep]);
 
   // Tracking Matomo à chaque changement d'étape + enregistrement anonyme du résultat.
-  // Même garde qu'en pattern côté simulateur d'éligibilité (SimulateurFormulaire) : on ne
-  // tracke pas au premier render (réhydratation sessionStorage), seulement les vraies
-  // transitions d'étape.
+  // Tant que `isLoading` est vrai, `currentStep` vaut INTRO par défaut (store pas encore
+  // réhydraté depuis sessionStorage, cf. useVulnerabiliteFormulaire) — pas fiable, on attend.
+  // Au premier rendu réhydraté, on mémorise l'étape réelle SANS la tracker : ça couvre aussi
+  // bien une vraie première visite qu'un rechargement de page qui restaure une étape déjà
+  // avancée (ex. RESULTAT) — sans ce garde-fou, un F5 sur l'écran de résultat était pris pour
+  // une transition et réenregistrait une simulation à chaque rechargement.
   useEffect(() => {
-    const isFirstRender = previousStepRef.current === null;
+    if (isLoading) return;
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+      previousStepRef.current = currentStep;
+      return;
+    }
     if (previousStepRef.current === currentStep) return;
     previousStepRef.current = currentStep;
-    if (isFirstRender) return;
 
     const currentAnswers = useVulnerabiliteStore.getState().vulnerabilite.answers;
     const codeDepartement = currentAnswers.adresse?.codeDepartement;
@@ -89,7 +97,7 @@ export function VulnerabiliteFormulaire() {
         trackEvent(eventName, undefined, customDimensions);
       }
     }
-  }, [currentStep, trackEvent]);
+  }, [isLoading, currentStep, trackEvent]);
 
   const handleStart = () => {
     trackEvent(MATOMO_EVENTS.VULNERABILITE_START);
