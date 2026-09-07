@@ -1,43 +1,47 @@
 import { describe, it, expect } from "vitest";
 import {
-  evaluateAgentSimulation,
+  evaluateSimulation,
   buildEligibiliteArchiveNote,
   isEligibiliteArchiveReason,
-} from "./eligibilite-agent.service";
-import { EligibilityReason } from "@/features/simulateur/domain/value-objects/eligibility-reason.enum";
+} from "./eligibilite-archivage.service";
+import { EligibilityReason } from "../value-objects/eligibility-reason.enum";
 
-describe("evaluateAgentSimulation", () => {
+describe("evaluateSimulation", () => {
   it("retourne un verdict neutre sans données", () => {
-    const verdict = evaluateAgentSimulation(null);
+    const verdict = evaluateSimulation(null);
     expect(verdict).toEqual({ result: null, isEligible: false, isNonEligible: false });
   });
 
   it("détecte la non-éligibilité (appartement) en early exit", () => {
-    const verdict = evaluateAgentSimulation({ logement: { type: "appartement" } });
+    const verdict = evaluateSimulation({ logement: { type: "appartement" } });
     expect(verdict.isNonEligible).toBe(true);
     expect(verdict.isEligible).toBe(false);
   });
 });
 
 describe("buildEligibiliteArchiveNote", () => {
-  it("inclut le libellé de raison et distingue création / édition", () => {
+  it("inclut le libellé de raison et distingue création / édition / demandeur", () => {
     const creation = buildEligibiliteArchiveNote({ reason: EligibilityReason.APPARTEMENT } as never, "creation");
     const edition = buildEligibiliteArchiveNote({ reason: EligibilityReason.APPARTEMENT } as never, "edition");
+    const demandeur = buildEligibiliteArchiveNote({ reason: EligibilityReason.APPARTEMENT } as never, "demandeur");
 
     expect(creation).toContain("création");
     expect(edition).toContain("corrigée");
+    expect(demandeur).toContain("demandeur");
     expect(edition).toContain("—");
   });
 
   it("reste lisible sans raison", () => {
     expect(buildEligibiliteArchiveNote(null, "edition")).toBe("Non éligible (simulation corrigée par un agent)");
+    expect(buildEligibiliteArchiveNote(null, "demandeur")).toBe("Non éligible (simulation du demandeur)");
   });
 });
 
 describe("isEligibiliteArchiveReason", () => {
-  it("reconnaît les notes d'archivage pour inéligibilité (création / édition)", () => {
+  it("reconnaît les notes d'archivage pour inéligibilité (création / édition / demandeur)", () => {
     expect(isEligibiliteArchiveReason(buildEligibiliteArchiveNote(null, "creation"))).toBe(true);
     expect(isEligibiliteArchiveReason(buildEligibiliteArchiveNote(null, "edition"))).toBe(true);
+    expect(isEligibiliteArchiveReason(buildEligibiliteArchiveNote(null, "demandeur"))).toBe(true);
     // Aligné aussi sur la note de qualification prospect (« Non éligible au dispositif »).
     expect(isEligibiliteArchiveReason("Non éligible au dispositif")).toBe(true);
   });
