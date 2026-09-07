@@ -273,11 +273,11 @@ function CalloutManager({
     return null;
   }
 
-  // Demande d'accompagnement après autonomie (§2.9 FLOW-AND-SYNC.md) : le parcours est déjà à
+  // Demande d'accompagnement après autonomie (§2.10 FLOW-AND-SYNC.md) : le parcours est déjà à
   // ÉLIGIBILITE alors que l'AMO n'a pas encore répondu. Sans cette garde, `renderEligibiliteCallout`
   // laisserait le demandeur remplir/déposer le formulaire (fraîchement réinitialisé) avant que
   // l'AMO n'ait confirmé — même blocage que le choix initial de l'AMO.
-  if (estFormulaireEligibiliteBloqueParDemandeAccompagnement(statutAmo, currentStep)) {
+  if (estFormulaireEligibiliteBloqueParDemandeAccompagnement(statutAmo, currentStep, dsStatus)) {
     return <CalloutAmoEnAttente />;
   }
 

@@ -19,11 +19,12 @@ export default function StepDetailEligibilite({ pieces }: { pieces?: PieceJustif
   // Vérifier si l'étape est active (on est à l'étape éligibilité)
   const isStepActive = currentStep === Step.ELIGIBILITE;
 
-  // Demande d'accompagnement après autonomie (§2.9 FLOW-AND-SYNC.md) : le formulaire vient
+  // Demande d'accompagnement après autonomie (§2.10 FLOW-AND-SYNC.md) : le formulaire vient
   // d'être réinitialisé et ne doit rester accessible qu'une fois l'AMO répondu.
   const isBloqueParDemandeAccompagnement = estFormulaireEligibiliteBloqueParDemandeAccompagnement(
     statutAmo,
-    currentStep
+    currentStep,
+    lastDSStatus
   );
 
   const isStepBeforeCurrent = currentStep ? isStepBefore(currentStep, Step.ELIGIBILITE) : false;
@@ -54,7 +55,7 @@ export default function StepDetailEligibilite({ pieces }: { pieces?: PieceJustif
             <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>
           )}
 
-        {isStepActive && lastDSStatus === DSStatus.EN_CONSTRUCTION && (
+        {isStepActive && !isBloqueParDemandeAccompagnement && lastDSStatus === DSStatus.EN_CONSTRUCTION && (
           <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">En attente d'instruction</span>
         )}
 

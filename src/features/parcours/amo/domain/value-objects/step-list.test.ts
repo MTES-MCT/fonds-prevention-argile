@@ -1,13 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { AmoMode } from "./departements-amo";
 import { getStepBadgeLabel, getStepListItems } from "./step-list";
 
 describe("getStepListItems", () => {
   describe("Mode OBLIGATOIRE / AV_AMO_FUSIONNES", () => {
     it("renvoie 5 items dont 'Attendre la réponse de votre AMO' actif sur CHOIX_AMO", () => {
-      const items = getStepListItems(AmoMode.OBLIGATOIRE, null, Step.CHOIX_AMO, false);
+      const items = getStepListItems(AmoMode.OBLIGATOIRE, null, Step.CHOIX_AMO, false, null);
       expect(items).toHaveLength(5);
       expect(items[0].label).toBe("Attendre la réponse de votre AMO");
       expect(items[0].state).toBe("active");
@@ -16,7 +17,13 @@ describe("getStepListItems", () => {
     });
 
     it("AV_AMO_FUSIONNES se comporte comme OBLIGATOIRE", () => {
-      const items = getStepListItems(AmoMode.AV_AMO_FUSIONNES, StatutValidationAmo.EN_ATTENTE, Step.CHOIX_AMO, false);
+      const items = getStepListItems(
+        AmoMode.AV_AMO_FUSIONNES,
+        StatutValidationAmo.EN_ATTENTE,
+        Step.CHOIX_AMO,
+        false,
+        null
+      );
       expect(items).toHaveLength(5);
       expect(items[0].label).toBe("Attendre la réponse de votre AMO");
       expect(items[0].state).toBe("active");
@@ -27,7 +34,8 @@ describe("getStepListItems", () => {
         AmoMode.OBLIGATOIRE,
         StatutValidationAmo.LOGEMENT_ELIGIBLE,
         Step.ELIGIBILITE,
-        false
+        false,
+        null
       );
       expect(items[0].state).toBe("completed");
       expect(items[1].state).toBe("active"); // ELIGIBILITE active
@@ -36,7 +44,7 @@ describe("getStepListItems", () => {
 
   describe("Mode FACULTATIF — statut null (choix initial)", () => {
     it("renvoie 5 items dont 'Choix de l'accompagnement' actif", () => {
-      const items = getStepListItems(AmoMode.FACULTATIF, null, Step.CHOIX_AMO, false);
+      const items = getStepListItems(AmoMode.FACULTATIF, null, Step.CHOIX_AMO, false, null);
       expect(items).toHaveLength(5);
       expect(items[0].label).toBe("Choix de l'accompagnement");
       expect(items[0].state).toBe("active");
@@ -46,7 +54,7 @@ describe("getStepListItems", () => {
 
   describe("Mode FACULTATIF — statut SANS_AMO", () => {
     it("renvoie 5 items, le 1er validé, et l'éligibilité active sur ELIGIBILITE/TODO", () => {
-      const items = getStepListItems(AmoMode.FACULTATIF, StatutValidationAmo.SANS_AMO, Step.ELIGIBILITE, false);
+      const items = getStepListItems(AmoMode.FACULTATIF, StatutValidationAmo.SANS_AMO, Step.ELIGIBILITE, false, null);
       expect(items).toHaveLength(5);
       expect(items[0].label).toBe("Choix de l'accompagnement");
       expect(items[0].state).toBe("completed");
@@ -57,7 +65,7 @@ describe("getStepListItems", () => {
 
   describe("Mode FACULTATIF — AMO sélectionné (statut !== null && !== SANS_AMO)", () => {
     it("renvoie 6 items (choix validé + attente AMO active)", () => {
-      const items = getStepListItems(AmoMode.FACULTATIF, StatutValidationAmo.EN_ATTENTE, Step.CHOIX_AMO, false);
+      const items = getStepListItems(AmoMode.FACULTATIF, StatutValidationAmo.EN_ATTENTE, Step.CHOIX_AMO, false, null);
       expect(items).toHaveLength(6);
       expect(items[0].label).toBe("Choix de l'accompagnement");
       expect(items[0].state).toBe("completed");
@@ -71,7 +79,8 @@ describe("getStepListItems", () => {
         AmoMode.FACULTATIF,
         StatutValidationAmo.LOGEMENT_ELIGIBLE,
         Step.ELIGIBILITE,
-        false
+        false,
+        null
       );
       expect(items).toHaveLength(6);
       expect(items[0].state).toBe("completed");
@@ -83,13 +92,26 @@ describe("getStepListItems", () => {
       // Un demandeur en autonomie (SANS_AMO) a déjà fait avancer son parcours à ELIGIBILITE.
       // S'il redemande un accompagnement, statutAmo repasse à EN_ATTENTE sans que currentStep
       // ne revienne à CHOIX_AMO : l'item AMO ne doit pas s'afficher comme déjà répondu, et le
-      // lien vers le formulaire (réinitialisé, cf. §2.9 FLOW-AND-SYNC.md) doit rester bloqué
+      // lien vers le formulaire (réinitialisé, cf. §2.10 FLOW-AND-SYNC.md) doit rester bloqué
       // tant que l'AMO n'a pas confirmé — sinon le demandeur pourrait le remplir avant.
-      const items = getStepListItems(AmoMode.FACULTATIF, StatutValidationAmo.EN_ATTENTE, Step.ELIGIBILITE, false);
+      const items = getStepListItems(AmoMode.FACULTATIF, StatutValidationAmo.EN_ATTENTE, Step.ELIGIBILITE, false, null);
       expect(items[1].label).toBe("Attendre la réponse de votre AMO");
       expect(items[1].state).toBe("active");
       expect(items[2].label).toContain("éligibilité");
       expect(items[2].state).toBe("pending");
+    });
+
+    it("ne bloque pas le formulaire si le dossier d'éligibilité a déjà été transmis", () => {
+      // Rien n'a été réinitialisé sur un dossier déposé : le bloquer priverait le demandeur
+      // de l'accès à son dossier sans corriger le préremplissage.
+      const items = getStepListItems(
+        AmoMode.FACULTATIF,
+        StatutValidationAmo.EN_ATTENTE,
+        Step.ELIGIBILITE,
+        false,
+        DSStatus.ACCEPTE
+      );
+      expect(items[2].state).toBe("active");
     });
   });
 
@@ -99,7 +121,8 @@ describe("getStepListItems", () => {
         AmoMode.OBLIGATOIRE,
         StatutValidationAmo.LOGEMENT_ELIGIBLE,
         Step.DIAGNOSTIC,
-        false
+        false,
+        null
       );
       // [AMO, ELIGIBILITE, DIAGNOSTIC, DEVIS, FACTURES]
       expect(items[0].state).toBe("completed"); // AMO
@@ -109,7 +132,13 @@ describe("getStepListItems", () => {
     });
 
     it("DS accepté pour l'étape courante => completed", () => {
-      const items = getStepListItems(AmoMode.OBLIGATOIRE, StatutValidationAmo.LOGEMENT_ELIGIBLE, Step.DIAGNOSTIC, true);
+      const items = getStepListItems(
+        AmoMode.OBLIGATOIRE,
+        StatutValidationAmo.LOGEMENT_ELIGIBLE,
+        Step.DIAGNOSTIC,
+        true,
+        null
+      );
       expect(items[2].state).toBe("completed");
     });
   });

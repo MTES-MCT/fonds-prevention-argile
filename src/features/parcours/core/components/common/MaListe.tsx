@@ -30,7 +30,14 @@ export default function MaListe() {
   const [isAnnulerOpen, setIsAnnulerOpen] = useState(false);
   const [isDemanderOpen, setIsDemanderOpen] = useState(false);
 
-  const items = getStepListItems(amoMode, statutAmo, currentStep, lastDSStatus === DSStatus.ACCEPTE);
+  const eligibiliteDsStatus = getDSStatusByStep(Step.ELIGIBILITE) ?? null;
+  const items = getStepListItems(
+    amoMode,
+    statutAmo,
+    currentStep,
+    lastDSStatus === DSStatus.ACCEPTE,
+    eligibiliteDsStatus
+  );
   // Dates clés (brouillon/dépôt/instruction/décision) du dossier d'éligibilité,
   // affichées sous l'item correspondant de la liste (cf. ParcoursDemandeur côté agent).
   const eligibiliteDossier = dossiers?.find((d) => d.demarcheEtape === Step.ELIGIBILITE);
@@ -44,7 +51,7 @@ export default function MaListe() {
     peutAnnulerAccompagnement({
       statut: statutAmo,
       demandeArretAt: validationAmoComplete.demandeArretAt,
-      eligibiliteDsStatus: getDSStatusByStep(Step.ELIGIBILITE) ?? null,
+      eligibiliteDsStatus,
     });
   const arretEnAttente = Boolean(validationAmoComplete?.demandeArretAt);
   const accordAmoRequis =
@@ -55,10 +62,7 @@ export default function MaListe() {
   const peutDemander =
     amoMode === AmoMode.FACULTATIF &&
     statutAmo !== null &&
-    peutDemanderAccompagnement({
-      statut: statutAmo,
-      eligibiliteDsStatus: getDSStatusByStep(Step.ELIGIBILITE) ?? null,
-    });
+    peutDemanderAccompagnement({ statut: statutAmo, eligibiliteDsStatus });
 
   const choixAccompagnementDetail =
     statutAmo === null

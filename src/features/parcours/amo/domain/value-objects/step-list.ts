@@ -1,5 +1,6 @@
 import { Step, STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { AmoMode } from "./departements-amo";
 import { estFormulaireEligibiliteBloqueParDemandeAccompagnement } from "./arretAccompagnement";
 
@@ -58,7 +59,7 @@ const DS_TAIL_ITEMS: ReadonlyArray<{ key: string; label: string; step: Step }> =
 /**
  * `blockedByAmoEnAttente` : le demandeur a redemandé un accompagnement après autonomie
  * (`statutAmo` repasse à EN_ATTENTE alors que `currentStep` a déjà quitté CHOIX_AMO). Le
- * formulaire de l'étape courante vient d'être réinitialisé (§2.9 FLOW-AND-SYNC.md) : on le
+ * formulaire de l'étape courante vient d'être réinitialisé (§2.10 FLOW-AND-SYNC.md) : on le
  * bloque (lien désactivé) tant que l'AMO n'a pas répondu, comme au choix initial de l'AMO.
  * Sans effet sur les autres statuts : à CHOIX_AMO, `dsTail` est déjà "pending" pour tous.
  */
@@ -92,9 +93,14 @@ export function getStepListItems(
   amoMode: AmoMode | null,
   statutAmo: StatutValidationAmo | null,
   currentStep: Step | null,
-  isCurrentDSStepAccepte: boolean
+  isCurrentDSStepAccepte: boolean,
+  eligibiliteDsStatus: DSStatus | null
 ): StepListItem[] {
-  const blockedByAmoEnAttente = estFormulaireEligibiliteBloqueParDemandeAccompagnement(statutAmo, currentStep);
+  const blockedByAmoEnAttente = estFormulaireEligibiliteBloqueParDemandeAccompagnement(
+    statutAmo,
+    currentStep,
+    eligibiliteDsStatus
+  );
   const dsTail = buildDsTail(currentStep, isCurrentDSStepAccepte, blockedByAmoEnAttente);
   const onChoixAmo = currentStep === Step.CHOIX_AMO;
 
