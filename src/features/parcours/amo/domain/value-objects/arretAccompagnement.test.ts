@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "./statutValidation";
-import { peutAnnulerAccompagnement, peutDemanderAccompagnement, requiertAccordAmo } from "./arretAccompagnement";
+import {
+  estFormulaireEligibiliteBloqueParDemandeAccompagnement,
+  peutAnnulerAccompagnement,
+  peutDemanderAccompagnement,
+  requiertAccordAmo,
+} from "./arretAccompagnement";
 
 describe("requiertAccordAmo", () => {
   it("exige l'accord quand l'AMO a validé ET est mandataire financier", () => {
@@ -40,8 +46,17 @@ describe("peutAnnulerAccompagnement", () => {
     expect(peutAnnulerAccompagnement({ ...base, eligibiliteDsStatus: DSStatus.EN_INSTRUCTION })).toBe(false);
   });
 
-  it("autorise encore si le dossier d'éligibilité est déposé mais pas instruit", () => {
-    expect(peutAnnulerAccompagnement({ ...base, eligibiliteDsStatus: DSStatus.EN_CONSTRUCTION })).toBe(true);
+  it("bloque dès le dépôt, avant même la prise en instruction", () => {
+    // La DDT peut instruire à tout moment un dossier déposé : se détacher lui ferait traiter
+    // un dossier déclarant une AMO mandataire qui n'accompagne plus.
+    expect(peutAnnulerAccompagnement({ ...base, eligibiliteDsStatus: DSStatus.EN_CONSTRUCTION })).toBe(false);
+  });
+
+  it("autorise à nouveau une fois la décision rendue", () => {
+    // Ce dossier est soldé : la relation AMO continue sur le diagnostic et les devis.
+    for (const statut of [DSStatus.ACCEPTE, DSStatus.REFUSE, DSStatus.CLASSE_SANS_SUITE]) {
+      expect(peutAnnulerAccompagnement({ ...base, eligibiliteDsStatus: statut })).toBe(true);
+    }
   });
 
   it("bloque si une demande d'arrêt est déjà en cours", () => {
@@ -67,12 +82,22 @@ describe("peutDemanderAccompagnement", () => {
     expect(peutDemanderAccompagnement(base)).toBe(true);
   });
 
-  it("autorise encore si le dossier d'éligibilité est déposé mais pas instruit", () => {
-    expect(peutDemanderAccompagnement({ ...base, eligibiliteDsStatus: DSStatus.EN_CONSTRUCTION })).toBe(true);
+  it("bloque dès le dépôt : le préremplissage n'est plus corrigeable", () => {
+    expect(peutDemanderAccompagnement({ ...base, eligibiliteDsStatus: DSStatus.EN_CONSTRUCTION })).toBe(false);
   });
 
   it("bloque si le formulaire d'éligibilité est en instruction", () => {
     expect(peutDemanderAccompagnement({ ...base, eligibiliteDsStatus: DSStatus.EN_INSTRUCTION })).toBe(false);
+  });
+
+  it("autorise à nouveau une fois la décision rendue", () => {
+    for (const statut of [DSStatus.ACCEPTE, DSStatus.REFUSE, DSStatus.CLASSE_SANS_SUITE]) {
+      expect(peutDemanderAccompagnement({ ...base, eligibiliteDsStatus: statut })).toBe(true);
+    }
+  });
+
+  it("autorise si le dossier est créé mais pas déposé (NON_ACCESSIBLE)", () => {
+    expect(peutDemanderAccompagnement({ ...base, eligibiliteDsStatus: DSStatus.NON_ACCESSIBLE })).toBe(true);
   });
 
   it("bloque si le demandeur a déjà un AMO (EN_ATTENTE)", () => {
@@ -81,5 +106,33 @@ describe("peutDemanderAccompagnement", () => {
 
   it("bloque si le demandeur a déjà un AMO (LOGEMENT_ELIGIBLE)", () => {
     expect(peutDemanderAccompagnement({ ...base, statut: StatutValidationAmo.LOGEMENT_ELIGIBLE })).toBe(false);
+  });
+});
+
+describe("estFormulaireEligibiliteBloqueParDemandeAccompagnement", () => {
+  const bloque = estFormulaireEligibiliteBloqueParDemandeAccompagnement;
+
+  it("bloque pendant l'attente de la réponse AMO, formulaire réinitialisé", () => {
+    expect(bloque(StatutValidationAmo.EN_ATTENTE, Step.ELIGIBILITE, null)).toBe(true);
+  });
+
+  it("ne bloque pas si le dossier a été transmis : rien n'a été réinitialisé", () => {
+    // Le reset refuse sur un dossier déposé (`dossier_depose`) : bloquer priverait le
+    // demandeur de l'accès à son dossier sans corriger le préremplissage.
+    for (const statut of [
+      DSStatus.EN_CONSTRUCTION,
+      DSStatus.EN_INSTRUCTION,
+      DSStatus.ACCEPTE,
+      DSStatus.REFUSE,
+      DSStatus.CLASSE_SANS_SUITE,
+    ]) {
+      expect(bloque(StatutValidationAmo.EN_ATTENTE, Step.ELIGIBILITE, statut)).toBe(false);
+    }
+  });
+
+  it("ne bloque pas hors de l'étape éligibilité ni sur un autre statut AMO", () => {
+    expect(bloque(StatutValidationAmo.EN_ATTENTE, Step.CHOIX_AMO, null)).toBe(false);
+    expect(bloque(StatutValidationAmo.LOGEMENT_ELIGIBLE, Step.ELIGIBILITE, null)).toBe(false);
+    expect(bloque(null, Step.ELIGIBILITE, null)).toBe(false);
   });
 });

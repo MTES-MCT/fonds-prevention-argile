@@ -114,17 +114,20 @@ describe("annulerAccompagnementDemandeur", () => {
     if (result.success) expect(result.data.outcome).toBe("detache");
   });
 
-  it("bloque si le formulaire d'éligibilité est en instruction", async () => {
-    mockSelectOnce([parcours]);
-    mockSelectOnce([validationMandataire]);
-    vi.mocked(getDossierByStep).mockResolvedValue({ dsStatus: DSStatus.EN_INSTRUCTION } as never);
+  it.each([DSStatus.EN_CONSTRUCTION, DSStatus.EN_INSTRUCTION])(
+    "bloque tant que la DDT tient le formulaire d'éligibilité (%s)",
+    async (dsStatus) => {
+      mockSelectOnce([parcours]);
+      mockSelectOnce([validationMandataire]);
+      vi.mocked(getDossierByStep).mockResolvedValue({ dsStatus } as never);
 
-    const result = await annulerAccompagnementDemandeur({ parcoursId: "p1" });
+      const result = await annulerAccompagnementDemandeur({ parcoursId: "p1" });
 
-    expect(result.success).toBe(false);
-    if (!result.success) expect(result.error).toContain("instruction");
-    expect(detacherAmo).not.toHaveBeenCalled();
-  });
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toContain("transmis");
+      expect(detacherAmo).not.toHaveBeenCalled();
+    }
+  );
 
   it("bloque si une demande d'arrêt est déjà en attente", async () => {
     mockSelectOnce([parcours]);

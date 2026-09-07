@@ -11,6 +11,10 @@ import {
 } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { detacherAmo } from "@/features/parcours/amo/services/detachement-amo.service";
 import { refuserDemandeArret } from "@/features/parcours/amo/services/arret-accompagnement.service";
+import { estDossierChezLaDdt } from "@/features/parcours/amo/domain/value-objects";
+import { getDossierByStep } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { ActionResult } from "@/shared/types";
 import { ROLES_ARRET_ACCOMPAGNEMENT } from "../domain/arret-accompagnement";
 
@@ -43,6 +47,17 @@ export async function arreterAccompagnementAction(parcoursId: string, raisons: s
     const raisonsPropres = raisons.map((r) => r.trim()).filter(Boolean);
     if (raisonsPropres.length === 0) {
       return { success: false, error: "Merci de préciser au moins une raison" };
+    }
+
+    // Même gel que côté demandeur (§2.7) : le dossier déposé déclare cette AMO comme
+    // mandataire et n'est plus corrigeable — se détacher ferait instruire une fausse donnée.
+    const dossierEligibilite = await getDossierByStep(parcoursId, Step.ELIGIBILITE);
+    if (estDossierChezLaDdt((dossierEligibilite?.dsStatus as DSStatus | null) ?? null)) {
+      return {
+        success: false,
+        error:
+          "Le formulaire d'éligibilité a été transmis : l'accompagnement ne peut plus être arrêté tant que l'administration n'a pas répondu",
+      };
     }
 
     const result = await detacherAmo({ parcoursId });

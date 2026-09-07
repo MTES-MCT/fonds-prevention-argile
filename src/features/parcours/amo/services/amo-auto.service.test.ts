@@ -364,15 +364,18 @@ describe("demanderAccompagnementDemandeur", () => {
     expect(result).toEqual({ success: false, error: "L'AMO est obligatoire pour ce département" });
   });
 
-  it("bloque si le formulaire d'éligibilité est déjà en instruction", async () => {
-    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("82001"));
-    mockValidationSelect([{ statut: "sans_amo" }]);
-    vi.mocked(getDossierByStep).mockResolvedValue({ dsStatus: DSStatus.EN_INSTRUCTION } as never);
+  it.each([DSStatus.EN_CONSTRUCTION, DSStatus.EN_INSTRUCTION])(
+    "bloque tant que la DDT tient le formulaire d'éligibilité (%s)",
+    async (dsStatus) => {
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("82001"));
+      mockValidationSelect([{ statut: "sans_amo" }]);
+      vi.mocked(getDossierByStep).mockResolvedValue({ dsStatus } as never);
 
-    const result = await demanderAccompagnementDemandeur(userId);
-    expect(result.success).toBe(false);
-    if (!result.success) expect(result.error).toContain("instruction");
-  });
+      const result = await demanderAccompagnementDemandeur(userId);
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toContain("transmis");
+    }
+  );
 
   it("bascule SANS_AMO -> EN_ATTENTE avec le 1er AMO du territoire, sans toucher le statut/l'étape du parcours", async () => {
     const parcours = buildMockParcours("82001");

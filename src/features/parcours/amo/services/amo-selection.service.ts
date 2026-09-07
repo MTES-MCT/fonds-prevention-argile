@@ -590,7 +590,8 @@ export async function demanderAccompagnementDemandeur(
   if (!peutDemanderAccompagnement({ statut: validation.statut, eligibiliteDsStatus })) {
     return {
       success: false,
-      error: "Votre formulaire d'éligibilité est en cours d'instruction : l'accompagnement ne peut plus être modifié",
+      error:
+        "Votre formulaire d'éligibilité a été transmis : l'accompagnement ne peut plus être modifié tant que l'administration n'a pas répondu",
     };
   }
 

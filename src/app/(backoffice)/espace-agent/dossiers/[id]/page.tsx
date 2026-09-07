@@ -31,6 +31,7 @@ import { ROLES_ARRET_ACCOMPAGNEMENT } from "@/features/backoffice/espace-agent/d
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { peutAgirSurDossierDn } from "@/features/backoffice/espace-agent/shared/services/dossier-dn-permissions.service";
 import { STEPS_REINITIALISABLES } from "@/features/parcours/dossiers-ds/services/regeneration.service";
+import { estDossierChezLaDdt } from "@/features/parcours/amo/domain/value-objects";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
@@ -99,6 +100,12 @@ export default async function DossierDetailPage({ params }: PageProps) {
     !timelineEtapeCourante.submittedAt &&
     !timelineEtapeCourante.etatDs;
 
+  // Gel entre dépôt et décision DDT (§2.7) : masque l'entrée de menu, la garde restant côté
+  // action. Le bandeau `arretADecider` n'est PAS gelé — l'AMO doit pouvoir refuser une demande
+  // d'arrêt en attente, sans quoi elle resterait pendante indéfiniment.
+  const peutArreterMaintenant =
+    peutArreterAccompagnement && !estDossierChezLaDdt(dossier.dossiersTimeline[Step.ELIGIBILITE]?.etatDs ?? null);
+
   // Le demandeur a demandé l'arrêt : l'AMO mandataire doit se prononcer.
   const arretADecider = dossier.demandeArretAt !== null && peutArreterAccompagnement;
 
@@ -164,7 +171,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                 <GererDossierMenu
                   parcoursId={dossier.parcoursId}
                   demandeurNom={nomComplet}
-                  peutArreterAccompagnement={peutArreterAccompagnement}
+                  peutArreterAccompagnement={peutArreterMaintenant}
                   peutAgirSurDossierDn={peutAgirSurDn}
                   peutReinitialiserDn={peutReinitialiserDn}
                   stepCourante={dossier.currentStep}
