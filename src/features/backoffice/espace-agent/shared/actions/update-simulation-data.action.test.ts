@@ -11,8 +11,8 @@ vi.mock("@/features/backoffice/shared/actions/agent.actions", () => ({
   getCurrentAgent: vi.fn(),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("../services/eligibilite-agent.service", () => ({
-  evaluateAgentSimulation: vi.fn(),
+vi.mock("@/features/simulateur/domain/services/eligibilite-archivage.service", () => ({
+  evaluateSimulation: vi.fn(),
   buildEligibiliteArchiveNote: vi.fn(() => "note-archivage"),
   isEligibiliteArchiveReason: vi.fn(
     (r: string | null | undefined) => typeof r === "string" && r.startsWith("Non éligible")
@@ -47,7 +47,7 @@ vi.mock("@/shared/database/client", () => ({
 import { updateSimulationDataAction } from "./update-simulation-data.action";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { db } from "@/shared/database/client";
-import { evaluateAgentSimulation } from "../services/eligibilite-agent.service";
+import { evaluateSimulation } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import {
   verifyProspectTerritoryAccess,
   calculateAgentScope,
@@ -116,7 +116,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
 
   it("bascule LOGEMENT_ELIGIBLE → LOGEMENT_NON_ELIGIBLE et archive (dans une transaction)", async () => {
     mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE);
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: false } as never,
       isEligible: false,
       isNonEligible: true,
@@ -147,7 +147,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
       archivedAt: new Date(),
       archiveReason: "Non éligible (simulation corrigée par un agent) — critère X",
     });
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: true } as never,
       isEligible: true,
       isNonEligible: false,
@@ -172,7 +172,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
 
   it("ne réécrit ni statut ni archivage quand le verdict est inchangé (reste éligible)", async () => {
     mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE);
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: true } as never,
       isEligible: true,
       isNonEligible: false,
@@ -188,7 +188,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
 
   it("archive un dossier EN_ATTENTE devenu inéligible ET refuse l'accompagnement (flip de statut)", async () => {
     mockValidationRow(StatutValidationAmo.EN_ATTENTE);
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: false } as never,
       isEligible: false,
       isNonEligible: true,
@@ -218,7 +218,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
 
   it("archive un dossier SANS_AMO devenu inéligible ET refuse l'accompagnement (flip de statut)", async () => {
     mockValidationRow(StatutValidationAmo.SANS_AMO);
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: false } as never,
       isEligible: false,
       isNonEligible: true,
@@ -243,7 +243,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
       archivedAt: new Date(),
       archiveReason: "Non éligible (simulation corrigée par un agent) — critère X",
     });
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: false } as never,
       isEligible: false,
       isNonEligible: true,
@@ -260,7 +260,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
 
   it("persiste une simulation indécise sans statut ni archivage (dossier déjà tranché)", async () => {
     mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE);
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: null,
       isEligible: false,
       isNonEligible: false,
@@ -278,7 +278,7 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
 describe("updateSimulationDataAction — autorisation SANS_AMO (Aller-vers)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: null,
       isEligible: false,
       isNonEligible: false,
@@ -342,7 +342,7 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
 
   it("archive le prospect devenu inéligible (transaction atomique)", async () => {
     mockProspectRow();
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: false } as never,
       isEligible: false,
       isNonEligible: true,
@@ -366,7 +366,7 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
       archivedAt: new Date(),
       archiveReason: "Non éligible (simulation corrigée par un agent) — critère X",
     });
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: true } as never,
       isEligible: true,
       isNonEligible: false,
@@ -382,7 +382,7 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
 
   it("ne dé-archive pas un prospect archivé manuellement (raison ≠ inéligibilité)", async () => {
     mockProspectRow({ archivedAt: new Date(), archiveReason: "Le demandeur a abandonné le projet" });
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: true } as never,
       isEligible: true,
       isNonEligible: false,
@@ -411,7 +411,7 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
       epcis: [],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: false } as never,
       isEligible: false,
       isNonEligible: true,
@@ -433,7 +433,7 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     mockProspectRow();
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: false } as never,
       isEligible: false,
       isNonEligible: true,
@@ -451,7 +451,7 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
 
   it("échec de la transaction → échec de l'action (pas de faux succès)", async () => {
     mockProspectRow();
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: false } as never,
       isEligible: false,
       isNonEligible: true,
@@ -465,7 +465,7 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
 
   it("refuse si une validation AMO existe pour ce parcours (pas de contournement via parcoursId)", async () => {
     mockProspectRow({}, [{ id: "validation-x" }]);
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: false } as never,
       isEligible: false,
       isNonEligible: true,
@@ -481,7 +481,7 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
   it("refuse un prospect hors territoire", async () => {
     mockProspectRow();
     vi.mocked(verifyProspectTerritoryAccess).mockResolvedValueOnce("Ce prospect n'est pas dans votre territoire");
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: { eligible: false } as never,
       isEligible: false,
       isNonEligible: true,
@@ -495,7 +495,7 @@ describe("updateSimulationDataAction — fallback prospect (sans validation AMO)
 
   it("persiste une simulation indécise sans toucher à la situation (prospect)", async () => {
     mockProspectRow();
-    vi.mocked(evaluateAgentSimulation).mockReturnValue({
+    vi.mocked(evaluateSimulation).mockReturnValue({
       result: null,
       isEligible: false,
       isNonEligible: false,
