@@ -91,7 +91,8 @@ users (1) ──1:1── parcours_prevention (1) ──1:N── dossiers_demar
                         │              └──1:N── amo_validation_tokens
                         ├──1:N── parcours_actions ──N:1── agents
                         ├──1:N── prospect_qualifications ──N:1── agents
-                        └──1:N── sync_run_entries ──N:1── sync_runs
+                        ├──1:N── sync_run_entries ──N:1── sync_runs
+                        └──N:1── vulnerabilite_simulations (pointeur nullable, cf. ADR-0032)
 
 agents ──N:1── entreprises_amo        entreprises_amo ──1:N── entreprises_amo_communes
 agents ──N:1── allers_vers            allers_vers ──1:N── allers_vers_departements
@@ -103,15 +104,15 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 
 ### Tables principales
 
-| Domaine           | Tables                                                                                                         |
-| ----------------- | -------------------------------------------------------------------------------------------------------------- |
-| Parcours          | `users`, `parcours_prevention`, `dossiers_demarches_simplifiees`, `dossiers_ds_tentatives`, `parcours_actions` |
-| AMO               | `parcours_amo_validations`, `amo_validation_tokens`, `entreprises_amo`, `entreprises_amo_communes`             |
-| Agents            | `agents`, `agent_permissions`                                                                                  |
-| Allers-vers       | `allers_vers`, `allers_vers_departements`, `allers_vers_epci`, `prospect_qualifications`                       |
-| Référentiels géo  | `catastrophes_naturelles`, `rga_zones` (PostGIS)                                                               |
-| Synchronisation   | `sync_runs`, `sync_run_entries`                                                                                |
-| Vulnérabilité RGA | `vulnerabilite_simulations` (table anonyme, sans FK `users` — cf. ADR-0031)                                    |
+| Domaine           | Tables                                                                                                                                                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Parcours          | `users`, `parcours_prevention`, `dossiers_demarches_simplifiees`, `dossiers_ds_tentatives`, `parcours_actions`                                                                                                    |
+| AMO               | `parcours_amo_validations`, `amo_validation_tokens`, `entreprises_amo`, `entreprises_amo_communes`                                                                                                                |
+| Agents            | `agents`, `agent_permissions`                                                                                                                                                                                     |
+| Allers-vers       | `allers_vers`, `allers_vers_departements`, `allers_vers_epci`, `prospect_qualifications`                                                                                                                          |
+| Référentiels géo  | `catastrophes_naturelles`, `rga_zones` (PostGIS)                                                                                                                                                                  |
+| Synchronisation   | `sync_runs`, `sync_run_entries`                                                                                                                                                                                   |
+| Vulnérabilité RGA | `vulnerabilite_simulations` (table anonyme, sans FK `users` — cf. ADR-0031). Pointeur nullable `parcours_prevention.vulnerabilite_simulation_id` vers la dernière simulation connue d'un demandeur (cf. ADR-0032) |
 
 > `users` (demandeur FranceConnect) et `agents` (ProConnect) sont deux tables
 > distinctes : le citoyen et l'agent ne partagent pas la même identité.
