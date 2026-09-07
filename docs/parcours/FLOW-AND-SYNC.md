@@ -543,6 +543,49 @@ de l'étape.
 Audit dans `parcours_actions` (type système, aucune migration) : `demande_accompagnement`,
 `agent_id = NULL`, `author_structure_type = "DEMANDEUR"`.
 
+### 2.11 Simulation non éligible du demandeur : enregistrée puis archivée — ADR-0033
+
+Jusqu'ici, une simulation non éligible n'était **écrite nulle part** : `commitToRGAStore`
+était gardé par `isEligible` et n'était appelé que par le CTA de l'écran éligible (l'écran
+non éligible n'en a pas). Le demandeur qui créait quand même un compte restait sans
+simulation, donc **sans département**, invisible de tous, et bouclait indéfiniment sur
+l'alerte « Éligibilité manquante » de `/mon-compte`.
+
+Trois changements, dans l'ordre du flux :
+
+- **L'adresse est toujours demandée.** L'early exit public est différé jusqu'à l'étape
+  adresse (`DEFAULT_DEFER_EARLY_EXIT_UNTIL`, `simulateur.store.ts`), comme le wizard
+  Aller-vers le faisait déjà ([ADR-0019](../adr/0019-early-exit-simulateur-agent.md)) :
+  sans elle, un « appartement » (critère évalué à l'étape 2) n'aurait toujours ni commune
+  ni département. Les wrappers agent posent leur propre valeur au montage et ne changent pas.
+- **La simulation est commitée à l'arrivée sur l'écran de résultat**, éligible ou non
+  (`SimulateurFormulaire`, effet gardé par un ref pour ne pas boucler sur `saveRGA`) — sauf
+  en `editMode`, qui couvre les deux surfaces agent.
+- **Le verdict est appliqué à la migration** (`appliquerVerdictSimulationDemandeur`, appelé
+  par `migrateSimulationDataToDatabase` **avant** l'évènement Brevo, pour que `SITUATION`
+  parte déjà à jour). Non éligible → qualification `prospect_qualifications` sans agent
+  (`agent_id = NULL`, raison mappée depuis `EligibilityReason`) + archivage avec la raison
+  canonique `RAISON_ARCHIVAGE_NON_ELIGIBLE` + audit `simulation_non_eligible`
+  (`author_structure_type = "DEMANDEUR"`). Redevenu éligible → dé-archivage, **uniquement**
+  si l'archivage venait d'une inéligibilité (`isEligibiliteArchiveReason`).
+
+> **Le simulateur reste public et écrase `rgaSimulationData` à chaque migration.** Garde
+> posée : ni archivage ni dé-archivage dès qu'un formulaire DN a été **déposé**
+> (`getSubmittedDatesByStep`) — l'état du dossier appartient alors à la DDT et aux
+> professionnels, pas à une nouvelle simulation. Même esprit que le gel de §2.7.1.
+
+> **Raison canonique et non note détaillée** : `archive_reason` vaut exactement
+> « Non éligible au dispositif », valeur sur laquelle les stats « demandes inéligibles »
+> filtrent à l'exact (`INELIGIBLE_ARCHIVE_REASONS`). La note lisible
+> (`buildEligibiliteArchiveNote(result, "demandeur")`) va dans la qualification et l'audit.
+
+Côté `/mon-compte`, l'inéligibilité — d'où qu'elle vienne : décision AMO, qualification
+Aller-vers ou simulation du demandeur — est traitée **en tête de `CalloutManager`**, avant
+l'aiguillage par étape (prédicat partagé `estLogementNonEligible`). Sans cette garde, un
+dossier archivé déjà passé à `ÉLIGIBILITE` (autonomie, puis simulation corrigée) continuait
+d'inviter au dépôt du formulaire DN. « Ma liste » désactive au passage l'étape courante
+(`getStepListItems(..., isNonEligible)`).
+
 ---
 
 ## 3. Architecture de la synchronisation
@@ -1069,6 +1112,8 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)                    |
 | Champ « état de la maison » (id par démarche)  | `dossiers-ds/domain/value-objects/ds-champ-etat-maison.ts` (`getChampEtatMaisonEligibilite`)                |
 | Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
+| Verdict d'éligibilité d'une simulation         | `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (partagé demandeur + agent)      |
+| Archivage sur simulation demandeur (ADR-0033)  | `src/features/parcours/core/services/simulation-eligibilite.service.ts`                                     |
 | Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                             |
 | Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                                 |
 | Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |

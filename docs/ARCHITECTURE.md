@@ -122,6 +122,11 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 > laissés. La suppression reste possible pour un agent sans aucune trace. Voir
 > [ADR-0029](adr/0029-desactivation-agent-plutot-que-suppression.md).
 
+> `prospect_qualifications.agent_id` est **nullable** et l'est réellement dans deux cas : un
+> agent supprimé (`on delete set null`) et une qualification automatique issue de la simulation
+> **du demandeur** — non éligible, elle archive le dossier sans qu'aucun agent n'intervienne.
+> Voir [ADR-0033](adr/0033-simulation-non-eligible-demandeur.md).
+
 > `dossiers_demarches_simplifiees` est le **pointeur courant** vers le dossier DN d'une étape,
 > pas l'historique des dossiers créés. La distinction entre **tentative** (brouillon prérempli,
 > plusieurs possibles, jamais autoritaire) et **dossier confirmé** (déposé, unique) est posée
