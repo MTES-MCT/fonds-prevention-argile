@@ -272,6 +272,33 @@ figé à vie dans DN, la cible doit être résolue **au clic** — la page tente
 `resolveEspaceAgentPath(id)` et redirige vers le dossier, la demande ou le prospect. C'est
 aussi ce qui répare les liens diagnostic/devis déjà écrits, qui renvoyaient un 404.
 
+### 2.6.2 Champ public « État de la maison » (éligibilité)
+
+Le formulaire DN posait deux cases à cocher dérivées du même `rga.sinistres` — « Désordres
+architecturaux identifiés » et « Micro-fissures d'1mm max identitées ». Elles ont été
+remplacées côté DN par **une seule liste déroulante à 4 choix**, alignée sur les 4 degrés du
+simulateur (`ETATS_SINISTRE`) ; les deux anciens champs ont été retirés de
+`DS_FIELDS_ELIGIBILITE`, sans quoi leur préremplissage serait devenu une écriture morte de
+plus (cf. l'encart § 2.6.1).
+
+Les deux mêmes pièges que l'annotation « lien FPA » s'appliquent :
+
+- **Id par démarche.** Le champ ayant été ajouté à la main après le clonage, son id diffère
+  entre prod et préprod : map `DS_CHAMP_ETAT_MAISON_ELIGIBILITE`
+  (`domain/value-objects/ds-champ-etat-maison.ts`), lue via `getChampEtatMaisonEligibilite()`.
+  Démarche non répertoriée → `console.warn` et **aucune clé écrite**.
+- **Libellés contractuels.** Liste fermée : la valeur envoyée doit être le libellé DN **au
+  caractère près** (`DS_LABELS_ETAT_MAISON`), sinon DN la rejette sans erreur. Un test
+  verrouille la copie des 4 libellés ; la relever avec `pnpm ds:fetch-schema <numero>` à
+  chaque évolution du formulaire.
+
+> Le degré « très endommagée » (désordres structuraux empêchant l'usage normal) est
+> **inéligible** côté simulateur (`checkEtatMaison`) : il n'atteint normalement pas le
+> préremplissage, qui n'a lieu qu'après validation de l'éligibilité. Son libellé reste mappé
+> pour que la table couvre les 4 degrés. Attention aux simulations **antérieures** à ce
+> degré : « endommagée » y désignait « avec des premiers désordres structuraux », elles
+> restent éligibles et sont préremplies avec « … mais sans désordres structuraux ».
+
 ### 2.7 Arrêt de l'accompagnement (demandeur ou AMO) — ADR-0018
 
 Contrairement au détachement ops (§2.5), l'arrêt est ici **déclenchable depuis l'UI**, des
@@ -1040,6 +1067,7 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Écriture des actions système (helper unique)   | `backoffice/espace-agent/shared/services/action-audit.service.ts` (`logSystemAction`)                       |
 | Rattrapage des actions d'audit (script ops)    | `scripts/ops/fix/backfill-actions-audit.ts` (`pnpm fix:backfill-actions-audit`)                             |
 | Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)                    |
+| Champ « état de la maison » (id par démarche)  | `dossiers-ds/domain/value-objects/ds-champ-etat-maison.ts` (`getChampEtatMaisonEligibilite`)                |
 | Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
 | Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                             |
 | Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                                 |

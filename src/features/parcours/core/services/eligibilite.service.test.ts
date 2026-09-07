@@ -9,6 +9,8 @@ import { userRepo } from "@/shared/database";
 import { Status } from "../domain/value-objects/status";
 import { Step } from "../domain/value-objects/step";
 import { DS_FIELD_IDS, DS_OPTIONS_MANDATAIRE } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
+import { DS_LABELS_ETAT_MAISON } from "../../dossiers-ds/domain/value-objects/ds-champ-etat-maison";
+import type { PartialRGASimulationData } from "@/shared/domain/types";
 
 vi.mock("./parcours-state.service", () => ({
   getParcoursComplet: vi.fn(),
@@ -56,7 +58,8 @@ const AMO = {
 async function runWithAmo(
   amoOverrides: Partial<typeof AMO> | null,
   estMandataireFinancier: boolean | null = null,
-  demarcheNumber = "126061"
+  demarcheNumber = "126061",
+  rgaData: PartialRGASimulationData = {}
 ) {
   vi.mocked(prefillClient.getDemarcheId).mockReturnValue(demarcheNumber);
   vi.mocked(getValidationAmo).mockResolvedValue({
@@ -83,7 +86,7 @@ async function runWithAmo(
     data: { dossierId: "db-1" },
   } as never);
 
-  const result = await createEligibiliteDossier("user-1", {} as never);
+  const result = await createEligibiliteDossier("user-1", rgaData);
   expect(result.success).toBe(true);
   return vi.mocked(prefillClient.createPrefillDossier).mock.calls[0][0];
 }
@@ -189,5 +192,59 @@ describe("createEligibiliteDossier — annotation privée « lien FPA »", () =>
     const payload = await runWithAmo({}, null, "126061");
 
     expect(payload).not.toHaveProperty("champ_Q2hhbXAtNjM1MjA4OQ==");
+  });
+});
+
+describe("createEligibiliteDossier — champ « état de la maison »", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const avecEtat = (sinistres: string): PartialRGASimulationData =>
+    ({ rga: { sinistres } }) as PartialRGASimulationData;
+
+  it("préremplit le libellé DN sur l'id de champ de la démarche de prod", async () => {
+    const payload = await runWithAmo({}, null, "126061", avecEtat("endommagée"));
+
+    expect(payload["champ_Q2hhbXAtNjg2MTM5OA=="]).toBe(DS_LABELS_ETAT_MAISON["endommagée"]);
+  });
+
+  it("préremplit le libellé DN sur l'id de champ de la démarche de préprod", async () => {
+    const payload = await runWithAmo({}, null, "146377", avecEtat("saine"));
+
+    expect(payload["champ_Q2hhbXAtNjg2MTQzMA=="]).toBe(DS_LABELS_ETAT_MAISON.saine);
+  });
+
+  // Les 2 checkbox qu'il remplace ont été retirées du formulaire DN (cf. ADR-0025) :
+  // continuer à les envoyer serait une écriture morte de plus.
+  it("n'envoie plus les anciens champs « désordres architecturaux » / « micro-fissures »", async () => {
+    const payload = await runWithAmo({}, null, "126061", avecEtat("endommagée"));
+
+    expect(payload).not.toHaveProperty("champ_Q2hhbXAtNTY3MDU4OA==");
+    expect(payload).not.toHaveProperty("champ_Q2hhbXAtNTY3MDUwNg==");
+  });
+
+  it("n'écrit aucune clé quand la simulation n'a pas d'état de maison", async () => {
+    const payload = await runWithAmo({}, null, "126061");
+
+    expect(payload).not.toHaveProperty("champ_Q2hhbXAtNjg2MTM5OA==");
+  });
+
+  // DN rejette silencieusement une valeur hors liste : mieux vaut ne rien envoyer.
+  it("n'écrit aucune clé sur une valeur d'état inconnue", async () => {
+    const payload = await runWithAmo({}, null, "126061", avecEtat("en ruine"));
+
+    expect(payload).not.toHaveProperty("champ_Q2hhbXAtNjg2MTM5OA==");
+  });
+
+  it("n'écrit aucune clé sur une démarche non répertoriée", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const payload = await runWithAmo({}, null, "999999", avecEtat("endommagée"));
+
+    expect(Object.values(payload)).not.toContain(DS_LABELS_ETAT_MAISON["endommagée"]);
+    expect(warn.mock.calls.some((call) => String(call[0]).includes("999999"))).toBe(true);
+
+    warn.mockRestore();
   });
 });

@@ -8,8 +8,9 @@ export interface EligibiliteTopDepartement {
 }
 
 export interface EligibiliteStats {
-  /** Micro-fissures (sur simulations éligibles uniquement) */
+  /** État de la maison (sur simulations éligibles uniquement) */
   avecMicroFissures: StatAvecVariation;
+  avecFissuresImportantes: StatAvecVariation;
   sansMicroFissures: StatAvecVariation;
 
   /** Indemnisation antérieure (sur simulations éligibles uniquement) */

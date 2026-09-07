@@ -53,6 +53,7 @@ function createAllEligibleChecks(): EligibilityChecks {
     zoneForte: true,
     anneeConstruction: true,
     niveaux: true,
+    etatMaisonEligible: true,
     nonMitoyen: true,
     indemnisation: true,
     catnatEnCours: true,

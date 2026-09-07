@@ -16,7 +16,7 @@ export const isTypeLogement = (value: unknown): value is TypeLogement => {
   return typeof value === "string" && TYPES_LOGEMENT.includes(value as TypeLogement);
 };
 
-export const ETATS_SINISTRE = ["saine", "très peu endommagée", "endommagée"] as const;
+export const ETATS_SINISTRE = ["saine", "très peu endommagée", "endommagée", "très endommagée"] as const;
 export type EtatSinistre = (typeof ETATS_SINISTRE)[number];
 
 export const isEtatSinistre = (value: unknown): value is EtatSinistre => {
