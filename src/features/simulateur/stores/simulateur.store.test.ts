@@ -24,12 +24,14 @@ describe("useSimulateurStore - earlyExit", () => {
     }));
   };
 
-  it("est activé par défaut", () => {
+  it("est activé par défaut, et différé à l'adresse", () => {
     expect(useSimulateurStore.getState().earlyExit).toBe(true);
+    expect(useSimulateurStore.getState().deferEarlyExitUntil).toBe(SimulateurStep.ADRESSE);
   });
 
-  it("coupe la simulation dès un critère éliminatoire quand il est activé", () => {
+  it("coupe la simulation dès un critère éliminatoire quand rien n'est différé", () => {
     goToTypeLogement();
+    useSimulateurStore.getState().setEarlyExit(true, null);
     useSimulateurStore.getState().submitAnswer({ logement: { type: "appartement" } });
 
     const { simulation } = useSimulateurStore.getState();
@@ -55,12 +57,12 @@ describe("useSimulateurStore - earlyExit", () => {
     expect(useSimulateurStore.getState().editMode).toBe(true);
   });
 
-  it("est restauré à true par reset()", () => {
-    useSimulateurStore.getState().setEarlyExit(false);
+  it("est restauré au défaut public par reset()", () => {
+    useSimulateurStore.getState().setEarlyExit(false, null);
     useSimulateurStore.getState().reset();
 
     expect(useSimulateurStore.getState().earlyExit).toBe(true);
-    expect(useSimulateurStore.getState().deferEarlyExitUntil).toBeNull();
+    expect(useSimulateurStore.getState().deferEarlyExitUntil).toBe(SimulateurStep.ADRESSE);
   });
 });
 
