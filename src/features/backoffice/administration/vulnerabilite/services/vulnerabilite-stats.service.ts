@@ -2,10 +2,13 @@ import { vulnerabiliteSimulationsRepo } from "@/shared/database/repositories";
 import type { VulnerabiliteSimulation } from "@/shared/database/schema/vulnerabilite-simulations";
 import {
   CATEGORIES_CONFIG,
-  ESSENCES_AGRESSIVITE,
-  getCritereConfig,
   type CategorieVulnerabilite,
 } from "@/features/vulnerabilite-rga/domain/value-objects/grille-ponderation";
+import {
+  CRITERE_FIELDS,
+  QUESTION_LABELS,
+  getReponseLabel,
+} from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-critere-fields";
 import {
   fetchMatomoCountByDimension,
   fetchMatomoFunnel,
@@ -42,43 +45,6 @@ function formatMatomoDateRange(debut: Date, fin: Date): string {
   return `${fmt(debut)},${fmt(fin)}`;
 }
 
-/** Un critère de la grille de pondération = une colonne de la table `vulnerabilite_simulations`. */
-const CRITERE_FIELDS: { critereId: string; field: keyof VulnerabiliteSimulation }[] = [
-  { critereId: "aleaRga", field: "aleaRga" },
-  { critereId: "pente_terrain", field: "penteTerrain" },
-  { critereId: "reseaux_enterres", field: "reseauxEnterres" },
-  { critereId: "gravier_proprete", field: "gravierProprete" },
-  { critereId: "gouttieres", field: "gouttieres" },
-  { critereId: "arbre_proximite", field: "arbreProximite" },
-  { critereId: "arbre_essence", field: "arbreEssence" },
-  { critereId: "haies", field: "haies" },
-  { critereId: "vegetation_pied_facade", field: "vegetationPiedFacade" },
-  { critereId: "mitoyennete", field: "mitoyennete" },
-  { critereId: "ensoleillement", field: "ensoleillement" },
-];
-
-/** Libellés des questions pour l'en-tête des cartes admin — indépendants des textes UI du simulateur. */
-const QUESTION_LABELS: Record<string, string> = {
-  aleaRga: "Aléa RGA (sol)",
-  pente_terrain: "Pente du terrain",
-  reseaux_enterres: "Réseaux enterrés",
-  gravier_proprete: "Gravier de propreté",
-  gouttieres: "Gouttières",
-  arbre_proximite: "Proximité d'un arbre",
-  arbre_essence: "Essence de l'arbre",
-  haies: "Haies",
-  vegetation_pied_facade: "Végétation en pied de façade",
-  mitoyennete: "Mitoyenneté",
-  ensoleillement: "Ensoleillement",
-};
-
-function getReponseLabel(critereId: string, reponse: string): string {
-  if (critereId === "arbre_essence") {
-    return ESSENCES_AGRESSIVITE[reponse]?.label ?? reponse;
-  }
-  return getCritereConfig(critereId)?.bareme.find((b) => b.reponse === reponse)?.label ?? reponse;
-}
-
 /**
  * Calcule, en un seul passage sur les lignes déjà chargées, la répartition en % de chaque
  * réponse pour chaque critère. Le dénominateur de chaque critère est le nombre de simulations
@@ -91,7 +57,7 @@ function computeReponsesStats(rows: VulnerabiliteSimulation[]): CritereReponsesS
     let total = 0;
 
     for (const row of rows) {
-      const reponse = row[field] as string | null;
+      const reponse = row[field as keyof VulnerabiliteSimulation] as string | null;
       if (!reponse) continue;
       counts.set(reponse, (counts.get(reponse) ?? 0) + 1);
       total += 1;
