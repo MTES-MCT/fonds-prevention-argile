@@ -12,7 +12,12 @@ vi.mock("@/shared/config/env.config", () => ({
   })),
 }));
 
-import { fetchMatomoCountByDimension, fetchMatomoSimulationsGroupedByDimension } from "./matomo-api.adapter";
+import {
+  fetchMatomoCountByDimension,
+  fetchMatomoEvents,
+  fetchMatomoEventsByDepartment,
+  fetchMatomoSimulationsGroupedByDimension,
+} from "./matomo-api.adapter";
 
 const originalFetch = global.fetch;
 
@@ -100,5 +105,95 @@ describe("fetchMatomoSimulationsGroupedByDimension — non-régression après ex
     expect(global.fetch).toHaveBeenCalledTimes(2);
     expect(result.get("36")).toEqual({ total: 7, eligible: 5, nonEligible: 2 });
     expect(result.get("18")).toEqual({ total: 1, eligible: 0, nonEligible: 1 });
+  });
+});
+
+const mockFetch = vi.fn();
+
+function jsonResponse(body: unknown, ok = true) {
+  return {
+    ok,
+    status: ok ? 200 : 500,
+    statusText: ok ? "OK" : "Error",
+    json: () => Promise.resolve(body),
+    text: () => Promise.resolve(JSON.stringify(body)),
+  };
+}
+
+describe("fetchMatomoEvents — granularité additive (anti-timeout period=range)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal("fetch", mockFetch);
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+describe("fetchMatomoEvents — granularité additive (anti-timeout period=range)", () => {
+  it("lit un tableau plat tel quel en period=range (comportement historique préservé)", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResponse([
+        { label: "simulateur_result_eligible", nb_events: 5, nb_visits: 5 },
+        { label: "simulateur_result_non_eligible", nb_events: 3, nb_visits: 3 },
+      ])
+    );
+
+    const result = await fetchMatomoEvents({ period: "range", date: "2026-01-01,2026-01-31" });
+
+    expect(result.get("simulateur_result_eligible")).toBe(5);
+    expect(result.get("simulateur_result_non_eligible")).toBe(3);
+  });
+
+  it("cumule les nb_visits d'un même label à travers plusieurs sous-périodes (day/week/month)", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResponse({
+        "2026-01-01,2026-01-07": [{ label: "simulateur_result_eligible", nb_events: 2, nb_visits: 2 }],
+        "2026-01-08,2026-01-14": [{ label: "simulateur_result_eligible", nb_events: 3, nb_visits: 3 }],
+        "2026-01-15,2026-01-21": [{ label: "simulateur_result_non_eligible", nb_events: 1, nb_visits: 1 }],
+      })
+    );
+
+    const result = await fetchMatomoEvents({ period: "week", date: "2026-01-01,2026-01-21" });
+
+    expect(result.get("simulateur_result_eligible")).toBe(5);
+    expect(result.get("simulateur_result_non_eligible")).toBe(1);
+  });
+
+  it("envoie period/date tels quels à l'API Matomo (jamais 'range' forcé en dur)", async () => {
+    mockFetch.mockResolvedValue(jsonResponse({}));
+
+    await fetchMatomoEventsByDepartment("36", 5, { period: "month", date: "2025-10-16,2026-09-07" });
+
+    const [, requestInit] = mockFetch.mock.calls[0];
+    const body = new URLSearchParams(requestInit.body as string);
+    expect(body.get("period")).toBe("month");
+    expect(body.get("date")).toBe("2025-10-16,2026-09-07");
+    expect(body.get("segment")).toBe("dimension5==36");
+  });
+
+describe("fetchMatomoApi — cache négatif sur échec", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal("fetch", mockFetch);
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+describe("fetchMatomoApi — cache négatif sur échec", () => {
+  it("propage toujours une erreur à l'appelant (contrat préservé malgré le cache d'échec en interne)", async () => {
+    mockFetch.mockResolvedValue(jsonResponse({ result: "error", message: "token_auth invalide" }));
+
+    await expect(fetchMatomoEvents({ period: "day", date: "2026-01-01,2026-01-01" })).rejects.toThrow(
+      "token_auth invalide"
+    );
+  });
+
+  it("propage une erreur sur timeout réseau", async () => {
+    mockFetch.mockRejectedValue(new DOMException("The operation was aborted", "AbortError"));
+
+    await expect(fetchMatomoEvents({ period: "day", date: "2026-01-01,2026-01-01" })).rejects.toThrow();
   });
 });

@@ -51,6 +51,8 @@ import {
   fetchMatomoSimulationsGroupedByDimension,
   buildPartnerSegment,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
+import { getGranulariteForPeriode } from "@/features/backoffice/administration/acquisition/services/matomo.service";
+import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
 import type { PartnerKey } from "@/shared/domain/partners";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getClientEnv } from "@/shared/config/env.config";
@@ -119,10 +121,17 @@ async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promi
 /**
  * Récupère le nombre de simulations terminées depuis Matomo (eligible + non eligible).
  * Utilise les events par département si un code département est spécifié.
+ *
+ * Requête en `day`/`week`/`month` (granularité adaptée à la durée, cf. `getGranulariteForPeriode`)
+ * plutôt qu'en `period=range` : un comptage d'events est additif, donc sommer les sous-périodes
+ * ne perd rien, et lit des archives Matomo pré-calculées au lieu de forcer un calcul live sur
+ * toute la plage — la cause principale des timeouts observés dès qu'un département est filtré
+ * sur une longue période (`range` n'est jamais pré-archivé par Matomo).
  */
 async function getSimulationsMatomo(
   debut: Date,
   fin: Date,
+  granularite: GranulariteVisites,
   codeDepartement?: string,
   partner?: PartnerKey | null
 ): Promise<SimulationsMatomoResult> {
@@ -138,12 +147,12 @@ async function getSimulationsMatomo(
 
     const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
     events = await fetchMatomoEventsByDepartment(codeDeptMatomo, dimensionId, {
-      period: "range",
+      period: granularite,
       date: dateRange,
       extraSegment: partnerSegment,
     });
   } else {
-    events = await fetchMatomoEvents({ period: "range", date: dateRange, segment: partnerSegment });
+    events = await fetchMatomoEvents({ period: granularite, date: dateRange, segment: partnerSegment });
   }
 
   const eligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE) ?? 0;
@@ -1377,16 +1386,20 @@ export async function getMatomoSimulationsStats(
 ): Promise<MatomoSimulationsStats> {
   const { debut, fin } = getDateRange(periodeId);
   const previousRange = getPreviousDateRange(periodeId);
+  const granularite = getGranulariteForPeriode(periodeId);
 
   const matomoFallback: SimulationsMatomoResult = { eligible: 0, nonEligible: 0, total: 0 };
 
   // Comptes crees BDD (filtrés par partenaire via users.partner_source) + visiteurs uniques Matomo (en parallele)
   const [currentMatomo, comptes, prevMatomo, prevComptes, currentVisitors, prevVisitors] = await Promise.all([
-    logMatomoFailure(getSimulationsMatomo(debut, fin, codeDepartement, partner), "simulations (periode courante)"),
+    logMatomoFailure(
+      getSimulationsMatomo(debut, fin, granularite, codeDepartement, partner),
+      "simulations (periode courante)"
+    ),
     countComptesCrees(debut, fin, codeDepartement, partner),
     previousRange
       ? logMatomoFailure(
-          getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement, partner),
+          getSimulationsMatomo(previousRange.debut, previousRange.fin, granularite, codeDepartement, partner),
           "simulations (periode precedente)"
         )
       : Promise.resolve(matomoFallback),

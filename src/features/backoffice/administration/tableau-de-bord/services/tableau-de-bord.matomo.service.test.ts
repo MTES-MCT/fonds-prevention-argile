@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { getMatomoSimulationsStats } from "./tableau-de-bord.service";
-import { fetchMatomoEvents, fetchMatomoUniqueVisitors } from "../../acquisition/adapters/matomo-api.adapter";
+import {
+  fetchMatomoEvents,
+  fetchMatomoEventsByDepartment,
+  fetchMatomoUniqueVisitors,
+} from "../../acquisition/adapters/matomo-api.adapter";
 import { db } from "@/shared/database/client";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 
@@ -16,6 +20,18 @@ vi.mock("../../acquisition/adapters/matomo-api.adapter", () => ({
   fetchMatomoSimulationsGroupedByDimension: vi.fn(),
   buildPartnerSegment: vi.fn(() => undefined),
 }));
+
+// Dimension département déterministe (indépendante de l'env locale) pour le test filtré par département.
+vi.mock("@/shared/config/env.config", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/shared/config/env.config")>();
+  return {
+    ...actual,
+    getClientEnv: () => ({
+      ...actual.getClientEnv(),
+      NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID: "7",
+    }),
+  };
+});
 
 // countComptesCrees fait db.select().from().where() et lit [{ count }]
 function mockComptesCrees(nombre: number) {
@@ -98,5 +114,48 @@ describe("getMatomoSimulationsStats — panne Matomo vs vrai zero", () => {
     expect(stats.simulationsEligibles?.valeur).toBe(12);
     expect(stats.simulationsNonEligibles?.valeur).toBe(8);
     expect(stats.visiteursUniques?.valeur).toBe(4955);
+  });
+});
+
+describe("getMatomoSimulationsStats — granularité des events (anti-timeout period=range)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockComptesCrees(5);
+    vi.mocked(fetchMatomoEvents).mockResolvedValue(eventsAvecSimulations);
+    vi.mocked(fetchMatomoEventsByDepartment).mockResolvedValue(eventsAvecSimulations);
+    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(0);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("n'utilise jamais period=range pour les simulations (toujours pre-archivable)", async () => {
+    await getMatomoSimulationsStats("30j");
+
+    expect(fetchMatomoEvents).toHaveBeenCalledWith(
+      expect.objectContaining({ period: expect.not.stringMatching("range") })
+    );
+  });
+
+  it("adapte la granularité à la durée de période, y compris avec un département filtré", async () => {
+    await getMatomoSimulationsStats("30j", "36");
+    expect(fetchMatomoEventsByDepartment).toHaveBeenCalledWith(
+      "36",
+      expect.any(Number),
+      expect.objectContaining({ period: "day" })
+    );
+
+    vi.clearAllMocks();
+    vi.mocked(fetchMatomoEventsByDepartment).mockResolvedValue(eventsAvecSimulations);
+    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(0);
+
+    await getMatomoSimulationsStats("12m", "36");
+    expect(fetchMatomoEventsByDepartment).toHaveBeenCalledWith(
+      "36",
+      expect.any(Number),
+      expect.objectContaining({ period: "month" })
+    );
   });
 });

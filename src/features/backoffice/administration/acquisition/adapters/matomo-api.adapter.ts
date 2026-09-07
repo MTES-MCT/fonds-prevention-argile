@@ -101,7 +101,8 @@ async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string):
     },
     body: searchParams.toString(),
     signal: AbortSignal.timeout(MATOMO_TIMEOUT_MS),
-    // Le cache est gere par unstable_cache en amont, qui ne memorise pas les erreurs.
+    // Le cache HTTP natif est desactive : c'est unstable_cache (fetchMatomoApiCached) qui gere
+    // le cache, y compris pour les echecs (cf. son commentaire) — pas de doublon de cache ici.
     cache: "no-store",
   });
 
@@ -122,25 +123,45 @@ async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string):
   return data as T;
 }
 
+/** Résultat mis en cache par `fetchMatomoApiCached` — discrimine succès et échec. */
+type MatomoCachedOutcome = { ok: true; data: unknown } | { ok: false; message: string };
+
 // Le token est relu ici plutot que passe en argument pour ne pas finir dans la cle de cache.
+//
+// L'echec est mis en cache au meme titre qu'un succes (meme TTL) : un `period=range` segmente
+// par departement sur une longue duree n'est jamais pre-archive par Matomo, donc un timeout se
+// reproduit a l'identique tant que l'archive n'existe pas — sans ce cache, chaque nouvelle
+// requete (a chaque changement de filtre, chaque rechargement) retente le meme appel couteux et
+// attend a nouveau le timeout de 10 s. Avec, la fenetre d'indisponibilite reste la meme, mais
+// elle n'est plus payee en repetant l'attente : les appels suivants echouent instantanement
+// depuis le cache jusqu'a expiration.
 const fetchMatomoApiCached = unstable_cache(
-  async (params: Record<string, string | undefined>, apiUrl: string): Promise<unknown> => {
+  async (params: Record<string, string | undefined>, apiUrl: string): Promise<MatomoCachedOutcome> => {
     const { apiToken } = getMatomoConfig();
-    return requestMatomoApi({ ...params, token_auth: apiToken } as MatomoRequestParams, apiUrl);
+    try {
+      const data = await requestMatomoApi({ ...params, token_auth: apiToken } as MatomoRequestParams, apiUrl);
+      return { ok: true, data };
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : String(error) };
+    }
   },
   ["matomo-api"],
   { revalidate: MATOMO_CACHE_TTL_SECONDS, tags: [MATOMO_CACHE_TAG] }
 );
 
 /**
- * Requete générique vers l'API Matomo, avec cache 1 h des seules reponses valides.
+ * Requete générique vers l'API Matomo, avec cache 1 h (succès et échec, cf. `fetchMatomoApiCached`).
  * @param params
  * @param apiUrl
  * @returns
  */
 async function fetchMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): Promise<T> {
   const cacheableParams: Record<string, string | undefined> = { ...params, token_auth: undefined };
-  return (await fetchMatomoApiCached(cacheableParams, apiUrl)) as T;
+  const outcome = await fetchMatomoApiCached(cacheableParams, apiUrl);
+  if (!outcome.ok) {
+    throw new Error(outcome.message);
+  }
+  return outcome.data as T;
 }
 
 /**
@@ -276,10 +297,39 @@ export async function fetchMatomoUniqueVisitors(
 }
 
 /**
+ * Réponse Events.getAction : un tableau plat en `period=range`, ou un objet keyed par
+ * sous-période (ex: "2026-01-05,2026-01-11") quand `period` est `day`/`week`/`month` sur un
+ * `date` en plage — même convention que `VisitsSummary.getVisits` (cf. `matomo.service.ts`).
+ */
+type MatomoEventActionApiResponse = MatomoEventActionResponse[] | Record<string, MatomoEventActionResponse[]>;
+
+/**
+ * Cumule les `nb_visits` par label d'event, à travers une ou plusieurs sous-périodes.
+ * `nb_visits` par event est un comptage — additif, contrairement aux visiteurs uniques
+ * (déduplication), donc sommer les sous-périodes ne fausse pas le total.
+ */
+function sumEventCounts(data: MatomoEventActionApiResponse): Map<string, number> {
+  const eventCounts = new Map<string, number>();
+  const rowsPerPeriode = Array.isArray(data) ? [data] : Object.values(data ?? {});
+
+  for (const rows of rowsPerPeriode) {
+    if (!Array.isArray(rows)) continue;
+    for (const row of rows) {
+      eventCounts.set(row.label, (eventCounts.get(row.label) ?? 0) + row.nb_visits);
+    }
+  }
+
+  return eventCounts;
+}
+
+/**
  * Récupère le nombre d'events Matomo par action (tous départements confondus).
  * Retourne une Map<eventName, count> en un seul appel API.
  *
- * @param options - Période et date optionnelles
+ * @param options - Période et date optionnelles. `period` peut être `day`/`week`/`month` avec
+ *   un `date` en plage pour éviter le calcul live d'un `range` non pré-archivé sur une longue
+ *   durée (cf. `getGranulariteForPeriode`) — un comptage d'events est additif, donc sans risque
+ *   à sommer entre sous-périodes.
  */
 export async function fetchMatomoEvents(options?: {
   period?: string;
@@ -288,7 +338,7 @@ export async function fetchMatomoEvents(options?: {
 }): Promise<Map<string, number>> {
   const config = getMatomoConfig();
 
-  const data = await fetchMatomoApi<MatomoEventActionResponse[]>(
+  const data = await fetchMatomoApi<MatomoEventActionApiResponse>(
     {
       module: "API",
       method: "Events.getAction",
@@ -303,13 +353,7 @@ export async function fetchMatomoEvents(options?: {
     config.apiUrl
   );
 
-  const eventCounts = new Map<string, number>();
-  if (Array.isArray(data)) {
-    for (const row of data) {
-      eventCounts.set(row.label, row.nb_visits);
-    }
-  }
-  return eventCounts;
+  return sumEventCounts(data);
 }
 
 /**
@@ -318,7 +362,7 @@ export async function fetchMatomoEvents(options?: {
  *
  * @param codeDepartement - Code département (ex: "36")
  * @param dimensionId - ID de la Custom Dimension département configurée dans Matomo
- * @param options - Période et date optionnelles
+ * @param options - Période et date optionnelles (cf. `fetchMatomoEvents` pour la granularité)
  */
 export async function fetchMatomoEventsByDepartment(
   codeDepartement: string,
@@ -329,7 +373,7 @@ export async function fetchMatomoEventsByDepartment(
   const baseSegment = `dimension${dimensionId}==${codeDepartement}`;
   const segment = combineSegments(baseSegment, options?.extraSegment) ?? baseSegment;
 
-  const data = await fetchMatomoApi<MatomoEventActionResponse[]>(
+  const data = await fetchMatomoApi<MatomoEventActionApiResponse>(
     {
       module: "API",
       method: "Events.getAction",
@@ -344,16 +388,7 @@ export async function fetchMatomoEventsByDepartment(
     config.apiUrl
   );
 
-  const eventCounts = new Map<string, number>();
-
-  // Matomo peut retourner un tableau vide ou un objet vide si pas de données
-  if (Array.isArray(data)) {
-    for (const row of data) {
-      eventCounts.set(row.label, row.nb_visits);
-    }
-  }
-
-  return eventCounts;
+  return sumEventCounts(data);
 }
 
 // ---------------------------------------------------------------------------
