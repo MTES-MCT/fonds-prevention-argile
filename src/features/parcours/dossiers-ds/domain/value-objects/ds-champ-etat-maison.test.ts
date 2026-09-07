@@ -6,22 +6,20 @@ describe("getChampEtatMaisonEligibilite", () => {
     vi.restoreAllMocks();
   });
 
-  // Les ids sont encore des placeholders TODO (à relever via `pnpm ds:fetch-schema`) :
-  // le champ n'est donc jamais préremplable tant qu'ils ne sont pas corrigés à la main.
-  it("renvoie null et loggue un warn pour la démarche de prod (id en TODO)", () => {
+  // Ids relevés via `pnpm ds:fetch-schema` : un champ_ inconnu étant avalé en silence par
+  // DN, ces deux assertions sont le seul garde-fou contre une régression sur la map.
+  it("renvoie l'id du champ pour la démarche de prod", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    expect(getChampEtatMaisonEligibilite(126061)).toBeNull();
-    expect(warn).toHaveBeenCalledOnce();
-    expect(warn.mock.calls[0][0]).toContain("126061");
+    expect(getChampEtatMaisonEligibilite(126061)).toBe("Q2hhbXAtNjg2MTM5OA==");
+    expect(warn).not.toHaveBeenCalled();
   });
 
-  it("renvoie null et loggue un warn pour la démarche de préprod (id en TODO)", () => {
+  it("renvoie l'id du champ pour la démarche de préprod", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    expect(getChampEtatMaisonEligibilite(146377)).toBeNull();
-    expect(warn).toHaveBeenCalledOnce();
-    expect(warn.mock.calls[0][0]).toContain("146377");
+    expect(getChampEtatMaisonEligibilite(146377)).toBe("Q2hhbXAtNjg2MTQzMA==");
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it("renvoie null et loggue un warn sur une démarche inconnue", () => {
