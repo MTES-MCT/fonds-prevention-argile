@@ -32,9 +32,14 @@ describe("getChampEtatMaisonEligibilite", () => {
 });
 
 describe("DS_LABELS_ETAT_MAISON", () => {
-  it("couvre les 4 degrés de ETATS_SINISTRE", () => {
-    expect(Object.keys(DS_LABELS_ETAT_MAISON).sort()).toEqual(
-      ["saine", "très peu endommagée", "endommagée", "très endommagée"].sort()
-    );
+  // Liste fermée côté DN : un libellé qui diverge d'un caractère fait rejeter la valeur
+  // sans erreur. Ce test verrouille la copie, il se met à jour via `pnpm ds:fetch-schema`.
+  it("reprend au caractère près les 4 libellés de la liste déroulante DN", () => {
+    expect(DS_LABELS_ETAT_MAISON).toEqual({
+      saine: "Saine",
+      "très peu endommagée": "Très peu endommagée (micro fissure de moins de 5mm)",
+      endommagée: "Endommagée (micro fissure de plus de 5mm mais sans désordres structuraux)",
+      "très endommagée": "Très endommagée (désordres structuraux empêchant l'usage normal de la maison)",
+    });
   });
 });

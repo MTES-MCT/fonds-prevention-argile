@@ -8,8 +8,8 @@ import { EtatSinistre } from "@/features/simulateur/domain/value-objects";
  * formulaire DN au profit d'une unique question à 4 choix.
  *
  * Ids à relever avec `pnpm ds:fetch-schema <numero>` — DN ignore silencieusement un
- * `champ_` inexistant, donc un id encore en TODO ne fait planter ni avertir DN, seulement
- * nos propres logs (cf. `getChampEtatMaisonEligibilite`).
+ * `champ_` inexistant, un id erroné ne se voit donc que dans nos propres logs
+ * (cf. `getChampEtatMaisonEligibilite`).
  */
 export const DS_CHAMP_ETAT_MAISON_ELIGIBILITE: Record<number, string> = {
   126061: "Q2hhbXAtNjg2MTM5OA==",
@@ -18,21 +18,14 @@ export const DS_CHAMP_ETAT_MAISON_ELIGIBILITE: Record<number, string> = {
 
 /**
  * Id du champ « État de la maison » pour la démarche d'éligibilité courante, ou `null` si
- * la démarche est inconnue ou son id pas encore relevé (`TODO-*`).
+ * la démarche est inconnue.
  */
 export function getChampEtatMaisonEligibilite(demarcheNumber: number): string | null {
   const champId = DS_CHAMP_ETAT_MAISON_ELIGIBILITE[demarcheNumber];
   if (!champId) {
     console.warn(
-      `Éligibilité: démarche ${demarcheNumber} inconnue, champ « état de la maison » non préremplie. ` +
+      `Éligibilité: démarche ${demarcheNumber} inconnue, champ « état de la maison » non prérempli. ` +
         `Relever son id avec \`pnpm ds:fetch-schema ${demarcheNumber}\` et l'ajouter à DS_CHAMP_ETAT_MAISON_ELIGIBILITE.`
-    );
-    return null;
-  }
-  if (champId.startsWith("TODO-")) {
-    console.warn(
-      `Éligibilité: id du champ « état de la maison » pas encore relevé pour la démarche ${demarcheNumber} ` +
-        `(placeholder "${champId}"). Relever avec \`pnpm ds:fetch-schema ${demarcheNumber}\` et corriger DS_CHAMP_ETAT_MAISON_ELIGIBILITE.`
     );
     return null;
   }
