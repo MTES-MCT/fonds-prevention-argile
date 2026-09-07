@@ -37,6 +37,12 @@ export function evaluateSimulation(
  */
 export const ELIGIBILITE_ARCHIVE_PREFIX = "Non éligible";
 
+/**
+ * Raison d'archivage canonique d'un dossier inéligible. Valeur contractuelle : les stats
+ * « demandes inéligibles » (`INELIGIBLE_ARCHIVE_REASONS`) filtrent dessus à l'exact.
+ */
+export const RAISON_ARCHIVAGE_NON_ELIGIBLE = "Non éligible au dispositif";
+
 /** Origine du recalcul ayant déclenché l'archivage. */
 export type OrigineArchivageEligibilite = "creation" | "edition" | "demandeur";
 

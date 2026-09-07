@@ -14,6 +14,7 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types/qualification.types";
 import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
+import { RAISON_ARCHIVAGE_NON_ELIGIBLE } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import { getAgentFirstSimulation, getDemandeurFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
 import { matchesTerritoire } from "@/shared/database/repositories/parcours-prevention.repository";
 import type {
@@ -760,7 +761,7 @@ export async function getAutresDemandesArchiveesDetail(
 /**
  * Motifs d'archivage considérés comme "inéligible" (provenant de la qualification ou de l'archivage agent)
  */
-const INELIGIBLE_ARCHIVE_REASONS = ["Le demandeur n'est pas éligible", "Non éligible au dispositif"];
+const INELIGIBLE_ARCHIVE_REASONS = ["Le demandeur n'est pas éligible", RAISON_ARCHIVAGE_NON_ELIGIBLE];
 
 /**
  * Récupère la distribution des raisons d'inéligibilité (issues de prospect_qualifications)
