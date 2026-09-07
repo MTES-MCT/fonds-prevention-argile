@@ -117,8 +117,8 @@ export function TableauDeBord() {
   // Simulations : Matomo uniquement (pas de fallback BDD pour eviter de sous-compter)
   const simulationsValue = matomoSimuStats?.simulationsMatomo ?? null;
   const simulationsEligiblesValue = matomoSimuStats?.simulationsEligibles ?? null;
-  // Carte fusionnee "Simulation eligible" : "eligibles / terminees", meme forme que
-  // "Reponses d'AMO en attente" (X / Y).
+  // Carte fusionnée "Simulations éligibles" : "éligibles / terminées", même forme que
+  // "Réponses d'AMO en attente" (X / Y).
   const simulationEligibleValue = !matomoLoaded
     ? "..."
     : simulationsEligiblesValue && simulationsValue
@@ -174,7 +174,7 @@ export function TableauDeBord() {
             />
             <DashboardStatCard
               value={simulationEligibleValue}
-              label="Simulation éligible"
+              label="Simulations éligibles"
               variation={simulationsEligiblesValue?.variation ?? null}
               loading={false}
               compact

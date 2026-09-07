@@ -72,7 +72,7 @@ export function StatistiquesDemandesTab({ users, periodeId, codeDepartement }: S
       {/* Graphe d'evolution */}
       <EvolutionDemandeurs evolution={evolution} />
 
-      {/* Nombre de demandes par etape + Delais moyens (dossiers archives exclus) */}
+      {/* Nombre de demandes par étape + Délais moyens (dossiers archivés exclus) */}
       <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
         <div className="fr-col-12 fr-col-lg-6">
           <NombreDemandesParEtape users={activeUsers} />
@@ -82,7 +82,7 @@ export function StatistiquesDemandesTab({ users, periodeId, codeDepartement }: S
         </div>
       </div>
 
-      {/* Nombre de demandes archivees par etape : symetrique du graphe ci-dessus */}
+      {/* Nombre de demandes archivées par étape : symétrique du graphe ci-dessus */}
       <div className="fr-mb-4w">
         <NombreDemandesParEtape
           users={archivedOnlyUsers}
@@ -91,13 +91,13 @@ export function StatistiquesDemandesTab({ users, periodeId, codeDepartement }: S
         />
       </div>
 
-      {/* Repartitions AMO — dossiers archives exclus seulement du compteur "en attente"
+      {/* Répartitions AMO — dossiers archivés exclus seulement du compteur "en attente"
           (les autres restent des faits historiques, cf. RepartitionAmoCards) */}
       <div className="fr-mb-4w">
         <RepartitionAmoCards users={filteredUsers} stats={stats} loading={loading} />
       </div>
 
-      {/* Repartition dossiers DN — idem, seul "en cours de creation" exclut les archives */}
+      {/* Répartition dossiers DN — idem, seul "en cours de création" exclut les archivés */}
       <div className="fr-mb-4w">
         <RepartitionDossiersCards users={filteredUsers} stats={stats} loading={loading} />
       </div>
