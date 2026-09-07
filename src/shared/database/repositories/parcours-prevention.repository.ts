@@ -304,11 +304,16 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   /**
-   * Sauvegarde les données RGA du simulateur dans le parcours
+   * Sauvegarde les données RGA du simulateur dans le parcours.
+   * Accepte un objet partiel : une simulation coupée par un early exit non éligible
+   * n'a pas tous les champs (les lecteurs downstream chaînent en optionnel).
    */
-  async updateRGAData(parcoursId: string, rgaData: RGASimulationData): Promise<ParcoursPrevention | null> {
+  async updateRGAData(
+    parcoursId: string,
+    rgaData: RGASimulationData | PartialRGASimulationData
+  ): Promise<ParcoursPrevention | null> {
     return await this.update(parcoursId, {
-      rgaSimulationData: rgaData,
+      rgaSimulationData: rgaData as RGASimulationData,
       rgaSimulationCompletedAt: new Date(),
     });
   }

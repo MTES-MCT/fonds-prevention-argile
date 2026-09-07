@@ -5,5 +5,6 @@ export {
   buildEligibiliteArchiveNote,
   isEligibiliteArchiveReason,
   ELIGIBILITE_ARCHIVE_PREFIX,
+  RAISON_ARCHIVAGE_NON_ELIGIBLE,
 } from "./eligibilite-archivage.service";
 export type { EligibiliteVerdict, OrigineArchivageEligibilite } from "./eligibilite-archivage.service";
