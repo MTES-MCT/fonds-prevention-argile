@@ -5,10 +5,17 @@ import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributes } from "@/share
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { migrateSimulationDataToDatabase } from "./parcours-simulateur-rga-migration.actions";
 import { isSameSimulationContent } from "../utils/simulation-comparison";
+import { appliquerVerdictSimulationDemandeur } from "../services/simulation-eligibilite.service";
 
 vi.mock("@/features/auth/server", () => ({ getSession: vi.fn() }));
 vi.mock("@/shared/database/repositories", () => ({
   parcoursRepo: { findByUserId: vi.fn(), updateRGAData: vi.fn() },
+  userRepo: { findById: vi.fn(async () => ({ prenom: "Marie", nom: "Durand" })) },
+}));
+// Le verdict d'éligibilité a ses propres tests : ici on vérifie seulement qu'il est
+// appliqué avant l'évènement Brevo (SITUATION doit partir à jour).
+vi.mock("../services/simulation-eligibilite.service", () => ({
+  appliquerVerdictSimulationDemandeur: vi.fn(async () => ({ archived: false, unarchived: false })),
 }));
 vi.mock("@/features/simulateur/domain/rules/navigation", () => ({ isSimulationComplete: vi.fn() }));
 // La barrière @/shared/email/brevo réimportée via importOriginal ci-dessous tire tout
@@ -88,6 +95,25 @@ describe("migrateSimulationDataToDatabase", () => {
     expect(res.success).toBe(true);
     expect(mockedUpdateRGAData).toHaveBeenCalled();
     expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE, { attributes: {} });
+  });
+
+  it("applique le verdict d'éligibilité avant d'émettre vers Brevo", async () => {
+    const order: string[] = [];
+    vi.mocked(appliquerVerdictSimulationDemandeur).mockImplementation(async () => {
+      order.push("verdict");
+      return { archived: true, unarchived: false };
+    });
+    mockedEmit.mockImplementation(async () => {
+      order.push("brevo");
+      return undefined as never;
+    });
+
+    await migrateSimulationDataToDatabase(rgaData);
+
+    expect(order).toEqual(["verdict", "brevo"]);
+    expect(appliquerVerdictSimulationDemandeur).toHaveBeenCalledWith(
+      expect.objectContaining({ demandeurNom: "Marie Durand" })
+    );
   });
 
   it("ne migre ni n'émet quand une simulation agent complète existe déjà", async () => {
