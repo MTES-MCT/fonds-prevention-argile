@@ -1,11 +1,11 @@
-import { EligibilityService } from "@/features/simulateur/domain/services/eligibility.service";
-import type { EligibilityResult } from "@/features/simulateur/domain/entities/eligibility-result.entity";
+import { EligibilityService } from "./eligibility.service";
+import type { EligibilityResult } from "../entities/eligibility-result.entity";
 import type { PartialRGASimulationData, RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 
 /**
- * Verdict d'éligibilité d'une simulation saisie par un agent.
- * Partagé entre la création de dossier (`createDossierByAgent`) et la correction
- * de simulation (`updateSimulationDataAction`) pour ne pas diverger.
+ * Verdict d'éligibilité d'une simulation. Partagé entre la création de dossier
+ * (`createDossierByAgent`), la correction de simulation (`updateSimulationDataAction`)
+ * et la simulation du demandeur (`enregistrerSimulationDemandeur`) pour ne pas diverger.
  */
 export interface EligibiliteVerdict {
   result: EligibilityResult | null;
@@ -16,10 +16,10 @@ export interface EligibiliteVerdict {
 }
 
 /**
- * Évalue une simulation agent (avec early exit). `result` est `null` si la
- * simulation est absente ou incomplète sans critère bloquant.
+ * Évalue une simulation (avec early exit). `result` est `null` si la simulation
+ * est absente ou incomplète sans critère bloquant.
  */
-export function evaluateAgentSimulation(
+export function evaluateSimulation(
   rgaData: RGASimulationData | PartialRGASimulationData | null | undefined
 ): EligibiliteVerdict {
   const result = rgaData ? EligibilityService.evaluate(rgaData).result : null;
@@ -37,16 +37,25 @@ export function evaluateAgentSimulation(
  */
 export const ELIGIBILITE_ARCHIVE_PREFIX = "Non éligible";
 
+/** Origine du recalcul ayant déclenché l'archivage. */
+export type OrigineArchivageEligibilite = "creation" | "edition" | "demandeur";
+
+const NOTES_PAR_ORIGINE: Record<OrigineArchivageEligibilite, string> = {
+  creation: `${ELIGIBILITE_ARCHIVE_PREFIX} (simulation auto à la création)`,
+  edition: `${ELIGIBILITE_ARCHIVE_PREFIX} (simulation corrigée par un agent)`,
+  demandeur: `${ELIGIBILITE_ARCHIVE_PREFIX} (simulation du demandeur)`,
+};
+
 /**
  * Note d'archivage lisible incluant le libellé exact de la raison d'inéligibilité,
  * pour que l'agent voie pourquoi le dossier a été archivé.
  */
-export function buildEligibiliteArchiveNote(result: EligibilityResult | null, origine: "creation" | "edition"): string {
+export function buildEligibiliteArchiveNote(
+  result: EligibilityResult | null,
+  origine: OrigineArchivageEligibilite
+): string {
   const reasonLabel = result?.reason ? EligibilityService.getReasonMessage(result.reason) : "";
-  const base =
-    origine === "creation"
-      ? `${ELIGIBILITE_ARCHIVE_PREFIX} (simulation auto à la création)`
-      : `${ELIGIBILITE_ARCHIVE_PREFIX} (simulation corrigée par un agent)`;
+  const base = NOTES_PAR_ORIGINE[origine];
   return reasonLabel ? `${base} — ${reasonLabel}` : base;
 }
 
