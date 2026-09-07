@@ -1,4 +1,4 @@
-import { UserWithParcoursDetails } from "@/features/backoffice";
+import type { UserWithParcoursDetails } from "@/features/backoffice";
 import {
   PERIODES,
   SERVICE_START_DATE,

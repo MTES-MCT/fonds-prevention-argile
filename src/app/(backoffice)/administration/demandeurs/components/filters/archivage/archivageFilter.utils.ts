@@ -1,14 +1,14 @@
-import { UserWithParcoursDetails } from "@/features/backoffice";
-import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import type { UserWithParcoursDetails } from "@/features/backoffice";
 import { getDateDebutPeriode } from "../periode/periodeFilter.utils";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
 /**
  * Un dossier archivé (arrêt d'accompagnement, refus, inéligibilité...) ne doit pas fausser
  * les compteurs "par étape" : il n'avance plus mais reste au dernier `currentStep` atteint.
+ * Prédicat aligné sur `archivedAt`, la source de vérité du SQL des stats et de `getDossierEtat`.
  */
 export function isUserArchive(user: UserWithParcoursDetails): boolean {
-  return user.parcours?.situationParticulier === SituationParticulier.ARCHIVE;
+  return user.parcours?.archivedAt != null;
 }
 
 export function excludeArchivedUsers(users: UserWithParcoursDetails[]): UserWithParcoursDetails[] {
@@ -29,8 +29,5 @@ export function keepArchivedInPeriode(
   periodeId: PeriodeId
 ): UserWithParcoursDetails[] {
   const dateDebut = getDateDebutPeriode(periodeId);
-  return users.filter((u) => {
-    const archivedAt = u.parcours?.archivedAt;
-    return archivedAt != null && archivedAt >= dateDebut;
-  });
+  return users.filter((u) => isUserArchive(u) && u.parcours!.archivedAt! >= dateDebut);
 }
