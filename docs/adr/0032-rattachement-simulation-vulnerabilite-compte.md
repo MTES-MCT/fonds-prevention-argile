@@ -21,7 +21,12 @@ données ni casser l'anonymat de la table stats pour les visiteurs qui restent a
 > (aucune FK entrante). Le pointeur est posé immédiatement si le demandeur est déjà connecté au moment de la
 > simulation ; sinon un **cookie httpOnly** porte l'UUID de la ligne créée, pour un rattachement différé si la
 > connexion intervient plus tard dans la même session — mirror exact de `FC_CLAIM_TOKEN`
-> (`franceconnect.service.ts`).
+> (`franceconnect.service.ts`) : consommé **au même endroit**, dans `handleFranceConnectCallback`
+> (`lierSimulationVulnerabiliteAnonyme`), pas via un hook client déclenché au montage de `/mon-compte`.
+> Une première version passait par un hook client (`useLinkVulnerabiliteSimulation`, gated sur
+> `useAuth().isAuthenticated`) : silencieusement inopérante dès que la première page visitée après
+> connexion n'était pas `/mon-compte` (URL de redirection sauvegardée, cf. `routes.config.ts`) — le
+> rattachement ne dépend plus de ce qui se monte côté client après la connexion.
 
 ## Options envisagées
 
@@ -97,5 +102,5 @@ données ni casser l'anonymat de la table stats pour les visiteurs qui restent a
 - [ADR-0031](0031-stats-vulnerabilite-matomo-bdd.md) — stats Matomo/BDD, `vulnerabilite_simulations`
 - `src/shared/database/schema/parcours-prevention.ts` — colonne `vulnerabilite_simulation_id`
 - `src/features/vulnerabilite-rga/actions/enregistrer-resultat.actions.ts` — pointeur immédiat ou cookie
-- `src/features/parcours/core/actions/parcours-vulnerabilite-link.actions.ts` — rattrapage à la connexion
-- `src/features/auth/adapters/franceconnect/franceconnect.service.ts` — `FC_CLAIM_TOKEN`, pattern mirroré
+- `src/features/auth/adapters/franceconnect/franceconnect.service.ts` — `lierSimulationVulnerabiliteAnonyme`
+  (rattrapage, appelé depuis `handleFranceConnectCallback`) et `FC_CLAIM_TOKEN` (pattern mirroré)

@@ -45,14 +45,12 @@ import Loading from "@/app/(main)/loading";
 import SimulationNeededAlert from "@/app/(main)/mon-compte/components/SimulationNeededAlert";
 import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/PourEnSavoirPlusSection";
 // import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
-import { useMigrateRGAToDB, useLinkVulnerabiliteSimulation } from "../hooks";
+import { useMigrateRGAToDB } from "../hooks";
 import { formatDate } from "@/shared/utils";
 
 export default function MonCompteClient({ piecesByStep }: { piecesByStep?: PiecesByStep }) {
   // Migration RGA si nécessaire (après connexion FC)
   useMigrateRGAToDB();
-  // Rattrapage simulation de vulnérabilité faite en anonyme avant connexion
-  useLinkVulnerabiliteSimulation();
 
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
   const { hasData: hasTempRGAData, isLoading: isLoadingRGA } = useSimulateurRga();

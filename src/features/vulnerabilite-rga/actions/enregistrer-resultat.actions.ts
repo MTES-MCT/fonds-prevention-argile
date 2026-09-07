@@ -15,7 +15,8 @@ import type { VulnerabiliteScoreResult } from "../domain/services/scoring.servic
  * Si un demandeur est déjà connecté au moment de la simulation, le pointeur
  * `parcours_prevention.vulnerabilite_simulation_id` est posé immédiatement. Sinon, un cookie
  * httpOnly porte l'UUID de la ligne créée pour un rattrapage si la connexion intervient plus
- * tard dans la même session (`lierSimulationVulnerabiliteAuCompte`, mirror de `FC_CLAIM_TOKEN`).
+ * tard dans la même session (`lierSimulationVulnerabiliteAnonyme` dans le callback FranceConnect,
+ * mirror de `FC_CLAIM_TOKEN`).
  */
 export async function enregistrerResultatVulnerabiliteAction(
   answers: PartialVulnerabiliteReponses,
