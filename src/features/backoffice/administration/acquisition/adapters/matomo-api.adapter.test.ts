@@ -182,8 +182,11 @@ describe("fetchMatomoApi — cache négatif sur échec", () => {
     global.fetch = originalFetch;
   });
 
-describe("fetchMatomoApi — cache négatif sur échec", () => {
-  it("propage toujours une erreur à l'appelant (contrat préservé malgré le cache d'échec en interne)", async () => {
+describe("fetchMatomoApi — échecs jamais mis en cache", () => {
+  // Un premier timeout n'empêche pas Matomo de terminer l'archive en tâche de fond : un nouvel
+  // essai un peu plus tard doit pouvoir réussir sans être bloqué par un échec mis en cache
+  // (aucune mise en cache d'erreur ici, volontairement — cf. commentaire dans l'adapter).
+  it("propage une erreur d'authentification à l'appelant", async () => {
     mockFetch.mockResolvedValue(jsonResponse({ result: "error", message: "token_auth invalide" }));
 
     await expect(fetchMatomoEvents({ period: "day", date: "2026-01-01,2026-01-01" })).rejects.toThrow(
@@ -191,9 +194,14 @@ describe("fetchMatomoApi — cache négatif sur échec", () => {
     );
   });
 
-  it("propage une erreur sur timeout réseau", async () => {
-    mockFetch.mockRejectedValue(new DOMException("The operation was aborted", "AbortError"));
-
+  it("propage une erreur sur timeout réseau, et n'empêche pas un appel suivant de réussir", async () => {
+    mockFetch.mockRejectedValueOnce(new DOMException("The operation was aborted", "AbortError"));
     await expect(fetchMatomoEvents({ period: "day", date: "2026-01-01,2026-01-01" })).rejects.toThrow();
+
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse([{ label: "simulateur_result_eligible", nb_events: 1, nb_visits: 1 }])
+    );
+    const result = await fetchMatomoEvents({ period: "day", date: "2026-01-01,2026-01-01" });
+    expect(result.get("simulateur_result_eligible")).toBe(1);
   });
 });

@@ -32,8 +32,11 @@ de département est donc systématiquement un cache miss, qui retombe sur ce cal
 > sous-périodes retournées par Matomo. Pour « visiteurs uniques » (dédoublonnage, **non additif**),
 > on garde `period=range` inchangé côté code — la piste retenue pour le rendre rapide sans perdre
 > l'exactitude est de déclarer les segments département dans Matomo avec archivage en tâche de
-> fond (configuration Matomo, hors du code applicatif, cf. Migration). On ajoute par ailleurs un
-> cache négatif : un échec (timeout compris) est mis en cache au même titre qu'un succès.
+> fond (configuration Matomo, hors du code applicatif, cf. Migration). Un cache négatif des échecs
+> a été envisagé puis **écarté** : un premier timeout côté appli n'interrompt pas l'archivage
+> Matomo en tâche de fond, et l'usage observé consiste justement à réessayer un peu plus tard une
+> fois l'archive prête — un échec mis en cache aurait bloqué ce contournement pendant toute sa
+> durée de vie (cf. Options, D bis).
 
 ## Options envisagées
 
@@ -74,25 +77,36 @@ de département est donc systématiquement un cache miss, qui retombe sur ce cal
   couvrir combinatoirement période × département pour rester efficace. Écartée au profit de
   l'option C, plus robuste et moins de code applicatif à maintenir.
 
+### Option D bis — Cache négatif sur échec (envisagée, écartée)
+
+- Avantages : évite de retenter le même appel coûteux et de rattendre le timeout de 10 s à chaque
+  requête suivante pendant la fenêtre de cache.
+- Inconvénients : **casse le contournement utilisateur observé en production**. Un premier timeout
+  côté appli (au bout de 10 s) n'arrête pas Matomo, qui continue de calculer/stocker l'archive en
+  tâche de fond ; un nouvel essai quelques minutes plus tard réussit alors souvent directement,
+  l'archive étant prête entretemps — c'est précisément ce que fait l'utilisateur aujourd'hui
+  (changer de filtre puis revenir). Mettre l'échec en cache aurait servi cet échec obsolète pendant
+  toute la durée du cache, empêchant cette réussite différée. **Rejetée après retour explicite de
+  l'utilisateur.**
+
 ## Conséquences
 
 ### Positives
 
 - « Simulations éligibles / terminées » ne déclenche plus de calcul `range` segmenté : gain de
   performance immédiat, sans risque de régression sur le chiffre affiché (comptage additif).
-- Un échec Matomo (timeout compris) est désormais mis en cache 1h comme un succès : les requêtes
-  suivantes pendant cette fenêtre échouent instantanément au lieu de rattendre un nouveau timeout
-  de 10 s — la fenêtre d'indisponibilité ne change pas, mais elle n'est plus payée en répétant
-  l'attente à chaque chargement de page.
+- Les échecs restent non mis en cache (comportement préexistant conservé) : un nouvel essai après
+  un timeout peut réussir dès que l'archive Matomo, calculée en tâche de fond, est prête — sans
+  attendre l'expiration d'un cache d'échec.
 
 ### Négatives / Risques
 
 - « Visiteurs uniques » reste potentiellement lent sur département + longue période tant que
   l'option C (segments pré-archivés Matomo) n'est pas mise en place côté administration Matomo —
   reste une dépendance externe hors du code applicatif.
-- Le cache négatif peut afficher « Indisponible » jusqu'à 1h après un timeout ponctuel, même si
-  Matomo redevient disponible plus tôt entretemps — jugé acceptable : c'est strictement mieux que
-  le comportement précédent (répéter l'attente de 10 s à chaque chargement pendant la même heure).
+- Sans cache négatif, un filtre qui timeout de façon persistante (archive jamais prête) continue de
+  rattendre le timeout de 10 s à chaque nouvelle tentative — accepté comme préférable au risque de
+  bloquer un contournement qui fonctionne.
 
 ### Migration (si applicable)
 
@@ -104,7 +118,7 @@ les pré-calcule. Action côté ops/admin Matomo, hors du code applicatif.
 ## Liens
 
 - `src/features/backoffice/administration/acquisition/adapters/matomo-api.adapter.ts` —
-  `sumEventCounts`, cache négatif (`fetchMatomoApiCached`)
+  `sumEventCounts`, `fetchMatomoApiCached` (cache des seuls succès, inchangé)
 - `src/features/backoffice/administration/acquisition/services/matomo.service.ts` —
   `getGranulariteForPeriode` (exportée, réutilisée)
 - `src/features/backoffice/administration/tableau-de-bord/services/tableau-de-bord.service.ts` —

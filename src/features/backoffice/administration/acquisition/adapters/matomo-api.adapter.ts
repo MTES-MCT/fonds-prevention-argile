@@ -101,8 +101,10 @@ async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string):
     },
     body: searchParams.toString(),
     signal: AbortSignal.timeout(MATOMO_TIMEOUT_MS),
-    // Le cache HTTP natif est desactive : c'est unstable_cache (fetchMatomoApiCached) qui gere
-    // le cache, y compris pour les echecs (cf. son commentaire) — pas de doublon de cache ici.
+    // Le cache est gere par unstable_cache en amont, qui ne memorise pas les erreurs — volontaire :
+    // un premier timeout n'empeche pas Matomo de terminer l'archive en tache de fond ; un nouvel
+    // essai un peu plus tard (l'archive etant alors prete) doit pouvoir reussir immediatement,
+    // pas etre bloque par un echec mis en cache.
     cache: "no-store",
   });
 
@@ -123,45 +125,25 @@ async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string):
   return data as T;
 }
 
-/** Résultat mis en cache par `fetchMatomoApiCached` — discrimine succès et échec. */
-type MatomoCachedOutcome = { ok: true; data: unknown } | { ok: false; message: string };
-
 // Le token est relu ici plutot que passe en argument pour ne pas finir dans la cle de cache.
-//
-// L'echec est mis en cache au meme titre qu'un succes (meme TTL) : un `period=range` segmente
-// par departement sur une longue duree n'est jamais pre-archive par Matomo, donc un timeout se
-// reproduit a l'identique tant que l'archive n'existe pas — sans ce cache, chaque nouvelle
-// requete (a chaque changement de filtre, chaque rechargement) retente le meme appel couteux et
-// attend a nouveau le timeout de 10 s. Avec, la fenetre d'indisponibilite reste la meme, mais
-// elle n'est plus payee en repetant l'attente : les appels suivants echouent instantanement
-// depuis le cache jusqu'a expiration.
 const fetchMatomoApiCached = unstable_cache(
-  async (params: Record<string, string | undefined>, apiUrl: string): Promise<MatomoCachedOutcome> => {
+  async (params: Record<string, string | undefined>, apiUrl: string): Promise<unknown> => {
     const { apiToken } = getMatomoConfig();
-    try {
-      const data = await requestMatomoApi({ ...params, token_auth: apiToken } as MatomoRequestParams, apiUrl);
-      return { ok: true, data };
-    } catch (error) {
-      return { ok: false, message: error instanceof Error ? error.message : String(error) };
-    }
+    return requestMatomoApi({ ...params, token_auth: apiToken } as MatomoRequestParams, apiUrl);
   },
   ["matomo-api"],
   { revalidate: MATOMO_CACHE_TTL_SECONDS, tags: [MATOMO_CACHE_TAG] }
 );
 
 /**
- * Requete générique vers l'API Matomo, avec cache 1 h (succès et échec, cf. `fetchMatomoApiCached`).
+ * Requete générique vers l'API Matomo, avec cache 1 h des seules reponses valides.
  * @param params
  * @param apiUrl
  * @returns
  */
 async function fetchMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): Promise<T> {
   const cacheableParams: Record<string, string | undefined> = { ...params, token_auth: undefined };
-  const outcome = await fetchMatomoApiCached(cacheableParams, apiUrl);
-  if (!outcome.ok) {
-    throw new Error(outcome.message);
-  }
-  return outcome.data as T;
+  return (await fetchMatomoApiCached(cacheableParams, apiUrl)) as T;
 }
 
 /**
