@@ -13,6 +13,7 @@ import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
+import { buildInfoVulnerabilite } from "@/features/backoffice/espace-agent/shared/services/build-info-vulnerabilite.service";
 
 /**
  * Récupérer le détail d'une demande d'accompagnement par son ID
@@ -134,10 +135,11 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       facturesProcessedAt: processedDatesByStep.get(Step.FACTURES),
     };
 
-    // Construire les informations de diff agent + résolution agent invitant
-    const [agentEditInfo, creator] = await Promise.all([
+    // Construire les informations de diff agent + résolution agent invitant + vulnérabilité RGA
+    const [agentEditInfo, creator, vulnerabilite] = await Promise.all([
       buildAgentEditInfo(demande.parcours),
       getParcoursCreator(demande.parcours.createdByAgentId),
+      buildInfoVulnerabilite(demande.parcours.vulnerabiliteSimulationId),
     ]);
 
     const demandeDetail: DemandeDetail = {
@@ -145,6 +147,7 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       parcoursId: demande.parcours.id,
       demandeur,
       logement,
+      vulnerabilite,
       statut: demande.validation.statut,
       archivedAt: demande.parcours.archivedAt,
       dateCreation: demande.validation.choisieAt,

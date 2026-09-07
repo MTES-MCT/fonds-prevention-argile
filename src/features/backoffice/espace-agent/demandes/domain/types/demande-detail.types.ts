@@ -1,6 +1,7 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { SourceAcquisition } from "@/shared/domain/value-objects/source-acquisition.enum";
 import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
+import type { InfoVulnerabiliteData } from "@/features/backoffice/espace-agent/shared/services/build-info-vulnerabilite.service";
 
 /**
  * Types pour la page détail d'une demande d'accompagnement
@@ -125,6 +126,8 @@ export interface DemandeDetail {
   demandeur: InfoDemandeur;
   /** Informations sur le logement */
   logement: InfoLogement;
+  /** Résultat du simulateur de vulnérabilité RGA rattaché au compte, null si aucun. */
+  vulnerabilite: InfoVulnerabiliteData | null;
   /** Statut actuel de la demande */
   statut: string;
   /** Date d'archivage du parcours (non éligible), ou null. Prime sur le statut EN_ATTENTE. */

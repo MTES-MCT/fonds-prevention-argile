@@ -5,6 +5,7 @@ export * from "./StatTile";
 export * from "./RepartitionCardTile";
 export * from "./InfoDemandeur";
 export * from "./InfoLogement";
+export * from "./InfoVulnerabilite";
 export * from "./ParcoursDemandeur";
 export * from "./AFaire";
 export * from "./Actions";

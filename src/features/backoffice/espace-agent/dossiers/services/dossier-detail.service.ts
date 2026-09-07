@@ -19,6 +19,7 @@ import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
+import { buildInfoVulnerabilite } from "@/features/backoffice/espace-agent/shared/services/build-info-vulnerabilite.service";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import { STATUTS_CONSULTABLES } from "../domain/types";
 import type { DossierTimelineData } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
@@ -167,10 +168,11 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       facturesProcessedAt: processedDatesByStep.get(Step.FACTURES),
     };
 
-    // Construire les informations de diff agent + résolution agent invitant
-    const [agentEditInfo, creator] = await Promise.all([
+    // Construire les informations de diff agent + résolution agent invitant + vulnérabilité RGA
+    const [agentEditInfo, creator, vulnerabilite] = await Promise.all([
       buildAgentEditInfo(dossier.parcours),
       getParcoursCreator(dossier.parcours.createdByAgentId),
+      buildInfoVulnerabilite(dossier.parcours.vulnerabiliteSimulationId),
     ]);
 
     const dossierDetail: DossierDetail = {
@@ -178,6 +180,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       parcoursId: dossier.parcours.id,
       demandeur,
       logement,
+      vulnerabilite,
       currentStep: dossier.parcours.currentStep as Step,
       currentStatus: dossier.parcours.currentStatus as Status,
       dsStatus: dossierDS?.dsStatus ?? null,
