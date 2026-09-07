@@ -130,7 +130,6 @@ describe("fetchMatomoEvents — granularité additive (anti-timeout period=range
     global.fetch = originalFetch;
   });
 
-describe("fetchMatomoEvents — granularité additive (anti-timeout period=range)", () => {
   it("lit un tableau plat tel quel en period=range (comportement historique préservé)", async () => {
     mockFetch.mockResolvedValue(
       jsonResponse([
@@ -172,7 +171,24 @@ describe("fetchMatomoEvents — granularité additive (anti-timeout period=range
     expect(body.get("segment")).toBe("dimension5==36");
   });
 
-describe("fetchMatomoApi — cache négatif sur échec", () => {
+  it("additionne correctement quand Matomo sérialise nb_visits en string (réponse multi-sous-période)", async () => {
+    // Régression : `0 + "234"` fait de la concaténation ("0234") au lieu d'une addition —
+    // observé en preprod sur une longue période, la valeur affichée devenait une suite de
+    // chiffres incohérente au lieu d'un total.
+    mockFetch.mockResolvedValue(
+      jsonResponse({
+        "2026-01-01,2026-01-31": [{ label: "simulateur_result_eligible", nb_events: 12, nb_visits: "12" }],
+        "2026-02-01,2026-02-28": [{ label: "simulateur_result_eligible", nb_events: 8, nb_visits: "8" }],
+      })
+    );
+
+    const result = await fetchMatomoEvents({ period: "month", date: "2026-01-01,2026-02-28" });
+
+    expect(result.get("simulateur_result_eligible")).toBe(20);
+  });
+});
+
+describe("fetchMatomoApi — échecs jamais mis en cache", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("fetch", mockFetch);
@@ -182,7 +198,6 @@ describe("fetchMatomoApi — cache négatif sur échec", () => {
     global.fetch = originalFetch;
   });
 
-describe("fetchMatomoApi — échecs jamais mis en cache", () => {
   // Un premier timeout n'empêche pas Matomo de terminer l'archive en tâche de fond : un nouvel
   // essai un peu plus tard doit pouvoir réussir sans être bloqué par un échec mis en cache
   // (aucune mise en cache d'erreur ici, volontairement — cf. commentaire dans l'adapter).

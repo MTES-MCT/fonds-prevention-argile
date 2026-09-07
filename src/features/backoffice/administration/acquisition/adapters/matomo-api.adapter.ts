@@ -289,6 +289,12 @@ type MatomoEventActionApiResponse = MatomoEventActionResponse[] | Record<string,
  * Cumule les `nb_visits` par label d'event, à travers une ou plusieurs sous-périodes.
  * `nb_visits` par event est un comptage — additif, contrairement aux visiteurs uniques
  * (déduplication), donc sommer les sous-périodes ne fausse pas le total.
+ *
+ * `Number(...)` est nécessaire : sur une réponse multi-sous-période (`day`/`week`/`month` sur un
+ * `date` en plage), Matomo sérialise `nb_visits` en **string** (contrairement au tableau plat
+ * `period=range`, où c'est déjà un nombre) — sans cette conversion, `(total ?? 0) + row.nb_visits`
+ * fait de la concaténation de texte au lieu d'une addition dès la 1ère sous-période
+ * (`0 + "234"` → `"0234"`), produisant une suite de chiffres incohérente au lieu d'un total.
  */
 function sumEventCounts(data: MatomoEventActionApiResponse): Map<string, number> {
   const eventCounts = new Map<string, number>();
@@ -297,7 +303,7 @@ function sumEventCounts(data: MatomoEventActionApiResponse): Map<string, number>
   for (const rows of rowsPerPeriode) {
     if (!Array.isArray(rows)) continue;
     for (const row of rows) {
-      eventCounts.set(row.label, (eventCounts.get(row.label) ?? 0) + row.nb_visits);
+      eventCounts.set(row.label, (eventCounts.get(row.label) ?? 0) + Number(row.nb_visits));
     }
   }
 

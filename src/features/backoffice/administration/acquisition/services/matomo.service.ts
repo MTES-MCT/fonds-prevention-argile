@@ -72,11 +72,14 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
         previousPeriod ? fetchMatomoUniqueVisitors("range", previousPeriod, segment) : Promise.resolve(0),
       ]);
 
-    // Transformer les données - La structure est { "date": nombre } (day) ou { "début,fin": nombre } (week/month)
-    const visitesParJour: VisiteParJour[] = Object.entries(visitsData).map(([date, visites]) => ({
-      date: extractDateDebut(date),
-      visites: typeof visites === "number" ? visites : 0,
-    }));
+    // Transformer les données - La structure est { "date": nombre } (day) ou { "début,fin": nombre } (week/month).
+    // Number(...) : sur une réponse multi-sous-période, Matomo sérialise parfois la valeur en
+    // string plutôt qu'en nombre — sans conversion, `typeof visites === "number"` échoue
+    // silencieusement et remplace la valeur par 0 (cf. bug similaire sur sumEventCounts).
+    const visitesParJour: VisiteParJour[] = Object.entries(visitsData).map(([date, visites]) => {
+      const nombre = Number(visites);
+      return { date: extractDateDebut(date), visites: Number.isFinite(nombre) ? nombre : 0 };
+    });
 
     // Calculer le total
     const nombreVisitesTotales = visitesParJour.reduce((total, jour) => total + jour.visites, 0);
@@ -87,10 +90,10 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
     let variationVisiteursUniques: number | null = null;
 
     if (previousVisitsData) {
-      const previousTotal = Object.values(previousVisitsData).reduce(
-        (total: number, v) => total + (typeof v === "number" ? v : 0),
-        0
-      );
+      const previousTotal = Object.values(previousVisitsData).reduce((total: number, v) => {
+        const nombre = Number(v);
+        return total + (Number.isFinite(nombre) ? nombre : 0);
+      }, 0);
       variationVisites = computeVariation(nombreVisitesTotales, previousTotal);
     }
 

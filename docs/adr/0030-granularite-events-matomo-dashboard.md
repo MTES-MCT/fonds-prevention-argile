@@ -48,7 +48,12 @@ de département est donc systématiquement un cache miss, qui retombe sur ce cal
   sous-périodes donne le même total qu'un `range` direct).
 - Inconvénients : nécessite de parser un format de réponse Matomo différent selon la période
   (tableau plat en `range`, objet keyed par sous-période en `day`/`week`/`month` sur une plage) —
-  géré par `sumEventCounts` dans l'adapter.
+  géré par `sumEventCounts` dans l'adapter. Piège rencontré en préprod : sur ce format
+  multi-sous-période, Matomo sérialise `nb_visits` en **string** (contrairement au tableau plat
+  `range`, déjà numérique) — une première version sommait sans conversion, produisant une
+  concaténation de texte (`0 + "234"` → `"0234"`) au lieu d'un total ; corrigé avec `Number(...)`
+  systématique (`sumEventCounts` et `getMatomoStatistiques`, même précaution appliquée par
+  cohérence au graphique de visites qui partage le même format de réponse).
 
 ### Option B — Même traitement (approximation additive) pour les visiteurs uniques
 
