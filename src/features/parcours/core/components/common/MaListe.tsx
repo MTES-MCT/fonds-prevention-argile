@@ -6,6 +6,7 @@ import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 import { useAmoMode } from "@/features/parcours/amo/hooks";
 import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import {
+  estLogementNonEligible,
   getStepListItems,
   peutAnnulerAccompagnement,
   peutDemanderAccompagnement,
@@ -24,19 +25,29 @@ const COMPLETED_STYLE: React.CSSProperties = {
 };
 
 export default function MaListe() {
-  const { currentStep, statutAmo, getDossierUrl, lastDSStatus, validationAmoComplete, getDSStatusByStep, dossiers } =
-    useParcours();
+  const {
+    currentStep,
+    statutAmo,
+    getDossierUrl,
+    lastDSStatus,
+    validationAmoComplete,
+    getDSStatusByStep,
+    dossiers,
+    isQualifiedNonEligible,
+  } = useParcours();
   const amoMode = useAmoMode();
   const [isAnnulerOpen, setIsAnnulerOpen] = useState(false);
   const [isDemanderOpen, setIsDemanderOpen] = useState(false);
 
   const eligibiliteDsStatus = getDSStatusByStep(Step.ELIGIBILITE) ?? null;
+  const isNonEligible = estLogementNonEligible(statutAmo, isQualifiedNonEligible);
   const items = getStepListItems(
     amoMode,
     statutAmo,
     currentStep,
     lastDSStatus === DSStatus.ACCEPTE,
-    eligibiliteDsStatus
+    eligibiliteDsStatus,
+    isNonEligible
   );
   // Dates clés (brouillon/dépôt/instruction/décision) du dossier d'éligibilité,
   // affichées sous l'item correspondant de la liste (cf. ParcoursDemandeur côté agent).
