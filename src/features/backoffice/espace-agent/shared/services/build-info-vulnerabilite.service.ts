@@ -5,11 +5,12 @@ import {
   QUESTION_LABELS,
   getReponseLabel,
 } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-critere-fields";
+import { getImpactScore } from "@/features/vulnerabilite-rga/domain/services/scoring.service";
 
 export interface InfoVulnerabiliteData {
   scoreGlobal: number;
   completedAt: Date;
-  reponses: { label: string; valeur: string }[];
+  reponses: { label: string; valeur: string; impactScore: number | null }[];
 }
 
 /**
@@ -28,8 +29,12 @@ export async function buildInfoVulnerabilite(
   const reponses = CRITERE_FIELDS.map(({ critereId, field }) => {
     const valeur = simulation[field as keyof VulnerabiliteSimulation] as string | null;
     if (!valeur) return null;
-    return { label: QUESTION_LABELS[critereId] ?? critereId, valeur: getReponseLabel(critereId, valeur) };
-  }).filter((r): r is { label: string; valeur: string } => r !== null);
+    return {
+      label: QUESTION_LABELS[critereId] ?? critereId,
+      valeur: getReponseLabel(critereId, valeur),
+      impactScore: getImpactScore(critereId, valeur),
+    };
+  }).filter((r): r is { label: string; valeur: string; impactScore: number | null } => r !== null);
 
   return { scoreGlobal: simulation.scoreGlobal, completedAt: simulation.createdAt, reponses };
 }

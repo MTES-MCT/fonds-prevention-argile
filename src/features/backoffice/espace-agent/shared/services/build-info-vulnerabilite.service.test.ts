@@ -60,4 +60,29 @@ describe("buildInfoVulnerabilite", () => {
     );
     expect(result?.reponses).toHaveLength(3);
   });
+
+  it("calcule le score d'impact de chaque réponse pour le code couleur côté agent", async () => {
+    mockedFindById.mockResolvedValue({
+      id: "sim-1",
+      createdAt: new Date("2026-06-01T10:00:00Z"),
+      scoreGlobal: 42,
+      penteTerrain: null,
+      reseauxEnterres: null,
+      gravierProprete: null,
+      gouttieres: null,
+      arbreProximite: null,
+      arbreEssence: null,
+      haies: null,
+      vegetationPiedFacade: null,
+      mitoyennete: null,
+      ensoleillement: null,
+      aleaRga: "fort",
+    } as never);
+
+    const result = await buildInfoVulnerabilite("sim-1");
+
+    expect(result?.reponses).toEqual([
+      expect.objectContaining({ label: "Aléa RGA (sol)", impactScore: expect.any(Number) }),
+    ]);
+  });
 });

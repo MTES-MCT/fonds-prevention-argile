@@ -1,4 +1,5 @@
 import { VulnerabiliteGauge } from "@/features/vulnerabilite-rga/components/results/VulnerabiliteGauge";
+import { ImpactBadge } from "@/features/vulnerabilite-rga/components/shared/ImpactBadge";
 import { formatDate } from "@/shared/utils";
 import type { InfoVulnerabiliteData } from "@/features/backoffice/espace-agent/shared/services/build-info-vulnerabilite.service";
 
@@ -34,8 +35,8 @@ export function InfoVulnerabilite({ data }: InfoVulnerabiliteProps) {
         <ul className="fr-ml-3w fr-text--sm">
           {data.reponses.map((reponse) => (
             <li key={reponse.label} className="fr-mb-2v">
-              {reponse.label}{" "}
-              <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">{reponse.valeur}</span>
+              {reponse.label} — {reponse.valeur}
+              {reponse.impactScore !== null && <ImpactBadge score={reponse.impactScore} />}
             </li>
           ))}
         </ul>
