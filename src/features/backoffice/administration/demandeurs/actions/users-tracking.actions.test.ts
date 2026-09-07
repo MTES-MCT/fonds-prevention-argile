@@ -61,6 +61,7 @@ describe("users-tracking.actions", () => {
       createdAt: new Date("2024-01-01T10:00:00Z"),
       updatedAt: new Date("2024-01-15T10:00:00Z"),
       completedAt: null,
+      archivedAt: null,
       rgaSimulationCompletedAt: new Date("2024-01-02T10:00:00Z"),
       rgaDataDeletedAt: null,
     },

@@ -5,8 +5,7 @@ import { DemandesArchiveesFullTable } from "./DemandesArchiveesFullTable";
 import { DemandesIneligiblesFullTable } from "./DemandesIneligiblesFullTable";
 import { NombreDemandesParEtape } from "../statistiques-demandes/NombreDemandesParEtape";
 import { filterUsersByDepartement } from "../filters/departements/departementFilter.utils";
-import { filterUsersByPeriode } from "../filters/periode/periodeFilter.utils";
-import { keepOnlyArchivedUsers } from "../filters/archivage/archivageFilter.utils";
+import { keepArchivedInPeriode } from "../filters/archivage/archivageFilter.utils";
 import { getTableauDeBordStatsAction } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
 import type { UserWithParcoursDetails } from "@/features/backoffice";
 import type {
@@ -27,11 +26,11 @@ export function ArchivageIneligibiliteTab({ users, periodeId, codeDepartement }:
   const [loading, setLoading] = useState(true);
 
   const archivedOnlyUsers = useMemo(() => {
-    let filtered = filterUsersByPeriode(users, periodeId);
+    let filtered = keepArchivedInPeriode(users, periodeId);
     if (codeDepartement) {
       filtered = filterUsersByDepartement(filtered, codeDepartement);
     }
-    return keepOnlyArchivedUsers(filtered);
+    return filtered;
   }, [users, periodeId, codeDepartement]);
 
   const loadStats = useCallback(async () => {
@@ -75,7 +74,7 @@ export function ArchivageIneligibiliteTab({ users, periodeId, codeDepartement }:
         <NombreDemandesParEtape
           users={archivedOnlyUsers}
           titre="Nombre de demandes archivées par étape"
-          tooltip="Données base de données — dossiers archivés uniquement (dernière étape atteinte avant l'archivage)"
+          tooltip="Données base de données — dossiers archivés sur la période, à la dernière étape atteinte avant l'archivage"
         />
       </div>
       <div className="fr-col-12">{archiveesStats && <DemandesArchiveesFullTable stats={archiveesStats} />}</div>
