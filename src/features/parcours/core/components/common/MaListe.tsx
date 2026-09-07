@@ -8,10 +8,13 @@ import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departemen
 import {
   getStepListItems,
   peutAnnulerAccompagnement,
+  peutDemanderAccompagnement,
   requiertAccordAmo,
+  StatutValidationAmo,
   type StepListItem,
 } from "@/features/parcours/amo/domain/value-objects";
 import { AnnulerAccompagnementModal } from "@/features/parcours/amo/components/steps/AnnulerAccompagnementModal";
+import { DemanderAccompagnementModal } from "@/features/parcours/amo/components/steps/DemanderAccompagnementModal";
 import { DossierTimeline } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
 
 const COMPLETED_STYLE: React.CSSProperties = {
@@ -25,8 +28,16 @@ export default function MaListe() {
     useParcours();
   const amoMode = useAmoMode();
   const [isAnnulerOpen, setIsAnnulerOpen] = useState(false);
+  const [isDemanderOpen, setIsDemanderOpen] = useState(false);
 
-  const items = getStepListItems(amoMode, statutAmo, currentStep, lastDSStatus === DSStatus.ACCEPTE);
+  const eligibiliteDsStatus = getDSStatusByStep(Step.ELIGIBILITE) ?? null;
+  const items = getStepListItems(
+    amoMode,
+    statutAmo,
+    currentStep,
+    lastDSStatus === DSStatus.ACCEPTE,
+    eligibiliteDsStatus
+  );
   // Dates clés (brouillon/dépôt/instruction/décision) du dossier d'éligibilité,
   // affichées sous l'item correspondant de la liste (cf. ParcoursDemandeur côté agent).
   const eligibiliteDossier = dossiers?.find((d) => d.demarcheEtape === Step.ELIGIBILITE);
@@ -40,11 +51,25 @@ export default function MaListe() {
     peutAnnulerAccompagnement({
       statut: statutAmo,
       demandeArretAt: validationAmoComplete.demandeArretAt,
-      eligibiliteDsStatus: getDSStatusByStep(Step.ELIGIBILITE) ?? null,
+      eligibiliteDsStatus,
     });
   const arretEnAttente = Boolean(validationAmoComplete?.demandeArretAt);
   const accordAmoRequis =
     statutAmo !== null && requiertAccordAmo(statutAmo, validationAmoComplete?.estMandataireFinancier ?? null);
+
+  // Symétrique de `peutAnnuler` : un demandeur en autonomie peut changer d'avis (même garde,
+  // revérifiée côté serveur).
+  const peutDemander =
+    amoMode === AmoMode.FACULTATIF &&
+    statutAmo !== null &&
+    peutDemanderAccompagnement({ statut: statutAmo, eligibiliteDsStatus });
+
+  const choixAccompagnementDetail =
+    statutAmo === null
+      ? null
+      : statutAmo === StatutValidationAmo.SANS_AMO
+        ? "En autonomie"
+        : (validationAmoComplete?.entrepriseAmo?.nom ?? "AMO en cours d'attribution");
 
   return (
     <>
@@ -64,8 +89,19 @@ export default function MaListe() {
                       Annuler
                     </button>
                   )}
+                  {item.key === "choix-accompagnement" && peutDemander && (
+                    <button
+                      type="button"
+                      className="fr-link fr-link--sm fr-ml-1w"
+                      onClick={() => setIsDemanderOpen(true)}>
+                      Demander à être accompagné
+                    </button>
+                  )}
                   {item.key === "choix-accompagnement" && arretEnAttente && (
                     <span className="fr-text--xs fr-text-mention--grey fr-ml-1w">Arrêt demandé</span>
+                  )}
+                  {item.key === "choix-accompagnement" && choixAccompagnementDetail && (
+                    <div className="fr-ml-3v fr-mt-1v fr-text--sm text-gray-500">{choixAccompagnementDetail}</div>
                   )}
                   {item.key === "eligibilite" && eligibiliteDossier && (
                     <div className="fr-ml-3v fr-mt-1v text-gray-500">
@@ -85,6 +121,8 @@ export default function MaListe() {
         accordAmoRequis={accordAmoRequis}
         entrepriseAmo={validationAmoComplete?.entrepriseAmo ?? null}
       />
+
+      <DemanderAccompagnementModal isOpen={isDemanderOpen} onClose={() => setIsDemanderOpen(false)} />
     </>
   );
 }
@@ -94,7 +132,7 @@ function renderItemLink(item: StepListItem, getDossierUrl: (step: Step) => strin
   if (item.isAmoAnchor) {
     if (item.state === "completed") {
       return (
-        <span  style={COMPLETED_STYLE}>
+        <span style={COMPLETED_STYLE}>
           {item.label} <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true" />
         </span>
       );
@@ -107,7 +145,7 @@ function renderItemLink(item: StepListItem, getDossierUrl: (step: Step) => strin
       );
     }
     return (
-      <a aria-disabled="true" role="link" >
+      <a aria-disabled="true" role="link">
         {item.label}
       </a>
     );

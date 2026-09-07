@@ -364,6 +364,13 @@ super-admin en lecture seule sont **exclus** — contrairement à la ré-ouvertu
 > l'accès** au dossier juste après son action (`canAccessDossier` refuse un dossier sans
 > entreprise) et l'aller-vers du territoire en devient responsable.
 
+> **Gel entre dépôt et décision DDT (septembre 2026).** À la garde de rôle s'ajoute une garde
+> d'**état** : `arreterAccompagnementAction` refuse tant que le formulaire d'éligibilité est
+> déposé sans décision rendue (`estDossierChezLaDdt`), y compris pour l'AMO responsable. Même
+> gel côté demandeur pour l'annulation et pour la demande d'accompagnement après autonomie.
+> Le **refus** d'une demande d'arrêt n'est pas gelé. Voir §2.7.1 de
+> [FLOW-AND-SYNC.md](../parcours/FLOW-AND-SYNC.md) et l'amendement d'[ADR-0018](../adr/0018-arret-accompagnement-amo.md).
+
 Côté demandeur, l'annulation n'a pas de garde de rôle : l'action résout le parcours via
 `userId` de session (modèle `skipAmoStepForUser`), elle est donc scopée par construction.
 

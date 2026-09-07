@@ -11,6 +11,7 @@ vi.mock("@/features/auth/permissions/services/responsable-permissions.service", 
 }));
 vi.mock("@/features/parcours/amo/services/detachement-amo.service", () => ({ detacherAmo: vi.fn() }));
 vi.mock("@/features/parcours/amo/services/arret-accompagnement.service", () => ({ refuserDemandeArret: vi.fn() }));
+vi.mock("@/features/parcours/dossiers-ds/services/dossier-ds.service", () => ({ getDossierByStep: vi.fn() }));
 vi.mock("@/features/backoffice/espace-agent/shared/services/author-snapshot", () => ({
   buildAuthorSnapshot: vi.fn().mockResolvedValue({
     authorName: "Michel M.",
@@ -26,6 +27,8 @@ import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/action
 import { assertCanActAsResponsable } from "@/features/auth/permissions/services/responsable-permissions.service";
 import { detacherAmo } from "@/features/parcours/amo/services/detachement-amo.service";
 import { refuserDemandeArret } from "@/features/parcours/amo/services/arret-accompagnement.service";
+import { getDossierByStep } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { parcoursActionsRepo } from "@/shared/database/repositories";
 
 const PARCOURS_ID = "11111111-1111-1111-1111-111111111111";
@@ -55,7 +58,30 @@ describe("arreterAccompagnementAction", () => {
         demandeurPrenom: "Georges",
       },
     });
+    vi.mocked(getDossierByStep).mockResolvedValue(null as never);
     mockAgent(UserRole.AMO);
+  });
+
+  it.each([DSStatus.EN_CONSTRUCTION, DSStatus.EN_INSTRUCTION])(
+    "refuse le détachement tant que la DDT tient le formulaire d'éligibilité (%s)",
+    async (dsStatus) => {
+      vi.mocked(getDossierByStep).mockResolvedValue({ dsStatus } as never);
+
+      const result = await arreterAccompagnementAction(PARCOURS_ID, ["Reste à charge trop élevé"]);
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toContain("transmis");
+      expect(detacherAmo).not.toHaveBeenCalled();
+    }
+  );
+
+  it("autorise à nouveau le détachement une fois la décision rendue", async () => {
+    vi.mocked(getDossierByStep).mockResolvedValue({ dsStatus: DSStatus.ACCEPTE } as never);
+
+    const result = await arreterAccompagnementAction(PARCOURS_ID, ["Reste à charge trop élevé"]);
+
+    expect(result.success).toBe(true);
+    expect(detacherAmo).toHaveBeenCalled();
   });
 
   it("détache l'AMO et trace une action avec les raisons", async () => {

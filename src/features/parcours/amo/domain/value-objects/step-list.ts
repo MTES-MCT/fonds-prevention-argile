@@ -1,6 +1,8 @@
 import { Step, STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { AmoMode } from "./departements-amo";
+import { estFormulaireEligibiliteBloqueParDemandeAccompagnement } from "./arretAccompagnement";
 
 /**
  * Items affichés dans la sidebar `MaListe` côté `/mon-compte`.
@@ -23,26 +25,27 @@ const LABEL_DIAGNOSTIC = "Soumettre le diagnostic";
 const LABEL_DEVIS = "Soumettre les devis";
 const LABEL_FACTURES = "Transmettre les factures";
 
-const STEP_ORDER: readonly Step[] = [
-  Step.CHOIX_AMO,
-  Step.ELIGIBILITE,
-  Step.DIAGNOSTIC,
-  Step.DEVIS,
-  Step.FACTURES,
-];
+const STEP_ORDER: readonly Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES];
 
 /**
  * Calcule l'état d'une étape DS par rapport à l'étape courante du parcours.
  * - Avant currentStep → completed (line-through)
- * - À currentStep → completed si DS accepté, sinon active
+ * - À currentStep → completed si DS accepté, sinon active ; pending si l'AMO n'a pas encore
+ *   répondu (demande d'accompagnement après autonomie, cf. `blockedByAmoEnAttente`)
  * - Après currentStep → pending (disabled)
  */
-function dsItemState(step: Step, currentStep: Step | null, isCurrentDSStepAccepte: boolean): StepListItem["state"] {
+function dsItemState(
+  step: Step,
+  currentStep: Step | null,
+  isCurrentDSStepAccepte: boolean,
+  blockedByAmoEnAttente: boolean
+): StepListItem["state"] {
   const cs = currentStep ?? Step.CHOIX_AMO;
   const stepIdx = STEP_ORDER.indexOf(step);
   const currentIdx = STEP_ORDER.indexOf(cs);
   if (stepIdx < currentIdx) return "completed";
   if (stepIdx > currentIdx) return "pending";
+  if (blockedByAmoEnAttente) return "pending";
   return isCurrentDSStepAccepte ? "completed" : "active";
 }
 
@@ -53,13 +56,34 @@ const DS_TAIL_ITEMS: ReadonlyArray<{ key: string; label: string; step: Step }> =
   { key: "factures", label: LABEL_FACTURES, step: Step.FACTURES },
 ];
 
-function buildDsTail(currentStep: Step | null, isCurrentDSStepAccepte: boolean): StepListItem[] {
+/**
+ * `blockedByAmoEnAttente` : le demandeur a redemandé un accompagnement après autonomie
+ * (`statutAmo` repasse à EN_ATTENTE alors que `currentStep` a déjà quitté CHOIX_AMO). Le
+ * formulaire de l'étape courante vient d'être réinitialisé (§2.10 FLOW-AND-SYNC.md) : on le
+ * bloque (lien désactivé) tant que l'AMO n'a pas répondu, comme au choix initial de l'AMO.
+ * Sans effet sur les autres statuts : à CHOIX_AMO, `dsTail` est déjà "pending" pour tous.
+ */
+function buildDsTail(
+  currentStep: Step | null,
+  isCurrentDSStepAccepte: boolean,
+  blockedByAmoEnAttente: boolean
+): StepListItem[] {
   return DS_TAIL_ITEMS.map(({ key, label, step }) => ({
     key,
     label,
     step,
-    state: dsItemState(step, currentStep, isCurrentDSStepAccepte),
+    state: dsItemState(step, currentStep, isCurrentDSStepAccepte, blockedByAmoEnAttente),
   }));
+}
+
+/**
+ * État de l'item "Attendre la réponse de votre AMO" : dépend du statut de la validation,
+ * pas de la position de `currentStep`. Une demande d'accompagnement après autonomie peut
+ * remettre `statutAmo` à `EN_ATTENTE` alors que le parcours a déjà quitté CHOIX_AMO — dans
+ * ce cas l'item doit rester "active" (réponse pas encore reçue), pas "completed".
+ */
+function amoItemState(statutAmo: StatutValidationAmo | null): StepListItem["state"] {
+  return statutAmo === null || statutAmo === StatutValidationAmo.EN_ATTENTE ? "active" : "completed";
 }
 
 /**
@@ -69,9 +93,15 @@ export function getStepListItems(
   amoMode: AmoMode | null,
   statutAmo: StatutValidationAmo | null,
   currentStep: Step | null,
-  isCurrentDSStepAccepte: boolean
+  isCurrentDSStepAccepte: boolean,
+  eligibiliteDsStatus: DSStatus | null
 ): StepListItem[] {
-  const dsTail = buildDsTail(currentStep, isCurrentDSStepAccepte);
+  const blockedByAmoEnAttente = estFormulaireEligibiliteBloqueParDemandeAccompagnement(
+    statutAmo,
+    currentStep,
+    eligibiliteDsStatus
+  );
+  const dsTail = buildDsTail(currentStep, isCurrentDSStepAccepte, blockedByAmoEnAttente);
   const onChoixAmo = currentStep === Step.CHOIX_AMO;
 
   // Mode OBLIGATOIRE / AV_AMO_FUSIONNES : un seul item AMO ("Attendre la réponse de votre AMO")
@@ -80,7 +110,7 @@ export function getStepListItems(
       {
         key: "amo",
         label: LABEL_ATTENTE_REPONSE_AMO,
-        state: onChoixAmo ? "active" : "completed",
+        state: amoItemState(statutAmo),
         isAmoAnchor: true,
       },
       ...dsTail,
@@ -126,7 +156,7 @@ export function getStepListItems(
     {
       key: "amo",
       label: LABEL_ATTENTE_REPONSE_AMO,
-      state: onChoixAmo ? "active" : "completed",
+      state: amoItemState(statutAmo),
       isAmoAnchor: true,
     },
     ...dsTail,

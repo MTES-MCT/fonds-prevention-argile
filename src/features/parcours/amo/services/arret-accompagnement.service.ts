@@ -5,7 +5,12 @@ import { ActionResult } from "@/shared/types/action-result.types";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { Step } from "../../core";
 import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
-import { StatutValidationAmo, peutAnnulerAccompagnement, requiertAccordAmo } from "../domain/value-objects";
+import {
+  StatutValidationAmo,
+  estDossierChezLaDdt,
+  peutAnnulerAccompagnement,
+  requiertAccordAmo,
+} from "../domain/value-objects";
 import { AmoMode, getAmoMode } from "../domain/value-objects/departements-amo";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee, validateEmailsList } from "../utils/amo.utils";
 import {
@@ -109,10 +114,11 @@ export async function annulerAccompagnementDemandeur(params: {
     if (validation.demandeArretAt) {
       return { success: false, error: "Votre demande est déjà en attente de la réponse de votre AMO" };
     }
-    if (eligibiliteDsStatus === DSStatus.EN_INSTRUCTION) {
+    if (estDossierChezLaDdt(eligibiliteDsStatus)) {
       return {
         success: false,
-        error: "Votre formulaire d'éligibilité est en cours d'instruction : l'accompagnement ne peut plus être modifié",
+        error:
+          "Votre formulaire d'éligibilité a été transmis : l'accompagnement ne peut plus être modifié tant que l'administration n'a pas répondu",
       };
     }
     return { success: false, error: "Votre accompagnement ne peut pas être annulé à ce stade" };

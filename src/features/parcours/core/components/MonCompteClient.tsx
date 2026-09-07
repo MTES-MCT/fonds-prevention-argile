@@ -9,7 +9,10 @@ import { useState, useEffect } from "react";
 import { useParcours } from "../context/useParcours";
 import { getContactInfo } from "../actions/contact-info.actions";
 import { Step } from "../domain";
-import { StatutValidationAmo } from "../../amo/domain/value-objects";
+import {
+  StatutValidationAmo,
+  estFormulaireEligibiliteBloqueParDemandeAccompagnement,
+} from "../../amo/domain/value-objects";
 import { AmoMode } from "../../amo/domain/value-objects/departements-amo";
 import { getStepBadgeLabel } from "../../amo/domain/value-objects/step-list";
 import { useAmoMode } from "../../amo/hooks";
@@ -268,6 +271,14 @@ function CalloutManager({
   // Si pas de parcours, rien à afficher
   if (!hasParcours || !currentStep) {
     return null;
+  }
+
+  // Demande d'accompagnement après autonomie (§2.10 FLOW-AND-SYNC.md) : le parcours est déjà à
+  // ÉLIGIBILITE alors que l'AMO n'a pas encore répondu. Sans cette garde, `renderEligibiliteCallout`
+  // laisserait le demandeur remplir/déposer le formulaire (fraîchement réinitialisé) avant que
+  // l'AMO n'ait confirmé — même blocage que le choix initial de l'AMO.
+  if (estFormulaireEligibiliteBloqueParDemandeAccompagnement(statutAmo, currentStep, dsStatus)) {
+    return <CalloutAmoEnAttente />;
   }
 
   // Gestion selon l'étape courante

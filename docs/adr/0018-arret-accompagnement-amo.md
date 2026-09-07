@@ -48,7 +48,7 @@ Les gardes de permission vivent dans les server actions, pas dans le service.
 | Condition                                                | Effet                                              |
 | -------------------------------------------------------- | -------------------------------------------------- |
 | Département où l'AMO est **obligatoire**                 | bloqué (l'autonomie n'y existe pas)                |
-| Éligibilité DN `en_instruction`                          | bloqué (plus de changement possible)               |
+| Éligibilité DN déposée, décision non rendue              | bloqué (amendement de septembre 2026, ci-dessous)  |
 | Statut `en_attente` (AMO pas encore validante)           | détachement immédiat + mail d'info                 |
 | `logement_eligible` et `est_mandataire_financier ≠ true` | détachement immédiat + mail d'info                 |
 | `logement_eligible` et `est_mandataire_financier = true` | `demande_arret_at` posé + mail de demande d'accord |
@@ -64,6 +64,25 @@ obligatoire (`NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE`, par défaut 03/36/47/54
 l'autonomie n'existe pas. C'est exactement la garde que porte déjà `skipAmoStepForUser` —
 la dupliquer ici évite que les deux chemins de « passage en autonomie » divergent. Côté
 UI, `MaListe` masque le lien sur le même critère.
+
+### 4.1 Amendement (septembre 2026) — le gel commence au dépôt, pas à l'instruction
+
+La borne d'origine était `en_instruction`, ce qui laissait passer `en_construction`,
+c'est-à-dire un dossier **déposé** en attente de prise en charge (ADR-0009). Or dès le dépôt
+le dossier déclare le SIRET de l'AMO et « Mandataire administratif (et financier) », champs
+que le préremplissage REST ne sait pas mettre à jour : un changement d'accompagnement dans
+cette fenêtre fait instruire à la DDT un dossier qui ment sur son propre accompagnement.
+
+Le gel court donc désormais **du dépôt à la décision** (`estDossierChezLaDdt`), et il
+s'applique aux trois chemins de changement : annulation demandeur, demande d'accompagnement
+après autonomie (§2.10 FLOW-AND-SYNC) et **arrêt à l'initiative de l'AMO** — ce dernier
+n'ayant jusqu'ici aucune garde de ce type (`arreterAccompagnementAction` ne vérifiait que
+`assertCanActAsResponsable`).
+
+Deux exclusions, détaillées en §2.7.1 de FLOW-AND-SYNC : le **refus** d'une demande d'arrêt
+(il maintient l'accompagnement, donc le dossier reste conforme) et le script ops
+`fix:detacher-amo` (échappatoire de dernier recours). La borne haute — réouverture après
+décision — évite de geler la relation AMO pour tout le reste du parcours.
 
 ## Options envisagées
 
