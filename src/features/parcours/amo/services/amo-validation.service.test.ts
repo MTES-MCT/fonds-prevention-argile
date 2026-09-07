@@ -31,7 +31,7 @@ vi.mock("@/shared/email/brevo", async (importOriginal) => ({
   emitBrevoEvent: vi.fn(),
 }));
 
-// Best-effort déclenché après une validation AMO éligible (§2.9 FLOW-AND-SYNC.md) : mocké
+// Best-effort déclenché après une validation AMO éligible (§2.10 FLOW-AND-SYNC.md) : mocké
 // entièrement pour ne pas tirer le vrai client GraphQL DS (instanciation exige des env vars
 // serveur absentes en test, cf. amo-selection.service.test.ts).
 vi.mock("../../dossiers-ds/services/regeneration.service", () => ({
@@ -137,7 +137,7 @@ describe("amo-validation.service", () => {
         eventProperties: { decision: "eligible" },
       });
       // Best-effort : le dossier d'éligibilité (SIRET/mandataire désormais connus) est
-      // réinitialisé s'il n'est pas encore déposé, cf. §2.9 FLOW-AND-SYNC.md.
+      // réinitialisé s'il n'est pas encore déposé, cf. §2.10 FLOW-AND-SYNC.md.
       expect(mockedReinitialiser).toHaveBeenCalledWith(parcoursId, Step.ELIGIBILITE);
     });
 

@@ -157,7 +157,7 @@ export async function approveValidation(
       });
 
       // Best-effort, hors transaction : le SIRET AMO et la réponse "mandataire financier"
-      // ne sont connus qu'à cet instant (cf. §2.6/§2.9 FLOW-AND-SYNC.md). Si un dossier
+      // ne sont connus qu'à cet instant (cf. §2.6/§2.10 FLOW-AND-SYNC.md). Si un dossier
       // d'éligibilité existe déjà sans ces infos à jour (demande d'accompagnement après
       // autonomie, ou tentative de reset précédente refusée pour cause de délai anti-rafale)
       // et n'est pas encore déposé, on le réinitialise pour qu'un nouveau prérempli correct

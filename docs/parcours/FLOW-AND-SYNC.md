@@ -286,7 +286,7 @@ autonomie. Voir [ADR-0018](../adr/0018-arret-accompagnement-amo.md).
 | Condition                                                    | Effet                                              |
 | ------------------------------------------------------------ | -------------------------------------------------- |
 | Département en mode AMO **obligatoire**                      | **bloqué** (l'autonomie n'y existe pas)            |
-| Dossier d'éligibilité DN `en_instruction`                    | **bloqué** (plus de changement possible)           |
+| Dossier d'éligibilité DN déposé, décision non rendue         | **bloqué** (cf. §2.7.1)                            |
 | `en_attente` (l'AMO n'a pas encore validé)                   | détachement immédiat + mail d'info à l'AMO         |
 | `logement_eligible` **et** `est_mandataire_financier ≠ true` | détachement immédiat + mail d'info à l'AMO         |
 | `logement_eligible` **et** `est_mandataire_financier = true` | `demande_arret_at` posé + mail de demande d'accord |
@@ -310,6 +310,45 @@ soit elle poursuit (`demande_arret_at` remis à NULL). Garde : `assertCanActAsRe
 Audit dans `parcours_actions` (types système, aucune migration) : `accompagnement_arrete`,
 `arret_accompagnement_demande`, `arret_accompagnement_refuse`. Les actions du demandeur ont
 `agent_id = NULL` et `author_structure_type = "DEMANDEUR"`.
+
+### 2.7.1 Gel du changement d'accompagnement entre dépôt et décision DDT
+
+> **Règle** : tout changement d'accompagnement — arrêt comme demande (§2.10) — est **gelé
+> pendant que la DDT tient le formulaire d'éligibilité**, c'est-à-dire de son dépôt à la
+> décision. Prédicat unique `estDossierChezLaDdt` (`arretAccompagnement.ts`) :
+> `ds_status ∈ {EN_CONSTRUCTION, EN_INSTRUCTION}`.
+
+Motif : le dossier déposé déclare le SIRET de l'AMO et « Mandataire administratif (et
+financier) » (§2.6), et le préremplissage REST ne sait que **créer** — ces champs ne sont plus
+corrigeables. Détacher (ou attacher) une AMO après le dépôt ferait donc instruire par la DDT
+un dossier qui ment sur son propre accompagnement.
+
+Les trois bornes du gel, à ne pas confondre :
+
+| Moment                          | `ds_status`                              | Changement d'accompagnement                     |
+| ------------------------------- | ---------------------------------------- | ----------------------------------------------- |
+| Formulaire créé, non déposé     | `null` / `NON_ACCESSIBLE`                | **libre** — le reset recrée un prérempli à jour |
+| **Déposé, décision non rendue** | `EN_CONSTRUCTION`, `EN_INSTRUCTION`      | **gelé**                                        |
+| Décision rendue                 | `ACCEPTE`, `REFUSE`, `CLASSE_SANS_SUITE` | **libre** — ce dossier est soldé                |
+
+La borne haute est essentielle : sans elle, un `ds_status = ACCEPTE` (qui ne change plus jamais)
+gèlerait la relation AMO pour **tout le reste du parcours**, alors que l'accompagnement continue
+sur le diagnostic, les devis et les factures.
+
+Trois points d'application, tous adossés au même prédicat :
+
+- **Demandeur, annulation** — `peutAnnulerAccompagnement` (UI `MaListe` + service
+  `annulerAccompagnementDemandeur`).
+- **Demandeur, demande** — `peutDemanderAccompagnement` (idem, cf. §2.10).
+- **AMO, « Ne plus accompagner »** — `arreterAccompagnementAction` ; l'entrée de menu est
+  masquée par `peutArreterMaintenant` sur le détail dossier, la barrière restant la server
+  action.
+
+> **Deux exclusions volontaires.** Le bandeau « Je donne ma réponse » (refus d'une demande
+> d'arrêt en attente) n'est **pas** gelé : refuser maintient l'accompagnement, donc le dossier
+> déposé reste conforme — le geler laisserait `demande_arret_at` pendant indéfiniment. Et le
+> script ops `pnpm fix:detacher-amo` reste hors garde : c'est l'échappatoire de dernier
+> recours, il doit pouvoir forcer un détachement que l'UI refuse.
 
 ### 2.8 Refus d'accompagnement d'un demandeur éligible (AMO)
 
@@ -396,8 +435,8 @@ Service `demanderAccompagnementDemandeur` (`amo-selection.service.ts`), symétri
 `skipAmoStepForUser` :
 
 - Garde : `parcours_amo_validations.statut === SANS_AMO`, département en mode `FACULTATIF`,
-  dossier d'éligibilité DN pas encore `EN_INSTRUCTION` (prédicat `peutDemanderAccompagnement`,
-  miroir de `peutAnnulerAccompagnement`).
+  formulaire d'éligibilité DN hors de la fenêtre de gel (prédicat `peutDemanderAccompagnement`,
+  miroir exact de `peutAnnulerAccompagnement` — cf. §2.7.1).
 - Délègue à `selectAmoForUser` avec deux options ajoutées à cette fonction pour ce cas
   précis : `skipStepGuard` (le parcours a déjà quitté `CHOIX_AMO` — `skipAmoStepForUser`
   l'a fait avancer à `ÉLIGIBILITE` au moment de l'autonomie, on ne le fait pas reculer) et
@@ -417,9 +456,9 @@ réinitialisation existant côté agent/demandeur (`reinitialiserDossierEtape` /
 best-effort, sur l'étape éligibilité, juste après l'attribution de l'AMO. S'il n'est pas encore
 déposé, le pointeur est retiré (numéro conservé dans `dossiers_ds_tentatives`) et un nouveau
 prérempli à jour est recréé au prochain retour du demandeur sur l'étape (`createEligibiliteDossier`,
-idempotence naturelle via `getDossierByStep`). S'il est déjà déposé, la réinitialisation refuse
-(`dossier_depose`) : rien de faisable côté applicatif, le dossier garde des infos AMO obsolètes
-jusqu'à correction manuelle par l'AMO directement auprès de l'administration.
+idempotence naturelle via `getDossierByStep`). Le cas « déjà déposé » n'est plus atteignable
+depuis cette action : le gel de §2.7.1 refuse la demande en amont, précisément parce qu'aucune
+réinitialisation ne serait possible.
 
 Ce reset est **automatique et non confirmé au cas par cas** : la popup « Demander à être
 accompagné » (`DemanderAccompagnementModal`) prévient le demandeur en amont qu'un brouillon
@@ -446,9 +485,9 @@ alors que `currentStep` reste `ÉLIGIBILITE` — un état que trois surfaces ind
 géraient pas : sans garde, le demandeur pourrait remplir/déposer le formulaire fraîchement
 réinitialisé **avant** la réponse de l'AMO, recréant immédiatement le problème que le reset
 vient de corriger. Prédicat partagé,
-`estFormulaireEligibiliteBloqueParDemandeAccompagnement(statutAmo, currentStep)`
-(`arretAccompagnement.ts`) — vrai seulement si `statutAmo === EN_ATTENTE` et
-`currentStep === ELIGIBILITE` — pour que les trois surfaces ne puissent pas diverger :
+`estFormulaireEligibiliteBloqueParDemandeAccompagnement(statutAmo, currentStep, eligibiliteDsStatus)`
+(`arretAccompagnement.ts`) — vrai si `statutAmo === EN_ATTENTE`, `currentStep === ELIGIBILITE`
+**et** le dossier n'est pas transmis — pour que les trois surfaces ne puissent pas diverger :
 
 - `CalloutManager` (`MonCompteClient.tsx`) court-circuite `renderEligibiliteCallout` et affiche
   `CalloutAmoEnAttente` (même callout qu'au choix initial).
@@ -458,6 +497,13 @@ vient de corriger. Prédicat partagé,
 - `StepDetailEligibilite` (carte « 2. Éligibilité » en bas de `/mon-compte`) masque le bouton
   « Reprendre le formulaire » et tout contenu dérivé de `lastDSStatus`, au profit d'un message
   d'attente et d'un badge dédié (« En attente de l'AMO »).
+
+> **Le troisième paramètre n'est pas décoratif** : un dossier transmis n'a rien vu réinitialiser,
+> et le bloquer priverait le demandeur de l'accès à son dossier déposé — avec deux badges
+> contradictoires — sans corriger le préremplissage. Il est **requis** pour que le compilateur
+> force chaque appelant à fournir le statut, et il couvre les états que le gel de §2.7.1 laisse
+> passer (`REFUSE` / `CLASSE_SANS_SUITE`, qui gardent `currentStep = ELIGIBILITE`), plus la
+> fenêtre où un dépôt n'est pas encore synchronisé.
 
 **Bug corrigé en marge (`getStepListItems`, `step-list.ts`).** L'item « Attendre la réponse de
 votre AMO » dérivait son état actif/complété de `currentStep === CHOIX_AMO`, une équivalence
@@ -615,17 +661,17 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 
 **`sync_runs`** — un enregistrement par run.
 
-| Colonne                  | Type                               |
+| Colonne | Type |
 | ------------------------ | ---------------------------------- | ------- | ----- | ----- |
-| `id`                     | uuid                               |
-| `started_at`             | timestamp                          |
-| `finished_at`            | timestamp (null = en cours)        |
-| `status`                 | `success                           | partial | error | null` |
-| `triggered_by`           | `cron                              | manual` |
-| `total_parcours_scanned` | int                                |
-| `total_parcours_updated` | int                                |
-| `total_errors`           | int                                |
-| `error_summary`          | text (20 premières erreurs concat) |
+| `id` | uuid |
+| `started_at` | timestamp |
+| `finished_at` | timestamp (null = en cours) |
+| `status` | `success                           | partial | error | null` |
+| `triggered_by` | `cron                              | manual` |
+| `total_parcours_scanned` | int |
+| `total_parcours_updated` | int |
+| `total_errors` | int |
+| `error_summary` | text (20 premières erreurs concat) |
 
 **`sync_run_entries`** — une entrée par parcours **modifié** (ou en erreur) durant un run. Les parcours sans changement ne génèrent **pas** d'entrée pour ne pas alourdir la table.
 
@@ -796,8 +842,7 @@ Le seuil de 30 min est volontairement généreux par rapport au `maxDuration = 5
 
 ```ts
 type SyncRunResult =
-  | { skipped: false; runId; status; totalScanned; totalUpdated; totalErrors }
-  | { skipped: true; reason; existingRunId };
+  { skipped: false; runId; status; totalScanned; totalUpdated; totalErrors } | { skipped: true; reason; existingRunId };
 ```
 
 ### 6.9 Sleep 150 ms entre parcours
