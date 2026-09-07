@@ -75,6 +75,23 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [currentStep]);
 
+  // Commit de la simulation dès l'écran de résultat, et non au clic du CTA éligible :
+  // l'écran non éligible n'a pas de CTA, sa simulation était donc perdue. Exclu en
+  // mode agent (édition AMO / wizard invitation), qui a sa propre persistance.
+  // Le ref évite la boucle : `saveRGA` re-rend, ce qui recrée `commitToRGAStore`.
+  const hasCommittedRef = useRef(false);
+  useEffect(() => {
+    if (isLoading) return;
+    if (currentStep !== SimulateurStep.RESULTAT) {
+      hasCommittedRef.current = false;
+      return;
+    }
+    if (editMode || hasCommittedRef.current) return;
+    hasCommittedRef.current = true;
+    commitToRGAStore();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, currentStep, editMode]);
+
   // Tracking Matomo à chaque changement d'étape
   useEffect(() => {
     // Sur le premier render (montage / réhydratation sessionStorage), on synchronise
@@ -228,12 +245,7 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
       );
 
     case SimulateurStep.CATASTROPHES_NATURELLES:
-      return (
-        <StepCatastrophesNaturelles
-          {...stepProps}
-          initialValue={answers.rga?.demande_catnat_en_cours}
-        />
-      );
+      return <StepCatastrophesNaturelles {...stepProps} initialValue={answers.rga?.demande_catnat_en_cours} />;
 
     case SimulateurStep.ASSURANCE:
       return <StepAssurance {...stepProps} initialValue={answers.rga?.assure} />;
