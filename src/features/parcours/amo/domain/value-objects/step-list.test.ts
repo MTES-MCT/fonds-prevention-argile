@@ -144,6 +144,28 @@ describe("getStepListItems", () => {
   });
 });
 
+describe("getStepListItems - logement non éligible", () => {
+  it("désactive l'étape courante quand le logement est non éligible", () => {
+    const actif = getStepListItems(AmoMode.FACULTATIF, StatutValidationAmo.SANS_AMO, Step.ELIGIBILITE, false, null);
+    expect(actif[1].state).toBe("active");
+
+    const nonEligible = getStepListItems(
+      AmoMode.FACULTATIF,
+      StatutValidationAmo.SANS_AMO,
+      Step.ELIGIBILITE,
+      false,
+      null,
+      true
+    );
+    expect(nonEligible[1].state).toBe("pending");
+  });
+
+  it("sans effet à CHOIX_AMO, où les étapes DS sont déjà pending", () => {
+    const items = getStepListItems(AmoMode.FACULTATIF, null, Step.CHOIX_AMO, false, null, true);
+    expect(items.slice(1).every((i) => i.state === "pending")).toBe(true);
+  });
+});
+
 describe("getStepBadgeLabel", () => {
   it("renvoie '1. AMO' pour CHOIX_AMO (raccourci par rapport à STEP_LABELS_NUMBERED)", () => {
     expect(getStepBadgeLabel(Step.CHOIX_AMO)).toBe("1. AMO");

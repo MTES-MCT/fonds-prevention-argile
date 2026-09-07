@@ -12,6 +12,8 @@ import { Step } from "../domain";
 import {
   StatutValidationAmo,
   estFormulaireEligibiliteBloqueParDemandeAccompagnement,
+  estLogementNonEligible,
+  isValidationRefusee,
 } from "../../amo/domain/value-objects";
 import { AmoMode } from "../../amo/domain/value-objects/departements-amo";
 import { getStepBadgeLabel } from "../../amo/domain/value-objects/step-list";
@@ -236,9 +238,7 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
       <StepDetailSection piecesByStep={piecesByStep} />
 
       {/* Section "Pour en savoir plus" si logement non éligible */}
-      {(statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE || isQualifiedNonEligible) && (
-        <PourEnSavoirPlusSectionContent />
-      )}
+      {estLogementNonEligible(statutAmo, isQualifiedNonEligible) && <PourEnSavoirPlusSectionContent />}
 
       {/*<FaqAccountSection />*/}
     </>
@@ -273,6 +273,16 @@ function CalloutManager({
     return null;
   }
 
+  // Logement non éligible : plus aucune étape à proposer, quelle que soit l'étape
+  // courante. Sans cette garde, un dossier déjà passé à ÉLIGIBILITE (autonomie, puis
+  // simulation corrigée en non éligible) continuerait d'inviter au dépôt du formulaire.
+  if (estLogementNonEligible(statutAmo, isQualifiedNonEligible)) {
+    // Seul un statut de validation refusé vient d'une analyse AMO ; une qualification
+    // (Aller-vers ou simulation du demandeur) ne doit pas s'en réclamer.
+    const origine = statutAmo !== null && isValidationRefusee(statutAmo) ? "amo" : "dossier";
+    return <CalloutAmoLogementNonEligible origine={origine} />;
+  }
+
   // Demande d'accompagnement après autonomie (§2.10 FLOW-AND-SYNC.md) : le parcours est déjà à
   // ÉLIGIBILITE alors que l'AMO n'a pas encore répondu. Sans cette garde, `renderEligibiliteCallout`
   // laisserait le demandeur remplir/déposer le formulaire (fraîchement réinitialisé) avant que
@@ -284,14 +294,7 @@ function CalloutManager({
   // Gestion selon l'étape courante
   switch (currentStep) {
     case Step.CHOIX_AMO:
-      return renderChoixAmoCallout(
-        amoMode,
-        statutAmo,
-        isQualifiedNonEligible,
-        onAmoSuccess,
-        refresh,
-        contactInfoVersion
-      );
+      return renderChoixAmoCallout(amoMode, statutAmo, onAmoSuccess, refresh, contactInfoVersion);
 
     case Step.ELIGIBILITE:
       return renderEligibiliteCallout(dsStatus);
@@ -314,15 +317,11 @@ function CalloutManager({
 function renderChoixAmoCallout(
   amoMode: AmoMode | null,
   statutAmo: StatutValidationAmo | null,
-  isQualifiedNonEligible: boolean,
   onAmoSuccess: () => void,
   refresh: () => Promise<void>,
   contactInfoVersion: number
 ) {
-  // Si qualifié non éligible par un allers-vers (avant même le choix AMO)
-  if (isQualifiedNonEligible && statutAmo === null) {
-    return <CalloutAmoLogementNonEligible />;
-  }
+  // L'inéligibilité (AMO, Aller-vers ou simulation) est traitée en amont par CalloutManager.
 
   // Modes OBLIGATOIRE et AV_AMO_FUSIONNES : `CalloutAmoEnAttente` gère lui-même
   // l'auto-attribution silencieuse quand statutAmo est null.
@@ -347,15 +346,6 @@ function renderChoixAmoCallout(
 
   if (statutAmo === StatutValidationAmo.EN_ATTENTE) {
     return <CalloutAmoEnAttente />;
-  }
-
-  // Statut LOGEMENT_NON_ELIGIBLE et ACCOMPAGNEMENT_REFUSE (legacy, plus produit côté UI mais
-  // conservé pour rétrocompatibilité avec d'anciens records) → même UI : "logement non éligible".
-  if (
-    statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE ||
-    statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
-  ) {
-    return <CalloutAmoLogementNonEligible />;
   }
 
   return undefined;
