@@ -26,6 +26,7 @@ import { getDepartementName, toOfficialCodeDepartement } from "@/shared/constant
 import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import { getDepartementsDisponiblesAction } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
+import { getDepartementsNonCouvertsAction } from "@/features/backoffice/administration/demandeurs/actions";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 import {
@@ -99,6 +100,7 @@ export default function UsersTrackingPanel() {
   const codeDepartementArchivage = useAdministrationFiltersStore(selectCodeDepartement);
   const setCodeDepartementArchivage = useAdministrationFiltersStore((s) => s.setCodeDepartement);
   const [departementsDisponibles, setDepartementsDisponibles] = useState<DepartementDisponible[]>([]);
+  const [departementsNonCouverts, setDepartementsNonCouverts] = useState<string[]>([]);
 
   // Pagination par onglet
   const [pageActifs, setPageActifs] = useState(1);
@@ -140,6 +142,14 @@ export default function UsersTrackingPanel() {
     }
     loadDepartements();
   }, []);
+
+  // Départements du dispositif sans AMO ni Aller-vers (signalés dans le listing)
+  useEffect(() => {
+    if (!canReadUsers) return;
+    getDepartementsNonCouvertsAction().then((result) => {
+      if (result.success) setDepartementsNonCouverts(result.data);
+    });
+  }, [canReadUsers]);
 
   // Pipeline de filtrage pour "Tous les demandeurs"
   const { activeUsers, archivedUsers } = useMemo(() => {
@@ -184,6 +194,15 @@ export default function UsersTrackingPanel() {
     () => archivedUsers.slice((pageArchives - 1) * pageSizeArchives, pageArchives * pageSizeArchives),
     [archivedUsers, pageArchives, pageSizeArchives]
   );
+
+  // Alerte de tête : demandeurs actifs qu'aucune structure ne couvre aujourd'hui.
+  const nbActifsNonCouverts = useMemo(() => {
+    if (departementsNonCouverts.length === 0) return 0;
+    return activeUsers.filter((u) => {
+      const dept = u.rgaSimulation?.logement?.code_departement;
+      return dept ? departementsNonCouverts.includes(String(dept)) : false;
+    }).length;
+  }, [activeUsers, departementsNonCouverts]);
 
   // Départements extraits des users (pour "Tous les demandeurs")
   const departements = useMemo(() => extractUniqueDepartements(users), [users]);
@@ -383,6 +402,17 @@ export default function UsersTrackingPanel() {
                   </button>
                 </div>
 
+                {/* Demandeurs qu'aucune structure ne peut prendre en charge */}
+                {nbActifsNonCouverts > 0 && (
+                  <div className="fr-alert fr-alert--warning fr-alert--sm fr-mb-2w">
+                    <p>
+                      {nbActifsNonCouverts} demandeur{nbActifsNonCouverts > 1 ? "s" : ""} actif
+                      {nbActifsNonCouverts > 1 ? "s" : ""} dans un département sans AMO ni Aller-vers (
+                      {departementsNonCouverts.join(", ")}) : personne ne peut les prendre en charge aujourd'hui.
+                    </p>
+                  </div>
+                )}
+
                 {/* Onglets DSFR Actifs / Archivés */}
                 <div className="fr-tabs">
                   <ul className="fr-tabs__list" role="tablist" aria-label="Demandeurs">
@@ -429,7 +459,7 @@ export default function UsersTrackingPanel() {
                       </div>
                     ) : (
                       <>
-                        <UsersTable users={paginatedActifs} />
+                        <UsersTable users={paginatedActifs} departementsNonCouverts={departementsNonCouverts} />
                         <Pagination
                           currentPage={pageActifs}
                           totalItems={activeUsers.length}
@@ -454,7 +484,7 @@ export default function UsersTrackingPanel() {
                       </div>
                     ) : (
                       <>
-                        <UsersTable users={paginatedArchives} />
+                        <UsersTable users={paginatedArchives} departementsNonCouverts={departementsNonCouverts} />
                         <Pagination
                           currentPage={pageArchives}
                           totalItems={archivedUsers.length}
