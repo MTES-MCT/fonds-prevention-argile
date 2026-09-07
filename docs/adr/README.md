@@ -61,6 +61,7 @@ purement cosmétique.
 | 0031 | [Statistiques d'usage du simulateur de vulnérabilité — hybride Matomo / BDD](0031-stats-vulnerabilite-matomo-bdd.md)                    | Accepté |
 | 0032 | [Rattachement de la simulation de vulnérabilité au compte demandeur](0032-rattachement-simulation-vulnerabilite-compte.md)              | Accepté |
 | 0033 | [Granularité adaptée pour les events Matomo du dashboard](0033-granularite-events-matomo-dashboard.md)                                  | Accepté |
+| 0034 | [Enregistrer et archiver la simulation non éligible du demandeur](0034-simulation-non-eligible-demandeur.md)                            | Accepté |
 | 0035 | [Page de statistiques publiques — sources, cache et absence de faux zéro](0035-page-statistiques-publiques.md)                          | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->
