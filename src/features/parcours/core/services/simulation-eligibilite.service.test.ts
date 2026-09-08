@@ -11,7 +11,7 @@ import { appliquerVerdictSimulationDemandeur } from "./simulation-eligibilite.se
 
 vi.mock("@/shared/database/repositories", () => ({
   parcoursRepo: { updateSituationParticulier: vi.fn() },
-  prospectQualificationsRepo: { create: vi.fn() },
+  prospectQualificationsRepo: { create: vi.fn(), findLatestByParcoursId: vi.fn(async () => null) },
   dossierDsRepo: { getSubmittedDatesByStep: vi.fn(async () => new Map()) },
 }));
 vi.mock("@/features/backoffice/espace-agent/shared/services/action-audit.service", () => ({
@@ -48,6 +48,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(dossierDsRepo.getSubmittedDatesByStep).mockResolvedValue(new Map());
+    vi.mocked(prospectQualificationsRepo.findLatestByParcoursId).mockResolvedValue(null);
   });
 
   it("archive et qualifie le dossier quand la simulation est non éligible", async () => {
@@ -57,7 +58,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: true, unarchived: false });
+    expect(res).toEqual({ archived: true, unarchived: false, raisonActualisee: false });
     expect(prospectQualificationsRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({
         parcoursId: "p1",
@@ -87,20 +88,78 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: false });
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
     expect(parcoursRepo.updateSituationParticulier).not.toHaveBeenCalled();
     expect(prospectQualificationsRepo.create).not.toHaveBeenCalled();
   });
 
-  it("est idempotent : n'archive pas deux fois", async () => {
+  const ARCHIVE_NON_ELIGIBLE = { archivedAt: new Date("2026-09-01"), archiveReason: "Non éligible au dispositif" };
+
+  it("est idempotent : n'archive pas deux fois, et n'empile rien si la raison est inchangée", async () => {
+    vi.mocked(prospectQualificationsRepo.findLatestByParcoursId).mockResolvedValue({
+      agentId: null,
+      raisonsIneligibilite: ["appartement"],
+    } as never);
+
     const res = await appliquerVerdictSimulationDemandeur({
-      parcours: parcours({ archivedAt: new Date(), archiveReason: "Non éligible au dispositif" }),
+      parcours: parcours(ARCHIVE_NON_ELIGIBLE),
       rgaData: SIM_NON_ELIGIBLE,
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: false });
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
     expect(parcoursRepo.updateSituationParticulier).not.toHaveBeenCalled();
+    expect(prospectQualificationsRepo.create).not.toHaveBeenCalled();
+  });
+
+  it("actualise la raison quand une nouvelle simulation reste non éligible autrement", async () => {
+    vi.mocked(prospectQualificationsRepo.findLatestByParcoursId).mockResolvedValue({
+      agentId: null,
+      raisonsIneligibilite: ["hors_plafonds_ressources"],
+    } as never);
+
+    const res = await appliquerVerdictSimulationDemandeur({
+      parcours: parcours(ARCHIVE_NON_ELIGIBLE),
+      rgaData: SIM_NON_ELIGIBLE,
+      demandeurNom: "Marie Durand",
+    });
+
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: true });
+    expect(prospectQualificationsRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: null, raisonsIneligibilite: ["appartement"] })
+    );
+    expect(logSystemAction).toHaveBeenCalledWith(
+      expect.objectContaining({ actionType: ACTION_TYPE_SIMULATION_NON_ELIGIBLE })
+    );
+    // archivedAt ne doit pas glisser : le dossier est archivé depuis le 1er septembre.
+    expect(parcoursRepo.updateSituationParticulier).not.toHaveBeenCalled();
+  });
+
+  it("ne remplace jamais la qualification d'un agent", async () => {
+    vi.mocked(prospectQualificationsRepo.findLatestByParcoursId).mockResolvedValue({
+      agentId: "agent-1",
+      raisonsIneligibilite: ["hors_plafonds_ressources"],
+    } as never);
+
+    const res = await appliquerVerdictSimulationDemandeur({
+      parcours: parcours(ARCHIVE_NON_ELIGIBLE),
+      rgaData: SIM_NON_ELIGIBLE,
+      demandeurNom: "Marie Durand",
+    });
+
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
+    expect(prospectQualificationsRepo.create).not.toHaveBeenCalled();
+  });
+
+  it("ne touche pas à un dossier archivé manuellement", async () => {
+    const res = await appliquerVerdictSimulationDemandeur({
+      parcours: parcours({ archivedAt: new Date(), archiveReason: "Le demandeur a abandonné le projet" }),
+      rgaData: SIM_NON_ELIGIBLE,
+      demandeurNom: "Marie Durand",
+    });
+
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
+    expect(prospectQualificationsRepo.findLatestByParcoursId).not.toHaveBeenCalled();
     expect(prospectQualificationsRepo.create).not.toHaveBeenCalled();
   });
 
@@ -113,7 +172,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: false });
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
     expect(parcoursRepo.updateSituationParticulier).not.toHaveBeenCalled();
   });
 
@@ -124,7 +183,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: true });
+    expect(res).toEqual({ archived: false, unarchived: true, raisonActualisee: false });
     expect(parcoursRepo.updateSituationParticulier).toHaveBeenCalledWith("p1", SituationParticulier.PROSPECT);
     expect(logSystemAction).toHaveBeenCalledWith(
       expect.objectContaining({ actionType: ACTION_TYPE_DOSSIER_DESARCHIVE })
@@ -138,7 +197,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: false });
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
     expect(parcoursRepo.updateSituationParticulier).not.toHaveBeenCalled();
   });
 });
