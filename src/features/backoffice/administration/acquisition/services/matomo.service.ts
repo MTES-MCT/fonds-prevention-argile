@@ -1,13 +1,15 @@
 import { fetchMatomoVisits, fetchMatomoBounceRate, fetchMatomoUniqueVisitors } from "../adapters/matomo-api.adapter";
 import type { MatomoStatistiques, VisiteParJour, GranulariteVisites } from "../domain/types/matomo.types";
+import { formaterDateMatomo } from "../domain/decoupage-periode";
 import {
-  PERIODES,
-  SERVICE_START_DATE,
-} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+  getFenetrePeriode,
+  getFenetrePeriodePrecedente,
+  type FenetrePeriode,
+} from "@/features/backoffice/administration/tableau-de-bord/domain/periode-window";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
-function formatDate(d: Date): string {
-  return d.toISOString().split("T")[0];
+function formaterPlage(fenetre: FenetrePeriode): string {
+  return `${formaterDateMatomo(fenetre.debut)},${formaterDateMatomo(fenetre.dernierJour)}`;
 }
 
 function computeVariation(current: number, previous: number): number | null {
@@ -16,13 +18,16 @@ function computeVariation(current: number, previous: number): number | null {
 }
 
 /**
- * Granularité de `VisitsSummary.getVisits` selon la durée de période.
- * Sur "day", Matomo doit calculer/renvoyer une archive par jour de la plage — jusqu'à ~365
- * archives pour "12m"/"tout", ce qui peut être très lent si elles ne sont pas pré-archivées
- * (même cause que le timeout déjà connu sur les Funnels). On élargit la granularité pour les
- * longues périodes afin de réduire le nombre de sous-archives demandées en un seul appel.
+ * Granularité à utiliser pour toute requête Matomo additive (comptages : visites, events…)
+ * selon la durée de période, en remplacement de `period=range`. Un `range` n'est jamais
+ * pré-archivé par Matomo — recalculé en live à chaque appel, pire cas quand un segment
+ * (département) est appliqué. `day`/`week`/`month` sur une plage lisent des archives
+ * pré-calculées, sommables sans perte pour un comptage (contrairement aux visiteurs uniques,
+ * qui nécessitent une vraie déduplication et restent donc en `range`, cf. `getUniqueVisitors`).
+ * On élargit la granularité sur les longues périodes pour limiter le nombre de sous-archives
+ * demandées en un seul appel (même cause que le timeout déjà connu sur les Funnels).
  */
-function getGranulariteForPeriode(periodeId?: PeriodeId): GranulariteVisites {
+export function getGranulariteForPeriode(periodeId?: PeriodeId): GranulariteVisites {
   if (periodeId === "90j" || periodeId === "6m") return "week";
   if (periodeId === "12m" || periodeId === "tout") return "month";
   return "day";
@@ -46,17 +51,10 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
   const granularite = getGranulariteForPeriode(periodeId);
 
   try {
-    const fin = new Date();
-    const periode = periodeId ? PERIODES.find((p) => p.id === periodeId) : null;
-    const jours = periode?.jours ?? null;
-    const debut = jours ? new Date(fin.getTime() - jours * 86400000) : SERVICE_START_DATE;
-    const period = `${formatDate(debut)},${formatDate(fin)}`;
-
-    // Période précédente (même durée, juste avant)
-    const hasPrevious = jours !== null;
-    const previousPeriod = hasPrevious
-      ? `${formatDate(new Date(fin.getTime() - jours * 2 * 86400000))},${formatDate(debut)}`
-      : null;
+    const fenetre = getFenetrePeriode(periodeId);
+    const fenetrePrecedente = getFenetrePeriodePrecedente(periodeId);
+    const period = formaterPlage(fenetre);
+    const previousPeriod = fenetrePrecedente ? formaterPlage(fenetrePrecedente) : null;
 
     // Récupérer les visites + visiteurs uniques + taux de rebond en parallele (période courante + précédente)
     const [visitsData, tauxRebond, uniqueVisitors, previousVisitsData, previousTauxRebond, previousUniqueVisitors] =
@@ -69,11 +67,16 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
         previousPeriod ? fetchMatomoUniqueVisitors("range", previousPeriod, segment) : Promise.resolve(0),
       ]);
 
-    // Transformer les données - La structure est { "date": nombre } (day) ou { "début,fin": nombre } (week/month)
-    const visitesParJour: VisiteParJour[] = Object.entries(visitsData).map(([date, visites]) => ({
-      date: extractDateDebut(date),
-      visites: typeof visites === "number" ? visites : 0,
-    }));
+    // Structure : { "date": nombre } (day) ou { "début,fin": nombre } (week/month).
+    // Number(...) : Matomo sérialise parfois la valeur en string, et `typeof === "number"`
+    // la remplaçait alors silencieusement par 0.
+    // Limite connue : en week/month les buckets de bord débordent de la fenêtre, donc le total
+    // ci-dessous la dépasse un peu. Assumé pour une courbe de tendance — le découpage exact
+    // (decouperPeriodeMatomo) mêlerait des points jour et semaine sur le même graphique.
+    const visitesParJour: VisiteParJour[] = Object.entries(visitsData).map(([date, visites]) => {
+      const nombre = Number(visites);
+      return { date: extractDateDebut(date), visites: Number.isFinite(nombre) ? nombre : 0 };
+    });
 
     // Calculer le total
     const nombreVisitesTotales = visitesParJour.reduce((total, jour) => total + jour.visites, 0);
@@ -84,10 +87,10 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
     let variationVisiteursUniques: number | null = null;
 
     if (previousVisitsData) {
-      const previousTotal = Object.values(previousVisitsData).reduce(
-        (total: number, v) => total + (typeof v === "number" ? v : 0),
-        0
-      );
+      const previousTotal = Object.values(previousVisitsData).reduce((total: number, v) => {
+        const nombre = Number(v);
+        return total + (Number.isFinite(nombre) ? nombre : 0);
+      }, 0);
       variationVisites = computeVariation(nombreVisitesTotales, previousTotal);
     }
 

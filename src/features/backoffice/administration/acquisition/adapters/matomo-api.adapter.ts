@@ -101,7 +101,10 @@ async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string):
     },
     body: searchParams.toString(),
     signal: AbortSignal.timeout(MATOMO_TIMEOUT_MS),
-    // Le cache est gere par unstable_cache en amont, qui ne memorise pas les erreurs.
+    // Le cache est gere par unstable_cache en amont, qui ne memorise pas les erreurs — volontaire :
+    // un premier timeout n'empeche pas Matomo de terminer l'archive en tache de fond ; un nouvel
+    // essai un peu plus tard (l'archive etant alors prete) doit pouvoir reussir immediatement,
+    // pas etre bloque par un echec mis en cache.
     cache: "no-store",
   });
 
@@ -276,10 +279,48 @@ export async function fetchMatomoUniqueVisitors(
 }
 
 /**
+ * Réponse Events.getAction : un tableau plat en `period=range`, ou un objet keyed par
+ * sous-période (ex: "2026-01-05,2026-01-11") quand `period` est `day`/`week`/`month` sur un
+ * `date` en plage — même convention que `VisitsSummary.getVisits` (cf. `matomo.service.ts`).
+ */
+type MatomoEventActionApiResponse = MatomoEventActionResponse[] | Record<string, MatomoEventActionResponse[]>;
+
+/**
+ * Cumule les `nb_visits` par label d'event, à travers une ou plusieurs sous-périodes.
+ * Un `nb_visits` par event est un comptage, additif entre sous-périodes disjointes —
+ * contrairement aux visiteurs uniques, qui exigent une déduplication.
+ *
+ * Toute anomalie de structure ou de compteur lève au lieu d'être ignorée : un total amputé
+ * d'une sous-période est indiscernable d'une vraie baisse une fois affiché.
+ */
+function sumEventCounts(data: MatomoEventActionApiResponse, methode: string): Map<string, number> {
+  const eventCounts = new Map<string, number>();
+  const rowsPerPeriode = Array.isArray(data) ? [data] : Object.values(data ?? {});
+
+  for (const rows of rowsPerPeriode) {
+    if (!Array.isArray(rows)) {
+      throw new Error(`Reponse Matomo inattendue (${methode}): sous-periode non tabulaire`);
+    }
+    for (const row of rows) {
+      // Number(...) : sur une reponse multi-sous-periode, Matomo serialise parfois nb_visits en
+      // string — sans conversion, `0 + "234"` concatene ("0234") au lieu d'additionner.
+      const valeur = Number(row.nb_visits);
+      if (!Number.isFinite(valeur)) {
+        throw new Error(`Reponse Matomo inattendue (${methode}): compteur non numerique`);
+      }
+      eventCounts.set(row.label, (eventCounts.get(row.label) ?? 0) + valeur);
+    }
+  }
+
+  return eventCounts;
+}
+
+/**
  * Récupère le nombre d'events Matomo par action (tous départements confondus).
  * Retourne une Map<eventName, count> en un seul appel API.
  *
- * @param options - Période et date optionnelles
+ * @param options - Période et date. En `day`/`week`/`month` sur une plage, les sous-périodes sont
+ *   sommées : passer des plages alignées sur les bornes de bucket (`decouperPeriodeMatomo`).
  */
 export async function fetchMatomoEvents(options?: {
   period?: string;
@@ -288,7 +329,7 @@ export async function fetchMatomoEvents(options?: {
 }): Promise<Map<string, number>> {
   const config = getMatomoConfig();
 
-  const data = await fetchMatomoApi<MatomoEventActionResponse[]>(
+  const data = await fetchMatomoApi<MatomoEventActionApiResponse>(
     {
       module: "API",
       method: "Events.getAction",
@@ -303,13 +344,7 @@ export async function fetchMatomoEvents(options?: {
     config.apiUrl
   );
 
-  const eventCounts = new Map<string, number>();
-  if (Array.isArray(data)) {
-    for (const row of data) {
-      eventCounts.set(row.label, row.nb_visits);
-    }
-  }
-  return eventCounts;
+  return sumEventCounts(data, "Events.getAction");
 }
 
 /**
@@ -318,7 +353,7 @@ export async function fetchMatomoEvents(options?: {
  *
  * @param codeDepartement - Code département (ex: "36")
  * @param dimensionId - ID de la Custom Dimension département configurée dans Matomo
- * @param options - Période et date optionnelles
+ * @param options - Période et date optionnelles (cf. `fetchMatomoEvents` pour la granularité)
  */
 export async function fetchMatomoEventsByDepartment(
   codeDepartement: string,
@@ -329,7 +364,7 @@ export async function fetchMatomoEventsByDepartment(
   const baseSegment = `dimension${dimensionId}==${codeDepartement}`;
   const segment = combineSegments(baseSegment, options?.extraSegment) ?? baseSegment;
 
-  const data = await fetchMatomoApi<MatomoEventActionResponse[]>(
+  const data = await fetchMatomoApi<MatomoEventActionApiResponse>(
     {
       module: "API",
       method: "Events.getAction",
@@ -344,16 +379,7 @@ export async function fetchMatomoEventsByDepartment(
     config.apiUrl
   );
 
-  const eventCounts = new Map<string, number>();
-
-  // Matomo peut retourner un tableau vide ou un objet vide si pas de données
-  if (Array.isArray(data)) {
-    for (const row of data) {
-      eventCounts.set(row.label, row.nb_visits);
-    }
-  }
-
-  return eventCounts;
+  return sumEventCounts(data, "Events.getAction (departement)");
 }
 
 // ---------------------------------------------------------------------------
@@ -423,12 +449,13 @@ export async function fetchMatomoSimulationsGroupedByDimension(
 
   const result = new Map<string, { total: number; eligible: number; nonEligible: number }>();
 
+  // Number(...) comme dans sumEventCounts : le type annonce un number que le JSON ne garantit pas.
   for (const row of eligibleData) {
     const value = extractDimensionValueFromLabel(row.label);
     if (!value) continue;
     const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
-    entry.eligible += row.nb_visits;
-    entry.total += row.nb_visits;
+    entry.eligible += Number(row.nb_visits) || 0;
+    entry.total += Number(row.nb_visits) || 0;
     result.set(value, entry);
   }
 
@@ -436,8 +463,8 @@ export async function fetchMatomoSimulationsGroupedByDimension(
     const value = extractDimensionValueFromLabel(row.label);
     if (!value) continue;
     const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
-    entry.nonEligible += row.nb_visits;
-    entry.total += row.nb_visits;
+    entry.nonEligible += Number(row.nb_visits) || 0;
+    entry.total += Number(row.nb_visits) || 0;
     result.set(value, entry);
   }
 
@@ -465,7 +492,7 @@ export async function fetchMatomoCountByDimension(
   for (const row of rows) {
     const value = extractDimensionValueFromLabel(row.label);
     if (!value) continue;
-    result.set(value, (result.get(value) ?? 0) + row.nb_visits);
+    result.set(value, (result.get(value) ?? 0) + (Number(row.nb_visits) || 0));
   }
   return result;
 }

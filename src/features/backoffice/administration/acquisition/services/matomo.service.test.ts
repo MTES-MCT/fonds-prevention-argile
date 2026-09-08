@@ -62,4 +62,17 @@ describe("matomo.service - getMatomoStatistiques", () => {
     expect(matomoApiAdapter.fetchMatomoVisits).toHaveBeenCalledWith("month", expect.any(String), undefined);
     expect(stats.visitesParJour).toEqual([{ date: "2026-01-01", visites: 200 }]);
   });
+
+  it("convertit les valeurs renvoyées en string par Matomo (réponse multi-sous-période) au lieu de les remplacer par 0", async () => {
+    // Régression : `typeof visites === "number"` échoue silencieusement sur une string Matomo,
+    // remplaçant la valeur par 0 au lieu de la convertir.
+    vi.mocked(matomoApiAdapter.fetchMatomoVisits).mockResolvedValue({
+      "2026-01-01,2026-01-31": "150" as unknown as number,
+    });
+
+    const stats = await getMatomoStatistiques("tout");
+
+    expect(stats.visitesParJour).toEqual([{ date: "2026-01-01", visites: 150 }]);
+    expect(stats.nombreVisitesTotales).toBe(150);
+  });
 });

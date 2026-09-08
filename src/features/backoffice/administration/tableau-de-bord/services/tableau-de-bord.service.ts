@@ -29,7 +29,6 @@ import type {
   MotifArchivage,
   MotifIneligibilite,
 } from "../domain/types/tableau-de-bord.types";
-import { PERIODES, SERVICE_START_DATE } from "../domain/types/tableau-de-bord.types";
 import type { EligibiliteStats } from "../domain/types/eligibilite-stats.types";
 import {
   calculerTrancheRevenu,
@@ -51,51 +50,30 @@ import {
   fetchMatomoSimulationsGroupedByDimension,
   buildPartnerSegment,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
+import { getGranulariteForPeriode } from "@/features/backoffice/administration/acquisition/services/matomo.service";
+import {
+  decouperPeriodeMatomo,
+  formaterDateMatomo,
+} from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
+import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
+import {
+  getFenetrePeriode,
+  getFenetrePeriodePrecedente,
+  type FenetrePeriode,
+} from "@/features/backoffice/administration/tableau-de-bord/domain/periode-window";
 import type { PartnerKey } from "@/shared/domain/partners";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getClientEnv } from "@/shared/config/env.config";
 
-/**
- * Calcule les dates de debut/fin pour une periode donnee
- */
-function getDateRange(periodeId: PeriodeId): { debut: Date; fin: Date } {
-  const fin = new Date();
-  const periode = PERIODES.find((p) => p.id === periodeId);
-
-  if (!periode || periode.jours === null) {
-    return { debut: SERVICE_START_DATE, fin };
-  }
-
-  const debut = new Date();
-  debut.setDate(debut.getDate() - periode.jours);
-  return { debut, fin };
-}
+const getDateRange = getFenetrePeriode;
+const getPreviousDateRange = getFenetrePeriodePrecedente;
 
 /**
- * Calcule la periode precedente de meme duree (pour la variation)
+ * Formate une fenêtre pour l'API Matomo (ex: "2025-01-01,2025-03-30").
+ * Borne haute = `dernierJour`, le `date` de Matomo étant inclusif des deux côtés.
  */
-function getPreviousDateRange(periodeId: PeriodeId): { debut: Date; fin: Date } | null {
-  const periode = PERIODES.find((p) => p.id === periodeId);
-
-  if (!periode || periode.jours === null) {
-    return null; // Pas de variation pour "depuis le debut"
-  }
-
-  const fin = new Date();
-  fin.setDate(fin.getDate() - periode.jours);
-
-  const debut = new Date();
-  debut.setDate(debut.getDate() - periode.jours * 2);
-
-  return { debut, fin };
-}
-
-/**
- * Formate une plage de dates pour l'API Matomo (ex: "2025-01-01,2025-03-30")
- */
-function formatMatomoDateRange(debut: Date, fin: Date): string {
-  const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  return `${fmt(debut)},${fmt(fin)}`;
+function formatMatomoDateRange(fenetre: FenetrePeriode): string {
+  return `${formaterDateMatomo(fenetre.debut)},${formaterDateMatomo(fenetre.dernierJour)}`;
 }
 
 interface SimulationsMatomoResult {
@@ -116,36 +94,56 @@ async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promi
   }
 }
 
+function cumulerCompteurs(compteursParAppel: Map<string, number>[]): Map<string, number> {
+  const cumul = new Map<string, number>();
+  for (const compteurs of compteursParAppel) {
+    for (const [label, valeur] of compteurs) cumul.set(label, (cumul.get(label) ?? 0) + valeur);
+  }
+  return cumul;
+}
+
 /**
  * Récupère le nombre de simulations terminées depuis Matomo (eligible + non eligible).
  * Utilise les events par département si un code département est spécifié.
+ *
+ * Requête en `day`/`week`/`month` (granularité adaptée à la durée, cf. `getGranulariteForPeriode`)
+ * plutôt qu'en `period=range`, que Matomo ne pré-archive pas — la cause principale des timeouts
+ * dès qu'un département est filtré sur une longue période. Le comptage reste exact parce que la
+ * fenêtre est d'abord découpée en plages alignées sur les bornes des buckets Matomo
+ * (`decouperPeriodeMatomo`) : sans ce découpage, les semaines/mois de bord déborderaient de la
+ * période demandée et seraient comptés dans la période courante comme dans la précédente.
  */
 async function getSimulationsMatomo(
-  debut: Date,
-  fin: Date,
+  fenetre: FenetrePeriode,
+  granularite: GranulariteVisites,
   codeDepartement?: string,
   partner?: PartnerKey | null
 ): Promise<SimulationsMatomoResult> {
-  const dateRange = formatMatomoDateRange(debut, fin);
+  const sousPeriodes = decouperPeriodeMatomo(fenetre.debut, fenetre.dernierJour, granularite);
   const partnerSegment = buildPartnerSegment(partner);
 
-  let events: Map<string, number>;
-
+  let dimensionId: number | null = null;
   if (codeDepartement) {
     const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
-    const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
+    dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
     if (!dimensionId) return { eligible: 0, nonEligible: 0, total: 0 };
-
-    const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
-    events = await fetchMatomoEventsByDepartment(codeDeptMatomo, dimensionId, {
-      period: "range",
-      date: dateRange,
-      extraSegment: partnerSegment,
-    });
-  } else {
-    events = await fetchMatomoEvents({ period: "range", date: dateRange, segment: partnerSegment });
   }
 
+  // Promise.all et non allSettled : un total partiel serait indiscernable d'une vraie baisse,
+  // l'appelant preferant afficher "Indisponible" (cf. logMatomoFailure).
+  const compteursParAppel = await Promise.all(
+    sousPeriodes.map(({ period, date }) =>
+      codeDepartement && dimensionId
+        ? fetchMatomoEventsByDepartment(toOfficialCodeDepartement(codeDepartement), dimensionId, {
+            period,
+            date,
+            extraSegment: partnerSegment,
+          })
+        : fetchMatomoEvents({ period, date, segment: partnerSegment })
+    )
+  );
+
+  const events = cumulerCompteurs(compteursParAppel);
   const eligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE) ?? 0;
   const nonEligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE) ?? 0;
 
@@ -156,12 +154,11 @@ async function getSimulationsMatomo(
  * Recupere le nombre de visiteurs uniques depuis Matomo, avec filtrage departement optionnel.
  */
 async function getUniqueVisitors(
-  debut: Date,
-  fin: Date,
+  fenetre: FenetrePeriode,
   codeDepartement?: string,
   partner?: PartnerKey | null
 ): Promise<number> {
-  const dateRange = formatMatomoDateRange(debut, fin);
+  const dateRange = formatMatomoDateRange(fenetre);
   const segments: string[] = [];
 
   if (codeDepartement) {
@@ -1071,8 +1068,9 @@ export async function getTopDepartementsMatomo(
   codeDepartement?: string,
   partner?: PartnerKey | null
 ): Promise<DepartementStats[]> {
-  const { debut, fin } = getDateRange(periodeId);
-  const dateRange = formatMatomoDateRange(debut, fin);
+  const fenetre = getDateRange(periodeId);
+  const { debut, fin } = fenetre;
+  const dateRange = formatMatomoDateRange(fenetre);
   const partnerSegment = buildPartnerSegment(partner);
 
   const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
@@ -1195,8 +1193,9 @@ export async function getTopCommunesMatomo(
   codeDepartement?: string,
   partner?: PartnerKey | null
 ): Promise<CommuneSimulationsStats[]> {
-  const { debut, fin } = getDateRange(periodeId);
-  const dateRange = formatMatomoDateRange(debut, fin);
+  const fenetre = getDateRange(periodeId);
+  const { debut, fin } = fenetre;
+  const dateRange = formatMatomoDateRange(fenetre);
   const partnerSegment = buildPartnerSegment(partner);
 
   const communeDimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID;
@@ -1375,30 +1374,32 @@ export async function getMatomoSimulationsStats(
   codeDepartement?: string,
   partner?: PartnerKey | null
 ): Promise<MatomoSimulationsStats> {
-  const { debut, fin } = getDateRange(periodeId);
+  const fenetre = getDateRange(periodeId);
+  const { debut, fin } = fenetre;
   const previousRange = getPreviousDateRange(periodeId);
+  const granularite = getGranulariteForPeriode(periodeId);
 
   const matomoFallback: SimulationsMatomoResult = { eligible: 0, nonEligible: 0, total: 0 };
 
   // Comptes crees BDD (filtrés par partenaire via users.partner_source) + visiteurs uniques Matomo (en parallele)
   const [currentMatomo, comptes, prevMatomo, prevComptes, currentVisitors, prevVisitors] = await Promise.all([
-    logMatomoFailure(getSimulationsMatomo(debut, fin, codeDepartement, partner), "simulations (periode courante)"),
+    logMatomoFailure(
+      getSimulationsMatomo(fenetre, granularite, codeDepartement, partner),
+      "simulations (periode courante)"
+    ),
     countComptesCrees(debut, fin, codeDepartement, partner),
     previousRange
       ? logMatomoFailure(
-          getSimulationsMatomo(previousRange.debut, previousRange.fin, codeDepartement, partner),
+          getSimulationsMatomo(previousRange, granularite, codeDepartement, partner),
           "simulations (periode precedente)"
         )
       : Promise.resolve(matomoFallback),
     previousRange
       ? countComptesCrees(previousRange.debut, previousRange.fin, codeDepartement, partner)
       : Promise.resolve(0),
-    logMatomoFailure(getUniqueVisitors(debut, fin, codeDepartement, partner), "visiteurs (periode courante)"),
+    logMatomoFailure(getUniqueVisitors(fenetre, codeDepartement, partner), "visiteurs (periode courante)"),
     previousRange
-      ? logMatomoFailure(
-          getUniqueVisitors(previousRange.debut, previousRange.fin, codeDepartement, partner),
-          "visiteurs (periode precedente)"
-        )
+      ? logMatomoFailure(getUniqueVisitors(previousRange, codeDepartement, partner), "visiteurs (periode precedente)")
       : Promise.resolve(0),
   ]);
 
