@@ -57,11 +57,11 @@ const DS_TAIL_ITEMS: ReadonlyArray<{ key: string; label: string; step: Step }> =
 ];
 
 /**
- * `etapeCouranteBloquee` : le formulaire de l'étape courante ne doit pas être ouvrable.
- * Deux cas — demande d'accompagnement après autonomie (§2.10 FLOW-AND-SYNC.md : `statutAmo`
- * repasse à EN_ATTENTE alors que `currentStep` a déjà quitté CHOIX_AMO, le formulaire vient
- * d'être réinitialisé) et logement non éligible. Sans effet à CHOIX_AMO, où `dsTail` est
- * déjà "pending" pour tous.
+ * `etapeCouranteBloquee` : le demandeur a redemandé un accompagnement après autonomie
+ * (§2.10 FLOW-AND-SYNC.md : `statutAmo` repasse à EN_ATTENTE alors que `currentStep` a déjà
+ * quitté CHOIX_AMO). Le formulaire de l'étape courante vient d'être réinitialisé : on le
+ * bloque (lien désactivé) tant que l'AMO n'a pas répondu, comme au choix initial de l'AMO.
+ * Sans effet à CHOIX_AMO, où `dsTail` est déjà "pending" pour tous.
  */
 function buildDsTail(
   currentStep: Step | null,
@@ -88,6 +88,10 @@ function amoItemState(statutAmo: StatutValidationAmo | null): StepListItem["stat
 
 /**
  * Retourne la liste des items à afficher dans la sidebar selon le mode AMO et le statut.
+ *
+ * `isNonEligible` neutralise l'ensemble : plus rien n'est actionnable, y compris l'item
+ * de tête « Choix de l'accompagnement », dont l'ancre `#choix-amo` ne mène plus qu'au
+ * callout d'inéligibilité. Les étapes déjà franchies restent barrées.
  */
 export function getStepListItems(
   amoMode: AmoMode | null,
@@ -95,15 +99,26 @@ export function getStepListItems(
   currentStep: Step | null,
   isCurrentDSStepAccepte: boolean,
   eligibiliteDsStatus: DSStatus | null,
-  /** Logement déclaré non éligible : plus aucune étape n'est actionnable. */
   isNonEligible = false
+): StepListItem[] {
+  const items = buildStepListItems(amoMode, statutAmo, currentStep, isCurrentDSStepAccepte, eligibiliteDsStatus);
+  if (!isNonEligible) return items;
+  return items.map((item) => (item.state === "active" ? { ...item, state: "pending" } : item));
+}
+
+function buildStepListItems(
+  amoMode: AmoMode | null,
+  statutAmo: StatutValidationAmo | null,
+  currentStep: Step | null,
+  isCurrentDSStepAccepte: boolean,
+  eligibiliteDsStatus: DSStatus | null
 ): StepListItem[] {
   const blockedByAmoEnAttente = estFormulaireEligibiliteBloqueParDemandeAccompagnement(
     statutAmo,
     currentStep,
     eligibiliteDsStatus
   );
-  const dsTail = buildDsTail(currentStep, isCurrentDSStepAccepte, blockedByAmoEnAttente || isNonEligible);
+  const dsTail = buildDsTail(currentStep, isCurrentDSStepAccepte, blockedByAmoEnAttente);
   const onChoixAmo = currentStep === Step.CHOIX_AMO;
 
   // Mode OBLIGATOIRE / AV_AMO_FUSIONNES : un seul item AMO ("Attendre la réponse de votre AMO")
