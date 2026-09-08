@@ -316,6 +316,36 @@ function sumEventCounts(data: MatomoEventActionApiResponse, methode: string): Ma
 }
 
 /**
+ * Récupère les visiteurs uniques par sous-période (ex: 1 point par mois) depuis l'API Matomo
+ * (`VisitsSummary.getUniqueVisitors`, métrique unique — pas de risque d'agrégation incorrecte
+ * comme `VisitsSummary.get` : chaque sous-période a son propre dédoublonnage, indépendant des
+ * autres, donc pas de double-comptage même si un visiteur revient sur plusieurs mois).
+ *
+ * @param period - Granularité des points : 'day', 'week', 'month'…
+ * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
+ */
+export async function fetchMatomoUniqueVisitorsSeries(period: string, date: string): Promise<MatomoVisitsResponse> {
+  const config = getMatomoConfig();
+
+  const data = await fetchMatomoApi<Record<string, number | string>>(
+    {
+      module: "API",
+      method: "VisitsSummary.getUniqueVisitors",
+      idSite: config.siteId,
+      period,
+      date,
+      format: "JSON",
+      token_auth: config.apiToken,
+    },
+    config.apiUrl
+  );
+
+  // Number(...) : sur une réponse multi-sous-période, Matomo peut sérialiser la valeur en string
+  // plutôt qu'en nombre (cf. gotcha CLAUDE.md) — jamais utiliser la valeur brute sans conversion.
+  return Object.fromEntries(Object.entries(data).map(([key, value]) => [key, Number(value) || 0]));
+}
+
+/**
  * Récupère le nombre d'events Matomo par action (tous départements confondus).
  * Retourne une Map<eventName, count> en un seul appel API.
  *

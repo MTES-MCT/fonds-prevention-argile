@@ -32,6 +32,7 @@ DDD-lite par feature.
 | `rga-map`              | Visualisation cartographique des zones RGA                                                                                                                                                                                                           |
 | `seo`                  | Données géographiques et SEO : catastrophes naturelles (catnat), allers-vers                                                                                                                                                                         |
 | `backoffice`           | Espaces agents : `espace-agent` (suivi dossiers) et `administration`                                                                                                                                                                                 |
+| `public-stats`         | Chiffres clés publics depuis le lancement (`/stats`) : cartes + évolution mensuelle |
 
 Sous-modules notables :
 
