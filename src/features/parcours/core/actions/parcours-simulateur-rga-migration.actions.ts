@@ -79,7 +79,7 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
     //        (sinon le demandeur reste non catégorisé et n'est adressé à personne).
     //        Avant l'évènement Brevo, pour que SITUATION parte déjà à jour.
     const user = await userRepo.findById(session.userId);
-    await appliquerVerdictSimulationDemandeur({
+    const verdict = await appliquerVerdictSimulationDemandeur({
       parcours,
       rgaData: rgaSimulationData,
       demandeurNom: formatNomComplet(user?.prenom, user?.nom),
@@ -94,6 +94,12 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
     await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_ENREGISTREE, {
       attributes: conseillerAttributes,
     });
+
+    // 8. Déclencheur dédié : le mail de bienvenue promet un conseiller, faux sur un dossier
+    //    archivé. Au 1er archivage seulement — une raison actualisée ne doit pas re-mailer.
+    if (verdict.archived) {
+      await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
+    }
 
     return {
       success: true,
