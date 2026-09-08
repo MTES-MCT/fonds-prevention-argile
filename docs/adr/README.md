@@ -60,5 +60,6 @@ purement cosmétique.
 | 0030 | [Architecture du simulateur de vulnérabilité RGA](0030-simulateur-vulnerabilite-rga.md)                                                 | Accepté |
 | 0031 | [Statistiques d'usage du simulateur de vulnérabilité — hybride Matomo / BDD](0031-stats-vulnerabilite-matomo-bdd.md)                    | Accepté |
 | 0032 | [Rattachement de la simulation de vulnérabilité au compte demandeur](0032-rattachement-simulation-vulnerabilite-compte.md)              | Accepté |
+| 0033 | [Granularité adaptée pour les events Matomo du dashboard](0033-granularite-events-matomo-dashboard.md)                                  | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->
