@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("next/cache", () => ({
+  // Pass-through en test : ce fichier n'exerce donc que l'adaptateur, jamais le cache Next.
   unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
 }));
 
@@ -120,7 +121,23 @@ function jsonResponse(body: unknown, ok = true) {
   };
 }
 
-describe("fetchMatomoEvents — granularité additive (anti-timeout period=range)", () => {
+/** Ligne calquée sur une réponse réelle de l'instance (champs conservés tels quels). */
+function ligneEvent(label: string, nbVisits: number | string) {
+  return {
+    label,
+    nb_visits: nbVisits,
+    nb_events: typeof nbVisits === "string" ? Number(nbVisits) * 2 : nbVisits * 2,
+    nb_events_with_value: 0,
+    sum_event_value: 0,
+    min_event_value: null,
+    max_event_value: null,
+    sum_daily_nb_uniq_visitors: 0,
+    avg_event_value: 0,
+  };
+}
+
+/** Les tests ci-dessous pilotent fetch via `mockFetch`, ceux du haut via `global.fetch` direct. */
+function stubberFetch() {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("fetch", mockFetch);
@@ -129,13 +146,14 @@ describe("fetchMatomoEvents — granularité additive (anti-timeout period=range
   afterEach(() => {
     global.fetch = originalFetch;
   });
+}
 
-  it("lit un tableau plat tel quel en period=range (comportement historique préservé)", async () => {
+describe("fetchMatomoEvents — cumul des sous-périodes", () => {
+  stubberFetch();
+
+  it("lit un tableau plat tel quel en period=range", async () => {
     mockFetch.mockResolvedValue(
-      jsonResponse([
-        { label: "simulateur_result_eligible", nb_events: 5, nb_visits: 5 },
-        { label: "simulateur_result_non_eligible", nb_events: 3, nb_visits: 3 },
-      ])
+      jsonResponse([ligneEvent("simulateur_result_eligible", 5), ligneEvent("simulateur_result_non_eligible", 3)])
     );
 
     const result = await fetchMatomoEvents({ period: "range", date: "2026-01-01,2026-01-31" });
@@ -144,16 +162,18 @@ describe("fetchMatomoEvents — granularité additive (anti-timeout period=range
     expect(result.get("simulateur_result_non_eligible")).toBe(3);
   });
 
-  it("cumule les nb_visits d'un même label à travers plusieurs sous-périodes (day/week/month)", async () => {
+  it("cumule un même label sur plusieurs semaines calendaires Matomo", async () => {
+    // Vraies semaines lundi-dimanche : c'est le seul découpage que Matomo renvoie, et les clés
+    // sont celles d'une plage déjà alignée (cf. decouperPeriodeMatomo côté service).
     mockFetch.mockResolvedValue(
       jsonResponse({
-        "2026-01-01,2026-01-07": [{ label: "simulateur_result_eligible", nb_events: 2, nb_visits: 2 }],
-        "2026-01-08,2026-01-14": [{ label: "simulateur_result_eligible", nb_events: 3, nb_visits: 3 }],
-        "2026-01-15,2026-01-21": [{ label: "simulateur_result_non_eligible", nb_events: 1, nb_visits: 1 }],
+        "2026-01-05,2026-01-11": [ligneEvent("simulateur_result_eligible", 2)],
+        "2026-01-12,2026-01-18": [ligneEvent("simulateur_result_eligible", 3)],
+        "2026-01-19,2026-01-25": [ligneEvent("simulateur_result_non_eligible", 1)],
       })
     );
 
-    const result = await fetchMatomoEvents({ period: "week", date: "2026-01-01,2026-01-21" });
+    const result = await fetchMatomoEvents({ period: "week", date: "2026-01-05,2026-01-25" });
 
     expect(result.get("simulateur_result_eligible")).toBe(5);
     expect(result.get("simulateur_result_non_eligible")).toBe(1);
@@ -162,23 +182,23 @@ describe("fetchMatomoEvents — granularité additive (anti-timeout period=range
   it("envoie period/date tels quels à l'API Matomo (jamais 'range' forcé en dur)", async () => {
     mockFetch.mockResolvedValue(jsonResponse({}));
 
-    await fetchMatomoEventsByDepartment("36", 5, { period: "month", date: "2025-10-16,2026-09-07" });
+    await fetchMatomoEventsByDepartment("36", 5, { period: "month", date: "2025-11-01,2026-08-31" });
 
     const [, requestInit] = mockFetch.mock.calls[0];
     const body = new URLSearchParams(requestInit.body as string);
     expect(body.get("period")).toBe("month");
-    expect(body.get("date")).toBe("2025-10-16,2026-09-07");
+    expect(body.get("date")).toBe("2025-11-01,2026-08-31");
     expect(body.get("segment")).toBe("dimension5==36");
   });
 
-  it("additionne correctement quand Matomo sérialise nb_visits en string (réponse multi-sous-période)", async () => {
-    // Régression : `0 + "234"` fait de la concaténation ("0234") au lieu d'une addition —
-    // observé en preprod sur une longue période, la valeur affichée devenait une suite de
-    // chiffres incohérente au lieu d'un total.
+  it("additionne quand Matomo sérialise nb_visits en string", async () => {
+    // Régression : `0 + "234"` concatène ("0234") au lieu d'additionner. La sérialisation en
+    // string n'est pas systématique (l'instance renvoie des nombres sur bien des réponses),
+    // d'où la conversion défensive plutôt qu'un pari sur le format observé.
     mockFetch.mockResolvedValue(
       jsonResponse({
-        "2026-01-01,2026-01-31": [{ label: "simulateur_result_eligible", nb_events: 12, nb_visits: "12" }],
-        "2026-02-01,2026-02-28": [{ label: "simulateur_result_eligible", nb_events: 8, nb_visits: "8" }],
+        "2026-01-01,2026-01-31": [ligneEvent("simulateur_result_eligible", "12")],
+        "2026-02-01,2026-02-28": [ligneEvent("simulateur_result_eligible", "8")],
       })
     );
 
@@ -188,20 +208,48 @@ describe("fetchMatomoEvents — granularité additive (anti-timeout period=range
   });
 });
 
-describe("fetchMatomoApi — échecs jamais mis en cache", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.stubGlobal("fetch", mockFetch);
+describe("fetchMatomoEvents — une réponse douteuse ne devient jamais un total partiel", () => {
+  stubberFetch();
+
+  it("rejette quand une sous-période n'est pas tabulaire, au lieu de l'ignorer", async () => {
+    // Sans rejet, le total ne porterait que sur janvier et serait affiché comme complet —
+    // indiscernable d'une vraie baisse de moitié.
+    mockFetch.mockResolvedValue(
+      jsonResponse({
+        "2026-01-01,2026-01-31": [ligneEvent("simulateur_result_eligible", 12)],
+        "2026-02-01,2026-02-28": { result: "error", message: "archive indisponible" },
+      })
+    );
+
+    await expect(fetchMatomoEvents({ period: "month", date: "2026-01-01,2026-02-28" })).rejects.toThrow(
+      "sous-periode non tabulaire"
+    );
   });
 
-  afterEach(() => {
-    global.fetch = originalFetch;
+  it("rejette un compteur non numérique au lieu de propager un NaN", async () => {
+    mockFetch.mockResolvedValue(jsonResponse([ligneEvent("simulateur_result_eligible", "indisponible")]));
+
+    await expect(fetchMatomoEvents({ period: "range", date: "2026-01-01,2026-01-31" })).rejects.toThrow(
+      "compteur non numerique"
+    );
   });
 
-  // Un premier timeout n'empêche pas Matomo de terminer l'archive en tâche de fond : un nouvel
-  // essai un peu plus tard doit pouvoir réussir sans être bloqué par un échec mis en cache
-  // (aucune mise en cache d'erreur ici, volontairement — cf. commentaire dans l'adapter).
-  it("propage une erreur d'authentification à l'appelant", async () => {
+  it("rejette une ligne dont le compteur est absent", async () => {
+    mockFetch.mockResolvedValue(jsonResponse([{ label: "simulateur_result_eligible" }]));
+
+    await expect(fetchMatomoEvents({ period: "range", date: "2026-01-01,2026-01-31" })).rejects.toThrow(
+      "compteur non numerique"
+    );
+  });
+});
+
+describe("fetchMatomoEvents — propagation des erreurs à l'appelant", () => {
+  stubberFetch();
+
+  // L'absence de mise en cache des échecs n'est PAS couverte ici (unstable_cache est neutralisé
+  // ci-dessus) : ces tests ne vérifient que la propagation, d'où l'appelant décide d'afficher
+  // "Indisponible" plutôt qu'un zéro.
+  it("propage une erreur d'authentification", async () => {
     mockFetch.mockResolvedValue(jsonResponse({ result: "error", message: "token_auth invalide" }));
 
     await expect(fetchMatomoEvents({ period: "day", date: "2026-01-01,2026-01-01" })).rejects.toThrow(
@@ -209,14 +257,9 @@ describe("fetchMatomoApi — échecs jamais mis en cache", () => {
     );
   });
 
-  it("propage une erreur sur timeout réseau, et n'empêche pas un appel suivant de réussir", async () => {
+  it("propage un timeout réseau", async () => {
     mockFetch.mockRejectedValueOnce(new DOMException("The operation was aborted", "AbortError"));
-    await expect(fetchMatomoEvents({ period: "day", date: "2026-01-01,2026-01-01" })).rejects.toThrow();
 
-    mockFetch.mockResolvedValueOnce(
-      jsonResponse([{ label: "simulateur_result_eligible", nb_events: 1, nb_visits: 1 }])
-    );
-    const result = await fetchMatomoEvents({ period: "day", date: "2026-01-01,2026-01-01" });
-    expect(result.get("simulateur_result_eligible")).toBe(1);
+    await expect(fetchMatomoEvents({ period: "day", date: "2026-01-01,2026-01-01" })).rejects.toThrow();
   });
 });

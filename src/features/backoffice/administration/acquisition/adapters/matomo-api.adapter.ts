@@ -287,23 +287,28 @@ type MatomoEventActionApiResponse = MatomoEventActionResponse[] | Record<string,
 
 /**
  * Cumule les `nb_visits` par label d'event, à travers une ou plusieurs sous-périodes.
- * `nb_visits` par event est un comptage — additif, contrairement aux visiteurs uniques
- * (déduplication), donc sommer les sous-périodes ne fausse pas le total.
+ * Un `nb_visits` par event est un comptage, additif entre sous-périodes disjointes —
+ * contrairement aux visiteurs uniques, qui exigent une déduplication.
  *
- * `Number(...)` est nécessaire : sur une réponse multi-sous-période (`day`/`week`/`month` sur un
- * `date` en plage), Matomo sérialise `nb_visits` en **string** (contrairement au tableau plat
- * `period=range`, où c'est déjà un nombre) — sans cette conversion, `(total ?? 0) + row.nb_visits`
- * fait de la concaténation de texte au lieu d'une addition dès la 1ère sous-période
- * (`0 + "234"` → `"0234"`), produisant une suite de chiffres incohérente au lieu d'un total.
+ * Toute anomalie de structure ou de compteur lève au lieu d'être ignorée : un total amputé
+ * d'une sous-période est indiscernable d'une vraie baisse une fois affiché.
  */
-function sumEventCounts(data: MatomoEventActionApiResponse): Map<string, number> {
+function sumEventCounts(data: MatomoEventActionApiResponse, methode: string): Map<string, number> {
   const eventCounts = new Map<string, number>();
   const rowsPerPeriode = Array.isArray(data) ? [data] : Object.values(data ?? {});
 
   for (const rows of rowsPerPeriode) {
-    if (!Array.isArray(rows)) continue;
+    if (!Array.isArray(rows)) {
+      throw new Error(`Reponse Matomo inattendue (${methode}): sous-periode non tabulaire`);
+    }
     for (const row of rows) {
-      eventCounts.set(row.label, (eventCounts.get(row.label) ?? 0) + Number(row.nb_visits));
+      // Number(...) : sur une reponse multi-sous-periode, Matomo serialise parfois nb_visits en
+      // string — sans conversion, `0 + "234"` concatene ("0234") au lieu d'additionner.
+      const valeur = Number(row.nb_visits);
+      if (!Number.isFinite(valeur)) {
+        throw new Error(`Reponse Matomo inattendue (${methode}): compteur non numerique`);
+      }
+      eventCounts.set(row.label, (eventCounts.get(row.label) ?? 0) + valeur);
     }
   }
 
@@ -314,10 +319,8 @@ function sumEventCounts(data: MatomoEventActionApiResponse): Map<string, number>
  * Récupère le nombre d'events Matomo par action (tous départements confondus).
  * Retourne une Map<eventName, count> en un seul appel API.
  *
- * @param options - Période et date optionnelles. `period` peut être `day`/`week`/`month` avec
- *   un `date` en plage pour éviter le calcul live d'un `range` non pré-archivé sur une longue
- *   durée (cf. `getGranulariteForPeriode`) — un comptage d'events est additif, donc sans risque
- *   à sommer entre sous-périodes.
+ * @param options - Période et date. En `day`/`week`/`month` sur une plage, les sous-périodes sont
+ *   sommées : passer des plages alignées sur les bornes de bucket (`decouperPeriodeMatomo`).
  */
 export async function fetchMatomoEvents(options?: {
   period?: string;
@@ -341,7 +344,7 @@ export async function fetchMatomoEvents(options?: {
     config.apiUrl
   );
 
-  return sumEventCounts(data);
+  return sumEventCounts(data, "Events.getAction");
 }
 
 /**
@@ -376,7 +379,7 @@ export async function fetchMatomoEventsByDepartment(
     config.apiUrl
   );
 
-  return sumEventCounts(data);
+  return sumEventCounts(data, "Events.getAction (departement)");
 }
 
 // ---------------------------------------------------------------------------
