@@ -117,8 +117,34 @@ describe("getMatomoSimulationsStats — panne Matomo vs vrai zero", () => {
   });
 });
 
-describe("getMatomoSimulationsStats — granularité des events (anti-timeout period=range)", () => {
+/** Déplie les `date` passés à Matomo en jours, pour vérifier ce que la fenêtre couvre vraiment. */
+function joursInterroges(appels: { period?: string; date?: string }[]): string[] {
+  const jours: string[] = [];
+  for (const { date } of appels) {
+    const [debut, fin] = (date ?? "").split(",").map((iso) => {
+      const [annee, mois, jour] = iso.split("-").map(Number);
+      return new Date(annee, mois - 1, jour);
+    });
+    for (const courant = new Date(debut); courant <= fin; courant.setDate(courant.getDate() + 1)) {
+      jours.push(courant.toDateString());
+    }
+  }
+  return jours;
+}
+
+function joursAttendus(debut: string, fin: string): string[] {
+  const jours: string[] = [];
+  const derniere = new Date(fin);
+  for (const courant = new Date(debut); courant <= derniere; courant.setDate(courant.getDate() + 1)) {
+    jours.push(courant.toDateString());
+  }
+  return jours;
+}
+
+describe("getMatomoSimulationsStats — fenêtre réellement interrogée sur Matomo", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 8, 14, 30));
     vi.clearAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockComptesCrees(5);
@@ -129,33 +155,59 @@ describe("getMatomoSimulationsStats — granularité des events (anti-timeout pe
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
-  it("n'utilise jamais period=range pour les simulations (toujours pre-archivable)", async () => {
-    await getMatomoSimulationsStats("30j");
+  it("n'utilise jamais period=range pour les simulations", async () => {
+    await getMatomoSimulationsStats("12m");
 
-    expect(fetchMatomoEvents).toHaveBeenCalledWith(
-      expect.objectContaining({ period: expect.not.stringMatching("range") })
-    );
+    const periodes = vi.mocked(fetchMatomoEvents).mock.calls.map(([options]) => options?.period);
+    expect(periodes).not.toContain("range");
+    expect(periodes.length).toBeGreaterThan(0);
   });
 
-  it("adapte la granularité à la durée de période, y compris avec un département filtré", async () => {
-    await getMatomoSimulationsStats("30j", "36");
-    expect(fetchMatomoEventsByDepartment).toHaveBeenCalledWith(
-      "36",
-      expect.any(Number),
-      expect.objectContaining({ period: "day" })
+  it("interroge exactement les 90 jours demandés, sans déborder sur les semaines de bord", async () => {
+    // Sans découpage, `period=week` sur cette fenêtre ferait renvoyer par Matomo les semaines
+    // pleines 08-14/06 et 07-13/09, soit 9 jours hors période comptés dans le total.
+    await getMatomoSimulationsStats("90j", "36");
+
+    const appelsCourants = vi
+      .mocked(fetchMatomoEventsByDepartment)
+      .mock.calls.map(([, , options]) => options ?? {})
+      .filter(({ date }) => (date ?? "") >= "2026-06-11");
+
+    const jours = joursInterroges(appelsCourants);
+    expect(jours).toEqual(joursAttendus("2026-06-11", "2026-09-08"));
+    expect(new Set(jours).size).toBe(jours.length);
+  });
+
+  it("ne fait partager aucune journée entre la période courante et la précédente", async () => {
+    await getMatomoSimulationsStats("90j");
+
+    const jours = joursInterroges(vi.mocked(fetchMatomoEvents).mock.calls.map(([options]) => options ?? {}));
+
+    // Les deux fenêtres sont demandées dans le même appel de service : un doublon ici signifierait
+    // qu'une journée est comptée dans la période courante ET dans la précédente.
+    expect(new Set(jours).size).toBe(jours.length);
+    expect(jours).toHaveLength(180);
+  });
+
+  it("cumule les sous-périodes en un seul total", async () => {
+    vi.mocked(fetchMatomoEvents).mockResolvedValue(
+      new Map([
+        [MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE, 3],
+        [MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE, 1],
+      ])
     );
 
-    vi.clearAllMocks();
-    vi.mocked(fetchMatomoEventsByDepartment).mockResolvedValue(eventsAvecSimulations);
-    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(0);
+    const stats = await getMatomoSimulationsStats("90j");
+    const nombreAppelsCourants = vi
+      .mocked(fetchMatomoEvents)
+      .mock.calls.map(([options]) => options?.date ?? "")
+      .filter((date) => date >= "2026-06-11").length;
 
-    await getMatomoSimulationsStats("12m", "36");
-    expect(fetchMatomoEventsByDepartment).toHaveBeenCalledWith(
-      "36",
-      expect.any(Number),
-      expect.objectContaining({ period: "month" })
-    );
+    expect(nombreAppelsCourants).toBeGreaterThan(1);
+    expect(stats.simulationsEligibles?.valeur).toBe(3 * nombreAppelsCourants);
+    expect(stats.simulationsNonEligibles?.valeur).toBe(1 * nombreAppelsCourants);
   });
 });

@@ -1,13 +1,15 @@
 import { fetchMatomoVisits, fetchMatomoBounceRate, fetchMatomoUniqueVisitors } from "../adapters/matomo-api.adapter";
 import type { MatomoStatistiques, VisiteParJour, GranulariteVisites } from "../domain/types/matomo.types";
+import { formaterDateMatomo } from "../domain/decoupage-periode";
 import {
-  PERIODES,
-  SERVICE_START_DATE,
-} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+  getFenetrePeriode,
+  getFenetrePeriodePrecedente,
+  type FenetrePeriode,
+} from "@/features/backoffice/administration/tableau-de-bord/domain/periode-window";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
-function formatDate(d: Date): string {
-  return d.toISOString().split("T")[0];
+function formaterPlage(fenetre: FenetrePeriode): string {
+  return `${formaterDateMatomo(fenetre.debut)},${formaterDateMatomo(fenetre.dernierJour)}`;
 }
 
 function computeVariation(current: number, previous: number): number | null {
@@ -49,17 +51,10 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
   const granularite = getGranulariteForPeriode(periodeId);
 
   try {
-    const fin = new Date();
-    const periode = periodeId ? PERIODES.find((p) => p.id === periodeId) : null;
-    const jours = periode?.jours ?? null;
-    const debut = jours ? new Date(fin.getTime() - jours * 86400000) : SERVICE_START_DATE;
-    const period = `${formatDate(debut)},${formatDate(fin)}`;
-
-    // Période précédente (même durée, juste avant)
-    const hasPrevious = jours !== null;
-    const previousPeriod = hasPrevious
-      ? `${formatDate(new Date(fin.getTime() - jours * 2 * 86400000))},${formatDate(debut)}`
-      : null;
+    const fenetre = getFenetrePeriode(periodeId);
+    const fenetrePrecedente = getFenetrePeriodePrecedente(periodeId);
+    const period = formaterPlage(fenetre);
+    const previousPeriod = fenetrePrecedente ? formaterPlage(fenetrePrecedente) : null;
 
     // Récupérer les visites + visiteurs uniques + taux de rebond en parallele (période courante + précédente)
     const [visitsData, tauxRebond, uniqueVisitors, previousVisitsData, previousTauxRebond, previousUniqueVisitors] =
@@ -72,10 +67,12 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
         previousPeriod ? fetchMatomoUniqueVisitors("range", previousPeriod, segment) : Promise.resolve(0),
       ]);
 
-    // Transformer les données - La structure est { "date": nombre } (day) ou { "début,fin": nombre } (week/month).
-    // Number(...) : sur une réponse multi-sous-période, Matomo sérialise parfois la valeur en
-    // string plutôt qu'en nombre — sans conversion, `typeof visites === "number"` échoue
-    // silencieusement et remplace la valeur par 0 (cf. bug similaire sur sumEventCounts).
+    // Structure : { "date": nombre } (day) ou { "début,fin": nombre } (week/month).
+    // Number(...) : Matomo sérialise parfois la valeur en string, et `typeof === "number"`
+    // la remplaçait alors silencieusement par 0.
+    // Limite connue : en week/month les buckets de bord débordent de la fenêtre, donc le total
+    // ci-dessous la dépasse un peu. Assumé pour une courbe de tendance — le découpage exact
+    // (decouperPeriodeMatomo) mêlerait des points jour et semaine sur le même graphique.
     const visitesParJour: VisiteParJour[] = Object.entries(visitsData).map(([date, visites]) => {
       const nombre = Number(visites);
       return { date: extractDateDebut(date), visites: Number.isFinite(nombre) ? nombre : 0 };
