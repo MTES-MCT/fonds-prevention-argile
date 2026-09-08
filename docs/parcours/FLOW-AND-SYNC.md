@@ -583,6 +583,13 @@ Trois changements, dans l'ordre du flux :
 > (`getSubmittedDatesByStep`) — l'état du dossier appartient alors à la DDT et aux
 > professionnels, pas à une nouvelle simulation. Même esprit que le gel de §2.7.1.
 
+> **Re-simulation sur un dossier déjà archivé.** Toujours non éligible mais pour une autre
+> raison → on **empile** une qualification et une action, sans toucher à `archivedAt` (il ne
+> doit pas glisser) ni à `archive_reason` (déjà canonique). Sinon la simulation affichée
+> contredirait la raison enregistrée, et les stats compteraient une raison périmée. Deux
+> abstentions : archivage **manuel** (hors de ce flux) et dernière qualification posée par un
+> **agent** — sa décision fait foi, une re-simulation ne la remplace pas.
+
 > **Raison canonique et non note détaillée** : `archive_reason` vaut exactement
 > « Non éligible au dispositif », valeur sur laquelle les stats « demandes inéligibles »
 > filtrent à l'exact (`INELIGIBLE_ARCHIVE_REASONS`). La note lisible
