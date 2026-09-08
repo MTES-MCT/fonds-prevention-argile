@@ -34,10 +34,13 @@ simulation, écrit une qualification `non_eligible` et archive le parcours.
 > simulation non éligible **archive** le parcours en écrivant une qualification
 > `prospect_qualifications` **sans agent** (`agent_id = NULL`).
 
-Trois conséquences directes :
+Quatre conséquences directes :
 
 - l'early exit du simulateur public est **différé jusqu'à l'adresse**
   (`DEFAULT_DEFER_EARLY_EXIT_UNTIL`), comme le wizard Aller-vers le faisait déjà ;
+- un demandeur **déjà connecté** écrit en base **dès l'écran de résultat**, sans attendre un
+  retour sur `/mon-compte` — seul endroit où tourne `useMigrateRGAToDB`, et où un non éligible
+  ne repasse pas ;
 - la raison d'archivage est la valeur canonique `RAISON_ARCHIVAGE_NON_ELIGIBLE`
   (« Non éligible au dispositif »), pas la note détaillée ;
 - l'audit est écrit avec le demandeur pour auteur
