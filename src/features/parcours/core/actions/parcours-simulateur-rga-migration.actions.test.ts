@@ -15,7 +15,11 @@ vi.mock("@/shared/database/repositories", () => ({
 // Le verdict d'éligibilité a ses propres tests : ici on vérifie seulement qu'il est
 // appliqué avant l'évènement Brevo (SITUATION doit partir à jour).
 vi.mock("../services/simulation-eligibilite.service", () => ({
-  appliquerVerdictSimulationDemandeur: vi.fn(async () => ({ archived: false, unarchived: false })),
+  appliquerVerdictSimulationDemandeur: vi.fn(async () => ({
+    archived: false,
+    unarchived: false,
+    raisonActualisee: false,
+  })),
 }));
 vi.mock("@/features/simulateur/domain/rules/navigation", () => ({ isSimulationComplete: vi.fn() }));
 // La barrière @/shared/email/brevo réimportée via importOriginal ci-dessous tire tout
@@ -101,7 +105,7 @@ describe("migrateSimulationDataToDatabase", () => {
     const order: string[] = [];
     vi.mocked(appliquerVerdictSimulationDemandeur).mockImplementation(async () => {
       order.push("verdict");
-      return { archived: true, unarchived: false };
+      return { archived: true, unarchived: false, raisonActualisee: false };
     });
     mockedEmit.mockImplementation(async () => {
       order.push("brevo");

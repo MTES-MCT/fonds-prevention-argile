@@ -25,9 +25,11 @@ import {
 export interface VerdictSimulationDemandeur {
   archived: boolean;
   unarchived: boolean;
+  /** Dossier déjà archivé, toujours non éligible, mais pour une nouvelle raison. */
+  raisonActualisee: boolean;
 }
 
-const AUCUN_CHANGEMENT: VerdictSimulationDemandeur = { archived: false, unarchived: false };
+const AUCUN_CHANGEMENT: VerdictSimulationDemandeur = { archived: false, unarchived: false, raisonActualisee: false };
 
 /**
  * Applique le verdict d'éligibilité de la simulation que le demandeur vient
@@ -61,16 +63,17 @@ export async function appliquerVerdictSimulationDemandeur(params: {
   const estArchive = Boolean(parcours.archivedAt);
 
   if (verdict.isNonEligible) {
-    if (estArchive) return AUCUN_CHANGEMENT;
-
+    const raison = mapEligibilityReasonToRaisonIneligibilite(verdict.result?.reason);
     const note = buildEligibiliteArchiveNote(verdict.result, "demandeur");
+
+    if (estArchive) return actualiserRaisonIneligibilite(parcours, raison, note, demandeurNom);
 
     await prospectQualificationsRepo.create({
       parcoursId: parcours.id,
       agentId: null,
       decision: QualificationDecision.NON_ELIGIBLE,
       actionsRealisees: [],
-      raisonsIneligibilite: [mapEligibilityReasonToRaisonIneligibilite(verdict.result?.reason)],
+      raisonsIneligibilite: [raison],
       note,
     });
 
@@ -89,7 +92,7 @@ export async function appliquerVerdictSimulationDemandeur(params: {
       message: note,
     });
 
-    return { archived: true, unarchived: false };
+    return { archived: true, unarchived: false, raisonActualisee: false };
   }
 
   // Redevenu éligible : on ne défait qu'un archivage pour inéligibilité, jamais un
@@ -114,5 +117,47 @@ export async function appliquerVerdictSimulationDemandeur(params: {
     message: "Dé-archivé automatiquement : la nouvelle simulation du demandeur est éligible.",
   });
 
-  return { archived: false, unarchived: true };
+  return { archived: false, unarchived: true, raisonActualisee: false };
+}
+
+/**
+ * Dossier déjà archivé et toujours non éligible, mais pour une autre raison (le demandeur
+ * a refait une simulation). On **empile** une qualification plutôt que de réécrire : la
+ * table porte l'historique, `archivedAt` ne doit pas glisser et `archive_reason` est déjà
+ * la valeur canonique. Sans ça, la simulation affichée contredit la raison enregistrée, et
+ * les stats d'inéligibilité comptent une raison périmée.
+ *
+ * Deux abstentions : un archivage **manuel** (abandon, non-réponse) n'appartient pas à ce
+ * flux, et une qualification posée par un **agent** fait foi — une re-simulation du
+ * demandeur ne remplace pas le jugement de l'Aller-vers qui l'a eu au téléphone.
+ */
+async function actualiserRaisonIneligibilite(
+  parcours: ParcoursPrevention,
+  raison: string,
+  note: string,
+  demandeurNom: string
+): Promise<VerdictSimulationDemandeur> {
+  if (!isEligibiliteArchiveReason(parcours.archiveReason)) return AUCUN_CHANGEMENT;
+
+  const derniere = await prospectQualificationsRepo.findLatestByParcoursId(parcours.id);
+  if (derniere?.agentId) return AUCUN_CHANGEMENT;
+  if (derniere?.raisonsIneligibilite?.[0] === raison) return AUCUN_CHANGEMENT;
+
+  await prospectQualificationsRepo.create({
+    parcoursId: parcours.id,
+    agentId: null,
+    decision: QualificationDecision.NON_ELIGIBLE,
+    actionsRealisees: [],
+    raisonsIneligibilite: [raison],
+    note,
+  });
+
+  await logSystemAction({
+    parcoursId: parcours.id,
+    author: { demandeur: { nom: demandeurNom } },
+    actionType: ACTION_TYPE_SIMULATION_NON_ELIGIBLE,
+    message: `${note} (nouvelle simulation)`,
+  });
+
+  return { archived: false, unarchived: false, raisonActualisee: true };
 }
