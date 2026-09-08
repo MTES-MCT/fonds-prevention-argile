@@ -75,10 +75,8 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [currentStep]);
 
-  // Commit de la simulation dès l'écran de résultat, et non au clic du CTA éligible :
-  // l'écran non éligible n'a pas de CTA, sa simulation était donc perdue. Exclu en
-  // mode agent (édition AMO / wizard invitation), qui a sa propre persistance.
-  // Le ref évite la boucle : `saveRGA` re-rend, ce qui recrée `commitToRGAStore`.
+  // L'écran non éligible n'a pas de CTA : sans commit au résultat, sa simulation est perdue (ADR-0030).
+  // Le ref évite la boucle : `saveRGA` re-rend et recrée `commitToRGAStore`.
   const hasCommittedRef = useRef(false);
   useEffect(() => {
     if (isLoading) return;
