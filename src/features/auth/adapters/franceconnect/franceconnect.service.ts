@@ -286,7 +286,7 @@ export async function handleFranceConnectCallback(
     //       Émis ici UNIQUEMENT si une simulation est déjà connue : le mail de bienvenue
     //       promet un conseiller, faux pour un non éligible. Sans simulation, l'évènement
     //       est différé jusqu'à son enregistrement (`migrateSimulationDataToDatabase`),
-    //       seul instant où le verdict est connu — cf. BREVO-LIFECYCLE §2 et ADR-0030.
+    //       seul instant où le verdict est connu — cf. BREVO-LIFECYCLE §2 et ADR-0034.
     const simulationConnue = Boolean(parcours.rgaSimulationData) || simulationPromue;
     const sim = simulationPromue ? parcours.rgaSimulationDataAgent : parcours.rgaSimulationData;
 
