@@ -140,6 +140,7 @@ scénario métier.
 
 ## Parcours 1 — <nom court du scénario>
 
+**Persona** : <demandeur (FranceConnect) | agent AMO | agent Aller-vers | super-administrateur>
 **Objectif** : <ce qu'on cherche à prouver, une phrase>
 
 **Données**
@@ -176,6 +177,14 @@ Règles d'écriture :
   renuméroter.
 - **Liens complets et cliquables**, jamais un chemin nu (`/mon-compte`) : `http://localhost:3000/...`
   en local, `https://fonds-argile-staging.osc-fr1.scalingo.io/...` pour une checklist staging.
+- **Un bloc = un persona.** Ne jamais enchaîner demandeur et agent dans le même parcours :
+  le contrôle côté agent d'un flux demandeur est un bloc à part. Un changement de compte est
+  une **étape explicite** (« se déconnecter ou ouvrir une fenêtre privée, se connecter avec … »),
+  jamais une ligne implicite du bloc « Données ».
+- **Vérifier que le compte proposé voit réellement le cas**, rôle **et** territoire : la liste
+  nominative des demandeurs exige `USERS_DETAIL_READ` (admins seulement), et un dossier dans un
+  département non couvert n'apparaît dans aucun espace agent. Un compte qui ne voit rien fait
+  perdre plus de temps qu'une étape manquante.
 - **Couverture simple** : le chemin nominal + 1 à 2 cas limites qui touchent réellement au
   changement de la branche. Ne pas re-tester toute l'app, seulement la surface impactée.
 - Quand le changement corrige un bug remonté (QA), inclure le **scénario de repro exact**.
