@@ -275,7 +275,14 @@ export async function fetchMatomoUniqueVisitors(
     config.apiUrl
   );
 
-  return data.nb_uniq_visitors ?? 0;
+  // Matomo ne calcule pas toujours les visiteurs uniques (`enable_processing_unique_visitors_range`) :
+  // sans metrique, lever plutot que renvoyer 0, indiscernable d'une vraie absence de visites.
+  const uniques = Number(data.nb_uniq_visitors);
+  if (!Number.isFinite(uniques)) {
+    throw new Error("Reponse Matomo inattendue (VisitsSummary.get): nb_uniq_visitors absent ou non numerique");
+  }
+
+  return uniques;
 }
 
 /**
