@@ -314,6 +314,7 @@ autonomie. Voir [ADR-0018](../adr/0018-arret-accompagnement-amo.md).
 | ------------------------------------------------------------ | -------------------------------------------------- |
 | Département en mode AMO **obligatoire**                      | **bloqué** (l'autonomie n'y existe pas)            |
 | Dossier d'éligibilité DN déposé, décision non rendue         | **bloqué** (cf. §2.7.1)                            |
+| Parcours **archivé** (`archived_at`)                         | **bloqué** (cf. §2.11)                             |
 | `en_attente` (l'AMO n'a pas encore validé)                   | détachement immédiat + mail d'info à l'AMO         |
 | `logement_eligible` **et** `est_mandataire_financier ≠ true` | détachement immédiat + mail d'info à l'AMO         |
 | `logement_eligible` **et** `est_mandataire_financier = true` | `demande_arret_at` posé + mail de demande d'accord |
@@ -583,8 +584,18 @@ Côté `/mon-compte`, l'inéligibilité — d'où qu'elle vienne : décision AMO
 Aller-vers ou simulation du demandeur — est traitée **en tête de `CalloutManager`**, avant
 l'aiguillage par étape (prédicat partagé `estLogementNonEligible`). Sans cette garde, un
 dossier archivé déjà passé à `ÉLIGIBILITE` (autonomie, puis simulation corrigée) continuait
-d'inviter au dépôt du formulaire DN. « Ma liste » désactive au passage l'étape courante
-(`getStepListItems(..., isNonEligible)`).
+d'inviter au dépôt du formulaire DN. Trois surfaces s'alignent dessus : « Ma liste » grise
+tout item resté actif (`getStepListItems(..., isNonEligible)`, y compris l'item de tête dont
+l'ancre `#choix-amo` ne mène plus qu'au callout), et les **pièces justificatives** ne sont
+plus proposées — ni pour l'étape courante, ni en « à prévoir » sur les étapes à venir.
+
+> **Un dossier archivé ne change plus d'accompagnement.** `peutAnnulerAccompagnement` et
+> `peutDemanderAccompagnement` prennent un `dossierArchive` **requis** (`parcours.archived_at`,
+> même valeur côté UI et côté service). Sans lui, un demandeur passé en autonomie puis devenu
+> non éligible — dossier archivé, `statut` toujours `SANS_AMO` — voyait « Demander à être
+> accompagné » **et** le service l'acceptait : un AMO se retrouvait attribué sur un dossier
+> garé. La garde couvre du même coup l'archivage manuel (abandon, non-réponse). Le cas d'une
+> décision AMO « non éligible » était déjà couvert par `statut`, pas celui-là.
 
 ---
 
