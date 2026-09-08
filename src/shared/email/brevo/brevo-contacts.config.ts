@@ -38,6 +38,10 @@ export const BREVO_ATTRS = {
   // Vrai si le dossier a été initié par un conseiller (AMO/Aller-vers) pour le compte du
   // demandeur, plutôt qu'auto-inscrit. Posé une fois pour toutes, ne change jamais.
   CREE_PAR_CONSEILLER: "CREE_PAR_CONSEILLER",
+  // Verdict de la SIMULATION (`eligible` / `non_eligible`), absent tant qu'aucun critère
+  // n'est tranché. Permet à une Automation de dévier le mail de bienvenue, qui promet le
+  // contact d'un conseiller — faux pour un dossier archivé non éligible (ADR-0030).
+  ELIGIBILITE: "ELIGIBILITE",
   // Debug staging uniquement : vrai email quand le contact est sous-adressé.
   EMAIL_REEL: "EMAIL_REEL",
 } as const;
