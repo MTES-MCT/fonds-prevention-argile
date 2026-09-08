@@ -1,4 +1,5 @@
 import { UserRole } from "@/shared/domain/value-objects";
+import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
 
 export interface AdminNavTab {
   id: string;
@@ -7,6 +8,8 @@ export interface AdminNavTab {
   icon: string;
   /** Rôles minimum requis pour voir l'onglet. Si absent, visible par tous les rôles ayant accès au backoffice. */
   minRoles?: UserRole[];
+  /** Onglet d'une feature non déployée partout : masqué là où elle est inactive. Si absent, toujours disponible. */
+  estDisponible?: () => boolean;
 }
 
 /**
@@ -36,6 +39,7 @@ export const ADMIN_NAV_TABS: AdminNavTab[] = [
     label: "Vulnérabilité",
     href: "/administration/vulnerabilite",
     icon: "fr-icon-alert-line",
+    estDisponible: isVulnerabiliteRgaActive,
   },
   {
     id: "agents",

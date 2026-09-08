@@ -33,7 +33,9 @@ function isAdminTabActive(pathname: string, tab: AdminNavTab): boolean {
 }
 
 function PilotageRow({ pathname, role }: { pathname: string; role: UserRole }) {
-  const tabs = ADMIN_NAV_TABS.filter((tab) => !tab.minRoles || tab.minRoles.includes(role));
+  const tabs = ADMIN_NAV_TABS.filter(
+    (tab) => (!tab.minRoles || tab.minRoles.includes(role)) && (!tab.estDisponible || tab.estDisponible())
+  );
   // Onglet actif uniquement si l'URL appartient à l'administration (un seul item
   // actif sur l'union des deux rangées) ; le plus spécifique l'emporte, le root
   // ne match qu'en exact.
