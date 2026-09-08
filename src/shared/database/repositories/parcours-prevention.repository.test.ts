@@ -153,6 +153,7 @@ describe("ParcoursPreventionRepository — invitation", () => {
     archiveReason: null,
     archivedBy: null,
     createdByAgentId: "agent-1",
+    vulnerabiliteSimulationId: null,
     completedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),

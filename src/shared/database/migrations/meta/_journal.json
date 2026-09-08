@@ -337,6 +337,13 @@
       "when": 1788438641877,
       "tag": "0047_typical_prowler",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1788786350504,
+      "tag": "0048_common_silk_fever",
+      "breakpoints": true
     }
   ]
 }

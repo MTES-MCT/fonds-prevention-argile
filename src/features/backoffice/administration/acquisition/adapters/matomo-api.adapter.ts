@@ -377,6 +377,33 @@ function extractDimensionValueFromLabel(label: string): string | null {
   return value || null;
 }
 
+/** Un seul appel `CustomDimensions.getCustomDimension`, segmenté par `eventActionSegment`. */
+async function fetchMatomoDimensionRows(
+  dimensionId: number,
+  eventActionSegment: string,
+  options?: { period?: string; date?: string; extraSegment?: string }
+): Promise<MatomoCustomDimensionRow[]> {
+  const config = getMatomoConfig();
+
+  const data = await fetchMatomoApi<MatomoCustomDimensionRow[]>(
+    {
+      module: "API",
+      method: "CustomDimensions.getCustomDimension",
+      idDimension: String(dimensionId),
+      idSite: config.siteId,
+      period: options?.period ?? "range",
+      date: options?.date ?? "2025-01-01,today",
+      format: "JSON",
+      token_auth: config.apiToken,
+      flat: "1",
+      segment: combineSegments(eventActionSegment, options?.extraSegment) ?? "",
+    },
+    config.apiUrl
+  );
+
+  return Array.isArray(data) ? data : [];
+}
+
 /**
  * Récupère les simulations Matomo ventilées par une Custom Dimension (département, commune, etc.).
  * Fait 2 appels segmentés (éligible + non éligible) et fusionne les résultats.
@@ -389,32 +416,14 @@ export async function fetchMatomoSimulationsGroupedByDimension(
   dimensionId: number,
   options?: { period?: string; date?: string; extraSegment?: string }
 ): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
-  const config = getMatomoConfig();
-
-  const baseParams = {
-    module: "API",
-    method: "CustomDimensions.getCustomDimension",
-    idDimension: String(dimensionId),
-    idSite: config.siteId,
-    period: options?.period ?? "range",
-    date: options?.date ?? "2025-01-01,today",
-    format: "JSON",
-    token_auth: config.apiToken,
-    flat: "1",
-  };
-
-  const eligibleSegment = combineSegments("eventAction==simulateur_result_eligible", options?.extraSegment) ?? "";
-  const nonEligibleSegment =
-    combineSegments("eventAction==simulateur_result_non_eligible", options?.extraSegment) ?? "";
-
   const [eligibleData, nonEligibleData] = await Promise.all([
-    fetchMatomoApi<MatomoCustomDimensionRow[]>({ ...baseParams, segment: eligibleSegment }, config.apiUrl),
-    fetchMatomoApi<MatomoCustomDimensionRow[]>({ ...baseParams, segment: nonEligibleSegment }, config.apiUrl),
+    fetchMatomoDimensionRows(dimensionId, "eventAction==simulateur_result_eligible", options),
+    fetchMatomoDimensionRows(dimensionId, "eventAction==simulateur_result_non_eligible", options),
   ]);
 
   const result = new Map<string, { total: number; eligible: number; nonEligible: number }>();
 
-  for (const row of Array.isArray(eligibleData) ? eligibleData : []) {
+  for (const row of eligibleData) {
     const value = extractDimensionValueFromLabel(row.label);
     if (!value) continue;
     const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
@@ -423,7 +432,7 @@ export async function fetchMatomoSimulationsGroupedByDimension(
     result.set(value, entry);
   }
 
-  for (const row of Array.isArray(nonEligibleData) ? nonEligibleData : []) {
+  for (const row of nonEligibleData) {
     const value = extractDimensionValueFromLabel(row.label);
     if (!value) continue;
     const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
@@ -432,6 +441,32 @@ export async function fetchMatomoSimulationsGroupedByDimension(
     result.set(value, entry);
   }
 
+  return result;
+}
+
+/**
+ * Récupère un comptage Matomo ventilé par Custom Dimension, pour un seul event (pas de
+ * distinction éligible/non-éligible) — utilisé par le simulateur de vulnérabilité, qui n'a
+ * qu'un seul type de résultat (`vulnerabilite_result`).
+ *
+ * @param dimensionId - ID de la Custom Dimension dans Matomo (réutilise la même dimension
+ *   département que le simulateur d'éligibilité : le filtre `eventActionSegment` garantit
+ *   qu'aucune visite de l'autre simulateur ne s'y mélange).
+ * @param eventActionSegment - ex: "eventAction==vulnerabilite_result"
+ */
+export async function fetchMatomoCountByDimension(
+  dimensionId: number,
+  eventActionSegment: string,
+  options?: { period?: string; date?: string; extraSegment?: string }
+): Promise<Map<string, number>> {
+  const rows = await fetchMatomoDimensionRows(dimensionId, eventActionSegment, options);
+
+  const result = new Map<string, number>();
+  for (const row of rows) {
+    const value = extractDimensionValueFromLabel(row.label);
+    if (!value) continue;
+    result.set(value, (result.get(value) ?? 0) + row.nb_visits);
+  }
   return result;
 }
 

@@ -4,6 +4,7 @@ import { SourceAcquisition } from "@/shared/domain/value-objects/source-acquisit
 import type { InfoLogement, AgentEditInfo } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import type { Amo } from "@/features/parcours/amo/domain/entities";
 import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
+import type { InfoVulnerabiliteData } from "@/features/backoffice/espace-agent/shared/services/build-info-vulnerabilite.service";
 
 /**
  * Un prospect = un particulier qui a créé un compte mais n'a PAS fait de demande à un AMO
@@ -88,8 +89,7 @@ export interface ProspectFilters {
  * Informations sur le statut AMO d'un prospect
  */
 export type ProspectAmoInfo =
-  | { status: "aucun_amo_disponible" }
-  | { status: "amo_disponibles"; amosDisponibles: Amo[] };
+  { status: "aucun_amo_disponible" } | { status: "amo_disponibles"; amosDisponibles: Amo[] };
 
 /**
  * Détail d'un prospect
@@ -97,6 +97,8 @@ export type ProspectAmoInfo =
 export interface ProspectDetail extends Prospect {
   /** Informations détaillées du logement pour l'affichage */
   infoLogement: InfoLogement;
+  /** Résultat du simulateur de vulnérabilité RGA rattaché au compte, null si aucun. */
+  vulnerabilite: InfoVulnerabiliteData | null;
   /** Informations sur le statut AMO */
   amoInfo: ProspectAmoInfo;
   /** Historique des étapes */

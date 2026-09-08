@@ -57,5 +57,8 @@ purement cosmétique.
 | 0027 | [Tentative de préremplissage vs dossier confirmé](0027-tentative-prefill-vs-dossier-confirme.md)                                        | Accepté |
 | 0028 | [Actions automatiques sur les décisions AV et les archivages](0028-actions-automatiques-decisions-et-archivage.md)                      | Accepté |
 | 0029 | [Désactivation d'un agent plutôt que suppression](0029-desactivation-agent-plutot-que-suppression.md)                                   | Accepté |
+| 0030 | [Architecture du simulateur de vulnérabilité RGA](0030-simulateur-vulnerabilite-rga.md)                                                 | Accepté |
+| 0031 | [Statistiques d'usage du simulateur de vulnérabilité — hybride Matomo / BDD](0031-stats-vulnerabilite-matomo-bdd.md)                    | Accepté |
+| 0032 | [Rattachement de la simulation de vulnérabilité au compte demandeur](0032-rattachement-simulation-vulnerabilite-compte.md)              | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->

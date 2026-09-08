@@ -7,6 +7,7 @@ export const SESSION_DURATION = {
   admin: 8 * 60 * 60, // 8 heures
   particulier: 24 * 60 * 60, // 24 heures
   redirectCookie: 5 * 60, // 5 minutes
+  vulnerabiliteSimulationLink: 60 * 60, // 1 heure — rattrapage cookie simulation de vulnérabilité
 } as const;
 
 /**

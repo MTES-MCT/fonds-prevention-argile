@@ -10,6 +10,7 @@ import type {
 } from "@/features/backoffice/espace-agent/demandes/domain/types/demande-detail.types";
 import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 import type { DossierTimelineData } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
+import type { InfoVulnerabiliteData } from "@/features/backoffice/espace-agent/shared/services/build-info-vulnerabilite.service";
 
 /**
  * Types pour la page détail d'un dossier suivi
@@ -36,6 +37,8 @@ export interface DossierDetail {
   demandeur: InfoDemandeur;
   /** Informations sur le logement */
   logement: InfoLogement;
+  /** Résultat du simulateur de vulnérabilité RGA rattaché au compte, null si aucun. */
+  vulnerabilite: InfoVulnerabiliteData | null;
   /** Étape actuelle du parcours */
   currentStep: Step;
   /** Statut actuel du parcours */

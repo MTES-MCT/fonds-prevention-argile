@@ -7,7 +7,7 @@ import { AUTH_METHODS, COOKIE_NAMES, getCookieOptions, ROLES, SESSION_DURATION }
 import { ERROR_CODES } from "../../domain/errors/authErrors";
 import type { ErrorCode } from "../../domain/errors/authErrors";
 import { JWTPayload } from "../../domain/entities";
-import { userRepo, parcoursRepo } from "@/shared/database/repositories";
+import { userRepo, parcoursRepo, vulnerabiliteSimulationsRepo } from "@/shared/database/repositories";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
 import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS, buildConseillerAttributes } from "@/shared/email/brevo";
@@ -130,6 +130,30 @@ export async function consumeClaimToken(): Promise<string | undefined> {
   }
 
   return undefined;
+}
+
+/**
+ * Rattache au parcours une simulation de vulnérabilité RGA faite en anonyme avant la connexion
+ * (cookie httpOnly posé par `enregistrerResultatVulnerabiliteAction`, cf. ADR-0032) — mirror exact
+ * de `consumeClaimToken` : consommé ici, dans le callback, pour garantir le rattachement quelle
+ * que soit la première page visitée après connexion (pas de dépendance à un hook client monté sur
+ * `/mon-compte`). Best-effort : ne doit jamais faire échouer la connexion.
+ */
+export async function lierSimulationVulnerabiliteAnonyme(parcoursId: string): Promise<void> {
+  try {
+    const cookieStore = await cookies();
+    const simulationId = cookieStore.get(COOKIE_NAMES.VULNERABILITE_SIMULATION_ID)?.value;
+    if (!simulationId) return;
+
+    cookieStore.delete(COOKIE_NAMES.VULNERABILITE_SIMULATION_ID);
+
+    const simulation = await vulnerabiliteSimulationsRepo.findById(simulationId);
+    if (!simulation) return;
+
+    await parcoursRepo.update(parcoursId, { vulnerabiliteSimulationId: simulation.id });
+  } catch (error) {
+    console.error("[lierSimulationVulnerabiliteAnonyme] échec du rattachement (best-effort)", error);
+  }
 }
 
 /**
@@ -271,6 +295,9 @@ export async function handleFranceConnectCallback(
         },
       });
     }
+
+    // 6quater. Rattache une simulation de vulnérabilité anonyme (cookie), si présente.
+    await lierSimulationVulnerabiliteAnonyme(parcours.id);
 
     // 7. Créer la session avec l'userId
     await createFranceConnectSession(

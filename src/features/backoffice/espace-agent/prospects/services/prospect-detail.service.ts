@@ -16,6 +16,7 @@ import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.typ
 import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
+import { buildInfoVulnerabilite } from "@/features/backoffice/espace-agent/shared/services/build-info-vulnerabilite.service";
 
 function buildAdresseComplete(logement: Partial<RGASimulationData["logement"]>): string {
   const parts = [logement.adresse, logement.commune].filter(Boolean);
@@ -123,10 +124,11 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     // Déterminer le statut AMO du prospect
     const amoInfo = await resolveAmoInfo(logement?.commune || "", logement?.code_departement || "");
 
-    // Construire les informations de diff agent + résolution agent invitant
-    const [agentEditInfo, creator] = await Promise.all([
+    // Construire les informations de diff agent + résolution agent invitant + vulnérabilité RGA
+    const [agentEditInfo, creator, vulnerabilite] = await Promise.all([
       buildAgentEditInfo(result.parcours),
       getParcoursCreator(result.parcours.createdByAgentId),
+      buildInfoVulnerabilite(result.parcours.vulnerabiliteSimulationId),
     ]);
 
     const hasUserClaimed = result.user.fcId !== null && result.user.fcId !== undefined;
@@ -157,6 +159,7 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       updatedAt: result.parcours.updatedAt,
       daysSinceLastAction: daysSince(result.parcours.updatedAt),
       infoLogement,
+      vulnerabilite,
       amoInfo,
       stepsHistory: [], // TODO: implémenter l'historique si nécessaire
       agentEditInfo,

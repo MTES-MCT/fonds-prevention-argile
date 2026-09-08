@@ -118,6 +118,7 @@ function buildMockParcours(codeInsee: string, codeEpci: string = "") {
     archiveReason: null,
     archivedBy: null,
     createdByAgentId: null,
+    vulnerabiliteSimulationId: null,
   };
 }
 

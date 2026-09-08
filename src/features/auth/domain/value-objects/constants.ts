@@ -33,6 +33,10 @@ export const COOKIE_NAMES = {
   FC_CLAIM_TOKEN: "fc_claim_token",
   PC_STATE: "pc_state",
   PC_NONCE: "pc_nonce",
+  // UUID de la ligne vulnerabilite_simulations créée en anonyme, posé par
+  // enregistrerResultatVulnerabiliteAction, consommé par lierSimulationVulnerabiliteAuCompte
+  // à la connexion (rattrapage même session, mirror de FC_CLAIM_TOKEN).
+  VULNERABILITE_SIMULATION_ID: "vulnerabilite_simulation_id",
 } as const;
 
 // Codes d'erreur auth génériques

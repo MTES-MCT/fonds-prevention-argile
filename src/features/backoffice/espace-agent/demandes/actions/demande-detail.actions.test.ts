@@ -134,6 +134,7 @@ describe("demande-detail.actions", () => {
           lon: 2.3522,
           rnbId: "RNB123456",
         },
+        vulnerabilite: null,
         statut: "EN_ATTENTE",
         archivedAt: null,
         dateCreation: new Date(),

@@ -4,6 +4,7 @@ import { users } from "./users";
 import { agents } from "./agents";
 import { dossiersDemarchesSimplifiees } from "./dossiers-demarches-simplifiees";
 import { parcoursActions } from "./parcours-actions";
+import { vulnerabiliteSimulations } from "./vulnerabilite-simulations";
 import { statusPgEnum, stepPgEnum, situationParticulierPgEnum } from "../enums/enums";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -61,6 +62,14 @@ export const parcoursPrevention = pgTable("parcours_prevention", {
   // Agent qui a créé le dossier (cas "Aller vers" : création proactive
   // d'un dossier pour un demandeur avant son inscription FranceConnect).
   createdByAgentId: uuid("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+
+  // Pointeur vers la dernière simulation de vulnérabilité RGA connue pour ce demandeur
+  // (même philosophie que le pointeur courant de dossiers_demarches_simplifiees, ADR-0027 :
+  // on lit depuis le parcours, pas l'inverse). vulnerabilite_simulations reste la table
+  // anonyme de référence pour les stats, inchangée par cette colonne.
+  vulnerabiliteSimulationId: uuid("vulnerabilite_simulation_id").references(() => vulnerabiliteSimulations.id, {
+    onDelete: "set null",
+  }),
 });
 
 export const parcoursPreventionRelations = relations(parcoursPrevention, ({ one, many }) => ({
