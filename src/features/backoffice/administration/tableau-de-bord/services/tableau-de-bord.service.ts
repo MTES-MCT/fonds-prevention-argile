@@ -55,6 +55,7 @@ import {
   decouperPeriodeMatomo,
   formaterDateMatomo,
 } from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
+import { cumulerCompteurs } from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
 import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
 import {
   getFenetrePeriode,
@@ -92,14 +93,6 @@ async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promi
     console.error(`[matomo] echec ${contexte}:`, error instanceof Error ? error.message : error);
     return null;
   }
-}
-
-function cumulerCompteurs(compteursParAppel: Map<string, number>[]): Map<string, number> {
-  const cumul = new Map<string, number>();
-  for (const compteurs of compteursParAppel) {
-    for (const [label, valeur] of compteurs) cumul.set(label, (cumul.get(label) ?? 0) + valeur);
-  }
-  return cumul;
 }
 
 /**
