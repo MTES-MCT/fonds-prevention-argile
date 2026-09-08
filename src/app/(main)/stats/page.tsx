@@ -46,8 +46,8 @@ export default async function StatsPage() {
 
         <div className="fr-grid-row fr-grid-row--gutters fr-mb-6w">
           <StatCard value={cards.visiteurs} label="Visiteurs uniques" />
-          <StatCard value={cards.simulationsEligibles} label="Simulations éligibles" />
           <StatCard value={cards.simulationsTerminees} label="Simulations terminées" />
+          <StatCard value={cards.simulationsEligibles} label="Simulations éligibles" />
           <StatCard value={cards.comptesCrees} label="Comptes créés" />
           <StatCard value={cards.dossiersEligibiliteDeposes} label="Dossiers d'éligibilité déposés" />
           <StatCard value={cards.diagnostics} label="Diagnostics réalisés ou en cours" />
