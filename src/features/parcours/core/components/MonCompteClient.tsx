@@ -85,6 +85,9 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
 
   const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
 
+  // Aucune pièce à réunir si le logement n'est pas éligible : plus rien ne sera déposé.
+  const isNonEligible = estLogementNonEligible(statutAmo, isQualifiedNonEligible);
+
   // Vérifier si les coordonnées de contact sont déjà renseignées.
   // Le téléphone et l'email_contact sont tous deux requis (l'auto-attribution AMO
   // en mode OBLIGATOIRE/AV_AMO_FUSIONNES exige le téléphone, sinon elle échoue).
@@ -223,22 +226,25 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
           </div>
 
           {/* Pièces de l'étape en cours : ce que le demandeur doit réunir maintenant. */}
-          <div className="fr-grid-row">
-            <div className="fr-col-12 fr-col-md-8">
-              <PiecesJustificatives
-                pieces={currentStep ? piecesByStep?.[currentStep] : undefined}
-                titre="Les pièces à préparer dès maintenant"
-              />
+          {!isNonEligible && (
+            <div className="fr-grid-row">
+              <div className="fr-col-12 fr-col-md-8">
+                <PiecesJustificatives
+                  pieces={currentStep ? piecesByStep?.[currentStep] : undefined}
+                  titre="Les pièces à préparer dès maintenant"
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
-      {/* Sections communes */}
-      <StepDetailSection piecesByStep={piecesByStep} />
+      {/* Sections communes. Sans pièces si non éligible : les cartes d'étapes restent
+          informatives, mais n'invitent plus à préparer des justificatifs. */}
+      <StepDetailSection piecesByStep={isNonEligible ? undefined : piecesByStep} />
 
       {/* Section "Pour en savoir plus" si logement non éligible */}
-      {estLogementNonEligible(statutAmo, isQualifiedNonEligible) && <PourEnSavoirPlusSectionContent />}
+      {isNonEligible && <PourEnSavoirPlusSectionContent />}
 
       {/*<FaqAccountSection />*/}
     </>
