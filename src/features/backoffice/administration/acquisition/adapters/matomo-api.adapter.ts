@@ -449,12 +449,13 @@ export async function fetchMatomoSimulationsGroupedByDimension(
 
   const result = new Map<string, { total: number; eligible: number; nonEligible: number }>();
 
+  // Number(...) comme dans sumEventCounts : le type annonce un number que le JSON ne garantit pas.
   for (const row of eligibleData) {
     const value = extractDimensionValueFromLabel(row.label);
     if (!value) continue;
     const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
-    entry.eligible += row.nb_visits;
-    entry.total += row.nb_visits;
+    entry.eligible += Number(row.nb_visits) || 0;
+    entry.total += Number(row.nb_visits) || 0;
     result.set(value, entry);
   }
 
@@ -462,8 +463,8 @@ export async function fetchMatomoSimulationsGroupedByDimension(
     const value = extractDimensionValueFromLabel(row.label);
     if (!value) continue;
     const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
-    entry.nonEligible += row.nb_visits;
-    entry.total += row.nb_visits;
+    entry.nonEligible += Number(row.nb_visits) || 0;
+    entry.total += Number(row.nb_visits) || 0;
     result.set(value, entry);
   }
 
@@ -491,7 +492,7 @@ export async function fetchMatomoCountByDimension(
   for (const row of rows) {
     const value = extractDimensionValueFromLabel(row.label);
     if (!value) continue;
-    result.set(value, (result.get(value) ?? 0) + row.nb_visits);
+    result.set(value, (result.get(value) ?? 0) + (Number(row.nb_visits) || 0));
   }
   return result;
 }

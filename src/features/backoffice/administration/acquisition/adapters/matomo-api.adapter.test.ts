@@ -243,6 +243,23 @@ describe("fetchMatomoEvents — une réponse douteuse ne devient jamais un total
   });
 });
 
+describe("fetchMatomoSimulationsGroupedByDimension — ventilation par département", () => {
+  stubberFetch();
+
+  it("additionne éligible et non éligible même si Matomo sérialise nb_visits en string", async () => {
+    mockFetch
+      .mockResolvedValueOnce(jsonResponse([{ label: "36 - exemple.test/simulateur", nb_visits: "12" }]))
+      .mockResolvedValueOnce(jsonResponse([{ label: "36 - exemple.test/simulateur", nb_visits: "8" }]));
+
+    const result = await fetchMatomoSimulationsGroupedByDimension(5, {
+      period: "range",
+      date: "2026-01-01,2026-01-31",
+    });
+
+    expect(result.get("36")).toEqual({ eligible: 12, nonEligible: 8, total: 20 });
+  });
+});
+
 describe("fetchMatomoEvents — propagation des erreurs à l'appelant", () => {
   stubberFetch();
 
