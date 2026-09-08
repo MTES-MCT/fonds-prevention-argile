@@ -562,6 +562,14 @@ Trois changements, dans l'ordre du flux :
 - **La simulation est commitée à l'arrivée sur l'écran de résultat**, éligible ou non
   (`SimulateurFormulaire`, effet gardé par un ref pour ne pas boucler sur `saveRGA`) — sauf
   en `editMode`, qui couvre les deux surfaces agent.
+- **Deux points d'écriture, selon que le demandeur est connecté ou non.** Anonyme : la
+  simulation part dans le store Zustand (localStorage, TTL 7 jours) et n'atteint la base qu'à
+  la migration, au prochain passage sur `/mon-compte`. **Déjà connecté** : le même effet
+  appelle en plus `migrateSimulationDataToDatabase` directement. Sans ce second point,
+  `useMigrateRGAToDB` — seul appelé par `MonCompteClient`, car il dépend de `ParcoursProvider`
+  qui n'enveloppe que `/mon-compte` — n'aurait jamais tourné pour un non éligible : il ferme
+  l'onglet sur l'écran de résultat et ne revient pas sur son espace. L'action est idempotente
+  (`isSameSimulationContent`), donc le doublon éventuel est un no-op.
 - **Le verdict est appliqué à la migration** (`appliquerVerdictSimulationDemandeur`, appelé
   par `migrateSimulationDataToDatabase` **avant** l'évènement Brevo, pour que `SITUATION`
   parte déjà à jour). Non éligible → qualification `prospect_qualifications` sans agent
