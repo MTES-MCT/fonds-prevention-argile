@@ -27,6 +27,7 @@ import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/d
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import { getDepartementsDisponiblesAction } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
 import { getDepartementsNonCouvertsAction } from "@/features/backoffice/administration/demandeurs/actions";
+import { estDepartementNonCouvert } from "@/features/backoffice/administration/demandeurs/domain";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 import {
@@ -196,13 +197,13 @@ export default function UsersTrackingPanel() {
   );
 
   // Alerte de tête : demandeurs actifs qu'aucune structure ne couvre aujourd'hui.
-  const nbActifsNonCouverts = useMemo(() => {
-    if (departementsNonCouverts.length === 0) return 0;
-    return activeUsers.filter((u) => {
-      const dept = u.rgaSimulation?.logement?.code_departement;
-      return dept ? departementsNonCouverts.includes(String(dept)) : false;
-    }).length;
-  }, [activeUsers, departementsNonCouverts]);
+  const nbActifsNonCouverts = useMemo(
+    () =>
+      activeUsers.filter((u) =>
+        estDepartementNonCouvert(u.rgaSimulation?.logement?.code_departement, departementsNonCouverts)
+      ).length,
+    [activeUsers, departementsNonCouverts]
+  );
 
   // Départements extraits des users (pour "Tous les demandeurs")
   const departements = useMemo(() => extractUniqueDepartements(users), [users]);
