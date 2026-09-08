@@ -13,14 +13,15 @@ interface StatsEvolutionChartsProps {
 
 interface MiniChartProps {
   title: string;
-  points: PointEvolutionMensuelle[];
+  /** `null` = panne Matomo (à distinguer d'une série vide/sans donnée, cf. `PublicStatsEvolution`). */
+  points: PointEvolutionMensuelle[] | null;
   unitTooltip: string;
   chartLoaded: boolean;
 }
 
 function MiniChart({ title, points, unitTooltip, chartLoaded }: MiniChartProps) {
   const chartData = useMemo(() => {
-    if (points.length === 0) return null;
+    if (!points || points.length === 0) return null;
     const labels = points.map((p) => `"${p.label}"`).join(", ");
     const values = points.map((p) => p.count).join(", ");
     return { x: `[[${labels}]]`, y: `[[${values}]]` };
@@ -35,7 +36,12 @@ function MiniChart({ title, points, unitTooltip, chartLoaded }: MiniChartProps) 
           border: "1px solid var(--border-default-grey)",
         }}>
         <div className="fr-p-2w">
-          {!chartData && (
+          {!chartData && points === null && (
+            <p className="fr-text--sm fr-mb-0" style={{ color: "var(--text-mention-grey)" }}>
+              Indisponible.
+            </p>
+          )}
+          {!chartData && points !== null && (
             <p className="fr-text--sm fr-mb-0" style={{ color: "var(--text-mention-grey)" }}>
               Aucune donnée disponible.
             </p>

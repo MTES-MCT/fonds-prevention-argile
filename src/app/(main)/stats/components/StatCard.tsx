@@ -1,5 +1,6 @@
 interface StatCardProps {
-  value: number;
+  /** `null` = panne Matomo (jamais affiché comme un faux 0, cf. `PublicStatsCards`). */
+  value: number | null;
   label: string;
 }
 
@@ -17,8 +18,14 @@ export function StatCard({ value, label }: StatCardProps) {
           boxShadow: "inset 0 -4px 0 0 var(--background-flat-blue-france)",
           width: "100%",
         }}>
-        <p className="fr-mb-1w" style={{ fontSize: "2.5rem", fontWeight: 700, lineHeight: 1.2 }}>
-          {numberFormatter.format(value)}
+        <p
+          className="fr-mb-1w"
+          style={
+            value === null
+              ? { fontSize: "1.25rem", fontWeight: 700, lineHeight: 2.5, color: "var(--text-mention-grey)" }
+              : { fontSize: "2.5rem", fontWeight: 700, lineHeight: 1.2 }
+          }>
+          {value === null ? "Indisponible" : numberFormatter.format(value)}
         </p>
         <p className="fr-text-mention--grey fr-mb-0">{label}</p>
       </div>

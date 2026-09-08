@@ -54,6 +54,16 @@ async function countDiagnostics(): Promise<number> {
   return result[0]?.count ?? 0;
 }
 
+/** Trace une panne Matomo et renvoie null, pour la distinguer d'un vrai zéro côté page (cf. logMatomoFailure côté admin). */
+async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promise<T | null> {
+  try {
+    return await promise;
+  } catch (error) {
+    console.error(`[public-stats] echec ${contexte}:`, error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
 async function getSimulationsTotals(): Promise<{ eligibles: number; terminees: number }> {
   const events = await fetchMatomoEvents({ period: "range", date: lifetimeMatomoRange() });
   const eligibles = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE) ?? 0;
@@ -64,13 +74,15 @@ async function getSimulationsTotals(): Promise<{ eligibles: number; terminees: n
 /**
  * Chiffres cumulés depuis le lancement du service, pour les cartes en tête de la page publique
  * `/stats`. Best-effort sur les compteurs Matomo (visiteurs, simulations) : une panne Matomo ne
- * doit jamais empêcher l'affichage des compteurs BDD, elle retombe sur 0 pour les seuls
- * compteurs concernés — page publique, jamais d'erreur visible.
+ * doit jamais empêcher l'affichage des compteurs BDD, mais ne doit jamais non plus se traduire
+ * par un faux 0 — retombe sur `null` (cf. `PublicStatsCards`), affiché comme « Indisponible »
+ * côté page. Important sur cette page en ISR : un 0 figé à tort resterait affiché jusqu'à la
+ * prochaine régénération (jusqu'à 1h), contrairement à l'admin qui refait un appel à chaque visite.
  */
 export async function getPublicStatsCards(): Promise<PublicStatsCards> {
   const [visiteurs, simulations, comptesCrees, dossiersEligibiliteDeposes, diagnostics] = await Promise.all([
-    fetchMatomoUniqueVisitors("range", lifetimeMatomoRange()).catch(() => 0),
-    getSimulationsTotals().catch(() => ({ eligibles: 0, terminees: 0 })),
+    logMatomoFailure(fetchMatomoUniqueVisitors("range", lifetimeMatomoRange()), "visiteurs"),
+    logMatomoFailure(getSimulationsTotals(), "simulations"),
     countComptesCrees(),
     countDossiersEligibiliteDeposes(),
     countDiagnostics(),
@@ -78,8 +90,8 @@ export async function getPublicStatsCards(): Promise<PublicStatsCards> {
 
   return {
     visiteurs,
-    simulationsEligibles: simulations.eligibles,
-    simulationsTerminees: simulations.terminees,
+    simulationsEligibles: simulations?.eligibles ?? null,
+    simulationsTerminees: simulations?.terminees ?? null,
     comptesCrees,
     dossiersEligibiliteDeposes,
     diagnostics,
@@ -96,7 +108,7 @@ export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {
 
   const [visiteursParMois, comptesCreesDates, dossiersDeposesDates, dossiersEligibiliteValideesDates] =
     await Promise.all([
-      fetchMatomoUniqueVisitorsSeries("month", lifetimeMatomoRange()).catch(() => ({})),
+      logMatomoFailure(fetchMatomoUniqueVisitorsSeries("month", lifetimeMatomoRange()), "visiteurs (evolution)"),
       db
         .select({ createdAt: parcoursPrevention.createdAt })
         .from(parcoursPrevention)
@@ -118,7 +130,9 @@ export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {
     ]);
 
   return {
-    visiteurs: aggregerCompteursParMois(visiteursParMois, SERVICE_START_DATE, maintenant, dateDebutMatomo),
+    visiteurs: visiteursParMois
+      ? aggregerCompteursParMois(visiteursParMois, SERVICE_START_DATE, maintenant, dateDebutMatomo)
+      : null,
     comptesCrees: aggregerParMois(
       comptesCreesDates.map((r) => r.createdAt),
       SERVICE_START_DATE,
