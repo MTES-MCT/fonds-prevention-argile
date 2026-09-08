@@ -164,6 +164,13 @@ page / Server Actions.
   la rangée 1 reste celui de `ADMIN_NAV_TABS.minRoles` : les AMO/AV n'y voient que les
   trois onglets stats (Tableau de bord, Acquisition, Demandeurs), les onglets sensibles
   restant masqués.
+- Un onglet peut en outre être masqué par **disponibilité de la feature**
+  (`ADMIN_NAV_TABS.estDisponible`), indépendamment du rôle. Seul cas aujourd'hui :
+  **Vulnérabilité** (`/administration/vulnerabilite`, agrégats anonymes, ouvert à tous les
+  rôles ci-dessus au même titre que les trois onglets stats) — masqué et en 404 en
+  production, la feature n'y étant pas déployée. Voir
+  [le guide du simulateur](../vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md) et l'amendement
+  d'[ADR-0030](../adr/0030-simulateur-vulnerabilite-rga.md).
 - `canAccessEspaceAgent` = `SUPER_ADMINISTRATEUR` / `AMO` / `ALLERS_VERS` /
   `AMO_ET_ALLERS_VERS`, **ou** `ANALYSTE` avec au moins un département. Aligné sur la
   garde du layout espace-agent. Les deux booléens sont calculés côté serveur et exposés

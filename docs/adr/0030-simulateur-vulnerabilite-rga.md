@@ -126,7 +126,27 @@ retirer (metadata + entrées `robots.ts`) une fois la méthode validée.
 Aucune : nouvelle feature, aucun code existant modifié. Retrait du `noindex`/`disallow` à prévoir une fois la grille
 validée par un expert RGA (cf. « Mitigation » ci-dessus).
 
+## Amendement (2026-09-08) — la feature ne va pas en production
+
+La mitigation « déployée en production mais non indexée » est jugée insuffisante : une page non indexée reste
+accessible à qui a l'URL, et un score de vulnérabilité issu d'une méthode non validée ne doit pas pouvoir être
+présenté à un ménage. La feature est donc **inactive en production**, et non plus seulement invisible des moteurs.
+
+Bascule unique : `isVulnerabiliteRgaActive()` (`domain/value-objects/vulnerabilite-disponibilite.ts`), dérivée de
+`NEXT_PUBLIC_APP_ENV` — active en `local`, `docker` et `staging`. Elle garde les deux pages publiques,
+l'onglet `/administration/vulnerabilite`, son entrée de navigation (`AdminNavTab.estDisponible`) et l'action
+d'enregistrement — une Server Action restant appelable même quand la page qui l'utilise renvoie 404.
+
+Le `noindex` et les entrées `robots.txt` sont **conservés** : ils protègent staging et couvriront la mise en ligne
+si elle se fait avant la validation de la grille. Les trois leviers (validation de la grille, bascule, retrait du
+`noindex`) sont à lever ensemble.
+
+Périmètre, méthode et backlog d'améliorations :
+[docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md](../vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md).
+
 ## Liens
+
+- `docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md`
 
 - `src/features/vulnerabilite-rga/domain/value-objects/grille-ponderation.ts`
 - `src/features/vulnerabilite-rga/domain/services/scoring.service.ts`
