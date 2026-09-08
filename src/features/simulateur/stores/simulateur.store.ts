@@ -7,12 +7,7 @@ import { SimulateurStep } from "../domain/value-objects/simulateur-step.enum";
 
 const SIMULATEUR_STORAGE_KEY = "fonds-argile-simulateur";
 
-/**
- * Sans adresse, une simulation n'a ni commune ni département : le dossier n'est
- * rattachable à aucun territoire et reste invisible des conseillers locaux. On
- * pose donc la question avant de couper, y compris côté demandeur (le seul
- * critère évalué plus tôt est le type de logement).
- */
+// Sans adresse, pas de département : le dossier n'est rattachable à aucun territoire (ADR-0030).
 const DEFAULT_DEFER_EARLY_EXIT_UNTIL = SimulateurStep.ADRESSE;
 
 /**
