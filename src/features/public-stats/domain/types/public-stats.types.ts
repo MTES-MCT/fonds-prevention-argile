@@ -29,6 +29,7 @@ export interface PointEvolutionMensuelle {
 export interface PublicStatsEvolution {
   visiteurs: PointEvolutionMensuelle[] | null;
   comptesCrees: PointEvolutionMensuelle[];
-  dossiersDeposes: PointEvolutionMensuelle[];
+  /** Même définition que la carte `dossiersEligibiliteDeposes` : cumul et série doivent concorder. */
+  dossiersEligibiliteDeposes: PointEvolutionMensuelle[];
   dossiersEligibiliteValides: PointEvolutionMensuelle[];
 }

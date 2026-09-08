@@ -82,8 +82,8 @@ export function StatsEvolutionCharts({ evolution }: StatsEvolutionChartsProps) {
         chartLoaded={chartLoaded}
       />
       <MiniChart
-        title="Dossiers déposés"
-        points={evolution.dossiersDeposes}
+        title="Dossiers d'éligibilité déposés"
+        points={evolution.dossiersEligibiliteDeposes}
         unitTooltip="dossiers"
         chartLoaded={chartLoaded}
       />

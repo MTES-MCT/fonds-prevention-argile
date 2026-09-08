@@ -8,17 +8,27 @@ import {
   fetchMatomoUniqueVisitors,
   fetchMatomoUniqueVisitorsSeries,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
+import {
+  decouperPeriodeMatomo,
+  formaterDateMatomo,
+} from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
+import { cumulerCompteurs } from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { SERVICE_START_DATE } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import { aggregerParMois, aggregerCompteursParMois } from "../domain/utils/aggreger-par-mois";
 import type { PublicStatsCards, PublicStatsEvolution } from "../domain/types/public-stats.types";
 
-function formatMatomoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+function lifetimeMatomoRange(): string {
+  return `${formaterDateMatomo(SERVICE_START_DATE)},${formaterDateMatomo(new Date())}`;
 }
 
-function lifetimeMatomoRange(): string {
-  return `${formatMatomoDate(SERVICE_START_DATE)},${formatMatomoDate(new Date())}`;
+/**
+ * Plage des séries mensuelles, calée sur le 1er du mois de lancement : Matomo ne rogne pas ses
+ * buckets (cf. gotcha CLAUDE.md), autant demander les mois pleins qu'on affichera.
+ */
+function lifetimeMatomoRangeMensuel(): string {
+  const premierMois = new Date(SERVICE_START_DATE.getUTCFullYear(), SERVICE_START_DATE.getUTCMonth(), 1);
+  return `${formaterDateMatomo(premierMois)},${formaterDateMatomo(new Date())}`;
 }
 
 /** Date de début d'une clé de réponse Matomo multi-sous-période ("début,fin" ou "début" seul). */
@@ -28,10 +38,7 @@ function dateDebutMatomo(cle: string): Date | null {
 }
 
 async function countComptesCrees(): Promise<number> {
-  const result = await db
-    .select({ count: count() })
-    .from(parcoursPrevention)
-    .where(isNotNull(parcoursPrevention.userId));
+  const result = await db.select({ count: count() }).from(parcoursPrevention);
   return result[0]?.count ?? 0;
 }
 
@@ -64,8 +71,19 @@ async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promi
   }
 }
 
+/**
+ * Somme des events de simulation depuis le lancement, en buckets mensuels alignés sur les bornes
+ * de calendrier plutôt qu'en `period=range` : Matomo ne pré-archive pas un `range`, qu'il
+ * recalculerait ici sur la fenêtre la plus longue possible (ADR-0033). `Promise.all` et non
+ * `allSettled` : un total amputé d'une sous-période serait indiscernable d'un vrai chiffre.
+ */
 async function getSimulationsTotals(): Promise<{ eligibles: number; terminees: number }> {
-  const events = await fetchMatomoEvents({ period: "range", date: lifetimeMatomoRange() });
+  const sousPeriodes = decouperPeriodeMatomo(SERVICE_START_DATE, new Date(), "month");
+  const compteursParAppel = await Promise.all(
+    sousPeriodes.map(({ period, date }) => fetchMatomoEvents({ period, date }))
+  );
+
+  const events = cumulerCompteurs(compteursParAppel);
   const eligibles = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE) ?? 0;
   const nonEligibles = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE) ?? 0;
   return { eligibles, terminees: eligibles + nonEligibles };
@@ -76,8 +94,7 @@ async function getSimulationsTotals(): Promise<{ eligibles: number; terminees: n
  * `/stats`. Best-effort sur les compteurs Matomo (visiteurs, simulations) : une panne Matomo ne
  * doit jamais empêcher l'affichage des compteurs BDD, mais ne doit jamais non plus se traduire
  * par un faux 0 — retombe sur `null` (cf. `PublicStatsCards`), affiché comme « Indisponible »
- * côté page. Important sur cette page en ISR : un 0 figé à tort resterait affiché jusqu'à la
- * prochaine régénération (jusqu'à 1h), contrairement à l'admin qui refait un appel à chaque visite.
+ * côté page.
  */
 export async function getPublicStatsCards(): Promise<PublicStatsCards> {
   const [visiteurs, simulations, comptesCrees, dossiersEligibiliteDeposes, diagnostics] = await Promise.all([
@@ -108,15 +125,17 @@ export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {
 
   const [visiteursParMois, comptesCreesDates, dossiersDeposesDates, dossiersEligibiliteValideesDates] =
     await Promise.all([
-      logMatomoFailure(fetchMatomoUniqueVisitorsSeries("month", lifetimeMatomoRange()), "visiteurs (evolution)"),
-      db
-        .select({ createdAt: parcoursPrevention.createdAt })
-        .from(parcoursPrevention)
-        .where(isNotNull(parcoursPrevention.userId)),
+      logMatomoFailure(fetchMatomoUniqueVisitorsSeries("month", lifetimeMatomoRangeMensuel()), "visiteurs (evolution)"),
+      db.select({ createdAt: parcoursPrevention.createdAt }).from(parcoursPrevention),
       db
         .select({ submittedAt: dossiersDemarchesSimplifiees.submittedAt })
         .from(dossiersDemarchesSimplifiees)
-        .where(isNotNull(dossiersDemarchesSimplifiees.submittedAt)),
+        .where(
+          and(
+            eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE),
+            isNotNull(dossiersDemarchesSimplifiees.submittedAt)
+          )
+        ),
       db
         .select({ processedAt: dossiersDemarchesSimplifiees.processedAt })
         .from(dossiersDemarchesSimplifiees)
@@ -138,7 +157,7 @@ export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {
       SERVICE_START_DATE,
       maintenant
     ),
-    dossiersDeposes: aggregerParMois(
+    dossiersEligibiliteDeposes: aggregerParMois(
       dossiersDeposesDates.map((r) => r.submittedAt).filter((d): d is Date => d !== null),
       SERVICE_START_DATE,
       maintenant
