@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getPublicStatsCards, getPublicStatsEvolution } from "@/features/public-stats/services/public-stats.service";
+import {
+  getPublicStatsCardsCached,
+  getPublicStatsEvolutionCached,
+} from "@/features/public-stats/services/public-stats.service";
 import { StatCard } from "./components/StatCard";
 import { StatsEvolutionCharts } from "./components/StatsEvolutionCharts";
 
-// Chiffres cumulés depuis le lancement : pas besoin de temps réel, régénération périodique
-// (ISR) pour éviter de recalculer Matomo/BDD à chaque visite d'une page publique.
-export const revalidate = 3600;
+// Pas d'ISR : sans segment dynamique, Next prérendrait la page au build, où ni la BDD ni Matomo
+// ne répondent. Le cache horaire est porté par `unstable_cache` côté service.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Statistiques | Fonds Prévention Argile",
@@ -14,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StatsPage() {
-  const [cards, evolution] = await Promise.all([getPublicStatsCards(), getPublicStatsEvolution()]);
+  const [cards, evolution] = await Promise.all([getPublicStatsCardsCached(), getPublicStatsEvolutionCached()]);
 
   return (
     <section className="fr-container-fluid fr-py-2v">

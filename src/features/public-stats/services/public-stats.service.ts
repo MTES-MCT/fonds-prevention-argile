@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { and, count, eq, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { parcoursPrevention, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
@@ -17,6 +18,9 @@ import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { SERVICE_START_DATE } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import { aggregerParMois, aggregerCompteursParMois } from "../domain/utils/aggreger-par-mois";
 import type { PublicStatsCards, PublicStatsEvolution } from "../domain/types/public-stats.types";
+
+export const PUBLIC_STATS_CACHE_TAG = "public-stats";
+const PUBLIC_STATS_CACHE_TTL_SECONDS = 3600;
 
 function lifetimeMatomoRange(): string {
   return `${formaterDateMatomo(SERVICE_START_DATE)},${formaterDateMatomo(new Date())}`;
@@ -169,3 +173,15 @@ export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {
     ),
   };
 }
+
+// Cache applicatif plutôt qu'ISR : la page est `force-dynamic` (ni BDD ni Matomo joignables au
+// build), et `unstable_cache` ne mémorise pas les échecs — un « Indisponible » n'est jamais figé.
+export const getPublicStatsCardsCached = unstable_cache(getPublicStatsCards, ["public-stats-cards"], {
+  revalidate: PUBLIC_STATS_CACHE_TTL_SECONDS,
+  tags: [PUBLIC_STATS_CACHE_TAG],
+});
+
+export const getPublicStatsEvolutionCached = unstable_cache(getPublicStatsEvolution, ["public-stats-evolution"], {
+  revalidate: PUBLIC_STATS_CACHE_TTL_SECONDS,
+  tags: [PUBLIC_STATS_CACHE_TAG],
+});
