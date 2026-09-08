@@ -34,6 +34,7 @@ export default function MaListe() {
     getDSStatusByStep,
     dossiers,
     isQualifiedNonEligible,
+    parcours,
   } = useParcours();
   const amoMode = useAmoMode();
   const [isAnnulerOpen, setIsAnnulerOpen] = useState(false);
@@ -41,6 +42,7 @@ export default function MaListe() {
 
   const eligibiliteDsStatus = getDSStatusByStep(Step.ELIGIBILITE) ?? null;
   const isNonEligible = estLogementNonEligible(statutAmo, isQualifiedNonEligible);
+  const dossierArchive = Boolean(parcours?.archivedAt);
   const items = getStepListItems(
     amoMode,
     statutAmo,
@@ -63,6 +65,7 @@ export default function MaListe() {
       statut: statutAmo,
       demandeArretAt: validationAmoComplete.demandeArretAt,
       eligibiliteDsStatus,
+      dossierArchive,
     });
   const arretEnAttente = Boolean(validationAmoComplete?.demandeArretAt);
   const accordAmoRequis =
@@ -73,7 +76,7 @@ export default function MaListe() {
   const peutDemander =
     amoMode === AmoMode.FACULTATIF &&
     statutAmo !== null &&
-    peutDemanderAccompagnement({ statut: statutAmo, eligibiliteDsStatus });
+    peutDemanderAccompagnement({ statut: statutAmo, eligibiliteDsStatus, dossierArchive });
 
   const choixAccompagnementDetail =
     statutAmo === null

@@ -109,8 +109,12 @@ export async function annulerAccompagnementDemandeur(params: {
       statut: validation.statut,
       demandeArretAt: validation.demandeArretAt,
       eligibiliteDsStatus,
+      dossierArchive: Boolean(parcours.archivedAt),
     })
   ) {
+    if (parcours.archivedAt) {
+      return { success: false, error: "Votre dossier est archivé : l'accompagnement ne peut plus être modifié" };
+    }
     if (validation.demandeArretAt) {
       return { success: false, error: "Votre demande est déjà en attente de la réponse de votre AMO" };
     }
