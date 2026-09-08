@@ -7,7 +7,7 @@ import { parcoursRepo, userRepo } from "@/shared/database/repositories";
 import { formatNomComplet } from "@/shared/utils";
 import { appliquerVerdictSimulationDemandeur } from "../services/simulation-eligibilite.service";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
-import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributes } from "@/shared/email/brevo";
+import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS, buildConseillerAttributes } from "@/shared/email/brevo";
 import { isSameSimulationContent } from "../utils/simulation-comparison";
 
 /**
@@ -72,6 +72,9 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
       return { success: true, data: undefined };
     }
 
+    // Lu avant l'écriture : sert à n'émettre `demandeur_cree` qu'une fois (cf. étape 8).
+    const premiereSimulation = !parcours.rgaSimulationData;
+
     // 6. Sauvegarder en base de données (écrase l'ancienne simulation si existante)
     await parcoursRepo.updateRGAData(parcours.id, rgaSimulationData);
 
@@ -95,10 +98,19 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
       attributes: conseillerAttributes,
     });
 
-    // 8. Déclencheur dédié : le mail de bienvenue promet un conseiller, faux sur un dossier
-    //    archivé. Au 1er archivage seulement — une raison actualisée ne doit pas re-mailer.
-    if (verdict.archived) {
-      await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
+    // 8. Bienvenue OU non-éligibilité, jamais les deux : `demandeur_cree` est différé
+    //    jusqu'ici pour une inscription autonome, seul instant où le verdict est connu
+    //    (cf. BREVO-LIFECYCLE §2). `premiereSimulation` garantit un unique envoi.
+    if (verdict.nonEligible) {
+      if (verdict.archived) await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
+    } else if (premiereSimulation) {
+      await emitBrevoEvent(parcours.id, BREVO_EVENTS.DEMANDEUR_CREE, {
+        attributes: {
+          [BREVO_ATTRS.A_AMO]: false,
+          [BREVO_ATTRS.CREE_PAR_CONSEILLER]: user?.claimedAt != null,
+          ...conseillerAttributes,
+        },
+      });
     }
 
     return {

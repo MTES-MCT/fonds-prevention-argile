@@ -58,7 +58,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: true, unarchived: false, raisonActualisee: false });
+    expect(res).toEqual({ archived: true, unarchived: false, raisonActualisee: false, nonEligible: true });
     expect(prospectQualificationsRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({
         parcoursId: "p1",
@@ -88,7 +88,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false, nonEligible: false });
     expect(parcoursRepo.updateSituationParticulier).not.toHaveBeenCalled();
     expect(prospectQualificationsRepo.create).not.toHaveBeenCalled();
   });
@@ -107,7 +107,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false, nonEligible: true });
     expect(parcoursRepo.updateSituationParticulier).not.toHaveBeenCalled();
     expect(prospectQualificationsRepo.create).not.toHaveBeenCalled();
   });
@@ -124,7 +124,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: true });
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: true, nonEligible: true });
     expect(prospectQualificationsRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({ agentId: null, raisonsIneligibilite: ["appartement"] })
     );
@@ -147,7 +147,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false, nonEligible: true });
     expect(prospectQualificationsRepo.create).not.toHaveBeenCalled();
   });
 
@@ -158,7 +158,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false, nonEligible: true });
     expect(prospectQualificationsRepo.findLatestByParcoursId).not.toHaveBeenCalled();
     expect(prospectQualificationsRepo.create).not.toHaveBeenCalled();
   });
@@ -172,7 +172,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false, nonEligible: false });
     expect(parcoursRepo.updateSituationParticulier).not.toHaveBeenCalled();
   });
 
@@ -183,7 +183,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: true, raisonActualisee: false });
+    expect(res).toEqual({ archived: false, unarchived: true, raisonActualisee: false, nonEligible: false });
     expect(parcoursRepo.updateSituationParticulier).toHaveBeenCalledWith("p1", SituationParticulier.PROSPECT);
     expect(logSystemAction).toHaveBeenCalledWith(
       expect.objectContaining({ actionType: ACTION_TYPE_DOSSIER_DESARCHIVE })
@@ -197,7 +197,7 @@ describe("appliquerVerdictSimulationDemandeur", () => {
       demandeurNom: "Marie Durand",
     });
 
-    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false });
+    expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false, nonEligible: false });
     expect(parcoursRepo.updateSituationParticulier).not.toHaveBeenCalled();
   });
 });

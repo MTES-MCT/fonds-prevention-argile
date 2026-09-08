@@ -19,6 +19,7 @@ vi.mock("../services/simulation-eligibilite.service", () => ({
     archived: false,
     unarchived: false,
     raisonActualisee: false,
+    nonEligible: false,
   })),
 }));
 vi.mock("@/features/simulateur/domain/rules/navigation", () => ({ isSimulationComplete: vi.fn() }));
@@ -52,6 +53,15 @@ describe("migrateSimulationDataToDatabase", () => {
     mockedFindByUserId.mockResolvedValue({ id: "p1", rgaSimulationDataAgent: null } as never);
     mockedIsComplete.mockReturnValue(false);
     mockedBuildConseillerAttributes.mockResolvedValue({});
+    // `clearAllMocks` n'efface pas les implémentations : sans ce reset, un verdict posé
+    // par un test fuiterait dans les suivants.
+    vi.mocked(appliquerVerdictSimulationDemandeur).mockResolvedValue({
+      archived: false,
+      unarchived: false,
+      raisonActualisee: false,
+      nonEligible: false,
+    });
+    mockedEmit.mockResolvedValue(undefined);
   });
 
   it("émet simulation_enregistree après avoir migré une simulation nouvelle", async () => {
@@ -105,7 +115,7 @@ describe("migrateSimulationDataToDatabase", () => {
     const order: string[] = [];
     vi.mocked(appliquerVerdictSimulationDemandeur).mockImplementation(async () => {
       order.push("verdict");
-      return { archived: true, unarchived: false, raisonActualisee: false };
+      return { archived: true, unarchived: false, raisonActualisee: false, nonEligible: true };
     });
     mockedEmit.mockImplementation(async () => {
       order.push("brevo");
@@ -121,16 +131,19 @@ describe("migrateSimulationDataToDatabase", () => {
     );
   });
 
-  it("émet simulation_non_eligible au 1er archivage", async () => {
+  it("émet simulation_non_eligible au 1er archivage, jamais demandeur_cree", async () => {
     vi.mocked(appliquerVerdictSimulationDemandeur).mockResolvedValue({
       archived: true,
       unarchived: false,
       raisonActualisee: false,
+      nonEligible: true,
     });
 
     await migrateSimulationDataToDatabase(rgaData);
 
     expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
+    // Le mail de bienvenue promet un conseiller : il ne doit jamais partir ici.
+    expect(mockedEmit).not.toHaveBeenCalledWith("p1", BREVO_EVENTS.DEMANDEUR_CREE, expect.anything());
   });
 
   it("n'émet pas simulation_non_eligible quand seule la raison est actualisée (pas de 2e mail)", async () => {
@@ -138,12 +151,34 @@ describe("migrateSimulationDataToDatabase", () => {
       archived: false,
       unarchived: false,
       raisonActualisee: true,
+      nonEligible: true,
     });
 
     await migrateSimulationDataToDatabase(rgaData);
 
     expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE, { attributes: {} });
     expect(mockedEmit).not.toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
+  });
+
+  it("émet demandeur_cree à la 1re simulation éligible (bienvenue différée depuis le callback FC)", async () => {
+    await migrateSimulationDataToDatabase(rgaData);
+
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.DEMANDEUR_CREE, {
+      attributes: expect.objectContaining({ A_AMO: false, CREE_PAR_CONSEILLER: false }),
+    });
+  });
+
+  it("n'émet demandeur_cree qu'une fois : pas sur une simulation ultérieure", async () => {
+    mockedFindByUserId.mockResolvedValue({
+      id: "p1",
+      rgaSimulationDataAgent: null,
+      rgaSimulationData: { logement: { commune: "75056" }, simulatedAt: "2026-07-21T00:00:00Z" },
+    } as never);
+
+    await migrateSimulationDataToDatabase(rgaData);
+
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE, { attributes: {} });
+    expect(mockedEmit).not.toHaveBeenCalledWith("p1", BREVO_EVENTS.DEMANDEUR_CREE, expect.anything());
   });
 
   it("ne migre ni n'émet quand une simulation agent complète existe déjà", async () => {

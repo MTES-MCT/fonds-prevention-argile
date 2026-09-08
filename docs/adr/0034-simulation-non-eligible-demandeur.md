@@ -46,6 +46,12 @@ Quatre conséquences directes :
 - l'audit est écrit avec le demandeur pour auteur
   (`ACTION_TYPE_SIMULATION_NON_ELIGIBLE`, `agent_id = NULL`).
 
+Côté Brevo, l'évènement `demandeur_cree` — qui déclenche le mail de bienvenue promettant le
+contact d'un conseiller — est **différé jusqu'à ce que le verdict soit connu**, et devient
+exclusif de `simulation_non_eligible`. Un compte qui ne simule jamais ne reçoit donc plus de
+mail de bienvenue : sans territoire ni verdict, la promesse serait fausse pour lui aussi. Voir
+[BREVO-LIFECYCLE §2](../emails/BREVO-LIFECYCLE.md).
+
 ## Options envisagées
 
 ### Option A — Qualification sans agent + archivage (retenue)
