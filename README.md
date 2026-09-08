@@ -29,6 +29,7 @@ cp .env.example .env.local
 Configurez les variables selon votre environnement. Les principales variables incluent :
 
 - `NODE_ENV` : Environnement d'exécution (`development` ou `production`)
+- `NEXT_PUBLIC_APP_ENV` : Environnement applicatif (`local`, `docker`, `staging`, `production`). **À poser sur chaque app, y compris au build** : c'est elle qui décide de l'initialisation de Matomo, du widget Messages, des garde-fous des scripts ops, et de la disponibilité du [simulateur de vulnérabilité](docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md) (servi hors production uniquement — une valeur absente ou inconnue le désactive)
 - `NEXT_PUBLIC_MATOMO_SITE_ID` : ID Matomo pour l'analytics
 - `NEXT_PUBLIC_MATOMO_URL` : URL de l'instance Matomo
 - `MATOMO_API_TOKEN` : Token d'API Matomo (Reporting API) alimentant les statistiques du back-office. **Obligatoire côté serveur** : s'il est absent, expiré ou révoqué, les tuiles Matomo de `/administration` affichent « Indisponible »
@@ -39,6 +40,7 @@ Configurez les variables selon votre environnement. Les principales variables in
 - `DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE` : Nom de la démarche liée au Fonds prévention argile dans la plateforme Démarches Simplifiées
 - `BREVO_CONTACT_LIST_ID` : ID de la liste Brevo « cycle de vie » où les contacts sont poussés en flux (inscription, réponse AMO, update DN). **Distinct par environnement** (liste staging vs prod). Optionnel : absent = synchro de contacts désactivée. Voir [docs/emails/BREVO-LIFECYCLE.md](docs/emails/BREVO-LIFECYCLE.md)
 - `NEXT_PUBLIC_LASUITE_MESSAGES_CHANNEL_ID` : Channel du widget « Messages » de La Suite numérique (ANCT), affiché sur le site public (staging et production uniquement). **Distinct par environnement**. Optionnel : absent = widget désactivé. Voir [ADR-0023](docs/adr/0023-remplacement-crisp-par-lasuite-messages.md)
+- `NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE` : ID du funnel Matomo du simulateur de vulnérabilité (distinct de `NEXT_PUBLIC_MATOMO_FUNNEL_ID`, qui est celui du simulateur d'éligibilité). Optionnel : absent = le widget funnel de `/administration/vulnerabilite` affiche « données non disponibles ». Voir [ADR-0031](docs/adr/0031-stats-vulnerabilite-matomo-bdd.md)
 
 ### Configuration AMO par département (arrêté 2026)
 

@@ -52,11 +52,25 @@ actif en `local`, `docker` et `staging`, **inactif en `production`**.
 > une simulation est rattachée au parcours, ce qui ne peut pas arriver en production tant que
 > l'écriture est bloquée.
 
-**Pour la mettre en ligne**, trois choses à faire ensemble, jamais séparément :
+> **Liste d'autorisation, pas de refus de la production.** Le lecteur d'environnement partagé
+> applique un défaut "local" quand la variable est absente : une app mal configurée servirait
+> alors le simulateur. La bascule teste donc l'appartenance à la liste ci-dessus — variable
+> absente ou valeur inconnue = **inactif**. Conséquence à connaître : un poste de dev sans
+> `NEXT_PUBLIC_APP_ENV` dans son `.env.local` obtient un 404, pas une page.
+
+> `NEXT_PUBLIC_APP_ENV` est une variable `NEXT_PUBLIC_*` : elle est **figée au build** pour tout ce
+> qui tourne côté navigateur (l'onglet de navigation backoffice). Elle doit donc être présente au
+> moment du build, pas seulement au runtime.
+
+**Pour la mettre en ligne**, quatre choses à faire ensemble, jamais séparément :
 
 1. faire valider la grille (`grille-ponderation.ts` + `ESSENCES_AGRESSIVITE`) par l'expert RGA ;
-2. basculer `isVulnerabiliteRgaActive()` ;
-3. retirer le `noindex` des deux pages **et** les entrées correspondantes de `src/app/robots.ts`.
+2. **limiter le débit de `enregistrerResultatVulnerabiliteAction`** : endpoint public, non
+   authentifié, sans plafond ni déduplication — tant que la feature est hors production le risque
+   est théorique (l'action est un no-op avant tout accès base), il devient réel le jour de la
+   bascule, sur les données mêmes qui servent à calibrer la grille ;
+3. basculer `isVulnerabiliteRgaActive()` (ajouter `"production"` à `ENVIRONNEMENTS_ACTIFS`) ;
+4. retirer le `noindex` des deux pages **et** les entrées correspondantes de `src/app/robots.ts`.
 
 ---
 
@@ -187,10 +201,11 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 - Ajouter un test négatif RBAC sur les trois Server Actions de `vulnerabilite-stats.actions.ts`
   (cf. [RBAC-TEST-PLAN §5](../security/RBAC-TEST-PLAN.md)) — gravité faible (agrégats anonymes),
   mais c'est la règle du repo pour toute nouvelle surface.
-- Ajouter `NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE` à `.env.example` (aujourd'hui documentée
-  seulement dans ADR-0031), et créer le funnel correspondant côté Matomo.
-- Pas de limitation de débit sur l'écriture anonyme : acceptable hors production, à traiter si la
-  feature est mise en ligne (l'endpoint est public et non authentifié).
+- Créer le funnel Matomo du simulateur et renseigner `NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE`
+  sur staging (sans elle, le widget funnel affiche « données non disponibles », le reste de
+  l'onglet fonctionne).
+- La limitation de débit de l'écriture anonyme est suivie comme **étape de mise en ligne** (§2),
+  pas comme amélioration : elle n'a pas d'objet tant que l'action est un no-op en production.
 
 ---
 

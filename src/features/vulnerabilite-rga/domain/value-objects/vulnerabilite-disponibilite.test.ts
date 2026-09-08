@@ -1,24 +1,33 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { isProduction } from "@/shared/config/env.config";
+import { describe, it, expect, afterEach } from "vitest";
 import { isVulnerabiliteRgaActive } from "./vulnerabilite-disponibilite";
 
-vi.mock("@/shared/config/env.config", () => ({ isProduction: vi.fn() }));
+const ENV_INITIAL = process.env.NEXT_PUBLIC_APP_ENV;
 
-const mockedIsProduction = vi.mocked(isProduction);
+afterEach(() => {
+  process.env.NEXT_PUBLIC_APP_ENV = ENV_INITIAL;
+});
 
 describe("isVulnerabiliteRgaActive", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("actif hors production (local, docker, staging)", () => {
-    mockedIsProduction.mockReturnValue(false);
+  it.each(["local", "docker", "staging"])("actif en %s", (env) => {
+    process.env.NEXT_PUBLIC_APP_ENV = env;
 
     expect(isVulnerabiliteRgaActive()).toBe(true);
   });
 
   it("inactif en production tant que la grille n'est pas validée (ADR-0030)", () => {
-    mockedIsProduction.mockReturnValue(true);
+    process.env.NEXT_PUBLIC_APP_ENV = "production";
+
+    expect(isVulnerabiliteRgaActive()).toBe(false);
+  });
+
+  it("inactif si la variable est absente : l'oubli de configuration ne doit pas ouvrir", () => {
+    delete process.env.NEXT_PUBLIC_APP_ENV;
+
+    expect(isVulnerabiliteRgaActive()).toBe(false);
+  });
+
+  it("inactif sur une valeur inconnue", () => {
+    process.env.NEXT_PUBLIC_APP_ENV = "preprod";
 
     expect(isVulnerabiliteRgaActive()).toBe(false);
   });
