@@ -79,7 +79,7 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
   }, [currentStep]);
 
   // Connecté, on écrit en base ici : la migration ne tourne que sur /mon-compte, où un non-éligible
-  // ne repasse pas (ADR-0030). Le ref évite la boucle : `saveRGA` re-rend et recrée `commitToRGAStore`.
+  // ne repasse pas (ADR-0033). Le ref évite la boucle : `saveRGA` re-rend et recrée `commitToRGAStore`.
   const hasCommittedRef = useRef(false);
   useEffect(() => {
     if (isLoading) return;

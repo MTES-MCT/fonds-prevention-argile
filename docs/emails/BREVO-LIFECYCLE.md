@@ -52,7 +52,7 @@ Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
   agent). Pousse `CREE_PAR_CONSEILLER` (`user.claimedAt !== null` — vrai seulement si ce compte provient
   d'un dossier pré-créé).
 
-  > **Différé jusqu'à ce que le verdict soit connu (ADR-0030).** L'évènement déclenche le mail de
+  > **Différé jusqu'à ce que le verdict soit connu (ADR-0033).** L'évènement déclenche le mail de
   > bienvenue, qui promet le contact d'un conseiller — faux pour un non éligible, dont le dossier
   > est archivé et que personne ne reprendra. Il n'est donc plus émis systématiquement au callback
   > FranceConnect :
@@ -169,7 +169,7 @@ email) tout en livrant tout dans la boîte de test.
 - [ ] Décider si `dossier_cree_par_conseiller` doit déclencher une Automation dédiée (relance vers le
       demandeur pour qu'il finalise son compte) ou rester une simple mise à jour de contact.
 - [ ] **Dévier le mail de bienvenue pour les non éligibles** (`ELIGIBILITE = non_eligible`) : il promet
-      le contact d'un conseiller, or le dossier est archivé et personne ne le reprendra (ADR-0030).
+      le contact d'un conseiller, or le dossier est archivé et personne ne le reprendra (ADR-0033).
       Brancher l'Automation dédiée sur **`simulation_non_eligible`**. **Rien à conditionner côté
       bienvenue** : `demandeur_cree` et `simulation_non_eligible` sont désormais mutuellement
       exclusifs côté code (cf. §2), un non éligible ne déclenche donc jamais l'Automation de

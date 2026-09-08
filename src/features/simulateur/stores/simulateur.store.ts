@@ -7,7 +7,7 @@ import { SimulateurStep } from "../domain/value-objects/simulateur-step.enum";
 
 const SIMULATEUR_STORAGE_KEY = "fonds-argile-simulateur";
 
-// Sans adresse, pas de département : le dossier n'est rattachable à aucun territoire (ADR-0030).
+// Sans adresse, pas de département : le dossier n'est rattachable à aucun territoire (ADR-0033).
 const DEFAULT_DEFER_EARLY_EXIT_UNTIL = SimulateurStep.ADRESSE;
 
 /**
