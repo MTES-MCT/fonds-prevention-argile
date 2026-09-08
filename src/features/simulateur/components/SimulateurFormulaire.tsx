@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { useSimulateurFormulaire } from "../hooks/useSimulateurFormulaire";
 import { SimulateurStep } from "../domain/value-objects/simulateur-step.enum";
 import { useMatomo } from "@/shared/components/Matomo/useMatomo";
+import { useAuth } from "@/features/auth/client";
+import { migrateSimulationDataToDatabase } from "@/features/parcours/core/actions/parcours-simulateur-rga-migration.actions";
 import { encryptRGAData } from "../actions/encrypt-rga-data.actions";
 import { resolvePartner } from "@/shared/domain/partners";
 
@@ -61,6 +63,7 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
   const editMode = useSimulateurStore(selectEditMode);
   const { customResultComponent } = useSimulateurContext();
   const { trackEvent } = useMatomo();
+  const { isAuthenticated } = useAuth();
   const previousStepRef = useRef<SimulateurStep | null>(null);
 
   // Résolution du partenaire : prop server (URL ?partner=) en priorité, sinon document.referrer
@@ -75,8 +78,8 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [currentStep]);
 
-  // L'écran non éligible n'a pas de CTA : sans commit au résultat, sa simulation est perdue (ADR-0030).
-  // Le ref évite la boucle : `saveRGA` re-rend et recrée `commitToRGAStore`.
+  // Connecté, on écrit en base ici : la migration ne tourne que sur /mon-compte, où un non-éligible
+  // ne repasse pas (ADR-0030). Le ref évite la boucle : `saveRGA` re-rend et recrée `commitToRGAStore`.
   const hasCommittedRef = useRef(false);
   useEffect(() => {
     if (isLoading) return;
@@ -87,8 +90,13 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
     if (editMode || hasCommittedRef.current) return;
     hasCommittedRef.current = true;
     commitToRGAStore();
+    if (isAuthenticated) {
+      migrateSimulationDataToDatabase(answers).then((result) => {
+        if (!result.success) console.error("[Simulateur] Enregistrement de la simulation échoué:", result.error);
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, currentStep, editMode]);
+  }, [isLoading, currentStep, editMode, isAuthenticated]);
 
   // Tracking Matomo à chaque changement d'étape
   useEffect(() => {
