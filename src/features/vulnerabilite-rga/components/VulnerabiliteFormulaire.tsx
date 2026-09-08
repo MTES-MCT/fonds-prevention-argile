@@ -6,6 +6,7 @@ import { VulnerabiliteStep } from "../domain/value-objects/vulnerabilite-step.en
 import { VULNERABILITE_STEP_EVENTS } from "../domain/value-objects/vulnerabilite-matomo-events";
 import { useVulnerabiliteStore } from "../stores/vulnerabilite.store";
 import { enregistrerResultatVulnerabiliteAction } from "../actions/enregistrer-resultat.actions";
+import { toSimulationPayload } from "../domain/value-objects/simulation-payload";
 import { useMatomo } from "@/shared/components/Matomo/useMatomo";
 import type { MatomoCustomDimension } from "@/shared/components/Matomo/useMatomo";
 import { MATOMO_EVENTS } from "@/shared/constants";
@@ -89,7 +90,8 @@ export function VulnerabiliteFormulaire() {
       const currentResult = useVulnerabiliteStore.getState().vulnerabilite.result;
       if (currentResult) {
         // Fire-and-forget : ne doit jamais bloquer ni faire échouer l'affichage du résultat.
-        enregistrerResultatVulnerabiliteAction(currentAnswers, currentResult).catch(() => {});
+        // Le score n'est pas transmis (recalculé côté serveur), l'adresse non plus.
+        enregistrerResultatVulnerabiliteAction(toSimulationPayload(currentAnswers)).catch(() => {});
       }
     } else if (currentStep !== VulnerabiliteStep.INTRO) {
       const eventName = VULNERABILITE_STEP_EVENTS[currentStep];

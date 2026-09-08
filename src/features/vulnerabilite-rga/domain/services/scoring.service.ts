@@ -7,6 +7,7 @@ import {
   type CategorieVulnerabilite,
   type CritereConfig,
 } from "../value-objects/grille-ponderation";
+import { toReponsesParCritere, type ReponsesParCritere } from "../value-objects/vulnerabilite-critere-fields";
 import type { PartialVulnerabiliteReponses } from "../types/vulnerabilite-reponses.types";
 
 export interface CritereScoreDetail {
@@ -39,39 +40,9 @@ export function getNiveauVulnerabilite(score: number): NiveauVulnerabilite {
   return seuil?.niveau ?? "tres_eleve";
 }
 
-/** Lit la réponse d'un critère dans les réponses collectées, par section. */
-function getReponseForCritere(critereId: string, answers: PartialVulnerabiliteReponses): string | undefined {
-  switch (critereId) {
-    case "aleaRga":
-      return answers.adresse?.aleaRga;
-    case "pente_terrain":
-      return answers.eaux?.pente_terrain;
-    case "reseaux_enterres":
-      return answers.eaux?.reseaux_enterres;
-    case "gravier_proprete":
-      return answers.eaux?.gravier_proprete;
-    case "gouttieres":
-      return answers.eaux?.gouttieres;
-    case "arbre_proximite":
-      return answers.vegetation?.arbre_proximite;
-    case "arbre_essence":
-      return answers.vegetation?.arbre_essence;
-    case "haies":
-      return answers.vegetation?.haies;
-    case "vegetation_pied_facade":
-      return answers.vegetation?.vegetation_pied_facade;
-    case "mitoyennete":
-      return answers.divers?.mitoyennete;
-    case "ensoleillement":
-      return answers.divers?.ensoleillement;
-    default:
-      return undefined;
-  }
-}
-
-function isCritereApplicable(critere: CritereConfig, answers: PartialVulnerabiliteReponses): boolean {
+function isCritereApplicable(critere: CritereConfig, reponses: ReponsesParCritere): boolean {
   if (!critere.conditionnelA) return true;
-  return getReponseForCritere(critere.conditionnelA.critereId, answers) === critere.conditionnelA.reponseRequise;
+  return reponses[critere.conditionnelA.critereId] === critere.conditionnelA.reponseRequise;
 }
 
 function getScoreForReponse(critere: CritereConfig, reponse: string): number | null {
@@ -103,16 +74,17 @@ function weightedAverage(entries: { score: number | null; poids: number }[]): nu
 }
 
 /**
- * Calcule le score de vulnérabilité (0-100) à partir des réponses collectées.
+ * Calcule le score de vulnérabilité (0-100) à partir des réponses aplaties.
  * Robuste à un parcours incomplet : les critères non répondus (ou non applicables,
  * ex. arbre_essence sans arbre proche) sont exclus du calcul, pas comptés comme "bons".
+ * Fonction pure : c'est elle que le serveur rejoue pour ne pas dépendre du score client.
  */
-export function computeScoreResult(answers: PartialVulnerabiliteReponses): VulnerabiliteScoreResult {
+export function computeScoreFromReponses(reponses: ReponsesParCritere): VulnerabiliteScoreResult {
   const details: CritereScoreDetail[] = CRITERES_CONFIG.map((critere) => {
     const categorieConfig = getCategorieConfig(critere.categorie);
     const poidsGlobal = (categorieConfig.poids / 100) * (critere.poids / 100);
-    const applicable = isCritereApplicable(critere, answers);
-    const reponse = applicable ? getReponseForCritere(critere.id, answers) : undefined;
+    const applicable = isCritereApplicable(critere, reponses);
+    const reponse = applicable ? reponses[critere.id] : undefined;
     const score = reponse !== undefined ? getScoreForReponse(critere, reponse) : null;
 
     return { critereId: critere.id, categorie: critere.categorie, reponse, score, poidsGlobal };
@@ -138,4 +110,9 @@ export function computeScoreResult(answers: PartialVulnerabiliteReponses): Vulne
     scoreParCategorie,
     details,
   };
+}
+
+/** Même calcul, à partir des réponses collectées section par section (parcours en cours). */
+export function computeScoreResult(answers: PartialVulnerabiliteReponses): VulnerabiliteScoreResult {
+  return computeScoreFromReponses(toReponsesParCritere(answers));
 }

@@ -1,4 +1,5 @@
 import { ESSENCES_AGRESSIVITE, getCritereConfig } from "./grille-ponderation";
+import type { PartialVulnerabiliteReponses } from "../types/vulnerabilite-reponses.types";
 
 /**
  * Un critère de la grille de pondération = une colonne de la table `vulnerabilite_simulations`.
@@ -18,6 +19,27 @@ export const CRITERE_FIELDS: { critereId: string; field: string }[] = [
   { critereId: "mitoyennete", field: "mitoyennete" },
   { critereId: "ensoleillement", field: "ensoleillement" },
 ];
+
+/** Réponses aplaties par identifiant de critère — forme pivot entre les sections du parcours,
+ * le calcul de score et la charge utile envoyée au serveur. */
+export type ReponsesParCritere = Record<string, string | undefined>;
+
+/** Aplatit les réponses collectées section par section en `critereId → réponse`. */
+export function toReponsesParCritere(answers: PartialVulnerabiliteReponses): ReponsesParCritere {
+  return {
+    aleaRga: answers.adresse?.aleaRga,
+    pente_terrain: answers.eaux?.pente_terrain,
+    reseaux_enterres: answers.eaux?.reseaux_enterres,
+    gravier_proprete: answers.eaux?.gravier_proprete,
+    gouttieres: answers.eaux?.gouttieres,
+    arbre_proximite: answers.vegetation?.arbre_proximite,
+    arbre_essence: answers.vegetation?.arbre_essence,
+    haies: answers.vegetation?.haies,
+    vegetation_pied_facade: answers.vegetation?.vegetation_pied_facade,
+    mitoyennete: answers.divers?.mitoyennete,
+    ensoleillement: answers.divers?.ensoleillement,
+  };
+}
 
 /** Libellés des questions, indépendants des textes UI du simulateur (intro/bullets). */
 export const QUESTION_LABELS: Record<string, string> = {
