@@ -587,7 +587,11 @@ export async function demanderAccompagnementDemandeur(
 
   const dossierEligibilite = await getDossierByStep(parcours.id, Step.ELIGIBILITE);
   const eligibiliteDsStatus = (dossierEligibilite?.dsStatus as DSStatus | null) ?? null;
-  if (!peutDemanderAccompagnement({ statut: validation.statut, eligibiliteDsStatus })) {
+  const dossierArchive = Boolean(parcours.archivedAt);
+  if (!peutDemanderAccompagnement({ statut: validation.statut, eligibiliteDsStatus, dossierArchive })) {
+    if (dossierArchive) {
+      return { success: false, error: "Votre dossier est archivé : l'accompagnement ne peut plus être demandé" };
+    }
     return {
       success: false,
       error:
