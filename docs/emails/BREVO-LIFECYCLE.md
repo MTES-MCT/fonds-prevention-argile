@@ -109,6 +109,7 @@ Source de vérité des noms : `src/shared/email/brevo/brevo-contacts.config.ts` 
 | `CONSEILLER_TELEPHONE` | Texte   | idem                                                                                                                                                                                                                                                                                                                         |
 | `CONSEILLER_HORAIRES`  | Texte   | idem — absent si la structure n'a pas renseigné d'horaires                                                                                                                                                                                                                                                                   |
 | `CREE_PAR_CONSEILLER`  | Booléen | `dossier_cree_par_conseiller` (`true`) et `demandeur_cree` (`user.claimedAt !== null`) — posé une fois, ne change plus                                                                                                                                                                                                       |
+| `ELIGIBILITE`          | Texte   | tous, dès qu'un critère est tranché — `eligible` / `non_eligible`, **verdict de la simulation** recalculé à chaque push (une simulation corrigée repasse à `eligible`). Absent tant que la simulation est incomplète sans critère bloquant                                                                                   |
 | `EMAIL_REEL`           | Texte   | **staging seulement** — vrai email quand le contact est sous-adressé (debug)                                                                                                                                                                                                                                                 |
 
 Évènements (`BREVO_EVENTS`) : `dossier_cree_par_conseiller`, `demandeur_cree`, `simulation_enregistree`,
@@ -147,6 +148,13 @@ email) tout en livrant tout dans la boîte de test.
       d'un demandeur qui s'inscrit lui-même, sans conseiller encore rattaché à cet instant).
 - [ ] Décider si `dossier_cree_par_conseiller` doit déclencher une Automation dédiée (relance vers le
       demandeur pour qu'il finalise son compte) ou rester une simple mise à jour de contact.
+- [ ] **Dévier le mail de bienvenue pour les non éligibles** (`ELIGIBILITE = non_eligible`) : il promet
+      le contact d'un conseiller, or le dossier est archivé et personne ne le reprendra (ADR-0030).
+      **Attention à l'ordre** : `demandeur_cree` part au callback FranceConnect, _avant_ que la
+      simulation ne soit enregistrée — à cet instant `ELIGIBILITE` n'est pas encore posé. Deux
+      montages possibles côté Brevo : déclencher sur `simulation_enregistree` plutôt que sur
+      `demandeur_cree`, ou garder `demandeur_cree` avec une **étape d'attente** (quelques minutes)
+      avant la condition sur l'attribut.
 
 ---
 
