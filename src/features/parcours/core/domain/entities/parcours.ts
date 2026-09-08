@@ -16,6 +16,9 @@ export interface Parcours {
   rgaDataDeletedAt: Date | null;
   rgaDataDeletionReason: string | null;
 
+  /** Non-null = dossier archivé (inéligibilité, abandon…) : plus rien n'y est actionnable. */
+  archivedAt: Date | null;
+
   createdAt: Date;
   updatedAt: Date;
 }
