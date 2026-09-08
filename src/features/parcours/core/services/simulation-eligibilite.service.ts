@@ -27,9 +27,16 @@ export interface VerdictSimulationDemandeur {
   unarchived: boolean;
   /** Dossier déjà archivé, toujours non éligible, mais pour une nouvelle raison. */
   raisonActualisee: boolean;
+  /** Verdict brut de la simulation, indépendant de ce qui a été écrit en base. */
+  nonEligible: boolean;
 }
 
-const AUCUN_CHANGEMENT: VerdictSimulationDemandeur = { archived: false, unarchived: false, raisonActualisee: false };
+const AUCUN_CHANGEMENT: VerdictSimulationDemandeur = {
+  archived: false,
+  unarchived: false,
+  raisonActualisee: false,
+  nonEligible: false,
+};
 
 /**
  * Applique le verdict d'éligibilité de la simulation que le demandeur vient
@@ -66,7 +73,9 @@ export async function appliquerVerdictSimulationDemandeur(params: {
     const raison = mapEligibilityReasonToRaisonIneligibilite(verdict.result?.reason);
     const note = buildEligibiliteArchiveNote(verdict.result, "demandeur");
 
-    if (estArchive) return actualiserRaisonIneligibilite(parcours, raison, note, demandeurNom);
+    if (estArchive) {
+      return { ...(await actualiserRaisonIneligibilite(parcours, raison, note, demandeurNom)), nonEligible: true };
+    }
 
     await prospectQualificationsRepo.create({
       parcoursId: parcours.id,
@@ -92,7 +101,7 @@ export async function appliquerVerdictSimulationDemandeur(params: {
       message: note,
     });
 
-    return { archived: true, unarchived: false, raisonActualisee: false };
+    return { archived: true, unarchived: false, raisonActualisee: false, nonEligible: true };
   }
 
   // Redevenu éligible : on ne défait qu'un archivage pour inéligibilité, jamais un
@@ -117,7 +126,7 @@ export async function appliquerVerdictSimulationDemandeur(params: {
     message: "Dé-archivé automatiquement : la nouvelle simulation du demandeur est éligible.",
   });
 
-  return { archived: false, unarchived: true, raisonActualisee: false };
+  return { archived: false, unarchived: true, raisonActualisee: false, nonEligible: false };
 }
 
 /**
@@ -159,5 +168,5 @@ async function actualiserRaisonIneligibilite(
     message: `${note} (nouvelle simulation)`,
   });
 
-  return { archived: false, unarchived: false, raisonActualisee: true };
+  return { archived: false, unarchived: false, raisonActualisee: true, nonEligible: true };
 }

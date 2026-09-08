@@ -50,10 +50,29 @@ Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
   pré-créé par un agent — piloté par `isNewAccount` (`userRepo.upsertFromFranceConnect`), pas par la
   création du `parcours_prevention` (qui peut précéder la connexion FC de plusieurs jours côté
   agent). Pousse `CREE_PAR_CONSEILLER` (`user.claimedAt !== null` — vrai seulement si ce compte provient
-  d'un dossier pré-créé). Pour une inscription autonome (cas courant), la simulation n'est **pas
-  encore** en base à cet instant (elle tourne avant la connexion FranceConnect, migrée juste après
-  via `simulation_enregistree`) → INSEE/DEPARTEMENT et `CONSEILLER_*` y sont donc **quasi toujours
-  absents** dans ce cas, présents seulement si déjà résolus côté agent.
+  d'un dossier pré-créé).
+
+  > **Différé jusqu'à ce que le verdict soit connu (ADR-0030).** L'évènement déclenche le mail de
+  > bienvenue, qui promet le contact d'un conseiller — faux pour un non éligible, dont le dossier
+  > est archivé et que personne ne reprendra. Il n'est donc plus émis systématiquement au callback
+  > FranceConnect :
+  >
+  > - **au callback**, seulement si une simulation est **déjà connue** (rattachement d'un dossier
+  >   pré-créé, simulation agent promue) — et si elle est non éligible, c'est
+  >   `simulation_non_eligible` qui part à la place ;
+  > - **sinon** (inscription autonome, cas courant), il est émis à l'enregistrement de la
+  >   **première** simulation, dans `migrateSimulationDataToDatabase` — même endroit, même
+  >   exclusivité avec `simulation_non_eligible`.
+  >
+  > Conséquence assumée : un compte créé qui ne simule **jamais** ne reçoit aucun `demandeur_cree`,
+  > donc aucun mail — on ne connaît ni son territoire ni son éligibilité, la promesse serait fausse
+  > pour lui aussi. Décidé en septembre 2026 ; à revoir si une relance « terminez votre simulation »
+  > est mise en place.
+
+  Quand il part au callback pour une inscription autonome — cas devenu impossible depuis ce
+  différé — INSEE/DEPARTEMENT et `CONSEILLER_*` étaient absents faute de simulation. Ils sont
+  désormais toujours présents, puisque l'évènement suit l'enregistrement de la simulation.
+
 - `simulation_enregistree` part quand la simulation localStorage est enregistrée sur le parcours
   (post-login) : il fait remonter INSEE/DEPARTEMENT, et donc **c'est le premier instant réel où le
   territoire — et donc `CONSEILLER_*` — devient résolvable** pour une inscription autonome
@@ -151,14 +170,11 @@ email) tout en livrant tout dans la boîte de test.
       demandeur pour qu'il finalise son compte) ou rester une simple mise à jour de contact.
 - [ ] **Dévier le mail de bienvenue pour les non éligibles** (`ELIGIBILITE = non_eligible`) : il promet
       le contact d'un conseiller, or le dossier est archivé et personne ne le reprendra (ADR-0030).
-      Déclencher l'Automation dédiée sur l'évènement **`simulation_non_eligible`** (émis au 1er
-      archivage) : c'est le seul déclencheur étanche.
-      **Ne pas conditionner l'Automation `demandeur_cree` sur le seul attribut** : cet évènement
-      part au callback FranceConnect, _avant_ l'enregistrement de la simulation — à cet instant
-      `ELIGIBILITE` n'est pas encore posé. Pour supprimer le mail de bienvenue à ces contacts, il
-      faut une **étape d'attente** (quelques minutes) puis la condition sur l'attribut ; sinon les
-      deux mails partent. L'attribut sert par ailleurs à segmenter les campagnes ultérieures (ne
-      pas relancer un non éligible).
+      Brancher l'Automation dédiée sur **`simulation_non_eligible`**. **Rien à conditionner côté
+      bienvenue** : `demandeur_cree` et `simulation_non_eligible` sont désormais mutuellement
+      exclusifs côté code (cf. §2), un non éligible ne déclenche donc jamais l'Automation de
+      bienvenue. L'attribut `ELIGIBILITE` reste utile pour segmenter les campagnes ultérieures
+      (ne pas relancer un non éligible).
 
 ---
 
