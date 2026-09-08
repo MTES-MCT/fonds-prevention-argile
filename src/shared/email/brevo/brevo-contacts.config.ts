@@ -40,7 +40,7 @@ export const BREVO_ATTRS = {
   CREE_PAR_CONSEILLER: "CREE_PAR_CONSEILLER",
   // Verdict de la SIMULATION (`eligible` / `non_eligible`), absent tant qu'aucun critère
   // n'est tranché. Permet à une Automation de dévier le mail de bienvenue, qui promet le
-  // contact d'un conseiller — faux pour un dossier archivé non éligible (ADR-0030).
+  // contact d'un conseiller — faux pour un dossier archivé non éligible (ADR-0034).
   ELIGIBILITE: "ELIGIBILITE",
   // Debug staging uniquement : vrai email quand le contact est sous-adressé.
   EMAIL_REEL: "EMAIL_REEL",
@@ -57,7 +57,7 @@ export const BREVO_EVENTS = {
   SIMULATION_ENREGISTREE: "simulation_enregistree",
   // Émis en plus de `simulation_enregistree` quand la simulation archive le dossier, et
   // seulement au 1er archivage : déclencheur étanche pour l'Automation qui remplace le mail
-  // de bienvenue (celui-ci promet un conseiller qui ne viendra pas). Cf. ADR-0030.
+  // de bienvenue (celui-ci promet un conseiller qui ne viendra pas). Cf. ADR-0034.
   SIMULATION_NON_ELIGIBLE: "simulation_non_eligible",
   AMO_DEFINI: "amo_defini",
   AMO_REPONSE: "amo_reponse",
