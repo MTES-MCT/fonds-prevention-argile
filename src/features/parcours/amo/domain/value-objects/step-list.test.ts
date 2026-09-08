@@ -145,6 +145,28 @@ describe("getStepListItems", () => {
 });
 
 describe("getStepListItems - logement non éligible", () => {
+  it("grise l'item « Choix de l'accompagnement » resté actif (son ancre ne mène plus nulle part)", () => {
+    const actif = getStepListItems(AmoMode.FACULTATIF, null, Step.CHOIX_AMO, false, null);
+    expect(actif[0].key).toBe("choix-accompagnement");
+    expect(actif[0].state).toBe("active");
+
+    const nonEligible = getStepListItems(AmoMode.FACULTATIF, null, Step.CHOIX_AMO, false, null, true);
+    expect(nonEligible[0].state).toBe("pending");
+  });
+
+  it("laisse barrées les étapes déjà franchies", () => {
+    const items = getStepListItems(
+      AmoMode.FACULTATIF,
+      StatutValidationAmo.LOGEMENT_NON_ELIGIBLE,
+      Step.ELIGIBILITE,
+      false,
+      null,
+      true
+    );
+    expect(items[0].state).toBe("completed");
+    expect(items.some((i) => i.state === "active")).toBe(false);
+  });
+
   it("désactive l'étape courante quand le logement est non éligible", () => {
     const actif = getStepListItems(AmoMode.FACULTATIF, StatutValidationAmo.SANS_AMO, Step.ELIGIBILITE, false, null);
     expect(actif[1].state).toBe("active");
