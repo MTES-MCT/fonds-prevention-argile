@@ -34,6 +34,7 @@ Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
 | Dossier créé par un conseiller | `features/backoffice/espace-agent/creation-dossier/services/creation-dossier.service.ts` (`createDossierByAgent`) | `dossier_cree_par_conseiller` | —                                                        |
 | Compte créé                    | `features/auth/adapters/franceconnect/franceconnect.service.ts`                                                   | `demandeur_cree`              | —                                                        |
 | Simulation enregistrée         | `features/parcours/core/actions/parcours-simulateur-rga-migration.actions.ts`                                     | `simulation_enregistree`      | —                                                        |
+| Simulation non éligible        | idem — en plus du précédent, au **1er** archivage seulement                                                       | `simulation_non_eligible`     | —                                                        |
 | AMO définie                    | `features/parcours/amo/services/amo-selection.service.ts` (`selectAmoForUser`)                                    | `amo_defini`                  | —                                                        |
 | Réponse AMO                    | `features/parcours/amo/services/amo-validation.service.ts`                                                        | `amo_reponse`                 | `decision` (`eligible`/`non_eligible`), `est_mandataire` |
 | Dossier DN créé (brouillon)    | `features/parcours/dossiers-ds/services/dossier-ds.service.ts` (`createDossierForCurrentStep`)                    | `dn_update`                   | `step`, `old_ds_status` (`""`), `new_ds_status` (`""`)   |
@@ -113,7 +114,7 @@ Source de vérité des noms : `src/shared/email/brevo/brevo-contacts.config.ts` 
 | `EMAIL_REEL`           | Texte   | **staging seulement** — vrai email quand le contact est sous-adressé (debug)                                                                                                                                                                                                                                                 |
 
 Évènements (`BREVO_EVENTS`) : `dossier_cree_par_conseiller`, `demandeur_cree`, `simulation_enregistree`,
-`amo_defini`, `amo_reponse`, `dn_update`.
+`simulation_non_eligible`, `amo_defini`, `amo_reponse`, `dn_update`.
 
 ---
 
@@ -150,11 +151,14 @@ email) tout en livrant tout dans la boîte de test.
       demandeur pour qu'il finalise son compte) ou rester une simple mise à jour de contact.
 - [ ] **Dévier le mail de bienvenue pour les non éligibles** (`ELIGIBILITE = non_eligible`) : il promet
       le contact d'un conseiller, or le dossier est archivé et personne ne le reprendra (ADR-0030).
-      **Attention à l'ordre** : `demandeur_cree` part au callback FranceConnect, _avant_ que la
-      simulation ne soit enregistrée — à cet instant `ELIGIBILITE` n'est pas encore posé. Deux
-      montages possibles côté Brevo : déclencher sur `simulation_enregistree` plutôt que sur
-      `demandeur_cree`, ou garder `demandeur_cree` avec une **étape d'attente** (quelques minutes)
-      avant la condition sur l'attribut.
+      Déclencher l'Automation dédiée sur l'évènement **`simulation_non_eligible`** (émis au 1er
+      archivage) : c'est le seul déclencheur étanche.
+      **Ne pas conditionner l'Automation `demandeur_cree` sur le seul attribut** : cet évènement
+      part au callback FranceConnect, _avant_ l'enregistrement de la simulation — à cet instant
+      `ELIGIBILITE` n'est pas encore posé. Pour supprimer le mail de bienvenue à ces contacts, il
+      faut une **étape d'attente** (quelques minutes) puis la condition sur l'attribut ; sinon les
+      deux mails partent. L'attribut sert par ailleurs à segmenter les campagnes ultérieures (ne
+      pas relancer un non éligible).
 
 ---
 

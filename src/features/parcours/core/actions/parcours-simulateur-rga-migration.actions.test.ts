@@ -114,10 +114,36 @@ describe("migrateSimulationDataToDatabase", () => {
 
     await migrateSimulationDataToDatabase(rgaData);
 
-    expect(order).toEqual(["verdict", "brevo"]);
+    // 2 pushes quand le dossier est archivé : l'évènement générique, puis le dédié.
+    expect(order).toEqual(["verdict", "brevo", "brevo"]);
     expect(appliquerVerdictSimulationDemandeur).toHaveBeenCalledWith(
       expect.objectContaining({ demandeurNom: "Marie Durand" })
     );
+  });
+
+  it("émet simulation_non_eligible au 1er archivage", async () => {
+    vi.mocked(appliquerVerdictSimulationDemandeur).mockResolvedValue({
+      archived: true,
+      unarchived: false,
+      raisonActualisee: false,
+    });
+
+    await migrateSimulationDataToDatabase(rgaData);
+
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
+  });
+
+  it("n'émet pas simulation_non_eligible quand seule la raison est actualisée (pas de 2e mail)", async () => {
+    vi.mocked(appliquerVerdictSimulationDemandeur).mockResolvedValue({
+      archived: false,
+      unarchived: false,
+      raisonActualisee: true,
+    });
+
+    await migrateSimulationDataToDatabase(rgaData);
+
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE, { attributes: {} });
+    expect(mockedEmit).not.toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
   });
 
   it("ne migre ni n'émet quand une simulation agent complète existe déjà", async () => {

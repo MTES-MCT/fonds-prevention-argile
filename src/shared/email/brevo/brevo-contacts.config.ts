@@ -55,6 +55,10 @@ export const BREVO_EVENTS = {
   DOSSIER_CREE_PAR_CONSEILLER: "dossier_cree_par_conseiller",
   DEMANDEUR_CREE: "demandeur_cree",
   SIMULATION_ENREGISTREE: "simulation_enregistree",
+  // Émis en plus de `simulation_enregistree` quand la simulation archive le dossier, et
+  // seulement au 1er archivage : déclencheur étanche pour l'Automation qui remplace le mail
+  // de bienvenue (celui-ci promet un conseiller qui ne viendra pas). Cf. ADR-0030.
+  SIMULATION_NON_ELIGIBLE: "simulation_non_eligible",
   AMO_DEFINI: "amo_defini",
   AMO_REPONSE: "amo_reponse",
   DN_UPDATE: "dn_update",
