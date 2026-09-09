@@ -2,8 +2,18 @@ import content from "../(home)/content/content.json";
 import { Notice } from "@/shared/components";
 import { SimulateurFormulaire } from "@/features/simulateur";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
+import { aDejaUneSimulation } from "@/features/parcours/core/services/ma-simulation.service";
 
 export default async function SimulateurPage() {
+  // Une simulation par compte : le demandeur qui en a déjà une la corrige au lieu
+  // d'en créer une seconde. Sans cette garde, les 14 CTA vers /simulateur seraient
+  // autant de portes d'entrée pour écraser silencieusement son dossier.
+  if (await aDejaUneSimulation()) {
+    redirect(ROUTES.particulier.maSimulation);
+  }
+
   return (
     <>
       <Notice

@@ -23,6 +23,7 @@ export const ROUTES = {
   // Espace Particulier (FranceConnect)
   particulier: {
     monCompte: "/mon-compte",
+    maSimulation: "/mon-compte/simulation",
     mesDossiers: "/mes-dossiers",
     mesDemandes: "/mes-demandes",
   },
