@@ -42,29 +42,88 @@ function dateDebutMatomo(cle: string): Date | null {
   return Number.isNaN(debut.getTime()) ? null : debut;
 }
 
-async function countComptesCrees(): Promise<number> {
-  const result = await db.select({ count: count() }).from(parcoursPrevention);
-  return result[0]?.count ?? 0;
+type ComptagesBdd = Pick<PublicStatsCards, "comptesCrees" | "dossiersEligibiliteDeposes" | "diagnostics">;
+
+async function getComptagesBdd(): Promise<ComptagesBdd> {
+  const [comptes, deposes, diagnostics] = await Promise.all([
+    db.select({ count: count() }).from(parcoursPrevention),
+    db
+      .select({ count: count() })
+      .from(dossiersDemarchesSimplifiees)
+      .where(
+        and(
+          eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE),
+          isNotNull(dossiersDemarchesSimplifiees.submittedAt)
+        )
+      ),
+    // Étape diagnostic ou déjà passée (devis, factures) : réalisé ou en cours.
+    db
+      .select({ count: count() })
+      .from(parcoursPrevention)
+      .where(inArray(parcoursPrevention.currentStep, [Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES])),
+  ]);
+
+  return {
+    comptesCrees: comptes[0]?.count ?? 0,
+    dossiersEligibiliteDeposes: deposes[0]?.count ?? 0,
+    diagnostics: diagnostics[0]?.count ?? 0,
+  };
 }
 
-async function countDossiersEligibiliteDeposes(): Promise<number> {
-  const result = await db
-    .select({ count: count() })
-    .from(dossiersDemarchesSimplifiees)
-    .where(
-      and(eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE), isNotNull(dossiersDemarchesSimplifiees.submittedAt))
-    );
-  return result[0]?.count ?? 0;
+interface DatesEvolutionBdd {
+  comptesCrees: Date[];
+  dossiersDeposes: Date[];
+  dossiersValides: Date[];
 }
 
-/** Parcours à l'étape diagnostic ou déjà passés cette étape (devis, factures) : réalisé ou en cours. */
-async function countDiagnostics(): Promise<number> {
-  const result = await db
-    .select({ count: count() })
-    .from(parcoursPrevention)
-    .where(inArray(parcoursPrevention.currentStep, [Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES]));
-  return result[0]?.count ?? 0;
+async function getDatesEvolutionBdd(): Promise<DatesEvolutionBdd> {
+  // Bornées au lancement : les mois antérieurs ne sont pas affichés, autant ne pas les charger
+  // — la page est publique et le 1er hit après expiration du cache paie le scan.
+  const [comptesCrees, deposes, valides] = await Promise.all([
+    db
+      .select({ createdAt: parcoursPrevention.createdAt })
+      .from(parcoursPrevention)
+      .where(gte(parcoursPrevention.createdAt, SERVICE_START_DATE)),
+    db
+      .select({ submittedAt: dossiersDemarchesSimplifiees.submittedAt })
+      .from(dossiersDemarchesSimplifiees)
+      .where(
+        and(
+          eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE),
+          gte(dossiersDemarchesSimplifiees.submittedAt, SERVICE_START_DATE)
+        )
+      ),
+    db
+      .select({ processedAt: dossiersDemarchesSimplifiees.processedAt })
+      .from(dossiersDemarchesSimplifiees)
+      .where(
+        and(
+          eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE),
+          eq(dossiersDemarchesSimplifiees.dsStatus, DSStatus.ACCEPTE),
+          gte(dossiersDemarchesSimplifiees.processedAt, SERVICE_START_DATE)
+        )
+      ),
+  ]);
+
+  return {
+    comptesCrees: comptesCrees.map((r) => r.createdAt),
+    dossiersDeposes: deposes.map((r) => r.submittedAt).filter((d): d is Date => d !== null),
+    dossiersValides: valides.map((r) => r.processedAt).filter((d): d is Date => d !== null),
+  };
 }
+
+// Seuls les comptages BDD sont cachés ici. Les appels Matomo ont déjà leur propre cache 1 h
+// (`fetchMatomoApiCached`) qui, lui, ne mémorise pas les échecs : mettre en cache le résultat
+// composé figerait un « Indisponible » pendant une heure, ce que ce choix de cache voulait éviter.
+const getComptagesBddCached = unstable_cache(getComptagesBdd, ["public-stats-comptages"], {
+  revalidate: PUBLIC_STATS_CACHE_TTL_SECONDS,
+  tags: [PUBLIC_STATS_CACHE_TAG],
+});
+
+const getDatesEvolutionBddCached = unstable_cache(getDatesEvolutionBdd, ["public-stats-evolution"], {
+  revalidate: PUBLIC_STATS_CACHE_TTL_SECONDS,
+  tags: [PUBLIC_STATS_CACHE_TAG],
+});
 
 /** Trace une panne Matomo et renvoie null, pour la distinguer d'un vrai zéro côté page (cf. logMatomoFailure côté admin). */
 async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promise<T | null> {
@@ -102,21 +161,17 @@ async function getSimulationsTotals(): Promise<{ eligibles: number; terminees: n
  * côté page.
  */
 export async function getPublicStatsCards(): Promise<PublicStatsCards> {
-  const [visiteurs, simulations, comptesCrees, dossiersEligibiliteDeposes, diagnostics] = await Promise.all([
+  const [visiteurs, simulations, comptages] = await Promise.all([
     logMatomoFailure(fetchMatomoUniqueVisitorsStrict("range", lifetimeMatomoRange()), "visiteurs"),
     logMatomoFailure(getSimulationsTotals(), "simulations"),
-    countComptesCrees(),
-    countDossiersEligibiliteDeposes(),
-    countDiagnostics(),
+    getComptagesBddCached(),
   ]);
 
   return {
     visiteurs,
     simulationsEligibles: simulations?.eligibles ?? null,
     simulationsTerminees: simulations?.terminees ?? null,
-    comptesCrees,
-    dossiersEligibiliteDeposes,
-    diagnostics,
+    ...comptages,
   };
 }
 
@@ -128,66 +183,17 @@ export async function getPublicStatsCards(): Promise<PublicStatsCards> {
 export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {
   const maintenant = new Date();
 
-  const [visiteursParMois, comptesCreesDates, dossiersDeposesDates, dossiersEligibiliteValideesDates] =
-    await Promise.all([
-      logMatomoFailure(fetchMatomoUniqueVisitorsSeries("month", lifetimeMatomoRangeMensuel()), "visiteurs (evolution)"),
-      // Bornées au lancement : les mois antérieurs ne sont pas affichés, autant ne pas les charger
-      // — la page est publique et le 1er hit après expiration du cache paie le scan.
-      db
-        .select({ createdAt: parcoursPrevention.createdAt })
-        .from(parcoursPrevention)
-        .where(gte(parcoursPrevention.createdAt, SERVICE_START_DATE)),
-      db
-        .select({ submittedAt: dossiersDemarchesSimplifiees.submittedAt })
-        .from(dossiersDemarchesSimplifiees)
-        .where(
-          and(
-            eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE),
-            gte(dossiersDemarchesSimplifiees.submittedAt, SERVICE_START_DATE)
-          )
-        ),
-      db
-        .select({ processedAt: dossiersDemarchesSimplifiees.processedAt })
-        .from(dossiersDemarchesSimplifiees)
-        .where(
-          and(
-            eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE),
-            eq(dossiersDemarchesSimplifiees.dsStatus, DSStatus.ACCEPTE),
-            gte(dossiersDemarchesSimplifiees.processedAt, SERVICE_START_DATE)
-          )
-        ),
-    ]);
+  const [visiteursParMois, datesBdd] = await Promise.all([
+    logMatomoFailure(fetchMatomoUniqueVisitorsSeries("month", lifetimeMatomoRangeMensuel()), "visiteurs (evolution)"),
+    getDatesEvolutionBddCached(),
+  ]);
 
   return {
     visiteurs: visiteursParMois
       ? aggregerCompteursParMois(visiteursParMois, SERVICE_START_DATE, maintenant, dateDebutMatomo)
       : null,
-    comptesCrees: aggregerParMois(
-      comptesCreesDates.map((r) => r.createdAt),
-      SERVICE_START_DATE,
-      maintenant
-    ),
-    dossiersEligibiliteDeposes: aggregerParMois(
-      dossiersDeposesDates.map((r) => r.submittedAt).filter((d): d is Date => d !== null),
-      SERVICE_START_DATE,
-      maintenant
-    ),
-    dossiersEligibiliteValides: aggregerParMois(
-      dossiersEligibiliteValideesDates.map((r) => r.processedAt).filter((d): d is Date => d !== null),
-      SERVICE_START_DATE,
-      maintenant
-    ),
+    comptesCrees: aggregerParMois(datesBdd.comptesCrees, SERVICE_START_DATE, maintenant),
+    dossiersEligibiliteDeposes: aggregerParMois(datesBdd.dossiersDeposes, SERVICE_START_DATE, maintenant),
+    dossiersEligibiliteValides: aggregerParMois(datesBdd.dossiersValides, SERVICE_START_DATE, maintenant),
   };
 }
-
-// Cache applicatif plutôt qu'ISR : la page est `force-dynamic` (ni BDD ni Matomo joignables au
-// build), et `unstable_cache` ne mémorise pas les échecs — un « Indisponible » n'est jamais figé.
-export const getPublicStatsCardsCached = unstable_cache(getPublicStatsCards, ["public-stats-cards"], {
-  revalidate: PUBLIC_STATS_CACHE_TTL_SECONDS,
-  tags: [PUBLIC_STATS_CACHE_TAG],
-});
-
-export const getPublicStatsEvolutionCached = unstable_cache(getPublicStatsEvolution, ["public-stats-evolution"], {
-  revalidate: PUBLIC_STATS_CACHE_TTL_SECONDS,
-  tags: [PUBLIC_STATS_CACHE_TAG],
-});

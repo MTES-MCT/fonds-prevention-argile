@@ -51,6 +51,14 @@ au hit suivant au lieu d'être gelé, et l'archivage que Matomo termine en tâch
 être lu. C'est déjà le mécanisme de `fetchMatomoApiCached` — la page ne fait qu'ajouter une
 couche pour les comptages BDD.
 
+> **Où poser la frontière de cache, sinon on retombe sur le défaut de l'ISR.** Cette propriété
+> ne tient que si l'échec traverse la frontière du cache. Une première version enveloppait
+> `getPublicStatsCards` **entière**, or elle rattrape les pannes Matomo en interne
+> (`logMatomoFailure`) et **résout normalement** avec des `null` : ce résultat dégradé était donc
+> mis en cache une heure, exactement le reproche fait à l'option A. Seuls les **comptages BDD**
+> sont donc cachés à ce niveau ; les appels Matomo gardent le cache de l'adaptateur, qui ne voit
+> passer que des réponses valides.
+
 ### Option C — Compteurs recalculés à chaque visite (écartée)
 
 Simple, mais la page est publique : les séries d'évolution lisent toutes les lignes de

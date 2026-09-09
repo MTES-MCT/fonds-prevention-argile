@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  getPublicStatsCardsCached,
-  getPublicStatsEvolutionCached,
-} from "@/features/public-stats/services/public-stats.service";
+import { getPublicStatsCards, getPublicStatsEvolution } from "@/features/public-stats/services/public-stats.service";
 import { StatCard } from "./components/StatCard";
 import { StatsEvolutionCharts } from "./components/StatsEvolutionCharts";
 
@@ -17,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StatsPage() {
-  const [cards, evolution] = await Promise.all([getPublicStatsCardsCached(), getPublicStatsEvolutionCached()]);
+  const [cards, evolution] = await Promise.all([getPublicStatsCards(), getPublicStatsEvolution()]);
 
   return (
     <section className="fr-container-fluid fr-py-2v">

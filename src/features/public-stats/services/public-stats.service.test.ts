@@ -8,6 +8,11 @@ import {
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getPublicStatsCards, getPublicStatsEvolution } from "./public-stats.service";
 
+vi.mock("next/cache", () => ({
+  // Pass-through en test : on exerce le service, pas le cache Next.
+  unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
+}));
+
 vi.mock("@/shared/database/client", () => ({
   db: { select: vi.fn() },
 }));
