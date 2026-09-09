@@ -78,7 +78,7 @@ export default function StepDetailDiagnostic({ pieces }: { pieces?: PieceJustifi
         <h5
           className={isStepActive ? "text-left fr-text-label--blue-france" : "text-left fr-text--disabled"}
           style={isStepActive ? undefined : { color: "var(--text-disabled-grey)" }}>
-          3. Diagnostic
+          4. Diagnostic logement
         </h5>
 
         {/* Texte si étape précédente */}

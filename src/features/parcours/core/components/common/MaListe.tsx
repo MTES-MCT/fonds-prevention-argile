@@ -17,6 +17,7 @@ import {
 import { AnnulerAccompagnementModal } from "@/features/parcours/amo/components/steps/AnnulerAccompagnementModal";
 import { DemanderAccompagnementModal } from "@/features/parcours/amo/components/steps/DemanderAccompagnementModal";
 import { DossierTimeline } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
+import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 
 const COMPLETED_STYLE: React.CSSProperties = {
   textDecoration: "line-through",
@@ -92,6 +93,17 @@ export default function MaListe() {
           <h2 className="fr-card__title">Ma liste</h2>
           <div className="fr-card__desc">
             <ol type="1" className="fr-list space-y-2">
+              {/* Étape toujours franchie — sans elle il n'y a pas de dossier — mais
+                  désormais consultable et corrigeable (une simulation par compte). */}
+              <li>
+                <span style={COMPLETED_STYLE}>
+                  Simulateur d&apos;éligibilité{" "}
+                  <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true" />
+                </span>
+                <Link className="fr-link fr-link--sm fr-ml-1w" href={ROUTES.particulier.maSimulation}>
+                  Voir/Modifier
+                </Link>
+              </li>
               {items.map((item) => (
                 <li key={item.key}>
                   {renderItemLink(item, getDossierUrl)}
