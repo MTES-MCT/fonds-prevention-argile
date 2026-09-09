@@ -9,8 +9,12 @@ import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getPublicStatsCards, getPublicStatsEvolution } from "./public-stats.service";
 
 vi.mock("next/cache", () => ({
-  // Pass-through en test : on exerce le service, pas le cache Next.
-  unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
+  // Aller-retour JSON, comme le vrai cache : un `Date` mis en cache revient en `string` au hit
+  // suivant. Un pass-through masquerait cette classe de bug au lieu de la faire échouer ici.
+  unstable_cache:
+    (fn: (...args: unknown[]) => Promise<unknown>) =>
+    async (...args: unknown[]) =>
+      JSON.parse(JSON.stringify(await fn(...args))),
 }));
 
 vi.mock("@/shared/database/client", () => ({

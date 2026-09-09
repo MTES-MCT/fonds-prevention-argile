@@ -70,10 +70,14 @@ async function getComptagesBdd(): Promise<ComptagesBdd> {
   };
 }
 
+/**
+ * Dates en ISO et non en `Date` : `unstable_cache` sérialise en JSON, donc un `Date` mis en cache
+ * revient en `string` au hit suivant et fait planter l'agrégation. Réhydratées par l'appelant.
+ */
 interface DatesEvolutionBdd {
-  comptesCrees: Date[];
-  dossiersDeposes: Date[];
-  dossiersValides: Date[];
+  comptesCrees: string[];
+  dossiersDeposes: string[];
+  dossiersValides: string[];
 }
 
 async function getDatesEvolutionBdd(): Promise<DatesEvolutionBdd> {
@@ -106,9 +110,9 @@ async function getDatesEvolutionBdd(): Promise<DatesEvolutionBdd> {
   ]);
 
   return {
-    comptesCrees: comptesCrees.map((r) => r.createdAt),
-    dossiersDeposes: deposes.map((r) => r.submittedAt).filter((d): d is Date => d !== null),
-    dossiersValides: valides.map((r) => r.processedAt).filter((d): d is Date => d !== null),
+    comptesCrees: comptesCrees.map((r) => r.createdAt.toISOString()),
+    dossiersDeposes: deposes.map((r) => r.submittedAt?.toISOString()).filter((d): d is string => d !== undefined),
+    dossiersValides: valides.map((r) => r.processedAt?.toISOString()).filter((d): d is string => d !== undefined),
   };
 }
 
@@ -188,12 +192,14 @@ export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {
     getDatesEvolutionBddCached(),
   ]);
 
+  const versDates = (iso: string[]) => iso.map((valeur) => new Date(valeur));
+
   return {
     visiteurs: visiteursParMois
       ? aggregerCompteursParMois(visiteursParMois, SERVICE_START_DATE, maintenant, dateDebutMatomo)
       : null,
-    comptesCrees: aggregerParMois(datesBdd.comptesCrees, SERVICE_START_DATE, maintenant),
-    dossiersEligibiliteDeposes: aggregerParMois(datesBdd.dossiersDeposes, SERVICE_START_DATE, maintenant),
-    dossiersEligibiliteValides: aggregerParMois(datesBdd.dossiersValides, SERVICE_START_DATE, maintenant),
+    comptesCrees: aggregerParMois(versDates(datesBdd.comptesCrees), SERVICE_START_DATE, maintenant),
+    dossiersEligibiliteDeposes: aggregerParMois(versDates(datesBdd.dossiersDeposes), SERVICE_START_DATE, maintenant),
+    dossiersEligibiliteValides: aggregerParMois(versDates(datesBdd.dossiersValides), SERVICE_START_DATE, maintenant),
   };
 }
