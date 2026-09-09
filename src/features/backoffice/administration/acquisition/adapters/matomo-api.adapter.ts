@@ -259,9 +259,36 @@ export async function fetchMatomoUniqueVisitors(
   date: string = "last30",
   segment?: string
 ): Promise<number> {
+  const data = await requestVisitsSummary(period, date, segment);
+
+  return data.nb_uniq_visitors ?? 0;
+}
+
+/**
+ * Meme appel, mais leve si Matomo n'a pas calcule la metrique
+ * (`enable_processing_unique_visitors_range` desactive) au lieu de renvoyer 0, indiscernable
+ * d'une vraie absence de visites. Reserve aux appelants qui savent afficher « Indisponible » —
+ * `getMatomoStatistiques` a un `catch` global qui remettrait *tous* ses KPI a 0.
+ */
+export async function fetchMatomoUniqueVisitorsStrict(
+  period: string = "range",
+  date: string = "last30",
+  segment?: string
+): Promise<number> {
+  const data = await requestVisitsSummary(period, date, segment);
+
+  const uniques = Number(data.nb_uniq_visitors);
+  if (!Number.isFinite(uniques)) {
+    throw new Error("Reponse Matomo inattendue (VisitsSummary.get): nb_uniq_visitors absent ou non numerique");
+  }
+
+  return uniques;
+}
+
+function requestVisitsSummary(period: string, date: string, segment?: string): Promise<MatomoVisitsSummaryResponse> {
   const config = getMatomoConfig();
 
-  const data = await fetchMatomoApi<MatomoVisitsSummaryResponse>(
+  return fetchMatomoApi<MatomoVisitsSummaryResponse>(
     {
       module: "API",
       method: "VisitsSummary.get",
@@ -274,8 +301,6 @@ export async function fetchMatomoUniqueVisitors(
     },
     config.apiUrl
   );
-
-  return data.nb_uniq_visitors ?? 0;
 }
 
 /**
@@ -313,6 +338,45 @@ function sumEventCounts(data: MatomoEventActionApiResponse, methode: string): Ma
   }
 
   return eventCounts;
+}
+
+/**
+ * Récupère les visiteurs uniques par sous-période (ex: 1 point par mois) depuis l'API Matomo
+ * (`VisitsSummary.getUniqueVisitors`, métrique unique — pas de risque d'agrégation incorrecte
+ * comme `VisitsSummary.get` : chaque sous-période a son propre dédoublonnage, indépendant des
+ * autres, donc pas de double-comptage même si un visiteur revient sur plusieurs mois).
+ *
+ * @param period - Granularité des points : 'day', 'week', 'month'…
+ * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
+ */
+export async function fetchMatomoUniqueVisitorsSeries(period: string, date: string): Promise<MatomoVisitsResponse> {
+  const config = getMatomoConfig();
+
+  const data = await fetchMatomoApi<Record<string, number | string>>(
+    {
+      module: "API",
+      method: "VisitsSummary.getUniqueVisitors",
+      idSite: config.siteId,
+      period,
+      date,
+      format: "JSON",
+      token_auth: config.apiToken,
+    },
+    config.apiUrl
+  );
+
+  // Number(...) : sur une réponse multi-sous-période, Matomo peut sérialiser la valeur en string
+  // plutôt qu'en nombre (cf. gotcha CLAUDE.md). Une valeur non numérique lève plutôt que de
+  // retomber sur 0, qui se lirait comme un mois réellement sans visiteur.
+  return Object.fromEntries(
+    Object.entries(data).map(([cle, valeur]) => {
+      const nombre = Number(valeur);
+      if (!Number.isFinite(nombre)) {
+        throw new Error(`Reponse Matomo inattendue (VisitsSummary.getUniqueVisitors): valeur non numerique (${cle})`);
+      }
+      return [cle, nombre];
+    })
+  );
 }
 
 /**

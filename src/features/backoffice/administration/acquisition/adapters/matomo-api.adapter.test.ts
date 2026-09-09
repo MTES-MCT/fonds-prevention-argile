@@ -18,6 +18,9 @@ import {
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
   fetchMatomoSimulationsGroupedByDimension,
+  fetchMatomoUniqueVisitors,
+  fetchMatomoUniqueVisitorsSeries,
+  fetchMatomoUniqueVisitorsStrict,
 } from "./matomo-api.adapter";
 
 const originalFetch = global.fetch;
@@ -278,5 +281,43 @@ describe("fetchMatomoEvents — propagation des erreurs à l'appelant", () => {
     mockFetch.mockRejectedValueOnce(new DOMException("The operation was aborted", "AbortError"));
 
     await expect(fetchMatomoEvents({ period: "day", date: "2026-01-01,2026-01-01" })).rejects.toThrow();
+  });
+});
+
+describe("visiteurs uniques", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("retombe sur 0 quand Matomo n'a pas calcule la metrique, pour ne pas casser le dashboard", async () => {
+    // `getMatomoStatistiques` a un catch global qui remettrait tous ses KPI a 0 : la variante
+    // tolerante reste le defaut.
+    mockFetchResponse({ nb_visits: 120 });
+
+    await expect(fetchMatomoUniqueVisitors("range", "2025-10-16,2026-09-08")).resolves.toBe(0);
+  });
+
+  it("leve dans la variante stricte, pour que l'appelant affiche « Indisponible »", async () => {
+    mockFetchResponse({ nb_visits: 120 });
+
+    await expect(fetchMatomoUniqueVisitorsStrict("range", "2025-10-16,2026-09-08")).rejects.toThrow(/nb_uniq_visitors/);
+  });
+
+  it("convertit les valeurs de serie serialisees en string", async () => {
+    mockFetchResponse({ "2025-10-01,2025-10-31": "4200", "2025-11-01,2025-11-30": 5100 });
+
+    const serie = await fetchMatomoUniqueVisitorsSeries("month", "2025-10-01,2025-11-30");
+
+    expect(serie).toEqual({ "2025-10-01,2025-10-31": 4200, "2025-11-01,2025-11-30": 5100 });
+  });
+
+  it("leve sur une valeur de serie non numerique plutot que de la compter comme un mois a zero", async () => {
+    mockFetchResponse({ "2025-10-01,2025-10-31": "n/a" });
+
+    await expect(fetchMatomoUniqueVisitorsSeries("month", "2025-10-01,2025-10-31")).rejects.toThrow(/non numerique/);
   });
 });

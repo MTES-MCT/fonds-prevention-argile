@@ -71,6 +71,11 @@ const Footer = () => {
                 Intégrer le simulateur sur son site
               </Link>
             </li>
+            <li className="fr-footer__bottom-item">
+              <Link className="fr-footer__bottom-link" href="/stats">
+                Statistiques
+              </Link>
+            </li>
           </ul>
           <div className="fr-footer__bottom-copy">
             <p>
