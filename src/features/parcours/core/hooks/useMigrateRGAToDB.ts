@@ -1,32 +1,34 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/features/auth/client";
 import { useParcours } from "../context/useParcours";
 import { migrateSimulationDataToDatabase } from "../actions/parcours-simulateur-rga-migration.actions";
+import { enregistrerSimulationDemandeurAction } from "../actions/enregistrer-simulation-demandeur.actions";
 import { createDebugLogger } from "@/shared/utils";
 import { RGASimulationData, useRGAStore } from "@/features/simulateur";
+import { comparerSimulations } from "@/features/simulateur/domain/services/comparaison-simulations.service";
+import { isSameSimulationContent } from "../utils/simulation-comparison";
+import { peutModifierSaSimulation } from "../domain/value-objects/edition-simulation";
+import { Step } from "../domain";
 
 const debug = createDebugLogger("MIGRATE_RGA");
 
 /**
- * Hook pour migrer les données RGA du localStorage vers la BDD
+ * Rattache au compte la simulation faite avant connexion.
  *
- * Scénario :
- * 1. Utilisateur remplit le simulateur → données en Zustand (localStorage)
- * 2. Utilisateur se connecte via FranceConnect
- * 3. Ce hook détecte les données + authentification + parcours
- * 4. Migration vers la BDD (écrase l'ancienne simulation si existante)
- * 5. Attendre que parcours.rgaSimulationData soit mis à jour
- * 6. Nettoyage du localStorage
- *
- * IMPORTANT : Le nettoyage est différé pour éviter le flash pendant le rechargement
+ * Quatre issues, selon ce que le compte connaît déjà :
+ * 1. aucune simulation → migration silencieuse (cas nominal) ;
+ * 2. la même simulation → rien à faire, on purge le cache local ;
+ * 3. une simulation différente → **arbitrage du demandeur** : on n'écrase plus en
+ *    silence un dossier existant, il choisit la version à conserver (ADR-0036) ;
+ * 4. idem mais la simulation du compte est verrouillée (correction d'agent, formulaire
+ *    chez la DDT) → aucun choix à proposer, la version du compte reste.
  */
 export function useMigrateRGAToDB() {
   const { isAuthenticated } = useAuth();
-  const { parcours, refresh } = useParcours();
+  const { parcours, refresh, getDSStatusByStep } = useParcours();
 
-  // Accès direct au store Zustand
   const tempRgaData = useRGAStore((state) => state.tempRgaData);
   const clearRGA = useRGAStore((state) => state.clearRGA);
   const isHydrated = useRGAStore((state) => state.isHydrated);
@@ -35,9 +37,37 @@ export function useMigrateRGAToDB() {
   const hasMigratedRef = useRef(false);
   const isMigratingRef = useRef(false);
   const hasCleanedRef = useRef(false);
+  // Un seul rattrapage : sans ce garde-fou, un désaccord persistant entre l'état
+  // client et le serveur ferait boucler action -> refresh -> action.
+  const hasResyncedRef = useRef(false);
 
-  // Stocker le timestamp des données migrées pour détecter la mise à jour
-  const migratedDataTimestampRef = useRef<string | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
+
+  const simulationActive = parcours?.rgaSimulationData ?? null;
+
+  const arbitrage = useMemo(() => {
+    if (!isHydrated || !isAuthenticated || !parcours || !tempRgaData || !simulationActive) return null;
+    if (isSameSimulationContent(simulationActive, tempRgaData as RGASimulationData)) return null;
+
+    // Verrouillée, la simulation du compte n'est pas remplaçable : proposer le choix
+    // reviendrait à le faire refuser côté serveur juste après.
+    const verrouille = !peutModifierSaSimulation({
+      simulationCorrigeeParAgent: parcours.simulationCorrigeeParAgent,
+      eligibiliteDsStatus: getDSStatusByStep(Step.ELIGIBILITE) ?? null,
+    });
+    if (verrouille) return { verrouille: true } as const;
+
+    const comparaison = comparerSimulations(simulationActive, tempRgaData);
+    if (comparaison.identiques) return null;
+
+    return { verrouille: false, comparaison, active: simulationActive, candidate: tempRgaData } as const;
+  }, [isHydrated, isAuthenticated, parcours, tempRgaData, simulationActive, getDSStatusByStep]);
+
+  const marquerTermine = useCallback(() => {
+    clearRGA();
+    hasMigratedRef.current = true;
+    hasCleanedRef.current = true;
+  }, [clearRGA]);
 
   // Migration des données RGA vers la BDD
   useEffect(() => {
@@ -47,87 +77,110 @@ export function useMigrateRGAToDB() {
         isAuthenticated,
         hasParcours: !!parcours,
         hasTempRgaData: !!tempRgaData,
-        hasRgaInDB: !!parcours?.rgaSimulationData,
+        hasRgaInDB: !!simulationActive,
+        arbitrage: arbitrage ? (arbitrage.verrouille ? "verrouille" : "a-trancher") : "aucun",
         hasMigrated: hasMigratedRef.current,
         isMigrating: isMigratingRef.current,
       });
 
-      // Guards
-      if (hasMigratedRef.current) {
-        debug.log("[MigrationRGAtoDB] Skip - already migrated this session");
-        return;
-      }
+      if (hasMigratedRef.current || isMigratingRef.current) return;
+      if (!isHydrated) return;
+      if (!isAuthenticated || !parcours) return;
 
-      if (isMigratingRef.current) {
-        debug.log("[MigrationRGAtoDB] Skip - migration in progress");
-        return;
-      }
-
-      // Attendre l'hydratation Zustand
-      if (!isHydrated) {
-        debug.log("[MigrationRGAtoDB] Skip - not hydrated yet");
-        return;
-      }
-
-      // Nécessite authentification + parcours
-      if (!isAuthenticated || !parcours) {
-        debug.log("[MigrationRGAtoDB] Skip - not authenticated or no parcours");
-        return;
-      }
-
-      // Pas de données temporaires à migrer
       if (!tempRgaData) {
-        debug.log("[MigrationRGAtoDB] Skip - no temp RGA data");
         hasMigratedRef.current = true; // Marquer comme vérifié
         return;
       }
 
-      // Lancer la migration (écrase l'ancienne simulation si existante)
+      // Verrouillé : la version du compte reste, le cache local n'a plus d'usage.
+      if (arbitrage?.verrouille) {
+        debug.log("[MigrationRGAtoDB] Simulation verrouillée — cache local abandonné");
+        marquerTermine();
+        return;
+      }
+
+      // L'arbitrage attend une réponse du demandeur : ne rien écrire entre-temps.
+      if (arbitrage) {
+        debug.log("[MigrationRGAtoDB] Conflit — arbitrage demandé au demandeur");
+        return;
+      }
+
       isMigratingRef.current = true;
-      debug.log("[MigrationRGAtoDB] Starting migration...", {
-        hasExistingData: !!parcours.rgaSimulationData,
-      });
 
       try {
         const result = await migrateSimulationDataToDatabase(tempRgaData as RGASimulationData);
 
-        if (result.success) {
-          debug.log("[MigrationRGAtoDB] Migration successful");
-
-          // Stocker un identifiant pour détecter quand le refresh est terminé
-          migratedDataTimestampRef.current = new Date().toISOString();
-
-          // Rafraîchir le parcours pour récupérer les données migrées
+        if (result.success && result.data.enregistree) {
           await refresh();
-
           hasMigratedRef.current = true;
-          debug.log("[MigrationRGAtoDB] Parcours refresh triggered, waiting for rgaSimulationData update...");
-        } else {
-          console.error("[MigrationRGAtoDB] Failed:", result.error);
-          // Permettre une nouvelle tentative
-          isMigratingRef.current = false;
+          return;
         }
+
+        // `enregistree: false` : le serveur voit une simulation que l'état client
+        // ignore encore. Un refresh suffit à révéler l'arbitrage ; s'il n'y parvient
+        // pas, on s'arrête là plutôt que de boucler.
+        if (result.success) {
+          isMigratingRef.current = false;
+          if (!hasResyncedRef.current) {
+            hasResyncedRef.current = true;
+            await refresh();
+          } else {
+            hasMigratedRef.current = true;
+          }
+          return;
+        }
+
+        console.error("[MigrationRGAtoDB] Failed:", result.error);
+        isMigratingRef.current = false;
       } catch (error) {
         console.error("[MigrationRGAtoDB] Exception:", error);
-        // Permettre une nouvelle tentative
         isMigratingRef.current = false;
       }
     };
 
     migrate();
-  }, [isHydrated, isAuthenticated, parcours, tempRgaData, refresh]);
+  }, [isHydrated, isAuthenticated, parcours, tempRgaData, refresh, arbitrage, simulationActive, marquerTermine]);
 
-  // Nettoyage du localStorage après confirmation des données en BDD
+  /**
+   * Tranche l'arbitrage. « Version active » n'écrit rien : la simulation du compte
+   * est déjà la bonne, seul le cache local est à jeter.
+   */
+  const resoudreConflit = useCallback(
+    async (choix: "active" | "candidate") => {
+      if (choix === "active") {
+        marquerTermine();
+        return;
+      }
+
+      if (!tempRgaData) return;
+      setIsResolving(true);
+      try {
+        const result = await enregistrerSimulationDemandeurAction(tempRgaData as RGASimulationData);
+        if (!result.success) {
+          console.error("[MigrationRGAtoDB] Arbitrage échoué:", result.error);
+          return;
+        }
+        marquerTermine();
+        await refresh();
+      } finally {
+        setIsResolving(false);
+      }
+    },
+    [tempRgaData, refresh, marquerTermine]
+  );
+
+  // Nettoyage du localStorage une fois les données confirmées en base.
   useEffect(() => {
-    // Conditions pour nettoyer :
-    // 1. Migration effectuée cette session
-    // 2. Données présentes en base (parcours.rgaSimulationData existe)
-    // 3. Pas encore nettoyé
     if (hasMigratedRef.current && parcours?.rgaSimulationData && !hasCleanedRef.current) {
       debug.log("[Cleanup] Nettoyage localStorage (données confirmées en base)");
       clearRGA();
       hasCleanedRef.current = true;
-      debug.log("[Cleanup] localStorage cleaned");
     }
   }, [parcours?.rgaSimulationData, clearRGA]);
+
+  return {
+    conflit: arbitrage && !arbitrage.verrouille ? arbitrage : null,
+    resoudreConflit,
+    isResolvingConflit: isResolving,
+  };
 }

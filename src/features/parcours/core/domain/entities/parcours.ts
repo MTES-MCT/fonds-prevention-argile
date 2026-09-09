@@ -13,6 +13,8 @@ export interface Parcours {
 
   rgaSimulationData: RGASimulationData | null;
   rgaSimulationCompletedAt: Date | null;
+  /** Un agent a corrigé la simulation : sa version prime et ferme l'édition demandeur. */
+  simulationCorrigeeParAgent: boolean;
   rgaDataDeletedAt: Date | null;
   rgaDataDeletionReason: string | null;
 

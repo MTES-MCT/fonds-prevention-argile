@@ -48,11 +48,13 @@ import SimulationNeededAlert from "@/app/(main)/mon-compte/components/Simulation
 import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/PourEnSavoirPlusSection";
 // import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
 import { useMigrateRGAToDB } from "../hooks";
+import { ChoixSimulationModal } from "./ChoixSimulationModal";
 import { formatDate } from "@/shared/utils";
 
 export default function MonCompteClient({ piecesByStep }: { piecesByStep?: PiecesByStep }) {
-  // Migration RGA si nécessaire (après connexion FC)
-  useMigrateRGAToDB();
+  // Rattachement de la simulation faite avant connexion — avec arbitrage si le
+  // compte en portait déjà une, différente (ADR-0036).
+  const { conflit, resoudreConflit, isResolvingConflit } = useMigrateRGAToDB();
 
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
   const { hasData: hasTempRGAData, isLoading: isLoadingRGA } = useSimulateurRga();
@@ -158,6 +160,17 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
 
   return (
     <>
+      {conflit && (
+        <ChoixSimulationModal
+          isOpen
+          active={conflit.active}
+          candidate={conflit.candidate}
+          comparaison={conflit.comparaison}
+          isSaving={isResolvingConflit}
+          onConfirmer={resoudreConflit}
+          onFermer={() => resoudreConflit("active")}
+        />
+      )}
       <ContactInfoModal
         isOpen={showContactModal}
         defaultEmail={user.email}
