@@ -2,11 +2,22 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
+import type { ActionResult } from "@/shared/types";
 import type { EligibilityChecks } from "../../domain/entities/eligibility-result.entity";
+
+/** Qui édite : décide des textes, jamais du comportement (garanti côté serveur). */
+export type SimulateurAudience = "agent" | "demandeur";
 
 interface SimulateurContextValue {
   /** Titre principal du simulateur */
   formTitle?: string;
+  /** Défaut `agent` : le mode édition est né côté back-office. */
+  audience?: SimulateurAudience;
+  /**
+   * Enregistrement du mode édition. Injecté par l'appelant pour que le simulateur
+   * ignore qui écrit et où (parcours du demandeur ou colonne agent du dossier).
+   */
+  onSave?: (rgaData: RGASimulationData) => Promise<ActionResult<unknown>>;
   /** Afficher le lien "Besoin d'aide ?" */
   showHelpLink?: boolean;
   /** Données initiales du demandeur (mode édition, pour comparaison) */

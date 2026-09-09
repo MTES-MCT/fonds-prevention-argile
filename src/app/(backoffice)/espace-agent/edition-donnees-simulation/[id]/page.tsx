@@ -4,7 +4,7 @@ import { getDossierSimulationData } from "@/features/backoffice/espace-agent/sha
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet } from "@/shared/utils";
 import { getCurrentUser } from "@/features/auth/services/user.service";
-import { SimulateurEdition } from "@/features/simulateur/components/SimulateurEdition";
+import { SimulateurEditionAgent } from "@/features/backoffice/espace-agent/shared/components/SimulateurEditionAgent";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
 interface PageProps {
@@ -113,7 +113,7 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
         </nav>
 
         {/* Simulateur en mode édition */}
-        <SimulateurEdition
+        <SimulateurEditionAgent
           nomComplet={nomComplet}
           initialData={rgaData}
           dossierId={id}
