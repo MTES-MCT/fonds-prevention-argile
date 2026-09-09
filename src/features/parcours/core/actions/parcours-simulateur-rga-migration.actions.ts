@@ -29,7 +29,9 @@ import { isSameSimulationContent } from "../utils/simulation-comparison";
  * client nettoie le localStorage : la sim demandeur n'est plus utile, soit
  * parce qu'elle est en BDD, soit parce qu'elle est volontairement ignorée.
  */
-export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulationData): Promise<ActionResult<void>> {
+export async function migrateSimulationDataToDatabase(
+  rgaData: PartialRGASimulationData
+): Promise<ActionResult<{ enregistree: boolean }>> {
   try {
     // 1. Vérifier session utilisateur
     const session = await getSession();
@@ -56,7 +58,7 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
       console.log("[Migration RGA] Skip : simulation agent complète déjà présente, on garde celle-ci", {
         parcoursId: parcours.id,
       });
-      return { success: true, data: undefined };
+      return { success: true, data: { enregistree: true } };
     }
 
     // 4. Ajouter le timestamp de simulation. Objet potentiellement partiel : une
@@ -69,13 +71,17 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
     // 5. Idempotence : une re-migration à l'identique (localStorage non purgé, autre
     //    session/appareil) ne doit ni réécrire ni ré-émettre l'évènement.
     if (isSameSimulationContent(parcours.rgaSimulationData, rgaSimulationData)) {
-      return { success: true, data: undefined };
+      return { success: true, data: { enregistree: true } };
     }
 
-    // Lu avant l'écriture : sert à n'émettre `demandeur_cree` qu'une fois (cf. étape 8).
-    const premiereSimulation = !parcours.rgaSimulationData;
+    // 5 bis. Le compte a déjà une simulation, différente : elle ne s'écrase pas en
+    //        silence. `enregistree: false` laisse la simulation en cache local, où
+    //        /mon-compte la reprendra pour faire arbitrer le demandeur (ADR-0036).
+    if (parcours.rgaSimulationData) {
+      return { success: true, data: { enregistree: false } };
+    }
 
-    // 6. Sauvegarder en base de données (écrase l'ancienne simulation si existante)
+    // 6. Première simulation du compte : sauvegarde en base.
     await parcoursRepo.updateRGAData(parcours.id, rgaSimulationData);
 
     // 6 bis. Verdict d'éligibilité : une simulation non éligible archive le dossier
@@ -100,10 +106,11 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
 
     // 8. Bienvenue OU non-éligibilité, jamais les deux : `demandeur_cree` est différé
     //    jusqu'ici pour une inscription autonome, seul instant où le verdict est connu
-    //    (cf. BREVO-LIFECYCLE §2). `premiereSimulation` garantit un unique envoi.
+    //    (cf. BREVO-LIFECYCLE §2). L'envoi est unique : on n'arrive ici que sur une
+    //    première simulation, l'étape 5 bis renvoyant toute simulation ultérieure.
     if (verdict.nonEligible) {
       if (verdict.archived) await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
-    } else if (premiereSimulation) {
+    } else {
       await emitBrevoEvent(parcours.id, BREVO_EVENTS.DEMANDEUR_CREE, {
         attributes: {
           [BREVO_ATTRS.A_AMO]: false,
@@ -115,7 +122,7 @@ export async function migrateSimulationDataToDatabase(rgaData: PartialRGASimulat
 
     return {
       success: true,
-      data: undefined,
+      data: { enregistree: true },
     };
   } catch (error) {
     console.error("[Migration RGA] Erreur:", error);

@@ -97,7 +97,7 @@ describe("migrateSimulationDataToDatabase", () => {
     expect(mockedEmit).not.toHaveBeenCalled();
   });
 
-  it("émet quand le contenu de la simulation a changé", async () => {
+  it("n'écrase pas une simulation différente : elle part en arbitrage", async () => {
     mockedFindByUserId.mockResolvedValue({
       id: "p1",
       rgaSimulationDataAgent: null,
@@ -106,9 +106,11 @@ describe("migrateSimulationDataToDatabase", () => {
 
     const res = await migrateSimulationDataToDatabase(rgaData);
 
-    expect(res.success).toBe(true);
-    expect(mockedUpdateRGAData).toHaveBeenCalled();
-    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE, { attributes: {} });
+    // `enregistree: false` laisse le cache local intact : c'est lui qui alimente
+    // l'arbitrage sur /mon-compte (ADR-0036).
+    expect(res.success && res.data.enregistree).toBe(false);
+    expect(mockedUpdateRGAData).not.toHaveBeenCalled();
+    expect(mockedEmit).not.toHaveBeenCalled();
   });
 
   it("applique le verdict d'éligibilité avant d'émettre vers Brevo", async () => {
@@ -168,7 +170,7 @@ describe("migrateSimulationDataToDatabase", () => {
     });
   });
 
-  it("n'émet demandeur_cree qu'une fois : pas sur une simulation ultérieure", async () => {
+  it("n'émet demandeur_cree qu'une fois : rien ne part sur une simulation ultérieure", async () => {
     mockedFindByUserId.mockResolvedValue({
       id: "p1",
       rgaSimulationDataAgent: null,
@@ -177,7 +179,6 @@ describe("migrateSimulationDataToDatabase", () => {
 
     await migrateSimulationDataToDatabase(rgaData);
 
-    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE, { attributes: {} });
     expect(mockedEmit).not.toHaveBeenCalledWith("p1", BREVO_EVENTS.DEMANDEUR_CREE, expect.anything());
   });
 
