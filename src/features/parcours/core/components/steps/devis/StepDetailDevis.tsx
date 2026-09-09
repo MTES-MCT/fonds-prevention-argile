@@ -24,7 +24,7 @@ export default function StepDetailDevis({ pieces }: { pieces?: PieceJustificativ
         <h5
           className={isActive ? "text-left fr-text-label--blue-france" : "text-left fr-text--disabled"}
           style={!isActive ? { color: "var(--text-disabled-grey)" } : undefined}>
-          4. Devis et accord
+          5. Devis et accord
         </h5>
 
         {/* Texte si etape précédente */}

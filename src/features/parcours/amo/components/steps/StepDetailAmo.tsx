@@ -20,7 +20,7 @@ export default function StepDetailAmo() {
 
   // Titre adapté au mode AMO
   const isFacultatif = amoMode === AmoMode.FACULTATIF;
-  const cardTitle = isFacultatif ? "1. Choix de l'accompagnement" : "1. Mon AMO";
+  const cardTitle = isFacultatif ? "2. Accompagnement" : "2. Mon AMO";
 
   // SANS_AMO : le demandeur a explicitement renoncé à un AMO. Pas de carte AMO à afficher.
   const isSansAmo = statutAmo === StatutValidationAmo.SANS_AMO;
