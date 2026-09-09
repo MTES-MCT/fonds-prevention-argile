@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { db } from "@/shared/database/client";
 import {
   fetchMatomoEvents,
-  fetchMatomoUniqueVisitors,
+  fetchMatomoUniqueVisitorsStrict,
   fetchMatomoUniqueVisitorsSeries,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
@@ -14,7 +14,7 @@ vi.mock("@/shared/database/client", () => ({
 
 vi.mock("@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter", () => ({
   fetchMatomoEvents: vi.fn(),
-  fetchMatomoUniqueVisitors: vi.fn(),
+  fetchMatomoUniqueVisitorsStrict: vi.fn(),
   fetchMatomoUniqueVisitorsSeries: vi.fn(),
 }));
 
@@ -39,7 +39,7 @@ describe("getPublicStatsCards", () => {
   });
 
   it("agrège les compteurs BDD et Matomo depuis le lancement", async () => {
-    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(12345);
+    vi.mocked(fetchMatomoUniqueVisitorsStrict).mockResolvedValue(12345);
     // Les sous-périodes suivantes ne portent aucun event : le total doit rester celui de la 1re.
     vi.mocked(fetchMatomoEvents).mockResolvedValue(new Map());
     vi.mocked(fetchMatomoEvents).mockResolvedValueOnce(
@@ -68,7 +68,7 @@ describe("getPublicStatsCards", () => {
   });
 
   it("somme les events par sous-période sans jamais demander un period=range (ADR-0033)", async () => {
-    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(0);
+    vi.mocked(fetchMatomoUniqueVisitorsStrict).mockResolvedValue(0);
     vi.mocked(fetchMatomoEvents).mockResolvedValue(new Map([[MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE, 10]]));
     vi.mocked(db.select)
       .mockReturnValueOnce(mockDbCount(0))
@@ -87,7 +87,7 @@ describe("getPublicStatsCards", () => {
 
   it("retombe sur null (jamais 0) pour les compteurs Matomo en panne, sans faire échouer la page", async () => {
     // null, pas 0 : « Indisponible » vaut mieux qu'un faux zéro indiscernable d'une vraie valeur.
-    vi.mocked(fetchMatomoUniqueVisitors).mockRejectedValue(new Error("timeout"));
+    vi.mocked(fetchMatomoUniqueVisitorsStrict).mockRejectedValue(new Error("timeout"));
     vi.mocked(fetchMatomoEvents).mockRejectedValue(new Error("timeout"));
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.mocked(db.select)

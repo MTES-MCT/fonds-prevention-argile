@@ -1,12 +1,12 @@
 import { unstable_cache } from "next/cache";
-import { and, count, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, count, eq, gte, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { parcoursPrevention, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import {
   fetchMatomoEvents,
-  fetchMatomoUniqueVisitors,
+  fetchMatomoUniqueVisitorsStrict,
   fetchMatomoUniqueVisitorsSeries,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
 import {
@@ -31,7 +31,8 @@ function lifetimeMatomoRange(): string {
  * buckets (cf. gotcha CLAUDE.md), autant demander les mois pleins qu'on affichera.
  */
 function lifetimeMatomoRangeMensuel(): string {
-  const premierMois = new Date(SERVICE_START_DATE.getUTCFullYear(), SERVICE_START_DATE.getUTCMonth(), 1);
+  // Getters locaux, comme `formaterDateMatomo` : mélanger UTC et local décalerait le mois de départ.
+  const premierMois = new Date(SERVICE_START_DATE.getFullYear(), SERVICE_START_DATE.getMonth(), 1);
   return `${formaterDateMatomo(premierMois)},${formaterDateMatomo(new Date())}`;
 }
 
@@ -102,7 +103,7 @@ async function getSimulationsTotals(): Promise<{ eligibles: number; terminees: n
  */
 export async function getPublicStatsCards(): Promise<PublicStatsCards> {
   const [visiteurs, simulations, comptesCrees, dossiersEligibiliteDeposes, diagnostics] = await Promise.all([
-    logMatomoFailure(fetchMatomoUniqueVisitors("range", lifetimeMatomoRange()), "visiteurs"),
+    logMatomoFailure(fetchMatomoUniqueVisitorsStrict("range", lifetimeMatomoRange()), "visiteurs"),
     logMatomoFailure(getSimulationsTotals(), "simulations"),
     countComptesCrees(),
     countDossiersEligibiliteDeposes(),
@@ -130,14 +131,19 @@ export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {
   const [visiteursParMois, comptesCreesDates, dossiersDeposesDates, dossiersEligibiliteValideesDates] =
     await Promise.all([
       logMatomoFailure(fetchMatomoUniqueVisitorsSeries("month", lifetimeMatomoRangeMensuel()), "visiteurs (evolution)"),
-      db.select({ createdAt: parcoursPrevention.createdAt }).from(parcoursPrevention),
+      // Bornées au lancement : les mois antérieurs ne sont pas affichés, autant ne pas les charger
+      // — la page est publique et le 1er hit après expiration du cache paie le scan.
+      db
+        .select({ createdAt: parcoursPrevention.createdAt })
+        .from(parcoursPrevention)
+        .where(gte(parcoursPrevention.createdAt, SERVICE_START_DATE)),
       db
         .select({ submittedAt: dossiersDemarchesSimplifiees.submittedAt })
         .from(dossiersDemarchesSimplifiees)
         .where(
           and(
             eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE),
-            isNotNull(dossiersDemarchesSimplifiees.submittedAt)
+            gte(dossiersDemarchesSimplifiees.submittedAt, SERVICE_START_DATE)
           )
         ),
       db
@@ -147,7 +153,7 @@ export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {
           and(
             eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE),
             eq(dossiersDemarchesSimplifiees.dsStatus, DSStatus.ACCEPTE),
-            isNotNull(dossiersDemarchesSimplifiees.processedAt)
+            gte(dossiersDemarchesSimplifiees.processedAt, SERVICE_START_DATE)
           )
         ),
     ]);

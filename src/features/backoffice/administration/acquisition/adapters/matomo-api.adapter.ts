@@ -259,9 +259,36 @@ export async function fetchMatomoUniqueVisitors(
   date: string = "last30",
   segment?: string
 ): Promise<number> {
+  const data = await requestVisitsSummary(period, date, segment);
+
+  return data.nb_uniq_visitors ?? 0;
+}
+
+/**
+ * Meme appel, mais leve si Matomo n'a pas calcule la metrique
+ * (`enable_processing_unique_visitors_range` desactive) au lieu de renvoyer 0, indiscernable
+ * d'une vraie absence de visites. Reserve aux appelants qui savent afficher « Indisponible » —
+ * `getMatomoStatistiques` a un `catch` global qui remettrait *tous* ses KPI a 0.
+ */
+export async function fetchMatomoUniqueVisitorsStrict(
+  period: string = "range",
+  date: string = "last30",
+  segment?: string
+): Promise<number> {
+  const data = await requestVisitsSummary(period, date, segment);
+
+  const uniques = Number(data.nb_uniq_visitors);
+  if (!Number.isFinite(uniques)) {
+    throw new Error("Reponse Matomo inattendue (VisitsSummary.get): nb_uniq_visitors absent ou non numerique");
+  }
+
+  return uniques;
+}
+
+function requestVisitsSummary(period: string, date: string, segment?: string): Promise<MatomoVisitsSummaryResponse> {
   const config = getMatomoConfig();
 
-  const data = await fetchMatomoApi<MatomoVisitsSummaryResponse>(
+  return fetchMatomoApi<MatomoVisitsSummaryResponse>(
     {
       module: "API",
       method: "VisitsSummary.get",
@@ -274,15 +301,6 @@ export async function fetchMatomoUniqueVisitors(
     },
     config.apiUrl
   );
-
-  // Matomo ne calcule pas toujours les visiteurs uniques (`enable_processing_unique_visitors_range`) :
-  // sans metrique, lever plutot que renvoyer 0, indiscernable d'une vraie absence de visites.
-  const uniques = Number(data.nb_uniq_visitors);
-  if (!Number.isFinite(uniques)) {
-    throw new Error("Reponse Matomo inattendue (VisitsSummary.get): nb_uniq_visitors absent ou non numerique");
-  }
-
-  return uniques;
 }
 
 /**
@@ -348,8 +366,17 @@ export async function fetchMatomoUniqueVisitorsSeries(period: string, date: stri
   );
 
   // Number(...) : sur une réponse multi-sous-période, Matomo peut sérialiser la valeur en string
-  // plutôt qu'en nombre (cf. gotcha CLAUDE.md) — jamais utiliser la valeur brute sans conversion.
-  return Object.fromEntries(Object.entries(data).map(([key, value]) => [key, Number(value) || 0]));
+  // plutôt qu'en nombre (cf. gotcha CLAUDE.md). Une valeur non numérique lève plutôt que de
+  // retomber sur 0, qui se lirait comme un mois réellement sans visiteur.
+  return Object.fromEntries(
+    Object.entries(data).map(([cle, valeur]) => {
+      const nombre = Number(valeur);
+      if (!Number.isFinite(nombre)) {
+        throw new Error(`Reponse Matomo inattendue (VisitsSummary.getUniqueVisitors): valeur non numerique (${cle})`);
+      }
+      return [cle, nombre];
+    })
+  );
 }
 
 /**

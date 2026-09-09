@@ -69,10 +69,13 @@ explicable au lecteur.
 
 - Une panne Matomo dégrade la page (« Indisponible » sur trois cartes et une courbe) sans jamais
   l'empêcher de s'afficher : les compteurs BDD restent justes.
-- `fetchMatomoUniqueVisitors` lève désormais quand `nb_uniq_visitors` est absent de la réponse au
-  lieu de renvoyer 0. Matomo ne calcule pas toujours les visiteurs uniques sur un `range`
-  (`enable_processing_unique_visitors_range`) : sans cette garde, l'absence de métrique se serait
-  affichée comme « 0 visiteur », côté public **comme côté back-office**.
+- Matomo ne calcule pas toujours les visiteurs uniques sur un `range`
+  (`enable_processing_unique_visitors_range`), et l'absence de métrique se lisait « 0 visiteur ».
+  D'où une variante **stricte** (`fetchMatomoUniqueVisitorsStrict`) qui lève, réservée à la page
+  publique. `fetchMatomoUniqueVisitors` garde son `?? 0` : son appelant `getMatomoStatistiques`
+  enveloppe **tous** ses KPI dans un seul `try`, dont le `catch` les remet à 0 — rendre l'adapter
+  strict pour tout le monde aurait vidé la page Acquisition entière au lieu d'une seule carte.
+  Le faux zéro y subsiste donc, à traiter séparément (découper ce `try` par métrique).
 - `cumulerCompteurs` quitte `tableau-de-bord.service.ts` pour
   `acquisition/domain/cumul-compteurs.ts`, partagé par les deux surfaces.
 - La carte « Dossiers d'éligibilité déposés » et la courbe du même nom partagent la même
