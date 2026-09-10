@@ -612,6 +612,52 @@ plus proposées — ni pour l'étape courante, ni en « à prévoir » sur les �
 > garé. La garde couvre du même coup l'archivage manuel (abandon, non-réponse). Le cas d'une
 > décision AMO « non éligible » était déjà couvert par `statut`, pas celui-là.
 
+### 2.12 Une simulation par compte : modifiable, jamais écrasée — ADR-0036
+
+Un compte porte **une** simulation (`parcours_prevention.rga_simulation_data`). Elle se
+modifie, elle ne se recrée pas.
+
+**Le simulateur public est fermé à qui en a déjà une.** `/simulateur` redirige vers
+`/mon-compte/simulation` (`aDejaUneSimulation`, `ma-simulation.service.ts`). La garde est
+dans la page et non dans les liens : quatorze CTA y mènent, dont plusieurs depuis des JSON
+de contenu. Conséquence à connaître : la route lit la session, elle n'est donc plus rendue
+statiquement.
+
+**La modification passe par l'écran des agents.** `SimulateurEdition` est partagé ; il reçoit
+son enregistrement (`onSave`) et son `audience` (`agent` | `demandeur`) par le contexte, et
+n'importe plus d'action du back-office. Deux wrappers le branchent : `SimulateurEditionAgent`
+(écrit `rgaSimulationDataAgent`) et `SimulateurEditionDemandeur` (écrit `rgaSimulationData`,
+via `enregistrerSimulationDemandeurAction`, dont le parcours vient de la **session** — aucun
+identifiant n'entre par le client).
+
+**Deux verrous ferment l'édition**, portés par le prédicat pur `peutModifierSaSimulation`
+(`core/domain/value-objects/edition-simulation.ts`) et revérifiés par l'action :
+
+| Verrou                                     | Motif                                                                                                                         | Levée                |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `rgaSimulationDataAgent` non nul           | La version de l'agent prime à l'affichage (`getEffectiveRGAData`, AGENT-first) : éditer donnerait un écran sans effet visible | Aucune               |
+| `estDossierChezLaDdt(eligibiliteDsStatus)` | Le formulaire déposé déclare ces données, et le préremplissage REST ne sait que créer (§2.7.1)                                | À la décision rendue |
+
+Verrouillée, la page rend un **récapitulatif en lecture seule** (`SimulationRecap`) et dit
+pourquoi (`MESSAGES_LECTURE_SEULE`).
+
+**Deux simulations divergentes se font arbitrer.** Au retour sur `/mon-compte`, quand le
+cache local (`useRGAStore`, simulation faite avant connexion) diffère de celle du compte,
+`useMigrateRGAToDB` n'écrase plus : il expose un conflit et `ChoixSimulationModal` fait
+choisir. `comparerSimulations` signale les champs modifiés en bleu, et **en rouge le seul
+qui fait échouer son critère** — celui qui coûte l'éligibilité. Le bandeau passe de `info` à
+`warning` quand les deux verdicts divergent.
+
+- « Version active » (et la fermeture sans choix) n'écrit **rien** : seul le cache local part.
+- « Dernière version » passe par `enregistrerSimulationDemandeurAction`, donc par le verdict
+  d'éligibilité et l'archivage de §2.11.
+- Simulation verrouillée : aucun choix proposé, le cache local est abandonné.
+
+> **La garde vit aussi côté serveur.** `migrateSimulationDataToDatabase` refuse d'écraser une
+> simulation existante différente et renvoie `enregistree: false`, laissant le cache local
+> alimenter l'arbitrage. Sans cela, `/embed-simulateur` — non gardé, puisque anonyme et
+> partenaire — restait une porte d'entrée pour écraser un dossier.
+
 ---
 
 ## 3. Architecture de la synchronisation
@@ -1140,6 +1186,10 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
 | Verdict d'éligibilité d'une simulation         | `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (partagé demandeur + agent)      |
 | Archivage sur simulation demandeur (ADR-0034)  | `src/features/parcours/core/services/simulation-eligibilite.service.ts`                                     |
+| Verrous d'édition de simulation (ADR-0036)     | `parcours/core/domain/value-objects/edition-simulation.ts` (`peutModifierSaSimulation`)                     |
+| Simulation du demandeur connecté (ADR-0036)    | `parcours/core/services/ma-simulation.service.ts`, `actions/enregistrer-simulation-demandeur.actions.ts`    |
+| Arbitrage des deux simulations (ADR-0036)      | `parcours/core/hooks/useMigrateRGAToDB.ts`, `components/ChoixSimulationModal.tsx`                           |
+| Comparaison de deux simulations (ADR-0036)     | `simulateur/domain/services/comparaison-simulations.service.ts`, `value-objects/simulation-fields.ts`       |
 | Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                             |
 | Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                                 |
 | Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |

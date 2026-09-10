@@ -63,5 +63,6 @@ purement cosmétique.
 | 0033 | [Granularité adaptée pour les events Matomo du dashboard](0033-granularite-events-matomo-dashboard.md)                                  | Accepté |
 | 0034 | [Enregistrer et archiver la simulation non éligible du demandeur](0034-simulation-non-eligible-demandeur.md)                            | Accepté |
 | 0035 | [Page de statistiques publiques — sources, cache et absence de faux zéro](0035-page-statistiques-publiques.md)                          | Accepté |
+| 0036 | [Une simulation par compte, modifiable et arbitrée](0036-simulation-unique-par-compte.md)                                               | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->
