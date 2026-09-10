@@ -59,6 +59,10 @@ export const BREVO_EVENTS = {
   // seulement au 1er archivage : déclencheur étanche pour l'Automation qui remplace le mail
   // de bienvenue (celui-ci promet un conseiller qui ne viendra pas). Cf. ADR-0034.
   SIMULATION_NON_ELIGIBLE: "simulation_non_eligible",
+  // Symétrique du précédent : le demandeur corrige sa simulation, son dossier est dé-archivé
+  // et un conseiller va le reprendre. Sans lui, ce retour n'était signalé par aucun évènement
+  // (le mail de bienvenue étant déjà parti) et restait invisible des Automations. Cf. ADR-0036.
+  SIMULATION_REDEVENUE_ELIGIBLE: "simulation_redevenue_eligible",
   AMO_DEFINI: "amo_defini",
   AMO_REPONSE: "amo_reponse",
   DN_UPDATE: "dn_update",

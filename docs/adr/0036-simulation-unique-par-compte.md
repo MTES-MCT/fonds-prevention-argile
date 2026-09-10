@@ -100,6 +100,12 @@ L'édition est fermée dans deux cas, tous deux réversibles (`peutModifierSaSim
   de simulation, jusqu'ici dupliqué entre `agent-edit-info.service.ts` et `InfoLogement`.
 - `migrateSimulationDataToDatabase` refuse d'écraser côté **serveur** : la garde ne dépend
   pas de la redirection de `/simulateur`, ce qui couvre aussi `/embed-simulateur`, non gardé.
+- Le **retour à l'éligibilité** devient notifiable : l'évènement `simulation_redevenue_eligible`
+  complète `simulation_non_eligible` (ADR-0034) pour couvrir les deux basculements. Sans lui, un
+  demandeur qui corrige sa simulation voyait son dossier dé-archivé — donc repris par un
+  conseiller — sans qu'aucun mail ne le lui dise : `demandeur_cree` est déjà parti et ne part
+  qu'une fois, et l'attribut `ELIGIBILITE` segmente sans déclencher. Voir
+  [BREVO-LIFECYCLE §2](../emails/BREVO-LIFECYCLE.md).
 
 ### Négatives / Risques
 
@@ -111,6 +117,10 @@ L'édition est fermée dans deux cas, tous deux réversibles (`peutModifierSaSim
 - **Le parcours d'édition est long** : dix étapes pour corriger un champ. Un accès direct
   au champ serait un chantier distinct.
 - La numérotation des cartes de `/mon-compte` décale (le simulateur devient la carte 1).
+- **Les corrections d'agent restent muettes côté Brevo** : `updateSimulationDataAction` et
+  `qualifyProspect` archivent et dé-archivent sans émettre d'évènement ni rafraîchir le contact.
+  Angle mort antérieur, laissé tel quel — l'ouvrir enverrait des mails sur un chemin que cet ADR
+  ne couvre pas.
 
 ### Migration
 
@@ -119,6 +129,10 @@ emplacement de la simulation du demandeur ; la colonne agent est inchangée.
 
 Les comptes portant déjà deux simulations divergentes n'existent pas : jusqu'ici la seconde
 écrasait la première.
+
+Côté Brevo, `simulation_redevenue_eligible` n'existe qu'à son premier envoi : il ne devient
+sélectionnable comme déclencheur d'Automation qu'après un passage sur staging. L'attribut
+`ELIGIBILITE`, lui, doit être créé à la main (sinon ignoré en silence).
 
 ## Liens
 
