@@ -75,6 +75,23 @@ describe("enregistrerSimulationDemandeurAction", () => {
     expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
   });
 
+  it("émet simulation_redevenue_eligible quand la correction dé-archive le dossier", async () => {
+    mockedVerdict.mockResolvedValue({ archived: false, unarchived: true, raisonActualisee: false, nonEligible: false });
+
+    await enregistrerSimulationDemandeurAction(rgaData);
+
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_REDEVENUE_ELIGIBLE);
+    // Le compte a déjà été accueilli : le mail de bienvenue ne doit pas repartir.
+    expect(mockedEmit).not.toHaveBeenCalledWith("p1", BREVO_EVENTS.DEMANDEUR_CREE, expect.anything());
+  });
+
+  it("ne signale rien de plus quand une correction laisse le dossier éligible et actif", async () => {
+    await enregistrerSimulationDemandeurAction(rgaData);
+
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE, { attributes: {} });
+    expect(mockedEmit).not.toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_REDEVENUE_ELIGIBLE);
+  });
+
   it("ne renvoie pas le mail d'inéligibilité sur une correction d'un dossier déjà archivé", async () => {
     mockedVerdict.mockResolvedValue({
       archived: false,

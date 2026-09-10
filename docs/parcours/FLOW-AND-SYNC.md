@@ -653,6 +653,17 @@ qui fait échouer son critère** — celui qui coûte l'éligibilité. Le bandea
   d'éligibilité et l'archivage de §2.11.
 - Simulation verrouillée : aucun choix proposé, le cache local est abandonné.
 
+**Les deux basculements d'éligibilité sont notifiés.** Toute correction émet
+`simulation_enregistree` ; s'y ajoute `simulation_non_eligible` au 1er archivage et
+`simulation_redevenue_eligible` au dé-archivage — jamais les deux, jamais sur un état stable.
+Le second est né avec cette fonctionnalité : le demandeur pouvant désormais corriger sa
+simulation, un dossier archivé peut redevenir éligible et être repris par un conseiller, ce que
+`demandeur_cree` (déjà parti, et unique) ne pouvait pas annoncer. Détail des déclencheurs et des
+attributs : [BREVO-LIFECYCLE §2](../emails/BREVO-LIFECYCLE.md).
+
+> **Les corrections d'agent restent muettes côté Brevo.** `updateSimulationDataAction` archive et
+> dé-archive sans émettre aucun évènement — angle mort antérieur, non traité ici.
+
 > **La garde vit aussi côté serveur.** `migrateSimulationDataToDatabase` refuse d'écraser une
 > simulation existante différente et renvoie `enregistree: false`, laissant le cache local
 > alimenter l'arbitrage. Sans cela, `/embed-simulateur` — non gardé, puisque anonyme et

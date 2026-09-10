@@ -74,10 +74,12 @@ export async function enregistrerSimulationDemandeurAction(
     const conseillerAttributes = await buildConseillerAttributes(parcours.id);
     await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_ENREGISTREE, { attributes: conseillerAttributes });
 
-    // Seul un basculement vers l'inéligibilité déclenche le mail dédié : une simulation
-    // déjà archivée pour ce motif ne doit pas le renvoyer à chaque correction.
+    // Seuls les basculements déclenchent un mail dédié : une simulation déjà archivée pour
+    // inéligibilité ne doit pas le renvoyer à chaque correction. Les deux sens sont exclusifs.
     if (verdict.archived) {
       await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
+    } else if (verdict.unarchived) {
+      await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_REDEVENUE_ELIGIBLE);
     }
 
     revalidatePath(ROUTES.particulier.monCompte);
