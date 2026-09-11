@@ -14,11 +14,17 @@ vi.mock("@/features/parcours/dossiers-ds/adapters/rest/client", () => ({ prefill
 vi.mock("../../../core/context/useParcours", () => ({ useParcours: vi.fn() }));
 vi.mock("@/features/parcours/amo/hooks", () => ({ useAmoMode: vi.fn() }));
 
-function mockParcours(currentStep: Step, statutAmo: StatutValidationAmo | null, validationAmoComplete: unknown = null) {
+function mockParcours(
+  currentStep: Step,
+  statutAmo: StatutValidationAmo | null,
+  validationAmoComplete: unknown = null,
+  isQualifiedNonEligible = false
+) {
   vi.mocked(parcoursContext.useParcours).mockReturnValue({
     currentStep,
     statutAmo,
     validationAmoComplete,
+    isQualifiedNonEligible,
   } as unknown as ReturnType<typeof parcoursContext.useParcours>);
 }
 
@@ -47,5 +53,38 @@ describe("StepDetailAmo — badge « A faire »", () => {
     render(<StepDetailAmo />);
     expect(screen.getByText(/Validé le/)).toBeInTheDocument();
     expect(screen.queryByText("A faire")).not.toBeInTheDocument();
+  });
+});
+
+describe("StepDetailAmo — logement non éligible", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(amoHooks.useAmoMode).mockReturnValue(AmoMode.FACULTATIF);
+  });
+
+  it("grise la carte sur une qualification non éligible, alors que statutAmo est null", () => {
+    mockParcours(Step.CHOIX_AMO, null, null, true);
+    render(<StepDetailAmo />);
+
+    expect(screen.getByText("Non éligible")).toBeInTheDocument();
+    expect(screen.queryByText("A faire")).not.toBeInTheDocument();
+    expect(screen.queryByText("Choisir mon AMO")).not.toBeInTheDocument();
+  });
+
+  it("ne présente plus l'autonomie comme validée quand le logement devient non éligible", () => {
+    mockParcours(Step.ELIGIBILITE, StatutValidationAmo.SANS_AMO, null, true);
+    render(<StepDetailAmo />);
+
+    expect(screen.getByText("Non éligible")).toBeInTheDocument();
+    expect(screen.queryByText("Validé")).not.toBeInTheDocument();
+    expect(screen.queryByText(/sans accompagnement/)).not.toBeInTheDocument();
+  });
+
+  it("garde le badge « Non éligible » sur une décision AMO (comportement existant)", () => {
+    mockParcours(Step.CHOIX_AMO, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE);
+    render(<StepDetailAmo />);
+
+    expect(screen.getByText("Non éligible")).toBeInTheDocument();
+    expect(screen.queryByText("Choisir mon AMO")).not.toBeInTheDocument();
   });
 });

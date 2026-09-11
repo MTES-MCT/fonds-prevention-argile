@@ -49,15 +49,12 @@ import {
 import { isProduction } from "@/shared/config/env.config";
 import { createRedactor } from "../lib/anonymize";
 import { getArg, hasFlag } from "../lib/args";
-import { parseTestEmails } from "../lib/fc-test-emails";
-
-const CSV_URL_DEFAULT =
-  "https://raw.githubusercontent.com/france-connect/sources/main/docker/volumes/fcp-low/mocks/idp/databases/citizen/base.csv";
+import { CSV_URL_FC_TEST, recupererEmailsTestFc, supprimerComptesTestFc } from "../lib/purge-fc";
 
 const APPLY = hasFlag("apply");
 const ANONYMIZE = !hasFlag("no-anonymize");
 const EMAIL_FILTER = getArg("email")?.trim().toLowerCase();
-const CSV_URL = getArg("url") ?? CSV_URL_DEFAULT;
+const CSV_URL = getArg("url") ?? CSV_URL_FC_TEST;
 
 const { redactEmail, redactName, redactUuid } = createRedactor(ANONYMIZE);
 
@@ -79,13 +76,14 @@ async function main() {
 
   // --- 2. Récupération du CSV (live) ---
   console.log(`CSV source : ${CSV_URL}`);
-  const res = await fetch(CSV_URL);
-  if (!res.ok) {
-    console.error(`ABANDON : échec du téléchargement du CSV (HTTP ${res.status}).`);
+  let testEmails: string[];
+  try {
+    testEmails = await recupererEmailsTestFc(CSV_URL);
+  } catch (err) {
+    console.error(`ABANDON : ${err instanceof Error ? err.message : err}`);
     await rawClient.end();
     process.exit(1);
   }
-  let testEmails = parseTestEmails(await res.text());
   console.log(`Emails de test dans le CSV : ${testEmails.length}`);
 
   if (EMAIL_FILTER) {
@@ -161,10 +159,7 @@ async function main() {
   }
 
   // --- 4. Suppression (transaction, cascade DB) ---
-  const deleted = await db.transaction(async (tx) => {
-    const rows = await tx.delete(users).where(inArray(users.id, userIds)).returning({ id: users.id });
-    return rows.length;
-  });
+  const deleted = await supprimerComptesTestFc(testEmails);
 
   // --- 5. Vérification ---
   const restants = await db.select({ id: users.id }).from(users).where(inArray(users.id, userIds));

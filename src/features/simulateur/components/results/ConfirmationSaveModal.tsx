@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { SimulateurAudience } from "../shared/SimulateurContext";
 
 interface ConfirmationSaveModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface ConfirmationSaveModalProps {
   isLoading?: boolean;
   /** Si true, affiche un avertissement d'inéligibilité dans la modale */
   isIneligible?: boolean;
+  audience?: SimulateurAudience;
 }
 
 /**
@@ -21,8 +23,10 @@ export function ConfirmationSaveModal({
   onConfirm,
   isLoading,
   isIneligible,
+  audience = "agent",
 }: ConfirmationSaveModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const estDemandeur = audience === "demandeur";
 
   // Gérer l'ouverture/fermeture via le DSFR
   useEffect(() => {
@@ -81,19 +85,29 @@ export function ConfirmationSaveModal({
               <div className="fr-modal__content">
                 <h1 id="modal-confirmation-save-title" className="fr-modal__title">
                   <span className="fr-icon-arrow-right-line fr-icon--lg fr-mr-2v" aria-hidden="true"></span>
-                  Confirmer la mise à jour des données ?
+                  {estDemandeur && isIneligible
+                    ? "Confirmer l’inéligibilité ?"
+                    : estDemandeur
+                      ? "Confirmer la mise à jour de vos données ?"
+                      : "Confirmer la mise à jour des données ?"}
                 </h1>
-                {isIneligible && (
-                  <div className="fr-alert fr-alert--warning fr-mb-2w">
-                    <h3 className="fr-alert__title">Attention, ces modifications rendent la demande inéligible :</h3>
-                    <ul>
-                      <li>Le demandeur ne pourra pas bénéficier de subventions</li>
-                      <li>Vous devez l&apos;informer des changements</li>
-                      <li>Le dossier sera déplacé dans la catégorie &quot;Archivés&quot;.</li>
-                    </ul>
-                  </div>
-                )}
-                <p>Cette action est irréversible.</p>
+                {isIneligible &&
+                  (estDemandeur ? (
+                    <p>
+                      Les changements effectués dans votre dossier le rendent inéligible, ce qui signifie que vous ne
+                      pourrez plus bénéficier de l&apos;aide du Fonds de Prévention Argile.
+                    </p>
+                  ) : (
+                    <div className="fr-alert fr-alert--warning fr-mb-2w">
+                      <h3 className="fr-alert__title">Attention, ces modifications rendent la demande inéligible :</h3>
+                      <ul>
+                        <li>Le demandeur ne pourra pas bénéficier de subventions</li>
+                        <li>Vous devez l&apos;informer des changements</li>
+                        <li>Le dossier sera déplacé dans la catégorie &quot;Archivés&quot;.</li>
+                      </ul>
+                    </div>
+                  ))}
+                {!estDemandeur && <p>Cette action est irréversible.</p>}
               </div>
               <div className="fr-modal__footer">
                 <ul className="fr-btns-group fr-btns-group--right fr-btns-group--inline-reverse fr-btns-group--inline-lg">
@@ -102,11 +116,19 @@ export function ConfirmationSaveModal({
                       type="button"
                       className="fr-btn"
                       style={
-                        isIneligible ? { backgroundColor: "var(--background-action-high-red-marianne)" } : undefined
+                        isIneligible && !estDemandeur
+                          ? { backgroundColor: "var(--background-action-high-red-marianne)" }
+                          : undefined
                       }
                       onClick={onConfirm}
                       disabled={isLoading}>
-                      {isLoading ? "Enregistrement..." : isIneligible ? "Confirmer l'inéligibilité" : "Confirmer"}
+                      {isLoading
+                        ? "Enregistrement..."
+                        : estDemandeur
+                          ? "Je confirme"
+                          : isIneligible
+                            ? "Confirmer l'inéligibilité"
+                            : "Confirmer"}
                     </button>
                   </li>
                   <li>

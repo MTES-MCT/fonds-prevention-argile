@@ -5,6 +5,8 @@ import { SimulateurProvider } from "./shared/SimulateurContext";
 import { SimulateurFormulaire } from "./SimulateurFormulaire";
 import { useSimulateurStore } from "../stores/simulateur.store";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
+import type { ActionResult } from "@/shared/types";
+import type { SimulateurAudience } from "./shared/SimulateurContext";
 
 interface SimulateurEditionProps {
   /** Nom complet du demandeur (ex: "Sophie Dubois") */
@@ -12,7 +14,11 @@ interface SimulateurEditionProps {
   /** Données RGA existantes à pré-remplir dans le simulateur */
   initialData: RGASimulationData | null;
   /** ID du dossier ou parcours (pour la sauvegarde) */
-  dossierId: string;
+  dossierId?: string;
+  /** Enregistrement : l'appelant décide où atterrissent les données. */
+  onSave: (rgaData: RGASimulationData) => Promise<ActionResult<unknown>>;
+  /** Décide des textes de l'écran de résultat. */
+  audience?: SimulateurAudience;
   /** URL de redirection après sauvegarde si éligible (page de détail) */
   redirectAfterSave?: string;
   /** URL de redirection après sauvegarde si non éligible (page de liste) */
@@ -20,7 +26,7 @@ interface SimulateurEditionProps {
 }
 
 /**
- * Composant d'édition des données de simulation par l'AMO.
+ * Écran d'édition d'une simulation existante, partagé par l'agent et le demandeur.
  * Réutilise le SimulateurFormulaire standard mais :
  * - Personnalise le titre avec le nom du demandeur
  * - Masque le lien "Besoin d'aide ?"
@@ -31,6 +37,8 @@ export function SimulateurEdition({
   nomComplet,
   initialData,
   dossierId,
+  onSave,
+  audience = "agent",
   redirectAfterSave,
   redirectAfterSaveList,
 }: SimulateurEditionProps) {
@@ -77,7 +85,10 @@ export function SimulateurEdition({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const formTitle = `${nomComplet} - Données de simulation d\u2019\u00e9ligibilit\u00e9`;
+  const formTitle =
+    audience === "demandeur"
+      ? "Mes données de simulation d\u2019\u00e9ligibilit\u00e9"
+      : `${nomComplet} - Données de simulation d\u2019\u00e9ligibilit\u00e9`;
 
   return (
     <SimulateurProvider
@@ -85,6 +96,8 @@ export function SimulateurEdition({
       showHelpLink={false}
       initialData={initialData}
       dossierId={dossierId}
+      onSave={onSave}
+      audience={audience}
       redirectAfterSave={redirectAfterSave}
       redirectAfterSaveList={redirectAfterSaveList}>
       <SimulateurFormulaire />

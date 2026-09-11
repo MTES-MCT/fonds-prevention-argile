@@ -27,8 +27,10 @@ export async function getOrCreateParcours(userId: string): Promise<Parcours> {
     updatedAt: parcours.updatedAt,
     rgaSimulationData: parcours.rgaSimulationData,
     rgaSimulationCompletedAt: parcours.rgaSimulationCompletedAt,
+    simulationCorrigeeParAgent: Boolean(parcours.rgaSimulationDataAgent),
     rgaDataDeletedAt: parcours.rgaDataDeletedAt,
     rgaDataDeletionReason: parcours.rgaDataDeletionReason,
+    archivedAt: parcours.archivedAt,
   };
 }
 
@@ -82,8 +84,10 @@ export async function getParcoursComplet(userId: string): Promise<ParcoursComple
       updatedAt: parcours.updatedAt,
       rgaSimulationData: parcours.rgaSimulationData,
       rgaSimulationCompletedAt: parcours.rgaSimulationCompletedAt,
+      simulationCorrigeeParAgent: Boolean(parcours.rgaSimulationDataAgent),
       rgaDataDeletedAt: parcours.rgaDataDeletedAt,
       rgaDataDeletionReason: parcours.rgaDataDeletionReason,
+      archivedAt: parcours.archivedAt,
     },
     dossiers,
     isComplete,

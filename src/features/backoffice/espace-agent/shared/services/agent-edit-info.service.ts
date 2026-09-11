@@ -1,102 +1,10 @@
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import type { AgentEditInfo } from "@/features/backoffice/espace-agent/demandes/domain/types/demande-detail.types";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
-import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
-
-/**
- * Définition d'un champ à comparer entre données initiales et données agent.
- * La clé `infoLogementKey` correspond au champ InfoLogement qui sera annoté dans le composant.
- */
-interface ComparisonField {
-  /** Clé du champ dans InfoLogement (pour le composant) */
-  infoLogementKey: string;
-  /** Extracteur de la valeur brute depuis les données RGA */
-  getValue: (data: RGASimulationData) => unknown;
-  /** Formateur pour l'affichage */
-  formatValue: (value: unknown, rgaData?: RGASimulationData) => string;
-}
-
-/**
- * Champs comparés entre données initiales et données agent.
- * L'ordre correspond à l'affichage dans InfoLogement.
- */
-const COMPARISON_FIELDS: ComparisonField[] = [
-  {
-    infoLogementKey: "typeLogement",
-    getValue: (d) => d.logement?.type,
-    // Placeholder si baseline partiel (early exit) : ne pas afficher un faux "avant".
-    formatValue: (v) => (v == null ? "—" : v === "maison" ? "MAISON" : "APPARTEMENT"),
-  },
-  {
-    infoLogementKey: "mitoyennete",
-    getValue: (d) => d.logement?.mitoyen,
-    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
-  },
-  {
-    infoLogementKey: "assurance",
-    getValue: (d) => d.rga?.assure,
-    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
-  },
-  {
-    infoLogementKey: "proprietaireOccupant",
-    getValue: (d) => d.logement?.proprietaire_occupant,
-    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
-  },
-  {
-    infoLogementKey: "zoneExposition",
-    getValue: (d) => d.logement?.zone_dexposition,
-    formatValue: (v) => (v == null ? "—" : String(v).toUpperCase()),
-  },
-  {
-    infoLogementKey: "anneeConstruction",
-    getValue: (d) => d.logement?.annee_de_construction,
-    formatValue: (v) => (v == null ? "—" : String(v)),
-  },
-  {
-    infoLogementKey: "nombreNiveaux",
-    getValue: (d) => d.logement?.niveaux,
-    formatValue: (v) => (v == null ? "—" : `${v} ${Number(v) > 1 ? "NIVEAUX" : "NIVEAU"}`),
-  },
-  {
-    infoLogementKey: "etatMaison",
-    getValue: (d) => d.rga?.sinistres,
-    formatValue: (v) => (v == null ? "—" : String(v).toUpperCase()),
-  },
-  {
-    infoLogementKey: "indemnisationPasseeRGA",
-    getValue: (d) => d.rga?.indemnise_indemnise_rga,
-    formatValue: (v) => (v == null ? "—" : v ? "OUI" : "NON"),
-  },
-  {
-    infoLogementKey: "montantIndemnisation",
-    getValue: (d) => d.rga?.indemnise_montant_indemnite,
-    formatValue: (v) => {
-      if (v === null || v === undefined) return "—";
-      return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(
-        Number(v)
-      );
-    },
-  },
-  {
-    infoLogementKey: "nombreHabitants",
-    getValue: (d) => d.menage?.personnes,
-    formatValue: (v) => (v == null ? "—" : `${v} ${Number(v) > 1 ? "HABITANTS" : "HABITANT"}`),
-  },
-  {
-    infoLogementKey: "niveauRevenu",
-    getValue: (d) => {
-      // On compare la tranche calculée, pas le revenu brut
-      return calculateNiveauRevenuFromRga(d);
-    },
-    formatValue: (v) => {
-      if (!v) return "—";
-      const s = String(v);
-      if (s === "Très modeste") return "MÉNAGE TRÈS MODESTE";
-      if (s === "Modeste") return "MÉNAGE MODESTE";
-      return s.toUpperCase();
-    },
-  },
-];
+import {
+  SIMULATION_FIELDS_BY_KEY,
+  diffSimulationFields,
+} from "@/features/simulateur/domain/value-objects/simulation-fields";
 
 /**
  * Construit les informations de diff agent pour un parcours donné.
@@ -138,21 +46,12 @@ export async function buildAgentEditInfo(parcours: {
     }
   }
 
-  // Comparer champ par champ
+  // Valeur AVANT correction, pour les seuls champs modifiés (cf. `SIMULATION_FIELDS`).
   const originalDisplayValues: Record<string, string> = {};
 
-  for (const field of COMPARISON_FIELDS) {
-    const oldValue = field.getValue(initial);
-    const newValue = field.getValue(edited);
-
-    // Ignorer si valeurs identiques (comparaison simple)
-    if (oldValue === newValue) continue;
-
-    // Ignorer si la nouvelle valeur n'est pas définie
-    if (newValue === undefined || newValue === null) continue;
-
-    // Stocker la valeur originale formatée
-    originalDisplayValues[field.infoLogementKey] = field.formatValue(oldValue, initial);
+  for (const key of diffSimulationFields(initial, edited)) {
+    const field = SIMULATION_FIELDS_BY_KEY[key];
+    originalDisplayValues[key] = field.formatValue(field.getValue(initial));
   }
 
   const nombreModifications = Object.keys(originalDisplayValues).length;

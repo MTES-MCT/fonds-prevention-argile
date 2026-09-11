@@ -15,10 +15,10 @@ import {
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import type { ActionResult } from "@/shared/types";
 import {
-  evaluateAgentSimulation,
+  evaluateSimulation,
   buildEligibiliteArchiveNote,
   isEligibiliteArchiveReason,
-} from "../services/eligibilite-agent.service";
+} from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import {
   verifyProspectTerritoryAccess,
   calculateAgentScope,
@@ -159,7 +159,7 @@ export async function updateSimulationDataAction(
 
         // 2. Recalcul du verdict d'éligibilité (miroir de la création). Sans verdict
         //    tranché (simulation incomplète, aucun critère bloquant) → rien d'autre.
-        const verdict = evaluateAgentSimulation(rgaData);
+        const verdict = evaluateSimulation(rgaData);
         if (!verdict.isEligible && !verdict.isNonEligible) return;
 
         // 2a. Décision de validation AMO. Un verdict NON ÉLIGIBLE tranche TOUJOURS le
@@ -296,7 +296,7 @@ export async function updateSimulationDataAction(
     // Écriture atomique (simulation + archivage), même exigence de cohérence que le
     // chemin dossier — sinon la simu peut être persistée sans l'archivage promis par l'UI.
     const now = new Date();
-    const prospectVerdict = evaluateAgentSimulation(rgaData);
+    const prospectVerdict = evaluateSimulation(rgaData);
     const prospectWasArchived = Boolean(parcours.archivedAt);
     const prospectArchiveReason = parcours.archiveReason;
 

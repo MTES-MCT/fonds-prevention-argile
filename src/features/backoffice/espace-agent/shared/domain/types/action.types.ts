@@ -53,6 +53,8 @@ export const ACTION_TYPE_AV_QUALIFICATION_ELIGIBLE = "av_qualification_eligible"
 export const ACTION_TYPE_AV_QUALIFICATION_A_QUALIFIER = "av_qualification_a_qualifier";
 /** Action système : l'Aller-vers qualifie le prospect non éligible (dossier archivé). */
 export const ACTION_TYPE_AV_QUALIFICATION_NON_ELIGIBLE = "av_qualification_non_eligible";
+/** Action système : la simulation du demandeur est non éligible (dossier archivé). */
+export const ACTION_TYPE_SIMULATION_NON_ELIGIBLE = "simulation_non_eligible";
 /** Action système : archivage manuel du dossier (le message porte la raison). */
 export const ACTION_TYPE_DOSSIER_ARCHIVE = "dossier_archive";
 /** Action système : dé-archivage du dossier (retour dans le suivi actif). */
@@ -148,6 +150,7 @@ export const ACTION_LABELS_BY_VALUE: Record<string, string> = ACTION_TYPE_GROUPS
     [ACTION_TYPE_AV_QUALIFICATION_ELIGIBLE]: "✅ Éligible — qualifié par l'Aller-vers",
     [ACTION_TYPE_AV_QUALIFICATION_A_QUALIFIER]: "⏳ À qualifier — Aller-vers",
     [ACTION_TYPE_AV_QUALIFICATION_NON_ELIGIBLE]: "⛔ Non éligible — qualifié par l'Aller-vers",
+    [ACTION_TYPE_SIMULATION_NON_ELIGIBLE]: "⛔ Non éligible — simulation du demandeur",
     [ACTION_TYPE_DOSSIER_ARCHIVE]: "📦 Dossier archivé",
     [ACTION_TYPE_DOSSIER_DESARCHIVE]: "📤 Dossier désarchivé",
   } as Record<string, string>
@@ -172,6 +175,7 @@ export const ACTION_TYPES_SYSTEME: ReadonlySet<string> = new Set([
   ACTION_TYPE_AV_QUALIFICATION_ELIGIBLE,
   ACTION_TYPE_AV_QUALIFICATION_A_QUALIFIER,
   ACTION_TYPE_AV_QUALIFICATION_NON_ELIGIBLE,
+  ACTION_TYPE_SIMULATION_NON_ELIGIBLE,
   ACTION_TYPE_DOSSIER_ARCHIVE,
   ACTION_TYPE_DOSSIER_DESARCHIVE,
 ]);

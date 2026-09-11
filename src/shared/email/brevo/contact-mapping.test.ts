@@ -32,6 +32,43 @@ const parcours = (over: Partial<ParcoursPrevention> = {}): ParcoursPrevention =>
     ...over,
   }) as unknown as ParcoursPrevention;
 
+describe("buildContactAttributes — ELIGIBILITE", () => {
+  const SIM_ELIGIBLE = {
+    logement: {
+      code_departement: "47",
+      commune: "47001",
+      type: "maison",
+      zone_dexposition: "fort",
+      annee_de_construction: (new Date().getFullYear() - 20).toString(),
+      niveaux: 2,
+      mitoyen: false,
+      proprietaire_occupant: true,
+    },
+    rga: { sinistres: "saine", indemnise_indemnise_rga: false, demande_catnat_en_cours: false, assure: true },
+    menage: { personnes: 2, revenu_rga: 25000 },
+  };
+
+  it("pose `non_eligible` sur une simulation non éligible (mail de bienvenue à dévier)", async () => {
+    const p = parcours({ rgaSimulationData: { logement: { type: "appartement", commune: "36044" } } } as never);
+    const attrs = await buildContactAttributes(user(), p, "jean@gmail.com");
+    expect(attrs[BREVO_ATTRS.ELIGIBILITE]).toBe("non_eligible");
+  });
+
+  it("repasse à `eligible` quand la simulation est corrigée", async () => {
+    const attrs = await buildContactAttributes(
+      user(),
+      parcours({ rgaSimulationData: SIM_ELIGIBLE } as never),
+      "j@x.fr"
+    );
+    expect(attrs[BREVO_ATTRS.ELIGIBILITE]).toBe("eligible");
+  });
+
+  it("reste absent tant qu'aucun critère n'est tranché", async () => {
+    const attrs = await buildContactAttributes(user(), parcours(), "jean@gmail.com");
+    expect(attrs[BREVO_ATTRS.ELIGIBILITE]).toBeUndefined();
+  });
+});
+
 describe("buildContactAttributes", () => {
   it("mappe les champs de base", async () => {
     const attrs = await buildContactAttributes(user(), parcours(), "jean@gmail.com");

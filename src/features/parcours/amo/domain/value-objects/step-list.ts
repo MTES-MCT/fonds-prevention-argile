@@ -31,21 +31,21 @@ const STEP_ORDER: readonly Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAG
  * Calcule l'état d'une étape DS par rapport à l'étape courante du parcours.
  * - Avant currentStep → completed (line-through)
  * - À currentStep → completed si DS accepté, sinon active ; pending si l'AMO n'a pas encore
- *   répondu (demande d'accompagnement après autonomie, cf. `blockedByAmoEnAttente`)
+ *   répondu (demande d'accompagnement après autonomie, cf. `etapeCouranteBloquee`)
  * - Après currentStep → pending (disabled)
  */
 function dsItemState(
   step: Step,
   currentStep: Step | null,
   isCurrentDSStepAccepte: boolean,
-  blockedByAmoEnAttente: boolean
+  etapeCouranteBloquee: boolean
 ): StepListItem["state"] {
   const cs = currentStep ?? Step.CHOIX_AMO;
   const stepIdx = STEP_ORDER.indexOf(step);
   const currentIdx = STEP_ORDER.indexOf(cs);
   if (stepIdx < currentIdx) return "completed";
   if (stepIdx > currentIdx) return "pending";
-  if (blockedByAmoEnAttente) return "pending";
+  if (etapeCouranteBloquee) return "pending";
   return isCurrentDSStepAccepte ? "completed" : "active";
 }
 
@@ -57,22 +57,22 @@ const DS_TAIL_ITEMS: ReadonlyArray<{ key: string; label: string; step: Step }> =
 ];
 
 /**
- * `blockedByAmoEnAttente` : le demandeur a redemandé un accompagnement après autonomie
- * (`statutAmo` repasse à EN_ATTENTE alors que `currentStep` a déjà quitté CHOIX_AMO). Le
- * formulaire de l'étape courante vient d'être réinitialisé (§2.10 FLOW-AND-SYNC.md) : on le
+ * `etapeCouranteBloquee` : le demandeur a redemandé un accompagnement après autonomie
+ * (§2.10 FLOW-AND-SYNC.md : `statutAmo` repasse à EN_ATTENTE alors que `currentStep` a déjà
+ * quitté CHOIX_AMO). Le formulaire de l'étape courante vient d'être réinitialisé : on le
  * bloque (lien désactivé) tant que l'AMO n'a pas répondu, comme au choix initial de l'AMO.
- * Sans effet sur les autres statuts : à CHOIX_AMO, `dsTail` est déjà "pending" pour tous.
+ * Sans effet à CHOIX_AMO, où `dsTail` est déjà "pending" pour tous.
  */
 function buildDsTail(
   currentStep: Step | null,
   isCurrentDSStepAccepte: boolean,
-  blockedByAmoEnAttente: boolean
+  etapeCouranteBloquee: boolean
 ): StepListItem[] {
   return DS_TAIL_ITEMS.map(({ key, label, step }) => ({
     key,
     label,
     step,
-    state: dsItemState(step, currentStep, isCurrentDSStepAccepte, blockedByAmoEnAttente),
+    state: dsItemState(step, currentStep, isCurrentDSStepAccepte, etapeCouranteBloquee),
   }));
 }
 
@@ -88,8 +88,25 @@ function amoItemState(statutAmo: StatutValidationAmo | null): StepListItem["stat
 
 /**
  * Retourne la liste des items à afficher dans la sidebar selon le mode AMO et le statut.
+ *
+ * `isNonEligible` neutralise l'ensemble : plus rien n'est actionnable, y compris l'item
+ * de tête « Choix de l'accompagnement », dont l'ancre `#choix-amo` ne mène plus qu'au
+ * callout d'inéligibilité. Les étapes déjà franchies restent barrées.
  */
 export function getStepListItems(
+  amoMode: AmoMode | null,
+  statutAmo: StatutValidationAmo | null,
+  currentStep: Step | null,
+  isCurrentDSStepAccepte: boolean,
+  eligibiliteDsStatus: DSStatus | null,
+  isNonEligible = false
+): StepListItem[] {
+  const items = buildStepListItems(amoMode, statutAmo, currentStep, isCurrentDSStepAccepte, eligibiliteDsStatus);
+  if (!isNonEligible) return items;
+  return items.map((item) => (item.state === "active" ? { ...item, state: "pending" } : item));
+}
+
+function buildStepListItems(
   amoMode: AmoMode | null,
   statutAmo: StatutValidationAmo | null,
   currentStep: Step | null,

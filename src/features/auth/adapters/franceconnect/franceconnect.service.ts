@@ -12,6 +12,7 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconnect.errors";
 import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS, buildConseillerAttributes } from "@/shared/email/brevo";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
+import { evaluateSimulation } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
 
 /**
@@ -260,6 +261,7 @@ export async function handleFranceConnectCallback(
     const { parcours } = await parcoursRepo.findOrCreateForUser(user.id);
 
     // 6bis. Si parcours en INVITATION (dossier pré-créé par un agent) → valider
+    let simulationPromue = false;
     if (parcours.currentStep === Step.INVITATION) {
       // Si l'agent a fait une simulation complète (parcours "avec simulation"),
       // on la promeut comme simulation canonique du parcours pour que le
@@ -272,6 +274,7 @@ export async function handleFranceConnectCallback(
         isSimulationComplete(parcours.rgaSimulationDataAgent)
       ) {
         await parcoursRepo.updateRGAData(parcours.id, parcours.rgaSimulationDataAgent);
+        simulationPromue = true;
       }
       await parcoursRepo.validateInvitation(parcours.id);
     }
@@ -279,7 +282,17 @@ export async function handleFranceConnectCallback(
     // 6ter. Synchro Brevo (flux) : évènement de compte créé, au premier compte actif
     //       (1ère inscription OU 1er rattachement d'un dossier pré-créé par un agent).
     //       Best-effort — n'échoue jamais la connexion.
-    if (isNewAccount) {
+    //
+    //       Émis ici UNIQUEMENT si une simulation est déjà connue : le mail de bienvenue
+    //       promet un conseiller, faux pour un non éligible. Sans simulation, l'évènement
+    //       est différé jusqu'à son enregistrement (`migrateSimulationDataToDatabase`),
+    //       seul instant où le verdict est connu — cf. BREVO-LIFECYCLE §2 et ADR-0034.
+    const simulationConnue = Boolean(parcours.rgaSimulationData) || simulationPromue;
+    const sim = simulationPromue ? parcours.rgaSimulationDataAgent : parcours.rgaSimulationData;
+
+    if (isNewAccount && simulationConnue && evaluateSimulation(sim).isNonEligible) {
+      await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
+    } else if (isNewAccount && simulationConnue) {
       // A_AMO=false explicite : connu à la création (pas d'AMO), et posé ici plutôt
       // qu'en base pour ne pas écraser un A_AMO=true ultérieur (amo_reponse).
       // CREE_PAR_CONSEILLER : `claimedAt` n'est posé que par `claimStub` (rattachement d'un

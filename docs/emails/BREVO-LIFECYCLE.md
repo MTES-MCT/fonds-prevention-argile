@@ -29,15 +29,18 @@ Automations soient branchées ou non. C'est ce découplage qui rend les évoluti
 
 Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
 
-| Déclencheur                    | Fichier                                                                                                           | `event_name`                  | `event_properties`                                       |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------------- |
-| Dossier créé par un conseiller | `features/backoffice/espace-agent/creation-dossier/services/creation-dossier.service.ts` (`createDossierByAgent`) | `dossier_cree_par_conseiller` | —                                                        |
-| Compte créé                    | `features/auth/adapters/franceconnect/franceconnect.service.ts`                                                   | `demandeur_cree`              | —                                                        |
-| Simulation enregistrée         | `features/parcours/core/actions/parcours-simulateur-rga-migration.actions.ts`                                     | `simulation_enregistree`      | —                                                        |
-| AMO définie                    | `features/parcours/amo/services/amo-selection.service.ts` (`selectAmoForUser`)                                    | `amo_defini`                  | —                                                        |
-| Réponse AMO                    | `features/parcours/amo/services/amo-validation.service.ts`                                                        | `amo_reponse`                 | `decision` (`eligible`/`non_eligible`), `est_mandataire` |
-| Dossier DN créé (brouillon)    | `features/parcours/dossiers-ds/services/dossier-ds.service.ts` (`createDossierForCurrentStep`)                    | `dn_update`                   | `step`, `old_ds_status` (`""`), `new_ds_status` (`""`)   |
-| Update DN                      | `features/parcours/dossiers-ds/services/ds-sync.service.ts`                                                       | `dn_update`                   | `step`, `old_ds_status`, `new_ds_status`                 |
+| Déclencheur                    | Fichier                                                                                                           | `event_name`                    | `event_properties`                                       |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ------------------------------- | -------------------------------------------------------- |
+| Dossier créé par un conseiller | `features/backoffice/espace-agent/creation-dossier/services/creation-dossier.service.ts` (`createDossierByAgent`) | `dossier_cree_par_conseiller`   | —                                                        |
+| Compte créé                    | `features/auth/adapters/franceconnect/franceconnect.service.ts`                                                   | `demandeur_cree`                | —                                                        |
+| Simulation enregistrée         | `features/parcours/core/actions/parcours-simulateur-rga-migration.actions.ts`                                     | `simulation_enregistree`        | —                                                        |
+| Simulation non éligible        | idem — en plus du précédent, au **1er** archivage seulement                                                       | `simulation_non_eligible`       | —                                                        |
+| Simulation non éligible        | `features/parcours/core/actions/enregistrer-simulation-demandeur.actions.ts` (correction depuis l'espace)         | `simulation_non_eligible`       | —                                                        |
+| Simulation redevenue éligible  | idem — au dé-archivage seulement                                                                                  | `simulation_redevenue_eligible` | —                                                        |
+| AMO définie                    | `features/parcours/amo/services/amo-selection.service.ts` (`selectAmoForUser`)                                    | `amo_defini`                    | —                                                        |
+| Réponse AMO                    | `features/parcours/amo/services/amo-validation.service.ts`                                                        | `amo_reponse`                   | `decision` (`eligible`/`non_eligible`), `est_mandataire` |
+| Dossier DN créé (brouillon)    | `features/parcours/dossiers-ds/services/dossier-ds.service.ts` (`createDossierForCurrentStep`)                    | `dn_update`                     | `step`, `old_ds_status` (`""`), `new_ds_status` (`""`)   |
+| Update DN                      | `features/parcours/dossiers-ds/services/ds-sync.service.ts`                                                       | `dn_update`                     | `step`, `old_ds_status`, `new_ds_status`                 |
 
 - `dossier_cree_par_conseiller` part quand un conseiller (AMO ou Aller-vers) pré-crée un dossier pour un
   demandeur sans compte FranceConnect actif (`createDossierByAgent`) : le `parcours_prevention` est
@@ -49,16 +52,58 @@ Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
   pré-créé par un agent — piloté par `isNewAccount` (`userRepo.upsertFromFranceConnect`), pas par la
   création du `parcours_prevention` (qui peut précéder la connexion FC de plusieurs jours côté
   agent). Pousse `CREE_PAR_CONSEILLER` (`user.claimedAt !== null` — vrai seulement si ce compte provient
-  d'un dossier pré-créé). Pour une inscription autonome (cas courant), la simulation n'est **pas
-  encore** en base à cet instant (elle tourne avant la connexion FranceConnect, migrée juste après
-  via `simulation_enregistree`) → INSEE/DEPARTEMENT et `CONSEILLER_*` y sont donc **quasi toujours
-  absents** dans ce cas, présents seulement si déjà résolus côté agent.
+  d'un dossier pré-créé).
+
+  > **Différé jusqu'à ce que le verdict soit connu (ADR-0034).** L'évènement déclenche le mail de
+  > bienvenue, qui promet le contact d'un conseiller — faux pour un non éligible, dont le dossier
+  > est archivé et que personne ne reprendra. Il n'est donc plus émis systématiquement au callback
+  > FranceConnect :
+  >
+  > - **au callback**, seulement si une simulation est **déjà connue** (rattachement d'un dossier
+  >   pré-créé, simulation agent promue) — et si elle est non éligible, c'est
+  >   `simulation_non_eligible` qui part à la place ;
+  > - **sinon** (inscription autonome, cas courant), il est émis à l'enregistrement de la
+  >   **première** simulation, dans `migrateSimulationDataToDatabase` — même endroit, même
+  >   exclusivité avec `simulation_non_eligible`.
+  >
+  > Conséquence assumée : un compte créé qui ne simule **jamais** ne reçoit aucun `demandeur_cree`,
+  > donc aucun mail — on ne connaît ni son territoire ni son éligibilité, la promesse serait fausse
+  > pour lui aussi. Décidé en septembre 2026 ; à revoir si une relance « terminez votre simulation »
+  > est mise en place.
+
+  Quand il part au callback pour une inscription autonome — cas devenu impossible depuis ce
+  différé — INSEE/DEPARTEMENT et `CONSEILLER_*` étaient absents faute de simulation. Ils sont
+  désormais toujours présents, puisque l'évènement suit l'enregistrement de la simulation.
+
 - `simulation_enregistree` part quand la simulation localStorage est enregistrée sur le parcours
   (post-login) : il fait remonter INSEE/DEPARTEMENT, et donc **c'est le premier instant réel où le
   territoire — et donc `CONSEILLER_*` — devient résolvable** pour une inscription autonome
   (Aller-vers de l'EPCI/département par défaut ; l'attribution AMO auto en département obligatoire
   arrive un peu après, via `amo_defini`). **Idempotent** : une re-migration à l'identique (hors
   `simulatedAt`) ne le ré-émet pas (`isSameSimulationContent`).
+- `simulation_non_eligible` et `simulation_redevenue_eligible` encadrent les deux **basculements**
+  d'éligibilité, jamais les états stables : le premier au 1er archivage, le second au dé-archivage.
+  Une correction qui laisse le dossier dans le même camp — y compris un changement de **raison**
+  d'inéligibilité sur un dossier déjà archivé — n'émet que `simulation_enregistree`. Sans quoi le
+  demandeur recevrait le même mail à chaque passage sur son formulaire.
+
+  > **Pourquoi un évènement pour le retour à l'éligibilité (ADR-0036).** Depuis que le demandeur peut
+  > corriger sa simulation, un dossier archivé peut redevenir éligible : un conseiller va le reprendre,
+  > ce qu'aucun mail ne disait. `demandeur_cree` ne pouvait pas jouer ce rôle — il est déjà parti, et
+  > il ne part qu'une fois. L'attribut `ELIGIBILITE` bascule bien à `eligible` (recalculé à chaque
+  > push), mais un attribut segmente, il ne déclenche pas.
+  >
+  > Les deux points d'écriture ne se recouvrent pas : dans `migrateSimulationDataToDatabase`
+  > (**première** simulation du compte), un dé-archivage est déjà couvert par `demandeur_cree`, dont
+  > le mail de bienvenue promet précisément ce conseiller — l'évènement dédié n'y est donc pas émis.
+  > Il ne sert que la **correction** d'une simulation existante.
+
+  > **Angle mort connu — les corrections d'agent ne poussent rien.** `updateSimulationDataAction`
+  > (correction de simulation par un AMO/Aller-vers) et `qualifyProspect` (qualification Aller-vers)
+  > archivent et dé-archivent eux aussi, sans appeler `emitBrevoEvent` : le contact n'est ni
+  > rafraîchi ni notifié. Le demandeur dont l'agent corrige la simulation ne reçoit donc aucun de
+  > ces deux mails. Non traité par ADR-0036, qui ne couvre que le chemin demandeur.
+
 - `amo_defini` part quand une AMO est attachée au parcours (choix manuel du demandeur ou
   auto-attribution — `assignAmoAutomatiqueForUser` délègue à `selectAmoForUser`, donc un seul hook
   couvre les deux). Rafraîchit les attributs `CONSEILLER_*` sur le contact : le responsable peut
@@ -88,31 +133,32 @@ Point d'entrée unique : `emitBrevoEvent(parcoursId, eventName, { attributes?, e
 Les `contact_properties` sont **ignorées si l'attribut n'existe pas** côté compte Brevo.
 Source de vérité des noms : `src/shared/email/brevo/brevo-contacts.config.ts` (`BREVO_ATTRS`).
 
-| Attribut               | Type    | Alimenté par                                                                                                                                                                                                                                                                                                                 |
-| ---------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PRENOM`, `NOM`        | Texte   | tous les flux                                                                                                                                                                                                                                                                                                                |
-| `DATE_INSCRIPTION`     | Date    | tous (date de création du parcours)                                                                                                                                                                                                                                                                                          |
-| `SITUATION`            | Texte   | tous (`prospect`/`particulier`)                                                                                                                                                                                                                                                                                              |
-| `ETAPE`                | Texte   | tous (étape courante du parcours)                                                                                                                                                                                                                                                                                            |
-| `STATUT`               | Texte   | tous (`todo`/`en_instruction`/`valide`)                                                                                                                                                                                                                                                                                      |
-| `A_AMO`                | Booléen | `false` à `demandeur_cree`, `true` à `amo_reponse` (jamais en base : un `dn_update` l'écraserait)                                                                                                                                                                                                                            |
-| `AMO_STATUT`           | Texte   | `amo_reponse`                                                                                                                                                                                                                                                                                                                |
-| `EST_MANDATAIRE`       | Booléen | `amo_reponse` (éligible + mandataire)                                                                                                                                                                                                                                                                                        |
-| `DS_STATUT`            | Texte   | `dn_update`                                                                                                                                                                                                                                                                                                                  |
-| `DEPARTEMENT`, `INSEE` | Texte   | dès que la simulation existe (`simulation_enregistree`, puis `amo_reponse`/`dn_update`) — pas au `demandeur_cree`                                                                                                                                                                                                            |
-| `SOURCE_ACQUISITION`   | Texte   | tous                                                                                                                                                                                                                                                                                                                         |
-| `PARCOURS_ID`          | Texte   | tous — `parcours_prevention.id`, dispo dès la création du parcours (avant toute résolution AMO/AV). Gardé pour rétrocompatibilité, voir `ADMIN_URL`                                                                                                                                                                          |
-| `ADMIN_URL`            | Texte   | tous — URL complète vers la fiche de suivi dans l'espace agent, déjà résolue côté serveur (`resolveAdminUrl`, source de vérité unique) : `/espace-agent/prospects/{id}` (pas de validation AMO), `/espace-agent/demandes/{id}` (validation en attente sur une AMO réelle, non archivée), sinon `/espace-agent/dossiers/{id}` |
-| `CONSEILLER_TYPE`      | Texte   | `dossier_cree_par_conseiller`, `demandeur_cree` (si déjà résolvable), `simulation_enregistree` et `amo_defini` — `AMO` ou `ALLERS_VERS`                                                                                                                                                                                      |
-| `CONSEILLER_NOM`       | Texte   | idem — nom de la structure responsable                                                                                                                                                                                                                                                                                       |
-| `CONSEILLER_EMAIL`     | Texte   | idem — 1er email de contact de la structure                                                                                                                                                                                                                                                                                  |
-| `CONSEILLER_TELEPHONE` | Texte   | idem                                                                                                                                                                                                                                                                                                                         |
-| `CONSEILLER_HORAIRES`  | Texte   | idem — absent si la structure n'a pas renseigné d'horaires                                                                                                                                                                                                                                                                   |
-| `CREE_PAR_CONSEILLER`  | Booléen | `dossier_cree_par_conseiller` (`true`) et `demandeur_cree` (`user.claimedAt !== null`) — posé une fois, ne change plus                                                                                                                                                                                                       |
-| `EMAIL_REEL`           | Texte   | **staging seulement** — vrai email quand le contact est sous-adressé (debug)                                                                                                                                                                                                                                                 |
+| Attribut               | Type    | Alimenté par                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PRENOM`, `NOM`        | Texte   | tous les flux                                                                                                                                                                                                                                                                                                                                                                        |
+| `DATE_INSCRIPTION`     | Date    | tous (date de création du parcours)                                                                                                                                                                                                                                                                                                                                                  |
+| `SITUATION`            | Texte   | tous (`prospect`/`particulier`)                                                                                                                                                                                                                                                                                                                                                      |
+| `ETAPE`                | Texte   | tous (étape courante du parcours)                                                                                                                                                                                                                                                                                                                                                    |
+| `STATUT`               | Texte   | tous (`todo`/`en_instruction`/`valide`)                                                                                                                                                                                                                                                                                                                                              |
+| `A_AMO`                | Booléen | `false` à `demandeur_cree`, `true` à `amo_reponse` (jamais en base : un `dn_update` l'écraserait)                                                                                                                                                                                                                                                                                    |
+| `AMO_STATUT`           | Texte   | `amo_reponse`                                                                                                                                                                                                                                                                                                                                                                        |
+| `EST_MANDATAIRE`       | Booléen | `amo_reponse` (éligible + mandataire)                                                                                                                                                                                                                                                                                                                                                |
+| `DS_STATUT`            | Texte   | `dn_update`                                                                                                                                                                                                                                                                                                                                                                          |
+| `DEPARTEMENT`, `INSEE` | Texte   | dès que la simulation existe (`simulation_enregistree`, puis `amo_reponse`/`dn_update`) — pas au `demandeur_cree`                                                                                                                                                                                                                                                                    |
+| `SOURCE_ACQUISITION`   | Texte   | tous                                                                                                                                                                                                                                                                                                                                                                                 |
+| `PARCOURS_ID`          | Texte   | tous — `parcours_prevention.id`, dispo dès la création du parcours (avant toute résolution AMO/AV). Gardé pour rétrocompatibilité, voir `ADMIN_URL`                                                                                                                                                                                                                                  |
+| `ADMIN_URL`            | Texte   | tous — URL complète vers la fiche de suivi dans l'espace agent, déjà résolue côté serveur (`resolveAdminUrl`, source de vérité unique) : `/espace-agent/prospects/{id}` (pas de validation AMO), `/espace-agent/demandes/{id}` (validation en attente sur une AMO réelle, non archivée), sinon `/espace-agent/dossiers/{id}`                                                         |
+| `CONSEILLER_TYPE`      | Texte   | `dossier_cree_par_conseiller`, `demandeur_cree` (si déjà résolvable), `simulation_enregistree` et `amo_defini` — `AMO` ou `ALLERS_VERS`                                                                                                                                                                                                                                              |
+| `CONSEILLER_NOM`       | Texte   | idem — nom de la structure responsable                                                                                                                                                                                                                                                                                                                                               |
+| `CONSEILLER_EMAIL`     | Texte   | idem — 1er email de contact de la structure                                                                                                                                                                                                                                                                                                                                          |
+| `CONSEILLER_TELEPHONE` | Texte   | idem                                                                                                                                                                                                                                                                                                                                                                                 |
+| `CONSEILLER_HORAIRES`  | Texte   | idem — absent si la structure n'a pas renseigné d'horaires                                                                                                                                                                                                                                                                                                                           |
+| `CREE_PAR_CONSEILLER`  | Booléen | `dossier_cree_par_conseiller` (`true`) et `demandeur_cree` (`user.claimedAt !== null`) — posé une fois, ne change plus                                                                                                                                                                                                                                                               |
+| `ELIGIBILITE`          | Texte   | tous, dès qu'un critère est tranché — `eligible` / `non_eligible`, **verdict de la simulation** recalculé à chaque push (une simulation corrigée repasse à `eligible`). Absent tant que la simulation est incomplète sans critère bloquant. Sert à **segmenter** un état ; ce sont `simulation_non_eligible` / `simulation_redevenue_eligible` qui **déclenchent** sur un changement |
+| `EMAIL_REEL`           | Texte   | **staging seulement** — vrai email quand le contact est sous-adressé (debug)                                                                                                                                                                                                                                                                                                         |
 
 Évènements (`BREVO_EVENTS`) : `dossier_cree_par_conseiller`, `demandeur_cree`, `simulation_enregistree`,
-`amo_defini`, `amo_reponse`, `dn_update`.
+`simulation_non_eligible`, `simulation_redevenue_eligible`, `amo_defini`, `amo_reponse`, `dn_update`.
 
 ---
 
@@ -147,6 +193,20 @@ email) tout en livrant tout dans la boîte de test.
       d'un demandeur qui s'inscrit lui-même, sans conseiller encore rattaché à cet instant).
 - [ ] Décider si `dossier_cree_par_conseiller` doit déclencher une Automation dédiée (relance vers le
       demandeur pour qu'il finalise son compte) ou rester une simple mise à jour de contact.
+- [ ] **Dévier le mail de bienvenue pour les non éligibles** (`ELIGIBILITE = non_eligible`) : il promet
+      le contact d'un conseiller, or le dossier est archivé et personne ne le reprendra (ADR-0034).
+      Brancher l'Automation dédiée sur **`simulation_non_eligible`**. **Rien à conditionner côté
+      bienvenue** : `demandeur_cree` et `simulation_non_eligible` sont désormais mutuellement
+      exclusifs côté code (cf. §2), un non éligible ne déclenche donc jamais l'Automation de
+      bienvenue. L'attribut `ELIGIBILITE` reste utile pour segmenter les campagnes ultérieures
+      (ne pas relancer un non éligible).
+- [ ] **Annoncer le retour à l'éligibilité** : brancher une Automation sur
+      **`simulation_redevenue_eligible`** (ADR-0036). Le demandeur a corrigé sa simulation, son
+      dossier est dé-archivé et un conseiller va le reprendre — le mail de bienvenue est déjà parti
+      et ne repartira pas. Personnaliser avec les `CONSEILLER_*`, comme la bienvenue.
+- [ ] Ne pas conditionner cette Automation sur `ELIGIBILITE` : l'attribut vaut `eligible` en
+      permanence pour l'immense majorité des contacts, l'évènement est le seul signal du
+      **changement**.
 
 ---
 

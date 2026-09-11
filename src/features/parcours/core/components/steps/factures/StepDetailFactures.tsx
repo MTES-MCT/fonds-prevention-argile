@@ -26,7 +26,7 @@ export default function StepDetailFactures({ pieces }: { pieces?: PieceJustifica
         <h5
           className={isActive ? "text-left fr-text-label--blue-france" : "text-left fr-text--disabled"}
           style={!isActive ? { color: "var(--text-disabled-grey)" } : undefined}>
-          5. Travaux et paiement
+          6. Travaux et paiement
         </h5>
 
         {/* Texte si etape précédente */}

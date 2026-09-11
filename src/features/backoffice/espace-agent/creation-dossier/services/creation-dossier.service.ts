@@ -6,9 +6,9 @@ import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-am
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { mapEligibilityReasonToRaisonIneligibilite } from "@/features/simulateur/domain/utils/eligibility-reason-to-raison.utils";
 import {
-  evaluateAgentSimulation,
+  evaluateSimulation,
   buildEligibiliteArchiveNote,
-} from "@/features/backoffice/espace-agent/shared/services/eligibilite-agent.service";
+} from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import { generateSecureRandomString } from "@/features/auth/utils/oauth.utils";
 import { getServerEnv } from "@/shared/config/env.config";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
@@ -106,7 +106,7 @@ export async function createDossierByAgent(params: CreateDossierByAgentParams): 
   // 4 bis. Évaluation d'éligibilité une fois, utilisée par les branches en aval
   //         (claim AMO + auto-archivage non éligible). Helper partagé avec
   //         `updateSimulationDataAction` pour ne pas diverger.
-  const { result: eligibilityResult, isEligible, isNonEligible } = evaluateAgentSimulation(rgaSimulationDataAgent);
+  const { result: eligibilityResult, isEligible, isNonEligible } = evaluateSimulation(rgaSimulationDataAgent);
 
   // 4 ter. Claim AMO auto, **uniquement en mode `amo`** (entrée /dossiers).
   // En mode `av` (entrée /prospects), même si l'agent a un `entrepriseAmoId`

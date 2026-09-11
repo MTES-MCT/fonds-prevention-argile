@@ -11,8 +11,6 @@ import { useSimulateurStore, selectAnswers } from "../../stores/simulateur.store
 import { evaluateAllChecks } from "../../domain/rules/navigation";
 import { computeModifications } from "../../domain/services/modifications-comparison.service";
 import { EligibilityService } from "../../domain/services/eligibility.service";
-import { updateSimulationDataAction } from "@/features/backoffice/espace-agent/shared/actions/update-simulation-data.action";
-import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { ProgressBar } from "../shared/ProgressBar";
 import { TOTAL_ETAPES } from "../../domain/value-objects/simulateur-step.enum";
 
@@ -29,7 +27,15 @@ interface ResultEditionProps {
  * et un bouton pour enregistrer les changements.
  */
 export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultEditionProps) {
-  const { formTitle, initialData, dossierId, redirectAfterSave, redirectAfterSaveList } = useSimulateurContext();
+  const {
+    formTitle,
+    initialData,
+    redirectAfterSave,
+    redirectAfterSaveList,
+    onSave,
+    audience = "agent",
+  } = useSimulateurContext();
+  const estDemandeur = audience === "demandeur";
   const answers = useSimulateurStore(selectAnswers);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +60,7 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
 
   // Enregistrer après confirmation
   const handleConfirmSave = async () => {
-    if (!dossierId) return;
+    if (!onSave) return;
 
     setIsSaving(true);
     setError(null);
@@ -87,7 +93,7 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
         return;
       }
 
-      const result = await updateSimulationDataAction(dossierId, fullRgaData);
+      const result = await onSave(fullRgaData);
 
       if (!result.success) {
         setError(result.error || "Erreur lors de la sauvegarde");
@@ -101,10 +107,8 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
       // - Non éligible → page de liste (le détail peut ne plus être accessible)
       // Utiliser window.location.href pour un rechargement complet de la page
       // (router.push peut causer des 404 avec les server components + modale DSFR ouverte)
-      const redirectUrl = isEligible
-        ? redirectAfterSave || ROUTES.backoffice.espaceAmo.dossier(dossierId)
-        : redirectAfterSaveList || redirectAfterSave || ROUTES.backoffice.espaceAmo.dossiers;
-      window.location.href = redirectUrl;
+      const redirectUrl = isEligible ? redirectAfterSave : (redirectAfterSaveList ?? redirectAfterSave);
+      if (redirectUrl) window.location.href = redirectUrl;
     } catch {
       setError("Erreur lors de la sauvegarde");
       setIsSaving(false);
@@ -135,7 +139,7 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
               <h5 className="fr-mb-2w">{formTitle}</h5>
 
               {/* Sous-titre */}
-              <p className="fr-text--lg fr-mb-2w">Éligibilité du demandeur</p>
+              <p className="fr-text--lg fr-mb-2w">{estDemandeur ? "Votre éligibilité" : "Éligibilité du demandeur"}</p>
 
               {/* Barre de progression complète */}
               <ProgressBar currentStep={TOTAL_ETAPES} totalSteps={TOTAL_ETAPES} />
@@ -160,8 +164,9 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
               <div className="fr-callout fr-mt-4w">
                 <h3 className="fr-callout__title">Important</h3>
                 <p className="fr-callout__text">
-                  N’oubliez pas d’enregistrer vos modifications pour que vos changements soient pris en compte. Pensez
-                  également à tenir le demandeur informé de la mise à jour de sa demande.
+                  {estDemandeur
+                    ? "N’oubliez pas d’enregistrer vos modifications pour qu’elles soient prises en compte. Elles remplaceront les informations de votre dossier."
+                    : "N’oubliez pas d’enregistrer vos modifications pour que vos changements soient pris en compte. Pensez également à tenir le demandeur informé de la mise à jour de sa demande."}
                 </p>
               </div>
 
@@ -204,6 +209,7 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
         onConfirm={handleConfirmSave}
         isLoading={isSaving}
         isIneligible={!isEligible}
+        audience={audience}
       />
 
       {/* Modale de confirmation de quitter sans enregistrer */}

@@ -7,6 +7,9 @@ import { SimulateurStep } from "../domain/value-objects/simulateur-step.enum";
 
 const SIMULATEUR_STORAGE_KEY = "fonds-argile-simulateur";
 
+// Sans adresse, pas de département : le dossier n'est rattachable à aucun territoire (ADR-0034).
+const DEFAULT_DEFER_EARLY_EXIT_UNTIL = SimulateurStep.ADRESSE;
+
 /**
  * État du store simulateur
  */
@@ -16,11 +19,7 @@ interface SimulateurState {
   editMode: boolean;
   /** Arrête la simulation dès qu'un critère est éliminatoire. */
   earlyExit: boolean;
-  /**
-   * Retarde l'early exit jusqu'à ce que cette étape soit répondue. Utilisé par
-   * le wizard agent : sans adresse, le dossier créé n'est rattachable à aucun
-   * territoire et devient invisible pour l'aller-vers qui vient de le créer.
-   */
+  /** Retarde l'early exit jusqu'à ce que cette étape soit répondue (cf. DEFAULT_DEFER_EARLY_EXIT_UNTIL). */
   deferEarlyExitUntil: SimulateurStep | null;
   isHydrated: boolean;
 
@@ -51,7 +50,7 @@ export const useSimulateurStore = create<SimulateurState>()(
       simulation: SimulationService.create(),
       editMode: false,
       earlyExit: true,
-      deferEarlyExitUntil: null,
+      deferEarlyExitUntil: DEFAULT_DEFER_EARLY_EXIT_UNTIL,
       isHydrated: false,
 
       start: () => {
@@ -84,7 +83,7 @@ export const useSimulateurStore = create<SimulateurState>()(
           simulation: SimulationService.reset(),
           editMode: false,
           earlyExit: true,
-          deferEarlyExitUntil: null,
+          deferEarlyExitUntil: DEFAULT_DEFER_EARLY_EXIT_UNTIL,
         });
       },
 
@@ -92,7 +91,9 @@ export const useSimulateurStore = create<SimulateurState>()(
         set({ editMode });
       },
 
-      setEarlyExit: (earlyExit: boolean, deferUntil: SimulateurStep | null = null) => {
+      // Le défaut restaure le comportement public : les wrappers agent (édition AMO,
+      // wizard invitation) le rétablissent ainsi à leur démontage.
+      setEarlyExit: (earlyExit: boolean, deferUntil: SimulateurStep | null = DEFAULT_DEFER_EARLY_EXIT_UNTIL) => {
         set({ earlyExit, deferEarlyExitUntil: deferUntil });
       },
 

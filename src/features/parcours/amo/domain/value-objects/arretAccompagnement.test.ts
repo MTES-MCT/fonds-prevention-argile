@@ -32,6 +32,7 @@ describe("peutAnnulerAccompagnement", () => {
     statut: StatutValidationAmo.LOGEMENT_ELIGIBLE,
     demandeArretAt: null,
     eligibiliteDsStatus: null,
+    dossierArchive: false,
   };
 
   it("autorise l'annulation quand l'AMO est en attente", () => {
@@ -70,12 +71,17 @@ describe("peutAnnulerAccompagnement", () => {
   it("bloque si la demande a été refusée par l'AMO (le demandeur re-choisit)", () => {
     expect(peutAnnulerAccompagnement({ ...base, statut: StatutValidationAmo.LOGEMENT_NON_ELIGIBLE })).toBe(false);
   });
+
+  it("bloque sur un dossier archivé (inéligibilité, abandon…)", () => {
+    expect(peutAnnulerAccompagnement({ ...base, dossierArchive: true })).toBe(false);
+  });
 });
 
 describe("peutDemanderAccompagnement", () => {
   const base = {
     statut: StatutValidationAmo.SANS_AMO,
     eligibiliteDsStatus: null,
+    dossierArchive: false,
   };
 
   it("autorise la demande quand le demandeur est en autonomie", () => {
@@ -106,6 +112,11 @@ describe("peutDemanderAccompagnement", () => {
 
   it("bloque si le demandeur a déjà un AMO (LOGEMENT_ELIGIBLE)", () => {
     expect(peutDemanderAccompagnement({ ...base, statut: StatutValidationAmo.LOGEMENT_ELIGIBLE })).toBe(false);
+  });
+
+  it("bloque sur un dossier archivé : non éligible (mauvais département ou critère), abandon…", () => {
+    // Cas réel : autonomie (SANS_AMO) puis simulation non éligible → parcours archivé.
+    expect(peutDemanderAccompagnement({ ...base, dossierArchive: true })).toBe(false);
   });
 });
 

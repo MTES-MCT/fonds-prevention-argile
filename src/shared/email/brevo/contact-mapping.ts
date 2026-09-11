@@ -4,6 +4,7 @@ import { BREVO_ATTRS } from "./brevo-contacts.config";
 import type { BrevoAttributes } from "./brevo-contacts.adapter";
 import { normalizeCodeInsee, getCodeDepartementFromCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
+import { evaluateSimulation } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import { isProduction } from "@/shared/config/env.config";
 import { resolveAdminUrl } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 
@@ -50,6 +51,15 @@ export async function buildContactAttributes(
   const insee = normalizeCodeInsee(sim?.logement?.commune);
   put(attrs, BREVO_ATTRS.INSEE, insee ?? undefined);
   put(attrs, BREVO_ATTRS.DEPARTEMENT, insee ? getCodeDepartementFromCodeInsee(insee) : undefined);
+
+  // Recalculé à chaque push plutôt que lu sur l'archivage : une simulation corrigée doit
+  // pouvoir repasser le contact à `eligible`, sans quoi il resterait figé.
+  const verdict = evaluateSimulation(sim);
+  put(
+    attrs,
+    BREVO_ATTRS.ELIGIBILITE,
+    verdict.isNonEligible ? "non_eligible" : verdict.isEligible ? "eligible" : undefined
+  );
 
   // EMAIL_REEL = debug staging uniquement, jamais le vrai email en production.
   const realEmail = user.emailContact ?? user.email;

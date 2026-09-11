@@ -63,15 +63,15 @@ Sous-modules notables :
 
 ## 4. Routes (`src/app/`)
 
-| Groupe                  | Rôle                                                                                                                                                                               |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `(main)`                | Site public + parcours demandeur (accueil, simulateur, parcours, mon-compte, pages légales, statistiques publiques `/stats` — [ADR-0035](adr/0035-page-statistiques-publiques.md)) |
-| `(backoffice)`          | Espaces agents privés ProConnect (`espace-agent`, `administration`)                                                                                                                |
-| `(embed)`               | Pages embarquées pour partenaires (iframes) — voir `docs/partners/`                                                                                                                |
-| `api/auth`              | Callbacks et logout FranceConnect / ProConnect                                                                                                                                     |
-| `api/cron`              | Jobs récurrents (sync parcours DS) — voir `docs/parcours/FLOW-AND-SYNC.md`                                                                                                         |
-| `api/webhooks`          | Webhooks entrants (DS, Brevo)                                                                                                                                                      |
-| `api/rga`, `api/health` | Requêtes spatiales RGA, healthcheck                                                                                                                                                |
+| Groupe                  | Rôle                                                                                                                                                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `(main)`                | Site public + parcours demandeur (accueil, simulateur, parcours, mon-compte et ses données de simulation, pages légales, statistiques publiques `/stats` — [ADR-0035](adr/0035-page-statistiques-publiques.md)) |
+| `(backoffice)`          | Espaces agents privés ProConnect (`espace-agent`, `administration`)                                                                                                                                             |
+| `(embed)`               | Pages embarquées pour partenaires (iframes) — voir `docs/partners/`                                                                                                                                             |
+| `api/auth`              | Callbacks et logout FranceConnect / ProConnect                                                                                                                                                                  |
+| `api/cron`              | Jobs récurrents (sync parcours DS) — voir `docs/parcours/FLOW-AND-SYNC.md`                                                                                                                                      |
+| `api/webhooks`          | Webhooks entrants (DS, Brevo)                                                                                                                                                                                   |
+| `api/rga`, `api/health` | Requêtes spatiales RGA, healthcheck                                                                                                                                                                             |
 
 Le contrôle d'accès aux routes est détaillé dans
 [docs/security/RBAC-ROLES.md](security/RBAC-ROLES.md).
@@ -122,6 +122,17 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 > son nom doit survivre sur les actions, qualifications, archivages et dossiers créés qu'il a
 > laissés. La suppression reste possible pour un agent sans aucune trace. Voir
 > [ADR-0029](adr/0029-desactivation-agent-plutot-que-suppression.md).
+
+> `prospect_qualifications.agent_id` est **nullable** et l'est réellement dans deux cas : un
+> agent supprimé (`on delete set null`) et une qualification automatique issue de la simulation
+> **du demandeur** — non éligible, elle archive le dossier sans qu'aucun agent n'intervienne.
+> Voir [ADR-0034](adr/0034-simulation-non-eligible-demandeur.md).
+
+> `parcours_prevention.rga_simulation_data` porte **une seule** simulation par compte : elle se
+> modifie (`/mon-compte/simulation`, même écran que l'édition agent), elle ne se recrée pas.
+> `/simulateur` redirige un demandeur qui en a déjà une, et le rattachement d'une simulation
+> faite avant connexion passe par un **arbitrage** au lieu d'écraser. Voir
+> [ADR-0036](adr/0036-simulation-unique-par-compte.md).
 
 > `dossiers_demarches_simplifiees` est le **pointeur courant** vers le dossier DN d'une étape,
 > pas l'historique des dossiers créés. La distinction entre **tentative** (brouillon prérempli,

@@ -1,3 +1,4 @@
+import StepDetailSimulateur from "../steps/simulateur/StepDetailSimulateur";
 import StepDetailEligibilite from "../steps/eligibilite/StepDetailEligibilite";
 import StepDetailDiagnostic from "../steps/diagnostic/StepDetailDiagnostic";
 import StepDetailFactures from "../steps/factures/StepDetailFactures";
@@ -15,6 +16,9 @@ export default function StepDetailSection({ piecesByStep }: { piecesByStep?: Pie
 
         {/* Zone cartes étapes détaillées */}
         <div className="fr-grid-row fr-grid-row--gutters">
+          <div className="fr-col-12 fr-col-md-3">
+            <StepDetailSimulateur />
+          </div>
           <div className="fr-col-12 fr-col-md-3">
             <StepDetailAmo />
           </div>

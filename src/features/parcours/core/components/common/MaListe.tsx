@@ -6,6 +6,7 @@ import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 import { useAmoMode } from "@/features/parcours/amo/hooks";
 import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import {
+  estLogementNonEligible,
   getStepListItems,
   peutAnnulerAccompagnement,
   peutDemanderAccompagnement,
@@ -16,6 +17,7 @@ import {
 import { AnnulerAccompagnementModal } from "@/features/parcours/amo/components/steps/AnnulerAccompagnementModal";
 import { DemanderAccompagnementModal } from "@/features/parcours/amo/components/steps/DemanderAccompagnementModal";
 import { DossierTimeline } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
+import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 
 const COMPLETED_STYLE: React.CSSProperties = {
   textDecoration: "line-through",
@@ -24,19 +26,31 @@ const COMPLETED_STYLE: React.CSSProperties = {
 };
 
 export default function MaListe() {
-  const { currentStep, statutAmo, getDossierUrl, lastDSStatus, validationAmoComplete, getDSStatusByStep, dossiers } =
-    useParcours();
+  const {
+    currentStep,
+    statutAmo,
+    getDossierUrl,
+    lastDSStatus,
+    validationAmoComplete,
+    getDSStatusByStep,
+    dossiers,
+    isQualifiedNonEligible,
+    parcours,
+  } = useParcours();
   const amoMode = useAmoMode();
   const [isAnnulerOpen, setIsAnnulerOpen] = useState(false);
   const [isDemanderOpen, setIsDemanderOpen] = useState(false);
 
   const eligibiliteDsStatus = getDSStatusByStep(Step.ELIGIBILITE) ?? null;
+  const isNonEligible = estLogementNonEligible(statutAmo, isQualifiedNonEligible);
+  const dossierArchive = Boolean(parcours?.archivedAt);
   const items = getStepListItems(
     amoMode,
     statutAmo,
     currentStep,
     lastDSStatus === DSStatus.ACCEPTE,
-    eligibiliteDsStatus
+    eligibiliteDsStatus,
+    isNonEligible
   );
   // Dates clés (brouillon/dépôt/instruction/décision) du dossier d'éligibilité,
   // affichées sous l'item correspondant de la liste (cf. ParcoursDemandeur côté agent).
@@ -52,6 +66,7 @@ export default function MaListe() {
       statut: statutAmo,
       demandeArretAt: validationAmoComplete.demandeArretAt,
       eligibiliteDsStatus,
+      dossierArchive,
     });
   const arretEnAttente = Boolean(validationAmoComplete?.demandeArretAt);
   const accordAmoRequis =
@@ -62,7 +77,7 @@ export default function MaListe() {
   const peutDemander =
     amoMode === AmoMode.FACULTATIF &&
     statutAmo !== null &&
-    peutDemanderAccompagnement({ statut: statutAmo, eligibiliteDsStatus });
+    peutDemanderAccompagnement({ statut: statutAmo, eligibiliteDsStatus, dossierArchive });
 
   const choixAccompagnementDetail =
     statutAmo === null
@@ -78,6 +93,17 @@ export default function MaListe() {
           <h2 className="fr-card__title">Ma liste</h2>
           <div className="fr-card__desc">
             <ol type="1" className="fr-list space-y-2">
+              {/* Étape toujours franchie — sans elle il n'y a pas de dossier — mais
+                  désormais consultable et corrigeable (une simulation par compte). */}
+              <li>
+                <span style={COMPLETED_STYLE}>
+                  Simulateur d&apos;éligibilité{" "}
+                  <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true" />
+                </span>
+                <Link className="fr-link fr-link--sm fr-ml-1w" href={ROUTES.particulier.maSimulation}>
+                  Voir/Modifier
+                </Link>
+              </li>
               {items.map((item) => (
                 <li key={item.key}>
                   {renderItemLink(item, getDossierUrl)}
