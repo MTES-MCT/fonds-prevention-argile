@@ -25,6 +25,13 @@ interface UseRgaBuildingSelectionReturn {
   isLoading: boolean;
   error: Error | null;
   clearSelection: () => void;
+  /**
+   * true une fois que les tuiles des bâtiments (RNB) sont chargées pour la vue courante.
+   * Distinct de `map.on("load")` (style de base seulement) : sur un réseau lent, le fond de
+   * carte peut sembler complet alors que ces tuiles - les seules cliquables - arrivent encore,
+   * ce qui donne l'impression trompeuse que le clic ne fonctionne pas.
+   */
+  layersReady: boolean;
 }
 
 /**
@@ -45,11 +52,39 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
   const [buildingData, setBuildingData] = useState<BuildingData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [layersReady, setLayersReady] = useState(false);
 
   const hoveredIdRef = useRef<string | null>(null);
   const selectedIdRef = useRef<string | null>(null);
   const initialSelectionAppliedRef = useRef(false);
   const retryCountRef = useRef(0);
+
+  // Detecter le chargement effectif des tuiles RNB (pas seulement le style de base), pour ne
+  // pas laisser croire que la carte est cliquable avant que les batiments y soient vraiment.
+  useEffect(() => {
+    if (!map || !enabled) {
+      setLayersReady(false);
+      return;
+    }
+
+    const checkLayersReady = () => {
+      const ready =
+        Boolean(map.getSource(SOURCE_IDS.rnbPoints)) &&
+        Boolean(map.getSource(SOURCE_IDS.rnbFormes)) &&
+        map.isSourceLoaded(SOURCE_IDS.rnbPoints) &&
+        map.isSourceLoaded(SOURCE_IDS.rnbFormes);
+      if (ready) setLayersReady(true);
+    };
+
+    checkLayersReady();
+    map.on("sourcedata", checkLayersReady);
+    map.on("idle", checkLayersReady);
+
+    return () => {
+      map.off("sourcedata", checkLayersReady);
+      map.off("idle", checkLayersReady);
+    };
+  }, [map, enabled]);
 
   // Pré-sélectionner un bâtiment par son ID RNB au chargement
   useEffect(() => {
@@ -289,6 +324,7 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
     isLoading,
     error,
     clearSelection,
+    layersReady,
   };
 }
 

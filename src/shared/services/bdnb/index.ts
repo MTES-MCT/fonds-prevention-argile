@@ -1,6 +1,7 @@
 export {
   getBuildingDataByRnbId,
   getBuildingDataByCleBan,
+  getBuildingDataFallback,
   isInRgaZone,
   getRgaRiskLevel,
   type BuildingData,

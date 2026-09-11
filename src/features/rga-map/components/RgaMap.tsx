@@ -39,7 +39,7 @@ export function RgaMap({
   const selectionEnabled = isReady && (readOnly ? Boolean(initialRnbId) : !locked);
   const interactionsEnabled = !readOnly && !locked;
 
-  const { selectedBuilding, buildingData, isLoading } = useRgaBuildingSelection({
+  const { selectedBuilding, buildingData, isLoading, layersReady } = useRgaBuildingSelection({
     map,
     // Activer le hook si readOnly ET qu'on a un initialRnbId, ou si pas readOnly/locked
     enabled: selectionEnabled,
@@ -82,8 +82,13 @@ export function RgaMap({
     onLoadingChange?.(isLoading);
   }, [isLoading, onLoadingChange]);
 
+  // Le style de base ("load") peut être prêt bien avant que les tuiles des bâtiments (RNB)
+  // n'aient fini d'arriver, en particulier sur un réseau lent : sans ce repère, le clic
+  // semble ne rien faire alors que rien n'est encore chargé sous le curseur.
+  const showLoadingOverlay = selectionEnabled && !layersReady;
+
   return (
-    <div style={{ padding }}>
+    <div style={{ padding, position: "relative" }}>
       <div
         ref={mapRef}
         className={className}
@@ -96,6 +101,24 @@ export function RgaMap({
         aria-label="Carte des zones d'aléa retrait-gonflement des argiles"
         role="application"
       />
+      {showLoadingOverlay && (
+        <div
+          role="status"
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(255,255,255,0.85)",
+            borderRadius: "0.6rem",
+            pointerEvents: "none",
+          }}>
+          <p className="fr-text--sm fr-mb-0" style={{ color: "#3a3a3a" }}>
+            Chargement des bâtiments...
+          </p>
+        </div>
+      )}
     </div>
   );
 }
