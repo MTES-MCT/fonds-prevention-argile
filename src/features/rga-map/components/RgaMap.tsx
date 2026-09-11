@@ -9,6 +9,10 @@ import { useRgaBuildingSelection } from "../hooks/useRgaBuildingSelection";
 import type { RgaMapProps } from "../domain/types";
 import type { BuildingData } from "@/shared/services/bdnb";
 import type { Coordinates } from "@/shared/types";
+import { useDelayedFlag } from "@/shared/hooks";
+
+/** Délai avant d'afficher un indicateur de chargement, pour ne pas le faire clignoter sur un réseau performant */
+const LOADING_INDICATOR_DELAY_MS = 300;
 
 interface RgaMapInternalProps extends RgaMapProps {
   onBuildingDataChange?: (data: BuildingData | null) => void;
@@ -84,10 +88,21 @@ export function RgaMap({
     onLoadingChange?.(isLoading);
   }, [isLoading, onLoadingChange]);
 
-  // Le style de base ("load") peut être prêt bien avant que les tuiles des bâtiments (RNB)
-  // n'aient fini d'arriver, en particulier sur un réseau lent : sans ce repère, le clic
-  // semble ne rien faire alors que rien n'est encore chargé sous le curseur.
-  const showLoadingOverlay = selectionEnabled && !layersReady;
+  // Carte entièrement prête (style + tuiles, y compris les zones d'aléa) : sur un réseau
+  // lent, le style de base peut sembler complet bien avant, ce qui donne l'impression
+  // trompeuse que le clic ne fonctionne pas. Le délai évite un flash sur réseau performant.
+  const mapFullyLoaded = isReady && layersReady;
+  const showMapLoadingOverlay = useDelayedFlag(!mapFullyLoaded && !selectedBuilding, LOADING_INDICATOR_DELAY_MS);
+  // Une fois un bâtiment cliqué, la récupération de ses données (BDNB) peut aussi prendre du
+  // temps sans aucun retour visuel - même logique de délai, et prioritaire sur le message
+  // "carte" puisque le clic a déjà réussi.
+  const showBuildingLoadingOverlay = useDelayedFlag(isLoading, LOADING_INDICATOR_DELAY_MS);
+
+  const overlayText = showBuildingLoadingOverlay
+    ? "Récupération des informations du bâtiment..."
+    : showMapLoadingOverlay
+      ? "Chargement de la carte..."
+      : null;
 
   return (
     <div style={{ padding, position: "relative" }}>
@@ -103,7 +118,7 @@ export function RgaMap({
         aria-label="Carte des zones d'aléa retrait-gonflement des argiles"
         role="application"
       />
-      {showLoadingOverlay && (
+      {overlayText && (
         <div
           role="status"
           style={{
@@ -117,7 +132,7 @@ export function RgaMap({
             pointerEvents: "none",
           }}>
           <p className="fr-text--sm fr-mb-0" style={{ color: "#3a3a3a" }}>
-            Chargement des bâtiments...
+            {overlayText}
           </p>
         </div>
       )}
