@@ -17,6 +17,9 @@ interface UseRgaBuildingSelectionOptions {
   initialCoordinates?: { lat: number; lon: number };
   onBuildingSelect?: (data: BuildingData | null) => void;
   onError?: (error: Error) => void;
+  /** Appelé quand l'utilisateur clique sur la carte sans toucher aucun bâtiment (tuiles pas
+   * encore chargées, ou clic hors bâtiment) - signal utile pour proposer une saisie manuelle. */
+  onEmptyClick?: () => void;
 }
 
 interface UseRgaBuildingSelectionReturn {
@@ -46,6 +49,7 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
     initialCoordinates,
     onBuildingSelect,
     onError,
+    onEmptyClick,
   } = options;
 
   const [selectedBuilding, setSelectedBuilding] = useState<SelectedBuilding | null>(null);
@@ -61,28 +65,21 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
 
   // Detecter le chargement effectif des tuiles RNB (pas seulement le style de base), pour ne
   // pas laisser croire que la carte est cliquable avant que les batiments y soient vraiment.
+  // On attend un vrai cycle "idle" (plus aucune tuile en cours de chargement) plutôt que de
+  // faire confiance à isSourceLoaded() vérifié immédiatement : celui-ci peut répondre vrai
+  // avant même que la première requête de tuile RNB n'ait été émise, ce qui rendait le
+  // message de chargement quasi invisible en pratique.
   useEffect(() => {
     if (!map || !enabled) {
       setLayersReady(false);
       return;
     }
 
-    const checkLayersReady = () => {
-      const ready =
-        Boolean(map.getSource(SOURCE_IDS.rnbPoints)) &&
-        Boolean(map.getSource(SOURCE_IDS.rnbFormes)) &&
-        map.isSourceLoaded(SOURCE_IDS.rnbPoints) &&
-        map.isSourceLoaded(SOURCE_IDS.rnbFormes);
-      if (ready) setLayersReady(true);
-    };
-
-    checkLayersReady();
-    map.on("sourcedata", checkLayersReady);
-    map.on("idle", checkLayersReady);
+    const markReady = () => setLayersReady(true);
+    map.on("idle", markReady);
 
     return () => {
-      map.off("sourcedata", checkLayersReady);
-      map.off("idle", checkLayersReady);
+      map.off("idle", markReady);
     };
   }, [map, enabled]);
 
@@ -277,6 +274,27 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
       map.off("click", LAYER_IDS.rnbFormes, handleClick);
     };
   }, [map, enabled, enableInteractions]);
+
+  // Detecte un clic qui ne touche aucun batiment (tuiles pas encore chargees, ou clic a cote) :
+  // signal générique, indépendant des handlers scopés par layer ci-dessus.
+  useEffect(() => {
+    if (!map || !enabled || !enableInteractions || !onEmptyClick) return;
+
+    const handleGenericClick = (e: maplibregl.MapMouseEvent) => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: [LAYER_IDS.rnbPoints, LAYER_IDS.rnbFormes],
+      });
+      if (features.length === 0) {
+        onEmptyClick();
+      }
+    };
+
+    map.on("click", handleGenericClick);
+
+    return () => {
+      map.off("click", handleGenericClick);
+    };
+  }, [map, enabled, enableInteractions, onEmptyClick]);
 
   // Gérer les événements de survol
   useEffect(() => {

@@ -56,6 +56,12 @@ export interface RgaMapProps {
   onError?: (error: Error) => void;
 
   /**
+   * Callback appelé quand l'utilisateur clique sur la carte sans toucher aucun bâtiment
+   * (tuiles pas encore chargées, ou clic à côté)
+   */
+  onEmptyClick?: () => void;
+
+  /**
    * Hauteur de la carte
    * @default "500px"
    */

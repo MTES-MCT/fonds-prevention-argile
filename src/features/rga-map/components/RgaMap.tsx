@@ -25,6 +25,7 @@ export function RgaMap({
   initialRnbId,
   onBuildingSelect,
   onError,
+  onEmptyClick,
   onBuildingDataChange,
   onLoadingChange,
   height = "500px",
@@ -49,6 +50,7 @@ export function RgaMap({
     initialCoordinates: center,
     onBuildingSelect,
     onError,
+    onEmptyClick,
   });
 
   // Calculer les coordonnées du marqueur : bâtiment sélectionné > coordonnées initiales

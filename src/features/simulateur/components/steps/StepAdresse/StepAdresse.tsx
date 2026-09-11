@@ -228,8 +228,21 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
 
   // Échappatoire manuelle si la carte ne répond pas (réseau lent, tuiles RNB non chargées) :
   // ne dépend ni de BDNB ni du clic carte, uniquement des coordonnées déjà connues de
-  // l'adresse recherchée.
+  // l'adresse recherchée. Masquée par défaut : proposée seulement après un délai sans
+  // sélection, ou si un clic sur la carte ne touche aucun bâtiment (signal direct que "ça ne
+  // répond pas") - sinon tout le monde l'utiliserait sans même essayer la carte.
+  const [showManualFallback, setShowManualFallback] = useState(false);
   const [isFallbackLoading, setIsFallbackLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedAddress || buildingData || isAddressLocked) {
+      return;
+    }
+    setShowManualFallback(false);
+    const timeout = setTimeout(() => setShowManualFallback(true), 8000);
+    return () => clearTimeout(timeout);
+  }, [selectedAddress, buildingData, isAddressLocked]);
+
   const handleManualFallback = useCallback(async () => {
     if (!selectedAddress) return;
     setIsFallbackLoading(true);
@@ -395,10 +408,11 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
               showLegend={true}
               variant="minimal"
               onBuildingSelect={isAddressLocked ? undefined : handleBuildingSelect}
+              onEmptyClick={isAddressLocked ? undefined : () => setShowManualFallback(true)}
             />
 
-            {/* Échappatoire si la carte ne répond pas (réseau lent, bâtiment introuvable) */}
-            {!buildingData && !isAddressLocked && (
+            {/* Échappatoire si la carte ne répond pas (délai écoulé ou clic à vide) */}
+            {!buildingData && !isAddressLocked && showManualFallback && (
               <p className="fr-text--sm fr-mt-2w fr-mb-0">
                 <button
                   type="button"
