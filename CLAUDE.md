@@ -242,6 +242,27 @@ existe désormais en base) : relancer les deux scripts à chaque session de test
 scénario dans `scripts/ops/qa/scenarios.ts` quand la PR introduit un flux dont la précondition
 n'existe pas encore.
 
+#### Remettre staging à plat avant une session de test
+
+Une checklist n'est fiable que si l'état de départ l'est. Après un déploiement sur staging, on
+repart d'un état connu en une seule commande, dans un one-off :
+
+```bash
+pnpm seed:staging --yes-staging --purge-fc
+```
+
+`--purge-fc` supprime d'abord les comptes demandeurs créés par un vrai login FranceConnect de
+test (cascade complète), **puis** le seed rejoue ses fixtures. Sans lui, ces comptes survivent
+au re-seed mais perdent leur validation AMO — l'étape `amo-av` fait un `DELETE FROM
+parcours_amo_validations` sans filtre — et se retrouvent dans un état ni neuf ni cohérent, qui
+fausse silencieusement les tests. Ajouter `--dry-run` pour voir combien de comptes seraient
+supprimés sans rien écrire.
+
+Conséquence pour l'écriture des checklists : **aucun compte du seed n'est connectable en
+FranceConnect** (les users seedés portent un `fc_id` factice, et le rattachement par email exige
+`fc_id IS NULL`). Un login FC crée donc toujours un compte neuf, sans simulation. Les états de
+départ côté demandeur se construisent par le parcours lui-même, pas en base.
+
 ### Revue Copilot avant merge (à chaque PR)
 
 Une fois la branche prête et validée (`pnpm validate` vert), **ne pas merger directement**.

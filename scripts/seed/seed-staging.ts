@@ -19,6 +19,7 @@
  *   pnpm seed:staging --steps=agents,amo-av
  *   pnpm seed:staging --dry-run
  *   pnpm seed:staging --yes-staging         # requis quand APP_ENV=staging
+ *   pnpm seed:staging --yes-staging --purge-fc   # + supprime les comptes de test FranceConnect
  *
  * Doc complète : scripts/seed/README.md
  */
@@ -28,6 +29,7 @@ import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { rawClient } from "@/shared/database/client";
+import { listerComptesTestFc, recupererEmailsTestFc, supprimerComptesTestFc } from "../ops/lib/purge-fc";
 
 // Charge .env.local si DATABASE_URL pas déjà défini (cas du lancement local).
 if (!process.env.DATABASE_URL && !process.env.SCALINGO_POSTGRESQL_URL) {
@@ -73,6 +75,7 @@ interface CliArgs {
   steps: Step[];
   dryRun: boolean;
   yesStaging: boolean;
+  purgeFc: boolean;
 }
 
 function parseArgs(): CliArgs {
@@ -90,6 +93,7 @@ function parseArgs(): CliArgs {
     steps,
     dryRun: argv.includes("--dry-run"),
     yesStaging: argv.includes("--yes-staging"),
+    purgeFc: argv.includes("--purge-fc"),
   };
 }
 
@@ -201,11 +205,47 @@ async function runVerifyStep(dryRun: boolean): Promise<void> {
 // Main
 // ============================================================================
 
+/**
+ * Supprime les comptes demandeurs créés par un vrai login FranceConnect de test.
+ * Le seed ne les voit pas (ses nettoyages ciblent ses propres préfixes d'uuid), et les
+ * laisser en place fausse les tests : ils gardent leur simulation mais perdent leur
+ * validation AMO, effacée sans filtre par l'étape `amo-av`.
+ */
+async function runPurgeFcStep(dryRun: boolean): Promise<void> {
+  console.log("→ purge-fc");
+  const emails = await recupererEmailsTestFc();
+  const presents = await listerComptesTestFc(emails);
+
+  if (presents.length === 0) {
+    console.log("  ✓ aucun compte de test FranceConnect en base");
+    return;
+  }
+  if (dryRun) {
+    console.log(`  [dry-run] ${presents.length} compte(s) de test seraient supprimés (cascade)`);
+    return;
+  }
+
+  const supprimes = await supprimerComptesTestFc(emails);
+  console.log(`  ✓ ${supprimes} compte(s) de test supprimé(s), cascade comprise`);
+}
+
 async function main(): Promise<void> {
   const args = parseArgs();
-  console.log(`seed:staging — steps=${args.steps.join(",")}${args.dryRun ? " (dry-run)" : ""}\n`);
+  const modificateurs = [args.purgeFc ? "purge-fc" : null, args.dryRun ? "dry-run" : null].filter(Boolean);
+  console.log(
+    `seed:staging — steps=${args.steps.join(",")}${modificateurs.length ? ` (${modificateurs.join(", ")})` : ""}\n`
+  );
 
   if (args.steps.includes("safety")) assertNotProduction(args.yesStaging);
+
+  // La purge supprime de vrais comptes : jamais sans la garde, même si `--steps=`
+  // a exclu l'étape safety. Elle passe avant tout le reste, sinon `amo-av` viderait
+  // d'abord leurs validations AMO et les laisserait à moitié dépouillés.
+  if (args.purgeFc) {
+    if (!args.steps.includes("safety")) assertNotProduction(args.yesStaging);
+    await runPurgeFcStep(args.dryRun);
+  }
+
   if (args.steps.includes("ref-data") && !args.dryRun) await assertRefDataPresent();
   if (args.steps.includes("amo-av")) await runAmoAvStep(args.dryRun);
   if (args.steps.includes("parcours")) await runParcoursStep(args.dryRun);
