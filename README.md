@@ -412,7 +412,7 @@ Le workflow utilise une **matrix [staging, production]** sur les **GitHub Enviro
 1. Settings → Environments → créer `staging` et `production`.
 2. Pour chaque environment, ajouter :
    - **Secret** `CRON_SECRET` : secret aléatoire ≥ 32 caractères, identique à celui configuré côté Scalingo de l'env. Générer avec `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
-   - **Variable** `APP_URL` : URL publique de l'app (ex : `https://fonds-argile-staging.osc-fr1.scalingo.io` pour staging, URL prod pour production).
+   - **Variable** `APP_URL` : URL publique de l'app (ex : `https://staging.fonds-prevention-argile.beta.gouv.fr` pour staging, URL prod pour production).
 3. Côté Scalingo (chaque app), ajouter la même variable d'env `CRON_SECRET` que celle configurée dans GitHub. `APP_URL` n'est pas nécessaire côté Scalingo (c'est juste le destinataire du curl).
 
 **Déclenchement manuel** : Actions → CRON sync parcours → "Run workflow" → confirme.

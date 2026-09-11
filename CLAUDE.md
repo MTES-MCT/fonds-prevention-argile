@@ -176,7 +176,9 @@ Règles d'écriture :
   séquence, et Notion ne numérote pas des cases à cocher. On insère une étape sans tout
   renuméroter.
 - **Liens complets et cliquables**, jamais un chemin nu (`/mon-compte`) : `http://localhost:3000/...`
-  en local, `https://fonds-argile-staging.osc-fr1.scalingo.io/...` pour une checklist staging.
+  en local, `https://staging.fonds-prevention-argile.beta.gouv.fr/...` pour une checklist staging
+  (URL canonique ; l'URL Scalingo `fonds-argile-staging.osc-fr1.scalingo.io` répond aussi mais ne
+  se donne pas dans une checklist).
 - **Un bloc = un persona.** Ne jamais enchaîner demandeur et agent dans le même parcours :
   le contrôle côté agent d'un flux demandeur est un bloc à part. Un changement de compte est
   une **étape explicite** (« se déconnecter ou ouvrir une fenêtre privée, se connecter avec … »),
