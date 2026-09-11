@@ -13,7 +13,7 @@ import {
 } from "@/shared/adapters/ban";
 import { getEpciByCommune } from "@/shared/adapters/geo";
 import { RgaMapContainer } from "@/features/rga-map";
-import type { BuildingData } from "@/shared/services/bdnb";
+import { getBuildingDataFallback, type BuildingData } from "@/shared/services/bdnb";
 import { asString } from "@/shared/utils";
 
 import { SimulateurLayout } from "../../shared/SimulateurLayout";
@@ -226,6 +226,37 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
     setFormData(data);
   }, []);
 
+  // Échappatoire manuelle si la carte ne répond pas (réseau lent, tuiles RNB non chargées) :
+  // ne dépend ni de BDNB ni du clic carte, uniquement des coordonnées déjà connues de
+  // l'adresse recherchée. Masquée par défaut : proposée seulement après un délai sans
+  // sélection, ou si un clic sur la carte ne touche aucun bâtiment (signal direct que "ça ne
+  // répond pas") - sinon tout le monde l'utiliserait sans même essayer la carte.
+  const [showManualFallback, setShowManualFallback] = useState(false);
+  const [isFallbackLoading, setIsFallbackLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedAddress || buildingData || isAddressLocked) {
+      return;
+    }
+    setShowManualFallback(false);
+    const timeout = setTimeout(() => setShowManualFallback(true), 8000);
+    return () => clearTimeout(timeout);
+  }, [selectedAddress, buildingData, isAddressLocked]);
+
+  const handleManualFallback = useCallback(async () => {
+    if (!selectedAddress) return;
+    setIsFallbackLoading(true);
+    try {
+      const data = await getBuildingDataFallback({
+        lat: selectedAddress.geometry.coordinates[1],
+        lon: selectedAddress.geometry.coordinates[0],
+      });
+      handleBuildingSelect(data);
+    } finally {
+      setIsFallbackLoading(false);
+    }
+  }, [selectedAddress, handleBuildingSelect]);
+
   // Soumission du formulaire
   const handleSubmit = useCallback(() => {
     if (!selectedAddress || !buildingData) return;
@@ -254,9 +285,13 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   }, [selectedAddress, buildingData, formData, codeEpci, onSubmit]);
 
   // Validation : peut passer à l'étape suivante ?
+  // aleaIndetermine bloque : contrairement à anneeConstruction/nombreNiveaux, l'aléa RGA
+  // n'est pas saisissable par l'utilisateur et null y a un sens métier propre ("hors zone",
+  // cf. checkZoneForte) qu'on ne peut pas laisser masquer un échec de récupération.
   const isValid =
     selectedAddress !== null &&
     buildingData !== null &&
+    !buildingData.aleaIndetermine &&
     formData.anneeConstruction !== null &&
     formData.nombreNiveaux !== null;
 
@@ -373,7 +408,23 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
               showLegend={true}
               variant="minimal"
               onBuildingSelect={isAddressLocked ? undefined : handleBuildingSelect}
+              onEmptyClick={isAddressLocked ? undefined : () => setShowManualFallback(true)}
             />
+
+            {/* Échappatoire si la carte ne répond pas (délai écoulé ou clic à vide) */}
+            {!buildingData && !isAddressLocked && showManualFallback && (
+              <p className="fr-text--sm fr-mt-2w fr-mb-0">
+                <button
+                  type="button"
+                  className="fr-link fr-link--sm"
+                  onClick={handleManualFallback}
+                  disabled={isFallbackLoading}>
+                  {isFallbackLoading
+                    ? "Vérification en cours..."
+                    : "Vous ne trouvez pas votre bâtiment, ou la carte ne répond pas ? Renseignez les informations vous-même"}
+                </button>
+              </p>
+            )}
 
             {/* Formulaire (visible après sélection d'un bâtiment) */}
             {buildingData && (
