@@ -64,5 +64,6 @@ purement cosmétique.
 | 0034 | [Enregistrer et archiver la simulation non éligible du demandeur](0034-simulation-non-eligible-demandeur.md)                            | Accepté |
 | 0035 | [Page de statistiques publiques — sources, cache et absence de faux zéro](0035-page-statistiques-publiques.md)                          | Accepté |
 | 0036 | [Une simulation par compte, modifiable et arbitrée](0036-simulation-unique-par-compte.md)                                               | Accepté |
+| 0037 | [Pas d'autonomie là où l'AMO est obligatoire](0037-pas-d-autonomie-en-amo-obligatoire.md)                                               | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->
