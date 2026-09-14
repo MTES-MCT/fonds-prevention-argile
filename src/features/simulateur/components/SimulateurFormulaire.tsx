@@ -61,7 +61,7 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
   } = useSimulateurFormulaire();
 
   const editMode = useSimulateurStore(selectEditMode);
-  const { customResultComponent } = useSimulateurContext();
+  const { customResultComponent, onSave } = useSimulateurContext();
   const { trackEvent } = useMatomo();
   const { isAuthenticated } = useAuth();
   const previousStepRef = useRef<SimulateurStep | null>(null);
@@ -87,7 +87,8 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
       hasCommittedRef.current = false;
       return;
     }
-    if (editMode || hasCommittedRef.current) return;
+    // `onSave` marque les écrans d'édition : ceinture si `editMode` n'est pas encore posé.
+    if (editMode || onSave || hasCommittedRef.current) return;
     hasCommittedRef.current = true;
     commitToRGAStore();
     if (isAuthenticated) {
@@ -96,7 +97,7 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, currentStep, editMode, isAuthenticated]);
+  }, [isLoading, currentStep, editMode, isAuthenticated, onSave]);
 
   // Tracking Matomo à chaque changement d'étape
   useEffect(() => {

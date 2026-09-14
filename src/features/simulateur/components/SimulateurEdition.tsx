@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { SimulateurProvider } from "./shared/SimulateurContext";
 import { SimulateurFormulaire } from "./SimulateurFormulaire";
 import { useSimulateurStore } from "../stores/simulateur.store";
@@ -46,6 +46,11 @@ export function SimulateurEdition({
   const start = useSimulateurStore((state) => state.start);
   const setEditMode = useSimulateurStore((state) => state.setEditMode);
   const setEarlyExit = useSimulateurStore((state) => state.setEarlyExit);
+  // Le formulaire n'est monté qu'une fois le store préparé : React exécute les effets
+  // enfant avant parent, si bien qu'un montage immédiat laissait `SimulateurFormulaire`
+  // voir `editMode = false` et l'étape « resultat » héritée de la session précédente —
+  // il réécrivait alors le cache local avec la simulation d'AVANT correction.
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     // Reset d'abord pour partir d'un état propre
@@ -77,6 +82,8 @@ export function SimulateurEdition({
       }));
     }
 
+    setIsReady(true);
+
     // Nettoyer le mode édition au démontage
     return () => {
       setEditMode(false);
@@ -84,6 +91,8 @@ export function SimulateurEdition({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (!isReady) return null;
 
   const formTitle =
     audience === "demandeur"
