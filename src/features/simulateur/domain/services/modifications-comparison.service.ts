@@ -145,6 +145,13 @@ export function computeModifications(
   initialChecks: EligibilityChecks,
   currentChecks: EligibilityChecks
 ): Modification[] {
+  // Aucune réponse de critère avant : l'agent RENSEIGNE la simulation, il ne la modifie pas.
+  // Cas d'un dossier créé sans simulation (adresse seule). Sans cette garde, l'écran annonçait
+  // « 8 modifications » dont « undefined niveau → 1 niveau » et « Non → Non », en inventant
+  // des valeurs d'avant que personne n'avait saisies.
+  const aDesReponsesInitiales = COMPARISON_FIELDS.some((field) => field.getOldValue(initialData) !== undefined);
+  if (!aDesReponsesInitiales) return [];
+
   const modifications: Modification[] = [];
 
   for (const field of COMPARISON_FIELDS) {

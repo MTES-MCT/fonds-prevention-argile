@@ -399,8 +399,8 @@ describe("computeModifications", () => {
 
     expect(() => computeModifications(adresseSeule, saisieAgent, checks, checks)).not.toThrow();
 
-    const mods = computeModifications(adresseSeule, saisieAgent, checks, checks);
-    // Tout est nouveau : les valeurs « avant » sont absentes, pas fausses.
-    expect(mods.map((m) => m.label)).toContain("Type de logement");
+    // Tout est nouveau : l'agent RENSEIGNE la simulation, il ne la modifie pas. Annoncer
+    // « 8 modifications » avec des « undefined niveau » et des « Non → Non » était faux.
+    expect(computeModifications(adresseSeule, saisieAgent, checks, checks)).toEqual([]);
   });
 });
