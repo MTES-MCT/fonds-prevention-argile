@@ -104,6 +104,22 @@ const mockProspectRow = (
 
 const rgaData = { logement: { adresse: "X" } } as unknown as RGASimulationData;
 
+/** Correction d'agent complète : seule une simulation complète est promue. */
+const rgaDataComplete = {
+  logement: {
+    adresse: "97 rue de Notz, 36000 Châteauroux",
+    type: "maison",
+    code_departement: "36",
+    zone_dexposition: "fort",
+    annee_de_construction: "1980",
+    niveaux: 1,
+    mitoyen: false,
+    proprietaire_occupant: true,
+  },
+  rga: { sinistres: "saine", indemnise_indemnise_rga: false, demande_catnat_en_cours: false, assure: true },
+  menage: { personnes: 2, revenu_rga: 20000 },
+} as unknown as RGASimulationData;
+
 describe("updateSimulationDataAction — recalcul du statut d'éligibilité", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -272,6 +288,50 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     expect(txSetSpy).toHaveBeenCalledTimes(1);
     expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ statut: expect.anything() }));
     expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ situationParticulier: expect.anything() }));
+  });
+
+  it("promeut une correction complète en simulation du compte quand il n'en a aucune", async () => {
+    // Sans cette promotion : « Éligibilité manquante » côté demandeur alors que le simulateur
+    // lui est fermé (impasse), et un préremplissage DN qui lit une colonne vide.
+    mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE, "amo-A", { rgaSimulationData: null });
+    vi.mocked(evaluateSimulation).mockReturnValue({
+      result: { eligible: true } as never,
+      isEligible: true,
+      isNonEligible: false,
+    });
+
+    await updateSimulationDataAction("validation-1", rgaDataComplete);
+
+    expect(txSetSpy).toHaveBeenCalledWith(expect.objectContaining({ rgaSimulationData: rgaDataComplete }));
+  });
+
+  it("n'écrase jamais la simulation que le demandeur a déjà faite", async () => {
+    // La résolution territoriale est USER-first : écraser déplacerait le dossier de territoire.
+    mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE, "amo-A", {
+      rgaSimulationData: { logement: { commune: "36044" } },
+    });
+    vi.mocked(evaluateSimulation).mockReturnValue({
+      result: { eligible: true } as never,
+      isEligible: true,
+      isNonEligible: false,
+    });
+
+    await updateSimulationDataAction("validation-1", rgaDataComplete);
+
+    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ rgaSimulationData: expect.anything() }));
+  });
+
+  it("ne promeut pas une correction incomplète", async () => {
+    mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE, "amo-A", { rgaSimulationData: null });
+    vi.mocked(evaluateSimulation).mockReturnValue({
+      result: { eligible: true } as never,
+      isEligible: true,
+      isNonEligible: false,
+    });
+
+    await updateSimulationDataAction("validation-1", rgaData);
+
+    expect(txSetSpy).not.toHaveBeenCalledWith(expect.objectContaining({ rgaSimulationData: expect.anything() }));
   });
 });
 

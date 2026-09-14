@@ -23,6 +23,7 @@ import {
   verifyProspectTerritoryAccess,
   calculateAgentScope,
 } from "@/features/auth/permissions/services/agent-scope.service";
+import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { logSystemAction } from "../services/action-audit.service";
 import {
   ACTION_TYPE_ELIGIBILITE_REFUSEE,
@@ -43,6 +44,22 @@ function computeAgentEditBaseline(parcours: {
   return (
     parcours.rgaSimulationDataAgentBaseline ?? parcours.rgaSimulationDataAgent ?? parcours.rgaSimulationData ?? null
   );
+}
+
+/**
+ * Une correction **complète** devient aussi la simulation du compte tant qu'il n'en a pas.
+ * Même critère que la promotion au rattachement FranceConnect, et même garde : on n'écrase
+ * jamais la simulation du demandeur, dont dépend la résolution territoriale USER-first.
+ *
+ * Sans cette promotion, un dossier créé sur la seule adresse puis complété par l'agent laissait
+ * `rgaSimulationData` nul : « Éligibilité manquante » côté demandeur alors que le simulateur lui
+ * est fermé (impasse), et un préremplissage DN qui lit une colonne vide.
+ */
+function champsPromotionSimulation(
+  parcours: { rgaSimulationData: RGASimulationData | null },
+  rgaData: RGASimulationData
+): { rgaSimulationData?: RGASimulationData } {
+  return !parcours.rgaSimulationData && isSimulationComplete(rgaData) ? { rgaSimulationData: rgaData } : {};
 }
 
 /**
@@ -154,6 +171,7 @@ export async function updateSimulationDataAction(
             rgaSimulationDataAgentBaseline: computeAgentEditBaseline(dossier.parcours),
             rgaSimulationAgentEditedAt: now,
             rgaSimulationAgentEditedBy: agent.id,
+            ...champsPromotionSimulation(dossier.parcours, rgaData),
           })
           .where(eq(parcoursPrevention.id, dossier.parcours.id));
 
@@ -311,6 +329,7 @@ export async function updateSimulationDataAction(
           rgaSimulationDataAgentBaseline: computeAgentEditBaseline(parcours),
           rgaSimulationAgentEditedAt: now,
           rgaSimulationAgentEditedBy: agent.id,
+          ...champsPromotionSimulation(parcours, rgaData),
         })
         .where(eq(parcoursPrevention.id, parcours.id));
 
