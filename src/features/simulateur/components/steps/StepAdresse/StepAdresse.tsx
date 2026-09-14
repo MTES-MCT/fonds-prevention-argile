@@ -18,6 +18,7 @@ import { asString } from "@/shared/utils";
 
 import { SimulateurLayout } from "../../shared/SimulateurLayout";
 import { NavigationButtons } from "../../shared/NavigationButtons";
+import { peutReprendreAdresseExistante } from "./adresse-reprise";
 import { BuildingDataForm, type BuildingFormData } from "./BuildingDataForm";
 import { useSimulateurStore, selectEditMode } from "../../../stores/simulateur.store";
 
@@ -47,7 +48,7 @@ const SEARCH_DEBOUNCE_DELAY = 300;
 export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack, onSubmit, onBack }: StepAdresseProps) {
   // Mode édition agent : verrouiller l'adresse
   const editMode = useSimulateurStore(selectEditMode);
-  const isAddressLocked = editMode && Boolean(initialValue?.coordonnees);
+  const isAddressLocked = editMode && peutReprendreAdresseExistante(initialValue);
 
   // IDs uniques pour l'accessibilité
   const inputId = useId();

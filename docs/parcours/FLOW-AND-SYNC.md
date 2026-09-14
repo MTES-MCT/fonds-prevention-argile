@@ -645,6 +645,13 @@ statiquement.
 > septembre 2026. Conséquence à ne pas défaire : le verrou « correction d'agent » et la
 > fermeture du simulateur lisent le **même** prédicat, ils ne peuvent plus diverger.
 >
+> **Corollaire côté écran agent** : l'étape adresse ne verrouille l'adresse et la carte que si
+> la simulation reprise porte déjà une **zone d'exposition** (`peutReprendreAdresseExistante`).
+> Un dossier créé sans simulation a des coordonnées mais aucune zone : verrouillé, il
+> condamnait l'agent à un « Zone d'exposition forte : NON » incorrigible, la carte verrouillée
+> n'interrogeant plus la BDNB. Le test porte sur la **présence de la clé**, `null` étant une
+> réponse à part entière (« hors zone argileuse »).
+
 > **La seconde porte du même cycle est fermée aussi** : `updateSimulationDataAction` promeut
 > désormais la correction dans `rgaSimulationData` dès qu'elle est **complète** et que le compte
 > n'en a aucune (`champsPromotionSimulation`), au même critère que la promotion du rattachement
