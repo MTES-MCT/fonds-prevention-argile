@@ -70,6 +70,21 @@ describe("chargerEtatEditionSimulation", () => {
     }
   });
 
+  it("signale l'existence d'un formulaire d'éligibilité, même non transmis", async () => {
+    mockedDossiers.mockResolvedValue([{ step: Step.ELIGIBILITE, dsStatus: null }] as never);
+
+    const etat = await chargerEtatEditionSimulation(parcours as never);
+
+    expect(etat.eligibiliteDossierExiste).toBe(true);
+    expect(etat.eligibiliteDsStatus).toBeNull();
+  });
+
+  it("ne voit aucun formulaire quand seules d'autres étapes en ont un", async () => {
+    mockedDossiers.mockResolvedValue([{ step: Step.DIAGNOSTIC, dsStatus: DSStatus.EN_CONSTRUCTION }] as never);
+
+    expect((await chargerEtatEditionSimulation(parcours as never)).eligibiliteDossierExiste).toBe(false);
+  });
+
   it("ne retient que le statut DN de l'étape éligibilité", async () => {
     mockedDossiers.mockResolvedValue([
       { step: Step.DIAGNOSTIC, dsStatus: DSStatus.EN_INSTRUCTION },

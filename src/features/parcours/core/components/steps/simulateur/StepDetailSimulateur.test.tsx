@@ -33,7 +33,7 @@ function mockParcours(rgaSimulationData: unknown, isDossierNonEligible = false) 
     },
     statutAmo: null,
     isDossierNonEligible,
-    getDSStatusByStep: () => null,
+    getDossierByStep: () => undefined,
   } as unknown as ReturnType<typeof parcoursContext.useParcours>);
 }
 

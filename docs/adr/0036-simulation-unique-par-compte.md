@@ -170,6 +170,13 @@ ce qui préserve l'essentiel du motif d'origine — l'auto-correction avant déc
 La contrepartie est explicite : **la correction passe désormais par le conseiller**. C'est un
 report de charge sur les AMO, assumé, et déjà outillé (« Vérifier son éligibilité », ADR-0020).
 
+**Quatrième verrou, même recette** : le formulaire DN **commencé** (prérempli créé, pas encore
+transmis). Le gel d'origine ne démarrait qu'au dépôt, alors que le motif invoqué — le
+préremplissage REST ne sait que créer — vaut dès la création. Option retenue face à la
+réinitialisation automatique du brouillon : bloquer coûte une correction reportée, réinitialiser
+coûte au demandeur l'accès depuis l'app à un formulaire parfois déjà rempli, et pouvait échouer
+en silence (`trop_recent`). Les deux verrous se lèvent ensemble à la décision de la DDT.
+
 Conséquence à ne jamais défaire : un verrou ferme aussi l'**arbitrage**. `useMigrateRGAToDB` ne
 purge plus le cache local sur le chemin verrouillé ; il expose la raison, `/mon-compte` l'affiche,
 et seul l'acquittement du demandeur jette la simulation refaite. Poser le verrou sans ce message

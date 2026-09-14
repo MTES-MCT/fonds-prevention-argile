@@ -12,13 +12,16 @@ import { raisonLectureSeule, type RaisonLectureSeule } from "../domain/value-obj
  * barrière reste côté serveur.
  */
 export function useLectureSeuleSimulation(): RaisonLectureSeule | null {
-  const { parcours, statutAmo, getDSStatusByStep } = useParcours();
+  const { parcours, statutAmo, getDossierByStep } = useParcours();
 
   if (!parcours) return null;
+
+  const eligibilite = getDossierByStep(Step.ELIGIBILITE);
 
   return raisonLectureSeule({
     simulationCorrigeeParAgent: parcours.simulationCorrigeeParAgent,
     decisionAmoRendue: aRenduSaDecision(statutAmo),
-    eligibiliteDsStatus: getDSStatusByStep(Step.ELIGIBILITE) ?? null,
+    eligibiliteDossierExiste: Boolean(eligibilite),
+    eligibiliteDsStatus: eligibilite?.etatDs ?? null,
   });
 }

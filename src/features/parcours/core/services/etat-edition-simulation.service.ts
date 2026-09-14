@@ -26,10 +26,12 @@ export async function chargerEtatEditionSimulation(parcours: ParcoursPrevention)
       .limit(1),
   ]);
 
+  const eligibilite = dossiers.find((dossier) => dossier.step === Step.ELIGIBILITE);
+
   return {
     simulationCorrigeeParAgent: estSimulationCorrigeeParAgent(parcours),
     decisionAmoRendue: aRenduSaDecision((validation?.statut as StatutValidationAmo) ?? null),
-    eligibiliteDsStatus:
-      (dossiers.find((dossier) => dossier.step === Step.ELIGIBILITE)?.dsStatus as DSStatus | null) ?? null,
+    eligibiliteDossierExiste: Boolean(eligibilite),
+    eligibiliteDsStatus: (eligibilite?.dsStatus as DSStatus | null) ?? null,
   };
 }

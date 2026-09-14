@@ -19,14 +19,18 @@ export function estDossierChezLaDdt(eligibiliteDsStatus: DSStatus | null): boole
   return eligibiliteDsStatus === DSStatus.EN_CONSTRUCTION || eligibiliteDsStatus === DSStatus.EN_INSTRUCTION;
 }
 
-/** Transmis, décision rendue ou non : plus rien n'est réinitialisable (`verifierRegeneration`). */
-export function estDossierDepose(eligibiliteDsStatus: DSStatus | null): boolean {
+/** La DDT a tranché : ce formulaire est soldé et ne déclare plus rien de corrigeable. */
+export function estDecisionDdtRendue(eligibiliteDsStatus: DSStatus | null): boolean {
   return (
-    estDossierChezLaDdt(eligibiliteDsStatus) ||
     eligibiliteDsStatus === DSStatus.ACCEPTE ||
     eligibiliteDsStatus === DSStatus.REFUSE ||
     eligibiliteDsStatus === DSStatus.CLASSE_SANS_SUITE
   );
+}
+
+/** Transmis, décision rendue ou non : plus rien n'est réinitialisable (`verifierRegeneration`). */
+export function estDossierDepose(eligibiliteDsStatus: DSStatus | null): boolean {
+  return estDossierChezLaDdt(eligibiliteDsStatus) || estDecisionDdtRendue(eligibiliteDsStatus);
 }
 
 export interface EtatAnnulationAccompagnement {

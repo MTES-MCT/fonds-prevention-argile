@@ -653,7 +653,7 @@ n'importe plus d'action du back-office. Deux wrappers le branchent : `Simulateur
 via `enregistrerSimulationDemandeurAction`, dont le parcours vient de la **session** — aucun
 identifiant n'entre par le client).
 
-**Trois verrous ferment l'édition**, portés par le prédicat pur `peutModifierSaSimulation`
+**Quatre verrous ferment l'édition**, portés par le prédicat pur `peutModifierSaSimulation`
 (`core/domain/value-objects/edition-simulation.ts`) et revérifiés par l'action. Leurs trois
 entrées sont assemblées en un point unique, `chargerEtatEditionSimulation`
 (`core/services/etat-edition-simulation.service.ts`), pour que l'écran et l'action qui écrit
@@ -664,11 +664,30 @@ jugent sur exactement les mêmes faits :
 | `rgaSimulationDataAgent` **complète**      | La version de l'agent prime à l'affichage (`getEffectiveRGAData`, AGENT-first) : éditer donnerait un écran sans effet visible         | Aucune               |
 | `aRenduSaDecision(statutAmo)`              | L'AMO a statué à partir de ces données : les corriger seul déferait une décision professionnelle, et pouvait archiver par-dessus elle | Par le conseiller    |
 | `estDossierChezLaDdt(eligibiliteDsStatus)` | Le formulaire déposé déclare ces données, et le préremplissage REST ne sait que créer (§2.7.1)                                        | À la décision rendue |
+| `eligibiliteDossierExiste` (non tranché)   | Le formulaire DN est **commencé** : le préremplissage y a déjà reporté ces réponses et ne sait pas les mettre à jour                  | À la décision rendue |
 
 L'ordre va du plus durable au plus transitoire : annoncer « vos informations redeviendront
 modifiables » serait faux si un verrou définitif tient déjà derrière. `aRenduSaDecision` ne
 couvre que les trois statuts **tranchés** — ni `EN_ATTENTE` (pas encore répondu), ni `SANS_AMO`
 (autonomie, aucun AMO au dossier) —, ce qui la distingue de `isValidationFinale`.
+
+> **Le quatrième verrou étend le troisième vers le bas** : le gel ne commençait qu'au **dépôt**,
+> alors que le motif invoqué — « le préremplissage REST ne sait que créer » — mord dès la
+> **création** du prérempli. Entre les deux s'ouvrait une fenêtre où le demandeur corrigeait sa
+> simulation pendant que son brouillon DN gardait silencieusement les anciennes réponses
+> (retour de recette, septembre 2026). Les deux verrous se lèvent au même endroit, à la
+> décision de la DDT (`estDecisionDdtRendue`), sans quoi un `ACCEPTE` figerait la simulation
+> pour tout le reste du parcours.
+>
+> D'où le champ `eligibiliteDossierExiste`, distinct du statut : un `eligibiliteDsStatus` nul
+> vaut aussi bien « aucun formulaire » que « formulaire créé, pas encore transmis », deux états
+> que ce verrou doit séparer. En pratique il ne mord que sur les parcours **en autonomie** :
+> pour un dossier accompagné, `aRenduSaDecision` a déjà fermé l'édition à la validation de
+> l'AMO, bien avant que le formulaire n'existe.
+>
+> Échappatoire conservée : « Ce lien ne fonctionne plus ? » (`regenererLienPrefill`) retire le
+> pointeur tant que rien n'est déposé — le verrou tombe alors, la simulation redevient
+> corrigeable, et le prochain prérempli repart des bonnes valeurs.
 
 Verrouillée, la page rend un **récapitulatif en lecture seule** (`SimulationRecap`) et dit
 pourquoi (`MESSAGES_LECTURE_SEULE`). Les deux CTA qui y mènent (« Ma liste », carte 1) passent

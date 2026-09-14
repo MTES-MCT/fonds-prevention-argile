@@ -20,7 +20,12 @@ const mockedFindByUserId = vi.mocked(parcoursRepo.findByUserId);
 const mockedFindDossiers = vi.mocked(dossierDsRepo.findByParcoursId);
 const mockedEtat = vi.mocked(chargerEtatEditionSimulation);
 
-const LIBRE = { simulationCorrigeeParAgent: false, decisionAmoRendue: false, eligibiliteDsStatus: null };
+const LIBRE = {
+  simulationCorrigeeParAgent: false,
+  decisionAmoRendue: false,
+  eligibiliteDossierExiste: false,
+  eligibiliteDsStatus: null,
+};
 
 const simulationDemandeur = { logement: { commune: "36044" } };
 

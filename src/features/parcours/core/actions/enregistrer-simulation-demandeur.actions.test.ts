@@ -43,7 +43,12 @@ const parcours = { id: "p1", rgaSimulationData: { logement: { commune: "75056" }
 const mockedEtat = vi.mocked(chargerEtatEditionSimulation);
 
 /** Aucun verrou : l'état nominal d'un demandeur qui corrige sa propre simulation. */
-const LIBRE = { simulationCorrigeeParAgent: false, decisionAmoRendue: false, eligibiliteDsStatus: null };
+const LIBRE = {
+  simulationCorrigeeParAgent: false,
+  decisionAmoRendue: false,
+  eligibiliteDossierExiste: false,
+  eligibiliteDsStatus: null,
+};
 
 describe("enregistrerSimulationDemandeurAction", () => {
   beforeEach(() => {
@@ -129,7 +134,11 @@ describe("enregistrerSimulationDemandeurAction", () => {
   });
 
   it("refuse dès qu'un verrou est posé, quel qu'il soit", async () => {
-    for (const verrou of [{ simulationCorrigeeParAgent: true }, { decisionAmoRendue: true }]) {
+    for (const verrou of [
+      { simulationCorrigeeParAgent: true },
+      { decisionAmoRendue: true },
+      { eligibiliteDossierExiste: true },
+    ]) {
       mockedEtat.mockResolvedValue({ ...LIBRE, ...verrou });
 
       const res = await enregistrerSimulationDemandeurAction(rgaData);
