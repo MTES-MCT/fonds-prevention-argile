@@ -37,7 +37,7 @@ export default function StepDetailSimulateur() {
 
         <Link
           href={ROUTES.particulier.maSimulation}
-          className="fr-link fr-icon-arrow-right-line fr-link--icon-right"
+          className="fr-link fr-link--sm fr-icon-arrow-right-line fr-link--icon-right"
           style={{ display: "inline-flex", alignItems: "center", width: "fit-content" }}>
           {simulationVerrouillee ? "Voir les données" : "Voir et modifier les données"}
         </Link>

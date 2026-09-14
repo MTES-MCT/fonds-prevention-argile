@@ -91,7 +91,7 @@ export default function StepDetailAmo() {
             <Link
               href="#choix-amo"
               target="_self"
-              className="fr-link fr-icon-arrow-up-fill fr-link--icon-right"
+              className="fr-link fr-link--sm fr-icon-arrow-up-fill fr-link--icon-right"
               style={{
                 display: "inline-flex !important",
                 alignItems: "center",
