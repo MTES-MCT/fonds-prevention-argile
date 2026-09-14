@@ -12,6 +12,8 @@ import {
 import { detacherAmo } from "@/features/parcours/amo/services/detachement-amo.service";
 import { refuserDemandeArret } from "@/features/parcours/amo/services/arret-accompagnement.service";
 import { estDossierChezLaDdt } from "@/features/parcours/amo/domain/value-objects";
+import { peutPasserEnAutonomie } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 import { getDossierByStep } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -47,6 +49,17 @@ export async function arreterAccompagnementAction(parcoursId: string, raisons: s
     const raisonsPropres = raisons.map((r) => r.trim()).filter(Boolean);
     if (raisonsPropres.length === 0) {
       return { success: false, error: "Merci de préciser au moins une raison" };
+    }
+
+    // Symétrique de la garde demandeur : l'autonomie n'existe pas là où l'AMO est obligatoire
+    // (un seul AMO par territoire, personne ne reprendrait le dossier). Sortie = « Archiver ».
+    const parcours = await parcoursPreventionRepository.findById(parcoursId);
+    if (!parcours || !peutPasserEnAutonomie(parcours)) {
+      return {
+        success: false,
+        error:
+          "L'AMO est obligatoire dans ce département : le demandeur ne peut pas poursuivre seul. Utilisez « Archiver » pour ne plus suivre ce dossier.",
+      };
     }
 
     // Même gel que côté demandeur (§2.7) : le dossier déposé déclare cette AMO comme

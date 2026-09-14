@@ -20,6 +20,9 @@ vi.mock("@/features/backoffice/espace-agent/shared/services/author-snapshot", ()
   }),
 }));
 vi.mock("@/shared/database/repositories", () => ({ parcoursActionsRepo: { create: vi.fn() } }));
+vi.mock("@/shared/database/repositories/parcours-prevention.repository", () => ({
+  parcoursPreventionRepository: { findById: vi.fn() },
+}));
 
 import { arreterAccompagnementAction, refuserArretAccompagnementAction } from "./arret-accompagnement.actions";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
@@ -30,8 +33,20 @@ import { refuserDemandeArret } from "@/features/parcours/amo/services/arret-acco
 import { getDossierByStep } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { parcoursActionsRepo } from "@/shared/database/repositories";
+import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 
 const PARCOURS_ID = "11111111-1111-1111-1111-111111111111";
+// 59 = facultatif par défaut, 47 = AMO obligatoire par défaut (cf. departements-amo).
+const COMMUNE_FACULTATIF = "59350";
+const COMMUNE_OBLIGATOIRE = "47001";
+
+function mockParcours(commune: string | null, { source = "demandeur" as "demandeur" | "agent" } = {}) {
+  const logement = commune ? { logement: { commune } } : null;
+  vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue({
+    rgaSimulationData: source === "demandeur" ? logement : null,
+    rgaSimulationDataAgent: source === "agent" ? logement : null,
+  } as never);
+}
 
 function mockAgent(role: UserRole) {
   vi.mocked(getCurrentAgent).mockResolvedValue({
@@ -59,7 +74,36 @@ describe("arreterAccompagnementAction", () => {
       },
     });
     vi.mocked(getDossierByStep).mockResolvedValue(null as never);
+    mockParcours(COMMUNE_FACULTATIF);
     mockAgent(UserRole.AMO);
+  });
+
+  it("refuse le détachement en département à AMO obligatoire", async () => {
+    mockParcours(COMMUNE_OBLIGATOIRE);
+
+    const result = await arreterAccompagnementAction(PARCOURS_ID, ["Reste à charge trop élevé"]);
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("Archiver");
+    expect(detacherAmo).not.toHaveBeenCalled();
+  });
+
+  it("refuse le détachement quand la commune est introuvable (jamais de repli permissif)", async () => {
+    mockParcours(null);
+
+    const result = await arreterAccompagnementAction(PARCOURS_ID, ["Reste à charge trop élevé"]);
+
+    expect(result.success).toBe(false);
+    expect(detacherAmo).not.toHaveBeenCalled();
+  });
+
+  it("résout le département sur la simulation agent quand le demandeur n'a pas simulé", async () => {
+    mockParcours(COMMUNE_OBLIGATOIRE, { source: "agent" });
+
+    const result = await arreterAccompagnementAction(PARCOURS_ID, ["Reste à charge trop élevé"]);
+
+    expect(result.success).toBe(false);
+    expect(detacherAmo).not.toHaveBeenCalled();
   });
 
   it.each([DSStatus.EN_CONSTRUCTION, DSStatus.EN_INSTRUCTION])(

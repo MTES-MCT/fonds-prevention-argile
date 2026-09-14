@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { AmoMode, getAmoMode, isAmoAttributionAutomatique } from "./departements-amo";
+import {
+  AmoMode,
+  getAmoMode,
+  isAmoAttributionAutomatique,
+  peutPasserEnAutonomie,
+  resolveAmoModeForParcours,
+} from "./departements-amo";
 
 describe("departements-amo", () => {
   describe("getAmoMode", () => {
@@ -66,6 +72,37 @@ describe("departements-amo", () => {
       expect(isAmoAttributionAutomatique("82")).toBe(false);
       expect(isAmoAttributionAutomatique("75")).toBe(false);
       expect(isAmoAttributionAutomatique("63")).toBe(false);
+    });
+  });
+
+  describe("resolveAmoModeForParcours / peutPasserEnAutonomie", () => {
+    const parcours = (demandeur: string | null, agent: string | null = null) => ({
+      rgaSimulationData: demandeur ? ({ logement: { commune: demandeur } } as never) : null,
+      rgaSimulationDataAgent: agent ? ({ logement: { commune: agent } } as never) : null,
+    });
+
+    it("résout le mode depuis la commune du demandeur", () => {
+      expect(resolveAmoModeForParcours(parcours("36044"))).toBe(AmoMode.OBLIGATOIRE);
+      expect(resolveAmoModeForParcours(parcours("75001"))).toBe(AmoMode.FACULTATIF);
+    });
+
+    it("retombe sur la simulation agent quand le demandeur n'a pas simulé", () => {
+      expect(resolveAmoModeForParcours(parcours(null, "47001"))).toBe(AmoMode.OBLIGATOIRE);
+    });
+
+    it("fait primer la commune du demandeur sur celle de l'agent (USER-first)", () => {
+      expect(resolveAmoModeForParcours(parcours("75001", "47001"))).toBe(AmoMode.FACULTATIF);
+    });
+
+    it("retourne null sans commune exploitable", () => {
+      expect(resolveAmoModeForParcours(parcours(null))).toBeNull();
+      expect(resolveAmoModeForParcours(parcours("abc"))).toBeNull();
+    });
+
+    it("n'ouvre l'autonomie qu'en mode FACULTATIF, commune absente comprise", () => {
+      expect(peutPasserEnAutonomie(parcours("75001"))).toBe(true);
+      expect(peutPasserEnAutonomie(parcours("36044"))).toBe(false);
+      expect(peutPasserEnAutonomie(parcours(null))).toBe(false);
     });
   });
 });
