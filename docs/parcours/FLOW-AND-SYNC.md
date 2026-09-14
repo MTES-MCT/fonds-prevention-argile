@@ -597,7 +597,13 @@ Trois changements, dans l'ordre du flux :
 
 Côté `/mon-compte`, l'inéligibilité — d'où qu'elle vienne : décision AMO, qualification
 Aller-vers ou simulation du demandeur — est traitée **en tête de `CalloutManager`**, avant
-l'aiguillage par étape (prédicat partagé `estLogementNonEligible`). Sans cette garde, un
+l'aiguillage par étape (prédicat partagé `estLogementNonEligible`). Ses deux sources sont
+**disjointes** : `statutAmo` porte la décision de l'AMO, `isDossierNonEligible` porte
+l'archivage pour inéligibilité (`estLogementDeclareNonEligible`, `eligibilite-query.actions.ts`),
+seul signal qui tombe de lui-même au dé-archivage. Une validation AMO ne doit jamais
+alimenter le second terme : la lire y faisait passer un `LOGEMENT_ELIGIBLE` pour une
+inéligibilité et affichait « Vous n'êtes pas éligible » à tout demandeur accompagné dont
+l'AMO venait de valider (QA septembre 2026). Sans cette garde, un
 dossier archivé déjà passé à `ÉLIGIBILITE` (autonomie, puis simulation corrigée) continuait
 d'inviter au dépôt du formulaire DN. Trois surfaces s'alignent dessus : « Ma liste » grise
 tout item resté actif (`getStepListItems(..., isNonEligible)`, y compris l'item de tête dont
@@ -623,6 +629,14 @@ dans la page et non dans les liens : quatorze CTA y mènent, dont plusieurs depu
 de contenu. Conséquence à connaître : la route lit la session, elle n'est donc plus rendue
 statiquement.
 
+> **Une simulation d'agent ne compte que complète** (`estSimulationCorrigeeParAgent`,
+> `rga-data.service.ts`) — même critère que la promotion au rattachement FranceConnect et que
+> l'étape 3 de la migration. Un dossier créé par un Aller-vers ne porte que l'adresse : la
+> compter fermait au demandeur le simulateur **et** son écran d'édition, et « Éligibilité
+> manquante » le renvoyait au simulateur, qui le renvoyait à l'édition — impasse fermée,
+> corrigée en septembre 2026. Conséquence à ne pas défaire : le verrou « correction d'agent »
+> et la fermeture du simulateur lisent le **même** prédicat, ils ne peuvent plus diverger.
+
 **La modification passe par l'écran des agents.** `SimulateurEdition` est partagé ; il reçoit
 son enregistrement (`onSave`) et son `audience` (`agent` | `demandeur`) par le contexte, et
 n'importe plus d'action du back-office. Deux wrappers le branchent : `SimulateurEditionAgent`
@@ -635,7 +649,7 @@ identifiant n'entre par le client).
 
 | Verrou                                     | Motif                                                                                                                         | Levée                |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| `rgaSimulationDataAgent` non nul           | La version de l'agent prime à l'affichage (`getEffectiveRGAData`, AGENT-first) : éditer donnerait un écran sans effet visible | Aucune               |
+| `rgaSimulationDataAgent` **complète**      | La version de l'agent prime à l'affichage (`getEffectiveRGAData`, AGENT-first) : éditer donnerait un écran sans effet visible | Aucune               |
 | `estDossierChezLaDdt(eligibiliteDsStatus)` | Le formulaire déposé déclare ces données, et le préremplissage REST ne sait que créer (§2.7.1)                                | À la décision rendue |
 
 Verrouillée, la page rend un **récapitulatif en lecture seule** (`SimulationRecap`) et dit
@@ -647,6 +661,21 @@ cache local (`useRGAStore`, simulation faite avant connexion) diffère de celle 
 choisir. `comparerSimulations` signale les champs modifiés en bleu, et **en rouge le seul
 qui fait échouer son critère** — celui qui coûte l'éligibilité. Le bandeau passe de `info` à
 `warning` quand les deux verdicts divergent.
+
+> **L'adresse est comparée au même titre** (`CHAMPS_COMPARES` = `CHAMP_ADRESSE` +
+> `SIMULATION_FIELDS`), bien qu'elle ne porte aucun critère d'éligibilité : elle porte la
+> commune, le département et l'EPCI, donc le conseiller responsable. Hors de la comparaison,
+> un déménagement passait pour « simulations identiques », aucun arbitrage n'était proposé et
+> la nouvelle adresse partait avec le cache local. Elle reste rendue en toutes lettres et non
+> en badge (un badge DSFR est en capitales), avec une marque « modifiée » quand elle diffère.
+
+> **L'écran d'édition ne réécrit plus le cache local.** `SimulateurEdition` ne monte
+> `SimulateurFormulaire` qu'une fois le store préparé (verrou `isReady`) : React exécutant les
+> effets enfant avant parent, le formulaire voyait `editMode = false` sur l'étape « resultat »
+> héritée de la session et recommitait la simulation **d'avant** correction. Au retour sur
+> `/mon-compte`, l'arbitrage proposait alors de revenir en arrière, présélectionné. Ceinture :
+> le commit s'abstient aussi dès que le contexte porte un `onSave`, et
+> `SimulateurEditionDemandeur` purge le cache dès que l'enregistrement est en base.
 
 - « Version active » (et la fermeture sans choix) n'écrit **rien** : seul le cache local part.
 - « Dernière version » passe par `enregistrerSimulationDemandeurAction`, donc par le verdict
@@ -1201,6 +1230,8 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Simulation du demandeur connecté (ADR-0036)    | `parcours/core/services/ma-simulation.service.ts`, `actions/enregistrer-simulation-demandeur.actions.ts`    |
 | Arbitrage des deux simulations (ADR-0036)      | `parcours/core/hooks/useMigrateRGAToDB.ts`, `components/ChoixSimulationModal.tsx`                           |
 | Comparaison de deux simulations (ADR-0036)     | `simulateur/domain/services/comparaison-simulations.service.ts`, `value-objects/simulation-fields.ts`       |
+| Correction d'agent opposable (complète)        | `parcours/core/services/rga-data.service.ts` (`estSimulationCorrigeeParAgent`)                              |
+| Inéligibilité affichée au demandeur            | `parcours/core/actions/eligibilite-query.actions.ts` (`estLogementDeclareNonEligible`)                      |
 | Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                             |
 | Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                                 |
 | Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |

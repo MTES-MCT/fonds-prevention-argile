@@ -134,6 +134,32 @@ Côté Brevo, `simulation_redevenue_eligible` n'existe qu'à son premier envoi :
 sélectionnable comme déclencheur d'Automation qu'après un passage sur staging. L'attribut
 `ELIGIBILITE`, lui, doit être créé à la main (sinon ignoré en silence).
 
+## Amendement — QA septembre 2026
+
+Quatre défauts relevés à la recette, tous corrigés sans revenir sur la décision.
+
+- **Une simulation d'agent ne compte que complète** (`estSimulationCorrigeeParAgent`). Prise
+  au sens large, elle fermait à la fois le simulateur public et l'édition pour un dossier créé
+  par un Aller-vers sur la seule adresse : « Éligibilité manquante » renvoyait au simulateur,
+  qui renvoyait à un récapitulatif en lecture seule. Le demandeur ne pouvait jamais faire sa
+  simulation, et `demandeur_cree` — différé jusqu'à son enregistrement — ne partait jamais.
+- **La décision de l'AMO n'alimente plus le drapeau d'inéligibilité.** Il dérivait de la
+  présence d'une validation clôturée, sans regarder son statut : tout dossier accompagné
+  validé affichait « Vous n'êtes pas éligible ». Le drapeau ne reflète plus que l'archivage
+  pour inéligibilité, seul signal qui retombe au dé-archivage.
+- **L'écran d'édition ne réécrit plus le cache local** (verrou de montage `isReady`, plus
+  purge à l'enregistrement). Il recommitait la simulation d'avant correction, si bien que
+  l'arbitrage rouvrait aussitôt pour proposer — présélectionné — un retour en arrière.
+- **L'adresse entre dans la comparaison.** Elle ne porte aucun critère d'éligibilité, mais
+  elle porte le territoire : hors comparaison, un déménagement passait pour « identique » et
+  la correction était jetée avec le cache.
+
+Reste ouvert, et hors de cet ADR : faut-il bloquer l'édition après une décision d'éligibilité
+rendue ? Cet ADR l'a explicitement refusé (option C) ; la QA demande l'inverse. L'arbitrage
+métier est à rendre, et à documenter ici, avant toute garde sur `peutModifierSaSimulation` —
+un verrou posé là ferme aussi l'arbitrage (`useMigrateRGAToDB`), qui abandonne alors le cache
+local **en silence**.
+
 ## Liens
 
 - Écran partagé : `src/features/simulateur/components/SimulateurEdition.tsx`,
