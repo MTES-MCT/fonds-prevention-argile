@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useRef, type RefObject } from "react";
 import maplibregl from "maplibre-gl";
-import { Protocol } from "pmtiles";
+import { Protocol, PMTiles } from "pmtiles";
 
-import { RGA_MAP_STYLE_URL, DEFAULT_CENTER, ZOOM, MAX_BOUNDS } from "../domain/config";
+import { RGA_MAP_STYLE_URL, ARGILE_PMTILES_URL, DEFAULT_CENTER, ZOOM, MAX_BOUNDS } from "../domain/config";
 import { Coordinates } from "@/shared/types";
 
 interface UseRgaMapOptions {
@@ -32,10 +32,16 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
   const centerLat = center?.lat;
   const centerLon = center?.lon;
 
-  // Enregistrer le protocole PMTiles
+  // Enregistrer le protocole PMTiles, et préchauffer l'en-tête + répertoire racine du fichier
+  // argile en parallèle du chargement du style : sur un réseau lent, cet aller-retour (~1 par
+  // requête non cachée) ne bloque plus la première tuile demandée une fois la carte affichée.
   useEffect(() => {
     const protocol = new Protocol();
     maplibregl.addProtocol("pmtiles", protocol.tile);
+
+    const argile = new PMTiles(ARGILE_PMTILES_URL);
+    protocol.add(argile);
+    argile.getHeader().catch(() => {});
 
     return () => {
       maplibregl.removeProtocol("pmtiles");

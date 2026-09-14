@@ -25,6 +25,12 @@ interface BuildingDataFormProps {
 
   /** Mode édition : les champs pré-remplis restent clairement éditables (pas de fond gris) */
   editMode?: boolean;
+
+  /** Relance la détermination de l'aléa quand elle a échoué (bandeau d'erreur) */
+  onRetryAlea?: () => void;
+
+  /** Relance en cours : désactive le bouton de réessai */
+  isRetryingAlea?: boolean;
 }
 
 /** Options pour le select du nombre de niveaux */
@@ -57,7 +63,14 @@ const ALEA_CONFIG = {
  * - Données présentes → champs pré-remplis, mode "vérifier"
  * - Données absentes → champs éditables, mode "compléter"
  */
-export function BuildingDataForm({ address, buildingData, onChange, editMode }: BuildingDataFormProps) {
+export function BuildingDataForm({
+  address,
+  buildingData,
+  onChange,
+  editMode,
+  onRetryAlea,
+  isRetryingAlea,
+}: BuildingDataFormProps) {
   const inputId = useId();
 
   // État local des valeurs éditables
@@ -69,9 +82,12 @@ export function BuildingDataForm({ address, buildingData, onChange, editMode }: 
   const hasNiveaux = buildingData?.nombreNiveaux != null;
   const hasAllData = hasAnnee && hasNiveaux;
 
-  // Niveau de risque pour le badge
-  const riskLevel = buildingData ? getRgaRiskLevel(buildingData.aleaArgiles) : "nul";
+  // Niveau de risque pour le badge (l'aléa indéterminé n'est pas un "hors zone" : on ne
+  // choisit pas de configuration ALEA_CONFIG dans ce cas, cf. bandeau d'avertissement)
+  const aleaIndetermine = Boolean(buildingData?.aleaIndetermine);
+  const riskLevel = buildingData && !aleaIndetermine ? getRgaRiskLevel(buildingData.aleaArgiles) : "nul";
   const aleaConfig = ALEA_CONFIG[riskLevel];
+  const donneesIndisponibles = Boolean(buildingData?.donneesIndisponibles);
 
   // Initialiser les valeurs depuis buildingData
   useEffect(() => {
@@ -106,12 +122,36 @@ export function BuildingDataForm({ address, buildingData, onChange, editMode }: 
     <div className="fr-p-2w border-solid border border-gray-200">
       <div className="fr-mb-4v" style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
         <span className="fr-badge fr-badge--success">{buildingData?.adresse || address}</span>
-        <span
-          className="fr-badge fr-badge--no-icon"
-          style={{ backgroundColor: aleaConfig.bgColor, color: aleaConfig.textColor }}>
-          {aleaConfig.label}
-        </span>
+        {!aleaIndetermine && (
+          <span
+            className="fr-badge fr-badge--no-icon"
+            style={{ backgroundColor: aleaConfig.bgColor, color: aleaConfig.textColor }}>
+            {aleaConfig.label}
+          </span>
+        )}
       </div>
+
+      {aleaIndetermine && (
+        <div className="fr-alert fr-alert--error fr-alert--sm fr-mb-3w" role="alert">
+          <p>Nous n&apos;avons pas pu vérifier si votre logement est situé en zone à risque (problème de connexion).</p>
+          {onRetryAlea && (
+            <p className="fr-mt-1w fr-mb-0">
+              <button type="button" className="fr-link fr-link--sm" onClick={onRetryAlea} disabled={isRetryingAlea}>
+                {isRetryingAlea ? "Vérification en cours..." : "Réessayer la vérification"}
+              </button>
+            </p>
+          )}
+        </div>
+      )}
+
+      {!aleaIndetermine && donneesIndisponibles && (
+        <div className="fr-alert fr-alert--info fr-alert--sm fr-mb-3w" role="status">
+          <p>
+            Nous n&apos;avons pas réussi à récupérer les informations de ce bâtiment depuis nos bases de données. Vous
+            pouvez les renseigner vous-même ci-dessous.
+          </p>
+        </div>
+      )}
 
       {/* Titre */}
       <p className="fr-text--lg fr-text--bold fr-mb-3w">

@@ -17,6 +17,9 @@ interface UseRgaBuildingSelectionOptions {
   initialCoordinates?: { lat: number; lon: number };
   onBuildingSelect?: (data: BuildingData | null) => void;
   onError?: (error: Error) => void;
+  /** Appelé quand l'utilisateur clique sur la carte sans toucher aucun bâtiment (tuiles pas
+   * encore chargées, ou clic hors bâtiment) - signal utile pour proposer une saisie manuelle. */
+  onEmptyClick?: () => void;
 }
 
 interface UseRgaBuildingSelectionReturn {
@@ -25,6 +28,13 @@ interface UseRgaBuildingSelectionReturn {
   isLoading: boolean;
   error: Error | null;
   clearSelection: () => void;
+  /**
+   * true une fois que les tuiles des bâtiments (RNB) sont chargées pour la vue courante.
+   * Distinct de `map.on("load")` (style de base seulement) : sur un réseau lent, le fond de
+   * carte peut sembler complet alors que ces tuiles - les seules cliquables - arrivent encore,
+   * ce qui donne l'impression trompeuse que le clic ne fonctionne pas.
+   */
+  layersReady: boolean;
 }
 
 /**
@@ -39,17 +49,39 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
     initialCoordinates,
     onBuildingSelect,
     onError,
+    onEmptyClick,
   } = options;
 
   const [selectedBuilding, setSelectedBuilding] = useState<SelectedBuilding | null>(null);
   const [buildingData, setBuildingData] = useState<BuildingData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [layersReady, setLayersReady] = useState(false);
 
   const hoveredIdRef = useRef<string | null>(null);
   const selectedIdRef = useRef<string | null>(null);
   const initialSelectionAppliedRef = useRef(false);
   const retryCountRef = useRef(0);
+
+  // Detecter le chargement effectif des tuiles RNB (pas seulement le style de base), pour ne
+  // pas laisser croire que la carte est cliquable avant que les batiments y soient vraiment.
+  // On attend un vrai cycle "idle" (plus aucune tuile en cours de chargement) plutôt que de
+  // faire confiance à isSourceLoaded() vérifié immédiatement : celui-ci peut répondre vrai
+  // avant même que la première requête de tuile RNB n'ait été émise, ce qui rendait le
+  // message de chargement quasi invisible en pratique.
+  useEffect(() => {
+    if (!map || !enabled) {
+      setLayersReady(false);
+      return;
+    }
+
+    const markReady = () => setLayersReady(true);
+    map.on("idle", markReady);
+
+    return () => {
+      map.off("idle", markReady);
+    };
+  }, [map, enabled]);
 
   // Pré-sélectionner un bâtiment par son ID RNB au chargement
   useEffect(() => {
@@ -243,6 +275,27 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
     };
   }, [map, enabled, enableInteractions]);
 
+  // Detecte un clic qui ne touche aucun batiment (tuiles pas encore chargees, ou clic a cote) :
+  // signal générique, indépendant des handlers scopés par layer ci-dessus.
+  useEffect(() => {
+    if (!map || !enabled || !enableInteractions || !onEmptyClick) return;
+
+    const handleGenericClick = (e: maplibregl.MapMouseEvent) => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: [LAYER_IDS.rnbPoints, LAYER_IDS.rnbFormes],
+      });
+      if (features.length === 0) {
+        onEmptyClick();
+      }
+    };
+
+    map.on("click", handleGenericClick);
+
+    return () => {
+      map.off("click", handleGenericClick);
+    };
+  }, [map, enabled, enableInteractions, onEmptyClick]);
+
   // Gérer les événements de survol
   useEffect(() => {
     if (!map || !enabled || !enableInteractions) return;
@@ -289,6 +342,7 @@ export function useRgaBuildingSelection(options: UseRgaBuildingSelectionOptions)
     isLoading,
     error,
     clearSelection,
+    layersReady,
   };
 }
 

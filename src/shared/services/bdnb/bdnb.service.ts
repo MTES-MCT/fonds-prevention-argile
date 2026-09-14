@@ -37,46 +37,112 @@ export interface BuildingData {
   etiquetteGes: string | null;
 
   // Données brutes BDNB pour usage avancé
-  raw: BdnbBatimentGroupeComplet;
+  raw: BdnbBatimentGroupeComplet | null;
+
+  /**
+   * true si BDNB n'a pas répondu (panne, timeout, bâtiment pas encore référencé) : les champs
+   * ci-dessus sont à null et l'utilisateur doit les compléter lui-même.
+   */
+  donneesIndisponibles?: boolean;
+
+  /**
+   * true si même le calcul d'aléa interne (indépendant de BDNB) a échoué. Dans ce cas
+   * `aleaArgiles` vaut null par défaut mais NE DOIT PAS être interprété comme "hors zone"
+   * (cf. checkZoneForte) : l'aléa est réellement inconnu, pas négatif.
+   */
+  aleaIndetermine?: boolean;
 }
 
 /**
- * Récupère les données complètes d'un bâtiment à partir de son ID RNB
+ * Récupère les données complètes d'un bâtiment à partir de son ID RNB.
+ *
+ * Ne lève jamais d'exception pour une indisponibilité de BDNB (réseau, timeout, bâtiment pas
+ * encore référencé) : renvoie à la place un squelette avec `donneesIndisponibles: true`, que
+ * l'appelant peut proposer à l'utilisateur de compléter manuellement plutôt que de bloquer le
+ * parcours. L'aléa RGA est déterminé via notre propre requête PostGIS (`fetchRga2026Alea`),
+ * indépendante de BDNB, pour ne jamais dépendre de sa disponibilité sur ce champ décisif pour
+ * l'éligibilité.
  */
 export async function getBuildingDataByRnbId(
   rnbId: string,
   coordinates: { lat: number; lon: number }
 ): Promise<BuildingData> {
-  // Étape 1 : Récupérer le batiment_groupe_id depuis l'ID RNB
-  const correspondances = await fetchBatimentConstructionByRnbId(rnbId);
+  let batiment: BdnbBatimentGroupeComplet | null = null;
 
-  if (correspondances.length === 0) {
-    throw new Error(`Aucun bâtiment trouvé pour l'ID RNB: ${rnbId}`);
+  try {
+    const correspondances = await fetchBatimentConstructionByRnbId(rnbId);
+    if (correspondances.length > 0) {
+      const batiments = await fetchBatimentGroupeComplet(correspondances[0].batiment_groupe_id);
+      batiment = batiments[0] ?? null;
+    }
+  } catch {
+    batiment = null;
   }
 
-  const { batiment_groupe_id } = correspondances[0];
-
-  // Étape 2 : Récupérer les données BDNB + alea RGA 2026 en parallèle
-  const [batiments, rga2026Alea] = await Promise.all([
-    fetchBatimentGroupeComplet(batiment_groupe_id),
-    fetchRga2026Alea(coordinates.lat, coordinates.lon),
-  ]);
-
-  if (batiments.length === 0) {
-    throw new Error(`Aucune donnée trouvée pour le batiment_groupe_id: ${batiment_groupe_id}`);
+  let aleaDetermine: BdnbAleaArgile = null;
+  let aleaIndetermine = false;
+  try {
+    aleaDetermine = await fetchRga2026Alea(coordinates.lat, coordinates.lon);
+  } catch {
+    aleaIndetermine = true;
   }
 
-  const batiment = batiments[0];
-
-  // Transformer en format application
-  const buildingData = transformBdnbToBuilding(batiment, rnbId, coordinates);
-
-  // Override alea avec les données RGA 2026 (PostGIS) si disponibles
-  if (rga2026Alea !== null) {
-    buildingData.aleaArgiles = rga2026Alea;
+  if (batiment) {
+    const buildingData = transformBdnbToBuilding(batiment, rnbId, coordinates);
+    // Override alea avec les données RGA 2026 (PostGIS) si le calcul a réussi ; sinon on
+    // garde l'alea déjà porté par BDNB plutôt que de l'écraser par une valeur inconnue.
+    if (!aleaIndetermine) {
+      buildingData.aleaArgiles = aleaDetermine;
+    }
+    return buildingData;
   }
 
-  return buildingData;
+  return buildDonneesIndisponibles(rnbId, coordinates, aleaDetermine, aleaIndetermine);
+}
+
+/**
+ * Squelette de données à compléter manuellement, pour l'échappatoire "je ne trouve pas mon
+ * bâtiment" proposée quand la carte reste trop longtemps sans réagir (ex. tuiles RNB lentes à
+ * charger sur un réseau dégradé). N'appelle jamais BDNB ni RNB : uniquement notre propre API
+ * d'aléa, à partir des coordonnées de l'adresse déjà recherchée.
+ */
+export async function getBuildingDataFallback(coordinates: { lat: number; lon: number }): Promise<BuildingData> {
+  let aleaDetermine: BdnbAleaArgile = null;
+  let aleaIndetermine = false;
+  try {
+    aleaDetermine = await fetchRga2026Alea(coordinates.lat, coordinates.lon);
+  } catch {
+    aleaIndetermine = true;
+  }
+
+  return buildDonneesIndisponibles("", coordinates, aleaDetermine, aleaIndetermine);
+}
+
+function buildDonneesIndisponibles(
+  rnbId: string,
+  coordinates: { lat: number; lon: number },
+  aleaArgiles: BdnbAleaArgile,
+  aleaIndetermine: boolean
+): BuildingData {
+  return {
+    rnbId,
+    batimentGroupeId: "",
+    lat: coordinates.lat,
+    lon: coordinates.lon,
+    aleaArgiles,
+    anneeConstruction: null,
+    nombreNiveaux: null,
+    surfaceHabitable: null,
+    adresse: null,
+    codePostal: null,
+    commune: null,
+    codeDepartement: null,
+    etiquetteEnergie: null,
+    etiquetteGes: null,
+    raw: null,
+    donneesIndisponibles: true,
+    aleaIndetermine,
+  };
 }
 
 /**
@@ -124,17 +190,16 @@ function transformBdnbToBuilding(
 
 /**
  * Appel client-side à l'API PostGIS pour obtenir l'aléa RGA 2026.
- * Retourne null si l'API n'est pas disponible ou en cas d'erreur (fallback BDNB).
+ * Lève une exception en cas d'échec (réseau, HTTP) : à l'appelant de distinguer un aléa
+ * réellement "null" (hors zone) d'un aléa qu'on n'a simplement pas pu déterminer.
  */
 async function fetchRga2026Alea(lat: number, lon: number): Promise<BdnbAleaArgile> {
-  try {
-    const response = await fetch(`/api/rga/alea?lat=${lat}&lon=${lon}`);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.alea ?? null;
-  } catch {
-    return null;
+  const response = await fetch(`/api/rga/alea?lat=${lat}&lon=${lon}`);
+  if (!response.ok) {
+    throw new Error(`Erreur API RGA (alea): ${response.status}`);
   }
+  const data = await response.json();
+  return data.alea ?? null;
 }
 
 /**

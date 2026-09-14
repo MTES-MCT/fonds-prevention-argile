@@ -8,6 +8,15 @@
 export const RGA_MAP_STYLE_URL = "/map/style-carte-argile.json";
 
 /**
+ * URL du fichier PMTiles des zones d'aléa argile (source "argile" du style ci-dessus).
+ * Dupliquée ici (le style ne l'expose pas au JS) pour pouvoir précharger son en-tête en
+ * parallèle du chargement de la carte - voir useRgaMap.ts. Un test verrouille la cohérence
+ * avec public/map/style-carte-argile.json.
+ */
+export const ARGILE_PMTILES_URL =
+  "https://static.data.gouv.fr/resources/carte-des-risques-retrait-gonflement-des-argiles-2026/20260401-081931/argile-2026.pmtiles";
+
+/**
  * Centre par défaut (France métropolitaine)
  */
 export const DEFAULT_CENTER: [number, number] = [1.86, 46.67];
