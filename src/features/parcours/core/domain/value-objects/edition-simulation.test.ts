@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { peutModifierSaSimulation, raisonLectureSeule } from "./edition-simulation";
 
-const libre = { simulationCorrigeeParAgent: false, eligibiliteDsStatus: null };
+const libre = { simulationCorrigeeParAgent: false, decisionAmoRendue: false, eligibiliteDsStatus: null };
 
 describe("peutModifierSaSimulation", () => {
   it("autorise l'édition tant que rien ne la verrouille", () => {
@@ -30,8 +30,23 @@ describe("peutModifierSaSimulation", () => {
     }
   });
 
+  it("passe en lecture seule dès que l'AMO a statué sur l'éligibilité", () => {
+    const etat = { ...libre, decisionAmoRendue: true };
+
+    expect(peutModifierSaSimulation(etat)).toBe(false);
+    expect(raisonLectureSeule(etat)).toBe("decision_amo");
+  });
+
+  it("garde la décision de l'AMO devant l'état du dossier, qui lui se lève", () => {
+    // Annoncer « vos informations redeviendront modifiables » serait faux : la décision
+    // de l'AMO, elle, ne se lève pas toute seule.
+    const etat = { ...libre, decisionAmoRendue: true, eligibiliteDsStatus: DSStatus.EN_INSTRUCTION };
+
+    expect(raisonLectureSeule(etat)).toBe("decision_amo");
+  });
+
   it("fait primer la correction d'agent sur l'état du dossier", () => {
-    const etat = { simulationCorrigeeParAgent: true, eligibiliteDsStatus: DSStatus.ACCEPTE };
+    const etat = { ...libre, simulationCorrigeeParAgent: true, eligibiliteDsStatus: DSStatus.ACCEPTE };
 
     expect(raisonLectureSeule(etat)).toBe("correction_agent");
   });

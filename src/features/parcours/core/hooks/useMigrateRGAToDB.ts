@@ -9,8 +9,7 @@ import { createDebugLogger } from "@/shared/utils";
 import { RGASimulationData, useRGAStore } from "@/features/simulateur";
 import { comparerSimulations } from "@/features/simulateur/domain/services/comparaison-simulations.service";
 import { isSameSimulationContent } from "../utils/simulation-comparison";
-import { peutModifierSaSimulation } from "../domain/value-objects/edition-simulation";
-import { Step } from "../domain";
+import { useLectureSeuleSimulation } from "./useLectureSeuleSimulation";
 
 const debug = createDebugLogger("MIGRATE_RGA");
 
@@ -27,7 +26,8 @@ const debug = createDebugLogger("MIGRATE_RGA");
  */
 export function useMigrateRGAToDB() {
   const { isAuthenticated } = useAuth();
-  const { parcours, refresh, getDSStatusByStep } = useParcours();
+  const { parcours, refresh } = useParcours();
+  const lectureSeule = useLectureSeuleSimulation();
 
   const tempRgaData = useRGAStore((state) => state.tempRgaData);
   const clearRGA = useRGAStore((state) => state.clearRGA);
@@ -51,17 +51,13 @@ export function useMigrateRGAToDB() {
 
     // Verrouillée, la simulation du compte n'est pas remplaçable : proposer le choix
     // reviendrait à le faire refuser côté serveur juste après.
-    const verrouille = !peutModifierSaSimulation({
-      simulationCorrigeeParAgent: parcours.simulationCorrigeeParAgent,
-      eligibiliteDsStatus: getDSStatusByStep(Step.ELIGIBILITE) ?? null,
-    });
-    if (verrouille) return { verrouille: true } as const;
+    if (lectureSeule) return { verrouille: true, raison: lectureSeule } as const;
 
     const comparaison = comparerSimulations(simulationActive, tempRgaData);
     if (comparaison.identiques) return null;
 
     return { verrouille: false, comparaison, active: simulationActive, candidate: tempRgaData } as const;
-  }, [isHydrated, isAuthenticated, parcours, tempRgaData, simulationActive, getDSStatusByStep]);
+  }, [isHydrated, isAuthenticated, parcours, tempRgaData, simulationActive, lectureSeule]);
 
   const marquerTermine = useCallback(() => {
     clearRGA();
@@ -92,10 +88,11 @@ export function useMigrateRGAToDB() {
         return;
       }
 
-      // Verrouillé : la version du compte reste, le cache local n'a plus d'usage.
+      // Verrouillé : la version du compte reste. On ne purge PAS le cache ici — le
+      // demandeur doit d'abord apprendre que sa nouvelle simulation n'a pas été retenue,
+      // sinon elle disparaît sans un mot. C'est `abandonnerSimulationLocale` qui purge.
       if (arbitrage?.verrouille) {
-        debug.log("[MigrationRGAtoDB] Simulation verrouillée — cache local abandonné");
-        marquerTermine();
+        debug.log("[MigrationRGAtoDB] Simulation verrouillée — en attente d'acquittement");
         return;
       }
 
@@ -182,5 +179,9 @@ export function useMigrateRGAToDB() {
     conflit: arbitrage && !arbitrage.verrouille ? arbitrage : null,
     resoudreConflit,
     isResolvingConflit: isResolving,
+    /** Pourquoi la simulation refaite n'a pas pu remplacer celle du compte. */
+    raisonVerrouillage: arbitrage?.verrouille ? arbitrage.raison : null,
+    /** Acquittement du demandeur : jette le cache local, définitivement. */
+    abandonnerSimulationLocale: marquerTermine,
   };
 }

@@ -3,8 +3,8 @@ import { getSession } from "@/features/auth/server";
 import { parcoursRepo, userRepo, dossierDsRepo } from "@/shared/database/repositories";
 import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributes } from "@/shared/email/brevo";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import { Step } from "@/shared/domain/value-objects/step.enum";
 import { appliquerVerdictSimulationDemandeur } from "../services/simulation-eligibilite.service";
+import { chargerEtatEditionSimulation } from "../services/etat-edition-simulation.service";
 import { enregistrerSimulationDemandeurAction } from "./enregistrer-simulation-demandeur.actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -16,6 +16,10 @@ vi.mock("@/shared/database/repositories", () => ({
 }));
 vi.mock("../services/simulation-eligibilite.service", () => ({
   appliquerVerdictSimulationDemandeur: vi.fn(),
+}));
+// Les verrous sont assemblés ailleurs (et testés là-bas) : ici on ne vérifie que la barrière.
+vi.mock("../services/etat-edition-simulation.service", () => ({
+  chargerEtatEditionSimulation: vi.fn(),
 }));
 // Même barrière que parcours-simulateur-rga-migration.actions.test.ts : le graphe réel
 // de @/shared/email/brevo touche le client DB au chargement du module.
@@ -36,12 +40,18 @@ const mockedEmit = vi.mocked(emitBrevoEvent);
 const rgaData = { logement: { commune: "36044" } } as never;
 const parcours = { id: "p1", rgaSimulationData: { logement: { commune: "75056" } }, rgaSimulationDataAgent: null };
 
+const mockedEtat = vi.mocked(chargerEtatEditionSimulation);
+
+/** Aucun verrou : l'état nominal d'un demandeur qui corrige sa propre simulation. */
+const LIBRE = { simulationCorrigeeParAgent: false, decisionAmoRendue: false, eligibiliteDsStatus: null };
+
 describe("enregistrerSimulationDemandeurAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedSession.mockResolvedValue({ userId: "u1" } as never);
     mockedFindByUserId.mockResolvedValue(parcours as never);
     mockedFindDossiers.mockResolvedValue([]);
+    mockedEtat.mockResolvedValue(LIBRE);
     mockedVerdict.mockResolvedValue({
       archived: false,
       unarchived: false,
@@ -118,44 +128,29 @@ describe("enregistrerSimulationDemandeurAction", () => {
     expect(mockedEmit).not.toHaveBeenCalled();
   });
 
-  it("refuse quand un agent a corrigé la simulation", async () => {
-    // Correction complète : une saisie partielle (dossier créé sur la seule adresse)
-    // ne fait pas foi et ne doit rien verrouiller.
-    const correctionAgent = {
-      logement: {
-        type: "maison",
-        code_departement: "36",
-        zone_dexposition: "moyenne",
-        annee_de_construction: "1980",
-        niveaux: 1,
-        mitoyen: false,
-        proprietaire_occupant: true,
-      },
-      rga: { sinistres: "aucun", indemnise_indemnise_rga: false, demande_catnat_en_cours: false, assure: true },
-      menage: { personnes: 2, revenu_rga: 20000 },
-    };
-    mockedFindByUserId.mockResolvedValue({ ...parcours, rgaSimulationDataAgent: correctionAgent } as never);
+  it("refuse dès qu'un verrou est posé, quel qu'il soit", async () => {
+    for (const verrou of [{ simulationCorrigeeParAgent: true }, { decisionAmoRendue: true }]) {
+      mockedEtat.mockResolvedValue({ ...LIBRE, ...verrou });
 
-    const res = await enregistrerSimulationDemandeurAction(rgaData);
+      const res = await enregistrerSimulationDemandeurAction(rgaData);
 
-    expect(res.success).toBe(false);
-    expect(mockedUpdateRGAData).not.toHaveBeenCalled();
+      expect(res.success).toBe(false);
+      expect(mockedUpdateRGAData).not.toHaveBeenCalled();
+    }
   });
 
-  it("accepte quand l'agent n'a saisi que l'adresse du dossier", async () => {
-    mockedFindByUserId.mockResolvedValue({
-      ...parcours,
-      rgaSimulationDataAgent: { logement: { adresse: "12 rue de Paris", commune: "36044" } },
-    } as never);
+  it("refuse une correction que l'AMO a déjà tranchée, même par l'arbitrage", async () => {
+    // `resoudreConflit("candidate")` passe par la même action : le verrou vaut pour les
+    // deux chemins d'écriture, sinon l'arbitrage rouvrirait ce que l'écran ferme.
+    mockedEtat.mockResolvedValue({ ...LIBRE, decisionAmoRendue: true });
 
     const res = await enregistrerSimulationDemandeurAction(rgaData);
 
-    expect(res.success).toBe(true);
-    expect(mockedUpdateRGAData).toHaveBeenCalled();
+    expect(res).toEqual({ success: false, error: "Vos données de simulation ne sont plus modifiables" });
   });
 
   it("refuse pendant que la DDT instruit le formulaire d'éligibilité", async () => {
-    mockedFindDossiers.mockResolvedValue([{ step: Step.ELIGIBILITE, dsStatus: DSStatus.EN_INSTRUCTION }] as never);
+    mockedEtat.mockResolvedValue({ ...LIBRE, eligibiliteDsStatus: DSStatus.EN_INSTRUCTION });
 
     const res = await enregistrerSimulationDemandeurAction(rgaData);
 
@@ -164,7 +159,7 @@ describe("enregistrerSimulationDemandeurAction", () => {
   });
 
   it("rouvre l'édition une fois la décision de la DDT rendue", async () => {
-    mockedFindDossiers.mockResolvedValue([{ step: Step.ELIGIBILITE, dsStatus: DSStatus.REFUSE }] as never);
+    mockedEtat.mockResolvedValue({ ...LIBRE, eligibiliteDsStatus: DSStatus.REFUSE });
 
     const res = await enregistrerSimulationDemandeurAction(rgaData);
 

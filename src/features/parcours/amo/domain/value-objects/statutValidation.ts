@@ -26,6 +26,15 @@ export function isValidationRefusee(statut: StatutValidationAmo): boolean {
 }
 
 /**
+ * L'AMO a statué sur l'éligibilité : validée, refusée pour inéligibilité, ou éligible sans
+ * accompagnement. `EN_ATTENTE` (pas encore répondu) et `SANS_AMO` (aucun AMO au dossier, le
+ * demandeur est en autonomie) n'en sont pas — d'où l'écart avec `isValidationFinale`.
+ */
+export function aRenduSaDecision(statut: StatutValidationAmo | null): boolean {
+  return statut !== null && (isValidationAcceptee(statut) || isValidationRefusee(statut));
+}
+
+/**
  * Logement non éligible, quelle qu'en soit la source : décision d'un AMO (`statutAmo`),
  * ou dossier archivé pour inéligibilité — qualification d'un Aller-vers comme simulation
  * du demandeur (`isDossierNonEligible`). Les deux sources sont disjointes : une validation

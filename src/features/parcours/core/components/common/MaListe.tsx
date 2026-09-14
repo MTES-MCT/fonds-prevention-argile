@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParcours } from "../../context/useParcours";
+import { useLectureSeuleSimulation } from "../../hooks/useLectureSeuleSimulation";
 import { Step } from "../../domain";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 import { useAmoMode } from "@/features/parcours/amo/hooks";
@@ -37,6 +38,7 @@ export default function MaListe() {
     isDossierNonEligible,
     parcours,
   } = useParcours();
+  const simulationVerrouillee = useLectureSeuleSimulation() !== null;
   const amoMode = useAmoMode();
   const [isAnnulerOpen, setIsAnnulerOpen] = useState(false);
   const [isDemanderOpen, setIsDemanderOpen] = useState(false);
@@ -101,7 +103,7 @@ export default function MaListe() {
                   <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true" />
                 </span>
                 <Link className="fr-link fr-link--sm fr-ml-1w" href={ROUTES.particulier.maSimulation}>
-                  Voir/Modifier
+                  {simulationVerrouillee ? "Voir" : "Voir/Modifier"}
                 </Link>
               </li>
               {items.map((item) => (

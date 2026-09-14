@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getSession } from "@/features/auth/server";
 import { parcoursRepo, userRepo, dossierDsRepo } from "@/shared/database/repositories";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import { Step } from "@/shared/domain/value-objects/step.enum";
+import { chargerEtatEditionSimulation } from "./etat-edition-simulation.service";
 import { getMaSimulation, aDejaUneSimulation } from "./ma-simulation.service";
 
 vi.mock("@/features/auth/server", () => ({ getSession: vi.fn() }));
@@ -11,10 +11,16 @@ vi.mock("@/shared/database/repositories", () => ({
   userRepo: { findById: vi.fn() },
   dossierDsRepo: { findByParcoursId: vi.fn() },
 }));
+// Les trois verrous sont assemblés et testés dans `etat-edition-simulation.service.test.ts` ;
+// ici on vérifie la simulation servie, et que la raison est bien relayée telle quelle.
+vi.mock("./etat-edition-simulation.service", () => ({ chargerEtatEditionSimulation: vi.fn() }));
 
 const mockedSession = vi.mocked(getSession);
 const mockedFindByUserId = vi.mocked(parcoursRepo.findByUserId);
 const mockedFindDossiers = vi.mocked(dossierDsRepo.findByParcoursId);
+const mockedEtat = vi.mocked(chargerEtatEditionSimulation);
+
+const LIBRE = { simulationCorrigeeParAgent: false, decisionAmoRendue: false, eligibiliteDsStatus: null };
 
 const simulationDemandeur = { logement: { commune: "36044" } };
 
@@ -47,6 +53,7 @@ describe("getMaSimulation", () => {
     vi.clearAllMocks();
     mockedSession.mockResolvedValue({ userId: "u1" } as never);
     mockedFindDossiers.mockResolvedValue([]);
+    mockedEtat.mockResolvedValue(LIBRE);
     vi.mocked(userRepo.findById).mockResolvedValue({ prenom: "Georges", nom: "Dupont" } as never);
     mockedFindByUserId.mockResolvedValue({
       id: "p1",
@@ -63,12 +70,13 @@ describe("getMaSimulation", () => {
     expect(res?.lectureSeule).toBeNull();
   });
 
-  it("affiche la correction de l'agent et verrouille l'édition", async () => {
+  it("affiche la correction de l'agent et relaie sa raison de lecture seule", async () => {
     mockedFindByUserId.mockResolvedValue({
       id: "p1",
       rgaSimulationData: simulationDemandeur,
       rgaSimulationDataAgent: simulationAgentComplete,
     } as never);
+    mockedEtat.mockResolvedValue({ ...LIBRE, simulationCorrigeeParAgent: true });
 
     const res = await getMaSimulation();
 
@@ -101,16 +109,15 @@ describe("getMaSimulation", () => {
     expect(await getMaSimulation()).toBeNull();
   });
 
-  it("verrouille pendant l'instruction du formulaire d'éligibilité", async () => {
-    mockedFindDossiers.mockResolvedValue([{ step: Step.ELIGIBILITE, dsStatus: DSStatus.EN_CONSTRUCTION }] as never);
+  it("relaie la lecture seule, quelle qu'en soit la raison", async () => {
+    for (const [etat, raison] of [
+      [{ decisionAmoRendue: true }, "decision_amo"],
+      [{ eligibiliteDsStatus: DSStatus.EN_CONSTRUCTION }, "dossier_chez_la_ddt"],
+    ] as const) {
+      mockedEtat.mockResolvedValue({ ...LIBRE, ...etat });
 
-    expect((await getMaSimulation())?.lectureSeule).toBe("dossier_chez_la_ddt");
-  });
-
-  it("ignore le statut des étapes suivantes", async () => {
-    mockedFindDossiers.mockResolvedValue([{ step: Step.DIAGNOSTIC, dsStatus: DSStatus.EN_INSTRUCTION }] as never);
-
-    expect((await getMaSimulation())?.lectureSeule).toBeNull();
+      expect((await getMaSimulation())?.lectureSeule).toBe(raison);
+    }
   });
 
   it("retourne null sans session, sans parcours ou sans simulation", async () => {

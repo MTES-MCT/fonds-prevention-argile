@@ -4,14 +4,12 @@ import { revalidatePath } from "next/cache";
 import { getSession } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types";
 import type { RGASimulationData } from "@/shared/domain/types";
-import { parcoursRepo, userRepo, dossierDsRepo } from "@/shared/database/repositories";
+import { parcoursRepo, userRepo } from "@/shared/database/repositories";
 import { formatNomComplet } from "@/shared/utils";
-import { Step } from "@/shared/domain/value-objects/step.enum";
-import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributes } from "@/shared/email/brevo";
 import { appliquerVerdictSimulationDemandeur } from "../services/simulation-eligibilite.service";
-import { estSimulationCorrigeeParAgent } from "../services/rga-data.service";
+import { chargerEtatEditionSimulation } from "../services/etat-edition-simulation.service";
 import { isSameSimulationContent } from "../utils/simulation-comparison";
 import { peutModifierSaSimulation } from "../domain/value-objects/edition-simulation";
 
@@ -43,15 +41,10 @@ export async function enregistrerSimulationDemandeurAction(
       return { success: false, error: "Parcours non trouvé" };
     }
 
-    // Même barrière que l'écran : sans elle, un POST direct contournerait la
-    // lecture seule (correction d'agent, formulaire chez la DDT).
-    const eligibiliteDsStatus = await getEligibiliteDsStatus(parcours.id);
-    if (
-      !peutModifierSaSimulation({
-        simulationCorrigeeParAgent: estSimulationCorrigeeParAgent(parcours),
-        eligibiliteDsStatus,
-      })
-    ) {
+    // Même barrière que l'écran, sur les mêmes faits : sans elle, un POST direct
+    // contournerait la lecture seule (correction d'agent, décision AMO rendue,
+    // formulaire chez la DDT).
+    if (!peutModifierSaSimulation(await chargerEtatEditionSimulation(parcours))) {
       return { success: false, error: "Vos données de simulation ne sont plus modifiables" };
     }
 
@@ -90,9 +83,4 @@ export async function enregistrerSimulationDemandeurAction(
     console.error("[enregistrerSimulationDemandeur] Erreur:", error);
     return { success: false, error: "Erreur lors de l'enregistrement de vos données de simulation" };
   }
-}
-
-async function getEligibiliteDsStatus(parcoursId: string): Promise<DSStatus | null> {
-  const dossiers = await dossierDsRepo.findByParcoursId(parcoursId);
-  return (dossiers.find((dossier) => dossier.step === Step.ELIGIBILITE)?.dsStatus as DSStatus | null) ?? null;
 }

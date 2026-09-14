@@ -1,10 +1,9 @@
 import { getSession } from "@/features/auth/server";
-import { parcoursRepo, userRepo, dossierDsRepo } from "@/shared/database/repositories";
+import { parcoursRepo, userRepo } from "@/shared/database/repositories";
 import { formatNomComplet } from "@/shared/utils";
-import { Step } from "@/shared/domain/value-objects/step.enum";
-import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { estSimulationCorrigeeParAgent } from "./rga-data.service";
+import { chargerEtatEditionSimulation } from "./etat-edition-simulation.service";
 import { raisonLectureSeule, type RaisonLectureSeule } from "../domain/value-objects/edition-simulation";
 
 export interface MaSimulation {
@@ -33,21 +32,12 @@ export async function getMaSimulation(): Promise<MaSimulation | null> {
   const rgaData = (corrigeeParAgent ? parcours.rgaSimulationDataAgent : parcours.rgaSimulationData) ?? null;
   if (!rgaData) return null;
 
-  const [user, dossiers] = await Promise.all([
-    userRepo.findById(session.userId),
-    dossierDsRepo.findByParcoursId(parcours.id),
-  ]);
-
-  const eligibiliteDsStatus =
-    (dossiers.find((dossier) => dossier.step === Step.ELIGIBILITE)?.dsStatus as DSStatus | null) ?? null;
+  const [user, etat] = await Promise.all([userRepo.findById(session.userId), chargerEtatEditionSimulation(parcours)]);
 
   return {
     rgaData,
     nomComplet: formatNomComplet(user?.prenom, user?.nom),
-    lectureSeule: raisonLectureSeule({
-      simulationCorrigeeParAgent: corrigeeParAgent,
-      eligibiliteDsStatus,
-    }),
+    lectureSeule: raisonLectureSeule(etat),
   };
 }
 

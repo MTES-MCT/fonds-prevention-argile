@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useParcours } from "../../../context/useParcours";
+import { useLectureSeuleSimulation } from "../../../hooks/useLectureSeuleSimulation";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { estLogementNonEligible } from "@/features/parcours/amo/domain/value-objects";
 import { evaluateSimulation } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
@@ -10,6 +11,7 @@ import { evaluateSimulation } from "@/features/simulateur/domain/services/eligib
  */
 export default function StepDetailSimulateur() {
   const { parcours, statutAmo, isDossierNonEligible } = useParcours();
+  const simulationVerrouillee = useLectureSeuleSimulation() !== null;
 
   // Le verdict enregistré prime : c'est lui qui a archivé (ou non) le dossier.
   const isNonEligible =
@@ -37,7 +39,7 @@ export default function StepDetailSimulateur() {
           href={ROUTES.particulier.maSimulation}
           className="fr-link fr-icon-arrow-right-line fr-link--icon-right"
           style={{ display: "inline-flex", alignItems: "center", width: "fit-content" }}>
-          Voir et modifier les données
+          {simulationVerrouillee ? "Voir les données" : "Voir et modifier les données"}
         </Link>
       </div>
     </div>

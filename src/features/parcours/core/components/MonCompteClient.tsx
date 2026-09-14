@@ -48,13 +48,15 @@ import SimulationNeededAlert from "@/app/(main)/mon-compte/components/Simulation
 import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/PourEnSavoirPlusSection";
 // import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
 import { useMigrateRGAToDB } from "../hooks";
+import { MESSAGES_LECTURE_SEULE } from "../domain/value-objects/edition-simulation";
 import { ChoixSimulationModal } from "./ChoixSimulationModal";
 import { formatDate } from "@/shared/utils";
 
 export default function MonCompteClient({ piecesByStep }: { piecesByStep?: PiecesByStep }) {
   // Rattachement de la simulation faite avant connexion — avec arbitrage si le
   // compte en portait déjà une, différente (ADR-0036).
-  const { conflit, resoudreConflit, isResolvingConflit } = useMigrateRGAToDB();
+  const { conflit, resoudreConflit, isResolvingConflit, raisonVerrouillage, abandonnerSimulationLocale } =
+    useMigrateRGAToDB();
 
   const { user, isLoading: isAuthLoading, isLoggingOut } = useAuth();
   const { hasData: hasTempRGAData, isLoading: isLoadingRGA } = useSimulateurRga();
@@ -160,6 +162,18 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
 
   return (
     <>
+      {raisonVerrouillage && (
+        <div className="fr-container fr-mt-4w">
+          <div className="fr-alert fr-alert--info">
+            <h3 className="fr-alert__title">La simulation de votre compte a été conservée</h3>
+            <p>{MESSAGES_LECTURE_SEULE[raisonVerrouillage]}</p>
+            <p>La simulation que vous venez de faire n&apos;a donc pas remplacé celle de votre dossier.</p>
+            <button type="button" className="fr-btn fr-btn--secondary fr-mt-2w" onClick={abandonnerSimulationLocale}>
+              J&apos;ai compris
+            </button>
+          </div>
+        </div>
+      )}
       {conflit && (
         <ChoixSimulationModal
           isOpen

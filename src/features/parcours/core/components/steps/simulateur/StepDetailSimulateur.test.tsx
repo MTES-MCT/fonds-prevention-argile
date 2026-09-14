@@ -26,9 +26,14 @@ const simulationEligible = {
 
 function mockParcours(rgaSimulationData: unknown, isDossierNonEligible = false) {
   vi.mocked(parcoursContext.useParcours).mockReturnValue({
-    parcours: { rgaSimulationData, rgaSimulationCompletedAt: new Date("2026-09-20T10:00:00Z") },
+    parcours: {
+      rgaSimulationData,
+      rgaSimulationCompletedAt: new Date("2026-09-20T10:00:00Z"),
+      simulationCorrigeeParAgent: false,
+    },
     statutAmo: null,
     isDossierNonEligible,
+    getDSStatusByStep: () => null,
   } as unknown as ReturnType<typeof parcoursContext.useParcours>);
 }
 
