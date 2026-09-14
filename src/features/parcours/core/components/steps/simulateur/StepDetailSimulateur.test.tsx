@@ -24,11 +24,11 @@ const simulationEligible = {
   menage: { personnes: 4, revenu_rga: 30000 },
 };
 
-function mockParcours(rgaSimulationData: unknown, isQualifiedNonEligible = false) {
+function mockParcours(rgaSimulationData: unknown, isDossierNonEligible = false) {
   vi.mocked(parcoursContext.useParcours).mockReturnValue({
     parcours: { rgaSimulationData, rgaSimulationCompletedAt: new Date("2026-09-20T10:00:00Z") },
     statutAmo: null,
-    isQualifiedNonEligible,
+    isDossierNonEligible,
   } as unknown as ReturnType<typeof parcoursContext.useParcours>);
 }
 

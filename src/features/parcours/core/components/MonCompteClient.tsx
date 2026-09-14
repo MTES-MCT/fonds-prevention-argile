@@ -75,7 +75,7 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
     currentStep,
     lastDSStatus,
     statutAmo,
-    isQualifiedNonEligible,
+    isDossierNonEligible,
     refresh,
     parcours,
     dossiers,
@@ -88,7 +88,7 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
   const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
 
   // Aucune pièce à réunir si le logement n'est pas éligible : plus rien ne sera déposé.
-  const isNonEligible = estLogementNonEligible(statutAmo, isQualifiedNonEligible);
+  const isNonEligible = estLogementNonEligible(statutAmo, isDossierNonEligible);
 
   // Vérifier si les coordonnées de contact sont déjà renseignées.
   // Le téléphone et l'email_contact sont tous deux requis (l'auto-attribution AMO
@@ -226,7 +226,7 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
                 dsStatus={lastDSStatus}
                 currentStep={currentStep}
                 statutAmo={statutAmo}
-                isQualifiedNonEligible={isQualifiedNonEligible}
+                isDossierNonEligible={isDossierNonEligible}
                 onAmoSuccess={() => setShowAmoSuccessAlert(true)}
                 refresh={refresh}
                 contactInfoVersion={contactInfoVersion}
@@ -269,7 +269,7 @@ function CalloutManager({
   hasParcours,
   dsStatus,
   statutAmo,
-  isQualifiedNonEligible,
+  isDossierNonEligible,
   currentStep,
   onAmoSuccess,
   refresh,
@@ -279,7 +279,7 @@ function CalloutManager({
   hasParcours: boolean;
   dsStatus: DSStatus | null;
   statutAmo: StatutValidationAmo | null;
-  isQualifiedNonEligible: boolean;
+  isDossierNonEligible: boolean;
   currentStep: Step | null;
   onAmoSuccess: () => void;
   refresh: () => Promise<void>;
@@ -295,7 +295,7 @@ function CalloutManager({
   // Logement non éligible : plus aucune étape à proposer, quelle que soit l'étape
   // courante. Sans cette garde, un dossier déjà passé à ÉLIGIBILITE (autonomie, puis
   // simulation corrigée en non éligible) continuerait d'inviter au dépôt du formulaire.
-  if (estLogementNonEligible(statutAmo, isQualifiedNonEligible)) {
+  if (estLogementNonEligible(statutAmo, isDossierNonEligible)) {
     // Seul un statut de validation refusé vient d'une analyse AMO ; une qualification
     // (Aller-vers ou simulation du demandeur) ne doit pas s'en réclamer.
     const origine = statutAmo !== null && isValidationRefusee(statutAmo) ? "amo" : "dossier";

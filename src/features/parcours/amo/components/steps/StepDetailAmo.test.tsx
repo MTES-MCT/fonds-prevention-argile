@@ -18,13 +18,13 @@ function mockParcours(
   currentStep: Step,
   statutAmo: StatutValidationAmo | null,
   validationAmoComplete: unknown = null,
-  isQualifiedNonEligible = false
+  isDossierNonEligible = false
 ) {
   vi.mocked(parcoursContext.useParcours).mockReturnValue({
     currentStep,
     statutAmo,
     validationAmoComplete,
-    isQualifiedNonEligible,
+    isDossierNonEligible,
   } as unknown as ReturnType<typeof parcoursContext.useParcours>);
 }
 

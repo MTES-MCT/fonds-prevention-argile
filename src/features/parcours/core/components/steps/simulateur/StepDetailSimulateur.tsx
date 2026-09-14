@@ -9,11 +9,11 @@ import { evaluateSimulation } from "@/features/simulateur/domain/services/eligib
  * (sans elle il n'y a pas de dossier) et désormais consultable et corrigeable.
  */
 export default function StepDetailSimulateur() {
-  const { parcours, statutAmo, isQualifiedNonEligible } = useParcours();
+  const { parcours, statutAmo, isDossierNonEligible } = useParcours();
 
   // Le verdict enregistré prime : c'est lui qui a archivé (ou non) le dossier.
   const isNonEligible =
-    estLogementNonEligible(statutAmo, isQualifiedNonEligible) ||
+    estLogementNonEligible(statutAmo, isDossierNonEligible) ||
     evaluateSimulation(parcours?.rgaSimulationData).isNonEligible;
 
   const simuleeLe = parcours?.rgaSimulationCompletedAt;

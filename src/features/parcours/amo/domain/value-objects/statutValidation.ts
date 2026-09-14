@@ -26,17 +26,17 @@ export function isValidationRefusee(statut: StatutValidationAmo): boolean {
 }
 
 /**
- * Logement non éligible, quelle qu'en soit la source : décision d'un AMO, qualification
- * d'un Aller-vers, ou simulation du demandeur (qui écrit aussi une qualification).
- * Prédicat partagé par `MaListe`, `CalloutManager` et la section « Pour en savoir plus »,
- * pour que les trois ne puissent pas diverger.
+ * Logement non éligible, quelle qu'en soit la source : décision d'un AMO (`statutAmo`),
+ * ou dossier archivé pour inéligibilité — qualification d'un Aller-vers comme simulation
+ * du demandeur (`isDossierNonEligible`). Les deux sources sont disjointes : une validation
+ * AMO ne doit jamais alimenter le second terme, sans quoi une décision **positive** se
+ * retourne en inéligibilité.
+ * Prédicat partagé par `MaListe`, `CalloutManager`, `StepDetailAmo`, `StepDetailSimulateur`
+ * et la section « Pour en savoir plus », pour qu'ils ne puissent pas diverger.
  */
-export function estLogementNonEligible(
-  statutAmo: StatutValidationAmo | null,
-  isQualifiedNonEligible: boolean
-): boolean {
+export function estLogementNonEligible(statutAmo: StatutValidationAmo | null, isDossierNonEligible: boolean): boolean {
   return (
-    isQualifiedNonEligible ||
+    isDossierNonEligible ||
     statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE ||
     statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
   );

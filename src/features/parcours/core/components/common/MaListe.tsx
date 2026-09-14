@@ -34,7 +34,7 @@ export default function MaListe() {
     validationAmoComplete,
     getDSStatusByStep,
     dossiers,
-    isQualifiedNonEligible,
+    isDossierNonEligible,
     parcours,
   } = useParcours();
   const amoMode = useAmoMode();
@@ -42,7 +42,7 @@ export default function MaListe() {
   const [isDemanderOpen, setIsDemanderOpen] = useState(false);
 
   const eligibiliteDsStatus = getDSStatusByStep(Step.ELIGIBILITE) ?? null;
-  const isNonEligible = estLogementNonEligible(statutAmo, isQualifiedNonEligible);
+  const isNonEligible = estLogementNonEligible(statutAmo, isDossierNonEligible);
   const dossierArchive = Boolean(parcours?.archivedAt);
   const items = getStepListItems(
     amoMode,

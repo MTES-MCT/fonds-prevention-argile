@@ -7,12 +7,12 @@ import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departemen
 import { ContactCard } from "@/shared/components/ContactCard/ContactCard";
 
 export default function StepDetailAmo() {
-  const { currentStep, statutAmo, validationAmoComplete, isQualifiedNonEligible } = useParcours();
+  const { currentStep, statutAmo, validationAmoComplete, isDossierNonEligible } = useParcours();
   const amoMode = useAmoMode();
 
   // Couvre les décisions AMO (dont ACCOMPAGNEMENT_REFUSE, legacy) et les qualifications
   // non éligibles (Aller-vers ou simulation du demandeur), qui laissent statutAmo null.
-  const isNonEligible = estLogementNonEligible(statutAmo, isQualifiedNonEligible);
+  const isNonEligible = estLogementNonEligible(statutAmo, isDossierNonEligible);
 
   const isDisabled = currentStep !== Step.CHOIX_AMO || isNonEligible;
 
