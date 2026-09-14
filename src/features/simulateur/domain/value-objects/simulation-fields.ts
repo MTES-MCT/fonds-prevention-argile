@@ -1,4 +1,5 @@
 import type { PartialRGASimulationData, RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
+import { asString } from "@/shared/utils";
 import type { EligibilityChecks } from "../entities/eligibility-result.entity";
 import { calculateNiveauRevenuFromRga } from "../types/rga-revenus.types";
 
@@ -16,8 +17,8 @@ export interface SimulationField {
   label: string;
   getValue: (data: SimulationLike) => unknown;
   formatValue: (value: unknown) => string;
-  /** Critère d'éligibilité porté par ce champ, pour signaler celui qui bloque. */
-  checkKey: keyof EligibilityChecks;
+  /** Critère d'éligibilité porté par ce champ. Absent : le champ n'en porte aucun. */
+  checkKey?: keyof EligibilityChecks;
 }
 
 /** Valeur absente : ne jamais afficher un faux « avant » sur un baseline partiel (early exit). */
@@ -125,6 +126,22 @@ export const SIMULATION_FIELDS: readonly SimulationField[] = [
   },
 ];
 
+/**
+ * L'adresse ne porte aucun critère d'éligibilité, mais elle porte la commune, le
+ * département et l'EPCI — donc le conseiller responsable du dossier. Elle vit hors de
+ * `SIMULATION_FIELDS` parce qu'elle se rend en toutes lettres et non en badge (un badge
+ * DSFR est en capitales) ; seule la comparaison de deux simulations l'ajoute.
+ */
+export const CHAMP_ADRESSE: SimulationField = {
+  key: "adresse",
+  label: "Adresse",
+  getValue: (d) => asString(d.logement?.adresse) || asString(d.logement?.commune_nom) || undefined,
+  formatValue: (v) => (v == null ? ABSENT : String(v)),
+};
+
+/** Champs comparés entre deux simulations d'un même compte : les critères, et l'adresse. */
+export const CHAMPS_COMPARES: readonly SimulationField[] = [CHAMP_ADRESSE, ...SIMULATION_FIELDS];
+
 export const SIMULATION_FIELDS_BY_KEY: Readonly<Record<string, SimulationField>> = Object.fromEntries(
   SIMULATION_FIELDS.map((field) => [field.key, field])
 );
@@ -136,13 +153,16 @@ export const SIMULATION_FIELDS_BY_KEY: Readonly<Record<string, SimulationField>>
  */
 export function diffSimulationFields(
   avant: SimulationLike | null | undefined,
-  apres: SimulationLike | null | undefined
+  apres: SimulationLike | null | undefined,
+  champs: readonly SimulationField[] = SIMULATION_FIELDS
 ): string[] {
   if (!avant || !apres) return [];
 
-  return SIMULATION_FIELDS.filter((field) => {
-    const valeurApres = field.getValue(apres);
-    if (valeurApres === undefined || valeurApres === null) return false;
-    return field.getValue(avant) !== valeurApres;
-  }).map((field) => field.key);
+  return champs
+    .filter((field) => {
+      const valeurApres = field.getValue(apres);
+      if (valeurApres === undefined || valeurApres === null) return false;
+      return field.getValue(avant) !== valeurApres;
+    })
+    .map((field) => field.key);
 }

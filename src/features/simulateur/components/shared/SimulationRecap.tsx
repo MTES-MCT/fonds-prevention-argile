@@ -2,7 +2,7 @@
 
 import type { PartialRGASimulationData, RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { asString, formatDateShort } from "@/shared/utils";
-import { SIMULATION_FIELDS } from "../../domain/value-objects/simulation-fields";
+import { CHAMP_ADRESSE, SIMULATION_FIELDS } from "../../domain/value-objects/simulation-fields";
 import { evaluateSimulation } from "../../domain/services/eligibilite-archivage.service";
 
 /** Signalement d'un champ : il diffère de la version de référence, et il bloque ou non. */
@@ -38,7 +38,8 @@ export function SimulationRecap({
   selectionne,
 }: SimulationRecapProps) {
   const verdict = evaluateSimulation(simulation);
-  const adresse = construireAdresse(simulation);
+  const adresse = CHAMP_ADRESSE.getValue(simulation ?? {});
+  const adresseModifiee = highlights?.[CHAMP_ADRESSE.key];
   const simulatedAt = asString(simulation?.simulatedAt);
 
   return (
@@ -67,7 +68,12 @@ export function SimulationRecap({
       )}
 
       <ul className="fr-ml-3w fr-text--sm fr-mb-0">
-        {adresse && <li className="fr-mb-2v">Adresse&nbsp;: {adresse}</li>}
+        {adresse != null && (
+          <li className="fr-mb-2v">
+            Adresse&nbsp;: {CHAMP_ADRESSE.formatValue(adresse)}
+            {adresseModifiee && <span className={`${CLASSES_BADGE[adresseModifiee]} fr-ml-1v`}>modifiée</span>}
+          </li>
+        )}
 
         {SIMULATION_FIELDS.map((field) => {
           const valeur = field.getValue(simulation ?? {});
@@ -83,11 +89,4 @@ export function SimulationRecap({
       </ul>
     </div>
   );
-}
-
-/** « 97 rue de Notz, 36000 Châteauroux » — la commune complète l'adresse de voie. */
-function construireAdresse(simulation: RGASimulationData | PartialRGASimulationData | null): string | null {
-  const adresse = asString(simulation?.logement?.adresse);
-  if (adresse) return adresse;
-  return asString(simulation?.logement?.commune_nom) || null;
 }

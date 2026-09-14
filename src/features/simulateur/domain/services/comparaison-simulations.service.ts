@@ -1,5 +1,5 @@
 import type { PartialRGASimulationData, RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
-import { SIMULATION_FIELDS_BY_KEY, diffSimulationFields } from "../value-objects/simulation-fields";
+import { CHAMPS_COMPARES, SIMULATION_FIELDS_BY_KEY, diffSimulationFields } from "../value-objects/simulation-fields";
 import { evaluateSimulation, type EligibiliteVerdict } from "./eligibilite-archivage.service";
 
 type SimulationLike = RGASimulationData | PartialRGASimulationData;
@@ -34,7 +34,9 @@ export function comparerSimulations(
 ): ComparaisonSimulations {
   const verdictActive = evaluateSimulation(active);
   const verdictCandidate = evaluateSimulation(candidate);
-  const champsDifferents = diffSimulationFields(active, candidate);
+  // Adresse comprise : sans elle, un déménagement ou une erreur de voie passait pour
+  // « simulations identiques » et la correction était jetée avec le cache local.
+  const champsDifferents = diffSimulationFields(active, candidate, CHAMPS_COMPARES);
 
   const checksCandidate = verdictCandidate.result?.checks;
   const signalements: Record<string, SignalementChamp> = {};

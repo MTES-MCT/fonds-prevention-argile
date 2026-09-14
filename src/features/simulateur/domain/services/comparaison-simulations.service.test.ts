@@ -64,4 +64,19 @@ describe("comparerSimulations", () => {
 
     expect(res.verdictsDivergent).toBe(false);
   });
+
+  it("voit un changement d'adresse, qui ne porte pourtant aucun critère", () => {
+    const demenage = {
+      ...eligible,
+      logement: { ...eligible.logement, adresse: "12 rue des Lilas, 75011 Paris", commune: "75111" },
+    } as PartialRGASimulationData;
+
+    const res = comparerSimulations(eligible, demenage);
+
+    // Sans l'adresse, les deux simulations passaient pour identiques : aucun arbitrage
+    // n'était proposé et la nouvelle adresse partait avec le cache local.
+    expect(res.identiques).toBe(false);
+    expect(res.champsDifferents).toContain("adresse");
+    expect(res.signalements.adresse).toBe("diff");
+  });
 });
