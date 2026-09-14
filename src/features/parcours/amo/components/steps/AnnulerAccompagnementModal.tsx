@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { annulerMonAccompagnement } from "../../actions/arret-accompagnement.actions";
 import type { Amo } from "../../domain/entities";
+import { useDsfrModal } from "@/shared/hooks";
 
 const MODAL_ID = "modal-annuler-accompagnement";
 
@@ -30,36 +31,7 @@ export function AnnulerAccompagnementModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // L'init du DSFR est asynchrone : on retry jusqu'à ce que l'instance modale existe.
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    let cancelled = false;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 30;
-
-    const tryToggle = () => {
-      if (cancelled) return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const modalInstance = (window as any).dsfr?.(dialog)?.modal;
-      if (modalInstance) {
-        if (isOpen) modalInstance.disclose();
-        else modalInstance.conceal();
-        return;
-      }
-      if (++attempts < MAX_ATTEMPTS) {
-        requestAnimationFrame(tryToggle);
-      } else {
-        console.warn("DSFR modal instance not ready after retries");
-      }
-    };
-
-    tryToggle();
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen]);
+  useDsfrModal(dialogRef, isOpen);
 
   useEffect(() => {
     const dialog = dialogRef.current;

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { PartialRGASimulationData, RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { SimulationRecap } from "@/features/simulateur/components/shared/SimulationRecap";
 import type { ComparaisonSimulations } from "@/features/simulateur/domain/services/comparaison-simulations.service";
+import { useDsfrModal } from "@/shared/hooks";
 
 type Choix = "active" | "candidate";
 
@@ -38,17 +39,7 @@ export function ChoixSimulationModal({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [choix, setChoix] = useState<Choix>("candidate");
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const modalInstance = (window as any).dsfr?.(dialog)?.modal;
-    if (!modalInstance) return;
-
-    if (isOpen) modalInstance.disclose();
-    else modalInstance.conceal();
-  }, [isOpen]);
+  useDsfrModal(dialogRef, isOpen);
 
   useEffect(() => {
     const dialog = dialogRef.current;
