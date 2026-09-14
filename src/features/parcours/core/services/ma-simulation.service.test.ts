@@ -17,7 +17,30 @@ const mockedFindByUserId = vi.mocked(parcoursRepo.findByUserId);
 const mockedFindDossiers = vi.mocked(dossierDsRepo.findByParcoursId);
 
 const simulationDemandeur = { logement: { commune: "36044" } };
-const simulationAgent = { logement: { commune: "75056" } };
+
+/** Dossier créé par un Aller-vers : la seule adresse, rien d'autre. */
+const simulationAgentMinimale = { logement: { commune: "75056", adresse: "12 rue de Paris" } };
+
+/** Correction d'agent réelle : tous les critères sont saisis. */
+const simulationAgentComplete = {
+  logement: {
+    commune: "75056",
+    type: "maison",
+    code_departement: "75",
+    zone_dexposition: "moyenne",
+    annee_de_construction: "1980",
+    niveaux: 1,
+    mitoyen: false,
+    proprietaire_occupant: true,
+  },
+  rga: {
+    sinistres: "aucun",
+    indemnise_indemnise_rga: false,
+    demande_catnat_en_cours: false,
+    assure: true,
+  },
+  menage: { personnes: 2, revenu_rga: 20000 },
+};
 
 describe("getMaSimulation", () => {
   beforeEach(() => {
@@ -44,14 +67,38 @@ describe("getMaSimulation", () => {
     mockedFindByUserId.mockResolvedValue({
       id: "p1",
       rgaSimulationData: simulationDemandeur,
-      rgaSimulationDataAgent: simulationAgent,
+      rgaSimulationDataAgent: simulationAgentComplete,
     } as never);
 
     const res = await getMaSimulation();
 
     // AGENT-first : montrer autre chose que ce qui fait foi tromperait le demandeur.
-    expect(res?.rgaData).toEqual(simulationAgent);
+    expect(res?.rgaData).toEqual(simulationAgentComplete);
     expect(res?.lectureSeule).toBe("correction_agent");
+  });
+
+  it("ignore une simulation d'agent incomplète : elle ne verrouille rien", async () => {
+    mockedFindByUserId.mockResolvedValue({
+      id: "p1",
+      rgaSimulationData: simulationDemandeur,
+      rgaSimulationDataAgent: simulationAgentMinimale,
+    } as never);
+
+    const res = await getMaSimulation();
+
+    expect(res?.rgaData).toEqual(simulationDemandeur);
+    expect(res?.lectureSeule).toBeNull();
+  });
+
+  it("retourne null quand l'agent n'a saisi qu'une adresse et que le demandeur n'a rien simulé", async () => {
+    mockedFindByUserId.mockResolvedValue({
+      id: "p1",
+      rgaSimulationData: null,
+      rgaSimulationDataAgent: simulationAgentMinimale,
+    } as never);
+
+    // Rien à éditer : la page renvoie au simulateur, qui doit rester ouvert.
+    expect(await getMaSimulation()).toBeNull();
   });
 
   it("verrouille pendant l'instruction du formulaire d'éligibilité", async () => {
@@ -91,14 +138,26 @@ describe("aDejaUneSimulation", () => {
     expect(await aDejaUneSimulation()).toBe(true);
   });
 
-  it("compte aussi la simulation saisie par un agent à l'invitation", async () => {
+  it("compte la simulation complète saisie par un agent à l'invitation", async () => {
     mockedFindByUserId.mockResolvedValue({
       id: "p1",
       rgaSimulationData: null,
-      rgaSimulationDataAgent: simulationAgent,
+      rgaSimulationDataAgent: simulationAgentComplete,
     } as never);
 
     expect(await aDejaUneSimulation()).toBe(true);
+  });
+
+  it("laisse le simulateur ouvert quand l'agent n'a saisi qu'une adresse", async () => {
+    mockedFindByUserId.mockResolvedValue({
+      id: "p1",
+      rgaSimulationData: null,
+      rgaSimulationDataAgent: simulationAgentMinimale,
+    } as never);
+
+    // Sinon : /simulateur renvoie à l'édition, l'édition est en lecture seule, et
+    // « Éligibilité manquante » renvoie au simulateur — le demandeur tourne en rond.
+    expect(await aDejaUneSimulation()).toBe(false);
   });
 
   it("laisse le simulateur ouvert au visiteur et au compte sans simulation", async () => {

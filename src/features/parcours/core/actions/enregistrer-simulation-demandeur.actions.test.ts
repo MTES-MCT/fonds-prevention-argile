@@ -119,12 +119,39 @@ describe("enregistrerSimulationDemandeurAction", () => {
   });
 
   it("refuse quand un agent a corrigé la simulation", async () => {
-    mockedFindByUserId.mockResolvedValue({ ...parcours, rgaSimulationDataAgent: { logement: {} } } as never);
+    // Correction complète : une saisie partielle (dossier créé sur la seule adresse)
+    // ne fait pas foi et ne doit rien verrouiller.
+    const correctionAgent = {
+      logement: {
+        type: "maison",
+        code_departement: "36",
+        zone_dexposition: "moyenne",
+        annee_de_construction: "1980",
+        niveaux: 1,
+        mitoyen: false,
+        proprietaire_occupant: true,
+      },
+      rga: { sinistres: "aucun", indemnise_indemnise_rga: false, demande_catnat_en_cours: false, assure: true },
+      menage: { personnes: 2, revenu_rga: 20000 },
+    };
+    mockedFindByUserId.mockResolvedValue({ ...parcours, rgaSimulationDataAgent: correctionAgent } as never);
 
     const res = await enregistrerSimulationDemandeurAction(rgaData);
 
     expect(res.success).toBe(false);
     expect(mockedUpdateRGAData).not.toHaveBeenCalled();
+  });
+
+  it("accepte quand l'agent n'a saisi que l'adresse du dossier", async () => {
+    mockedFindByUserId.mockResolvedValue({
+      ...parcours,
+      rgaSimulationDataAgent: { logement: { adresse: "12 rue de Paris", commune: "36044" } },
+    } as never);
+
+    const res = await enregistrerSimulationDemandeurAction(rgaData);
+
+    expect(res.success).toBe(true);
+    expect(mockedUpdateRGAData).toHaveBeenCalled();
   });
 
   it("refuse pendant que la DDT instruit le formulaire d'éligibilité", async () => {

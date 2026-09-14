@@ -11,6 +11,7 @@ import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributes } from "@/shared/email/brevo";
 import { appliquerVerdictSimulationDemandeur } from "../services/simulation-eligibilite.service";
+import { estSimulationCorrigeeParAgent } from "../services/rga-data.service";
 import { isSameSimulationContent } from "../utils/simulation-comparison";
 import { peutModifierSaSimulation } from "../domain/value-objects/edition-simulation";
 
@@ -47,7 +48,7 @@ export async function enregistrerSimulationDemandeurAction(
     const eligibiliteDsStatus = await getEligibiliteDsStatus(parcours.id);
     if (
       !peutModifierSaSimulation({
-        simulationCorrigeeParAgent: Boolean(parcours.rgaSimulationDataAgent),
+        simulationCorrigeeParAgent: estSimulationCorrigeeParAgent(parcours),
         eligibiliteDsStatus,
       })
     ) {

@@ -4,7 +4,7 @@ import { formatNomComplet } from "@/shared/utils";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
-import { getEffectiveRGAData } from "./rga-data.service";
+import { estSimulationCorrigeeParAgent } from "./rga-data.service";
 import { raisonLectureSeule, type RaisonLectureSeule } from "../domain/value-objects/edition-simulation";
 
 export interface MaSimulation {
@@ -27,7 +27,10 @@ export async function getMaSimulation(): Promise<MaSimulation | null> {
   const parcours = await parcoursRepo.findByUserId(session.userId);
   if (!parcours) return null;
 
-  const rgaData = getEffectiveRGAData(parcours);
+  // AGENT-first, mais seulement sur une correction complète : sinon c'est la simulation
+  // du demandeur qui fait foi, et l'écran reste modifiable.
+  const corrigeeParAgent = estSimulationCorrigeeParAgent(parcours);
+  const rgaData = (corrigeeParAgent ? parcours.rgaSimulationDataAgent : parcours.rgaSimulationData) ?? null;
   if (!rgaData) return null;
 
   const [user, dossiers] = await Promise.all([
@@ -42,7 +45,7 @@ export async function getMaSimulation(): Promise<MaSimulation | null> {
     rgaData,
     nomComplet: formatNomComplet(user?.prenom, user?.nom),
     lectureSeule: raisonLectureSeule({
-      simulationCorrigeeParAgent: Boolean(parcours.rgaSimulationDataAgent),
+      simulationCorrigeeParAgent: corrigeeParAgent,
       eligibiliteDsStatus,
     }),
   };
@@ -57,5 +60,6 @@ export async function aDejaUneSimulation(): Promise<boolean> {
   if (!session?.userId) return false;
 
   const parcours = await parcoursRepo.findByUserId(session.userId);
-  return Boolean(parcours && getEffectiveRGAData(parcours));
+  if (!parcours) return false;
+  return Boolean(parcours.rgaSimulationData) || estSimulationCorrigeeParAgent(parcours);
 }
