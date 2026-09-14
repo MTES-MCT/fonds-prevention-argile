@@ -689,6 +689,13 @@ choisir. `comparerSimulations` signale les champs modifiés en bleu, et **en rou
 qui fait échouer son critère** — celui qui coûte l'éligibilité. Le bandeau passe de `info` à
 `warning` quand les deux verdicts divergent.
 
+> **La demande d'aide catnat est désormais un champ à part entière** (`demandeCatnat`,
+> critère `catnatEnCours` : l'aide n'est pas cumulable). Elle manquait à `SIMULATION_FIELDS`,
+> si bien qu'une simulation qui ne changeait que là-dessus était déclarée « identique » — pas
+> d'arbitrage, cache jeté, et un **basculement d'éligibilité** passé inaperçu. Elle est aussi
+> rendue, côté agent, sur `InfoLogement` : la liste annotée et le compteur « X modifications »
+> de `buildAgentEditInfo` dérivent de la même table et ne doivent pas diverger.
+
 > **L'adresse est comparée au même titre** (`CHAMPS_COMPARES` = `CHAMP_ADRESSE` +
 > `SIMULATION_FIELDS`), bien qu'elle ne porte aucun critère d'éligibilité : elle porte la
 > commune, le département et l'EPCI, donc le conseiller responsable. Hors de la comparaison,

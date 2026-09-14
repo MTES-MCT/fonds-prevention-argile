@@ -79,4 +79,20 @@ describe("comparerSimulations", () => {
     expect(res.champsDifferents).toContain("adresse");
     expect(res.signalements.adresse).toBe("diff");
   });
+
+  it("signale en rouge une demande d'aide catnat qui coûte l'éligibilité", () => {
+    const avecCatnat = {
+      ...eligible,
+      rga: { ...eligible.rga, demande_catnat_en_cours: true },
+    } as PartialRGASimulationData;
+
+    const res = comparerSimulations(eligible, avecCatnat);
+
+    // Le critère n'était comparé nulle part : un basculement d'éligibilité passait
+    // pour « simulations identiques » et l'arbitrage était sauté.
+    expect(res.identiques).toBe(false);
+    expect(res.champsDifferents).toContain("demandeCatnat");
+    expect(res.signalements.demandeCatnat).toBe("bloquant");
+    expect(res.verdictsDivergent).toBe(true);
+  });
 });

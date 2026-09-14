@@ -50,6 +50,8 @@ export interface InfoLogement {
   indemnisationAvantJuillet2015: boolean | null;
   /** Montant de l'indemnisation */
   montantIndemnisation: number | null;
+  /** Demande d'aide catastrophe naturelle en cours (non cumulable avec le fonds) */
+  demandeCatnatEnCours: boolean | null;
   /** Nombre d'habitants */
   nombreHabitants: number | null;
   /** Niveau de revenu (modeste, très modeste, intermédiaire, supérieur) */

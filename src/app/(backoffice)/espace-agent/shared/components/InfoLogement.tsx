@@ -311,6 +311,18 @@ export function InfoLogement({
             </li>
           )}
 
+        {logement.demandeCatnatEnCours !== null && (
+          <li className="fr-mb-2v">
+            Demande d&apos;aide catnat en cours{" "}
+            <FieldValue
+              fieldKey="demandeCatnat"
+              agentEditInfo={agentEditInfo}
+              className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">
+              {logement.demandeCatnatEnCours ? "OUI" : "NON"}
+            </FieldValue>
+          </li>
+        )}
+
         {logement.nombreHabitants && (
           <li className="fr-mb-2v">
             Habitants du logement{" "}

@@ -104,6 +104,13 @@ export const SIMULATION_FIELDS: readonly SimulationField[] = [
     checkKey: "indemnisation",
   },
   {
+    key: "demandeCatnat",
+    label: "Demande d'aide catnat en cours",
+    getValue: (d) => d.rga?.demande_catnat_en_cours,
+    formatValue: (v) => (v == null ? ABSENT : v ? "OUI" : "NON"),
+    checkKey: "catnatEnCours",
+  },
+  {
     key: "nombreHabitants",
     label: "Habitants du logement",
     getValue: (d) => d.menage?.personnes,
