@@ -118,7 +118,10 @@ export function StepAdresseVulnerabilite({
     });
   }, [selectedAddress, buildingData, onSubmit]);
 
-  const isValid = selectedAddress !== null && buildingData !== null;
+  // aleaIndetermine bloque : getRgaRiskLevel(null) rendrait "nul" (= hors zone) un aléa qu'on
+  // n'a pas pu déterminer, faussant la pondération du score et la simulation enregistrée.
+  const aleaIndetermine = Boolean(buildingData?.aleaIndetermine);
+  const isValid = selectedAddress !== null && buildingData !== null && !aleaIndetermine;
 
   const mapCenter = selectedAddress
     ? { lat: selectedAddress.geometry.coordinates[1], lon: selectedAddress.geometry.coordinates[0] }
@@ -214,11 +217,20 @@ export function StepAdresseVulnerabilite({
             onBuildingSelect={setBuildingData}
           />
 
-          {buildingData && (
+          {buildingData && !aleaIndetermine && (
             <AleaBadgeDisplay
               adresse={selectedAddress.properties.label}
               aleaRga={getRgaRiskLevel(buildingData.aleaArgiles)}
             />
+          )}
+
+          {aleaIndetermine && (
+            <div className="fr-alert fr-alert--error fr-alert--sm fr-mt-2w" role="alert">
+              <p>
+                Nous n&apos;avons pas pu vérifier si votre logement est situé en zone à risque (problème de connexion).
+                Cliquez à nouveau sur votre bâtiment pour réessayer.
+              </p>
+            </div>
           )}
         </div>
       )}
