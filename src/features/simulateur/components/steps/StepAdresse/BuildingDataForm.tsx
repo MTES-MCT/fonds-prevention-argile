@@ -25,6 +25,12 @@ interface BuildingDataFormProps {
 
   /** Mode édition : les champs pré-remplis restent clairement éditables (pas de fond gris) */
   editMode?: boolean;
+
+  /** Relance la détermination de l'aléa quand elle a échoué (bandeau d'erreur) */
+  onRetryAlea?: () => void;
+
+  /** Relance en cours : désactive le bouton de réessai */
+  isRetryingAlea?: boolean;
 }
 
 /** Options pour le select du nombre de niveaux */
@@ -57,7 +63,14 @@ const ALEA_CONFIG = {
  * - Données présentes → champs pré-remplis, mode "vérifier"
  * - Données absentes → champs éditables, mode "compléter"
  */
-export function BuildingDataForm({ address, buildingData, onChange, editMode }: BuildingDataFormProps) {
+export function BuildingDataForm({
+  address,
+  buildingData,
+  onChange,
+  editMode,
+  onRetryAlea,
+  isRetryingAlea,
+}: BuildingDataFormProps) {
   const inputId = useId();
 
   // État local des valeurs éditables
@@ -120,10 +133,14 @@ export function BuildingDataForm({ address, buildingData, onChange, editMode }: 
 
       {aleaIndetermine && (
         <div className="fr-alert fr-alert--error fr-alert--sm fr-mb-3w" role="alert">
-          <p>
-            Nous n&apos;avons pas pu vérifier si votre logement est situé en zone à risque (problème de connexion).
-            Cliquez à nouveau sur votre bâtiment sur la carte pour réessayer.
-          </p>
+          <p>Nous n&apos;avons pas pu vérifier si votre logement est situé en zone à risque (problème de connexion).</p>
+          {onRetryAlea && (
+            <p className="fr-mt-1w fr-mb-0">
+              <button type="button" className="fr-link fr-link--sm" onClick={onRetryAlea} disabled={isRetryingAlea}>
+                {isRetryingAlea ? "Vérification en cours..." : "Réessayer la vérification"}
+              </button>
+            </p>
+          )}
         </div>
       )}
 

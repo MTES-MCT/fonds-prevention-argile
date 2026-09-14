@@ -13,7 +13,7 @@ import {
 } from "@/shared/adapters/ban";
 import { getEpciByCommune } from "@/shared/adapters/geo";
 import { RgaMapContainer } from "@/features/rga-map";
-import { getBuildingDataFallback, type BuildingData } from "@/shared/services/bdnb";
+import { getBuildingDataByRnbId, getBuildingDataFallback, type BuildingData } from "@/shared/services/bdnb";
 import { asString } from "@/shared/utils";
 
 import { SimulateurLayout } from "../../shared/SimulateurLayout";
@@ -234,6 +234,10 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   const [showManualFallback, setShowManualFallback] = useState(false);
   const [isFallbackLoading, setIsFallbackLoading] = useState(false);
 
+  // Mémoïsé : useRgaBuildingSelection prend ce callback en dépendance d'effet, une identité
+  // instable y ré-abonnerait le handler de clic de la carte à chaque rendu.
+  const handleEmptyClick = useCallback(() => setShowManualFallback(true), []);
+
   useEffect(() => {
     if (!selectedAddress || buildingData || isAddressLocked) {
       return;
@@ -247,15 +251,24 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
     if (!selectedAddress) return;
     setIsFallbackLoading(true);
     try {
-      const data = await getBuildingDataFallback({
-        lat: selectedAddress.geometry.coordinates[1],
-        lon: selectedAddress.geometry.coordinates[0],
+      const coordonnees = buildingData
+        ? { lat: buildingData.lat, lon: buildingData.lon }
+        : { lat: selectedAddress.geometry.coordinates[1], lon: selectedAddress.geometry.coordinates[0] };
+      // Réessai sur un bâtiment déjà cliqué : repasser par son RNB plutôt que de le dégrader
+      // en squelette, le bâtiment étant bien identifié - seul l'aléa avait échoué.
+      const data = buildingData?.rnbId
+        ? await getBuildingDataByRnbId(buildingData.rnbId, coordonnees)
+        : await getBuildingDataFallback(coordonnees);
+      handleBuildingSelect({
+        ...data,
+        // Ce que l'usager a déjà saisi prime : le réessai ne vise que l'aléa.
+        anneeConstruction: formData.anneeConstruction ?? data.anneeConstruction,
+        nombreNiveaux: formData.nombreNiveaux ?? data.nombreNiveaux,
       });
-      handleBuildingSelect(data);
     } finally {
       setIsFallbackLoading(false);
     }
-  }, [selectedAddress, handleBuildingSelect]);
+  }, [selectedAddress, buildingData, formData, handleBuildingSelect]);
 
   // Soumission du formulaire
   const handleSubmit = useCallback(() => {
@@ -408,7 +421,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
               showLegend={true}
               variant="minimal"
               onBuildingSelect={isAddressLocked ? undefined : handleBuildingSelect}
-              onEmptyClick={isAddressLocked ? undefined : () => setShowManualFallback(true)}
+              onEmptyClick={isAddressLocked ? undefined : handleEmptyClick}
             />
 
             {/* Échappatoire si la carte ne répond pas (délai écoulé ou clic à vide) */}
@@ -434,6 +447,8 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
                   buildingData={buildingData}
                   onChange={handleFormChange}
                   editMode={isAddressLocked}
+                  onRetryAlea={isAddressLocked ? undefined : handleManualFallback}
+                  isRetryingAlea={isFallbackLoading}
                 />
               </div>
             )}
