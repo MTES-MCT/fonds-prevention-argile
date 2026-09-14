@@ -55,6 +55,8 @@ export interface DossierDetail {
   estMandataireFinancier: boolean | null;
   /** Non-null = le demandeur a demandé l'arrêt et attend la réponse de l'AMO mandataire. */
   demandeArretAt: Date | null;
+  /** Faux en département à AMO obligatoire : « Ne plus accompagner » y est refusé. */
+  peutPasserEnAutonomie: boolean;
   /** Date de passage en instruction (null si jamais passé en instruction) */
   instructedAt: Date | null;
   /** Date de création du parcours */
