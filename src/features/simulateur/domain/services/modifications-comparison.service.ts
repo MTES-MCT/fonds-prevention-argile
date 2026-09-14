@@ -1,4 +1,4 @@
-import type { RGASimulationData, PartialRGASimulationData } from "@/shared/domain/types";
+import type { PartialRGASimulationData } from "@/shared/domain/types";
 import type { EligibilityChecks } from "../entities/eligibility-result.entity";
 import { calculerTrancheRevenu } from "../types/rga-revenus.types";
 
@@ -19,11 +19,16 @@ export interface Modification {
 }
 
 /**
- * Définition d'un champ à comparer entre les données initiales et modifiées
+ * Définition d'un champ à comparer entre les données initiales et modifiées.
+ *
+ * Les deux côtés sont **partiels** : un dossier créé par un Aller-vers sans simulation ne
+ * porte que `logement` (adresse seule), et le type `RGASimulationData` de la colonne JSONB
+ * ne garantit donc rien. Sans chaînage optionnel, l'écran d'édition de l'agent plantait sur
+ * `d.rga is undefined` dès qu'il ouvrait « Vérifier son éligibilité » sur un tel dossier.
  */
 interface ComparisonField {
   label: string;
-  getOldValue: (data: RGASimulationData) => unknown;
+  getOldValue: (data: PartialRGASimulationData) => unknown;
   getNewValue: (data: PartialRGASimulationData) => unknown;
   formatValue: (value: unknown) => string;
   checkKey: keyof EligibilityChecks;
@@ -35,70 +40,70 @@ interface ComparisonField {
 const COMPARISON_FIELDS: ComparisonField[] = [
   {
     label: "Type de logement",
-    getOldValue: (d) => d.logement.type,
+    getOldValue: (d) => d.logement?.type,
     getNewValue: (d) => d.logement?.type,
     formatValue: (v) => (v === "maison" ? "Maison" : "Appartement"),
     checkKey: "maison",
   },
   {
     label: "Nombre de niveaux",
-    getOldValue: (d) => d.logement.niveaux,
+    getOldValue: (d) => d.logement?.niveaux,
     getNewValue: (d) => d.logement?.niveaux,
     formatValue: (v) => `${v} niveau${Number(v) > 1 ? "x" : ""}`,
     checkKey: "niveaux",
   },
   {
     label: "Mitoyenneté",
-    getOldValue: (d) => d.logement.mitoyen,
+    getOldValue: (d) => d.logement?.mitoyen,
     getNewValue: (d) => d.logement?.mitoyen,
     formatValue: (v) => (v ? "Oui" : "Non"),
     checkKey: "nonMitoyen",
   },
   {
     label: "Indemnisation RGA",
-    getOldValue: (d) => d.rga.indemnise_indemnise_rga,
+    getOldValue: (d) => d.rga?.indemnise_indemnise_rga,
     getNewValue: (d) => d.rga?.indemnise_indemnise_rga,
     formatValue: (v) => (v ? "Oui" : "Non"),
     checkKey: "indemnisation",
   },
   {
     label: "Indemnisé avant juillet 2025",
-    getOldValue: (d) => d.rga.indemnise_avant_juillet_2025,
+    getOldValue: (d) => d.rga?.indemnise_avant_juillet_2025,
     getNewValue: (d) => d.rga?.indemnise_avant_juillet_2025,
     formatValue: (v) => (v === undefined || v === null ? "-" : v ? "Oui" : "Non"),
     checkKey: "indemnisation",
   },
   {
     label: "Indemnisé avant juillet 2015",
-    getOldValue: (d) => d.rga.indemnise_avant_juillet_2015,
+    getOldValue: (d) => d.rga?.indemnise_avant_juillet_2015,
     getNewValue: (d) => d.rga?.indemnise_avant_juillet_2015,
     formatValue: (v) => (v === undefined || v === null ? "-" : v ? "Oui" : "Non"),
     checkKey: "indemnisation",
   },
   {
     label: "Montant de l'indemnisation",
-    getOldValue: (d) => d.rga.indemnise_montant_indemnite,
+    getOldValue: (d) => d.rga?.indemnise_montant_indemnite,
     getNewValue: (d) => d.rga?.indemnise_montant_indemnite,
     formatValue: (v) => (v === undefined || v === null ? "-" : `${Number(v).toLocaleString("fr-FR")} €`),
     checkKey: "indemnisation",
   },
   {
     label: "Assurance",
-    getOldValue: (d) => d.rga.assure,
+    getOldValue: (d) => d.rga?.assure,
     getNewValue: (d) => d.rga?.assure,
     formatValue: (v) => (v ? "Oui" : "Non"),
     checkKey: "assurance",
   },
   {
     label: "Propriétaire occupant",
-    getOldValue: (d) => d.logement.proprietaire_occupant,
+    getOldValue: (d) => d.logement?.proprietaire_occupant,
     getNewValue: (d) => d.logement?.proprietaire_occupant,
     formatValue: (v) => (v ? "Oui" : "Non"),
     checkKey: "proprietaireOccupant",
   },
   {
     label: "Habitants du logement",
-    getOldValue: (d) => d.menage.personnes,
+    getOldValue: (d) => d.menage?.personnes,
     getNewValue: (d) => d.menage?.personnes,
     formatValue: (v) => `${v} habitant${Number(v) > 1 ? "s" : ""}`,
     checkKey: "revenusEligibles",
@@ -106,8 +111,10 @@ const COMPARISON_FIELDS: ComparisonField[] = [
   {
     label: "Revenus",
     getOldValue: (d) => {
-      const personnes = d.menage.personnes;
-      return calculerTrancheRevenu(d.menage.revenu_rga, personnes, false);
+      const revenu = d.menage?.revenu_rga;
+      const personnes = d.menage?.personnes;
+      if (revenu === undefined || !personnes) return undefined;
+      return calculerTrancheRevenu(revenu, personnes, false);
     },
     getNewValue: (d) => {
       const revenu = d.menage?.revenu_rga;
@@ -133,7 +140,7 @@ const COMPARISON_FIELDS: ComparisonField[] = [
  * Retourne la liste des champs modifiés avec leur impact sur l'éligibilité.
  */
 export function computeModifications(
-  initialData: RGASimulationData,
+  initialData: PartialRGASimulationData,
   currentAnswers: PartialRGASimulationData,
   initialChecks: EligibilityChecks,
   currentChecks: EligibilityChecks
