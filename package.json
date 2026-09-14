@@ -74,7 +74,7 @@
     "exceljs": "~4.4.0",
     "maplibre-gl": "5.24.0",
     "next": "15.5.23",
-    "nodemailer": "9.0.5",
+    "nodemailer": "9.1.1",
     "pmtiles": "4.5.0",
     "postgres": "3.4.9",
     "prettier": "3.9.6",
