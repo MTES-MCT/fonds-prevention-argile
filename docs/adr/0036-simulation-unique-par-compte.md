@@ -154,11 +154,26 @@ Quatre défauts relevés à la recette, tous corrigés sans revenir sur la déci
   elle porte le territoire : hors comparaison, un déménagement passait pour « identique » et
   la correction était jetée avec le cache.
 
-Reste ouvert, et hors de cet ADR : faut-il bloquer l'édition après une décision d'éligibilité
-rendue ? Cet ADR l'a explicitement refusé (option C) ; la QA demande l'inverse. L'arbitrage
-métier est à rendre, et à documenter ici, avant toute garde sur `peutModifierSaSimulation` —
-un verrou posé là ferme aussi l'arbitrage (`useMigrateRGAToDB`), qui abandonne alors le cache
-local **en silence**.
+### Révision : l'édition se ferme dès que l'AMO a statué
+
+La recette a tranché la question laissée ouverte par cet ADR. L'option C (« bloquer ») avait été
+écartée au motif qu'elle laisserait « le demandeur prisonnier de sa faute de saisie » ; ce motif
+tenait tant que la simulation n'était qu'une déclaration du demandeur. Il ne tient plus une fois
+qu'un professionnel s'est prononcé **à partir d'elle** : la corriger seul défait une décision, et
+— non éligible — archive le dossier par-dessus une validation qui dit l'inverse (§2.11).
+
+**Troisième verrou** : `aRenduSaDecision(statutAmo)`, soit les trois statuts tranchés
+(`LOGEMENT_ELIGIBLE`, `LOGEMENT_NON_ELIGIBLE`, `ACCOMPAGNEMENT_REFUSE`). `EN_ATTENTE` et
+`SANS_AMO` n'en sont pas : tant que personne n'a statué, le demandeur reste maître de sa saisie,
+ce qui préserve l'essentiel du motif d'origine — l'auto-correction avant décision.
+
+La contrepartie est explicite : **la correction passe désormais par le conseiller**. C'est un
+report de charge sur les AMO, assumé, et déjà outillé (« Vérifier son éligibilité », ADR-0020).
+
+Conséquence à ne jamais défaire : un verrou ferme aussi l'**arbitrage**. `useMigrateRGAToDB` ne
+purge plus le cache local sur le chemin verrouillé ; il expose la raison, `/mon-compte` l'affiche,
+et seul l'acquittement du demandeur jette la simulation refaite. Poser le verrou sans ce message
+aurait transformé l'arbitrage en suppression muette.
 
 ## Liens
 

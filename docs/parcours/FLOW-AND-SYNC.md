@@ -644,16 +644,34 @@ n'importe plus d'action du back-office. Deux wrappers le branchent : `Simulateur
 via `enregistrerSimulationDemandeurAction`, dont le parcours vient de la **session** — aucun
 identifiant n'entre par le client).
 
-**Deux verrous ferment l'édition**, portés par le prédicat pur `peutModifierSaSimulation`
-(`core/domain/value-objects/edition-simulation.ts`) et revérifiés par l'action :
+**Trois verrous ferment l'édition**, portés par le prédicat pur `peutModifierSaSimulation`
+(`core/domain/value-objects/edition-simulation.ts`) et revérifiés par l'action. Leurs trois
+entrées sont assemblées en un point unique, `chargerEtatEditionSimulation`
+(`core/services/etat-edition-simulation.service.ts`), pour que l'écran et l'action qui écrit
+jugent sur exactement les mêmes faits :
 
-| Verrou                                     | Motif                                                                                                                         | Levée                |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| `rgaSimulationDataAgent` **complète**      | La version de l'agent prime à l'affichage (`getEffectiveRGAData`, AGENT-first) : éditer donnerait un écran sans effet visible | Aucune               |
-| `estDossierChezLaDdt(eligibiliteDsStatus)` | Le formulaire déposé déclare ces données, et le préremplissage REST ne sait que créer (§2.7.1)                                | À la décision rendue |
+| Verrou                                     | Motif                                                                                                                                 | Levée                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `rgaSimulationDataAgent` **complète**      | La version de l'agent prime à l'affichage (`getEffectiveRGAData`, AGENT-first) : éditer donnerait un écran sans effet visible         | Aucune               |
+| `aRenduSaDecision(statutAmo)`              | L'AMO a statué à partir de ces données : les corriger seul déferait une décision professionnelle, et pouvait archiver par-dessus elle | Par le conseiller    |
+| `estDossierChezLaDdt(eligibiliteDsStatus)` | Le formulaire déposé déclare ces données, et le préremplissage REST ne sait que créer (§2.7.1)                                        | À la décision rendue |
+
+L'ordre va du plus durable au plus transitoire : annoncer « vos informations redeviendront
+modifiables » serait faux si un verrou définitif tient déjà derrière. `aRenduSaDecision` ne
+couvre que les trois statuts **tranchés** — ni `EN_ATTENTE` (pas encore répondu), ni `SANS_AMO`
+(autonomie, aucun AMO au dossier) —, ce qui la distingue de `isValidationFinale`.
 
 Verrouillée, la page rend un **récapitulatif en lecture seule** (`SimulationRecap`) et dit
-pourquoi (`MESSAGES_LECTURE_SEULE`).
+pourquoi (`MESSAGES_LECTURE_SEULE`). Les deux CTA qui y mènent (« Ma liste », carte 1) passent
+de « Modifier » à « Voir » via `useLectureSeuleSimulation`, miroir client du même prédicat.
+
+> **Un verrou ferme aussi l'arbitrage : il doit donc parler.** `useMigrateRGAToDB` refuse de
+> proposer un choix sur une simulation verrouillée — le serveur le refuserait juste après. Mais
+> il ne purge plus le cache local en silence : il expose `raisonVerrouillage`, `/mon-compte`
+> affiche l'alerte correspondante, et c'est l'acquittement du demandeur
+> (`abandonnerSimulationLocale`) qui jette la simulation refaite. Sans cela, poser un verrou
+> revenait à transformer l'arbitrage en suppression muette — exactement l'écrasement silencieux
+> qu'ADR-0036 interdit, retourné dans l'autre sens.
 
 **Deux simulations divergentes se font arbitrer.** Au retour sur `/mon-compte`, quand le
 cache local (`useRGAStore`, simulation faite avant connexion) diffère de celle du compte,
@@ -1227,6 +1245,8 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Verdict d'éligibilité d'une simulation         | `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (partagé demandeur + agent)      |
 | Archivage sur simulation demandeur (ADR-0034)  | `src/features/parcours/core/services/simulation-eligibilite.service.ts`                                     |
 | Verrous d'édition de simulation (ADR-0036)     | `parcours/core/domain/value-objects/edition-simulation.ts` (`peutModifierSaSimulation`)                     |
+| Entrées des verrous, point unique              | `parcours/core/services/etat-edition-simulation.service.ts` (`chargerEtatEditionSimulation`)                |
+| Miroir client des verrous                      | `parcours/core/hooks/useLectureSeuleSimulation.ts`                                                          |
 | Simulation du demandeur connecté (ADR-0036)    | `parcours/core/services/ma-simulation.service.ts`, `actions/enregistrer-simulation-demandeur.actions.ts`    |
 | Arbitrage des deux simulations (ADR-0036)      | `parcours/core/hooks/useMigrateRGAToDB.ts`, `components/ChoixSimulationModal.tsx`                           |
 | Comparaison de deux simulations (ADR-0036)     | `simulateur/domain/services/comparaison-simulations.service.ts`, `value-objects/simulation-fields.ts`       |
