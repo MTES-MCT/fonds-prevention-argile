@@ -647,10 +647,14 @@ statiquement.
 >
 > **Corollaire côté écran agent** : l'étape adresse ne verrouille l'adresse et la carte que si
 > la simulation reprise porte déjà une **zone d'exposition** (`peutReprendreAdresseExistante`).
-> Un dossier créé sans simulation a des coordonnées mais aucune zone : verrouillé, il
-> condamnait l'agent à un « Zone d'exposition forte : NON » incorrigible, la carte verrouillée
-> n'interrogeant plus la BDNB. Le test porte sur la **présence de la clé**, `null` étant une
-> réponse à part entière (« hors zone argileuse »).
+> Un dossier créé sans simulation a des coordonnées mais aucun bâtiment sélectionné :
+> verrouillé, il condamnait l'agent à un « Zone d'exposition forte : NON » incorrigible, la
+> carte verrouillée n'interrogeant plus la BDNB. Le prédicat reconnaît une sélection réelle à
+> **deux marqueurs, dont un seul suffit** : une zone renseignée, ou un identifiant **RNB**. Le
+> second couvre le cas « hors zone argileuse », où la zone vaut légitimement `null` — et il
+> était indispensable, `SimulateurFormulaire` reconstruisant `initialValue` comme un littéral
+> dont toutes les clés existent, fût-ce à `undefined` : tester la présence d'une clé est sans
+> effet à cette frontière.
 
 > **La seconde porte du même cycle est fermée aussi** : `updateSimulationDataAction` promeut
 > désormais la correction dans `rgaSimulationData` dès qu'elle est **complète** et que le compte
