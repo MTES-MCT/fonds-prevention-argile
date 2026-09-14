@@ -633,9 +633,18 @@ statiquement.
 > `rga-data.service.ts`) — même critère que la promotion au rattachement FranceConnect et que
 > l'étape 3 de la migration. Un dossier créé par un Aller-vers ne porte que l'adresse : la
 > compter fermait au demandeur le simulateur **et** son écran d'édition, et « Éligibilité
-> manquante » le renvoyait au simulateur, qui le renvoyait à l'édition — impasse fermée,
-> corrigée en septembre 2026. Conséquence à ne pas défaire : le verrou « correction d'agent »
-> et la fermeture du simulateur lisent le **même** prédicat, ils ne peuvent plus diverger.
+> manquante » le renvoyait au simulateur, qui le renvoyait à l'édition — impasse fermée en
+> septembre 2026. Conséquence à ne pas défaire : le verrou « correction d'agent » et la
+> fermeture du simulateur lisent le **même** prédicat, ils ne peuvent plus diverger.
+>
+> **Le même cycle reste atteignable par une autre porte**, antérieure et non traitée : si un
+> agent complète la simulation (« Vérifier son éligibilité ») **après** le rattachement
+> FranceConnect, `updateSimulationDataAction` n'écrit que `rgaSimulationDataAgent`, et rien ne
+> promeut cette version vers `rgaSimulationData` — la promotion n'a lieu qu'au rattachement, à
+> l'étape `INVITATION`. `hasRGAData` (`MonCompteClient`) ne lisant que `rgaSimulationData`, le
+> demandeur reste sur « Éligibilité manquante » pendant que le simulateur lui est fermé. Le
+> correctif est la promotion vers `rgaSimulationData` dès que la simulation agent devient
+> complète — ce qui réglerait du même coup le préremplissage DN, qui lit la même colonne.
 
 **La modification passe par l'écran des agents.** `SimulateurEdition` est partagé ; il reçoit
 son enregistrement (`onSave`) et son `audience` (`agent` | `demandeur`) par le contexte, et

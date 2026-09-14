@@ -70,7 +70,7 @@ export function SimulationRecap({
       <ul className="fr-ml-3w fr-text--sm fr-mb-0">
         {adresse != null && (
           <li className="fr-mb-2v">
-            Adresse&nbsp;: {CHAMP_ADRESSE.formatValue(adresse)}
+            {CHAMP_ADRESSE.label}&nbsp;: {CHAMP_ADRESSE.formatValue(adresse)}
             {adresseModifiee && <span className={`${CLASSES_BADGE[adresseModifiee]} fr-ml-1v`}>modifiée</span>}
           </li>
         )}

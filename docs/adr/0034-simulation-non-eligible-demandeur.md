@@ -57,7 +57,8 @@ mail de bienvenue : sans territoire ni verdict, la promesse serait fausse pour l
 ### Option A — Qualification sans agent + archivage (retenue)
 
 - Avantages : tout l'aval fonctionne sans modification — `getMyIneligibiliteData` (donc le
-  callout « Vous n'êtes pas éligible » côté demandeur), la catégorie « Archivés » de l'espace
+  callout « Vous n'êtes pas éligible » côté demandeur ; cette fonction a depuis été remplacée
+  par `estLogementDeclareNonEligible`, cf. l'amendement d'ADR-0036), la catégorie « Archivés » de l'espace
   agent (`getDossierEtat` lit `archivedAt`), et surtout la distribution des raisons
   d'inéligibilité du tableau de bord, qui fait un `innerJoin` sur `prospect_qualifications`
   et un filtre exact sur `archive_reason`. `agent_id` est déjà nullable (suppression d'agent).
