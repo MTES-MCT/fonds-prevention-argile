@@ -108,6 +108,19 @@ Aucune. Les 120+ parcours existants **ne sont pas rattrapables** : leur simulati
 jamais été écrite, il n'y a rien à rejouer. Seul un rapprochement manuel avec les réponses
 Tally permettrait de les traiter.
 
+## Amendement — QA septembre 2026
+
+**Une décision d'un professionnel prime sur la simulation du demandeur.**
+`appliquerVerdictSimulationDemandeur` s'abstient désormais dès que l'AMO a statué
+(`aRenduSaDecision`) : ni archivage, ni qualification, ni dé-archivage. L'option A retenue ici
+ne prévoyait que trois abstentions (verdict non tranché, formulaire DN déposé, décision d'agent
+sur un dossier **déjà archivé**) ; il manquait le cas d'une **première** simulation non éligible
+sur un dossier qu'une AMO venait de valider — elle l'archivait par-dessus la validation.
+
+Ce chemin n'est pas couvert par les verrous d'édition d'ADR-0036 : il passe par
+`migrateSimulationDataToDatabase`, qui rattache une première simulation et n'est donc pas soumis
+à `peutModifierSaSimulation`.
+
 ## Liens
 
 - `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (helpers partagés

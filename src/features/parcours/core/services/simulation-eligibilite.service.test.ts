@@ -19,8 +19,11 @@ vi.mock("@/features/backoffice/espace-agent/shared/services/action-audit.service
 }));
 // Aucun dé-archivage testé ici n'a de validation AMO : le select renvoie une liste vide.
 vi.mock("@/shared/database/client", () => ({
-  db: { select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }) },
+  db: { select: () => ({ from: () => ({ where: () => ({ limit: async () => validationEnBase }) }) }) },
 }));
+
+/** Pilotée par test : la validation AMO que `db.select` renvoie. */
+let validationEnBase: { statut: string; entrepriseAmoId: string | null }[] = [];
 
 const SIM_NON_ELIGIBLE: PartialRGASimulationData = {
   logement: { type: "appartement", code_departement: "36", commune: "36044" },
@@ -47,6 +50,7 @@ function parcours(overrides: Record<string, unknown> = {}) {
 describe("appliquerVerdictSimulationDemandeur", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    validationEnBase = [];
     vi.mocked(dossierDsRepo.getSubmittedDatesByStep).mockResolvedValue(new Map());
     vi.mocked(prospectQualificationsRepo.findLatestByParcoursId).mockResolvedValue(null);
   });
@@ -199,5 +203,34 @@ describe("appliquerVerdictSimulationDemandeur", () => {
 
     expect(res).toEqual({ archived: false, unarchived: false, raisonActualisee: false, nonEligible: false });
     expect(parcoursRepo.updateSituationParticulier).not.toHaveBeenCalled();
+  });
+
+  it("n'archive pas par-dessus une décision rendue par l'AMO", async () => {
+    // Chemin non couvert par le verrou d'édition : il passe par la PREMIÈRE simulation
+    // (`migrateSimulationDataToDatabase`), qui n'est pas soumise à `peutModifierSaSimulation`.
+    // L'AMO a vu la maison, le demandeur non : sa décision prime.
+    validationEnBase = [{ statut: "logement_eligible", entrepriseAmoId: "amo-1" }];
+
+    const verdict = await appliquerVerdictSimulationDemandeur({
+      parcours: parcours(),
+      rgaData: SIM_NON_ELIGIBLE,
+      demandeurNom: "Georges Dupont",
+    });
+
+    expect(verdict).toEqual({ archived: false, unarchived: false, raisonActualisee: false, nonEligible: false });
+    expect(vi.mocked(parcoursRepo.updateSituationParticulier)).not.toHaveBeenCalled();
+    expect(vi.mocked(prospectQualificationsRepo.create)).not.toHaveBeenCalled();
+  });
+
+  it("archive normalement tant qu'aucun professionnel n'a statué", async () => {
+    validationEnBase = [{ statut: "en_attente", entrepriseAmoId: "amo-1" }];
+
+    const verdict = await appliquerVerdictSimulationDemandeur({
+      parcours: parcours(),
+      rgaData: SIM_NON_ELIGIBLE,
+      demandeurNom: "Georges Dupont",
+    });
+
+    expect(verdict.archived).toBe(true);
   });
 });

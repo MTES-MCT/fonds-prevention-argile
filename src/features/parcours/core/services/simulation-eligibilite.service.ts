@@ -16,6 +16,8 @@ import {
 } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import { mapEligibilityReasonToRaisonIneligibilite } from "@/features/simulateur/domain/utils/eligibility-reason-to-raison.utils";
 import { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
+import { aRenduSaDecision } from "@/features/parcours/amo/domain/value-objects";
+import type { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 import {
   ACTION_TYPE_SIMULATION_NON_ELIGIBLE,
@@ -67,6 +69,18 @@ export async function appliquerVerdictSimulationDemandeur(params: {
   const dossiersDeposes = await dossierDsRepo.getSubmittedDatesByStep(parcours.id);
   if (dossiersDeposes.size > 0) return AUCUN_CHANGEMENT;
 
+  const [validation] = await db
+    .select({ statut: parcoursAmoValidations.statut, entrepriseAmoId: parcoursAmoValidations.entrepriseAmoId })
+    .from(parcoursAmoValidations)
+    .where(eq(parcoursAmoValidations.parcoursId, parcours.id))
+    .limit(1);
+
+  // Une décision de professionnel prime sur la simulation du demandeur : l'AMO a vu la
+  // maison, lui pas. Sans cette garde, une première simulation non éligible archivait le
+  // dossier par-dessus une validation `LOGEMENT_ELIGIBLE` — chemin que le verrou d'édition
+  // ne couvre pas, puisqu'il passe par `migrateSimulationDataToDatabase`.
+  if (aRenduSaDecision((validation?.statut as StatutValidationAmo) ?? null)) return AUCUN_CHANGEMENT;
+
   const estArchive = Boolean(parcours.archivedAt);
 
   if (verdict.isNonEligible) {
@@ -107,12 +121,6 @@ export async function appliquerVerdictSimulationDemandeur(params: {
   // Redevenu éligible : on ne défait qu'un archivage pour inéligibilité, jamais un
   // archivage manuel (abandon, non-réponse, reste à charge…).
   if (!estArchive || !isEligibiliteArchiveReason(parcours.archiveReason)) return AUCUN_CHANGEMENT;
-
-  const [validation] = await db
-    .select({ entrepriseAmoId: parcoursAmoValidations.entrepriseAmoId })
-    .from(parcoursAmoValidations)
-    .where(eq(parcoursAmoValidations.parcoursId, parcours.id))
-    .limit(1);
 
   await parcoursRepo.updateSituationParticulier(
     parcours.id,

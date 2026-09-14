@@ -583,6 +583,14 @@ Trois changements, dans l'ordre du flux :
 > (`getSubmittedDatesByStep`) — l'état du dossier appartient alors à la DDT et aux
 > professionnels, pas à une nouvelle simulation. Même esprit que le gel de §2.7.1.
 
+> **Une décision de l'AMO prime sur la simulation du demandeur** (`aRenduSaDecision`, lu en
+> tête d'`appliquerVerdictSimulationDemandeur`) : l'AMO a vu la maison, le demandeur non. Sans
+> cette garde, une **première** simulation non éligible archivait le dossier par-dessus une
+> validation `LOGEMENT_ELIGIBLE` — chemin que le verrou d'édition de §2.12 ne couvre pas,
+> puisqu'il passe par `migrateSimulationDataToDatabase` et non par l'écran d'édition. La garde
+> coupe les deux sens, archivage comme dé-archivage : le demandeur ne défait pas une décision
+> rendue, il en parle à son conseiller.
+
 > **Re-simulation sur un dossier déjà archivé.** Toujours non éligible mais pour une autre
 > raison → on **empile** une qualification et une action, sans toucher à `archivedAt` (il ne
 > doit pas glisser) ni à `archive_reason` (déjà canonique). Sinon la simulation affichée
@@ -637,14 +645,14 @@ statiquement.
 > septembre 2026. Conséquence à ne pas défaire : le verrou « correction d'agent » et la
 > fermeture du simulateur lisent le **même** prédicat, ils ne peuvent plus diverger.
 >
-> **Le même cycle reste atteignable par une autre porte**, antérieure et non traitée : si un
-> agent complète la simulation (« Vérifier son éligibilité ») **après** le rattachement
-> FranceConnect, `updateSimulationDataAction` n'écrit que `rgaSimulationDataAgent`, et rien ne
-> promeut cette version vers `rgaSimulationData` — la promotion n'a lieu qu'au rattachement, à
-> l'étape `INVITATION`. `hasRGAData` (`MonCompteClient`) ne lisant que `rgaSimulationData`, le
-> demandeur reste sur « Éligibilité manquante » pendant que le simulateur lui est fermé. Le
-> correctif est la promotion vers `rgaSimulationData` dès que la simulation agent devient
-> complète — ce qui réglerait du même coup le préremplissage DN, qui lit la même colonne.
+> **La seconde porte du même cycle est fermée aussi** : `updateSimulationDataAction` promeut
+> désormais la correction dans `rgaSimulationData` dès qu'elle est **complète** et que le compte
+> n'en a aucune (`champsPromotionSimulation`), au même critère que la promotion du rattachement
+> FranceConnect. Sans elle, un agent qui complétait la simulation **après** le rattachement
+> laissait `rgaSimulationData` nul : « Éligibilité manquante » côté demandeur alors que le
+> simulateur lui est fermé, et un préremplissage DN lisant une colonne vide. La garde
+> essentielle est qu'on **n'écrase jamais** une simulation que le demandeur a déjà faite : la
+> résolution territoriale est USER-first, écraser déplacerait le dossier de territoire.
 
 **La modification passe par l'écran des agents.** `SimulateurEdition` est partagé ; il reçoit
 son enregistrement (`onSave`) et son `audience` (`agent` | `demandeur`) par le contexte, et
@@ -1287,6 +1295,7 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
 | Verdict d'éligibilité d'une simulation         | `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (partagé demandeur + agent)      |
 | Archivage sur simulation demandeur (ADR-0034)  | `src/features/parcours/core/services/simulation-eligibilite.service.ts`                                     |
+| Promotion d'une correction agent complète      | `espace-agent/shared/actions/update-simulation-data.action.ts` (`champsPromotionSimulation`)                |
 | Verrous d'édition de simulation (ADR-0036)     | `parcours/core/domain/value-objects/edition-simulation.ts` (`peutModifierSaSimulation`)                     |
 | Entrées des verrous, point unique              | `parcours/core/services/etat-edition-simulation.service.ts` (`chargerEtatEditionSimulation`)                |
 | Miroir client des verrous                      | `parcours/core/hooks/useLectureSeuleSimulation.ts`                                                          |
