@@ -703,6 +703,13 @@ qui fait échouer son critère** — celui qui coûte l'éligibilité. Le bandea
 > la nouvelle adresse partait avec le cache local. Elle reste rendue en toutes lettres et non
 > en badge (un badge DSFR est en capitales), avec une marque « modifiée » quand elle diffère.
 
+> **La version retenue se voit** : la carte sélectionnée reprend les jetons du **bouton
+> primaire DSFR** (`--background-action-high-blue-france` sur `--text-inverted-blue-france`),
+> avec une icône de coche et la mention « Version qui sera conservée ». Auparavant la
+> sélection ne tenait qu'à la couleur d'un filet de 1 px, invisible en recette — d'autant que
+> la pastille verte « version rattachée à votre compte » attire l'œil sur l'autre colonne. Les
+> badges internes portent leurs propres fonds DSFR et restent lisibles sur le bleu.
+
 > **L'écran d'édition ne réécrit plus le cache local.** `SimulateurEdition` ne monte
 > `SimulateurFormulaire` qu'une fois le store préparé (verrou `isReady`) : React exécutant les
 > effets enfant avant parent, le formulaire voyait `editMode = false` sur l'étape « resultat »

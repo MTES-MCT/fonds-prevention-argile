@@ -164,7 +164,9 @@ function ChoixCarte({
   children: React.ReactNode;
 }) {
   return (
-    <label style={{ display: "block", cursor: "pointer" }}>
+    <label
+      className="focus-within:outline focus-within:outline-2 focus-within:outline-offset-2"
+      style={{ display: "block", cursor: "pointer", outlineColor: "var(--border-active-blue-france)" }}>
       <input
         type="radio"
         name={nom}

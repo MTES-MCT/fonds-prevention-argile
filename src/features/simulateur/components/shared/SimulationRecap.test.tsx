@@ -69,4 +69,27 @@ describe("SimulationRecap", () => {
 
     expect(screen.queryByText("MAISON")).not.toBeInTheDocument();
   });
+
+  it("marque la version sélectionnée comme un bouton primaire DSFR", () => {
+    const { container } = render(<SimulationRecap simulation={eligible} titre="Dernière version" selectionne />);
+
+    const carte = container.firstElementChild as HTMLElement;
+
+    // Jetons du bouton primaire : un filet de 1 px ne se voyait pas, et rien ne disait
+    // laquelle des deux colonnes serait conservée (retour de recette, septembre 2026).
+    expect(carte.style.background).toContain("--background-action-high-blue-france");
+    expect(carte.style.color).toContain("--text-inverted-blue-france");
+    expect(container.querySelector(".fr-icon-check-line")).toBeTruthy();
+    expect(screen.getByText("Version qui sera conservée")).toBeInTheDocument();
+  });
+
+  it("laisse la version non sélectionnée sur le fond par défaut", () => {
+    const { container } = render(<SimulationRecap simulation={eligible} titre="Version active" />);
+
+    const carte = container.firstElementChild as HTMLElement;
+
+    expect(carte.style.background).toContain("--background-default-grey");
+    expect(carte.style.color).toBe("");
+    expect(screen.queryByText("Version qui sera conservée")).not.toBeInTheDocument();
+  });
 });

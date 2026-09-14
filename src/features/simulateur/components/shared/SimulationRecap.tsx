@@ -46,11 +46,15 @@ export function SimulationRecap({
     <div
       className="fr-p-3w"
       style={{
-        background: "var(--background-default-grey)",
-        border: `1px solid ${selectionne ? "var(--border-active-blue-france)" : "var(--border-default-grey)"}`,
+        // Sélectionnée : mêmes jetons que le bouton primaire DSFR. Un filet de 1 px ne
+        // se voyait pas, et rien ne disait laquelle des deux colonnes serait conservée.
+        background: selectionne ? "var(--background-action-high-blue-france)" : "var(--background-default-grey)",
+        color: selectionne ? "var(--text-inverted-blue-france)" : undefined,
+        border: `1px solid ${selectionne ? "var(--background-action-high-blue-france)" : "var(--border-default-grey)"}`,
       }}>
       {titre && (
-        <h3 className="fr-h6 fr-mb-1w">
+        <h3 className="fr-h6 fr-mb-1w" style={{ color: "inherit" }}>
+          {selectionne && <span className="fr-icon-check-line fr-mr-1v" aria-hidden="true" />}
           {titre}
           {estVersionActive && (
             <span className="fr-ml-1v" aria-label="version rattachée à votre compte">
@@ -60,6 +64,8 @@ export function SimulationRecap({
           {simulatedAt && <> - {formatDateShort(simulatedAt)}</>}
         </h3>
       )}
+
+      {selectionne && <p className="fr-text--xs fr-mb-2w">Version qui sera conservée</p>}
 
       {(verdict.isEligible || verdict.isNonEligible) && (
         <p className={`fr-badge fr-badge--sm ${verdict.isEligible ? "fr-badge--success" : "fr-badge--error"} fr-mb-2w`}>
