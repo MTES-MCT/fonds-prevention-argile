@@ -46,15 +46,20 @@ export function SimulationRecap({
     <div
       className="fr-p-3w"
       style={{
-        // Sélectionnée : mêmes jetons que le bouton primaire DSFR. Un filet de 1 px ne
-        // se voyait pas, et rien ne disait laquelle des deux colonnes serait conservée.
-        background: selectionne ? "var(--background-action-high-blue-france)" : "var(--background-default-grey)",
-        color: selectionne ? "var(--text-inverted-blue-france)" : undefined,
-        border: `1px solid ${selectionne ? "var(--background-action-high-blue-france)" : "var(--border-default-grey)"}`,
+        background: "var(--background-default-grey)",
+        // 2 px sur les deux cartes : le filet de 1 px du DSFR ne se voyait pas, et ne
+        // l'épaissir que sur la carte retenue décalerait le contenu à chaque changement.
+        border: `2px solid ${selectionne ? "var(--border-active-blue-france)" : "var(--border-default-grey)"}`,
       }}>
       {titre && (
-        <h3 className="fr-h6 fr-mb-1w" style={{ color: "inherit" }}>
-          {selectionne && <span className="fr-icon-check-line fr-mr-1v" aria-hidden="true" />}
+        <h3 className="fr-h6 fr-mb-1w">
+          {selectionne && (
+            <span
+              className="fr-icon-check-line fr-mr-1v"
+              style={{ color: "var(--text-active-blue-france)" }}
+              aria-hidden="true"
+            />
+          )}
           {titre}
           {estVersionActive && (
             <span className="fr-ml-1v" aria-label="version rattachée à votre compte">

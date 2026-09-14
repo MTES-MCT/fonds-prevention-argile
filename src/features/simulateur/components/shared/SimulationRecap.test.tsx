@@ -75,10 +75,9 @@ describe("SimulationRecap", () => {
 
     const carte = container.firstElementChild as HTMLElement;
 
-    // Jetons du bouton primaire : un filet de 1 px ne se voyait pas, et rien ne disait
+    // Contour bleu épaissi : le filet de 1 px du DSFR ne se voyait pas, et rien ne disait
     // laquelle des deux colonnes serait conservée (retour de recette, septembre 2026).
-    expect(carte.style.background).toContain("--background-action-high-blue-france");
-    expect(carte.style.color).toContain("--text-inverted-blue-france");
+    expect(carte.style.border).toBe("2px solid var(--border-active-blue-france)");
     expect(container.querySelector(".fr-icon-check-line")).toBeTruthy();
     expect(screen.getByText("Version qui sera conservée")).toBeInTheDocument();
   });
@@ -88,8 +87,8 @@ describe("SimulationRecap", () => {
 
     const carte = container.firstElementChild as HTMLElement;
 
-    expect(carte.style.background).toContain("--background-default-grey");
-    expect(carte.style.color).toBe("");
+    // Même épaisseur des deux côtés : sinon le contenu se décale au changement de choix.
+    expect(carte.style.border).toBe("2px solid var(--border-default-grey)");
     expect(screen.queryByText("Version qui sera conservée")).not.toBeInTheDocument();
   });
 });
