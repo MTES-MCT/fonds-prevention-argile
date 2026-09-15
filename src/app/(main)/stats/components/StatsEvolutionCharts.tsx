@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useDsfrChart } from "@/shared/hooks/useDsfrChart";
+import { buildChartSeries } from "./build-chart-series.utils";
 import type {
   PublicStatsEvolution,
   PointEvolutionMensuelle,
@@ -22,10 +23,8 @@ interface MiniChartProps {
 function MiniChart({ title, points, unitTooltip, chartLoaded }: MiniChartProps) {
   const chartData = useMemo(() => {
     if (!points || points.length === 0) return null;
-    const labels = points.map((p) => `"${p.label}"`).join(", ");
-    const values = points.map((p) => p.count).join(", ");
-    return { x: `[[${labels}]]`, y: `[[${values}]]` };
-  }, [points]);
+    return buildChartSeries(points, title);
+  }, [points, title]);
 
   return (
     <div className="fr-col-12 fr-col-md-6">
@@ -56,9 +55,9 @@ function MiniChart({ title, points, unitTooltip, chartLoaded }: MiniChartProps) 
               key={`${title}-${chartData.x}`}
               x={chartData.x}
               y={chartData.y}
-              selected-palette="default"
+              selected-palette={chartData.selectedPalette}
               unit-tooltip={unitTooltip}
-              name={`["${title}"]`}
+              name={chartData.name}
             />
           )}
         </div>
