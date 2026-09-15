@@ -63,7 +63,7 @@ interface Candidat {
 }
 
 /** Parcours actifs en « sans AMO » sans entreprise, dans un département à AMO automatique. */
-async function inventorier(): Promise<Candidat[]> {
+async function inventorier(parcoursId?: string): Promise<Candidat[]> {
   const rows = await db
     .select({
       id: parcoursPrevention.id,
@@ -79,7 +79,8 @@ async function inventorier(): Promise<Candidat[]> {
         eq(parcoursAmoValidations.statut, StatutValidationAmo.SANS_AMO),
         isNull(parcoursAmoValidations.entrepriseAmoId),
         isNull(parcoursPrevention.archivedAt),
-        isNull(parcoursPrevention.completedAt)
+        isNull(parcoursPrevention.completedAt),
+        parcoursId ? eq(parcoursPrevention.id, parcoursId) : undefined
       )
     );
 
@@ -105,34 +106,40 @@ async function main() {
   console.log(`RATTACHEMENT AMO — ${APPLY ? "APPLY (écriture)" : "DRY-RUN (aucune écriture)"}`);
   line();
 
-  const candidats = PARCOURS_ID ? [{ parcoursId: PARCOURS_ID } as Candidat] : await inventorier();
+  const candidats = await inventorier(PARCOURS_ID);
 
   if (candidats.length === 0) {
     console.log("Aucun parcours à rattacher.");
+    if (PARCOURS_ID) {
+      console.log();
+      console.log(`Le parcours ${PARCOURS_ID} ne remplit pas les critères. Causes possibles :`);
+      console.log("  - il est archivé ou complété (le désarchiver d'abord) ;");
+      console.log("  - il a déjà une AMO rattachée, ou n'est pas en statut « sans_amo » ;");
+      console.log("  - son département est en AMO facultative (l'autonomie y est légitime) ;");
+      console.log("  - sa commune est introuvable dans la simulation.");
+    }
     await rawClient.end();
     return;
   }
 
-  if (!PARCOURS_ID) {
-    console.log(`${candidats.length} parcours concerné(s) :`);
-    console.log();
-    for (const c of candidats) {
-      console.log(`  ${c.parcoursId}  dept ${c.dept.padEnd(3)}  ${c.step}/${c.status}  (${c.mode})`);
-    }
-    console.log();
-    const parDept = candidats.reduce<Record<string, number>>((acc, c) => {
-      acc[c.dept] = (acc[c.dept] ?? 0) + 1;
-      return acc;
-    }, {});
-    console.log(
-      "Par département : " +
-        Object.entries(parDept)
-          .sort((a, b) => b[1] - a[1])
-          .map(([d, n]) => `${d}=${n}`)
-          .join("  ")
-    );
-    line();
+  console.log(`${candidats.length} parcours concerné(s) :`);
+  console.log();
+  for (const c of candidats) {
+    console.log(`  ${c.parcoursId}  dept ${c.dept.padEnd(3)}  ${c.step}/${c.status}  (${c.mode})`);
   }
+  console.log();
+  const parDept = candidats.reduce<Record<string, number>>((acc, c) => {
+    acc[c.dept] = (acc[c.dept] ?? 0) + 1;
+    return acc;
+  }, {});
+  console.log(
+    "Par département : " +
+      Object.entries(parDept)
+        .sort((a, b) => b[1] - a[1])
+        .map(([d, n]) => `${d}=${n}`)
+        .join("  ")
+  );
+  line();
 
   if (!APPLY) {
     console.log("Dry-run : relancer avec --apply pour rattacher.");
