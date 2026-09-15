@@ -178,6 +178,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   peutAgirSurDossierDn={peutAgirSurDn}
                   peutReinitialiserDn={peutReinitialiserDn}
                   stepCourante={dossier.currentStep}
+                  estArchive={dossier.archivedAt !== null}
                 />
               )}
             </div>
@@ -193,6 +194,8 @@ export default async function DossierDetailPage({ params }: PageProps) {
               currentStatus={dossier.currentStatus}
               dsStatus={dossier.dsStatus}
               validationStatut={dossier.validationStatut}
+              archivedAt={dossier.archivedAt}
+              archiveReason={dossier.archiveReason}
               instructedAt={dossier.instructedAt}
             />
             {/* Invitation en attente (étape INVITATION = stub non réclamé) → renvoi possible,

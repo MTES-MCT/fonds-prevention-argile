@@ -192,6 +192,8 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       estMandataireFinancier: dossier.validation.estMandataireFinancier,
       demandeArretAt: dossier.validation.demandeArretAt,
       peutPasserEnAutonomie: peutPasserEnAutonomie(dossier.parcours),
+      archivedAt: dossier.parcours.archivedAt,
+      archiveReason: dossier.parcours.archiveReason,
       instructedAt: dossierDS?.instructedAt ?? null,
       parcoursCreatedAt: dossier.parcours.createdAt,
       lastUpdatedAt: dossier.parcours.updatedAt,
