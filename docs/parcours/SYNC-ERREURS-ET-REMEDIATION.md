@@ -383,7 +383,8 @@ récupèrent leur état réel et les parcours avancent.
 ### 6. Ce qui ne se répare pas comme ça
 
 - Un demandeur dont le lien ne fonctionne plus se débloque **seul**, depuis `/mon-compte`
-  (« Ce lien ne fonctionne plus ? »). Aucune intervention nécessaire.
+  (« Ce lien ne fonctionne plus ? ») : après confirmation en modale, son formulaire est recréé
+  et ouvert dans la foulée. Aucune intervention nécessaire.
 - Les dossiers antérieurs au 2026-08-25 n'ont pas d'annotation FPA : ils ne se rattachent
   jamais automatiquement, seul le numéro déjà connu les identifie. Population figée.
 - `pnpm fix:clean-faux-depots` reste disponible, indépendant du reste : il nettoie les

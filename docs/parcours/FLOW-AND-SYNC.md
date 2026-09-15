@@ -40,12 +40,13 @@ Chaque parcours a deux niveaux d'état complémentaires :
 > n'est tranché automatiquement — deux dossiers déposés pour une même étape remontent pour
 > arbitrage.
 >
-> Côté demandeur, « Ce lien ne fonctionne plus ? » (`regenererLienPrefill`) sonde d'abord les
-> numéros déjà connus — si l'un a été déposé entre-temps, on rattache au lieu de recréer — puis
-> retire le pointeur pour qu'un nouveau prérempli soit créé. **Retirer le pointeur ne perd plus
-> rien** : le numéro reste au registre, et la réconciliation le rattrapera s'il finit déposé.
-> C'est ce qui distingue ce secours du reset gelé par [ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md),
-> qui effaçait la seule trace du numéro.
+> Côté demandeur, « Ce lien ne fonctionne plus ? » (`recreerFormulaireDemandeur`) sonde d'abord
+> les numéros déjà connus — si l'un a été déposé entre-temps, on rattache au lieu de recréer —
+> puis retire le pointeur **et recrée le prérempli dans la foulée**, sur les trois étapes à
+> formulaire (éligibilité, diagnostic, devis). **Retirer le pointeur ne perd plus rien** : le
+> numéro reste au registre, et la réconciliation le rattrapera s'il finit déposé. C'est ce qui
+> distingue ce secours du reset gelé par [ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md),
+> qui effaçait la seule trace du numéro. Détail du parcours demandeur en §7.6.
 >
 > **Côté agent**, la même mécanique est exposée par « Gérer → Réinitialiser le formulaire DN »
 > (`reinitialiserDossierEtape`, action `reinitialiserDossierDnAction`), proposée uniquement sur
@@ -479,8 +480,8 @@ avancer jusqu'à l'étape éligibilité avant de changer d'avis : son dossier DN
 été prérempli sans AMO (`MANDATAIRE_FINANCIER = "Pas de mandataire"`, pas de SIRET, cf. §2.6).
 Comme le préremplissage REST ne sait que **créer** (jamais mettre à jour, même limite que
 l'annulation en §2.6), `demanderAccompagnementDemandeur` réutilise le mécanisme de
-réinitialisation existant côté agent/demandeur (`reinitialiserDossierEtape` /
-`regenererLienPrefill`, `regeneration.service.ts`, cf. §7.4) :
+réinitialisation existant côté agent/demandeur (`reinitialiserDossierEtape`,
+`regeneration.service.ts`, cf. §7.4) :
 best-effort, sur l'étape éligibilité, juste après l'attribution de l'AMO. S'il n'est pas encore
 déposé, le pointeur est retiré (numéro conservé dans `dossiers_ds_tentatives`) et un nouveau
 prérempli à jour est recréé au prochain retour du demandeur sur l'étape (`createEligibiliteDossier`,
@@ -704,9 +705,9 @@ couvre que les trois statuts **tranchés** — ni `EN_ATTENTE` (pas encore répo
 > pour un dossier accompagné, `aRenduSaDecision` a déjà fermé l'édition à la validation de
 > l'AMO, bien avant que le formulaire n'existe.
 >
-> Échappatoire conservée : « Ce lien ne fonctionne plus ? » (`regenererLienPrefill`) retire le
-> pointeur tant que rien n'est déposé — le verrou tombe alors, la simulation redevient
-> corrigeable, et le prochain prérempli repart des bonnes valeurs.
+> Échappatoire conservée : « Ce lien ne fonctionne plus ? » (§7.6) retire le pointeur tant que
+> rien n'est déposé — le verrou tombe alors, la simulation redevient corrigeable, et le
+> prérempli recréé dans la foulée repart des bonnes valeurs.
 
 Verrouillée, la page rend un **récapitulatif en lecture seule** (`SimulationRecap`) et dit
 pourquoi (`MESSAGES_LECTURE_SEULE`). Les deux CTA qui y mènent (« Ma liste », carte 1) passent
@@ -1265,6 +1266,46 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 - Vérification / inventaire : `pnpm ds:fetch-pieces` liste, par démarche configurée, les
   pièces et l'URL de leur modèle (confirme la présence de `fileTemplate`).
 
+### 7.6 « Créer un nouveau formulaire » côté demandeur : un clic, une modale, un formulaire
+
+Le secours du demandeur (« Ce lien ne fonctionne plus ? », sous le CTA de l'étape) **réinitialise
+et recrée** en un seul aller-retour : `recreerFormulaireAction` → `recreerFormulaireDemandeur`
+(`core/services/recreation-formulaire.service.ts`), qui délègue la réinitialisation à
+`reinitialiserDossierEtape` puis appelle le service de création de l'étape
+(`createEligibiliteDossier` / `createDiagnosticDossier` / `createDevisDossier`). Disponible sur
+les trois étapes de `STEPS_REINITIALISABLES`, dès qu'un lien existe déjà.
+
+Trois raisons à ce regroupement, toutes issues du découpage précédent en deux clics :
+
+- **La fenêtre de fermeture de DN.** `window.open` n'est autorisé que dans le geste utilisateur
+  synchrone (Safari) : l'onglet est ouvert au clic de confirmation, puis redirigé vers l'URL
+  renvoyée. Après une réinitialisation seule, on n'était plus dans le geste — d'où l'ancien
+  « cliquez maintenant sur le bouton principal ».
+- **La simulation est lue en base** (`getEffectiveRGAData`, AGENT-first : une correction
+  d'agent est la version la plus à jour), plus dans le store du navigateur. Le CTA principal
+  lisait `useSimulateurRga`, vide sur un dossier créé par un Aller-vers : le demandeur se
+  retrouvait alors sans pointeur **et** sans lien, avec un « Aucune donnée de simulation
+  trouvée » en rouge en haut de page.
+- **La confirmation remplace la fenêtre anti-rafale.** Le demandeur passe `force: true`, qui
+  ramène le délai de 10 min à un plancher de 30 s (`DELAI_MIN_REGENERATION_FORCE_SECONDES`) —
+  simple garde-fou anti double-clic. Les 10 min refusaient le cas nominal : ouvrir le lien,
+  constater qu'il ne marche pas, en redemander un.
+
+Ce que `force` **ne** relâche pas, et qui s'affiche dans la modale au lieu d'une alerte en haut
+de page : un dossier **déjà déposé** (son lien stable s'applique, invariant ADR-0027) et un
+**sondage DN impossible** (autre chose qu'un `not_found` : on est aveugle sur un numéro peut-être
+déposé, message retryable).
+
+Deux gardes côté serveur : le parcours vient de la **session** (aucun identifiant n'entre par le
+client), et l'étape transmise doit être l'étape en cours — le callout affiché n'est pas toujours
+celle-ci, un diagnostic accepté rendant déjà le CTA devis. Audit dans `parcours_actions`, auteur
+`DEMANDEUR` : `dossier_dn_reinitialise`, ou `dossier_dn_rattache` si un ancien numéro a été
+retrouvé déposé.
+
+> Si la création échoue **après** le retrait du pointeur (DN indisponible), le message le dit
+> explicitement et le CTA principal de l'étape reste le moyen de repartir : `getDossierByStep`
+> ne renvoyant plus rien, il recrée un prérempli.
+
 ---
 
 ## 8. Fichiers clés
@@ -1277,7 +1318,9 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Amorçage du registre                           | `scripts/ops/sync-erreurs/backfill-tentatives.ts` (`pnpm ds:backfill-tentatives`)                           |
 | Réconciliation au dépôt (annotation FPA)       | `dossiers-ds/services/reconciliation.service.ts`, `dossiers-ds/utils/annotation-fpa.utils.ts`               |
 | Réconciliation (script ops)                    | `scripts/ops/sync-erreurs/reconcilier-dossiers.ts` (`pnpm ds:reconcilier`)                                  |
-| Secours « ce lien ne fonctionne plus »         | `dossiers-ds/services/regeneration.service.ts`, `actions/regeneration.actions.ts`                           |
+| Réinitialisation d'un formulaire DN            | `dossiers-ds/services/regeneration.service.ts` (`reinitialiserDossierEtape`)                                |
+| Secours « ce lien ne fonctionne plus »         | `core/services/recreation-formulaire.service.ts`, `core/actions/recreation-formulaire.actions.ts`           |
+| Modale de confirmation (demandeur)             | `core/components/formulaire-dn/` (`SecoursLienFormulaire`, `RecreerFormulaireModal`)                        |
 | Rattachement manuel par numéro (AMO/admin)     | `espace-agent/dossiers/actions/rattacher-dossier-dn.actions.ts` (`rattacherDossierManuel`)                  |
 | Schéma historique CRON                         | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts`                                            |
 | Repository parcours                            | `src/shared/database/repositories/parcours-prevention.repository.ts`                                        |
