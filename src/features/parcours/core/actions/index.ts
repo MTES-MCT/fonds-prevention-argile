@@ -7,3 +7,4 @@ export * from "./devis.actions";
 export * from "./parcours-simulateur-rga-migration.actions";
 export * from "./enregistrer-simulation-demandeur.actions";
 export * from "./contact-info.actions";
+export * from "./recreation-formulaire.actions";
