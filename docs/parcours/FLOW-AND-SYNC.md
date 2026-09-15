@@ -631,9 +631,20 @@ inéligibilité et affichait « Vous n'êtes pas éligible » à tout demandeur 
 l'AMO venait de valider (QA septembre 2026). Sans cette garde, un
 dossier archivé déjà passé à `ÉLIGIBILITE` (autonomie, puis simulation corrigée) continuait
 d'inviter au dépôt du formulaire DN. Trois surfaces s'alignent dessus : « Ma liste » grise
-tout item resté actif (`getStepListItems(..., isNonEligible)`, y compris l'item de tête dont
+tout item resté actif (`getStepListItems(..., isSansSuite)`, y compris l'item de tête dont
 l'ancre `#choix-amo` ne mène plus qu'au callout), et les **pièces justificatives** ne sont
 plus proposées — ni pour l'étape courante, ni en « à prévoir » sur les étapes à venir.
+
+> **Refus d'accompagnement ≠ inéligibilité (septembre 2026).** `ACCOMPAGNEMENT_REFUSE` alimentait
+> `estLogementNonEligible` : un demandeur jugé **éligible** par son AMO, mais qu'elle renonçait à
+> accompagner (injoignable, reste à charge trop élevé — §2.8), lisait « Vous n'êtes pas éligible ».
+> C'était faux, et sans recours affiché. Le prédicat ne porte plus que l'inéligibilité réelle ;
+> `estAccompagnementRefuse` porte l'autre cas et rend `CalloutAmoAccompagnementRefuse`
+> (« Votre dossier est en pause », avec l'adresse de contact). Ce qui se neutralise **identiquement**
+> dans les deux cas — pièces à réunir, items de « Ma liste », carte AMO désactivée — passe par
+> `estParcoursSansSuite`, leur union ; ce qui **parle** au demandeur distingue les deux. La section
+> « Pour en savoir plus » (contenu sur l'inéligibilité) ne s'affiche plus que sur une vraie
+> inéligibilité, et la carte AMO porte un badge « Sans accompagnement » au lieu de « Non éligible ».
 
 > **Un dossier archivé ne change plus d'accompagnement.** `peutAnnulerAccompagnement` et
 > `peutDemanderAccompagnement` prennent un `dossierArchive` **requis** (`parcours.archived_at`,
