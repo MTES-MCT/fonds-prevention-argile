@@ -21,6 +21,13 @@ import { getDossierByStep } from "./dossier-ds.service";
 /** Fenêtre anti-rafale : évite qu'un double-clic n'empile les brouillons côté DN. */
 export const DELAI_MIN_REGENERATION_MINUTES = 10;
 
+/**
+ * Plancher appliqué quand le demandeur a confirmé en modale : sa confirmation explicite
+ * remplace la fenêtre de 10 min, qui refusait le cas nominal (ouvrir le lien, constater
+ * qu'il ne marche pas, en redemander un). Il ne reste qu'un garde-fou anti double-clic.
+ */
+export const DELAI_MIN_REGENERATION_FORCE_SECONDES = 30;
+
 export type RefusRegeneration =
   "aucun_dossier" | "dossier_depose" | "trop_recent" | "verification_impossible" | "etape_non_reinitialisable";
 
@@ -41,19 +48,26 @@ interface DossierPourRegeneration {
   dsStatus: string | null;
 }
 
+/** Confirmation explicite du demandeur (modale) : seule la fenêtre anti-rafale se relâche. */
+export interface OptionsRegeneration {
+  force?: boolean;
+}
+
 /**
  * Peut-on régénérer ? Sans effet de bord.
  * On refuse sur un dossier déjà déposé : son lien est valide, c'est l'URL stable qui s'applique.
  */
 export function verifierRegeneration(
   dossier: DossierPourRegeneration | null,
-  maintenant: Date
+  maintenant: Date,
+  options: OptionsRegeneration = {}
 ): RefusRegeneration | null {
   if (!dossier) return "aucun_dossier";
   if (dossier.submittedAt || dossier.lastSyncAt || dossier.dsStatus) return "dossier_depose";
 
-  const minutes = (maintenant.getTime() - dossier.createdAt.getTime()) / 60_000;
-  if (minutes < DELAI_MIN_REGENERATION_MINUTES) return "trop_recent";
+  const secondes = (maintenant.getTime() - dossier.createdAt.getTime()) / 1_000;
+  const plancher = options.force ? DELAI_MIN_REGENERATION_FORCE_SECONDES : DELAI_MIN_REGENERATION_MINUTES * 60;
+  if (secondes < plancher) return "trop_recent";
 
   return null;
 }
@@ -68,11 +82,19 @@ const MESSAGES: Record<RefusRegeneration, string> = {
     "Nous n'arrivons pas à joindre Démarches Numériques pour le moment. Réessayez dans quelques minutes.",
 };
 
+/** Le refus « trop récent » ne dit pas la même chose selon le plancher qui l'a déclenché. */
+function messageRefus(refus: RefusRegeneration, options: OptionsRegeneration): string {
+  if (refus === "trop_recent" && options.force) {
+    return "Votre nouveau formulaire vient d'être créé. Patientez quelques secondes avant d'en redemander un.";
+  }
+  return MESSAGES[refus];
+}
+
 export type ResultatRegeneration =
   /** Un numéro déjà connu a été déposé entre-temps : on rattache au lieu de recréer. */
   | { statut: "rattache"; dsNumber: string }
   /** Le pointeur a été retiré : l'app peut créer un nouveau prérempli. */
-  | { statut: "a_recreer" };
+  | { statut: "a_recreer"; ancienDsNumber: string };
 
 /** Repointe l'étape vers un dossier réellement déposé et remet l'état à zéro pour la sync. */
 async function rattacher(dossierId: string, dsNumber: string): Promise<void> {
@@ -95,34 +117,33 @@ async function rattacher(dossierId: string, dsNumber: string): Promise<void> {
 
 /**
  * Réinitialise le formulaire d'une étape : même mécanique pour le demandeur (« ce lien ne
- * fonctionne plus ») et pour l'agent (« Réinitialiser le formulaire DN »).
+ * fonctionne plus ») et pour l'agent (« Réinitialiser le formulaire DN »). Le demandeur passe
+ * en `force` — sa confirmation en modale tient lieu de fenêtre anti-rafale.
  */
 export async function reinitialiserDossierEtape(
   parcoursId: string,
-  step: Step
+  step: Step,
+  options: OptionsRegeneration = {}
 ): Promise<ActionResult<ResultatRegeneration>> {
   const parcours = await parcoursRepo.findById(parcoursId);
   if (!parcours) return { success: false, error: "Parcours non trouvé" };
 
-  return reinitialiser(parcours.id, step);
+  return reinitialiser(parcours.id, step, options);
 }
 
-export async function regenererLienPrefill(userId: string): Promise<ActionResult<ResultatRegeneration>> {
-  const parcours = await parcoursRepo.findByUserId(userId);
-  if (!parcours) return { success: false, error: "Parcours non trouvé" };
-
-  return reinitialiser(parcours.id, parcours.currentStep);
-}
-
-async function reinitialiser(parcoursId: string, step: Step): Promise<ActionResult<ResultatRegeneration>> {
+async function reinitialiser(
+  parcoursId: string,
+  step: Step,
+  options: OptionsRegeneration
+): Promise<ActionResult<ResultatRegeneration>> {
   if (!STEPS_REINITIALISABLES.includes(step)) {
     return { success: false, error: MESSAGES.etape_non_reinitialisable };
   }
 
   const dossier = await getDossierByStep(parcoursId, step);
 
-  const refus = verifierRegeneration(dossier, new Date());
-  if (refus) return { success: false, error: MESSAGES[refus] };
+  const refus = verifierRegeneration(dossier, new Date(), options);
+  if (refus) return { success: false, error: messageRefus(refus, options) };
   if (!dossier?.dsNumber) return { success: false, error: MESSAGES.aucun_dossier };
 
   // Le numéro courant doit être au registre AVANT qu'on retire le pointeur.
@@ -150,7 +171,7 @@ async function reinitialiser(parcoursId: string, step: Step): Promise<ActionResu
       // plutôt que de retirer un pointeur peut-être vivant.
       const code = error instanceof DsGraphQLError ? error.code : undefined;
       if (code !== "not_found") {
-        console.error("regenererLienPrefill : sondage DN impossible", { dsNumber: tentative.dsNumber, code });
+        console.error("reinitialiserDossierEtape : sondage DN impossible", { dsNumber: tentative.dsNumber, code });
         return { success: false, error: MESSAGES.verification_impossible };
       }
     }
@@ -179,5 +200,5 @@ async function reinitialiser(parcoursId: string, step: Step): Promise<ActionResu
     return { success: false, error: MESSAGES.dossier_depose };
   }
 
-  return { success: true, data: { statut: "a_recreer" } };
+  return { success: true, data: { statut: "a_recreer", ancienDsNumber: dossier.dsNumber } };
 }

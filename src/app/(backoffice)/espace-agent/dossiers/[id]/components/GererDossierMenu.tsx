@@ -6,10 +6,8 @@ import { ROUTES } from "@/features/auth/domain/value-objects";
 import { ArchiveModal } from "../../../shared/components/ArchiveModal";
 import { ArretAccompagnementModal } from "../../../shared/components/ArretAccompagnementModal";
 import { RattacherDossierDnModal } from "../../../shared/components/RattacherDossierDnModal";
-import {
-  ReinitialiserDossierDnModal,
-  LIBELLE_FORMULAIRE,
-} from "../../../shared/components/ReinitialiserDossierDnModal";
+import { ReinitialiserDossierDnModal } from "../../../shared/components/ReinitialiserDossierDnModal";
+import { LIBELLE_FORMULAIRE } from "@/features/parcours/dossiers-ds/domain/value-objects/libelle-formulaire";
 import { ActionMenu } from "../../../shared/components";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
 

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   verifierRegeneration,
-  regenererLienPrefill,
   reinitialiserDossierEtape,
   STEPS_REINITIALISABLES,
   DELAI_MIN_REGENERATION_MINUTES,
+  DELAI_MIN_REGENERATION_FORCE_SECONDES,
 } from "./regeneration.service";
 import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import { dossiersDsTentativesRepo, parcoursRepo } from "@/shared/database/repositories";
@@ -64,13 +64,29 @@ describe("verifierRegeneration", () => {
       verifierRegeneration(dossier({ createdAt: ilYA(DELAI_MIN_REGENERATION_MINUTES + 1) }), MAINTENANT)
     ).toBeNull();
   });
+
+  // Le demandeur a confirmé en modale : la fenêtre de 10 min refusait le cas nominal
+  // (ouvrir le lien, constater qu'il ne marche pas, en redemander un).
+  it("forcé, n'oppose plus que le plancher anti double-clic", () => {
+    const juste = ilYA(DELAI_MIN_REGENERATION_FORCE_SECONDES / 60 + 0.1);
+    expect(verifierRegeneration(dossier({ createdAt: ilYA(1) }), MAINTENANT, { force: true })).toBeNull();
+    expect(verifierRegeneration(dossier({ createdAt: juste }), MAINTENANT, { force: true })).toBeNull();
+    expect(verifierRegeneration(dossier({ createdAt: ilYA(0.1) }), MAINTENANT, { force: true })).toBe("trop_recent");
+  });
+
+  it("forcé, ne relâche ni le dossier déposé ni l'absence de dossier", () => {
+    expect(verifierRegeneration(dossier({ submittedAt: ilYA(120) }), MAINTENANT, { force: true })).toBe(
+      "dossier_depose"
+    );
+    expect(verifierRegeneration(null, MAINTENANT, { force: true })).toBe("aucun_dossier");
+  });
 });
 
 // Cf. revue ADR-0027 : une panne DN ne doit jamais faire retirer un pointeur peut-être vivant.
-describe("regenererLienPrefill — panne DN", () => {
+describe("reinitialiserDossierEtape — panne DN", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue({
+    vi.mocked(parcoursRepo.findById).mockResolvedValue({
       id: "parcours-1",
       currentStep: Step.ELIGIBILITE,
     } as never);
@@ -93,7 +109,7 @@ describe("regenererLienPrefill — panne DN", () => {
       new DsGraphQLError("GraphQL errors: unauthorized", "unauthorized")
     );
 
-    const result = await regenererLienPrefill("user-1");
+    const result = await reinitialiserDossierEtape("parcours-1", Step.ELIGIBILITE, { force: true });
 
     expect(result.success).toBe(false);
   });
