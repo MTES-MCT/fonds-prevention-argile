@@ -44,9 +44,25 @@ export function aRenduSaDecision(statut: StatutValidationAmo | null): boolean {
  * et la section « Pour en savoir plus », pour qu'ils ne puissent pas diverger.
  */
 export function estLogementNonEligible(statutAmo: StatutValidationAmo | null, isDossierNonEligible: boolean): boolean {
-  return (
-    isDossierNonEligible ||
-    statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE ||
-    statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
-  );
+  return isDossierNonEligible || statutAmo === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE;
+}
+
+/**
+ * L'AMO a jugé le demandeur **éligible** mais a renoncé à l'accompagner (ADR-0022) : demandeur
+ * injoignable, reste à charge trop élevé, plan de charge… Le parcours est archivé, mais ce
+ * n'est en rien une inéligibilité — les deux ont longtemps partagé le même rendu, et le
+ * demandeur lisait « Vous n'êtes pas éligible » alors qu'il l'était.
+ */
+export function estAccompagnementRefuse(statutAmo: StatutValidationAmo | null): boolean {
+  return statutAmo === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE;
+}
+
+/**
+ * Le parcours est garé : plus rien n'est actionnable par le demandeur, que ce soit pour
+ * inéligibilité ou pour refus d'accompagnement. À utiliser pour ce qui se neutralise
+ * identiquement dans les deux cas (pièces à réunir, items de « Ma liste », carte AMO) — jamais
+ * pour un texte, qui doit dire lequel des deux s'applique.
+ */
+export function estParcoursSansSuite(statutAmo: StatutValidationAmo | null, isDossierNonEligible: boolean): boolean {
+  return estLogementNonEligible(statutAmo, isDossierNonEligible) || estAccompagnementRefuse(statutAmo);
 }
