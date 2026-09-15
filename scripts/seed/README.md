@@ -11,20 +11,20 @@ Outils pour bootstrap une base **de zéro** avec des données de test cohérente
 pnpm seed:staging
 ```
 
-Pipeline en 6 étapes, ~30s en local. Résultat : 7 super-admins + AMO/AV de test + 70 users + parcours à tous les stades.
+Pipeline en 6 étapes, ~30s en local. Résultat : agents de test + AMO/AV de test + 70 users + parcours à tous les stades.
 
 ## Pipeline
 
 Le script `seed-staging.ts` enchaîne 6 étapes. Chacune est lançable séparément via `--steps`.
 
-| #   | Step       | Quoi                                                                                        | Idempotent                                |
-| --- | ---------- | ------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                  | —                                         |
-| 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)            | —                                         |
-| 3   | `agents`   | Insère 7 super-admins (`sql/agents/seed-agents-local-staging.sql`)                          | ✅ `ON CONFLICT (email) DO UPDATE`        |
-| 4   | `amo-av`   | Insère AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`)                    | ✅ `ON CONFLICT`                          |
-| 5   | `parcours` | Joue les 13 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `13-amo-av-arrete-2026.sql` | ✅ via `00-init.sql` qui TRUNCATE en tête |
-| 6   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus)                              | —                                         |
+| #   | Step       | Quoi                                                                                                           | Idempotent                                |
+| --- | ---------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                                     | —                                         |
+| 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)                               | —                                         |
+| 3   | `agents`   | Fixtures d'agents (`sql/agents/seed-agents-local-staging.sql`) + super-admins depuis `SEED_AGENTS_SUPERADMINS` | ✅ `ON CONFLICT (email) DO UPDATE`        |
+| 4   | `amo-av`   | Insère AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`)                                       | ✅ `ON CONFLICT`                          |
+| 5   | `parcours` | Joue les 13 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `13-amo-av-arrete-2026.sql`                    | ✅ via `00-init.sql` qui TRUNCATE en tête |
+| 6   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus)                                                 | —                                         |
 
 ## Pré-requis (étape `ref-data`)
 
@@ -79,6 +79,44 @@ silence. Le flag suit `--dry-run`, et reste soumis au garde-fou triple ci-dessou
 Même logique, en autonome et avec un rapport détaillé : `pnpm fix:purge-comptes-test-fc`
 (dry-run par défaut, `--email=` pour cibler). Les deux partagent `scripts/ops/lib/purge-fc.ts`.
 
+## Super-administrateurs : jamais dans le dépôt
+
+Les fichiers SQL de ce dossier sont commités, donc publics : ils ne contiennent **aucune
+identité réelle**. Y inscrire les adresses de l'équipe reviendrait à publier une liste
+nominative de comptes à privilèges — du ciblage prêt à l'emploi pour du phishing, en plus
+d'une divulgation de données personnelles.
+
+Les adresses réelles arrivent par l'environnement, au moment du seed :
+
+```bash
+SEED_AGENTS_SUPERADMINS="prenom.nom@beta.gouv.fr,autre.personne@beta.gouv.fr" \
+  pnpm seed:staging --yes-staging --steps=agents
+```
+
+Variable absente = aucun super-admin nominatif inséré, et le seed le dit dans sa sortie.
+Les lignes sont écrites en requête paramétrée, une par adresse, en `ON CONFLICT (email)
+DO UPDATE SET role` : re-jouer le seed ne duplique rien et n'écrase ni le `sub` ni l'état
+civil déjà renseignés par ProConnect.
+
+Sur un environnement **neuf**, où personne ne peut encore se connecter pour créer des
+agents via `/administration/agents`, l'amorçage du premier compte passe par
+`sql/agents/seed-agents-prod.sql`, qui prend lui aussi l'adresse en paramètre :
+
+```bash
+psql "$DATABASE_URL" \
+  -v email="'prenom.nom@example.gouv.fr'" -v given="'Prénom'" -v usual="'Nom'" \
+  -f scripts/seed/sql/agents/seed-agents-prod.sql
+```
+
+### Quels comptes sont réellement connectables
+
+Seules les identités du **bac à sable ProConnect** le sont (`user@yopmail.com`,
+`user14@yopmail.com` — cf. « Se connecter en tant qu'agent en local » dans le
+[README](../../README.md)). C'est pourquoi le seed les rattache explicitement à une
+structure : sans rattachement, l'espace agent bascule sur le listing national au lieu du
+périmètre attendu. Les fixtures `@example.org` ne servent qu'à couvrir les rôles dans le
+jeu de données, elles ne permettent pas de se connecter.
+
 ## Garde-fou triple (refus en prod)
 
 Le script bail avec exit 1 dans ces 3 cas :
@@ -94,8 +132,8 @@ En `local` ou `docker`, aucune confirmation n'est demandée.
 ```
 sql/
 ├── agents/                          # Super-administrateurs
-│   ├── seed-agents-local-staging.sql   # 7 super-admins (beta.gouv + yopmail)
-│   └── seed-agents-prod.sql            # à utiliser hors pipeline auto (rare)
+│   ├── seed-agents-local-staging.sql   # fixtures + comptes bac à sable ProConnect
+│   └── seed-agents-prod.sql            # amorçage du 1er super-admin, paramétré
 ├── amo-av/                          # Fixtures AMO + Allers-vers
 │   └── seed-amo-av-fixtures.sql        # 2-3 AMO + 2-3 AV de test
 └── fake-parcours/                   # 13 étapes pour peupler les parcours
