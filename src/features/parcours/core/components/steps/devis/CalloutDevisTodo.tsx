@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTransition, useState } from "react";
 import { Step } from "../../../domain";
 import { useParcours } from "../../../context/useParcours";
+import { SecoursLienFormulaire } from "../../formulaire-dn";
 import { envoyerDossierDevis } from "../../../actions/devis.actions";
 
 export default function CalloutDevisTodo() {
@@ -59,6 +60,8 @@ export default function CalloutDevisTodo() {
           {error}
         </p>
       )}
+
+      {dsUrl && <SecoursLienFormulaire step={Step.DEVIS} />}
     </div>
   );
 }

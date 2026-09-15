@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTransition, useState } from "react";
 import { Step } from "../../../domain";
 import { useParcours } from "../../../context/useParcours";
+import { SecoursLienFormulaire } from "../../formulaire-dn";
 import { envoyerDossierDiagnostic } from "../../../actions/diagnostic.actions";
 
 export default function CalloutDiagnosticTodo() {
@@ -60,6 +61,8 @@ export default function CalloutDiagnosticTodo() {
           {error}
         </p>
       )}
+
+      {dsUrl && <SecoursLienFormulaire step={Step.DIAGNOSTIC} />}
     </div>
   );
 }
