@@ -7,6 +7,7 @@ import { useRgaMap } from "../hooks/useRgaMap";
 import { useRgaMapMarker } from "../hooks/useRgaMapMarker";
 import { useRgaBuildingSelection } from "../hooks/useRgaBuildingSelection";
 import type { RgaMapProps } from "../domain/types";
+import { estCartePrete } from "../domain/chargement-carte";
 import type { BuildingData } from "@/shared/services/bdnb";
 import type { Coordinates } from "@/shared/types";
 import { useDelayedFlag } from "@/shared/hooks";
@@ -91,7 +92,7 @@ export function RgaMap({
   // Carte entièrement prête (style + tuiles, y compris les zones d'aléa) : sur un réseau
   // lent, le style de base peut sembler complet bien avant, ce qui donne l'impression
   // trompeuse que le clic ne fonctionne pas. Le délai évite un flash sur réseau performant.
-  const mapFullyLoaded = isReady && layersReady;
+  const mapFullyLoaded = estCartePrete({ isReady, selectionEnabled, layersReady });
   const showMapLoadingOverlay = useDelayedFlag(!mapFullyLoaded && !selectedBuilding, LOADING_INDICATOR_DELAY_MS);
   // Une fois un bâtiment cliqué, la récupération de ses données (BDNB) peut aussi prendre du
   // temps sans aucun retour visuel - même logique de délai, et prioritaire sur le message

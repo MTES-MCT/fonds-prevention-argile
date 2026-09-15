@@ -70,3 +70,6 @@ CLAUDE.local.md
 
 # PMTiles locaux (trop volumineux pour git, heberges sur data.gouv.fr)
 *.pmtiles
+# Worker maplibre copie au postinstall (cf. scripts/setup/copy-maplibre-worker.mjs)
+/public/maplibre-gl-worker.mjs
+/public/maplibre-gl-shared.mjs

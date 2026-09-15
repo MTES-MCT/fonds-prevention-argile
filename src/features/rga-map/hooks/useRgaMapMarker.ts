@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import maplibregl, { Marker } from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
 
 import { ZOOM, FLY_TO_DELAY, MARKER_ICON_SIZE } from "../domain/config";
 import { Coordinates } from "@/shared/types";
@@ -20,7 +20,7 @@ interface UseRgaMapMarkerOptions {
 export function useRgaMapMarker(options: UseRgaMapMarkerOptions): void {
   const { map, coordinates, showMarker = false, flyToOnMount = true, zoom } = options;
 
-  const markerRef = useRef<Marker | null>(null);
+  const markerRef = useRef<maplibregl.Marker | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export function useRgaMapMarker(options: UseRgaMapMarkerOptions): void {
       el.alt = "Position sélectionnée";
 
       // Ajouter le marqueur à la carte
-      markerRef.current = new Marker({ element: el }).setLngLat([lon, lat]).addTo(map);
+      markerRef.current = new maplibregl.Marker({ element: el }).setLngLat([lon, lat]).addTo(map);
     }
 
     // Centrer la carte avec animation (après un délai)

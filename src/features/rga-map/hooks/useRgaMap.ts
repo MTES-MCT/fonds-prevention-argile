@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, type RefObject } from "react";
-import maplibregl from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
 import { Protocol, PMTiles } from "pmtiles";
 
 import { RGA_MAP_STYLE_URL, ARGILE_PMTILES_URL, DEFAULT_CENTER, ZOOM, MAX_BOUNDS } from "../domain/config";
@@ -36,6 +36,10 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
   // argile en parallèle du chargement du style : sur un réseau lent, cet aller-retour (~1 par
   // requête non cachée) ne bloque plus la première tuile demandée une fois la carte affichée.
   useEffect(() => {
+    // maplibre 6 resout son worker via import.meta.url, qui pointe le chunk webpack : 404.
+    // Le fichier est copie dans public/ au postinstall (scripts/setup/copy-maplibre-worker.mjs).
+    maplibregl.setWorkerUrl("/maplibre-gl-worker.mjs");
+
     const protocol = new Protocol();
     maplibregl.addProtocol("pmtiles", protocol.tile);
 
