@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/features/auth/domain/value-objects";
 import { ArchiveModal } from "../../../shared/components/ArchiveModal";
+import { UnarchiveModal } from "../../../shared/components/UnarchiveModal";
 import { ArretAccompagnementModal } from "../../../shared/components/ArretAccompagnementModal";
 import { RattacherDossierDnModal } from "../../../shared/components/RattacherDossierDnModal";
 import { ReinitialiserDossierDnModal } from "../../../shared/components/ReinitialiserDossierDnModal";
@@ -24,11 +25,12 @@ interface GererDossierMenuProps {
   stepCourante: Step;
   /** Ouvre la modale d'arrêt au montage (entrée depuis le bandeau « Je donne ma réponse »). */
   ouvrirArretAuMontage?: boolean;
+  /** Dossier archivé : « Archiver » laisse place à « Désarchiver ». */
+  estArchive: boolean;
 }
 
 /**
- * Menu « Gérer » du détail dossier : Archiver, actions sur le dossier DN, Ne plus accompagner.
- * Remplace l'ancien bouton « Archiver » seul.
+ * Menu « Gérer » du détail dossier : (dés)archivage, actions sur le dossier DN, Ne plus accompagner.
  */
 export function GererDossierMenu({
   parcoursId,
@@ -38,9 +40,11 @@ export function GererDossierMenu({
   peutReinitialiserDn,
   stepCourante,
   ouvrirArretAuMontage = false,
+  estArchive,
 }: GererDossierMenuProps) {
   const router = useRouter();
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [isUnarchiveOpen, setIsUnarchiveOpen] = useState(false);
   const [isArretOpen, setIsArretOpen] = useState(ouvrirArretAuMontage);
   const [isRattacherOpen, setIsRattacherOpen] = useState(false);
   const [isReinitOpen, setIsReinitOpen] = useState(false);
@@ -59,7 +63,13 @@ export function GererDossierMenu({
         triggerLabel="Gérer"
         triggerClassName="fr-btn fr-btn--secondary fr-btn--sm fr-icon-arrow-down-s-line fr-btn--icon-right"
         items={[
-          { label: "Archiver", icon: "fr-icon-archive-line", onClick: () => setIsArchiveOpen(true) },
+          estArchive
+            ? {
+                label: "Désarchiver",
+                icon: "fr-icon-inbox-archive-line",
+                onClick: () => setIsUnarchiveOpen(true),
+              }
+            : { label: "Archiver", icon: "fr-icon-archive-line", onClick: () => setIsArchiveOpen(true) },
           // Proposée uniquement aux rôles habilités : l'action refuserait les autres.
           ...(peutAgirSurDossierDn
             ? [
@@ -97,6 +107,17 @@ export function GererDossierMenu({
         onClose={() => setIsArchiveOpen(false)}
         parcoursId={parcoursId}
         onSuccess={backToListing}
+      />
+
+      {/* Le dé-archivage ramène le dossier dans le périmètre de l'agent : on reste sur la page. */}
+      <UnarchiveModal
+        isOpen={isUnarchiveOpen}
+        onClose={() => setIsUnarchiveOpen(false)}
+        parcoursId={parcoursId}
+        onSuccess={() => {
+          setIsUnarchiveOpen(false);
+          router.refresh();
+        }}
       />
 
       <ReinitialiserDossierDnModal

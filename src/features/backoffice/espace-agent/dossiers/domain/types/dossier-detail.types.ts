@@ -57,6 +57,10 @@ export interface DossierDetail {
   demandeArretAt: Date | null;
   /** Faux en département à AMO obligatoire : « Ne plus accompagner » y est refusé. */
   peutPasserEnAutonomie: boolean;
+  /** Non-null = parcours archivé. Seule source fiable : le statut de validation n'en dit rien. */
+  archivedAt: Date | null;
+  /** Motif saisi à l'archivage (`ARCHIVE_REASONS`, ou note d'inéligibilité automatique). */
+  archiveReason: string | null;
   /** Date de passage en instruction (null si jamais passé en instruction) */
   instructedAt: Date | null;
   /** Date de création du parcours */
