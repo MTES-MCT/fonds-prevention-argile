@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useDsfrModal } from "@/shared/hooks";
 import { LIBELLE_FORMULAIRE } from "@/features/parcours/dossiers-ds/domain/value-objects/libelle-formulaire";
+import { DELAI_MIN_REGENERATION_FORCE_SECONDES } from "@/features/parcours/dossiers-ds/domain/value-objects/regeneration-delais";
 import type { Step } from "../../domain";
 import { useParcours } from "../../context/useParcours";
 import { recreerFormulaireAction } from "../../actions/recreation-formulaire.actions";
@@ -25,7 +26,7 @@ interface RecreerFormulaireModalProps {
  */
 export function RecreerFormulaireModal({ isOpen, onClose, step }: RecreerFormulaireModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const { refresh } = useParcours();
+  const { refresh, getDossierByStep } = useParcours();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +34,23 @@ export function RecreerFormulaireModal({ isOpen, onClose, step }: RecreerFormula
   const [nouveauLien, setNouveauLien] = useState<string | null>(null);
 
   useDsfrModal(dialogRef, isOpen);
+
+  // Le serveur refuse un lien créé il y a moins de 30 s. Sans ce décompte, le refus arrivait
+  // après coup : l'onglet ouvert pour DN se refermait aussitôt, sans que personne ne comprenne.
+  const [maintenant, setMaintenant] = useState(() => Date.now());
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setInterval(() => setMaintenant(Date.now()), 1_000);
+    return () => clearInterval(timer);
+  }, [isOpen]);
+
+  const creeLe = getDossierByStep(step)?.createdAt;
+  const attenteRestante = creeLe
+    ? Math.max(
+        0,
+        Math.ceil((new Date(creeLe).getTime() + DELAI_MIN_REGENERATION_FORCE_SECONDES * 1_000 - maintenant) / 1_000)
+      )
+    : 0;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -149,6 +167,11 @@ export function RecreerFormulaireModal({ isOpen, onClose, step }: RecreerFormula
                       Votre ancien numéro de dossier reste conservé : si vous finissez par transmettre ce brouillon-là,
                       nous le rattacherons automatiquement à votre parcours.
                     </p>
+                    {attenteRestante > 0 && (
+                      <p className="fr-text--sm" role="status">
+                        {`Votre lien vient d'être créé : essayez d'abord de l'ouvrir. Si vous voulez vraiment en créer un autre, ce sera possible dans ${attenteRestante} secondes.`}
+                      </p>
+                    )}
                   </>
                 )}
 
@@ -163,8 +186,16 @@ export function RecreerFormulaireModal({ isOpen, onClose, step }: RecreerFormula
                 <ul className="fr-btns-group fr-btns-group--right fr-btns-group--inline-reverse fr-btns-group--inline-lg">
                   {!termine && (
                     <li>
-                      <button type="button" className="fr-btn" disabled={isSubmitting} onClick={handleConfirm}>
-                        {isSubmitting ? "Création en cours…" : "Créer un nouveau formulaire"}
+                      <button
+                        type="button"
+                        className="fr-btn"
+                        disabled={isSubmitting || attenteRestante > 0}
+                        onClick={handleConfirm}>
+                        {isSubmitting
+                          ? "Création en cours…"
+                          : attenteRestante > 0
+                            ? `Disponible dans ${attenteRestante} s`
+                            : "Créer un nouveau formulaire"}
                       </button>
                     </li>
                   )}

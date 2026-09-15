@@ -6,3 +6,4 @@ export * from "./ds-field-ids";
 export * from "./ds-annotations";
 export * from "./ds-champ-etat-maison";
 export * from "./libelle-formulaire";
+export * from "./regeneration-delais";

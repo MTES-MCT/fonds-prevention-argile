@@ -6,6 +6,10 @@ import type { ActionResult } from "@/shared/types";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import { getDossierByStep } from "./dossier-ds.service";
+import {
+  DELAI_MIN_REGENERATION_FORCE_SECONDES,
+  DELAI_MIN_REGENERATION_MINUTES,
+} from "../domain/value-objects/regeneration-delais";
 
 /**
  * Secours du demandeur dont le lien DN ne fonctionne plus (ADR-0027).
@@ -17,16 +21,6 @@ import { getDossierByStep } from "./dossier-ds.service";
  * Retirer le pointeur ne perd plus rien : le numéro reste au registre des tentatives, et la
  * réconciliation le retrouvera s'il finit par être déposé.
  */
-
-/** Fenêtre anti-rafale : évite qu'un double-clic n'empile les brouillons côté DN. */
-export const DELAI_MIN_REGENERATION_MINUTES = 10;
-
-/**
- * Plancher appliqué quand le demandeur a confirmé en modale : sa confirmation explicite
- * remplace la fenêtre de 10 min, qui refusait le cas nominal (ouvrir le lien, constater
- * qu'il ne marche pas, en redemander un). Il ne reste qu'un garde-fou anti double-clic.
- */
-export const DELAI_MIN_REGENERATION_FORCE_SECONDES = 30;
 
 export type RefusRegeneration =
   "aucun_dossier" | "dossier_depose" | "trop_recent" | "verification_impossible" | "etape_non_reinitialisable";

@@ -1,11 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { verifierRegeneration, reinitialiserDossierEtape, STEPS_REINITIALISABLES } from "./regeneration.service";
 import {
-  verifierRegeneration,
-  reinitialiserDossierEtape,
-  STEPS_REINITIALISABLES,
   DELAI_MIN_REGENERATION_MINUTES,
   DELAI_MIN_REGENERATION_FORCE_SECONDES,
-} from "./regeneration.service";
+} from "../domain/value-objects/regeneration-delais";
 import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import { dossiersDsTentativesRepo, parcoursRepo } from "@/shared/database/repositories";
 import { getDossierByStep } from "./dossier-ds.service";

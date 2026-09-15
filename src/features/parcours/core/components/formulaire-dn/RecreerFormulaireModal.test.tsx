@@ -1,11 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { RecreerFormulaireModal } from "./RecreerFormulaireModal";
 import { recreerFormulaireAction } from "../../actions/recreation-formulaire.actions";
 
 vi.mock("../../actions/recreation-formulaire.actions", () => ({ recreerFormulaireAction: vi.fn() }));
-vi.mock("../../context/useParcours", () => ({ useParcours: () => ({ refresh: vi.fn() }) }));
+const dossierCourant = { createdAt: new Date("2026-09-15T10:00:00Z") };
+vi.mock("../../context/useParcours", () => ({
+  useParcours: () => ({ refresh: vi.fn(), getDossierByStep: () => dossierCourant }),
+}));
 // Le DSFR n'est pas initialisé en test : le `<dialog>` reste fermé, donc hors de l'arbre
 // d'accessibilité. Les requêtes par rôle passent par `hidden: true`.
 vi.mock("@/shared/hooks", () => ({ useDsfrModal: vi.fn() }));
@@ -22,6 +25,12 @@ function rendre() {
 beforeEach(() => {
   vi.clearAllMocks();
   window.open = vi.fn().mockReturnValue(null);
+  // Lien créé il y a longtemps : le plancher anti double-clic ne s'applique pas.
+  vi.setSystemTime(new Date("2026-09-15T10:05:00Z"));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("RecreerFormulaireModal", () => {
@@ -56,6 +65,18 @@ describe("RecreerFormulaireModal", () => {
 
     await waitFor(() => expect(screen.getByText(/32052358/)).toBeInTheDocument());
     expect(screen.queryByRole("link", { name: /cliquez ici/, hidden: true })).not.toBeInTheDocument();
+  });
+
+  // Sans ce décompte, le refus serveur arrivait après l'ouverture de l'onglet DN, qui se
+  // refermait aussitôt sans explication lisible.
+  it("verrouille le bouton tant que le lien vient d'être créé", () => {
+    vi.setSystemTime(new Date("2026-09-15T10:00:10Z"));
+
+    render(<RecreerFormulaireModal isOpen onClose={vi.fn()} step={Step.ELIGIBILITE} />);
+
+    expect(screen.getByRole("button", { name: "Disponible dans 20 s", hidden: true })).toBeDisabled();
+    expect(screen.getByText(/essayez d'abord de l'ouvrir/)).toBeInTheDocument();
+    expect(window.open).not.toHaveBeenCalled();
   });
 
   // Le refus s'affichait en rouge tout en haut du callout, loin du bouton cliqué.

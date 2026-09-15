@@ -1291,6 +1291,12 @@ Trois raisons à ce regroupement, toutes issues du découpage précédent en deu
   simple garde-fou anti double-clic. Les 10 min refusaient le cas nominal : ouvrir le lien,
   constater qu'il ne marche pas, en redemander un.
 
+> Ce plancher est **décompté côté client** : la modale désactive son bouton et affiche le temps
+> restant (`DELAI_MIN_REGENERATION_FORCE_SECONDES`, dans le domaine et non dans le service, pour
+> ne pas embarquer Drizzle dans le bundle). Sans ce décompte, le refus n'arrivait qu'après
+> l'aller-retour serveur, donc **après** l'ouverture de l'onglet destiné à DN, qui se refermait
+> aussitôt — un clignotement que personne ne rattachait au message de la modale.
+
 Ce que `force` **ne** relâche pas, et qui s'affiche dans la modale au lieu d'une alerte en haut
 de page : un dossier **déjà déposé** (son lien stable s'applique, invariant ADR-0027) et un
 **sondage DN impossible** (autre chose qu'un `not_found` : on est aveugle sur un numéro peut-être
