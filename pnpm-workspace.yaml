@@ -47,9 +47,11 @@ overrides:
   # minimatch, exceljs>archiver côté prod). 2.1.4 reste sur la ligne 2.x : la 5.x
   # est un major, inutile ici puisque le correctif est backporté.
   brace-expansion: "^2.1.4"
+  # Copie récursive suivant les symlinks hors du répertoire cible (transitif via eslint)
+  "@humanfs/node": "^0.16.8"
   # Prototype pollution via merge + DoS quadratique sur clés de merge
   # (transitif via eslint)
-  js-yaml: "^4.3.1"
+  js-yaml: "^4.3.2"
   # ReDoS $data (transitif via eslint)
   ajv: "^6.14.0"
   # Arbitrary requests via dev server + binary-integrity (transitif via drizzle-kit, tsx)
@@ -61,11 +63,11 @@ overrides:
   undici: "^7.29.0"
   # CVE libvips (CVE-2026-33327/33328/35590/35591) — transitif via next (image
   # optimization), non exploitable sans input attaquant mais patché à la source
-  sharp: "^0.35.0"
+  sharp: "^0.35.4"
   # next épingle postcss@8.4.31 : lecture de fichier arbitraire via sourceMappingURL,
   # XSS </style> et 2 autres CVE, dont 2 High, en dépendance de PRODUCTION.
   # L'override aligne le postcss bundlé sur notre dep directe (même majeur 8.x).
-  postcss: "^8.5.26"
+  postcss: "^8.5.28"
   # DoS via ID non cryptographiquement sûr (transitif via postcss)
   nanoid: "^3.3.18"
   # Parsing de schéma protobuf non borné (transitif via maplibre-gl)
@@ -85,6 +87,7 @@ trustPolicyExclude:
 # Approbation explicite des scripts d'install natif (pnpm 11+).
 # Note : remplace `onlyBuiltDependencies` (ancien mécanisme pnpm 9-10, ignoré en 11).
 allowBuilds:
+  "@gouvfr/dsfr": false
   esbuild: true
   sharp: true
   unrs-resolver: true
