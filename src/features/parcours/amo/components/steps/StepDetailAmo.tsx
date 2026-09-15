@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { useParcours } from "../../../core/context/useParcours";
 import { Step } from "../../../core/domain";
-import { estLogementNonEligible, StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import {
+  estAccompagnementRefuse,
+  estLogementNonEligible,
+  estParcoursSansSuite,
+  StatutValidationAmo,
+} from "@/features/parcours/amo/domain/value-objects";
 import { useAmoMode } from "@/features/parcours/amo/hooks";
 import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { ContactCard } from "@/shared/components/ContactCard/ContactCard";
@@ -10,11 +15,14 @@ export default function StepDetailAmo() {
   const { currentStep, statutAmo, validationAmoComplete, isDossierNonEligible } = useParcours();
   const amoMode = useAmoMode();
 
-  // Couvre les décisions AMO (dont ACCOMPAGNEMENT_REFUSE, legacy) et les qualifications
-  // non éligibles (Aller-vers ou simulation du demandeur), qui laissent statutAmo null.
+  // Inéligibilité : décision d'un AMO, ou qualification Aller-vers / simulation du demandeur
+  // (qui laissent statutAmo null). Le refus d'accompagnement gare aussi la carte, mais sans
+  // rien dire de l'éligibilité — d'où deux prédicats et deux badges.
   const isNonEligible = estLogementNonEligible(statutAmo, isDossierNonEligible);
+  const isRefusAccompagnement = estAccompagnementRefuse(statutAmo);
+  const isSansSuite = estParcoursSansSuite(statutAmo, isDossierNonEligible);
 
-  const isDisabled = currentStep !== Step.CHOIX_AMO || isNonEligible;
+  const isDisabled = currentStep !== Step.CHOIX_AMO || isSansSuite;
 
   const isChooseAmoLinkDisabled = isDisabled || statutAmo === StatutValidationAmo.EN_ATTENTE;
 
@@ -29,15 +37,15 @@ export default function StepDetailAmo() {
     <div className="fr-card">
       <div className="fr-card__body fr-py-4w">
         {/* Badge conditionnel. « A faire » uniquement à l'étape choix_amo  */}
-        {currentStep === Step.CHOIX_AMO && !statutAmo && !isNonEligible && (
+        {currentStep === Step.CHOIX_AMO && !statutAmo && !isSansSuite && (
           <span className="fr-badge fr-text--sm fr-badge--new fr-mb-2w">A faire</span>
         )}
 
-        {statutAmo === StatutValidationAmo.EN_ATTENTE && !isNonEligible && (
+        {statutAmo === StatutValidationAmo.EN_ATTENTE && !isSansSuite && (
           <span className="fr-badge fr-text--sm fr-badge--info fr-mb-2w">En attente</span>
         )}
 
-        {statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE && validationAmoComplete?.choisieAt && !isNonEligible && (
+        {statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE && validationAmoComplete?.choisieAt && !isSansSuite && (
           <span className="fr-badge fr-text--sm fr-badge--success fr-mb-2w">
             Validé le {validationAmoComplete?.choisieAt.toLocaleDateString("fr-FR")}
           </span>
@@ -45,7 +53,11 @@ export default function StepDetailAmo() {
 
         {isNonEligible && <span className="fr-badge fr-text--sm fr-badge--error fr-mb-2w">Non éligible</span>}
 
-        {isSansAmo && !isNonEligible && <span className="fr-badge fr-text--sm fr-badge--success fr-mb-2w">Validé</span>}
+        {isRefusAccompagnement && (
+          <span className="fr-badge fr-text--sm fr-badge--warning fr-mb-2w">Sans accompagnement</span>
+        )}
+
+        {isSansAmo && !isSansSuite && <span className="fr-badge fr-text--sm fr-badge--success fr-mb-2w">Validé</span>}
 
         {/* Titre avec couleur conditionnelle */}
         <h5
@@ -75,7 +87,7 @@ export default function StepDetailAmo() {
         )}
 
         {/* Mention SANS_AMO : le demandeur gère ses démarches seul */}
-        {isSansAmo && !isNonEligible && (
+        {isSansAmo && !isSansSuite && (
           <p className="fr-text--sm">Vous avez choisi de gérer vos démarches sans accompagnement.</p>
         )}
 
