@@ -411,6 +411,16 @@ l'aller-vers du territoire en devient responsable. Retour arrière : ré-ouvertu
 déjà `accompagnement_refuse`) ou dé-archivage manuel — pas de routage automatique. Voir
 [ADR-0022](../adr/0022-refus-accompagnement-demandeur-eligible.md).
 
+> **Le détail dossier lit l'archivage, plus un proxy (septembre 2026).** `getDossierDetail`
+> n'exposait ni `archivedAt` ni `archiveReason`, et le seul bandeau d'archivage d'`InfoDossierCallout`
+> se déclenchait sur `validationStatut === LOGEMENT_NON_ELIGIBLE`. Un dossier archivé pour tout autre
+> motif — abandon, non-réponse, reste à charge, refus d'accompagnement — s'affichait donc comme un
+> dossier actif, et le menu « Gérer » lui réoffrait « Archiver ». Environ 186 des 215 dossiers
+> archivés de la production étaient dans ce cas. Le bandeau dérive désormais d'`archivedAt` (avec le
+> motif, et la variante « non éligible » conservée via `isEligibiliteArchiveReason`), et « Archiver »
+> laisse place à « Désarchiver ». Un dossier **refusé** garde son propre chemin de retour, le bouton
+> « Ré-ouvrir la demande » (ADR-0016), qui remplace le menu entier.
+
 > `ACCOMPAGNEMENT_REFUSE` est **consultable** (`STATUTS_CONSULTABLES`) mais **non éditable**
 > (`editableStatuts` de l'édition simulation) : le dossier archivé n'est pas corrigeable via
 > « Vérifier son éligibilité » — asymétrie assumée (le dossier est garé).
