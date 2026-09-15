@@ -26,6 +26,17 @@ Copiez le fichier `.env.example` vers `.env.local` :
 cp .env.example .env.local
 ```
 
+> **Deux fichiers, deux lecteurs.** Next lit `.env.local` ; `docker-compose.yml` lit `.env`
+> pour ses substitutions (`DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`). Une valeur posée
+> uniquement dans `.env.local` n'a donc **aucun effet** sur les conteneurs : Compose retombe
+> sur ses valeurs par défaut. Si vous changez le port ou le mot de passe de la base, posez-les
+> dans `.env`, et gardez les deux fichiers cohérents avec `DATABASE_URL`.
+
+Les ports des conteneurs de développement (base `5433`, Mailhog `1025`/`8025`) sont liés à
+`127.0.0.1` : ils ne sont joignables que depuis votre poste. C'est volontaire — la base a un
+mot de passe par défaut connu et l'interface de Mailhog n'a aucune authentification. Ne
+retirez pas ce préfixe pour dépanner sur un réseau partagé.
+
 Configurez les variables selon votre environnement. Les principales variables incluent :
 
 - `NODE_ENV` : Environnement d'exécution (`development` ou `production`)
