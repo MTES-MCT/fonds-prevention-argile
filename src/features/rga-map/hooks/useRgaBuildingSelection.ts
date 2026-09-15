@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import type maplibregl from "maplibre-gl";
+import type * as maplibregl from "maplibre-gl";
 
 import { SOURCE_IDS, LAYER_IDS, RNB_SOURCE_LAYER } from "../domain/config";
 import type { SelectedBuilding } from "../domain/types";
