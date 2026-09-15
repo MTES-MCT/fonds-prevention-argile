@@ -75,6 +75,16 @@ describe("recreerFormulaireAction", () => {
     );
   });
 
+  // Le formulaire est déjà recréé : un audit en échec ne doit pas se présenter au demandeur
+  // comme une création ratée.
+  it("reste un succès si l'audit échoue", async () => {
+    vi.mocked(parcoursRepo.findByUserId).mockRejectedValue(new Error("base indisponible"));
+
+    const result = await recreerFormulaireAction(Step.ELIGIBILITE);
+
+    expect(result.success).toBe(true);
+  });
+
   it("ne trace rien quand le service refuse", async () => {
     mockedService.mockResolvedValue({ success: false, error: "Votre dossier a déjà été transmis" });
 

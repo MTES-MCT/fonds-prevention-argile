@@ -75,6 +75,9 @@ export function RecreerFormulaireModal({ isOpen, onClose, step }: RecreerFormula
     // synchrone d'un geste utilisateur.
     const dsWindow = window.open("about:blank", "_blank");
     if (dsWindow) {
+      // Équivalent de `noopener` : un `window.open` pré-ouvert ne prend pas l'option, et la
+      // page DN chargée ensuite ne doit pas garder la main sur notre onglet (tabnabbing).
+      dsWindow.opener = null;
       dsWindow.document.title = "Chargement…";
       dsWindow.document.body.innerHTML =
         '<p style="font-family:system-ui,sans-serif;text-align:center;margin-top:40vh;font-size:1.2rem">' +

@@ -27,7 +27,13 @@ export async function recreerFormulaireAction(step: Step): Promise<ActionResult<
     const result = await recreerFormulaireDemandeur(session.userId, step);
     if (!result.success) return result;
 
-    await auditer(session.userId, result.data);
+    // Best-effort jusqu'au bout : le formulaire est déjà recréé, un audit qui échoue ne doit
+    // pas renvoyer une erreur au demandeur.
+    try {
+      await auditer(session.userId, result.data);
+    } catch (error) {
+      console.error("recreerFormulaireAction : audit best-effort échoué", error);
+    }
 
     revalidatePath("/mon-compte");
     revalidatePath("/espace-agent", "layout");

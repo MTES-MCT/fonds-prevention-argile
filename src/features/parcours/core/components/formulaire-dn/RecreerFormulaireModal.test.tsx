@@ -17,6 +17,17 @@ const mockedAction = vi.mocked(recreerFormulaireAction);
 
 const URL_DN = "https://demarche.numerique.gouv.fr/commencer/x";
 
+/** Onglet pré-ouvert : le code y écrit un message d'attente puis le redirige vers DN. */
+function ongletFactice() {
+  return {
+    opener: {} as unknown,
+    closed: false,
+    location: { href: "" },
+    document: { title: "", body: { innerHTML: "" } },
+    close: vi.fn(),
+  };
+}
+
 function rendre() {
   render(<RecreerFormulaireModal isOpen onClose={vi.fn()} step={Step.ELIGIBILITE} />);
   return screen.getByRole("button", { name: "Créer un nouveau formulaire", hidden: true });
@@ -77,6 +88,22 @@ describe("RecreerFormulaireModal", () => {
     expect(screen.getByRole("button", { name: "Disponible dans 20 s", hidden: true })).toBeDisabled();
     expect(screen.getByText(/essayez d'abord de l'ouvrir/)).toBeInTheDocument();
     expect(window.open).not.toHaveBeenCalled();
+  });
+
+  // Un `window.open` pré-ouvert ne prend pas l'option `noopener` : la page DN garderait la
+  // main sur notre onglet (tabnabbing).
+  it("coupe le lien vers l'onglet d'origine avant de charger DN", async () => {
+    const onglet = ongletFactice();
+    window.open = vi.fn().mockReturnValue(onglet);
+    mockedAction.mockResolvedValue({
+      success: true,
+      data: { statut: "recree", dossierUrl: URL_DN, ancienDsNumber: "32872663", step: Step.ELIGIBILITE },
+    });
+
+    fireEvent.click(rendre());
+
+    await waitFor(() => expect(onglet.location.href).toBe(URL_DN));
+    expect(onglet.opener).toBeNull();
   });
 
   // Le refus s'affichait en rouge tout en haut du callout, loin du bouton cliqué.

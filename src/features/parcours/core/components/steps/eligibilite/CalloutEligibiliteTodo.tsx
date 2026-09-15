@@ -39,6 +39,8 @@ export default function CalloutEligibiliteTodo() {
     // Safari n'autorise window.open() qu'en contexte synchrone d'un geste utilisateur.
     const dsWindow = window.open("about:blank", "_blank");
     if (dsWindow) {
+      // Équivalent de `noopener` sur une fenêtre pré-ouverte (cf. RecreerFormulaireModal).
+      dsWindow.opener = null;
       dsWindow.document.title = "Chargement…";
       dsWindow.document.body.innerHTML =
         '<p style="font-family:system-ui,sans-serif;text-align:center;margin-top:40vh;font-size:1.2rem">' +
