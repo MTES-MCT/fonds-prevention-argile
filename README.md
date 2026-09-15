@@ -182,6 +182,7 @@ Installe les dépendances avec lockfile et lance la validation complète.
 
 Documentation technique détaillée dans `docs/` :
 
+- [`docs/ops/`](./docs/ops/README.md) — **Commandes et requêtes d'exploitation** : se connecter à staging/prod, lire les logs, restaurer un dump en local, diagnostiquer le dossier d'un demandeur, tester les webhooks Brevo
 - [`docs/parcours/FLOW-AND-SYNC.md`](./docs/parcours/FLOW-AND-SYNC.md) — Flux du parcours utilisateur et synchronisation Démarches Simplifiées
 - [`docs/partners/PARTNER-TRACKING.md`](./docs/partners/PARTNER-TRACKING.md) — **Suivi des partenaires intégrant l'iframe** (MAIF, etc.) : détection, persistance via cookie + champ `users.partner_source`, filtrage backoffice, et procédure pour ajouter un nouveau partenaire
 - [`docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md`](./docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md) — **Simulateur de vulnérabilité RGA** (prototype, inactif en production) : périmètre, disponibilité par environnement, méthode de calcul, backlog d'améliorations
