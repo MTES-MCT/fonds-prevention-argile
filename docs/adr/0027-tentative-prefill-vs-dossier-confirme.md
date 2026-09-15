@@ -176,6 +176,29 @@ Découpage retenu : registre des tentatives (phase 3), réconciliation au dépô
 régénération de lien côté demandeur (phase 5), rattachement manuel et aide au compte DN
 (phase 6).
 
+## Amendement (2026-09-15) — la régénération crée le formulaire, elle ne le prépare plus
+
+La phase 5 livrait un secours en **deux clics** : « Créer un nouveau formulaire » retirait le
+pointeur, puis invitait le demandeur à relancer le CTA principal. Trois défauts constatés en
+recette, tous réparés par un unique aller-retour serveur (`recreerFormulaireDemandeur`) :
+
+- la fenêtre anti-rafale de **10 minutes** refusait le cas nominal — ouvrir le lien, constater
+  qu'il ne fonctionne pas, en redemander un — avec un message d'erreur en haut de page ;
+- le CTA principal lisait la simulation dans le **store du navigateur**, vide sur un dossier créé
+  par un Aller-vers : le demandeur restait alors sans pointeur **et** sans lien ;
+- l'onglet DN ne pouvait plus être ouvert au second clic sans sortir du geste utilisateur.
+
+Ce que l'amendement change : une **modale de confirmation** avertit de la perte du brouillon, et
+cette confirmation explicite remplace la fenêtre de 10 min (plancher ramené à 30 s, anti
+double-clic). La simulation est lue **en base**. Le secours est étendu au **diagnostic** et aux
+**devis**, que `STEPS_REINITIALISABLES` couvrait déjà côté service.
+
+Ce que l'amendement ne change pas : les invariants du registre (le numéro courant y est écrit
+**avant** le retrait du pointeur, jamais supprimé), le sondage préalable des numéros connus (un
+dossier déposé se rattache, il ne se recrée pas), le refus sur un dossier **déjà déposé** et le
+refus sur un **sondage DN impossible** — `force` ne relâche que la fenêtre anti-rafale. Détail
+en [FLOW-AND-SYNC §7.6](../parcours/FLOW-AND-SYNC.md).
+
 ## Liens
 
 - [ADR-0026](0026-gel-reset-eligibilite-not-found.md) — gel du reset destructif, constat fondateur

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useParcours } from "../../../context/useParcours";
 import { envoyerDossierEligibiliteAvecDonnees } from "../../../actions";
-import { regenererLienPrefillAction } from "@/features/parcours/dossiers-ds/actions";
+import { SecoursLienFormulaire } from "../../formulaire-dn";
 import { Step } from "../../../domain";
 import { useSimulateurRga } from "@/features/simulateur";
 import { ROUTES } from "@/features/auth/client";
@@ -23,8 +23,6 @@ export default function CalloutEligibiliteTodo() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [regenerationMessage, setRegenerationMessage] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     setError(null);
@@ -41,6 +39,8 @@ export default function CalloutEligibiliteTodo() {
     // Safari n'autorise window.open() qu'en contexte synchrone d'un geste utilisateur.
     const dsWindow = window.open("about:blank", "_blank");
     if (dsWindow) {
+      // Équivalent de `noopener` sur une fenêtre pré-ouverte (cf. RecreerFormulaireModal).
+      dsWindow.opener = null;
       dsWindow.document.title = "Chargement…";
       dsWindow.document.body.innerHTML =
         '<p style="font-family:system-ui,sans-serif;text-align:center;margin-top:40vh;font-size:1.2rem">' +
@@ -79,45 +79,6 @@ export default function CalloutEligibiliteTodo() {
     }
   };
 
-  // Secours : le lien ne fonctionne plus (mauvais compte DN, brouillon expiré…). On ne sait
-  // pas diagnostiquer côté DN, alors on vérifie d'abord si un ancien numéro a été déposé
-  // entre-temps, sinon on repart d'un formulaire neuf. Cf. ADR-0027.
-  const handleRegenerer = async () => {
-    setError(null);
-    setRegenerationMessage(null);
-    setIsRegenerating(true);
-
-    try {
-      const result = await regenererLienPrefillAction();
-
-      if (!result.success) {
-        setError(result.error);
-        return;
-      }
-
-      if (result.data.statut === "rattache") {
-        setRegenerationMessage(
-          "Bonne nouvelle : votre dossier a bien été transmis à Démarches Numériques. Nous l'avons retrouvé."
-        );
-        await refresh();
-        return;
-      }
-
-      // handleSubmit ouvre sa propre fenêtre, mais nous ne sommes plus dans le geste
-      // utilisateur synchrone : Safari la bloquerait. L'usager relance donc lui-même
-      // depuis le bouton principal, désormais fonctionnel.
-      setRegenerationMessage(
-        "Un nouveau formulaire peut être créé : cliquez sur « Remplir le formulaire d'éligibilité »."
-      );
-      await refresh();
-    } catch (err) {
-      console.error("Erreur lors de la régénération:", err);
-      setError("Une erreur inattendue s'est produite. Veuillez réessayer.");
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
-
   // Affichage pendant le chargement
   if (isLoading) {
     return (
@@ -151,47 +112,11 @@ export default function CalloutEligibiliteTodo() {
           Une fois votre formulaire rempli et soumis, un instructeur l'analysera. Vous recevrez une notification
           lorsqu'il aura pris sa décision.
         </p>
-        <button
-          onClick={handleSubmit}
-          disabled={isRegenerating}
-          className="fr-btn fr-btn--icon-right fr-icon-external-link-line">
-          Remplir le formulaire d'éligibilité
+        <button onClick={handleSubmit} className="fr-btn fr-btn--icon-right fr-icon-external-link-line">
+          Remplir le formulaire d&apos;éligibilité
         </button>
 
-        {aDejaUnLien && (
-          <details className="fr-mt-3w">
-            <summary className="fr-text--sm">Ce lien ne fonctionne plus ?</summary>
-            <div className="fr-mt-1w fr-text--sm">
-              <p>
-                Cela arrive quand le formulaire a été ouvert avec un autre compte Démarches Numériques, ou lorsqu'il est
-                resté trop longtemps sans être complété.
-              </p>
-              <p>Avant de recommencer, deux vérifications qui vous feront peut-être gagner du temps :</p>
-              <ul>
-                <li>
-                  connectez-vous à Démarches Numériques <strong>avec l'adresse e-mail que vous utilisez ici</strong> ;
-                </li>
-                <li>regardez vos dossiers en cours : votre formulaire s'y trouve peut-être déjà.</li>
-              </ul>
-              <p>
-                Sinon, nous pouvons vous en créer un nouveau. Attention : ce que vous auriez déjà saisi dans l'ancien
-                formulaire ne sera pas repris.
-              </p>
-              <button
-                onClick={handleRegenerer}
-                disabled={isRegenerating}
-                className="fr-btn fr-btn--secondary fr-btn--sm">
-                {isRegenerating ? "Vérification en cours…" : "Créer un nouveau formulaire"}
-              </button>
-            </div>
-          </details>
-        )}
-
-        {regenerationMessage && (
-          <div className="fr-alert fr-alert--success fr-alert--sm fr-mt-2w">
-            <p>{regenerationMessage}</p>
-          </div>
-        )}
+        {aDejaUnLien && <SecoursLienFormulaire step={Step.ELIGIBILITE} />}
       </div>
     </>
   );

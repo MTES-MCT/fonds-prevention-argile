@@ -32,7 +32,7 @@ describe("reinitialiserDossierDnAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(verifierAccesDossierDn).mockResolvedValue(null);
-    vi.mocked(reinitialiserDossierEtape).mockResolvedValue({ success: true, data: { statut: "a_recreer" } });
+    vi.mocked(reinitialiserDossierEtape).mockResolvedValue({ success: true, data: { statut: "a_recreer", ancienDsNumber: "32872663" } });
   });
 
   it("refuse quand la garde de périmètre refuse, sans rien réinitialiser", async () => {
