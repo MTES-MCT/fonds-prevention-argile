@@ -9,7 +9,7 @@
  * Pipeline (6 étapes, ~30s en local) :
  *   1. safety   — vérifs env + DB URL
  *   2. ref-data — bail si rga_zones ou catastrophes_naturelles est vide
- *   3. agents   — INSERT 7 super-admins (ON CONFLICT DO UPDATE)
+ *   3. agents   — fixtures d'agents + super-admins depuis SEED_AGENTS_SUPERADMINS
  *   4. amo-av   — INSERT fixtures AMO + Allers-vers
  *   5. parcours — joue les 13 SQL de sql/fake-parcours/00 → 13
  *   6. verify   — joue 99-verification.sql
@@ -182,6 +182,39 @@ async function runSqlFile(relPath: string, dryRun: boolean): Promise<void> {
 async function runAgentsStep(dryRun: boolean): Promise<void> {
   console.log("→ agents");
   await runSqlFile("agents/seed-agents-local-staging.sql", dryRun);
+  await seedSuperAdmins(dryRun);
+}
+
+// Les super-admins sont des personnes réelles : leurs adresses arrivent par
+// l'environnement, jamais par un fichier commité.
+async function seedSuperAdmins(dryRun: boolean): Promise<void> {
+  const emails = [
+    ...new Set(
+      (process.env.SEED_AGENTS_SUPERADMINS ?? "")
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter((e) => e.includes("@"))
+    ),
+  ];
+
+  if (emails.length === 0) {
+    console.log("  · SEED_AGENTS_SUPERADMINS absent : aucun super-admin nominatif inséré");
+    return;
+  }
+  if (dryRun) {
+    console.log(`  [dry-run] ${emails.length} super-admin(s) depuis SEED_AGENTS_SUPERADMINS`);
+    return;
+  }
+
+  for (const email of emails) {
+    // Le vrai `sub` et l'état civil sont écrits par ProConnect à la première connexion.
+    await rawClient`
+      INSERT INTO agents (sub, email, given_name, usual_name, role)
+      VALUES (${`seed_${email}`}, ${email}, 'Super', 'Administrateur', 'super_administrateur'::agent_role)
+      ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role
+    `;
+  }
+  console.log(`  ✓ ${emails.length} super-admin(s) depuis SEED_AGENTS_SUPERADMINS`);
 }
 
 async function runAmoAvStep(dryRun: boolean): Promise<void> {
