@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useAuth } from "@/features/auth/client";
+import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import type { EligibilityChecks } from "../../domain/entities/eligibility-result.entity";
 import { EligibilityChecksList } from "./EligibilityChecksList";
 
@@ -14,6 +16,8 @@ interface ResultNonEligibleProps {
  * Page de résultat : non éligible
  */
 export function ResultNonEligible({ checks, onRestart, onBack }: ResultNonEligibleProps) {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="bg-[var(--background-alt-grey)] min-h-screen md:min-h-0 md:bg-transparent">
       <div className="fr-container fr-mb-8w">
@@ -32,8 +36,14 @@ export function ResultNonEligible({ checks, onRestart, onBack }: ResultNonEligib
               <h5 className="fr-mb-4w">Simulateur d'éligibilité au Fonds Prévention Argile</h5>
 
               <div className="fr-callout fr-icon-warning-line fr-callout--pink-macaron">
-                <h2 className="fr-callout__title">Vous n'êtes pas éligible</h2>
+                <h2 className="fr-callout__title">Vous n&apos;êtes pas éligible</h2>
                 <p>Votre logement ne répond pas aux critères du dispositif.</p>
+                {/* Le résultat est déjà enregistré sur le dossier : on évite juste le cul-de-sac. */}
+                {isAuthenticated && (
+                  <Link href={ROUTES.particulier.monCompte} className="fr-btn fr-btn--secondary fr-mt-2w">
+                    Retour à mon espace
+                  </Link>
+                )}
               </div>
 
               <EligibilityChecksList checks={checks} isEligible={false} />

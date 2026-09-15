@@ -122,40 +122,146 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 
 À chaque PR (ou groupe de commits livrant une fonctionnalité), proposer une
 **checklist de tests manuels UI / E2E** que l'utilisateur déroulera pour valider la
-branche. Règles :
+branche.
 
-- Format **collable dans Notion** : cases à cocher Markdown (`- [ ]`), une action par ligne.
-- **Étape par étape, en quelques mots** : action → résultat attendu. Pas de paragraphes.
+#### Structure : un bloc autonome par parcours
+
+Chaque parcours testé est un bloc qu'on peut dérouler seul, sans lire les autres (pour se
+les répartir à plusieurs) : titre + objectif, **données**, étapes, cas limites, remise à
+zéro. La **non-régression** forme le dernier bloc, à part : elle ne se rattache à aucun
+scénario métier.
+
+```markdown
+# Tests manuels — <titre de la fonctionnalité>
+
+**Environnement** : local — `pnpm db:start`, `pnpm start:dev`, Mailhog sur http://localhost:8025
+
+---
+
+## Parcours 1 — <nom court du scénario>
+
+**Persona** : <demandeur (FranceConnect) | agent AMO | agent Aller-vers | super-administrateur>
+**Objectif** : <ce qu'on cherche à prouver, une phrase>
+
+**Données**
+
+- Compte FranceConnect : login `<login>` / `123` — libre en base, à consommer
+- Compte agent (ProConnect) : `<email>` / `<mot de passe>` — <rôle, structure, territoire>
+- Dossier concerné : http://localhost:3000/espace-agent/dossiers/<id> — <libellé du cas>
+- Adresse à saisir : <adresse complète, avec le département visé>
+
+**Étapes**
+
+- [ ] <action> → <résultat attendu>
+- [ ] <action> → <résultat attendu>
+
+**Cas limites**
+
+- [ ] <action> → <résultat attendu>
+
+**Remise à zéro** : `pnpm fix:purge-comptes-test-fc --email=<email> --apply`
+
+---
+
+## Parcours N — Non-régression
+
+- [ ] <action> → <résultat attendu>
+```
+
+Règles d'écriture :
+
+- **Collable dans Notion** : cases à cocher Markdown (`- [ ]`), une action par ligne.
+- **Une action, un attendu** séparés par `→`, en quelques mots. Pas de paragraphes.
+- **Pas d'étapes numérotées** (`Étape 1`, `Étape 2`) : l'ordre de la liste porte déjà la
+  séquence, et Notion ne numérote pas des cases à cocher. On insère une étape sans tout
+  renuméroter.
+- **Liens complets et cliquables**, jamais un chemin nu (`/mon-compte`) : `http://localhost:3000/...`
+  en local, `https://staging.fonds-prevention-argile.beta.gouv.fr/...` pour une checklist staging
+  (URL canonique ; l'URL Scalingo `fonds-argile-staging.osc-fr1.scalingo.io` répond aussi mais ne
+  se donne pas dans une checklist).
+- **Un bloc = un persona.** Ne jamais enchaîner demandeur et agent dans le même parcours :
+  le contrôle côté agent d'un flux demandeur est un bloc à part. Un changement de compte est
+  une **étape explicite** (« se déconnecter ou ouvrir une fenêtre privée, se connecter avec … »),
+  jamais une ligne implicite du bloc « Données ».
+- **Vérifier que le compte proposé voit réellement le cas**, rôle **et** territoire : la liste
+  nominative des demandeurs exige `USERS_DETAIL_READ` (admins seulement), et un dossier dans un
+  département non couvert n'apparaît dans aucun espace agent. Un compte qui ne voit rien fait
+  perdre plus de temps qu'une étape manquante.
 - **Couverture simple** : le chemin nominal + 1 à 2 cas limites qui touchent réellement au
   changement de la branche. Ne pas re-tester toute l'app, seulement la surface impactée.
-- Grouper par flux / écran si plusieurs zones sont touchées.
-- Lister en tête les **prérequis** (compte de test, environnement, seed) si nécessaires.
-- Quand le changement corrige un bug remonté (QA), inclure le **scénario de repro exact**
-  pour vérifier la non-régression.
+- Quand le changement corrige un bug remonté (QA), inclure le **scénario de repro exact**.
 - Français, accents. Pas d'emojis.
 - Si la branche ne touche rien de visible côté UI, l'indiquer : « rien à tester côté UI ».
 
-**Partir de cas réels, pas de préconditions génériques.** Quand la branche touche l'espace
-agent, une étape du type « ouvrir un prospect non qualifié de ton territoire » coûte plus de
-temps à instancier qu'à dérouler. `pnpm qa:cas-de-test` (cf. `scripts/ops/README.md`) résout
-le périmètre réel d'un compte et sort, par scénario, les dossiers concernés avec leur URL :
+#### Le bloc « Données » : des cas réels, jamais des préconditions génériques
 
-1. `pnpm qa:cas-de-test --comptes` — choisir le compte de test (et écarter ceux marqués
-   « COMPTE INEXPLOITABLE »).
-2. `pnpm qa:cas-de-test --agent=<email> --markdown` — obtenir les liens directs.
-3. Coller ces liens sous les étapes correspondantes de la checklist.
+C'est le cœur du format. Une étape du type « ouvrir un prospect non qualifié de ton
+territoire » coûte plus de temps à instancier qu'à dérouler : le bloc « Données » doit donner
+le compte, le mot de passe, l'URL du dossier et l'adresse à saisir, pour que les étapes n'aient
+plus rien à résoudre.
 
-Qui lance le script dépend de l'environnement visé :
+**Comptes FranceConnect (demandeur).** Les citoyens mockés de l'IdP FC « low » (staging et
+local) sont listés dans
+[base.csv](https://github.com/france-connect/sources/blob/main/docker/volumes/fcp-low/mocks/idp/databases/citizen/base.csv).
+
+- **On saisit le `login`, pas l'email** — piège classique, le CSV expose les deux.
+- Le mot de passe est **`123` pour tous** les comptes du CSV.
+- Toujours **vérifier que le compte est libre en base** avant de le proposer :
+  `pnpm fix:purge-comptes-test-fc --no-anonymize` (dry-run) liste ceux **déjà pris** ; prendre
+  un login dont l'email n'y figure pas. Un scénario « nouveau compte » a besoin d'un compte neuf.
+- Écarter les identités piégeuses : `moins_16_ans` / `moins_18_ans` (mineurs) et les emails
+  présents sur deux lignes du CSV.
+- Donner la **commande de purge** en pied de bloc : le compte se consomme au premier passage.
+
+**Comptes agents (ProConnect bac à sable).** Voir « Se connecter en tant qu'agent en local »
+dans le [README](README.md) pour le diagnostic des échecs. Mots de passe :
+
+| Compte                                  | Mot de passe       |
+| --------------------------------------- | ------------------ |
+| `user@yopmail.com`                      | `user@yopmail.com` |
+| `userNN@yopmail.com` (ex. `user14@...`) | `password123`      |
+
+`pnpm qa:cas-de-test --comptes` dit quels comptes existent en base, ce qu'ils voient et
+lesquels sont marqués « COMPTE INEXPLOITABLE » (à écarter).
+
+**Dossiers concernés.** `pnpm qa:cas-de-test --agent=<email> --markdown` sort, par scénario,
+les dossiers réels du périmètre du compte **avec leur URL complète** : coller ces liens dans
+le bloc « Données », pas sous les étapes.
+
+Qui lance `qa:cas-de-test` dépend de l'environnement visé :
 
 - **tests en local** (cas courant) : Claude lance le script lui-même sur la base de dev et
   livre directement une checklist avec les liens dedans — rien à coller ;
 - **tests sur staging** : Claude n'a pas cette base. L'utilisateur lance le script (one-off
   Scalingo, ou en local avec le `DATABASE_URL` de staging — il est en lecture seule) et colle
-  la sortie ; Claude l'associe alors aux étapes et aux attendus.
+  la sortie ; Claude l'associe alors aux blocs « Données », en réécrivant les URLs sur le
+  domaine de staging.
 
-Les cas se consomment (un prospect qualifié n'est plus « à qualifier ») : relancer le script
-à chaque session de test. Ajouter un scénario dans `scripts/ops/qa/scenarios.ts` quand la PR
-introduit un flux dont la précondition n'existe pas encore.
+Les cas se consomment (un prospect qualifié n'est plus « à qualifier », un compte FC utilisé
+existe désormais en base) : relancer les deux scripts à chaque session de test. Ajouter un
+scénario dans `scripts/ops/qa/scenarios.ts` quand la PR introduit un flux dont la précondition
+n'existe pas encore.
+
+#### Remettre staging à plat avant une session de test
+
+Une checklist n'est fiable que si l'état de départ l'est. Après un déploiement sur staging, on
+repart d'un état connu en une seule commande, dans un one-off :
+
+```bash
+pnpm seed:staging --yes-staging --purge-fc
+```
+
+`--purge-fc` supprime d'abord les comptes demandeurs créés par un vrai login FranceConnect de
+test (cascade complète), **puis** le seed rejoue ses fixtures. Sans lui, ces comptes survivent
+au re-seed mais perdent leur validation AMO — l'étape `amo-av` fait un `DELETE FROM
+parcours_amo_validations` sans filtre — et se retrouvent dans un état ni neuf ni cohérent, qui
+fausse silencieusement les tests. Ajouter `--dry-run` pour voir combien de comptes seraient
+supprimés sans rien écrire.
+
+Conséquence pour l'écriture des checklists : **aucun compte du seed n'est connectable en
+FranceConnect** (les users seedés portent un `fc_id` factice, et le rattachement par email exige
+`fc_id IS NULL`). Un login FC crée donc toujours un compte neuf, sans simulation. Les états de
+départ côté demandeur se construisent par le parcours lui-même, pas en base.
 
 ### Revue Copilot avant merge (à chaque PR)
 

@@ -9,7 +9,7 @@ import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status"
 import type { Parcours, Step } from "../domain";
 import { obtenirMonParcours } from "../actions";
 import { getValidationAmo } from "../../amo/actions";
-import { getMyIneligibiliteData } from "../actions/qualification-query.actions";
+import { estLogementDeclareNonEligible } from "../actions/eligibilite-query.actions";
 import { syncAllUserDossiers, syncUserDossierStatus } from "../../dossiers-ds/actions/dossier-sync.actions";
 import { getDossierForStep, getStepDsStatus } from "../../dossiers-ds/utils/dossier-step.utils";
 import { DossierDS } from "../../dossiers-ds";
@@ -39,7 +39,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
   const [validationAmoComplete, setValidationAmoComplete] = useState<ValidationAmoComplete | null>(null);
 
   // Qualification allers-vers
-  const [isQualifiedNonEligible, setIsQualifiedNonEligible] = useState(false);
+  const [isDossierNonEligible, setIsDossierNonEligible] = useState(false);
 
   // État de synchronisation
   const [isSyncing, setIsSyncing] = useState(false);
@@ -106,14 +106,12 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
           debug.log("[fetchParcours] No AMO validation data");
         }
 
-        // Vérifier la qualification allers-vers (inéligibilité)
-        const qualifResult = await getMyIneligibiliteData();
-        if (qualifResult.success && qualifResult.data) {
-          setIsQualifiedNonEligible(true);
-          debug.log("[fetchParcours] Qualified non eligible");
-        } else {
-          setIsQualifiedNonEligible(false);
-        }
+        // Dossier archivé pour inéligibilité (qualification Aller-vers ou simulation
+        // du demandeur). La décision de l'AMO, elle, vit dans `statutAmo`.
+        const eligibiliteResult = await estLogementDeclareNonEligible();
+        const nonEligible = eligibiliteResult.success && eligibiliteResult.data;
+        setIsDossierNonEligible(nonEligible);
+        debug.log("[fetchParcours] Dossier non eligible:", nonEligible);
 
         debug.log("[fetchParcours] Complete");
       } else {
@@ -336,7 +334,7 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
     validationAmoComplete,
 
     // Qualification allers-vers
-    isQualifiedNonEligible,
+    isDossierNonEligible,
 
     // Sync DS
     lastDSStatus,

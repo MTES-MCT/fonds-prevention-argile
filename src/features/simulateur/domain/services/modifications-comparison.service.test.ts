@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeModifications } from "./modifications-comparison.service";
+import { evaluateAllChecks } from "../rules/navigation";
 import type { RGASimulationData, PartialRGASimulationData } from "@/shared/domain/types";
 import type { EligibilityChecks } from "../entities/eligibility-result.entity";
 
@@ -382,5 +383,24 @@ describe("computeModifications", () => {
     expect(result).toHaveLength(1);
     expect(result[0].afterDisplay).toBe("1 habitant");
     expect(result[0].beforeDisplay).toBe("2 habitants");
+  });
+
+  it("ne plante pas sur un dossier créé sans simulation (adresse seule)", () => {
+    // Un dossier créé par un Aller-vers ne porte que `logement` : ni `rga`, ni `menage`.
+    // L'écran « Vérifier son éligibilité » plantait alors sur « d.rga is undefined ».
+    const adresseSeule = { logement: { adresse: "97 rue de Notz, 36000 Châteauroux" } } as PartialRGASimulationData;
+    const saisieAgent = {
+      logement: { ...adresseSeule.logement, type: "maison", niveaux: 1 },
+      rga: { indemnise_indemnise_rga: false, assure: true },
+      menage: { personnes: 2, revenu_rga: 20000 },
+    } as PartialRGASimulationData;
+
+    const checks = evaluateAllChecks(saisieAgent);
+
+    expect(() => computeModifications(adresseSeule, saisieAgent, checks, checks)).not.toThrow();
+
+    // Tout est nouveau : l'agent RENSEIGNE la simulation, il ne la modifie pas. Annoncer
+    // « 8 modifications » avec des « undefined niveau » et des « Non → Non » était faux.
+    expect(computeModifications(adresseSeule, saisieAgent, checks, checks)).toEqual([]);
   });
 });

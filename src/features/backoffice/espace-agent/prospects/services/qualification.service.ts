@@ -6,6 +6,7 @@ import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.
 import { assignAmoAutomatiqueForUser } from "@/features/parcours/amo/services/amo-selection.service";
 import { isAmoAttributionAutomatique } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
+import { RAISON_ARCHIVAGE_NON_ELIGIBLE } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import { QualificationDecision } from "../domain/types";
 import { ACTION_TYPE_BY_DECISION, buildQualificationAuditMessage } from "../domain/qualification-audit";
 import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
@@ -63,7 +64,7 @@ export class QualificationService {
       await parcoursPreventionRepository.updateSituationParticulier(
         parcoursId,
         SituationParticulier.ARCHIVE,
-        "Non éligible au dispositif",
+        RAISON_ARCHIVAGE_NON_ELIGIBLE,
         agentId
       );
     }

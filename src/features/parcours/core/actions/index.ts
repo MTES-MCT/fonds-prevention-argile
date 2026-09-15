@@ -5,4 +5,5 @@ export * from "./eligibilite.actions";
 export * from "./diagnostic.actions";
 export * from "./devis.actions";
 export * from "./parcours-simulateur-rga-migration.actions";
+export * from "./enregistrer-simulation-demandeur.actions";
 export * from "./contact-info.actions";

@@ -124,6 +124,7 @@ describe("demande-detail.actions", () => {
           etatMaison: "saine",
           zoneExposition: "moyen" as const,
           indemnisationPasseeRGA: false,
+          demandeCatnatEnCours: false,
           indemnisationAvantJuillet2025: null,
           indemnisationAvantJuillet2015: null,
           montantIndemnisation: null,

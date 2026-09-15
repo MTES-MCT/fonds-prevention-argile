@@ -15,14 +15,15 @@ import {
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import type { ActionResult } from "@/shared/types";
 import {
-  evaluateAgentSimulation,
+  evaluateSimulation,
   buildEligibiliteArchiveNote,
   isEligibiliteArchiveReason,
-} from "../services/eligibilite-agent.service";
+} from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import {
   verifyProspectTerritoryAccess,
   calculateAgentScope,
 } from "@/features/auth/permissions/services/agent-scope.service";
+import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { logSystemAction } from "../services/action-audit.service";
 import {
   ACTION_TYPE_ELIGIBILITE_REFUSEE,
@@ -43,6 +44,22 @@ function computeAgentEditBaseline(parcours: {
   return (
     parcours.rgaSimulationDataAgentBaseline ?? parcours.rgaSimulationDataAgent ?? parcours.rgaSimulationData ?? null
   );
+}
+
+/**
+ * Une correction **complète** devient aussi la simulation du compte tant qu'il n'en a pas.
+ * Même critère que la promotion au rattachement FranceConnect, et même garde : on n'écrase
+ * jamais la simulation du demandeur, dont dépend la résolution territoriale USER-first.
+ *
+ * Sans cette promotion, un dossier créé sur la seule adresse puis complété par l'agent laissait
+ * `rgaSimulationData` nul : « Éligibilité manquante » côté demandeur alors que le simulateur lui
+ * est fermé (impasse), et un préremplissage DN qui lit une colonne vide.
+ */
+function champsPromotionSimulation(
+  parcours: { rgaSimulationData: RGASimulationData | null },
+  rgaData: RGASimulationData
+): { rgaSimulationData?: RGASimulationData } {
+  return !parcours.rgaSimulationData && isSimulationComplete(rgaData) ? { rgaSimulationData: rgaData } : {};
 }
 
 /**
@@ -154,12 +171,13 @@ export async function updateSimulationDataAction(
             rgaSimulationDataAgentBaseline: computeAgentEditBaseline(dossier.parcours),
             rgaSimulationAgentEditedAt: now,
             rgaSimulationAgentEditedBy: agent.id,
+            ...champsPromotionSimulation(dossier.parcours, rgaData),
           })
           .where(eq(parcoursPrevention.id, dossier.parcours.id));
 
         // 2. Recalcul du verdict d'éligibilité (miroir de la création). Sans verdict
         //    tranché (simulation incomplète, aucun critère bloquant) → rien d'autre.
-        const verdict = evaluateAgentSimulation(rgaData);
+        const verdict = evaluateSimulation(rgaData);
         if (!verdict.isEligible && !verdict.isNonEligible) return;
 
         // 2a. Décision de validation AMO. Un verdict NON ÉLIGIBLE tranche TOUJOURS le
@@ -296,7 +314,7 @@ export async function updateSimulationDataAction(
     // Écriture atomique (simulation + archivage), même exigence de cohérence que le
     // chemin dossier — sinon la simu peut être persistée sans l'archivage promis par l'UI.
     const now = new Date();
-    const prospectVerdict = evaluateAgentSimulation(rgaData);
+    const prospectVerdict = evaluateSimulation(rgaData);
     const prospectWasArchived = Boolean(parcours.archivedAt);
     const prospectArchiveReason = parcours.archiveReason;
 
@@ -311,6 +329,7 @@ export async function updateSimulationDataAction(
           rgaSimulationDataAgentBaseline: computeAgentEditBaseline(parcours),
           rgaSimulationAgentEditedAt: now,
           rgaSimulationAgentEditedBy: agent.id,
+          ...champsPromotionSimulation(parcours, rgaData),
         })
         .where(eq(parcoursPrevention.id, parcours.id));
 

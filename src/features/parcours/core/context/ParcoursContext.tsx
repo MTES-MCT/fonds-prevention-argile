@@ -22,7 +22,7 @@ interface ParcoursContextType {
   validationAmoComplete: ValidationAmoComplete | null;
 
   // Qualification allers-vers
-  isQualifiedNonEligible: boolean;
+  isDossierNonEligible: boolean;
 
   // État de synchronisation DS
   lastDSStatus: DSStatus | null;

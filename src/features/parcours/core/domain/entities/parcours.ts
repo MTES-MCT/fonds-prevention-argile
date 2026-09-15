@@ -13,8 +13,13 @@ export interface Parcours {
 
   rgaSimulationData: RGASimulationData | null;
   rgaSimulationCompletedAt: Date | null;
+  /** Un agent a corrigé la simulation : sa version prime et ferme l'édition demandeur. */
+  simulationCorrigeeParAgent: boolean;
   rgaDataDeletedAt: Date | null;
   rgaDataDeletionReason: string | null;
+
+  /** Non-null = dossier archivé (inéligibilité, abandon…) : plus rien n'y est actionnable. */
+  archivedAt: Date | null;
 
   createdAt: Date;
   updatedAt: Date;

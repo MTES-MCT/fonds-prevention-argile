@@ -5,10 +5,22 @@ import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributes } from "@/share
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { migrateSimulationDataToDatabase } from "./parcours-simulateur-rga-migration.actions";
 import { isSameSimulationContent } from "../utils/simulation-comparison";
+import { appliquerVerdictSimulationDemandeur } from "../services/simulation-eligibilite.service";
 
 vi.mock("@/features/auth/server", () => ({ getSession: vi.fn() }));
 vi.mock("@/shared/database/repositories", () => ({
   parcoursRepo: { findByUserId: vi.fn(), updateRGAData: vi.fn() },
+  userRepo: { findById: vi.fn(async () => ({ prenom: "Marie", nom: "Durand" })) },
+}));
+// Le verdict d'éligibilité a ses propres tests : ici on vérifie seulement qu'il est
+// appliqué avant l'évènement Brevo (SITUATION doit partir à jour).
+vi.mock("../services/simulation-eligibilite.service", () => ({
+  appliquerVerdictSimulationDemandeur: vi.fn(async () => ({
+    archived: false,
+    unarchived: false,
+    raisonActualisee: false,
+    nonEligible: false,
+  })),
 }));
 vi.mock("@/features/simulateur/domain/rules/navigation", () => ({ isSimulationComplete: vi.fn() }));
 // La barrière @/shared/email/brevo réimportée via importOriginal ci-dessous tire tout
@@ -41,6 +53,15 @@ describe("migrateSimulationDataToDatabase", () => {
     mockedFindByUserId.mockResolvedValue({ id: "p1", rgaSimulationDataAgent: null } as never);
     mockedIsComplete.mockReturnValue(false);
     mockedBuildConseillerAttributes.mockResolvedValue({});
+    // `clearAllMocks` n'efface pas les implémentations : sans ce reset, un verdict posé
+    // par un test fuiterait dans les suivants.
+    vi.mocked(appliquerVerdictSimulationDemandeur).mockResolvedValue({
+      archived: false,
+      unarchived: false,
+      raisonActualisee: false,
+      nonEligible: false,
+    });
+    mockedEmit.mockResolvedValue(undefined);
   });
 
   it("émet simulation_enregistree après avoir migré une simulation nouvelle", async () => {
@@ -76,7 +97,7 @@ describe("migrateSimulationDataToDatabase", () => {
     expect(mockedEmit).not.toHaveBeenCalled();
   });
 
-  it("émet quand le contenu de la simulation a changé", async () => {
+  it("n'écrase pas une simulation différente : elle part en arbitrage", async () => {
     mockedFindByUserId.mockResolvedValue({
       id: "p1",
       rgaSimulationDataAgent: null,
@@ -85,9 +106,80 @@ describe("migrateSimulationDataToDatabase", () => {
 
     const res = await migrateSimulationDataToDatabase(rgaData);
 
-    expect(res.success).toBe(true);
-    expect(mockedUpdateRGAData).toHaveBeenCalled();
+    // `enregistree: false` laisse le cache local intact : c'est lui qui alimente
+    // l'arbitrage sur /mon-compte (ADR-0036).
+    expect(res.success && res.data.enregistree).toBe(false);
+    expect(mockedUpdateRGAData).not.toHaveBeenCalled();
+    expect(mockedEmit).not.toHaveBeenCalled();
+  });
+
+  it("applique le verdict d'éligibilité avant d'émettre vers Brevo", async () => {
+    const order: string[] = [];
+    vi.mocked(appliquerVerdictSimulationDemandeur).mockImplementation(async () => {
+      order.push("verdict");
+      return { archived: true, unarchived: false, raisonActualisee: false, nonEligible: true };
+    });
+    mockedEmit.mockImplementation(async () => {
+      order.push("brevo");
+      return undefined as never;
+    });
+
+    await migrateSimulationDataToDatabase(rgaData);
+
+    // 2 pushes quand le dossier est archivé : l'évènement générique, puis le dédié.
+    expect(order).toEqual(["verdict", "brevo", "brevo"]);
+    expect(appliquerVerdictSimulationDemandeur).toHaveBeenCalledWith(
+      expect.objectContaining({ demandeurNom: "Marie Durand" })
+    );
+  });
+
+  it("émet simulation_non_eligible au 1er archivage, jamais demandeur_cree", async () => {
+    vi.mocked(appliquerVerdictSimulationDemandeur).mockResolvedValue({
+      archived: true,
+      unarchived: false,
+      raisonActualisee: false,
+      nonEligible: true,
+    });
+
+    await migrateSimulationDataToDatabase(rgaData);
+
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
+    // Le mail de bienvenue promet un conseiller : il ne doit jamais partir ici.
+    expect(mockedEmit).not.toHaveBeenCalledWith("p1", BREVO_EVENTS.DEMANDEUR_CREE, expect.anything());
+  });
+
+  it("n'émet pas simulation_non_eligible quand seule la raison est actualisée (pas de 2e mail)", async () => {
+    vi.mocked(appliquerVerdictSimulationDemandeur).mockResolvedValue({
+      archived: false,
+      unarchived: false,
+      raisonActualisee: true,
+      nonEligible: true,
+    });
+
+    await migrateSimulationDataToDatabase(rgaData);
+
     expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_ENREGISTREE, { attributes: {} });
+    expect(mockedEmit).not.toHaveBeenCalledWith("p1", BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
+  });
+
+  it("émet demandeur_cree à la 1re simulation éligible (bienvenue différée depuis le callback FC)", async () => {
+    await migrateSimulationDataToDatabase(rgaData);
+
+    expect(mockedEmit).toHaveBeenCalledWith("p1", BREVO_EVENTS.DEMANDEUR_CREE, {
+      attributes: expect.objectContaining({ A_AMO: false, CREE_PAR_CONSEILLER: false }),
+    });
+  });
+
+  it("n'émet demandeur_cree qu'une fois : rien ne part sur une simulation ultérieure", async () => {
+    mockedFindByUserId.mockResolvedValue({
+      id: "p1",
+      rgaSimulationDataAgent: null,
+      rgaSimulationData: { logement: { commune: "75056" }, simulatedAt: "2026-07-21T00:00:00Z" },
+    } as never);
+
+    await migrateSimulationDataToDatabase(rgaData);
+
+    expect(mockedEmit).not.toHaveBeenCalledWith("p1", BREVO_EVENTS.DEMANDEUR_CREE, expect.anything());
   });
 
   it("ne migre ni n'émet quand une simulation agent complète existe déjà", async () => {

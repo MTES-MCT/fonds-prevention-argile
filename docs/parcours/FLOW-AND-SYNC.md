@@ -314,6 +314,7 @@ autonomie. Voir [ADR-0018](../adr/0018-arret-accompagnement-amo.md).
 | ------------------------------------------------------------ | -------------------------------------------------- |
 | Département en mode AMO **obligatoire**                      | **bloqué** (l'autonomie n'y existe pas)            |
 | Dossier d'éligibilité DN déposé, décision non rendue         | **bloqué** (cf. §2.7.1)                            |
+| Parcours **archivé** (`archived_at`)                         | **bloqué** (cf. §2.11)                             |
 | `en_attente` (l'AMO n'a pas encore validé)                   | détachement immédiat + mail d'info à l'AMO         |
 | `logement_eligible` **et** `est_mandataire_financier ≠ true` | détachement immédiat + mail d'info à l'AMO         |
 | `logement_eligible` **et** `est_mandataire_financier = true` | `demande_arret_at` posé + mail de demande d'accord |
@@ -542,6 +543,240 @@ de l'étape.
 
 Audit dans `parcours_actions` (type système, aucune migration) : `demande_accompagnement`,
 `agent_id = NULL`, `author_structure_type = "DEMANDEUR"`.
+
+### 2.11 Simulation non éligible du demandeur : enregistrée puis archivée — ADR-0034
+
+Jusqu'ici, une simulation non éligible n'était **écrite nulle part** : `commitToRGAStore`
+était gardé par `isEligible` et n'était appelé que par le CTA de l'écran éligible (l'écran
+non éligible n'en a pas). Le demandeur qui créait quand même un compte restait sans
+simulation, donc **sans département**, invisible de tous, et bouclait indéfiniment sur
+l'alerte « Éligibilité manquante » de `/mon-compte`.
+
+Trois changements, dans l'ordre du flux :
+
+- **L'adresse est toujours demandée.** L'early exit public est différé jusqu'à l'étape
+  adresse (`DEFAULT_DEFER_EARLY_EXIT_UNTIL`, `simulateur.store.ts`), comme le wizard
+  Aller-vers le faisait déjà ([ADR-0019](../adr/0019-early-exit-simulateur-agent.md)) :
+  sans elle, un « appartement » (critère évalué à l'étape 2) n'aurait toujours ni commune
+  ni département. Les wrappers agent posent leur propre valeur au montage et ne changent pas.
+- **La simulation est commitée à l'arrivée sur l'écran de résultat**, éligible ou non
+  (`SimulateurFormulaire`, effet gardé par un ref pour ne pas boucler sur `saveRGA`) — sauf
+  en `editMode`, qui couvre les deux surfaces agent.
+- **Deux points d'écriture, selon que le demandeur est connecté ou non.** Anonyme : la
+  simulation part dans le store Zustand (localStorage, TTL 7 jours) et n'atteint la base qu'à
+  la migration, au prochain passage sur `/mon-compte`. **Déjà connecté** : le même effet
+  appelle en plus `migrateSimulationDataToDatabase` directement. Sans ce second point,
+  `useMigrateRGAToDB` — seul appelé par `MonCompteClient`, car il dépend de `ParcoursProvider`
+  qui n'enveloppe que `/mon-compte` — n'aurait jamais tourné pour un non éligible : il ferme
+  l'onglet sur l'écran de résultat et ne revient pas sur son espace. L'action est idempotente
+  (`isSameSimulationContent`), donc le doublon éventuel est un no-op.
+- **Le verdict est appliqué à la migration** (`appliquerVerdictSimulationDemandeur`, appelé
+  par `migrateSimulationDataToDatabase` **avant** l'évènement Brevo, pour que `SITUATION`
+  parte déjà à jour). Non éligible → qualification `prospect_qualifications` sans agent
+  (`agent_id = NULL`, raison mappée depuis `EligibilityReason`) + archivage avec la raison
+  canonique `RAISON_ARCHIVAGE_NON_ELIGIBLE` + audit `simulation_non_eligible`
+  (`author_structure_type = "DEMANDEUR"`). Redevenu éligible → dé-archivage, **uniquement**
+  si l'archivage venait d'une inéligibilité (`isEligibiliteArchiveReason`).
+
+> **Le simulateur reste public et écrase `rgaSimulationData` à chaque migration.** Garde
+> posée : ni archivage ni dé-archivage dès qu'un formulaire DN a été **déposé**
+> (`getSubmittedDatesByStep`) — l'état du dossier appartient alors à la DDT et aux
+> professionnels, pas à une nouvelle simulation. Même esprit que le gel de §2.7.1.
+
+> **Une décision de l'AMO prime sur la simulation du demandeur** (`aRenduSaDecision`, lu en
+> tête d'`appliquerVerdictSimulationDemandeur`) : l'AMO a vu la maison, le demandeur non. Sans
+> cette garde, une **première** simulation non éligible archivait le dossier par-dessus une
+> validation `LOGEMENT_ELIGIBLE` — chemin que le verrou d'édition de §2.12 ne couvre pas,
+> puisqu'il passe par `migrateSimulationDataToDatabase` et non par l'écran d'édition. La garde
+> coupe les deux sens, archivage comme dé-archivage : le demandeur ne défait pas une décision
+> rendue, il en parle à son conseiller.
+
+> **Re-simulation sur un dossier déjà archivé.** Toujours non éligible mais pour une autre
+> raison → on **empile** une qualification et une action, sans toucher à `archivedAt` (il ne
+> doit pas glisser) ni à `archive_reason` (déjà canonique). Sinon la simulation affichée
+> contredirait la raison enregistrée, et les stats compteraient une raison périmée. Deux
+> abstentions : archivage **manuel** (hors de ce flux) et dernière qualification posée par un
+> **agent** — sa décision fait foi, une re-simulation ne la remplace pas.
+
+> **Raison canonique et non note détaillée** : `archive_reason` vaut exactement
+> « Non éligible au dispositif », valeur sur laquelle les stats « demandes inéligibles »
+> filtrent à l'exact (`INELIGIBLE_ARCHIVE_REASONS`). La note lisible
+> (`buildEligibiliteArchiveNote(result, "demandeur")`) va dans la qualification et l'audit.
+
+Côté `/mon-compte`, l'inéligibilité — d'où qu'elle vienne : décision AMO, qualification
+Aller-vers ou simulation du demandeur — est traitée **en tête de `CalloutManager`**, avant
+l'aiguillage par étape (prédicat partagé `estLogementNonEligible`). Ses deux sources sont
+**disjointes** : `statutAmo` porte la décision de l'AMO, `isDossierNonEligible` porte
+l'archivage pour inéligibilité (`estLogementDeclareNonEligible`, `eligibilite-query.actions.ts`),
+seul signal qui tombe de lui-même au dé-archivage. Une validation AMO ne doit jamais
+alimenter le second terme : la lire y faisait passer un `LOGEMENT_ELIGIBLE` pour une
+inéligibilité et affichait « Vous n'êtes pas éligible » à tout demandeur accompagné dont
+l'AMO venait de valider (QA septembre 2026). Sans cette garde, un
+dossier archivé déjà passé à `ÉLIGIBILITE` (autonomie, puis simulation corrigée) continuait
+d'inviter au dépôt du formulaire DN. Trois surfaces s'alignent dessus : « Ma liste » grise
+tout item resté actif (`getStepListItems(..., isNonEligible)`, y compris l'item de tête dont
+l'ancre `#choix-amo` ne mène plus qu'au callout), et les **pièces justificatives** ne sont
+plus proposées — ni pour l'étape courante, ni en « à prévoir » sur les étapes à venir.
+
+> **Un dossier archivé ne change plus d'accompagnement.** `peutAnnulerAccompagnement` et
+> `peutDemanderAccompagnement` prennent un `dossierArchive` **requis** (`parcours.archived_at`,
+> même valeur côté UI et côté service). Sans lui, un demandeur passé en autonomie puis devenu
+> non éligible — dossier archivé, `statut` toujours `SANS_AMO` — voyait « Demander à être
+> accompagné » **et** le service l'acceptait : un AMO se retrouvait attribué sur un dossier
+> garé. La garde couvre du même coup l'archivage manuel (abandon, non-réponse). Le cas d'une
+> décision AMO « non éligible » était déjà couvert par `statut`, pas celui-là.
+
+### 2.12 Une simulation par compte : modifiable, jamais écrasée — ADR-0036
+
+Un compte porte **une** simulation (`parcours_prevention.rga_simulation_data`). Elle se
+modifie, elle ne se recrée pas.
+
+**Le simulateur public est fermé à qui en a déjà une.** `/simulateur` redirige vers
+`/mon-compte/simulation` (`aDejaUneSimulation`, `ma-simulation.service.ts`). La garde est
+dans la page et non dans les liens : quatorze CTA y mènent, dont plusieurs depuis des JSON
+de contenu. Conséquence à connaître : la route lit la session, elle n'est donc plus rendue
+statiquement.
+
+> **Une simulation d'agent ne compte que complète** (`estSimulationCorrigeeParAgent`,
+> `rga-data.service.ts`) — même critère que la promotion au rattachement FranceConnect et que
+> l'étape 3 de la migration. Un dossier créé par un Aller-vers ne porte que l'adresse : la
+> compter fermait au demandeur le simulateur **et** son écran d'édition, et « Éligibilité
+> manquante » le renvoyait au simulateur, qui le renvoyait à l'édition — impasse fermée en
+> septembre 2026. Conséquence à ne pas défaire : le verrou « correction d'agent » et la
+> fermeture du simulateur lisent le **même** prédicat, ils ne peuvent plus diverger.
+>
+> **Corollaire côté écran agent** : l'étape adresse ne verrouille l'adresse et la carte que si
+> la simulation reprise porte déjà une **zone d'exposition** (`peutReprendreAdresseExistante`).
+> Un dossier créé sans simulation a des coordonnées mais aucun bâtiment sélectionné :
+> verrouillé, il condamnait l'agent à un « Zone d'exposition forte : NON » incorrigible, la
+> carte verrouillée n'interrogeant plus la BDNB. Le prédicat reconnaît une sélection réelle à
+> **deux marqueurs, dont un seul suffit** : une zone renseignée, ou un identifiant **RNB**. Le
+> second couvre le cas « hors zone argileuse », où la zone vaut légitimement `null` — et il
+> était indispensable, `SimulateurFormulaire` reconstruisant `initialValue` comme un littéral
+> dont toutes les clés existent, fût-ce à `undefined` : tester la présence d'une clé est sans
+> effet à cette frontière.
+
+> **La seconde porte du même cycle est fermée aussi** : `updateSimulationDataAction` promeut
+> désormais la correction dans `rgaSimulationData` dès qu'elle est **complète** et que le compte
+> n'en a aucune (`champsPromotionSimulation`), au même critère que la promotion du rattachement
+> FranceConnect. Sans elle, un agent qui complétait la simulation **après** le rattachement
+> laissait `rgaSimulationData` nul : « Éligibilité manquante » côté demandeur alors que le
+> simulateur lui est fermé, et un préremplissage DN lisant une colonne vide. La garde
+> essentielle est qu'on **n'écrase jamais** une simulation que le demandeur a déjà faite : la
+> résolution territoriale est USER-first, écraser déplacerait le dossier de territoire.
+
+**La modification passe par l'écran des agents.** `SimulateurEdition` est partagé ; il reçoit
+son enregistrement (`onSave`) et son `audience` (`agent` | `demandeur`) par le contexte, et
+n'importe plus d'action du back-office. Deux wrappers le branchent : `SimulateurEditionAgent`
+(écrit `rgaSimulationDataAgent`) et `SimulateurEditionDemandeur` (écrit `rgaSimulationData`,
+via `enregistrerSimulationDemandeurAction`, dont le parcours vient de la **session** — aucun
+identifiant n'entre par le client).
+
+**Quatre verrous ferment l'édition**, portés par le prédicat pur `peutModifierSaSimulation`
+(`core/domain/value-objects/edition-simulation.ts`) et revérifiés par l'action. Leurs trois
+entrées sont assemblées en un point unique, `chargerEtatEditionSimulation`
+(`core/services/etat-edition-simulation.service.ts`), pour que l'écran et l'action qui écrit
+jugent sur exactement les mêmes faits :
+
+| Verrou                                     | Motif                                                                                                                                 | Levée                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `rgaSimulationDataAgent` **complète**      | La version de l'agent prime à l'affichage (`getEffectiveRGAData`, AGENT-first) : éditer donnerait un écran sans effet visible         | Aucune               |
+| `aRenduSaDecision(statutAmo)`              | L'AMO a statué à partir de ces données : les corriger seul déferait une décision professionnelle, et pouvait archiver par-dessus elle | Par le conseiller    |
+| `estDossierChezLaDdt(eligibiliteDsStatus)` | Le formulaire déposé déclare ces données, et le préremplissage REST ne sait que créer (§2.7.1)                                        | À la décision rendue |
+| `eligibiliteDossierExiste` (non tranché)   | Le formulaire DN est **commencé** : le préremplissage y a déjà reporté ces réponses et ne sait pas les mettre à jour                  | À la décision rendue |
+
+L'ordre va du plus durable au plus transitoire : annoncer « vos informations redeviendront
+modifiables » serait faux si un verrou définitif tient déjà derrière. `aRenduSaDecision` ne
+couvre que les trois statuts **tranchés** — ni `EN_ATTENTE` (pas encore répondu), ni `SANS_AMO`
+(autonomie, aucun AMO au dossier) —, ce qui la distingue de `isValidationFinale`.
+
+> **Le quatrième verrou étend le troisième vers le bas** : le gel ne commençait qu'au **dépôt**,
+> alors que le motif invoqué — « le préremplissage REST ne sait que créer » — mord dès la
+> **création** du prérempli. Entre les deux s'ouvrait une fenêtre où le demandeur corrigeait sa
+> simulation pendant que son brouillon DN gardait silencieusement les anciennes réponses
+> (retour de recette, septembre 2026). Les deux verrous se lèvent au même endroit, à la
+> décision de la DDT (`estDecisionDdtRendue`), sans quoi un `ACCEPTE` figerait la simulation
+> pour tout le reste du parcours.
+>
+> D'où le champ `eligibiliteDossierExiste`, distinct du statut : un `eligibiliteDsStatus` nul
+> vaut aussi bien « aucun formulaire » que « formulaire créé, pas encore transmis », deux états
+> que ce verrou doit séparer. En pratique il ne mord que sur les parcours **en autonomie** :
+> pour un dossier accompagné, `aRenduSaDecision` a déjà fermé l'édition à la validation de
+> l'AMO, bien avant que le formulaire n'existe.
+>
+> Échappatoire conservée : « Ce lien ne fonctionne plus ? » (`regenererLienPrefill`) retire le
+> pointeur tant que rien n'est déposé — le verrou tombe alors, la simulation redevient
+> corrigeable, et le prochain prérempli repart des bonnes valeurs.
+
+Verrouillée, la page rend un **récapitulatif en lecture seule** (`SimulationRecap`) et dit
+pourquoi (`MESSAGES_LECTURE_SEULE`). Les deux CTA qui y mènent (« Ma liste », carte 1) passent
+de « Modifier » à « Voir » via `useLectureSeuleSimulation`, miroir client du même prédicat.
+
+> **Un verrou ferme aussi l'arbitrage : il doit donc parler.** `useMigrateRGAToDB` refuse de
+> proposer un choix sur une simulation verrouillée — le serveur le refuserait juste après. Mais
+> il ne purge plus le cache local en silence : il expose `raisonVerrouillage`, `/mon-compte`
+> affiche l'alerte correspondante, et c'est l'acquittement du demandeur
+> (`abandonnerSimulationLocale`) qui jette la simulation refaite. Sans cela, poser un verrou
+> revenait à transformer l'arbitrage en suppression muette — exactement l'écrasement silencieux
+> qu'ADR-0036 interdit, retourné dans l'autre sens.
+
+**Deux simulations divergentes se font arbitrer.** Au retour sur `/mon-compte`, quand le
+cache local (`useRGAStore`, simulation faite avant connexion) diffère de celle du compte,
+`useMigrateRGAToDB` n'écrase plus : il expose un conflit et `ChoixSimulationModal` fait
+choisir. `comparerSimulations` signale les champs modifiés en bleu, et **en rouge le seul
+qui fait échouer son critère** — celui qui coûte l'éligibilité. Le bandeau passe de `info` à
+`warning` quand les deux verdicts divergent.
+
+> **La demande d'aide catnat est désormais un champ à part entière** (`demandeCatnat`,
+> critère `catnatEnCours` : l'aide n'est pas cumulable). Elle manquait à `SIMULATION_FIELDS`,
+> si bien qu'une simulation qui ne changeait que là-dessus était déclarée « identique » — pas
+> d'arbitrage, cache jeté, et un **basculement d'éligibilité** passé inaperçu. Elle est aussi
+> rendue, côté agent, sur `InfoLogement` : la liste annotée et le compteur « X modifications »
+> de `buildAgentEditInfo` dérivent de la même table et ne doivent pas diverger.
+
+> **L'adresse est comparée au même titre** (`CHAMPS_COMPARES` = `CHAMP_ADRESSE` +
+> `SIMULATION_FIELDS`), bien qu'elle ne porte aucun critère d'éligibilité : elle porte la
+> commune, le département et l'EPCI, donc le conseiller responsable. Hors de la comparaison,
+> un déménagement passait pour « simulations identiques », aucun arbitrage n'était proposé et
+> la nouvelle adresse partait avec le cache local. Elle reste rendue en toutes lettres et non
+> en badge (un badge DSFR est en capitales), avec une marque « modifiée » quand elle diffère.
+
+> **La version retenue se voit** : contour bleu (`--border-active-blue-france`) **de 2 px**,
+> icône de coche et mention « Version qui sera conservée ». Auparavant la sélection ne tenait
+> qu'à la couleur d'un filet de 1 px, invisible en recette — d'autant que la pastille verte
+> « version rattachée à votre compte » attire l'œil sur l'autre colonne. Les 2 px sont posés
+> sur les **deux** cartes, seule la couleur change : n'épaissir que la carte retenue décalerait
+> le contenu à chaque changement de choix. Le DSFR dessine ses propres cartes sélectionnables
+> (radio riche) en 1 px — l'écart est assumé, c'est précisément ce qui ne se voyait pas.
+
+> **L'écran d'édition ne réécrit plus le cache local.** `SimulateurEdition` ne monte
+> `SimulateurFormulaire` qu'une fois le store préparé (verrou `isReady`) : React exécutant les
+> effets enfant avant parent, le formulaire voyait `editMode = false` sur l'étape « resultat »
+> héritée de la session et recommitait la simulation **d'avant** correction. Au retour sur
+> `/mon-compte`, l'arbitrage proposait alors de revenir en arrière, présélectionné. Ceinture :
+> le commit s'abstient aussi dès que le contexte porte un `onSave`, et
+> `SimulateurEditionDemandeur` purge le cache dès que l'enregistrement est en base.
+
+- « Version active » (et la fermeture sans choix) n'écrit **rien** : seul le cache local part.
+- « Dernière version » passe par `enregistrerSimulationDemandeurAction`, donc par le verdict
+  d'éligibilité et l'archivage de §2.11.
+- Simulation verrouillée : aucun choix proposé, le cache local est abandonné.
+
+**Les deux basculements d'éligibilité sont notifiés.** Toute correction émet
+`simulation_enregistree` ; s'y ajoute `simulation_non_eligible` au 1er archivage et
+`simulation_redevenue_eligible` au dé-archivage — jamais les deux, jamais sur un état stable.
+Le second est né avec cette fonctionnalité : le demandeur pouvant désormais corriger sa
+simulation, un dossier archivé peut redevenir éligible et être repris par un conseiller, ce que
+`demandeur_cree` (déjà parti, et unique) ne pouvait pas annoncer. Détail des déclencheurs et des
+attributs : [BREVO-LIFECYCLE §2](../emails/BREVO-LIFECYCLE.md).
+
+> **Les corrections d'agent restent muettes côté Brevo.** `updateSimulationDataAction` archive et
+> dé-archive sans émettre aucun évènement — angle mort antérieur, non traité ici.
+
+> **La garde vit aussi côté serveur.** `migrateSimulationDataToDatabase` refuse d'écraser une
+> simulation existante différente et renvoie `enregistree: false`, laissant le cache local
+> alimenter l'arbitrage. Sans cela, `/embed-simulateur` — non gardé, puisque anonyme et
+> partenaire — restait une porte d'entrée pour écraser un dossier.
 
 ---
 
@@ -1069,6 +1304,17 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
 | Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)                    |
 | Champ « état de la maison » (id par démarche)  | `dossiers-ds/domain/value-objects/ds-champ-etat-maison.ts` (`getChampEtatMaisonEligibilite`)                |
 | Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
+| Verdict d'éligibilité d'une simulation         | `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (partagé demandeur + agent)      |
+| Archivage sur simulation demandeur (ADR-0034)  | `src/features/parcours/core/services/simulation-eligibilite.service.ts`                                     |
+| Promotion d'une correction agent complète      | `espace-agent/shared/actions/update-simulation-data.action.ts` (`champsPromotionSimulation`)                |
+| Verrous d'édition de simulation (ADR-0036)     | `parcours/core/domain/value-objects/edition-simulation.ts` (`peutModifierSaSimulation`)                     |
+| Entrées des verrous, point unique              | `parcours/core/services/etat-edition-simulation.service.ts` (`chargerEtatEditionSimulation`)                |
+| Miroir client des verrous                      | `parcours/core/hooks/useLectureSeuleSimulation.ts`                                                          |
+| Simulation du demandeur connecté (ADR-0036)    | `parcours/core/services/ma-simulation.service.ts`, `actions/enregistrer-simulation-demandeur.actions.ts`    |
+| Arbitrage des deux simulations (ADR-0036)      | `parcours/core/hooks/useMigrateRGAToDB.ts`, `components/ChoixSimulationModal.tsx`                           |
+| Comparaison de deux simulations (ADR-0036)     | `simulateur/domain/services/comparaison-simulations.service.ts`, `value-objects/simulation-fields.ts`       |
+| Correction d'agent opposable (complète)        | `parcours/core/services/rga-data.service.ts` (`estSimulationCorrigeeParAgent`)                              |
+| Inéligibilité affichée au demandeur            | `parcours/core/actions/eligibilite-query.actions.ts` (`estLogementDeclareNonEligible`)                      |
 | Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                             |
 | Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                                 |
 | Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |

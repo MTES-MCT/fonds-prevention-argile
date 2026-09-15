@@ -17,14 +17,14 @@ Pipeline en 6 étapes, ~30s en local. Résultat : 7 super-admins + AMO/AV de tes
 
 Le script `seed-staging.ts` enchaîne 6 étapes. Chacune est lançable séparément via `--steps`.
 
-| # | Step | Quoi | Idempotent |
-|---|---|---|---|
-| 1 | `safety` | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL` | — |
-| 2 | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail) | — |
-| 3 | `agents` | Insère 7 super-admins (`sql/agents/seed-agents-local-staging.sql`) | ✅ `ON CONFLICT (email) DO UPDATE` |
-| 4 | `amo-av` | Insère AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`) | ✅ `ON CONFLICT` |
-| 5 | `parcours` | Joue les 13 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `13-amo-av-arrete-2026.sql` | ✅ via `00-init.sql` qui TRUNCATE en tête |
-| 6 | `verify` | Joue `sql/fake-parcours/99-verification.sql` (counts attendus) | — |
+| #   | Step       | Quoi                                                                                        | Idempotent                                |
+| --- | ---------- | ------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                  | —                                         |
+| 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)            | —                                         |
+| 3   | `agents`   | Insère 7 super-admins (`sql/agents/seed-agents-local-staging.sql`)                          | ✅ `ON CONFLICT (email) DO UPDATE`        |
+| 4   | `amo-av`   | Insère AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`)                    | ✅ `ON CONFLICT`                          |
+| 5   | `parcours` | Joue les 13 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `13-amo-av-arrete-2026.sql` | ✅ via `00-init.sql` qui TRUNCATE en tête |
+| 6   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus)                              | —                                         |
 
 ## Pré-requis (étape `ref-data`)
 
@@ -56,7 +56,28 @@ pnpm seed:staging --dry-run
 
 # Confirmation explicite (requise quand NEXT_PUBLIC_APP_ENV=staging)
 pnpm seed:staging --yes-staging
+
+# + supprime les comptes de test FranceConnect avant de seeder
+pnpm seed:staging --yes-staging --purge-fc
 ```
+
+### `--purge-fc` — repartir d'un staging propre
+
+Le seed ne voit pas les comptes créés par un vrai login FranceConnect de test : ses nettoyages
+ciblent ses propres préfixes d'uuid, un compte FC a un uuid aléatoire. Il ne les laisse pas
+intacts pour autant — l'étape `amo-av` fait un `DELETE FROM parcours_amo_validations` **sans
+filtre**, donc ces comptes gardent leur simulation mais perdent leur validation AMO. Ni neufs,
+ni cohérents.
+
+`--purge-fc` supprime ces comptes (cascade complète) **avant** que le seed ne rejoue ses
+fixtures, ce qui rend l'état de départ d'une session de test entièrement reproductible. La liste
+des emails vient du [CSV de l'IdP FC « low »](https://github.com/france-connect/sources/blob/main/docker/volumes/fcp-low/mocks/idp/databases/citizen/base.csv),
+lu en direct : une session sans accès réseau sortant échoue plutôt que de ne rien supprimer en
+silence. Le flag suit `--dry-run`, et reste soumis au garde-fou triple ci-dessous — même si
+`--steps=` a exclu l'étape `safety`.
+
+Même logique, en autonome et avec un rapport détaillé : `pnpm fix:purge-comptes-test-fc`
+(dry-run par défaut, `--email=` pour cibler). Les deux partagent `scripts/ops/lib/purge-fc.ts`.
 
 ## Garde-fou triple (refus en prod)
 

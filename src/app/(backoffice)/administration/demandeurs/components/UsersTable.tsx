@@ -8,9 +8,12 @@ import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-valida
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects";
 import { PARTNER_LABELS, isPartnerKey } from "@/shared/domain/partners";
+import { estDepartementNonCouvert } from "@/features/backoffice/administration/demandeurs/domain";
 
 interface UsersTableProps {
   users: UserWithParcoursDetails[];
+  /** Départements éligibles sans AMO ni Aller-vers (cf. getDepartementsNonCouverts). */
+  departementsNonCouverts?: string[];
 }
 
 /**
@@ -224,7 +227,7 @@ function ValidationLink({ user }: { user: UserWithParcoursDetails }) {
   );
 }
 
-export function UsersTable({ users }: UsersTableProps) {
+export function UsersTable({ users, departementsNonCouverts = [] }: UsersTableProps) {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
   const toggleExpand = (userId: string) => {
@@ -259,7 +262,19 @@ export function UsersTable({ users }: UsersTableProps) {
                         <td>{formatNomComplet(user.user.firstName, user.user.name)}</td>
 
                         {/* Commune (Dpt) */}
-                        <td className="fr-text--sm">{getCommuneInfo(user)}</td>
+                        <td className="fr-text--sm">
+                          {getCommuneInfo(user)}
+                          {estDepartementNonCouvert(
+                            user.rgaSimulation?.logement?.code_departement,
+                            departementsNonCouverts
+                          ) && (
+                            <span
+                              className="fr-badge fr-badge--warning fr-badge--sm fr-ml-1w"
+                              title="Aucun AMO ni Aller-vers rattaché à ce département">
+                              DÉPARTEMENT NON COUVERT
+                            </span>
+                          )}
+                        </td>
 
                         {/* Date d'inscription */}
                         <td className="fr-text--sm">{formatDate(user.user.createdAt.toISOString())}</td>

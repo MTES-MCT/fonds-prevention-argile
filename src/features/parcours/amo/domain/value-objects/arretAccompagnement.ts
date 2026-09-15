@@ -19,14 +19,18 @@ export function estDossierChezLaDdt(eligibiliteDsStatus: DSStatus | null): boole
   return eligibiliteDsStatus === DSStatus.EN_CONSTRUCTION || eligibiliteDsStatus === DSStatus.EN_INSTRUCTION;
 }
 
-/** Transmis, décision rendue ou non : plus rien n'est réinitialisable (`verifierRegeneration`). */
-export function estDossierDepose(eligibiliteDsStatus: DSStatus | null): boolean {
+/** La DDT a tranché : ce formulaire est soldé et ne déclare plus rien de corrigeable. */
+export function estDecisionDdtRendue(eligibiliteDsStatus: DSStatus | null): boolean {
   return (
-    estDossierChezLaDdt(eligibiliteDsStatus) ||
     eligibiliteDsStatus === DSStatus.ACCEPTE ||
     eligibiliteDsStatus === DSStatus.REFUSE ||
     eligibiliteDsStatus === DSStatus.CLASSE_SANS_SUITE
   );
+}
+
+/** Transmis, décision rendue ou non : plus rien n'est réinitialisable (`verifierRegeneration`). */
+export function estDossierDepose(eligibiliteDsStatus: DSStatus | null): boolean {
+  return estDossierChezLaDdt(eligibiliteDsStatus) || estDecisionDdtRendue(eligibiliteDsStatus);
 }
 
 export interface EtatAnnulationAccompagnement {
@@ -35,6 +39,8 @@ export interface EtatAnnulationAccompagnement {
   demandeArretAt: Date | null;
   /** Statut DN du dossier d'éligibilité (null si pas encore de dossier). */
   eligibiliteDsStatus: DSStatus | null;
+  /** Dossier archivé : cf. `dossierArchive` sur `EtatDemandeAccompagnement`. */
+  dossierArchive: boolean;
 }
 
 /**
@@ -53,6 +59,7 @@ export function requiertAccordAmo(statut: StatutValidationAmo, estMandataireFina
  * formulaire d'éligibilité (du dépôt à la décision).
  */
 export function peutAnnulerAccompagnement(etat: EtatAnnulationAccompagnement): boolean {
+  if (etat.dossierArchive) return false;
   if (!STATUTS_ANNULABLES.includes(etat.statut)) return false;
   if (etat.demandeArretAt) return false;
   if (estDossierChezLaDdt(etat.eligibiliteDsStatus)) return false;
@@ -63,14 +70,23 @@ export interface EtatDemandeAccompagnement {
   statut: StatutValidationAmo;
   /** Statut DN du dossier d'éligibilité (null si pas encore de dossier). */
   eligibiliteDsStatus: DSStatus | null;
+  /**
+   * `parcours.archived_at` non nul. Requis : un dossier archivé n'a plus d'accompagnement
+   * à changer — inéligibilité (qualification Aller-vers ou simulation du demandeur, qui
+   * archivent toutes deux) comme archivage manuel (abandon, non-réponse…). Le cas d'une
+   * décision AMO « non éligible » est déjà couvert par `statut`, pas celui d'un `SANS_AMO`
+   * ou d'un `EN_ATTENTE` archivé après coup.
+   */
+  dossierArchive: boolean;
 }
 
 /**
  * Symétrique de `peutAnnulerAccompagnement` : un demandeur en autonomie peut changer
  * d'avis et demander un accompagnement, sauf pendant que la DDT tient son formulaire
- * d'éligibilité (même garde que l'annulation).
+ * d'éligibilité (même garde que l'annulation) et sauf dossier archivé.
  */
 export function peutDemanderAccompagnement(etat: EtatDemandeAccompagnement): boolean {
+  if (etat.dossierArchive) return false;
   if (etat.statut !== StatutValidationAmo.SANS_AMO) return false;
   if (estDossierChezLaDdt(etat.eligibiliteDsStatus)) return false;
   return true;

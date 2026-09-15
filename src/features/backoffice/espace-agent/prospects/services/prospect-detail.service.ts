@@ -110,6 +110,7 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
       etatMaison: rgaData?.rga?.sinistres || null,
       zoneExposition: rgaData?.logement?.zone_dexposition || null,
       indemnisationPasseeRGA: rgaData?.rga?.indemnise_indemnise_rga ?? null,
+      demandeCatnatEnCours: rgaData?.rga?.demande_catnat_en_cours ?? null,
       indemnisationAvantJuillet2025: rgaData?.rga?.indemnise_avant_juillet_2025 ?? null,
       indemnisationAvantJuillet2015: rgaData?.rga?.indemnise_avant_juillet_2015 ?? null,
       montantIndemnisation: rgaData?.rga?.indemnise_montant_indemnite ?? null,

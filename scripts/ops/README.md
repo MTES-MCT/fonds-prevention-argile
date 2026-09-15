@@ -232,6 +232,11 @@ pnpm fix:purge-comptes-test-fc --no-anonymize           # emails/noms en clair
 **Prérequis** : `.env.local` avec `DATABASE_URL` + `NEXT_PUBLIC_APP_ENV` ; accès réseau à
 raw.githubusercontent.com pour le CSV.
 
+> Pour **repartir d'un staging propre** avant une session de test, préférer
+> `pnpm seed:staging --yes-staging --purge-fc` : il enchaîne cette purge et le re-seed dans le
+> bon ordre (les comptes FC d'abord, sinon `amo-av` leur retire leur validation AMO et les
+> laisse à moitié dépouillés). Logique partagée dans `scripts/ops/lib/purge-fc.ts`.
+
 ### backfill-brevo-attributes
 
 Recalcule et pousse (upsert de contact, **jamais** de `trackEvent` — les évènements

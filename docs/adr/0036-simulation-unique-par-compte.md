@@ -1,0 +1,196 @@
+# ADR-0036 : Une simulation par compte, modifiable et arbitrée
+
+**Date** : 2026-09-09
+**Statut** : Accepté
+
+## Contexte
+
+Un demandeur pouvait empiler les simulations sans jamais s'en apercevoir.
+
+Le simulateur public (`/simulateur`) est ouvert à tous, y compris à un demandeur déjà
+connecté et déjà titulaire d'un dossier. À la fin du parcours, deux chemins écrivaient en
+base **en écrasant** la simulation existante :
+
+- `SimulateurFormulaire` appelle `migrateSimulationDataToDatabase` dès que l'utilisateur
+  est authentifié (ADR-0034) ;
+- `useMigrateRGAToDB`, au retour sur `/mon-compte`, rattache la simulation faite avant
+  connexion — son commentaire disait déjà « écrase l'ancienne simulation si existante ».
+
+Trois conséquences, toutes silencieuses :
+
+1. **Perte de données sans consentement.** Une simulation refaite à moitié, ou faite pour
+   la maison d'un proche, remplaçait le dossier réel. L'ancienne version n'était nulle part.
+2. **Verdict d'éligibilité rejoué à l'aveugle.** Depuis l'ADR-0034, une simulation non
+   éligible archive le dossier et écrit une qualification. Un écrasement pouvait donc
+   archiver un dossier vivant, ou dé-archiver un dossier réellement inéligible.
+3. **Aucun moyen de corriger une erreur.** À l'inverse, le demandeur qui avait fait une
+   faute de saisie n'avait **aucun écran** pour la corriger : seul un agent le pouvait,
+   depuis `/espace-agent/edition-donnees-simulation/[id]`. Refaire la simulation entière
+   était le seul recours — celui-là même qui écrase.
+
+Le cas le plus fréquent est le plus dommageable : simuler sans être connecté, puis se
+connecter avec un compte FranceConnect qui porte déjà un dossier.
+
+## Décision
+
+> Un compte porte **une** simulation. Elle se modifie, elle ne se recrée pas. Quand deux
+> versions se présentent, c'est le demandeur qui tranche.
+
+Trois règles :
+
+1. **Le simulateur public est fermé à qui a déjà une simulation.** `/simulateur` redirige
+   vers `/mon-compte/simulation`. La garde est dans la page, pas dans les CTA : quatorze
+   liens y mènent depuis des JSON de contenu et des composants.
+2. **La modification passe par l'écran d'édition des agents.** `SimulateurEdition` est
+   partagé ; il reçoit son enregistrement et ses textes par le contexte
+   (`onSave`, `audience`), et ne connaît plus l'action du back-office.
+3. **Deux simulations divergentes déclenchent un arbitrage.** Au retour sur `/mon-compte`,
+   une modale compare les deux versions champ par champ, signale celles qui changent
+   l'éligibilité, et laisse choisir. Fermer sans choisir conserve la version du compte —
+   le seul choix qui n'écrit rien.
+
+L'édition est fermée dans deux cas, tous deux réversibles (`peutModifierSaSimulation`) :
+
+| Verrou                                                                      | Motif                                                                                                                                   | Levée                                              |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `rgaSimulationDataAgent` non nul                                            | La correction de l'agent prime à l'affichage (`getEffectiveRGAData`, AGENT-first). Éditer produirait un écran sans effet visible.       | Aucune : le dossier est suivi par un professionnel |
+| Formulaire d'éligibilité chez la DDT (`EN_CONSTRUCTION` / `EN_INSTRUCTION`) | Le dossier déposé déclare ces données et le préremplissage REST ne sait que créer (même motif qu'ADR-0018 amendé, FLOW-AND-SYNC §2.7.1) | À la décision rendue                               |
+
+## Options envisagées
+
+### Option A — Une simulation par compte, modifiable, avec arbitrage (retenue)
+
+- Avantages : aucune donnée n'est perdue sans un choix explicite ; le demandeur peut enfin
+  corriger une erreur ; l'écran d'édition est mutualisé avec celui des agents, donc une
+  seule surface à maintenir ; le verdict d'éligibilité (ADR-0034) n'est plus rejoué à
+  l'insu de personne.
+- Inconvénients : corriger un seul champ impose de retraverser les dix étapes du
+  simulateur (l'écran agent fonctionne ainsi) ; `/simulateur` devient une route dynamique,
+  puisqu'elle lit la session.
+
+### Option B — Historiser les simulations et garder la dernière
+
+- Avantages : aucune perte, aucun écran d'arbitrage à écrire.
+- Inconvénients : une table de plus et une migration, pour un besoin que personne n'a
+  exprimé (personne ne demande à consulter ses anciennes simulations) ; surtout, cela ne
+  répond pas à la question posée — laquelle fait foi ? Le verdict d'éligibilité continuerait
+  de basculer tout seul.
+
+### Option C — Bloquer purement la re-simulation, sans écran d'édition
+
+- Avantages : le plus simple à écrire.
+- Inconvénients : laisse le demandeur prisonnier de sa faute de saisie, ce qui est
+  précisément l'une des trois causes du problème. Reporte la charge sur les AMO et les
+  Aller-vers, appelés pour corriger un chiffre.
+
+### Option D — Faire trancher le serveur (la plus récente gagne)
+
+- Avantages : aucun écran, aucune interaction.
+- Inconvénients : c'est le comportement actuel, celui qu'on corrige. « La plus récente »
+  n'est pas « la bonne » : une simulation abandonnée en cours de route est plus récente
+  qu'un dossier complet.
+
+## Conséquences
+
+### Positives
+
+- Le dossier d'un demandeur ne change plus d'état sans qu'il l'ait voulu.
+- La correction d'une simulation devient possible sans passer par un agent.
+- `SIMULATION_FIELDS` devient la source unique du couple (extraction, formatage) d'un champ
+  de simulation, jusqu'ici dupliqué entre `agent-edit-info.service.ts` et `InfoLogement`.
+- `migrateSimulationDataToDatabase` refuse d'écraser côté **serveur** : la garde ne dépend
+  pas de la redirection de `/simulateur`, ce qui couvre aussi `/embed-simulateur`, non gardé.
+- Le **retour à l'éligibilité** devient notifiable : l'évènement `simulation_redevenue_eligible`
+  complète `simulation_non_eligible` (ADR-0034) pour couvrir les deux basculements. Sans lui, un
+  demandeur qui corrige sa simulation voyait son dossier dé-archivé — donc repris par un
+  conseiller — sans qu'aucun mail ne le lui dise : `demandeur_cree` est déjà parti et ne part
+  qu'une fois, et l'attribut `ELIGIBILITE` segmente sans déclencher. Voir
+  [BREVO-LIFECYCLE §2](../emails/BREVO-LIFECYCLE.md).
+
+### Négatives / Risques
+
+- **`/simulateur` n'est plus rendue statiquement** (lecture de session). Elle reste rendue
+  côté serveur et indexable, mais perd le cache statique.
+- **Modifier son adresse change son territoire**, donc l'AMO ou l'Aller-vers responsable.
+  Rien ne réassigne l'accompagnement : le risque préexistait côté agent, il devient plus
+  fréquent.
+- **Le parcours d'édition est long** : dix étapes pour corriger un champ. Un accès direct
+  au champ serait un chantier distinct.
+- La numérotation des cartes de `/mon-compte` décale (le simulateur devient la carte 1).
+- **Les corrections d'agent restent muettes côté Brevo** : `updateSimulationDataAction` et
+  `qualifyProspect` archivent et dé-archivent sans émettre d'évènement ni rafraîchir le contact.
+  Angle mort antérieur, laissé tel quel — l'ouvrir enverrait des mails sur un chemin que cet ADR
+  ne couvre pas.
+
+### Migration
+
+Aucune migration de schéma. `parcours_prevention.rga_simulation_data` reste le seul
+emplacement de la simulation du demandeur ; la colonne agent est inchangée.
+
+Les comptes portant déjà deux simulations divergentes n'existent pas : jusqu'ici la seconde
+écrasait la première.
+
+Côté Brevo, `simulation_redevenue_eligible` n'existe qu'à son premier envoi : il ne devient
+sélectionnable comme déclencheur d'Automation qu'après un passage sur staging. L'attribut
+`ELIGIBILITE`, lui, doit être créé à la main (sinon ignoré en silence).
+
+## Amendement — QA septembre 2026
+
+Quatre défauts relevés à la recette, tous corrigés sans revenir sur la décision.
+
+- **Une simulation d'agent ne compte que complète** (`estSimulationCorrigeeParAgent`). Prise
+  au sens large, elle fermait à la fois le simulateur public et l'édition pour un dossier créé
+  par un Aller-vers sur la seule adresse : « Éligibilité manquante » renvoyait au simulateur,
+  qui renvoyait à un récapitulatif en lecture seule. Le demandeur ne pouvait jamais faire sa
+  simulation, et `demandeur_cree` — différé jusqu'à son enregistrement — ne partait jamais.
+- **La décision de l'AMO n'alimente plus le drapeau d'inéligibilité.** Il dérivait de la
+  présence d'une validation clôturée, sans regarder son statut : tout dossier accompagné
+  validé affichait « Vous n'êtes pas éligible ». Le drapeau ne reflète plus que l'archivage
+  pour inéligibilité, seul signal qui retombe au dé-archivage.
+- **L'écran d'édition ne réécrit plus le cache local** (verrou de montage `isReady`, plus
+  purge à l'enregistrement). Il recommitait la simulation d'avant correction, si bien que
+  l'arbitrage rouvrait aussitôt pour proposer — présélectionné — un retour en arrière.
+- **L'adresse entre dans la comparaison.** Elle ne porte aucun critère d'éligibilité, mais
+  elle porte le territoire : hors comparaison, un déménagement passait pour « identique » et
+  la correction était jetée avec le cache.
+
+### Révision : l'édition se ferme dès que l'AMO a statué
+
+La recette a tranché la question laissée ouverte par cet ADR. L'option C (« bloquer ») avait été
+écartée au motif qu'elle laisserait « le demandeur prisonnier de sa faute de saisie » ; ce motif
+tenait tant que la simulation n'était qu'une déclaration du demandeur. Il ne tient plus une fois
+qu'un professionnel s'est prononcé **à partir d'elle** : la corriger seul défait une décision, et
+— non éligible — archive le dossier par-dessus une validation qui dit l'inverse (§2.11).
+
+**Troisième verrou** : `aRenduSaDecision(statutAmo)`, soit les trois statuts tranchés
+(`LOGEMENT_ELIGIBLE`, `LOGEMENT_NON_ELIGIBLE`, `ACCOMPAGNEMENT_REFUSE`). `EN_ATTENTE` et
+`SANS_AMO` n'en sont pas : tant que personne n'a statué, le demandeur reste maître de sa saisie,
+ce qui préserve l'essentiel du motif d'origine — l'auto-correction avant décision.
+
+La contrepartie est explicite : **la correction passe désormais par le conseiller**. C'est un
+report de charge sur les AMO, assumé, et déjà outillé (« Vérifier son éligibilité », ADR-0020).
+
+**Quatrième verrou, même recette** : le formulaire DN **commencé** (prérempli créé, pas encore
+transmis). Le gel d'origine ne démarrait qu'au dépôt, alors que le motif invoqué — le
+préremplissage REST ne sait que créer — vaut dès la création. Option retenue face à la
+réinitialisation automatique du brouillon : bloquer coûte une correction reportée, réinitialiser
+coûte au demandeur l'accès depuis l'app à un formulaire parfois déjà rempli, et pouvait échouer
+en silence (`trop_recent`). Les deux verrous se lèvent ensemble à la décision de la DDT.
+
+Conséquence à ne jamais défaire : un verrou ferme aussi l'**arbitrage**. `useMigrateRGAToDB` ne
+purge plus le cache local sur le chemin verrouillé ; il expose la raison, `/mon-compte` l'affiche,
+et seul l'acquittement du demandeur jette la simulation refaite. Poser le verrou sans ce message
+aurait transformé l'arbitrage en suppression muette.
+
+## Liens
+
+- Écran partagé : `src/features/simulateur/components/SimulateurEdition.tsx`,
+  `components/shared/SimulateurContext.tsx`
+- Verrous d'édition : `src/features/parcours/core/domain/value-objects/edition-simulation.ts`
+- Enregistrement demandeur : `src/features/parcours/core/actions/enregistrer-simulation-demandeur.actions.ts`
+- Arbitrage : `src/features/parcours/core/hooks/useMigrateRGAToDB.ts`,
+  `components/ChoixSimulationModal.tsx`
+- Comparaison : `src/features/simulateur/domain/services/comparaison-simulations.service.ts`
+- Voir aussi : [ADR-0034](0034-simulation-non-eligible-demandeur.md) (verdict et archivage),
+  [ADR-0020](0020-correction-simulation-agent-post-eligibilite.md) (correction agent),
+  [FLOW-AND-SYNC §2.12](../parcours/FLOW-AND-SYNC.md)

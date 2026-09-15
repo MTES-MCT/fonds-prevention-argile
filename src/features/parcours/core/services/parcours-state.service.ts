@@ -4,6 +4,7 @@ import type { Parcours, ParcoursState } from "../domain/entities/parcours";
 import type { ParcoursComplet } from "../domain/types/parcours-query.types";
 import { getNextStep } from "../domain/value-objects/step";
 import { getParcoursPermissions, isParcoursComplete } from "./parcours-permissions.service";
+import { estSimulationCorrigeeParAgent } from "./rga-data.service";
 import type { DossierDS } from "../../dossiers-ds/domain/entities/dossier-ds";
 import type { DSStatus } from "../../dossiers-ds/domain/value-objects/ds-status";
 import { buildDemarcheUrl } from "../../dossiers-ds/utils/ds-url.utils";
@@ -27,8 +28,10 @@ export async function getOrCreateParcours(userId: string): Promise<Parcours> {
     updatedAt: parcours.updatedAt,
     rgaSimulationData: parcours.rgaSimulationData,
     rgaSimulationCompletedAt: parcours.rgaSimulationCompletedAt,
+    simulationCorrigeeParAgent: estSimulationCorrigeeParAgent(parcours),
     rgaDataDeletedAt: parcours.rgaDataDeletedAt,
     rgaDataDeletionReason: parcours.rgaDataDeletionReason,
+    archivedAt: parcours.archivedAt,
   };
 }
 
@@ -82,8 +85,10 @@ export async function getParcoursComplet(userId: string): Promise<ParcoursComple
       updatedAt: parcours.updatedAt,
       rgaSimulationData: parcours.rgaSimulationData,
       rgaSimulationCompletedAt: parcours.rgaSimulationCompletedAt,
+      simulationCorrigeeParAgent: estSimulationCorrigeeParAgent(parcours),
       rgaDataDeletedAt: parcours.rgaDataDeletedAt,
       rgaDataDeletionReason: parcours.rgaDataDeletionReason,
+      archivedAt: parcours.archivedAt,
     },
     dossiers,
     isComplete,

@@ -47,11 +47,11 @@ export function useSimulateurFormulaire() {
   // Message d'erreur si non éligible
   const reasonMessage = result?.reason ? ELIGIBILITY_REASON_MESSAGES[result.reason] : null;
 
-  // Commit vers RGA store (après éligibilité)
+  // Commit vers RGA store, éligible ou non : une simulation non éligible non
+  // enregistrée laisse un demandeur sans département, invisible de tous.
   const commitToRGAStore = () => {
-    if (isEligible && answers) {
-      saveRGA({ ...answers, simulatedAt: new Date().toISOString() });
-    }
+    if (!answers || Object.keys(answers).length === 0) return;
+    saveRGA(EligibilityService.toPartialRGASimulationData(answers));
   };
 
   // Loading state

@@ -155,13 +155,13 @@ export function UserDetailSimulation({ user }: UserDetailSimulationProps) {
                 <dd className="fr-mb-0">
                   <span
                     className={`fr-badge fr-badge--sm ${
-                      user.rgaSimulation.rga.sinistres === "saine"
+                      user.rgaSimulation.rga?.sinistres === "saine"
                         ? "fr-badge--success"
-                        : user.rgaSimulation.rga.sinistres === "très peu endommagée"
+                        : user.rgaSimulation.rga?.sinistres === "très peu endommagée"
                           ? "fr-badge--warning"
                           : "fr-badge--error"
                     }`}>
-                    {user.rgaSimulation.rga.sinistres || "—"}
+                    {user.rgaSimulation.rga?.sinistres || "—"}
                   </span>
                 </dd>
               </div>
@@ -173,7 +173,7 @@ export function UserDetailSimulation({ user }: UserDetailSimulationProps) {
                 <dt className="fr-text--regular fr-mb-0">Assuré RGA</dt>
               </div>
               <div className="fr-col-12 fr-col-md-8">
-                <dd className="fr-text--bold fr-mb-0">{user.rgaSimulation.rga.assure ? "Oui" : "Non"}</dd>
+                <dd className="fr-text--bold fr-mb-0">{user.rgaSimulation.rga?.assure ? "Oui" : "Non"}</dd>
               </div>
             </div>
 
@@ -184,21 +184,21 @@ export function UserDetailSimulation({ user }: UserDetailSimulationProps) {
               </div>
               <div className="fr-col-12 fr-col-md-8">
                 <dd className="fr-text--bold fr-mb-0">
-                  {user.rgaSimulation.rga.indemnise_indemnise_rga ? "Oui" : "Non"}
+                  {user.rgaSimulation.rga?.indemnise_indemnise_rga ? "Oui" : "Non"}
                 </dd>
               </div>
             </div>
 
             {/* Montant indemnité */}
-            {user.rgaSimulation.rga.indemnise_montant_indemnite &&
-              user.rgaSimulation.rga.indemnise_montant_indemnite > 0 && (
+            {user.rgaSimulation.rga?.indemnise_montant_indemnite &&
+              user.rgaSimulation.rga?.indemnise_montant_indemnite > 0 && (
                 <div className="fr-grid-row fr-py-2w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
                   <div className="fr-col-12 fr-col-md-4">
                     <dt className="fr-text--regular fr-mb-0">Montant indemnité</dt>
                   </div>
                   <div className="fr-col-12 fr-col-md-8">
                     <dd className="fr-text--bold fr-mb-0">
-                      {formatEuros(user.rgaSimulation.rga.indemnise_montant_indemnite)}
+                      {formatEuros(user.rgaSimulation.rga?.indemnise_montant_indemnite)}
                     </dd>
                   </div>
                 </div>
@@ -221,7 +221,7 @@ export function UserDetailSimulation({ user }: UserDetailSimulationProps) {
                 <dt className="fr-text--regular fr-mb-0">Nombre de personnes</dt>
               </div>
               <div className="fr-col-12 fr-col-md-8">
-                <dd className="fr-text--bold fr-mb-0">{user.rgaSimulation.menage.personnes || "—"}</dd>
+                <dd className="fr-text--bold fr-mb-0">{user.rgaSimulation.menage?.personnes || "—"}</dd>
               </div>
             </div>
 
@@ -232,7 +232,7 @@ export function UserDetailSimulation({ user }: UserDetailSimulationProps) {
               </div>
               <div className="fr-col-12 fr-col-md-8">
                 <dd className="fr-text--bold fr-mb-0">
-                  {user.rgaSimulation.menage.revenu_rga ? formatEuros(user.rgaSimulation.menage.revenu_rga) : "—"}
+                  {user.rgaSimulation.menage?.revenu_rga ? formatEuros(user.rgaSimulation.menage?.revenu_rga) : "—"}
                 </dd>
               </div>
             </div>
@@ -255,7 +255,7 @@ export function UserDetailSimulation({ user }: UserDetailSimulationProps) {
               </div>
               <div className="fr-col-12 fr-col-md-8">
                 <dd className="fr-text--bold fr-mb-0">
-                  {user.rgaSimulation.taxeFonciere.commune_eligible ? "Oui" : "Non"}
+                  {user.rgaSimulation.taxeFonciere?.commune_eligible ? "Oui" : "Non"}
                 </dd>
               </div>
             </div>

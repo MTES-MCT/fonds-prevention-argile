@@ -77,7 +77,7 @@ export default function StepDetailEligibilite({ pieces }: { pieces?: PieceJustif
         <h5
           className={isStepActive ? "text-left fr-text-label--blue-france" : "text-left fr-text--disabled"}
           style={isStepActive ? undefined : { color: "var(--text-disabled-grey)" }}>
-          2. Éligibilité
+          3. Éligibilité
         </h5>
 
         {/* Contenu si étape précédente */}
