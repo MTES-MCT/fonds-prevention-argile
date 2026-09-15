@@ -11,7 +11,7 @@ Auditeur : Samir + Claude
 >
 > **État courant (septembre 2026) — une seule vulnérabilité acceptée** : `uuid` <11.1.1
 > (Moderate, transitif via `exceljs`). Tout le reste est corrigé à la source. Voir
-> [Refresh — septembre 2026](#refresh--septembre-2026-branche-featdesactivation-agents).
+> [Refresh — septembre 2026](#refresh--septembre-2026-branche-chorebump-deps-securite-sept).
 
 ## Décision
 
@@ -295,6 +295,117 @@ un simple bump patch dans la même mineure (`4.28.8`, publié le 2026-08-08, hor
 `minimumReleaseAge`) : corrigé plutôt qu'accepté.
 
 Le checksum de `pnpm-lock.yaml` dans `.talismanrc` a été mis à jour en conséquence.
+
+### Reste accepté (`pnpm audit --prod`, 1 vulnérabilité)
+
+| Dépendance vulnérable | Sévérité | Type    | Chemin           | Justification                                                                                            |
+| --------------------- | -------- | ------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
+| `uuid` <11.1.1        | Moderate | runtime | `exceljs > uuid` | Inchangé : exceljs appelle `uuidv4()` sans buffer → faille non atteignable ; override v11 = major risqué |
+
+## Refresh — septembre 2026 (branche `chore/bump-deps-securite-sept`)
+
+Lot groupé de bumps hors majors conflictuels, déclenché par **trois CVE Critical** publiées le
+2026-09-08 (deux RCE `next`, un XSS `maplibre-gl`). `pnpm audit` passe de **6 à 1** vulnérabilité
+(prod : 4 → 1). Vérification : `pnpm validate` (typecheck + lint + 2113 tests + talisman),
+`pnpm build` prod, et **test manuel de la carte** (cf. maplibre ci-dessous).
+
+> **Piège de méthode.** Un premier audit lancé le 2026-09-14 ne voyait que 3 vulnérabilités prod :
+> la base d'advisories de `pnpm audit` n'avait pas encore indexé les deux CVE `next` du 08/09,
+> pourtant vieilles de six jours. Relancer l'audit à quelques heures d'intervalle peut changer
+> le verdict — ne pas conclure « rien de neuf » sur un seul passage.
+
+### Corrigées à la source (bumps directs)
+
+| Paquet             | Avant     | Après     | CVE éliminées                                                   |
+| ------------------ | --------- | --------- | --------------------------------------------------------------- |
+| `next`             | `15.5.23` | `15.5.24` | **2 Critical** (RCE non authentifiées) — contenu de la PR #344  |
+| `maplibre-gl`      | `5.24.0`  | `6.4.1`   | **1 Critical** — XSS, CVSS 3.1 **10.0** (`GHSA-jrc7-96c5-q579`) |
+| `postcss` (direct) | `8.5.26`  | `8.5.28`  | aligne la dep directe sur l'override                            |
+
+Les deux CVE `next`, toutes deux **RCE non authentifiées**, patchées en 15.5.24 :
+
+- **`GHSA-2xp9-vwfh-vxw4`** (CVSS **9.5**) — RCE dans l'**Image Optimization API** quand des
+  fichiers AVIF sont utilisés. Applicable : `next/image` est utilisé sur 21 fichiers et l'app
+  sert `/_next/image` en production.
+- **`GHSA-p293-qw3h-jr36`** — RCE sur les serveurs **hébergés sous Windows**. Non applicable à
+  notre runtime (buildpack Node Scalingo, base Ubuntu), corrigée par le même bump.
+
+### maplibre-gl 6 : deux breaking changes, dont un invisible des tests
+
+Le correctif du XSS (`DOM.sanitize()`, CWE-79, CVSS 10.0) n'existe **qu'en 6.x** — aucun backport
+5.x. Le major impose deux adaptations.
+
+**1. Plus d'export par défaut.** `import maplibregl from "maplibre-gl"` échoue en `TS1192`. Les
+trois consommateurs (`useRgaMap`, `useRgaMapMarker`, `useRgaBuildingSelection`) passent en import
+de namespace (`import * as maplibregl`), qui couvre l'usage valeur **et** type. Le reste de l'API
+utilisée est inchangé : `Map`, `Marker`, `NavigationControl`, `addProtocol`/`removeProtocol`,
+`setFeatureState`, types d'évènements, et l'intégration `pmtiles`.
+
+**2. Le worker n'est plus bundlé — et c'est ce qui casse la carte sous Next.** La v6 est ESM-only
+et charge son worker depuis un fichier voisin résolu via `import.meta.url`
+(`new URL("./maplibre-gl-worker.mjs", import.meta.url)`). Sous webpack, `import.meta.url` pointe
+le **chunk bundlé** dans `/_next/static/chunks/`, où ce fichier n'existe pas : Next répond sa page
+404 en HTML et le navigateur rejette le module (« non-JavaScript MIME type "text/html" »). La
+carte s'instancie — les contrôles +/− s'affichent — mais **aucune tuile n'arrive**.
+
+> **Aucun garde-fou automatique n'attrape cette panne** : typecheck, 2113 tests et build prod
+> passent tous au vert avec une carte morte. Seul un rendu réel la révèle. Toute évolution de
+> maplibre doit être validée en ouvrant la carte, pas seulement avec `pnpm validate`.
+
+Correctif en deux temps :
+
+- `scripts/setup/copy-maplibre-worker.mjs` copie `maplibre-gl-worker.mjs` **et** son chunk
+  `maplibre-gl-shared.mjs` (que le worker importe en relatif, les deux doivent être côte à côte)
+  de `node_modules/maplibre-gl/dist/` vers `public/`. Branché sur **`postinstall`**, pas sur
+  `prebuild` : `next dev` ne déclenche pas `prebuild`, la carte casserait en local. Node pur et
+  sans dépendance, pour tourner aussi côté Scalingo où les devDeps sont élaguées. Les deux
+  fichiers sont **gitignorés** : générés, jamais commités, donc jamais désynchronisés de la
+  version installée.
+- `useRgaMap` appelle `maplibregl.setWorkerUrl("/maplibre-gl-worker.mjs")` avant la création de
+  la carte.
+
+> Le `Procfile` n'est **pas** le bon crochet : ses entrées (`postdeploy`, `web`) tournent au
+> runtime, après le build et après l'élagage des devDeps.
+
+**Validation manuelle effectuée** (simulateur, étape « Où se situe votre logement ? ») : tuiles de
+base et couche d'aléa rendues, points RNB chargés, marqueur d'adresse posé, overlay « Chargement
+de la carte… » levé, clic sur un bâtiment → sélection, aléa et données BDNB (année de
+construction, niveaux) remontées. Zéro ressource en échec. Worker et chunk partagé servis en 200
+`application/javascript`, en dev **et** sur un `next start` de build de production.
+
+### Corrigées à la source (overrides `pnpm-workspace.yaml`)
+
+| Override                  | Avant     | Après     | CVE éliminées                                                                      |
+| ------------------------- | --------- | --------- | ---------------------------------------------------------------------------------- |
+| `sharp`                   | `^0.35.0` | `^0.35.4` | 1 High — **prod**, libheif (`GHSA-g89c-p67h-r497`, `GHSA-2jg2-4ch7-h545`) via next |
+| `js-yaml`                 | `^4.3.1`  | `^4.3.2`  | 1 High — devDep `eslint`, `maxTotalMergeKeys` ne borne pas le CPU                  |
+| `@humanfs/node` (nouveau) | —         | `^0.16.8` | 1 Moderate — devDep `eslint`, copie récursive suivant les symlinks                 |
+| `postcss`                 | `^8.5.26` | `^8.5.28` | alignement sur la dep directe                                                      |
+
+### Bumps de maintenance embarqués (groupe sécurité Dependabot #348)
+
+`@types/pg` 8.21.0 → 8.23.1, `tsx` 4.23.12 → 4.23.13, `@testing-library/react` 16.3.2 → 16.3.3,
+`@testing-library/user-event` 14.6.4 → 14.6.7, plus `vitest` **4.1.11 → 5.0.0** et `@vitest/ui`
+4.1.11 → 5.0.0 (les 2113 tests passent sans modification ; `@vitest/ui` était resté en 4.1.10,
+désaligné de `vitest` par la PR #342).
+
+`allowBuilds` fixe désormais `"@gouvfr/dsfr": false` : pnpm réinjectait un placeholder invalide
+(`set this to true or false`) dans `pnpm-workspace.yaml` à chaque install. `false` ne change rien
+au comportement — le script d'install était déjà ignoré — mais supprime le bruit récurrent.
+
+### Écarté
+
+- **`nodemailer` 10.0.10** (PR #349) : publié le 2026-09-14, il viole `minimumReleaseAge`
+  (1 semaine) et fait échouer la CI sur la policy supply-chain. À reprendre après le 2026-09-21.
+  C'est la **seule** raison de l'exclusion, pas une incompatibilité.
+- **Next 16 / ESLint 10 / `@vitejs/plugin-react` 6** (#263, #261, #234) : lot conflictuel
+  toujours reporté à une PR dédiée.
+
+> **Faux blocage à connaître.** Les CI rouges de `vitest@5.0.0` et `nodemailer@10.0.10` (14/09)
+> affichaient toutes deux `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`, pas une erreur de test :
+> un échec de ce type se lève tout seul avec le temps. Vérifier l'âge de publication
+> (`npm view <pkg> time --json`) avant de conclure à une incompatibilité — c'est ce qui a permis
+> d'embarquer vitest 5 ici alors que sa PR Dependabot était rouge la veille.
 
 ### Reste accepté (`pnpm audit --prod`, 1 vulnérabilité)
 
