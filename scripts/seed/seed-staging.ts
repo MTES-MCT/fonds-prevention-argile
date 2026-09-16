@@ -31,10 +31,9 @@ import { fileURLToPath } from "node:url";
 import { rawClient } from "@/shared/database/client";
 import { listerComptesTestFc, recupererEmailsTestFc, supprimerComptesTestFc } from "../ops/lib/purge-fc";
 
-// Charge .env.local si DATABASE_URL pas déjà défini (cas du lancement local).
-if (!process.env.DATABASE_URL && !process.env.SCALINGO_POSTGRESQL_URL) {
-  config({ path: ".env.local" });
-}
+// Filet pour un lancement qui ne passe pas par le runner (lui charge déjà .env.local) :
+// dotenv ne remplace jamais une variable déjà définie, l'appel est donc sans effet sinon.
+config({ path: ".env.local" });
 
 // ============================================================================
 // Steps
