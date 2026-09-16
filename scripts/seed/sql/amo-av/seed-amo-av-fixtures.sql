@@ -11,7 +11,8 @@
 -- partenaires en ont été retirés : ils sont **utilisés par l'application**, qui
 -- écrit à l'AMO du territoire à l'auto-attribution — un test de staging aurait
 -- envoyé de vrais emails à de vraies structures. Pour recevoir ces invitations
--- pendant une session de test, passer `SEED_STRUCTURES_EMAIL` (cf. README).
+-- pendant une session de test, passer `SEED_STRUCTURES_EMAIL` : le seed dérive un
+-- alias par structure à partir du slug ci-dessous (cf. README).
 --
 -- Noms et périmètres territoriaux sont conservés : ils sont publics (l'app les
 -- affiche aux demandeurs) et les checklists de test s'y réfèrent.

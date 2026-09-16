@@ -123,15 +123,21 @@ traitement pour les téléphones (`0X XX 00 00 00`) et les SIRET (série `999999
 demandeurs — et les checklists de test s'y réfèrent.
 
 En contrepartie, plus personne ne reçoit l'invitation AMO. En local, Mailhog les capture
-toutes quelle que soit l'adresse. Sur staging, passer l'adresse qui doit les recevoir :
+toutes quelle que soit l'adresse. Sur staging, passer **une** adresse de base :
 
 ```bash
-SEED_STRUCTURES_EMAIL="prenom.nom+amo@beta.gouv.fr" \
+SEED_STRUCTURES_EMAIL="prenom.nom@beta.gouv.fr" \
   pnpm seed:staging --yes-staging
 ```
 
-Toutes les structures reçoivent alors sur cette adresse. Variable absente = les `@example.org`
-restent en place, et le seed le dit dans sa sortie.
+Le seed en dérive **un alias par structure**, en sous-adressant avec le slug de la fixture :
+`alohe@example.org` devient `prenom.nom+alohe@beta.gouv.fr`, `terre-solide@example.org`
+devient `prenom.nom+terre-solide@beta.gouv.fr`. Tout arrive dans la même boîte, mais chaque
+message reste attribuable à sa structure et filtrable — ce qu'une adresse unique partagée
+par les 24 structures ne permettrait pas. Les quatre Soliha Hauts-de-France, qui partagent
+volontairement une adresse dans les fixtures, partagent donc aussi leur alias.
+
+Variable absente = les `@example.org` restent en place, et le seed le dit dans sa sortie.
 
 ### Quels comptes sont réellement connectables
 

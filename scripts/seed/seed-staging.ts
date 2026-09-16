@@ -216,23 +216,48 @@ async function seedSuperAdmins(dryRun: boolean): Promise<void> {
   console.log(`  ✓ ${emails.length} super-admin(s) depuis SEED_AGENTS_SUPERADMINS`);
 }
 
+// Le slug de la fixture devient le sous-adressage : `alohe@example.org` et la base
+// `prenom.nom@beta.gouv.fr` donnent `prenom.nom+alohe@beta.gouv.fr`. Une adresse par
+// structure, donc filtrable à la réception, sans aucune en clair dans le dépôt.
+function construireAlias(base: string, emailFixture: string): string {
+  const [local, domaine] = base.split("@");
+  const slug = emailFixture.split("@")[0];
+  return `${local}+${slug}@${domaine}`;
+}
+
 // Les fixtures portent des adresses `@example.org`, non délivrables : sans surcharge,
 // une session de test ne reçoit jamais l'invitation envoyée à l'AMO du territoire.
 async function redirigerEmailsStructures(dryRun: boolean): Promise<void> {
-  const email = (process.env.SEED_STRUCTURES_EMAIL ?? "").trim().toLowerCase();
+  const base = (process.env.SEED_STRUCTURES_EMAIL ?? "").trim().toLowerCase();
 
-  if (!email.includes("@")) {
+  if (!base.includes("@")) {
     console.log("  · SEED_STRUCTURES_EMAIL absent : les structures gardent leurs adresses @example.org");
     return;
   }
   if (dryRun) {
-    console.log(`  [dry-run] emails des structures redirigés vers ${email}`);
+    console.log(`  [dry-run] emails des structures en alias de ${base}`);
     return;
   }
 
-  await rawClient`UPDATE entreprises_amo SET emails = ${email}`;
-  await rawClient`UPDATE allers_vers SET emails = ARRAY[${email}]::text[]`;
-  console.log(`  ✓ emails des structures redirigés vers ${email}`);
+  // `entreprises_amo.emails` est un TEXT séparé par `;`, `allers_vers.emails` un text[].
+  const amos = await rawClient<{ id: string; emails: string }[]>`SELECT id, emails FROM entreprises_amo`;
+  for (const amo of amos) {
+    const alias = amo.emails
+      .split(";")
+      .map((e) => e.trim())
+      .filter((e) => e.includes("@"))
+      .map((e) => construireAlias(base, e))
+      .join(";");
+    await rawClient`UPDATE entreprises_amo SET emails = ${alias} WHERE id = ${amo.id}::uuid`;
+  }
+
+  const av = await rawClient<{ id: string; emails: string[] }[]>`SELECT id, emails FROM allers_vers`;
+  for (const structure of av) {
+    const alias = structure.emails.filter((e) => e.includes("@")).map((e) => construireAlias(base, e));
+    await rawClient`UPDATE allers_vers SET emails = ${alias}::text[] WHERE id = ${structure.id}::uuid`;
+  }
+
+  console.log(`  ✓ ${amos.length + av.length} structures en alias de ${base}`);
 }
 
 async function runAmoAvStep(dryRun: boolean): Promise<void> {
