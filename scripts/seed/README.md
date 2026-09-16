@@ -22,7 +22,7 @@ Le script `seed-staging.ts` enchaîne 6 étapes. Chacune est lançable séparém
 | 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                                     | —                                         |
 | 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)                               | —                                         |
 | 3   | `agents`   | Fixtures d'agents (`sql/agents/seed-agents-local-staging.sql`) + super-admins depuis `SEED_AGENTS_SUPERADMINS` | ✅ `ON CONFLICT (email) DO UPDATE`        |
-| 4   | `amo-av`   | Insère AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`)                                       | ✅ `ON CONFLICT`                          |
+| 4   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`) + redirection `SEED_STRUCTURES_EMAIL`        | ✅ `ON CONFLICT`                          |
 | 5   | `parcours` | Joue les 13 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `13-amo-av-arrete-2026.sql`                    | ✅ via `00-init.sql` qui TRUNCATE en tête |
 | 6   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus)                                                 | —                                         |
 
@@ -107,6 +107,31 @@ psql "$DATABASE_URL" \
   -v email="'prenom.nom@example.gouv.fr'" -v given="'Prénom'" -v usual="'Nom'" \
   -f scripts/seed/sql/agents/seed-agents-prod.sql
 ```
+
+## Structures partenaires : des contacts qui partent vraiment
+
+Même principe pour les AMO et Allers-vers, avec une raison supplémentaire : leurs adresses
+ne dorment pas en base, **l'application écrit dessus**. L'auto-attribution envoie l'invitation
+à l'AMO du territoire (cf. [FLOW-AND-SYNC §2.3.1](../../docs/parcours/FLOW-AND-SYNC.md)) — un
+parcours de test dans l'Indre suffisait donc à envoyer un vrai email à une vraie structure
+partenaire depuis staging.
+
+Les fixtures portent désormais des adresses `@example.org`, que la RFC 2606 garantit non
+attribuables : aucun message ne peut atteindre un tiers, quel que soit l'environnement. Même
+traitement pour les téléphones (`0X XX 00 00 00`) et les SIRET (série `999999999000XX`). Les
+**noms et périmètres territoriaux sont conservés** : ils sont publics — l'app les affiche aux
+demandeurs — et les checklists de test s'y réfèrent.
+
+En contrepartie, plus personne ne reçoit l'invitation AMO. En local, Mailhog les capture
+toutes quelle que soit l'adresse. Sur staging, passer l'adresse qui doit les recevoir :
+
+```bash
+SEED_STRUCTURES_EMAIL="prenom.nom+amo@beta.gouv.fr" \
+  pnpm seed:staging --yes-staging
+```
+
+Toutes les structures reçoivent alors sur cette adresse. Variable absente = les `@example.org`
+restent en place, et le seed le dit dans sa sortie.
 
 ### Quels comptes sont réellement connectables
 

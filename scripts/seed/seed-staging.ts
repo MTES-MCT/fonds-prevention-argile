@@ -10,7 +10,7 @@
  *   1. safety   — vérifs env + DB URL
  *   2. ref-data — bail si rga_zones ou catastrophes_naturelles est vide
  *   3. agents   — fixtures d'agents + super-admins depuis SEED_AGENTS_SUPERADMINS
- *   4. amo-av   — INSERT fixtures AMO + Allers-vers
+ *   4. amo-av   — fixtures AMO + Allers-vers, emails redirigés si SEED_STRUCTURES_EMAIL
  *   5. parcours — joue les 13 SQL de sql/fake-parcours/00 → 13
  *   6. verify   — joue 99-verification.sql
  *
@@ -217,9 +217,29 @@ async function seedSuperAdmins(dryRun: boolean): Promise<void> {
   console.log(`  ✓ ${emails.length} super-admin(s) depuis SEED_AGENTS_SUPERADMINS`);
 }
 
+// Les fixtures portent des adresses `@example.org`, non délivrables : sans surcharge,
+// une session de test ne reçoit jamais l'invitation envoyée à l'AMO du territoire.
+async function redirigerEmailsStructures(dryRun: boolean): Promise<void> {
+  const email = (process.env.SEED_STRUCTURES_EMAIL ?? "").trim().toLowerCase();
+
+  if (!email.includes("@")) {
+    console.log("  · SEED_STRUCTURES_EMAIL absent : les structures gardent leurs adresses @example.org");
+    return;
+  }
+  if (dryRun) {
+    console.log(`  [dry-run] emails des structures redirigés vers ${email}`);
+    return;
+  }
+
+  await rawClient`UPDATE entreprises_amo SET emails = ${email}`;
+  await rawClient`UPDATE allers_vers SET emails = ARRAY[${email}]::text[]`;
+  console.log(`  ✓ emails des structures redirigés vers ${email}`);
+}
+
 async function runAmoAvStep(dryRun: boolean): Promise<void> {
   console.log("→ amo-av");
   await runSqlFile("amo-av/seed-amo-av-fixtures.sql", dryRun);
+  await redirigerEmailsStructures(dryRun);
 }
 
 async function runParcoursStep(dryRun: boolean): Promise<void> {
