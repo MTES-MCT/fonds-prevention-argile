@@ -11,8 +11,8 @@ import {
   peutAnnulerAccompagnement,
   requiertAccordAmo,
 } from "../domain/value-objects";
-import { AmoMode, getAmoMode } from "../domain/value-objects/departements-amo";
-import { getCodeDepartementFromCodeInsee, normalizeCodeInsee, validateEmailsList } from "../utils/amo.utils";
+import { peutPasserEnAutonomie } from "../domain/value-objects/departements-amo";
+import { validateEmailsList } from "../utils/amo.utils";
 import {
   sendArretAccompagnementInfoEmail,
   sendArretAccompagnementValidationEmail,
@@ -96,8 +96,7 @@ export async function annulerAccompagnementDemandeur(params: {
   }
 
   // Même garde que `skipAmoStepForUser` : là où l'AMO est obligatoire, pas d'autonomie.
-  const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData?.logement?.commune);
-  if (codeInsee && getAmoMode(getCodeDepartementFromCodeInsee(codeInsee)) !== AmoMode.FACULTATIF) {
+  if (!peutPasserEnAutonomie(parcours)) {
     return { success: false, error: "L'AMO est obligatoire pour ce département" };
   }
 

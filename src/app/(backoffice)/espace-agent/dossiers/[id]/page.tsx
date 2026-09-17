@@ -101,11 +101,13 @@ export default async function DossierDetailPage({ params }: PageProps) {
     !timelineEtapeCourante.submittedAt &&
     !timelineEtapeCourante.etatDs;
 
-  // Gel entre dépôt et décision DDT (§2.7) : masque l'entrée de menu, la garde restant côté
-  // action. Le bandeau `arretADecider` n'est PAS gelé — l'AMO doit pouvoir refuser une demande
-  // d'arrêt en attente, sans quoi elle resterait pendante indéfiniment.
+  // Deux masquages, gardes revérifiées côté action : le gel dépôt/décision DDT (§2.7), et
+  // l'AMO obligatoire, où l'autonomie n'existe pas. Le bandeau `arretADecider` n'est PAS gelé —
+  // l'AMO doit pouvoir refuser une demande d'arrêt en attente, sinon elle reste pendante.
   const peutArreterMaintenant =
-    peutArreterAccompagnement && !estDossierChezLaDdt(dossier.dossiersTimeline[Step.ELIGIBILITE]?.etatDs ?? null);
+    peutArreterAccompagnement &&
+    dossier.peutPasserEnAutonomie &&
+    !estDossierChezLaDdt(dossier.dossiersTimeline[Step.ELIGIBILITE]?.etatDs ?? null);
 
   // Le demandeur a demandé l'arrêt : l'AMO mandataire doit se prononcer.
   const arretADecider = dossier.demandeArretAt !== null && peutArreterAccompagnement;
@@ -176,6 +178,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   peutAgirSurDossierDn={peutAgirSurDn}
                   peutReinitialiserDn={peutReinitialiserDn}
                   stepCourante={dossier.currentStep}
+                  estArchive={dossier.archivedAt !== null}
                 />
               )}
             </div>
@@ -191,6 +194,8 @@ export default async function DossierDetailPage({ params }: PageProps) {
               currentStatus={dossier.currentStatus}
               dsStatus={dossier.dsStatus}
               validationStatut={dossier.validationStatut}
+              archivedAt={dossier.archivedAt}
+              archiveReason={dossier.archiveReason}
               instructedAt={dossier.instructedAt}
             />
             {/* Invitation en attente (étape INVITATION = stub non réclamé) → renvoi possible,

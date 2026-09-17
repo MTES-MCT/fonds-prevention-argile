@@ -114,9 +114,15 @@ function resume(d: DossierItem): string {
 async function listerComptes() {
   const agents = await agentsRepo.findAll();
 
-  console.log(`${agents.length} comptes agents.`);
+  const nbDesactives = agents.filter((a) => a.desactiveAt).length;
+  const suffixe = nbDesactives > 0 ? ` (dont ${nbDesactives} désactivé${nbDesactives > 1 ? "s" : ""})` : "";
+
+  console.log(`${agents.length} comptes agents${suffixe}.`);
   console.log("Le volume est celui du listing espace agent : ce que le compte voit vraiment.");
   console.log("« jamais connecté » = ligne créée en base mais sans identité ProConnect associée.");
+  if (nbDesactives > 0) {
+    console.log("« désactivé » = accès révoqué : la connexion ProConnect est refusée, sans message.");
+  }
   console.log();
 
   for (const agent of agents) {
@@ -126,6 +132,16 @@ async function listerComptes() {
       entrepriseAmoId: agent.entrepriseAmoId,
       allersVersId: agent.allersVersId,
     };
+
+    // Un agent désactivé garde un périmètre valide : sans cette garde, il était proposé
+    // avec son volume de dossiers alors que sa connexion est refusée (ADR-0029).
+    if (agent.desactiveAt) {
+      const date = agent.desactiveAt.toISOString().slice(0, 10);
+      const motif = agent.desactiveRaison ? ` — ${agent.desactiveRaison}` : "";
+      console.log(`  ${agent.email}`);
+      console.log(`      ${agent.role} — COMPTE INEXPLOITABLE : désactivé le ${date}${motif}`);
+      continue;
+    }
 
     // Un compte mal configuré (rôle sans structure rattachée) fait échouer le calcul de
     // périmètre — donc l'app entière pour cet agent. On le signale au lieu de tout arrêter :

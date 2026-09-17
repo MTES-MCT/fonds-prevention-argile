@@ -371,6 +371,13 @@ super-admin en lecture seule sont **exclus** — contrairement à la ré-ouvertu
 > l'accès** au dossier juste après son action (`canAccessDossier` refuse un dossier sans
 > entreprise) et l'aller-vers du territoire en devient responsable.
 
+> **Pas d'autonomie en AMO obligatoire (septembre 2026).** À la garde de rôle s'ajoute une
+> garde **territoriale** : `arreterAccompagnementAction` refuse dans un département où l'AMO
+> est obligatoire, la sortie de l'AMO y étant l'archivage. Même prédicat
+> (`peutPasserEnAutonomie`) que l'annulation côté demandeur, dont la version précédente se
+> sautait quand seule la simulation agent portait la commune. Voir
+> [ADR-0037](../adr/0037-pas-d-autonomie-en-amo-obligatoire.md).
+
 > **Gel entre dépôt et décision DDT (septembre 2026).** À la garde de rôle s'ajoute une garde
 > d'**état** : `arreterAccompagnementAction` refuse tant que le formulaire d'éligibilité est
 > déposé sans décision rendue (`estDossierChezLaDdt`), y compris pour l'AMO responsable. Même

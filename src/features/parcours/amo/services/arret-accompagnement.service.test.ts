@@ -150,6 +150,29 @@ describe("annulerAccompagnementDemandeur", () => {
     expect(detacherAmo).not.toHaveBeenCalled();
   });
 
+  it("refuse quand seule la simulation agent porte la commune obligatoire (dossier Aller-vers)", async () => {
+    mockSelectOnce([
+      { ...parcours, rgaSimulationData: null, rgaSimulationDataAgent: { logement: { commune: "36044" } } },
+    ]);
+    mockSelectOnce([validationMandataire]);
+
+    const result = await annulerAccompagnementDemandeur({ parcoursId: "p1" });
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("obligatoire pour ce département");
+    expect(detacherAmo).not.toHaveBeenCalled();
+  });
+
+  it("refuse quand aucune simulation ne porte de commune (jamais de repli permissif)", async () => {
+    mockSelectOnce([{ ...parcours, rgaSimulationData: null, rgaSimulationDataAgent: null }]);
+    mockSelectOnce([validationMandataire]);
+
+    const result = await annulerAccompagnementDemandeur({ parcoursId: "p1" });
+
+    expect(result.success).toBe(false);
+    expect(detacherAmo).not.toHaveBeenCalled();
+  });
+
   it("refuse si le parcours est déjà sans AMO", async () => {
     mockSelectOnce([parcours]);
     mockSelectOnce([{ ...validationMandataire, statut: StatutValidationAmo.SANS_AMO }]);

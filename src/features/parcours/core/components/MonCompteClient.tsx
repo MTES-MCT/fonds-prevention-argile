@@ -12,7 +12,9 @@ import { Step } from "../domain";
 import {
   StatutValidationAmo,
   estFormulaireEligibiliteBloqueParDemandeAccompagnement,
+  estAccompagnementRefuse,
   estLogementNonEligible,
+  estParcoursSansSuite,
   isValidationRefusee,
 } from "../../amo/domain/value-objects";
 import { AmoMode } from "../../amo/domain/value-objects/departements-amo";
@@ -22,6 +24,7 @@ import { DSStatus } from "../../dossiers-ds/domain";
 import type { PiecesByStep } from "../../dossiers-ds/domain/pieces-justificatives";
 import { PiecesJustificatives } from "../../dossiers-ds/components";
 import {
+  CalloutAmoAccompagnementRefuse,
   CalloutAmoEnAttente,
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
@@ -89,7 +92,9 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
 
   const hasRGAData = hasTempRGAData || !!parcours?.rgaSimulationData;
 
-  // Aucune pièce à réunir si le logement n'est pas éligible : plus rien ne sera déposé.
+  // Aucune pièce à réunir sur un parcours garé : plus rien ne sera déposé. La distinction
+  // inéligibilité / refus d'accompagnement ne joue que sur les textes, pas ici.
+  const isSansSuite = estParcoursSansSuite(statutAmo, isDossierNonEligible);
   const isNonEligible = estLogementNonEligible(statutAmo, isDossierNonEligible);
 
   // Vérifier si les coordonnées de contact sont déjà renseignées.
@@ -253,7 +258,7 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
           </div>
 
           {/* Pièces de l'étape en cours : ce que le demandeur doit réunir maintenant. */}
-          {!isNonEligible && (
+          {!isSansSuite && (
             <div className="fr-grid-row">
               <div className="fr-col-12 fr-col-md-8">
                 <PiecesJustificatives
@@ -268,7 +273,7 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
 
       {/* Sections communes. Sans pièces si non éligible : les cartes d'étapes restent
           informatives, mais n'invitent plus à préparer des justificatifs. */}
-      <StepDetailSection piecesByStep={isNonEligible ? undefined : piecesByStep} />
+      <StepDetailSection piecesByStep={isSansSuite ? undefined : piecesByStep} />
 
       {/* Section "Pour en savoir plus" si logement non éligible */}
       {isNonEligible && <PourEnSavoirPlusSectionContent />}
@@ -314,6 +319,12 @@ function CalloutManager({
     // (Aller-vers ou simulation du demandeur) ne doit pas s'en réclamer.
     const origine = statutAmo !== null && isValidationRefusee(statutAmo) ? "amo" : "dossier";
     return <CalloutAmoLogementNonEligible origine={origine} />;
+  }
+
+  // Éligible, mais l'AMO a renoncé à l'accompagner (ADR-0022) : le parcours est garé comme
+  // ci-dessus, mais lui annoncer une inéligibilité serait faux.
+  if (estAccompagnementRefuse(statutAmo)) {
+    return <CalloutAmoAccompagnementRefuse />;
   }
 
   // Demande d'accompagnement après autonomie (§2.10 FLOW-AND-SYNC.md) : le parcours est déjà à
