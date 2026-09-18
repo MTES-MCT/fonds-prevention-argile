@@ -17,10 +17,9 @@ interface QuestionStepProps<TValue extends string> {
   /** Id du critère dans la grille de pondération (ex: "pente_terrain") — sert à afficher l'impact de la réponse sélectionnée. */
   critereId: string;
   title: string;
-  subtitle?: string;
   illustration: ReactNode;
-  /** Explication vulgarisée en bullet points : de quoi il s'agit + impact sur le RGA. */
-  bullets: string[];
+  /** Explication pédagogique en un paragraphe : de quoi il s'agit + impact sur le RGA. */
+  description: string;
   options: QuestionOption<TValue>[];
   selected: TValue | undefined;
   onSelect: (value: TValue) => void;
@@ -33,16 +32,15 @@ interface QuestionStepProps<TValue extends string> {
 
 /**
  * Squelette commun à toutes les questions du simulateur de vulnérabilité :
- * illustration + bullet points pédagogiques + choix (fr-radio-rich) + navigation.
+ * illustration + paragraphe pédagogique + choix (fr-radio-rich) + navigation.
  * Un composant `Step*` par question ne fait donc que fournir son contenu.
  */
 export function QuestionStep<TValue extends string>({
   fieldsetName,
   critereId,
   title,
-  subtitle,
   illustration,
-  bullets,
+  description,
   options,
   selected,
   onSelect,
@@ -53,16 +51,10 @@ export function QuestionStep<TValue extends string>({
   onBack,
 }: QuestionStepProps<TValue>) {
   return (
-    <VulnerabiliteLayout title={title} subtitle={subtitle} currentStep={numeroEtape} totalSteps={totalEtapes}>
+    <VulnerabiliteLayout title={title} currentStep={numeroEtape} totalSteps={totalEtapes}>
       <div className="fr-mb-3w flex justify-center">{illustration}</div>
 
-      <ul className="fr-mb-3w fr-text--sm" style={{ paddingLeft: "1.25rem" }}>
-        {bullets.map((bullet, index) => (
-          <li key={index} className="fr-mb-1v">
-            {bullet}
-          </li>
-        ))}
-      </ul>
+      <p className="fr-mb-3w">{description}</p>
 
       <fieldset className="fr-fieldset" id={`${fieldsetName}-fieldset`}>
         <legend className="fr-fieldset__legend fr-sr-only">{title}</legend>

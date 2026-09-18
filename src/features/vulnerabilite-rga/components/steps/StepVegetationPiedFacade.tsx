@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaVegetationPiedFacade } from "../illustrations/SchemaVegetationPiedFacade";
+import Image from "next/image";
+import schemaVegetationPiedFacade from "../illustrations/SchemaVegetationPiedFacade.svg";
 import type {
   ReponseVegetationPiedFacade,
   PartialVulnerabiliteReponses,
@@ -32,13 +33,8 @@ export function StepVegetationPiedFacade({
       fieldsetName="vegetation-pied-facade"
       critereId="vegetation_pied_facade"
       title="Y a-t-il des plantations juste au pied des façades ?"
-      subtitle="Potager, rosiers, arbustes ou toute plantation contre le mur, nécessitant un arrosage régulier."
-      illustration={<SchemaVegetationPiedFacade />}
-      bullets={[
-        "Arroser régulièrement juste au pied du mur crée des apports d'eau localisés et irréguliers",
-        "Sur sol argileux, ces variations d'humidité concentrées sont particulièrement défavorables",
-        "Ce type de plantation est à éloigner d'office de la façade (1 à 2 mètres minimum)",
-      ]}
+      illustration={<Image src={schemaVegetationPiedFacade} alt="" className="w-full h-auto" />}
+      description="Un potager, des rosiers ou des arbustes arrosés au pied de la façade créent des apports d'eau localisés et irréguliers. Sur sol argileux, ces à-coups font gonfler puis rétracter l'argile et favorisent le RGA."
       options={[
         { value: "presente", label: "Oui, il y a des plantations arrosées contre le mur" },
         { value: "absente", label: "Non, rien contre les murs" },

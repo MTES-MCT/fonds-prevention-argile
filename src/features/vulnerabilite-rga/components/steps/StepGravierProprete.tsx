@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaGravierProprete } from "../illustrations/SchemaGravierProprete";
+import Image from "next/image";
+import schemaGravierProprete from "../illustrations/SchemaGravierProprete.svg";
 import type {
   ReponseGravierProprete,
   PartialVulnerabiliteReponses,
@@ -32,13 +33,8 @@ export function StepGravierProprete({
       fieldsetName="gravier-proprete"
       critereId="gravier_proprete"
       title="Y a-t-il un lit de gravier en pied de façade ?"
-      subtitle="Bande de graviers posée directement sur la terre, au ras du mur."
-      illustration={<SchemaGravierProprete />}
-      bullets={[
-        "Sans membrane étanche dessous, le gravier laisse l'eau de pluie s'infiltrer directement au pied du mur",
-        "Ces infiltrations répétées, juste sous les fondations, favorisent les cycles gonflement/retrait du sol",
-        "L'absence de gravier (terre nue ou dallage étanche) limite ce risque",
-      ]}
+      illustration={<Image src={schemaGravierProprete} alt="" className="w-full h-auto" />}
+      description="Une bande de graviers posée à même la terre, au ras du mur favorise l'infiltration au pied des fondations. Le mur aura tendance à s'enfoncer dans une argile plus molle."
       options={[
         { value: "present", label: "Oui, il y a un lit de gravier en pied de façade" },
         { value: "absent", label: "Non, il n'y en a pas" },

@@ -33,6 +33,7 @@ export const MATOMO_EVENTS = {
   VULNERABILITE_STEP_MITOYENNETE: "vulnerabilite_step_mitoyennete",
   VULNERABILITE_STEP_ENSOLEILLEMENT: "vulnerabilite_step_ensoleillement",
   VULNERABILITE_RESULT: "vulnerabilite_result",
+  VULNERABILITE_PDF_DOWNLOAD: "vulnerabilite_pdf_download",
 } as const;
 
 export type MatomoEvent = (typeof MATOMO_EVENTS)[keyof typeof MATOMO_EVENTS];

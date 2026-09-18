@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaReseauxEnterres } from "../illustrations/SchemaReseauxEnterres";
+import Image from "next/image";
+import schemaReseauxEnterres from "../illustrations/SchemaReseauxEnterres.svg";
 import type {
   ReponseReseauxEnterres,
   PartialVulnerabiliteReponses,
@@ -32,13 +33,8 @@ export function StepReseauxEnterres({
       fieldsetName="reseaux-enterres"
       critereId="reseaux_enterres"
       title="Où passent les canalisations d'eau et d'assainissement enterrées ?"
-      subtitle="Réseau d'eau potable, d'évacuation ou de descente de gouttière enterrée."
-      illustration={<SchemaReseauxEnterres />}
-      bullets={[
-        "Une fuite d'eau sous ou près des fondations est l'une des causes les plus fréquentes de sinistre RGA",
-        "Éloigner les réseaux des fondations limite le risque qu'une fuite humidifie le sol juste sous la maison",
-        "Pas besoin de connaître le tracé exact : une estimation suffit",
-      ]}
+      illustration={<Image src={schemaReseauxEnterres} alt="" className="w-full h-auto" />}
+      description="Repérez les réseaux enterrés (eau potable, évacuation, descente de gouttière). Une fuite près des fondations humidifie le sol et fait gonfler l'argile localement : c'est l'une des causes les plus fréquentes de sinistre RGA. Une estimation du tracé suffit."
       options={[
         { value: "sous_fondations", label: "Les réseaux passent sous les fondations" },
         { value: "proches", label: "Les réseaux sont proches, mais pas sous les fondations" },

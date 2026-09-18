@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaEnsoleillement } from "../illustrations/SchemaEnsoleillement";
+import Image from "next/image";
+import schemaEnsoleillement from "../illustrations/SchemaEnsoleillement.svg";
 import type {
   ReponseEnsoleillement,
   PartialVulnerabiliteReponses,
@@ -32,12 +33,8 @@ export function StepEnsoleillement({
       fieldsetName="ensoleillement"
       critereId="ensoleillement"
       title="Quelle est l'exposition de la maison au soleil ?"
-      illustration={<SchemaEnsoleillement />}
-      bullets={[
-        "Une façade très ensoleillée, notamment exposée au sud, s'assèche plus vite en été",
-        "Ce dessèchement du sol accentue le retrait argileux à cet endroit précis",
-        "Une façade ombragée une bonne partie de la journée est moins exposée à ce risque",
-      ]}
+      illustration={<Image src={schemaEnsoleillement} alt="" className="w-full h-auto" />}
+      description="Une façade très ensoleillée, notamment exposée au sud, s'assèche plus vite en été, ce qui accentue le retrait argileux à cet endroit précis."
       options={[
         { value: "fort_sud", label: "Très ensoleillée, exposition sud sans protection" },
         { value: "modere", label: "Mi-ombre" },

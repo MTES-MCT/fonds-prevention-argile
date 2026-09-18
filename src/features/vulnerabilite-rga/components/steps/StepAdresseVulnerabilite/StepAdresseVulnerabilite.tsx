@@ -219,7 +219,10 @@ export function StepAdresseVulnerabilite({
 
           {buildingData && !aleaIndetermine && (
             <AleaBadgeDisplay
-              adresse={selectedAddress.properties.label}
+              // L'adresse BAN recherchée reste figée après le premier clic : c'est celle du
+              // bâtiment cliqué (rafraîchie à chaque clic, comme l'aléa) qui doit s'afficher —
+              // même repli que handleSubmit.
+              adresse={buildingData.adresse || selectedAddress.properties.label}
               aleaRga={getRgaRiskLevel(buildingData.aleaArgiles)}
             />
           )}
