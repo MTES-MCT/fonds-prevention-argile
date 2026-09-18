@@ -87,7 +87,7 @@ export function VulnerabiliteGauge({ score, size = 280 }: VulnerabiliteGaugeProp
         />
         <circle cx={CX} cy={CY} r={4} fill="#161616" />
       </svg>
-      <p className="fr-text--bold fr-mb-0" style={{ textAlign: "center", fontSize: "1.5rem" }}>
+      <p className="fr-text--bold fr-mb-1v" style={{ textAlign: "center", fontSize: "1.5rem" }}>
         {clamped}/100
       </p>
       <p className="fr-mb-0" style={{ textAlign: "center" }}>

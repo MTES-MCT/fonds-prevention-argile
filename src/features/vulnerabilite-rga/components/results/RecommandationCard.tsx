@@ -59,8 +59,14 @@ export function RecommandationCard({ recommandation }: RecommandationCardProps) 
             ))}
           </ul>
 
-          <div className="fr-callout fr-icon-info-line fr-callout--blue-ecume fr-mb-0">
-            <p className="fr-callout__title">Amélioration conseillée :</p>
+          {/* color sur le conteneur : l'icône fr-icon-* (::before) utilise currentColor, et
+              .fr-callout__title fixe sa propre couleur, d'où l'override explicite en plus. */}
+          <div
+            className="fr-callout fr-icon-info-line fr-callout--blue-ecume fr-mb-0"
+            style={{ color: "var(--text-label-blue-ecume)" }}>
+            <p className="fr-callout__title" style={{ color: "var(--text-label-blue-ecume)" }}>
+              Amélioration conseillée :
+            </p>
             <ul className="fr-callout__text fr-text--sm fr-mb-0">
               {ameliorations.map((bullet, index) => (
                 <li key={index}>{bullet}</li>

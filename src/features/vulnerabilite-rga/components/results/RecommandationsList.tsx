@@ -10,7 +10,6 @@ interface RecommandationsListProps {
 export function RecommandationsList({ recommandations }: RecommandationsListProps) {
   return (
     <div className="fr-mt-4w">
-      <h3 className="fr-h5 fr-mb-2w">Comment réduire cette vulnérabilité ?</h3>
       <CalloutExpertRga />
       <ComprendreSourcesVulnerabilite />
       {recommandations.length === 0 ? (

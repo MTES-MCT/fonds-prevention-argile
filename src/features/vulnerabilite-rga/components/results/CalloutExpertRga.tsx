@@ -7,7 +7,7 @@ import Link from "next/link";
 export function CalloutExpertRga() {
   return (
     <div className="fr-callout fr-icon-info-line fr-callout--blue-ecume fr-my-4w">
-      <p className="fr-callout__title">Ces pistes sont indicatives</p>
+      <p className="fr-callout__title">Comment réduire cette vulnérabilité ?</p>
       <p className="fr-callout__text">
         Ce simulateur donne une estimation simplifiée, pas un diagnostic. Pour évaluer précisément la vulnérabilité de
         votre logement et prioriser les travaux, rapprochez-vous d&apos;un expert RGA. C&apos;est justement à cela que
