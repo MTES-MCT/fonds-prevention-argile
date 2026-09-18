@@ -34,14 +34,19 @@ export function RecommandationCard({ recommandation }: RecommandationCardProps) 
       <div className="fr-card__body">
         <div className="fr-card__content fr-pb-0">
           <h4 className="fr-card__title fr-text--md fr-mb-1v">{titre}</h4>
-          <div className="fr-mb-3w">
-            <ImpactBadge score={recommandation.score} context="solution" inline={false} />
-          </div>
-          {illustration && (
-            <div style={{ maxWidth: "260px", marginInline: "auto" }}>
-              <Image src={illustration} alt="" className="w-full h-auto" />
+          {/* .fr-card__content est en flex-column et .fr-card__title a order:2 (DSFR) : un
+              simple <div> (order:0 par défaut) passerait avant le titre. fr-card__desc (order:3)
+              garantit sa position après le titre sans dépendre de l'ordre dans le DOM. */}
+          <div className="fr-card__desc">
+            <div className="fr-mb-3w">
+              <ImpactBadge score={recommandation.score} context="solution" inline={false} />
             </div>
-          )}
+            {illustration && (
+              <div style={{ maxWidth: "260px", marginInline: "auto" }}>
+                <Image src={illustration} alt="" className="w-full h-auto" />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="fr-card__content fr-pt-0">
