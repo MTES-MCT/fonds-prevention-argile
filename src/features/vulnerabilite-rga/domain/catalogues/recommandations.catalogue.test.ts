@@ -25,11 +25,12 @@ describe("RECOMMANDATIONS_CATALOGUE", () => {
     }
   });
 
-  it("des ids uniques et au moins un bullet par recommandation", () => {
+  it("des ids uniques et au moins un problème et une amélioration par recommandation", () => {
     const ids = RECOMMANDATIONS_CATALOGUE.map((r) => r.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const reco of RECOMMANDATIONS_CATALOGUE) {
-      expect(reco.bullets.length, reco.id).toBeGreaterThan(0);
+      expect(reco.problemes.length, reco.id).toBeGreaterThan(0);
+      expect(reco.ameliorations.length, reco.id).toBeGreaterThan(0);
     }
   });
 });

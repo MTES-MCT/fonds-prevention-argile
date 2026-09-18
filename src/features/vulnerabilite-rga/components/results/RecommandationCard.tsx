@@ -26,25 +26,41 @@ interface RecommandationCardProps {
 }
 
 export function RecommandationCard({ recommandation }: RecommandationCardProps) {
-  const { titre, bullets, illustrationId } = recommandation.def;
+  const { titre, problemes, ameliorations, illustrationId } = recommandation.def;
   const illustration = illustrationId ? ILLUSTRATIONS[illustrationId] : undefined;
 
   return (
     <div className="fr-card fr-card--no-arrow fr-mb-3w">
       <div className="fr-card__body">
-        <div className="fr-card__content" style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+        <div className="fr-card__content" style={{ textAlign: "center" }}>
+          <h4 className="fr-card__title fr-text--md fr-mb-1v">{titre}</h4>
+          <ImpactBadge score={recommandation.score} context="solution" inline={false} />
           {illustration && (
-            <div style={{ flexShrink: 0, width: "100px" }}>
+            <div className="fr-mt-3w" style={{ maxWidth: "260px", marginInline: "auto" }}>
               <Image src={illustration} alt="" className="w-full h-auto" />
             </div>
           )}
-          <div>
-            <h4 className="fr-card__title fr-text--md fr-mb-1v">
-              {titre}
-              <ImpactBadge score={recommandation.score} context="solution" />
-            </h4>
-            <ul className="fr-text--sm fr-mb-0">
-              {bullets.map((bullet, index) => (
+        </div>
+
+        <div className="fr-card__content fr-pt-0">
+          <h5 className="fr-text--md fr-mb-1w">
+            <span
+              className="fr-icon-warning-fill fr-mr-1w"
+              aria-hidden="true"
+              style={{ color: "var(--text-default-error)" }}
+            />
+            Problème
+          </h5>
+          <ul className="fr-text--sm fr-mb-3w">
+            {problemes.map((bullet, index) => (
+              <li key={index}>{bullet}</li>
+            ))}
+          </ul>
+
+          <div className="fr-callout fr-icon-info-line fr-callout--blue-ecume fr-mb-0">
+            <p className="fr-callout__title">Amélioration conseillée :</p>
+            <ul className="fr-callout__text fr-text--sm fr-mb-0">
+              {ameliorations.map((bullet, index) => (
                 <li key={index}>{bullet}</li>
               ))}
             </ul>

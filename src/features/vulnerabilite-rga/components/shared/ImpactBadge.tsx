@@ -10,6 +10,8 @@ interface ImpactBadgeProps {
    * l'ampleur du gain attendu, pas un danger.
    */
   context?: "risque" | "solution";
+  /** false : badge posé seul (ex. sous-titre de carte) — sans la marge prévue pour un badge collé après un texte. */
+  inline?: boolean;
 }
 
 /** Mêmes seuils que la jauge de résultat (VulnerabiliteGauge) — un seul système de niveaux. */
@@ -47,13 +49,15 @@ const COULEURS_SOLUTION: Record<NiveauVulnerabilite, string> = {
  * (réponse sélectionnée, ou carte de recommandation) pour rester lisible : jamais sur
  * toutes les options à la fois.
  */
-export function ImpactBadge({ score, context = "risque" }: ImpactBadgeProps) {
+export function ImpactBadge({ score, context = "risque", inline = true }: ImpactBadgeProps) {
   const niveau = getNiveauVulnerabilite(score);
   const labels = context === "solution" ? LABELS_SOLUTION : LABELS_RISQUE;
   const couleurs = context === "solution" ? COULEURS_SOLUTION : COULEURS_RISQUE;
 
   return (
-    <span className="fr-badge fr-badge--sm fr-ml-1w" style={{ backgroundColor: couleurs[niveau], color: "#161616" }}>
+    <span
+      className={`fr-badge fr-badge--sm${inline ? " fr-ml-1w" : ""}`}
+      style={{ backgroundColor: couleurs[niveau], color: "#161616" }}>
       {labels[niveau]}
     </span>
   );
