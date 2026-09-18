@@ -11,7 +11,7 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
   return (
     <div className="fr-stepper">
       <span className="fr-stepper__state">
-        Étape {currentStep} sur {totalSteps}
+        Simulation de vulnérabilité - {currentStep}/{totalSteps}
       </span>
       <div className="fr-stepper__steps" data-fr-current-step={currentStep} data-fr-steps={totalSteps}></div>
     </div>
