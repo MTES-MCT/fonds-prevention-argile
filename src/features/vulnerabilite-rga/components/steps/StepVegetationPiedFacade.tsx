@@ -33,13 +33,8 @@ export function StepVegetationPiedFacade({
       fieldsetName="vegetation-pied-facade"
       critereId="vegetation_pied_facade"
       title="Y a-t-il des plantations juste au pied des façades ?"
-      subtitle="Potager, rosiers, arbustes ou toute plantation contre le mur, nécessitant un arrosage régulier."
       illustration={<Image src={schemaVegetationPiedFacade} alt="" className="w-full h-auto" />}
-      bullets={[
-        "Arroser régulièrement juste au pied du mur crée des apports d'eau localisés et irréguliers",
-        "Sur sol argileux, ces variations d'humidité concentrées sont particulièrement défavorables",
-        "Ce type de plantation est à éloigner d'office de la façade (1 à 2 mètres minimum)",
-      ]}
+      description="Il s'agit d'un potager, de rosiers, d'arbustes ou de toute plantation contre le mur nécessitant un arrosage régulier : arroser juste au pied de la façade crée des apports d'eau localisés et irréguliers, particulièrement défavorables sur sol argileux. Ce type de plantation est à éloigner d'office de la façade, d'au moins 1 à 2 mètres."
       options={[
         { value: "presente", label: "Oui, il y a des plantations arrosées contre le mur" },
         { value: "absente", label: "Non, rien contre les murs" },

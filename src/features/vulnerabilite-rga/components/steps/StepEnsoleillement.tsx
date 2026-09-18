@@ -34,11 +34,7 @@ export function StepEnsoleillement({
       critereId="ensoleillement"
       title="Quelle est l'exposition de la maison au soleil ?"
       illustration={<Image src={schemaEnsoleillement} alt="" className="w-full h-auto" />}
-      bullets={[
-        "Une façade très ensoleillée, notamment exposée au sud, s'assèche plus vite en été",
-        "Ce dessèchement du sol accentue le retrait argileux à cet endroit précis",
-        "Une façade ombragée une bonne partie de la journée est moins exposée à ce risque",
-      ]}
+      description="Une façade très ensoleillée, notamment exposée au sud, s'assèche plus vite en été, ce qui accentue le retrait argileux à cet endroit précis. Une façade ombragée une bonne partie de la journée est moins exposée à ce risque."
       options={[
         { value: "fort_sud", label: "Très ensoleillée, exposition sud sans protection" },
         { value: "modere", label: "Mi-ombre" },

@@ -33,13 +33,8 @@ export function StepArbreProximite({
       fieldsetName="arbre-proximite"
       critereId="arbre_proximite"
       title="Y a-t-il un arbre proche des fondations ?"
-      subtitle="Un arbre est considéré proche s'il se situe à une distance inférieure à sa hauteur une fois adulte."
       illustration={<Image src={schemaArbreProximite} alt="" className="w-full h-auto" />}
-      bullets={[
-        "Les racines d'un arbre proche assèchent le sol à son pied, ce qui accentue le retrait argileux en été",
-        "Plus l'arbre est proche et sa hauteur adulte importante, plus le risque est élevé",
-        "Un arbre plus éloigné que sa hauteur adulte n'est en général pas un facteur de risque direct",
-      ]}
+      description="Un arbre est considéré proche s'il se situe à une distance inférieure à sa hauteur une fois adulte : ses racines assèchent le sol à son pied, ce qui accentue le retrait argileux en été, et plus il est proche avec une hauteur adulte importante, plus le risque est élevé. Un arbre plus éloigné que sa hauteur adulte n'est en général pas un facteur de risque direct."
       options={[
         { value: "oui", label: "Oui, un arbre est proche des fondations" },
         { value: "non", label: "Non, aucun arbre proche" },

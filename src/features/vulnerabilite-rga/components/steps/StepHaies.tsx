@@ -24,11 +24,7 @@ export function StepHaies({ initialValue, numeroEtape, totalEtapes, canGoBack, o
       critereId="haies"
       title="Y a-t-il une haie proche de la maison ?"
       illustration={<Image src={schemaHaies} alt="" className="w-full h-auto" />}
-      bullets={[
-        "Comme un arbre, une haie dense et proche assèche le sol à son pied",
-        "Une taille régulière limite le développement des racines et donc le risque",
-        "Pour une nouvelle plantation, préférer une distance d'au moins quelques mètres de la façade",
-      ]}
+      description="Comme un arbre, une haie dense et proche de la maison assèche le sol à son pied. Une taille régulière limite le développement des racines et donc le risque ; pour une nouvelle plantation, mieux vaut prévoir une distance d'au moins quelques mètres de la façade."
       options={[
         { value: "proches_denses", label: "Proche des fondations et dense" },
         { value: "proches_moyennement_denses", label: "Proche des fondations, moyennement dense" },
