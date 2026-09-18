@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaGouttieres } from "../illustrations/SchemaGouttieres";
+import Image from "next/image";
+import schemaGouttieres from "../illustrations/SchemaGouttieres.svg";
 import type { ReponseGouttieres, PartialVulnerabiliteReponses } from "../../domain/types/vulnerabilite-reponses.types";
 
 interface StepGouttieresProps {
@@ -29,7 +30,7 @@ export function StepGouttieres({
       fieldsetName="gouttieres"
       critereId="gouttieres"
       title="Dans quel état sont les gouttières ?"
-      illustration={<SchemaGouttieres />}
+      illustration={<Image src={schemaGouttieres} alt="" className="w-full h-auto" />}
       bullets={[
         "Des gouttières bouchées, absentes ou débordantes déversent l'eau de pluie directement contre le mur",
         "Une descente qui évacue l'eau loin des fondations (drain, regard, raccordement) limite le risque",

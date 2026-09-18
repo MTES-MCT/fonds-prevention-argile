@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaPenteTerrain } from "../illustrations/SchemaPenteTerrain";
+import Image from "next/image";
+import schemaPenteTerrain from "../illustrations/SchemaPenteTerrain.svg";
 import type {
   ReponsePenteTerrain,
   PartialVulnerabiliteReponses,
@@ -33,7 +34,7 @@ export function StepPenteTerrain({
       critereId="pente_terrain"
       title="Quelle est la pente du terrain autour de la maison ?"
       subtitle="Regardez si l'eau de pluie s'écoule vers la maison ou s'en éloigne."
-      illustration={<SchemaPenteTerrain />}
+      illustration={<Image src={schemaPenteTerrain} alt="" className="w-full h-auto" />}
       bullets={[
         "Une pente qui descend vers une façade y ramène l'eau de pluie à chaque orage",
         "Cette eau, concentrée au même endroit, fait gonfler puis se rétracter le sol argileux juste sous les fondations",

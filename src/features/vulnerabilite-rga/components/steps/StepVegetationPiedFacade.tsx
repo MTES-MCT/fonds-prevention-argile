@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaVegetationPiedFacade } from "../illustrations/SchemaVegetationPiedFacade";
+import Image from "next/image";
+import schemaVegetationPiedFacade from "../illustrations/SchemaVegetationPiedFacade.svg";
 import type {
   ReponseVegetationPiedFacade,
   PartialVulnerabiliteReponses,
@@ -33,7 +34,7 @@ export function StepVegetationPiedFacade({
       critereId="vegetation_pied_facade"
       title="Y a-t-il des plantations juste au pied des façades ?"
       subtitle="Potager, rosiers, arbustes ou toute plantation contre le mur, nécessitant un arrosage régulier."
-      illustration={<SchemaVegetationPiedFacade />}
+      illustration={<Image src={schemaVegetationPiedFacade} alt="" className="w-full h-auto" />}
       bullets={[
         "Arroser régulièrement juste au pied du mur crée des apports d'eau localisés et irréguliers",
         "Sur sol argileux, ces variations d'humidité concentrées sont particulièrement défavorables",

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaArbreProximite } from "../illustrations/SchemaArbreProximite";
+import Image from "next/image";
+import schemaArbreProximite from "../illustrations/SchemaArbreProximite.svg";
 import type {
   ReponseArbreProximite,
   PartialVulnerabiliteReponses,
@@ -33,7 +34,7 @@ export function StepArbreProximite({
       critereId="arbre_proximite"
       title="Y a-t-il un arbre proche des fondations ?"
       subtitle="Un arbre est considéré proche s'il se situe à une distance inférieure à sa hauteur une fois adulte."
-      illustration={<SchemaArbreProximite />}
+      illustration={<Image src={schemaArbreProximite} alt="" className="w-full h-auto" />}
       bullets={[
         "Les racines d'un arbre proche assèchent le sol à son pied, ce qui accentue le retrait argileux en été",
         "Plus l'arbre est proche et sa hauteur adulte importante, plus le risque est élevé",

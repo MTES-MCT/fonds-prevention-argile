@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaArbreProximite } from "../illustrations/SchemaArbreProximite";
+import Image from "next/image";
+import schemaArbreProximite from "../illustrations/SchemaArbreProximite.svg";
 import { ESSENCES_AGRESSIVITE } from "../../domain/value-objects/grille-ponderation";
 import type {
   ReponseArbreEssence,
@@ -36,7 +37,7 @@ export function StepArbreEssence({
       critereId="arbre_essence"
       title="Quelle est l'essence de cet arbre ?"
       subtitle="Certaines essences assèchent le sol beaucoup plus vite que d'autres."
-      illustration={<SchemaArbreProximite />}
+      illustration={<Image src={schemaArbreProximite} alt="" className="w-full h-auto" />}
       bullets={[
         "Les essences à racines traçantes et à forte consommation d'eau (peuplier, saule...) sont les plus agressives",
         "Les conifères et arbres fruitiers assèchent en général beaucoup moins le sol",

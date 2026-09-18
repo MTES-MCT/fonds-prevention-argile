@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaMitoyennete } from "../illustrations/SchemaMitoyennete";
+import Image from "next/image";
+import schemaMitoyennete from "../illustrations/SchemaMitoyennete.svg";
 import type { ReponseMitoyennete, PartialVulnerabiliteReponses } from "../../domain/types/vulnerabilite-reponses.types";
 
 interface StepMitoyenneteVulnerabiliteProps {
@@ -29,7 +30,7 @@ export function StepMitoyenneteVulnerabilite({
       fieldsetName="mitoyennete"
       critereId="mitoyennete"
       title="La maison est-elle mitoyenne ?"
-      illustration={<SchemaMitoyennete />}
+      illustration={<Image src={schemaMitoyennete} alt="" className="w-full h-auto" />}
       bullets={[
         "Sur une maison mitoyenne, les mouvements de sol du côté du voisin peuvent affecter votre propre bâti",
         "Si le voisin a déjà engagé des travaux de prévention, le risque partagé diminue",

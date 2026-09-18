@@ -1,25 +1,24 @@
-import {
-  SchemaPenteTerrain,
-  SchemaReseauxEnterres,
-  SchemaGravierProprete,
-  SchemaGouttieres,
-  SchemaArbreProximite,
-  SchemaHaies,
-  SchemaVegetationPiedFacade,
-  SchemaEnsoleillement,
-} from "../illustrations";
+import Image, { type StaticImageData } from "next/image";
+import schemaPenteTerrain from "../illustrations/SchemaPenteTerrain.svg";
+import schemaReseauxEnterres from "../illustrations/SchemaReseauxEnterres.svg";
+import schemaGravierProprete from "../illustrations/SchemaGravierProprete.svg";
+import schemaGouttieres from "../illustrations/SchemaGouttieres.svg";
+import schemaArbreProximite from "../illustrations/SchemaArbreProximite.svg";
+import schemaHaies from "../illustrations/SchemaHaies.svg";
+import schemaVegetationPiedFacade from "../illustrations/SchemaVegetationPiedFacade.svg";
+import schemaEnsoleillement from "../illustrations/SchemaEnsoleillement.svg";
 import { ImpactBadge } from "../shared/ImpactBadge";
 import type { RecommandationPrioritaire } from "../../domain/services/recommandations.service";
 
-const ILLUSTRATIONS: Record<string, () => React.JSX.Element> = {
-  pente: SchemaPenteTerrain,
-  reseaux: SchemaReseauxEnterres,
-  gravier: SchemaGravierProprete,
-  gouttieres: SchemaGouttieres,
-  arbre: SchemaArbreProximite,
-  haies: SchemaHaies,
-  "pied-facade": SchemaVegetationPiedFacade,
-  ensoleillement: SchemaEnsoleillement,
+const ILLUSTRATIONS: Record<string, StaticImageData> = {
+  pente: schemaPenteTerrain,
+  reseaux: schemaReseauxEnterres,
+  gravier: schemaGravierProprete,
+  gouttieres: schemaGouttieres,
+  arbre: schemaArbreProximite,
+  haies: schemaHaies,
+  "pied-facade": schemaVegetationPiedFacade,
+  ensoleillement: schemaEnsoleillement,
 };
 
 interface RecommandationCardProps {
@@ -28,15 +27,15 @@ interface RecommandationCardProps {
 
 export function RecommandationCard({ recommandation }: RecommandationCardProps) {
   const { titre, bullets, illustrationId } = recommandation.def;
-  const Illustration = illustrationId ? ILLUSTRATIONS[illustrationId] : undefined;
+  const illustration = illustrationId ? ILLUSTRATIONS[illustrationId] : undefined;
 
   return (
     <div className="fr-card fr-card--no-arrow fr-mb-3w">
       <div className="fr-card__body">
         <div className="fr-card__content" style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-          {Illustration && (
+          {illustration && (
             <div style={{ flexShrink: 0, width: "100px" }}>
-              <Illustration />
+              <Image src={illustration} alt="" className="w-full h-auto" />
             </div>
           )}
           <div>

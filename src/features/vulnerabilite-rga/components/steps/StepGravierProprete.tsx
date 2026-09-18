@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaGravierProprete } from "../illustrations/SchemaGravierProprete";
+import Image from "next/image";
+import schemaGravierProprete from "../illustrations/SchemaGravierProprete.svg";
 import type {
   ReponseGravierProprete,
   PartialVulnerabiliteReponses,
@@ -33,7 +34,7 @@ export function StepGravierProprete({
       critereId="gravier_proprete"
       title="Y a-t-il un lit de gravier en pied de façade ?"
       subtitle="Bande de graviers posée directement sur la terre, au ras du mur."
-      illustration={<SchemaGravierProprete />}
+      illustration={<Image src={schemaGravierProprete} alt="" className="w-full h-auto" />}
       bullets={[
         "Sans membrane étanche dessous, le gravier laisse l'eau de pluie s'infiltrer directement au pied du mur",
         "Ces infiltrations répétées, juste sous les fondations, favorisent les cycles gonflement/retrait du sol",

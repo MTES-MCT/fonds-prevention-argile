@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaHaies } from "../illustrations/SchemaHaies";
+import Image from "next/image";
+import schemaHaies from "../illustrations/SchemaHaies.svg";
 import type { ReponseHaies, PartialVulnerabiliteReponses } from "../../domain/types/vulnerabilite-reponses.types";
 
 interface StepHaiesProps {
@@ -22,7 +23,7 @@ export function StepHaies({ initialValue, numeroEtape, totalEtapes, canGoBack, o
       fieldsetName="haies"
       critereId="haies"
       title="Y a-t-il une haie proche de la maison ?"
-      illustration={<SchemaHaies />}
+      illustration={<Image src={schemaHaies} alt="" className="w-full h-auto" />}
       bullets={[
         "Comme un arbre, une haie dense et proche assèche le sol à son pied",
         "Une taille régulière limite le développement des racines et donc le risque",
