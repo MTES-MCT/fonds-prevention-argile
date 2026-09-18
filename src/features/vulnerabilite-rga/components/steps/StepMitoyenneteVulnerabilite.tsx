@@ -31,7 +31,7 @@ export function StepMitoyenneteVulnerabilite({
       critereId="mitoyennete"
       title="La maison est-elle mitoyenne ?"
       illustration={<Image src={schemaMitoyennete} alt="" className="w-full h-auto" />}
-      description="Sur une maison mitoyenne, les mouvements de sol du côté du voisin peuvent affecter votre propre bâti. Si le voisin a déjà engagé des travaux de prévention, le risque partagé diminue ; une maison individuelle non mitoyenne n'est pas concernée par ce risque."
+      description="Sur une maison mitoyenne, les mouvements de sol subis par le bâti voisin peuvent se transmettre au vôtre et favoriser le RGA. Si le voisin a déjà engagé des travaux de prévention, le risque partagé diminue "
       options={[
         { value: "pas_mitoyen", label: "Maison individuelle, non mitoyenne" },
         { value: "mitoyen_voisin_travaux_prevention", label: "Mitoyenne, le voisin a fait des travaux de prévention" },

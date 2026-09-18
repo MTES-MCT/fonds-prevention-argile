@@ -31,7 +31,7 @@ export function StepGouttieres({
       critereId="gouttieres"
       title="Dans quel état sont les gouttières ?"
       illustration={<Image src={schemaGouttieres} alt="" className="w-full h-auto" />}
-      description="Des gouttières bouchées, absentes ou débordantes déversent l'eau de pluie directement contre le mur. Une descente qui évacue l'eau loin des fondations (drain, regard, raccordement) limite ce risque, et un simple entretien annuel suffit souvent à l'éviter."
+      description="Des gouttières bouchées, absentes ou débordantes déversent l'eau de pluie directement au pied du mur. Cela fait gonfler l'argile localement et favorise le RGA."
       options={[
         { value: "absentes_ou_debordantes", label: "Absentes, débordantes ou mal entretenues" },
         { value: "entretenues_evacuation_proche", label: "Entretenues, mais l'évacuation est proche des fondations" },

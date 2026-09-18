@@ -34,7 +34,7 @@ export function StepGravierProprete({
       critereId="gravier_proprete"
       title="Y a-t-il un lit de gravier en pied de façade ?"
       illustration={<Image src={schemaGravierProprete} alt="" className="w-full h-auto" />}
-      description="Il s'agit d'une bande de graviers posée directement sur la terre, au ras du mur : sans membrane étanche dessous, le gravier laisse l'eau de pluie s'infiltrer directement au pied du mur, et ces infiltrations répétées juste sous les fondations favorisent les cycles de gonflement et de retrait du sol. L'absence de gravier (terre nue ou dallage étanche) limite ce risque."
+      description="Une bande de graviers posée à même la terre, au ras du mur favorise l'infiltration au pied des fondations. Le mur aura tendance à s'enfoncer dans une argile plus molle."
       options={[
         { value: "present", label: "Oui, il y a un lit de gravier en pied de façade" },
         { value: "absent", label: "Non, il n'y en a pas" },

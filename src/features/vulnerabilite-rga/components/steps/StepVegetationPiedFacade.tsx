@@ -34,7 +34,7 @@ export function StepVegetationPiedFacade({
       critereId="vegetation_pied_facade"
       title="Y a-t-il des plantations juste au pied des façades ?"
       illustration={<Image src={schemaVegetationPiedFacade} alt="" className="w-full h-auto" />}
-      description="Il s'agit d'un potager, de rosiers, d'arbustes ou de toute plantation contre le mur nécessitant un arrosage régulier : arroser juste au pied de la façade crée des apports d'eau localisés et irréguliers, particulièrement défavorables sur sol argileux. Ce type de plantation est à éloigner d'office de la façade, d'au moins 1 à 2 mètres."
+      description="Un potager, des rosiers ou des arbustes arrosés au pied de la façade créent des apports d'eau localisés et irréguliers. Sur sol argileux, ces à-coups font gonfler puis rétracter l'argile et favorisent le RGA."
       options={[
         { value: "presente", label: "Oui, il y a des plantations arrosées contre le mur" },
         { value: "absente", label: "Non, rien contre les murs" },

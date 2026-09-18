@@ -37,7 +37,7 @@ export function StepArbreEssence({
       critereId="arbre_essence"
       title="Quelle est l'essence de cet arbre ?"
       illustration={<Image src={schemaArbreProximite} alt="" className="w-full h-auto" />}
-      description="Certaines essences assèchent le sol beaucoup plus vite que d'autres : celles à racines traçantes et à forte consommation d'eau, comme le peuplier ou le saule, sont les plus agressives, tandis que les conifères et arbres fruitiers assèchent en général beaucoup moins le sol. En cas de doute, choisissez « Autre essence » : une expertise permettra de préciser le risque."
+      description="Certaines essences ont un fort pouvoir de succion et assèchent l'argile plus vite. Les plus agressives sont les peupliers et les saules (racines traçantes, forte consommation d'eau) ; les conifères et fruitiers assèchent beaucoup moins."
       options={OPTIONS}
       selected={selected}
       onSelect={setSelected}

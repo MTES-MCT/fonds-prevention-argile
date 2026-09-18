@@ -34,7 +34,7 @@ export function StepReseauxEnterres({
       critereId="reseaux_enterres"
       title="Où passent les canalisations d'eau et d'assainissement enterrées ?"
       illustration={<Image src={schemaReseauxEnterres} alt="" className="w-full h-auto" />}
-      description="Il s'agit du réseau d'eau potable, d'évacuation ou de descente de gouttière enterrée : une fuite sous ou près des fondations est l'une des causes les plus fréquentes de sinistre RGA, car elle humidifie le sol juste sous la maison. Éloigner les réseaux des fondations limite ce risque — pas besoin de connaître le tracé exact, une estimation suffit."
+      description="Repérez les réseaux enterrés (eau potable, évacuation, descente de gouttière). Une fuite près des fondations humidifie le sol et fait gonfler l'argile localement : c'est l'une des causes les plus fréquentes de sinistre RGA. Une estimation du tracé suffit."
       options={[
         { value: "sous_fondations", label: "Les réseaux passent sous les fondations" },
         { value: "proches", label: "Les réseaux sont proches, mais pas sous les fondations" },
