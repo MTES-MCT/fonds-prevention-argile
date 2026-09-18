@@ -34,10 +34,13 @@ export const LABELS_SOLUTION: Record<NiveauVulnerabilite, string> = {
   tres_eleve: "Gain potentiel très élevé",
 };
 
-/** Dégradé bleu (jamais rouge) : agir sur une recommandation est toujours une bonne nouvelle. */
+/**
+ * Dégradé vert DSFR (`green-emeraude`, jamais rouge) : agir sur une recommandation est
+ * toujours une bonne nouvelle — plus le gain potentiel est élevé, plus le vert est foncé.
+ */
 export const COULEURS_SOLUTION: Record<NiveauVulnerabilite, string> = {
-  faible: "#E8EDFF",
-  modere: "#C7D6FE",
-  eleve: "#9EB6FC",
-  tres_eleve: "#6A96F5",
+  faible: "#E3FDEB",
+  modere: "#C3FAD5",
+  eleve: "#9EF9BE",
+  tres_eleve: "#6FE49D",
 };

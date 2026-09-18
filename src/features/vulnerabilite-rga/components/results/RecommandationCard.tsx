@@ -34,14 +34,14 @@ export function RecommandationCard({ recommandation }: RecommandationCardProps) 
       <div className="fr-card__body">
         <div className="fr-card__content fr-pb-0">
           <h4 className="fr-card__title fr-text--md fr-mb-1v">{titre}</h4>
-          <div style={{ textAlign: "center" }}>
+          <div className="fr-mb-3w">
             <ImpactBadge score={recommandation.score} context="solution" inline={false} />
-            {illustration && (
-              <div className="fr-mt-3w" style={{ maxWidth: "260px", marginInline: "auto" }}>
-                <Image src={illustration} alt="" className="w-full h-auto" />
-              </div>
-            )}
           </div>
+          {illustration && (
+            <div style={{ maxWidth: "260px", marginInline: "auto" }}>
+              <Image src={illustration} alt="" className="w-full h-auto" />
+            </div>
+          )}
         </div>
 
         <div className="fr-card__content fr-pt-0">
@@ -59,12 +59,12 @@ export function RecommandationCard({ recommandation }: RecommandationCardProps) 
             ))}
           </ul>
 
-          {/* color sur le conteneur : l'icône fr-icon-* (::before) utilise currentColor, et
+          {/* Callout info DSFR standard, sans modificateur de couleur (--blue-ecume) : seul le
+              texte est recoloré en bleu info (--text-default-info, #0063CB). color sur le
+              conteneur pour que l'icône fr-icon-* (::before, currentColor) suive aussi ;
               .fr-callout__title fixe sa propre couleur, d'où l'override explicite en plus. */}
-          <div
-            className="fr-callout fr-icon-info-line fr-callout--blue-ecume fr-mb-0"
-            style={{ color: "var(--text-label-blue-ecume)" }}>
-            <p className="fr-callout__title" style={{ color: "var(--text-label-blue-ecume)" }}>
+          <div className="fr-callout fr-icon-info-line fr-mb-0" style={{ color: "var(--text-default-info)" }}>
+            <p className="fr-callout__title" style={{ color: "var(--text-default-info)" }}>
               Amélioration conseillée :
             </p>
             <ul className="fr-callout__text fr-text--sm fr-mb-0">
