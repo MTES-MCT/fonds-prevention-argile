@@ -1,4 +1,5 @@
 import { CalloutExpertRga } from "./CalloutExpertRga";
+import { ComprendreSourcesVulnerabilite } from "./ComprendreSourcesVulnerabilite";
 import { RecommandationCard } from "./RecommandationCard";
 import type { RecommandationPrioritaire } from "../../domain/services/recommandations.service";
 
@@ -11,6 +12,7 @@ export function RecommandationsList({ recommandations }: RecommandationsListProp
     <div className="fr-mt-4w">
       <h3 className="fr-h5 fr-mb-2w">Comment réduire cette vulnérabilité ?</h3>
       <CalloutExpertRga />
+      <ComprendreSourcesVulnerabilite />
       {recommandations.length === 0 ? (
         <p className="fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
           Aucune vulnérabilité marquée n&apos;a été identifiée sur l&apos;environnement proche de votre logement.
