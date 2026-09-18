@@ -90,8 +90,11 @@ domain/
   services/recommandations.service.ts      ← priorisation `poidsGlobal × score`
   catalogues/recommandations.catalogue.ts  ← fiches conseil, par critère et réponse déclenchante
   rules/navigation/step-flow.rules.ts      ← ordre des étapes + branchement arbre → essence
+  value-objects/resultat-content.const.ts  ← textes de l'écran de résultat, partagés HTML + PDF
+  value-objects/niveau-badge.const.ts      ← labels/couleurs des badges de niveau, partagés HTML + PDF
 stores/vulnerabilite.store.ts              ← Zustand + sessionStorage (pas de localStorage)
-components/                                ← 13 étapes, 9 schémas SVG, jauge, recommandations
+components/                                ← 13 étapes, 9 illustrations SVG, jauge, recommandations
+components/pdf/VulnerabilitePdfDocument.tsx ← PDF téléchargeable depuis l'écran de résultat
 actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
 ```
 
@@ -136,6 +139,28 @@ Répartition Matomo / BDD (ADR-0031) : Matomo pour le volume, le funnel et la r�
 département ; la table pour la répartition par réponse et le score moyen, que Matomo ne sait pas
 agréger. Onglet `/administration/vulnerabilite`, ouvert à tous les agents (agrégats non nominatifs,
 même logique qu'ADR-0017).
+
+### Export PDF
+
+Bouton secondaire « Télécharger les solutions en PDF » sur l'écran de résultat
+(`ResultVulnerabilite.tsx`) : génère et télécharge, **entièrement côté client**
+(`PDFDownloadLink` de `@react-pdf/renderer`), un PDF reprenant le score, le callout d'avertissement
+(sans le CTA vers `/simulateur`, hors-sujet une fois imprimé), la pédagogie RGA et les cartes de
+recommandation — un en-tête façon .gouv.fr (bandeau tricolore + Ministère + « Fonds Prévention
+Argile ») en tête de document pour que le lecteur se souvienne d'où il vient une fois imprimé ou
+partagé.
+
+`VulnerabilitePdfDocument.tsx` (`components/pdf/`) reconstitue la mise en page en primitives PDF
+(`View`/`Text`/`Svg`), le CSS/DSFR n'étant pas disponible dans ce rendu — y compris le triangle
+d'alerte « Problème », dessiné en SVG plutôt qu'en glyphe unicode (les polices standard PDFKit
+n'ont pas « ▲ »). Les textes (callout, pédagogie) et les couleurs de badge de niveau sont partagés
+avec le rendu HTML via `resultat-content.const.ts` et `niveau-badge.const.ts`, pour que les deux
+rendus ne puissent pas diverger. Aucune illustration dans le PDF (non demandé, et les schémas SVG
+du dossier `illustrations/` ne sont pas conçus pour ce second moteur de rendu).
+
+Téléchargement tracké via l'évènement Matomo `vulnerabilite_pdf_download`
+(`MATOMO_EVENTS.VULNERABILITE_PDF_DOWNLOAD`), même mécanique que les autres évènements du funnel —
+consultable directement dans Matomo, pas de compteur dédié côté admin.
 
 ---
 
@@ -193,8 +218,10 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
   depuis `ESSENCES_AGRESSIVITE` au chargement du module.
 - `getPreviousStep` et `canGoToStep` (`step-flow.rules.ts`) ne sont appelés que par leurs propres
   tests : la navigation arrière passe par `history`. Du code mort qui a l'air couvert.
-- Remplacer les couleurs en dur d'`ImpactBadge` et `VulnerabiliteGauge` par les classes/variables
-  DSFR (`fr-badge--success/warning/error`, `--background-contrast-*`) pour suivre le thème sombre.
+- Remplacer les couleurs en dur de `niveau-badge.const.ts` (badges `ImpactBadge`, jauge et PDF) par
+  les classes/variables DSFR (`fr-badge--success/warning/error`, `--background-contrast-*`) pour
+  suivre le thème sombre — la factorisation dans ce fichier (au lieu de deux composants) facilite
+  ce remplacement le jour venu.
 - `ETAPES_NUMEROTEES_BASE` (`vulnerabilite-step.enum.ts`) duplique volontairement l'ordre et la
   règle de branchement de `step-flow.rules.ts` : à dériver si une seconde question conditionnelle
   apparaît.
@@ -211,17 +238,20 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 
 ## 7. Fichiers clés
 
-| Rôle                                         | Fichier                                                                                       |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Méthode de calcul (poids, barèmes, essences) | `vulnerabilite-rga/domain/value-objects/grille-ponderation.ts`                                |
-| Bascule d'environnement                      | `vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite.ts`                       |
-| Charge utile + validation Zod                | `vulnerabilite-rga/domain/value-objects/simulation-payload.ts`                                |
-| Calcul du score                              | `vulnerabilite-rga/domain/services/scoring.service.ts`                                        |
-| Priorisation des recommandations             | `vulnerabilite-rga/domain/services/recommandations.service.ts`                                |
-| Navigation et branchement                    | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                |
-| Orchestrateur des 13 étapes                  | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                    |
-| Écriture anonyme                             | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                   |
-| Table anonyme                                | `shared/database/schema/vulnerabilite-simulations.ts`                                         |
-| Rattachement à la connexion                  | `auth/adapters/franceconnect/franceconnect.service.ts` (`lierSimulationVulnerabiliteAnonyme`) |
-| Stats back-office                            | `backoffice/administration/vulnerabilite/services/vulnerabilite-stats.service.ts`             |
-| Carte espace agent                           | `backoffice/espace-agent/shared/services/build-info-vulnerabilite.service.ts`                 |
+| Rôle                                          | Fichier                                                                                       |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Méthode de calcul (poids, barèmes, essences)  | `vulnerabilite-rga/domain/value-objects/grille-ponderation.ts`                                |
+| Bascule d'environnement                       | `vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite.ts`                       |
+| Charge utile + validation Zod                 | `vulnerabilite-rga/domain/value-objects/simulation-payload.ts`                                |
+| Calcul du score                               | `vulnerabilite-rga/domain/services/scoring.service.ts`                                        |
+| Priorisation des recommandations              | `vulnerabilite-rga/domain/services/recommandations.service.ts`                                |
+| Navigation et branchement                     | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                |
+| Orchestrateur des 13 étapes                   | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                    |
+| Écriture anonyme                              | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                   |
+| Table anonyme                                 | `shared/database/schema/vulnerabilite-simulations.ts`                                         |
+| PDF téléchargeable                            | `vulnerabilite-rga/components/pdf/VulnerabilitePdfDocument.tsx`                               |
+| Textes partagés HTML + PDF                    | `vulnerabilite-rga/domain/value-objects/resultat-content.const.ts`                            |
+| Labels/couleurs de niveau partagés HTML + PDF | `vulnerabilite-rga/domain/value-objects/niveau-badge.const.ts`                                |
+| Rattachement à la connexion                   | `auth/adapters/franceconnect/franceconnect.service.ts` (`lierSimulationVulnerabiliteAnonyme`) |
+| Stats back-office                             | `backoffice/administration/vulnerabilite/services/vulnerabilite-stats.service.ts`             |
+| Carte espace agent                            | `backoffice/espace-agent/shared/services/build-info-vulnerabilite.service.ts`                 |

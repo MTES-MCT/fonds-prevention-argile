@@ -1,31 +1,28 @@
+import {
+  SOURCES_VULNERABILITE_TITRE,
+  SOURCES_VULNERABILITE_INTRO,
+  SOURCES_VULNERABILITE_CHAPO,
+  SOURCES_VULNERABILITE_ITEMS,
+} from "../../domain/value-objects/resultat-content.const";
+
 /**
  * Pédagogie RGA déplacée depuis l'écran d'accueil (`StepIntro`) vers l'écran de résultat :
- * plus utile une fois le score connu que comme préambule avant de démarrer.
+ * plus utile une fois le score connu que comme préambule avant de démarrer. Texte partagé
+ * avec le PDF téléchargeable (`resultat-content.const.ts`).
  */
 export function ComprendreSourcesVulnerabilite() {
   return (
     <div className="fr-my-4w">
-      <h4 className="fr-mb-2w">Comprendre les sources de vulnérabilité</h4>
-      <p className="fr-mb-3w">
-        Le retrait-gonflement des argiles (RGA) fragilise les maisons individuelles quand le sol argileux se rétracte en
-        période sèche puis regonfle avec l&apos;humidité.
-      </p>
+      <h4 className="fr-mb-2w">{SOURCES_VULNERABILITE_TITRE}</h4>
+      <p className="fr-mb-3w">{SOURCES_VULNERABILITE_INTRO}</p>
 
-      <p className="fr-mb-2w fr-text--bold">Trois sources de vulnérabilité :</p>
+      <p className="fr-mb-2w fr-text--bold">{SOURCES_VULNERABILITE_CHAPO}</p>
       <ul className="fr-mb-0">
-        <li>
-          <strong>Le sol</strong> : l&apos;aléa argileux de votre terrain — on ne peut pas agir dessus, les solutions ne
-          sont pas encore éprouvées.
-        </li>
-        <li>
-          <strong>Le bâtiment</strong> : notamment les fondations — des travaux efficaces mais coûteux, à réserver à un
-          diagnostic d&apos;expert.
-        </li>
-        <li>
-          <strong>L&apos;environnement proche</strong> : gestion de l&apos;eau et de la végétation autour de la maison —
-          c&apos;est là que des gestes simples, à moindre coût, ont le plus d&apos;impact. C&apos;est le cœur de ce
-          simulateur.
-        </li>
+        {SOURCES_VULNERABILITE_ITEMS.map((item) => (
+          <li key={item.label}>
+            <strong>{item.label}</strong> : {item.texte}
+          </li>
+        ))}
       </ul>
     </div>
   );

@@ -1,5 +1,6 @@
 import { computeNeedlePoint } from "./gauge.utils";
-import { getNiveauVulnerabilite, type NiveauVulnerabilite } from "../../domain/services/scoring.service";
+import { getNiveauVulnerabilite } from "../../domain/services/scoring.service";
+import { NIVEAU_LABELS } from "../../domain/value-objects/niveau-badge.const";
 
 interface VulnerabiliteGaugeProps {
   /** Score de vulnérabilité, 0 (faible) à 100 (très élevé). */
@@ -15,13 +16,6 @@ const NEEDLE_LENGTH = 75;
 
 /** 5 bandes de couleur, vert (idéal) → rouge (risque maximal), chacune sur 36°. */
 const BANDES_COULEUR = ["#18753C", "#8ABF3F", "#E9C53B", "#E4794A", "#CE0500"];
-
-const NIVEAU_LABELS: Record<NiveauVulnerabilite, string> = {
-  faible: "Faible",
-  modere: "Modérée",
-  eleve: "Élevée",
-  tres_eleve: "Très élevée",
-};
 
 /** Point sur l'arc à l'angle donné (0° = droite, 180° = gauche). */
 function pointOnArc(angleDeg: number, radius: number): { x: number; y: number } {

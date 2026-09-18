@@ -68,6 +68,7 @@
     "@gouvfr/dsfr-chart": "2.1.1",
     "@react-email/components": "1.0.12",
     "@react-email/render": "2.1.0",
+    "@react-pdf/renderer": "~4.9.0",
     "@socialgouv/matomo-next": "1.14.2",
     "@types/pg": "8.23.1",
     "dotenv": "17.4.2",
