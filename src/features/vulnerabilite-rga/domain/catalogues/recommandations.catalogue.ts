@@ -30,7 +30,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     ameliorations: [
       "Créer une pente légère qui éloigne l'eau de pluie de la maison plutôt que vers elle",
       "Installer un caniveau ou une noue le long de la façade concernée",
-      "Éviter que l'eau stagne au même endroit après chaque pluie",
+      "Installer un système de drainge pour éviter l'accumulation de l'eau en pied de façase",
     ],
     illustrationId: "pente",
   },
@@ -130,7 +130,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     titre: "Limiter le dessèchement du sol en façade sud",
     problemes: ["Une exposition sud sans protection accélère l'évaporation de l'eau du sol, donc son retrait"],
     ameliorations: [
-      "Un paillage au pied de la façade limite l'évaporation directe",
+      "Une voile d'ombrage ou un paillage au pied de la façade limite l'évaporation directe",
       "Un arrosage léger et régulier en période de sécheresse peut aider à stabiliser l'humidité du sol (à éviter en cas d'arrêté sécheresse)",
     ],
     illustrationId: "ensoleillement",
