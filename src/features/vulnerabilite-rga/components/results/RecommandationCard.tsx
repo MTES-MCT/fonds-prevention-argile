@@ -33,7 +33,7 @@ export function RecommandationCard({ recommandation }: RecommandationCardProps) 
     <div className="fr-card fr-card--no-arrow fr-mb-3w">
       <div className="fr-card__body">
         <div className="fr-card__content fr-pb-0">
-          <h4 className="fr-card__title fr-text--md fr-mb-1v">{titre}</h4>
+          <h3 className="fr-card__title fr-text--md fr-mb-1v">{titre}</h3>
           {/* .fr-card__content est en flex-column et .fr-card__title a order:2 (DSFR) : un
               simple <div> (order:0 par défaut) passerait avant le titre. fr-card__desc (order:3)
               garantit sa position après le titre sans dépendre de l'ordre dans le DOM. */}
@@ -50,14 +50,14 @@ export function RecommandationCard({ recommandation }: RecommandationCardProps) 
         </div>
 
         <div className="fr-card__content fr-pt-0">
-          <h5 className="fr-text--md fr-mb-1w">
+          <h4 className="fr-text--md fr-mb-1w">
             <span
               className="fr-icon-warning-fill fr-mr-1w"
               aria-hidden="true"
               style={{ color: "var(--text-default-error)" }}
             />
             Problème
-          </h5>
+          </h4>
           <ul className="fr-text--sm fr-mb-3w">
             {problemes.map((bullet, index) => (
               <li key={index}>{bullet}</li>

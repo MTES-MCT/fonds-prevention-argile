@@ -13,7 +13,7 @@ import {
 export function ComprendreSourcesVulnerabilite() {
   return (
     <div className="fr-my-4w">
-      <h4 className="fr-mb-2w">{SOURCES_VULNERABILITE_TITRE}</h4>
+      <h2 className="fr-h4 fr-mb-2w">{SOURCES_VULNERABILITE_TITRE}</h2>
       <p className="fr-mb-3w">{SOURCES_VULNERABILITE_INTRO}</p>
 
       <p className="fr-mb-2w fr-text--bold">{SOURCES_VULNERABILITE_CHAPO}</p>

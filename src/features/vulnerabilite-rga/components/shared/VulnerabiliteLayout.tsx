@@ -35,7 +35,7 @@ export function VulnerabiliteLayout({
           <div className="fr-col-12 fr-col-md-8 fr-col-lg-8 md:bg-[var(--background-alt-grey)] p-0 md:p-10">
             <div className="px-4 md:px-6 pb-4 md:pb-0 fr-mt-3w md:fr-mt-4w">
               {showProgress && <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />}
-              {title && <h4 className={titleMargin}>{title}</h4>}
+              {title && <h1 className={`fr-h4 ${titleMargin}`}>{title}</h1>}
               {subtitle && <div className="fr-text--sm fr-mb-2w text-gray-500">{subtitle}</div>}
               {children}
             </div>
