@@ -304,6 +304,26 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   /**
+   * Ouvre l'étape éligibilité depuis `CHOIX_AMO`, en UPDATE conditionnel.
+   *
+   * Même transition que `approveValidation`, mais rejouable : elle rattrape les dossiers
+   * dont la validation est passée à `LOGEMENT_ELIGIBLE` sans passer par la réponse de
+   * l'AMO (correction de simulation par un agent). `INVITATION` en est volontairement
+   * exclue : cette étape tient jusqu'au claim, qui seul promeut la simulation de l'agent.
+   *
+   * Retourne `true` si l'étape a effectivement bougé (no-op silencieux sinon).
+   */
+  async advanceToEligibiliteFromChoixAmo(parcoursId: string): Promise<boolean> {
+    const [updated] = await db
+      .update(parcoursPrevention)
+      .set({ currentStep: Step.ELIGIBILITE, currentStatus: Status.TODO })
+      .where(and(eq(parcoursPrevention.id, parcoursId), eq(parcoursPrevention.currentStep, Step.CHOIX_AMO)))
+      .returning({ id: parcoursPrevention.id });
+
+    return Boolean(updated);
+  }
+
+  /**
    * Sauvegarde les données RGA du simulateur dans le parcours.
    * Accepte un objet partiel : une simulation coupée par un early exit non éligible
    * n'a pas tous les champs (les lecteurs downstream chaînent en optionnel).

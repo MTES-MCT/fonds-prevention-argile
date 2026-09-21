@@ -19,10 +19,16 @@ const dbInsertChain = {
   onConflictDoNothing: vi.fn(() => dbInsertChain),
   returning: vi.fn(async () => [] as unknown[]),
 };
+const dbUpdateChain = {
+  set: vi.fn(() => dbUpdateChain),
+  where: vi.fn(() => dbUpdateChain),
+  returning: vi.fn(async () => [] as unknown[]),
+};
 vi.mock("../client", () => ({
   db: {
     select: vi.fn(() => dbSelectChain),
     insert: vi.fn(() => dbInsertChain),
+    update: vi.fn(() => dbUpdateChain),
   },
 }));
 
@@ -258,6 +264,29 @@ describe("ParcoursPreventionRepository — invitation", () => {
 
       expect(updateStep).toHaveBeenCalledWith("parcours-1", Step.ELIGIBILITE, Status.TODO);
     });
+  });
+});
+
+describe("ParcoursPreventionRepository — advanceToEligibiliteFromChoixAmo", () => {
+  let repo: ParcoursPreventionRepository;
+
+  beforeEach(() => {
+    repo = new ParcoursPreventionRepository();
+    dbUpdateChain.set.mockClear();
+    dbUpdateChain.where.mockClear();
+    dbUpdateChain.returning.mockReset();
+    dbUpdateChain.returning.mockResolvedValue([] as unknown[]);
+  });
+
+  it("ouvre l'étape éligibilité et signale que le parcours a bougé", async () => {
+    dbUpdateChain.returning.mockResolvedValueOnce([{ id: "parcours-1" }]);
+
+    await expect(repo.advanceToEligibiliteFromChoixAmo("parcours-1")).resolves.toBe(true);
+    expect(dbUpdateChain.set).toHaveBeenCalledWith({ currentStep: Step.ELIGIBILITE, currentStatus: Status.TODO });
+  });
+
+  it("est un no-op quand le parcours n'est plus à CHOIX_AMO (aucune ligne touchée)", async () => {
+    await expect(repo.advanceToEligibiliteFromChoixAmo("parcours-1")).resolves.toBe(false);
   });
 });
 
