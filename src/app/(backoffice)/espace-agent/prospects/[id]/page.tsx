@@ -19,6 +19,8 @@ import { qualificationService } from "@/features/backoffice/espace-agent/prospec
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
 import type { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
+import { estAmoObligatoire } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import type { AccompagnementSouhaite } from "@/shared/domain/value-objects/accompagnement-souhaite.enum";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -159,6 +161,7 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
             )}
             <QualificationSection
               parcoursId={prospect.parcoursId}
+              amoObligatoire={estAmoObligatoire(prospect.logement.codeDepartement)}
               qualification={
                 latestQualification
                   ? {
@@ -166,6 +169,8 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
                       actionsRealisees: latestQualification.actionsRealisees,
                       raisonsIneligibilite: latestQualification.raisonsIneligibilite,
                       estMandataireFinancier: latestQualification.estMandataireFinancier,
+                      accompagnementSouhaite:
+                        latestQualification.accompagnementSouhaite as AccompagnementSouhaite | null,
                       note: latestQualification.note,
                       createdAt: latestQualification.createdAt.toISOString(),
                     }

@@ -7,18 +7,27 @@ import {
   RAISONS_INELIGIBILITE,
 } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { formatRelativeTimeShort } from "@/shared/utils/date.utils";
+import { AccompagnementSouhaite } from "@/shared/domain/value-objects/accompagnement-souhaite.enum";
 
 interface QualificationCalloutProps {
   decision: QualificationDecision;
   actionsRealisees: string[];
   raisonsIneligibilite: string[] | null;
   estMandataireFinancier: boolean | null;
+  accompagnementSouhaite: AccompagnementSouhaite | null;
   note: string | null;
   agentNom: string;
   structureNom: string;
   createdAt: string;
   onRequalifier: () => void;
 }
+
+/** Ce que l'agent a retenu de la réponse du demandeur sur son accompagnement. */
+const LABELS_ACCOMPAGNEMENT: Record<AccompagnementSouhaite, string> = {
+  [AccompagnementSouhaite.ACCOMPAGNEMENT]: "Souhaite être accompagné",
+  [AccompagnementSouhaite.AUTONOMIE]: "Gère ses démarches seul",
+  [AccompagnementSouhaite.INCONNU]: "Ne sait pas encore",
+};
 
 const VARIANT_CONFIG: Record<QualificationDecision, { className: string }> = {
   [QualificationDecision.ELIGIBLE]: { className: "fr-callout--green-emeraude" },
@@ -47,6 +56,7 @@ export function QualificationCallout({
   actionsRealisees,
   raisonsIneligibilite,
   estMandataireFinancier,
+  accompagnementSouhaite,
   note,
   agentNom,
   structureNom,
@@ -108,6 +118,13 @@ export function QualificationCallout({
         {decision === QualificationDecision.ELIGIBLE && estMandataireFinancier !== null && (
           <p className="fr-mb-1w">
             Mandataire financier : <strong>{estMandataireFinancier ? "Oui" : "Non"}</strong>
+          </p>
+        )}
+
+        {/* Accompagnement souhaité (si la question a été posée) */}
+        {accompagnementSouhaite && (
+          <p className="fr-mb-1w">
+            Accompagnement : <strong>{LABELS_ACCOMPAGNEMENT[accompagnementSouhaite]}</strong>
           </p>
         )}
 

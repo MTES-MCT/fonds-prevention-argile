@@ -8,17 +8,28 @@ import {
   RAISONS_INELIGIBILITE,
 } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import { qualifyProspectAction } from "@/features/backoffice/espace-agent/prospects/actions/qualify-prospect.actions";
+import { AccompagnementSouhaite } from "@/shared/domain/value-objects/accompagnement-souhaite.enum";
 
 interface QualificationInitialValues {
   decision: QualificationDecision;
   actionsRealisees: string[];
   raisonsIneligibilite: string[] | null;
   estMandataireFinancier: boolean | null;
+  accompagnementSouhaite: AccompagnementSouhaite | null;
   note: string | null;
 }
 
+/** Libellés de la question posée là où le demandeur a le choix de son accompagnement. */
+const OPTIONS_ACCOMPAGNEMENT = [
+  { value: AccompagnementSouhaite.ACCOMPAGNEMENT, label: "Oui, il souhaite être accompagné par un AMO" },
+  { value: AccompagnementSouhaite.AUTONOMIE, label: "Non, il gère ses démarches seul" },
+  { value: AccompagnementSouhaite.INCONNU, label: "Il ne sait pas encore" },
+] as const;
+
 interface QualificationFormProps {
   parcoursId: string;
+  /** L'AMO est-il imposé ? Si oui, la question de l'accompagnement ne se pose pas. */
+  amoObligatoire: boolean;
   onSuccess: () => void;
   onCancel?: () => void;
   /** Mode mise à jour : change le libellé du bouton et l'ordre des boutons */
@@ -186,6 +197,7 @@ function RaisonsIneligibiliteSelect({
  */
 export function QualificationForm({
   parcoursId,
+  amoObligatoire,
   onSuccess,
   onCancel,
   isUpdate,
@@ -205,6 +217,9 @@ export function QualificationForm({
   const [autreRaisonPrecision, setAutreRaisonPrecision] = useState(initRaisons?.precision ?? "");
   const [mandataireFinancier, setMandataireFinancier] = useState<boolean | null>(
     initialValues?.estMandataireFinancier ?? null
+  );
+  const [accompagnement, setAccompagnement] = useState<AccompagnementSouhaite | null>(
+    initialValues?.accompagnementSouhaite ?? null
   );
   const [note, setNote] = useState(initialValues?.note ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -261,9 +276,10 @@ export function QualificationForm({
     if (value !== QualificationDecision.NON_ELIGIBLE) {
       setRaisonsIneligibilite([]);
     }
-    // La question mandataire financier ne concerne que le cas éligible.
+    // Mandataire financier et accompagnement ne se posent que sur un dossier éligible.
     if (value !== QualificationDecision.ELIGIBLE) {
       setMandataireFinancier(null);
+      setAccompagnement(null);
     }
   }
 
@@ -282,6 +298,10 @@ export function QualificationForm({
     }
     if (decision === QualificationDecision.ELIGIBLE && mandataireFinancier === null) {
       setError("Veuillez indiquer si votre structure est le mandataire financier.");
+      return;
+    }
+    if (questionAccompagnementPosee && accompagnement === null) {
+      setError("Veuillez indiquer ce que le demandeur souhaite comme accompagnement.");
       return;
     }
 
@@ -304,6 +324,7 @@ export function QualificationForm({
         raisonsIneligibilite: decision === QualificationDecision.NON_ELIGIBLE ? finalRaisons : undefined,
         estMandataireFinancier:
           decision === QualificationDecision.ELIGIBLE ? (mandataireFinancier ?? undefined) : undefined,
+        accompagnementSouhaite: questionAccompagnementPosee ? (accompagnement ?? undefined) : undefined,
         note: note.trim() || undefined,
       });
 
@@ -315,11 +336,11 @@ export function QualificationForm({
         return;
       }
 
-      // La transmission à l'AMO est best-effort : si elle a échoué, l'agent doit le savoir
-      // maintenant, sinon il quitte l'écran en croyant avoir passé la main.
-      const transmission = result.data.transmissionAmo;
-      if (transmission && !transmission.transmise) {
-        setError(`Qualification enregistrée, mais le dossier n'a pas été transmis à l'AMO : ${transmission.raison}`);
+      // La suite donnée à l'accompagnement est best-effort : si elle a échoué, l'agent doit
+      // le savoir maintenant, sinon il quitte l'écran en croyant avoir passé la main.
+      const suite = result.data.suiteAccompagnement;
+      if (suite?.issue === "echec") {
+        setError(`Qualification enregistrée, mais l'accompagnement n'a pas été mis en place : ${suite.raison}`);
         return;
       }
 
@@ -329,6 +350,8 @@ export function QualificationForm({
   }
 
   const confirmConfig = decision ? CONFIRM_CONFIG[decision] : null;
+  // Là où l'AMO est imposé, il n'y a rien à demander : il est attribué d'office.
+  const questionAccompagnementPosee = !amoObligatoire && decision === QualificationDecision.ELIGIBLE;
 
   return (
     <>
@@ -401,6 +424,35 @@ export function QualificationForm({
                 </label>
               </div>
             </div>
+          </fieldset>
+        )}
+
+        {/* Accompagnement souhaité — seulement là où le demandeur a le choix */}
+        {questionAccompagnementPosee && (
+          <fieldset className="fr-fieldset fr-mt-3w" aria-labelledby="accompagnement-legend">
+            <legend className="fr-fieldset__legend fr-text--bold" id="accompagnement-legend">
+              Le demandeur souhaite-t-il être accompagné ?
+            </legend>
+            <p className="fr-hint-text fr-mb-2w">
+              Sa réponse évite de lui reposer la question sur son espace. « Il ne sait pas encore » lui laisse le choix.
+            </p>
+            {OPTIONS_ACCOMPAGNEMENT.map((option) => (
+              <div key={option.value} className="fr-fieldset__element">
+                <div className="fr-radio-group">
+                  <input
+                    type="radio"
+                    id={`accompagnement-${option.value}`}
+                    name="accompagnement-souhaite"
+                    checked={accompagnement === option.value}
+                    onChange={() => setAccompagnement(option.value)}
+                    disabled={isPending}
+                  />
+                  <label className="fr-label" htmlFor={`accompagnement-${option.value}`}>
+                    {option.label}
+                  </label>
+                </div>
+              </div>
+            ))}
           </fieldset>
         )}
 
