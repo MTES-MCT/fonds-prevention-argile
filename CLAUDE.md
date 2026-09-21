@@ -275,6 +275,8 @@ qu'un relecteur pourrait contester.
   ça vit dans les messages de commit, les ADR et la doc.
 - La **checklist de tests manuels** se livre dans la conversation ou en commentaire de PR —
   jamais dans le corps, elle le noie.
+- **Aucune mention d'outil ni d'auteur** : pas de « Generated with … », pas de co-auteur, pas
+  de signature. Même règle que pour les commits — l'auteur GitHub suffit.
 
 Un corps qui dépasse 25 lignes signale en général une PR qui fait trop de choses : se demander
 si elle ne devrait pas être découpée avant de raccourcir le texte.
