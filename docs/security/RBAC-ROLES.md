@@ -358,6 +358,24 @@ refuserait normalement l'AV). `ANALYSTE` et `ADMINISTRATEUR` sont exclus. Garde
 (`reouvrirDemandeAction`) = rôle habilité **+** `canReopenRefusedDemande(scope, …)` ; l'audit
 QUI/QUAND est écrit dans `parcours_actions` (type `dossier_reouvert`).
 
+### 6.1.0 Qualification d'un Aller-vers valant validation AMO (ADR-0038)
+
+Là où l'aller-vers **est** l'AMO du territoire, sa qualification « éligible » écrit
+directement `logement_eligible` sans repasser par le lien email de validation. La garde
+s'ajoute à celle de la qualification (rôle, structure, responsable du dossier) et exige
+**trois** conditions cumulatives : département reconnaissant le cumul, agent portant la
+casquette AMO **par son rôle** (`AMO` / `AMO_ET_ALLERS_VERS`), et entreprise de l'agent
+couvrant la commune. L'entreprise rattachée est celle de l'agent, issue du contexte serveur.
+
+> La seule présence d'un `entreprise_amo_id` en base **ne suffit pas** : sans le contrôle de
+> rôle, un `ALLERS_VERS` rattaché à une entreprise validerait au nom d'une AMO qui n'a rien
+> dit. À l'inverse, un agent hybride hors de son territoire retombe sur la sollicitation
+> normale de l'AMO — jamais sur un refus muet.
+
+Même écran, garde voisine : la **décision d'accompagnement** en département à AMO facultatif
+(`accompagnement_souhaite`) n'écrase jamais un choix déjà exprimé — l'écriture est un
+`onConflictDoNothing` — et refuse sur un dossier archivé.
+
 ### 6.1.1 Arrêt de l'accompagnement (garde stricte, à l'inverse)
 
 L'action « Ne plus accompagner » ([ADR-0018](../adr/0018-arret-accompagnement-amo.md))
@@ -377,6 +395,12 @@ super-admin en lecture seule sont **exclus** — contrairement à la ré-ouvertu
 > (`peutPasserEnAutonomie`) que l'annulation côté demandeur, dont la version précédente se
 > sautait quand seule la simulation agent portait la commune. Voir
 > [ADR-0037](../adr/0037-pas-d-autonomie-en-amo-obligatoire.md).
+
+> **L'obligation d'AMO ne se déduit plus du cumul aller-vers/AMO (septembre 2026).** Les deux
+> règles départementales sont devenues indépendantes : `peutPasserEnAutonomie` lit
+> `estAmoObligatoire` seul, si bien qu'un département où l'aller-vers est aussi l'AMO **sans
+> l'imposer** (le Gers) conserve le droit à l'autonomie. Voir
+> [ADR-0038](../adr/0038-qualification-aller-vers-pivot-accompagnement.md).
 
 > **Gel entre dépôt et décision DDT (septembre 2026).** À la garde de rôle s'ajoute une garde
 > d'**état** : `arreterAccompagnementAction` refuse tant que le formulaire d'éligibilité est
@@ -479,27 +503,28 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 
 ## 7. Fichiers clés
 
-| Rôle                                  | Fichier                                                                                                                                                  |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Enum des rôles                        | `src/shared/domain/value-objects/user-role.enum.ts`                                                                                                      |
-| Service de permissions                | `src/features/auth/permissions/services/permissions.service.ts`                                                                                          |
-| Matrice permissions / onglets         | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                                                                                 |
-| Périmètre données agent               | `src/features/auth/permissions/services/agent-scope.service.ts`                                                                                          |
-| Scope stats national (ADR-0017)       | `agent-scope.service.ts` (`getStatsScopeFilters`, `canViewNationalStats`)                                                                                |
-| Projection stats anonymisée           | `src/features/backoffice/administration/demandeurs/services/users-tracking.service.ts` (`toStatsProjection`)                                             |
-| Service RBAC (onglets)                | `src/features/auth/permissions/services/rbac.service.ts`                                                                                                 |
-| Config des routes / redirections      | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                                                        |
-| Aiguillage auth                       | `src/middleware.ts`                                                                                                                                      |
-| Coupure d'accès agent désactivé       | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)                                               |
-| Garde-fou suppression d'agent         | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`) + `agents.repository.ts` (`countTraces`)                                        |
-| Retrait des listes de diffusion       | `administration/agents/services/listes-diffusion.service.ts`                                                                                             |
-| Garde espace agent                    | `src/app/(backoffice)/espace-agent/layout.tsx`                                                                                                           |
-| Garde administration                  | `src/app/(backoffice)/administration/page.tsx`                                                                                                           |
-| Garde entreprise AMO                  | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                                                           |
-| Garde ré-ouverture demande            | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                                                    |
-| Garde rattachement d'une AMO          | `administration/diagnostics/actions/amo-a-rattacher.actions.ts` (`ensureSuperAdmin`) — super-admin seul, file des diagnostics comme entrée du menu Gérer |
-| Garde arrêt d'accompagnement          | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts`                                  |
-| Garde refus accompagnement (éligible) | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                                                    |
-| Garde rattachement / réinit. DN       | `espace-agent/shared/services/dossier-dn-permissions.service.ts` (`verifierAccesDossierDn`)                                                              |
-| Garde édition simulation              | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)                                        |
-| Résolution du permalien parcours      | `dossiers/services/admin-url-resolver.service.ts` (`resolveEspaceAgentPath`) — chemin seul, aucune donnée                                                |
+| Rôle                                        | Fichier                                                                                                                                                  |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Enum des rôles                              | `src/shared/domain/value-objects/user-role.enum.ts`                                                                                                      |
+| Service de permissions                      | `src/features/auth/permissions/services/permissions.service.ts`                                                                                          |
+| Matrice permissions / onglets               | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                                                                                 |
+| Périmètre données agent                     | `src/features/auth/permissions/services/agent-scope.service.ts`                                                                                          |
+| Scope stats national (ADR-0017)             | `agent-scope.service.ts` (`getStatsScopeFilters`, `canViewNationalStats`)                                                                                |
+| Projection stats anonymisée                 | `src/features/backoffice/administration/demandeurs/services/users-tracking.service.ts` (`toStatsProjection`)                                             |
+| Service RBAC (onglets)                      | `src/features/auth/permissions/services/rbac.service.ts`                                                                                                 |
+| Config des routes / redirections            | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                                                        |
+| Aiguillage auth                             | `src/middleware.ts`                                                                                                                                      |
+| Coupure d'accès agent désactivé             | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)                                               |
+| Garde-fou suppression d'agent               | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`) + `agents.repository.ts` (`countTraces`)                                        |
+| Retrait des listes de diffusion             | `administration/agents/services/listes-diffusion.service.ts`                                                                                             |
+| Garde espace agent                          | `src/app/(backoffice)/espace-agent/layout.tsx`                                                                                                           |
+| Garde administration                        | `src/app/(backoffice)/administration/page.tsx`                                                                                                           |
+| Garde entreprise AMO                        | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                                                           |
+| Garde ré-ouverture demande                  | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                                                    |
+| Garde « qualification vaut validation AMO » | `prospects/services/suite-qualification.service.ts` (`peutValiderCommeAmo`) + rôle AMO dans `qualify-prospect.actions.ts`                                |
+| Garde rattachement d'une AMO                | `administration/diagnostics/actions/amo-a-rattacher.actions.ts` (`ensureSuperAdmin`) — super-admin seul, file des diagnostics comme entrée du menu Gérer |
+| Garde arrêt d'accompagnement                | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts`                                  |
+| Garde refus accompagnement (éligible)       | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                                                    |
+| Garde rattachement / réinit. DN             | `espace-agent/shared/services/dossier-dn-permissions.service.ts` (`verifierAccesDossierDn`)                                                              |
+| Garde édition simulation                    | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)                                        |
+| Résolution du permalien parcours            | `dossiers/services/admin-url-resolver.service.ts` (`resolveEspaceAgentPath`) — chemin seul, aucune donnée                                                |
