@@ -4,6 +4,7 @@ import { getParcoursComplet } from "./parcours-state.service";
 import { mapRGAToDSFormat, validateRGADataForDS } from "../../dossiers-ds/mappers/rga-to-ds.mapper";
 import { Status } from "../domain";
 import { getAmoChoisie, getValidationAmo } from "../../amo/actions";
+import { estFormulaireEligibiliteBloqueParDemandeAccompagnement } from "../../amo/domain/value-objects/arretAccompagnement";
 import { prefillClient } from "../../dossiers-ds/adapters";
 import { createDossierForCurrentStep, getDossierByStep } from "../../dossiers-ds/services";
 import { parcoursRepo, userRepo } from "@/shared/database";
@@ -89,6 +90,20 @@ export async function createEligibiliteDossier(
     // Idempotence : si un dossier existe déjà pour cette étape, le retourner
     // (le current_status ne sert plus de verrou anti-doublon, cf. ADR-0009).
     const existing = await getDossierByStep(parcoursData.parcours.id, Step.ELIGIBILITE);
+
+    // Une AMO sollicitée et pas encore répondue bloque la création : le préremplissage
+    // reporterait un accompagnement encore incertain, et il ne sait pas se corriger. Le
+    // blocage ne vivait que dans trois composants, une requête d'un écran périmé passait.
+    if (!existing) {
+      const validationEnCours = await getValidationAmo();
+      const statutAmo = validationEnCours.success ? (validationEnCours.data?.statut ?? null) : null;
+      if (estFormulaireEligibiliteBloqueParDemandeAccompagnement(statutAmo, parcoursData.parcours.currentStep, null)) {
+        return {
+          success: false,
+          error: "Votre AMO n'a pas encore répondu : le formulaire sera disponible dès sa réponse",
+        };
+      }
+    }
     if (existing) {
       debug.log("Dossier éligibilité déjà existant, n° :", existing.dsNumber);
       return {

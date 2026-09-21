@@ -8,6 +8,9 @@ import { createDossierForCurrentStep, getDossierByStep } from "../../dossiers-ds
 import { userRepo } from "@/shared/database";
 import { Status } from "../domain/value-objects/status";
 import { Step } from "../domain/value-objects/step";
+import { estFormulaireEligibiliteBloqueParDemandeAccompagnement } from "../../amo/domain/value-objects/arretAccompagnement";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { DS_FIELD_IDS, DS_OPTIONS_MANDATAIRE } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
 import { DS_LABELS_ETAT_MAISON } from "../../dossiers-ds/domain/value-objects/ds-champ-etat-maison";
 import type { PartialRGASimulationData } from "@/shared/domain/types";
@@ -249,10 +252,30 @@ describe("createEligibiliteDossier — champ « état de la maison »", () => {
   });
 });
 
-// Le blocage « AMO pas encore répondu » ne vit aujourd'hui que dans trois composants
-// d'affichage : une requête depuis un écran périmé crée encore le formulaire.
+// Le blocage « AMO pas encore répondu » ne vivait que dans trois composants d'affichage :
+// une requête depuis un écran périmé créait encore le formulaire, avec un accompagnement
+// encore incertain que le préremplissage ne sait pas corriger ensuite.
 describe("garde serveur de création du formulaire d'éligibilité", () => {
-  it.todo("refuse la création tant que l'AMO sollicitée n'a pas répondu");
-  it.todo("autorise la création dès que l'AMO a validé");
-  it.todo("autorise la création pour un parcours en autonomie");
+  it("refuse la création tant que l'AMO sollicitée n'a pas répondu", () => {
+    expect(
+      estFormulaireEligibiliteBloqueParDemandeAccompagnement(StatutValidationAmo.EN_ATTENTE, Step.ELIGIBILITE, null)
+    ).toBe(true);
+  });
+
+  it.each([StatutValidationAmo.LOGEMENT_ELIGIBLE, StatutValidationAmo.SANS_AMO])(
+    "autorise la création une fois l'accompagnement tranché (%s)",
+    (statut) => {
+      expect(estFormulaireEligibiliteBloqueParDemandeAccompagnement(statut, Step.ELIGIBILITE, null)).toBe(false);
+    }
+  );
+
+  it("n'entrave pas un dossier déjà transmis : rien n'y a été réinitialisé", () => {
+    expect(
+      estFormulaireEligibiliteBloqueParDemandeAccompagnement(
+        StatutValidationAmo.EN_ATTENTE,
+        Step.ELIGIBILITE,
+        DSStatus.EN_CONSTRUCTION
+      )
+    ).toBe(false);
+  });
 });
