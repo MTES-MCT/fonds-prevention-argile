@@ -30,7 +30,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     ameliorations: [
       "Créer une pente légère qui éloigne l'eau de pluie de la maison plutôt que vers elle",
       "Installer un caniveau ou une noue le long de la façade concernée",
-      "Installer un système de drainge pour éviter l'accumulation de l'eau en pied de façase",
+      "Installer un système de drainage pour éviter l'accumulation de l'eau en pied de façade",
     ],
     illustrationId: "pente",
   },
