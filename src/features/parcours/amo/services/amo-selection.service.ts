@@ -28,6 +28,12 @@ import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributesFromAmo } from "
 import type { ParcoursPrevention } from "@/shared/database/schema";
 
 /**
+ * Étapes où une AMO peut être sollicitée. `INVITATION` y figure : un dossier créé par un
+ * agent y reste jusqu'au claim, et l'AMO doit pouvoir être saisie entre-temps (ADR-0038).
+ */
+const ETAPES_SELECTION_AMO: readonly Step[] = [Step.CHOIX_AMO, Step.INVITATION];
+
+/**
  * Paramètres pour la sélection d'un AMO
  */
 export interface SelectAmoParams {
@@ -112,12 +118,15 @@ async function checkAmoCoversTerritory(
  *   par `demanderAccompagnementDemandeur`, où le parcours a déjà avancé à ÉLIGIBILITE.
  * @param options.skipStatusUpdate n'écrit pas `parcours.currentStatus = EN_INSTRUCTION` —
  *   idem, l'étape courante n'étant plus CHOIX_AMO, ce champ reste piloté par la sync DS.
+ * @param options.nePasEcraser refuse au lieu de remplacer une validation existante — l'auto
+ *   -attribution s'en sert pour ne pas défaire une décision posée entre sa lecture et son
+ *   écriture (l'upsert, lui, sert la re-sélection volontaire d'un AMO par le demandeur).
  */
 export async function selectAmoForUser(
   userId: string,
   params: SelectAmoParams,
   attributionMode: AttributionAmoMode = AttributionAmoMode.MANUEL,
-  options?: { skipStepGuard?: boolean; skipStatusUpdate?: boolean }
+  options?: { skipStepGuard?: boolean; skipStatusUpdate?: boolean; nePasEcraser?: boolean }
 ): Promise<ActionResult<SelectAmoResult>> {
   // Validation des données personnelles
   const validationError = validatePersonalData(params);
@@ -134,8 +143,9 @@ export async function selectAmoForUser(
     return { success: false, error: "Parcours non trouvé" };
   }
 
-  // Vérifier qu'on est bien à l'étape CHOIX_AMO (sauf demande d'accompagnement après autonomie)
-  if (!options?.skipStepGuard && parcours.currentStep !== Step.CHOIX_AMO) {
+  // Étape attendue : CHOIX_AMO, ou INVITATION quand le dossier a été créé par un agent et
+  // n'a pas encore été réclamé — l'AMO doit pouvoir être sollicitée sans attendre le claim.
+  if (!options?.skipStepGuard && !ETAPES_SELECTION_AMO.includes(parcours.currentStep)) {
     return {
       success: false,
       error: "Vous n'êtes pas à l'étape de choix de l'AMO",
@@ -183,47 +193,52 @@ export async function selectAmoForUser(
     .where(eq(users.id, userId));
 
   // Créer ou mettre à jour la validation AMO
-  // Reset des champs email tracking en cas de re-sélection
-  const [validation] = await db
-    .insert(parcoursAmoValidations)
-    .values({
-      parcoursId: parcours.id,
-      entrepriseAmoId,
-      statut: StatutValidationAmo.EN_ATTENTE,
-      attributionMode,
-      userPrenom: userPrenom.trim(),
-      userNom: userNom.trim(),
-      userEmail: userEmail.trim(),
-      userTelephone: telephone,
-      adresseLogement: adresseLogement.trim(),
-    })
-    .onConflictDoUpdate({
-      target: parcoursAmoValidations.parcoursId,
-      set: {
-        entrepriseAmoId,
-        statut: StatutValidationAmo.EN_ATTENTE,
-        attributionMode,
-        choisieAt: new Date(),
-        valideeAt: null,
-        commentaire: null,
-        userPrenom: userPrenom.trim(),
-        userNom: userNom.trim(),
-        userEmail: userEmail.trim(),
-        userTelephone: telephone,
-        adresseLogement: adresseLogement.trim(),
-        // Reset du tracking email (nouvelle tentative)
-        brevoMessageId: null,
-        emailSentAt: null,
-        emailDeliveredAt: null,
-        emailOpenedAt: null,
-        emailClickedAt: null,
-        emailBounceType: null,
-        emailBounceReason: null,
-      },
-    })
-    .returning();
+  const valeurs = {
+    parcoursId: parcours.id,
+    entrepriseAmoId,
+    statut: StatutValidationAmo.EN_ATTENTE,
+    attributionMode,
+    userPrenom: userPrenom.trim(),
+    userNom: userNom.trim(),
+    userEmail: userEmail.trim(),
+    userTelephone: telephone,
+    adresseLogement: adresseLogement.trim(),
+  };
+
+  const [validation] = options?.nePasEcraser
+    ? await db
+        .insert(parcoursAmoValidations)
+        .values(valeurs)
+        .onConflictDoNothing({ target: parcoursAmoValidations.parcoursId })
+        .returning()
+    : await db
+        .insert(parcoursAmoValidations)
+        .values(valeurs)
+        .onConflictDoUpdate({
+          target: parcoursAmoValidations.parcoursId,
+          set: {
+            ...valeurs,
+            choisieAt: new Date(),
+            valideeAt: null,
+            commentaire: null,
+            // Reset du tracking email (nouvelle tentative)
+            brevoMessageId: null,
+            emailSentAt: null,
+            emailDeliveredAt: null,
+            emailOpenedAt: null,
+            emailClickedAt: null,
+            emailBounceType: null,
+            emailBounceReason: null,
+          },
+        })
+        .returning();
 
   if (!validation) {
+    // Sans écrasement, l'absence de ligne signifie qu'une validation a été posée entre
+    // la lecture de l'appelant et cette écriture : on la laisse telle quelle.
+    if (options?.nePasEcraser) {
+      return { success: true, data: { message: "AMO déjà attribuée", token: "" } };
+    }
     return {
       success: false,
       error: "Erreur lors de la création de la validation",
@@ -414,7 +429,11 @@ async function resolveAmoAndContactForTerritory(
 }
 
 /**
- * Auto-affecte un AMO au parcours d'un utilisateur (modes OBLIGATOIRE et AV_AMO_FUSIONNES).
+ * Auto-affecte l'AMO du territoire au parcours d'un utilisateur.
+ *
+ * Accepte l'étape `INVITATION` : un dossier créé par un agent y reste jusqu'au claim, et
+ * l'AMO doit pouvoir être sollicitée sans attendre que le demandeur crée son compte — sans
+ * cela, la qualification d'un Aller-vers échouait en silence et le dossier restait chez lui.
  *
  * Idempotent : si une validation existe déjà pour ce parcours, ne fait rien.
  * Délègue ensuite à `selectAmoForUser` avec le mode d'attribution adéquat.
@@ -425,7 +444,7 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
     return { success: false, error: "Parcours non trouvé" };
   }
 
-  if (parcours.currentStep !== Step.CHOIX_AMO) {
+  if (!ETAPES_SELECTION_AMO.includes(parcours.currentStep)) {
     return { success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" };
   }
 
@@ -461,6 +480,8 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
     return resolved;
   }
 
+  // `skipStatusUpdate` à l'étape invitation : `currentStatus` n'a de sens que rattaché à
+  // l'étape courante, et c'est le claim qui posera EN_INSTRUCTION avec CHOIX_AMO.
   return selectAmoForUser(
     userId,
     {
@@ -471,7 +492,8 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
       userTelephone: resolved.data.userTelephone,
       adresseLogement: resolved.data.adresseLogement,
     },
-    attributionMode
+    attributionMode,
+    { nePasEcraser: true, skipStatusUpdate: parcours.currentStep === Step.INVITATION }
   );
 }
 

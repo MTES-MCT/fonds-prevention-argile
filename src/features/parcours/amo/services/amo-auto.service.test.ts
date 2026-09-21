@@ -133,12 +133,104 @@ describe("assignAmoAutomatiqueForUser", () => {
     expect(result).toEqual({ success: false, error: "Parcours non trouvé" });
   });
 
-  it("refuse si le parcours n'est plus à l'étape CHOIX_AMO", async () => {
+  it("refuse si le parcours a dépassé l'étape de choix de l'AMO", async () => {
     const parcours = buildMockParcours("36001");
     parcours.currentStep = Step.ELIGIBILITE;
     vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours);
     const result = await assignAmoAutomatiqueForUser(userId);
     expect(result).toEqual({ success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" });
+  });
+
+  /**
+   * Chaîne complète d'une attribution réussie : aucune validation existante, un AMO sur le
+   * territoire, le demandeur, puis la fiche AMO lue pour l'email.
+   */
+  function mockAttributionComplete() {
+    let appel = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(db.select).mockImplementation((() => {
+      appel++;
+      const rows =
+        appel === 1
+          ? [] // aucune validation existante
+          : appel === 2
+            ? [{ id: "amo-1" }] // AMO du département
+            : appel === 3
+              ? [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }]
+              : [{ nom: "AMO Test", emails: "amo@example.fr", telephone: "0102030405", horaires: null }];
+      return {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(rows) }),
+          leftJoin: vi.fn().mockReturnValue({
+            leftJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([{ id: "amo-1" }]) }),
+            }),
+          }),
+        }),
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as any);
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
+        }),
+        onConflictDoUpdate: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
+        }),
+        // db.insert(amoValidationTokens).values(...) — sans returning
+        then: undefined,
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    vi.mocked(db.update).mockReturnValue({
+      set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    vi.mocked(sendValidationAmoEmail).mockResolvedValue({
+      success: true,
+      data: { messageId: "msg-1" },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  }
+
+  it("attribue l'AMO à un parcours encore à l'étape invitation", async () => {
+    // Dossier créé par un agent, demandeur n'ayant pas encore réclamé son compte : l'AMO
+    // doit pouvoir être sollicitée, sinon la qualification de l'Aller-vers n'aboutit à rien.
+    const parcours = buildMockParcours("36001");
+    parcours.currentStep = Step.INVITATION;
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours);
+    mockAttributionComplete();
+
+    const result = await assignAmoAutomatiqueForUser(userId);
+
+    expect(result.success).toBe(true);
+    expect(sendValidationAmoEmail).toHaveBeenCalled();
+  });
+
+  it("n'écrit pas le statut du parcours tant qu'il est à l'étape invitation", async () => {
+    const parcours = buildMockParcours("36001");
+    parcours.currentStep = Step.INVITATION;
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours);
+    mockAttributionComplete();
+
+    await assignAmoAutomatiqueForUser(userId);
+
+    // `currentStatus` n'a de sens que rattaché à l'étape courante : c'est le claim qui
+    // posera EN_INSTRUCTION en même temps que CHOIX_AMO.
+    expect(parcoursRepo.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it("pose EN_INSTRUCTION quand le parcours est bien à l'étape de choix de l'AMO", async () => {
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("36001"));
+    mockAttributionComplete();
+
+    await assignAmoAutomatiqueForUser(userId);
+
+    expect(parcoursRepo.updateStatus).toHaveBeenCalledWith("parcours-789", Status.EN_INSTRUCTION);
   });
 
   it("est idempotent si une validation existe déjà", async () => {
@@ -509,8 +601,6 @@ describe("demanderAccompagnementDemandeur", () => {
 // Sujet 2 — l'attribution doit franchir l'étape invitation : c'est la garde d'étape de
 // `selectAmoForUser`, et non celle-ci seule, qui bloque aujourd'hui la transmission.
 describe("attribution d'AMO sur un dossier non encore réclamé", () => {
-  it.todo("attribue l'AMO à un parcours encore à l'étape invitation");
-  it.todo("n'écrit pas le statut du parcours tant qu'il est à l'étape invitation");
   it.todo("résout le territoire sur la simulation de l'agent quand le demandeur n'a pas simulé");
 });
 
