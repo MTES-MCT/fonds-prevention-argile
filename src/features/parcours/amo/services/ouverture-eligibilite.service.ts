@@ -29,3 +29,18 @@ export async function ouvrirEligibiliteApresValidationAmo(parcoursId: string): P
 
   return parcoursRepo.advanceToEligibiliteFromChoixAmo(parcoursId);
 }
+
+/**
+ * Une AMO a-t-elle déjà validé ce parcours ? Une validation peut être posée avant que le
+ * demandeur ne réclame son compte : annoncer « pas d'AMO » à la création contredirait alors
+ * l'évènement de réponse AMO déjà parti.
+ */
+export async function aUneAmoValidee(parcoursId: string): Promise<boolean> {
+  const [validation] = await db
+    .select({ statut: parcoursAmoValidations.statut })
+    .from(parcoursAmoValidations)
+    .where(eq(parcoursAmoValidations.parcoursId, parcoursId))
+    .limit(1);
+
+  return validation?.statut === StatutValidationAmo.LOGEMENT_ELIGIBLE;
+}

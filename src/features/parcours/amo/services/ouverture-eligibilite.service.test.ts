@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ouvrirEligibiliteApresValidationAmo } from "./ouverture-eligibilite.service";
+import { aUneAmoValidee, ouvrirEligibiliteApresValidationAmo } from "./ouverture-eligibilite.service";
 import { db } from "@/shared/database/client";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
@@ -57,5 +57,32 @@ describe("ouvrirEligibiliteApresValidationAmo", () => {
 
     await expect(ouvrirEligibiliteApresValidationAmo("parcours-1")).resolves.toBe(false);
     expect(parcoursRepo.advanceToEligibiliteFromChoixAmo).not.toHaveBeenCalled();
+  });
+});
+
+describe("aUneAmoValidee", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("reconnaît une AMO ayant validé avant le rattachement du compte", async () => {
+    mockValidation(StatutValidationAmo.LOGEMENT_ELIGIBLE);
+
+    await expect(aUneAmoValidee("parcours-1")).resolves.toBe(true);
+  });
+
+  it.each([StatutValidationAmo.EN_ATTENTE, StatutValidationAmo.SANS_AMO, StatutValidationAmo.LOGEMENT_NON_ELIGIBLE])(
+    "ne compte pas une AMO qui n'a pas validé (%s)",
+    async (statut) => {
+      mockValidation(statut);
+
+      await expect(aUneAmoValidee("parcours-1")).resolves.toBe(false);
+    }
+  );
+
+  it("répond non sur un parcours sans validation", async () => {
+    mockValidation(null);
+
+    await expect(aUneAmoValidee("parcours-1")).resolves.toBe(false);
   });
 });
