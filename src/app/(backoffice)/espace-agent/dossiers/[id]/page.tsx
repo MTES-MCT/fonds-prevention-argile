@@ -30,6 +30,8 @@ import { STATUTS_REFUSES } from "@/features/backoffice/espace-agent/dossiers/dom
 import { ROLES_REOUVERTURE } from "@/features/backoffice/espace-agent/dossiers/domain/reouverture";
 import { ROLES_ARRET_ACCOMPAGNEMENT } from "@/features/backoffice/espace-agent/dossiers/domain/arret-accompagnement";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
+import { isSuperAdminRole } from "@/shared/domain/value-objects/user-role.enum";
+import { listerDossiersARattacher } from "@/features/backoffice/administration/diagnostics/services/amo-a-rattacher.service";
 import { peutAgirSurDossierDn } from "@/features/backoffice/espace-agent/shared/services/dossier-dn-permissions.service";
 import { STEPS_REINITIALISABLES } from "@/features/parcours/dossiers-ds/services/regeneration.service";
 import { estDossierChezLaDdt } from "@/features/parcours/amo/domain/value-objects";
@@ -109,6 +111,17 @@ export default async function DossierDetailPage({ params }: PageProps) {
     dossier.peutPasserEnAutonomie &&
     !estDossierChezLaDdt(dossier.dossiersTimeline[Step.ELIGIBILITE]?.etatDs ?? null);
 
+  // Réparation d'un dossier détaché à tort (ADR-0037), réservée au super-admin comme la file
+  // des diagnostics. Gardé par le statut : sans ce court-circuit, chaque détail paierait la requête.
+  const estSansAmo = dossier.validationStatut === StatutValidationAmo.SANS_AMO;
+  const estSuperAdmin = agentCourant.success && isSuperAdminRole(agentCourant.data.role);
+  const aRattacher = estSansAmo && estSuperAdmin ? await listerDossiersARattacher(dossier.parcoursId) : [];
+  const candidat = aRattacher[0];
+  const rattachementAmo =
+    candidat && !candidat.gele && candidat.amoCible
+      ? { amoNom: candidat.amoCible.nom, origine: candidat.amoCible.origine }
+      : null;
+
   // Le demandeur a demandé l'arrêt : l'AMO mandataire doit se prononcer.
   const arretADecider = dossier.demandeArretAt !== null && peutArreterAccompagnement;
 
@@ -179,6 +192,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   peutReinitialiserDn={peutReinitialiserDn}
                   stepCourante={dossier.currentStep}
                   estArchive={dossier.archivedAt !== null}
+                  rattachementAmo={rattachementAmo}
                 />
               )}
             </div>
