@@ -42,8 +42,11 @@
 import "../lib/env";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, rawClient } from "@/shared/database/client";
-import { parcoursPrevention, parcoursAmoValidations } from "@/shared/database/schema";
+import { parcoursPrevention, parcoursAmoValidations, dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { Step } from "@/shared/domain/value-objects/step.enum";
+import { estDossierChezLaDdt } from "@/features/parcours/amo/domain/value-objects";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import { AmoMode, resolveAmoModeForParcours } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { rattacherAmo } from "@/features/parcours/amo/services/rattachement-amo.service";
@@ -60,6 +63,8 @@ interface Candidat {
   status: string;
   dept: string;
   mode: AmoMode;
+  /** Formulaire d'éligibilité déposé, décision non rendue : le service refusera. */
+  gele: boolean;
 }
 
 /** Parcours actifs en « sans AMO » sans entreprise, dans un département à AMO automatique. */
@@ -71,9 +76,17 @@ async function inventorier(parcoursId?: string): Promise<Candidat[]> {
       currentStatus: parcoursPrevention.currentStatus,
       rgaSimulationData: parcoursPrevention.rgaSimulationData,
       rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
+      eligibiliteDsStatus: dossiersDemarchesSimplifiees.dsStatus,
     })
     .from(parcoursPrevention)
     .innerJoin(parcoursAmoValidations, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
+    .leftJoin(
+      dossiersDemarchesSimplifiees,
+      and(
+        eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id),
+        eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE)
+      )
+    )
     .where(
       and(
         eq(parcoursAmoValidations.statut, StatutValidationAmo.SANS_AMO),
@@ -96,6 +109,7 @@ async function inventorier(parcoursId?: string): Promise<Candidat[]> {
       status: row.currentStatus,
       dept: commune.startsWith("97") || commune.startsWith("98") ? commune.slice(0, 3) : commune.slice(0, 2),
       mode,
+      gele: estDossierChezLaDdt((row.eligibiliteDsStatus as DSStatus | null) ?? null),
     });
   }
   return candidats.sort((a, b) => a.dept.localeCompare(b.dept) || a.step.localeCompare(b.step));
@@ -122,10 +136,14 @@ async function main() {
     return;
   }
 
-  console.log(`${candidats.length} parcours concerné(s) :`);
+  const nbGeles = candidats.filter((c) => c.gele).length;
+  const detailGeles = nbGeles > 0 ? `, dont ${nbGeles} gelé${nbGeles > 1 ? "s" : ""} (formulaire déposé)` : "";
+
+  console.log(`${candidats.length} parcours concerné(s)${detailGeles} :`);
   console.log();
   for (const c of candidats) {
-    console.log(`  ${c.parcoursId}  dept ${c.dept.padEnd(3)}  ${c.step}/${c.status}  (${c.mode})`);
+    const marque = c.gele ? "  GELE" : "";
+    console.log(`  ${c.parcoursId}  dept ${c.dept.padEnd(3)}  ${c.step}/${c.status}  (${c.mode})${marque}`);
   }
   console.log();
   const parDept = candidats.reduce<Record<string, number>>((acc, c) => {

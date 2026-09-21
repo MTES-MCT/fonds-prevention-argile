@@ -394,6 +394,10 @@ Trois points d'application, tous adossés au même prédicat :
 - **AMO, « Ne plus accompagner »** — `arreterAccompagnementAction` ; l'entrée de menu est
   masquée par `peutArreterMaintenant` sur le détail dossier, la barrière restant la server
   action.
+- **Ops, rattachement d'une AMO** — `rattacherAmo` refuse tant que la DDT tient le formulaire.
+  Le motif vaut dans les deux sens : un dossier déposé déclare « Pas de mandataire » et le
+  préremplissage ne sait que créer, donc **attacher** une AMO après coup ment autant que la
+  détacher. `pnpm fix:rattacher-amo` marque ces dossiers `GELE` dans son inventaire.
 
 > **Deux exclusions volontaires.** Le bandeau « Je donne ma réponse » (refus d'une demande
 > d'arrêt en attente) n'est **pas** gelé : refuser maintient l'accompagnement, donc le dossier

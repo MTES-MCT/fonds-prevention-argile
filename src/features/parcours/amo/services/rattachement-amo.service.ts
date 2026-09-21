@@ -11,7 +11,10 @@ import { ActionResult } from "@/shared/types/action-result.types";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import { ACTION_TYPE_ACCOMPAGNEMENT_ARRETE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
-import { StatutValidationAmo } from "../domain/value-objects";
+import { StatutValidationAmo, estDossierChezLaDdt } from "../domain/value-objects";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { Step } from "@/shared/domain/value-objects/step.enum";
+import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
 import { AmoMode, resolveAmoModeForParcours } from "../domain/value-objects/departements-amo";
 import { normalizeCodeInsee } from "../utils/amo.utils";
 import { findFirstAmoForTerritory } from "./amo-selection.service";
@@ -36,6 +39,9 @@ export interface RattacherAmoResult {
  * Ne touche NI `current_step` NI `current_status` : un dossier déjà au diagnostic reste au
  * diagnostic, il ne fait que retrouver son accompagnateur. N'envoie aucun email et ne crée
  * aucun token — l'AMO retrouve le dossier dans son listing.
+ *
+ * Gelé entre le dépôt du formulaire d'éligibilité et la décision de la DDT, pour la même
+ * raison que l'arrêt d'accompagnement (§2.7.1).
  *
  * Pur domaine : ne vérifie NI la session NI les permissions (usage ops uniquement).
  */
@@ -68,6 +74,16 @@ export async function rattacherAmo(params: { parcoursId: string }): Promise<Acti
   }
   if (validation.statut !== StatutValidationAmo.SANS_AMO || validation.entrepriseAmoId) {
     return { success: false, error: "Ce parcours a déjà une AMO rattachée" };
+  }
+
+  // Symétrique du gel de l'arrêt (§2.7.1) : le formulaire déposé déclare « Pas de mandataire »
+  // et le préremplissage ne sait que créer — rattacher ferait instruire une fausse donnée.
+  const dossierEligibilite = await getDossierByStep(parcoursId, Step.ELIGIBILITE);
+  if (estDossierChezLaDdt((dossierEligibilite?.dsStatus as DSStatus | null) ?? null)) {
+    return {
+      success: false,
+      error: "Formulaire d'éligibilité déposé : attendre la décision de l'administration avant de rattacher une AMO",
+    };
   }
 
   const resolved = await resoudreAmoARattacher(parcours);
