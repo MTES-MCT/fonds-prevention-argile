@@ -18,14 +18,17 @@ export interface ReglesAmo {
 /**
  * Valeurs par défaut (utilisées si les variables d'environnement ne sont pas définies).
  * Configuration côté Scalingo via :
- *   - NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE   (CSV, ex. "03,36,47,54,81")
+ *   - NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE   (CSV, ex. "03,04,36,47,54,63,81")
  *   - NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES  (CSV, ex. "" pour vide, ou "32" pour activer)
+ *
+ * Les deux listes se recoupent volontairement : 03/04/54/63 imposent l'AMO **et** ont un
+ * aller-vers qui l'est aussi ; le 32 cumule sans imposer.
  *
  * Les codes sont normalisés (sans zéro initial) — alignés sur les clés du référentiel
  * `DEPARTEMENTS` de `@/shared/constants/departements.constants`.
  */
-const DEFAULT_DEPARTEMENTS_AMO_OBLIGATOIRE = ["3", "36", "47", "54", "81"] as const;
-const DEFAULT_DEPARTEMENTS_AV_AMO_FUSIONNES: readonly string[] = [];
+const DEFAULT_DEPARTEMENTS_AMO_OBLIGATOIRE = ["3", "4", "36", "47", "54", "63", "81"] as const;
+const DEFAULT_DEPARTEMENTS_AV_AMO_FUSIONNES: readonly string[] = ["3", "4", "32", "54", "63"];
 
 /**
  * Construit l'ensemble des codes département à partir d'une variable d'environnement CSV.

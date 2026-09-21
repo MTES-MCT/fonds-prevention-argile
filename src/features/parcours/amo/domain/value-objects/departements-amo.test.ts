@@ -6,9 +6,11 @@ describe("departements-amo", () => {
     describe("AMO obligatoire", () => {
       it.each([
         ["03", "Allier"],
+        ["04", "Alpes-de-Haute-Provence"],
         ["36", "Indre"],
         ["47", "Lot-et-Garonne"],
         ["54", "Meurthe-et-Moselle"],
+        ["63", "Puy-de-Dôme"],
         ["81", "Tarn"],
       ])("impose l'AMO dans le %s (%s)", (code) => {
         expect(estAmoObligatoire(code)).toBe(true);
@@ -26,11 +28,9 @@ describe("departements-amo", () => {
 
     describe("AMO facultatif", () => {
       it.each([
-        ["04", "Alpes-de-Haute-Provence"],
         ["24", "Dordogne"],
         ["32", "Gers"],
         ["59", "Nord (en attente validation préfecture)"],
-        ["63", "Puy-de-Dôme"],
         ["82", "Tarn-et-Garonne"],
       ])("n'impose pas l'AMO dans le %s (%s)", (code) => {
         expect(estAmoObligatoire(code)).toBe(false);
@@ -45,11 +45,23 @@ describe("departements-amo", () => {
       });
     });
 
-    it("aucun département ne cumule AV et AMO tant que l'env var n'est pas définie", () => {
-      const departements = ["03", "04", "24", "32", "36", "47", "54", "59", "63", "75", "81", "82"];
-      for (const code of departements) {
-        expect(avCumuleAmo(code)).toBe(false);
-      }
+    it.each([
+      ["03", "Allier"],
+      ["04", "Alpes-de-Haute-Provence"],
+      ["32", "Gers"],
+      ["54", "Meurthe-et-Moselle"],
+      ["63", "Puy-de-Dôme"],
+    ])("reconnaît l'aller-vers du %s (%s) comme étant aussi l'AMO", (code) => {
+      expect(avCumuleAmo(code)).toBe(true);
+    });
+
+    it("le Gers cumule sans imposer l'AMO : les deux axes ne se déduisent pas l'un de l'autre", () => {
+      expect(avCumuleAmo("32")).toBe(true);
+      expect(estAmoObligatoire("32")).toBe(false);
+    });
+
+    it.each(["24", "36", "47", "59", "75", "81", "82"])("ne prête aucun cumul au %s", (code) => {
+      expect(avCumuleAmo(code)).toBe(false);
     });
   });
 
