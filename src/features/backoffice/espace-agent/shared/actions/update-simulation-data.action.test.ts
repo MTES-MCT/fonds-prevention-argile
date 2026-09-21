@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { UserRole } from "@/shared/domain/value-objects";
+import { ouvrirEligibiliteApresValidationAmo } from "@/features/parcours/amo/services/ouverture-eligibilite.service";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 
 vi.mock("@/features/backoffice/shared/actions/super-admin-access", () => ({
@@ -24,6 +25,9 @@ vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({
 }));
 vi.mock("@/shared/database/repositories", () => ({
   parcoursActionsRepo: { create: vi.fn(async () => undefined) },
+}));
+vi.mock("@/features/parcours/amo/services/ouverture-eligibilite.service", () => ({
+  ouvrirEligibiliteApresValidationAmo: vi.fn(async () => true),
 }));
 vi.mock("../services/author-snapshot", () => ({
   buildAuthorSnapshot: vi.fn(async () => ({
@@ -184,6 +188,34 @@ describe("updateSimulationDataAction — recalcul du statut d'éligibilité", ()
     expect(parcoursActionsRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({ parcoursId: "parcours-1", actionType: ACTION_TYPE_DOSSIER_DESARCHIVE })
     );
+    // Redevenu éligible : l'étape doit suivre, sinon le parcours reste muet à CHOIX_AMO.
+    expect(ouvrirEligibiliteApresValidationAmo).toHaveBeenCalledWith("parcours-1");
+  });
+
+  it("n'ouvre pas l'étape éligibilité quand la correction rend le logement non éligible", async () => {
+    mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE, "amo-A");
+    vi.mocked(evaluateSimulation).mockReturnValue({
+      result: { eligible: false } as never,
+      isEligible: false,
+      isNonEligible: true,
+    });
+
+    await updateSimulationDataAction("validation-1", rgaData);
+
+    expect(ouvrirEligibiliteApresValidationAmo).not.toHaveBeenCalled();
+  });
+
+  it("n'ouvre pas l'étape éligibilité quand le verdict éligible est inchangé", async () => {
+    mockValidationRow(StatutValidationAmo.LOGEMENT_ELIGIBLE, "amo-A");
+    vi.mocked(evaluateSimulation).mockReturnValue({
+      result: { eligible: true } as never,
+      isEligible: true,
+      isNonEligible: false,
+    });
+
+    await updateSimulationDataAction("validation-1", rgaData);
+
+    expect(ouvrirEligibiliteApresValidationAmo).not.toHaveBeenCalled();
   });
 
   it("ne réécrit ni statut ni archivage quand le verdict est inchangé (reste éligible)", async () => {
