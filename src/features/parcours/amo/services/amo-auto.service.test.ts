@@ -505,3 +505,24 @@ describe("demanderAccompagnementDemandeur", () => {
     expect(db.delete).toHaveBeenCalled();
   });
 });
+
+// Sujet 2 — l'attribution doit franchir l'étape invitation : c'est la garde d'étape de
+// `selectAmoForUser`, et non celle-ci seule, qui bloque aujourd'hui la transmission.
+describe("attribution d'AMO sur un dossier non encore réclamé", () => {
+  it.todo("attribue l'AMO à un parcours encore à l'étape invitation");
+  it.todo("n'écrit pas le statut du parcours tant qu'il est à l'étape invitation");
+  it.todo("résout le territoire sur la simulation de l'agent quand le demandeur n'a pas simulé");
+});
+
+// Deux écritures concurrentes (qualification, claim, réponse AMO) ne doivent produire ni
+// doublon ni recul d'étape. Demande un test d'intégration base, pas un mock.
+describe("intégrité des transitions d'accompagnement", () => {
+  it.todo("deux écritures concurrentes ne produisent ni double token, ni double email, ni recul d'étape");
+  it.todo("l'autonomie ne détache pas une AMO apparue entre la lecture et l'écriture");
+});
+
+// L'autonomie lit aujourd'hui la seule simulation du demandeur, contrairement à ADR-0037.
+describe("skipAmoStepForUser — résolution territoriale", () => {
+  it.todo("résout le département avec repli sur la simulation de l'agent");
+  it.todo("refuse quand aucune des deux simulations ne porte de commune exploitable");
+});

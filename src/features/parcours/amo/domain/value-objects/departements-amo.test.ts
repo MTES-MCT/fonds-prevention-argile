@@ -106,3 +106,15 @@ describe("departements-amo", () => {
     });
   });
 });
+
+// Spec à implémenter : obligation d'AMO et cumul AV/AMO sont deux axes indépendants.
+// Le 32 cumule sans rendre l'AMO obligatoire — l'enum à trois valeurs ne sait pas le dire.
+describe("règles départementales — obligation et cumul AV/AMO", () => {
+  it.todo("32 : AMO non obligatoire, donc l'autonomie reste possible malgré le cumul AV/AMO");
+  it.todo("32 : le cumul AV/AMO autorise la validation fusionnée sans rendre l'AMO obligatoire");
+  it.todo("32 : aucune auto-attribution spontanée d'AMO — le demandeur garde le choix");
+  it.todo("03 : AMO obligatoire et cumul AV/AMO — autonomie refusée, validation fusionnée autorisée");
+  it.todo("36 : AMO obligatoire sans cumul — autonomie refusée, validation fusionnée refusée");
+  it.todo("24 : ni obligation ni cumul — autonomie possible, validation fusionnée refusée");
+  it.todo("commune introuvable : refuse au lieu de supposer un département facultatif");
+});

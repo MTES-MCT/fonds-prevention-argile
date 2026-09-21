@@ -199,3 +199,53 @@ describe("qualificationService.qualifyProspect — auto-lien AMO (dépt obligato
     expect(qualification).toMatchObject({ decision: QualificationDecision.ELIGIBLE });
   });
 });
+
+// Sujet 1 — là où l'Aller-vers et l'AMO sont la même structure, la qualification EST la
+// validation AMO : plus de second tour, plus d'email, accès direct au formulaire.
+describe("qualification Aller-vers valant validation AMO (départements à cumul)", () => {
+  it.todo("pose la validation en logement éligible avec valideeAt, sans email de validation");
+  it.todo("rattache l'entreprise AMO de l'agent, jamais la première AMO trouvée sur le territoire");
+  it.todo("reprend l'engagement de mandataire financier saisi dans le même formulaire");
+  it.todo("ouvre l'étape éligibilité : un parcours à choix AMO passe à éligibilité / à faire");
+  it.todo("laisse le parcours à l'étape invitation tant que le demandeur n'a pas réclamé son dossier");
+  it.todo("trace une acceptation d'éligibilité distincte de la qualification, avec l'agent et son entreprise");
+  it.todo("n'émet aucun token de validation : il n'y a plus de second tour à ouvrir");
+
+  it.todo("ne vaut pas validation si l'agent n'a pas d'entreprise AMO : transmission normale à l'AMO");
+  it.todo("ne vaut pas validation si l'entreprise de l'agent ne couvre pas la commune du logement");
+  it.todo("ne vaut pas validation dans un département sans cumul AV/AMO");
+  it.todo("n'écrase pas une décision AMO déjà rendue, ni une AMO d'une autre entreprise");
+  it.todo("ne réactive pas un dossier archivé ni un parcours déjà au diagnostic");
+});
+
+// Sujet 2 — la qualification éligible vaut demande d'accompagnement : le demandeur n'a jamais
+// à la formuler, et la transmission ne dépend pas de sa venue sur son espace.
+describe("transmission à l'AMO dès la qualification (départements à AMO obligatoire)", () => {
+  it.todo("transmet le dossier à l'AMO du territoire : validation en attente, email et token");
+  it.todo("transmet un dossier encore à l'étape invitation, avant que le demandeur ait réclamé son compte");
+  it.todo("transmet un dossier dont seule la simulation de l'agent porte la commune");
+  it.todo("n'exige pas le téléphone du demandeur, absent des dossiers créés par un Aller-vers");
+  it.todo("remonte l'échec de transmission à l'agent au lieu de le journaliser en silence");
+  it.todo("n'invalide pas la qualification quand la transmission échoue : la décision reste enregistrée");
+
+  it.todo("ne transmet pas sur une décision « à qualifier » ou « non éligible »");
+  it.todo("ne transmet pas dans un département où l'AMO est facultatif");
+  it.todo("ne recrée ni validation ni token quand une validation existe déjà");
+  it.todo("ne remet jamais en attente une AMO qui a déjà rendu sa décision");
+});
+
+// Sujet 3 — l'Aller-vers tranche quand le demandeur ne l'a pas fait ; un choix déjà exprimé
+// par le demandeur prime toujours sur la qualification.
+describe("l'Aller-vers tranche l'accompagnement (départements à AMO facultatif)", () => {
+  it.todo("accompagnement : attribue l'AMO du territoire et met la validation en attente");
+  it.todo("autonomie : pose « sans AMO » et ouvre l'étape éligibilité");
+  it.todo("ne sait pas : ne touche pas à l'accompagnement, le demandeur garde le choix");
+  it.todo("autonomie : résout le département même quand seule la simulation de l'agent porte la commune");
+  it.todo("trace la décision avec l'agent comme auteur, jamais le demandeur");
+
+  it.todo("la question n'est posée que sur une décision « éligible »");
+  it.todo("la question n'est pas posée là où l'AMO est obligatoire");
+  it.todo("respecte un choix déjà fait : n'écrase ni « sans AMO » ni une AMO en attente ou validée");
+  it.todo("refuse de changer l'accompagnement pendant que la DDT tient le formulaire d'éligibilité");
+  it.todo("refuse sur un dossier archivé");
+});

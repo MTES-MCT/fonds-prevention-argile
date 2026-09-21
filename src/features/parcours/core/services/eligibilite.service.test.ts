@@ -248,3 +248,11 @@ describe("createEligibiliteDossier — champ « état de la maison »", () => {
     warn.mockRestore();
   });
 });
+
+// Le blocage « AMO pas encore répondu » ne vit aujourd'hui que dans trois composants
+// d'affichage : une requête depuis un écran périmé crée encore le formulaire.
+describe("garde serveur de création du formulaire d'éligibilité", () => {
+  it.todo("refuse la création tant que l'AMO sollicitée n'a pas répondu");
+  it.todo("autorise la création dès que l'AMO a validé");
+  it.todo("autorise la création pour un parcours en autonomie");
+});

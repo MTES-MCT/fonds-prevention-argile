@@ -204,3 +204,10 @@ describe("getStepBadgeLabel", () => {
     expect(getStepBadgeLabel(null)).toBe("");
   });
 });
+
+// Sujet 3 — quand l'Aller-vers a tranché, on ne repose pas la question au demandeur.
+describe("surfaces demandeur après décision de l'Aller-vers", () => {
+  it.todo("n'affiche plus le choix d'accompagnement quand l'Aller-vers a tranché");
+  it.todo("affiche toujours le choix quand l'Aller-vers a répondu « ne sait pas »");
+  it.todo("un département à cumul AV/AMO mais facultatif ne déclenche aucune attribution silencieuse");
+});

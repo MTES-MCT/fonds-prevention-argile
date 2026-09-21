@@ -260,3 +260,20 @@ describe("ParcoursPreventionRepository — invitation", () => {
     });
   });
 });
+
+// L'étape invitation tient jusqu'au claim : c'est elle qui conditionne la promotion de la
+// simulation de l'agent. Le routage doit donc couvrir les cinq états de validation.
+describe("validateInvitation — routage au claim selon la validation", () => {
+  it.todo("sans validation : route vers choix AMO / à faire");
+  it.todo("validation en attente : route vers choix AMO / en instruction");
+  it.todo("validation « sans AMO » : route vers éligibilité / à faire");
+  it.todo("refus d'éligibilité : conserve le blocage, sans ouvrir l'étape éligibilité");
+  it.todo("ne recule pas une étape déjà avancée par une approbation concurrente");
+});
+
+// Angle mort actuel : une AMO qui valide avant le claim sort le parcours de l'étape
+// invitation, et la simulation de l'agent n'est alors jamais promue.
+describe("promotion de la simulation de l'agent au claim", () => {
+  it.todo("promeut la simulation de l'agent même si l'AMO a validé avant le claim");
+  it.todo("l'attribut « a une AMO » de l'évènement de création reflète la validation déjà posée");
+});
