@@ -11,6 +11,17 @@ import { QualificationDecision } from "../domain/types";
 import { ACTION_TYPE_BY_DECISION, buildQualificationAuditMessage } from "../domain/qualification-audit";
 import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 
+/**
+ * Verdict de la transmission à l'AMO. `null` = sans objet (décision non éligible, ou
+ * département où le ménage choisit lui-même son accompagnement).
+ */
+export type TransmissionAmo = { transmise: boolean; raison: string } | null;
+
+export interface QualifyProspectResult {
+  qualification: ProspectQualification;
+  transmissionAmo: TransmissionAmo;
+}
+
 interface QualifyProspectParams {
   parcoursId: string;
   agentId: string;
@@ -32,7 +43,7 @@ export class QualificationService {
    * - "non_eligible" → situation_particulier passe à ARCHIVE
    * - "a_qualifier" → pas de changement de situation_particulier
    */
-  async qualifyProspect(params: QualifyProspectParams): Promise<ProspectQualification> {
+  async qualifyProspect(params: QualifyProspectParams): Promise<QualifyProspectResult> {
     const { parcoursId, agentId, decision, actionsRealisees, raisonsIneligibilite, estMandataireFinancier, note } =
       params;
 
@@ -54,11 +65,12 @@ export class QualificationService {
     });
 
     // 3. Mettre à jour situation_particulier selon la décision
+    let transmissionAmo: TransmissionAmo = null;
     if (decision === QualificationDecision.ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(parcoursId, SituationParticulier.ELIGIBLE);
       // Là où l'AMO est imposé, la validation de l'Aller-vers met directement le dossier
       // en lien avec l'AMO du territoire, sans attendre la demande du ménage.
-      await this.autoLinkAmoIfObligatoire(parcours);
+      transmissionAmo = await this.autoLinkAmoIfObligatoire(parcours);
     } else if (decision === QualificationDecision.NON_ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(
         parcoursId,
@@ -81,30 +93,35 @@ export class QualificationService {
       message: buildQualificationAuditMessage({ decision, raisonsIneligibilite, estMandataireFinancier, note }),
     });
 
-    return qualification;
+    return { qualification, transmissionAmo };
   }
 
   /**
-   * Met le dossier en lien direct avec l'AMO du territoire si le département impose
-   * un AMO. Best-effort : `assignAmoAutomatiqueForUser`
-   * est idempotent (no-op success si une validation existe déjà) et gardé à l'étape
-   * choix_amo (renvoie success:false sinon) — cet échec est ignoré (loggé) et ne doit
-   * jamais faire échouer la qualification déjà enregistrée.
+   * Met le dossier en lien direct avec l'AMO du territoire si le département impose un AMO.
+   *
+   * Best-effort sur la mutation (un échec ne fait jamais échouer la qualification déjà
+   * enregistrée) mais **pas silencieux** : le verdict remonte à l'agent, qui croyait sinon
+   * avoir passé la main alors que rien n'était parti vers l'AMO.
    */
   private async autoLinkAmoIfObligatoire(
     parcours: NonNullable<Awaited<ReturnType<typeof parcoursPreventionRepository.findById>>>
-  ): Promise<void> {
+  ): Promise<TransmissionAmo> {
     try {
       const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
-      if (!codeInsee) return;
-      if (!estAmoObligatoire(getCodeDepartementFromCodeInsee(codeInsee))) return;
+      if (!codeInsee) {
+        return { transmise: false, raison: "Commune du logement inconnue : AMO non sollicitée." };
+      }
+      if (!estAmoObligatoire(getCodeDepartementFromCodeInsee(codeInsee))) return null;
 
       const result = await assignAmoAutomatiqueForUser(parcours.userId);
       if (!result.success) {
         console.warn(`[qualifyProspect] auto-lien AMO non appliqué (parcours ${parcours.id}): ${result.error}`);
+        return { transmise: false, raison: result.error };
       }
+      return { transmise: true, raison: result.data.message };
     } catch (error) {
       console.error(`[qualifyProspect] échec auto-lien AMO (parcours ${parcours.id}):`, error);
+      return { transmise: false, raison: "Erreur technique lors de la transmission à l'AMO." };
     }
   }
 

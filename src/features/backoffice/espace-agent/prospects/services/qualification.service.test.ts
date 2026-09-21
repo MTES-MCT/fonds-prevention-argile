@@ -130,11 +130,11 @@ describe("qualificationService.qualifyProspect — audit de la réponse Aller-ve
 
 describe("qualificationService.qualifyProspect — auto-lien AMO (dépt obligatoire)", () => {
   // Commune en dept 03 (Allier) = AMO obligatoire par défaut ; dept 59 (Nord) = facultatif.
-  function mockParcours(commune: string) {
+  function mockParcours(commune: string | null) {
     return {
       id: "parcours-1",
       userId: "user-1",
-      rgaSimulationData: { logement: { commune } },
+      rgaSimulationData: commune ? { logement: { commune } } : null,
       rgaSimulationDataAgent: null,
     };
   }
@@ -186,17 +186,72 @@ describe("qualificationService.qualifyProspect — auto-lien AMO (dépt obligato
     expect(assignAmoAutomatiqueForUser).not.toHaveBeenCalled();
   });
 
-  it("n'échoue pas la qualification si l'auto-lien AMO échoue (best-effort)", async () => {
+  it("n'invalide pas la qualification quand la transmission échoue : la décision reste enregistrée", async () => {
     vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(mockParcours("03185") as never);
     vi.mocked(assignAmoAutomatiqueForUser).mockResolvedValueOnce({ success: false, error: "boom" });
 
-    const qualification = await qualificationService.qualifyProspect({
+    const { qualification } = await qualificationService.qualifyProspect({
       parcoursId: "parcours-1",
       agentId: "agent-1",
       decision: QualificationDecision.ELIGIBLE,
     });
 
     expect(qualification).toMatchObject({ decision: QualificationDecision.ELIGIBLE });
+  });
+
+  it("remonte l'échec de transmission à l'agent au lieu de le journaliser en silence", async () => {
+    vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(mockParcours("03185") as never);
+    vi.mocked(assignAmoAutomatiqueForUser).mockResolvedValueOnce({ success: false, error: "Aucun AMO disponible" });
+
+    const { transmissionAmo } = await qualificationService.qualifyProspect({
+      parcoursId: "parcours-1",
+      agentId: "agent-1",
+      decision: QualificationDecision.ELIGIBLE,
+    });
+
+    expect(transmissionAmo).toEqual({ transmise: false, raison: "Aucun AMO disponible" });
+  });
+
+  it("confirme la transmission quand l'AMO a bien été sollicitée", async () => {
+    vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(mockParcours("03185") as never);
+    vi.mocked(assignAmoAutomatiqueForUser).mockResolvedValueOnce({
+      success: true,
+      data: { message: "AMO sélectionnée avec succès", token: "t" },
+    });
+
+    const { transmissionAmo } = await qualificationService.qualifyProspect({
+      parcoursId: "parcours-1",
+      agentId: "agent-1",
+      decision: QualificationDecision.ELIGIBLE,
+    });
+
+    expect(transmissionAmo).toMatchObject({ transmise: true });
+  });
+
+  it("ne transmet pas dans un département où l'AMO est facultatif", async () => {
+    vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(mockParcours("82013") as never);
+
+    const { transmissionAmo } = await qualificationService.qualifyProspect({
+      parcoursId: "parcours-1",
+      agentId: "agent-1",
+      decision: QualificationDecision.ELIGIBLE,
+    });
+
+    expect(transmissionAmo).toBeNull();
+    expect(assignAmoAutomatiqueForUser).not.toHaveBeenCalled();
+  });
+
+  it("signale une commune inconnue au lieu de transmettre à l'aveugle", async () => {
+    vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(mockParcours(null) as never);
+
+    const { transmissionAmo } = await qualificationService.qualifyProspect({
+      parcoursId: "parcours-1",
+      agentId: "agent-1",
+      decision: QualificationDecision.ELIGIBLE,
+    });
+
+    expect(transmissionAmo).toMatchObject({ transmise: false });
+    expect(assignAmoAutomatiqueForUser).not.toHaveBeenCalled();
   });
 });
 
@@ -225,11 +280,8 @@ describe("transmission à l'AMO dès la qualification (départements à AMO obli
   it.todo("transmet un dossier encore à l'étape invitation, avant que le demandeur ait réclamé son compte");
   it.todo("transmet un dossier dont seule la simulation de l'agent porte la commune");
   it.todo("n'exige pas le téléphone du demandeur, absent des dossiers créés par un Aller-vers");
-  it.todo("remonte l'échec de transmission à l'agent au lieu de le journaliser en silence");
-  it.todo("n'invalide pas la qualification quand la transmission échoue : la décision reste enregistrée");
 
   it.todo("ne transmet pas sur une décision « à qualifier » ou « non éligible »");
-  it.todo("ne transmet pas dans un département où l'AMO est facultatif");
   it.todo("ne recrée ni validation ni token quand une validation existe déjà");
   it.todo("ne remet jamais en attente une AMO qui a déjà rendu sa décision");
 });

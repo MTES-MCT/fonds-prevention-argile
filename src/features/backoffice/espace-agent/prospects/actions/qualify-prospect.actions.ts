@@ -7,7 +7,7 @@ import { hasPermission } from "@/features/auth/permissions/services/rbac.service
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { UserRole } from "@/shared/domain/value-objects";
 import { QualificationDecision } from "../domain/types";
-import { qualificationService } from "../services/qualification.service";
+import { qualificationService, type QualifyProspectResult } from "../services/qualification.service";
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import { assertCanActAsResponsable } from "@/features/auth/permissions/services/responsable-permissions.service";
@@ -51,7 +51,7 @@ type QualifyProspectInput = z.infer<typeof qualifyProspectSchema>;
  *
  * Vérifie que l'agent connecté est un agent Allers-Vers.
  */
-export async function qualifyProspectAction(input: QualifyProspectInput): Promise<ActionResult<ProspectQualification>> {
+export async function qualifyProspectAction(input: QualifyProspectInput): Promise<ActionResult<QualifyProspectResult>> {
   try {
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
@@ -96,7 +96,7 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
     if (!guard.ok) return { success: false, error: guard.error };
 
     // 6. Logique métier
-    const qualification = await qualificationService.qualifyProspect({
+    const resultat = await qualificationService.qualifyProspect({
       parcoursId,
       agentId: user.agentId,
       decision,
@@ -109,7 +109,7 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
     // 7. Invalidation du cache
     revalidatePath("/espace-agent", "layout");
 
-    return { success: true, data: qualification };
+    return { success: true, data: resultat };
   } catch (error) {
     console.error("[qualifyProspectAction] Erreur:", error);
     return { success: false, error: "Erreur lors de la qualification du prospect" };

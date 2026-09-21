@@ -315,6 +315,14 @@ export function QualificationForm({
         return;
       }
 
+      // La transmission à l'AMO est best-effort : si elle a échoué, l'agent doit le savoir
+      // maintenant, sinon il quitte l'écran en croyant avoir passé la main.
+      const transmission = result.data.transmissionAmo;
+      if (transmission && !transmission.transmise) {
+        setError(`Qualification enregistrée, mais le dossier n'a pas été transmis à l'AMO : ${transmission.raison}`);
+        return;
+      }
+
       onSuccess();
       router.refresh();
     });
