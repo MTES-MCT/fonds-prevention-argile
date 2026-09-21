@@ -59,6 +59,8 @@ export const ACTION_TYPE_SIMULATION_NON_ELIGIBLE = "simulation_non_eligible";
 export const ACTION_TYPE_DOSSIER_ARCHIVE = "dossier_archive";
 /** Action système : dé-archivage du dossier (retour dans le suivi actif). */
 export const ACTION_TYPE_DOSSIER_DESARCHIVE = "dossier_desarchive";
+/** Action système : une AMO a été rerattachée à un dossier détaché à tort (ADR-0037). */
+export const ACTION_TYPE_AMO_RATTACHEE = "amo_rattachee";
 /** Valeur de type d'action "Autre" (nécessite une précision) */
 export const ACTION_TYPE_AUTRE = "autre";
 
@@ -153,6 +155,7 @@ export const ACTION_LABELS_BY_VALUE: Record<string, string> = ACTION_TYPE_GROUPS
     [ACTION_TYPE_SIMULATION_NON_ELIGIBLE]: "⛔ Non éligible — simulation du demandeur",
     [ACTION_TYPE_DOSSIER_ARCHIVE]: "📦 Dossier archivé",
     [ACTION_TYPE_DOSSIER_DESARCHIVE]: "📤 Dossier désarchivé",
+    [ACTION_TYPE_AMO_RATTACHEE]: "🔗 AMO rattachée",
   } as Record<string, string>
 );
 
@@ -178,6 +181,7 @@ export const ACTION_TYPES_SYSTEME: ReadonlySet<string> = new Set([
   ACTION_TYPE_SIMULATION_NON_ELIGIBLE,
   ACTION_TYPE_DOSSIER_ARCHIVE,
   ACTION_TYPE_DOSSIER_DESARCHIVE,
+  ACTION_TYPE_AMO_RATTACHEE,
 ]);
 
 /** Une action système est une trace d'audit : lecture seule dans l'historique. */

@@ -123,7 +123,7 @@ export async function rattacherAmo(params: { parcoursId: string }): Promise<Acti
  * L'AMO d'origine d'abord (agent du dernier `accompagnement_arrete`), le territoire ensuite :
  * un détachement par le script ops ne laisse aucune trace d'audit.
  */
-async function resoudreAmoARattacher(parcours: {
+export async function resoudreAmoARattacher(parcours: {
   id: string;
   rgaSimulationData: unknown;
   rgaSimulationDataAgent: unknown;

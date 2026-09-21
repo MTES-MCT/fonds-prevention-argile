@@ -9,9 +9,12 @@ import {
 import { Step, STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
 import DiagnosticsPanel from "./DiagnosticsPanel";
 import { FileReconciliation } from "./FileReconciliation";
+import { FileAmoARattacher } from "./FileAmoARattacher";
+import { listerDossiersARattacherAction } from "@/features/backoffice/administration/diagnostics/actions/amo-a-rattacher.actions";
+import type { DossierARattacher } from "@/features/backoffice/administration/diagnostics/services/amo-a-rattacher.service";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 
-type Onglet = "rattacher" | "arbitrer" | "etats";
+type Onglet = "rattacher" | "arbitrer" | "amo" | "etats";
 
 /** Ce que chaque onglet contient et ce qu'on est censé y faire. */
 const AIDE_ONGLET: Record<Onglet, { titre: string; contenu: ReactNode }> = {
@@ -56,6 +59,27 @@ const AIDE_ONGLET: Record<Onglet, { titre: string; contenu: ReactNode }> = {
       </>
     ),
   },
+  amo: {
+    titre: "Des demandeurs n'ont plus d'AMO là où elle est obligatoire",
+    contenu: (
+      <>
+        <p className="fr-mb-1v">
+          Ces parcours ont été détachés de leur AMO dans un département où l&apos;arrêté en impose une : le demandeur
+          n&apos;est plus accompagné, et personne ne peut revenir en arrière depuis l&apos;espace agent —
+          l&apos;entreprise ayant été retirée, elle ne voit plus le dossier. La garde qui empêche ce détachement est en
+          place, cette file draine ce qui a été produit avant, et ce qu&apos;un changement de département
+          réintroduirait.
+        </p>
+        <p className="fr-mb-0">
+          <strong>Rattacher</strong> remet l&apos;AMO d&apos;origine — retrouvée dans l&apos;historique du dossier — ou
+          à défaut celle du territoire. L&apos;étape du parcours n&apos;est pas touchée, aucun email n&apos;est envoyé,
+          et la demande repasse <strong>en attente de validation</strong> : l&apos;AMO devra re-confirmer
+          l&apos;éligibilité, la date de sa décision d&apos;origine ayant été perdue au détachement. Prévenez-la avant :
+          le dossier réapparaît sans préavis dans sa file.
+        </p>
+      </>
+    ),
+  },
   etats: {
     titre: "Vue détaillée de l'état de chaque parcours actif",
     contenu: (
@@ -78,14 +102,19 @@ const STEPS_ANALYSABLES = [Step.ELIGIBILITE, Step.DIAGNOSTIC, Step.DEVIS];
 export default function DiagnosticsTabs() {
   const [onglet, setOnglet] = useState<Onglet>("rattacher");
   const [files, setFiles] = useState<FilesReconciliation | null>(null);
+  const [dossiersAmo, setDossiersAmo] = useState<DossierARattacher[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [analyseEnCours, setAnalyseEnCours] = useState<Step | null>(null);
   const [messageAnalyse, setMessageAnalyse] = useState<string | null>(null);
 
   const charger = useCallback(async () => {
-    const result = await listerFilesReconciliationAction();
-    if (result.success) setFiles(result.data);
-    else setErreur(result.error);
+    const [reconciliation, amo] = await Promise.all([
+      listerFilesReconciliationAction(),
+      listerDossiersARattacherAction(),
+    ]);
+    if (reconciliation.success) setFiles(reconciliation.data);
+    else setErreur(reconciliation.error);
+    if (amo.success) setDossiersAmo(amo.data);
   }, []);
 
   useEffect(() => {
@@ -122,6 +151,7 @@ export default function DiagnosticsTabs() {
   const onglets: Array<{ id: Onglet; label: string }> = [
     { id: "rattacher", label: `À rattacher${nbRattacher ? ` (${nbRattacher})` : ""}` },
     { id: "arbitrer", label: `À arbitrer${nbArbitrer ? ` (${nbArbitrer})` : ""}` },
+    { id: "amo", label: `AMO à rattacher${dossiersAmo.length ? ` (${dossiersAmo.length})` : ""}` },
     { id: "etats", label: "États des parcours" },
   ];
 
@@ -171,7 +201,7 @@ export default function DiagnosticsTabs() {
                 <div className="fr-callout__text fr-text--sm">{AIDE_ONGLET[onglet].contenu}</div>
               </div>
 
-              {onglet !== "etats" && (
+              {(onglet === "rattacher" || onglet === "arbitrer") && (
                 <div className="fr-mb-3w">
                   <p className="fr-text--sm fr-mb-1w">
                     L&apos;analyse interroge Démarches Numériques et remplit ces deux files. Elle ne modifie aucun
@@ -215,6 +245,8 @@ export default function DiagnosticsTabs() {
                   onResolved={charger}
                 />
               )}
+
+              {onglet === "amo" && <FileAmoARattacher dossiers={dossiersAmo} onResolved={charger} />}
 
               {onglet === "etats" && <DiagnosticsPanel embedded />}
             </div>

@@ -346,6 +346,12 @@ territoire dans la majorité des cas, donc personne pour reprendre le dossier : 
 l'AMO y est « Archiver », qui garde le lien et reste réversible. L'entrée de menu est masquée
 en conséquence, la barrière restant la server action.
 
+> **Deux surfaces, une seule source.** L'onglet « AMO à rattacher » de `/administration/diagnostics`
+> (super-admin) et le script ops lisent le même `listerDossiersARattacher` : ils ne peuvent pas
+> compter des populations différentes. L'écran montre l'AMO qui serait rattachée **avant** le clic,
+> et affiche les dossiers gelés sans permettre de les traiter. Contrairement au script — action ops
+> sans agent connecté — l'action UI trace la décision (`amo_rattachee`, ADR-0028).
+
 > **Rattrapage des dossiers déjà détachés à tort** : `pnpm fix:rattacher-amo`
 > (dry-run par défaut, `--apply`, `--parcours-id`). Ne traite que les parcours actifs en
 > `sans_amo` sans entreprise **en département à attribution automatique** — ailleurs

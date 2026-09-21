@@ -497,6 +497,7 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Garde administration                  | `src/app/(backoffice)/administration/page.tsx`                                                                          |
 | Garde entreprise AMO                  | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                          |
 | Garde ré-ouverture demande            | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                   |
+| Garde file « AMO à rattacher »        | `administration/diagnostics/actions/amo-a-rattacher.actions.ts` (`ensureSuperAdmin`) — super-admin seul                 |
 | Garde arrêt d'accompagnement          | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts` |
 | Garde refus accompagnement (éligible) | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                   |
 | Garde rattachement / réinit. DN       | `espace-agent/shared/services/dossier-dn-permissions.service.ts` (`verifierAccesDossierDn`)                             |
