@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef, useId } from "react";
-import { useRouter } from "next/navigation";
 import {
   QUALIFICATION_DECISIONS,
   QualificationDecision,
@@ -203,7 +202,6 @@ export function QualificationForm({
   isUpdate,
   initialValues,
 }: QualificationFormProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   // Parse des valeurs initiales (gère le format "autre:précision")
@@ -344,8 +342,11 @@ export function QualificationForm({
         return;
       }
 
+      // Rechargement complet, pas `router.refresh()` : « Actions réalisées » est un composant
+      // client qui charge ses données dans un effet — un re-render des Server Components ne le
+      // remonte pas, et la trace de qualification n'apparaissait qu'au F5 suivant (§2.10).
       onSuccess();
-      router.refresh();
+      window.location.reload();
     });
   }
 
