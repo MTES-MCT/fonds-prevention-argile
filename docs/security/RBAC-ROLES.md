@@ -479,26 +479,27 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 
 ## 7. Fichiers clés
 
-| Rôle                                  | Fichier                                                                                                                 |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Enum des rôles                        | `src/shared/domain/value-objects/user-role.enum.ts`                                                                     |
-| Service de permissions                | `src/features/auth/permissions/services/permissions.service.ts`                                                         |
-| Matrice permissions / onglets         | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                                                |
-| Périmètre données agent               | `src/features/auth/permissions/services/agent-scope.service.ts`                                                         |
-| Scope stats national (ADR-0017)       | `agent-scope.service.ts` (`getStatsScopeFilters`, `canViewNationalStats`)                                               |
-| Projection stats anonymisée           | `src/features/backoffice/administration/demandeurs/services/users-tracking.service.ts` (`toStatsProjection`)            |
-| Service RBAC (onglets)                | `src/features/auth/permissions/services/rbac.service.ts`                                                                |
-| Config des routes / redirections      | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                       |
-| Aiguillage auth                       | `src/middleware.ts`                                                                                                     |
-| Coupure d'accès agent désactivé       | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)              |
-| Garde-fou suppression d'agent         | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`) + `agents.repository.ts` (`countTraces`)       |
-| Retrait des listes de diffusion       | `administration/agents/services/listes-diffusion.service.ts`                                                            |
-| Garde espace agent                    | `src/app/(backoffice)/espace-agent/layout.tsx`                                                                          |
-| Garde administration                  | `src/app/(backoffice)/administration/page.tsx`                                                                          |
-| Garde entreprise AMO                  | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                          |
-| Garde ré-ouverture demande            | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                   |
-| Garde arrêt d'accompagnement          | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts` |
-| Garde refus accompagnement (éligible) | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                   |
-| Garde rattachement / réinit. DN       | `espace-agent/shared/services/dossier-dn-permissions.service.ts` (`verifierAccesDossierDn`)                             |
-| Garde édition simulation              | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)       |
-| Résolution du permalien parcours      | `dossiers/services/admin-url-resolver.service.ts` (`resolveEspaceAgentPath`) — chemin seul, aucune donnée               |
+| Rôle                                  | Fichier                                                                                                                                                  |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Enum des rôles                        | `src/shared/domain/value-objects/user-role.enum.ts`                                                                                                      |
+| Service de permissions                | `src/features/auth/permissions/services/permissions.service.ts`                                                                                          |
+| Matrice permissions / onglets         | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                                                                                 |
+| Périmètre données agent               | `src/features/auth/permissions/services/agent-scope.service.ts`                                                                                          |
+| Scope stats national (ADR-0017)       | `agent-scope.service.ts` (`getStatsScopeFilters`, `canViewNationalStats`)                                                                                |
+| Projection stats anonymisée           | `src/features/backoffice/administration/demandeurs/services/users-tracking.service.ts` (`toStatsProjection`)                                             |
+| Service RBAC (onglets)                | `src/features/auth/permissions/services/rbac.service.ts`                                                                                                 |
+| Config des routes / redirections      | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                                                        |
+| Aiguillage auth                       | `src/middleware.ts`                                                                                                                                      |
+| Coupure d'accès agent désactivé       | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)                                               |
+| Garde-fou suppression d'agent         | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`) + `agents.repository.ts` (`countTraces`)                                        |
+| Retrait des listes de diffusion       | `administration/agents/services/listes-diffusion.service.ts`                                                                                             |
+| Garde espace agent                    | `src/app/(backoffice)/espace-agent/layout.tsx`                                                                                                           |
+| Garde administration                  | `src/app/(backoffice)/administration/page.tsx`                                                                                                           |
+| Garde entreprise AMO                  | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                                                           |
+| Garde ré-ouverture demande            | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                                                    |
+| Garde rattachement d'une AMO          | `administration/diagnostics/actions/amo-a-rattacher.actions.ts` (`ensureSuperAdmin`) — super-admin seul, file des diagnostics comme entrée du menu Gérer |
+| Garde arrêt d'accompagnement          | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts`                                  |
+| Garde refus accompagnement (éligible) | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                                                    |
+| Garde rattachement / réinit. DN       | `espace-agent/shared/services/dossier-dn-permissions.service.ts` (`verifierAccesDossierDn`)                                                              |
+| Garde édition simulation              | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)                                        |
+| Résolution du permalien parcours      | `dossiers/services/admin-url-resolver.service.ts` (`resolveEspaceAgentPath`) — chemin seul, aucune donnée                                                |

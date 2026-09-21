@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ROUTES } from "@/features/auth/domain/value-objects";
 import { ArchiveModal } from "../../../shared/components/ArchiveModal";
 import { UnarchiveModal } from "../../../shared/components/UnarchiveModal";
+import { RattacherAmoModal } from "../../../shared/components/RattacherAmoModal";
 import { ArretAccompagnementModal } from "../../../shared/components/ArretAccompagnementModal";
 import { RattacherDossierDnModal } from "../../../shared/components/RattacherDossierDnModal";
 import { ReinitialiserDossierDnModal } from "../../../shared/components/ReinitialiserDossierDnModal";
@@ -27,6 +28,8 @@ interface GererDossierMenuProps {
   ouvrirArretAuMontage?: boolean;
   /** Dossier archivé : « Archiver » laisse place à « Désarchiver ». */
   estArchive: boolean;
+  /** Dossier sans AMO en département obligatoire, réparable par un super-admin (ADR-0037). */
+  rattachementAmo: { amoNom: string; origine: "audit" | "territoire" } | null;
 }
 
 /**
@@ -41,10 +44,12 @@ export function GererDossierMenu({
   stepCourante,
   ouvrirArretAuMontage = false,
   estArchive,
+  rattachementAmo,
 }: GererDossierMenuProps) {
   const router = useRouter();
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isUnarchiveOpen, setIsUnarchiveOpen] = useState(false);
+  const [isRattacherAmoOpen, setIsRattacherAmoOpen] = useState(false);
   const [isArretOpen, setIsArretOpen] = useState(ouvrirArretAuMontage);
   const [isRattacherOpen, setIsRattacherOpen] = useState(false);
   const [isReinitOpen, setIsReinitOpen] = useState(false);
@@ -89,6 +94,15 @@ export function GererDossierMenu({
                 },
               ]
             : []),
+          ...(rattachementAmo
+            ? [
+                {
+                  label: "Rattacher une AMO",
+                  icon: "fr-icon-links-line",
+                  onClick: () => setIsRattacherAmoOpen(true),
+                },
+              ]
+            : []),
           ...(peutArreterAccompagnement
             ? [
                 {
@@ -108,6 +122,20 @@ export function GererDossierMenu({
         parcoursId={parcoursId}
         onSuccess={backToListing}
       />
+
+      {rattachementAmo && (
+        <RattacherAmoModal
+          isOpen={isRattacherAmoOpen}
+          onClose={() => setIsRattacherAmoOpen(false)}
+          parcoursId={parcoursId}
+          amoNom={rattachementAmo.amoNom}
+          origine={rattachementAmo.origine}
+          onSuccess={() => {
+            setIsRattacherAmoOpen(false);
+            router.refresh();
+          }}
+        />
+      )}
 
       {/* Le dé-archivage ramène le dossier dans le périmètre de l'agent : on reste sur la page. */}
       <UnarchiveModal

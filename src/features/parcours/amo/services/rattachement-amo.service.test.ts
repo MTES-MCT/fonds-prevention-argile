@@ -8,9 +8,12 @@ vi.mock("@/shared/database/client", () => ({
   db: { select: vi.fn(), update: vi.fn() },
 }));
 vi.mock("./amo-selection.service", () => ({ findFirstAmoForTerritory: vi.fn() }));
+vi.mock("../../dossiers-ds/services/dossier-ds.service", () => ({ getDossierByStep: vi.fn() }));
 
 import { rattacherAmo } from "./rattachement-amo.service";
 import { findFirstAmoForTerritory } from "./amo-selection.service";
+import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 
 /** Chaîne `db.select().from().where().limit()` -> rows (un appel). */
 function mockSelectOnce(rows: unknown[]) {
@@ -57,6 +60,7 @@ const validationDetachee = { id: "val-1", statut: StatutValidationAmo.SANS_AMO, 
 describe("rattacherAmo", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getDossierByStep).mockResolvedValue(null as never);
   });
 
   it("restaure l'AMO d'origine trouvée dans la trace d'audit, en en_attente", async () => {
@@ -144,5 +148,35 @@ describe("rattacherAmo", () => {
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("Aucune AMO");
     expect(sets).toHaveLength(0);
+  });
+
+  it.each([DSStatus.EN_CONSTRUCTION, DSStatus.EN_INSTRUCTION])(
+    "refuse tant que la DDT tient le formulaire d'éligibilité (%s)",
+    async (dsStatus) => {
+      mockSelectOnce([parcoursObligatoire]);
+      mockSelectOnce([validationDetachee]);
+      const { sets } = mockUpdateCapturingSet();
+      vi.mocked(getDossierByStep).mockResolvedValue({ dsStatus } as never);
+
+      const result = await rattacherAmo({ parcoursId: "p1" });
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toContain("déposé");
+      expect(sets).toHaveLength(0);
+    }
+  );
+
+  it("autorise à nouveau une fois la décision rendue", async () => {
+    mockSelectOnce([parcoursObligatoire]);
+    mockSelectOnce([validationDetachee]);
+    mockSelectJoinOnce([{ entrepriseAmoId: "e-origine" }]);
+    mockSelectOnce([{ nom: "Soliha 36" }]);
+    const { sets } = mockUpdateCapturingSet();
+    vi.mocked(getDossierByStep).mockResolvedValue({ dsStatus: DSStatus.ACCEPTE } as never);
+
+    const result = await rattacherAmo({ parcoursId: "p1" });
+
+    expect(result.success).toBe(true);
+    expect(sets).toHaveLength(1);
   });
 });

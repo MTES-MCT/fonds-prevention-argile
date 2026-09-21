@@ -346,6 +346,14 @@ territoire dans la majorité des cas, donc personne pour reprendre le dossier : 
 l'AMO y est « Archiver », qui garde le lien et reste réversible. L'entrée de menu est masquée
 en conséquence, la barrière restant la server action.
 
+> **Trois surfaces, une seule source.** L'onglet « AMO à rattacher » de `/administration/diagnostics`,
+> l'entrée « Rattacher une AMO » du menu Gérer du détail dossier, et le script ops lisent tous
+> `listerDossiersARattacher` : ils ne peuvent pas compter des populations différentes. Les deux
+> surfaces UI sont **super-admin** et montrent l'AMO cible avant le clic ; le détail dossier
+> n'interroge le service que si la validation est `sans_amo`, pour ne pas payer la requête sur
+> chaque dossier. Contrairement au script — action ops sans agent connecté — les actions UI
+> tracent la décision (`amo_rattachee`, ADR-0028).
+
 > **Rattrapage des dossiers déjà détachés à tort** : `pnpm fix:rattacher-amo`
 > (dry-run par défaut, `--apply`, `--parcours-id`). Ne traite que les parcours actifs en
 > `sans_amo` sans entreprise **en département à attribution automatique** — ailleurs
@@ -394,6 +402,10 @@ Trois points d'application, tous adossés au même prédicat :
 - **AMO, « Ne plus accompagner »** — `arreterAccompagnementAction` ; l'entrée de menu est
   masquée par `peutArreterMaintenant` sur le détail dossier, la barrière restant la server
   action.
+- **Ops, rattachement d'une AMO** — `rattacherAmo` refuse tant que la DDT tient le formulaire.
+  Le motif vaut dans les deux sens : un dossier déposé déclare « Pas de mandataire » et le
+  préremplissage ne sait que créer, donc **attacher** une AMO après coup ment autant que la
+  détacher. `pnpm fix:rattacher-amo` marque ces dossiers `GELE` dans son inventaire.
 
 > **Deux exclusions volontaires.** Le bandeau « Je donne ma réponse » (refus d'une demande
 > d'arrêt en attente) n'est **pas** gelé : refuser maintient l'accompagnement, donc le dossier
