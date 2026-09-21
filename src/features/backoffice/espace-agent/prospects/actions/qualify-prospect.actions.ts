@@ -12,6 +12,7 @@ import { qualificationService, type QualifyProspectResult } from "../services/qu
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import { assertCanActAsResponsable } from "@/features/auth/permissions/services/responsable-permissions.service";
+import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
 import type { ActionResult } from "@/shared/types";
 
@@ -56,7 +57,9 @@ const ROLES_CAPACITE_AMO: readonly UserRole[] = [UserRole.AMO, UserRole.AMO_ET_A
  *
  * Vérifie que l'agent connecté est un agent Allers-Vers.
  */
-export async function qualifyProspectAction(input: QualifyProspectInput): Promise<ActionResult<QualifyProspectResult>> {
+export async function qualifyProspectAction(
+  input: QualifyProspectInput
+): Promise<ActionResult<QualifyProspectResult & { redirectTo: string | null }>> {
   try {
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
@@ -129,7 +132,9 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
     // 7. Invalidation du cache
     revalidatePath("/espace-agent", "layout");
 
-    return { success: true, data: resultat };
+    // Résolue APRÈS la mutation : une qualification qui pose une validation fait quitter
+    // l'écran prospect, qui n'affiche ni l'AMO responsable ni l'état du dossier.
+    return { success: true, data: { ...resultat, redirectTo: await resolveEspaceAgentPath(parcoursId) } };
   } catch (error) {
     console.error("[qualifyProspectAction] Erreur:", error);
     return { success: false, error: "Erreur lors de la qualification du prospect" };

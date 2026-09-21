@@ -342,11 +342,11 @@ export function QualificationForm({
         return;
       }
 
-      // Rechargement complet, pas `router.refresh()` : « Actions réalisées » est un composant
-      // client qui charge ses données dans un effet — un re-render des Server Components ne le
-      // remonte pas, et la trace de qualification n'apparaissait qu'au F5 suivant (§2.10).
+      // Navigation complète, pas `router.refresh()` : une qualification qui pose une validation
+      // fait quitter l'écran prospect, et « Actions réalisées » charge ses données dans un effet
+      // client qu'un re-render des Server Components ne remonte pas (§2.10).
       onSuccess();
-      window.location.reload();
+      window.location.href = result.data.redirectTo ?? window.location.pathname;
     });
   }
 

@@ -13,6 +13,9 @@ vi.mock("@/features/auth/permissions/services/responsable-permissions.service", 
 vi.mock("../services/qualification.service", () => ({
   qualificationService: { qualifyProspect: vi.fn(), getLatestQualification: vi.fn() },
 }));
+vi.mock("@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service", () => ({
+  resolveEspaceAgentPath: vi.fn(async () => "/espace-agent/dossiers/validation-1"),
+}));
 
 import { qualifyProspectAction } from "./qualify-prospect.actions";
 import { getCurrentUser } from "@/features/auth/services/user.service";
@@ -178,6 +181,17 @@ describe("qualifyProspectAction", () => {
           contexteAgent: { entrepriseAmoId: "amo-1", aLaCapaciteAmo: true },
         })
       );
+    });
+
+    it("renvoie la cible résolue après la mutation, pour quitter l'écran prospect", async () => {
+      // Une qualification qui pose une validation change la nature du dossier : rester sur
+      // l'écran prospect masquerait l'AMO responsable et l'état réel.
+      const result = await qualifyProspectAction(payloadEligible);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.redirectTo).toBe("/espace-agent/dossiers/validation-1");
+      }
     });
 
     it("transmet les raisons d'inéligibilité", async () => {
