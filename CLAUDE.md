@@ -263,6 +263,22 @@ FranceConnect** (les users seedés portent un `fc_id` factice, et le rattachemen
 `fc_id IS NULL`). Un login FC crée donc toujours un compte neuf, sans simulation. Les états de
 départ côté demandeur se construisent par le parcours lui-même, pas en base.
 
+### Corps de PR : court, pas un compte rendu
+
+Le corps dit **ce qui change et pourquoi**, pas comment on y est arrivé. Viser **15 à 25
+lignes** : une phrase de contexte, un paragraphe court par changement, et les arbitrages
+qu'un relecteur pourrait contester.
+
+- Un paragraphe par changement : le symptôme d'abord, la correction ensuite.
+- Les arbitrages non évidents en **une phrase chacun**, jamais en section dédiée.
+- Pas de récit de l'investigation, pas de chiffres de tests, pas de détail d'implémentation :
+  ça vit dans les messages de commit, les ADR et la doc.
+- La **checklist de tests manuels** se livre dans la conversation ou en commentaire de PR —
+  jamais dans le corps, elle le noie.
+
+Un corps qui dépasse 25 lignes signale en général une PR qui fait trop de choses : se demander
+si elle ne devrait pas être découpée avant de raccourcir le texte.
+
 ### Revue Copilot avant merge (à chaque PR)
 
 Une fois la branche prête et validée (`pnpm validate` vert), **ne pas merger directement**.
