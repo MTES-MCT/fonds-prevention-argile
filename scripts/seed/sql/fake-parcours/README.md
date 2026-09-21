@@ -126,11 +126,11 @@ Utile pour vérifier que le menu modifier/supprimer n'apparaît que sur ses prop
 
 Le script `13-amo-av-arrete-2026.sql` crée les structures nécessaires pour couvrir les 3 modes :
 
-| Dept | Mode (`getAmoMode`) | Ce qui est créé                                                                |
-| ---- | ------------------- | ------------------------------------------------------------------------------ |
-| `36` | OBLIGATOIRE         | AMO existant (07-commentaires.sql) + lien AV → dept 36 (pour `AllerVersLocal`) |
-| `54` | AV_AMO_FUSIONNES    | Soliha 54 (AMO + AV liés au dept)                                              |
-| `82` | FACULTATIF + AMO    | "AMO Tarn-et-Garonne"                                                          |
-| `75` | FACULTATIF SANS AMO | Aucun seed (l'absence d'AMO est ce qu'on teste)                                |
+| Dept | Règles (`getReglesAmo`)  | Ce qui est créé                                                                |
+| ---- | ------------------------ | ------------------------------------------------------------------------------ |
+| `36` | AMO imposé               | AMO existant (07-commentaires.sql) + lien AV → dept 36 (pour `AllerVersLocal`) |
+| `54` | AMO imposé, AV cumulant  | Soliha 54 (AMO + AV liés au dept)                                              |
+| `82` | AMO facultatif, avec AMO | "AMO Tarn-et-Garonne"                                                          |
+| `75` | AMO facultatif, sans AMO | Aucun seed (l'absence d'AMO est ce qu'on teste)                                |
 
 Le script est idempotent (DELETE préalable + ON CONFLICT DO NOTHING).
