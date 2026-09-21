@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   assignAmoAutomatiqueForUser,
   demanderAccompagnementDemandeur,
+  passerEnAutonomie,
   skipAmoStepForUser,
 } from "./amo-selection.service";
 import { db } from "@/shared/database/client";
@@ -386,8 +387,11 @@ describe("skipAmoStepForUser", () => {
     vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours);
     vi.mocked(parcoursRepo.updateStep).mockResolvedValue(parcours);
 
+    // L'insertion ne remplace plus une décision existante : `onConflictDoNothing` + returning.
     const insertValuesMock = vi.fn().mockReturnValue({
-      onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      onConflictDoNothing: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
+      }),
     });
     vi.mocked(db.insert).mockReturnValue({
       values: insertValuesMock,
@@ -612,7 +616,83 @@ describe("intégrité des transitions d'accompagnement", () => {
 });
 
 // L'autonomie lit aujourd'hui la seule simulation du demandeur, contrairement à ADR-0037.
-describe("skipAmoStepForUser — résolution territoriale", () => {
-  it.todo("résout le département avec repli sur la simulation de l'agent");
-  it.todo("refuse quand aucune des deux simulations ne porte de commune exploitable");
+describe("passerEnAutonomie — gardes et résolution territoriale", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
+        }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  });
+
+  it("résout le département avec repli sur la simulation de l'agent", async () => {
+    // Dossier créé par un Aller-vers : le demandeur n'a pas simulé, seule la version agent
+    // porte la commune. Lire la seule simulation du demandeur faisait échouer l'autonomie.
+    const parcours = buildMockParcours("82001");
+    const logementAgent = parcours.rgaSimulationData;
+    parcours.rgaSimulationData = null as never;
+    parcours.rgaSimulationDataAgent = logementAgent as never;
+
+    const result = await passerEnAutonomie(parcours as never);
+
+    expect(result.success).toBe(true);
+    expect(parcoursRepo.updateStep).toHaveBeenCalledWith("parcours-789", Step.ELIGIBILITE, Status.TODO);
+  });
+
+  it("refuse quand aucune des deux simulations ne porte de commune exploitable", async () => {
+    const parcours = buildMockParcours("82001");
+    parcours.rgaSimulationData = null as never;
+
+    const result = await passerEnAutonomie(parcours as never);
+
+    expect(result).toEqual({ success: false, error: "Simulation RGA non complétée (code INSEE invalide)" });
+  });
+
+  it("accepte un dossier encore à l'étape invitation, sans toucher à son étape", async () => {
+    const parcours = buildMockParcours("82001");
+    parcours.currentStep = Step.INVITATION;
+
+    const result = await passerEnAutonomie(parcours as never);
+
+    expect(result.success).toBe(true);
+    // C'est le claim qui posera ELIGIBILITE, en lisant le statut « sans AMO ».
+    expect(parcoursRepo.updateStep).not.toHaveBeenCalled();
+  });
+
+  it("refuse sur un dossier archivé", async () => {
+    const parcours = buildMockParcours("82001");
+    parcours.archivedAt = new Date() as never;
+
+    const result = await passerEnAutonomie(parcours as never);
+
+    expect(result).toMatchObject({ success: false });
+    expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it("refuse une fois le parcours parti à l'éligibilité, donc tant que la DDT tient le formulaire", async () => {
+    const parcours = buildMockParcours("82001");
+    parcours.currentStep = Step.ELIGIBILITE;
+
+    const result = await passerEnAutonomie(parcours as never);
+
+    expect(result).toEqual({ success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" });
+  });
+
+  it("n'écrase pas une décision d'accompagnement déjà prise", async () => {
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([]) }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    const result = await passerEnAutonomie(buildMockParcours("82001") as never);
+
+    expect(result).toEqual({ success: false, error: "Un accompagnement a déjà été décidé pour ce dossier" });
+    expect(parcoursRepo.updateStep).not.toHaveBeenCalled();
+  });
 });

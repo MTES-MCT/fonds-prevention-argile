@@ -498,25 +498,29 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
 }
 
 /**
- * Renonce explicitement à un AMO (mode FACULTATIF) et fait avancer le parcours
- * directement à l'étape ELIGIBILITE.
+ * Renonce à l'AMO et fait avancer le parcours à l'étape ELIGIBILITE, là où l'AMO n'est pas
+ * imposé. Écrit une `parcours_amo_validations` en `SANS_AMO` / `AUCUN` / sans entreprise.
  *
- * Crée une `parcours_amo_validations` avec :
- *   - statut = SANS_AMO
- *   - attributionMode = AUCUN
- *   - entrepriseAmoId = null
+ * Deux appelants : le demandeur depuis son espace, et l'Aller-vers qui tranche pour lui
+ * quand il a recueilli sa réponse (§2.3.2 FLOW-AND-SYNC.md). L'étape `INVITATION` est donc
+ * acceptée : un dossier créé par un agent y reste jusqu'au claim, qui route ensuite sur
+ * `ELIGIBILITE` en lisant ce statut.
+ *
+ * **N'écrase jamais une décision existante** : la validation n'est écrite que si le parcours
+ * n'en a aucune. Un demandeur ayant déjà choisi — ou une AMO déjà sollicitée — prime.
  */
-export async function skipAmoStepForUser(userId: string): Promise<ActionResult<{ message: string }>> {
-  const parcours = await parcoursRepo.findByUserId(userId);
-  if (!parcours) {
-    return { success: false, error: "Parcours non trouvé" };
-  }
-
-  if (parcours.currentStep !== Step.CHOIX_AMO || parcours.currentStatus !== Status.TODO) {
+export async function passerEnAutonomie(parcours: ParcoursPrevention): Promise<ActionResult<{ message: string }>> {
+  if (!ETAPES_SELECTION_AMO.includes(parcours.currentStep) || parcours.currentStatus !== Status.TODO) {
     return { success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" };
   }
 
-  const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData?.logement?.commune);
+  if (parcours.archivedAt) {
+    return { success: false, error: "Le dossier est archivé : l'accompagnement ne peut plus être modifié" };
+  }
+
+  // USER-first avec repli agent : un dossier créé par un Aller-vers n'a que la simulation
+  // de l'agent, et lire la seule simulation du demandeur faisait échouer l'autonomie.
+  const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
   if (!codeInsee) {
     return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
   }
@@ -525,7 +529,7 @@ export async function skipAmoStepForUser(userId: string): Promise<ActionResult<{
     return { success: false, error: "L'AMO est obligatoire pour ce département" };
   }
 
-  await db
+  const [validation] = await db
     .insert(parcoursAmoValidations)
     .values({
       parcoursId: parcours.id,
@@ -533,31 +537,31 @@ export async function skipAmoStepForUser(userId: string): Promise<ActionResult<{
       statut: StatutValidationAmo.SANS_AMO,
       attributionMode: AttributionAmoMode.AUCUN,
     })
-    .onConflictDoUpdate({
-      target: parcoursAmoValidations.parcoursId,
-      set: {
-        entrepriseAmoId: null,
-        statut: StatutValidationAmo.SANS_AMO,
-        attributionMode: AttributionAmoMode.AUCUN,
-        choisieAt: new Date(),
-        valideeAt: null,
-        commentaire: null,
-        brevoMessageId: null,
-        emailSentAt: null,
-        emailDeliveredAt: null,
-        emailOpenedAt: null,
-        emailClickedAt: null,
-        emailBounceType: null,
-        emailBounceReason: null,
-      },
-    });
+    .onConflictDoNothing({ target: parcoursAmoValidations.parcoursId })
+    .returning({ id: parcoursAmoValidations.id });
 
-  await parcoursRepo.updateStep(parcours.id, Step.ELIGIBILITE, Status.TODO);
+  if (!validation) {
+    return { success: false, error: "Un accompagnement a déjà été décidé pour ce dossier" };
+  }
+
+  // À l'étape invitation, c'est le claim qui posera ELIGIBILITE en lisant ce statut.
+  if (parcours.currentStep === Step.CHOIX_AMO) {
+    await parcoursRepo.updateStep(parcours.id, Step.ELIGIBILITE, Status.TODO);
+  }
 
   return {
     success: true,
     data: { message: "Parcours avancé à l'étape éligibilité sans AMO" },
   };
+}
+
+/** Variante par `userId` : le demandeur renonce à l'AMO depuis son espace. */
+export async function skipAmoStepForUser(userId: string): Promise<ActionResult<{ message: string }>> {
+  const parcours = await parcoursRepo.findByUserId(userId);
+  if (!parcours) {
+    return { success: false, error: "Parcours non trouvé" };
+  }
+  return passerEnAutonomie(parcours);
 }
 
 export interface DemanderAccompagnementResult {
