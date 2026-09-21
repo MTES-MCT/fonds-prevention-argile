@@ -5,3 +5,4 @@ export * from "./amo-validation.actions";
 export * from "./amo-validation-query.actions";
 export * from "./arret-accompagnement.actions";
 export * from "./demande-accompagnement.actions";
+export * from "./ouverture-eligibilite.actions";

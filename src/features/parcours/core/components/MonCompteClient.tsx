@@ -29,6 +29,7 @@ import {
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
   CalloutChoixAccompagnement,
+  CalloutOuvertureEligibilite,
   CalloutDiagnosticEnConstruction,
   CalloutDiagnosticEnInstruction,
   CalloutDiagnosticTodo,
@@ -390,6 +391,12 @@ function renderChoixAmoCallout(
 
   if (statutAmo === StatutValidationAmo.EN_ATTENTE) {
     return <CalloutAmoEnAttente />;
+  }
+
+  // Logement éligible mais parcours resté à CHOIX_AMO : état sans issue, qui ne rendait
+  // aucun callout. On ouvre l'étape suivante au lieu d'afficher une page muette.
+  if (statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE) {
+    return <CalloutOuvertureEligibilite refresh={refresh} />;
   }
 
   return undefined;

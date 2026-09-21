@@ -4,3 +4,4 @@ export { default as CalloutAmoLogementNonEligible } from "./CalloutAmoLogementNo
 export { default as CalloutAmoAccompagnementRefuse } from "./CalloutAmoAccompagnementRefuse";
 export { default as CalloutChoixAccompagnement } from "./CalloutChoixAccompagnement";
 export { default as StepDetailAmo } from "./StepDetailAmo";
+export { default as CalloutOuvertureEligibilite } from "./CalloutOuvertureEligibilite";
