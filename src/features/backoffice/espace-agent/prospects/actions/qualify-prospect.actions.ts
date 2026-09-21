@@ -50,6 +50,25 @@ type QualifyProspectInput = z.infer<typeof qualifyProspectSchema>;
 /** Rôles portant la casquette AMO : eux seuls peuvent valider au nom de leur entreprise. */
 const ROLES_CAPACITE_AMO: readonly UserRole[] = [UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS];
 
+/**
+ * Où emmener l'agent après sa qualification, selon ce qu'il conserve comme accès.
+ *
+ *  - sa structure prend l'accompagnement → le dossier, qu'il suit désormais ;
+ *  - il a passé la main à une AMO → le listing, car l'écran de décision ne lui est pas
+ *    ouvert (un Aller-vers pur y récoltait un 404) ;
+ *  - rien n'a changé pour lui → il reste sur place.
+ */
+async function resoudreRetour(parcoursId: string, resultat: QualifyProspectResult): Promise<string | null> {
+  switch (resultat.suiteAccompagnement?.issue) {
+    case "validee_par_la_structure":
+      return resolveEspaceAgentPath(parcoursId);
+    case "transmise":
+      return "/espace-agent/dossiers";
+    default:
+      return null;
+  }
+}
+
 // --- Actions ---
 
 /**
@@ -132,9 +151,7 @@ export async function qualifyProspectAction(
     // 7. Invalidation du cache
     revalidatePath("/espace-agent", "layout");
 
-    // Résolue APRÈS la mutation : une qualification qui pose une validation fait quitter
-    // l'écran prospect, qui n'affiche ni l'AMO responsable ni l'état du dossier.
-    return { success: true, data: { ...resultat, redirectTo: await resolveEspaceAgentPath(parcoursId) } };
+    return { success: true, data: { ...resultat, redirectTo: await resoudreRetour(parcoursId, resultat) } };
   } catch (error) {
     console.error("[qualifyProspectAction] Erreur:", error);
     return { success: false, error: "Erreur lors de la qualification du prospect" };

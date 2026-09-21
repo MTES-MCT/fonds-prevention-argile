@@ -183,16 +183,32 @@ describe("qualifyProspectAction", () => {
       );
     });
 
-    it("renvoie la cible résolue après la mutation, pour quitter l'écran prospect", async () => {
-      // Une qualification qui pose une validation change la nature du dossier : rester sur
-      // l'écran prospect masquerait l'AMO responsable et l'état réel.
+    /** La destination dépend de ce que l'agent conserve comme accès après sa décision. */
+    async function redirectionPour(issue: string | null) {
+      vi.mocked(qualificationService.qualifyProspect).mockResolvedValue({
+        qualification: { id: "qualif-1" },
+        suiteAccompagnement: issue ? { issue, raison: "r" } : null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
       const result = await qualifyProspectAction(payloadEligible);
+      return result.success ? result.data.redirectTo : "<echec>";
+    }
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.redirectTo).toBe("/espace-agent/dossiers/validation-1");
-      }
+    it("emmène sur le dossier quand la structure prend l'accompagnement", async () => {
+      await expect(redirectionPour("validee_par_la_structure")).resolves.toBe("/espace-agent/dossiers/validation-1");
     });
+
+    it("renvoie au listing après transmission : l'écran de décision est celui de l'AMO", async () => {
+      // Un Aller-vers pur n'a pas accès au détail d'une demande — l'y envoyer donnait un 404.
+      await expect(redirectionPour("transmise")).resolves.toBe("/espace-agent/dossiers");
+    });
+
+    it.each(["autonomie", "laissee_au_demandeur", "echec", null])(
+      "laisse l'agent sur place quand son accès est inchangé (%s)",
+      async (issue) => {
+        await expect(redirectionPour(issue)).resolves.toBeNull();
+      }
+    );
 
     it("transmet les raisons d'inéligibilité", async () => {
       await qualifyProspectAction({
