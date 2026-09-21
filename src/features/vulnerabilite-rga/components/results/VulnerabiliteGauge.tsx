@@ -1,5 +1,6 @@
 import { computeNeedlePoint } from "./gauge.utils";
-import { getNiveauVulnerabilite, type NiveauVulnerabilite } from "../../domain/services/scoring.service";
+import { getNiveauVulnerabilite } from "../../domain/services/scoring.service";
+import { NIVEAU_LABELS } from "../../domain/value-objects/niveau-badge.const";
 
 interface VulnerabiliteGaugeProps {
   /** Score de vulnérabilité, 0 (faible) à 100 (très élevé). */
@@ -16,23 +17,20 @@ const NEEDLE_LENGTH = 75;
 /** 5 bandes de couleur, vert (idéal) → rouge (risque maximal), chacune sur 36°. */
 const BANDES_COULEUR = ["#18753C", "#8ABF3F", "#E9C53B", "#E4794A", "#CE0500"];
 
-const NIVEAU_LABELS: Record<NiveauVulnerabilite, string> = {
-  faible: "Faible",
-  modere: "Modérée",
-  eleve: "Élevée",
-  tres_eleve: "Très élevée",
-};
-
 /** Point sur l'arc à l'angle donné (0° = droite, 180° = gauche). */
 function pointOnArc(angleDeg: number, radius: number): { x: number; y: number } {
   const rad = (angleDeg * Math.PI) / 180;
   return { x: CX + radius * Math.cos(rad), y: CY - radius * Math.sin(rad) };
 }
 
+// sweep-flag=1 : avec des points calculés directement sur le cercle (CX, CY, RADIUS), c'est
+// le seul flag qui fait résoudre à ce centre par le moteur SVG (vérifié via la formule de
+// conversion endpoint -> centre, spec F.6.5) — sweep-flag=0 fait bulger chaque bande vers un
+// centre complètement différent, cassant la continuité de l'arc.
 function arcPath(startAngle: number, endAngle: number): string {
   const start = pointOnArc(startAngle, RADIUS);
   const end = pointOnArc(endAngle, RADIUS);
-  return `M ${start.x} ${start.y} A ${RADIUS} ${RADIUS} 0 0 0 ${end.x} ${end.y}`;
+  return `M ${start.x} ${start.y} A ${RADIUS} ${RADIUS} 0 0 1 ${end.x} ${end.y}`;
 }
 
 /**
@@ -49,6 +47,19 @@ export function VulnerabiliteGauge({ score, size = 280 }: VulnerabiliteGaugeProp
   return (
     <div role="img" aria-label={`Vulnérabilité estimée : ${clamped} sur 100, niveau ${NIVEAU_LABELS[niveau]}`}>
       <svg viewBox="0 0 200 115" width={size} aria-hidden="true">
+        <defs>
+          {/* markerUnits="userSpaceOnUse" : sinon la taille est multipliée par strokeWidth (3), donnant une flèche énorme. */}
+          <marker
+            id="gauge-needle-arrow"
+            markerWidth="12"
+            markerHeight="12"
+            refX="12"
+            refY="6"
+            orient="auto"
+            markerUnits="userSpaceOnUse">
+            <path d="M0,0 L12,6 L0,12 Z" fill="#161616" />
+          </marker>
+        </defs>
         {BANDES_COULEUR.map((couleur, index) => (
           <path
             key={couleur}
@@ -66,10 +77,11 @@ export function VulnerabiliteGauge({ score, size = 280 }: VulnerabiliteGaugeProp
           stroke="#161616"
           strokeWidth={3}
           strokeLinecap="round"
+          markerEnd="url(#gauge-needle-arrow)"
         />
-        <circle cx={CX} cy={CY} r={6} fill="#161616" />
+        <circle cx={CX} cy={CY} r={4} fill="#161616" />
       </svg>
-      <p className="fr-text--bold fr-mb-0" style={{ textAlign: "center", fontSize: "1.5rem" }}>
+      <p className="fr-text--bold fr-mb-1v" style={{ textAlign: "center", fontSize: "1.5rem" }}>
         {clamped}/100
       </p>
       <p className="fr-mb-0" style={{ textAlign: "center" }}>

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
-import { SchemaHaies } from "../illustrations/SchemaHaies";
+import Image from "next/image";
+import schemaHaies from "../illustrations/SchemaHaies.svg";
 import type { ReponseHaies, PartialVulnerabiliteReponses } from "../../domain/types/vulnerabilite-reponses.types";
 
 interface StepHaiesProps {
@@ -22,12 +23,8 @@ export function StepHaies({ initialValue, numeroEtape, totalEtapes, canGoBack, o
       fieldsetName="haies"
       critereId="haies"
       title="Y a-t-il une haie proche de la maison ?"
-      illustration={<SchemaHaies />}
-      bullets={[
-        "Comme un arbre, une haie dense et proche assèche le sol à son pied",
-        "Une taille régulière limite le développement des racines et donc le risque",
-        "Pour une nouvelle plantation, préférer une distance d'au moins quelques mètres de la façade",
-      ]}
+      illustration={<Image src={schemaHaies} alt="" className="w-full h-auto" />}
+      description="Comme un arbre, une haie dense et proche de la maison assèche l'argile à son pied, ce qui favorise son retrait et le RGA."
       options={[
         { value: "proches_denses", label: "Proche des fondations et dense" },
         { value: "proches_moyennement_denses", label: "Proche des fondations, moyennement dense" },

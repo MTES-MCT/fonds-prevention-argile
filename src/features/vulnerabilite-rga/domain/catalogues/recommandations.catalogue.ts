@@ -5,8 +5,10 @@ export interface RecommandationDef {
   /** Réponses de ce critère qui déclenchent la fiche. */
   reponsesDeclenchantes: string[];
   titre: string;
-  /** Explication en bullet points, affichés tels quels dans `RecommandationCard`. */
-  bullets: string[];
+  /** Pourquoi c'est un problème pour le RGA — section "Problème" de `RecommandationCard`. */
+  problemes: string[];
+  /** Ce qu'il est recommandé de faire — section "Amélioration conseillée" de `RecommandationCard`. */
+  ameliorations: string[];
   /** Clé du composant SVG dans `components/illustrations` (réutilise celle de la question). */
   illustrationId?: string;
 }
@@ -22,10 +24,13 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     critereId: "pente_terrain",
     reponsesDeclenchantes: ["vers_facade", "ne_sais_pas"],
     titre: "Détourner les eaux de ruissellement de la façade",
-    bullets: [
+    problemes: [
+      "Une pente qui descend vers la maison ramène l'eau de pluie contre la façade à chaque orage, provoquant des cycles de gonflement et de retrait du sol argileux juste sous les fondations",
+    ],
+    ameliorations: [
       "Créer une pente légère qui éloigne l'eau de pluie de la maison plutôt que vers elle",
       "Installer un caniveau ou une noue le long de la façade concernée",
-      "Éviter que l'eau stagne au même endroit après chaque pluie",
+      "Installer un système de drainage pour éviter l'accumulation de l'eau en pied de façade",
     ],
     illustrationId: "pente",
   },
@@ -34,8 +39,10 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     critereId: "reseaux_enterres",
     reponsesDeclenchantes: ["proches", "sous_fondations", "ne_sais_pas"],
     titre: "Faire vérifier l'étanchéité des réseaux enterrés",
-    bullets: [
+    problemes: [
       "Une fuite d'eau ou d'assainissement près des fondations est l'une des causes les plus fréquentes de sinistre RGA",
+    ],
+    ameliorations: [
       "Faire contrôler l'étanchéité des canalisations proches de la maison par un professionnel",
       "Envisager, si possible, d'éloigner les réseaux des fondations lors de travaux futurs",
     ],
@@ -46,9 +53,11 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     critereId: "gravier_proprete",
     reponsesDeclenchantes: ["present"],
     titre: "Revoir le gravier de propreté en pied de façade",
-    bullets: [
+    problemes: [
       "Sans membrane étanche dessous, le gravier laisse l'eau s'infiltrer directement au pied du mur",
       "Ces infiltrations répétées provoquent des cycles gonflement/retrait du sol contre les fondations",
+    ],
+    ameliorations: [
       "Faire vérifier la présence d'une membrane étanche, ou remplacer par un dispositif qui éloigne l'eau du mur",
     ],
     illustrationId: "gravier",
@@ -58,8 +67,8 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     critereId: "gouttieres",
     reponsesDeclenchantes: ["absentes_ou_debordantes", "entretenues_evacuation_proche", "ne_sais_pas"],
     titre: "Entretenir les gouttières et éloigner leur évacuation",
-    bullets: [
-      "Des gouttières bouchées ou absentes déversent l'eau de pluie directement contre le mur",
+    problemes: ["Des gouttières bouchées ou absentes déversent l'eau de pluie directement contre le mur"],
+    ameliorations: [
       "Nettoyer les gouttières au moins une fois par an",
       "Vérifier que la descente évacue l'eau loin des fondations (regard, drain, ou raccordement)",
     ],
@@ -70,8 +79,8 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     critereId: "arbre_essence",
     reponsesDeclenchantes: ["peuplier", "saule", "chene", "frene", "bouleau", "erable", "autre", "ne_sais_pas"],
     titre: "Faire expertiser l'arbre proche des fondations",
-    bullets: [
-      "Les racines d'un arbre proche assèchent le sol à son pied, ce qui accentue le retrait argileux",
+    problemes: ["Les racines d'un arbre proche assèchent le sol à son pied, ce qui accentue le retrait argileux"],
+    ameliorations: [
       "Faire évaluer par un professionnel si un élagage régulier ou une barrière anti-racines suffit",
       "L'abattage n'est pas toujours la meilleure solution : un arbre supprimé brutalement peut au contraire déséquilibrer l'humidité du sol",
     ],
@@ -82,8 +91,8 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     critereId: "haies",
     reponsesDeclenchantes: ["proches_moyennement_denses", "proches_denses", "ne_sais_pas"],
     titre: "Éloigner ou espacer la haie des fondations",
-    bullets: [
-      "Une haie dense et proche de la maison assèche le sol comme le ferait un arbre",
+    problemes: ["Une haie dense et proche de la maison assèche le sol comme le ferait un arbre"],
+    ameliorations: [
       "Tailler régulièrement pour limiter le développement des racines",
       "Privilégier une distance de plantation d'au moins quelques mètres pour toute nouvelle haie",
     ],
@@ -94,9 +103,11 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     critereId: "vegetation_pied_facade",
     reponsesDeclenchantes: ["presente"],
     titre: "Supprimer la végétation en pied de façade",
-    bullets: [
+    problemes: [
       "Potager, rosiers ou arbustes contre le mur imposent des arrosages répétés juste au pied des fondations",
       "Ces apports d'eau localisés et irréguliers sont particulièrement défavorables sur sol argileux",
+    ],
+    ameliorations: [
       "Éloigner ces plantations d'au moins 1 à 2 mètres de la façade, ou les remplacer par un massif sans arrosage",
     ],
     illustrationId: "pied-facade",
@@ -106,8 +117,8 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     critereId: "mitoyennete",
     reponsesDeclenchantes: ["mitoyen_voisin_sans_travaux"],
     titre: "Échanger avec le voisin mitoyen sur la prévention RGA",
-    bullets: [
-      "Sur une maison mitoyenne, les mouvements de sol du côté du voisin peuvent affecter votre propre bâti",
+    problemes: ["Sur une maison mitoyenne, les mouvements de sol du côté du voisin peuvent affecter votre propre bâti"],
+    ameliorations: [
       "Partager cette information avec le voisin et l'inviter à faire le même diagnostic",
       "Une prévention efficace sur ce type de risque se joue souvent à l'échelle de plusieurs maisons",
     ],
@@ -117,9 +128,9 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     critereId: "ensoleillement",
     reponsesDeclenchantes: ["fort_sud"],
     titre: "Limiter le dessèchement du sol en façade sud",
-    bullets: [
-      "Une exposition sud sans protection accélère l'évaporation de l'eau du sol, donc son retrait",
-      "Un paillage au pied de la façade limite l'évaporation directe",
+    problemes: ["Une exposition sud sans protection accélère l'évaporation de l'eau du sol, donc son retrait"],
+    ameliorations: [
+      "Une voile d'ombrage ou un paillage au pied de la façade limite l'évaporation directe",
       "Un arrosage léger et régulier en période de sécheresse peut aider à stabiliser l'humidité du sol (à éviter en cas d'arrêté sécheresse)",
     ],
     illustrationId: "ensoleillement",
