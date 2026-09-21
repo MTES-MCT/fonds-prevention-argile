@@ -25,6 +25,9 @@ vi.mock("@/shared/database/client", () => ({
     }),
   },
 }));
+vi.mock("@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service", () => ({
+  resolveEspaceAgentPath: vi.fn(),
+}));
 // On garde `canReopenRefusedDemande` réel, on ne mocke que `calculateAgentScope`.
 vi.mock("@/features/auth/permissions/services/agent-scope.service", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/auth/permissions/services/agent-scope.service")>();
@@ -36,6 +39,7 @@ import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.acti
 import { reouvrirDemandeRefusee } from "@/features/parcours/amo/services/reouverture-demande.service";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import { parcoursRepo, parcoursActionsRepo } from "@/shared/database/repositories";
+import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 
 const PARCOURS_ID = "11111111-1111-1111-1111-111111111111";
 
@@ -67,6 +71,7 @@ describe("reouvrirDemandeAction — RBAC", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(parcoursRepo.findById).mockResolvedValue(parcours75 as never);
+    vi.mocked(resolveEspaceAgentPath).mockResolvedValue("/espace-agent/demandes/validation-1");
     vi.mocked(reouvrirDemandeRefusee).mockResolvedValue({
       success: true,
       data: { newToken: "tok", emailSent: true, amoNom: "ACME", demandeurNom: "X", demandeurPrenom: "Y" },
@@ -161,5 +166,35 @@ describe("reouvrirDemandeAction — RBAC", () => {
 
     expect(res.success).toBe(true);
     expect(reouvrirDemandeRefusee).toHaveBeenCalled();
+  });
+
+  it("renvoie l'écran de décision : la demande redevient en attente, pas un dossier suivi", async () => {
+    mockAgent(UserRole.AMO, { entrepriseAmoId: "entreprise-123" });
+    vi.mocked(calculateAgentScope).mockResolvedValue({
+      ...baseScope,
+      entrepriseAmoIds: ["entreprise-123"],
+      canViewDossiersByEntreprise: true,
+    } as never);
+
+    const res = await reouvrirDemandeAction(PARCOURS_ID);
+
+    expect(res.success).toBe(true);
+    if (res.success) expect(res.data.redirectTo).toBe("/espace-agent/demandes/validation-1");
+    expect(resolveEspaceAgentPath).toHaveBeenCalledWith(PARCOURS_ID);
+  });
+
+  it("tolère une cible non résolue : l'appelant retombe sur un simple rafraîchissement", async () => {
+    mockAgent(UserRole.AMO, { entrepriseAmoId: "entreprise-123" });
+    vi.mocked(calculateAgentScope).mockResolvedValue({
+      ...baseScope,
+      entrepriseAmoIds: ["entreprise-123"],
+      canViewDossiersByEntreprise: true,
+    } as never);
+    vi.mocked(resolveEspaceAgentPath).mockResolvedValue(null);
+
+    const res = await reouvrirDemandeAction(PARCOURS_ID);
+
+    expect(res.success).toBe(true);
+    if (res.success) expect(res.data.redirectTo).toBeNull();
   });
 });

@@ -168,6 +168,12 @@ le script ops `pnpm fix:reouvrir-demande` et la server action UI `reouvrirDemand
 Permissions et audit : voir [ADR-0016](../adr/0016-reouverture-demande-refusee.md) et
 [RBAC-ROLES.md](../security/RBAC-ROLES.md).
 
+> **Où l'on atterrit après avoir ré-ouvert.** La demande redevient `en_attente`, donc l'écran de
+> décision est `/demandes/[id]` — pas la page dossier d'où part le bouton, qui n'affiche qu'un
+> bandeau d'attente. `reouvrirDemandeAction` renvoie donc la cible, résolue **après** la mutation
+> par `resolveEspaceAgentPath` (même règle que le listing), et le bouton y navigue. Sans cela
+> l'agent restait sur une page sans aucune action possible et devait repasser par le listing.
+
 ### 2.5 Détachement de l'AMO (passage en « sans AMO »)
 
 Un demandeur avait choisi un AMO quand celui-ci était **obligatoire** ; depuis la
