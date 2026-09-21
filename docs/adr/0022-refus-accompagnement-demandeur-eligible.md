@@ -87,6 +87,29 @@ d'accompagnement (ADR-0018), la ré-ouverture et le renvoi d'invitation.
 Aucune migration de schéma : `ACCOMPAGNEMENT_REFUSE` existe déjà dans l'enum de validation, et
 les nouveaux types `parcours_actions` sont du texte libre (`action_type`). Bump `1.37.3 → 1.38.0`.
 
+## Amendement (2026-09-15) — le demandeur ne lit plus « Vous n'êtes pas éligible »
+
+Angle mort de la décision initiale : côté `/mon-compte`, `ACCOMPAGNEMENT_REFUSE` alimentait
+`estLogementNonEligible` au même titre que `LOGEMENT_NON_ELIGIBLE`. Un demandeur que l'AMO venait de
+juger **éligible**, mais qu'elle renonçait à accompagner, lisait donc : « Vous n'êtes pas éligible ».
+C'est faux, définitif à ses yeux, et sans recours affiché. Une vingtaine de cas dans le seul
+Puy-de-Dôme, motifs « ne donne pas de réponse » ou « reste à charge trop élevé ».
+
+Correction : le prédicat ne porte plus que l'inéligibilité réelle. `estAccompagnementRefuse` porte
+l'autre cas et rend `CalloutAmoAccompagnementRefuse` — « Votre dossier est en pause », qui affirme
+l'éligibilité, explique que la structure sollicitée n'a pas pu prendre le dossier, et donne
+l'adresse de contact pour le réactiver.
+
+Le parcours reste garé de la même façon dans les deux cas : `estParcoursSansSuite`, leur union, pilote
+tout ce qui se neutralise à l'identique (pièces à réunir, items de « Ma liste », carte AMO désactivée).
+Seuls les **textes** distinguent les deux causes — c'est la règle à tenir si d'autres surfaces s'y
+ajoutent. La carte AMO porte un badge « Sans accompagnement », et la section « Pour en savoir plus »
+(contenu sur l'inéligibilité) ne s'affiche plus dans ce cas.
+
+Deux commentaires de code affirmaient que `ACCOMPAGNEMENT_REFUSE` n'était « plus produit côté UI
+(legacy) ». C'était faux : `refuserAccompagnementEligible` est branché et la production en est pleine.
+Supprimés.
+
 ## Liens
 
 - Service : `src/features/parcours/amo/services/amo-validation.service.ts` (`declineAccompagnementEligible`)

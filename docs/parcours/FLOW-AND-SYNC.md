@@ -168,6 +168,12 @@ le script ops `pnpm fix:reouvrir-demande` et la server action UI `reouvrirDemand
 Permissions et audit : voir [ADR-0016](../adr/0016-reouverture-demande-refusee.md) et
 [RBAC-ROLES.md](../security/RBAC-ROLES.md).
 
+> **Où l'on atterrit après avoir ré-ouvert.** La demande redevient `en_attente`, donc l'écran de
+> décision est `/demandes/[id]` — pas la page dossier d'où part le bouton, qui n'affiche qu'un
+> bandeau d'attente. `reouvrirDemandeAction` renvoie donc la cible, résolue **après** la mutation
+> par `resolveEspaceAgentPath` (même règle que le listing), et le bouton y navigue. Sans cela
+> l'agent restait sur une page sans aucune action possible et devait repasser par le listing.
+
 ### 2.5 Détachement de l'AMO (passage en « sans AMO »)
 
 Un demandeur avait choisi un AMO quand celui-ci était **obligatoire** ; depuis la
@@ -324,13 +330,29 @@ autonomie. Voir [ADR-0018](../adr/0018-arret-accompagnement-amo.md).
 absente). Prédicats purs partagés UI ↔ service : `peutAnnulerAccompagnement`,
 `requiertAccordAmo` (`domain/value-objects/arretAccompagnement.ts`).
 
-> L'annulation n'existe qu'en mode **FACULTATIF** : là où l'AMO est obligatoire (par défaut
-> 03/36/47/54/81), le lien est masqué et le service refuse — même garde que
-> `skipAmoStepForUser`, dupliquée pour que les deux chemins vers l'autonomie ne divergent pas.
+> **L'autonomie n'existe qu'en mode FACULTATIF**, quel que soit le chemin emprunté (par
+> défaut 03/36/47/54/81 en obligatoire). Prédicat unique `peutPasserEnAutonomie(parcours)`
+> (`departements-amo.ts`), partagé par `skipAmoStepForUser`, l'annulation demandeur et
+> « Ne plus accompagner » côté AMO, pour qu'ils ne puissent pas diverger. Il résout le
+> département **USER-first avec repli agent** et **refuse quand la commune est introuvable** :
+> l'ancienne garde lisait `rgaSimulationData` seul et se sautait entièrement sur un dossier
+> créé par un Aller-vers. Voir [ADR-0037](../adr/0037-pas-d-autonomie-en-amo-obligatoire.md).
 
 **Côté AMO** (menu « Gérer » → « Ne plus accompagner », ou bandeau « Je donne ma réponse »
 quand `demande_arret_at` est posé) : soit l'AMO arrête (raisons obligatoires → détachement),
-soit elle poursuit (`demande_arret_at` remis à NULL). Garde : `assertCanActAsResponsable`.
+soit elle poursuit (`demande_arret_at` remis à NULL). Garde : `assertCanActAsResponsable`,
+**plus** `peutPasserEnAutonomie` — en département obligatoire, il n'y a qu'une AMO par
+territoire dans la majorité des cas, donc personne pour reprendre le dossier : la sortie de
+l'AMO y est « Archiver », qui garde le lien et reste réversible. L'entrée de menu est masquée
+en conséquence, la barrière restant la server action.
+
+> **Rattrapage des dossiers déjà détachés à tort** : `pnpm fix:rattacher-amo`
+> (dry-run par défaut, `--apply`, `--parcours-id`). Ne traite que les parcours actifs en
+> `sans_amo` sans entreprise **en département à attribution automatique** — ailleurs
+> l'autonomie est le résultat voulu. Remet l'AMO d'origine (agent de la dernière action
+> `accompagnement_arrete`, repli territorial) en `en_attente` : `validee_at` ayant été purgé
+> au détachement, on ne sait plus si elle avait validé, elle re-confirme. Ni email, ni token,
+> et `current_step` / `current_status` inchangés.
 
 > **Effet de bord assumé** : détacher pose `entreprise_amo_id = NULL`, donc l'AMO **perd
 > immédiatement l'accès au dossier**. La server action doit lire la validation et
@@ -394,6 +416,16 @@ Effet (service `declineAccompagnementEligible`, `amo-validation.service.ts`, en 
 l'aller-vers du territoire en devient responsable. Retour arrière : ré-ouverture (ADR-0016, qui gère
 déjà `accompagnement_refuse`) ou dé-archivage manuel — pas de routage automatique. Voir
 [ADR-0022](../adr/0022-refus-accompagnement-demandeur-eligible.md).
+
+> **Le détail dossier lit l'archivage, plus un proxy (septembre 2026).** `getDossierDetail`
+> n'exposait ni `archivedAt` ni `archiveReason`, et le seul bandeau d'archivage d'`InfoDossierCallout`
+> se déclenchait sur `validationStatut === LOGEMENT_NON_ELIGIBLE`. Un dossier archivé pour tout autre
+> motif — abandon, non-réponse, reste à charge, refus d'accompagnement — s'affichait donc comme un
+> dossier actif, et le menu « Gérer » lui réoffrait « Archiver ». Environ 186 des 215 dossiers
+> archivés de la production étaient dans ce cas. Le bandeau dérive désormais d'`archivedAt` (avec le
+> motif, et la variante « non éligible » conservée via `isEligibiliteArchiveReason`), et « Archiver »
+> laisse place à « Désarchiver ». Un dossier **refusé** garde son propre chemin de retour, le bouton
+> « Ré-ouvrir la demande » (ADR-0016), qui remplace le menu entier.
 
 > `ACCOMPAGNEMENT_REFUSE` est **consultable** (`STATUTS_CONSULTABLES`) mais **non éditable**
 > (`editableStatuts` de l'édition simulation) : le dossier archivé n'est pas corrigeable via
@@ -615,9 +647,20 @@ inéligibilité et affichait « Vous n'êtes pas éligible » à tout demandeur 
 l'AMO venait de valider (QA septembre 2026). Sans cette garde, un
 dossier archivé déjà passé à `ÉLIGIBILITE` (autonomie, puis simulation corrigée) continuait
 d'inviter au dépôt du formulaire DN. Trois surfaces s'alignent dessus : « Ma liste » grise
-tout item resté actif (`getStepListItems(..., isNonEligible)`, y compris l'item de tête dont
+tout item resté actif (`getStepListItems(..., isSansSuite)`, y compris l'item de tête dont
 l'ancre `#choix-amo` ne mène plus qu'au callout), et les **pièces justificatives** ne sont
 plus proposées — ni pour l'étape courante, ni en « à prévoir » sur les étapes à venir.
+
+> **Refus d'accompagnement ≠ inéligibilité (septembre 2026).** `ACCOMPAGNEMENT_REFUSE` alimentait
+> `estLogementNonEligible` : un demandeur jugé **éligible** par son AMO, mais qu'elle renonçait à
+> accompagner (injoignable, reste à charge trop élevé — §2.8), lisait « Vous n'êtes pas éligible ».
+> C'était faux, et sans recours affiché. Le prédicat ne porte plus que l'inéligibilité réelle ;
+> `estAccompagnementRefuse` porte l'autre cas et rend `CalloutAmoAccompagnementRefuse`
+> (« Votre dossier est en pause », avec l'adresse de contact). Ce qui se neutralise **identiquement**
+> dans les deux cas — pièces à réunir, items de « Ma liste », carte AMO désactivée — passe par
+> `estParcoursSansSuite`, leur union ; ce qui **parle** au demandeur distingue les deux. La section
+> « Pour en savoir plus » (contenu sur l'inéligibilité) ne s'affiche plus que sur une vraie
+> inéligibilité, et la carte AMO porte un badge « Sans accompagnement » au lieu de « Non éligible ».
 
 > **Un dossier archivé ne change plus d'accompagnement.** `peutAnnulerAccompagnement` et
 > `peutDemanderAccompagnement` prennent un `dossierArchive` **requis** (`parcours.archived_at`,
@@ -1366,6 +1409,8 @@ retrouvé déposé.
 | Inéligibilité affichée au demandeur            | `parcours/core/actions/eligibilite-query.actions.ts` (`estLogementDeclareNonEligible`)                      |
 | Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                             |
 | Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                                 |
+| Garde « pas d'autonomie en AMO obligatoire »   | `amo/domain/value-objects/departements-amo.ts` (`peutPasserEnAutonomie`)                                    |
+| Rattachement AMO après détachement à tort      | `amo/services/rattachement-amo.service.ts`, `scripts/ops/fix/rattacher-amo.ts` (`pnpm fix:rattacher-amo`)   |
 | Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |
 | Rattrapage lien AMO obligatoire (script ops)   | `scripts/ops/fix/lier-amo-oblig.ts` (`pnpm fix:lier-amo-oblig`)                                             |
 | Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                                        |

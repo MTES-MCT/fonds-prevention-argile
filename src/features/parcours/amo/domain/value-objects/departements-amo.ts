@@ -1,5 +1,7 @@
 import { normalizeCodeDepartement } from "@/shared/constants/departements.constants";
 import { getSharedEnv } from "@/shared/config/env.config";
+import { getDemandeurFirstLogement, type ParcoursSimulationPair } from "@/shared/domain/utils/rga-simulation.utils";
+import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../../utils/amo.utils";
 
 /**
  * Mode d'AMO appliqué selon le département du demandeur (arrêté 2026).
@@ -74,4 +76,22 @@ export function getAmoMode(codeDepartement: string | number): AmoMode {
 export function isAmoAttributionAutomatique(codeDepartement: string | number): boolean {
   const mode = getAmoMode(codeDepartement);
   return mode === AmoMode.OBLIGATOIRE || mode === AmoMode.AV_AMO_FUSIONNES;
+}
+
+/**
+ * Mode d'AMO d'un parcours, résolu USER-first avec repli agent (cf. RBAC-ROLES §6).
+ * `null` = commune introuvable : l'appelant refuse, il ne suppose jamais FACULTATIF.
+ */
+export function resolveAmoModeForParcours(parcours: ParcoursSimulationPair): AmoMode | null {
+  const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
+  if (!codeInsee) return null;
+  return getAmoMode(getCodeDepartementFromCodeInsee(codeInsee));
+}
+
+/**
+ * L'autonomie (détachement de l'AMO) n'existe qu'en mode FACULTATIF — porte d'entrée unique
+ * des trois chemins qui y mènent, pour qu'ils ne puissent pas diverger.
+ */
+export function peutPasserEnAutonomie(parcours: ParcoursSimulationPair): boolean {
+  return resolveAmoModeForParcours(parcours) === AmoMode.FACULTATIF;
 }

@@ -89,9 +89,10 @@ function amoItemState(statutAmo: StatutValidationAmo | null): StepListItem["stat
 /**
  * Retourne la liste des items à afficher dans la sidebar selon le mode AMO et le statut.
  *
- * `isNonEligible` neutralise l'ensemble : plus rien n'est actionnable, y compris l'item
- * de tête « Choix de l'accompagnement », dont l'ancre `#choix-amo` ne mène plus qu'au
- * callout d'inéligibilité. Les étapes déjà franchies restent barrées.
+ * `isSansSuite` neutralise l'ensemble : plus rien n'est actionnable, y compris l'item de tête
+ * « Choix de l'accompagnement », dont l'ancre `#choix-amo` ne mène plus qu'au callout expliquant
+ * pourquoi. Couvre l'inéligibilité comme le refus d'accompagnement (le motif ne change que le
+ * texte du callout). Les étapes déjà franchies restent barrées.
  */
 export function getStepListItems(
   amoMode: AmoMode | null,
@@ -99,10 +100,10 @@ export function getStepListItems(
   currentStep: Step | null,
   isCurrentDSStepAccepte: boolean,
   eligibiliteDsStatus: DSStatus | null,
-  isNonEligible = false
+  isSansSuite = false
 ): StepListItem[] {
   const items = buildStepListItems(amoMode, statutAmo, currentStep, isCurrentDSStepAccepte, eligibiliteDsStatus);
-  if (!isNonEligible) return items;
+  if (!isSansSuite) return items;
   return items.map((item) => (item.state === "active" ? { ...item, state: "pending" } : item));
 }
 

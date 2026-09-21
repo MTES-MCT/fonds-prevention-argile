@@ -2,13 +2,19 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
+import { isEligibiliteArchiveReason } from "@/features/simulateur/domain/services";
+import { formatDate } from "@/shared/utils";
 
 interface InfoDossierCalloutProps {
   currentStep: Step;
   currentStatus: Status;
   dsStatus: DSStatus | null;
-  /** Statut validation AMO — sert à détecter un dossier archivé non éligible. */
+  /** Statut validation AMO — distingue l'attente AMO du reste du parcours. */
   validationStatut?: StatutValidationAmo;
+  /** Non-null = parcours archivé. Prime sur tout le reste : plus rien n'est attendu de personne. */
+  archivedAt: Date | null;
+  /** Motif d'archivage, affiché tel quel à l'agent. */
+  archiveReason: string | null;
   /** Date de passage en instruction — distingue 1er dépôt et retour de correction DDT. */
   instructedAt: Date | null;
 }
@@ -17,7 +23,7 @@ interface CalloutMessage {
   title: string;
   description: string;
   hint: string;
-  variant: "yellow-moutarde" | "green-emeraude" | "blue-france" | "red-marianne";
+  variant: "yellow-moutarde" | "green-emeraude" | "blue-france" | "red-marianne" | "brown-caramel";
 }
 
 /**
@@ -201,21 +207,32 @@ export function InfoDossierCallout({
   currentStatus,
   dsStatus,
   validationStatut,
+  archivedAt,
+  archiveReason,
   instructedAt,
 }: InfoDossierCalloutProps) {
   let message: CalloutMessage;
 
-  if (validationStatut === StatutValidationAmo.LOGEMENT_NON_ELIGIBLE) {
-    // Dossier archivé automatiquement (à la création ou lors d'une correction de
-    // simulation par un agent) parce que la simulation a déterminé que le demandeur
-    // n'est pas éligible.
-    message = {
-      title: "Dossier archivé — non éligible",
-      description:
-        "La simulation a déterminé que ce dossier n'est pas éligible au dispositif. Il a été archivé automatiquement.",
-      hint: "Les raisons d'inéligibilité sont consultables dans les détails du dossier.",
-      variant: "red-marianne",
-    };
+  if (archivedAt !== null) {
+    // L'archivage prime sur l'état d'avancement : il n'est plus attendu d'action de personne.
+    // Piloté par `archivedAt`, jamais par le statut de validation — un archivage manuel
+    // (abandon, non-réponse, reste à charge) n'en laisse aucune trace.
+    message = isEligibiliteArchiveReason(archiveReason)
+      ? {
+          title: "Dossier archivé — non éligible",
+          description:
+            "La simulation a déterminé que ce dossier n'est pas éligible au dispositif. Il a été archivé automatiquement.",
+          hint: "Les raisons d'inéligibilité sont consultables dans les détails du dossier.",
+          variant: "red-marianne",
+        }
+      : {
+          title: `Dossier archivé le ${formatDate(archivedAt.toISOString())}`,
+          description: archiveReason
+            ? `Motif : ${archiveReason}. Le demandeur ne poursuit plus ses démarches, et ce dossier n'attend d'action de personne.`
+            : "Ce dossier n'attend d'action de personne. Aucun motif n'a été enregistré.",
+          hint: "Utilisez « Gérer » puis « Désarchiver » pour le remettre dans le suivi actif.",
+          variant: "brown-caramel",
+        };
   } else if (validationStatut === StatutValidationAmo.EN_ATTENTE) {
     // Dossier en attente de validation par l'AMO (étape choix AMO). Le parcours est
     // en EN_INSTRUCTION, mais ce n'est PAS la DDT qui instruit : c'est l'AMO qui doit

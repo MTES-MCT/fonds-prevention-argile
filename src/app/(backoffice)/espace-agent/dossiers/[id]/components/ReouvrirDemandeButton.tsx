@@ -17,9 +17,12 @@ export function ReouvrirDemandeButton({ parcoursId }: ReouvrirDemandeButtonProps
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
-  function handleSuccess() {
+  // La demande redevient `en_attente` : l'écran de décision est sur /demandes/[id], pas ici.
+  // Sans cette redirection, l'agent restait sur une page sans bouton accepter/refuser.
+  function handleSuccess(redirectTo: string | null) {
     setIsModalOpen(false);
-    router.refresh();
+    if (redirectTo) router.push(redirectTo);
+    else router.refresh();
   }
 
   return (

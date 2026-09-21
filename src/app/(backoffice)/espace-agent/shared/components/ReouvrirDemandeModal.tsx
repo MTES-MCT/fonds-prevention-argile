@@ -7,7 +7,7 @@ interface ReouvrirDemandeModalProps {
   isOpen: boolean;
   onClose: () => void;
   parcoursId: string;
-  onSuccess: () => void;
+  onSuccess: (redirectTo: string | null) => void;
 }
 
 /**
@@ -67,7 +67,7 @@ export function ReouvrirDemandeModal({ isOpen, onClose, parcoursId, onSuccess }:
           const modalInstance = (window as any).dsfr?.(dialog)?.modal;
           if (modalInstance) modalInstance.conceal();
         }
-        onSuccess();
+        onSuccess(result.data.redirectTo);
       } else {
         setError(result.error || "Erreur lors de la ré-ouverture");
       }

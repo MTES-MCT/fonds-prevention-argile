@@ -12,6 +12,7 @@ import type { ActionResult } from "@/shared/types/action-result.types";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import { peutPasserEnAutonomie } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
 import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
@@ -190,6 +191,9 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       amoNom: dossier.amoNom,
       estMandataireFinancier: dossier.validation.estMandataireFinancier,
       demandeArretAt: dossier.validation.demandeArretAt,
+      peutPasserEnAutonomie: peutPasserEnAutonomie(dossier.parcours),
+      archivedAt: dossier.parcours.archivedAt,
+      archiveReason: dossier.parcours.archiveReason,
       instructedAt: dossierDS?.instructedAt ?? null,
       parcoursCreatedAt: dossier.parcours.createdAt,
       lastUpdatedAt: dossier.parcours.updatedAt,

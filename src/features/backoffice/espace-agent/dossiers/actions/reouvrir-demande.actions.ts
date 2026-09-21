@@ -11,6 +11,7 @@ import { reouvrirDemandeRefusee } from "@/features/parcours/amo/services/reouver
 import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 import { ACTION_TYPE_DOSSIER_REOUVERT } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { ROLES_REOUVERTURE } from "@/features/backoffice/espace-agent/dossiers/domain/reouverture";
+import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 import type { ActionResult } from "@/shared/types";
 
 /**
@@ -19,8 +20,11 @@ import type { ActionResult } from "@/shared/types";
  * couvrant le territoire (garde `canReopenRefusedDemande`). La mutation métier est
  * déléguée au service partagé `reouvrirDemandeRefusee` ; l'action ajoute le contrôle
  * d'accès, l'audit (`parcours_actions`) et la revalidation.
+ *
+ * Renvoie la page où poursuivre : la demande redevenant `en_attente`, l'écran de décision
+ * est `/demandes/[id]` et non la page dossier d'où part le bouton.
  */
-export async function reouvrirDemandeAction(parcoursId: string): Promise<ActionResult<void>> {
+export async function reouvrirDemandeAction(parcoursId: string): Promise<ActionResult<{ redirectTo: string | null }>> {
   try {
     const agentResult = await getCurrentAgent();
     if (!agentResult.success) return { success: false, error: agentResult.error };
@@ -67,7 +71,9 @@ export async function reouvrirDemandeAction(parcoursId: string): Promise<ActionR
     });
 
     revalidatePath("/espace-agent", "layout");
-    return { success: true, data: undefined };
+
+    // Résolu APRÈS la mutation : la cible dépend du statut et de l'archivage tout juste levés.
+    return { success: true, data: { redirectTo: await resolveEspaceAgentPath(parcoursId) } };
   } catch (error) {
     console.error("[reouvrirDemandeAction] Erreur:", error);
     return { success: false, error: "Erreur lors de la ré-ouverture de la demande" };
