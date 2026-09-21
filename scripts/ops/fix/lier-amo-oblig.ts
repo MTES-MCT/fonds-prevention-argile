@@ -39,7 +39,7 @@
  */
 
 import "../lib/env";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db, rawClient } from "@/shared/database/client";
 import { parcoursPrevention, parcoursAmoValidations, users } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -49,6 +49,9 @@ import { assignAmoAutomatiqueForUser } from "@/features/parcours/amo/services/am
 import { estAmoObligatoire } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { getArg, hasFlag } from "../lib/args";
+
+/** Étapes où une AMO peut encore être attribuée : `invitation` = compte non réclamé. */
+const ETAPES_RATTRAPABLES: readonly Step[] = [Step.CHOIX_AMO, Step.INVITATION];
 
 const APPLY = hasFlag("apply");
 const PARCOURS_ID = getArg("parcours-id");
@@ -131,9 +134,9 @@ async function runTargeted(parcoursId: string) {
     console.error("En mode facultatif, le ménage doit choisir lui-même son AMO — pas de rattrapage automatique.");
     process.exit(1);
   }
-  if (parcours.currentStep !== Step.CHOIX_AMO) {
+  if (!ETAPES_RATTRAPABLES.includes(parcours.currentStep)) {
     console.error(
-      `ABANDON : étape ${parcours.currentStep} ≠ choix_amo. L'auto-attribution ne s'applique qu'à choix_amo.`
+      `ABANDON : étape ${parcours.currentStep}. L'auto-attribution ne s'applique qu'à ${ETAPES_RATTRAPABLES.join(" ou ")}.`
     );
     process.exit(1);
   }
@@ -162,8 +165,9 @@ async function runTargeted(parcoursId: string) {
 }
 
 async function runInventory() {
-  // Dossiers validés par un Aller-vers (situation = eligible), encore en choix_amo,
-  // sans validation AMO, ni archivés ni complétés.
+  // Dossiers validés par un Aller-vers (situation = eligible), encore en attente d'AMO,
+  // sans validation AMO, ni archivés ni complétés. `invitation` incluse : le compte n'a
+  // pas encore été réclamé, ce sont justement les dossiers restés chez l'Aller-vers.
   const rows = await db
     .select({
       parcours: parcoursPrevention,
@@ -176,7 +180,7 @@ async function runInventory() {
     .leftJoin(parcoursAmoValidations, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
     .where(
       and(
-        eq(parcoursPrevention.currentStep, Step.CHOIX_AMO),
+        inArray(parcoursPrevention.currentStep, ETAPES_RATTRAPABLES),
         eq(parcoursPrevention.situationParticulier, SituationParticulier.ELIGIBLE),
         isNull(parcoursAmoValidations.id),
         isNull(parcoursPrevention.archivedAt),
@@ -202,7 +206,7 @@ async function runInventory() {
   }
 
   console.log(
-    `Dossiers bloqués éligibles au rattrapage : ${candidates.length} (sur ${rows.length} sans validation en choix_amo/eligible)`
+    `Dossiers bloqués éligibles au rattrapage : ${candidates.length} (sur ${rows.length} sans validation, en invitation ou choix_amo)`
   );
   console.log();
   for (const c of candidates) {
