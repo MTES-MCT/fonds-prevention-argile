@@ -46,7 +46,7 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import { assignAmoAutomatiqueForUser } from "@/features/parcours/amo/services/amo-selection.service";
-import { getAmoMode, isAmoAttributionAutomatique } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { estAmoObligatoire } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { getArg, hasFlag } from "../lib/args";
 
@@ -64,20 +64,20 @@ interface Candidate {
   nom: string | null;
   email: string | null;
   codeDepartement: string | null;
-  mode: string | null;
+  amoObligatoire: boolean;
 }
 
 /**
- * Résout le département d'un parcours (user-first, fallback agent) et le mode AMO.
+ * Résout le département d'un parcours (user-first, fallback agent) et ses règles AMO.
  */
 function resolveDept(parcours: typeof parcoursPrevention.$inferSelect): {
   codeDepartement: string | null;
-  mode: string | null;
+  amoObligatoire: boolean;
 } {
   const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
-  if (!codeInsee) return { codeDepartement: null, mode: null };
+  if (!codeInsee) return { codeDepartement: null, amoObligatoire: false };
   const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
-  return { codeDepartement, mode: getAmoMode(codeDepartement) };
+  return { codeDepartement, amoObligatoire: estAmoObligatoire(codeDepartement) };
 }
 
 /**
@@ -109,13 +109,13 @@ async function runTargeted(parcoursId: string) {
     .from(parcoursAmoValidations)
     .where(eq(parcoursAmoValidations.parcoursId, parcoursId))
     .limit(1);
-  const { codeDepartement, mode } = resolveDept(parcours);
+  const { codeDepartement, amoObligatoire } = resolveDept(parcours);
 
   console.log(`Parcours    : ${parcoursId}`);
   console.log(`Demandeur   : ${user?.prenom ?? ""} ${user?.nom ?? ""} <${user?.email ?? "?"}>`);
   console.log(`Étape       : ${parcours.currentStep} / ${parcours.currentStatus}`);
   console.log(`Situation   : ${parcours.situationParticulier}`);
-  console.log(`Département  : ${codeDepartement ?? "?"} (mode AMO : ${mode ?? "?"})`);
+  console.log(`Département  : ${codeDepartement ?? "?"} (AMO obligatoire : ${amoObligatoire ? "oui" : "non"})`);
   console.log(
     `Validation  : ${validation ? `${validation.statut} (${validation.attributionMode})` : "<aucune ligne>"}`
   );
@@ -126,10 +126,8 @@ async function runTargeted(parcoursId: string) {
     console.error("ABANDON : une validation AMO existe déjà. Rien à faire (le service serait no-op).");
     process.exit(1);
   }
-  if (!codeDepartement || !isAmoAttributionAutomatique(codeDepartement)) {
-    console.error(
-      `ABANDON : département ${codeDepartement ?? "?"} non en attribution automatique (mode ${mode ?? "?"}).`
-    );
+  if (!codeDepartement || !amoObligatoire) {
+    console.error(`ABANDON : département ${codeDepartement ?? "?"} sans AMO obligatoire.`);
     console.error("En mode facultatif, le ménage doit choisir lui-même son AMO — pas de rattrapage automatique.");
     process.exit(1);
   }
@@ -158,7 +156,7 @@ async function runTargeted(parcoursId: string) {
     nom: user?.nom ?? null,
     email: user?.email ?? null,
     codeDepartement,
-    mode,
+    amoObligatoire,
   });
   if (!ok) process.exit(1);
 }
@@ -189,8 +187,8 @@ async function runInventory() {
   // Filtre département en attribution automatique (dépend de la config env + jsonb → côté JS).
   const candidates: Candidate[] = [];
   for (const row of rows) {
-    const { codeDepartement, mode } = resolveDept(row.parcours);
-    if (codeDepartement && isAmoAttributionAutomatique(codeDepartement)) {
+    const { codeDepartement, amoObligatoire } = resolveDept(row.parcours);
+    if (codeDepartement && amoObligatoire) {
       candidates.push({
         parcoursId: row.parcours.id,
         userId: row.parcours.userId,
@@ -198,7 +196,7 @@ async function runInventory() {
         nom: row.nom,
         email: row.email,
         codeDepartement,
-        mode,
+        amoObligatoire,
       });
     }
   }
@@ -208,9 +206,7 @@ async function runInventory() {
   );
   console.log();
   for (const c of candidates) {
-    console.log(
-      `  ${c.parcoursId}  dept ${c.codeDepartement} (${c.mode})  ${c.prenom ?? ""} ${c.nom ?? ""} <${c.email ?? "?"}>`
-    );
+    console.log(`  ${c.parcoursId}  dept ${c.codeDepartement}  ${c.prenom ?? ""} ${c.nom ?? ""} <${c.email ?? "?"}>`);
   }
   console.log();
 

@@ -4,7 +4,7 @@ import { SituationParticulier } from "@/shared/domain/value-objects/situation-pa
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import { assignAmoAutomatiqueForUser } from "@/features/parcours/amo/services/amo-selection.service";
-import { isAmoAttributionAutomatique } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { estAmoObligatoire } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { RAISON_ARCHIVAGE_NON_ELIGIBLE } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import { QualificationDecision } from "../domain/types";
@@ -56,9 +56,8 @@ export class QualificationService {
     // 3. Mettre à jour situation_particulier selon la décision
     if (decision === QualificationDecision.ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(parcoursId, SituationParticulier.ELIGIBLE);
-      // En département à AMO obligatoire (ou AV/AMO fusionnés), la validation de
-      // l'Aller-vers met directement le dossier en lien avec l'AMO unique du
-      // territoire — sans attendre que le ménage fasse sa demande d'accompagnement.
+      // Là où l'AMO est imposé, la validation de l'Aller-vers met directement le dossier
+      // en lien avec l'AMO du territoire, sans attendre la demande du ménage.
       await this.autoLinkAmoIfObligatoire(parcours);
     } else if (decision === QualificationDecision.NON_ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(
@@ -87,7 +86,7 @@ export class QualificationService {
 
   /**
    * Met le dossier en lien direct avec l'AMO du territoire si le département impose
-   * un AMO (obligatoire / AV-AMO fusionnés). Best-effort : `assignAmoAutomatiqueForUser`
+   * un AMO. Best-effort : `assignAmoAutomatiqueForUser`
    * est idempotent (no-op success si une validation existe déjà) et gardé à l'étape
    * choix_amo (renvoie success:false sinon) — cet échec est ignoré (loggé) et ne doit
    * jamais faire échouer la qualification déjà enregistrée.
@@ -98,7 +97,7 @@ export class QualificationService {
     try {
       const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
       if (!codeInsee) return;
-      if (!isAmoAttributionAutomatique(getCodeDepartementFromCodeInsee(codeInsee))) return;
+      if (!estAmoObligatoire(getCodeDepartementFromCodeInsee(codeInsee))) return;
 
       const result = await assignAmoAutomatiqueForUser(parcours.userId);
       if (!result.success) {

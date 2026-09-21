@@ -17,7 +17,7 @@ import {
 } from "../domain/value-objects";
 import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import { AmoMode, getAmoMode } from "../domain/value-objects/departements-amo";
+import { estAmoObligatoire, getReglesAmo } from "../domain/value-objects/departements-amo";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { Status, Step } from "../../core";
 import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
@@ -444,16 +444,14 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
     return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
   }
 
-  // Détermine le mode d'attribution :
-  //   - OBLIGATOIRE / AV_AMO_FUSIONNES : auto-attribué silencieusement à l'arrivée sur /mon-compte
-  //   - FACULTATIF : appelée après que l'utilisateur a explicitement choisi "Oui" dans
-  //     CalloutChoixAccompagnement → on prend le 1er AMO du territoire (skip de l'étape liste).
-  const mode = getAmoMode(getCodeDepartementFromCodeInsee(codeInsee));
+  // Trace l'origine de l'attribution : imposée par le département (silencieuse à l'arrivée
+  // sur /mon-compte), ou choisie par le demandeur via CalloutChoixAccompagnement.
+  const regles = getReglesAmo(getCodeDepartementFromCodeInsee(codeInsee));
   let attributionMode: AttributionAmoMode;
-  if (mode === AmoMode.OBLIGATOIRE) {
-    attributionMode = AttributionAmoMode.AUTO_OBLIGATOIRE;
-  } else if (mode === AmoMode.AV_AMO_FUSIONNES) {
+  if (regles.avCumuleAmo) {
     attributionMode = AttributionAmoMode.AUTO_AV_AMO;
+  } else if (regles.amoObligatoire) {
+    attributionMode = AttributionAmoMode.AUTO_OBLIGATOIRE;
   } else {
     attributionMode = AttributionAmoMode.MANUEL;
   }
@@ -501,8 +499,7 @@ export async function skipAmoStepForUser(userId: string): Promise<ActionResult<{
     return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
   }
 
-  const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
-  if (getAmoMode(codeDepartement) !== AmoMode.FACULTATIF) {
+  if (estAmoObligatoire(getCodeDepartementFromCodeInsee(codeInsee))) {
     return { success: false, error: "L'AMO est obligatoire pour ce département" };
   }
 
@@ -581,7 +578,7 @@ export async function demanderAccompagnementDemandeur(
 
   // Même garde que `skipAmoStepForUser`/`annulerAccompagnementDemandeur` : là où l'AMO est
   // obligatoire, ce statut SANS_AMO ne devrait de toute façon jamais exister.
-  if (getAmoMode(getCodeDepartementFromCodeInsee(codeInsee)) !== AmoMode.FACULTATIF) {
+  if (estAmoObligatoire(getCodeDepartementFromCodeInsee(codeInsee))) {
     return { success: false, error: "L'AMO est obligatoire pour ce département" };
   }
 

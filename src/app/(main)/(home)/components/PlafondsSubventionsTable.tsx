@@ -3,7 +3,7 @@
 import { useState } from "react";
 import content from "../content/content.json";
 import { getAllDepartementsEligibles } from "@/shared/constants/rga.constants";
-import { AmoMode, getAmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { estAmoObligatoire } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 
 type PlafondRow = {
   phase: string;
@@ -21,8 +21,7 @@ type PlafondRow = {
 function getStatut(row: PlafondRow, codeDept: string): "obligatoire" | "facultative" {
   if (row.always) return row.always;
   // depends_on_amo : OBLIGATOIRE ou AV_AMO_FUSIONNES → AMO auto-attribué = obligatoire
-  const mode = getAmoMode(codeDept);
-  return mode === AmoMode.OBLIGATOIRE || mode === AmoMode.AV_AMO_FUSIONNES ? "obligatoire" : "facultative";
+  return estAmoObligatoire(codeDept) ? "obligatoire" : "facultative";
 }
 
 function StatutBadge({ statut }: { statut: "obligatoire" | "facultative" }) {

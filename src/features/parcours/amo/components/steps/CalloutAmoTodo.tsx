@@ -11,8 +11,7 @@ import type { AllersVers } from "@/features/seo/allers-vers";
 import { getCodeDepartementFromCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { ContactCard } from "@/shared/components";
 import { useParcours } from "@/features/parcours/core/context/useParcours";
-import { useAmoMode } from "@/features/parcours/amo/hooks";
-import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { useReglesAmo } from "@/features/parcours/amo/hooks";
 
 interface CalloutAmoTodoProps {
   onSuccess?: () => void;
@@ -24,8 +23,8 @@ export default function CalloutAmoTodo({ onSuccess, refresh, contactInfoVersion 
   const { user } = useAuth();
   const { data: rgaData, isLoading: isLoadingRga } = useSimulateurRga();
   const { parcours, isLoading: isLoadingParcours } = useParcours();
-  const amoMode = useAmoMode();
-  const isFacultatif = amoMode === AmoMode.FACULTATIF;
+  const regles = useReglesAmo();
+  const isFacultatif = regles?.amoObligatoire === false;
 
   const [amoList, setAmoList] = useState<Amo[]>([]);
   const [allersVersList, setAllersVersList] = useState<AllersVers[]>([]);
@@ -89,7 +88,13 @@ export default function CalloutAmoTodo({ onSuccess, refresh, contactInfoVersion 
     }
 
     loadData();
-  }, [isLoadingRga, isLoadingParcours, parcours?.rgaSimulationData, rgaData?.logement?.commune, rgaData?.logement?.epci]);
+  }, [
+    isLoadingRga,
+    isLoadingParcours,
+    parcours?.rgaSimulationData,
+    rgaData?.logement?.commune,
+    rgaData?.logement?.epci,
+  ]);
 
   // Charger les coordonnées de contact sauvegardées, sinon fallback sur l'email FC
   useEffect(() => {

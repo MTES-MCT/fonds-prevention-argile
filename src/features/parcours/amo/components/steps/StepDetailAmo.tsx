@@ -7,13 +7,12 @@ import {
   estParcoursSansSuite,
   StatutValidationAmo,
 } from "@/features/parcours/amo/domain/value-objects";
-import { useAmoMode } from "@/features/parcours/amo/hooks";
-import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { useReglesAmo } from "@/features/parcours/amo/hooks";
 import { ContactCard } from "@/shared/components/ContactCard/ContactCard";
 
 export default function StepDetailAmo() {
   const { currentStep, statutAmo, validationAmoComplete, isDossierNonEligible } = useParcours();
-  const amoMode = useAmoMode();
+  const regles = useReglesAmo();
 
   // Inéligibilité : décision d'un AMO, ou qualification Aller-vers / simulation du demandeur
   // (qui laissent statutAmo null). Le refus d'accompagnement gare aussi la carte, mais sans
@@ -27,7 +26,7 @@ export default function StepDetailAmo() {
   const isChooseAmoLinkDisabled = isDisabled || statutAmo === StatutValidationAmo.EN_ATTENTE;
 
   // Titre adapté au mode AMO
-  const isFacultatif = amoMode === AmoMode.FACULTATIF;
+  const isFacultatif = regles?.amoObligatoire === false;
   const cardTitle = isFacultatif ? "2. Accompagnement" : "2. Mon AMO";
 
   // SANS_AMO : le demandeur a explicitement renoncé à un AMO. Pas de carte AMO à afficher.

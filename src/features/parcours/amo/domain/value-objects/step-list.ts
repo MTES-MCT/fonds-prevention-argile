@@ -1,7 +1,7 @@
 import { Step, STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import { AmoMode } from "./departements-amo";
+import type { ReglesAmo } from "./departements-amo";
 import { estFormulaireEligibiliteBloqueParDemandeAccompagnement } from "./arretAccompagnement";
 
 /**
@@ -87,7 +87,8 @@ function amoItemState(statutAmo: StatutValidationAmo | null): StepListItem["stat
 }
 
 /**
- * Retourne la liste des items à afficher dans la sidebar selon le mode AMO et le statut.
+ * Retourne la liste des items à afficher dans la sidebar selon les règles d'AMO du
+ * département et le statut de la validation.
  *
  * `isSansSuite` neutralise l'ensemble : plus rien n'est actionnable, y compris l'item de tête
  * « Choix de l'accompagnement », dont l'ancre `#choix-amo` ne mène plus qu'au callout expliquant
@@ -95,20 +96,20 @@ function amoItemState(statutAmo: StatutValidationAmo | null): StepListItem["stat
  * texte du callout). Les étapes déjà franchies restent barrées.
  */
 export function getStepListItems(
-  amoMode: AmoMode | null,
+  regles: ReglesAmo | null,
   statutAmo: StatutValidationAmo | null,
   currentStep: Step | null,
   isCurrentDSStepAccepte: boolean,
   eligibiliteDsStatus: DSStatus | null,
   isSansSuite = false
 ): StepListItem[] {
-  const items = buildStepListItems(amoMode, statutAmo, currentStep, isCurrentDSStepAccepte, eligibiliteDsStatus);
+  const items = buildStepListItems(regles, statutAmo, currentStep, isCurrentDSStepAccepte, eligibiliteDsStatus);
   if (!isSansSuite) return items;
   return items.map((item) => (item.state === "active" ? { ...item, state: "pending" } : item));
 }
 
 function buildStepListItems(
-  amoMode: AmoMode | null,
+  regles: ReglesAmo | null,
   statutAmo: StatutValidationAmo | null,
   currentStep: Step | null,
   isCurrentDSStepAccepte: boolean,
@@ -122,8 +123,8 @@ function buildStepListItems(
   const dsTail = buildDsTail(currentStep, isCurrentDSStepAccepte, blockedByAmoEnAttente);
   const onChoixAmo = currentStep === Step.CHOIX_AMO;
 
-  // Mode OBLIGATOIRE / AV_AMO_FUSIONNES : un seul item AMO ("Attendre la réponse de votre AMO")
-  if (amoMode === AmoMode.OBLIGATOIRE || amoMode === AmoMode.AV_AMO_FUSIONNES) {
+  // AMO imposé : un seul item AMO ("Attendre la réponse de votre AMO"), sans étape de choix.
+  if (regles?.amoObligatoire === true) {
     return [
       {
         key: "amo",
@@ -135,7 +136,7 @@ function buildStepListItems(
     ];
   }
 
-  // Mode FACULTATIF (par défaut si amoMode null le temps du chargement aussi)
+  // AMO facultatif (et par défaut le temps du chargement, règles encore inconnues)
   // Cas 1 : aucune réponse encore → un seul item "Choix de l'accompagnement" actif
   if (statutAmo === null) {
     return [

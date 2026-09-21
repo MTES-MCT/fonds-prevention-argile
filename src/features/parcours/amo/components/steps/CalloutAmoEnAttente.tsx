@@ -6,13 +6,12 @@ import { useParcours } from "@/features/parcours/core/context/useParcours";
 import { Amo } from "@/features/parcours/amo";
 import { assignAmoAutomatique, getAmoChoisie } from "@/features/parcours/amo/actions";
 import { StatutValidationAmo } from "../../domain/value-objects";
-import { useAmoMode } from "../../hooks";
-import { AmoMode } from "../../domain/value-objects/departements-amo";
+import { useReglesAmo } from "../../hooks";
 import { ContactCard } from "@/shared/components";
 
 interface CalloutAmoEnAttenteProps {
-  /** Disponible uniquement en modes OBLIGATOIRE / AV_AMO_FUSIONNES pour déclencher
-   *  l'auto-attribution puis recharger le parcours. */
+  /** Disponible uniquement là où l'AMO est imposé, pour déclencher l'auto-attribution
+   *  puis recharger le parcours. */
   refresh?: () => Promise<void>;
   /** Incrémenté à chaque sauvegarde du `ContactInfoModal`. Permet de retry l'auto-attribution
    *  après que l'utilisateur a complété ses coordonnées (téléphone obligatoire). */
@@ -20,16 +19,16 @@ interface CalloutAmoEnAttenteProps {
 }
 
 /**
- * Callout "AMO en attente". Couvre 2 callout selon le mode AMO :
- *  - Mode OBLIGATOIRE / AV_AMO_FUSIONNES) : Affiche ce callout dès le début du parcours, avec un message d'attente et les coordonnées de l'AMO une fois attribué
- *  - Mode FACULTATIF (après que l'utilisateur a choisi un AMO)
+ * Callout "AMO en attente", en deux variantes :
+ *  - AMO imposé : affiché dès le début du parcours, il attribue l'AMO puis montre ses coordonnées ;
+ *  - AMO facultatif : affiché une fois que le demandeur a choisi d'être accompagné.
  */
 export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }: CalloutAmoEnAttenteProps = {}) {
   const { user } = useAuth();
   const { statutAmo } = useParcours();
-  const amoMode = useAmoMode();
+  const regles = useReglesAmo();
 
-  const isAutoAttributionMode = amoMode === AmoMode.OBLIGATOIRE || amoMode === AmoMode.AV_AMO_FUSIONNES;
+  const isAutoAttributionMode = regles?.amoObligatoire === true;
 
   const [amoChoisie, setAmoChoisie] = useState<Amo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +40,7 @@ export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }:
   // chaque fois que `contactInfoVersion` change (ex. après confirmation du modal).
   const triedVersionRef = useRef<number | null>(null);
 
-  // Auto-attribution silencieuse au montage (modes OBLIGATOIRE / AV_AMO_FUSIONNES uniquement)
+  // Auto-attribution silencieuse au montage (là où l'AMO est imposé uniquement)
   useEffect(() => {
     if (!isAutoAttributionMode) return;
     if (statutAmo !== null) return;
@@ -87,7 +86,7 @@ export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }:
     );
   }
 
-  // Cas OBLIGATOIRE / AV_AMO_FUSIONNES : aucun AMO n'est seedé pour le département du demandeur.
+  // AMO imposé mais aucun AMO seedé pour le département du demandeur.
   if (noAmoAvailable) {
     return (
       <div id="choix-amo">

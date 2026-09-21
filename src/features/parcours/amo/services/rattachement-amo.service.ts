@@ -15,7 +15,7 @@ import { StatutValidationAmo, estDossierChezLaDdt } from "../domain/value-object
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
-import { AmoMode, resolveAmoModeForParcours } from "../domain/value-objects/departements-amo";
+import { resolveReglesAmoForParcours } from "../domain/value-objects/departements-amo";
 import { normalizeCodeInsee } from "../utils/amo.utils";
 import { findFirstAmoForTerritory } from "./amo-selection.service";
 
@@ -56,11 +56,11 @@ export async function rattacherAmo(params: { parcoursId: string }): Promise<Acti
     return { success: false, error: "Parcours archivé : le désarchiver avant de rattacher une AMO" };
   }
 
-  const mode = resolveAmoModeForParcours(parcours);
-  if (mode === null) {
-    return { success: false, error: "Commune introuvable : impossible de déterminer le mode AMO" };
+  const regles = resolveReglesAmoForParcours(parcours);
+  if (regles === null) {
+    return { success: false, error: "Commune introuvable : impossible de déterminer les règles AMO" };
   }
-  if (mode === AmoMode.FACULTATIF) {
+  if (!regles.amoObligatoire) {
     return { success: false, error: "Département à AMO facultative : l'autonomie y est légitime" };
   }
 
@@ -91,8 +91,7 @@ export async function rattacherAmo(params: { parcoursId: string }): Promise<Acti
     return { success: false, error: "Aucune AMO trouvée (ni dans l'historique, ni sur le territoire)" };
   }
 
-  const attributionMode =
-    mode === AmoMode.AV_AMO_FUSIONNES ? AttributionAmoMode.AUTO_AV_AMO : AttributionAmoMode.AUTO_OBLIGATOIRE;
+  const attributionMode = regles.avCumuleAmo ? AttributionAmoMode.AUTO_AV_AMO : AttributionAmoMode.AUTO_OBLIGATOIRE;
 
   // Conditionné sur `sans_amo` : protège d'un rattachement concurrent.
   await db
