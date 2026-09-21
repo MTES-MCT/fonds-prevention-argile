@@ -144,15 +144,40 @@ describe("qualifyProspectAction", () => {
       const result = await qualifyProspectAction(payloadEligible);
 
       expect(result.success).toBe(true);
-      expect(qualificationService.qualifyProspect).toHaveBeenCalledWith({
-        parcoursId: PARCOURS_ID,
-        agentId: "agent-1",
-        decision: QualificationDecision.ELIGIBLE,
-        actionsRealisees: undefined,
-        raisonsIneligibilite: undefined,
-        estMandataireFinancier: true,
-        note: "Visite faite",
-      });
+      expect(qualificationService.qualifyProspect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          parcoursId: PARCOURS_ID,
+          agentId: "agent-1",
+          decision: QualificationDecision.ELIGIBLE,
+          estMandataireFinancier: true,
+          note: "Visite faite",
+        })
+      );
+    });
+
+    it("refuse la casquette AMO à un Aller-vers pur, même rattaché à une entreprise", async () => {
+      // Sans cette garde de rôle, il validerait au nom d'une AMO qui n'a rien dit.
+      mockAgentAllersVers({ entrepriseAmoId: "amo-1" });
+
+      await qualifyProspectAction(payloadEligible);
+
+      expect(qualificationService.qualifyProspect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contexteAgent: { entrepriseAmoId: "amo-1", aLaCapaciteAmo: false },
+        })
+      );
+    });
+
+    it("reconnaît la casquette AMO d'un agent hybride", async () => {
+      mockAgentAllersVers({ role: UserRole.AMO_ET_ALLERS_VERS, entrepriseAmoId: "amo-1" });
+
+      await qualifyProspectAction(payloadEligible);
+
+      expect(qualificationService.qualifyProspect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contexteAgent: { entrepriseAmoId: "amo-1", aLaCapaciteAmo: true },
+        })
+      );
     });
 
     it("transmet les raisons d'inéligibilité", async () => {

@@ -2,24 +2,22 @@ import { parcoursPreventionRepository } from "@/shared/database/repositories/par
 import { prospectQualificationsRepo } from "@/shared/database/repositories/prospect-qualifications.repository";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
-import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
-import { assignAmoAutomatiqueForUser } from "@/features/parcours/amo/services/amo-selection.service";
-import { estAmoObligatoire } from "@/features/parcours/amo/domain/value-objects/departements-amo";
-import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { RAISON_ARCHIVAGE_NON_ELIGIBLE } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
+import type { AccompagnementSouhaite } from "@/shared/domain/value-objects/accompagnement-souhaite.enum";
 import { QualificationDecision } from "../domain/types";
 import { ACTION_TYPE_BY_DECISION, buildQualificationAuditMessage } from "../domain/qualification-audit";
 import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
-
-/**
- * Verdict de la transmission à l'AMO. `null` = sans objet (décision non éligible, ou
- * département où le ménage choisit lui-même son accompagnement).
- */
-export type TransmissionAmo = { transmise: boolean; raison: string } | null;
+import {
+  donnerSuiteAQualificationEligible,
+  libelleSuiteAccompagnement,
+  type ContexteAgentQualification,
+  type SuiteAccompagnement,
+} from "./suite-qualification.service";
 
 export interface QualifyProspectResult {
   qualification: ProspectQualification;
-  transmissionAmo: TransmissionAmo;
+  /** Suite donnée à l'accompagnement. `null` = sans objet (décision autre qu'éligible). */
+  suiteAccompagnement: SuiteAccompagnement;
 }
 
 interface QualifyProspectParams {
@@ -29,7 +27,14 @@ interface QualifyProspectParams {
   actionsRealisees?: string[];
   raisonsIneligibilite?: string[];
   estMandataireFinancier?: boolean;
+  /** Réponse du demandeur recueillie par l'agent (départements sans AMO imposé). */
+  accompagnementSouhaite?: AccompagnementSouhaite;
   note?: string;
+  /**
+   * Casquettes de l'agent, pour décider si sa qualification vaut validation AMO. Absent
+   * quand l'appelant n'est pas une action d'agent (création de dossier non éligible).
+   */
+  contexteAgent?: Omit<ContexteAgentQualification, "agentId">;
 }
 
 /**
@@ -44,8 +49,17 @@ export class QualificationService {
    * - "a_qualifier" → pas de changement de situation_particulier
    */
   async qualifyProspect(params: QualifyProspectParams): Promise<QualifyProspectResult> {
-    const { parcoursId, agentId, decision, actionsRealisees, raisonsIneligibilite, estMandataireFinancier, note } =
-      params;
+    const {
+      parcoursId,
+      agentId,
+      decision,
+      actionsRealisees,
+      raisonsIneligibilite,
+      estMandataireFinancier,
+      accompagnementSouhaite,
+      note,
+      contexteAgent,
+    } = params;
 
     // 1. Vérifier que le parcours existe
     const parcours = await parcoursPreventionRepository.findById(parcoursId);
@@ -61,16 +75,22 @@ export class QualificationService {
       actionsRealisees: actionsRealisees ?? [],
       raisonsIneligibilite: raisonsIneligibilite ?? null,
       estMandataireFinancier: estMandataireFinancier ?? null,
+      accompagnementSouhaite: accompagnementSouhaite ?? null,
       note: note ?? null,
     });
 
     // 3. Mettre à jour situation_particulier selon la décision
-    let transmissionAmo: TransmissionAmo = null;
+    let suiteAccompagnement: SuiteAccompagnement = null;
     if (decision === QualificationDecision.ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(parcoursId, SituationParticulier.ELIGIBLE);
-      // Là où l'AMO est imposé, la validation de l'Aller-vers met directement le dossier
-      // en lien avec l'AMO du territoire, sans attendre la demande du ménage.
-      transmissionAmo = await this.autoLinkAmoIfObligatoire(parcours);
+      // La qualification de l'Aller-vers met le dossier en relation avec l'AMO, sans
+      // attendre que le ménage redemande ce qu'il vient de dire à l'agent.
+      suiteAccompagnement = await donnerSuiteAQualificationEligible(
+        parcours,
+        { agentId, ...(contexteAgent ?? { entrepriseAmoId: null, aLaCapaciteAmo: false }) },
+        accompagnementSouhaite,
+        estMandataireFinancier
+      );
     } else if (decision === QualificationDecision.NON_ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(
         parcoursId,
@@ -86,43 +106,24 @@ export class QualificationService {
     // server action, pour couvrir aussi la création de dossier AV non éligible.
     // Une décision « non éligible » archive le dossier : pas de `dossier_archive` en plus,
     // la qualification porte déjà l'information.
+    // La suite donnée à l'accompagnement enrichit cette trace au lieu d'en créer une seconde :
+    // un seul geste de l'agent doit rester une seule ligne d'historique (§2.9 FLOW-AND-SYNC.md).
+    const messageQualification = buildQualificationAuditMessage({
+      decision,
+      raisonsIneligibilite,
+      estMandataireFinancier,
+      note,
+    });
+    const messageSuite = libelleSuiteAccompagnement(suiteAccompagnement);
+
     await logSystemAction({
       parcoursId,
       author: { agentId },
       actionType: ACTION_TYPE_BY_DECISION[decision],
-      message: buildQualificationAuditMessage({ decision, raisonsIneligibilite, estMandataireFinancier, note }),
+      message: [messageQualification, messageSuite].filter(Boolean).join(" ") || null,
     });
 
-    return { qualification, transmissionAmo };
-  }
-
-  /**
-   * Met le dossier en lien direct avec l'AMO du territoire si le département impose un AMO.
-   *
-   * Best-effort sur la mutation (un échec ne fait jamais échouer la qualification déjà
-   * enregistrée) mais **pas silencieux** : le verdict remonte à l'agent, qui croyait sinon
-   * avoir passé la main alors que rien n'était parti vers l'AMO.
-   */
-  private async autoLinkAmoIfObligatoire(
-    parcours: NonNullable<Awaited<ReturnType<typeof parcoursPreventionRepository.findById>>>
-  ): Promise<TransmissionAmo> {
-    try {
-      const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
-      if (!codeInsee) {
-        return { transmise: false, raison: "Commune du logement inconnue : AMO non sollicitée." };
-      }
-      if (!estAmoObligatoire(getCodeDepartementFromCodeInsee(codeInsee))) return null;
-
-      const result = await assignAmoAutomatiqueForUser(parcours.userId);
-      if (!result.success) {
-        console.warn(`[qualifyProspect] auto-lien AMO non appliqué (parcours ${parcours.id}): ${result.error}`);
-        return { transmise: false, raison: result.error };
-      }
-      return { transmise: true, raison: result.data.message };
-    } catch (error) {
-      console.error(`[qualifyProspect] échec auto-lien AMO (parcours ${parcours.id}):`, error);
-      return { transmise: false, raison: "Erreur technique lors de la transmission à l'AMO." };
-    }
+    return { qualification, suiteAccompagnement };
   }
 
   /**

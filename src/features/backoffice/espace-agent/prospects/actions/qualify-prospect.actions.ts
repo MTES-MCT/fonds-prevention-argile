@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/features/auth/services/user.service";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { UserRole } from "@/shared/domain/value-objects";
+import { ACCOMPAGNEMENT_SOUHAITE_VALUES } from "@/shared/domain/value-objects/accompagnement-souhaite.enum";
 import { QualificationDecision } from "../domain/types";
 import { qualificationService, type QualifyProspectResult } from "../services/qualification.service";
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
@@ -27,6 +28,7 @@ const qualifyProspectSchema = z
     actionsRealisees: z.array(z.string()).optional(),
     raisonsIneligibilite: z.array(z.string()).optional(),
     estMandataireFinancier: z.boolean().optional(),
+    accompagnementSouhaite: z.enum(ACCOMPAGNEMENT_SOUHAITE_VALUES).optional(),
     note: z.string().optional(),
   })
   .refine(
@@ -43,6 +45,9 @@ const qualifyProspectSchema = z
   );
 
 type QualifyProspectInput = z.infer<typeof qualifyProspectSchema>;
+
+/** Rôles portant la casquette AMO : eux seuls peuvent valider au nom de leur entreprise. */
+const ROLES_CAPACITE_AMO: readonly UserRole[] = [UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS];
 
 // --- Actions ---
 
@@ -86,7 +91,15 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
       return { success: false, error: messageMetier ?? "Données invalides" };
     }
 
-    const { parcoursId, decision, actionsRealisees, raisonsIneligibilite, estMandataireFinancier, note } = parsed.data;
+    const {
+      parcoursId,
+      decision,
+      actionsRealisees,
+      raisonsIneligibilite,
+      estMandataireFinancier,
+      accompagnementSouhaite,
+      note,
+    } = parsed.data;
 
     // 5. Garde responsable : seul le responsable courant peut qualifier
     const guard = await assertCanActAsResponsable(parcoursId, {
@@ -103,7 +116,14 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
       actionsRealisees,
       raisonsIneligibilite,
       estMandataireFinancier,
+      accompagnementSouhaite,
       note,
+      // La capacité AMO vient du rôle, pas de la seule présence d'une entreprise en base :
+      // sans elle, un agent Aller-vers pur validerait au nom d'une AMO.
+      contexteAgent: {
+        entrepriseAmoId: user.entrepriseAmoId ?? null,
+        aLaCapaciteAmo: ROLES_CAPACITE_AMO.includes(role),
+      },
     });
 
     // 7. Invalidation du cache

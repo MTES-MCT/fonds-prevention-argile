@@ -27,6 +27,36 @@ vi.mock("@/shared/database/repositories/parcours-prevention.repository", () => (
 
 vi.mock("@/features/parcours/amo/services/amo-selection.service", () => ({
   assignAmoAutomatiqueForUser: vi.fn(async () => ({ success: true, data: { message: "AMO liée", token: "t" } })),
+  passerEnAutonomie: vi.fn(async () => ({ success: true, data: { message: "autonomie" } })),
+}));
+
+vi.mock("@/features/parcours/amo/services/ouverture-eligibilite.service", () => ({
+  ouvrirEligibiliteApresValidationAmo: vi.fn(async () => true),
+}));
+
+vi.mock("@/features/parcours/amo/services/amo-query.service", () => ({
+  checkAmoCoversCodeInsee: vi.fn(async () => true),
+}));
+
+vi.mock("@/shared/database/repositories", () => ({
+  entreprisesAmoRepo: { findById: vi.fn(async () => null) },
+}));
+
+vi.mock("@/shared/email/brevo", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/email/brevo")>()),
+  emitBrevoEvent: vi.fn(),
+}));
+
+// Insertion de la validation par la voie fusionnée (aller-vers qui est aussi l'AMO).
+const insertReturning = vi.fn(async () => [{ id: "validation-1" }]);
+vi.mock("@/shared/database/client", () => ({
+  db: {
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoNothing: vi.fn(() => ({ returning: insertReturning })),
+      })),
+    })),
+  },
 }));
 
 vi.mock("@/features/backoffice/espace-agent/shared/services/action-audit.service", () => ({
@@ -77,12 +107,17 @@ describe("qualificationService.qualifyProspect — audit de la réponse Aller-ve
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue({ id: parcoursId } as never);
+    vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue({
+      id: parcoursId,
+      userId: "user-1",
+      rgaSimulationData: { logement: { commune: "03185" } },
+      rgaSimulationDataAgent: null,
+    } as never);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(prospectQualificationsRepo.create).mockImplementation(async (data: any) => data);
   });
 
-  it("trace la qualification éligible avec l'engagement de mandataire financier", async () => {
+  it("trace la qualification éligible avec l'engagement de mandataire financier et la suite donnée", async () => {
     await qualificationService.qualifyProspect({
       parcoursId,
       agentId,
@@ -95,7 +130,7 @@ describe("qualificationService.qualifyProspect — audit de la réponse Aller-ve
       parcoursId,
       author: { agentId },
       actionType: ACTION_TYPE_AV_QUALIFICATION_ELIGIBLE,
-      message: "Mandataire financier : oui — Visite faite le 12/08",
+      message: "Mandataire financier : oui — Visite faite le 12/08 Dossier transmis à l'AMO du territoire.",
     });
   });
 
@@ -203,13 +238,13 @@ describe("qualificationService.qualifyProspect — auto-lien AMO (dépt obligato
     vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(mockParcours("03185") as never);
     vi.mocked(assignAmoAutomatiqueForUser).mockResolvedValueOnce({ success: false, error: "Aucun AMO disponible" });
 
-    const { transmissionAmo } = await qualificationService.qualifyProspect({
+    const { suiteAccompagnement } = await qualificationService.qualifyProspect({
       parcoursId: "parcours-1",
       agentId: "agent-1",
       decision: QualificationDecision.ELIGIBLE,
     });
 
-    expect(transmissionAmo).toEqual({ transmise: false, raison: "Aucun AMO disponible" });
+    expect(suiteAccompagnement).toEqual({ issue: "echec", raison: "Aucun AMO disponible" });
   });
 
   it("confirme la transmission quand l'AMO a bien été sollicitée", async () => {
@@ -219,38 +254,38 @@ describe("qualificationService.qualifyProspect — auto-lien AMO (dépt obligato
       data: { message: "AMO sélectionnée avec succès", token: "t" },
     });
 
-    const { transmissionAmo } = await qualificationService.qualifyProspect({
+    const { suiteAccompagnement } = await qualificationService.qualifyProspect({
       parcoursId: "parcours-1",
       agentId: "agent-1",
       decision: QualificationDecision.ELIGIBLE,
     });
 
-    expect(transmissionAmo).toMatchObject({ transmise: true });
+    expect(suiteAccompagnement).toMatchObject({ issue: "transmise" });
   });
 
   it("ne transmet pas dans un département où l'AMO est facultatif", async () => {
     vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(mockParcours("82013") as never);
 
-    const { transmissionAmo } = await qualificationService.qualifyProspect({
+    const { suiteAccompagnement } = await qualificationService.qualifyProspect({
       parcoursId: "parcours-1",
       agentId: "agent-1",
       decision: QualificationDecision.ELIGIBLE,
     });
 
-    expect(transmissionAmo).toBeNull();
+    expect(suiteAccompagnement).toMatchObject({ issue: "laissee_au_demandeur" });
     expect(assignAmoAutomatiqueForUser).not.toHaveBeenCalled();
   });
 
   it("signale une commune inconnue au lieu de transmettre à l'aveugle", async () => {
     vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(mockParcours(null) as never);
 
-    const { transmissionAmo } = await qualificationService.qualifyProspect({
+    const { suiteAccompagnement } = await qualificationService.qualifyProspect({
       parcoursId: "parcours-1",
       agentId: "agent-1",
       decision: QualificationDecision.ELIGIBLE,
     });
 
-    expect(transmissionAmo).toMatchObject({ transmise: false });
+    expect(suiteAccompagnement).toMatchObject({ issue: "echec" });
     expect(assignAmoAutomatiqueForUser).not.toHaveBeenCalled();
   });
 });
@@ -258,25 +293,15 @@ describe("qualificationService.qualifyProspect — auto-lien AMO (dépt obligato
 // Sujet 1 — là où l'Aller-vers et l'AMO sont la même structure, la qualification EST la
 // validation AMO : plus de second tour, plus d'email, accès direct au formulaire.
 describe("qualification Aller-vers valant validation AMO (départements à cumul)", () => {
-  it.todo("pose la validation en logement éligible avec valideeAt, sans email de validation");
-  it.todo("rattache l'entreprise AMO de l'agent, jamais la première AMO trouvée sur le territoire");
-  it.todo("reprend l'engagement de mandataire financier saisi dans le même formulaire");
-  it.todo("ouvre l'étape éligibilité : un parcours à choix AMO passe à éligibilité / à faire");
   it.todo("laisse le parcours à l'étape invitation tant que le demandeur n'a pas réclamé son dossier");
   it.todo("trace une acceptation d'éligibilité distincte de la qualification, avec l'agent et son entreprise");
-  it.todo("n'émet aucun token de validation : il n'y a plus de second tour à ouvrir");
 
-  it.todo("ne vaut pas validation si l'agent n'a pas d'entreprise AMO : transmission normale à l'AMO");
-  it.todo("ne vaut pas validation si l'entreprise de l'agent ne couvre pas la commune du logement");
-  it.todo("ne vaut pas validation dans un département sans cumul AV/AMO");
-  it.todo("n'écrase pas une décision AMO déjà rendue, ni une AMO d'une autre entreprise");
   it.todo("ne réactive pas un dossier archivé ni un parcours déjà au diagnostic");
 });
 
 // Sujet 2 — la qualification éligible vaut demande d'accompagnement : le demandeur n'a jamais
 // à la formuler, et la transmission ne dépend pas de sa venue sur son espace.
 describe("transmission à l'AMO dès la qualification (départements à AMO obligatoire)", () => {
-  it.todo("transmet le dossier à l'AMO du territoire : validation en attente, email et token");
   it.todo("transmet un dossier encore à l'étape invitation, avant que le demandeur ait réclamé son compte");
   it.todo("transmet un dossier dont seule la simulation de l'agent porte la commune");
   it.todo("n'exige pas le téléphone du demandeur, absent des dossiers créés par un Aller-vers");
@@ -289,15 +314,9 @@ describe("transmission à l'AMO dès la qualification (départements à AMO obli
 // Sujet 3 — l'Aller-vers tranche quand le demandeur ne l'a pas fait ; un choix déjà exprimé
 // par le demandeur prime toujours sur la qualification.
 describe("l'Aller-vers tranche l'accompagnement (départements à AMO facultatif)", () => {
-  it.todo("accompagnement : attribue l'AMO du territoire et met la validation en attente");
-  it.todo("autonomie : pose « sans AMO » et ouvre l'étape éligibilité");
-  it.todo("ne sait pas : ne touche pas à l'accompagnement, le demandeur garde le choix");
   it.todo("autonomie : résout le département même quand seule la simulation de l'agent porte la commune");
   it.todo("trace la décision avec l'agent comme auteur, jamais le demandeur");
 
-  it.todo("la question n'est posée que sur une décision « éligible »");
-  it.todo("la question n'est pas posée là où l'AMO est obligatoire");
-  it.todo("respecte un choix déjà fait : n'écrase ni « sans AMO » ni une AMO en attente ou validée");
   it.todo("refuse de changer l'accompagnement pendant que la DDT tient le formulaire d'éligibilité");
   it.todo("refuse sur un dossier archivé");
 });
