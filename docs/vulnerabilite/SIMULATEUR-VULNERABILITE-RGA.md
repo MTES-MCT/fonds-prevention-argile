@@ -95,6 +95,7 @@ domain/
 stores/vulnerabilite.store.ts              ← Zustand + sessionStorage (pas de localStorage)
 components/                                ← 13 étapes, 9 illustrations SVG, jauge, recommandations
 components/pdf/VulnerabilitePdfDocument.tsx ← PDF téléchargeable depuis l'écran de résultat
+components/pdf/TelechargerPdfButton.tsx    ← bouton, chargé en `next/dynamic` (seul accès à la lib PDF)
 actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
 ```
 
@@ -157,6 +158,14 @@ n'ont pas « ▲ »). Les textes (callout, pédagogie) et les couleurs de badge 
 avec le rendu HTML via `resultat-content.const.ts` et `niveau-badge.const.ts`, pour que les deux
 rendus ne puissent pas diverger. Aucune illustration dans le PDF (non demandé, et les schémas SVG
 du dossier `illustrations/` ne sont pas conçus pour ce second moteur de rendu).
+
+**`@react-pdf/renderer` n'est jamais dans le first-load** : la lib pèse ~256 Ko gzip, soit plus
+que tout le reste de la page, alors que le bouton n'apparaît qu'à la 13e étape. `ResultVulnerabilite`
+la charge donc en `next/dynamic(..., { ssr: false })` via `TelechargerPdfButton.tsx`, seul module à
+l'importer. Corollaire à ne pas défaire : rien d'autre ne doit importer ce module en statique — y
+compris pour une constante partagée — sinon la lib revient dans le bundle d'entrée de
+`/vulnerabilite-rga` **et** de l'iframe partenaire `/embed-vulnerabilite-rga` (mesuré : 884 Ko de
+first-load JS contre 441 Ko).
 
 Téléchargement tracké via l'évènement Matomo `vulnerabilite_pdf_download`
 (`MATOMO_EVENTS.VULNERABILITE_PDF_DOWNLOAD`), même mécanique que les autres évènements du funnel —
@@ -250,6 +259,7 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 | Écriture anonyme                              | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                   |
 | Table anonyme                                 | `shared/database/schema/vulnerabilite-simulations.ts`                                         |
 | PDF téléchargeable                            | `vulnerabilite-rga/components/pdf/VulnerabilitePdfDocument.tsx`                               |
+| Bouton PDF (chargement dynamique)             | `vulnerabilite-rga/components/pdf/TelechargerPdfButton.tsx`                                   |
 | Textes partagés HTML + PDF                    | `vulnerabilite-rga/domain/value-objects/resultat-content.const.ts`                            |
 | Labels/couleurs de niveau partagés HTML + PDF | `vulnerabilite-rga/domain/value-objects/niveau-badge.const.ts`                                |
 | Rattachement à la connexion                   | `auth/adapters/franceconnect/franceconnect.service.ts` (`lierSimulationVulnerabiliteAnonyme`) |
