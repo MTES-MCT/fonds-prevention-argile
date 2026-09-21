@@ -33,6 +33,12 @@ export const prospectQualifications = pgTable(
     // Renseigné quand la décision est ELIGIBLE ; null sinon.
     estMandataireFinancier: boolean("est_mandataire_financier"),
 
+    // Ce que l'Aller-vers a appris du demandeur sur son accompagnement, quand le département
+    // n'impose pas d'AMO : "accompagnement" | "autonomie" | "inconnu". `null` = question non
+    // posée (AMO imposé, autre décision, ou qualification antérieure à ce champ). En `text`
+    // comme `decision` ci-dessus, pour rester alignée sur la table.
+    accompagnementSouhaite: text("accompagnement_souhaite"),
+
     // Note complémentaire (optionnelle)
     note: text("note"),
 
