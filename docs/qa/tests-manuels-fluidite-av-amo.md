@@ -10,26 +10,36 @@
 
 ## Parcours 1 — Un dossier créé par l'Aller-vers part chez l'AMO
 
-**Persona** : agent Aller-vers
+**Persona** : agent Aller-vers **pur** (sans casquette AMO)
 **Objectif** : prouver que la qualification transmet le dossier même si le demandeur n'a jamais
 créé son compte — c'est le dossier qui restait chez l'Aller-vers.
 
+> **Le compte est déterminant.** Avec un agent AMO ou hybride, le dossier est rattaché à son
+> entreprise dès la création : il n'y a plus de prospect à qualifier, et l'action tracée est
+> « Éligible — accompagnement accepté » (décision d'une AMO), pas « Éligible — qualifié par
+> l'Aller-vers ». Ce parcours ne prouve alors rien.
+
 **Données**
 
-- Compte agent (ProConnect) : `user@yopmail.com` / `user@yopmail.com` — Aller-vers Adil 36, département 36 (AMO imposé)
+- Compte agent (ProConnect) : `user@yopmail.com` / `user@yopmail.com` — Aller-vers Adil 36, **sans entreprise AMO**, département 36 (AMO imposé)
 - Adresse à saisir : `12 Rue Grande, 36000 Châteauroux`
 - `.env.local` : aucune modification pour ce parcours
 
 **Étapes**
 
 - [ ] Se connecter sur http://localhost:3000/espace-agent/dossiers → l'espace agent s'ouvre
-- [ ] Aller sur http://localhost:3000/espace-agent/prospects → bouton de création de dossier visible
-- [ ] Créer un dossier : nom, prénom, un email `@yopmail.com` inédit, l'adresse ci-dessus, **sans** envoyer l'invitation → dossier créé, listé en prospect
-- [ ] Ouvrir le prospect créé → le bandeau indique une invitation en attente (compte non réclamé)
+- [ ] Ouvrir http://localhost:3000/espace-agent/dossiers/nouveau?intent=av → assistant « Ajout d'un nouveau dossier », étape 1 sur 4
+- [ ] Choisir « Créer simplement un dossier sans faire de simulation d'éligibilité », puis renseigner prénom, nom, l'adresse ci-dessus, un téléphone et un email `@yopmail.com` inédit
+- [ ] Terminer **sans** envoyer l'invitation → dossier créé, visible dans le listing
+- [ ] Ouvrir le dossier créé → bandeau « Le demandeur n'a pas encore accepté l'invitation », aucune AMO au dossier
 - [ ] Qualifier : « Éligible et peut passer à l'étape AMO », mandataire financier « Non », confirmer → enregistrement sans erreur rouge
-- [ ] Recharger la page → le dossier n'est plus un prospect : il apparaît comme demande en attente de réponse AMO
+- [ ] Recharger la page → une AMO du 36 apparaît au dossier, en attente de sa réponse
 - [ ] Ouvrir http://localhost:8025 → un mail de demande de validation est parti vers l'AMO du 36
-- [ ] Rouvrir le dossier, section historique → une seule action de qualification, dont le message se termine par « Dossier transmis à l'AMO du territoire. »
+- [ ] Rouvrir le dossier, section « Actions réalisées » → une seule ligne, **« ✅ Éligible — qualifié par l'Aller-vers »**, dont le message se termine par « Dossier transmis à l'AMO du territoire. »
+
+> `/espace-agent/prospects` redirige vers `/espace-agent/dossiers` : les deux listings sont
+> unifiés. Le bouton « Nouveau dossier » de cette page pointe sur `?intent=amo`, d'où l'URL
+> explicite en `?intent=av` ci-dessus.
 
 **Cas limites**
 
