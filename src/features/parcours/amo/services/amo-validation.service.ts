@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { amoValidationTokens, parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
 
@@ -21,8 +21,8 @@ import { reinitialiserDossierEtape } from "../../dossiers-ds/services/regenerati
  *   non null) retourne `success: true, alreadyProcessed: true` sans muter la BDD.
  * - **Transition atomique** : la mise à jour de la validation, du token et du
  *   parcours est faite dans une seule transaction. La transition du parcours
- *   est conditionnée sur l'état attendu (CHOIX_AMO/INVITATION) — un parcours
- *   déjà progressé ne sera pas re-poussé.
+ *   est conditionnée sur l'état attendu (CHOIX_AMO) — un parcours déjà
+ *   progressé ne sera pas re-poussé.
  *
  * Ces deux propriétés ferment la race observée en prod où deux appels
  * concurrents à approveValidation faisaient avancer le parcours de DEUX étapes
@@ -40,7 +40,7 @@ interface ApproveValidationData {
  * Approuve la validation (logement éligible).
  *
  * Transition métier : `CHOIX_AMO/EN_INSTRUCTION → ELIGIBILITE/TODO`
- * (ou no-op sur le step si le parcours n'est plus à CHOIX_AMO/INVITATION).
+ * (no-op sur le step ailleurs, `INVITATION` comprise — cf. §3 ci-dessous).
  */
 export async function approveValidation(
   validationId: string,
@@ -107,10 +107,10 @@ export async function approveValidation(
         .set({ usedAt: now })
         .where(eq(amoValidationTokens.parcoursAmoValidationId, validationId));
 
-      // 3. Transition atomique du parcours : CHOIX_AMO → ELIGIBILITE/TODO.
-      //    Conditionnée sur (currentStep IN [CHOIX_AMO, INVITATION]) pour ne PAS
-      //    re-progresser un parcours qui est déjà ailleurs (sécurité face à un
-      //    code path concurrent qui aurait déjà avancé le step).
+      // 3. Transition atomique du parcours : CHOIX_AMO → ELIGIBILITE/TODO, conditionnée
+      //    pour ne PAS re-progresser un parcours déjà ailleurs (code path concurrent).
+      //    INVITATION en est exclue : un compte non encore réclamé doit y rester, c'est
+      //    le claim qui promeut la simulation de l'agent puis route l'étape (ADR-0038).
       const [parcoursUpdated] = await tx
         .update(parcoursPrevention)
         .set({
@@ -118,17 +118,12 @@ export async function approveValidation(
           currentStatus: Status.TODO,
         })
         .where(
-          and(
-            eq(parcoursPrevention.id, validation.parcoursId),
-            inArray(parcoursPrevention.currentStep, [Step.CHOIX_AMO, Step.INVITATION])
-          )
+          and(eq(parcoursPrevention.id, validation.parcoursId), eq(parcoursPrevention.currentStep, Step.CHOIX_AMO))
         )
         .returning({ id: parcoursPrevention.id });
 
       if (!parcoursUpdated) {
-        console.warn(
-          `[approveValidation] parcours ${validation.parcoursId} déjà progressé hors CHOIX_AMO/INVITATION — step non touché`
-        );
+        console.warn(`[approveValidation] parcours ${validation.parcoursId} hors CHOIX_AMO — step non touché`);
       }
 
       return {
