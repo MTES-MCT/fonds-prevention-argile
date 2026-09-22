@@ -150,4 +150,6 @@ export interface DemandeDetail {
   agentEditInfo?: AgentEditInfo | null;
   /** Agent qui a pré-créé le compte (av-add-dossier), null sinon. */
   creator: ParcoursCreatorInfo | null;
+  /** Faux en département à AMO imposé : décliner n'y laisse que l'archivage. */
+  autonomiePossible: boolean;
 }

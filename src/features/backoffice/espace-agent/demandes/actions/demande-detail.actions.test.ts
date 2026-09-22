@@ -19,6 +19,11 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { db } from "@/shared/database/client";
 import type { AuthUser } from "@/features/auth/domain/entities";
 import type { Agent } from "@/shared/database/schema/agents";
+import { detacherAmo } from "@/features/parcours/amo/services/detachement-amo.service";
+import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import { getDossierByStep } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
+import { RAISON_POURSUITE_AUTONOME } from "@/features/backoffice/espace-agent/shared/domain/value-objects/raisons-fin-suivi";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 
 // Mock des modules
 vi.mock("../services/demande-detail.service");
@@ -37,6 +42,15 @@ vi.mock("@/features/backoffice/espace-agent/shared/services/author-snapshot", ()
   }),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/features/parcours/amo/services/detachement-amo.service", () => ({
+  detacherAmo: vi.fn(),
+}));
+vi.mock("@/shared/database/repositories/parcours-prevention.repository", () => ({
+  parcoursPreventionRepository: { findById: vi.fn() },
+}));
+vi.mock("@/features/parcours/dossiers-ds/services/dossier-ds.service", () => ({
+  getDossierByStep: vi.fn(),
+}));
 vi.mock("@/features/backoffice/shared/actions/super-admin-access", () => ({
   assertNotSuperAdminReadOnly: vi.fn(),
 }));
@@ -63,7 +77,7 @@ const mockDemandeOwner = (entrepriseAmoId: string | null) => {
   vi.mocked(db.select).mockReturnValue({
     from: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
-        limit: vi.fn().mockResolvedValue([{ entrepriseAmoId }]),
+        limit: vi.fn().mockResolvedValue([{ entrepriseAmoId, parcoursId: "parcours-123" }]),
       }),
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,6 +166,7 @@ describe("demande-detail.actions", () => {
           facturesSubmittedAt: undefined,
         },
         creator: null,
+        autonomiePossible: true,
       };
 
       vi.mocked(getDemandeDetail).mockResolvedValue({
@@ -372,6 +387,80 @@ describe("demande-detail.actions", () => {
 
       expect(result.success).toBe(false);
       expect(declineAccompagnementEligible).not.toHaveBeenCalled();
+    });
+  });
+
+  // La raison choisie décide de la suite : détachement plutôt qu'archivage (ADR-0022 amendé).
+  describe("refuserAccompagnementEligible — le demandeur poursuit seul", () => {
+    /** 82 = AMO facultatif, 36 = AMO imposé (listes par défaut de `departements-amo`). */
+    const parcoursDans = (commune: string) =>
+      vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue({
+        id: "parcours-123",
+        rgaSimulationData: { logement: { commune } },
+        rgaSimulationDataAgent: null,
+      } as never);
+
+    beforeEach(() => {
+      vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, "amo-123"));
+      mockDemandeOwner("amo-123");
+      vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: { id: "agent-1" } as unknown as Agent });
+      vi.mocked(getDossierByStep).mockResolvedValue(null as never);
+      vi.mocked(detacherAmo).mockResolvedValue({
+        success: true,
+        data: { etapeAvancee: true } as never,
+      });
+      parcoursDans("82013");
+    });
+
+    it("détache l'AMO au lieu d'archiver le dossier", async () => {
+      const result = await refuserAccompagnementEligible("demande-123", RAISON_POURSUITE_AUTONOME);
+
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.poursuiteAutonome).toBe(true);
+      expect(detacherAmo).toHaveBeenCalledWith({ parcoursId: "parcours-123" });
+      expect(declineAccompagnementEligible).not.toHaveBeenCalled();
+    });
+
+    it("refuse l'autonomie là où l'AMO est imposé, sans rien écrire", async () => {
+      parcoursDans("36044");
+
+      const result = await refuserAccompagnementEligible("demande-123", RAISON_POURSUITE_AUTONOME);
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toContain("obligatoire");
+      expect(detacherAmo).not.toHaveBeenCalled();
+      expect(declineAccompagnementEligible).not.toHaveBeenCalled();
+    });
+
+    it("refuse tant que la DDT tient le formulaire d'éligibilité", async () => {
+      vi.mocked(getDossierByStep).mockResolvedValue({ dsStatus: DSStatus.EN_INSTRUCTION } as never);
+
+      const result = await refuserAccompagnementEligible("demande-123", RAISON_POURSUITE_AUTONOME);
+
+      expect(result.success).toBe(false);
+      expect(detacherAmo).not.toHaveBeenCalled();
+    });
+
+    it("remonte l'échec du détachement au lieu de le taire", async () => {
+      vi.mocked(detacherAmo).mockResolvedValue({ success: false, error: "Parcours archivé" });
+
+      const result = await refuserAccompagnementEligible("demande-123", RAISON_POURSUITE_AUTONOME);
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.error).toBe("Parcours archivé");
+    });
+
+    it("garde l'archivage pour toutes les autres raisons", async () => {
+      vi.mocked(declineAccompagnementEligible).mockResolvedValue({
+        success: true,
+        data: { message: "archivé", alreadyProcessed: false, valideeAt: new Date(), parcoursId: "parcours-123" },
+      });
+
+      const result = await refuserAccompagnementEligible("demande-123", "Reste à charge trop élevé");
+
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.poursuiteAutonome).toBe(false);
+      expect(detacherAmo).not.toHaveBeenCalled();
     });
   });
 

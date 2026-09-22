@@ -12,10 +12,22 @@ export const mockServerEnv = {
 };
 
 /**
+ * Variables partagées client/serveur. Les listes départementales restent indéfinies :
+ * les tests héritent alors des valeurs par défaut du code, jamais de celles d'un `.env`.
+ */
+export const mockSharedEnv = {
+  NEXT_PUBLIC_APP_ENV: "local" as const,
+  NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL: "https://test.ds.com",
+  NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE: undefined,
+  NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES: undefined,
+};
+
+/**
  * Fonction pour créer le mock complet de env.config
  */
 export const createEnvConfigMock = () => ({
   getServerEnv: vi.fn(() => mockServerEnv),
+  getSharedEnv: vi.fn(() => mockSharedEnv),
   isClient: vi.fn(() => false),
   isServer: vi.fn(() => true),
   isProduction: vi.fn(() => false),
