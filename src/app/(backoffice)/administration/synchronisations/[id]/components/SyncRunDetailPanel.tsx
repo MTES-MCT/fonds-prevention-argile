@@ -3,10 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getSyncRunDetailAction } from "@/features/backoffice/administration/synchronisations/actions";
-import {
-  SyncRunStatus,
-  SyncRunTrigger,
-} from "@/shared/domain/value-objects/sync-run-status.enum";
+import { SyncRunStatus, SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
 import type { SyncRunDetail } from "@/shared/database/repositories/sync-run.repository";
 import type { DsStatusChange } from "@/shared/database/schema/sync-run-entries";
 import { DS_STATUS_LABELS } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-status";
@@ -64,10 +61,7 @@ function renderStatusTransition(before: Status | null, after: Status | null): st
 function renderDsChanges(changes: DsStatusChange[] | null): string {
   if (!changes || changes.length === 0) return "-";
   return changes
-    .map(
-      (c) =>
-        `${STEP_LABELS[c.step]} : ${DS_STATUS_LABELS[c.oldDsStatus]} → ${DS_STATUS_LABELS[c.newDsStatus]}`
-    )
+    .map((c) => `${STEP_LABELS[c.step]} : ${DS_STATUS_LABELS[c.oldDsStatus]} → ${DS_STATUS_LABELS[c.newDsStatus]}`)
     .join("\n");
 }
 
@@ -99,7 +93,7 @@ export default function SyncRunDetailPanel({ runId }: Props) {
   if (isLoading) {
     return (
       <section className="fr-container fr-py-4w">
-        <div className="text-gray-500">Chargement...</div>
+        <div className="text-(--text-mention-grey)">Chargement...</div>
       </section>
     );
   }
@@ -122,9 +116,7 @@ export default function SyncRunDetailPanel({ runId }: Props) {
 
   return (
     <>
-      <section
-        className="fr-container-fluid fr-pt-4w"
-        style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
+      <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
           <nav role="navigation" className="fr-breadcrumb fr-mb-2w" aria-label="vous êtes ici :">
             <ol className="fr-breadcrumb__list">
@@ -157,8 +149,8 @@ export default function SyncRunDetailPanel({ runId }: Props) {
                 ) : (
                   <span className="fr-badge fr-badge--sm fr-badge--info fr-mr-2v">En cours</span>
                 )}
-                Trigger : {TRIGGER_LABELS[run.triggeredBy as SyncRunTrigger]} · Scannés :{" "}
-                {run.totalParcoursScanned} · Mis à jour : {run.totalParcoursUpdated} · Erreurs : {run.totalErrors}
+                Trigger : {TRIGGER_LABELS[run.triggeredBy as SyncRunTrigger]} · Scannés : {run.totalParcoursScanned} ·
+                Mis à jour : {run.totalParcoursUpdated} · Erreurs : {run.totalErrors}
               </p>
             </div>
           </div>
@@ -206,9 +198,7 @@ export default function SyncRunDetailPanel({ runId }: Props) {
                               <div className="fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
                                 {entry.userEmail || ""}
                               </div>
-                              <Link
-                                className="fr-link fr-text--sm"
-                                href={`/espace-agent/dossiers/${entry.parcoursId}`}>
+                              <Link className="fr-link fr-text--sm" href={`/espace-agent/dossiers/${entry.parcoursId}`}>
                                 Voir le parcours
                               </Link>
                             </td>

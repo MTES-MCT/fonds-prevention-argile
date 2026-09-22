@@ -22,7 +22,7 @@ export function RgaMapSection({ title, centre, zoomLevel }: RgaMapSectionProps) 
     return (
       <section className="fr-py-4w">
         <div className="fr-container">
-          <div className="fr-p-4w" style={{ backgroundColor: "#f0f0f0", minHeight: "300px" }}>
+          <div className="fr-p-4w" style={{ backgroundColor: "var(--background-alt-grey)", minHeight: "300px" }}>
             <p>Carte de {title} non disponible</p>
           </div>
         </div>

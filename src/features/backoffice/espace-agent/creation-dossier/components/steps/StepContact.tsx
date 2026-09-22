@@ -60,7 +60,7 @@ export function StepContact() {
     <>
       <h4 className="fr-mb-1v">Quelles sont les coordonnées du demandeur ?</h4>
       {!wantsSimulation && (
-        <p className="fr-text--sm fr-mb-4w text-gray-500">
+        <p className="fr-text--sm fr-mb-4w text-(--text-mention-grey)">
           Ces informations seront mises à jour si nécessaire lorsque le demandeur se connectera avec France Connect
         </p>
       )}
@@ -72,9 +72,7 @@ export function StepContact() {
           value={demandeur.adresseBien}
           onChange={(adresseBien) => update({ adresseBien })}
           errorMessage={
-            addressTypedButNotSelected
-              ? "Veuillez sélectionner une adresse dans les suggestions proposées."
-              : undefined
+            addressTypedButNotSelected ? "Veuillez sélectionner une adresse dans les suggestions proposées." : undefined
           }
           onSelectFeature={async (feature: BanFeature | null) => {
             if (!feature) {
@@ -142,12 +140,7 @@ export function StepContact() {
         )}
       </div>
 
-      <NavigationButtons
-        canGoBack
-        onPrevious={previous}
-        onNext={handleNext}
-        isNextDisabled={!canGoNext}
-      />
+      <NavigationButtons canGoBack onPrevious={previous} onNext={handleNext} isNextDisabled={!canGoNext} />
     </>
   );
 }

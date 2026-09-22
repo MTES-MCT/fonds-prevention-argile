@@ -15,7 +15,7 @@ export function ModificationsSummary({ modifications }: ModificationsSummaryProp
   if (modifications.length === 0) return null;
 
   return (
-    <div className="border border-[var(--border-default-grey)] bg-white p-6 fr-mt-4w">
+    <div className="border border-(--border-default-grey) bg-(--background-default-grey) p-6 fr-mt-4w">
       <h3 className="fr-h6 fr-mb-2w flex items-center gap-2">
         <span className="fr-icon-info-line" aria-hidden="true" />
         Vous avez fait {modifications.length} modification{modifications.length > 1 ? "s" : ""} :

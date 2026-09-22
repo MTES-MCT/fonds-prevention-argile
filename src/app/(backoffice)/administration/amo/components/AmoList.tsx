@@ -120,7 +120,7 @@ export function AmoList({ onEdit, refreshTrigger, canEdit }: AmoListProps) {
       )}
 
       {amos.length > 0 && (
-        <p className="fr-text--sm fr-mt-2w text-gray-600">
+        <p className="fr-text--sm fr-mt-2w text-(--text-mention-grey)">
           Total : {amos.length} AMO enregistrée{amos.length > 1 ? "s" : ""}
         </p>
       )}

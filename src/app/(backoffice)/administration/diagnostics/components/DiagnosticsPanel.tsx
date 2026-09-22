@@ -334,7 +334,7 @@ export default function DiagnosticsPanel({ embedded = false }: { embedded?: bool
       <Section embedded={embedded} className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
         {isLoading ? (
           <div className="flex justify-center items-center py-12">
-            <div className="text-gray-500">Chargement...</div>
+            <div className="text-(--text-mention-grey)">Chargement...</div>
           </div>
         ) : visibleRows.length === 0 ? (
           <div className="fr-callout">

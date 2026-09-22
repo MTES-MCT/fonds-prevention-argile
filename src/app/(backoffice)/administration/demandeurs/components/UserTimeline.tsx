@@ -47,7 +47,7 @@ export function UserTimeline({ user }: UserTimelineProps) {
       date: null,
       label: "Simulation RGA - En attente",
       icon: "fr-icon-time-line",
-      colorClass: "text-gray-400",
+      colorClass: "text-(--text-disabled-grey)",
       status: "pending",
     });
   }
@@ -96,7 +96,7 @@ export function UserTimeline({ user }: UserTimelineProps) {
       date: null,
       label: "Choix AMO - En attente",
       icon: "fr-icon-time-line",
-      colorClass: "text-gray-400",
+      colorClass: "text-(--text-disabled-grey)",
       status: "pending",
     });
   }
@@ -139,7 +139,7 @@ export function UserTimeline({ user }: UserTimelineProps) {
       date: null,
       label: "Dossier éligibilité - En attente",
       icon: "fr-icon-time-line",
-      colorClass: "text-gray-400",
+      colorClass: "text-(--text-disabled-grey)",
       status: "pending",
     });
   }
@@ -179,7 +179,7 @@ export function UserTimeline({ user }: UserTimelineProps) {
       date: null,
       label: "Dossier diagnostic - En attente",
       icon: "fr-icon-time-line",
-      colorClass: "text-gray-400",
+      colorClass: "text-(--text-disabled-grey)",
       status: "pending",
     });
   }
@@ -219,7 +219,7 @@ export function UserTimeline({ user }: UserTimelineProps) {
       date: null,
       label: "Dossier devis - En attente",
       icon: "fr-icon-time-line",
-      colorClass: "text-gray-400",
+      colorClass: "text-(--text-disabled-grey)",
       status: "pending",
     });
   }
@@ -259,7 +259,7 @@ export function UserTimeline({ user }: UserTimelineProps) {
       date: null,
       label: "Dossier factures - En attente",
       icon: "fr-icon-time-line",
-      colorClass: "text-gray-400",
+      colorClass: "text-(--text-disabled-grey)",
       status: "pending",
     });
   }
@@ -310,7 +310,9 @@ export function UserTimeline({ user }: UserTimelineProps) {
                 <strong className={event.colorClass}>{event.label}</strong>
               </p>
               {event.date && (
-                <p className="fr-text--sm fr-mb-0 text-gray-600">{formatDateTime(event.date.toISOString())}</p>
+                <p className="fr-text--sm fr-mb-0 text-(--text-mention-grey)">
+                  {formatDateTime(event.date.toISOString())}
+                </p>
               )}
             </div>
           </li>

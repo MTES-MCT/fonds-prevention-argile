@@ -115,12 +115,12 @@ export function AddressAutocompleteInput({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-10 w-full bg-white border border-gray-300 shadow-md max-h-72 overflow-auto fr-mt-1v">
+          className="absolute z-10 w-full bg-(--background-default-grey) border border-(--border-default-grey) shadow-md max-h-72 overflow-auto fr-mt-1v">
           {results.map((feature) => (
             <li key={`${feature.properties.id}-${feature.properties.label}`} role="option" aria-selected="false">
               <button
                 type="button"
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                className="block w-full text-left px-4 py-2 hover:bg-(--background-alt-grey)"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSelect(feature)}>
                 {feature.properties.label}

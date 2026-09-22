@@ -14,7 +14,7 @@ export function StepIdentite() {
   return (
     <>
       <h4 className="fr-mb-1v">Comment s&apos;appelle le demandeur ?</h4>
-      <p className="fr-text--sm fr-mb-4w text-gray-500">
+      <p className="fr-text--sm fr-mb-4w text-(--text-mention-grey)">
         Ces informations seront mises à jour si nécessaire lorsque le demandeur se connectera avec France Connect
       </p>
 

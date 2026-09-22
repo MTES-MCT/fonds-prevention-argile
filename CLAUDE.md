@@ -89,6 +89,7 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 - Accents français obligatoires dans le texte user-facing (é, è, ê, à, ô, ç, î)
 - Nommage fichiers : `*.actions.ts` (Server Actions), `*.service.ts`, `*.repository.ts`, `*.adapter.ts`
 - Respecter le DSFR pour les composants UI
+- Couleurs : toujours les **tokens DSFR** (`bg-(--background-default-grey)`, `text-(--text-mention-grey)`, `border-(--border-default-grey)`…), jamais les palettes Tailwind (`bg-white`, `text-gray-500`) — une couleur en dur ne suit pas le thème et rend le texte illisible au moindre écart. Garde-fou : `src/styles/couleurs-dsfr.test.ts` balaie tous les `.tsx` et échoue en nommant le fichier fautif
 - Pas d'emojis dans le code ou les messages de sortie
 - Commentaires de code : **1 ligne, jamais plus de 2**. Uniquement le _pourquoi_ non-évident, jamais la paraphrase du code. Le raisonnement détaillé (contexte, alternatives, décision) va dans le **message de commit** ou un **ADR**, pas dans le source.
   - Mauvais : bloc JSDoc de 6 lignes qui re-déroule la logique de la fonction.
@@ -426,6 +427,7 @@ Lors de la compaction automatique ou manuelle (`/compact`), TOUJOURS préserver 
 ## Gotchas
 
 - Les valeurs JSONB (`rgaSimulationData`) peuvent être des nombres au lieu de strings — toujours utiliser `asString()` de `@/shared/utils` pour lire les champs
+- Le site force le **thème clair** (`data-fr-scheme="light"` sur `<html>`, aucun réglage d'affichage dans le footer depuis #131), mais **DSFR fait primer `localStorage.scheme` sur cet attribut** (`Scheme.init`, `dsfr.module.js`) : un navigateur ayant visité l'app avant ce forçage a gardé `scheme=system` et rend **tout le site** en thème sombre dès que l'OS l'est — les cartes `bg-white` codées en dur (wizard de création de dossier, `InfoLogement`…) deviennent alors illisibles. `syncStoredScheme` (`shared/components/DsfrProvider/dsfr-scheme.ts`) réaligne le stockage sur l'attribut avant `dsfr.start()` : il suit l'attribut, donc repasser le layout en `system` réactive le thème système sans rien toucher d'autre
 - Les modales DSFR ne s'ouvrent pas avec l'attribut HTML `open` — utiliser `window.dsfr(modal).modal.disclose()`
 - L'API Matomo Funnels timeout sur les périodes longues — limiter à 7 jours
 - `VisitsSummary.getVisits` en `period=day` sur un range long force Matomo à calculer une archive par jour (jusqu'à ~365 pour "12m"/"tout") : même cause que le timeout Funnels. `getMatomoStatistiques` (`matomo.service.ts`) adapte donc la granularité à la durée sélectionnée (`day` ≤30j, `week` pour 90j/6m, `month` pour 12m/tout) via `getGranulariteForPeriode` — ne pas revenir à `"day"` en dur sans réévaluer ce risque

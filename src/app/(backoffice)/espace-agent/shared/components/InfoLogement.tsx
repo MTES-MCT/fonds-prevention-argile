@@ -129,7 +129,7 @@ export function InfoLogement({
 
   return (
     <div
-      className="bg-white p-6"
+      className="bg-(--background-default-grey) p-6"
       style={{ background: "var(--background-default-grey)", border: "1px solid var(--border-default-grey)" }}>
       <div className="fr-mb-1w">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -224,7 +224,7 @@ export function InfoLogement({
               className="fr-badge fr-badge--sm fr-badge--no-icon fr-text--bold"
               style={{
                 backgroundColor: getRisqueArgileColor(logement.zoneExposition),
-                color: "#2a2a2a",
+                color: "var(--text-default-grey)",
               }}>
               {logement.zoneExposition.toUpperCase()}
             </FieldValue>

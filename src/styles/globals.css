@@ -1,6 +1,12 @@
 /* Tailwind CSS */
 @import "tailwindcss";
 
+/* Site mono-thème : couvre aussi les contrôles natifs que le DSFR ne style pas.
+   `only` bloque en plus l'assombrissement forcé du navigateur (cf. PR #360). */
+:root {
+  color-scheme: only light;
+}
+
 /**
  * Fix bug DSFR v1.14.2 - Navigation dropdown positioning
  * Date: 14/11/2025

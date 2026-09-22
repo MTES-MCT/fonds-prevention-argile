@@ -2,6 +2,7 @@
 
 import { DsfrGlobal } from "@/shared/types";
 import { useEffect } from "react";
+import { syncStoredScheme } from "./dsfr-scheme";
 
 export default function DsfrProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -10,6 +11,9 @@ export default function DsfrProvider({ children }: { children: React.ReactNode }
       if (typeof window === "undefined") return;
 
       try {
+        // Avant tout démarrage : la préférence stockée doit suivre l'attribut du layout.
+        syncStoredScheme();
+
         // Configuration du DSFR
         const dsfrFunction = (() => {}) as unknown as DsfrGlobal;
         dsfrFunction.verbose = false;

@@ -107,7 +107,7 @@ export function ActionMenu({
               top: position.top,
               right: position.right,
               zIndex: 2000,
-              backgroundColor: "white",
+              backgroundColor: "var(--background-default-grey)",
               border: "1px solid var(--border-default-grey)",
               borderRadius: "4px",
               boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
@@ -138,7 +138,7 @@ export function ActionMenu({
                     alignItems: "center",
                     gap: "0.375rem",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f6f6f6")}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--background-alt-grey)")}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
                   {item.icon && <span className={`${item.icon} fr-icon--sm`} aria-hidden="true" />}
                   {item.label}

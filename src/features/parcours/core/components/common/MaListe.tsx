@@ -129,10 +129,12 @@ export default function MaListe() {
                     <span className="fr-text--xs fr-text-mention--grey fr-ml-1w">Arrêt demandé</span>
                   )}
                   {item.key === "choix-accompagnement" && choixAccompagnementDetail && (
-                    <div className="fr-ml-3v fr-mt-1v fr-text--sm text-gray-500">{choixAccompagnementDetail}</div>
+                    <div className="fr-ml-3v fr-mt-1v fr-text--sm text-(--text-mention-grey)">
+                      {choixAccompagnementDetail}
+                    </div>
                   )}
                   {item.key === "eligibilite" && eligibiliteDossier && (
-                    <div className="fr-ml-3v fr-mt-1v text-gray-500">
+                    <div className="fr-ml-3v fr-mt-1v text-(--text-mention-grey)">
                       <DossierTimeline dossier={eligibiliteDossier} />
                     </div>
                   )}

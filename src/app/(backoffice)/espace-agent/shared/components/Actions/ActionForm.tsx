@@ -218,7 +218,7 @@ export function ActionForm({
           maxLength={MAX_LENGTH}
           disabled={isSubmitting}
         />
-        <div className="fr-text--xs fr-mt-1v" style={{ color: "#666" }}>
+        <div className="fr-text--xs fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
           {remainingChars} caractères restants
         </div>
       </div>

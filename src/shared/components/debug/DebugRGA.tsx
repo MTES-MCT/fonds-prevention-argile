@@ -18,9 +18,9 @@ export function DebugRGA({ urlSearchParams, rgaData, hasSessionData }: DebugRGAP
     <div
       className="fr-container fr-my-4w"
       style={{
-        backgroundColor: "#f0f0f0",
+        backgroundColor: "var(--background-alt-grey)",
         padding: "20px",
-        border: "2px solid #ccc",
+        border: "2px solid var(--border-default-grey)",
       }}>
       <h2>DEBUG RGA (développement uniquement)</h2>
 

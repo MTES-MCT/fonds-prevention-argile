@@ -17,7 +17,7 @@ export function DemandesAccompagnementHeader({
   return (
     <div className="fr-container fr-py-4w">
       {user?.firstName && <h1 className="fr-h1 fr-mb-0">Bonjour {user.firstName}</h1>}
-      <p className="fr-mt-2w fr-text--xl text-gray-500">Voici les dernières mises à jour</p>
+      <p className="fr-mt-2w fr-text--xl text-(--text-mention-grey)">Voici les dernières mises à jour</p>
 
       <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
         <div className="fr-col-12 fr-col-md-6">

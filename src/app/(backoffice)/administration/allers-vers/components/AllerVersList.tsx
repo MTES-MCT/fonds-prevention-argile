@@ -117,7 +117,7 @@ export function AllerVersList({ onEdit, refreshTrigger, canEdit }: AllersVersLis
       )}
 
       {allersVers.length > 0 && (
-        <p className="fr-text--sm fr-mt-2w text-gray-600">
+        <p className="fr-text--sm fr-mt-2w text-(--text-mention-grey)">
           Total : {allersVers.length} structure{allersVers.length > 1 ? "s" : ""} enregistrée
           {allersVers.length > 1 ? "s" : ""}
         </p>

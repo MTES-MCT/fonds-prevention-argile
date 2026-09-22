@@ -5,7 +5,7 @@ type Item = { text: string; sublist?: readonly string[] };
 
 function CritereCard({ title, subtitle, items }: { title: string; subtitle: string; items: readonly Item[] }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+    <div className="rounded-lg border border-(--border-default-grey) bg-(--background-default-grey) overflow-hidden">
       {/* En-tête */}
       <div className="fr-p-4w">
         <h4 className="fr-mb-2v">{title}</h4>
@@ -54,7 +54,7 @@ export default function CommentBeneficierAideEtatSection() {
           <div className="flex-1">
             <CritereCard title={c.phase_etude.title} subtitle={c.phase_etude.subtitle} items={c.phase_etude.items} />
           </div>
-          <div aria-hidden="true" className="hidden md:flex items-center text-2xl text-gray-700">
+          <div aria-hidden="true" className="hidden md:flex items-center text-2xl text-(--text-default-grey)">
             →
           </div>
           <div className="flex-1">

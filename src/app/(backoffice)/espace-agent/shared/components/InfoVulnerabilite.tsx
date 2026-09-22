@@ -15,7 +15,7 @@ interface InfoVulnerabiliteProps {
 export function InfoVulnerabilite({ data }: InfoVulnerabiliteProps) {
   return (
     <div
-      className="bg-white p-6"
+      className="bg-(--background-default-grey) p-6"
       style={{ background: "var(--background-default-grey)", border: "1px solid var(--border-default-grey)" }}>
       <div className="fr-mb-1w">
         <h3 className="fr-h5 fr-mb-1v">

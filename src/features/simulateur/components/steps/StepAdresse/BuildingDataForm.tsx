@@ -119,7 +119,7 @@ export function BuildingDataForm({
   };
 
   return (
-    <div className="fr-p-2w border-solid border border-gray-200">
+    <div className="fr-p-2w border-solid border border-(--border-default-grey)">
       <div className="fr-mb-4v" style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
         <span className="fr-badge fr-badge--success">{buildingData?.adresse || address}</span>
         {!aleaIndetermine && (
@@ -172,7 +172,7 @@ export function BuildingDataForm({
           value={anneeConstruction}
           onChange={handleAnneeChange}
           placeholder={hasAnnee && !editMode ? undefined : "Ajouter"}
-          style={hasAnnee && !editMode ? { backgroundColor: "#f0f0f0" } : undefined}
+          style={hasAnnee && !editMode ? { backgroundColor: "var(--background-alt-grey)" } : undefined}
         />
       </div>
 
@@ -187,7 +187,7 @@ export function BuildingDataForm({
           name="nombreNiveaux"
           value={nombreNiveaux}
           onChange={handleNiveauxChange}
-          style={hasNiveaux && !editMode ? { backgroundColor: "#f0f0f0" } : undefined}>
+          style={hasNiveaux && !editMode ? { backgroundColor: "var(--background-alt-grey)" } : undefined}>
           {NIVEAUX_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -197,7 +197,7 @@ export function BuildingDataForm({
       </div>
 
       {/* Footer : Sources */}
-      <p className="fr-text--xs" style={{ color: "#666" }}>
+      <p className="fr-text--xs" style={{ color: "var(--text-mention-grey)" }}>
         Données issues du{" "}
         <a href="https://rnb.beta.gouv.fr/" target="_blank" rel="noopener noreferrer">
           RNB

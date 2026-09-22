@@ -167,7 +167,7 @@ export default function AgentDeleteModal({
                       <button
                         type="button"
                         className="fr-btn"
-                        style={{ backgroundColor: "#c9191e", color: "white" }}
+                        style={{ backgroundColor: "#c9191e", color: "var(--text-inverted-grey)" }}
                         onClick={handleDelete}
                         disabled={isLoading}>
                         {isLoading ? "Suppression..." : "Supprimer"}

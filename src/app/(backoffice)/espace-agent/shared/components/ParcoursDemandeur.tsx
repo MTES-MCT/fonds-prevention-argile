@@ -197,7 +197,10 @@ export function ParcoursDemandeur({
                     {isPending && <span className="fr-mr-3v" aria-hidden="true" />}
 
                     {/* Label de l'étape */}
-                    <span className={isCurrent ? "fr-text--bold" : isCompleted ? "fr-text--regular" : "text-gray-400"}>
+                    <span
+                      className={
+                        isCurrent ? "fr-text--bold" : isCompleted ? "fr-text--regular" : "text-(--text-disabled-grey)"
+                      }>
                       {index + 1}. {stepConfig.label}
                       {/* Date entre parenthèses pour les étapes complétées */}
                       {isCompleted && stepDate && <span> ({formatDate(stepDate.toISOString())})</span>}
@@ -217,7 +220,7 @@ export function ParcoursDemandeur({
 
                     {/* Indique l'agent invitant sous "Compte créé" (av-add-dossier) */}
                     {index === 0 && creator && (
-                      <div className="fr-text--sm text-gray-500 fr-ml-3v">
+                      <div className="fr-text--sm text-(--text-mention-grey) fr-ml-3v">
                         Invité par {creator.displayName}
                         {creator.structureNom && ` — ${creator.structureNom}`}
                       </div>
@@ -225,7 +228,7 @@ export function ParcoursDemandeur({
 
                     {/* Dates clés du dossier DS (brouillon/dépôt/instruction/décision) */}
                     {timeline && (
-                      <div className="fr-ml-3v fr-mt-1v text-gray-500">
+                      <div className="fr-ml-3v fr-mt-1v text-(--text-mention-grey)">
                         <DossierTimeline dossier={timeline} />
                       </div>
                     )}
