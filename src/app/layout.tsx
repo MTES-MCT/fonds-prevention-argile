@@ -67,6 +67,9 @@ export default function RootLayout({
         <meta content="telephone=no,date=no,address=no,email=no,url=no" name="format-detection" />
         <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport" />
         <meta content="#000091" name="theme-color" />
+        {/* Déclaré avant les feuilles de style : contrôles natifs et ascenseurs restent
+            clairs même si la CSS tarde ou échoue. Le site n'a qu'un thème (cf. globals.css). */}
+        <meta content="light" name="color-scheme" />
 
         {/* DSFR Favicons */}
         <link href="/dsfr/favicon/apple-touch-icon.png" rel="apple-touch-icon" />
