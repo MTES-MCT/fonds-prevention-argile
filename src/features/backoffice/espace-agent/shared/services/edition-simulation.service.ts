@@ -3,6 +3,7 @@ import { parcoursAmoValidations, parcoursPrevention, users } from "@/shared/data
 import { eq } from "drizzle-orm";
 import type { ActionResult } from "@/shared/types/action-result.types";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
+import { unstable_rethrow } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
@@ -185,6 +186,8 @@ export async function getDossierSimulationData(id: string): Promise<ActionResult
       },
     };
   } catch (error) {
+    // Ne jamais masquer un signal Next (usage dynamique, redirect) derrière un ActionResult en échec.
+    unstable_rethrow(error);
     console.error("Erreur getDossierSimulationData:", error);
     return {
       success: false,

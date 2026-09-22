@@ -9,6 +9,7 @@ import {
 import { eq, and } from "drizzle-orm";
 import type { DossierDetail, InfoDemandeur, InfoLogement, ParcoursDateProgression } from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
+import { unstable_rethrow } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -206,6 +207,8 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
 
     return { success: true, data: dossierDetail };
   } catch (error) {
+    // Ne jamais masquer un signal Next (usage dynamique, redirect) derrière un ActionResult en échec.
+    unstable_rethrow(error);
     console.error("Erreur getDossierDetail:", error);
     return {
       success: false,

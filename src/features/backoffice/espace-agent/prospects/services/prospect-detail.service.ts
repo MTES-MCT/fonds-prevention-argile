@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import type { ProspectDetail, ProspectAmoInfo } from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
+import { unstable_rethrow } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -176,6 +177,8 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
 
     return { success: true, data: prospectDetail };
   } catch (error) {
+    // Ne jamais masquer un signal Next (usage dynamique, redirect) derrière un ActionResult en échec.
+    unstable_rethrow(error);
     console.error("Erreur getProspectDetail:", error);
     return {
       success: false,

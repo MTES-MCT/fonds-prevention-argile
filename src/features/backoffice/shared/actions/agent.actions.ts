@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_rethrow } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { getSession } from "@/features/auth/services/session.service";
 import { AUTH_METHODS } from "@/features/auth/domain/value-objects/constants";
@@ -58,6 +59,8 @@ export async function getCurrentAgent(): Promise<ActionResult<Agent>> {
       data: agent,
     };
   } catch (error) {
+    // cookies() signale l'usage dynamique en lançant : l'avaler ferait prérendre la page en « pas d'agent ».
+    unstable_rethrow(error);
     console.error("[getCurrentAgent] Erreur:", error);
     return {
       success: false,

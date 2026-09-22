@@ -7,6 +7,9 @@ import { UserRole } from "@/shared/domain/value-objects";
 import { agentPermissionsRepository } from "@/shared/database";
 import SuperAdminReadOnlyBanner from "./components/SuperAdminReadOnlyBanner";
 
+// Tout l'espace agent vit derrière une session ProConnect : hérité par chaque sous-route, rien n'y est prérendable.
+export const dynamic = "force-dynamic";
+
 interface EspaceAgentLayoutProps {
   children: ReactNode;
 }
