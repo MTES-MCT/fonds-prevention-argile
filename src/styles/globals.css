@@ -1,14 +1,8 @@
 /* Tailwind CSS */
 @import "tailwindcss";
 
-/* ===================================
-   Thème clair unique
-   Le site force le thème clair (`data-fr-scheme="light"` dans le layout racine) et
-   n'expose aucun réglage d'affichage. Couvre les contrôles natifs que le DSFR ne style
-   pas : champs, ascenseurs, et le `<dialog>` natif sur lequel reposent les 24 modales.
-   `only` et non `light` seul : sans lui, un navigateur en assombrissement forcé
-   (Auto Dark Theme de Chrome) réécrit quand même les couleurs de la page.
-   =================================== */
+/* Site mono-thème : couvre aussi les contrôles natifs que le DSFR ne style pas.
+   `only` bloque en plus l'assombrissement forcé du navigateur (cf. PR #360). */
 :root {
   color-scheme: only light;
 }
