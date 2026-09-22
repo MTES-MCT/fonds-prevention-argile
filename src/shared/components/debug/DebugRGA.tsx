@@ -20,7 +20,7 @@ export function DebugRGA({ urlSearchParams, rgaData, hasSessionData }: DebugRGAP
       style={{
         backgroundColor: "var(--background-alt-grey)",
         padding: "20px",
-        border: "2px solid #ccc",
+        border: "2px solid var(--border-default-grey)",
       }}>
       <h2>DEBUG RGA (développement uniquement)</h2>
 

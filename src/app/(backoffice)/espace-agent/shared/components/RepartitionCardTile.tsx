@@ -18,7 +18,7 @@ export function RepartitionCardTile({ number, label, badgeSeverity = "info" }: R
         backgroundColor: "var(--background-default-grey)",
         textAlign: "center",
         border: "1px solid var(--border-default-grey)",
-        boxShadow: "inset 0 -4px 0 0 black",
+        boxShadow: "inset 0 -4px 0 0 var(--border-plain-grey)",
       }}>
       <p
         className="fr-mb-2w"

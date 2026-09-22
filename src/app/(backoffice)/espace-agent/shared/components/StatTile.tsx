@@ -14,7 +14,7 @@ export function StatTile({ number, label, description }: StatTileProps) {
       style={{
         backgroundColor: "var(--background-default-grey)",
         border: "1px solid var(--border-default-grey)",
-        boxShadow: "inset 0 -4px 0 0 black",
+        boxShadow: "inset 0 -4px 0 0 var(--border-plain-grey)",
         height: "100%",
       }}>
       <p
