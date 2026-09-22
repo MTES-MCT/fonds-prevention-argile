@@ -119,7 +119,7 @@ export function BuildingDataForm({
   };
 
   return (
-    <div className="fr-p-2w border-solid border border-gray-200">
+    <div className="fr-p-2w border-solid border border-(--border-default-grey)">
       <div className="fr-mb-4v" style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
         <span className="fr-badge fr-badge--success">{buildingData?.adresse || address}</span>
         {!aleaIndetermine && (

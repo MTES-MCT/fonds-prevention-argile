@@ -129,7 +129,7 @@ export function InfoLogement({
 
   return (
     <div
-      className="bg-white p-6"
+      className="bg-(--background-default-grey) p-6"
       style={{ background: "var(--background-default-grey)", border: "1px solid var(--border-default-grey)" }}>
       <div className="fr-mb-1w">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>

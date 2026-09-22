@@ -56,7 +56,7 @@ function EmailLinks({ emails }: { emails: string[] }) {
     <>
       {emails.map((email, index) => (
         <span key={email}>
-          <a href={`mailto:${email}`} className="fr-link text-gray-500 fr-text--sm">
+          <a href={`mailto:${email}`} className="fr-link text-(--text-mention-grey) fr-text--sm">
             {email}
           </a>
           {index < emails.length - 1 && ", "}
@@ -85,19 +85,19 @@ export function ContactCard({
   if (!selectable) {
     return (
       <div className={colClass}>
-        <div className="fr-p-2w bg-white border border-gray-200">
+        <div className="fr-p-2w bg-(--background-default-grey) border border-(--border-default-grey)">
           <p className="fr-mb-0">{nom}</p>
           {emailList.length > 0 && (
-            <p className="fr-text--sm text-gray-500 fr-mb-0">
+            <p className="fr-text--sm text-(--text-mention-grey) fr-mb-0">
               <EmailLinks emails={emailList} />
             </p>
           )}
-          {telephone && <p className="fr-text--sm text-gray-500 fr-mb-0">{telephone}</p>}
-          {adresse && <p className="fr-text--sm fr-mb-0 text-gray-500">{adresse}</p>}
+          {telephone && <p className="fr-text--sm text-(--text-mention-grey) fr-mb-0">{telephone}</p>}
+          {adresse && <p className="fr-text--sm fr-mb-0 text-(--text-mention-grey)">{adresse}</p>}
           {horaires && (
             <div className="fr-mt-2v">
-              <p className="fr-text--xs fr-text--bold uppercase fr-mb-1v text-gray-500">Horaires</p>
-              <p className="fr-text--sm fr-mb-0 text-gray-500" style={{ whiteSpace: "pre-line" }}>
+              <p className="fr-text--xs fr-text--bold uppercase fr-mb-1v text-(--text-mention-grey)">Horaires</p>
+              <p className="fr-text--sm fr-mb-0 text-(--text-mention-grey)" style={{ whiteSpace: "pre-line" }}>
                 {horaires}
               </p>
             </div>
@@ -123,16 +123,20 @@ export function ContactCard({
           <label className="fr-label" htmlFor={`radio-contact-${id}`}>
             <span className="fr-mb-1v">{nom}</span>
             {emailList.length > 0 && (
-              <span className="fr-text--sm fr-text--light text-gray-500 block">
+              <span className="fr-text--sm fr-text--light text-(--text-mention-grey) block">
                 <EmailLinks emails={emailList} />
               </span>
             )}
-            {telephone && <span className="fr-text--sm fr-text--light text-gray-500 block">{telephone}</span>}
-            {adresse && <span className="fr-text--sm fr-text--light block text-gray-500">{adresse}</span>}
+            {telephone && (
+              <span className="fr-text--sm fr-text--light text-(--text-mention-grey) block">{telephone}</span>
+            )}
+            {adresse && <span className="fr-text--sm fr-text--light block text-(--text-mention-grey)">{adresse}</span>}
             {horaires && (
               <span className="block fr-mt-2v">
-                <span className="fr-text--xs fr-text--bold uppercase text-gray-500 block">Horaires</span>
-                <span className="fr-text--sm fr-text--light block text-gray-500" style={{ whiteSpace: "pre-line" }}>
+                <span className="fr-text--xs fr-text--bold uppercase text-(--text-mention-grey) block">Horaires</span>
+                <span
+                  className="fr-text--sm fr-text--light block text-(--text-mention-grey)"
+                  style={{ whiteSpace: "pre-line" }}>
                   {horaires}
                 </span>
               </span>

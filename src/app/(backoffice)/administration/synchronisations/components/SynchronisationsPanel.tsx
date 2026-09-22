@@ -154,9 +154,7 @@ export default function SynchronisationsPanel() {
 
   return (
     <>
-      <section
-        className="fr-container-fluid fr-pt-4w"
-        style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
+      <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
           <AdminBreadcrumb currentPageLabel="Synchronisations" />
           <div className="fr-grid-row fr-grid-row--middle fr-mb-6w">
@@ -184,8 +182,8 @@ export default function SynchronisationsPanel() {
               {pendingRun && !isPendingStale && (
                 <p className="fr-text--sm fr-mt-1v fr-mb-0" style={{ color: "var(--text-mention-grey)" }}>
                   Démarrée il y a {formatElapsed(pendingRun.startedAt)}
-                  {pendingRun.triggeredBy === SyncRunTrigger.CRON ? " (CRON)" : " (manuel)"}.
-                  Actualisation auto toutes les {PENDING_POLL_INTERVAL_MS / 1000} s.
+                  {pendingRun.triggeredBy === SyncRunTrigger.CRON ? " (CRON)" : " (manuel)"}. Actualisation auto toutes
+                  les {PENDING_POLL_INTERVAL_MS / 1000} s.
                 </p>
               )}
               {pendingRun && isPendingStale && (
@@ -213,7 +211,7 @@ export default function SynchronisationsPanel() {
         <div className="fr-container">
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
-              <div className="text-gray-500">Chargement...</div>
+              <div className="text-(--text-mention-grey)">Chargement...</div>
             </div>
           ) : runs.length === 0 ? (
             <div className="fr-callout">

@@ -53,7 +53,9 @@ export function StepEnvoiEmail() {
         Envoyer un email automatique au demandeur pour l&apos;inciter à créer son compte sur le site du Fonds Prévention
         Argile ?
       </h4>
-      <p className="fr-text--sm fr-mb-4w text-gray-500">Vous pouvez le faire manuellement si vous préférez.</p>
+      <p className="fr-text--sm fr-mb-4w text-(--text-mention-grey)">
+        Vous pouvez le faire manuellement si vous préférez.
+      </p>
 
       <div className="fr-form-group">
         <fieldset className="fr-fieldset">

@@ -67,7 +67,7 @@ export function ActionsRealisees({ parcoursId }: ActionsRealiseesProps) {
                 </span>
               )}
             </h3>
-            <p className="fr-text--sm fr-mb-0 text-gray-600">
+            <p className="fr-text--sm fr-mb-0 text-(--text-mention-grey)">
               Tout élément pertinent qui ne rentre pas dans la qualification du dossier.
             </p>
           </div>
@@ -84,7 +84,11 @@ export function ActionsRealisees({ parcoursId }: ActionsRealiseesProps) {
 
         {isAddingAction && (
           <div className="fr-mt-3w">
-            <ActionForm parcoursId={parcoursId} onSuccess={handleActionCreated} onCancel={() => setIsAddingAction(false)} />
+            <ActionForm
+              parcoursId={parcoursId}
+              onSuccess={handleActionCreated}
+              onCancel={() => setIsAddingAction(false)}
+            />
           </div>
         )}
 
@@ -93,11 +97,11 @@ export function ActionsRealisees({ parcoursId }: ActionsRealiseesProps) {
         <div className="fr-pt-2w">
           {isLoading ? (
             <div className="fr-p-4w text-center">
-              <p className="fr-text--sm text-gray-600">Chargement des actions...</p>
+              <p className="fr-text--sm text-(--text-mention-grey)">Chargement des actions...</p>
             </div>
           ) : totalCount === 0 ? (
             <div className="fr-p-4w text-center">
-              <p className="fr-text--sm text-gray-600">Aucune action pour le moment.</p>
+              <p className="fr-text--sm text-(--text-mention-grey)">Aucune action pour le moment.</p>
             </div>
           ) : (
             <>

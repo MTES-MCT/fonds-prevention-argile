@@ -157,7 +157,7 @@ export default function AgentsList({
                     {[UserRole.ADMINISTRATEUR, UserRole.ANALYSTE].includes(agent.role as UserRole) && (
                       <>
                         {departements.length === 0 ? (
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-(--text-mention-grey)">
                             {agent.role === UserRole.ANALYSTE ? "National" : "Tous départements"}
                           </span>
                         ) : (
@@ -187,7 +187,7 @@ export default function AgentsList({
 
                     {/* Super Admin : tous les territoires */}
                     {agent.role === UserRole.SUPER_ADMINISTRATEUR && (
-                      <span className="text-sm text-gray-500">Tous territoires</span>
+                      <span className="text-sm text-(--text-mention-grey)">Tous territoires</span>
                     )}
                   </div>
                 </td>
@@ -255,7 +255,7 @@ export default function AgentsList({
           })}
         </tbody>
       </table>
-      <p className="text-xs text-gray-500 mt-2">* Suivi des connexions disponible depuis le 01/04/2026</p>
+      <p className="text-xs text-(--text-mention-grey) mt-2">* Suivi des connexions disponible depuis le 01/04/2026</p>
     </div>
   );
 }

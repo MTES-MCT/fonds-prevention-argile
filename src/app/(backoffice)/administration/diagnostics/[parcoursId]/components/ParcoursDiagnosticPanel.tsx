@@ -88,7 +88,7 @@ export default function ParcoursDiagnosticPanel({ parcoursId }: { parcoursId: st
         <div className="fr-container">
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
-              <div className="text-gray-500">Cross-check DN en cours...</div>
+              <div className="text-(--text-mention-grey)">Cross-check DN en cours...</div>
             </div>
           ) : !detail ? (
             <div className="fr-callout">

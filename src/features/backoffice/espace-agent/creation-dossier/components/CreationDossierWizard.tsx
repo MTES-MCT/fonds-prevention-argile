@@ -73,7 +73,7 @@ export function CreationDossierWizard({ intent }: CreationDossierWizardProps) {
         </nav>
 
         <h1 className="fr-mb-1v">Ajout d&apos;un nouveau dossier</h1>
-        <p className="fr-text--md fr-mb-0 text-gray-500">
+        <p className="fr-text--md fr-mb-0 text-(--text-mention-grey)">
           Ce dossier pourra être rattaché à un demandeur (France Connect)
         </p>
       </div>
@@ -84,7 +84,7 @@ export function CreationDossierWizard({ intent }: CreationDossierWizardProps) {
           <div className="fr-grid-row fr-grid-row--center">
             <div className="fr-col-12 fr-col-md-10 fr-col-lg-8">
               {/* Carte blanche centrée */}
-              <div className="bg-white fr-p-6w">
+              <div className="bg-(--background-default-grey) fr-p-6w">
                 <div className="fr-stepper">
                   {stepperTitle ? (
                     <h2 className="fr-stepper__title">

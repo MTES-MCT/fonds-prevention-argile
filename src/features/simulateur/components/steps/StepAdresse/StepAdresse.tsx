@@ -400,7 +400,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
         {/* Container carte + formulaire */}
         {selectedAddress && mapCenter && (
           <div
-            className="fr-mb-4w border-solid border border-gray-200"
+            className="fr-mb-4w border-solid border border-(--border-default-grey)"
             style={{
               backgroundColor: "#fff",
               borderRadius: "0.5rem",
