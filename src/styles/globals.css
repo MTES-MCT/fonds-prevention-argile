@@ -4,11 +4,13 @@
 /* ===================================
    Thème clair unique
    Le site force le thème clair (`data-fr-scheme="light"` dans le layout racine) et
-   n'expose aucun réglage d'affichage. Déclaré aussi en CSS pour que les contrôles
-   natifs (champs, ascenseurs) restent clairs avant le démarrage du JS DSFR.
+   n'expose aucun réglage d'affichage. Couvre les contrôles natifs que le DSFR ne style
+   pas : champs, ascenseurs, et le `<dialog>` natif sur lequel reposent les 24 modales.
+   `only` et non `light` seul : sans lui, un navigateur en assombrissement forcé
+   (Auto Dark Theme de Chrome) réécrit quand même les couleurs de la page.
    =================================== */
 :root {
-  color-scheme: light;
+  color-scheme: only light;
 }
 
 /**
