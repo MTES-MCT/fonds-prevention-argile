@@ -235,6 +235,12 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   const [showManualFallback, setShowManualFallback] = useState(false);
   const [isFallbackLoading, setIsFallbackLoading] = useState(false);
 
+  // Navigateur sans WebGL2 (Firefox à GPU sur liste noire, accélération coupée) : la carte ne
+  // s'affichera jamais, il n'y a rien à attendre - la saisie manuelle est la seule voie.
+  const [carteIndisponible, setCarteIndisponible] = useState(false);
+  const handleCarteIndisponible = useCallback(() => setCarteIndisponible(true), []);
+  const proposerSaisieManuelle = showManualFallback || carteIndisponible;
+
   // Mémoïsé : useRgaBuildingSelection prend ce callback en dépendance d'effet, une identité
   // instable y ré-abonnerait le handler de clic de la carte à chaque rendu.
   const handleEmptyClick = useCallback(() => setShowManualFallback(true), []);
@@ -407,7 +413,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
               padding: "0.5rem",
             }}>
             {/* Message d'instruction (visible tant que pas de bâtiment sélectionné) */}
-            {!buildingData && (
+            {!buildingData && !carteIndisponible && (
               <p className="fr-text--sm fr-text--bold fr-mb-2w">
                 Cliquez sur votre bâtiment (point bleu) pour le sélectionner :
               </p>
@@ -423,19 +429,22 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
               variant="minimal"
               onBuildingSelect={isAddressLocked ? undefined : handleBuildingSelect}
               onEmptyClick={isAddressLocked ? undefined : handleEmptyClick}
+              onCarteIndisponible={handleCarteIndisponible}
             />
 
-            {/* Échappatoire si la carte ne répond pas (délai écoulé ou clic à vide) */}
-            {!buildingData && !isAddressLocked && showManualFallback && (
+            {/* Échappatoire si la carte ne répond pas (délai écoulé, clic à vide, ou pas de WebGL2) */}
+            {!buildingData && !isAddressLocked && proposerSaisieManuelle && (
               <p className="fr-text--sm fr-mt-2w fr-mb-0">
                 <button
                   type="button"
-                  className="fr-link fr-link--sm"
+                  className={carteIndisponible ? "fr-btn fr-btn--secondary fr-btn--sm" : "fr-link fr-link--sm"}
                   onClick={handleManualFallback}
                   disabled={isFallbackLoading}>
                   {isFallbackLoading
                     ? "Vérification en cours..."
-                    : "Vous ne trouvez pas votre bâtiment, ou la carte ne répond pas ? Renseignez les informations vous-même"}
+                    : carteIndisponible
+                      ? "Renseigner les informations de mon logement"
+                      : "Vous ne trouvez pas votre bâtiment, ou la carte ne répond pas ? Renseignez les informations vous-même"}
                 </button>
               </p>
             )}
