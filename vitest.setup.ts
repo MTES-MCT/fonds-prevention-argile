@@ -15,6 +15,19 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
   usePathname: vi.fn(() => "/"),
   useParams: () => ({}),
+  // Reproduit le tri côté serveur : sous jsdom, next/navigation résout la variante navigateur,
+  // qui ignore l'usage dynamique — l'inverse de ce que fait la prod.
+  unstable_rethrow: (error: unknown) => {
+    const digest = (error as { digest?: unknown } | null)?.digest;
+    if (
+      typeof digest === "string" &&
+      (digest === "DYNAMIC_SERVER_USAGE" ||
+        digest.startsWith("NEXT_REDIRECT") ||
+        digest.startsWith("NEXT_HTTP_ERROR_FALLBACK"))
+    ) {
+      throw error;
+    }
+  },
 }));
 
 // Mock de env.config
