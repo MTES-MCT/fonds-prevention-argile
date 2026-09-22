@@ -224,7 +224,7 @@ export function InfoLogement({
               className="fr-badge fr-badge--sm fr-badge--no-icon fr-text--bold"
               style={{
                 backgroundColor: getRisqueArgileColor(logement.zoneExposition),
-                color: "#2a2a2a",
+                color: "var(--text-default-grey)",
               }}>
               {logement.zoneExposition.toUpperCase()}
             </FieldValue>

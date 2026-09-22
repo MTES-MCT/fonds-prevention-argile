@@ -51,7 +51,7 @@ export function DemandeArchiveeCard({ demande }: DemandeArchiveeCardProps) {
       </div>
 
       {/* Contenu : raison d'archivage sur fond gris */}
-      <div className="fr-p-2w" style={{ backgroundColor: "#f6f6f6", borderRadius: "0.25rem" }}>
+      <div className="fr-p-2w" style={{ backgroundColor: "var(--background-alt-grey)", borderRadius: "0.25rem" }}>
         <p className="fr-text--sm fr-mb-0" style={{ whiteSpace: "pre-wrap" }}>
           &ldquo;{demande.raison}&rdquo;
         </p>

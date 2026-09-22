@@ -202,7 +202,7 @@ export function StepAdresseVulnerabilite({
       {selectedAddress && mapCenter && (
         <div
           className="fr-mb-4w border-solid border border-(--border-default-grey)"
-          style={{ backgroundColor: "#fff", borderRadius: "0.5rem", padding: "0.5rem" }}>
+          style={{ backgroundColor: "var(--background-default-grey)", borderRadius: "0.5rem", padding: "0.5rem" }}>
           {!buildingData && (
             <p className="fr-text--sm fr-text--bold fr-mb-2w">
               Cliquez sur votre bâtiment (point bleu) pour le sélectionner :

@@ -224,7 +224,7 @@ export default function EligibiliteDemarcheSchema({ champDescriptors }: Eligibil
             <pre
               className="fr-p-2w"
               style={{
-                backgroundColor: "#f6f6f6",
+                backgroundColor: "var(--background-alt-grey)",
                 borderRadius: "0.25rem",
                 overflow: "auto",
                 maxHeight: "500px",

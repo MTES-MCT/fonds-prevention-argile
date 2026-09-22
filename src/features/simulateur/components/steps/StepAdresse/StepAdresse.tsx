@@ -402,7 +402,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
           <div
             className="fr-mb-4w border-solid border border-(--border-default-grey)"
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: "var(--background-default-grey)",
               borderRadius: "0.5rem",
               padding: "0.5rem",
             }}>

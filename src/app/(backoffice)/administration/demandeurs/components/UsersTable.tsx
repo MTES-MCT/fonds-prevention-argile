@@ -324,7 +324,7 @@ export function UsersTable({ users, departementsNonCouverts = [] }: UsersTablePr
                       {expandedUserId === user.user.id && (
                         <tr>
                           <td colSpan={8}>
-                            <div className="fr-p-4w" style={{ backgroundColor: "#f6f6f6" }}>
+                            <div className="fr-p-4w" style={{ backgroundColor: "var(--background-alt-grey)" }}>
                               <UserDetailRow user={user} />
                             </div>
                           </td>

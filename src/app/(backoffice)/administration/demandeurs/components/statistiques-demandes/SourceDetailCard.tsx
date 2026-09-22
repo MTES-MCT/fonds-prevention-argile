@@ -28,7 +28,9 @@ export function SourceDetailCard({ demandeur, departement, sourcePrecision }: So
         </p>
       </div>
 
-      <div className="fr-p-2w fr-mt-1v" style={{ backgroundColor: "#f6f6f6", borderRadius: "0.25rem" }}>
+      <div
+        className="fr-p-2w fr-mt-1v"
+        style={{ backgroundColor: "var(--background-alt-grey)", borderRadius: "0.25rem" }}>
         <p className="fr-text--sm fr-mb-0" style={{ whiteSpace: "pre-wrap" }}>
           &ldquo;{sourcePrecision}&rdquo;
         </p>
