@@ -5,6 +5,7 @@ import * as maplibregl from "maplibre-gl";
 import { Protocol, PMTiles } from "pmtiles";
 
 import { RGA_MAP_STYLE_URL, ARGILE_PMTILES_URL, DEFAULT_CENTER, ZOOM, MAX_BOUNDS } from "../domain/config";
+import { webgl2EstDisponible } from "../domain/webgl";
 import { Coordinates } from "@/shared/types";
 
 interface UseRgaMapOptions {
@@ -16,6 +17,8 @@ interface UseRgaMapReturn {
   mapRef: RefObject<HTMLDivElement | null>;
   map: maplibregl.Map | null;
   isReady: boolean;
+  /** WebGL2 absent : aucune carte ne s'affichera, il faut proposer une autre voie. */
+  webglIndisponible: boolean;
 }
 
 /**
@@ -27,6 +30,9 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [isReady, setIsReady] = useState(false);
+  // Faux au premier rendu des deux côtés : la détection a besoin du navigateur, la poser
+  // dès l'état initial provoquerait une divergence d'hydratation.
+  const [webglIndisponible, setWebglIndisponible] = useState(false);
 
   // Extraire les valeurs primitives pour éviter les re-renders
   const centerLat = center?.lat;
@@ -55,6 +61,13 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
   // Initialiser la carte (une seule fois)
   useEffect(() => {
     if (!mapRef.current) return;
+
+    // maplibre 6 n'échoue plus bruyamment sans WebGL2 : il construit une carte sans peintre,
+    // muette, dont le remove() lève et emporte la page entière. Ne rien instancier plutôt.
+    if (!webgl2EstDisponible()) {
+      setWebglIndisponible(true);
+      return;
+    }
 
     const initialCenter: [number, number] =
       centerLon !== undefined && centerLat !== undefined ? [centerLon, centerLat] : DEFAULT_CENTER;
@@ -89,7 +102,13 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
     return () => {
       setMap(null);
       setIsReady(false);
-      newMap.remove();
+      try {
+        newMap.remove();
+      } catch (error) {
+        // Ceinture : le peintre peut aussi disparaître après coup (perte de contexte WebGL),
+        // et l'échec d'une destruction ne doit jamais faire tomber le rendu.
+        console.error("[RgaMap] Destruction de la carte impossible:", error);
+      }
     };
   }, [centerLat, centerLon, zoom]);
 
@@ -97,5 +116,6 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
     mapRef,
     map,
     isReady,
+    webglIndisponible,
   };
 }
