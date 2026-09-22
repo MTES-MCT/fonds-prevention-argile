@@ -2,16 +2,13 @@
 
 import { useEffect, useRef, useState, useId } from "react";
 import { archiveDossierAction } from "@/features/backoffice/espace-agent/dossiers/actions";
+import {
+  RAISONS_ARCHIVAGE,
+  type GroupeRaisons,
+} from "@/features/backoffice/espace-agent/shared/domain/value-objects/raisons-fin-suivi";
 import type { ActionResult } from "@/shared/types";
 
-const ARCHIVE_REASONS = [
-  "Le demandeur n'est pas éligible",
-  "Reste à charge trop élevé",
-  "Le demandeur a abandonné le projet",
-  "Le demandeur ne donne pas de réponse",
-  "Fausse déclaration / documents falsifiés",
-  "Autre",
-] as const;
+const GROUPES_PAR_DEFAUT: readonly GroupeRaisons[] = [{ label: "", raisons: RAISONS_ARCHIVAGE }];
 
 interface ArchiveModalProps {
   isOpen: boolean;
@@ -24,10 +21,19 @@ interface ArchiveModalProps {
   entityLabel?: string;
   /** Description personnalisée (override le texte par défaut) */
   description?: string;
+  /** Raisons groupées : un `optgroup` par groupe dès qu'il y en a plusieurs. */
+  groupesRaisons?: readonly GroupeRaisons[];
+  /** Titre, label et bouton deviennent neutres quand une raison n'archive pas. */
+  titre?: string;
+  labelSelect?: string;
+  libelleAction?: string;
+  /** Conséquence de la raison sélectionnée, affichée avant de confirmer. */
+  alerteParRaison?: (raison: string) => string | null;
 }
 
 /**
- * Modale d'archivage générique (dossiers AMO et prospects)
+ * Modale de fin de suivi (dossiers AMO et prospects) : choisir une raison, puis confirmer.
+ * La raison peut décider de la suite — toutes n'archivent pas (cf. `raisons-fin-suivi`).
  */
 export function ArchiveModal({
   isOpen,
@@ -37,6 +43,11 @@ export function ArchiveModal({
   archiveAction = archiveDossierAction,
   entityLabel = "dossier",
   description,
+  groupesRaisons = GROUPES_PAR_DEFAUT,
+  titre,
+  labelSelect,
+  libelleAction,
+  alerteParRaison,
 }: ArchiveModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [reason, setReason] = useState("");
@@ -52,6 +63,10 @@ export function ArchiveModal({
       : "Le dossier passera en statut \"Archivé\". Vous pourrez toujours le mettre à jour tant qu'il n'est pas transféré à l'AMO ou supprimé par le demandeur.";
 
   const displayDescription = description ?? defaultDescription;
+  const displayTitre = titre ?? `Archiver le ${entityLabel} ?`;
+  const displayLabelSelect = labelSelect ?? `Pour quelles raisons souhaitez-vous archiver le ${entityLabel} ?`;
+  const displayLibelleAction = libelleAction ?? "Archiver";
+  const alerte = reason ? (alerteParRaison?.(reason) ?? null) : null;
 
   // Ouvrir/fermer via l'API DSFR
   useEffect(() => {
@@ -115,6 +130,9 @@ export function ArchiveModal({
     }
   }
 
+  const groupes = groupesRaisons.length > 0 ? groupesRaisons : GROUPES_PAR_DEFAUT;
+  const rendreOptions = groupes.length > 1 || groupes.some((g) => g.label !== "");
+
   return (
     <dialog ref={dialogRef} id={modalId} className="fr-modal" aria-labelledby={`${modalId}-title`}>
       <div className="fr-container fr-container--fluid fr-container-md">
@@ -128,7 +146,7 @@ export function ArchiveModal({
               </div>
               <div className="fr-modal__content">
                 <h1 id={`${modalId}-title`} className="fr-modal__title">
-                  Archiver le {entityLabel}&nbsp;?
+                  {displayTitre}
                 </h1>
                 <p>{displayDescription}</p>
 
@@ -140,7 +158,7 @@ export function ArchiveModal({
 
                 <div className="fr-select-group">
                   <label className="fr-label" htmlFor={selectId}>
-                    Pour quelles raisons souhaitez-vous archiver le {entityLabel}&nbsp;?
+                    {displayLabelSelect}
                   </label>
                   <select
                     className="fr-select"
@@ -151,19 +169,35 @@ export function ArchiveModal({
                     <option value="" disabled>
                       S&eacute;lectionnez une raison
                     </option>
-                    {ARCHIVE_REASONS.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
+                    {rendreOptions
+                      ? groupes.map((groupe) => (
+                          <optgroup key={groupe.label} label={groupe.label}>
+                            {groupe.raisons.map((r) => (
+                              <option key={r} value={r}>
+                                {r}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))
+                      : groupes[0].raisons.map((r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ))}
                   </select>
                 </div>
+
+                {alerte && (
+                  <div className="fr-alert fr-alert--info fr-alert--sm fr-mt-2w">
+                    <p>{alerte}</p>
+                  </div>
+                )}
               </div>
               <div className="fr-modal__footer">
                 <ul className="fr-btns-group fr-btns-group--right fr-btns-group--inline-reverse fr-btns-group--inline-lg">
                   <li>
                     <button type="button" className="fr-btn" disabled={!reason || isSubmitting} onClick={handleSubmit}>
-                      {isSubmitting ? "Archivage..." : "Archiver"}
+                      {isSubmitting ? "Enregistrement..." : displayLibelleAction}
                     </button>
                   </li>
                   <li>
