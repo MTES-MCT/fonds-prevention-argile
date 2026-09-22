@@ -89,7 +89,7 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 - Accents français obligatoires dans le texte user-facing (é, è, ê, à, ô, ç, î)
 - Nommage fichiers : `*.actions.ts` (Server Actions), `*.service.ts`, `*.repository.ts`, `*.adapter.ts`
 - Respecter le DSFR pour les composants UI
-- Couleurs : toujours les **tokens DSFR** (`bg-(--background-default-grey)`, `text-(--text-mention-grey)`, `border-(--border-default-grey)`…), jamais les palettes Tailwind (`bg-white`, `text-gray-500`) — une couleur en dur ne suit pas le thème et rend le texte illisible au moindre écart
+- Couleurs : toujours les **tokens DSFR** (`bg-(--background-default-grey)`, `text-(--text-mention-grey)`, `border-(--border-default-grey)`…), jamais les palettes Tailwind (`bg-white`, `text-gray-500`) — une couleur en dur ne suit pas le thème et rend le texte illisible au moindre écart. Garde-fou : `src/styles/couleurs-dsfr.test.ts` balaie tous les `.tsx` et échoue en nommant le fichier fautif
 - Pas d'emojis dans le code ou les messages de sortie
 - Commentaires de code : **1 ligne, jamais plus de 2**. Uniquement le _pourquoi_ non-évident, jamais la paraphrase du code. Le raisonnement détaillé (contexte, alternatives, décision) va dans le **message de commit** ou un **ADR**, pas dans le source.
   - Mauvais : bloc JSDoc de 6 lignes qui re-déroule la logique de la fonction.
