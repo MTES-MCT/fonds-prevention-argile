@@ -18,7 +18,8 @@ interface ConfirmationReponseModalProps {
  *
  * Affiche un message différent selon le choix effectué :
  * - LOGEMENT_ELIGIBLE : Demande ajoutée aux dossiers suivis
- * - LOGEMENT_NON_ELIGIBLE : Demande archivée (inéligibilité)
+ * - LOGEMENT_NON_ELIGIBLE / ACCOMPAGNEMENT_REFUSE : Demande archivée
+ * - SANS_AMO : l'AMO décline, mais le demandeur poursuit seul (dossier actif)
  */
 export function ConfirmationReponseModal({
   isOpen,
@@ -118,6 +119,20 @@ export function ConfirmationReponseModal({
           description:
             "Le demandeur reste éligible, mais votre structure ne l'accompagne pas : le dossier a été archivé.",
           hint: "L'aller-vers de son territoire pourra reprendre le dossier si le demandeur souhaite poursuivre.",
+          secondaryButton: {
+            label: "Retour à l'accueil",
+            href: ROUTES.backoffice.espaceAmo.root,
+            icon: "fr-icon-arrow-left-line",
+            isSecondary: true,
+          },
+        };
+
+      case StatutValidationAmo.SANS_AMO:
+        return {
+          icon: "fr-icon-user-line",
+          title: "Le demandeur poursuit seul",
+          description: "Votre structure ne l'accompagne pas, mais son dossier reste actif : il n'est pas archivé.",
+          hint: "L'aller-vers de son territoire en devient le référent et pourra l'aider s'il en a besoin.",
           secondaryButton: {
             label: "Retour à l'accueil",
             href: ROUTES.backoffice.espaceAmo.root,

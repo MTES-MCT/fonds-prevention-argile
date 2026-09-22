@@ -133,6 +133,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
               statutActuel={demande.statut}
               estMandataireFinancier={demande.estMandataireFinancier}
               noteAmo={demande.commentaire}
+              autonomiePossible={demande.autonomiePossible}
             />
             <div className="fr-mt-4w">
               <ActionsRealisees parcoursId={demande.parcoursId} />
