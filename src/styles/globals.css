@@ -1,6 +1,16 @@
 /* Tailwind CSS */
 @import "tailwindcss";
 
+/* ===================================
+   Thème clair unique
+   Le site force le thème clair (`data-fr-scheme="light"` dans le layout racine) et
+   n'expose aucun réglage d'affichage. Déclaré aussi en CSS pour que les contrôles
+   natifs (champs, ascenseurs) restent clairs avant le démarrage du JS DSFR.
+   =================================== */
+:root {
+  color-scheme: light;
+}
+
 /**
  * Fix bug DSFR v1.14.2 - Navigation dropdown positioning
  * Date: 14/11/2025
