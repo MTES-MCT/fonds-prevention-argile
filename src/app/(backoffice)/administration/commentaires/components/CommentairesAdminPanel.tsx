@@ -198,7 +198,7 @@ export default function CommentairesAdminPanel() {
             </div>
           ) : commentaires.length === 0 ? (
             <div className="flex justify-center items-center py-12">
-              <div className="text-(--text-mention-grey)">Aucune note trouvee.</div>
+              <div className="text-(--text-mention-grey)">Aucune note trouvée.</div>
             </div>
           ) : (
             <>
