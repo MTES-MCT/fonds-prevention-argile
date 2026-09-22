@@ -545,6 +545,25 @@ déjà `accompagnement_refuse`) ou dé-archivage manuel — pas de routage autom
 > laisse place à « Désarchiver ». Un dossier **refusé** garde son propre chemin de retour, le bouton
 > « Ré-ouvrir la demande » (ADR-0016), qui remplace le menu entier.
 
+> **La raison choisie décide de la suite (septembre 2026).** Une AMO peut décliner parce que le
+> ménage veut **avancer seul** : archiver ce dossier était faux, le demandeur étant éligible et
+> actif. Les raisons sont donc scindées en deux sous-listes
+> (`espace-agent/shared/domain/value-objects/raisons-fin-suivi.ts`), rendues en `optgroup` dont le
+> libellé annonce la conséquence.
+>
+> | Sous-liste                                                | Effet                                                          |
+> | --------------------------------------------------------- | -------------------------------------------------------------- |
+> | « Le demandeur poursuit son parcours seul »               | `detacherAmo` → `sans_amo`, étape ouverte, **aucun archivage** |
+> | « Le dossier sera archivé » (les six raisons historiques) | inchangé : `ACCOMPAGNEMENT_REFUSE` + `archived_at`             |
+>
+> Le chemin autonomie reprend **les deux gardes de « Ne plus accompagner »** (§2.7), sans quoi il
+> en serait une porte dérobée : `peutPasserEnAutonomie` et `estDossierChezLaDdt` — une demande
+> d'accompagnement faite après une autonomie (§2.10) peut porter un dossier déjà déposé. La
+> première masque aussi la sous-liste là où l'AMO est imposé, plutôt que d'offrir une option qui
+> échouerait ; la seconde ne vit que côté serveur, le cas étant rare et le message explicite.
+> Un geste, une ligne d'historique : l'audit reste `accompagnement_refuse_eligible` et son message
+> porte l'issue. Voir [ADR-0022](../adr/0022-refus-accompagnement-demandeur-eligible.md).
+
 > `ACCOMPAGNEMENT_REFUSE` est **consultable** (`STATUTS_CONSULTABLES`) mais **non éditable**
 > (`editableStatuts` de l'édition simulation) : le dossier archivé n'est pas corrigeable via
 > « Vérifier son éligibilité » — asymétrie assumée (le dossier est garé).
@@ -1531,6 +1550,7 @@ retrouvé déposé.
 | Rattachement AMO après détachement à tort      | `amo/services/rattachement-amo.service.ts`, `scripts/ops/fix/rattacher-amo.ts` (`pnpm fix:rattacher-amo`)   |
 | Règles départementales (2 axes, ADR-0038)      | `amo/domain/value-objects/departements-amo.ts` (`estAmoObligatoire`, `avCumuleAmo`)                         |
 | Suite donnée à une qualification éligible      | `espace-agent/prospects/services/suite-qualification.service.ts`                                            |
+| Sous-listes de raisons de fin de suivi         | `espace-agent/shared/domain/value-objects/raisons-fin-suivi.ts` (`estRaisonPoursuiteAutonome`)              |
 | Autonomie décidée par un agent                 | `amo/services/amo-selection.service.ts` (`passerEnAutonomie`)                                               |
 | Ouverture d'étape après validation AMO         | `amo/services/ouverture-eligibilite.service.ts` (`ouvrirEligibiliteApresValidationAmo`, `aUneAmoValidee`)   |
 | Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |

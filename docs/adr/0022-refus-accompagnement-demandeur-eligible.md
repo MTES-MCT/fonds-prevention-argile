@@ -110,12 +110,50 @@ Deux commentaires de code affirmaient que `ACCOMPAGNEMENT_REFUSE` n'était « pl
 (legacy) ». C'était faux : `refuserAccompagnementEligible` est branché et la production en est pleine.
 Supprimés.
 
+## Amendement (2026-09-22) — la raison décide : archiver, ou laisser le demandeur poursuivre seul
+
+L'option B ci-dessus (`sans_amo` sans archivage) avait été écartée parce qu'elle « ne correspond
+pas au besoin exprimé ». Un **second** besoin est apparu depuis, remonté par les AMO : refuser
+l'accompagnement **parce que le ménage veut avancer seul**. Archiver ce dossier est alors faux —
+le demandeur est éligible, actif, et veut continuer. Il se retrouvait garé, avec « Votre dossier
+est en pause » pour toute réponse.
+
+Les deux besoins tiennent dans le même geste de l'AMO (« je ne l'accompagne pas ») et ne se
+distinguent que par le **motif**, déjà saisi et déjà obligatoire. C'est donc la **raison** qui
+décide de la suite, et non un quatrième choix au menu déroulant — qui aurait obligé l'AMO à
+trancher entre deux formulations quasi identiques avant de dire pourquoi.
+
+Les raisons sont scindées en deux sous-listes (`raisons-fin-suivi.ts`), rendues en `optgroup`
+dont le libellé annonce la conséquence :
+
+| Sous-liste                              | Raison                                                   | Effet                                                          |
+| --------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------- |
+| Le demandeur poursuit son parcours seul | « Le demandeur souhaite poursuivre sans accompagnement » | `detacherAmo` : `sans_amo`, étape ouverte, **aucun archivage** |
+| Le dossier sera archivé                 | les six raisons historiques                              | inchangé : `ACCOMPAGNEMENT_REFUSE` + `archivedAt`              |
+
+Le chemin autonomie reprend **les deux gardes de « Ne plus accompagner »** (ADR-0018), sans quoi
+il en serait une porte dérobée : `peutPasserEnAutonomie` (pas d'autonomie là où l'AMO est imposé,
+ADR-0037) et `estDossierChezLaDdt` (rien ne bouge tant que le formulaire d'éligibilité est chez
+l'administration — une demande d'accompagnement faite après une autonomie peut porter un dossier
+déjà déposé, cf. FLOW-AND-SYNC §2.10). La première est aussi appliquée à l'affichage : la
+sous-liste disparaît là où l'AMO est imposé, plutôt que d'offrir une option qui échouerait.
+
+Un geste, une ligne d'historique : l'audit reste `accompagnement_refuse_eligible` et son message
+porte l'issue, au lieu d'ouvrir un second type d'action. Même règle que pour la suite donnée à une
+qualification Aller-vers (ADR-0038).
+
+> La modale « Archiver » devient une modale de **fin de suivi** : titre, libellé du bouton et
+> alerte contextuelle sont désormais paramétrables, et son texte par défaut est inchangé pour les
+> quatre autres surfaces qui l'utilisent. Une modale dont une option n'archive pas ne pouvait pas
+> continuer à s'intituler « Archiver le dossier ? ».
+
 ## Liens
 
 - Service : `src/features/parcours/amo/services/amo-validation.service.ts` (`declineAccompagnementEligible`)
 - Action : `src/features/backoffice/espace-agent/demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible`)
 - Types d'action : `src/features/backoffice/espace-agent/shared/domain/types/action.types.ts`
 - UI : `src/app/(backoffice)/espace-agent/demandes/[id]/components/ReponseAccompagnement.tsx`, `ConfirmationReponseModal.tsx`
-- Modale d'archivage réutilisée : `src/app/(backoffice)/espace-agent/shared/components/ArchiveModal.tsx`
+- Modale de fin de suivi : `src/app/(backoffice)/espace-agent/shared/components/ArchiveModal.tsx`
+- Sous-listes de raisons : `src/features/backoffice/espace-agent/shared/domain/value-objects/raisons-fin-suivi.ts`
 - Documentation : `docs/parcours/FLOW-AND-SYNC.md` (§2.8), `docs/security/RBAC-ROLES.md`
-- ADR liés : [ADR-0016](0016-reouverture-demande-refusee.md) (ré-ouverture), [ADR-0018](0018-arret-accompagnement-amo.md) (arrêt d'accompagnement), [ADR-0020](0020-correction-simulation-agent-post-eligibilite.md) (archivage/éligibilité)
+- ADR liés : [ADR-0016](0016-reouverture-demande-refusee.md) (ré-ouverture), [ADR-0018](0018-arret-accompagnement-amo.md) (arrêt d'accompagnement), [ADR-0020](0020-correction-simulation-agent-post-eligibilite.md) (archivage/éligibilité), [ADR-0037](0037-pas-d-autonomie-en-amo-obligatoire.md) (garde départementale)

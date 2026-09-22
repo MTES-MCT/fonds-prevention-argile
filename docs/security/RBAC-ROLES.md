@@ -402,6 +402,16 @@ super-admin en lecture seule sont **exclus** — contrairement à la ré-ouvertu
 > l'imposer** (le Gers) conserve le droit à l'autonomie. Voir
 > [ADR-0038](../adr/0038-qualification-aller-vers-pivot-accompagnement.md).
 
+> **Le refus d'accompagnement emprunte les mêmes gardes quand il mène à l'autonomie
+> (septembre 2026).** `refuserAccompagnementEligible` détache l'AMO — au lieu d'archiver — quand
+> l'AMO retient la raison « le demandeur souhaite poursuivre sans accompagnement ». Ce chemin
+> revérifie donc `peutPasserEnAutonomie` **et** `estDossierChezLaDdt`, sinon il serait une porte
+> dérobée à « Ne plus accompagner ». Sa garde de rôle reste la sienne (`verifyAmoOwnership` +
+> `assertNotSuperAdminReadOnly`), et non `assertCanActAsResponsable` : c'est une réponse à une
+> demande, pas une action sur un dossier suivi. La sous-liste est masquée là où l'AMO est imposé,
+> la barrière restant la server action. Voir
+> [ADR-0022](../adr/0022-refus-accompagnement-demandeur-eligible.md).
+
 > **Gel entre dépôt et décision DDT (septembre 2026).** À la garde de rôle s'ajoute une garde
 > d'**état** : `arreterAccompagnementAction` refuse tant que le formulaire d'éligibilité est
 > déposé sans décision rendue (`estDossierChezLaDdt`), y compris pour l'AMO responsable. Même
@@ -525,6 +535,7 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Garde rattachement d'une AMO                | `administration/diagnostics/actions/amo-a-rattacher.actions.ts` (`ensureSuperAdmin`) — super-admin seul, file des diagnostics comme entrée du menu Gérer |
 | Garde arrêt d'accompagnement                | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts`                                  |
 | Garde refus accompagnement (éligible)       | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                                                    |
+| Garde refus menant à l'autonomie            | `demandes/actions/demande-detail.actions.ts` (`declinerVersAutonomie` → `peutPasserEnAutonomie` + `estDossierChezLaDdt`)                                 |
 | Garde rattachement / réinit. DN             | `espace-agent/shared/services/dossier-dn-permissions.service.ts` (`verifierAccesDossierDn`)                                                              |
 | Garde édition simulation                    | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)                                        |
 | Résolution du permalien parcours            | `dossiers/services/admin-url-resolver.service.ts` (`resolveEspaceAgentPath`) — chemin seul, aucune donnée                                                |
