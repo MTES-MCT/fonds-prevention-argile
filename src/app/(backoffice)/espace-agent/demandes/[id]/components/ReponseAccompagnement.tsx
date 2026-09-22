@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import {
   accepterAccompagnement,
@@ -372,13 +373,17 @@ export function ReponseAccompagnement({
         }
         onSuccess={async () => {
           setIsArchiveOpen(false);
+          // Le détachement retire l'entreprise : cette page devient inaccessible à l'AMO et se
+          // re-rend en 404. Navigation dure vers le listing, comme « Ne plus accompagner ».
+          if (poursuiteAutonomeRef.current) {
+            window.location.href = ROUTES.backoffice.espaceAmo.dossiers;
+            return;
+          }
           const nextResult = await getNextDemandeurEnAttente(demandeId);
           if (nextResult.success && nextResult.data) {
             setNextDemandeId(nextResult.data.nextDemandeId);
           }
-          setConfirmedChoix(
-            poursuiteAutonomeRef.current ? StatutValidationAmo.SANS_AMO : StatutValidationAmo.ACCOMPAGNEMENT_REFUSE
-          );
+          setConfirmedChoix(StatutValidationAmo.ACCOMPAGNEMENT_REFUSE);
           setIsModalOpen(true);
         }}
       />

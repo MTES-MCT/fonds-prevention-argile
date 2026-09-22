@@ -142,6 +142,13 @@ Un geste, une ligne d'historique : l'audit reste `accompagnement_refuse_eligible
 porte l'issue, au lieu d'ouvrir un second type d'action. Même règle que pour la suite donnée à une
 qualification Aller-vers (ADR-0038).
 
+> **L'AMO perd l'accès au dossier dans la seconde qui suit**, le détachement posant
+> `entreprise_amo_id = NULL` : la page de la demande se re-rend en 404 avant toute confirmation.
+> L'UI renvoie donc au listing par une navigation dure, sans modale — même règle que
+> « Ne plus accompagner » (ADR-0018), et seule différence de traitement entre les deux familles
+> de raisons après le clic. Le retour de recette qui l'a révélé : un 404 « Demande non trouvée »
+> sur une action pourtant réussie.
+
 > La modale « Archiver » devient une modale de **fin de suivi** : titre, libellé du bouton et
 > alerte contextuelle sont désormais paramétrables, et son texte par défaut est inchangé pour les
 > quatre autres surfaces qui l'utilisent. Une modale dont une option n'archive pas ne pouvait pas
