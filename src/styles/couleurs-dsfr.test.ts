@@ -17,11 +17,13 @@ const CLASSES_INTERDITES = [
 
 // Même piège dans un style inline, que les classes ci-dessus ne couvrent pas. Limité au
 // gris neutre (r = v = b) : c'est lui qui rend un texte invisible, pas une teinte de marque.
+// La couleur est cherchée n'importe où dans la valeur, pour attraper les raccourcis
+// du type `border: "2px solid #ccc"` autant que `color: "#666"`.
 const STYLES_INTERDITS = [
   {
     motif:
-      /(?:backgroundColor|borderColor|background|color)\s*[:=]\s*"(?:#(?:([0-9a-fA-F])\1{2}|([0-9a-fA-F]{2})\2{2})|white|black)"/g,
-    conseil: "utiliser var(--background-alt-grey) / var(--text-mention-grey) / var(--text-inverted-grey)",
+      /(?:backgroundColor|borderColor|border|background|boxShadow|outline|color)\s*[:=]\s*"[^"]*(?:#(?:([0-9a-fA-F])\1{2}|([0-9a-fA-F]{2})\2{2})|\bwhite\b|\bblack\b)[^"]*"/g,
+    conseil: "utiliser var(--background-alt-grey) / var(--text-mention-grey) / var(--border-default-grey)",
   },
 ];
 
