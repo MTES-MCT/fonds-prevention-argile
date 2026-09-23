@@ -41,4 +41,18 @@ describe("PiecesAPrevoir", () => {
       "https://service-public.fr/cerfa"
     );
   });
+
+  it("ne met d'astérisque que sur les pièces obligatoires sans condition", () => {
+    const conditionnelle: PieceJustificative = {
+      id: "p3",
+      label: "Attestation indivision",
+      required: true,
+      categorie: "DEMANDEUR",
+      condition: { libelle: "Obligatoire uniquement si indivision" },
+    };
+    render(<PiecesAPrevoir pieces={[...pieces, conditionnelle]} />);
+
+    expect(screen.getByText("Pièce d'identité *")).toBeInTheDocument();
+    expect(screen.getByText("Attestation indivision")).toBeInTheDocument();
+  });
 });

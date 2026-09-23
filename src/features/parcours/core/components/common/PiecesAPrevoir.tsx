@@ -22,7 +22,7 @@ export default function PiecesAPrevoir({ pieces }: PiecesAPrevoirProps) {
           <li className="fr-mb-2v" key={piece.id}>
             <span className="fr-text--xs fr-text--bold">
               {piece.label}
-              {piece.required && " *"}
+              {piece.required && !piece.condition && " *"}
             </span>
             {piece.aide?.texte && <p className="fr-text--xs fr-mb-0">{piece.aide.texte}</p>}
             {piece.modele && (

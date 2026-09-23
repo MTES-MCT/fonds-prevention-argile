@@ -263,7 +263,7 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
               <div className="fr-col-12 fr-col-md-8">
                 <PiecesJustificatives
                   pieces={currentStep ? piecesByStep?.[currentStep] : undefined}
-                  titre="Les pièces à préparer dès maintenant"
+                  titre="Pièces justificatives à préparer dès maintenant"
                 />
               </div>
             </div>
