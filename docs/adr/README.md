@@ -65,5 +65,6 @@ purement cosmétique.
 | 0035 | [Page de statistiques publiques — sources, cache et absence de faux zéro](0035-page-statistiques-publiques.md)                          | Accepté |
 | 0036 | [Une simulation par compte, modifiable et arbitrée](0036-simulation-unique-par-compte.md)                                               | Accepté |
 | 0037 | [Pas d'autonomie là où l'AMO est obligatoire](0037-pas-d-autonomie-en-amo-obligatoire.md)                                               | Accepté |
+| 0038 | [La qualification de l'Aller-vers décide de l'accompagnement](0038-qualification-aller-vers-pivot-accompagnement.md)                    | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->

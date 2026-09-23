@@ -10,6 +10,7 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
 import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types/rga-revenus.types";
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
+import { peutPasserEnAutonomie } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { dossierDemarchesSimplifieesRepository } from "@/shared/database/repositories/dossiers-demarches-simplifiees.repository";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
@@ -159,6 +160,7 @@ export async function getDemandeDetail(demandeId: string): Promise<ActionResult<
       dates,
       agentEditInfo,
       creator,
+      autonomiePossible: peutPasserEnAutonomie(demande.parcours),
     };
 
     return { success: true, data: demandeDetail };

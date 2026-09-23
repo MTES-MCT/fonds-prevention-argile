@@ -232,7 +232,7 @@ describe("amo-validation.service", () => {
       }
     });
 
-    it("warn et continue si le parcours n'est plus à CHOIX_AMO/INVITATION (skip transition step)", async () => {
+    it("warn et continue si le parcours n'est plus à CHOIX_AMO (skip transition step)", async () => {
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       mockUpdateReturning([{ id: validationId, parcoursId }]); // validation OK
@@ -245,7 +245,7 @@ describe("amo-validation.service", () => {
       if (result.success) {
         expect(result.data.alreadyProcessed).toBe(false);
       }
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("déjà progressé hors CHOIX_AMO/INVITATION"));
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("hors CHOIX_AMO"));
 
       warnSpy.mockRestore();
     });

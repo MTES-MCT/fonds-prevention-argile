@@ -17,9 +17,9 @@ import {
   estParcoursSansSuite,
   isValidationRefusee,
 } from "../../amo/domain/value-objects";
-import { AmoMode } from "../../amo/domain/value-objects/departements-amo";
+import type { ReglesAmo } from "../../amo/domain/value-objects/departements-amo";
 import { getStepBadgeLabel } from "../../amo/domain/value-objects/step-list";
-import { useAmoMode } from "../../amo/hooks";
+import { useReglesAmo } from "../../amo/hooks";
 import { DSStatus } from "../../dossiers-ds/domain";
 import type { PiecesByStep } from "../../dossiers-ds/domain/pieces-justificatives";
 import { PiecesJustificatives } from "../../dossiers-ds/components";
@@ -29,6 +29,7 @@ import {
   CalloutAmoLogementNonEligible,
   CalloutAmoTodo,
   CalloutChoixAccompagnement,
+  CalloutOuvertureEligibilite,
   CalloutDiagnosticEnConstruction,
   CalloutDiagnosticEnInstruction,
   CalloutDiagnosticTodo,
@@ -97,9 +98,8 @@ export default function MonCompteClient({ piecesByStep }: { piecesByStep?: Piece
   const isSansSuite = estParcoursSansSuite(statutAmo, isDossierNonEligible);
   const isNonEligible = estLogementNonEligible(statutAmo, isDossierNonEligible);
 
-  // Vérifier si les coordonnées de contact sont déjà renseignées.
-  // Le téléphone et l'email_contact sont tous deux requis (l'auto-attribution AMO
-  // en mode OBLIGATOIRE/AV_AMO_FUSIONNES exige le téléphone, sinon elle échoue).
+  // Vérifier si les coordonnées de contact sont déjà renseignées : le téléphone et
+  // l'email_contact sont tous deux demandés au demandeur.
   useEffect(() => {
     if (!user || contactInfoChecked) return;
     getContactInfo().then((result) => {
@@ -304,7 +304,7 @@ function CalloutManager({
   refresh: () => Promise<void>;
   contactInfoVersion: number;
 }) {
-  const amoMode = useAmoMode();
+  const regles = useReglesAmo();
 
   // Si pas de parcours, rien à afficher
   if (!hasParcours || !currentStep) {
@@ -338,7 +338,7 @@ function CalloutManager({
   // Gestion selon l'étape courante
   switch (currentStep) {
     case Step.CHOIX_AMO:
-      return renderChoixAmoCallout(amoMode, statutAmo, onAmoSuccess, refresh, contactInfoVersion);
+      return renderChoixAmoCallout(regles, statutAmo, onAmoSuccess, refresh, contactInfoVersion);
 
     case Step.ELIGIBILITE:
       return renderEligibiliteCallout(dsStatus);
@@ -359,7 +359,7 @@ function CalloutManager({
 
 // Helpers pour chaque étape
 function renderChoixAmoCallout(
-  amoMode: AmoMode | null,
+  regles: ReglesAmo | null,
   statutAmo: StatutValidationAmo | null,
   onAmoSuccess: () => void,
   refresh: () => Promise<void>,
@@ -367,9 +367,9 @@ function renderChoixAmoCallout(
 ) {
   // L'inéligibilité (AMO, Aller-vers ou simulation) est traitée en amont par CalloutManager.
 
-  // Modes OBLIGATOIRE et AV_AMO_FUSIONNES : `CalloutAmoEnAttente` gère lui-même
-  // l'auto-attribution silencieuse quand statutAmo est null.
-  if (amoMode === AmoMode.OBLIGATOIRE || amoMode === AmoMode.AV_AMO_FUSIONNES) {
+  // AMO imposé : `CalloutAmoEnAttente` gère lui-même l'auto-attribution silencieuse
+  // quand statutAmo est null.
+  if (regles?.amoObligatoire === true) {
     if (
       statutAmo === null ||
       statutAmo === StatutValidationAmo.EN_ATTENTE ||
@@ -380,9 +380,9 @@ function renderChoixAmoCallout(
   }
 
   if (statutAmo === null) {
-    // Mode FACULTATIF (arrêté 2026) : choix initial entre AMO et démarches autonomes.
+    // AMO facultatif (arrêté 2026) : choix initial entre AMO et démarches autonomes.
     // "Oui" → assignAmoAutomatique (1er AMO du territoire), "Non" → skipAmoStep.
-    if (amoMode === AmoMode.FACULTATIF) {
+    if (regles?.amoObligatoire === false) {
       return <CalloutChoixAccompagnement onSuccess={onAmoSuccess} refresh={refresh} />;
     }
     return <CalloutAmoTodo onSuccess={onAmoSuccess} refresh={refresh} contactInfoVersion={contactInfoVersion} />;
@@ -390,6 +390,12 @@ function renderChoixAmoCallout(
 
   if (statutAmo === StatutValidationAmo.EN_ATTENTE) {
     return <CalloutAmoEnAttente />;
+  }
+
+  // Logement éligible mais parcours resté à CHOIX_AMO : état sans issue, qui ne rendait
+  // aucun callout. On ouvre l'étape suivante au lieu d'afficher une page muette.
+  if (statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE) {
+    return <CalloutOuvertureEligibilite refresh={refresh} />;
   }
 
   return undefined;

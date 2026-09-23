@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   assignAmoAutomatiqueForUser,
   demanderAccompagnementDemandeur,
+  passerEnAutonomie,
   skipAmoStepForUser,
 } from "./amo-selection.service";
 import { db } from "@/shared/database/client";
@@ -133,12 +134,104 @@ describe("assignAmoAutomatiqueForUser", () => {
     expect(result).toEqual({ success: false, error: "Parcours non trouvé" });
   });
 
-  it("refuse si le parcours n'est plus à l'étape CHOIX_AMO", async () => {
+  it("refuse si le parcours a dépassé l'étape de choix de l'AMO", async () => {
     const parcours = buildMockParcours("36001");
     parcours.currentStep = Step.ELIGIBILITE;
     vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours);
     const result = await assignAmoAutomatiqueForUser(userId);
     expect(result).toEqual({ success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" });
+  });
+
+  /**
+   * Chaîne complète d'une attribution réussie : aucune validation existante, un AMO sur le
+   * territoire, le demandeur, puis la fiche AMO lue pour l'email.
+   */
+  function mockAttributionComplete() {
+    let appel = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(db.select).mockImplementation((() => {
+      appel++;
+      const rows =
+        appel === 1
+          ? [] // aucune validation existante
+          : appel === 2
+            ? [{ id: "amo-1" }] // AMO du département
+            : appel === 3
+              ? [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }]
+              : [{ nom: "AMO Test", emails: "amo@example.fr", telephone: "0102030405", horaires: null }];
+      return {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(rows) }),
+          leftJoin: vi.fn().mockReturnValue({
+            leftJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([{ id: "amo-1" }]) }),
+            }),
+          }),
+        }),
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as any);
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
+        }),
+        onConflictDoUpdate: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
+        }),
+        // db.insert(amoValidationTokens).values(...) — sans returning
+        then: undefined,
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    vi.mocked(db.update).mockReturnValue({
+      set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    vi.mocked(sendValidationAmoEmail).mockResolvedValue({
+      success: true,
+      data: { messageId: "msg-1" },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  }
+
+  it("attribue l'AMO à un parcours encore à l'étape invitation", async () => {
+    // Dossier créé par un agent, demandeur n'ayant pas encore réclamé son compte : l'AMO
+    // doit pouvoir être sollicitée, sinon la qualification de l'Aller-vers n'aboutit à rien.
+    const parcours = buildMockParcours("36001");
+    parcours.currentStep = Step.INVITATION;
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours);
+    mockAttributionComplete();
+
+    const result = await assignAmoAutomatiqueForUser(userId);
+
+    expect(result.success).toBe(true);
+    expect(sendValidationAmoEmail).toHaveBeenCalled();
+  });
+
+  it("n'écrit pas le statut du parcours tant qu'il est à l'étape invitation", async () => {
+    const parcours = buildMockParcours("36001");
+    parcours.currentStep = Step.INVITATION;
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours);
+    mockAttributionComplete();
+
+    await assignAmoAutomatiqueForUser(userId);
+
+    // `currentStatus` n'a de sens que rattaché à l'étape courante : c'est le claim qui
+    // posera EN_INSTRUCTION en même temps que CHOIX_AMO.
+    expect(parcoursRepo.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it("pose EN_INSTRUCTION quand le parcours est bien à l'étape de choix de l'AMO", async () => {
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("36001"));
+    mockAttributionComplete();
+
+    await assignAmoAutomatiqueForUser(userId);
+
+    expect(parcoursRepo.updateStatus).toHaveBeenCalledWith("parcours-789", Status.EN_INSTRUCTION);
   });
 
   it("est idempotent si une validation existe déjà", async () => {
@@ -294,8 +387,11 @@ describe("skipAmoStepForUser", () => {
     vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours);
     vi.mocked(parcoursRepo.updateStep).mockResolvedValue(parcours);
 
+    // L'insertion ne remplace plus une décision existante : `onConflictDoNothing` + returning.
     const insertValuesMock = vi.fn().mockReturnValue({
-      onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      onConflictDoNothing: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
+      }),
     });
     vi.mocked(db.insert).mockReturnValue({
       values: insertValuesMock,
@@ -503,5 +599,100 @@ describe("demanderAccompagnementDemandeur", () => {
       expect.objectContaining({ parcoursId: parcours.id, step: Step.ELIGIBILITE, dsNumber: "12345" })
     );
     expect(db.delete).toHaveBeenCalled();
+  });
+});
+
+// Sujet 2 — l'attribution doit franchir l'étape invitation : c'est la garde d'étape de
+// `selectAmoForUser`, et non celle-ci seule, qui bloque aujourd'hui la transmission.
+describe("attribution d'AMO sur un dossier non encore réclamé", () => {
+  it.todo("résout le territoire sur la simulation de l'agent quand le demandeur n'a pas simulé");
+});
+
+// Deux écritures concurrentes (qualification, claim, réponse AMO) ne doivent produire ni
+// doublon ni recul d'étape. Demande un test d'intégration base, pas un mock.
+describe("intégrité des transitions d'accompagnement", () => {
+  it.todo("deux écritures concurrentes ne produisent ni double token, ni double email, ni recul d'étape");
+  it.todo("l'autonomie ne détache pas une AMO apparue entre la lecture et l'écriture");
+});
+
+// L'autonomie lit aujourd'hui la seule simulation du demandeur, contrairement à ADR-0037.
+describe("passerEnAutonomie — gardes et résolution territoriale", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
+        }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  });
+
+  it("résout le département avec repli sur la simulation de l'agent", async () => {
+    // Dossier créé par un Aller-vers : le demandeur n'a pas simulé, seule la version agent
+    // porte la commune. Lire la seule simulation du demandeur faisait échouer l'autonomie.
+    const parcours = buildMockParcours("82001");
+    const logementAgent = parcours.rgaSimulationData;
+    parcours.rgaSimulationData = null as never;
+    parcours.rgaSimulationDataAgent = logementAgent as never;
+
+    const result = await passerEnAutonomie(parcours as never);
+
+    expect(result.success).toBe(true);
+    expect(parcoursRepo.updateStep).toHaveBeenCalledWith("parcours-789", Step.ELIGIBILITE, Status.TODO);
+  });
+
+  it("refuse quand aucune des deux simulations ne porte de commune exploitable", async () => {
+    const parcours = buildMockParcours("82001");
+    parcours.rgaSimulationData = null as never;
+
+    const result = await passerEnAutonomie(parcours as never);
+
+    expect(result).toEqual({ success: false, error: "Simulation RGA non complétée (code INSEE invalide)" });
+  });
+
+  it("accepte un dossier encore à l'étape invitation, sans toucher à son étape", async () => {
+    const parcours = buildMockParcours("82001");
+    parcours.currentStep = Step.INVITATION;
+
+    const result = await passerEnAutonomie(parcours as never);
+
+    expect(result.success).toBe(true);
+    // C'est le claim qui posera ELIGIBILITE, en lisant le statut « sans AMO ».
+    expect(parcoursRepo.updateStep).not.toHaveBeenCalled();
+  });
+
+  it("refuse sur un dossier archivé", async () => {
+    const parcours = buildMockParcours("82001");
+    parcours.archivedAt = new Date() as never;
+
+    const result = await passerEnAutonomie(parcours as never);
+
+    expect(result).toMatchObject({ success: false });
+    expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it("refuse une fois le parcours parti à l'éligibilité, donc tant que la DDT tient le formulaire", async () => {
+    const parcours = buildMockParcours("82001");
+    parcours.currentStep = Step.ELIGIBILITE;
+
+    const result = await passerEnAutonomie(parcours as never);
+
+    expect(result).toEqual({ success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" });
+  });
+
+  it("n'écrase pas une décision d'accompagnement déjà prise", async () => {
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([]) }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    const result = await passerEnAutonomie(buildMockParcours("82001") as never);
+
+    expect(result).toEqual({ success: false, error: "Un accompagnement a déjà été décidé pour ce dossier" });
+    expect(parcoursRepo.updateStep).not.toHaveBeenCalled();
   });
 });

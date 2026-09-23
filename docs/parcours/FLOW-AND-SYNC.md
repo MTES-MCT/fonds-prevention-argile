@@ -111,14 +111,33 @@ TODO ──(dépôt usager, sync ds=en_construction)──► TODO* ──(sync 
 
 L'étape `choix_amo` **n'a pas de dossier DS**. La progression vers `eligibilite` est pilotée par la validation AMO via webhook email Brevo, pas par une sync DS. Conséquence pour le code de sync : `recomputeParcoursStatus` est no-op si `current_step = choix_amo` (pas de dossier de l'étape courante).
 
-#### 2.3.1 Auto-attribution de l'AMO en département obligatoire (et AV/AMO fusionnés)
+#### 2.3.1 Deux règles départementales indépendantes (ADR-0038)
 
-En département à AMO **obligatoire** (ou **AV/AMO fusionnés**), le demandeur ne choisit pas
-son AMO : l'AMO unique du territoire est **auto-attribué**. Le service
-`assignAmoAutomatiqueForUser` crée la `parcours_amo_validations` (`statut = en_attente`,
-`attribution_mode = auto_obligatoire` / `auto_av_amo`), envoie l'email à l'AMO et passe le
-parcours en `en_instruction`. Il est **idempotent** (no-op si une validation existe déjà) et
-**gardé** à l'étape `choix_amo`.
+Un département porte **deux** caractéristiques, que rien ne déduit l'une de l'autre :
+
+| Règle                 | Prédicat            | Défaut                 | Effet                                                         |
+| --------------------- | ------------------- | ---------------------- | ------------------------------------------------------------- |
+| AMO **imposé**        | `estAmoObligatoire` | `03,04,36,47,54,63,81` | AMO attribué d'office, ni autonomie ni choix d'accompagnement |
+| AV **cumulant** l'AMO | `avCumuleAmo`       | `03,04,32,54,63`       | Une qualification de l'aller-vers peut valoir validation AMO  |
+
+Le Gers cumule **sans** imposer : le demandeur y garde le choix de son accompagnement, et
+aucune AMO ne lui est attribuée silencieusement. C'est ce cas que l'ancien enum à trois
+valeurs exclusives (`AmoMode`) ne savait pas représenter — l'inscrire en « AV/AMO fusionnés »
+lui retirait du même coup le droit à l'autonomie. Ces deux listes sont configurables par env
+(`NEXT_PUBLIC_DEPARTEMENTS_*`, cf. README) et **se recoupent volontairement**.
+
+> Corollaire à ne pas défaire : tout ce qui retire une liberté au demandeur (attribution
+> d'office, refus de l'autonomie, libellé « accompagnement obligatoire ») lit
+> `amoObligatoire` **seul**. `avCumuleAmo` n'ouvre qu'une chose : le saut de la double
+> validation décrit en §2.3.3.
+
+#### 2.3.2 Auto-attribution de l'AMO là où il est imposé
+
+En département à AMO **imposé**, le demandeur ne choisit pas son AMO : l'AMO unique du
+territoire est **auto-attribué**. Le service `assignAmoAutomatiqueForUser` crée la
+`parcours_amo_validations` (`statut = en_attente`, `attribution_mode = auto_obligatoire` /
+`auto_av_amo`), envoie l'email à l'AMO et passe le parcours en `en_instruction`. Il est
+**idempotent** (no-op si une validation existe déjà).
 
 Deux déclencheurs :
 
@@ -126,9 +145,19 @@ Deux déclencheurs :
   `useEffect`).
 - **Aller-vers** — dès qu'un agent **qualifie le prospect éligible** (`qualifyProspect`,
   branche `ELIGIBLE`) : le dossier est mis **directement** en lien avec l'AMO, sans attendre
-  que le ménage fasse sa demande d'accompagnement. En département **facultatif**, aucun lien
-  n'est créé (le ménage choisit lui-même). Best-effort : un échec de l'auto-lien ne fait pas
-  échouer la qualification.
+  que le ménage fasse sa demande d'accompagnement.
+
+> **L'étape `invitation` est acceptée, et c'est le correctif central d'ADR-0038.** Un dossier
+> créé par un agent démarre à `invitation` (`findOrCreateForUser`) et y reste jusqu'au claim.
+> `assignAmoAutomatiqueForUser` **et** `selectAmoForUser` exigeaient `choix_amo` : la
+> qualification d'un Aller-vers échouait donc en silence (best-effort, `console.warn`) sur
+> exactement les dossiers qu'il venait de créer. L'agent croyait avoir passé la main, le
+> dossier restait chez lui. Les deux gardes partagent désormais `ETAPES_SELECTION_AMO`, et le
+> verdict remonte à l'agent au lieu d'être journalisé (§2.3.4).
+
+> **Le statut du parcours n'est pas écrit à l'étape `invitation`** (`skipStatusUpdate`) :
+> `current_status` n'a de sens que rattaché à l'étape courante, et c'est le claim qui posera
+> `choix_amo / en_instruction` en lisant la validation (§2.3.5).
 
 > **Le téléphone du demandeur n'est pas requis** (août 2026). Un dossier créé par un Aller-vers
 > n'en a pas forcément, et il ne figure pas dans l'email envoyé à l'AMO : l'exiger bloquait
@@ -148,9 +177,86 @@ Deux déclencheurs :
 
 > **Rattrapage des dossiers déjà bloqués** : `pnpm fix:lier-amo-oblig`
 > (`scripts/ops/fix/lier-amo-oblig.ts`, dry-run par défaut, `--apply`, ciblage
-> `--parcours-id`). Sans cible = inventaire de tous les dossiers `eligible` en `choix_amo`
-> sans validation dans un département à attribution automatique ; avec cible = un dossier
-> précis. Délègue au même service `assignAmoAutomatiqueForUser`.
+> `--parcours-id`). Sans cible = inventaire des dossiers `eligible` sans validation, **en
+> `invitation` ou en `choix_amo`**, dans un département à AMO imposé ; avec cible = un dossier
+> précis. Ses **deux** gardes filtraient sur `choix_amo` et manquaient donc exactement les
+> dossiers restés chez l'Aller-vers. Délègue au même service `assignAmoAutomatiqueForUser`.
+
+#### 2.3.3 La qualification de l'Aller-vers vaut validation quand il est aussi l'AMO
+
+Là où l'aller-vers **est** l'AMO du territoire, lui envoyer une demande de validation revient
+à lui demander de confirmer ce qu'il vient d'établir. `donnerSuiteAQualificationEligible`
+écrit donc directement `logement_eligible` + `validee_at`, **sans email ni token**, avec
+l'entreprise AMO **de l'agent** (jamais « la première AMO du territoire » :
+`findFirstAmoForTerritory` ignore le rattachement communal et n'a pas d'ordre déterministe).
+
+Trois conditions **cumulatives** (`peutValiderCommeAmo`) :
+
+1. le département reconnaît le cumul (`avCumuleAmo`) ;
+2. l'agent porte la **casquette AMO par son rôle** (`AMO` ou `AMO_ET_ALLERS_VERS`) — la seule
+   présence d'un `entreprise_amo_id` en base ne suffit pas, sinon un Aller-vers pur validerait
+   au nom d'une AMO qui n'a rien dit ;
+3. son entreprise **couvre la commune** (`checkAmoCoversCodeInsee`).
+
+Sinon, la sollicitation normale de l'AMO s'applique. L'engagement « mandataire financier »
+saisi au même formulaire est repris dans la validation (§2.6), et `estMandataireFinancier`
+reste `null` si la question n'a pas été posée.
+
+> **Ne jamais enchaîner `selectAmoForUser` puis `approveValidation`** pour obtenir ce
+> résultat : le premier envoie précisément l'email de demande que ce chemin supprime.
+
+#### 2.3.4 L'Aller-vers tranche l'accompagnement là où l'AMO est facultatif
+
+Quand le demandeur n'a pas encore choisi, l'agent recueille sa réponse au moment de qualifier
+(`prospect_qualifications.accompagnement_souhaite`, migration `0049`) :
+
+| Réponse          | Effet                                                                |
+| ---------------- | -------------------------------------------------------------------- |
+| `accompagnement` | AMO du territoire sollicitée (ou validée directement, cf. §2.3.3)    |
+| `autonomie`      | `sans_amo` posé, étape `eligibilite` ouverte — sans repasser par lui |
+| `inconnu`        | Rien n'est écrit : le choix lui reste proposé sur `/mon-compte`      |
+
+`null` n'est **pas** `inconnu` : c'est l'absence de question (AMO imposé, autre décision, ou
+qualification antérieure à ce champ). La distinction est volontaire et ne se déduit pas
+rétroactivement des qualifications passées.
+
+Gardes, toutes revérifiées côté serveur :
+
+- **Un choix déjà fait prime** : l'écriture est un `onConflictDoNothing`, jamais un upsert.
+  Un demandeur ayant choisi, ou une AMO déjà sollicitée, ne sont pas défaits par l'agent.
+- **Dossier archivé** → refus.
+- **Gel DDT** : pas de garde dédiée, la garde d'étape suffit — `choix_amo` et `invitation`
+  sont les seules étapes acceptées, et aucun formulaire d'éligibilité n'y existe encore.
+
+> **Le verdict remonte à l'agent** (`suiteAccompagnement`) et s'affiche dans le formulaire en
+> cas d'échec. Il reste best-effort au sens où il n'invalide pas la qualification déjà
+> enregistrée, mais il n'est plus silencieux. La suite donnée **enrichit le message de l'action
+> de qualification** au lieu d'écrire une seconde action : un geste de l'agent, une ligne
+> d'historique (§2.9).
+
+#### 2.3.5 L'étape `invitation` tient jusqu'au claim
+
+Une validation AMO peut désormais exister **avant** que le demandeur ne réclame son compte.
+`approveValidation` ne fait donc plus sortir un parcours de `invitation` (il ne bouge que
+depuis `choix_amo`) : c'est `validateInvitation` qui route, au claim, selon la validation.
+
+| Validation existante | Destination                                    |
+| -------------------- | ---------------------------------------------- |
+| absente              | `choix_amo / todo` — le demandeur choisit      |
+| `en_attente`         | `choix_amo / en_instruction` — AMO sollicitée  |
+| `logement_eligible`  | `eligibilite / todo` — l'AMO a validé          |
+| `sans_amo`           | `eligibilite / todo` — autonomie déjà actée    |
+| refus (les deux)     | `choix_amo / todo` — le statut bloque la suite |
+
+> **Pourquoi ce verrou compte** : la promotion de `rgaSimulationDataAgent` vers
+> `rgaSimulationData` au login FranceConnect vit **dans** `if (currentStep === INVITATION)`
+> (`franceconnect.service.ts`), et la migration ultérieure ne la rattrape pas (elle retourne
+> `enregistree: true` sans promouvoir dès qu'une simulation agent complète existe). Une AMO
+> validant avant le claim faisait donc disparaître définitivement la simulation de l'agent.
+
+> **Corollaire Brevo** : l'attribut `A_AMO` de `demandeur_cree` était forcé à `false`, ce qui
+> contredisait l'évènement `amo_reponse` déjà parti quand une AMO avait validé avant le claim.
+> Il est désormais dérivé de l'état réel (`aUneAmoValidee`).
 
 ### 2.4 Ré-ouverture d'une demande refusée (changement d'avis)
 
@@ -438,6 +544,25 @@ déjà `accompagnement_refuse`) ou dé-archivage manuel — pas de routage autom
 > motif, et la variante « non éligible » conservée via `isEligibiliteArchiveReason`), et « Archiver »
 > laisse place à « Désarchiver ». Un dossier **refusé** garde son propre chemin de retour, le bouton
 > « Ré-ouvrir la demande » (ADR-0016), qui remplace le menu entier.
+
+> **La raison choisie décide de la suite (septembre 2026).** Une AMO peut décliner parce que le
+> ménage veut **avancer seul** : archiver ce dossier était faux, le demandeur étant éligible et
+> actif. Les raisons sont donc scindées en deux sous-listes
+> (`espace-agent/shared/domain/value-objects/raisons-fin-suivi.ts`), rendues en `optgroup` dont le
+> libellé annonce la conséquence.
+>
+> | Sous-liste                                                | Effet                                                          |
+> | --------------------------------------------------------- | -------------------------------------------------------------- |
+> | « Le demandeur poursuit son parcours seul »               | `detacherAmo` → `sans_amo`, étape ouverte, **aucun archivage** |
+> | « Le dossier sera archivé » (les six raisons historiques) | inchangé : `ACCOMPAGNEMENT_REFUSE` + `archived_at`             |
+>
+> Le chemin autonomie reprend **les deux gardes de « Ne plus accompagner »** (§2.7), sans quoi il
+> en serait une porte dérobée : `peutPasserEnAutonomie` et `estDossierChezLaDdt` — une demande
+> d'accompagnement faite après une autonomie (§2.10) peut porter un dossier déjà déposé. La
+> première masque aussi la sous-liste là où l'AMO est imposé, plutôt que d'offrir une option qui
+> échouerait ; la seconde ne vit que côté serveur, le cas étant rare et le message explicite.
+> Un geste, une ligne d'historique : l'audit reste `accompagnement_refuse_eligible` et son message
+> porte l'issue. Voir [ADR-0022](../adr/0022-refus-accompagnement-demandeur-eligible.md).
 
 > `ACCOMPAGNEMENT_REFUSE` est **consultable** (`STATUTS_CONSULTABLES`) mais **non éditable**
 > (`editableStatuts` de l'édition simulation) : le dossier archivé n'est pas corrigeable via
@@ -1423,6 +1548,11 @@ retrouvé déposé.
 | Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                                 |
 | Garde « pas d'autonomie en AMO obligatoire »   | `amo/domain/value-objects/departements-amo.ts` (`peutPasserEnAutonomie`)                                    |
 | Rattachement AMO après détachement à tort      | `amo/services/rattachement-amo.service.ts`, `scripts/ops/fix/rattacher-amo.ts` (`pnpm fix:rattacher-amo`)   |
+| Règles départementales (2 axes, ADR-0038)      | `amo/domain/value-objects/departements-amo.ts` (`estAmoObligatoire`, `avCumuleAmo`)                         |
+| Suite donnée à une qualification éligible      | `espace-agent/prospects/services/suite-qualification.service.ts`                                            |
+| Sous-listes de raisons de fin de suivi         | `espace-agent/shared/domain/value-objects/raisons-fin-suivi.ts` (`estRaisonPoursuiteAutonome`)              |
+| Autonomie décidée par un agent                 | `amo/services/amo-selection.service.ts` (`passerEnAutonomie`)                                               |
+| Ouverture d'étape après validation AMO         | `amo/services/ouverture-eligibilite.service.ts` (`ouvrirEligibiliteApresValidationAmo`, `aUneAmoValidee`)   |
 | Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |
 | Rattrapage lien AMO obligatoire (script ops)   | `scripts/ops/fix/lier-amo-oblig.ts` (`pnpm fix:lier-amo-oblig`)                                             |
 | Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                                        |

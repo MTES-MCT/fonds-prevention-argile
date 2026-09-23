@@ -2,14 +2,23 @@ import { parcoursPreventionRepository } from "@/shared/database/repositories/par
 import { prospectQualificationsRepo } from "@/shared/database/repositories/prospect-qualifications.repository";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
-import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
-import { assignAmoAutomatiqueForUser } from "@/features/parcours/amo/services/amo-selection.service";
-import { isAmoAttributionAutomatique } from "@/features/parcours/amo/domain/value-objects/departements-amo";
-import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { RAISON_ARCHIVAGE_NON_ELIGIBLE } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
+import type { AccompagnementSouhaite } from "@/shared/domain/value-objects/accompagnement-souhaite.enum";
 import { QualificationDecision } from "../domain/types";
 import { ACTION_TYPE_BY_DECISION, buildQualificationAuditMessage } from "../domain/qualification-audit";
 import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
+import {
+  donnerSuiteAQualificationEligible,
+  libelleSuiteAccompagnement,
+  type ContexteAgentQualification,
+  type SuiteAccompagnement,
+} from "./suite-qualification.service";
+
+export interface QualifyProspectResult {
+  qualification: ProspectQualification;
+  /** Suite donnée à l'accompagnement. `null` = sans objet (décision autre qu'éligible). */
+  suiteAccompagnement: SuiteAccompagnement;
+}
 
 interface QualifyProspectParams {
   parcoursId: string;
@@ -18,7 +27,14 @@ interface QualifyProspectParams {
   actionsRealisees?: string[];
   raisonsIneligibilite?: string[];
   estMandataireFinancier?: boolean;
+  /** Réponse du demandeur recueillie par l'agent (départements sans AMO imposé). */
+  accompagnementSouhaite?: AccompagnementSouhaite;
   note?: string;
+  /**
+   * Casquettes de l'agent, pour décider si sa qualification vaut validation AMO. Absent
+   * quand l'appelant n'est pas une action d'agent (création de dossier non éligible).
+   */
+  contexteAgent?: Omit<ContexteAgentQualification, "agentId">;
 }
 
 /**
@@ -32,9 +48,18 @@ export class QualificationService {
    * - "non_eligible" → situation_particulier passe à ARCHIVE
    * - "a_qualifier" → pas de changement de situation_particulier
    */
-  async qualifyProspect(params: QualifyProspectParams): Promise<ProspectQualification> {
-    const { parcoursId, agentId, decision, actionsRealisees, raisonsIneligibilite, estMandataireFinancier, note } =
-      params;
+  async qualifyProspect(params: QualifyProspectParams): Promise<QualifyProspectResult> {
+    const {
+      parcoursId,
+      agentId,
+      decision,
+      actionsRealisees,
+      raisonsIneligibilite,
+      estMandataireFinancier,
+      accompagnementSouhaite,
+      note,
+      contexteAgent,
+    } = params;
 
     // 1. Vérifier que le parcours existe
     const parcours = await parcoursPreventionRepository.findById(parcoursId);
@@ -50,16 +75,22 @@ export class QualificationService {
       actionsRealisees: actionsRealisees ?? [],
       raisonsIneligibilite: raisonsIneligibilite ?? null,
       estMandataireFinancier: estMandataireFinancier ?? null,
+      accompagnementSouhaite: accompagnementSouhaite ?? null,
       note: note ?? null,
     });
 
     // 3. Mettre à jour situation_particulier selon la décision
+    let suiteAccompagnement: SuiteAccompagnement = null;
     if (decision === QualificationDecision.ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(parcoursId, SituationParticulier.ELIGIBLE);
-      // En département à AMO obligatoire (ou AV/AMO fusionnés), la validation de
-      // l'Aller-vers met directement le dossier en lien avec l'AMO unique du
-      // territoire — sans attendre que le ménage fasse sa demande d'accompagnement.
-      await this.autoLinkAmoIfObligatoire(parcours);
+      // La qualification de l'Aller-vers met le dossier en relation avec l'AMO, sans
+      // attendre que le ménage redemande ce qu'il vient de dire à l'agent.
+      suiteAccompagnement = await donnerSuiteAQualificationEligible(
+        parcours,
+        { agentId, ...(contexteAgent ?? { entrepriseAmoId: null, aLaCapaciteAmo: false }) },
+        accompagnementSouhaite,
+        estMandataireFinancier
+      );
     } else if (decision === QualificationDecision.NON_ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(
         parcoursId,
@@ -75,38 +106,24 @@ export class QualificationService {
     // server action, pour couvrir aussi la création de dossier AV non éligible.
     // Une décision « non éligible » archive le dossier : pas de `dossier_archive` en plus,
     // la qualification porte déjà l'information.
+    // La suite donnée à l'accompagnement enrichit cette trace au lieu d'en créer une seconde :
+    // un seul geste de l'agent doit rester une seule ligne d'historique (§2.9 FLOW-AND-SYNC.md).
+    const messageQualification = buildQualificationAuditMessage({
+      decision,
+      raisonsIneligibilite,
+      estMandataireFinancier,
+      note,
+    });
+    const messageSuite = libelleSuiteAccompagnement(suiteAccompagnement);
+
     await logSystemAction({
       parcoursId,
       author: { agentId },
       actionType: ACTION_TYPE_BY_DECISION[decision],
-      message: buildQualificationAuditMessage({ decision, raisonsIneligibilite, estMandataireFinancier, note }),
+      message: [messageQualification, messageSuite].filter(Boolean).join(" ") || null,
     });
 
-    return qualification;
-  }
-
-  /**
-   * Met le dossier en lien direct avec l'AMO du territoire si le département impose
-   * un AMO (obligatoire / AV-AMO fusionnés). Best-effort : `assignAmoAutomatiqueForUser`
-   * est idempotent (no-op success si une validation existe déjà) et gardé à l'étape
-   * choix_amo (renvoie success:false sinon) — cet échec est ignoré (loggé) et ne doit
-   * jamais faire échouer la qualification déjà enregistrée.
-   */
-  private async autoLinkAmoIfObligatoire(
-    parcours: NonNullable<Awaited<ReturnType<typeof parcoursPreventionRepository.findById>>>
-  ): Promise<void> {
-    try {
-      const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
-      if (!codeInsee) return;
-      if (!isAmoAttributionAutomatique(getCodeDepartementFromCodeInsee(codeInsee))) return;
-
-      const result = await assignAmoAutomatiqueForUser(parcours.userId);
-      if (!result.success) {
-        console.warn(`[qualifyProspect] auto-lien AMO non appliqué (parcours ${parcours.id}): ${result.error}`);
-      }
-    } catch (error) {
-      console.error(`[qualifyProspect] échec auto-lien AMO (parcours ${parcours.id}):`, error);
-    }
+    return { qualification, suiteAccompagnement };
   }
 
   /**

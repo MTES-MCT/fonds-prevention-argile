@@ -22,17 +22,31 @@ import { db } from "@/shared/database/client";
 import { parcoursAmoValidations } from "@/shared/database/schema";
 import { eq, ne, asc, and as drizzleAnd } from "drizzle-orm";
 import type { DemandeDetail } from "../domain/types";
+import type { Agent } from "@/shared/database/schema/agents";
+import { estRaisonPoursuiteAutonome } from "@/features/backoffice/espace-agent/shared/domain/value-objects/raisons-fin-suivi";
+import { detacherAmo } from "@/features/parcours/amo/services/detachement-amo.service";
+import { estDossierChezLaDdt } from "@/features/parcours/amo/domain/value-objects";
+import { peutPasserEnAutonomie } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import { getDossierByStep } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 
 /**
  * Trace le choix d'éligibilité de l'AMO dans l'historique (`parcours_actions`).
  * La résolution de l'agent est protégée ici : `logSystemAction` n'absorbe que ses
  * propres erreurs, et un audit raté ne doit jamais invalider la décision enregistrée.
  */
-async function logDecisionAction(parcoursId: string, actionType: string, message?: string | null): Promise<void> {
+async function logDecisionAction(
+  parcoursId: string,
+  actionType: string,
+  message?: string | null,
+  agentConnu?: Agent
+): Promise<void> {
   try {
-    const agentResult = await getCurrentAgent();
-    if (!agentResult.success) return;
-    await logSystemAction({ parcoursId, author: { agent: agentResult.data }, actionType, message });
+    const agent = agentConnu ?? (await getCurrentAgent().then((r) => (r.success ? r.data : null)));
+    if (!agent) return;
+    await logSystemAction({ parcoursId, author: { agent }, actionType, message });
   } catch (error) {
     console.error("[logDecisionAction] audit best-effort échoué:", error);
   }
@@ -168,15 +182,23 @@ export async function refuserDemandeNonEligible(
   }
 }
 
+/** Ce que l'AMO renvoie au client après avoir décliné : le dossier est-il garé, ou poursuivi seul ? */
+export interface RefusAccompagnementData {
+  message: string;
+  alreadyProcessed: boolean;
+  /** true : l'AMO a été détachée et le dossier reste actif, sans archivage. */
+  poursuiteAutonome: boolean;
+}
+
 /**
- * Demandeur éligible, mais l'AMO refuse de l'accompagner (ex. injoignable).
- * Archive le dossier avec la raison saisie (modale « Archiver ») et trace l'action.
+ * Demandeur éligible, mais l'AMO ne l'accompagne pas. **La raison décide de la suite** :
+ * « poursuivre sans accompagnement » détache l'AMO, toutes les autres archivent (ADR-0022).
  */
 export async function refuserAccompagnementEligible(
   demandeId: string,
   archiveReason: string,
   note?: string
-): Promise<ActionResult<{ message: string; alreadyProcessed: boolean; valideeAt: Date }>> {
+): Promise<ActionResult<RefusAccompagnementData>> {
   try {
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
@@ -197,6 +219,11 @@ export async function refuserAccompagnementEligible(
     }
 
     const noteClean = note?.trim() || null;
+
+    if (estRaisonPoursuiteAutonome(reason)) {
+      return await declinerVersAutonomie(demandeId, reason, noteClean, agentResult.data);
+    }
+
     const result = await declineAccompagnementEligible(demandeId, reason, noteClean, agentResult.data.id);
     if (!result.success) return result;
 
@@ -204,7 +231,8 @@ export async function refuserAccompagnementEligible(
       await logDecisionAction(
         result.data.parcoursId,
         ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE,
-        noteClean ? `${reason} — ${noteClean}` : reason
+        noteClean ? `${reason} — ${noteClean}` : reason,
+        agentResult.data
       );
       revalidatePath("/espace-agent", "layout");
     }
@@ -215,7 +243,7 @@ export async function refuserAccompagnementEligible(
       data: {
         message: result.data.message,
         alreadyProcessed: result.data.alreadyProcessed,
-        valideeAt: result.data.valideeAt,
+        poursuiteAutonome: false,
       },
     };
   } catch (error) {
@@ -225,6 +253,70 @@ export async function refuserAccompagnementEligible(
       error: "Erreur lors du refus d'accompagnement",
     };
   }
+}
+
+/**
+ * Le demandeur poursuit seul : on détache l'AMO au lieu d'archiver, le dossier reste actif et
+ * l'aller-vers du territoire en devient responsable.
+ *
+ * Mêmes deux gardes que « Ne plus accompagner » (ADR-0018) : l'autonomie n'existe pas là où
+ * l'AMO est imposé, et rien ne bouge tant que la DDT tient le formulaire d'éligibilité — une
+ * demande d'accompagnement faite après une autonomie peut porter un dossier déjà déposé.
+ */
+async function declinerVersAutonomie(
+  demandeId: string,
+  reason: string,
+  note: string | null,
+  agent: Agent
+): Promise<ActionResult<RefusAccompagnementData>> {
+  const [validation] = await db
+    .select({ parcoursId: parcoursAmoValidations.parcoursId })
+    .from(parcoursAmoValidations)
+    .where(eq(parcoursAmoValidations.id, demandeId))
+    .limit(1);
+
+  if (!validation) {
+    return { success: false, error: "Demande non trouvée" };
+  }
+
+  const parcours = await parcoursPreventionRepository.findById(validation.parcoursId);
+  if (!parcours || !peutPasserEnAutonomie(parcours)) {
+    return {
+      success: false,
+      error:
+        "L'AMO est obligatoire dans ce département : le demandeur ne peut pas poursuivre seul. Choisissez une raison qui archive le dossier.",
+    };
+  }
+
+  const dossierEligibilite = await getDossierByStep(validation.parcoursId, Step.ELIGIBILITE);
+  if (estDossierChezLaDdt((dossierEligibilite?.dsStatus as DSStatus | null) ?? null)) {
+    return {
+      success: false,
+      error:
+        "Le formulaire d'éligibilité a été transmis : l'accompagnement ne peut pas être retiré tant que l'administration n'a pas répondu",
+    };
+  }
+
+  const result = await detacherAmo({ parcoursId: validation.parcoursId });
+  if (!result.success) return { success: false, error: result.error };
+
+  // Un seul geste de l'AMO, une seule ligne d'historique : l'issue enrichit le message.
+  await logDecisionAction(
+    validation.parcoursId,
+    ACTION_TYPE_ACCOMPAGNEMENT_REFUSE_ELIGIBLE,
+    [reason, note, "Le demandeur poursuit sans accompagnement."].filter(Boolean).join(" — "),
+    agent
+  );
+  revalidatePath("/espace-agent", "layout");
+
+  return {
+    success: true,
+    data: {
+      message: "Le demandeur poursuit son parcours sans accompagnement.",
+      alreadyProcessed: false,
+      poursuiteAutonome: true,
+    },
+  };
 }
 
 /**

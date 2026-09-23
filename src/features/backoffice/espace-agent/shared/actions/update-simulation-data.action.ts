@@ -24,6 +24,7 @@ import {
   calculateAgentScope,
 } from "@/features/auth/permissions/services/agent-scope.service";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
+import { ouvrirEligibiliteApresValidationAmo } from "@/features/parcours/amo/services/ouverture-eligibilite.service";
 import { logSystemAction } from "../services/action-audit.service";
 import {
   ACTION_TYPE_ELIGIBILITE_REFUSEE,
@@ -161,6 +162,7 @@ export async function updateSimulationDataAction(
       // Calculé dans la transaction, utilisé après coup pour l'audit (parcours_actions).
       let didRefuserNonEligible = false;
       let didDesarchiver = false;
+      let didValiderEligible = false;
 
       await db.transaction(async (tx) => {
         // 1. Simulation agent + baseline (données AVANT 1re correction) pour le diff.
@@ -198,6 +200,7 @@ export async function updateSimulationDataAction(
               .set({ statut: nouveauStatut, valideeAt: now })
               .where(eq(parcoursAmoValidations.id, dossier.validation.id));
             didRefuserNonEligible = verdict.isNonEligible;
+            didValiderEligible = verdict.isEligible;
           }
         }
 
@@ -243,6 +246,12 @@ export async function updateSimulationDataAction(
           actionType: ACTION_TYPE_ELIGIBILITE_REFUSEE,
           message: "Accompagnement refusé automatiquement suite à la correction de la simulation (non éligible).",
         });
+      }
+
+      // Le dossier redevenu éligible doit aussi retrouver une étape actionnable : resté à
+      // CHOIX_AMO, il ne rend plus aucun callout côté demandeur (hors transaction, idempotent).
+      if (didValiderEligible) {
+        await ouvrirEligibiliteApresValidationAmo(dossier.parcours.id);
       }
 
       // Symétrique : le retour à l'éligibilité efface archivedAt, seule l'action en garde la date.

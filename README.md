@@ -46,18 +46,18 @@ Configurez les variables selon votre environnement. Les principales variables in
 
 Le mode d'AMO appliqué à chaque demandeur dépend de son département. La configuration est pilotée par 2 variables d'environnement optionnelles. Si elles ne sont pas définies, des valeurs par défaut alignées sur la dernière config produit sont utilisées.
 
-| Variable                                    | Format         | Défaut           | Description                                                                                            |
-| ------------------------------------------- | -------------- | ---------------- | ------------------------------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE`  | CSV codes dept | `03,36,47,54,81` | Départements où l'AMO est obligatoire (1 AMO auto-affecté à l'arrivée sur `/mon-compte`).              |
-| `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES` | CSV codes dept | _(vide)_         | Départements où l'aller-vers local joue aussi le rôle d'AMO (auto-attribution silencieuse). Optionnel. |
+| Variable                                    | Format         | Défaut                 | Description                                                                                 |
+| ------------------------------------------- | -------------- | ---------------------- | ------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE`  | CSV codes dept | `03,04,36,47,54,63,81` | Départements où l'AMO est obligatoire (1 AMO auto-affecté à l'arrivée sur `/mon-compte`).   |
+| `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES` | CSV codes dept | `03,04,32,54,63`       | Départements où l'aller-vers local est aussi l'AMO. N'implique pas l'obligation. Optionnel. |
 
-**Tout département non listé dans ces deux variables retombe sur le mode `FACULTATIF`** : le demandeur choisit lui-même s'il souhaite être accompagné ("Oui" → 1er AMO du territoire, "Non" → skip vers Éligibilité).
+**Les deux listes sont indépendantes** : un département peut cumuler AV et AMO sans imposer l'AMO (cas du Gers), et inversement. Seule `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE` retire le choix au demandeur ; hors d'elle, il décide lui-même ("Oui" → 1er AMO du territoire, "Non" → skip vers Éligibilité).
 
 **Format** : codes département séparés par virgules. Le zéro initial est optionnel (`03` et `3` sont équivalents). Exemples valides :
 
-- `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE=03,36,47,54,81`
+- `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE=03,04,36,47,54,63,81`
 - `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES=` (vide explicite)
-- `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES=63` (pour basculer 63 en mode AV/AMO fusionnés)
+- `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES=03,04,32,54,63` (aller-vers qui sont aussi l'AMO)
 
 **Côté Scalingo** : ces variables sont exposées au client (préfixe `NEXT_PUBLIC_`), donc un changement nécessite un rebuild de l'application (auto-déclenché par Scalingo lors d'une modification des env vars).
 

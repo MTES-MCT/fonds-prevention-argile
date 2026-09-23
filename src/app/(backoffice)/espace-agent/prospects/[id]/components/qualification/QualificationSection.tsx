@@ -4,18 +4,22 @@ import { useState } from "react";
 import { QualificationCallout } from "./QualificationCallout";
 import { QualificationForm } from "./QualificationForm";
 import type { QualificationDecision } from "@/features/backoffice/espace-agent/prospects/domain/types";
+import type { AccompagnementSouhaite } from "@/shared/domain/value-objects/accompagnement-souhaite.enum";
 
 interface QualificationData {
   decision: QualificationDecision;
   actionsRealisees: string[];
   raisonsIneligibilite: string[] | null;
   estMandataireFinancier: boolean | null;
+  accompagnementSouhaite: AccompagnementSouhaite | null;
   note: string | null;
   createdAt: string; // ISO string
 }
 
 interface QualificationSectionProps {
   parcoursId: string;
+  /** L'AMO est-il imposé dans le département du logement ? Sinon l'agent tranche. */
+  amoObligatoire: boolean;
   /** null si aucune qualification existante */
   qualification: QualificationData | null;
   agentNom: string;
@@ -28,7 +32,13 @@ interface QualificationSectionProps {
  * - Si qualification existante : affiche le callout résultat avec bouton "Requalifier"
  * - "Requalifier" bascule vers le formulaire
  */
-export function QualificationSection({ parcoursId, qualification, agentNom, structureNom }: QualificationSectionProps) {
+export function QualificationSection({
+  parcoursId,
+  amoObligatoire,
+  qualification,
+  agentNom,
+  structureNom,
+}: QualificationSectionProps) {
   const [mode, setMode] = useState<"view" | "form">(qualification ? "view" : "form");
 
   function handleRequalifier() {
@@ -48,6 +58,7 @@ export function QualificationSection({ parcoursId, qualification, agentNom, stru
         actionsRealisees={qualification.actionsRealisees}
         raisonsIneligibilite={qualification.raisonsIneligibilite}
         estMandataireFinancier={qualification.estMandataireFinancier}
+        accompagnementSouhaite={qualification.accompagnementSouhaite}
         note={qualification.note}
         agentNom={agentNom}
         structureNom={structureNom}
@@ -69,6 +80,7 @@ export function QualificationSection({ parcoursId, qualification, agentNom, stru
       </p>
       <QualificationForm
         parcoursId={parcoursId}
+        amoObligatoire={amoObligatoire}
         onSuccess={handleSuccess}
         onCancel={qualification ? () => setMode("view") : undefined}
         isUpdate={isUpdate}

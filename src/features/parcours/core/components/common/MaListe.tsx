@@ -4,8 +4,7 @@ import { useParcours } from "../../context/useParcours";
 import { useLectureSeuleSimulation } from "../../hooks/useLectureSeuleSimulation";
 import { Step } from "../../domain";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
-import { useAmoMode } from "@/features/parcours/amo/hooks";
-import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { useReglesAmo } from "@/features/parcours/amo/hooks";
 import {
   estParcoursSansSuite,
   getStepListItems,
@@ -39,7 +38,7 @@ export default function MaListe() {
     parcours,
   } = useParcours();
   const simulationVerrouillee = useLectureSeuleSimulation() !== null;
-  const amoMode = useAmoMode();
+  const regles = useReglesAmo();
   const [isAnnulerOpen, setIsAnnulerOpen] = useState(false);
   const [isDemanderOpen, setIsDemanderOpen] = useState(false);
 
@@ -47,7 +46,7 @@ export default function MaListe() {
   const isSansSuite = estParcoursSansSuite(statutAmo, isDossierNonEligible);
   const dossierArchive = Boolean(parcours?.archivedAt);
   const items = getStepListItems(
-    amoMode,
+    regles,
     statutAmo,
     currentStep,
     lastDSStatus === DSStatus.ACCEPTE,
@@ -61,7 +60,7 @@ export default function MaListe() {
   // L'annulation n'existe qu'en mode FACULTATIF : ailleurs l'AMO est imposé par le
   // département (même garde que `skipAmoStepForUser`, revérifiée côté serveur).
   const peutAnnuler =
-    amoMode === AmoMode.FACULTATIF &&
+    regles?.amoObligatoire === false &&
     statutAmo !== null &&
     validationAmoComplete !== null &&
     peutAnnulerAccompagnement({
@@ -77,7 +76,7 @@ export default function MaListe() {
   // Symétrique de `peutAnnuler` : un demandeur en autonomie peut changer d'avis (même garde,
   // revérifiée côté serveur).
   const peutDemander =
-    amoMode === AmoMode.FACULTATIF &&
+    regles?.amoObligatoire === false &&
     statutAmo !== null &&
     peutDemanderAccompagnement({ statut: statutAmo, eligibiliteDsStatus, dossierArchive });
 

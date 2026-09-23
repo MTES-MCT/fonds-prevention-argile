@@ -4,29 +4,31 @@ import { getDemandeurFirstLogement, type ParcoursSimulationPair } from "@/shared
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../../utils/amo.utils";
 
 /**
- * Mode d'AMO appliqué selon le département du demandeur (arrêté 2026).
- * - OBLIGATOIRE : 1 AMO auto-affecté à la création du parcours.
- * - AV_AMO_FUSIONNES : l'aller-vers local joue le rôle d'AMO (auto-attribution).
- *   Mode optionnel : aucun département en mode AV_AMO_FUSIONNES par défaut.
- * - FACULTATIF : le demandeur peut choisir un AMO ou continuer sans.
+ * Règles d'AMO applicables à un département (arrêté 2026). Les deux axes sont
+ * **indépendants** : le Gers cumule AV et AMO sans rendre l'AMO obligatoire, et un
+ * département peut imposer l'AMO sans que l'aller-vers en soit un.
  */
-export enum AmoMode {
-  OBLIGATOIRE = "obligatoire",
-  AV_AMO_FUSIONNES = "av_amo_fusionnes",
-  FACULTATIF = "facultatif",
+export interface ReglesAmo {
+  /** L'AMO est imposé : ni autonomie, ni choix d'accompagnement — il est attribué d'office. */
+  amoObligatoire: boolean;
+  /** L'aller-vers du territoire est aussi l'AMO : sa validation peut valoir celle de l'AMO. */
+  avCumuleAmo: boolean;
 }
 
 /**
  * Valeurs par défaut (utilisées si les variables d'environnement ne sont pas définies).
  * Configuration côté Scalingo via :
- *   - NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE   (CSV, ex. "03,36,47,54,81")
- *   - NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES  (CSV, ex. "" pour vide, ou "63" pour activer)
+ *   - NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE   (CSV, ex. "03,04,36,47,54,63,81")
+ *   - NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES  (CSV, ex. "" pour vide, ou "32" pour activer)
+ *
+ * Les deux listes se recoupent volontairement : 03/04/54/63 imposent l'AMO **et** ont un
+ * aller-vers qui l'est aussi ; le 32 cumule sans imposer.
  *
  * Les codes sont normalisés (sans zéro initial) — alignés sur les clés du référentiel
  * `DEPARTEMENTS` de `@/shared/constants/departements.constants`.
  */
-const DEFAULT_DEPARTEMENTS_AMO_OBLIGATOIRE = ["3", "36", "47", "54", "81"] as const;
-const DEFAULT_DEPARTEMENTS_AV_AMO_FUSIONNES: readonly string[] = [];
+const DEFAULT_DEPARTEMENTS_AMO_OBLIGATOIRE = ["3", "4", "36", "47", "54", "63", "81"] as const;
+const DEFAULT_DEPARTEMENTS_AV_AMO_FUSIONNES: readonly string[] = ["3", "4", "32", "54", "63"];
 
 /**
  * Construit l'ensemble des codes département à partir d'une variable d'environnement CSV.
@@ -57,41 +59,46 @@ const DEPARTEMENTS_AV_AMO_FUSIONNES = buildDeptSet(
 );
 
 /**
- * Résout le mode d'AMO applicable pour un département donné.
- * Accepte le code en format officiel ("03", "54") ou normalisé ("3", "54").
- *
- * Comportement par défaut (dept non listé, ex. "59" en attente de validation
- * préfecture) : FACULTATIF.
+ * Règles applicables à un département. Accepte le code en format officiel ("03", "54")
+ * ou normalisé ("3", "54"). Département non listé : AMO facultatif, sans cumul.
  */
-export function getAmoMode(codeDepartement: string | number): AmoMode {
+export function getReglesAmo(codeDepartement: string | number): ReglesAmo {
   const normalized = normalizeCodeDepartement(codeDepartement);
-  if (DEPARTEMENTS_AV_AMO_FUSIONNES.has(normalized)) return AmoMode.AV_AMO_FUSIONNES;
-  if (DEPARTEMENTS_AMO_OBLIGATOIRE.has(normalized)) return AmoMode.OBLIGATOIRE;
-  return AmoMode.FACULTATIF;
+  return {
+    amoObligatoire: DEPARTEMENTS_AMO_OBLIGATOIRE.has(normalized),
+    avCumuleAmo: DEPARTEMENTS_AV_AMO_FUSIONNES.has(normalized),
+  };
 }
 
 /**
- * Vrai si le département impose une auto-attribution d'AMO (obligatoire ou AV/AMO fusionnés).
+ * L'AMO est-il imposé dans ce département ? Seul critère de l'attribution d'office :
+ * un département qui cumule AV et AMO sans l'imposer laisse le demandeur choisir.
  */
-export function isAmoAttributionAutomatique(codeDepartement: string | number): boolean {
-  const mode = getAmoMode(codeDepartement);
-  return mode === AmoMode.OBLIGATOIRE || mode === AmoMode.AV_AMO_FUSIONNES;
+export function estAmoObligatoire(codeDepartement: string | number): boolean {
+  return getReglesAmo(codeDepartement).amoObligatoire;
 }
 
 /**
- * Mode d'AMO d'un parcours, résolu USER-first avec repli agent (cf. RBAC-ROLES §6).
- * `null` = commune introuvable : l'appelant refuse, il ne suppose jamais FACULTATIF.
+ * L'aller-vers du territoire y est-il aussi l'AMO ? N'implique jamais l'obligation.
  */
-export function resolveAmoModeForParcours(parcours: ParcoursSimulationPair): AmoMode | null {
+export function avCumuleAmo(codeDepartement: string | number): boolean {
+  return getReglesAmo(codeDepartement).avCumuleAmo;
+}
+
+/**
+ * Règles d'un parcours, résolues USER-first avec repli agent (cf. RBAC-ROLES §6).
+ * `null` = commune introuvable : l'appelant refuse, il ne suppose jamais l'AMO facultatif.
+ */
+export function resolveReglesAmoForParcours(parcours: ParcoursSimulationPair): ReglesAmo | null {
   const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
   if (!codeInsee) return null;
-  return getAmoMode(getCodeDepartementFromCodeInsee(codeInsee));
+  return getReglesAmo(getCodeDepartementFromCodeInsee(codeInsee));
 }
 
 /**
- * L'autonomie (détachement de l'AMO) n'existe qu'en mode FACULTATIF — porte d'entrée unique
- * des trois chemins qui y mènent, pour qu'ils ne puissent pas diverger.
+ * L'autonomie (détachement de l'AMO) n'existe que là où l'AMO n'est pas imposé — porte
+ * d'entrée unique des trois chemins qui y mènent, pour qu'ils ne puissent pas diverger.
  */
 export function peutPasserEnAutonomie(parcours: ParcoursSimulationPair): boolean {
-  return resolveAmoModeForParcours(parcours) === AmoMode.FACULTATIF;
+  return resolveReglesAmoForParcours(parcours)?.amoObligatoire === false;
 }

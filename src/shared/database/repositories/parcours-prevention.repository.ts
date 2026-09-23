@@ -270,16 +270,18 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   /**
-   * Marque l'invitation comme acceptée et fait progresser le parcours.
+   * Marque l'invitation comme acceptée et route le parcours selon l'accompagnement déjà
+   * décidé. L'étape `INVITATION` tient jusqu'ici : tout ce qui a pu être décidé avant le
+   * rattachement du compte (attribution d'AMO, réponse de l'AMO, autonomie) est rejoué ici,
+   * une fois la simulation de l'agent promue.
    *
-   * - Si une validation AMO en `LOGEMENT_ELIGIBLE` existe déjà pour ce parcours
-   *   (cas d'une invitation créée par un agent AMO avec simulation éligible) :
-   *   l'AMO est déjà choisi+validé → on saute `CHOIX_AMO` et on va directement
-   *   à `ELIGIBILITE/TODO`.
-   * - Si une validation `LOGEMENT_NON_ELIGIBLE` existe : on reste sur `CHOIX_AMO`
-   *   (le demandeur sera bloqué de toute façon par le statut AMO).
-   * - Sinon (invitation AV sans validation AMO, ou AMO sans simulation) :
-   *   transition standard vers `CHOIX_AMO/TODO`.
+   * | Validation existante   | Destination                                                  |
+   * | ---------------------- | ------------------------------------------------------------ |
+   * | absente                | `CHOIX_AMO/TODO` — le demandeur choisit                      |
+   * | `EN_ATTENTE`           | `CHOIX_AMO/EN_INSTRUCTION` — l'AMO a été sollicitée          |
+   * | `LOGEMENT_ELIGIBLE`    | `ELIGIBILITE/TODO` — l'AMO a validé, on saute le choix       |
+   * | `SANS_AMO`             | `ELIGIBILITE/TODO` — autonomie déjà actée                    |
+   * | refus (les deux cas)   | `CHOIX_AMO/TODO` — le statut bloque de toute façon la suite  |
    *
    * Idempotent : ne fait rien si le parcours n'est plus à l'étape INVITATION.
    */
@@ -295,12 +297,35 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       .where(eq(parcoursAmoValidations.parcoursId, parcoursId))
       .limit(1);
 
-    if (existingValidation?.statut === StatutValidationAmo.LOGEMENT_ELIGIBLE) {
-      // AMO déjà choisi+validé via l'invitation → on saute la sélection AMO.
-      return await this.updateStep(parcoursId, Step.ELIGIBILITE, Status.TODO);
+    switch (existingValidation?.statut) {
+      case StatutValidationAmo.LOGEMENT_ELIGIBLE:
+      case StatutValidationAmo.SANS_AMO:
+        return await this.updateStep(parcoursId, Step.ELIGIBILITE, Status.TODO);
+      case StatutValidationAmo.EN_ATTENTE:
+        return await this.updateStep(parcoursId, Step.CHOIX_AMO, Status.EN_INSTRUCTION);
+      default:
+        return await this.updateStep(parcoursId, Step.CHOIX_AMO, Status.TODO);
     }
+  }
 
-    return await this.updateStep(parcoursId, Step.CHOIX_AMO, Status.TODO);
+  /**
+   * Ouvre l'étape éligibilité depuis `CHOIX_AMO`, en UPDATE conditionnel.
+   *
+   * Même transition que `approveValidation`, mais rejouable : elle rattrape les dossiers
+   * dont la validation est passée à `LOGEMENT_ELIGIBLE` sans passer par la réponse de
+   * l'AMO (correction de simulation par un agent). `INVITATION` en est volontairement
+   * exclue : cette étape tient jusqu'au claim, qui seul promeut la simulation de l'agent.
+   *
+   * Retourne `true` si l'étape a effectivement bougé (no-op silencieux sinon).
+   */
+  async advanceToEligibiliteFromChoixAmo(parcoursId: string): Promise<boolean> {
+    const [updated] = await db
+      .update(parcoursPrevention)
+      .set({ currentStep: Step.ELIGIBILITE, currentStatus: Status.TODO })
+      .where(and(eq(parcoursPrevention.id, parcoursId), eq(parcoursPrevention.currentStep, Step.CHOIX_AMO)))
+      .returning({ id: parcoursPrevention.id });
+
+    return Boolean(updated);
   }
 
   /**

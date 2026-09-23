@@ -1,1 +1,1 @@
-export * from "./useAmoMode";
+export * from "./useReglesAmo";

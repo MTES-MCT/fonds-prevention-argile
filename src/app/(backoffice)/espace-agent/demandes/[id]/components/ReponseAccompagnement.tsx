@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
+import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { RAISONS_INELIGIBILITE } from "@/features/backoffice/espace-agent/prospects/domain/types";
 import {
   accepterAccompagnement,
@@ -9,6 +10,10 @@ import {
   refuserAccompagnementEligible,
   getNextDemandeurEnAttente,
 } from "@/features/backoffice/espace-agent/demandes/actions";
+import {
+  estRaisonPoursuiteAutonome,
+  getGroupesRaisonsSansAccompagnement,
+} from "@/features/backoffice/espace-agent/shared/domain/value-objects/raisons-fin-suivi";
 import { ArchiveModal } from "../../../shared/components/ArchiveModal";
 import { ConfirmationReponseModal } from "./ConfirmationReponseModal";
 
@@ -19,6 +24,8 @@ interface ReponseAccompagnementProps {
   estMandataireFinancier?: boolean | null;
   /** Note complémentaire déjà enregistrée (champ commentaire) */
   noteAmo?: string | null;
+  /** Faux en département à AMO imposé : décliner n'y laisse que l'archivage. */
+  autonomiePossible: boolean;
 }
 
 /**
@@ -30,6 +37,7 @@ export function ReponseAccompagnement({
   statutActuel,
   estMandataireFinancier,
   noteAmo,
+  autonomiePossible,
 }: ReponseAccompagnementProps) {
   const [choix, setChoix] = useState<StatutValidationAmo | "">(
     statutActuel !== StatutValidationAmo.EN_ATTENTE ? (statutActuel as StatutValidationAmo) : ""
@@ -51,8 +59,10 @@ export function ReponseAccompagnement({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmedChoix, setConfirmedChoix] = useState<StatutValidationAmo | null>(null);
   const [nextDemandeId, setNextDemandeId] = useState<string | null>(null);
-  // Modale d'archivage (chemin "éligible mais je n'accompagne pas").
+  // Modale de fin de suivi (chemin "éligible mais je n'accompagne pas").
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  // Ref et non state : `onSuccess` est appelé dans le même tick, avant tout re-render.
+  const poursuiteAutonomeRef = useRef(false);
 
   const alreadyProcessed = statutActuel !== StatutValidationAmo.EN_ATTENTE;
 
@@ -194,8 +204,10 @@ export function ReponseAccompagnement({
         {choix === StatutValidationAmo.ACCOMPAGNEMENT_REFUSE && !alreadyProcessed && (
           <div className="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w">
             <p>
-              Le demandeur reste éligible, mais votre structure ne l&apos;accompagne pas. En confirmant, le dossier sera
-              archivé : une raison vous sera demandée.
+              Le demandeur reste éligible, mais votre structure ne l&apos;accompagne pas.{" "}
+              {autonomiePossible
+                ? "La raison que vous préciserez ensuite décidera de la suite : poursuite seul, ou archivage du dossier."
+                : "En confirmant, le dossier sera archivé : une raison vous sera demandée."}
             </p>
           </div>
         )}
@@ -335,18 +347,38 @@ export function ReponseAccompagnement({
         )}
       </div>
 
-      {/* Modale d'archivage : chemin "éligible mais je n'accompagne pas" */}
+      {/* Fin de suivi : chemin "éligible mais je n'accompagne pas", la raison décide de la suite */}
       <ArchiveModal
         isOpen={isArchiveOpen}
         onClose={() => setIsArchiveOpen(false)}
         parcoursId={demandeId}
         archiveAction={async (id, reason) => {
           const r = await refuserAccompagnementEligible(id, reason);
+          poursuiteAutonomeRef.current = r.success && r.data.poursuiteAutonome;
           return r.success ? { success: true, data: undefined } : r;
         }}
-        description="Le demandeur reste éligible, mais votre structure ne l'accompagne pas : le dossier sera archivé. L'aller-vers de son territoire pourra le reprendre."
+        groupesRaisons={getGroupesRaisonsSansAccompagnement(autonomiePossible)}
+        titre="Confirmer votre réponse"
+        labelSelect="Pour quelle raison votre structure ne l'accompagne-t-elle pas ?"
+        libelleAction="Confirmer"
+        description={
+          autonomiePossible
+            ? "Le demandeur reste éligible, mais votre structure ne l'accompagne pas. Selon la raison, son dossier reste actif ou passe en archives."
+            : "Le demandeur reste éligible, mais votre structure ne l'accompagne pas : le dossier sera archivé. L'aller-vers de son territoire pourra le reprendre."
+        }
+        alerteParRaison={(raison) =>
+          estRaisonPoursuiteAutonome(raison)
+            ? "Le dossier reste actif : le demandeur poursuit sans AMO et l'aller-vers de son territoire en devient le référent."
+            : "Le dossier sera archivé. L'aller-vers de son territoire pourra le reprendre si le demandeur se manifeste."
+        }
         onSuccess={async () => {
           setIsArchiveOpen(false);
+          // Le détachement retire l'entreprise : cette page devient inaccessible à l'AMO et se
+          // re-rend en 404. Navigation dure vers le listing, comme « Ne plus accompagner ».
+          if (poursuiteAutonomeRef.current) {
+            window.location.href = ROUTES.backoffice.espaceAmo.dossiers;
+            return;
+          }
           const nextResult = await getNextDemandeurEnAttente(demandeId);
           if (nextResult.success && nextResult.data) {
             setNextDemandeId(nextResult.data.nextDemandeId);

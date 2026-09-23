@@ -18,7 +18,10 @@ interface ConfirmationReponseModalProps {
  *
  * Affiche un message différent selon le choix effectué :
  * - LOGEMENT_ELIGIBLE : Demande ajoutée aux dossiers suivis
- * - LOGEMENT_NON_ELIGIBLE : Demande archivée (inéligibilité)
+ * - LOGEMENT_NON_ELIGIBLE / ACCOMPAGNEMENT_REFUSE : Demande archivée
+ *
+ * Le cas « poursuit seul » n'y figure pas : le détachement ferme la page à l'AMO, qui est
+ * renvoyée au listing sans confirmation (même règle que « Ne plus accompagner »).
  */
 export function ConfirmationReponseModal({
   isOpen,

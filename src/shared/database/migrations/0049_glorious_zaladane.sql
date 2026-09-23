@@ -1,0 +1,1 @@
+ALTER TABLE "prospect_qualifications" ADD COLUMN "accompagnement_souhaite" text;

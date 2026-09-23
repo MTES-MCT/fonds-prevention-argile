@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import StepDetailAmo from "./StepDetailAmo";
 import { Step } from "../../../core/domain";
 import { StatutValidationAmo } from "@/features/parcours/amo/domain/value-objects";
-import { AmoMode } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+
 import * as parcoursContext from "../../../core/context/useParcours";
 import * as amoHooks from "@/features/parcours/amo/hooks";
 
@@ -12,7 +12,7 @@ vi.mock("@/features/parcours/dossiers-ds/adapters/graphql/client", () => ({ grap
 vi.mock("@/features/parcours/dossiers-ds/adapters/rest/client", () => ({ prefillClient: {} }));
 
 vi.mock("../../../core/context/useParcours", () => ({ useParcours: vi.fn() }));
-vi.mock("@/features/parcours/amo/hooks", () => ({ useAmoMode: vi.fn() }));
+vi.mock("@/features/parcours/amo/hooks", () => ({ useReglesAmo: vi.fn() }));
 
 function mockParcours(
   currentStep: Step,
@@ -31,7 +31,7 @@ function mockParcours(
 describe("StepDetailAmo — badge « A faire »", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(amoHooks.useAmoMode).mockReturnValue(AmoMode.OBLIGATOIRE);
+    vi.mocked(amoHooks.useReglesAmo).mockReturnValue({ amoObligatoire: true, avCumuleAmo: false });
   });
 
   it("affiche « A faire » à l'étape choix_amo sans validation", () => {
@@ -59,7 +59,7 @@ describe("StepDetailAmo — badge « A faire »", () => {
 describe("StepDetailAmo — logement non éligible", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(amoHooks.useAmoMode).mockReturnValue(AmoMode.FACULTATIF);
+    vi.mocked(amoHooks.useReglesAmo).mockReturnValue({ amoObligatoire: false, avCumuleAmo: false });
   });
 
   it("grise la carte sur une qualification non éligible, alors que statutAmo est null", () => {

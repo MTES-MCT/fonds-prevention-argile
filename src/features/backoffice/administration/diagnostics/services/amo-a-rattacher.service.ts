@@ -13,7 +13,7 @@ import { Status } from "@/shared/domain/value-objects/status.enum";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import { asString } from "@/shared/utils";
 import { estDossierChezLaDdt } from "@/features/parcours/amo/domain/value-objects";
-import { AmoMode, resolveAmoModeForParcours } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { resolveReglesAmoForParcours } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import {
   resoudreAmoARattacher,
   type OrigineRattachement,
@@ -74,9 +74,10 @@ export async function listerDossiersARattacher(parcoursId?: string): Promise<Dos
   const dossiers: DossierARattacher[] = [];
 
   for (const row of rows) {
-    // Le mode AMO dérive de la commune stockée en JSONB : filtrage côté JS (cf. CLAUDE.md).
-    const mode = resolveAmoModeForParcours(row);
-    if (mode === null || mode === AmoMode.FACULTATIF) continue;
+    // Les règles AMO dérivent de la commune stockée en JSONB : filtrage côté JS (cf. CLAUDE.md).
+    // Seule l'obligation compte : là où l'AMO est facultative, l'autonomie est légitime.
+    const regles = resolveReglesAmoForParcours(row);
+    if (regles === null || !regles.amoObligatoire) continue;
 
     const logement = getDemandeurFirstLogement(row);
     const codeInsee = (asString(logement?.commune) ?? "").padStart(5, "0");

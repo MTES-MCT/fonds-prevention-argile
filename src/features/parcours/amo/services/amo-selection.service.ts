@@ -17,7 +17,7 @@ import {
 } from "../domain/value-objects";
 import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import { AmoMode, getAmoMode } from "../domain/value-objects/departements-amo";
+import { estAmoObligatoire, getReglesAmo } from "../domain/value-objects/departements-amo";
 import { sendValidationAmoEmail } from "@/shared/email/actions/send-email.actions";
 import { Status, Step } from "../../core";
 import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
@@ -26,6 +26,12 @@ import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/am
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributesFromAmo } from "@/shared/email/brevo";
 import type { ParcoursPrevention } from "@/shared/database/schema";
+
+/**
+ * Étapes où une AMO peut être sollicitée. `INVITATION` y figure : un dossier créé par un
+ * agent y reste jusqu'au claim, et l'AMO doit pouvoir être saisie entre-temps (ADR-0038).
+ */
+const ETAPES_SELECTION_AMO: readonly Step[] = [Step.CHOIX_AMO, Step.INVITATION];
 
 /**
  * Paramètres pour la sélection d'un AMO
@@ -112,12 +118,15 @@ async function checkAmoCoversTerritory(
  *   par `demanderAccompagnementDemandeur`, où le parcours a déjà avancé à ÉLIGIBILITE.
  * @param options.skipStatusUpdate n'écrit pas `parcours.currentStatus = EN_INSTRUCTION` —
  *   idem, l'étape courante n'étant plus CHOIX_AMO, ce champ reste piloté par la sync DS.
+ * @param options.nePasEcraser refuse au lieu de remplacer une validation existante — l'auto
+ *   -attribution s'en sert pour ne pas défaire une décision posée entre sa lecture et son
+ *   écriture (l'upsert, lui, sert la re-sélection volontaire d'un AMO par le demandeur).
  */
 export async function selectAmoForUser(
   userId: string,
   params: SelectAmoParams,
   attributionMode: AttributionAmoMode = AttributionAmoMode.MANUEL,
-  options?: { skipStepGuard?: boolean; skipStatusUpdate?: boolean }
+  options?: { skipStepGuard?: boolean; skipStatusUpdate?: boolean; nePasEcraser?: boolean }
 ): Promise<ActionResult<SelectAmoResult>> {
   // Validation des données personnelles
   const validationError = validatePersonalData(params);
@@ -134,8 +143,9 @@ export async function selectAmoForUser(
     return { success: false, error: "Parcours non trouvé" };
   }
 
-  // Vérifier qu'on est bien à l'étape CHOIX_AMO (sauf demande d'accompagnement après autonomie)
-  if (!options?.skipStepGuard && parcours.currentStep !== Step.CHOIX_AMO) {
+  // Étape attendue : CHOIX_AMO, ou INVITATION quand le dossier a été créé par un agent et
+  // n'a pas encore été réclamé — l'AMO doit pouvoir être sollicitée sans attendre le claim.
+  if (!options?.skipStepGuard && !ETAPES_SELECTION_AMO.includes(parcours.currentStep)) {
     return {
       success: false,
       error: "Vous n'êtes pas à l'étape de choix de l'AMO",
@@ -183,47 +193,52 @@ export async function selectAmoForUser(
     .where(eq(users.id, userId));
 
   // Créer ou mettre à jour la validation AMO
-  // Reset des champs email tracking en cas de re-sélection
-  const [validation] = await db
-    .insert(parcoursAmoValidations)
-    .values({
-      parcoursId: parcours.id,
-      entrepriseAmoId,
-      statut: StatutValidationAmo.EN_ATTENTE,
-      attributionMode,
-      userPrenom: userPrenom.trim(),
-      userNom: userNom.trim(),
-      userEmail: userEmail.trim(),
-      userTelephone: telephone,
-      adresseLogement: adresseLogement.trim(),
-    })
-    .onConflictDoUpdate({
-      target: parcoursAmoValidations.parcoursId,
-      set: {
-        entrepriseAmoId,
-        statut: StatutValidationAmo.EN_ATTENTE,
-        attributionMode,
-        choisieAt: new Date(),
-        valideeAt: null,
-        commentaire: null,
-        userPrenom: userPrenom.trim(),
-        userNom: userNom.trim(),
-        userEmail: userEmail.trim(),
-        userTelephone: telephone,
-        adresseLogement: adresseLogement.trim(),
-        // Reset du tracking email (nouvelle tentative)
-        brevoMessageId: null,
-        emailSentAt: null,
-        emailDeliveredAt: null,
-        emailOpenedAt: null,
-        emailClickedAt: null,
-        emailBounceType: null,
-        emailBounceReason: null,
-      },
-    })
-    .returning();
+  const valeurs = {
+    parcoursId: parcours.id,
+    entrepriseAmoId,
+    statut: StatutValidationAmo.EN_ATTENTE,
+    attributionMode,
+    userPrenom: userPrenom.trim(),
+    userNom: userNom.trim(),
+    userEmail: userEmail.trim(),
+    userTelephone: telephone,
+    adresseLogement: adresseLogement.trim(),
+  };
+
+  const [validation] = options?.nePasEcraser
+    ? await db
+        .insert(parcoursAmoValidations)
+        .values(valeurs)
+        .onConflictDoNothing({ target: parcoursAmoValidations.parcoursId })
+        .returning()
+    : await db
+        .insert(parcoursAmoValidations)
+        .values(valeurs)
+        .onConflictDoUpdate({
+          target: parcoursAmoValidations.parcoursId,
+          set: {
+            ...valeurs,
+            choisieAt: new Date(),
+            valideeAt: null,
+            commentaire: null,
+            // Reset du tracking email (nouvelle tentative)
+            brevoMessageId: null,
+            emailSentAt: null,
+            emailDeliveredAt: null,
+            emailOpenedAt: null,
+            emailClickedAt: null,
+            emailBounceType: null,
+            emailBounceReason: null,
+          },
+        })
+        .returning();
 
   if (!validation) {
+    // Sans écrasement, l'absence de ligne signifie qu'une validation a été posée entre
+    // la lecture de l'appelant et cette écriture : on la laisse telle quelle.
+    if (options?.nePasEcraser) {
+      return { success: true, data: { message: "AMO déjà attribuée", token: "" } };
+    }
     return {
       success: false,
       error: "Erreur lors de la création de la validation",
@@ -414,7 +429,11 @@ async function resolveAmoAndContactForTerritory(
 }
 
 /**
- * Auto-affecte un AMO au parcours d'un utilisateur (modes OBLIGATOIRE et AV_AMO_FUSIONNES).
+ * Auto-affecte l'AMO du territoire au parcours d'un utilisateur.
+ *
+ * Accepte l'étape `INVITATION` : un dossier créé par un agent y reste jusqu'au claim, et
+ * l'AMO doit pouvoir être sollicitée sans attendre que le demandeur crée son compte — sans
+ * cela, la qualification d'un Aller-vers échouait en silence et le dossier restait chez lui.
  *
  * Idempotent : si une validation existe déjà pour ce parcours, ne fait rien.
  * Délègue ensuite à `selectAmoForUser` avec le mode d'attribution adéquat.
@@ -425,7 +444,7 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
     return { success: false, error: "Parcours non trouvé" };
   }
 
-  if (parcours.currentStep !== Step.CHOIX_AMO) {
+  if (!ETAPES_SELECTION_AMO.includes(parcours.currentStep)) {
     return { success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" };
   }
 
@@ -444,16 +463,14 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
     return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
   }
 
-  // Détermine le mode d'attribution :
-  //   - OBLIGATOIRE / AV_AMO_FUSIONNES : auto-attribué silencieusement à l'arrivée sur /mon-compte
-  //   - FACULTATIF : appelée après que l'utilisateur a explicitement choisi "Oui" dans
-  //     CalloutChoixAccompagnement → on prend le 1er AMO du territoire (skip de l'étape liste).
-  const mode = getAmoMode(getCodeDepartementFromCodeInsee(codeInsee));
+  // Trace l'origine de l'attribution : imposée par le département (silencieuse à l'arrivée
+  // sur /mon-compte), ou choisie par le demandeur via CalloutChoixAccompagnement.
+  const regles = getReglesAmo(getCodeDepartementFromCodeInsee(codeInsee));
   let attributionMode: AttributionAmoMode;
-  if (mode === AmoMode.OBLIGATOIRE) {
-    attributionMode = AttributionAmoMode.AUTO_OBLIGATOIRE;
-  } else if (mode === AmoMode.AV_AMO_FUSIONNES) {
+  if (regles.avCumuleAmo) {
     attributionMode = AttributionAmoMode.AUTO_AV_AMO;
+  } else if (regles.amoObligatoire) {
+    attributionMode = AttributionAmoMode.AUTO_OBLIGATOIRE;
   } else {
     attributionMode = AttributionAmoMode.MANUEL;
   }
@@ -463,6 +480,8 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
     return resolved;
   }
 
+  // `skipStatusUpdate` à l'étape invitation : `currentStatus` n'a de sens que rattaché à
+  // l'étape courante, et c'est le claim qui posera EN_INSTRUCTION avec CHOIX_AMO.
   return selectAmoForUser(
     userId,
     {
@@ -473,40 +492,44 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
       userTelephone: resolved.data.userTelephone,
       adresseLogement: resolved.data.adresseLogement,
     },
-    attributionMode
+    attributionMode,
+    { nePasEcraser: true, skipStatusUpdate: parcours.currentStep === Step.INVITATION }
   );
 }
 
 /**
- * Renonce explicitement à un AMO (mode FACULTATIF) et fait avancer le parcours
- * directement à l'étape ELIGIBILITE.
+ * Renonce à l'AMO et fait avancer le parcours à l'étape ELIGIBILITE, là où l'AMO n'est pas
+ * imposé. Écrit une `parcours_amo_validations` en `SANS_AMO` / `AUCUN` / sans entreprise.
  *
- * Crée une `parcours_amo_validations` avec :
- *   - statut = SANS_AMO
- *   - attributionMode = AUCUN
- *   - entrepriseAmoId = null
+ * Deux appelants : le demandeur depuis son espace, et l'Aller-vers qui tranche pour lui
+ * quand il a recueilli sa réponse (§2.3.2 FLOW-AND-SYNC.md). L'étape `INVITATION` est donc
+ * acceptée : un dossier créé par un agent y reste jusqu'au claim, qui route ensuite sur
+ * `ELIGIBILITE` en lisant ce statut.
+ *
+ * **N'écrase jamais une décision existante** : la validation n'est écrite que si le parcours
+ * n'en a aucune. Un demandeur ayant déjà choisi — ou une AMO déjà sollicitée — prime.
  */
-export async function skipAmoStepForUser(userId: string): Promise<ActionResult<{ message: string }>> {
-  const parcours = await parcoursRepo.findByUserId(userId);
-  if (!parcours) {
-    return { success: false, error: "Parcours non trouvé" };
-  }
-
-  if (parcours.currentStep !== Step.CHOIX_AMO || parcours.currentStatus !== Status.TODO) {
+export async function passerEnAutonomie(parcours: ParcoursPrevention): Promise<ActionResult<{ message: string }>> {
+  if (!ETAPES_SELECTION_AMO.includes(parcours.currentStep) || parcours.currentStatus !== Status.TODO) {
     return { success: false, error: "Le parcours n'est plus à l'étape de choix de l'AMO" };
   }
 
-  const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData?.logement?.commune);
+  if (parcours.archivedAt) {
+    return { success: false, error: "Le dossier est archivé : l'accompagnement ne peut plus être modifié" };
+  }
+
+  // USER-first avec repli agent : un dossier créé par un Aller-vers n'a que la simulation
+  // de l'agent, et lire la seule simulation du demandeur faisait échouer l'autonomie.
+  const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
   if (!codeInsee) {
     return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
   }
 
-  const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
-  if (getAmoMode(codeDepartement) !== AmoMode.FACULTATIF) {
+  if (estAmoObligatoire(getCodeDepartementFromCodeInsee(codeInsee))) {
     return { success: false, error: "L'AMO est obligatoire pour ce département" };
   }
 
-  await db
+  const [validation] = await db
     .insert(parcoursAmoValidations)
     .values({
       parcoursId: parcours.id,
@@ -514,31 +537,31 @@ export async function skipAmoStepForUser(userId: string): Promise<ActionResult<{
       statut: StatutValidationAmo.SANS_AMO,
       attributionMode: AttributionAmoMode.AUCUN,
     })
-    .onConflictDoUpdate({
-      target: parcoursAmoValidations.parcoursId,
-      set: {
-        entrepriseAmoId: null,
-        statut: StatutValidationAmo.SANS_AMO,
-        attributionMode: AttributionAmoMode.AUCUN,
-        choisieAt: new Date(),
-        valideeAt: null,
-        commentaire: null,
-        brevoMessageId: null,
-        emailSentAt: null,
-        emailDeliveredAt: null,
-        emailOpenedAt: null,
-        emailClickedAt: null,
-        emailBounceType: null,
-        emailBounceReason: null,
-      },
-    });
+    .onConflictDoNothing({ target: parcoursAmoValidations.parcoursId })
+    .returning({ id: parcoursAmoValidations.id });
 
-  await parcoursRepo.updateStep(parcours.id, Step.ELIGIBILITE, Status.TODO);
+  if (!validation) {
+    return { success: false, error: "Un accompagnement a déjà été décidé pour ce dossier" };
+  }
+
+  // À l'étape invitation, c'est le claim qui posera ELIGIBILITE en lisant ce statut.
+  if (parcours.currentStep === Step.CHOIX_AMO) {
+    await parcoursRepo.updateStep(parcours.id, Step.ELIGIBILITE, Status.TODO);
+  }
 
   return {
     success: true,
     data: { message: "Parcours avancé à l'étape éligibilité sans AMO" },
   };
+}
+
+/** Variante par `userId` : le demandeur renonce à l'AMO depuis son espace. */
+export async function skipAmoStepForUser(userId: string): Promise<ActionResult<{ message: string }>> {
+  const parcours = await parcoursRepo.findByUserId(userId);
+  if (!parcours) {
+    return { success: false, error: "Parcours non trouvé" };
+  }
+  return passerEnAutonomie(parcours);
 }
 
 export interface DemanderAccompagnementResult {
@@ -581,7 +604,7 @@ export async function demanderAccompagnementDemandeur(
 
   // Même garde que `skipAmoStepForUser`/`annulerAccompagnementDemandeur` : là où l'AMO est
   // obligatoire, ce statut SANS_AMO ne devrait de toute façon jamais exister.
-  if (getAmoMode(getCodeDepartementFromCodeInsee(codeInsee)) !== AmoMode.FACULTATIF) {
+  if (estAmoObligatoire(getCodeDepartementFromCodeInsee(codeInsee))) {
     return { success: false, error: "L'AMO est obligatoire pour ce département" };
   }
 

@@ -1,108 +1,155 @@
-import { describe, it, expect } from "vitest";
-import {
-  AmoMode,
-  getAmoMode,
-  isAmoAttributionAutomatique,
-  peutPasserEnAutonomie,
-  resolveAmoModeForParcours,
-} from "./departements-amo";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { avCumuleAmo, estAmoObligatoire, peutPasserEnAutonomie } from "./departements-amo";
 
 describe("departements-amo", () => {
-  describe("getAmoMode", () => {
-    describe("AMO obligatoire (config par défaut)", () => {
+  describe("getReglesAmo (config par défaut)", () => {
+    describe("AMO obligatoire", () => {
       it.each([
         ["03", "Allier"],
+        ["04", "Alpes-de-Haute-Provence"],
         ["36", "Indre"],
         ["47", "Lot-et-Garonne"],
         ["54", "Meurthe-et-Moselle"],
+        ["63", "Puy-de-Dôme"],
         ["81", "Tarn"],
-      ])("retourne OBLIGATOIRE pour %s (%s)", (code) => {
-        expect(getAmoMode(code)).toBe(AmoMode.OBLIGATOIRE);
+      ])("impose l'AMO dans le %s (%s)", (code) => {
+        expect(estAmoObligatoire(code)).toBe(true);
       });
 
       it("accepte le format normalisé sans zéro initial (3 → 03)", () => {
-        expect(getAmoMode("3")).toBe(AmoMode.OBLIGATOIRE);
+        expect(estAmoObligatoire("3")).toBe(true);
       });
 
       it("accepte un code numérique (number)", () => {
-        expect(getAmoMode(3)).toBe(AmoMode.OBLIGATOIRE);
-        expect(getAmoMode(54)).toBe(AmoMode.OBLIGATOIRE);
+        expect(estAmoObligatoire(3)).toBe(true);
+        expect(estAmoObligatoire(54)).toBe(true);
       });
     });
 
-    describe("AMO facultatif (config par défaut)", () => {
+    describe("AMO facultatif", () => {
       it.each([
-        ["04", "Alpes-de-Haute-Provence"],
         ["24", "Dordogne"],
         ["32", "Gers"],
         ["59", "Nord (en attente validation préfecture)"],
-        ["63", "Puy-de-Dôme"],
         ["82", "Tarn-et-Garonne"],
-      ])("retourne FACULTATIF pour les départements explicitement non obligatoires : %s (%s)", (code) => {
-        expect(getAmoMode(code)).toBe(AmoMode.FACULTATIF);
+      ])("n'impose pas l'AMO dans le %s (%s)", (code) => {
+        expect(estAmoObligatoire(code)).toBe(false);
       });
 
-      it("retourne FACULTATIF par défaut pour un département non listé (75 Paris)", () => {
-        expect(getAmoMode("75")).toBe(AmoMode.FACULTATIF);
+      it("laisse l'AMO facultatif par défaut pour un département non listé (75 Paris)", () => {
+        expect(estAmoObligatoire("75")).toBe(false);
       });
 
-      it("retourne FACULTATIF pour un DOM-TOM (974 La Réunion)", () => {
-        expect(getAmoMode("974")).toBe(AmoMode.FACULTATIF);
-      });
-    });
-
-    describe("AV/AMO fusionnés (vide par défaut, configurable via env)", () => {
-      it("aucun département en AV_AMO_FUSIONNES par défaut", () => {
-        // Aucun dept ne doit être en mode AV_AMO_FUSIONNES tant que l'env var n'est pas définie
-        const allCommonDepts = ["03", "04", "24", "32", "36", "47", "54", "59", "63", "75", "81", "82"];
-        for (const code of allCommonDepts) {
-          expect(getAmoMode(code)).not.toBe(AmoMode.AV_AMO_FUSIONNES);
-        }
+      it("laisse l'AMO facultatif pour un DOM-TOM (974 La Réunion)", () => {
+        expect(estAmoObligatoire("974")).toBe(false);
       });
     });
-  });
 
-  describe("isAmoAttributionAutomatique", () => {
-    it("retourne true en mode OBLIGATOIRE", () => {
-      expect(isAmoAttributionAutomatique("36")).toBe(true);
-      expect(isAmoAttributionAutomatique("54")).toBe(true);
+    it.each([
+      ["03", "Allier"],
+      ["04", "Alpes-de-Haute-Provence"],
+      ["32", "Gers"],
+      ["54", "Meurthe-et-Moselle"],
+      ["63", "Puy-de-Dôme"],
+    ])("reconnaît l'aller-vers du %s (%s) comme étant aussi l'AMO", (code) => {
+      expect(avCumuleAmo(code)).toBe(true);
     });
 
-    it("retourne false en mode FACULTATIF", () => {
-      expect(isAmoAttributionAutomatique("82")).toBe(false);
-      expect(isAmoAttributionAutomatique("75")).toBe(false);
-      expect(isAmoAttributionAutomatique("63")).toBe(false);
+    it("le Gers cumule sans imposer l'AMO : les deux axes ne se déduisent pas l'un de l'autre", () => {
+      expect(avCumuleAmo("32")).toBe(true);
+      expect(estAmoObligatoire("32")).toBe(false);
+    });
+
+    it.each(["24", "36", "47", "59", "75", "81", "82"])("ne prête aucun cumul au %s", (code) => {
+      expect(avCumuleAmo(code)).toBe(false);
     });
   });
 
-  describe("resolveAmoModeForParcours / peutPasserEnAutonomie", () => {
+  describe("resolveReglesAmoForParcours / peutPasserEnAutonomie", () => {
     const parcours = (demandeur: string | null, agent: string | null = null) => ({
       rgaSimulationData: demandeur ? ({ logement: { commune: demandeur } } as never) : null,
       rgaSimulationDataAgent: agent ? ({ logement: { commune: agent } } as never) : null,
     });
 
-    it("résout le mode depuis la commune du demandeur", () => {
-      expect(resolveAmoModeForParcours(parcours("36044"))).toBe(AmoMode.OBLIGATOIRE);
-      expect(resolveAmoModeForParcours(parcours("75001"))).toBe(AmoMode.FACULTATIF);
+    it("résout les règles depuis la commune du demandeur", () => {
+      expect(peutPasserEnAutonomie(parcours("36044"))).toBe(false);
+      expect(peutPasserEnAutonomie(parcours("75001"))).toBe(true);
     });
 
     it("retombe sur la simulation agent quand le demandeur n'a pas simulé", () => {
-      expect(resolveAmoModeForParcours(parcours(null, "47001"))).toBe(AmoMode.OBLIGATOIRE);
+      expect(peutPasserEnAutonomie(parcours(null, "47001"))).toBe(false);
     });
 
     it("fait primer la commune du demandeur sur celle de l'agent (USER-first)", () => {
-      expect(resolveAmoModeForParcours(parcours("75001", "47001"))).toBe(AmoMode.FACULTATIF);
+      expect(peutPasserEnAutonomie(parcours("75001", "47001"))).toBe(true);
     });
 
-    it("retourne null sans commune exploitable", () => {
-      expect(resolveAmoModeForParcours(parcours(null))).toBeNull();
-      expect(resolveAmoModeForParcours(parcours("abc"))).toBeNull();
-    });
-
-    it("n'ouvre l'autonomie qu'en mode FACULTATIF, commune absente comprise", () => {
-      expect(peutPasserEnAutonomie(parcours("75001"))).toBe(true);
-      expect(peutPasserEnAutonomie(parcours("36044"))).toBe(false);
+    it("refuse l'autonomie sans commune exploitable, au lieu de supposer l'AMO facultatif", () => {
       expect(peutPasserEnAutonomie(parcours(null))).toBe(false);
+      expect(peutPasserEnAutonomie(parcours("abc"))).toBe(false);
     });
+  });
+});
+
+/**
+ * Obligation et cumul AV/AMO sont deux axes indépendants : le Gers cumule sans imposer.
+ * Les listes étant configurées par env, on recharge le module pour couvrir les quatre cas.
+ */
+describe("règles départementales — obligation et cumul AV/AMO", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  async function chargerAvecConfig(obligatoires: string, fusionnes: string) {
+    vi.resetModules();
+    vi.stubEnv("NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE", obligatoires);
+    vi.stubEnv("NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES", fusionnes);
+    return import("./departements-amo");
+  }
+
+  /** Listes cibles de l'arrêté : le 32 cumule sans être obligatoire, le 36 impose sans cumuler. */
+  const CONFIG_CIBLE = ["03,04,36,47,54,63,81", "03,04,32,54,63"] as const;
+
+  it("32 : AMO non obligatoire, donc l'autonomie reste possible malgré le cumul AV/AMO", async () => {
+    const { getReglesAmo: regles, peutPasserEnAutonomie: autonomie } = await chargerAvecConfig(...CONFIG_CIBLE);
+
+    expect(regles("32")).toEqual({ amoObligatoire: false, avCumuleAmo: true });
+    expect(
+      autonomie({ rgaSimulationData: { logement: { commune: "32013" } } as never, rgaSimulationDataAgent: null })
+    ).toBe(true);
+  });
+
+  it("32 : le cumul AV/AMO ne déclenche aucune attribution d'office", async () => {
+    const { estAmoObligatoire: obligatoire } = await chargerAvecConfig(...CONFIG_CIBLE);
+
+    expect(obligatoire("32")).toBe(false);
+  });
+
+  it("03 : AMO obligatoire et cumul AV/AMO — autonomie refusée, cumul reconnu", async () => {
+    const { getReglesAmo: regles, peutPasserEnAutonomie: autonomie } = await chargerAvecConfig(...CONFIG_CIBLE);
+
+    expect(regles("03")).toEqual({ amoObligatoire: true, avCumuleAmo: true });
+    expect(
+      autonomie({ rgaSimulationData: { logement: { commune: "03185" } } as never, rgaSimulationDataAgent: null })
+    ).toBe(false);
+  });
+
+  it("36 : AMO obligatoire sans cumul — autonomie refusée, aucun cumul", async () => {
+    const { getReglesAmo: regles } = await chargerAvecConfig(...CONFIG_CIBLE);
+
+    expect(regles("36")).toEqual({ amoObligatoire: true, avCumuleAmo: false });
+  });
+
+  it("24 : ni obligation ni cumul", async () => {
+    const { getReglesAmo: regles } = await chargerAvecConfig(...CONFIG_CIBLE);
+
+    expect(regles("24")).toEqual({ amoObligatoire: false, avCumuleAmo: false });
+  });
+
+  it("une liste vide explicite écrase les valeurs par défaut", async () => {
+    const { getReglesAmo: regles } = await chargerAvecConfig("", "");
+
+    expect(regles("36")).toEqual({ amoObligatoire: false, avCumuleAmo: false });
   });
 });

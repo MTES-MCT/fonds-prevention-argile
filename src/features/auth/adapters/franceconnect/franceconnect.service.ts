@@ -13,6 +13,7 @@ import { FC_ERROR_MAPPING, FC_ERROR_MESSAGES, createFCError } from "./franceconn
 import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS, buildConseillerAttributes } from "@/shared/email/brevo";
 import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigation";
 import { evaluateSimulation } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
+import { aUneAmoValidee } from "@/features/parcours/amo/services/ouverture-eligibilite.service";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
 
 /**
@@ -293,8 +294,8 @@ export async function handleFranceConnectCallback(
     if (isNewAccount && simulationConnue && evaluateSimulation(sim).isNonEligible) {
       await emitBrevoEvent(parcours.id, BREVO_EVENTS.SIMULATION_NON_ELIGIBLE);
     } else if (isNewAccount && simulationConnue) {
-      // A_AMO=false explicite : connu à la création (pas d'AMO), et posé ici plutôt
-      // qu'en base pour ne pas écraser un A_AMO=true ultérieur (amo_reponse).
+      // A_AMO lu de l'état réel : une AMO a pu valider avant le claim (dossier créé par
+      // un agent), et le forcer à false contredisait l'évènement `amo_reponse` déjà parti.
       // CREE_PAR_CONSEILLER : `claimedAt` n'est posé que par `claimStub` (rattachement d'un
       // stub pré-créé par un conseiller) — jamais sur une inscription autonome.
       // CONSEILLER_* : AMO ou Aller-vers déjà rattaché, pour personnaliser le mail de
@@ -302,7 +303,7 @@ export async function handleFranceConnectCallback(
       const conseillerAttributes = await buildConseillerAttributes(parcours.id);
       await emitBrevoEvent(parcours.id, BREVO_EVENTS.DEMANDEUR_CREE, {
         attributes: {
-          [BREVO_ATTRS.A_AMO]: false,
+          [BREVO_ATTRS.A_AMO]: await aUneAmoValidee(parcours.id),
           [BREVO_ATTRS.CREE_PAR_CONSEILLER]: user.claimedAt !== null,
           ...conseillerAttributes,
         },

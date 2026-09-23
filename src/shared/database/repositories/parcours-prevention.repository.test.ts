@@ -3,6 +3,7 @@ import { ParcoursPreventionRepository, matchesTerritoire } from "./parcours-prev
 import { Step, Status } from "@/features/parcours/core";
 import type { RGASimulationData } from "@/shared/domain/types";
 import type { ParcoursPrevention } from "../schema/parcours-prevention";
+import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
 // Mock minimal du client db : `db.select()...limit(n)` retourne `[]` par défaut
 // (aucune validation AMO existante, donc validateInvitation suit la branche
@@ -19,10 +20,16 @@ const dbInsertChain = {
   onConflictDoNothing: vi.fn(() => dbInsertChain),
   returning: vi.fn(async () => [] as unknown[]),
 };
+const dbUpdateChain = {
+  set: vi.fn(() => dbUpdateChain),
+  where: vi.fn(() => dbUpdateChain),
+  returning: vi.fn(async () => [] as unknown[]),
+};
 vi.mock("../client", () => ({
   db: {
     select: vi.fn(() => dbSelectChain),
     insert: vi.fn(() => dbInsertChain),
+    update: vi.fn(() => dbUpdateChain),
   },
 }));
 
@@ -132,32 +139,33 @@ describe("matchesTerritoire", () => {
   });
 });
 
+const BASE_PARCOURS: ParcoursPrevention = {
+  id: "parcours-1",
+  userId: "user-1",
+  currentStep: Step.INVITATION,
+  currentStatus: Status.TODO,
+  situationParticulier: "prospect" as never,
+  rgaSimulationData: null,
+  rgaSimulationCompletedAt: null,
+  rgaDataDeletedAt: null,
+  rgaDataDeletionReason: null,
+  rgaSimulationDataAgent: null,
+  rgaSimulationDataAgentBaseline: null,
+  rgaSimulationAgentEditedAt: null,
+  rgaSimulationAgentEditedBy: null,
+  archivedAt: null,
+  archiveReason: null,
+  archivedBy: null,
+  createdByAgentId: "agent-1",
+  vulnerabiliteSimulationId: null,
+  completedAt: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
 describe("ParcoursPreventionRepository — invitation", () => {
   let repo: ParcoursPreventionRepository;
-
-  const baseParcours: ParcoursPrevention = {
-    id: "parcours-1",
-    userId: "user-1",
-    currentStep: Step.INVITATION,
-    currentStatus: Status.TODO,
-    situationParticulier: "prospect" as never,
-    rgaSimulationData: null,
-    rgaSimulationCompletedAt: null,
-    rgaDataDeletedAt: null,
-    rgaDataDeletionReason: null,
-    rgaSimulationDataAgent: null,
-    rgaSimulationDataAgentBaseline: null,
-    rgaSimulationAgentEditedAt: null,
-    rgaSimulationAgentEditedBy: null,
-    archivedAt: null,
-    archiveReason: null,
-    archivedBy: null,
-    createdByAgentId: "agent-1",
-    vulnerabiliteSimulationId: null,
-    completedAt: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  const baseParcours = BASE_PARCOURS;
 
   beforeEach(() => {
     repo = new ParcoursPreventionRepository();
@@ -259,4 +267,100 @@ describe("ParcoursPreventionRepository — invitation", () => {
       expect(updateStep).toHaveBeenCalledWith("parcours-1", Step.ELIGIBILITE, Status.TODO);
     });
   });
+});
+
+describe("ParcoursPreventionRepository — advanceToEligibiliteFromChoixAmo", () => {
+  let repo: ParcoursPreventionRepository;
+
+  beforeEach(() => {
+    repo = new ParcoursPreventionRepository();
+    dbUpdateChain.set.mockClear();
+    dbUpdateChain.where.mockClear();
+    dbUpdateChain.returning.mockReset();
+    dbUpdateChain.returning.mockResolvedValue([] as unknown[]);
+  });
+
+  it("ouvre l'étape éligibilité et signale que le parcours a bougé", async () => {
+    dbUpdateChain.returning.mockResolvedValueOnce([{ id: "parcours-1" }]);
+
+    await expect(repo.advanceToEligibiliteFromChoixAmo("parcours-1")).resolves.toBe(true);
+    expect(dbUpdateChain.set).toHaveBeenCalledWith({ currentStep: Step.ELIGIBILITE, currentStatus: Status.TODO });
+  });
+
+  it("est un no-op quand le parcours n'est plus à CHOIX_AMO (aucune ligne touchée)", async () => {
+    await expect(repo.advanceToEligibiliteFromChoixAmo("parcours-1")).resolves.toBe(false);
+  });
+});
+
+// L'étape invitation tient jusqu'au claim : c'est elle qui conditionne la promotion de la
+// simulation de l'agent. Le routage doit donc couvrir les cinq états de validation.
+describe("validateInvitation — routage au claim selon la validation", () => {
+  let repo: ParcoursPreventionRepository;
+  const enInvitation: ParcoursPrevention = {
+    ...BASE_PARCOURS,
+    currentStep: Step.INVITATION,
+  };
+
+  beforeEach(() => {
+    repo = new ParcoursPreventionRepository();
+    dbSelectChain.limit.mockReset();
+    dbSelectChain.limit.mockResolvedValue([]);
+  });
+
+  /** Prépare la validation lue par `validateInvitation` et espionne la transition. */
+  function prepare(statut: StatutValidationAmo | null) {
+    vi.spyOn(repo, "findById").mockResolvedValue(enInvitation);
+    dbSelectChain.limit.mockResolvedValueOnce(statut === null ? [] : [{ statut }]);
+    return vi.spyOn(repo, "updateStep").mockResolvedValue(enInvitation);
+  }
+
+  it("sans validation : route vers choix AMO / à faire", async () => {
+    const updateStep = prepare(null);
+
+    await repo.validateInvitation("parcours-1");
+
+    expect(updateStep).toHaveBeenCalledWith("parcours-1", Step.CHOIX_AMO, Status.TODO);
+  });
+
+  it("validation en attente : route vers choix AMO / en instruction", async () => {
+    const updateStep = prepare(StatutValidationAmo.EN_ATTENTE);
+
+    await repo.validateInvitation("parcours-1");
+
+    expect(updateStep).toHaveBeenCalledWith("parcours-1", Step.CHOIX_AMO, Status.EN_INSTRUCTION);
+  });
+
+  it("validation « sans AMO » : route vers éligibilité / à faire", async () => {
+    const updateStep = prepare(StatutValidationAmo.SANS_AMO);
+
+    await repo.validateInvitation("parcours-1");
+
+    expect(updateStep).toHaveBeenCalledWith("parcours-1", Step.ELIGIBILITE, Status.TODO);
+  });
+
+  it.each([StatutValidationAmo.LOGEMENT_NON_ELIGIBLE, StatutValidationAmo.ACCOMPAGNEMENT_REFUSE])(
+    "refus (%s) : conserve le blocage, sans ouvrir l'étape éligibilité",
+    async (statut) => {
+      const updateStep = prepare(statut);
+
+      await repo.validateInvitation("parcours-1");
+
+      expect(updateStep).toHaveBeenCalledWith("parcours-1", Step.CHOIX_AMO, Status.TODO);
+    }
+  );
+
+  it("ne touche à rien si le parcours a déjà quitté l'étape invitation", async () => {
+    vi.spyOn(repo, "findById").mockResolvedValue({ ...BASE_PARCOURS, currentStep: Step.ELIGIBILITE });
+    const updateStep = vi.spyOn(repo, "updateStep");
+
+    await repo.validateInvitation("parcours-1");
+
+    expect(updateStep).not.toHaveBeenCalled();
+  });
+});
+
+// La promotion de la simulation de l'agent est conditionnée à l'étape invitation, que
+// `approveValidation` ne quitte plus. Le prouver demande de rejouer le callback complet.
+describe("promotion de la simulation de l'agent au claim", () => {
+  it.todo("promeut la simulation de l'agent même si l'AMO a validé avant le claim (intégration)");
 });

@@ -125,6 +125,11 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 **checklist de tests manuels UI / E2E** que l'utilisateur déroulera pour valider la
 branche.
 
+> **Livrer la checklist dans la réponse, jamais dans un fichier commité.** Elle est
+> destinée à être collée dans Notion et se périme avec la branche : la versionner dans
+> `docs/` encombre le dépôt sans servir personne. Ne pas créer de `docs/qa/`, ne pas
+> l'ajouter à un commit — l'écrire directement dans le message de fin de lot.
+
 #### Structure : un bloc autonome par parcours
 
 Chaque parcours testé est un bloc qu'on peut dérouler seul, sans lire les autres (pour se

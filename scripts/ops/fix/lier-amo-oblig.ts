@@ -39,16 +39,19 @@
  */
 
 import "../lib/env";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db, rawClient } from "@/shared/database/client";
 import { parcoursPrevention, parcoursAmoValidations, users } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import { assignAmoAutomatiqueForUser } from "@/features/parcours/amo/services/amo-selection.service";
-import { getAmoMode, isAmoAttributionAutomatique } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import { estAmoObligatoire } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import { getArg, hasFlag } from "../lib/args";
+
+/** Étapes où une AMO peut encore être attribuée : `invitation` = compte non réclamé. */
+const ETAPES_RATTRAPABLES: readonly Step[] = [Step.CHOIX_AMO, Step.INVITATION];
 
 const APPLY = hasFlag("apply");
 const PARCOURS_ID = getArg("parcours-id");
@@ -64,20 +67,20 @@ interface Candidate {
   nom: string | null;
   email: string | null;
   codeDepartement: string | null;
-  mode: string | null;
+  amoObligatoire: boolean;
 }
 
 /**
- * Résout le département d'un parcours (user-first, fallback agent) et le mode AMO.
+ * Résout le département d'un parcours (user-first, fallback agent) et ses règles AMO.
  */
 function resolveDept(parcours: typeof parcoursPrevention.$inferSelect): {
   codeDepartement: string | null;
-  mode: string | null;
+  amoObligatoire: boolean;
 } {
   const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
-  if (!codeInsee) return { codeDepartement: null, mode: null };
+  if (!codeInsee) return { codeDepartement: null, amoObligatoire: false };
   const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
-  return { codeDepartement, mode: getAmoMode(codeDepartement) };
+  return { codeDepartement, amoObligatoire: estAmoObligatoire(codeDepartement) };
 }
 
 /**
@@ -109,13 +112,13 @@ async function runTargeted(parcoursId: string) {
     .from(parcoursAmoValidations)
     .where(eq(parcoursAmoValidations.parcoursId, parcoursId))
     .limit(1);
-  const { codeDepartement, mode } = resolveDept(parcours);
+  const { codeDepartement, amoObligatoire } = resolveDept(parcours);
 
   console.log(`Parcours    : ${parcoursId}`);
   console.log(`Demandeur   : ${user?.prenom ?? ""} ${user?.nom ?? ""} <${user?.email ?? "?"}>`);
   console.log(`Étape       : ${parcours.currentStep} / ${parcours.currentStatus}`);
   console.log(`Situation   : ${parcours.situationParticulier}`);
-  console.log(`Département  : ${codeDepartement ?? "?"} (mode AMO : ${mode ?? "?"})`);
+  console.log(`Département  : ${codeDepartement ?? "?"} (AMO obligatoire : ${amoObligatoire ? "oui" : "non"})`);
   console.log(
     `Validation  : ${validation ? `${validation.statut} (${validation.attributionMode})` : "<aucune ligne>"}`
   );
@@ -126,16 +129,14 @@ async function runTargeted(parcoursId: string) {
     console.error("ABANDON : une validation AMO existe déjà. Rien à faire (le service serait no-op).");
     process.exit(1);
   }
-  if (!codeDepartement || !isAmoAttributionAutomatique(codeDepartement)) {
-    console.error(
-      `ABANDON : département ${codeDepartement ?? "?"} non en attribution automatique (mode ${mode ?? "?"}).`
-    );
+  if (!codeDepartement || !amoObligatoire) {
+    console.error(`ABANDON : département ${codeDepartement ?? "?"} sans AMO obligatoire.`);
     console.error("En mode facultatif, le ménage doit choisir lui-même son AMO — pas de rattrapage automatique.");
     process.exit(1);
   }
-  if (parcours.currentStep !== Step.CHOIX_AMO) {
+  if (!ETAPES_RATTRAPABLES.includes(parcours.currentStep)) {
     console.error(
-      `ABANDON : étape ${parcours.currentStep} ≠ choix_amo. L'auto-attribution ne s'applique qu'à choix_amo.`
+      `ABANDON : étape ${parcours.currentStep}. L'auto-attribution ne s'applique qu'à ${ETAPES_RATTRAPABLES.join(" ou ")}.`
     );
     process.exit(1);
   }
@@ -158,14 +159,15 @@ async function runTargeted(parcoursId: string) {
     nom: user?.nom ?? null,
     email: user?.email ?? null,
     codeDepartement,
-    mode,
+    amoObligatoire,
   });
   if (!ok) process.exit(1);
 }
 
 async function runInventory() {
-  // Dossiers validés par un Aller-vers (situation = eligible), encore en choix_amo,
-  // sans validation AMO, ni archivés ni complétés.
+  // Dossiers validés par un Aller-vers (situation = eligible), encore en attente d'AMO,
+  // sans validation AMO, ni archivés ni complétés. `invitation` incluse : le compte n'a
+  // pas encore été réclamé, ce sont justement les dossiers restés chez l'Aller-vers.
   const rows = await db
     .select({
       parcours: parcoursPrevention,
@@ -178,7 +180,7 @@ async function runInventory() {
     .leftJoin(parcoursAmoValidations, eq(parcoursAmoValidations.parcoursId, parcoursPrevention.id))
     .where(
       and(
-        eq(parcoursPrevention.currentStep, Step.CHOIX_AMO),
+        inArray(parcoursPrevention.currentStep, ETAPES_RATTRAPABLES),
         eq(parcoursPrevention.situationParticulier, SituationParticulier.ELIGIBLE),
         isNull(parcoursAmoValidations.id),
         isNull(parcoursPrevention.archivedAt),
@@ -189,8 +191,8 @@ async function runInventory() {
   // Filtre département en attribution automatique (dépend de la config env + jsonb → côté JS).
   const candidates: Candidate[] = [];
   for (const row of rows) {
-    const { codeDepartement, mode } = resolveDept(row.parcours);
-    if (codeDepartement && isAmoAttributionAutomatique(codeDepartement)) {
+    const { codeDepartement, amoObligatoire } = resolveDept(row.parcours);
+    if (codeDepartement && amoObligatoire) {
       candidates.push({
         parcoursId: row.parcours.id,
         userId: row.parcours.userId,
@@ -198,19 +200,17 @@ async function runInventory() {
         nom: row.nom,
         email: row.email,
         codeDepartement,
-        mode,
+        amoObligatoire,
       });
     }
   }
 
   console.log(
-    `Dossiers bloqués éligibles au rattrapage : ${candidates.length} (sur ${rows.length} sans validation en choix_amo/eligible)`
+    `Dossiers bloqués éligibles au rattrapage : ${candidates.length} (sur ${rows.length} sans validation, en invitation ou choix_amo)`
   );
   console.log();
   for (const c of candidates) {
-    console.log(
-      `  ${c.parcoursId}  dept ${c.codeDepartement} (${c.mode})  ${c.prenom ?? ""} ${c.nom ?? ""} <${c.email ?? "?"}>`
-    );
+    console.log(`  ${c.parcoursId}  dept ${c.codeDepartement}  ${c.prenom ?? ""} ${c.nom ?? ""} <${c.email ?? "?"}>`);
   }
   console.log();
 

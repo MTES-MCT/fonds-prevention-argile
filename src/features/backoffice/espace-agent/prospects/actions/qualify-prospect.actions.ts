@@ -6,11 +6,13 @@ import { getCurrentUser } from "@/features/auth/services/user.service";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import { UserRole } from "@/shared/domain/value-objects";
+import { ACCOMPAGNEMENT_SOUHAITE_VALUES } from "@/shared/domain/value-objects/accompagnement-souhaite.enum";
 import { QualificationDecision } from "../domain/types";
-import { qualificationService } from "../services/qualification.service";
+import { qualificationService, type QualifyProspectResult } from "../services/qualification.service";
 import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/actions/super-admin-access";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import { assertCanActAsResponsable } from "@/features/auth/permissions/services/responsable-permissions.service";
+import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
 import type { ActionResult } from "@/shared/types";
 
@@ -27,6 +29,7 @@ const qualifyProspectSchema = z
     actionsRealisees: z.array(z.string()).optional(),
     raisonsIneligibilite: z.array(z.string()).optional(),
     estMandataireFinancier: z.boolean().optional(),
+    accompagnementSouhaite: z.enum(ACCOMPAGNEMENT_SOUHAITE_VALUES).optional(),
     note: z.string().optional(),
   })
   .refine(
@@ -44,6 +47,30 @@ const qualifyProspectSchema = z
 
 type QualifyProspectInput = z.infer<typeof qualifyProspectSchema>;
 
+/** Rôles portant la casquette AMO : eux seuls peuvent valider au nom de leur entreprise. */
+const ROLES_CAPACITE_AMO: readonly UserRole[] = [UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS];
+
+/**
+ * Où emmener l'agent après sa qualification, selon ce qu'il conserve comme accès.
+ *
+ *  - une validation existe désormais (sa structure accompagne, ou le demandeur poursuit
+ *    seul) → le dossier, car le parcours a cessé d'être un prospect ;
+ *  - il a passé la main à une AMO → le listing, car l'écran de décision ne lui est pas
+ *    ouvert (un Aller-vers pur y récoltait un 404) ;
+ *  - rien n'a été écrit → il reste sur place.
+ */
+async function resoudreRetour(parcoursId: string, resultat: QualifyProspectResult): Promise<string | null> {
+  switch (resultat.suiteAccompagnement?.issue) {
+    case "validee_par_la_structure":
+    case "autonomie":
+      return resolveEspaceAgentPath(parcoursId);
+    case "transmise":
+      return "/espace-agent/dossiers";
+    default:
+      return null;
+  }
+}
+
 // --- Actions ---
 
 /**
@@ -51,7 +78,9 @@ type QualifyProspectInput = z.infer<typeof qualifyProspectSchema>;
  *
  * Vérifie que l'agent connecté est un agent Allers-Vers.
  */
-export async function qualifyProspectAction(input: QualifyProspectInput): Promise<ActionResult<ProspectQualification>> {
+export async function qualifyProspectAction(
+  input: QualifyProspectInput
+): Promise<ActionResult<QualifyProspectResult & { redirectTo: string | null }>> {
   try {
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
@@ -86,7 +115,15 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
       return { success: false, error: messageMetier ?? "Données invalides" };
     }
 
-    const { parcoursId, decision, actionsRealisees, raisonsIneligibilite, estMandataireFinancier, note } = parsed.data;
+    const {
+      parcoursId,
+      decision,
+      actionsRealisees,
+      raisonsIneligibilite,
+      estMandataireFinancier,
+      accompagnementSouhaite,
+      note,
+    } = parsed.data;
 
     // 5. Garde responsable : seul le responsable courant peut qualifier
     const guard = await assertCanActAsResponsable(parcoursId, {
@@ -96,20 +133,27 @@ export async function qualifyProspectAction(input: QualifyProspectInput): Promis
     if (!guard.ok) return { success: false, error: guard.error };
 
     // 6. Logique métier
-    const qualification = await qualificationService.qualifyProspect({
+    const resultat = await qualificationService.qualifyProspect({
       parcoursId,
       agentId: user.agentId,
       decision,
       actionsRealisees,
       raisonsIneligibilite,
       estMandataireFinancier,
+      accompagnementSouhaite,
       note,
+      // La capacité AMO vient du rôle, pas de la seule présence d'une entreprise en base :
+      // sans elle, un agent Aller-vers pur validerait au nom d'une AMO.
+      contexteAgent: {
+        entrepriseAmoId: user.entrepriseAmoId ?? null,
+        aLaCapaciteAmo: ROLES_CAPACITE_AMO.includes(role),
+      },
     });
 
     // 7. Invalidation du cache
     revalidatePath("/espace-agent", "layout");
 
-    return { success: true, data: qualification };
+    return { success: true, data: { ...resultat, redirectTo: await resoudreRetour(parcoursId, resultat) } };
   } catch (error) {
     console.error("[qualifyProspectAction] Erreur:", error);
     return { success: false, error: "Erreur lors de la qualification du prospect" };
