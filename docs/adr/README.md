@@ -66,5 +66,6 @@ purement cosmétique.
 | 0036 | [Une simulation par compte, modifiable et arbitrée](0036-simulation-unique-par-compte.md)                                               | Accepté |
 | 0037 | [Pas d'autonomie là où l'AMO est obligatoire](0037-pas-d-autonomie-en-amo-obligatoire.md)                                               | Accepté |
 | 0038 | [La qualification de l'Aller-vers décide de l'accompagnement](0038-qualification-aller-vers-pivot-accompagnement.md)                    | Accepté |
+| 0039 | [Classer les pièces justificatives d'après leur libellé DN](0039-classement-pieces-justificatives-par-libelle.md)                       | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->
