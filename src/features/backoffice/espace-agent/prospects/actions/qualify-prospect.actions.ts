@@ -53,14 +53,16 @@ const ROLES_CAPACITE_AMO: readonly UserRole[] = [UserRole.AMO, UserRole.AMO_ET_A
 /**
  * Où emmener l'agent après sa qualification, selon ce qu'il conserve comme accès.
  *
- *  - sa structure prend l'accompagnement → le dossier, qu'il suit désormais ;
+ *  - une validation existe désormais (sa structure accompagne, ou le demandeur poursuit
+ *    seul) → le dossier, car le parcours a cessé d'être un prospect ;
  *  - il a passé la main à une AMO → le listing, car l'écran de décision ne lui est pas
  *    ouvert (un Aller-vers pur y récoltait un 404) ;
- *  - rien n'a changé pour lui → il reste sur place.
+ *  - rien n'a été écrit → il reste sur place.
  */
 async function resoudreRetour(parcoursId: string, resultat: QualifyProspectResult): Promise<string | null> {
   switch (resultat.suiteAccompagnement?.issue) {
     case "validee_par_la_structure":
+    case "autonomie":
       return resolveEspaceAgentPath(parcoursId);
     case "transmise":
       return "/espace-agent/dossiers";

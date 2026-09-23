@@ -194,16 +194,21 @@ describe("qualifyProspectAction", () => {
       return result.success ? result.data.redirectTo : "<echec>";
     }
 
-    it("emmène sur le dossier quand la structure prend l'accompagnement", async () => {
-      await expect(redirectionPour("validee_par_la_structure")).resolves.toBe("/espace-agent/dossiers/validation-1");
-    });
+    // Les deux issues qui écrivent une validation : le parcours cesse d'être un prospect,
+    // son URL aussi — l'agent restait sinon sur la fiche prospect (retour de recette).
+    it.each(["validee_par_la_structure", "autonomie"])(
+      "emmène sur le dossier dès qu'une validation existe (%s)",
+      async (issue) => {
+        await expect(redirectionPour(issue)).resolves.toBe("/espace-agent/dossiers/validation-1");
+      }
+    );
 
     it("renvoie au listing après transmission : l'écran de décision est celui de l'AMO", async () => {
       // Un Aller-vers pur n'a pas accès au détail d'une demande — l'y envoyer donnait un 404.
       await expect(redirectionPour("transmise")).resolves.toBe("/espace-agent/dossiers");
     });
 
-    it.each(["autonomie", "laissee_au_demandeur", "echec", null])(
+    it.each(["laissee_au_demandeur", "echec", null])(
       "laisse l'agent sur place quand son accès est inchangé (%s)",
       async (issue) => {
         await expect(redirectionPour(issue)).resolves.toBeNull();
