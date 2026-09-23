@@ -4,7 +4,7 @@ import { Step } from "@/shared/domain/value-objects/step.enum";
 import { graphqlClient } from "../adapters/graphql/client";
 import type { ChampDescriptor } from "../adapters/graphql/types";
 import {
-  findAideForLabel,
+  classerPiece,
   PIECES_FALLBACK,
   type PieceJustificative,
   type PiecesByStep,
@@ -81,13 +81,16 @@ function toPieceJustificative(champ: ChampDescriptor, demarcheNumber: number): P
     champ.fileTemplate?.url && champ.fileTemplate.filename
       ? { filename: champ.fileTemplate.filename, url: buildModeleProxyUrl(demarcheNumber, champ.id) }
       : undefined;
+  const { categorie, condition, aide } = classerPiece(champ.label);
   return {
     id: champ.id,
     label: champ.label,
     description: champ.description || undefined,
     required: champ.required,
     modele,
-    aide: findAideForLabel(champ.label),
+    aide,
+    categorie,
+    condition,
   };
 }
 
@@ -117,10 +120,9 @@ export async function getFreshModeleUrl(demarcheNumber: number, champId: string)
   return piece?.fileTemplate?.url ?? null;
 }
 
-// `v2` : invalide les entrées cachées avant le passage aux URLs proxy (elles
-// contenaient l'URL temporaire DN directe → 403 « Unauthorized temp url invalide »).
+// `v3` : les entrées `v2` n'ont ni catégorie ni condition (v2 avait invalidé les URLs DN directes, 403).
 const getCachedPieces = (demarcheNumber: number) =>
-  unstable_cache(() => fetchPiecesFromDN(demarcheNumber), ["ds-pieces", "v2", String(demarcheNumber)], {
+  unstable_cache(() => fetchPiecesFromDN(demarcheNumber), ["ds-pieces", "v3", String(demarcheNumber)], {
     revalidate: REVALIDATE_SECONDS,
     tags: [CACHE_TAG],
   })();
