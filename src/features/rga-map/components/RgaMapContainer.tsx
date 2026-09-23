@@ -17,10 +17,12 @@ export function RgaMapContainer({
   showLegend = true,
   variant = "default",
   onBuildingSelect,
+  onCarteIndisponible,
   ...mapProps
 }: RgaMapContainerProps) {
   const [, setBuildingData] = useState<BuildingData | null>(null);
   const [, setIsLoading] = useState(false);
+  const [carteIndisponible, setCarteIndisponible] = useState(false);
 
   const handleBuildingSelect = useCallback(
     (data: BuildingData | null) => {
@@ -28,6 +30,11 @@ export function RgaMapContainer({
     },
     [onBuildingSelect]
   );
+
+  const handleCarteIndisponible = useCallback(() => {
+    setCarteIndisponible(true);
+    onCarteIndisponible?.();
+  }, [onCarteIndisponible]);
 
   const containerStyle =
     variant === "default"
@@ -39,10 +46,12 @@ export function RgaMapContainer({
       <RgaMap
         {...mapProps}
         onBuildingSelect={handleBuildingSelect}
+        onCarteIndisponible={handleCarteIndisponible}
         onBuildingDataChange={setBuildingData}
         onLoadingChange={setIsLoading}
       />
-      {showLegend && (
+      {/* Une légende sans carte n'explique plus rien. */}
+      {showLegend && !carteIndisponible && (
         <div
           className="px-4 pb-4"
           style={{

@@ -62,6 +62,12 @@ export interface RgaMapProps {
   onEmptyClick?: () => void;
 
   /**
+   * Callback appelé quand la carte ne peut pas s'afficher du tout dans ce navigateur
+   * (WebGL2 absent). Permet à l'appelant de proposer immédiatement une saisie manuelle.
+   */
+  onCarteIndisponible?: () => void;
+
+  /**
    * Hauteur de la carte
    * @default "500px"
    */

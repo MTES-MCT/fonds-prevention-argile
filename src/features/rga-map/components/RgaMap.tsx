@@ -31,13 +31,14 @@ export function RgaMap({
   onBuildingSelect,
   onError,
   onEmptyClick,
+  onCarteIndisponible,
   onBuildingDataChange,
   onLoadingChange,
   height = "500px",
   className = "",
   padding = "0.8rem",
 }: RgaMapInternalProps) {
-  const { mapRef, map, isReady } = useRgaMap({
+  const { mapRef, map, isReady, webglIndisponible } = useRgaMap({
     center,
     zoom,
   });
@@ -80,6 +81,10 @@ export function RgaMap({
     zoom,
   });
 
+  useEffect(() => {
+    if (webglIndisponible) onCarteIndisponible?.();
+  }, [webglIndisponible, onCarteIndisponible]);
+
   // Remonter les données au parent
   useEffect(() => {
     onBuildingDataChange?.(buildingData);
@@ -104,6 +109,20 @@ export function RgaMap({
     : showMapLoadingOverlay
       ? "Chargement de la carte..."
       : null;
+
+  if (webglIndisponible) {
+    return (
+      <div style={{ padding }}>
+        <div className="fr-alert fr-alert--warning fr-alert--sm" role="alert">
+          <p>
+            La carte ne peut pas s&apos;afficher dans ce navigateur : il n&apos;a pas accès à l&apos;accélération
+            graphique (WebGL 2). Renseignez les informations de votre logement vous-même, ou reprenez la démarche depuis
+            un autre navigateur.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding, position: "relative" }}>

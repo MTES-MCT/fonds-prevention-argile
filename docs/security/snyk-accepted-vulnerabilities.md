@@ -348,6 +348,8 @@ le **chunk bundlé** dans `/_next/static/chunks/`, où ce fichier n'existe pas :
 404 en HTML et le navigateur rejette le module (« non-JavaScript MIME type "text/html" »). La
 carte s'instancie — les contrôles +/− s'affichent — mais **aucune tuile n'arrive**.
 
+> **Seconde panne du même major, trouvée en production (septembre 2026).** La v6 a aussi changé sa réaction à l'absence de **WebGL2** : au lieu de lever depuis `new Map()`, elle construit une carte sans `painter`, et c'est `remove()` qui casse — page blanche « Application error » sur les navigateurs sans accélération graphique (Firefox à GPU sur liste noire). Corrigé par une détection en amont et un `remove()` enveloppé, cf. le gotcha maplibre de `CLAUDE.md`. Là encore, `pnpm validate` et le build étaient verts.
+
 > **Aucun garde-fou automatique n'attrape cette panne** : typecheck, 2113 tests et build prod
 > passent tous au vert avec une carte morte. Seul un rendu réel la révèle. Toute évolution de
 > maplibre doit être validée en ouvrant la carte, pas seulement avec `pnpm validate`.
