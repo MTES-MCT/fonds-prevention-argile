@@ -14,6 +14,7 @@
       "Bash(pnpm db:generate)",
       "Bash(pnpm why:*)"
     ],
+    "ask": ["Bash(git push:*)"],
     "deny": [
       "Bash(git commit --no-verify:*)",
       "Bash(git commit *--no-verify*)",
@@ -21,7 +22,6 @@
       "Bash(git commit * -n)",
       "Bash(git commit * -n *)",
       "Bash(git -c core.hooksPath=*)",
-      "Bash(git push:*)",
       "Edit(.claude/settings.json)",
       "Edit(.claude/settings.local.json)",
       "Edit(.claude/hooks/**)",

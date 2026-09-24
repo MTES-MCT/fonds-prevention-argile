@@ -293,10 +293,12 @@ si elle ne devrait pas être découpée avant de raccourcir le texte.
 Une fois la branche prête et validée (`pnpm validate` vert), **ne pas merger directement**.
 Le cycle de revue est le suivant :
 
-1. **Claude demande à l'utilisateur de créer la PR** (Claude ne push pas et ne crée pas la
-   PR — cf. règle « Ne jamais `git push` »). Claude peut préparer un titre et un corps de PR.
-2. **L'utilisateur crée la PR et attend le retour de Copilot** (revue automatique
-   « Overview » + commentaires de Copilot sur la PR).
+1. **La PR n'est créée que sur demande explicite de l'utilisateur** (commande « Create
+   PR », ou demande en toutes lettres) : Claude pousse alors la branche — confirmation
+   demandée par la règle `ask` — et ouvre la PR avec `gh pr create`. Sans cette demande,
+   Claude prépare le titre et le corps, puis rend la main.
+2. **L'utilisateur attend le retour de Copilot** (revue automatique « Overview » +
+   commentaires de Copilot sur la PR).
 3. **L'utilisateur donne le go** à Claude une fois le retour Copilot disponible.
 4. **Claude récupère les commentaires Copilot et filtre les périmés** (cf. « Détecter les
    retours périmés » ci-dessous) : on ne traite que les fils **encore vivants**
@@ -321,8 +323,9 @@ Le cycle de revue est le suivant :
    vivants en une passe → push. Éviter le ping-pong 1 commentaire/commit.
 8. On ne merge qu'une fois ce tour terminé.
 
-> Claude n'attend jamais Copilot de lui-même : il **rend la main à l'utilisateur** pour la
-> création de PR, le push et l'attente de la revue, puis reprend sur le **go** explicite.
+> Claude n'attend jamais Copilot de lui-même : il **rend la main à l'utilisateur** pour
+> l'attente de la revue — et, faute de demande explicite, pour la création de PR et le
+> push —, puis reprend sur le **go** explicite.
 > Rappel : Copilot ne fait que **commenter**, il n'`APPROVE` jamais — une règle « 1 approving
 > review » exige donc une **approbation humaine**, indépendante de Copilot.
 
@@ -404,8 +407,10 @@ Règles :
   sans attendre de demande explicite (un commit par changement cohérent : ex. schéma +
   migration, feature back, feature front, doc + bump de version). Préférer plusieurs
   petits commits ciblés à un gros commit fourre-tout.
-- **Ne jamais `git push`** (ni `push --force`, ni création de PR distante) : les push
-  sont gérés exclusivement par l'utilisateur. Se limiter au commit local.
+- **Ne jamais `git push` de sa propre initiative.** Pousser uniquement sur demande
+  explicite de l'utilisateur (par exemple la commande « Create PR »), et **jamais en
+  `--force`**. Le push reste soumis à confirmation par la règle `ask` de
+  `.claude/settings.json`, y compris en mode auto. Sans demande, se limiter au commit local.
 
 ## Compaction du contexte
 
