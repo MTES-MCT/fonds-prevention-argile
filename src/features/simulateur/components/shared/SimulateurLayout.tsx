@@ -1,34 +1,32 @@
 "use client";
 
 import { ReactNode } from "react";
-import { ProgressBar } from "./ProgressBar";
+import { LIEN_AIDE_SIMULATEUR } from "@/shared/constants/aide.constants";
 import { useSimulateurContext } from "./SimulateurContext";
+import { BarreCollanteContext } from "./NavigationButtons";
 
 interface SimulateurLayoutProps {
   children: ReactNode;
   title?: string;
   subtitle?: ReactNode;
-  description?: string;
   currentStep: number | null;
   totalSteps: number;
   showProgress?: boolean;
-  /** Titre principal du simulateur (par défaut: "Simulateur d'éligibilité au Fonds Prévention Argile") */
+  /** Titre au-dessus du compteur, réservé aux écrans d'édition (ex : nom du demandeur) */
   formTitle?: string;
-  /** Afficher le lien "Besoin d'aide ?" (par défaut: true) */
+  /** Afficher le lien "Besoin d'aide ?" (par défaut : non, le header du tunnel le porte) */
   showHelpLink?: boolean;
 }
 
-const DEFAULT_FORM_TITLE = "Simulateur d\u2019\u00e9ligibilit\u00e9 au Fonds Pr\u00e9vention Argile";
-
 /**
- * Layout commun pour toutes les étapes du simulateur.
+ * Layout commun des étapes : compteur et question en tête, boutons collés au bas de l'écran
+ * quand ils en sortiraient.
  * Les props formTitle/showHelpLink peuvent être fournies directement ou via SimulateurProvider (contexte).
  */
 export function SimulateurLayout({
   children,
   title,
   subtitle,
-  description,
   currentStep,
   totalSteps,
   showProgress = true,
@@ -37,12 +35,10 @@ export function SimulateurLayout({
 }: SimulateurLayoutProps) {
   const context = useSimulateurContext();
 
-  // Les props directes ont la priorité sur le contexte
-  const formTitle = formTitleProp ?? context.formTitle ?? DEFAULT_FORM_TITLE;
-  const showHelpLink = showHelpLinkProp ?? context.showHelpLink ?? true;
+  const formTitle = formTitleProp ?? context.formTitle;
+  const showHelpLink = showHelpLinkProp ?? context.showHelpLink ?? false;
 
-  const hasSubContent = subtitle || description;
-  const titleMargin = hasSubContent ? "fr-mb-1v" : "fr-mb-4w";
+  const titleMargin = subtitle ? "fr-mb-1v" : "fr-mb-4w";
 
   // Mode embarqué : le parent (ex: wizard invitation AMO AV) fournit son propre layout.
   // On rend uniquement le contenu de l'étape sans wrapping externe.
@@ -56,30 +52,36 @@ export function SimulateurLayout({
     );
   }
 
+  // Un seul h1 par page : les écrans d'édition portent déjà le leur.
+  const TitreQuestion = formTitle ? "h2" : "h1";
+
   return (
-    <div className="bg-[var(--background-alt-grey)] md:bg-transparent">
-      <div className="fr-container fr-mb-8w">
-        <div className="fr-grid-row fr-grid-row--center">
-          <div className="fr-col-12 fr-col-md-8 fr-col-lg-8 md:bg-[var(--background-alt-grey)] p-0 md:p-10">
-            {showHelpLink && (
-              <div className="flex justify-end fr-mb-2w px-4 pt-4 md:px-0 md:pt-0">
-                <a
-                  id="link-help"
-                  href="mailto:contact@fonds-prevention-argile.fr?subject=Besoin%20d'aide%20pour%20le%20simulateur%20d'éligibilité%20au%20Fonds%20Prévention%20Argile"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="fr-link fr-icon-question-fill fr-link--icon-left">
-                  Besoin d&apos;aide ?
-                </a>
-              </div>
-            )}
-            <div className="px-4 md:px-8 pb-4 md:pb-0 fr-mt-4w md:fr-mt-6w">
-              <h5 className="fr-mb-4w">{formTitle}</h5>
-              {showProgress && <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />}
-              {title && <h4 className={titleMargin}>{title}</h4>}
-              {subtitle && <div className="fr-text--sm fr-mb-2w text-(--text-mention-grey)">{subtitle}</div>}
-              {children}
+    // Sans marge latérale sur mobile : la page fournit déjà son conteneur, la carte grise a son propre retrait.
+    <div className="fr-container max-md:px-0! fr-mb-8w">
+      <div className="fr-grid-row fr-grid-row--center">
+        <div className="fr-col-12 fr-col-md-10 fr-col-lg-8">
+          {showHelpLink && (
+            <div className="flex justify-end fr-mb-2w">
+              <a
+                id="link-help"
+                href={LIEN_AIDE_SIMULATEUR}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fr-link fr-icon-question-fill fr-link--icon-left">
+                Besoin d&apos;aide ?
+              </a>
             </div>
+          )}
+          <div className="bg-(--background-alt-grey) px-4 pt-6 pb-2 md:px-10 md:pt-10 md:pb-6">
+            {formTitle && <p className="fr-h6 fr-mb-2w">{formTitle}</p>}
+            {showProgress && currentStep !== null && (
+              <p className="fr-text--sm fr-mb-1v">
+                Simulation d&apos;éligibilité - {currentStep}/{totalSteps}
+              </p>
+            )}
+            {title && <TitreQuestion className={`fr-h4 ${titleMargin}`}>{title}</TitreQuestion>}
+            {subtitle && <div className="fr-text--sm fr-mb-3w text-(--text-mention-grey)">{subtitle}</div>}
+            <BarreCollanteContext.Provider value={true}>{children}</BarreCollanteContext.Provider>
           </div>
         </div>
       </div>
