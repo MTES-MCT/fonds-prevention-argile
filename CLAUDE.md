@@ -27,6 +27,7 @@ pnpm db:push        # Appliquer le schema Drizzle
 pnpm db:migrate     # Lancer les migrations
 pnpm db:studio      # Drizzle Studio (GUI)
 pnpm db:generate    # Générer les migrations
+pnpm db:restore     # Restaurer un dump dans la base locale (cf. docs/ops/db-local.md)
 ```
 
 ## Stack technique

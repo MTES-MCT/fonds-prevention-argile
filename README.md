@@ -52,6 +52,8 @@ Configurez les variables selon votre environnement. Les principales variables in
 - `BREVO_CONTACT_LIST_ID` : ID de la liste Brevo « cycle de vie » où les contacts sont poussés en flux (inscription, réponse AMO, update DN). **Distinct par environnement** (liste staging vs prod). Optionnel : absent = synchro de contacts désactivée. Voir [docs/emails/BREVO-LIFECYCLE.md](docs/emails/BREVO-LIFECYCLE.md)
 - `NEXT_PUBLIC_LASUITE_MESSAGES_CHANNEL_ID` : Channel du widget « Messages » de La Suite numérique (ANCT), affiché sur le site public (staging et production uniquement). **Distinct par environnement**. Optionnel : absent = widget désactivé. Voir [ADR-0023](docs/adr/0023-remplacement-crisp-par-lasuite-messages.md)
 - `NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE` : ID du funnel Matomo du simulateur de vulnérabilité (distinct de `NEXT_PUBLIC_MATOMO_FUNNEL_ID`, qui est celui du simulateur d'éligibilité). Optionnel : absent = le widget funnel de `/administration/vulnerabilite` affiche « données non disponibles ». Voir [ADR-0031](docs/adr/0031-stats-vulnerabilite-matomo-bdd.md)
+- `SEED_AGENTS_SUPERADMINS`, `SEED_AGENTS_HYBRIDES`, `SEED_STRUCTURES_EMAIL` : identités réelles injectées par `pnpm seed:staging` (local et staging uniquement), pour qu'aucune ne soit écrite dans les fichiers de seed commités. Optionnelles. Voir [scripts/seed/README.md](scripts/seed/README.md)
+- `DB_BACKUP_DIR` : dossier des dumps proposés par `pnpm db:restore`, **hors du dépôt**. Optionnelle. Voir [docs/ops/db-local.md](docs/ops/db-local.md)
 
 ### Configuration AMO par département (arrêté 2026)
 
