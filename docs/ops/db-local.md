@@ -27,25 +27,42 @@ pnpm db:studio       # Drizzle Studio (GUI) — pratique pour piocher un UUID
 
 ## Restaurer un dump dans la base locale
 
-Un dump PostgreSQL (`.tar.gz` contenant un `.pgsql`) se charge dans la base locale avec le
-script dédié :
+Un dump PostgreSQL (`.tar.gz` contenant un `.pgsql`) se charge dans la base locale en une
+commande. Indiquer une fois le dossier de vos dumps dans `.env.local` :
 
-```bash
-./scripts/dev/restore-db.sh mon-dump.tar.gz
+```
+DB_BACKUP_DIR=~/chemin/vers/mes/dumps
 ```
 
-Il extrait l'archive, copie le dump dans le conteneur, déconnecte les clients de la base,
-la recrée vide, restaure, puis nettoie les fichiers temporaires. Options :
+Puis :
 
-| Option         | Effet                                                                                           |
-| -------------- | ----------------------------------------------------------------------------------------------- |
-| `-d <dossier>` | Dossier où chercher le dump (défaut : `$BACKUP_DIR`, sinon `~/fonds-prevention-argile-backups`) |
-| `-k`           | Garde les fichiers temporaires après restauration                                               |
-| `-h`           | Aide                                                                                            |
+```bash
+pnpm db:restore
+```
 
-Le dossier par défaut est **hors du dépôt**, et c'est voulu : le script y décompresse le dump,
-donc une copie en clair de la base. Dans le dépôt, un `git add -A` la publierait, et un agent
-de code pourrait la lire. Le `.gitignore` bloque aussi `/backups/`, `*.pgsql`, `*.dump` et
+Sans argument, la commande liste les dumps du dossier, du plus récent au plus ancien ;
+`Entrée` prend le plus récent. Si [`fzf`](https://github.com/junegunn/fzf) est installé, la
+liste se filtre en tapant quelques lettres. On peut aussi nommer le fichier directement :
+`pnpm db:restore mon-dump.tar.gz`.
+
+Une **confirmation** est demandée avant de toucher à la base, qui est supprimée puis recréée :
+tout autre réponse que `o` abandonne sans rien modifier. Le script extrait ensuite l'archive,
+copie le dump dans le conteneur, déconnecte les clients, recrée la base vide, restaure, puis
+nettoie les fichiers temporaires. Options :
+
+| Option         | Effet                                                            |
+| -------------- | ---------------------------------------------------------------- |
+| `-d <dossier>` | Dossier des dumps, prioritaire sur tout le reste                 |
+| `-k`           | Garde les fichiers temporaires après restauration                |
+| `-y`           | Pas de confirmation : pour un appel scripté, jamais par habitude |
+| `-h`           | Aide, avec le dossier effectivement retenu                       |
+
+Ordre de résolution du dossier : `-d`, puis la variable d'environnement `DB_BACKUP_DIR`, puis
+`DB_BACKUP_DIR` dans `.env.local`, et enfin `~/fonds-prevention-argile-backups`.
+
+Le dossier doit être **hors du dépôt**, et c'est voulu : le script y décompresse le dump, donc
+une copie en clair de la base. Dans le dépôt, un `git add -A` la publierait, et un agent de
+code pourrait la lire. Le `.gitignore` bloque aussi `/backups/`, `*.pgsql`, `*.dump` et
 `*.tar.gz`, en filet de sécurité si un dump y est déposé quand même.
 
 > **Données de développement.** Le développement et les tests se font sur des données

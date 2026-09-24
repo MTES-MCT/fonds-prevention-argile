@@ -29,6 +29,7 @@
     "db:studio": "pnpm drizzle-kit studio",
     "db:generate": "pnpm drizzle-kit generate",
     "db:reset:full": "pnpm db:reset && sleep 5 && pnpm db:push",
+    "db:restore": "bash scripts/dev/restore-db.sh",
     "clean": "rm -rf .next && pnpm start:dev",
     "fresh": "rm -rf .next node_modules pnpm-lock.yaml && pnpm install && pnpm start:dev",
     "prepare": "husky",

@@ -26,10 +26,10 @@ Tous les scripts TypeScript se lancent via **`tsx`** (déjà installé) et respe
 
 ## Commandes pnpm
 
-| Commande                                    | Script                                                                                                 |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `pnpm seed:staging`                         | Orchestrateur seed staging — pipeline complet, voir [`seed/README.md`](./seed/README.md)               |
-| `pnpm rga:import <shapefile>`               | Import des zones RGA (PostGIS, voir [`import/rga-zones/README.md`](./import/rga-zones/README.md))      |
-| `pnpm seo:import-catnat`                    | Import catastrophes naturelles (lié à la feature SEO, dans `src/features/seo/`)                        |
-| `pnpm fix:epci`                             | Correction des EPCI manquants sur certains parcours (`ops/`)                                           |
-| `./scripts/dev/restore-db.sh <dump.tar.gz>` | Charge un dump PostgreSQL dans la base locale (voir [`docs/ops/db-local.md`](../docs/ops/db-local.md)) |
+| Commande                      | Script                                                                                                                        |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm seed:staging`           | Orchestrateur seed staging — pipeline complet, voir [`seed/README.md`](./seed/README.md)                                      |
+| `pnpm rga:import <shapefile>` | Import des zones RGA (PostGIS, voir [`import/rga-zones/README.md`](./import/rga-zones/README.md))                             |
+| `pnpm seo:import-catnat`      | Import catastrophes naturelles (lié à la feature SEO, dans `src/features/seo/`)                                               |
+| `pnpm fix:epci`               | Correction des EPCI manquants sur certains parcours (`ops/`)                                                                  |
+| `pnpm db:restore`             | Charge un dump PostgreSQL dans la base locale, avec choix du fichier (voir [`docs/ops/db-local.md`](../docs/ops/db-local.md)) |
