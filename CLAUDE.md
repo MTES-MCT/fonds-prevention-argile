@@ -98,7 +98,7 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 ## Workflow
 
 - Après implémentation, lancer `pnpm validate` (typecheck + lint + test)
-- Préférer lancer un test ciblé (`pnpm test -- path/to/file.test.ts`) plutôt que toute la suite
+- Préférer lancer un test ciblé (`pnpm test path/to/file.test.ts`) plutôt que toute la suite — **sans `--`** : pnpm le transmet à Vitest, qui ignore alors le filtre et lance les 215 fichiers
 - Lint avant commit : `pnpm format && pnpm lint`
 - Produire du code, pas des plans (sauf si demandé explicitement)
 - À chaque fin de fonctionnalité (groupe de commits / PR), **bumper la version** dans
