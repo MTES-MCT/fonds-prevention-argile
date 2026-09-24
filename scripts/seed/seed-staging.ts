@@ -206,11 +206,13 @@ async function seedSuperAdmins(dryRun: boolean): Promise<void> {
   }
 
   for (const email of emails) {
-    // Le vrai `sub` et l'état civil sont écrits par ProConnect à la première connexion.
+    // Le vrai `sub` et l'état civil viennent de ProConnect ; la désactivation est levée comme
+    // pour les fixtures SQL, sinon le compte reste refusé sans message après re-seed.
     await rawClient`
       INSERT INTO agents (sub, email, given_name, usual_name, role)
       VALUES (${`seed_${email}`}, ${email}, 'Super', 'Administrateur', 'super_administrateur'::agent_role)
-      ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role
+      ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role,
+        desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL
     `;
   }
   console.log(`  ✓ ${emails.length} super-admin(s) depuis SEED_AGENTS_SUPERADMINS`);
