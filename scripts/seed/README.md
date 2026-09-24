@@ -17,14 +17,14 @@ Pipeline en 6 étapes, ~30s en local. Résultat : agents de test + AMO/AV de tes
 
 Le script `seed-staging.ts` enchaîne 6 étapes. Chacune est lançable séparément via `--steps`.
 
-| #   | Step       | Quoi                                                                                                    | Idempotent                                |
-| --- | ---------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                              | —                                         |
-| 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)                        | —                                         |
-| 3   | `agents`   | Fixtures d'agents (`sql/agents/…`) + `SEED_AGENTS_SUPERADMINS` + `SEED_AGENTS_HYBRIDES`                 | ✅ `ON CONFLICT (email) DO UPDATE`        |
-| 4   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`) + redirection `SEED_STRUCTURES_EMAIL` | ✅ `ON CONFLICT`                          |
-| 5   | `parcours` | Joue les 13 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `13-amo-av-arrete-2026.sql`             | ✅ via `00-init.sql` qui TRUNCATE en tête |
-| 6   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus)                                          | —                                         |
+| #   | Step       | Quoi                                                                                        | Idempotent                                |
+| --- | ---------- | ------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                  | —                                         |
+| 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)            | —                                         |
+| 3   | `agents`   | Fixtures d'agents (`sql/agents/…`) + `SEED_AGENTS_SUPERADMINS` + `SEED_AGENTS_HYBRIDES`     | ✅ `ON CONFLICT (email) DO UPDATE`        |
+| 4   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`)                           | ✅ `ON CONFLICT`                          |
+| 5   | `parcours` | Joue les 13 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `13-amo-av-arrete-2026.sql` | ✅ via `00-init.sql` qui TRUNCATE en tête |
+| 6   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus)                              | —                                         |
 
 ## Pré-requis (étape `ref-data`)
 
@@ -136,6 +136,11 @@ devient `prenom.nom+terre-solide@beta.gouv.fr`. Tout arrive dans la même boîte
 message reste attribuable à sa structure et filtrable — ce qu'une adresse unique partagée
 par les 24 structures ne permettrait pas. Les quatre Soliha Hauts-de-France, qui partagent
 volontairement une adresse dans les fixtures, partagent donc aussi leur alias.
+
+La conversion a lieu **après l'étape `parcours`**, et non pendant `amo-av` : deux fichiers de
+`fake-parcours` (07 et 13) suppriment puis réinsèrent les structures « seed test », qui
+échapperaient sinon aux alias. Elle ne convertit que les adresses `@example.org` : la rejouer ne
+double pas l'alias, et une structure créée à la main pendant un test garde son adresse.
 
 Variable absente = les `@example.org` restent en place, et le seed le dit dans sa sortie.
 

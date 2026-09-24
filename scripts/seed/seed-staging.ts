@@ -10,7 +10,7 @@
  *   1. safety   — vérifs env + DB URL
  *   2. ref-data — bail si rga_zones ou catastrophes_naturelles est vide
  *   3. agents   — fixtures d'agents + SEED_AGENTS_SUPERADMINS + SEED_AGENTS_HYBRIDES
- *   4. amo-av   — fixtures AMO + Allers-vers, emails redirigés si SEED_STRUCTURES_EMAIL
+ *   4. amo-av   — fixtures AMO + Allers-vers (alias SEED_STRUCTURES_EMAIL posés après parcours)
  *   5. parcours — joue les 13 SQL de sql/fake-parcours/00 → 13
  *   6. verify   — joue 99-verification.sql
  *
@@ -277,31 +277,37 @@ async function redirigerEmailsStructures(dryRun: boolean): Promise<void> {
     return;
   }
 
+  // Seules les adresses de fixture sont converties : rejouer ne double pas l'alias, et une
+  // structure créée à la main pendant un test garde son adresse.
+  const convertir = (email: string): string => (email.endsWith("@example.org") ? construireAlias(base, email) : email);
+  let converties = 0;
+
   // `entreprises_amo.emails` est un TEXT séparé par `;`, `allers_vers.emails` un text[].
   const amos = await rawClient<{ id: string; emails: string }[]>`SELECT id, emails FROM entreprises_amo`;
   for (const amo of amos) {
     const alias = amo.emails
       .split(";")
-      .map((e) => e.trim())
-      .filter((e) => e.includes("@"))
-      .map((e) => construireAlias(base, e))
+      .map((e) => convertir(e.trim()))
       .join(";");
+    if (alias === amo.emails) continue;
     await rawClient`UPDATE entreprises_amo SET emails = ${alias} WHERE id = ${amo.id}::uuid`;
+    converties++;
   }
 
   const av = await rawClient<{ id: string; emails: string[] }[]>`SELECT id, emails FROM allers_vers`;
   for (const structure of av) {
-    const alias = structure.emails.filter((e) => e.includes("@")).map((e) => construireAlias(base, e));
+    const alias = structure.emails.map(convertir);
+    if (alias.every((e, i) => e === structure.emails[i])) continue;
     await rawClient`UPDATE allers_vers SET emails = ${alias}::text[] WHERE id = ${structure.id}::uuid`;
+    converties++;
   }
 
-  console.log(`  ✓ ${amos.length + av.length} structures en alias de ${base}`);
+  console.log(`  ✓ ${converties} structure(s) passée(s) en alias de ${base}`);
 }
 
 async function runAmoAvStep(dryRun: boolean): Promise<void> {
   console.log("→ amo-av");
   await runSqlFile("amo-av/seed-amo-av-fixtures.sql", dryRun);
-  await redirigerEmailsStructures(dryRun);
 }
 
 async function runParcoursStep(dryRun: boolean): Promise<void> {
@@ -364,6 +370,10 @@ async function main(): Promise<void> {
   if (args.steps.includes("ref-data") && !args.dryRun) await assertRefDataPresent();
   if (args.steps.includes("amo-av")) await runAmoAvStep(args.dryRun);
   if (args.steps.includes("parcours")) await runParcoursStep(args.dryRun);
+  // Après parcours : 07 et 13 suppriment puis réinsèrent les structures « seed test ».
+  if (args.steps.includes("amo-av") || args.steps.includes("parcours")) {
+    await redirigerEmailsStructures(args.dryRun);
+  }
   if (args.steps.includes("agents")) await runAgentsStep(args.dryRun);
   if (args.steps.includes("verify")) await runVerifyStep(args.dryRun);
 
