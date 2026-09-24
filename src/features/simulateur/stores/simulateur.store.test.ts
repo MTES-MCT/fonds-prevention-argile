@@ -121,4 +121,34 @@ describe("useSimulateurStore - early exit différé à l'adresse", () => {
     expect(simulation.currentStep).toBe(SimulateurStep.RESULTAT);
     expect(simulation.result?.eligible).toBe(false);
   });
+
+  it("juge l'année et les niveaux à l'écran de vérification, pas sur la carte", () => {
+    useSimulateurStore.getState().submitAnswer({ logement: { type: "maison" } });
+    useSimulateurStore.getState().submitAnswer({
+      logement: { code_departement: "47", commune: "47001", zone_dexposition: "fort" },
+    });
+    expect(useSimulateurStore.getState().simulation.currentStep).toBe(SimulateurStep.CARACTERISTIQUES);
+
+    useSimulateurStore.getState().submitAnswer({
+      logement: { annee_de_construction: String(new Date().getFullYear() - 2), niveaux: 1 },
+    });
+
+    const { simulation } = useSimulateurStore.getState();
+    expect(simulation.currentStep).toBe(SimulateurStep.RESULTAT);
+    expect(simulation.result?.eligible).toBe(false);
+  });
+});
+
+describe("useSimulateurStore — préremplissage du bâtiment", () => {
+  it("est vidé par reset, pour ne pas proposer le bâtiment d'une autre simulation", () => {
+    useSimulateurStore.getState().setPrefillBatiment({
+      anneeConstruction: 1975,
+      nombreNiveaux: 2,
+      donneesIndisponibles: false,
+    });
+
+    useSimulateurStore.getState().reset();
+
+    expect(useSimulateurStore.getState().prefillBatiment).toBeNull();
+  });
 });

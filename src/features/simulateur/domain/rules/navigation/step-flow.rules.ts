@@ -1,4 +1,4 @@
-import { SimulateurStep, ETAPES_NUMEROTEES } from "../../value-objects/simulateur-step.enum";
+import { SimulateurStep, ETAPES_SAISIE } from "../../value-objects/simulateur-step.enum";
 import type { PartialRGASimulationData } from "@/shared/domain/types";
 import type { EligibilityChecks } from "../../entities/eligibility-result.entity";
 import {
@@ -19,7 +19,7 @@ import {
 /**
  * Ordre complet des étapes (incluant intro et résultat)
  */
-const STEP_ORDER: SimulateurStep[] = [SimulateurStep.INTRO, ...ETAPES_NUMEROTEES, SimulateurStep.RESULTAT];
+const STEP_ORDER: SimulateurStep[] = [SimulateurStep.INTRO, ...ETAPES_SAISIE, SimulateurStep.RESULTAT];
 
 /**
  * Retourne l'étape suivante (sans vérification d'éligibilité)
@@ -104,11 +104,12 @@ export function evaluateEligibility(answers: PartialRGASimulationData): {
     }
   }
 
+  // Étape 2 bis - Caractéristiques du bâtiment
   if (answers.logement?.annee_de_construction !== undefined) {
     const anneeResult = checkAnneeConstruction(answers.logement.annee_de_construction);
     checks.anneeConstruction = anneeResult.passed;
     if (!anneeResult.passed) {
-      return { checks, shouldExit: true, failedAtStep: SimulateurStep.ADRESSE };
+      return { checks, shouldExit: true, failedAtStep: SimulateurStep.CARACTERISTIQUES };
     }
   }
 
@@ -116,7 +117,7 @@ export function evaluateEligibility(answers: PartialRGASimulationData): {
     const niveauxResult = checkNiveaux(answers.logement.niveaux);
     checks.niveaux = niveauxResult.passed;
     if (!niveauxResult.passed) {
-      return { checks, shouldExit: true, failedAtStep: SimulateurStep.ADRESSE };
+      return { checks, shouldExit: true, failedAtStep: SimulateurStep.CARACTERISTIQUES };
     }
   }
 

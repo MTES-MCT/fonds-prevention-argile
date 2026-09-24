@@ -14,6 +14,7 @@ import {
   StepIntro,
   StepTypeLogement,
   StepAdresse,
+  StepCaracteristiques,
   StepEtatMaison,
   StepMitoyennete,
   StepIndemnisation,
@@ -225,9 +226,18 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
             clef_ban: answers.logement?.clef_ban,
             epci: answers.logement?.epci,
             zone_dexposition: answers.logement?.zone_dexposition,
+            rnb: answers.logement?.rnb,
+          }}
+        />
+      );
+
+    case SimulateurStep.CARACTERISTIQUES:
+      return (
+        <StepCaracteristiques
+          {...stepProps}
+          initialValue={{
             annee_de_construction: answers.logement?.annee_de_construction,
             niveaux: answers.logement?.niveaux,
-            rnb: answers.logement?.rnb,
           }}
         />
       );

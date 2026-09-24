@@ -10,6 +10,13 @@ const SIMULATEUR_STORAGE_KEY = "fonds-argile-simulateur";
 // Sans adresse, pas de département : le dossier n'est rattachable à aucun territoire (ADR-0034).
 const DEFAULT_DEFER_EARLY_EXIT_UNTIL = SimulateurStep.ADRESSE;
 
+/** Valeurs BDNB du bâtiment choisi sur la carte, proposées à l'écran de vérification. */
+export interface PrefillBatiment {
+  anneeConstruction: number | null;
+  nombreNiveaux: number | null;
+  donneesIndisponibles: boolean;
+}
+
 /**
  * État du store simulateur
  */
@@ -21,6 +28,8 @@ interface SimulateurState {
   earlyExit: boolean;
   /** Retarde l'early exit jusqu'à ce que cette étape soit répondue (cf. DEFAULT_DEFER_EARLY_EXIT_UNTIL). */
   deferEarlyExitUntil: SimulateurStep | null;
+  /** Hors des réponses : l'early exit jugerait sinon des valeurs que l'usager n'a pas encore vérifiées. */
+  prefillBatiment: PrefillBatiment | null;
   isHydrated: boolean;
 
   start: () => void;
@@ -29,6 +38,7 @@ interface SimulateurState {
   reset: () => void;
   setEditMode: (editMode: boolean) => void;
   setEarlyExit: (earlyExit: boolean, deferUntil?: SimulateurStep | null) => void;
+  setPrefillBatiment: (prefill: PrefillBatiment | null) => void;
   setHydrated: () => void;
 }
 
@@ -51,6 +61,7 @@ export const useSimulateurStore = create<SimulateurState>()(
       editMode: false,
       earlyExit: true,
       deferEarlyExitUntil: DEFAULT_DEFER_EARLY_EXIT_UNTIL,
+      prefillBatiment: null,
       isHydrated: false,
 
       start: () => {
@@ -84,6 +95,7 @@ export const useSimulateurStore = create<SimulateurState>()(
           editMode: false,
           earlyExit: true,
           deferEarlyExitUntil: DEFAULT_DEFER_EARLY_EXIT_UNTIL,
+          prefillBatiment: null,
         });
       },
 
@@ -97,6 +109,10 @@ export const useSimulateurStore = create<SimulateurState>()(
         set({ earlyExit, deferEarlyExitUntil: deferUntil });
       },
 
+      setPrefillBatiment: (prefill: PrefillBatiment | null) => {
+        set({ prefillBatiment: prefill });
+      },
+
       setHydrated: () => {
         set({ isHydrated: true });
       },
@@ -104,7 +120,7 @@ export const useSimulateurStore = create<SimulateurState>()(
     {
       name: SIMULATEUR_STORAGE_KEY,
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({ simulation: state.simulation }),
+      partialize: (state) => ({ simulation: state.simulation, prefillBatiment: state.prefillBatiment }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           const sim = state.simulation;
@@ -138,3 +154,4 @@ export const selectIsIntro = (state: SimulateurState) => state.simulation.curren
 export const selectIsResultat = (state: SimulateurState) => state.simulation.currentStep === SimulateurStep.RESULTAT;
 export const selectEditMode = (state: SimulateurState) => state.editMode;
 export const selectEarlyExit = (state: SimulateurState) => state.earlyExit;
+export const selectPrefillBatiment = (state: SimulateurState) => state.prefillBatiment;

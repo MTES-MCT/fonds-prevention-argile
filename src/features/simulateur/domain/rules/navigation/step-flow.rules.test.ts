@@ -19,8 +19,12 @@ describe("step-flow.rules", () => {
       expect(getNextStep(SimulateurStep.TYPE_LOGEMENT)).toBe(SimulateurStep.ADRESSE);
     });
 
-    it("retourne ETAT_MAISON après ADRESSE", () => {
-      expect(getNextStep(SimulateurStep.ADRESSE)).toBe(SimulateurStep.ETAT_MAISON);
+    it("retourne CARACTERISTIQUES après ADRESSE", () => {
+      expect(getNextStep(SimulateurStep.ADRESSE)).toBe(SimulateurStep.CARACTERISTIQUES);
+    });
+
+    it("retourne ETAT_MAISON après CARACTERISTIQUES", () => {
+      expect(getNextStep(SimulateurStep.CARACTERISTIQUES)).toBe(SimulateurStep.ETAT_MAISON);
     });
 
     it("retourne MITOYENNETE après ETAT_MAISON", () => {
@@ -170,7 +174,7 @@ describe("step-flow.rules", () => {
         };
         const result = evaluateEligibility(answers);
         expect(result.shouldExit).toBe(true);
-        expect(result.failedAtStep).toBe(SimulateurStep.ADRESSE);
+        expect(result.failedAtStep).toBe(SimulateurStep.CARACTERISTIQUES);
         expect(result.checks.anneeConstruction).toBe(false);
       });
 
@@ -187,7 +191,7 @@ describe("step-flow.rules", () => {
         };
         const result = evaluateEligibility(answers);
         expect(result.shouldExit).toBe(true);
-        expect(result.failedAtStep).toBe(SimulateurStep.ADRESSE);
+        expect(result.failedAtStep).toBe(SimulateurStep.CARACTERISTIQUES);
         expect(result.checks.niveaux).toBe(false);
       });
     });
