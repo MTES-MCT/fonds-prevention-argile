@@ -6,9 +6,9 @@
 ## Contexte
 
 Les pièces justificatives sont tirées dynamiquement des démarches DN depuis juillet 2026
-(FLOW-AND-SYNC §7.5). La maquette les regroupe **par fournisseur** — demandeur (ou son
-mandataire), assureur, AMO et expert — et signale par un badge les pièces qui ne sont
-obligatoires que sous condition (« Sauf si AMO mandataire financier », « Obligatoire
+(FLOW-AND-SYNC §7.5). La maquette les regroupe en quatre groupes — demandeur (ou son
+mandataire), assurance, AMO et expert, autres — et signale par un badge les pièces qui ne
+sont obligatoires que sous condition (« Sauf si AMO mandataire financier », « Obligatoire
 uniquement si indivision »).
 
 Ni l'un ni l'autre n'est disponible dans DN, vérifié par introspection du schéma GraphQL :
@@ -27,16 +27,21 @@ Ni l'un ni l'autre n'est disponible dans DN, vérifié par introspection du sch�
 ## Décision
 
 > Nous classons chaque pièce par une table de règles ordonnées sur son libellé DN normalisé,
-> qui porte à la fois sa catégorie, sa condition d'obligation et son aide éditoriale.
+> qui porte sa catégorie et sa condition d'obligation — et rien d'autre.
 
-- Une seule table (`pieces-regles.ts`) remplace `pieces-aide.map.ts` : reconnaître la pièce
-  est une seule question, qui ne doit pas pouvoir recevoir deux réponses divergentes.
+- **DN reste la seule source de texte.** La table (`pieces-regles.ts`) ne décrit pas la pièce :
+  la description affichée est celle de DN, retours à la ligne compris. L'aide éditoriale
+  (« où l'obtenir », `pieces-aide.map.ts`) a été retirée en recette.
+- **Une condition n'est posée que si elle distingue des demandeurs éligibles.** L'attestation
+  d'assurance n'en a pas, le simulateur rendant inéligible une maison non assurée ; le devis
+  de phase étude non plus, puisqu'il couvre l'accompagnement et le diagnostic.
 - Première règle qui matche ; les plus spécifiques d'abord (« autres financeurs » contient
   « assureurs », « expert en RGA » cite aussi « diagnostic de vulnérabilité »). Les mots-clés
   visent ce qui **distingue** la pièce, jamais sa formule d'ouverture : neuf libellés sur
   quatorze commencent par « Attestation sur l'honneur », et DN écrit « Attestion ».
 - Un libellé inconnu tombe dans **« Autres pièces »**, affichée : la liste reste exhaustive.
-  Mal classer est cosmétique, perdre une pièce ne l'est pas.
+  Mal classer est cosmétique, perdre une pièce ne l'est pas. Même règle au regroupement : une
+  catégorie disparue, venue d'une entrée de cache antérieure, est rangée dans « Autres pièces ».
 - La condition **remplace** le rendu de `required`. Une pièce sans condition mais non
   obligatoire est marquée « Facultatif » ; les autres relèvent de « Sauf mention contraire,
   toutes les pièces sont obligatoires ».
@@ -47,7 +52,7 @@ Ni l'un ni l'autre n'est disponible dans DN, vérifié par introspection du sch�
 
 ### Option A — Règles sur le libellé (retenue)
 
-- Avantages : couvre l'axe « fournisseur » voulu par la maquette ; une pièce ajoutée dans DN
+- Avantages : couvre les groupes voulus par la maquette ; une pièce ajoutée dans DN
   dont le libellé contient un mot connu est classée sans déploiement ; libellés réels
   verrouillés par test.
 - Inconvénients : une pièce **renommée** dans DN sort de sa règle sans bruit (elle reste
@@ -70,6 +75,9 @@ Ni l'un ni l'autre n'est disponible dans DN, vérifié par introspection du sch�
 
 - **Libellés éditoriaux courts** (« RIB du propriétaire » au lieu du libellé DN) : une
   seconde source qui diverge sans bruit quand DN renomme la pièce.
+- **Aide éditoriale** (« Téléchargeable sur impots.gouv.fr », « À demander à votre
+  assureur ») : même motif, et elle s'affichait jusque sur les pièces de la phase travaux. Un
+  texte utile a sa place dans la description DN, où l'équipe qui tient le formulaire le voit.
 - **Masquer une pièce jugée non applicable** d'après nos données (mandataire financier,
   accompagnement) : le demandeur peut répondre autre chose dans le formulaire DN, et une
   pièce non annoncée coûte un aller-retour avec la DDT.
@@ -78,7 +86,7 @@ Ni l'un ni l'autre n'est disponible dans DN, vérifié par introspection du sch�
 
 ### Positives
 
-- Le rendu de la maquette (accordéons par fournisseur, badges d'exception) est obtenu sur les
+- Le rendu de la maquette (accordéons par catégorie, badges d'exception) est obtenu sur les
   quatre surfaces qui partagent `PiecesJustificatives`.
 - Les badges d'obligation disent vrai, là où `required` induisait en erreur.
 
@@ -94,8 +102,8 @@ Ni l'un ni l'autre n'est disponible dans DN, vérifié par introspection du sch�
 
 ### Migration
 
-- Clé de cache `ds-pieces` passée de `v2` à `v3` : les entrées antérieures n'ont ni catégorie
-  ni condition.
+- Clé de cache `ds-pieces` passée de `v2` à `v4` : une entrée antérieure n'a pas de catégorie
+  (`v2`) ou porte la catégorie `ASSUREUR`, renommée `ASSURANCE` en recette (`v3`).
 - Suite prévue : reformuler les conditions pour le dossier affiché (on connaît
   l'accompagnement et `est_mandataire_financier`) par une fonction pure appliquée **hors** du
   cache, pour ne pas mettre de contexte de parcours dans la clé.

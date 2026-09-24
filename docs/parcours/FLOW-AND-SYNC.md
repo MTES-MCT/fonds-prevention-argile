@@ -1408,14 +1408,14 @@ détail dossier AMO **et sur les cartes d'étapes à venir du parcours demandeur
 `activeRevision.champDescriptors` (query `getDemarcheSchema` enrichie du fragment
 `... on PieceJustificativeChampDescriptor { fileTemplate { filename url … } }`), ne garde
 que les descripteurs de pièce, et expose `label / description / required / modele`
-(modèle téléchargeable DN), enrichis par la table de règles `pieces-regles.ts` : la
-**catégorie** (qui fournit la pièce), la **condition** d'obligation et une **aide
-éditoriale** (« où l'obtenir »). Voir le classement ci-dessous.
+(modèle téléchargeable DN), classés par la table de règles `pieces-regles.ts` : **catégorie** et
+**condition** d'obligation. **Aucun texte n'est ajouté** : la description affichée est celle de DN,
+retours à la ligne compris. Voir le classement ci-dessous.
 
 - Résolution étape → démarche : `resolveDemarcheNumberForStep` (amont éligibilité →
   démarche éligibilité, sinon 1:1).
 - Cache : appel DN enveloppé dans `unstable_cache` (revalidate 6 h, tag `ds-pieces`) —
-  les schémas DN bougent rarement. Clé `v3` : une entrée `v2` n'a ni catégorie ni condition.
+  les schémas DN bougent rarement. Clé `v4` : une entrée antérieure n'a pas de catégorie (`v2`) ou porte `ASSUREUR`, renommée `ASSURANCE` (`v3`).
 - **Modèle téléchargeable via proxy (pas l'URL DN directe)** : `fileTemplate.url` est un
   lien temporaire signé (Swift TempURL) qui **expire en quelques heures**. Le mettre en
   cache 6 h faisait servir des liens périmés → **403 « Unauthorized temp url invalide »**
@@ -1453,14 +1453,18 @@ que les descripteurs de pièce, et expose `label / description / required / mode
 DN n'expose ni qui fournit une pièce, ni la condition qui la rend obligatoire : son
 `required` vaut « obligatoire quand le champ est affiché », si bien que les deux RIB
 mutuellement exclusifs sont tous deux `required: true`. La carte `PiecesJustificatives`
-regroupe donc les pièces en accordéons ouverts (Demandeur, Assureur, AMO et Expert, Autres),
+regroupe donc les pièces en accordéons ouverts (Demandeur, Assurance, AMO et Expert, Autres),
 sous la mention « Sauf mention contraire, toutes les pièces sont obligatoires ».
 
 - **La condition prime sur `required`** (`mentionObligation`) : badge de condition s'il y
   en a une, « Facultatif » pour une pièce non obligatoire sans condition, rien sinon.
   `PiecesAPrevoir` n'affiche plus son astérisque sur une pièce conditionnelle.
+- **Une condition n'est posée que si elle distingue des demandeurs éligibles** : aucun badge sur
+  l'attestation d'assurance (le simulateur exclut une maison non assurée, `checkAssurance`) ni
+  sur le devis de phase étude (il couvre l'accompagnement et le diagnostic).
 - **Un libellé inconnu tombe dans « Autres pièces »**, affichée : une pièce renommée côté DN
-  sort de sa règle sans bruit, mais reste visible. Pas d'accordéon quand un seul groupe est
+  sort de sa règle sans bruit, mais reste visible. Une catégorie disparue, venue d'une entrée de
+  cache antérieure, y est rangée aussi. Pas d'accordéon quand un seul groupe est
   non vide.
 - **Les conditions sont génériques**, identiques pour tous les dossiers. Les reformuler pour
   le dossier affiché (accompagnement, mandataire financier) devra se faire **hors** du cache,
