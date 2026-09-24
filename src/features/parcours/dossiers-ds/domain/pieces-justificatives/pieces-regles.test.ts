@@ -23,7 +23,7 @@ const LIBELLES_DN: [string, PieceCategorie, string | undefined][] = [
     "AMO_EXPERT",
     "Uniquement si demandeur accompagné",
   ],
-  ["Devis pour la phase étude du fonds de prévention argile", "AMO_EXPERT", "Uniquement si demandeur accompagné"],
+  ["Devis pour la phase étude du fonds de prévention argile", "AMO_EXPERT", undefined],
   ["Attestation sur l'honneur de l'expert en RGA réalisant le diagnostic de vulnérabilité", "AMO_EXPERT", undefined],
   [
     "Relevé d'identité bancaire du mandataire financier pour le paiement de la subvention",
@@ -39,18 +39,18 @@ const LIBELLES_DN: [string, PieceCategorie, string | undefined][] = [
   [
     "Attestion sur l'honneur indiquant que la maison a plus de 15 ans",
     "DEMANDEUR",
-    "Uniquement sans justificatif de l'année de construction",
+    "Uniquement sans document officiel indiquant l'année de construction",
   ],
   [
     "Attestation sur l'honneur du représentant unique de l'indivision",
     "DEMANDEUR",
     "Obligatoire uniquement si indivision",
   ],
-  ["Attestation d'assurance habitation", "ASSUREUR", "Uniquement si la maison est assurée"],
-  ["Attestation sur l’honneur de votre assureur de non sinistralité catastrophe naturelle", "ASSUREUR", undefined],
+  ["Attestation d'assurance habitation", "ASSURANCE", undefined],
+  ["Attestation sur l’honneur de votre assureur de non sinistralité catastrophe naturelle", "ASSURANCE", undefined],
   [
     "Attestation sur l'honneur que vous n'avez pas de demande d'indemnisation catastrophe naturelle en cours",
-    "DEMANDEUR",
+    "ASSURANCE",
     undefined,
   ],
   // Diagnostic (démarche 129894)
@@ -80,12 +80,12 @@ describe("classerPiece — libellés DN réels", () => {
 });
 
 describe("classerPiece — ordre des règles", () => {
-  it("départage deux libellés « catastrophe naturelle » par la mention de l'assureur", () => {
-    expect(classerPiece("Attestation de votre assureur … catastrophe naturelle").categorie).toBe("ASSUREUR");
-    expect(classerPiece("Pas de demande d'indemnisation catastrophe naturelle").categorie).toBe("DEMANDEUR");
+  it("range les attestations catastrophe naturelle dans l'assurance, qu'elles viennent de l'assureur ou du demandeur", () => {
+    expect(classerPiece("Attestation de votre assureur … catastrophe naturelle").categorie).toBe("ASSURANCE");
+    expect(classerPiece("Pas de demande d'indemnisation catastrophe naturelle").categorie).toBe("ASSURANCE");
   });
 
-  it("ne range pas « autres financeurs » chez l'assureur malgré le mot « assureurs »", () => {
+  it("ne range pas « autres financeurs » dans l'assurance malgré le mot « assureurs »", () => {
     expect(classerPiece("Autres financeurs (assureurs)").categorie).toBe("DEMANDEUR");
   });
 

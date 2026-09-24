@@ -2,10 +2,15 @@ import { PIECE_CATEGORIES, type PieceCategorie, type PieceJustificative } from "
 
 export const PIECE_CATEGORIE_LIBELLES: Record<PieceCategorie, string> = {
   DEMANDEUR: "Pièces liées au demandeur (ou son mandataire)",
-  ASSUREUR: "Pièces liées à l'assureur",
+  ASSURANCE: "Pièces liées à l'assurance",
   AMO_EXPERT: "Pièces liées à l'AMO et l'Expert",
   AUTRES: "Autres pièces",
 };
+
+// Une entrée de cache antérieure peut porter une catégorie disparue : la pièce doit rester visible.
+function categorieAffichee(piece: PieceJustificative): PieceCategorie {
+  return PIECE_CATEGORIES.includes(piece.categorie) ? piece.categorie : "AUTRES";
+}
 
 export interface GroupePieces {
   categorie: PieceCategorie;
@@ -18,7 +23,7 @@ export function grouperPiecesParCategorie(pieces: PieceJustificative[]): GroupeP
   return PIECE_CATEGORIES.map((categorie) => ({
     categorie,
     libelle: PIECE_CATEGORIE_LIBELLES[categorie],
-    pieces: pieces.filter((piece) => piece.categorie === categorie),
+    pieces: pieces.filter((piece) => categorieAffichee(piece) === categorie),
   })).filter((groupe) => groupe.pieces.length > 0);
 }
 

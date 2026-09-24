@@ -39,11 +39,10 @@ const REGLES: PieceRegle[] = [
   },
   {
     keywords: ["assurance habitation", "attestation d'assurance"],
-    categorie: "ASSUREUR",
-    condition: { libelle: "Uniquement si la maison est assurée" },
+    categorie: "ASSURANCE",
     aide: { texte: "À demander à votre assureur habitation (espace client ou conseiller)." },
   },
-  { keywords: ["assureur", "sinistralite"], categorie: "ASSUREUR" },
+  { keywords: ["assureur", "sinistralite"], categorie: "ASSURANCE" },
   // Avant la règle du rapport : le libellé cite aussi « diagnostic de vulnérabilité ».
   { keywords: ["expert en rga"], categorie: "AMO_EXPERT" },
   {
@@ -64,7 +63,7 @@ const REGLES: PieceRegle[] = [
     condition: { libelle: "Sauf si AMO mandataire financier" },
     aide: AIDE_RIB,
   },
-  { keywords: ["devis pour la phase etude"], categorie: "AMO_EXPERT", condition: SI_ACCOMPAGNE, aide: AIDE_DEVIS },
+  { keywords: ["devis pour la phase etude"], categorie: "AMO_EXPERT", aide: AIDE_DEVIS },
   {
     keywords: ["facture"],
     categorie: "AMO_EXPERT",
@@ -72,7 +71,7 @@ const REGLES: PieceRegle[] = [
   },
   // Devis des travaux, maîtrise d'œuvre : ni AMO ni expert.
   { keywords: ["devis"], categorie: "AUTRES", aide: AIDE_DEVIS },
-  { keywords: ["catastrophe naturelle", "indemnisation"], categorie: "DEMANDEUR" },
+  { keywords: ["catastrophe naturelle", "indemnisation"], categorie: "ASSURANCE" },
   {
     keywords: ["indivision"],
     categorie: "DEMANDEUR",
@@ -82,7 +81,7 @@ const REGLES: PieceRegle[] = [
   {
     keywords: ["15 ans"],
     categorie: "DEMANDEUR",
-    condition: { libelle: "Uniquement sans justificatif de l'année de construction" },
+    condition: { libelle: "Uniquement sans document officiel indiquant l'année de construction" },
   },
   {
     keywords: ["representant legal"],

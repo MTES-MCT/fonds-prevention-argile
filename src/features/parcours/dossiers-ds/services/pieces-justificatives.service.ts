@@ -120,9 +120,9 @@ export async function getFreshModeleUrl(demarcheNumber: number, champId: string)
   return piece?.fileTemplate?.url ?? null;
 }
 
-// `v3` : les entrées `v2` n'ont ni catégorie ni condition (v2 avait invalidé les URLs DN directes, 403).
+// `v4` : une entrée antérieure porte la catégorie disparue `ASSUREUR` (v3), ou aucune (v2).
 const getCachedPieces = (demarcheNumber: number) =>
-  unstable_cache(() => fetchPiecesFromDN(demarcheNumber), ["ds-pieces", "v3", String(demarcheNumber)], {
+  unstable_cache(() => fetchPiecesFromDN(demarcheNumber), ["ds-pieces", "v4", String(demarcheNumber)], {
     revalidate: REVALIDATE_SECONDS,
     tags: [CACHE_TAG],
   })();

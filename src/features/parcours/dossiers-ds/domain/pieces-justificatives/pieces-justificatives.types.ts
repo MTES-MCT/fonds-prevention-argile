@@ -27,7 +27,7 @@ export interface PieceAide {
 }
 
 /** Ordre d'affichage des groupes : c'est aussi l'ordre de la maquette. */
-export const PIECE_CATEGORIES = ["DEMANDEUR", "ASSUREUR", "AMO_EXPERT", "AUTRES"] as const;
+export const PIECE_CATEGORIES = ["DEMANDEUR", "ASSURANCE", "AMO_EXPERT", "AUTRES"] as const;
 
 /** Qui fournit la pièce. DN ne l'expose pas : déduit du libellé (pieces-regles). */
 export type PieceCategorie = (typeof PIECE_CATEGORIES)[number];

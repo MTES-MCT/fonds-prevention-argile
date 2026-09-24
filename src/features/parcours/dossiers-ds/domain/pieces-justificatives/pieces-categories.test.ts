@@ -12,11 +12,11 @@ describe("grouperPiecesParCategorie", () => {
     const groupes = grouperPiecesParCategorie([
       piece("autre", "AUTRES"),
       piece("amo", "AMO_EXPERT"),
-      piece("assureur", "ASSUREUR"),
+      piece("assurance", "ASSURANCE"),
       piece("demandeur", "DEMANDEUR"),
     ]);
 
-    expect(groupes.map((g) => g.categorie)).toEqual(["DEMANDEUR", "ASSUREUR", "AMO_EXPERT", "AUTRES"]);
+    expect(groupes.map((g) => g.categorie)).toEqual(["DEMANDEUR", "ASSURANCE", "AMO_EXPERT", "AUTRES"]);
     expect(groupes[0].libelle).toBe("Pièces liées au demandeur (ou son mandataire)");
   });
 
@@ -27,8 +27,16 @@ describe("grouperPiecesParCategorie", () => {
     expect(groupes[0].pieces.map((p) => p.id)).toEqual(["b", "a"]);
   });
 
+  it("range dans « Autres pièces » une catégorie disparue, venue d'un cache antérieur", () => {
+    const perimee = { ...piece("ancienne", "AUTRES"), categorie: "ASSUREUR" as unknown as PieceCategorie };
+    const groupes = grouperPiecesParCategorie([piece("a", "DEMANDEUR"), perimee]);
+
+    expect(groupes.map((g) => g.categorie)).toEqual(["DEMANDEUR", "AUTRES"]);
+    expect(groupes[1].pieces).toEqual([perimee]);
+  });
+
   it("ne perd aucune pièce", () => {
-    const pieces = [piece("x", "AUTRES"), piece("y", "ASSUREUR"), piece("z", "AUTRES")];
+    const pieces = [piece("x", "AUTRES"), piece("y", "ASSURANCE"), piece("z", "AUTRES")];
     const total = grouperPiecesParCategorie(pieces).reduce((n, g) => n + g.pieces.length, 0);
 
     expect(total).toBe(pieces.length);

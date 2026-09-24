@@ -21,7 +21,7 @@ const pieces: PieceJustificative[] = [
     modele: { filename: "cerfa.pdf", url: "https://dn/cerfa.pdf" },
     aide: { liens: [{ label: "service-public", href: "https://service-public.fr/cerfa" }] },
   },
-  { id: "p3", label: "Attestation d'assurance habitation", required: true, categorie: "ASSUREUR" },
+  { id: "p3", label: "Attestation d'assurance habitation", required: true, categorie: "ASSURANCE" },
   { id: "p4", label: "Plan cadastral", required: false, categorie: "AUTRES" },
 ];
 
@@ -55,7 +55,7 @@ describe("PiecesJustificatives", () => {
     const boutons = screen.getAllByRole("button");
     expect(boutons.map((b) => b.textContent)).toEqual([
       "Pièces liées au demandeur (ou son mandataire)",
-      "Pièces liées à l'assureur",
+      "Pièces liées à l'assurance",
       "Pièces liées à l'AMO et l'Expert",
       "Autres pièces",
     ]);
@@ -69,7 +69,7 @@ describe("PiecesJustificatives", () => {
     render(<PiecesJustificatives pieces={pieces} />);
 
     expect(
-      within(sectionDe("Pièces liées à l'assureur")).getByText("Attestation d'assurance habitation")
+      within(sectionDe("Pièces liées à l'assurance")).getByText("Attestation d'assurance habitation")
     ).toBeInTheDocument();
     expect(within(sectionDe("Autres pièces")).getByText("Plan cadastral")).toBeInTheDocument();
   });
@@ -86,7 +86,7 @@ describe("PiecesJustificatives", () => {
 
     expect(screen.getByText("Uniquement si demandeur accompagné")).toBeInTheDocument();
     expect(within(sectionDe("Autres pièces")).getByText("Facultatif")).toBeInTheDocument();
-    expect(within(sectionDe("Pièces liées à l'assureur")).queryByText("Facultatif")).toBeNull();
+    expect(within(sectionDe("Pièces liées à l'assurance")).queryByText("Facultatif")).toBeNull();
     expect(screen.queryByText("Obligatoire")).toBeNull();
   });
 
