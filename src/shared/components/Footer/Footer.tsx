@@ -1,50 +1,62 @@
 import Link from "next/link";
 import { RgaFooter } from "../RgaFooter/RgaFooter";
 
-const Footer = () => {
+interface FooterProps {
+  /** `tunnel` : bandeau légal seul, sans maillage SEO ni présentation du service. */
+  variante?: "complet" | "tunnel";
+}
+
+const Footer = ({ variante = "complet" }: FooterProps) => {
+  const complet = variante === "complet";
+
   return (
     <footer className="fr-footer" role="contentinfo" id="footer-main">
-      <div className="fr-footer__top">
-        <div className="fr-container">
-          <RgaFooter />
-        </div>
-      </div>
-      <div className="fr-container">
-        <div className="fr-footer__body">
-          <div className="fr-footer__brand fr-enlarge-link">
-            <Link href="/" title="Accueil - Fonds prévention argile - Ministère<br>de la transition<br>écologique">
-              <p className="fr-logo">
-                Ministère
-                <br />
-                de la transition
-                <br />
-                écologique
-              </p>
-            </Link>
+      {complet && (
+        <div className="fr-footer__top">
+          <div className="fr-container">
+            <RgaFooter />
           </div>
-          <div className="fr-footer__content">
-            <div className="fr-footer__content-desc [&_a]:after:content-none!">
-              Fonds prévention argile est une plateforme numérique conçue par la{" "}
-              <Link
-                href="https://www.ecologie.gouv.fr/direction-generale-lamenagement-du-logement-et-nature-dgaln-0"
-                rel="noopener noreferrer"
-                target="_blank">
-                Direction générale de l'aménagement, du logement et de la nature (DGALN)
-              </Link>{" "}
-              en partenariat avec le programme{" "}
-              <a href="https://beta.gouv.fr/" rel="noopener noreferrer" target="_blank">
-                beta.gouv
-              </a>{" "}
-              de la{" "}
-              <a href="https://www.numerique.gouv.fr/" rel="noopener noreferrer" target="_blank">
-                DINUM
-              </a>
-              . Le Fonds de Prévention Argile est en phase d'expérimentation, n'hésitez pas à nous faire part de vos
-              retours par mail à contact@fonds-prevention-argile.beta.gouv.fr
+        </div>
+      )}
+      <div className="fr-container">
+        {complet && (
+          <div className="fr-footer__body">
+            <div className="fr-footer__brand fr-enlarge-link">
+              <Link href="/" title="Accueil - Fonds prévention argile - Ministère<br>de la transition<br>écologique">
+                <p className="fr-logo">
+                  Ministère
+                  <br />
+                  de la transition
+                  <br />
+                  écologique
+                </p>
+              </Link>
+            </div>
+            <div className="fr-footer__content">
+              <div className="fr-footer__content-desc [&_a]:after:content-none!">
+                Fonds prévention argile est une plateforme numérique conçue par la{" "}
+                <Link
+                  href="https://www.ecologie.gouv.fr/direction-generale-lamenagement-du-logement-et-nature-dgaln-0"
+                  rel="noopener noreferrer"
+                  target="_blank">
+                  Direction générale de l'aménagement, du logement et de la nature (DGALN)
+                </Link>{" "}
+                en partenariat avec le programme{" "}
+                <a href="https://beta.gouv.fr/" rel="noopener noreferrer" target="_blank">
+                  beta.gouv
+                </a>{" "}
+                de la{" "}
+                <a href="https://www.numerique.gouv.fr/" rel="noopener noreferrer" target="_blank">
+                  DINUM
+                </a>
+                . Le Fonds de Prévention Argile est en phase d'expérimentation, n'hésitez pas à nous faire part de vos
+                retours par mail à contact@fonds-prevention-argile.beta.gouv.fr
+              </div>
             </div>
           </div>
-        </div>
-        <div className="fr-footer__bottom">
+        )}
+        {/* Sans corps de footer, le filet gris du DSFR doublerait la ligne bleue. */}
+        <div className={complet ? "fr-footer__bottom" : "fr-footer__bottom mt-0! shadow-none!"}>
           <ul className="fr-footer__bottom-list">
             <li className="fr-footer__bottom-item" key="mentions-legales">
               <Link className="fr-footer__bottom-link" href="/mentions-legales">
@@ -66,16 +78,20 @@ const Footer = () => {
                 Accessibilité : non conforme
               </Link>
             </li>
-            <li className="fr-footer__bottom-item" key="integration-iframe">
-              <Link className="fr-footer__bottom-link" href="/documentation/integration-iframe">
-                Intégrer le simulateur sur son site
-              </Link>
-            </li>
-            <li className="fr-footer__bottom-item">
-              <Link className="fr-footer__bottom-link" href="/stats">
-                Statistiques
-              </Link>
-            </li>
+            {complet && (
+              <li className="fr-footer__bottom-item" key="integration-iframe">
+                <Link className="fr-footer__bottom-link" href="/documentation/integration-iframe">
+                  Intégrer le simulateur sur son site
+                </Link>
+              </li>
+            )}
+            {complet && (
+              <li className="fr-footer__bottom-item">
+                <Link className="fr-footer__bottom-link" href="/stats">
+                  Statistiques
+                </Link>
+              </li>
+            )}
           </ul>
           <div className="fr-footer__bottom-copy">
             <p>
