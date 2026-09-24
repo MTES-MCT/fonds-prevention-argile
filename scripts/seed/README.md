@@ -17,14 +17,14 @@ Pipeline en 6 étapes, ~30s en local. Résultat : agents de test + AMO/AV de tes
 
 Le script `seed-staging.ts` enchaîne 6 étapes. Chacune est lançable séparément via `--steps`.
 
-| #   | Step       | Quoi                                                                                                           | Idempotent                                |
-| --- | ---------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                                     | —                                         |
-| 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)                               | —                                         |
-| 3   | `agents`   | Fixtures d'agents (`sql/agents/seed-agents-local-staging.sql`) + super-admins depuis `SEED_AGENTS_SUPERADMINS` | ✅ `ON CONFLICT (email) DO UPDATE`        |
-| 4   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`) + redirection `SEED_STRUCTURES_EMAIL`        | ✅ `ON CONFLICT`                          |
-| 5   | `parcours` | Joue les 13 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `13-amo-av-arrete-2026.sql`                    | ✅ via `00-init.sql` qui TRUNCATE en tête |
-| 6   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus)                                                 | —                                         |
+| #   | Step       | Quoi                                                                                                    | Idempotent                                |
+| --- | ---------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                              | —                                         |
+| 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)                        | —                                         |
+| 3   | `agents`   | Fixtures d'agents (`sql/agents/…`) + `SEED_AGENTS_SUPERADMINS` + `SEED_AGENTS_HYBRIDES`                 | ✅ `ON CONFLICT (email) DO UPDATE`        |
+| 4   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`) + redirection `SEED_STRUCTURES_EMAIL` | ✅ `ON CONFLICT`                          |
+| 5   | `parcours` | Joue les 13 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `13-amo-av-arrete-2026.sql`             | ✅ via `00-init.sql` qui TRUNCATE en tête |
+| 6   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus)                                          | —                                         |
 
 ## Pré-requis (étape `ref-data`)
 
@@ -138,6 +138,22 @@ par les 24 structures ne permettrait pas. Les quatre Soliha Hauts-de-France, qui
 volontairement une adresse dans les fixtures, partagent donc aussi leur alias.
 
 Variable absente = les `@example.org` restent en place, et le seed le dit dans sa sortie.
+
+### Testeurs du rôle AMO + Aller-vers
+
+Même mécanisme pour les personnes qui testent le rôle cumulé avec leur propre identité :
+
+```bash
+SEED_AGENTS_HYBRIDES="prenom.nom@exemple.fr,autre.personne@exemple.fr" \
+  pnpm seed:staging --yes-staging --steps=agents
+```
+
+Chaque adresse devient un agent `amo_et_allers_vers` rattaché à l'AMO Maison Tranquille et à
+l'Aller-vers Adil 36 (département 36), les deux structures qu'exige ce rôle. La variable n'est
+pas un confort : l'étape `amo-av` vide `allers_vers`, ce qui remet à `NULL` le lien de ces
+agents, et sans elle ils tombent en « compte inexploitable » à chaque re-seed. Le rôle, les
+deux rattachements et la désactivation sont réécrits ; le nom et le `sub`, écrits par
+ProConnect, ne le sont pas.
 
 ### Quels comptes sont réellement connectables
 

@@ -9,7 +9,7 @@
  * Pipeline (6 étapes, ~30s en local) :
  *   1. safety   — vérifs env + DB URL
  *   2. ref-data — bail si rga_zones ou catastrophes_naturelles est vide
- *   3. agents   — fixtures d'agents + super-admins depuis SEED_AGENTS_SUPERADMINS
+ *   3. agents   — fixtures d'agents + SEED_AGENTS_SUPERADMINS + SEED_AGENTS_HYBRIDES
  *   4. amo-av   — fixtures AMO + Allers-vers, emails redirigés si SEED_STRUCTURES_EMAIL
  *   5. parcours — joue les 13 SQL de sql/fake-parcours/00 → 13
  *   6. verify   — joue 99-verification.sql
@@ -182,19 +182,24 @@ async function runAgentsStep(dryRun: boolean): Promise<void> {
   console.log("→ agents");
   await runSqlFile("agents/seed-agents-local-staging.sql", dryRun);
   await seedSuperAdmins(dryRun);
+  await seedAgentsHybrides(dryRun);
 }
 
-// Les super-admins sont des personnes réelles : leurs adresses arrivent par
-// l'environnement, jamais par un fichier commité.
-async function seedSuperAdmins(dryRun: boolean): Promise<void> {
-  const emails = [
+function lireEmails(variable: string): string[] {
+  return [
     ...new Set(
-      (process.env.SEED_AGENTS_SUPERADMINS ?? "")
+      (process.env[variable] ?? "")
         .split(",")
         .map((e) => e.trim().toLowerCase())
         .filter((e) => e.includes("@"))
     ),
   ];
+}
+
+// Les super-admins sont des personnes réelles : leurs adresses arrivent par
+// l'environnement, jamais par un fichier commité.
+async function seedSuperAdmins(dryRun: boolean): Promise<void> {
+  const emails = lireEmails("SEED_AGENTS_SUPERADMINS");
 
   if (emails.length === 0) {
     console.log("  · SEED_AGENTS_SUPERADMINS absent : aucun super-admin nominatif inséré");
@@ -216,6 +221,37 @@ async function seedSuperAdmins(dryRun: boolean): Promise<void> {
     `;
   }
   console.log(`  ✓ ${emails.length} super-admin(s) depuis SEED_AGENTS_SUPERADMINS`);
+}
+
+// Mêmes structures que la fixture `agent-hybride-1` : AMO Maison Tranquille + Aller-vers Adil 36.
+const HYBRIDE_ENTREPRISE_AMO_ID = "5833143c-9397-4a80-a7fc-3c5eb37c7a28";
+const HYBRIDE_ALLERS_VERS_ID = "17628a5e-6a45-4a3c-a72c-606332b42e4c";
+
+// L'étape amo-av remet leurs deux liens à NULL (ON DELETE SET NULL) : sans ce rattachement,
+// un testeur réel du rôle cumulé devient « compte inexploitable » à chaque re-seed.
+async function seedAgentsHybrides(dryRun: boolean): Promise<void> {
+  const emails = lireEmails("SEED_AGENTS_HYBRIDES");
+
+  if (emails.length === 0) {
+    console.log("  · SEED_AGENTS_HYBRIDES absent : aucun testeur AMO + Aller-vers nominatif rattaché");
+    return;
+  }
+  if (dryRun) {
+    console.log(`  [dry-run] ${emails.length} testeur(s) AMO + Aller-vers depuis SEED_AGENTS_HYBRIDES`);
+    return;
+  }
+
+  for (const email of emails) {
+    await rawClient`
+      INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id)
+      VALUES (${`seed_${email}`}, ${email}, 'Testeur', 'AMO + Aller-vers', 'amo_et_allers_vers'::agent_role,
+        ${HYBRIDE_ENTREPRISE_AMO_ID}::uuid, ${HYBRIDE_ALLERS_VERS_ID}::uuid)
+      ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role,
+        entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id,
+        desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL
+    `;
+  }
+  console.log(`  ✓ ${emails.length} testeur(s) AMO + Aller-vers depuis SEED_AGENTS_HYBRIDES`);
 }
 
 // Le slug de la fixture devient le sous-adressage : `alohe@example.org` et la base
