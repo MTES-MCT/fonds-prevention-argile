@@ -9,7 +9,7 @@
 # Usage: ./scripts/dev/restore-db.sh [-d <directory>] [-k] <backup_file.tar.gz>
 #
 # Options:
-#   -d <directory>  Répertoire contenant les dumps (défaut: $BACKUP_DIR, sinon ./backups)
+#   -d <directory>  Répertoire contenant les dumps (défaut: $BACKUP_DIR, sinon ~/fonds-prevention-argile-backups)
 #   -k              Garder les fichiers temporaires après restauration
 #   -h              Afficher l'aide
 #
@@ -28,7 +28,8 @@ set -e
 CONTAINER_NAME="${DB_CONTAINER:-fonds-argile-postgres}"
 DB_USER="${DB_USER:-fonds_argile_user}"
 DB_NAME="${DB_NAME:-fonds_argile}"
-DEFAULT_BACKUP_DIR="${BACKUP_DIR:-./backups}"
+# Hors du dépôt : le dump, et sa version décompressée, contiennent des données personnelles.
+DEFAULT_BACKUP_DIR="${BACKUP_DIR:-$HOME/fonds-prevention-argile-backups}"
 
 # Variables
 BACKUP_DIR="$DEFAULT_BACKUP_DIR"

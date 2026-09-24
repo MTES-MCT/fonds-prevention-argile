@@ -37,11 +37,16 @@ script dédié :
 Il extrait l'archive, copie le dump dans le conteneur, déconnecte les clients de la base,
 la recrée vide, restaure, puis nettoie les fichiers temporaires. Options :
 
-| Option         | Effet                                                                   |
-| -------------- | ----------------------------------------------------------------------- |
-| `-d <dossier>` | Dossier où chercher le dump (défaut : `$BACKUP_DIR`, sinon `./backups`) |
-| `-k`           | Garde les fichiers temporaires après restauration                       |
-| `-h`           | Aide                                                                    |
+| Option         | Effet                                                                                           |
+| -------------- | ----------------------------------------------------------------------------------------------- |
+| `-d <dossier>` | Dossier où chercher le dump (défaut : `$BACKUP_DIR`, sinon `~/fonds-prevention-argile-backups`) |
+| `-k`           | Garde les fichiers temporaires après restauration                                               |
+| `-h`           | Aide                                                                                            |
+
+Le dossier par défaut est **hors du dépôt**, et c'est voulu : le script y décompresse le dump,
+donc une copie en clair de la base. Dans le dépôt, un `git add -A` la publierait, et un agent
+de code pourrait la lire. Le `.gitignore` bloque aussi `/backups/`, `*.pgsql`, `*.dump` et
+`*.tar.gz`, en filet de sécurité si un dump y est déposé quand même.
 
 > **Données de développement.** Le développement et les tests se font sur des données
 > synthétiques (`pnpm seed:staging`) ou effectivement anonymisées **avant** leur transfert
