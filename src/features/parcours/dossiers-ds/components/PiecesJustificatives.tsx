@@ -107,8 +107,10 @@ function PieceItem({ piece }: { piece: PieceJustificative }) {
           <span className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">{mention}</span>
         </p>
       )}
-      {piece.description && <p className="fr-text--xs fr-mb-1v text-(--text-mention-grey)">{piece.description}</p>}
-      {piece.aide?.texte && <p className="fr-text--xs fr-mb-1v text-(--text-mention-grey)">{piece.aide.texte}</p>}
+      {/* DN écrit ses listes en lignes « - » : les retours à la ligne portent le sens. */}
+      {piece.description && (
+        <p className="fr-text--xs fr-mb-1v whitespace-pre-line text-(--text-mention-grey)">{piece.description}</p>
+      )}
       {piece.modele && (
         <p className="fr-mb-1v">
           <a
@@ -120,13 +122,6 @@ function PieceItem({ piece }: { piece: PieceJustificative }) {
           </a>
         </p>
       )}
-      {piece.aide?.liens?.map((lien) => (
-        <p className="fr-mb-0" key={lien.href}>
-          <a href={lien.href} target="_blank" rel="noopener noreferrer" className="fr-link fr-link--sm">
-            {lien.label}
-          </a>
-        </p>
-      ))}
     </>
   );
 }

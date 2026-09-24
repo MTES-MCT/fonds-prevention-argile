@@ -14,10 +14,6 @@ export const PIECES_FALLBACK: PieceJustificative[] = [
     label: "Dernier avis d'imposition de TOUS les foyers fiscaux de l'habitation",
     required: true,
     categorie: "DEMANDEUR",
-    aide: {
-      texte: "Téléchargeable depuis votre espace particulier sur impots.gouv.fr.",
-      liens: [{ label: "impots.gouv.fr", href: "https://www.impots.gouv.fr/accueil" }],
-    },
   },
   {
     id: "fallback-propriete",
@@ -56,13 +52,5 @@ export const PIECES_FALLBACK: PieceJustificative[] = [
     required: false,
     categorie: "AMO_EXPERT",
     condition: { libelle: "Uniquement si demandeur accompagné" },
-    aide: {
-      liens: [
-        {
-          label: "CERFA mandat (service-public)",
-          href: "https://www.formulaires.service-public.gouv.fr/gf/cerfa_17596.do",
-        },
-      ],
-    },
   },
 ];

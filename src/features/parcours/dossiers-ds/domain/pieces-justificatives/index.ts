@@ -1,8 +1,6 @@
 export type {
   PieceJustificative,
   PieceModele,
-  PieceAide,
-  PieceAideLien,
   PieceCategorie,
   PieceCondition,
   PiecesByStep,

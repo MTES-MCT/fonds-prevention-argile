@@ -107,14 +107,6 @@ describe("getPiecesJustificativesForStep", () => {
     });
   });
 
-  it("enrichit d'une aide éditoriale quand le libellé matche (ex. pièce d'identité)", async () => {
-    mockedSchema.mockResolvedValue(schemaWith([pieceIdentite]));
-
-    const [piece] = await getPiecesJustificativesForStep(Step.ELIGIBILITE);
-
-    expect(piece.aide?.texte).toContain("Carte nationale d'identité");
-  });
-
   it("classe chaque pièce DN par catégorie et condition d'après son libellé", async () => {
     const inconnue: ChampDescriptor = { ...pieceIdentite, id: "champ-4", label: "Plan cadastral" };
     mockedSchema.mockResolvedValue(schemaWith([pieceIdentite, pieceCerfa, inconnue]));
@@ -164,7 +156,7 @@ describe("getPiecesJustificativesForStep", () => {
     const [piece] = await getPiecesJustificativesForStep(Step.ELIGIBILITE);
 
     expect(Object.keys(piece).sort()).toEqual(
-      ["aide", "categorie", "condition", "description", "id", "label", "modele", "required"].sort()
+      ["categorie", "condition", "description", "id", "label", "modele", "required"].sort()
     );
   });
 });

@@ -9,7 +9,6 @@ const pieces: PieceJustificative[] = [
     label: "Pièce d'identité",
     required: true,
     categorie: "DEMANDEUR",
-    aide: { texte: "CNI ou passeport en cours de validité." },
   },
   {
     id: "p2",
@@ -17,7 +16,6 @@ const pieces: PieceJustificative[] = [
     required: false,
     categorie: "AMO_EXPERT",
     modele: { filename: "cerfa.pdf", url: "https://dn/cerfa.pdf" },
-    aide: { liens: [{ label: "service-public", href: "https://service-public.fr/cerfa" }] },
   },
 ];
 
@@ -27,19 +25,15 @@ describe("PiecesAPrevoir", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("affiche le compteur, les libellés, l'aide, le modèle et les liens", () => {
+  it("affiche le compteur et le modèle, sans lien ajouté par l'application", () => {
     render(<PiecesAPrevoir pieces={pieces} />);
 
     expect(screen.getByText(/Préparez les pièces nécessaires \(2\)/)).toBeInTheDocument();
-    expect(screen.getByText("CNI ou passeport en cours de validité.")).toBeInTheDocument();
 
     const modele = screen.getByRole("link", { name: /Télécharger le modèle/ });
     expect(modele).toHaveAttribute("href", "https://dn/cerfa.pdf");
 
-    expect(screen.getByRole("link", { name: "service-public" })).toHaveAttribute(
-      "href",
-      "https://service-public.fr/cerfa"
-    );
+    expect(screen.getAllByRole("link")).toHaveLength(1);
   });
 
   it("ne met d'astérisque que sur les pièces obligatoires sans condition", () => {

@@ -95,24 +95,8 @@ describe("classerPiece — ordre des règles", () => {
   });
 });
 
-describe("classerPiece — aide éditoriale", () => {
-  it("rattache l'avis d'imposition à impots.gouv", () => {
-    expect(classerPiece("Dernier avis d'imposition").aide?.liens?.[0]?.href).toContain("impots.gouv.fr");
-  });
-
-  it("garde l'aide d'identité pour la pièce du représentant légal", () => {
-    expect(classerPiece("Pièce d'identité du représentant légal").aide?.texte).toContain("Carte nationale d'identité");
-  });
-
-  it("rattache le rapport au professionnel, la facture à l'entreprise, le devis à l'AMO", () => {
-    expect(classerPiece("Rapport du diagnostic de vulnérabilité").aide?.texte).toContain("professionnel");
-    expect(classerPiece("Facture(s) acquittées").aide?.texte).toContain("entreprise");
-    expect(classerPiece("Devis pour la phase étude").aide?.texte).toContain("AMO");
-  });
-});
-
 describe("classerPiece — libellé inconnu", () => {
-  it("tombe dans « Autres pièces », sans condition ni aide", () => {
+  it("tombe dans « Autres pièces », sans condition", () => {
     expect(classerPiece("Plan cadastral")).toEqual({ categorie: "AUTRES" });
   });
 });

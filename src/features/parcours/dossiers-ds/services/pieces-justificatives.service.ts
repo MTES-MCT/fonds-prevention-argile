@@ -81,14 +81,13 @@ function toPieceJustificative(champ: ChampDescriptor, demarcheNumber: number): P
     champ.fileTemplate?.url && champ.fileTemplate.filename
       ? { filename: champ.fileTemplate.filename, url: buildModeleProxyUrl(demarcheNumber, champ.id) }
       : undefined;
-  const { categorie, condition, aide } = classerPiece(champ.label);
+  const { categorie, condition } = classerPiece(champ.label);
   return {
     id: champ.id,
     label: champ.label,
     description: champ.description || undefined,
     required: champ.required,
     modele,
-    aide,
     categorie,
     condition,
   };
@@ -129,7 +128,7 @@ const getCachedPieces = (demarcheNumber: number) =>
 
 /**
  * Pièces justificatives à prévoir pour l'étape donnée, tirées de DN (libellé,
- * description, obligatoire, modèle téléchargeable) et enrichies de l'aide éditoriale.
+ * description, obligatoire, modèle téléchargeable) et classées par catégorie.
  * Filet de sécurité : sur erreur ou liste vide, renvoie `PIECES_FALLBACK` — l'UI
  * n'affiche jamais une section vide.
  */

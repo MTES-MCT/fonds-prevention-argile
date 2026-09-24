@@ -10,7 +10,6 @@ const pieces: PieceJustificative[] = [
     required: true,
     categorie: "DEMANDEUR",
     description: "Recto verso.",
-    aide: { texte: "CNI ou passeport en cours de validité." },
   },
   {
     id: "p2",
@@ -19,7 +18,6 @@ const pieces: PieceJustificative[] = [
     categorie: "AMO_EXPERT",
     condition: { libelle: "Uniquement si demandeur accompagné" },
     modele: { filename: "cerfa.pdf", url: "https://dn/cerfa.pdf" },
-    aide: { liens: [{ label: "service-public", href: "https://service-public.fr/cerfa" }] },
   },
   { id: "p3", label: "Attestation d'assurance habitation", required: true, categorie: "ASSURANCE" },
   { id: "p4", label: "Plan cadastral", required: false, categorie: "AUTRES" },
@@ -90,16 +88,21 @@ describe("PiecesJustificatives", () => {
     expect(screen.queryByText("Obligatoire")).toBeNull();
   });
 
-  it("affiche la description, l'aide, le modèle et les liens", () => {
+  it("affiche la description DN et le modèle, sans texte ajouté par l'application", () => {
     render(<PiecesJustificatives pieces={pieces} />);
 
     expect(screen.getByText("Recto verso.")).toBeInTheDocument();
-    expect(screen.getByText("CNI ou passeport en cours de validité.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Télécharger le modèle/ })).toHaveAttribute("href", "https://dn/cerfa.pdf");
-    expect(screen.getByRole("link", { name: "service-public" })).toHaveAttribute(
-      "href",
-      "https://service-public.fr/cerfa"
-    );
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+  });
+
+  it("conserve les retours à la ligne de la description DN", () => {
+    const description = "Si plusieurs foyers fiscaux :\n- un avis par foyer\n- ou l'avis de situation déclarative";
+    render(<PiecesJustificatives pieces={[{ ...pieces[0], description }]} />);
+
+    const paragraphe = screen.getByText(/Si plusieurs foyers fiscaux/);
+    expect(paragraphe).toHaveClass("whitespace-pre-line");
+    expect(paragraphe.textContent).toBe(description);
   });
 
   it("utilise le titre par défaut, surchargeable côté demandeur", () => {
