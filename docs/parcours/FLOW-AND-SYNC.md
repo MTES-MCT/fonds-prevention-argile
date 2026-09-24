@@ -1408,13 +1408,14 @@ détail dossier AMO **et sur les cartes d'étapes à venir du parcours demandeur
 `activeRevision.champDescriptors` (query `getDemarcheSchema` enrichie du fragment
 `... on PieceJustificativeChampDescriptor { fileTemplate { filename url … } }`), ne garde
 que les descripteurs de pièce, et expose `label / description / required / modele`
-(modèle téléchargeable DN) + une **aide éditoriale** statique (« où l'obtenir » :
-impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
+(modèle téléchargeable DN), classés par la table de règles `pieces-regles.ts` : **catégorie** et
+**condition** d'obligation. **Aucun texte n'est ajouté** : la description affichée est celle de DN,
+retours à la ligne compris. Voir le classement ci-dessous.
 
 - Résolution étape → démarche : `resolveDemarcheNumberForStep` (amont éligibilité →
   démarche éligibilité, sinon 1:1).
 - Cache : appel DN enveloppé dans `unstable_cache` (revalidate 6 h, tag `ds-pieces`) —
-  les schémas DN bougent rarement.
+  les schémas DN bougent rarement. Clé `v4` : une entrée antérieure n'a pas de catégorie (`v2`) ou porte `ASSUREUR`, renommée `ASSURANCE` (`v3`).
 - **Modèle téléchargeable via proxy (pas l'URL DN directe)** : `fileTemplate.url` est un
   lien temporaire signé (Swift TempURL) qui **expire en quelques heures**. Le mettre en
   cache 6 h faisait servir des liens périmés → **403 « Unauthorized temp url invalide »**
@@ -1432,7 +1433,7 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
   `getPiecesJustificativesByStep` et les passe en prop `piecesByStep` à `MonCompteClient`.
   Deux rendus complémentaires, jamais en doublon :
   - **étape courante** — carte `PiecesJustificatives` dépliée, juste sous le callout
-    principal (« Les pièces à préparer dès maintenant ») ;
+    principal (« Pièces justificatives à préparer dès maintenant ») ;
   - **étapes à venir** — cartes `StepDetail<Step>`, composant repliable `PiecesAPrevoir`
     (élément natif `<details>`, pas de JS DSFR), rendu seulement si `isStepBeforeCurrent`.
     `CHOIX_AMO` fait partie des étapes préchargées : `resolveDemarcheNumberForStep` le
@@ -1444,7 +1445,31 @@ impots.gouv, assureur, CERFA mandat — `pieces-aide.map.ts`).
   dur, doublon dérivant du formulaire DN) a été supprimé ; à ne pas confondre avec
   `GagnezDuTempsTravaux` (travaux éligibles), toujours en place sur `dossiers/[id]`.
 - Vérification / inventaire : `pnpm ds:fetch-pieces` liste, par démarche configurée, les
-  pièces et l'URL de leur modèle (confirme la présence de `fileTemplate`).
+  pièces et l'URL de leur modèle (confirme la présence de `fileTemplate`). Il affiche aussi la
+  catégorie et la condition résolues, et liste les pièces rangées dans « Autres pièces » :
+  à relancer à chaque évolution d'un formulaire DN.
+
+**Classement par catégorie et condition ([ADR-0039](../adr/0039-classement-pieces-justificatives-par-libelle.md)).**
+DN n'expose ni qui fournit une pièce, ni la condition qui la rend obligatoire : son
+`required` vaut « obligatoire quand le champ est affiché », si bien que les deux RIB
+mutuellement exclusifs sont tous deux `required: true`. La carte `PiecesJustificatives`
+regroupe donc les pièces en accordéons ouverts (Demandeur, Assurance, AMO et Expert, Autres),
+sous la mention « Sauf mention contraire, toutes les pièces sont obligatoires ».
+
+- **La condition prime sur `required`** (`mentionObligation`) : badge de condition s'il y
+  en a une, « Facultatif » pour une pièce non obligatoire sans condition, rien sinon.
+  `PiecesAPrevoir` n'affiche plus son astérisque sur une pièce conditionnelle.
+- **Une condition n'est posée que si elle distingue des demandeurs éligibles** : aucun badge sur
+  l'attestation d'assurance (le simulateur exclut une maison non assurée, `checkAssurance`) ni
+  sur le devis de phase étude (il couvre l'accompagnement et le diagnostic).
+- **Un libellé inconnu tombe dans « Autres pièces »**, affichée : une pièce renommée côté DN
+  sort de sa règle sans bruit, mais reste visible. Une catégorie disparue, venue d'une entrée de
+  cache antérieure, y est rangée aussi. Pas d'accordéon quand un seul groupe est
+  non vide.
+- **Les conditions sont génériques**, identiques pour tous les dossiers. Les reformuler pour
+  le dossier affiché (accompagnement, mandataire financier) devra se faire **hors** du cache,
+  pour ne pas mettre de contexte de parcours dans sa clé.
+- `PIECES_FALLBACK` porte des catégories explicites : ses libellés ne sont pas ceux de DN.
 
 ### 7.6 « Créer un nouveau formulaire » côté demandeur : un clic, une modale, un formulaire
 
@@ -1519,6 +1544,7 @@ retrouvé déposé.
 | Service sync batch (CRON)                      | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`                                 |
 | Vérif permissions / état démarches DS          | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                                      |
 | Pièces justificatives (service dynamique DN)   | `dossiers-ds/services/pieces-justificatives.service.ts`, `domain/pieces-justificatives/*`                   |
+| Classement des pièces (ADR-0039)               | `dossiers-ds/domain/pieces-justificatives/pieces-regles.ts` (`classerPiece`)                                |
 | Composant PJ partagé (agent + demandeur)       | `dossiers-ds/components/PiecesJustificatives.tsx`                                                           |
 | Proxy modèle PJ (URL temporaire DN régénérée)  | `src/app/api/ds/piece-modele/route.ts` (`buildModeleProxyUrl` / `getFreshModeleUrl`)                        |
 | Probe pièces + modèles DN                      | `scripts/ops/ds/fetch-pieces-justificatives.ts` (`pnpm ds:fetch-pieces`)                                    |

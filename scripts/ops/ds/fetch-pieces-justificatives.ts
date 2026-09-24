@@ -4,7 +4,8 @@
  * (PieceJustificativeChampDescriptor.fileTemplate) avant de câbler l'UI dynamique,
  * et sert d'outil de vérification récurrent (comme ds:check-permissions).
  *
- * Script autonome (aucun import `@/`) → lançable tel quel en local et sur Scalingo.
+ * Affiche aussi la catégorie et la condition résolues par la table de règles de l'app
+ * (pieces-regles) : à relancer à chaque évolution du formulaire DN.
  *
  * Usage:
  *   npx tsx scripts/ops/ds/fetch-pieces-justificatives.ts            # toutes les démarches configurées
@@ -14,6 +15,7 @@
  * Prérequis : DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY + DEMARCHES_SIMPLIFIEES_ID_* dans l'env.
  */
 
+import { classerPiece } from "@/features/parcours/dossiers-ds/domain/pieces-justificatives/pieces-regles";
 import { dsQuery } from "../lib/ds-graphql";
 
 // Démarches configurées (on ignore celles non renseignées), ou une seule si passée en argument.
@@ -101,6 +103,8 @@ const MAX_INT32 = 2147483647;
 function printPiece(champ: ChampDescriptor, indent: string): void {
   const reqTag = champ.required ? " [OBLIGATOIRE]" : "";
   console.log(`${indent}- ${champ.label}${reqTag}  (id: ${champ.id})`);
+  const { categorie, condition } = classerPiece(champ.label);
+  console.log(`${indent}    catégorie: ${categorie}${condition ? ` | condition: ${condition.libelle}` : ""}`);
   if (champ.description) {
     console.log(`${indent}    ${champ.description.substring(0, 100)}`);
   }
@@ -154,14 +158,20 @@ async function inspectDemarche(etape: string, id: string): Promise<void> {
   for (const p of pieces) printPiece(p, "  ");
 
   // PJ nichées dans des blocs répétables.
+  const toutes = [...pieces];
   const repetitions = champs.filter((c) => c.__typename === "RepetitionChampDescriptor");
   for (const rep of repetitions) {
     const subPieces = (rep.champDescriptors ?? []).filter((c) => c.__typename === "PieceJustificativeChampDescriptor");
     if (subPieces.length > 0) {
       console.log(`\n  Dans le bloc répétable « ${rep.label} »:`);
       for (const p of subPieces) printPiece(p, "    ");
+      toutes.push(...subPieces);
     }
   }
+
+  const nonClassees = toutes.filter((p) => classerPiece(p.label).categorie === "AUTRES");
+  console.log(`\n  Rangées dans « Autres pièces » : ${nonClassees.length}/${toutes.length}`);
+  for (const p of nonClassees) console.log(`    - ${p.label}`);
 }
 
 async function main() {
