@@ -25,9 +25,12 @@ import { checkProConnectAccess } from "@/features/auth/permissions/services/perm
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { agentPermissionsRepository } from "@/shared/database/repositories/agent-permissions.repository";
 
-function connecteEnAgent(role: UserRole, departements: string[] = []) {
+function connecteEnAgent(role: UserRole, departements: string[] = [], entrepriseAmoId: string | null = "amo-1") {
   vi.mocked(checkProConnectAccess).mockResolvedValue({ hasAccess: true } as never);
-  vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: { id: "agent-1", role } } as never);
+  vi.mocked(getCurrentAgent).mockResolvedValue({
+    success: true,
+    data: { id: "agent-1", role, entrepriseAmoId },
+  } as never);
   vi.mocked(agentPermissionsRepository.getDepartementsByAgentId).mockResolvedValue(departements);
 }
 
@@ -66,6 +69,18 @@ describe("evaluerAccesEspaceAgent", () => {
     connecteEnAgent(role);
 
     expect(await evaluerAccesEspaceAgent()).toEqual({ statut: "role_refuse" });
+  });
+
+  it.each([UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS])("%s sans entreprise → amo_non_configure", async (role) => {
+    connecteEnAgent(role, [], null);
+
+    expect(await evaluerAccesEspaceAgent()).toEqual({ statut: "amo_non_configure" });
+  });
+
+  it("ALLERS_VERS sans entreprise → autorise (l'entreprise ne le concerne pas)", async () => {
+    connecteEnAgent(UserRole.ALLERS_VERS, [], null);
+
+    expect((await evaluerAccesEspaceAgent()).statut).toBe("autorise");
   });
 
   it("ANALYSTE sans département → analyste_national", async () => {
@@ -138,6 +153,12 @@ describe("refusAccesEspaceAgent", () => {
 
   it("ADMINISTRATEUR → refus", async () => {
     connecteEnAgent(UserRole.ADMINISTRATEUR);
+
+    expect(await refusAccesEspaceAgent()).toBe(REFUS_ACCES_ESPACE_AGENT);
+  });
+
+  it("AMO sans entreprise → refus", async () => {
+    connecteEnAgent(UserRole.AMO, [], null);
 
     expect(await refusAccesEspaceAgent()).toBe(REFUS_ACCES_ESPACE_AGENT);
   });

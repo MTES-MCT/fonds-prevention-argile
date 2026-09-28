@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ParcoursPreventionRepository, matchesTerritoire } from "./parcours-prevention.repository";
+import { db } from "../client";
 import { Step, Status } from "@/features/parcours/core";
 import type { RGASimulationData } from "@/shared/domain/types";
 import type { ParcoursPrevention } from "../schema/parcours-prevention";
@@ -162,6 +163,30 @@ const BASE_PARCOURS: ParcoursPrevention = {
   createdAt: new Date(),
   updatedAt: new Date(),
 };
+
+// Des listes vides valaient « tout » : un AMO sans territoire recevait la base entière.
+describe("ParcoursPreventionRepository — getParcoursByTerritoire fermé par défaut", () => {
+  const repo = new ParcoursPreventionRepository();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("périmètre « aucun » → aucun parcours, sans requête", async () => {
+    expect(await repo.getParcoursByTerritoire({ kind: "aucun" })).toEqual([]);
+    expect(db.select).not.toHaveBeenCalled();
+  });
+
+  it("territoire sans département ni EPCI → aucun parcours, sans requête", async () => {
+    expect(await repo.getParcoursByTerritoire({ kind: "territoire", departements: [], epcis: [] })).toEqual([]);
+    expect(db.select).not.toHaveBeenCalled();
+  });
+
+  it("le compteur suit la même règle", async () => {
+    expect(await repo.countParcoursByTerritoire({ kind: "aucun" })).toBe(0);
+    expect(db.select).not.toHaveBeenCalled();
+  });
+});
 
 describe("ParcoursPreventionRepository — invitation", () => {
   let repo: ParcoursPreventionRepository;

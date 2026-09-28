@@ -430,13 +430,20 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
    * agent-edited si le demandeur n'a pas simulé).
    */
   async getParcoursByTerritoire(
-    departements: string[],
-    epcis: string[] = [],
+    perimetre: PerimetreListing,
     filters?: {
       step?: Step;
       search?: string;
     }
   ) {
+    // Fermé par défaut : sans territoire, matchesTerritoire laisserait tout passer.
+    if (perimetre.kind === "aucun") return [];
+    if (perimetre.kind === "territoire" && perimetre.departements.length === 0 && perimetre.epcis.length === 0) {
+      return [];
+    }
+    const departements = perimetre.kind === "territoire" ? perimetre.departements : [];
+    const epcis = perimetre.kind === "territoire" ? perimetre.epcis : [];
+
     const conditions: SQL[] = [];
     if (filters?.step) {
       conditions.push(eq(parcoursPrevention.currentStep, filters.step));
@@ -505,11 +512,15 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
   }
 
   // Dérive du listing pour que le badge égale « Tous les dossiers » (archivés compris).
-  async countParcoursByTerritoire(departements: string[], epcis: string[] = []): Promise<number> {
-    const rows = await this.getParcoursByTerritoire(departements, epcis);
+  async countParcoursByTerritoire(perimetre: PerimetreListing): Promise<number> {
+    const rows = await this.getParcoursByTerritoire(perimetre);
     return rows.length;
   }
 }
+
+// « Tous les parcours » doit être demandé explicitement : des listes vides ne valent plus « national ».
+export type PerimetreListing =
+  { kind: "national" } | { kind: "territoire"; departements: string[]; epcis: string[] } | { kind: "aucun" };
 
 /**
  * Vérifie si un parcours est inclus dans le territoire d'un agent.

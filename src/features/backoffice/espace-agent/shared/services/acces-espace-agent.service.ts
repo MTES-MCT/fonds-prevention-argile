@@ -22,7 +22,8 @@ export type AccesEspaceAgent =
   | { statut: "methode_invalide" }
   | { statut: "agent_inconnu" }
   | { statut: "role_refuse" }
-  | { statut: "analyste_national" };
+  | { statut: "analyste_national" }
+  | { statut: "amo_non_configure" };
 
 // Mis en cache par requête : le layout et la page jugent sur le même verdict, sans double requête.
 export const evaluerAccesEspaceAgent = cache(async (): Promise<AccesEspaceAgent> => {
@@ -41,6 +42,11 @@ export const evaluerAccesEspaceAgent = cache(async (): Promise<AccesEspaceAgent>
   const agent = agentResult.data;
   if (!ROLES_ESPACE_AGENT.includes(agent.role as UserRole)) {
     return { statut: "role_refuse" };
+  }
+
+  // Sans entreprise, le rôle AMO n'a aucun territoire : AmoGuard l'affiche, la garde le refuse.
+  if ((agent.role === UserRole.AMO || agent.role === UserRole.AMO_ET_ALLERS_VERS) && !agent.entrepriseAmoId) {
+    return { statut: "amo_non_configure" };
   }
 
   if (agent.role === UserRole.ANALYSTE) {
