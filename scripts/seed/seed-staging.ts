@@ -185,15 +185,33 @@ async function runAgentsStep(dryRun: boolean): Promise<void> {
   await seedAgentsHybrides(dryRun);
 }
 
+const EMAIL_VALIDE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Une adresse mal formée échoue au lieu d'être ignorée ou tronquée : `a@b.fr@c.org`
+// devenait `a+slug@b.fr`, et `@` passait pour une adresse d'agent.
 function lireEmails(variable: string): string[] {
-  return [
-    ...new Set(
-      (process.env[variable] ?? "")
-        .split(",")
-        .map((e) => e.trim().toLowerCase())
-        .filter((e) => e.includes("@"))
-    ),
-  ];
+  const emails = (process.env[variable] ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => e !== "");
+  const invalides = emails.filter((e) => !EMAIL_VALIDE.test(e));
+  if (invalides.length > 0) {
+    throw new Error(`${variable} : adresse(s) invalide(s) ${invalides.map((e) => `« ${e} »`).join(", ")}`);
+  }
+  return [...new Set(emails)];
+}
+
+function lireEmailBase(): string | null {
+  const emails = lireEmails("SEED_STRUCTURES_EMAIL");
+  if (emails.length > 1) throw new Error("SEED_STRUCTURES_EMAIL : une seule adresse de base attendue");
+  return emails[0] ?? null;
+}
+
+// Avant toute écriture, purge comprise : une faute de frappe ne doit pas laisser un seed à moitié joué.
+function validerVariablesSeed(): void {
+  lireEmails("SEED_AGENTS_SUPERADMINS");
+  lireEmails("SEED_AGENTS_HYBRIDES");
+  lireEmailBase();
 }
 
 // Les super-admins sont des personnes réelles : leurs adresses arrivent par
@@ -266,9 +284,9 @@ function construireAlias(base: string, emailFixture: string): string {
 // Les fixtures portent des adresses `@example.org`, non délivrables : sans surcharge,
 // une session de test ne reçoit jamais l'invitation envoyée à l'AMO du territoire.
 async function redirigerEmailsStructures(dryRun: boolean): Promise<void> {
-  const base = (process.env.SEED_STRUCTURES_EMAIL ?? "").trim().toLowerCase();
+  const base = lireEmailBase();
 
-  if (!base.includes("@")) {
+  if (base === null) {
     console.log("  · SEED_STRUCTURES_EMAIL absent : les structures gardent leurs adresses @example.org");
     return;
   }
@@ -357,6 +375,7 @@ async function main(): Promise<void> {
     `seed:staging — steps=${args.steps.join(",")}${modificateurs.length ? ` (${modificateurs.join(", ")})` : ""}\n`
   );
 
+  validerVariablesSeed();
   if (args.steps.includes("safety")) assertNotProduction(args.yesStaging);
 
   // La purge supprime de vrais comptes : jamais sans la garde, même si `--steps=`
