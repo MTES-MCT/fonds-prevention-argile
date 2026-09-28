@@ -264,6 +264,14 @@ données. Calculé dans
 > distinct (ADR-0017) : national pour AMO / ALLERS_VERS / AMO_ET_ALLERS_VERS et
 > l'analyste national, territorial pour l'analyste départemental. Voir §4.
 
+> **Le listing ne filtre que par territoire, et « aucun territoire » ne vaut plus « tout ».**
+> `getParcoursByTerritoire` reçoit un périmètre explicite (`perimetreListing` :
+> `national` / `territoire` / `aucun`) et refuse par défaut. Avant, des listes vides
+> signifiaient « pas de filtre » : un AMO sans entreprise — ou rattaché à une entreprise sans
+> territoire — gardait `canViewDossiersByEntreprise` et recevait **toute la base**, PII
+> comprises. Un AMO / `AMO_ET_ALLERS_VERS` sans entreprise est en outre refusé à l'entrée de
+> l'espace agent (`amo_non_configure`), en plus de l'écran d'`AmoGuard`.
+
 Distinctions clés :
 
 - **ANALYSTE bimode (stats vs dossiers)** : sans département affecté, l'`ANALYSTE`
