@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getDemandeDetail } from "@/features/backoffice/espace-agent/demandes/services/demande-detail.service";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet, formatDate } from "@/shared/utils";
-import { getCurrentUser } from "@/features/auth/services/user.service";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import {
   InfoDemandeur,
@@ -35,11 +35,7 @@ export const dynamic = "force-dynamic";
  * Page détail d'une demande d'accompagnement (Espace AMO)
  */
 export default async function DemandeDetailPage({ params }: PageProps) {
-  // Vérifier l'authentification
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect(ROUTES.connexion.agent);
-  }
+  await exigerAccesEspaceAgent();
 
   const { id } = await params;
 

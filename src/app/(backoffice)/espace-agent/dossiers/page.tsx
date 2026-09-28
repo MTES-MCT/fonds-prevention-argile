@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { DossiersPanel } from "./components/DossiersPanel";
-import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
 import { getCurrentUser } from "@/features/auth/services/user.service";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { UserRole } from "@/shared/domain/value-objects";
 
 /**
@@ -10,8 +10,8 @@ import { UserRole } from "@/shared/domain/value-objects";
  * et à SUPER_ADMINISTRATEUR en lecture.
  */
 export default async function DossiersAgentPage() {
-  const access = await resolveEspaceAgentAccess();
-  const role = access.kind !== "error" ? (access.agent.role as UserRole) : null;
+  const agent = await exigerAccesEspaceAgent();
+  const role = agent.role as UserRole;
   const user = await getCurrentUser();
 
   // Bouton "+ Nouveau dossier" visible pour tout agent métier (intent résolu côté wizard).

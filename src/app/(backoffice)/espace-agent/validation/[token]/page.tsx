@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getValidationDataByToken } from "@/features/parcours/amo/actions";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 interface ValidationAmoPageProps {
   params: Promise<{
@@ -14,10 +15,9 @@ interface ValidationAmoPageProps {
  *
  * Cette page redirige vers la page de détail de demande /espace-agent/demandes/[id]
  * qui offre une meilleure expérience utilisateur avec carte et informations complètes.
- *
- * L'accès AMO est vérifié par le layout parent (layout.tsx)
  */
 export default async function ValidationAmoPage({ params }: ValidationAmoPageProps) {
+  await exigerAccesEspaceAgent();
   const { token } = await params;
 
   // Récupérer et vérifier le token côté serveur

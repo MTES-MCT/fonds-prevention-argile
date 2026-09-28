@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { SimulateurEditionInvitation } from "@/features/backoffice/espace-agent/creation-dossier/components/SimulateurEditionInvitation";
 
@@ -21,10 +21,8 @@ interface PageProps {
  * pour résister à un refresh sur cette page.
  */
 export default async function CreationDossierSimulationPage({ searchParams }: PageProps) {
-  const access = await resolveEspaceAgentAccess();
-  if (access.kind === "error") redirect("/espace-agent/dossiers");
-
-  const role = access.agent.role as UserRole;
+  const agent = await exigerAccesEspaceAgent();
+  const role = agent.role as UserRole;
   if (role !== UserRole.AMO && role !== UserRole.ALLERS_VERS && role !== UserRole.AMO_ET_ALLERS_VERS) {
     redirect("/espace-agent/dossiers");
   }

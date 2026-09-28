@@ -1,9 +1,9 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getDossierSimulationData } from "@/features/backoffice/espace-agent/shared/services/edition-simulation.service";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet } from "@/shared/utils";
-import { getCurrentUser } from "@/features/auth/services/user.service";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { SimulateurEditionAgent } from "@/features/backoffice/espace-agent/shared/components/SimulateurEditionAgent";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
@@ -46,10 +46,7 @@ function getBreadcrumbInfo(id: string, statut: string | null) {
  * Utilisée depuis les pages demandes, dossiers et prospects.
  */
 export default async function EditionDonneesSimulationPage({ params }: PageProps) {
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect(ROUTES.connexion.agent);
-  }
+  await exigerAccesEspaceAgent();
 
   const { id } = await params;
 

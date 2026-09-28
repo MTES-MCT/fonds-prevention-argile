@@ -4,7 +4,7 @@ import { getDossierDetail } from "@/features/backoffice/espace-agent/dossiers/se
 import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet } from "@/shared/utils";
-import { getCurrentUser } from "@/features/auth/services/user.service";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { DOSSIER_STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain";
 import {
   InfoDemandeur,
@@ -48,11 +48,7 @@ interface PageProps {
  * Page détail d'un dossier suivi (Espace AMO)
  */
 export default async function DossierDetailPage({ params }: PageProps) {
-  // Vérifier l'authentification
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect(ROUTES.connexion.agent);
-  }
+  await exigerAccesEspaceAgent();
 
   const { id } = await params;
 
