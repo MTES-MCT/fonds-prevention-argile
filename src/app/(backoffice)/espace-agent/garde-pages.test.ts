@@ -1,30 +1,30 @@
 import { describe, it, expect } from "vitest";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { relative } from "node:path";
+import { fonctionsExportees, listerFichiers } from "@/shared/testing/server-exports";
 
 const RACINE = __dirname;
 
 // Pages sans aucun rendu ni donnée : elles ne font que rediriger.
 const EXEMPTEES = new Set(["prospects/page.tsx"]);
 
-function listerPages(dossier: string): string[] {
-  return readdirSync(dossier).flatMap((nom) => {
-    const chemin = join(dossier, nom);
-    if (statSync(chemin).isDirectory()) return listerPages(chemin);
-    return nom === "page.tsx" ? [chemin] : [];
+const GARDE = /^(const \w+ = )?await exigerAccesEspaceAgent\(\);$/;
+
+// Next rend layout, page et generateMetadata séparément : chacun doit se garder, le layout ne protège rien.
+describe("Espace agent — chaque rendu de page porte sa propre garde d'accès", () => {
+  const rendus = listerFichiers(RACINE, (chemin) => chemin.endsWith("/page.tsx"))
+    .filter((chemin) => !EXEMPTEES.has(relative(RACINE, chemin)))
+    .flatMap((chemin) =>
+      fonctionsExportees(chemin)
+        .filter((fn) => fn.nom === "default" || fn.nom === "generateMetadata")
+        .map((fn) => ({ ...fn, nom: `${relative(RACINE, chemin)} › ${fn.nom}` }))
+    );
+
+  it("recense les pages et leurs métadonnées", () => {
+    expect(rendus.filter((r) => r.nom.endsWith("› default")).length).toBeGreaterThan(5);
+    expect(rendus.filter((r) => r.nom.endsWith("› generateMetadata")).length).toBeGreaterThan(0);
   });
-}
 
-// Le layout ne protège rien : Next rend la page en parallèle et sérialise son RSC même quand il refuse.
-describe("Espace agent — chaque page porte sa propre garde d'accès", () => {
-  const pages = listerPages(RACINE).map((chemin) => relative(RACINE, chemin));
-
-  it("recense les pages", () => {
-    expect(pages.length).toBeGreaterThan(5);
-  });
-
-  it.each(pages.filter((page) => !EXEMPTEES.has(page)))("%s appelle exigerAccesEspaceAgent()", (page) => {
-    const source = readFileSync(join(RACINE, page), "utf8");
-    expect(source).toMatch(/await exigerAccesEspaceAgent\(\)/);
+  it.each(rendus)("$nom commence par exigerAccesEspaceAgent()", ({ instructions }) => {
+    expect(instructions[0]).toMatch(GARDE);
   });
 });

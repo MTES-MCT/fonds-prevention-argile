@@ -125,7 +125,7 @@ sauvegardée reste prioritaire. Avant, le callback envoyait **tout** agent vers
 
 Gardes principales :
 
-- Espace agent : `exigerAccesEspaceAgent()` **en tête de chaque page**
+- Espace agent : `exigerAccesEspaceAgent()` **en tête de chaque page et de chaque `generateMetadata`**
   (`espace-agent/shared/services/acces-espace-agent.service.ts`). Le layout lit le même
   verdict (`evaluerAccesEspaceAgent`, mis en cache par requête) mais ne fait qu'**afficher**
   l'écran de refus : Next rend la page en parallèle du layout et sérialise son RSC dans le

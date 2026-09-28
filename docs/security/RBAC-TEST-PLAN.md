@@ -99,13 +99,21 @@ Une nouvelle surface non gardée = fuite potentielle. Deux tests méta l'attrape
   passer n'importe quel agent. Ailleurs, la session suffit, l'action ne lisant que le
   parcours du demandeur connecté.
 - **`espace-agent/garde-actions.test.ts`**, plus strict : dans l'espace agent, la garde doit
-  être la **première instruction**.
+  être la **première instruction**, et l'instruction suivante doit **tester son résultat**
+  (un `await refusAccesEspaceAgent()` jeté ne refuse rien).
+- **`espace-agent/garde-pages.test.ts`** : même exigence pour le composant de chaque page
+  **et pour son `generateMetadata`**, rendu séparément.
+
+Les trois lisent le code par l'**AST TypeScript** (`shared/testing/server-exports.ts`) : une
+regex manquait les exports fléchés (`export const x = async …`) et les fichiers dont la
+directive `"use server"` suit un commentaire. Une réexportation, dont le corps n'est pas
+lisible, échoue au lieu de passer.
 
 Les exceptions vivent dans une `ALLOWLIST` justifiée entrée par entrée (référentiels publics,
 jeton de validation AMO, chiffrement du simulateur en iframe). Une entrée devenue inutile
 fait échouer le test, pour que la liste ne s'élargisse pas en silence.
 
-Heuristique assumée : le test reconnaît un **nom** de garde dans le corps, il ne prouve pas
+Heuristique assumée pour le test global : il reconnaît un **nom** de garde dans le corps, il ne prouve pas
 qu'elle est correcte, ni qu'elle est appliquée à la bonne ressource. Une garde déléguée à
 un service n'est pas vue : la remonter dans l'action, ou justifier l'exception. La présence
 d'un fichier de test frère n'est **pas** acceptée comme alternative : elle ne dit rien de ce

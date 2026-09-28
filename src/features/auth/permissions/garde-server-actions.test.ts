@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { fonctionsExportees, listerFichiersServer } from "@/shared/testing/server-exports";
 
 // Garde-fou RBAC-TEST-PLAN §5 : le middleware n'authentifie que les pages, chaque action se garde elle-même.
 const SRC = join(__dirname, "../../..");
@@ -66,31 +66,13 @@ interface Action {
   backoffice: boolean;
 }
 
-function listerFichiersServer(dossier: string): string[] {
-  return readdirSync(dossier).flatMap((nom) => {
-    const chemin = join(dossier, nom);
-    if (statSync(chemin).isDirectory()) return listerFichiersServer(chemin);
-    if (!/\.tsx?$/.test(nom) || /\.test\.tsx?$/.test(nom)) return [];
-    return /^["']use server["']/.test(readFileSync(chemin, "utf8")) ? [chemin] : [];
-  });
-}
-
 function extraireActions(chemin: string): Action[] {
   const fichier = relative(SRC, chemin);
-  const lignes = readFileSync(chemin, "utf8").split("\n");
-  return lignes.flatMap((ligne, i) => {
-    const nom = ligne.match(/^export async function (\w+)/)?.[1];
-    if (!nom) return [];
-    const finSignature = lignes.findIndex((l, j) => j >= i && !l.startsWith(" ") && l.endsWith("{"));
-    const fin = lignes.findIndex((l, j) => j > finSignature && l === "}");
-    return [
-      {
-        cle: `${fichier} › ${nom}`,
-        corps: lignes.slice(finSignature + 1, fin).join("\n"),
-        backoffice: fichier.startsWith("features/backoffice/"),
-      },
-    ];
-  });
+  return fonctionsExportees(chemin).map((fn) => ({
+    cle: `${fichier} › ${fn.nom}`,
+    corps: fn.corps,
+    backoffice: fichier.startsWith("features/backoffice/"),
+  }));
 }
 
 const contient = (corps: string, gardes: string[]) => gardes.some((g) => new RegExp(`\\b${g}\\b`).test(corps));
