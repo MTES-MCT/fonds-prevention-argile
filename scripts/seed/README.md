@@ -103,10 +103,14 @@ agents via `/administration/agents`, l'amorçage du premier compte passe par
 `sql/agents/seed-agents-prod.sql`, qui prend lui aussi l'adresse en paramètre :
 
 ```bash
-psql "$DATABASE_URL" \
-  -v email="'prenom.nom@example.gouv.fr'" -v given="'Prénom'" -v usual="'Nom'" \
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -v email="prenom.nom@example.gouv.fr" -v given="Prénom" -v usual="Nom" \
   -f scripts/seed/sql/agents/seed-agents-prod.sql
 ```
+
+Les valeurs se passent **sans guillemets** : le script les lit avec `:'email'`, qui les
+échappe. Un nom comme « N'Diaye » fonctionne ; dans l'ancienne forme, entre guillemets, il
+cassait la requête.
 
 ## Structures partenaires : des contacts qui partent vraiment
 
