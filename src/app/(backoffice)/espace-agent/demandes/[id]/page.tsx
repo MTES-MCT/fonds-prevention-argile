@@ -225,6 +225,8 @@ export default async function DemandeDetailPage({ params }: PageProps) {
  * Génération des métadonnées de la page
  */
 export async function generateMetadata({ params }: PageProps) {
+  // Rendue à part de la page : sans sa propre garde, le titre livrait le nom du demandeur.
+  await exigerAccesEspaceAgent();
   const { id } = await params;
   const result = await getDemandeDetail(id);
 
