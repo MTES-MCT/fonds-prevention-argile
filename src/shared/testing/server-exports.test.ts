@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { fonctionsExportees, listerFichiersServer } from "./server-exports";
 
 let dossier: string;
@@ -26,7 +26,7 @@ describe("server-exports", () => {
     ecrire("commente.ts", '// en-tête\n/* bloc */\n"use server";\nexport async function a() {}\n');
     ecrire("sans-directive.ts", "export async function b() {}\n");
 
-    expect(listerFichiersServer(dossier).map((c) => c.split("/").pop())).toEqual(["commente.ts"]);
+    expect(listerFichiersServer(dossier).map((c) => basename(c))).toEqual(["commente.ts"]);
   });
 
   it("recense une action exportée en fonction fléchée", () => {
