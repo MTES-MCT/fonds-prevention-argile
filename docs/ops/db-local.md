@@ -45,10 +45,13 @@ Sans argument, la commande liste les dumps du dossier, du plus récent au plus a
 liste se filtre en tapant quelques lettres. On peut aussi nommer le fichier directement :
 `pnpm db:restore mon-dump.tar.gz`.
 
-Une **confirmation** est demandée avant de toucher à la base, qui est supprimée puis recréée :
-tout autre réponse que `o` abandonne sans rien modifier. Le script extrait ensuite l'archive,
-copie le dump dans le conteneur, déconnecte les clients, recrée la base vide, restaure, puis
-nettoie les fichiers temporaires. Options :
+Tout ce qui est réversible passe **avant** la confirmation : le script extrait l'archive dans
+un dossier jetable, vérifie qu'elle contient exactement un `.pgsql`, le copie dans le conteneur
+et contrôle que `pg_restore` sait le lire. Un dump illisible est donc refusé sans que la base
+ait été touchée. Vient ensuite la **confirmation** : toute autre réponse que `o` abandonne sans
+rien modifier. Après accord seulement, la base est supprimée (clients déconnectés), recréée
+vide, puis restaurée. Les fichiers extraits sont effacés à toute sortie, erreur comprise.
+Options :
 
 | Option         | Effet                                                            |
 | -------------- | ---------------------------------------------------------------- |

@@ -52,9 +52,10 @@ BACKUP_DIR="$DEFAULT_BACKUP_DIR"
 KEEP_FILES=false
 CONFIRMER=true
 BACKUP_FILE=""
-PGSQL_FILE=""
-CONTAINER_BACKUP_PATH=""
-CONTAINER_CP_PATH=""
+# Dossier d'extraction jetable : un ancien .pgsql du dossier des dumps ne peut plus être pris
+# pour celui de l'archive choisie, ni supprimé à sa place.
+TMP_DIR=""
+CONTAINER_DUMP=""
 
 # Couleurs pour les messages
 RED='\033[0;31m'
@@ -136,30 +137,17 @@ choisir_dump() {
     BACKUP_FILE="${dumps[$((choix - 1))]}"
 }
 
-# Fonction de nettoyage
+# Appelé à toute sortie, erreur et abandon compris : sinon un dump extrait, donc une copie en
+# clair de la base, restait sur le disque après un échec.
 cleanup() {
     if [ "$KEEP_FILES" = true ]; then
-        print_warning "Option -k activée : les fichiers temporaires sont conservés"
-        if [ -n "$PGSQL_FILE" ] && [ -f "$BACKUP_DIR/$PGSQL_FILE" ]; then
-            print_info "Fichier local conservé : $BACKUP_DIR/$PGSQL_FILE"
-        fi
-        if [ -n "$CONTAINER_CP_PATH" ]; then
-            print_info "Fichier container conservé : $CONTAINER_CP_PATH"
-        fi
-    else
-        print_step "Nettoyage des fichiers temporaires..."
-        
-        # Supprimer le fichier .pgsql local
-        if [ -n "$PGSQL_FILE" ] && [ -f "$BACKUP_DIR/$PGSQL_FILE" ]; then
-            rm -f "$BACKUP_DIR/$PGSQL_FILE"
-            print_success "Fichier local supprimé : $PGSQL_FILE"
-        fi
-        
-        # Supprimer le fichier dans le container
-        if [ -n "$CONTAINER_CP_PATH" ]; then
-            docker exec "$CONTAINER_NAME" rm -f "$CONTAINER_BACKUP_PATH" 2>/dev/null || true
-            print_success "Fichier container supprimé : $CONTAINER_CP_PATH"
-        fi
+        if [ -n "$TMP_DIR" ]; then print_warning "Option -k : dump extrait conservé dans $TMP_DIR"; fi
+        if [ -n "$CONTAINER_DUMP" ]; then print_warning "Option -k : dump conservé dans le conteneur ($CONTAINER_DUMP)"; fi
+        return 0
+    fi
+    if [ -n "$TMP_DIR" ]; then rm -rf "$TMP_DIR"; fi
+    if [ -n "$CONTAINER_DUMP" ]; then
+        docker exec "$CONTAINER_NAME" rm -f "/$CONTAINER_DUMP" > /dev/null 2>&1 || true
     fi
 }
 
@@ -171,6 +159,7 @@ handle_error() {
 }
 
 trap 'handle_error $LINENO' ERR
+trap cleanup EXIT
 
 # Parsing des arguments
 while getopts "d:kyh" opt; do
@@ -250,6 +239,40 @@ fi
 
 print_success "Container Docker '$CONTAINER_NAME' actif"
 
+# -----------------------------------------------------------------------------
+# ÉTAPE 1 : Extraction, dans un dossier dédié à côté des dumps (donc hors du dépôt)
+# -----------------------------------------------------------------------------
+print_step "Extraction de l'archive..."
+
+TMP_DIR=$(mktemp -d "$BACKUP_DIR/.restauration.XXXXXX")
+tar -xzf "$TAR_FILE_PATH" -C "$TMP_DIR"
+
+DUMPS_EXTRAITS=()
+while IFS= read -r f; do DUMPS_EXTRAITS+=("$f"); done < <(find "$TMP_DIR" -type f -name '*.pgsql')
+if [ ${#DUMPS_EXTRAITS[@]} -ne 1 ]; then
+    print_error "L'archive doit contenir exactement un fichier .pgsql (trouvés : ${#DUMPS_EXTRAITS[@]})"
+    exit 1
+fi
+PGSQL_PATH="${DUMPS_EXTRAITS[0]}"
+
+print_success "Dump extrait : $(basename "$PGSQL_PATH") ($(du -h "$PGSQL_PATH" | cut -f1))"
+
+# -----------------------------------------------------------------------------
+# ÉTAPE 2 : Copie et contrôle dans le conteneur, avant toute suppression
+# -----------------------------------------------------------------------------
+print_step "Contrôle du dump dans le conteneur Docker..."
+
+CONTAINER_DUMP="/tmp/restauration-$$.pgsql"
+docker cp "$PGSQL_PATH" "$CONTAINER_NAME:$CONTAINER_DUMP" > /dev/null
+
+# Le slash de tête double le chemin, ce qui évite sa réécriture par Git Bash sous Windows.
+if ! docker exec "$CONTAINER_NAME" pg_restore --list "/$CONTAINER_DUMP" > /dev/null 2>&1; then
+    print_error "Ce fichier n'est pas un dump lisible par pg_restore : la base n'a pas été touchée"
+    exit 1
+fi
+
+print_success "Dump lisible"
+
 # Dernier point de retour : tout ce qui suit supprime la base locale.
 if [ "$CONFIRMER" = true ]; then
     echo ""
@@ -262,84 +285,22 @@ if [ "$CONFIRMER" = true ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# ÉTAPE 1 : Extraction du fichier tar.gz
+# ÉTAPES 3 à 6 : Recréation de la base, puis restauration
 # -----------------------------------------------------------------------------
-print_step "Extraction du fichier tar.gz..."
+print_step "Recréation de la base '$DB_NAME'..."
 
-cd "$BACKUP_DIR"
-tar -xzf "$BACKUP_FILE"
+# --force déconnecte les clients (PostgreSQL 13+) ; dropdb et createdb échappent le nom eux-mêmes.
+docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$DB_NAME"
+docker exec "$CONTAINER_NAME" createdb -U "$DB_USER" "$DB_NAME"
 
-# Trouver le fichier .pgsql extrait (le plus récent)
-PGSQL_FILE=$(ls -t *.pgsql 2>/dev/null | head -n 1)
+print_success "Base recréée vide"
 
-if [ -z "$PGSQL_FILE" ]; then
-    print_error "Aucun fichier .pgsql trouvé après extraction"
-    exit 1
-fi
-
-print_success "Fichier extrait : $PGSQL_FILE"
-print_info "Taille : $(ls -lh "$PGSQL_FILE" | awk '{print $5}')"
-
-# -----------------------------------------------------------------------------
-# ÉTAPE 2 : Copie du fichier dans le container
-# -----------------------------------------------------------------------------
-print_step "Copie du fichier dans le container Docker..."
-
-# Chemin dans le container (double slash pour docker exec sous Git Bash)
-CONTAINER_BACKUP_PATH="//tmp/backup-$PGSQL_FILE"
-# Chemin pour docker cp (sans double slash)
-CONTAINER_CP_PATH="/tmp/backup-$PGSQL_FILE"
-
-docker cp "$BACKUP_DIR/$PGSQL_FILE" "$CONTAINER_NAME:$CONTAINER_CP_PATH"
-
-# Vérifier que le fichier est dans le container
-docker exec "$CONTAINER_NAME" ls -lh "$CONTAINER_BACKUP_PATH" > /dev/null
-
-print_success "Fichier copié dans le container : $CONTAINER_BACKUP_PATH"
-
-# -----------------------------------------------------------------------------
-# ÉTAPE 3 : Déconnexion des clients actifs
-# -----------------------------------------------------------------------------
-print_step "Déconnexion des clients actifs de la base '$DB_NAME'..."
-
-DISCONNECTED=$(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -t -c \
-    "SELECT COUNT(*) FROM pg_stat_activity WHERE datname = '$DB_NAME' AND pid <> pg_backend_pid();")
-
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c \
-    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DB_NAME' AND pid <> pg_backend_pid();" \
-    > /dev/null 2>&1 || true
-
-print_success "Clients déconnectés (${DISCONNECTED// /} connexion(s) fermée(s))"
-
-# -----------------------------------------------------------------------------
-# ÉTAPE 4 : Suppression de la base existante
-# -----------------------------------------------------------------------------
-print_step "Suppression de la base de données '$DB_NAME'..."
-
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c \
-    "DROP DATABASE IF EXISTS $DB_NAME;" > /dev/null
-
-print_success "Base de données supprimée"
-
-# -----------------------------------------------------------------------------
-# ÉTAPE 5 : Création d'une nouvelle base
-# -----------------------------------------------------------------------------
-print_step "Création d'une nouvelle base de données '$DB_NAME'..."
-
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c \
-    "CREATE DATABASE $DB_NAME;" > /dev/null
-
-print_success "Base de données créée"
-
-# -----------------------------------------------------------------------------
-# ÉTAPE 6 : Restauration du backup
-# -----------------------------------------------------------------------------
-print_step "Restauration du backup (cela peut prendre quelques minutes)..."
+print_step "Restauration du dump (cela peut prendre quelques minutes)..."
 
 docker exec "$CONTAINER_NAME" pg_restore -U "$DB_USER" -d "$DB_NAME" \
-    --no-owner --no-privileges "$CONTAINER_BACKUP_PATH"
+    --no-owner --no-privileges "/$CONTAINER_DUMP"
 
-print_success "Backup restauré avec succès"
+print_success "Dump restauré"
 
 # -----------------------------------------------------------------------------
 # ÉTAPE 7 : Vérification des données
@@ -356,11 +317,6 @@ TABLES_COUNT=$(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -t
     "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' ')
 
 print_info "Nombre de tables : $TABLES_COUNT"
-
-# -----------------------------------------------------------------------------
-# ÉTAPE 8 : Nettoyage
-# -----------------------------------------------------------------------------
-cleanup
 
 # =============================================================================
 # FIN DU SCRIPT
