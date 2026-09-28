@@ -214,7 +214,8 @@ Repères de permissions par rôle :
   Le reste de l'espace agent reste en lecture seule (`assertNotSuperAdminReadOnly`), à
   l'exception de la ré-ouverture d'une demande refusée ([§6.1](#61-ré-ouverture-dune-demande-refusée-garde-élargie)).
 - **ADMINISTRATEUR** : stats, users, AMO (R/W/import/delete), allers-vers
-  (R/W/import/delete), étapes (éligibilité/diagnostic/devis/factures en lecture),
+  (R/W/import/delete — la suppression préalable à un import exige `*_DELETE` en plus de
+  `*_IMPORT` et épargne les structures rattachées, cf. [import-structures](../ops/import-structures.md)), étapes (éligibilité/diagnostic/devis/factures en lecture),
   commentaires (lecture globale). Pas la gestion des agents.
 - **ANALYSTE** : lecture stats (national ou départemental, voir §5). En mode
   départemental (suivi DDT), peut aussi ajouter/éditer ses propres messages
