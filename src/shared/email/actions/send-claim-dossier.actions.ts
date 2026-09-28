@@ -1,5 +1,4 @@
-"use server";
-
+// Pas de "use server" : un helper d'envoi prenant destinataire et contenu en paramètres ne doit pas être un endpoint POST.
 import { ActionResult } from "@/shared/types";
 import { renderEmailTemplate } from "../utils/render-template.utils";
 import { ClaimDossierTemplate } from "../templates/claim-dossier.template";

@@ -1,5 +1,4 @@
-"use server";
-
+// Pas de "use server" : un helper d'envoi prenant destinataire et contenu en paramètres ne doit pas être un endpoint POST.
 import { getServerEnv } from "@/shared/config/env.config";
 import { ActionResult } from "@/shared/types";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
