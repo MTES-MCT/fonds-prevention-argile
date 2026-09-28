@@ -53,6 +53,14 @@ export const evaluerAccesEspaceAgent = cache(async (): Promise<AccesEspaceAgent>
   return { statut: "autorise", agent };
 });
 
+export const REFUS_ACCES_ESPACE_AGENT = "Accès réservé aux agents de l'espace agent";
+
+// Garde de server action : même verdict que les pages, une action restant appelable directement en POST.
+export async function refusAccesEspaceAgent(): Promise<string | null> {
+  const acces = await evaluerAccesEspaceAgent();
+  return acces.statut === "autorise" ? null : REFUS_ACCES_ESPACE_AGENT;
+}
+
 // Garde de page : Next rend la page même quand le layout refuse, son RSC part donc dans le HTML.
 export async function exigerAccesEspaceAgent(): Promise<Agent> {
   const acces = await evaluerAccesEspaceAgent();

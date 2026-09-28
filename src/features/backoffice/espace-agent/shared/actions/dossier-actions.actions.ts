@@ -9,6 +9,7 @@ import type {
   UpdateActionResult,
   DeleteActionResult,
 } from "../domain/types/action.types";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 /**
  * Récupère toutes les actions d'un parcours
@@ -16,6 +17,9 @@ import type {
  */
 export async function getActionsAction(parcoursId: string): Promise<ActionsListResult> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { actions: [], totalCount: 0 };
+
     const agentResult = await getCurrentAgent();
     if (!agentResult.success || !agentResult.data) {
       return { actions: [], totalCount: 0 };
@@ -43,6 +47,9 @@ export async function getActionsAction(parcoursId: string): Promise<ActionsListR
  */
 export async function createActionAction(parcoursId: string, data: ActionFormData): Promise<CreateActionResult> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     // Exception assumée au read-only super-admin : les commentaires/actions lui sont
     // ouverts (portée nationale, sur ses propres commentaires) — on ne passe donc pas
     // par assertNotSuperAdminReadOnly.
@@ -69,6 +76,9 @@ export async function updateActionAction(
   rdvDate?: string
 ): Promise<UpdateActionResult> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     // Exception assumée au read-only super-admin, cf. createActionAction ci-dessus.
     const agentResult = await getCurrentAgent();
     if (!agentResult.success || !agentResult.data) {
@@ -89,6 +99,9 @@ export async function updateActionAction(
  */
 export async function deleteActionAction(actionId: string): Promise<DeleteActionResult> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     // Exception assumée au read-only super-admin, cf. createActionAction ci-dessus.
     const agentResult = await getCurrentAgent();
     if (!agentResult.success || !agentResult.data) {

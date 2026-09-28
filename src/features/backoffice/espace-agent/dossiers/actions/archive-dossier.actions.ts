@@ -15,6 +15,7 @@ import {
   situationApresReactivation,
 } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { ActionResult } from "@/shared/types";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 /**
  * Archive un dossier — réservé au responsable courant du dossier
@@ -22,6 +23,9 @@ import type { ActionResult } from "@/shared/types";
  */
 export async function archiveDossierAction(parcoursId: string, archiveReason: string): Promise<ActionResult<void>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
 
@@ -64,6 +68,9 @@ export async function archiveDossierAction(parcoursId: string, archiveReason: st
  */
 export async function unarchiveDossierAction(parcoursId: string): Promise<ActionResult<void>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
 

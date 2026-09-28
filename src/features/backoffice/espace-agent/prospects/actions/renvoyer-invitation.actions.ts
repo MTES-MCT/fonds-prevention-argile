@@ -8,6 +8,7 @@ import { logSystemAction } from "@/features/backoffice/espace-agent/shared/servi
 import { ACTION_TYPE_INVITATION_RENVOYEE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { UserRole } from "@/shared/domain/value-objects";
 import type { ActionResult } from "@/shared/types";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 /**
  * Renvoie l'email d'invitation "claim dossier" à un demandeur dont le dossier a
@@ -21,6 +22,9 @@ import type { ActionResult } from "@/shared/types";
  */
 export async function renvoyerInvitationAction(parcoursId: string): Promise<ActionResult<void>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const agentResult = await getCurrentAgent();
     if (!agentResult.success) return { success: false, error: agentResult.error };
     const agent = agentResult.data;

@@ -13,6 +13,7 @@ import { ACTION_TYPE_DOSSIER_REOUVERT } from "@/features/backoffice/espace-agent
 import { ROLES_REOUVERTURE } from "@/features/backoffice/espace-agent/dossiers/domain/reouverture";
 import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 import type { ActionResult } from "@/shared/types";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 /**
  * Ré-ouvre une demande refusée par l'AMO (« changement d'avis » du demandeur).
@@ -26,6 +27,9 @@ import type { ActionResult } from "@/shared/types";
  */
 export async function reouvrirDemandeAction(parcoursId: string): Promise<ActionResult<{ redirectTo: string | null }>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const agentResult = await getCurrentAgent();
     if (!agentResult.success) return { success: false, error: agentResult.error };
     const agent = agentResult.data;

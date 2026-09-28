@@ -3,25 +3,27 @@
 import { UserRole } from "@/shared/domain/value-objects";
 import type { Agent } from "@/shared/database/schema/agents";
 import { getCurrentAgent } from "./agent.actions";
+import {
+  evaluerAccesEspaceAgent,
+  REFUS_ACCES_ESPACE_AGENT,
+} from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 type EspaceAgentAccess =
-  | { kind: "agent"; agent: Agent }
-  | { kind: "super-admin"; agent: Agent }
-  | { kind: "error"; error: string };
+  { kind: "agent"; agent: Agent } | { kind: "super-admin"; agent: Agent } | { kind: "error"; error: string };
 
 /**
  * Résout l'accès à l'espace agent.
- * - AMO / Allers-vers / AMO_ET_ALLERS_VERS → { kind: "agent", agent }
+ * - AMO / Allers-vers / AMO_ET_ALLERS_VERS / ANALYSTE départemental → { kind: "agent", agent }
  * - SUPER_ADMINISTRATEUR → { kind: "super-admin", agent } (lecture globale, sans filtre)
- * - Autre / non connecté → { kind: "error", error }
+ * - Refusé par evaluerAccesEspaceAgent (ADMINISTRATEUR, analyste national, non connecté…) → { kind: "error", error }
  */
 export async function resolveEspaceAgentAccess(): Promise<EspaceAgentAccess> {
-  const agentResult = await getCurrentAgent();
-  if (!agentResult.success) {
-    return { kind: "error", error: agentResult.error };
+  const acces = await evaluerAccesEspaceAgent();
+  if (acces.statut !== "autorise") {
+    return { kind: "error", error: REFUS_ACCES_ESPACE_AGENT };
   }
 
-  const agent = agentResult.data;
+  const { agent } = acces;
 
   if (agent.role === UserRole.SUPER_ADMINISTRATEUR) {
     return { kind: "super-admin", agent };

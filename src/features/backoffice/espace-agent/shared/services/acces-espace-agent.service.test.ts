@@ -15,7 +15,12 @@ vi.mock("@/shared/database/repositories/agent-permissions.repository", () => ({
   agentPermissionsRepository: { getDepartementsByAgentId: vi.fn() },
 }));
 
-import { evaluerAccesEspaceAgent, exigerAccesEspaceAgent } from "./acces-espace-agent.service";
+import {
+  evaluerAccesEspaceAgent,
+  exigerAccesEspaceAgent,
+  refusAccesEspaceAgent,
+  REFUS_ACCES_ESPACE_AGENT,
+} from "./acces-espace-agent.service";
 import { checkProConnectAccess } from "@/features/auth/permissions/services/permissions.service";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { agentPermissionsRepository } from "@/shared/database/repositories/agent-permissions.repository";
@@ -122,5 +127,43 @@ describe("exigerAccesEspaceAgent", () => {
     } as never);
 
     await expect(exigerAccesEspaceAgent()).rejects.toThrow("NOT_FOUND");
+  });
+});
+
+// Une server action reste appelable en POST direct : le refus doit tenir hors de toute page.
+describe("refusAccesEspaceAgent", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("ADMINISTRATEUR → refus", async () => {
+    connecteEnAgent(UserRole.ADMINISTRATEUR);
+
+    expect(await refusAccesEspaceAgent()).toBe(REFUS_ACCES_ESPACE_AGENT);
+  });
+
+  it("ANALYSTE national → refus", async () => {
+    connecteEnAgent(UserRole.ANALYSTE, []);
+
+    expect(await refusAccesEspaceAgent()).toBe(REFUS_ACCES_ESPACE_AGENT);
+  });
+
+  it("non authentifié → refus", async () => {
+    vi.mocked(checkProConnectAccess).mockResolvedValue({
+      hasAccess: false,
+      errorCode: "NOT_AUTHENTICATED",
+    } as never);
+
+    expect(await refusAccesEspaceAgent()).toBe(REFUS_ACCES_ESPACE_AGENT);
+  });
+
+  it.each([
+    [UserRole.AMO, []],
+    [UserRole.SUPER_ADMINISTRATEUR, []],
+    [UserRole.ANALYSTE, ["30"]],
+  ])("%s → aucun refus", async (role, departements) => {
+    connecteEnAgent(role, departements);
+
+    expect(await refusAccesEspaceAgent()).toBeNull();
   });
 });

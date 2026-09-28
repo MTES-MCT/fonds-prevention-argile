@@ -31,6 +31,7 @@ import {
   ACTION_TYPE_DOSSIER_ARCHIVE,
   ACTION_TYPE_DOSSIER_DESARCHIVE,
 } from "../domain/types/action.types";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 /**
  * Baseline du diff agent = données effectives AVANT la 1re correction. Idempotent :
@@ -78,6 +79,9 @@ export async function updateSimulationDataAction(
   rgaData: RGASimulationData
 ): Promise<ActionResult<{ parcoursId: string }>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     // SUPER_ADMIN : lecture seule dans /espace-agent
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };

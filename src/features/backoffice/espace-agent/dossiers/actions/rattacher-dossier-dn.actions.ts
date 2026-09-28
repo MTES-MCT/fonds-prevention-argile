@@ -9,6 +9,7 @@ import { logSystemAction } from "@/features/backoffice/espace-agent/shared/servi
 import { verifierAccesDossierDn } from "@/features/backoffice/espace-agent/shared/services/dossier-dn-permissions.service";
 import { ACTION_TYPE_DOSSIER_DN_RATTACHE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import type { ActionResult } from "@/shared/types";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 /**
  * Rattache un dossier DN existant à un parcours, par son numéro (ADR-0027).
@@ -21,6 +22,9 @@ import type { ActionResult } from "@/shared/types";
  */
 export async function rattacherDossierDnAction(parcoursId: string, dsNumber: string): Promise<ActionResult<void>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const agentResult = await getCurrentAgent();
     if (!agentResult.success) return { success: false, error: agentResult.error };
     const agent = agentResult.data;

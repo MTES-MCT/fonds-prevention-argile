@@ -31,6 +31,7 @@ import { parcoursPreventionRepository } from "@/shared/database/repositories/par
 import { getDossierByStep } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 /**
  * Trace le choix d'éligibilité de l'AMO dans l'historique (`parcours_actions`).
@@ -101,6 +102,9 @@ async function verifyAmoOwnership(demandeId: string): Promise<ActionResult<{ ent
  */
 export async function getDemandeDetailAction(demandeId: string): Promise<ActionResult<DemandeDetail>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     return await getDemandeDetail(demandeId);
   } catch (error) {
     console.error("Erreur getDemandeDetailAction:", error);
@@ -120,6 +124,9 @@ export async function accepterAccompagnement(
   estMandataireFinancier?: boolean
 ): Promise<ActionResult<{ message: string; alreadyProcessed: boolean; valideeAt: Date }>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
 
@@ -151,6 +158,9 @@ export async function refuserDemandeNonEligible(
   commentaire: string
 ): Promise<ActionResult<{ message: string; alreadyProcessed: boolean; valideeAt: Date }>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
 
@@ -200,6 +210,9 @@ export async function refuserAccompagnementEligible(
   note?: string
 ): Promise<ActionResult<RefusAccompagnementData>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
 
@@ -327,6 +340,9 @@ export async function getNextDemandeurEnAttente(
   currentDemandeId: string
 ): Promise<ActionResult<{ nextDemandeId: string | null }>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const user = await getCurrentUser();
 
     if (!user) {

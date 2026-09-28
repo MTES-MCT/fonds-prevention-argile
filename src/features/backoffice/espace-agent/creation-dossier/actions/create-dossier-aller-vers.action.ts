@@ -11,6 +11,7 @@ import type { ActionResult } from "@/shared/types";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { createDossierByAgent } from "../services/creation-dossier.service";
 import { getPostCreationRedirectUrl } from "./post-creation-redirect";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 const adresseBienDetailsSchema = z.object({
   label: z.string(),
@@ -74,6 +75,9 @@ export async function createDossierAllerVersAction(
   input: CreateDossierInput
 ): Promise<ActionResult<{ parcoursId: string; claimUrl: string; emailSent: boolean; redirectUrl: string }>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
 
