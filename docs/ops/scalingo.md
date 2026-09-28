@@ -92,9 +92,13 @@ Repères une fois dans le prompt :
 \q                  -- quitter
 ```
 
-> Le `DATABASE_URL` de **staging** est en lecture seule et peut donc être utilisé depuis un
-> shell local (utile pour `pnpm qa:cas-de-test`, cf. `CLAUDE.md`). Celui de **prod**, non :
-> y rester en lecture est une discipline, pas une contrainte technique.
+> **Aucun `DATABASE_URL` n'est en lecture seule, staging compris** : son rôle a le droit de
+> modifier les tables (vérifié le 28/09/2026 avec
+> `SELECT has_table_privilege(current_user, 'users', 'UPDATE')`). L'exporter dans un shell
+> local reste possible pour un script qui ne fait que lire, comme `pnpm qa:cas-de-test`, mais
+> tout ce qui est lancé dans ce shell écrit sur staging. Rester en lecture est une discipline,
+> pas une contrainte technique, sur staging comme en prod. `pnpm seed:staging` refuse
+> désormais une base distante sans `--yes-staging`, même si `.env.local` annonce « local ».
 
 ## Requêtes de lecture courantes
 

@@ -240,7 +240,8 @@ Qui lance `qa:cas-de-test` dépend de l'environnement visé :
 - **tests en local** (cas courant) : Claude lance le script lui-même sur la base de dev et
   livre directement une checklist avec les liens dedans — rien à coller ;
 - **tests sur staging** : Claude n'a pas cette base. L'utilisateur lance le script (one-off
-  Scalingo, ou en local avec le `DATABASE_URL` de staging — il est en lecture seule) et colle
+  Scalingo, ou en local avec le `DATABASE_URL` de staging — **pas** en lecture seule : son rôle
+  peut écrire, n'y lancer que des scripts qui lisent, cf. `docs/ops/scalingo.md`) et colle
   la sortie ; Claude l'associe alors aux blocs « Données », en réécrivant les URLs sur le
   domaine de staging.
 
