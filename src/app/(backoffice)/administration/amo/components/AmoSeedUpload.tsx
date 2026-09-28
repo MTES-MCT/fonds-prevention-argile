@@ -86,6 +86,11 @@ export function AmoSeedUpload({ onImportSuccess }: AmoSeedUploadProps) {
         </div>
       </div>
 
+      <p className="fr-text--sm">
+        Une entreprise déjà présente (même SIRET) est mise à jour au lieu d'être dupliquée. Dans les colonnes à
+        plusieurs valeurs, séparez-les par des virgules ou des points-virgules.
+      </p>
+
       <form action={formAction}>
         <div
           className={`
@@ -135,8 +140,11 @@ export function AmoSeedUpload({ onImportSuccess }: AmoSeedUploadProps) {
             disabled={isPending}
           />
           <label className="fr-label" htmlFor="clear-existing">
-            Supprimer toutes les données AMO existantes avant l'import
-            <span className="fr-hint-text">Attention : cette action est irréversible</span>
+            Supprimer les entreprises AMO non rattachées avant l'import
+            <span className="fr-hint-text">
+              Les entreprises rattachées à un agent ou à un dossier sont conservées. Attention : la suppression est
+              irréversible
+            </span>
           </label>
         </div>
 

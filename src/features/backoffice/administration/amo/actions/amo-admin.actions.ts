@@ -76,6 +76,16 @@ export async function importAmoFromExcel(formData: FormData, clearExisting: bool
     };
   }
 
+  if (clearExisting) {
+    const deleteCheck = await checkBackofficePermission(BackofficePermission.AMO_DELETE);
+    if (!deleteCheck.hasAccess) {
+      return {
+        success: false,
+        message: "Permission insuffisante pour supprimer des AMO",
+      };
+    }
+  }
+
   try {
     const result = await importAmosFromExcel(formData, clearExisting);
     return result;

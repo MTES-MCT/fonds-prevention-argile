@@ -17,5 +17,8 @@ export interface AllersVersImportRow {
 export interface AllersVersImportResult {
   success: boolean;
   created: number;
+  updated: number;
   errors: string[];
+  // Bilan de la suppression préalable, présent seulement si elle a été demandée
+  purge?: string;
 }

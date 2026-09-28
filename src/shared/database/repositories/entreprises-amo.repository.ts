@@ -1,6 +1,6 @@
-import { eq, like, or, SQL, sql } from "drizzle-orm"; // Ajouter sql
+import { and, eq, like, notExists, or, SQL, sql } from "drizzle-orm";
 import { db } from "../client";
-import { entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "../schema";
+import { agents, entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci, parcoursAmoValidations } from "../schema";
 import type { NewEntrepriseAmo } from "../schema/entreprises-amo";
 import { BaseRepository } from "./base.repository";
 import type { Amo } from "@/features/parcours/amo/domain/entities";
@@ -145,6 +145,31 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
 
       return result.length > 0;
     });
+  }
+
+  /**
+   * Supprime les entreprises qu'aucun agent ni aucune validation AMO ne référence
+   */
+  async supprimerNonRattachees(): Promise<{ supprimees: string[]; conservees: string[] }> {
+    // Un seul DELETE : la FK restrict des validations ne peut pas lever, et aucun agent ne devient orphelin.
+    const supprimees = await db
+      .delete(entreprisesAmo)
+      .where(
+        and(
+          notExists(db.select({ id: agents.id }).from(agents).where(eq(agents.entrepriseAmoId, entreprisesAmo.id))),
+          notExists(
+            db
+              .select({ id: parcoursAmoValidations.id })
+              .from(parcoursAmoValidations)
+              .where(eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
+          )
+        )
+      )
+      .returning({ nom: entreprisesAmo.nom });
+
+    const conservees = await db.select({ nom: entreprisesAmo.nom }).from(entreprisesAmo).orderBy(entreprisesAmo.nom);
+
+    return { supprimees: supprimees.map((s) => s.nom), conservees: conservees.map((s) => s.nom) };
   }
 
   /**

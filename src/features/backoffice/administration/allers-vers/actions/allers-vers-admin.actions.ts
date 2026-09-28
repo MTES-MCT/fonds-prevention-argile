@@ -75,22 +75,33 @@ export async function importAllersVersAction(formData: FormData): Promise<Action
     }
 
     const clearExisting = formData.get("clearExisting") === "true";
+    if (clearExisting) {
+      const deleteCheck = await checkBackofficePermission(BackofficePermission.ALLERS_VERS_DELETE);
+      if (!deleteCheck.hasAccess) {
+        return {
+          success: false,
+          error: "Permission insuffisante pour supprimer des Allers Vers",
+        };
+      }
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const result = await importAllersVersFromExcel(arrayBuffer, clearExisting);
 
     revalidatePath("/administration");
 
-    if (result.success) {
-      return {
-        success: true,
-        data: result,
-      };
-    } else {
+    // Échec seulement si rien n'a été écrit : un import partiel doit montrer ce qui est passé
+    if (result.created + result.updated === 0 && result.errors.length > 0) {
       return {
         success: false,
-        error: result.errors.join(", "),
+        error: [result.purge, result.errors.join(", ")].filter(Boolean).join(" "),
       };
     }
+
+    return {
+      success: true,
+      data: result,
+    };
   } catch (error) {
     console.error("Erreur lors de l'import des Allers Vers:", error);
     return {
@@ -155,37 +166,6 @@ export async function updateAllersVersAction(
     return {
       success: false,
       error: "Impossible de mettre à jour l'Allers Vers",
-    };
-  }
-}
-
-export async function deleteAllAllersVers(): Promise<ActionResult<void>> {
-  // Vérifier la permission de suppression
-  const permissionCheck = await checkBackofficePermission(BackofficePermission.ALLERS_VERS_DELETE);
-
-  if (!permissionCheck.hasAccess) {
-    return {
-      success: false,
-      error: "Permission insuffisante pour supprimer des Allers Vers",
-    };
-  }
-
-  try {
-    const allAllersVers = await allersVersRepository.findAll();
-
-    for (const av of allAllersVers) {
-      await allersVersRepository.delete(av.id);
-    }
-
-    return {
-      success: true,
-      data: undefined,
-    };
-  } catch (error) {
-    console.error("Erreur lors de la suppression des Allers Vers:", error);
-    return {
-      success: false,
-      error: "Impossible de supprimer les Allers Vers",
     };
   }
 }

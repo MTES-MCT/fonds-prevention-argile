@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import { importAmosFromExcel } from "./amo-import.service";
 import { db } from "@/shared/database/client";
 import { entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "@/shared/database/schema";
+import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
 
 // Mock ExcelJS
 vi.mock("exceljs", () => {
@@ -28,6 +29,12 @@ vi.mock("exceljs", () => {
     },
   };
 });
+
+vi.mock("@/shared/database/repositories/entreprises-amo.repository", () => ({
+  entreprisesAmoRepository: {
+    supprimerNonRattachees: vi.fn(),
+  },
+}));
 
 vi.mock("@/shared/database/client", () => ({
   db: {
@@ -303,11 +310,9 @@ describe("amo-import.service", () => {
       expect(result.stats?.epciCreated).toBe(0);
     });
 
-    it("devrait supprimer toutes les données si clearExisting=true", async () => {
-      const file = createMockFile("test.xlsx", new ArrayBuffer(0));
-      const formData = createMockFormData(file);
-
-      const validData = [
+    it("ne supprime que les entreprises non rattachées si clearExisting=true", async () => {
+      const formData = createMockFormData(createMockFile("test.xlsx", new ArrayBuffer(0)));
+      setupMockWorksheet([
         {
           nom: "AMO Test",
           epci: "200054781",
@@ -318,16 +323,73 @@ describe("amo-import.service", () => {
           adresse: "1 rue",
           codes_insee: "",
         },
-      ];
+      ]);
+      mockDbForInsert(false);
+      vi.mocked(entreprisesAmoRepository.supprimerNonRattachees).mockResolvedValue({
+        supprimees: ["AMO Orpheline"],
+        conservees: ["AMO Suivie"],
+      });
 
-      setupMockWorksheet(validData);
+      const result = await importAmosFromExcel(formData, true);
+
+      expect(entreprisesAmoRepository.supprimerNonRattachees).toHaveBeenCalledTimes(1);
+      // Plus de delete-all : il levait sur la FK restrict des validations et orphelinait les agents
+      expect(db.delete).not.toHaveBeenCalledWith(entreprisesAmo);
+      expect(result.success).toBe(true);
+      expect(result.message).toContain("1 structure supprimée");
+      expect(result.message).toContain("rattachées à un agent ou à un dossier");
+      expect(result.message).toContain("AMO Suivie");
+    });
+
+    it("ne touche à rien sans clearExisting", async () => {
+      const formData = createMockFormData(createMockFile("test.xlsx", new ArrayBuffer(0)));
+      setupMockWorksheet([
+        {
+          nom: "AMO Test",
+          epci: "",
+          siret: "12345678901234",
+          departements: "75",
+          emails: "contact@amo.fr",
+          telephone: "",
+          adresse: "",
+          codes_insee: "",
+        },
+      ]);
       mockDbForInsert(false);
 
-      await importAmosFromExcel(formData, true);
+      await importAmosFromExcel(formData);
 
-      expect(db.delete).toHaveBeenCalledWith(entreprisesAmoEpci);
-      expect(db.delete).toHaveBeenCalledWith(entreprisesAmoCommunes);
-      expect(db.delete).toHaveBeenCalledWith(entreprisesAmo);
+      expect(entreprisesAmoRepository.supprimerNonRattachees).not.toHaveBeenCalled();
+    });
+
+    it("accepte la virgule et le point-virgule dans toutes les colonnes à plusieurs valeurs", async () => {
+      const formData = createMockFormData(createMockFile("test.xlsx", new ArrayBuffer(0)));
+      setupMockWorksheet([
+        {
+          nom: "AMO Séparateurs",
+          epci: "200054781, 200058519",
+          siret: "12345678901234",
+          departements: "Seine-et-Marne 77; Essonne 91",
+          emails: "a@amo.fr, b@amo.fr",
+          telephone: "",
+          adresse: "",
+          codes_insee: "75001;75002",
+        },
+      ]);
+      mockDbForInsert(false);
+      const valuesMock = vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: "amo-1" }]) }),
+      });
+      vi.mocked(db.insert).mockReturnValue({ values: valuesMock } as unknown as ReturnType<typeof db.insert>);
+
+      const result = await importAmosFromExcel(formData);
+
+      expect(result.stats?.epciCreated).toBe(2);
+      expect(result.stats?.communesCreated).toBe(2);
+      expect(valuesMock.mock.calls[0][0]).toMatchObject({
+        emails: "a@amo.fr;b@amo.fr",
+        departements: "Seine-et-Marne 77, Essonne 91",
+      });
     });
 
     it("devrait continuer l'import même si certaines lignes échouent", async () => {
