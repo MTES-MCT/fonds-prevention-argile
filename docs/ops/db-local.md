@@ -113,16 +113,19 @@ docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
   -c "SELECT id, nom FROM allers_vers ORDER BY nom;"
 ```
 
-Puis basculer le compte. `psql` substitue `:email` tel quel, d'où les quotes simples
-imbriquées dans `-v` :
+Puis basculer le compte. La requête passe par l'**entrée standard** : `psql` n'interpole ses
+variables ni dans `-c`, ni sans la forme `:'email'`, qui les échappe. Les valeurs se donnent
+donc brutes, sans guillemets :
 
 ```bash
 EMAIL="prenom.nom@beta.gouv.fr"
 
 # Super-administrateur (ou administrateur / analyste : mêmes FK à NULL)
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
-  -v email="'$EMAIL'" \
-  -c "UPDATE agents SET role = 'super_administrateur', entreprise_amo_id = NULL, allers_vers_id = NULL WHERE email = :email;"
+  -v ON_ERROR_STOP=1 -v email="$EMAIL" <<'SQL'
+UPDATE agents SET role = 'super_administrateur', entreprise_amo_id = NULL, allers_vers_id = NULL
+WHERE email = :'email';
+SQL
 ```
 
 ```bash
@@ -131,8 +134,10 @@ AMO_ID="<uuid-entreprise-amo>"
 
 # AMO
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
-  -v email="'$EMAIL'" -v amo_id="'$AMO_ID'" \
-  -c "UPDATE agents SET role = 'amo', entreprise_amo_id = :amo_id, allers_vers_id = NULL WHERE email = :email;"
+  -v ON_ERROR_STOP=1 -v email="$EMAIL" -v amo_id="$AMO_ID" <<'SQL'
+UPDATE agents SET role = 'amo', entreprise_amo_id = :'amo_id', allers_vers_id = NULL
+WHERE email = :'email';
+SQL
 ```
 
 ```bash
@@ -141,20 +146,23 @@ AV_ID="<uuid-allers-vers>"
 
 # Aller-vers
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
-  -v email="'$EMAIL'" -v av_id="'$AV_ID'" \
-  -c "UPDATE agents SET role = 'allers_vers', entreprise_amo_id = NULL, allers_vers_id = :av_id WHERE email = :email;"
+  -v ON_ERROR_STOP=1 -v email="$EMAIL" -v av_id="$AV_ID" <<'SQL'
+UPDATE agents SET role = 'allers_vers', entreprise_amo_id = NULL, allers_vers_id = :'av_id'
+WHERE email = :'email';
+SQL
 ```
 
 Vérification :
 
 ```bash
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
-  -v email="'$EMAIL'" \
-  -c "SELECT a.email, a.role, e.nom AS amo, av.nom AS allers_vers, a.desactive_at
-      FROM agents a
-      LEFT JOIN entreprises_amo e ON e.id = a.entreprise_amo_id
-      LEFT JOIN allers_vers av    ON av.id = a.allers_vers_id
-      WHERE a.email = :email;"
+  -v email="$EMAIL" <<'SQL'
+SELECT a.email, a.role, e.nom AS amo, av.nom AS allers_vers, a.desactive_at
+FROM agents a
+LEFT JOIN entreprises_amo e ON e.id = a.entreprise_amo_id
+LEFT JOIN allers_vers av    ON av.id = a.allers_vers_id
+WHERE a.email = :'email';
+SQL
 ```
 
 Trois pièges qui font perdre du temps :

@@ -137,8 +137,10 @@ En local, dans le conteneur Docker :
 EMAIL="demandeur@example.org"
 
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
-  -v email="'$EMAIL'" \
-  -c "SELECT u.id, u.email, u.prenom, u.nom FROM users u WHERE u.email = :email OR u.email_contact = :email;"
+  -v email="$EMAIL" <<'SQL'
+SELECT u.id, u.email, u.prenom, u.nom FROM users u
+WHERE u.email = :'email' OR u.email_contact = :'email';
+SQL
 ```
 
 Sur un environnement déployé, depuis un one-off (cf. [`scalingo.md`](./scalingo.md)) :

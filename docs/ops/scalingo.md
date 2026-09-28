@@ -173,9 +173,14 @@ scalingo --app fonds-argile --region osc-secnum-fr1 run "pnpm fix:lier-amo-oblig
 ```
 
 ```bash
-# Puis, après avoir lu l'inventaire
-scalingo --app fonds-argile --region osc-secnum-fr1 run "pnpm fix:lier-amo-oblig --apply"
+# Puis, après avoir lu l'inventaire, un dossier à la fois
+scalingo --app fonds-argile --region osc-secnum-fr1 run "pnpm fix:lier-amo-oblig --parcours-id=<uuid> --apply"
 ```
+
+> Ce script **écrit en production et envoie des emails** : chaque validation créée déclenche
+> l'invitation de l'AMO. Sans `--parcours-id`, `--apply` traite d'un coup tous les dossiers de
+> l'inventaire. Cibler un dossier est la règle ; un `--apply` global se décide après lecture de
+> l'inventaire complet, pas par copier-coller.
 
 **Les guillemets autour de la commande ne sont pas optionnels** : sans eux, la CLI Scalingo
 interprète `--apply` comme un de ses propres flags et le script tourne en dry-run — on croit
