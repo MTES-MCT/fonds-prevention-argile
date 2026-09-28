@@ -1,5 +1,6 @@
 import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
 import type { Amo } from "../domain/entities";
+import { parseListe } from "@/shared/utils/liste.utils";
 
 /**
  * Service pour les opérations d'écriture sur les AMO
@@ -30,8 +31,9 @@ export async function updateAmo(amoId: string, data: UpdateAmoData): Promise<Amo
   const updated = await entreprisesAmoRepository.update(amoId, {
     nom: data.nom.trim(),
     siret: data.siret?.trim() || "",
-    departements: data.departements,
-    emails: data.emails,
+    departements: parseListe(data.departements).join(", "),
+    // Stockage canonique en `;` : les lecteurs (email AMO, préremplissage DN) découpent sur ce séparateur
+    emails: parseListe(data.emails).join(";"),
     telephone: data.telephone?.trim() || "",
     adresse: data.adresse?.trim() || "",
     horaires: data.horaires === undefined ? undefined : data.horaires?.trim() || null,

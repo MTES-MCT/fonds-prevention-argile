@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Amo } from "@/features/parcours/amo";
 import { updateAmo } from "@/features/backoffice";
+import { parseListe } from "@/shared/utils/liste.utils";
 
 interface AmoEditModalProps {
   amo: Amo & {
@@ -38,14 +39,8 @@ export function AmoEditModal({ amo, onClose, onSuccess }: AmoEditModalProps) {
     try {
       const result = await updateAmo(amo.id, {
         ...formData,
-        communes: formData.communes
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean),
-        epci: formData.epci
-          .split(",")
-          .map((e) => e.trim())
-          .filter(Boolean),
+        communes: parseListe(formData.communes),
+        epci: parseListe(formData.epci),
       });
 
       if (result.success) {
@@ -154,10 +149,11 @@ export function AmoEditModal({ amo, onClose, onSuccess }: AmoEditModalProps) {
                       type="text"
                       id={`${modalId}-emails`}
                       required
-                      placeholder="email1@test.fr;email2@test.fr"
+                      placeholder="email1@test.fr; email2@test.fr"
                       value={formData.emails}
                       onChange={(e) => setFormData({ ...formData, emails: e.target.value })}
                     />
+                    <p className="fr-hint-text">Emails séparés par des virgules ou des points-virgules</p>
                   </div>
 
                   <div className="fr-input-group">
@@ -213,7 +209,7 @@ export function AmoEditModal({ amo, onClose, onSuccess }: AmoEditModalProps) {
                       value={formData.epci}
                       onChange={(e) => setFormData({ ...formData, epci: e.target.value })}
                     />
-                    <p className="fr-hint-text">Codes EPCI séparés par des virgules</p>
+                    <p className="fr-hint-text">Codes EPCI séparés par des virgules ou des points-virgules</p>
                   </div>
 
                   <div className="fr-input-group">
@@ -228,7 +224,7 @@ export function AmoEditModal({ amo, onClose, onSuccess }: AmoEditModalProps) {
                       value={formData.communes}
                       onChange={(e) => setFormData({ ...formData, communes: e.target.value })}
                     />
-                    <p className="fr-hint-text">Codes INSEE séparés par des virgules</p>
+                    <p className="fr-hint-text">Codes INSEE séparés par des virgules ou des points-virgules</p>
                   </div>
 
                   <div className="fr-modal__footer fr-mt-4v">

@@ -8,3 +8,4 @@ export * from "./geo.utils";
 export * from "./departements.utils";
 export * from "./phone.utils";
 export * from "./uuid.utils";
+export * from "./liste.utils";

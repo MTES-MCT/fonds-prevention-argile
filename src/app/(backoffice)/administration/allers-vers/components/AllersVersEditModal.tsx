@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { AllersVers } from "@/features/seo/allers-vers";
 import { updateAllersVersAction } from "@/features/backoffice";
+import { parseListe } from "@/shared/utils/liste.utils";
 
 interface AllersVersWithRelations extends AllersVers {
   departements?: { codeDepartement: string }[];
@@ -37,20 +38,9 @@ export function AllersVersEditModal({ allersVers, onClose, onSuccess }: AllersVe
 
     try {
       // Parser les données
-      const emailsArray = formData.emails
-        .split(";")
-        .map((e) => e.trim())
-        .filter(Boolean);
-
-      const departementsArray = formData.departements
-        .split(",")
-        .map((d) => d.trim())
-        .filter(Boolean);
-
-      const epciArray = formData.epci
-        .split(",")
-        .map((e) => e.trim())
-        .filter(Boolean);
+      const emailsArray = parseListe(formData.emails);
+      const departementsArray = parseListe(formData.departements);
+      const epciArray = parseListe(formData.epci);
 
       // Appeler l'action
       const result = await updateAllersVersAction(allersVers.id, {
@@ -143,7 +133,7 @@ export function AllersVersEditModal({ allersVers, onClose, onSuccess }: AllersVe
                       value={formData.departements}
                       onChange={(e) => setFormData({ ...formData, departements: e.target.value })}
                     />
-                    <p className="fr-hint-text">Codes départements séparés par des virgules</p>
+                    <p className="fr-hint-text">Codes départements séparés par des virgules ou des points-virgules</p>
                   </div>
 
                   <div className="fr-input-group">
@@ -159,7 +149,7 @@ export function AllersVersEditModal({ allersVers, onClose, onSuccess }: AllersVe
                       value={formData.emails}
                       onChange={(e) => setFormData({ ...formData, emails: e.target.value })}
                     />
-                    <p className="fr-hint-text">Emails séparés par des points-virgules</p>
+                    <p className="fr-hint-text">Emails séparés par des virgules ou des points-virgules</p>
                   </div>
 
                   <div className="fr-input-group">
@@ -215,7 +205,7 @@ export function AllersVersEditModal({ allersVers, onClose, onSuccess }: AllersVe
                       value={formData.epci}
                       onChange={(e) => setFormData({ ...formData, epci: e.target.value })}
                     />
-                    <p className="fr-hint-text">Codes EPCI séparés par des virgules</p>
+                    <p className="fr-hint-text">Codes EPCI séparés par des virgules ou des points-virgules</p>
                   </div>
 
                   <div className="fr-modal__footer fr-mt-4v">
