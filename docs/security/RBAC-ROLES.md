@@ -133,6 +133,13 @@ Gardes principales :
   un `ADMINISTRATEUR` (refusé par le layout, national pour les services) recevoir le détail
   complet d'un dossier dans le payload, derrière l'écran « accès non autorisé ». Un test méta
   (`espace-agent/garde-pages.test.ts`) échoue si une page oublie la garde.
+- Server actions de l'espace agent : même verdict, appliqué **en première instruction** de
+  chaque action exportée (`refusAccesEspaceAgent()`, ou `resolveEspaceAgentAccess()` qui s'y
+  adosse désormais). Une action est un endpoint POST joignable sans passer par la page :
+  sans cette garde, `calculateAgentScope` donnait à un `ADMINISTRATEUR` une portée nationale
+  sur les dossiers, commentaires et qualifications. Seul appelant hors espace agent :
+  `rattacherDossierDnAction` depuis les diagnostics, réservés au super-admin, qui reste admis.
+  Test méta : `espace-agent/garde-actions.test.ts`.
 - Administration : `src/app/(backoffice)/administration/page.tsx`
   (`checkAgentAccess` ; tout agent rend le tableau de bord depuis ADR-0017, les
   onglets sensibles restant gardés par page). Les sous-pages sensibles gardent leur
