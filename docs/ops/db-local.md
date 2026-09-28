@@ -47,8 +47,10 @@ liste se filtre en tapant quelques lettres. On peut aussi nommer le fichier dire
 
 Tout ce qui est réversible passe **avant** la confirmation : le script extrait l'archive dans
 un dossier jetable, vérifie qu'elle contient exactement un `.pgsql`, le copie dans le conteneur
-et contrôle que `pg_restore` sait le lire. Un dump illisible est donc refusé sans que la base
-ait été touchée. Vient ensuite la **confirmation** : toute autre réponse que `o` abandonne sans
+et le fait lire **en entier** par `pg_restore`, vers `/dev/null`. Un dump illisible ou tronqué
+est donc refusé sans que la base ait été touchée. Ce contrôle ne garantit pas que chaque
+instruction SQL passera à la restauration (une extension manquante, par exemple), seulement que
+le fichier est complet et lisible. Vient ensuite la **confirmation** : toute autre réponse que `o` abandonne sans
 rien modifier. Après accord seulement, la base est supprimée (clients déconnectés), recréée
 vide, puis restaurée. Les fichiers extraits sont effacés à toute sortie, erreur comprise.
 Options :

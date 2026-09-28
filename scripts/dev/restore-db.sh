@@ -145,10 +145,17 @@ cleanup() {
         if [ -n "$CONTAINER_DUMP" ]; then print_warning "Option -k : dump conservé dans le conteneur ($CONTAINER_DUMP)"; fi
         return 0
     fi
-    if [ -n "$TMP_DIR" ]; then rm -rf "$TMP_DIR"; fi
-    if [ -n "$CONTAINER_DUMP" ]; then
-        docker exec "$CONTAINER_NAME" rm -f "/$CONTAINER_DUMP" > /dev/null 2>&1 || true
+    # Chaque suppression est tentée indépendamment : sous set -e, un premier échec (dossier
+    # de l'archive en lecture seule) laissait aussi la copie du conteneur.
+    if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
+        chmod -R u+rwx "$TMP_DIR" 2> /dev/null || true
+        rm -rf "$TMP_DIR" 2> /dev/null || print_warning "Dump extrait non supprimé, à effacer à la main : $TMP_DIR"
     fi
+    if [ -n "$CONTAINER_DUMP" ]; then
+        docker exec "$CONTAINER_NAME" rm -f "/$CONTAINER_DUMP" > /dev/null 2>&1 \
+            || print_warning "Copie non supprimée dans le conteneur : $CONTAINER_DUMP"
+    fi
+    return 0
 }
 
 # Gestion des erreurs
@@ -266,12 +273,14 @@ CONTAINER_DUMP="/tmp/restauration-$$.pgsql"
 docker cp "$PGSQL_PATH" "$CONTAINER_NAME:$CONTAINER_DUMP" > /dev/null
 
 # Le slash de tête double le chemin, ce qui évite sa réécriture par Git Bash sous Windows.
-if ! docker exec "$CONTAINER_NAME" pg_restore --list "/$CONTAINER_DUMP" > /dev/null 2>&1; then
-    print_error "Ce fichier n'est pas un dump lisible par pg_restore : la base n'a pas été touchée"
+# Lecture complète vers /dev/null : --list ne lit que la table des matières, et laissait passer
+# un dump tronqué qui n'échouait qu'après la suppression de la base.
+if ! docker exec "$CONTAINER_NAME" pg_restore --file=/dev/null "/$CONTAINER_DUMP" > /dev/null 2>&1; then
+    print_error "Ce dump est illisible ou incomplet : la base n'a pas été touchée"
     exit 1
 fi
 
-print_success "Dump lisible"
+print_success "Dump lu en entier"
 
 # Dernier point de retour : tout ce qui suit supprime la base locale.
 if [ "$CONFIRMER" = true ]; then
