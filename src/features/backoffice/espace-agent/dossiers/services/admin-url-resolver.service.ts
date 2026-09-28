@@ -42,15 +42,15 @@ export async function resolveEspaceAgentPath(parcoursId: string): Promise<string
     .limit(1);
 
   if (!validation) {
-    return ROUTES.backoffice.espaceAmo.prospect(parcours.id);
+    return ROUTES.backoffice.espaceAgent.prospect(parcours.id);
   }
 
   const isDemandeEnAttente =
     validation.statut === StatutValidationAmo.EN_ATTENTE && !!validation.entrepriseAmoId && !parcours.archivedAt;
 
   return isDemandeEnAttente
-    ? ROUTES.backoffice.espaceAmo.demande(validation.id)
-    : ROUTES.backoffice.espaceAmo.dossier(validation.id);
+    ? ROUTES.backoffice.espaceAgent.demande(validation.id)
+    : ROUTES.backoffice.espaceAgent.dossier(validation.id);
 }
 
 /** Même résolution que `resolveEspaceAgentPath`, en URL absolue (systèmes externes). */

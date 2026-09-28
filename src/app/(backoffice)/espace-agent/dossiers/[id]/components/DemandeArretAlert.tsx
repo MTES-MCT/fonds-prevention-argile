@@ -38,7 +38,7 @@ export function DemandeArretAlert({ parcoursId, demandeurNom }: DemandeArretAler
         demandeurNom={demandeurNom}
         onArretSuccess={() => {
           setIsArretOpen(false);
-          router.push(ROUTES.backoffice.espaceAmo.dossiers);
+          router.push(ROUTES.backoffice.espaceAgent.dossiers);
         }}
         onPoursuiteSuccess={() => {
           setIsArretOpen(false);

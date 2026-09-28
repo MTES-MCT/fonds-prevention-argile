@@ -51,7 +51,7 @@ export function canAccessRoute(path: string, role?: UserRole): boolean {
  * (alias plus explicite de isAdminRoute pour le code métier)
  */
 export function isBackofficeRoute(path: string): boolean {
-  return path.startsWith(ROUTES.backoffice.administration.root) || path.startsWith(ROUTES.backoffice.espaceAmo.root);
+  return path.startsWith(ROUTES.backoffice.administration.root) || path.startsWith(ROUTES.backoffice.espaceAgent.root);
 }
 
 /**

@@ -52,7 +52,7 @@ export function DemandesAccompagnementTable({ demandes }: DemandesAccompagnement
                     return (
                       <tr key={demande.id}>
                         <td>
-                          <Link href={ROUTES.backoffice.espaceAmo.demande(demande.id)} className="fr-link">
+                          <Link href={ROUTES.backoffice.espaceAgent.demande(demande.id)} className="fr-link">
                             {formatNomComplet(demande.prenom, demande.nom)}
                           </Link>
                         </td>
@@ -69,7 +69,7 @@ export function DemandesAccompagnementTable({ demandes }: DemandesAccompagnement
                         </td>
                         <td>
                           <Link
-                            href={ROUTES.backoffice.espaceAmo.demande(demande.id)}
+                            href={ROUTES.backoffice.espaceAgent.demande(demande.id)}
                             className="fr-btn fr-btn--sm fr-btn--icon-right fr-icon-arrow-right-line">
                             Traiter
                           </Link>

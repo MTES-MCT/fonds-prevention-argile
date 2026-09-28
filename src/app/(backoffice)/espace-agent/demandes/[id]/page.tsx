@@ -53,7 +53,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
   // de suivi, archive-aware (affiche le motif). Défense en profondeur contre l'accès direct
   // par URL — le listing route déjà les archivés vers /dossiers/[id].
   if (demande.archivedAt) {
-    redirect(ROUTES.backoffice.espaceAmo.dossier(id));
+    redirect(ROUTES.backoffice.espaceAgent.dossier(id));
   }
 
   const nomComplet = formatNomComplet(demande.demandeur.prenom, demande.demandeur.nom);
@@ -88,12 +88,12 @@ export default async function DemandeDetailPage({ params }: PageProps) {
           <div className="fr-collapse" id="breadcrumb-1">
             <ol className="fr-breadcrumb__list">
               <li>
-                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.root}>
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAgent.root}>
                   Accueil
                 </Link>
               </li>
               <li>
-                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.root}>
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAgent.root}>
                   Demandes d&apos;accompagnement
                 </Link>
               </li>
@@ -139,7 +139,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
             <div style={{ alignSelf: "flex-start" }}>
               <InfoDemandeur
                 demandeur={demande.demandeur}
-                editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(demande.id)}
+                editSimulationHref={ROUTES.backoffice.espaceAgent.editionDonneesSimulation(demande.id)}
               />
             </div>
           </div>
@@ -170,7 +170,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                 <InfoLogement
                   logement={demande.logement}
                   adresse={demande.demandeur.adresse}
-                  editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(demande.id)}
+                  editSimulationHref={ROUTES.backoffice.espaceAgent.editionDonneesSimulation(demande.id)}
                   agentEditInfo={demande.agentEditInfo}
                 />
               </div>

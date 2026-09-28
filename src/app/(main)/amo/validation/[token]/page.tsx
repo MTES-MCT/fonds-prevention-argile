@@ -91,7 +91,7 @@ export default async function ValidationAmoPage({ params }: ValidationAmoPagePro
             </div>
 
             <div className="fr-mt-4w">
-              <Link href={ROUTES.backoffice.espaceAmo.demande(result.data.validationId)} className="fr-btn">
+              <Link href={ROUTES.backoffice.espaceAgent.demande(result.data.validationId)} className="fr-btn">
                 Voir le détail de la demande
               </Link>
             </div>
@@ -111,5 +111,5 @@ export default async function ValidationAmoPage({ params }: ValidationAmoPagePro
 
   // Si le token est valide et pas encore utilisé, rediriger vers la page de détail
   // L'authentification sera gérée par le layout de l'espace AMO
-  redirect(ROUTES.backoffice.espaceAmo.demande(result.data.validationId));
+  redirect(ROUTES.backoffice.espaceAgent.demande(result.data.validationId));
 }

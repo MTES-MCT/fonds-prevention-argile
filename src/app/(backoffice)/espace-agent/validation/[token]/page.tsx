@@ -38,7 +38,7 @@ export default async function ValidationAmoPage({ params }: ValidationAmoPagePro
             </ul>
             <p className="fr-mt-4w">
               Vous pouvez consulter vos demandes d&apos;accompagnement depuis{" "}
-              <Link href={ROUTES.backoffice.espaceAmo.root}>votre espace AMO</Link>.
+              <Link href={ROUTES.backoffice.espaceAgent.root}>votre espace AMO</Link>.
             </p>
           </div>
         </div>
@@ -47,5 +47,5 @@ export default async function ValidationAmoPage({ params }: ValidationAmoPagePro
   }
 
   // Rediriger vers la page de détail de la demande
-  redirect(ROUTES.backoffice.espaceAmo.demande(result.data.validationId));
+  redirect(ROUTES.backoffice.espaceAgent.demande(result.data.validationId));
 }

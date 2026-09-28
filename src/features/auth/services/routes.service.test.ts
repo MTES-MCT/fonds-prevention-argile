@@ -12,19 +12,19 @@ describe("routes.service", () => {
     });
 
     it("devrait identifier les routes espace-amo comme admin", () => {
-      expect(isAdminRoute(ROUTES.backoffice.espaceAmo.root)).toBe(true);
-      expect(isAdminRoute(ROUTES.backoffice.espaceAmo.dossiers)).toBe(true);
-      expect(isAdminRoute(ROUTES.backoffice.espaceAmo.prospects)).toBe(true);
+      expect(isAdminRoute(ROUTES.backoffice.espaceAgent.root)).toBe(true);
+      expect(isAdminRoute(ROUTES.backoffice.espaceAgent.dossiers)).toBe(true);
+      expect(isAdminRoute(ROUTES.backoffice.espaceAgent.prospects)).toBe(true);
     });
 
-    it("devrait identifier les routes API privées comme admin", () => {
-      expect(isAdminRoute("/api/private")).toBe(true);
-      expect(isAdminRoute("/api/private/users")).toBe(true);
+    it("devrait identifier les sous-pages d'administration comme admin", () => {
+      expect(isAdminRoute("/administration/agents")).toBe(true);
     });
 
-    it("devrait identifier les routes de test comme admin", () => {
-      expect(isAdminRoute("/test")).toBe(true);
-      expect(isAdminRoute("/test/debug")).toBe(true);
+    // Le test est par préfixe : l'ancien "/test" aurait exigé une connexion agent sur toute page en /test….
+    it("ne protège plus les préfixes fictifs /api/private et /test", () => {
+      expect(isAdminRoute("/api/private/users")).toBe(false);
+      expect(isAdminRoute("/test/debug")).toBe(false);
     });
 
     it("devrait rejeter les routes non-admin", () => {
@@ -76,9 +76,9 @@ describe("routes.service", () => {
     it("devrait identifier les routes backoffice comme protégées", () => {
       expect(isProtectedRoute(ROUTES.backoffice.administration.root)).toBe(true);
       expect(isProtectedRoute(`${ROUTES.backoffice.administration.root}/users`)).toBe(true);
-      expect(isProtectedRoute(ROUTES.backoffice.espaceAmo.root)).toBe(true);
-      expect(isProtectedRoute("/api/private")).toBe(true);
-      expect(isProtectedRoute("/test")).toBe(true);
+      expect(isProtectedRoute(ROUTES.backoffice.espaceAgent.root)).toBe(true);
+      expect(isProtectedRoute("/administration/agents")).toBe(true);
+      expect(isProtectedRoute("/espace-agent/dossiers")).toBe(true);
     });
 
     it("devrait identifier les routes particulier comme protégées", () => {
@@ -107,32 +107,32 @@ describe("routes.service", () => {
       it("devrait autoriser l'accès ADMIN aux routes backoffice", () => {
         expect(canAccessRoute(ROUTES.backoffice.administration.root, ROLES.ADMINISTRATEUR)).toBe(true);
         expect(canAccessRoute(`${ROUTES.backoffice.administration.root}/users`, ROLES.ADMINISTRATEUR)).toBe(true);
-        expect(canAccessRoute(ROUTES.backoffice.espaceAmo.root, ROLES.ADMINISTRATEUR)).toBe(true);
-        expect(canAccessRoute("/api/private", ROLES.ADMINISTRATEUR)).toBe(true);
-        expect(canAccessRoute("/test", ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute(ROUTES.backoffice.espaceAgent.root, ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute("/administration/agents", ROLES.ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute("/espace-agent/dossiers", ROLES.ADMINISTRATEUR)).toBe(true);
       });
 
       it("devrait autoriser l'accès SUPER_ADMINISTRATEUR aux routes backoffice", () => {
         expect(canAccessRoute(ROUTES.backoffice.administration.root, ROLES.SUPER_ADMINISTRATEUR)).toBe(true);
-        expect(canAccessRoute("/api/private", ROLES.SUPER_ADMINISTRATEUR)).toBe(true);
+        expect(canAccessRoute("/administration/agents", ROLES.SUPER_ADMINISTRATEUR)).toBe(true);
       });
 
       it("devrait autoriser l'accès AMO aux routes backoffice", () => {
         expect(canAccessRoute(ROUTES.backoffice.administration.root, ROLES.AMO)).toBe(true);
-        expect(canAccessRoute(ROUTES.backoffice.espaceAmo.root, ROLES.AMO)).toBe(true);
-        expect(canAccessRoute("/api/private", ROLES.AMO)).toBe(true);
+        expect(canAccessRoute(ROUTES.backoffice.espaceAgent.root, ROLES.AMO)).toBe(true);
+        expect(canAccessRoute("/administration/agents", ROLES.AMO)).toBe(true);
       });
 
       it("devrait refuser l'accès PARTICULIER aux routes backoffice", () => {
         expect(canAccessRoute(ROUTES.backoffice.administration.root, ROLES.PARTICULIER)).toBe(false);
-        expect(canAccessRoute(ROUTES.backoffice.espaceAmo.root, ROLES.PARTICULIER)).toBe(false);
-        expect(canAccessRoute("/api/private", ROLES.PARTICULIER)).toBe(false);
-        expect(canAccessRoute("/test", ROLES.PARTICULIER)).toBe(false);
+        expect(canAccessRoute(ROUTES.backoffice.espaceAgent.root, ROLES.PARTICULIER)).toBe(false);
+        expect(canAccessRoute("/administration/agents", ROLES.PARTICULIER)).toBe(false);
+        expect(canAccessRoute("/espace-agent/dossiers", ROLES.PARTICULIER)).toBe(false);
       });
 
       it("devrait refuser l'accès sans rôle aux routes backoffice", () => {
         expect(canAccessRoute(ROUTES.backoffice.administration.root, undefined)).toBe(false);
-        expect(canAccessRoute("/api/private", undefined)).toBe(false);
+        expect(canAccessRoute("/administration/agents", undefined)).toBe(false);
       });
     });
 

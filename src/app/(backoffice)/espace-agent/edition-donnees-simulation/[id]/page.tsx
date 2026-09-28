@@ -28,16 +28,16 @@ function getBreadcrumbInfo(id: string, statut: string | null) {
   if (statut === StatutValidationAmo.EN_ATTENTE) {
     return {
       sectionLabel: "Demandes d\u2019accompagnement",
-      sectionHref: ROUTES.backoffice.espaceAmo.root,
-      detailHref: ROUTES.backoffice.espaceAmo.demande(id),
+      sectionHref: ROUTES.backoffice.espaceAgent.root,
+      detailHref: ROUTES.backoffice.espaceAgent.demande(id),
     };
   }
 
   // Toute autre validation (\u00e9ligible, sans AMO, refus\u00e9e) : espace dossiers.
   return {
     sectionLabel: "Vos dossiers",
-    sectionHref: ROUTES.backoffice.espaceAmo.dossiers,
-    detailHref: ROUTES.backoffice.espaceAmo.dossier(id),
+    sectionHref: ROUTES.backoffice.espaceAgent.dossiers,
+    detailHref: ROUTES.backoffice.espaceAgent.dossier(id),
   };
 }
 
@@ -86,7 +86,7 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
           <div className="fr-collapse" id="breadcrumb-edition">
             <ol className="fr-breadcrumb__list">
               <li>
-                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.root}>
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAgent.root}>
                   Accueil
                 </Link>
               </li>

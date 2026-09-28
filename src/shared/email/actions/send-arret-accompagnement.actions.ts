@@ -27,7 +27,7 @@ export async function sendArretAccompagnementInfoEmail(
 ): Promise<ActionResult<{ messageId?: string }>> {
   try {
     const { amoEmail, demandeurPrenom, demandeurNom } = params;
-    const lienDossier = `${getServerEnv().BASE_URL}${ROUTES.backoffice.espaceAmo.dossiers}`;
+    const lienDossier = `${getServerEnv().BASE_URL}${ROUTES.backoffice.espaceAgent.dossiers}`;
 
     const html = await renderEmailTemplate(
       ArretAccompagnementInfoTemplate({ demandeurPrenom, demandeurNom, lienDossier })
@@ -53,7 +53,7 @@ export async function sendArretAccompagnementValidationEmail(
 ): Promise<ActionResult<{ messageId?: string }>> {
   try {
     const { amoEmail, demandeurPrenom, demandeurNom, validationId } = params;
-    const lienDossier = `${getServerEnv().BASE_URL}${ROUTES.backoffice.espaceAmo.dossier(validationId)}`;
+    const lienDossier = `${getServerEnv().BASE_URL}${ROUTES.backoffice.espaceAgent.dossier(validationId)}`;
 
     const html = await renderEmailTemplate(
       ArretAccompagnementValidationTemplate({ demandeurPrenom, demandeurNom, lienDossier })

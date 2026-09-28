@@ -148,12 +148,12 @@ export default async function DossierDetailPage({ params }: PageProps) {
           <div className="fr-collapse" id="breadcrumb-1">
             <ol className="fr-breadcrumb__list">
               <li>
-                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.root}>
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAgent.root}>
                   Accueil
                 </Link>
               </li>
               <li>
-                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.dossiers}>
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAgent.dossiers}>
                   Vos dossiers
                 </Link>
               </li>
@@ -233,7 +233,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                     ? { nom: dossier.amoNom, estMandataireFinancier: dossier.estMandataireFinancier }
                     : null
                 }
-                editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)}
+                editSimulationHref={ROUTES.backoffice.espaceAgent.editionDonneesSimulation(dossier.id)}
               />
             </div>
           </div>
@@ -271,7 +271,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   logement={dossier.logement}
                   adresse={dossier.demandeur.adresse}
                   dateIndemnisation={dossier.dateIndemnisation}
-                  editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)}
+                  editSimulationHref={ROUTES.backoffice.espaceAgent.editionDonneesSimulation(dossier.id)}
                   agentEditInfo={dossier.agentEditInfo}
                 />
               </div>
