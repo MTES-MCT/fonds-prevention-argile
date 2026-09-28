@@ -90,10 +90,33 @@ backlog prioritaire.
 
 ## 5. Garde-fou anti-régression
 
-Une nouvelle surface non testée = fuite potentielle. Ajouter un **test méta** qui
-échoue si une `*.actions.ts` lisant des données ne présente ni garde reconnue
-(`checkBackofficePermission` / `verifyProspectTerritoryAccess` / `verifyAmoOwnership`)
-ni test d'accès associé. Heuristique imparfaite mais qui attrape les oublis.
+Une nouvelle surface non gardée = fuite potentielle. Deux tests méta l'attrapent :
+
+- **`auth/permissions/garde-server-actions.test.ts`** : toute fonction exportée d'un fichier
+  `"use server"` de `src/` (le nom du fichier ne compte pas, il y a des `*.action.ts`) doit
+  contenir une garde reconnue. Sous `features/backoffice/`, il faut une garde
+  **d'autorisation** (rôle, permission, périmètre, propriété) : une session seule laisse
+  passer n'importe quel agent. Ailleurs, la session suffit, l'action ne lisant que le
+  parcours du demandeur connecté.
+- **`espace-agent/garde-actions.test.ts`**, plus strict : dans l'espace agent, la garde doit
+  être la **première instruction**.
+
+Les exceptions vivent dans une `ALLOWLIST` justifiée entrée par entrée (référentiels publics,
+jeton de validation AMO, chiffrement du simulateur en iframe). Une entrée devenue inutile
+fait échouer le test, pour que la liste ne s'élargisse pas en silence.
+
+Heuristique assumée : le test reconnaît un **nom** de garde dans le corps, il ne prouve pas
+qu'elle est correcte, ni qu'elle est appliquée à la bonne ressource. Une garde déléguée à
+un service n'est pas vue : la remonter dans l'action, ou justifier l'exception. La présence
+d'un fichier de test frère n'est **pas** acceptée comme alternative : elle ne dit rien de ce
+que le test vérifie.
+
+> Première trouvaille (septembre 2026) : les quatre helpers d'envoi d'email de
+> `shared/email/actions/` étaient des fichiers `"use server"`, donc des endpoints POST
+> acceptant destinataire et contenu en paramètres, sans aucune garde. Next 15 ne publie pas
+> l'identifiant d'une action qu'aucun composant client n'importe, ce qui rendait l'appel
+> difficile en pratique, mais rien ne l'interdisait. La directive est retirée : ce sont des
+> fonctions serveur appelées par des services.
 
 ---
 
@@ -139,8 +162,8 @@ cellules négatives** recensées. Les agrégats nationaux consultables par l'`AN
 > `/administration`, layout espace-agent dont rejet FranceConnect, middleware,
 > autres demandes archivées). Reste en **PARTIEL** : les gardes des sous-pages
 > `/administration/*` (pattern `/administration` testé, à décliner) et les gardes
-> _page_ super-admin synchronisations. Le garde-fou meta (§5) reste à implémenter
-> pour attraper les futures `*.actions.ts` non gardées/non testées.
+> _page_ super-admin synchronisations. Le garde-fou meta (§5) est en place depuis septembre 2026,
+> il attrape les futures server actions non gardées.
 
 > Mise au point post-audit (2026-06-23) : la fuite nominative
 > `getAutresDemandesArchiveesAction` est **corrigée** (scope territorial + test,
