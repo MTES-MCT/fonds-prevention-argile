@@ -26,6 +26,12 @@ function lifetimeMatomoRange(): string {
   return `${formaterDateMatomo(SERVICE_START_DATE)},${formaterDateMatomo(new Date())}`;
 }
 
+/** Dernier jour du mois précédant `reference` — borne haute des séries mensuelles, le mois en
+ * cours étant toujours incomplet et volontairement absent des graphiques. */
+function finMoisPrecedent(reference: Date): Date {
+  return new Date(reference.getFullYear(), reference.getMonth(), 0);
+}
+
 /**
  * Plage des séries mensuelles, calée sur le 1er du mois de lancement : Matomo ne rogne pas ses
  * buckets (cf. gotcha CLAUDE.md), autant demander les mois pleins qu'on affichera.
@@ -33,7 +39,7 @@ function lifetimeMatomoRange(): string {
 function lifetimeMatomoRangeMensuel(): string {
   // Getters locaux, comme `formaterDateMatomo` : mélanger UTC et local décalerait le mois de départ.
   const premierMois = new Date(SERVICE_START_DATE.getFullYear(), SERVICE_START_DATE.getMonth(), 1);
-  return `${formaterDateMatomo(premierMois)},${formaterDateMatomo(new Date())}`;
+  return `${formaterDateMatomo(premierMois)},${formaterDateMatomo(finMoisPrecedent(new Date()))}`;
 }
 
 /** Date de début d'une clé de réponse Matomo multi-sous-période ("début,fin" ou "début" seul). */
@@ -185,7 +191,8 @@ export async function getPublicStatsCards(): Promise<PublicStatsCards> {
  * afin qu'elles partagent un axe des mois cohérent même quand une métrique démarre plus tard.
  */
 export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {
-  const maintenant = new Date();
+  // Borne haute au mois précédent : le mois en cours est toujours incomplet, on ne l'affiche pas.
+  const jusqua = finMoisPrecedent(new Date());
 
   const [visiteursParMois, datesBdd] = await Promise.all([
     logMatomoFailure(fetchMatomoUniqueVisitorsSeries("month", lifetimeMatomoRangeMensuel()), "visiteurs (evolution)"),
@@ -196,10 +203,10 @@ export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {
 
   return {
     visiteurs: visiteursParMois
-      ? aggregerCompteursParMois(visiteursParMois, SERVICE_START_DATE, maintenant, dateDebutMatomo)
+      ? aggregerCompteursParMois(visiteursParMois, SERVICE_START_DATE, jusqua, dateDebutMatomo)
       : null,
-    comptesCrees: aggregerParMois(versDates(datesBdd.comptesCrees), SERVICE_START_DATE, maintenant),
-    dossiersEligibiliteDeposes: aggregerParMois(versDates(datesBdd.dossiersDeposes), SERVICE_START_DATE, maintenant),
-    dossiersEligibiliteValides: aggregerParMois(versDates(datesBdd.dossiersValides), SERVICE_START_DATE, maintenant),
+    comptesCrees: aggregerParMois(versDates(datesBdd.comptesCrees), SERVICE_START_DATE, jusqua),
+    dossiersEligibiliteDeposes: aggregerParMois(versDates(datesBdd.dossiersDeposes), SERVICE_START_DATE, jusqua),
+    dossiersEligibiliteValides: aggregerParMois(versDates(datesBdd.dossiersValides), SERVICE_START_DATE, jusqua),
   };
 }
