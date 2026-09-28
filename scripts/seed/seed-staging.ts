@@ -104,6 +104,19 @@ function maskUrl(url: string): string {
   return url.replace(/:[^:@]+@/, ":****@");
 }
 
+// Le conteneur applicatif joint la base par le nom de service Docker.
+const HOTES_LOCAUX = ["localhost", "127.0.0.1", "::1", "[::1]", "postgres", "fonds-argile-postgres"];
+
+// Même source que le client (shared/database/client.ts) : DATABASE_URL, sinon DB_HOST.
+function hoteBase(dbUrl: string): string {
+  if (!dbUrl) return process.env.DB_HOST ?? "localhost";
+  try {
+    return new URL(dbUrl).hostname;
+  } catch {
+    return "illisible";
+  }
+}
+
 function assertNotProduction(yesStaging: boolean): void {
   const env = process.env.NEXT_PUBLIC_APP_ENV ?? "local";
   const dbUrl = process.env.DATABASE_URL ?? process.env.SCALINGO_POSTGRESQL_URL ?? "";
@@ -125,6 +138,16 @@ function assertNotProduction(yesStaging: boolean): void {
   // 3. En staging, exige --yes-staging explicite (anti slip-of-fingers)
   if (env === "staging" && !yesStaging) {
     throw new Error("REFUSED: --yes-staging requis quand NEXT_PUBLIC_APP_ENV=staging.");
+  }
+
+  // 4. Un DATABASE_URL distant exporté dans le shell l'emporte sur .env.local, qui annonce
+  //    pourtant « local » : sans ce contrôle, le seed vidait staging sans --yes-staging.
+  const hote = hoteBase(dbUrl);
+  if (!HOTES_LOCAUX.includes(hote) && !yesStaging) {
+    throw new Error(
+      `REFUSED: la base visée (${hote}) n'est pas locale alors que NEXT_PUBLIC_APP_ENV=${env}. ` +
+        `Relancer avec --yes-staging si c'est voulu.`
+    );
   }
 
   // local / docker / staging-avec-flag : OK

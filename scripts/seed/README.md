@@ -2,7 +2,7 @@
 
 Outils pour bootstrap une base **de zéro** avec des données de test cohérentes (agents super-admins, AMO, Allers-vers, users démandeurs, parcours à différents stades, dossiers DS, commentaires, etc.).
 
-> ⚠️ **Strictement réservé aux environnements local / docker / staging**. Un garde-fou triple refuse l'exécution en production (cf. ci-dessous).
+> ⚠️ **Strictement réservé aux environnements local / docker / staging**. Un garde-fou refuse l'exécution en production, et sur une base distante sans confirmation (cf. ci-dessous).
 
 ## TL;DR
 
@@ -73,7 +73,7 @@ ni cohérents.
 fixtures, ce qui rend l'état de départ d'une session de test entièrement reproductible. La liste
 des emails vient du [CSV de l'IdP FC « low »](https://github.com/france-connect/sources/blob/main/docker/volumes/fcp-low/mocks/idp/databases/citizen/base.csv),
 lu en direct : une session sans accès réseau sortant échoue plutôt que de ne rien supprimer en
-silence. Le flag suit `--dry-run`, et reste soumis au garde-fou triple ci-dessous — même si
+silence. Le flag suit `--dry-run`, et reste soumis au garde-fou ci-dessous — même si
 `--steps=` a exclu l'étape `safety`.
 
 Même logique, en autonome et avec un rapport détaillé : `pnpm fix:purge-comptes-test-fc`
@@ -173,15 +173,16 @@ structure : sans rattachement, l'espace agent bascule sur le listing national au
 périmètre attendu. Les fixtures `@example.org` ne servent qu'à couvrir les rôles dans le
 jeu de données, elles ne permettent pas de se connecter.
 
-## Garde-fou triple (refus en prod)
+## Garde-fou (refus en prod, confirmation hors local)
 
-Le script bail avec exit 1 dans ces 3 cas :
+Le script bail avec exit 1 dans ces 4 cas :
 
 1. **`NEXT_PUBLIC_APP_ENV=production`** → message `REFUSED: NEXT_PUBLIC_APP_ENV=production`
 2. **`DATABASE_URL` qui matche `/prod(uction)?/i`** (sans `staging` à côté) → heuristique, peut générer un faux-positif sur un host bizarrement nommé
 3. **`NEXT_PUBLIC_APP_ENV=staging` sans `--yes-staging`** → exige une confirmation explicite pour éviter le slip-of-fingers
+4. **Base distante sans `--yes-staging`**, quel que soit `NEXT_PUBLIC_APP_ENV` → l'hôte de `DATABASE_URL` (ou `DB_HOST`) n'est ni `localhost`, ni `127.0.0.1`, ni le service Docker. C'est le cas d'un `DATABASE_URL` de staging exporté dans un shell local : il l'emporte sur `.env.local`, qui annonce pourtant `local`, et **aucun `DATABASE_URL` n'est en lecture seule**
 
-En `local` ou `docker`, aucune confirmation n'est demandée.
+Sur une base locale, aucune confirmation n'est demandée.
 
 ## Structure des SQL
 
