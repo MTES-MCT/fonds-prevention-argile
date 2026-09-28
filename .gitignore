@@ -55,6 +55,12 @@ yarn-error.log*
 # Local folder
 .local*
 
+# Dumps de base : données personnelles, jamais dans le dépôt (cf. scripts/dev/restore-db.sh)
+/backups/
+*.pgsql
+*.dump
+*.tar.gz
+
 # Ignorer tous les fichiers Excel SAUF le template
 *.xlsx
 !public/templates/amo-exemple.xlsx

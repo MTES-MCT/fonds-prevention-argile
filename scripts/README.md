@@ -4,11 +4,12 @@ Outils utilitaires en CLI pour le projet `fonds-prevention-argile`. Organisés e
 
 ## Buckets
 
-| Dossier | Rôle | Quand l'utiliser |
-|---|---|---|
-| [`seed/`](./seed/README.md) | Peupler la BDD avec des données de test (fixtures) | Bootstrap d'un environnement local ou staging from-scratch |
-| [`ops/`](./ops/README.md) | Audit, correction, debug, nettoyage sur une BDD existante | Incident, maintenance ponctuelle, vérif d'intégrité |
+| Dossier                         | Rôle                                                      | Quand l'utiliser                                                     |
+| ------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------- |
+| [`seed/`](./seed/README.md)     | Peupler la BDD avec des données de test (fixtures)        | Bootstrap d'un environnement local ou staging from-scratch           |
+| [`ops/`](./ops/README.md)       | Audit, correction, debug, nettoyage sur une BDD existante | Incident, maintenance ponctuelle, vérif d'intégrité                  |
 | [`import/`](./import/README.md) | Imports depuis sources externes (PostGIS, APIs publiques) | Première mise en place d'une BDD ou refresh des données de référence |
+| [`dev/`](./dev/)                | Outils de poste de développement (base locale Docker)     | Confort local, jamais sur un environnement déployé                   |
 
 Les scripts liés à une feature applicative (ex : génération SEO, import catnat) restent **dans la feature** (`src/features/<feature>/scripts/`).
 
@@ -25,9 +26,10 @@ Tous les scripts TypeScript se lancent via **`tsx`** (déjà installé) et respe
 
 ## Commandes pnpm
 
-| Commande | Script |
-|---|---|
-| `pnpm seed:staging` | Orchestrateur seed staging — pipeline complet, voir [`seed/README.md`](./seed/README.md) |
-| `pnpm rga:import <shapefile>` | Import des zones RGA (PostGIS, voir [`import/rga-zones/README.md`](./import/rga-zones/README.md)) |
-| `pnpm seo:import-catnat` | Import catastrophes naturelles (lié à la feature SEO, dans `src/features/seo/`) |
-| `pnpm fix:epci` | Correction des EPCI manquants sur certains parcours (`ops/`) |
+| Commande                      | Script                                                                                                                        |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm seed:staging`           | Orchestrateur seed staging — pipeline complet, voir [`seed/README.md`](./seed/README.md)                                      |
+| `pnpm rga:import <shapefile>` | Import des zones RGA (PostGIS, voir [`import/rga-zones/README.md`](./import/rga-zones/README.md))                             |
+| `pnpm seo:import-catnat`      | Import catastrophes naturelles (lié à la feature SEO, dans `src/features/seo/`)                                               |
+| `pnpm fix:epci`               | Correction des EPCI manquants sur certains parcours (`ops/`)                                                                  |
+| `pnpm db:restore`             | Charge un dump PostgreSQL dans la base locale, avec choix du fichier (voir [`docs/ops/db-local.md`](../docs/ops/db-local.md)) |

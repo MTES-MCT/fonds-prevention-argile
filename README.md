@@ -26,6 +26,17 @@ Copiez le fichier `.env.example` vers `.env.local` :
 cp .env.example .env.local
 ```
 
+> **Deux fichiers, deux lecteurs.** Next lit `.env.local` ; `docker-compose.yml` lit `.env`
+> pour ses substitutions (`DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`). Une valeur posée
+> uniquement dans `.env.local` n'a donc **aucun effet** sur les conteneurs : Compose retombe
+> sur ses valeurs par défaut. Si vous changez le port ou le mot de passe de la base, posez-les
+> dans `.env`, et gardez les deux fichiers cohérents avec `DATABASE_URL`.
+
+Les ports des conteneurs de développement (base `5433`, Mailhog `1025`/`8025`) sont liés à
+`127.0.0.1` : ils ne sont joignables que depuis votre poste. C'est volontaire — la base a un
+mot de passe par défaut connu et l'interface de Mailhog n'a aucune authentification. Ne
+retirez pas ce préfixe pour dépanner sur un réseau partagé.
+
 Configurez les variables selon votre environnement. Les principales variables incluent :
 
 - `NODE_ENV` : Environnement d'exécution (`development` ou `production`)
@@ -41,6 +52,8 @@ Configurez les variables selon votre environnement. Les principales variables in
 - `BREVO_CONTACT_LIST_ID` : ID de la liste Brevo « cycle de vie » où les contacts sont poussés en flux (inscription, réponse AMO, update DN). **Distinct par environnement** (liste staging vs prod). Optionnel : absent = synchro de contacts désactivée. Voir [docs/emails/BREVO-LIFECYCLE.md](docs/emails/BREVO-LIFECYCLE.md)
 - `NEXT_PUBLIC_LASUITE_MESSAGES_CHANNEL_ID` : Channel du widget « Messages » de La Suite numérique (ANCT), affiché sur le site public (staging et production uniquement). **Distinct par environnement**. Optionnel : absent = widget désactivé. Voir [ADR-0023](docs/adr/0023-remplacement-crisp-par-lasuite-messages.md)
 - `NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE` : ID du funnel Matomo du simulateur de vulnérabilité (distinct de `NEXT_PUBLIC_MATOMO_FUNNEL_ID`, qui est celui du simulateur d'éligibilité). Optionnel : absent = le widget funnel de `/administration/vulnerabilite` affiche « données non disponibles ». Voir [ADR-0031](docs/adr/0031-stats-vulnerabilite-matomo-bdd.md)
+- `SEED_AGENTS_SUPERADMINS`, `SEED_AGENTS_HYBRIDES`, `SEED_STRUCTURES_EMAIL` : identités réelles injectées par `pnpm seed:staging` (local et staging uniquement), pour qu'aucune ne soit écrite dans les fichiers de seed commités. Optionnelles. Voir [scripts/seed/README.md](scripts/seed/README.md)
+- `DB_BACKUP_DIR` : dossier des dumps proposés par `pnpm db:restore`, **hors du dépôt**. Optionnelle. Voir [docs/ops/db-local.md](docs/ops/db-local.md)
 
 ### Configuration AMO par département (arrêté 2026)
 
@@ -171,6 +184,7 @@ Installe les dépendances avec lockfile et lance la validation complète.
 
 Documentation technique détaillée dans `docs/` :
 
+- [`docs/ops/`](./docs/ops/README.md) — **Commandes et requêtes d'exploitation** : se connecter à staging/prod, lire les logs, restaurer un dump en local, diagnostiquer le dossier d'un demandeur, tester les webhooks Brevo
 - [`docs/parcours/FLOW-AND-SYNC.md`](./docs/parcours/FLOW-AND-SYNC.md) — Flux du parcours utilisateur et synchronisation Démarches Simplifiées
 - [`docs/partners/PARTNER-TRACKING.md`](./docs/partners/PARTNER-TRACKING.md) — **Suivi des partenaires intégrant l'iframe** (MAIF, etc.) : détection, persistance via cookie + champ `users.partner_source`, filtrage backoffice, et procédure pour ajouter un nouveau partenaire
 - [`docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md`](./docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md) — **Simulateur de vulnérabilité RGA** (prototype, inactif en production) : périmètre, disponibilité par environnement, méthode de calcul, backlog d'améliorations

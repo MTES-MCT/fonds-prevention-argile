@@ -40,7 +40,7 @@ VALUES (
   'AMO du Berry Profond (seed test)',
   '99999999900001',
   'Indre 36',
-  'geraldine@amo-berry.fr',
+  'amo-berry@example.org',
   '02 54 00 00 00',
   '42 rue de la Châtaigne, 36000 Châteauroux'
 )
@@ -50,7 +50,7 @@ INSERT INTO allers_vers (id, nom, emails, telephone, adresse)
 VALUES (
   '88888888-8888-8888-8888-888888888801',
   'Allers-Vers Centre Indre (seed test)',
-  ARRAY['jeanpatrick@allers-vers-indre.fr'],
+  ARRAY['av-centre-indre@example.org'],
   '02 54 11 11 11',
   '7 place du Marché, 36100 Issoudun'
 )
@@ -71,7 +71,7 @@ VALUES (
   'Soliha 54 (seed test)',
   '99999999900002',
   'Meurthe-et-Moselle 54',
-  'soliha54@test.fr',
+  'soliha-54-seed@example.org',
   '03 83 00 00 00',
   '1 rue de Nancy, 54000 Nancy'
 )
@@ -81,7 +81,7 @@ INSERT INTO allers_vers (id, nom, emails, telephone, adresse)
 VALUES (
   '88888888-8888-8888-8888-888888888802',
   'Soliha 54 AV (seed test)',
-  ARRAY['soliha54@test.fr'],
+  ARRAY['soliha-54-seed-av@example.org'],
   '03 83 00 00 00',
   '1 rue de Nancy, 54000 Nancy'
 )
@@ -100,7 +100,7 @@ VALUES (
   'AMO Tarn-et-Garonne (seed test)',
   '99999999900003',
   'Tarn-et-Garonne 82',
-  'amo82@test.fr',
+  'amo-82@example.org',
   '05 63 00 00 00',
   '1 rue de Montauban, 82000 Montauban'
 )

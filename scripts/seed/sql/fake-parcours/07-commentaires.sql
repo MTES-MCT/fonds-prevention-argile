@@ -27,7 +27,7 @@
     'AMO du Berry Profond',
     '99999999900001',
     'Indre 36',
-    'geraldine@amo-berry.fr',
+    'amo-berry@example.org',
     '02 54 00 00 00',
     '42 rue de la Châtaigne, 36000 Châteauroux'
   )
@@ -40,7 +40,7 @@
   VALUES (
     '88888888-8888-8888-8888-888888888801',
     'Allers-Vers Centre Indre',
-    ARRAY['jeanpatrick@allers-vers-indre.fr'],
+    ARRAY['av-centre-indre@example.org'],
     '02 54 11 11 11',
     '7 place du Marché, 36100 Issoudun'
   )

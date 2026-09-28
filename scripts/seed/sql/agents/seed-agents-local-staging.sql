@@ -1,8 +1,10 @@
 -- =============================================================================
--- Agents — dump du staging au 12 mai 2026
+-- Agents — fixtures local / staging
 -- =============================================================================
--- 10 agents (4 super-admins + 2 seed fictifs Géraldine/Jean-Patrick utilisés par
--- fake-parcours/07-commentaires.sql + 4 testeurs rattachés à AMO/AV).
+-- Aucune identité réelle ici : ce fichier est commité, donc public. Les
+-- super-administrateurs de l'équipe sont insérés par l'orchestrateur à partir de
+-- SEED_AGENTS_SUPERADMINS (cf. scripts/seed/README.md) — jamais depuis ce SQL.
+--
 -- Tous les rôles métier sont rattachés à une structure : un AMO sans entreprise, ou un
 -- aller-vers sans structure, rend l'espace agent inexploitable (scope qui lève ou listing national).
 --
@@ -14,27 +16,28 @@
 -- connexion sans aucun message (ADR-0029), et sa ligne survivait au re-seed — un compte
 -- de test devenait injoignable sans que rien ne le signale.
 --
+-- Les `sub` sont des marqueurs `seed_*` et non de vrais identifiants ProConnect :
+-- `authenticateFromProConnect` retombe sur l'email quand le sub ne correspond pas,
+-- puis écrit le vrai sub (cf. agents.repository.ts).
+--
 -- Doit s'exécuter APRÈS amo-av et parcours (les FK entreprise_amo_id et
 -- allers_vers_id pointent sur des UUIDs créés par ces étapes — en particulier
 -- fake-parcours/13 fait DELETE+INSERT sur les AMOs 99999999*, ce qui annule
 -- les FK des agents si l'ordre est inversé).
 -- =============================================================================
 
--- Super-administrateurs (beta.gouv)
-INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('50051b7f-341d-45db-99fd-34d8c9533afd', 'guillaume.bertrand@beta.gouv.fr', 'Guillaume', 'Bertrand', 'super_administrateur'::agent_role, NULL::uuid, NULL::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
-INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('ff708a2a-240b-4c7f-836d-804b5bad4378', 'martin.letellier@beta.gouv.fr', 'Martin', 'Letellier', 'super_administrateur'::agent_role, NULL::uuid, NULL::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
-INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('075a5799-a0e9-4356-8312-3642be6aa455', 'maxime.amieux@beta.gouv.fr', 'Maxime', 'Amieux', 'super_administrateur'::agent_role, NULL::uuid, NULL::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
-INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('4811eada-2c7a-46a5-add6-e719cc8ae892', 'samir.benfares@beta.gouv.fr', 'Samir  BENFARES', 'Benfares', 'super_administrateur'::agent_role, NULL::uuid, NULL::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
-
 -- Agents fictifs utilisés par fake-parcours/07-commentaires.sql
 INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('seed_geraldine', 'geraldine.moulin@amo-berry.fr', 'Géraldine', 'Moulin', 'amo'::agent_role, '99999999-9999-4999-8999-999999999901'::uuid, NULL::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
 INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('seed_jeanpatrick', 'jeanpatrick.duval@allers-vers-indre.fr', 'Jean-Patrick', 'Duval', 'allers_vers'::agent_role, NULL::uuid, '17628a5e-6a45-4a3c-a72c-606332b42e4c'::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
 
--- Testeurs réels rattachés à des AMO/AV (Adil 36 = 17628a5e-…, AMO Berry = 99999999-…01)
--- Compte AMO des tests manuels : identité du bac à sable ProConnect (cf. README, « Se connecter
--- en tant qu'agent en local »). Sans cette ligne, le re-seed le laisse sans entreprise et il
--- bascule sur le listing national au lieu de son périmètre.
+-- Comptes du bac à sable ProConnect (cf. README, « Se connecter en tant qu'agent en local »).
+-- Ce sont les seules identités réellement connectables en local et sur staging : sans ces
+-- lignes, le re-seed les laisse sans structure et l'espace agent bascule sur le listing
+-- national au lieu de leur périmètre.
 INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('seed_user14', 'user14@yopmail.com', 'Testeur', 'AMO', 'amo'::agent_role, '5833143c-9397-4a80-a7fc-3c5eb37c7a28'::uuid, NULL::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
-INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('f0773fce-f744-4df3-bf97-1f382c252101', 'user@yopmail.com', 'Jean', NULL, 'allers_vers'::agent_role, NULL::uuid, '17628a5e-6a45-4a3c-a72c-606332b42e4c'::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
-INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('72bc2109-4dff-40e3-b544-51388e58165b', 'contact@gllm.design', 'Guillaume', 'Bertrand Design', 'amo_et_allers_vers'::agent_role, '5833143c-9397-4a80-a7fc-3c5eb37c7a28'::uuid, '17628a5e-6a45-4a3c-a72c-606332b42e4c'::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
-INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('607acb0e-605b-453e-a74a-e029ae7507a9', 'martin@evlaa.com', 'Angela', 'Letellier- Aller-vers', 'amo_et_allers_vers'::agent_role, '99999999-9999-4999-8999-999999999901'::uuid, '17628a5e-6a45-4a3c-a72c-606332b42e4c'::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
+INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('seed_user', 'user@yopmail.com', 'Testeur', 'Aller-vers', 'allers_vers'::agent_role, NULL::uuid, '17628a5e-6a45-4a3c-a72c-606332b42e4c'::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
+
+-- Fixtures de couverture : le rôle cumulé AMO + Aller-vers doit exister dans le jeu de
+-- test (union des périmètres), même si ces comptes ne sont pas connectables.
+INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('seed_hybride_1', 'agent-hybride-1@example.org', 'Agent', 'Hybride 1', 'amo_et_allers_vers'::agent_role, '5833143c-9397-4a80-a7fc-3c5eb37c7a28'::uuid, '17628a5e-6a45-4a3c-a72c-606332b42e4c'::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;
+INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id) VALUES ('seed_hybride_2', 'agent-hybride-2@example.org', 'Agent', 'Hybride 2', 'amo_et_allers_vers'::agent_role, '99999999-9999-4999-8999-999999999901'::uuid, '17628a5e-6a45-4a3c-a72c-606332b42e4c'::uuid) ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id, given_name = EXCLUDED.given_name, usual_name = EXCLUDED.usual_name, desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL;

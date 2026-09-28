@@ -1,27 +1,36 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm:*)",
-      "Bash(git status)",
-      "Bash(git diff*)",
-      "Bash(git log*)",
-      "Bash(git branch*)",
-      "Bash(git show*)",
-      "Bash(ls:*)"
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm validate)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm build)",
+      "Bash(pnpm audit)",
+      "Bash(pnpm audit --prod)",
+      "Bash(pnpm format:check)",
+      "Bash(pnpm talisman:check)",
+      "Bash(pnpm db:generate)",
+      "Bash(pnpm why:*)"
     ],
+    "ask": ["Bash(git push:*)"],
     "deny": [
-      "Read(.env)",
-      "Read(.env.*)",
-      "Read(**/.env)",
-      "Read(**/.env.*)",
-      "Edit(.env)",
-      "Edit(.env.*)",
-      "Edit(**/.env)",
-      "Edit(**/.env.*)",
-      "Write(.env)",
-      "Write(.env.*)",
-      "Write(**/.env)",
-      "Write(**/.env.*)"
+      "Bash(git commit --no-verify:*)",
+      "Bash(git commit *--no-verify*)",
+      "Bash(git commit -n:*)",
+      "Bash(git commit * -n)",
+      "Bash(git commit * -n *)",
+      "Bash(git -c core.hooksPath=*)",
+      "Edit(.claude/settings.json)",
+      "Edit(.claude/settings.local.json)",
+      "Edit(.claude/hooks/**)",
+      "Edit(.husky/**)",
+      "Edit(.git/**)",
+      "Read(.env*)",
+      "Read(**/.env*)",
+      "Edit(.env*)",
+      "Edit(**/.env*)"
     ]
   },
   "hooks": {

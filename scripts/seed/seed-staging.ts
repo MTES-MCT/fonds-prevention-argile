@@ -9,8 +9,8 @@
  * Pipeline (6 étapes, ~30s en local) :
  *   1. safety   — vérifs env + DB URL
  *   2. ref-data — bail si rga_zones ou catastrophes_naturelles est vide
- *   3. agents   — INSERT 7 super-admins (ON CONFLICT DO UPDATE)
- *   4. amo-av   — INSERT fixtures AMO + Allers-vers
+ *   3. agents   — fixtures d'agents + SEED_AGENTS_SUPERADMINS + SEED_AGENTS_HYBRIDES
+ *   4. amo-av   — fixtures AMO + Allers-vers (alias SEED_STRUCTURES_EMAIL posés après parcours)
  *   5. parcours — joue les 13 SQL de sql/fake-parcours/00 → 13
  *   6. verify   — joue 99-verification.sql
  *
@@ -28,13 +28,12 @@ import { config } from "dotenv";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { rawClient } from "@/shared/database/client";
+import { getConnectionString, rawClient } from "@/shared/database/client";
 import { listerComptesTestFc, recupererEmailsTestFc, supprimerComptesTestFc } from "../ops/lib/purge-fc";
 
-// Charge .env.local si DATABASE_URL pas déjà défini (cas du lancement local).
-if (!process.env.DATABASE_URL && !process.env.SCALINGO_POSTGRESQL_URL) {
-  config({ path: ".env.local" });
-}
+// Filet pour un lancement qui ne passe pas par le runner (lui charge déjà .env.local) :
+// dotenv ne remplace jamais une variable déjà définie, l'appel est donc sans effet sinon.
+config({ path: ".env.local" });
 
 // ============================================================================
 // Steps
@@ -105,9 +104,21 @@ function maskUrl(url: string): string {
   return url.replace(/:[^:@]+@/, ":****@");
 }
 
+// Le conteneur applicatif joint la base par le nom de service Docker.
+const HOTES_LOCAUX = ["localhost", "127.0.0.1", "::1", "[::1]", "postgres", "fonds-argile-postgres"];
+
+function hoteBase(dbUrl: string): string {
+  try {
+    return new URL(dbUrl).hostname;
+  } catch {
+    return "illisible";
+  }
+}
+
 function assertNotProduction(yesStaging: boolean): void {
   const env = process.env.NEXT_PUBLIC_APP_ENV ?? "local";
-  const dbUrl = process.env.DATABASE_URL ?? process.env.SCALINGO_POSTGRESQL_URL ?? "";
+  // L'URL que le client utilisera réellement : recopier son ordre de priorité l'a fait diverger.
+  const dbUrl = getConnectionString();
 
   // 1. Refus immédiat si APP_ENV=production
   if (env === "production") {
@@ -126,6 +137,16 @@ function assertNotProduction(yesStaging: boolean): void {
   // 3. En staging, exige --yes-staging explicite (anti slip-of-fingers)
   if (env === "staging" && !yesStaging) {
     throw new Error("REFUSED: --yes-staging requis quand NEXT_PUBLIC_APP_ENV=staging.");
+  }
+
+  // 4. Un DATABASE_URL distant exporté dans le shell l'emporte sur .env.local, qui annonce
+  //    pourtant « local » : sans ce contrôle, le seed vidait staging sans --yes-staging.
+  const hote = hoteBase(dbUrl);
+  if (!HOTES_LOCAUX.includes(hote) && !yesStaging) {
+    throw new Error(
+      `REFUSED: la base visée (${hote}) n'est pas locale alors que NEXT_PUBLIC_APP_ENV=${env}. ` +
+        `Relancer avec --yes-staging si c'est voulu.`
+    );
   }
 
   // local / docker / staging-avec-flag : OK
@@ -182,6 +203,147 @@ async function runSqlFile(relPath: string, dryRun: boolean): Promise<void> {
 async function runAgentsStep(dryRun: boolean): Promise<void> {
   console.log("→ agents");
   await runSqlFile("agents/seed-agents-local-staging.sql", dryRun);
+  await seedSuperAdmins(dryRun);
+  await seedAgentsHybrides(dryRun);
+}
+
+const EMAIL_VALIDE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Une adresse mal formée échoue au lieu d'être ignorée ou tronquée : `a@b.fr@c.org`
+// devenait `a+slug@b.fr`, et `@` passait pour une adresse d'agent.
+function lireEmails(variable: string): string[] {
+  const emails = (process.env[variable] ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => e !== "");
+  // La position suffit à corriger, et les logs d'un one-off ne reçoivent aucune adresse nominative.
+  const positions = emails.flatMap((e, i) => (EMAIL_VALIDE.test(e) ? [] : [i + 1]));
+  if (positions.length > 0) {
+    throw new Error(`${variable} : adresse(s) invalide(s) en position ${positions.join(", ")}`);
+  }
+  return [...new Set(emails)];
+}
+
+function lireEmailBase(): string | null {
+  const emails = lireEmails("SEED_STRUCTURES_EMAIL");
+  if (emails.length > 1) throw new Error("SEED_STRUCTURES_EMAIL : une seule adresse de base attendue");
+  return emails[0] ?? null;
+}
+
+// Avant toute écriture, purge comprise : une faute de frappe ne doit pas laisser un seed à moitié joué.
+function validerVariablesSeed(): void {
+  lireEmails("SEED_AGENTS_SUPERADMINS");
+  lireEmails("SEED_AGENTS_HYBRIDES");
+  lireEmailBase();
+}
+
+// Les super-admins sont des personnes réelles : leurs adresses arrivent par
+// l'environnement, jamais par un fichier commité.
+async function seedSuperAdmins(dryRun: boolean): Promise<void> {
+  const emails = lireEmails("SEED_AGENTS_SUPERADMINS");
+
+  if (emails.length === 0) {
+    console.log("  · SEED_AGENTS_SUPERADMINS absent : aucun super-admin nominatif inséré");
+    return;
+  }
+  if (dryRun) {
+    console.log(`  [dry-run] ${emails.length} super-admin(s) depuis SEED_AGENTS_SUPERADMINS`);
+    return;
+  }
+
+  for (const email of emails) {
+    // Le vrai `sub` et l'état civil viennent de ProConnect ; la désactivation est levée comme
+    // pour les fixtures SQL, sinon le compte reste refusé sans message après re-seed.
+    await rawClient`
+      INSERT INTO agents (sub, email, given_name, usual_name, role)
+      VALUES (${`seed_${email}`}, ${email}, 'Super', 'Administrateur', 'super_administrateur'::agent_role)
+      ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role,
+        desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL
+    `;
+  }
+  console.log(`  ✓ ${emails.length} super-admin(s) depuis SEED_AGENTS_SUPERADMINS`);
+}
+
+// Mêmes structures que la fixture `agent-hybride-1` : AMO Maison Tranquille + Aller-vers Adil 36.
+const HYBRIDE_ENTREPRISE_AMO_ID = "5833143c-9397-4a80-a7fc-3c5eb37c7a28";
+const HYBRIDE_ALLERS_VERS_ID = "17628a5e-6a45-4a3c-a72c-606332b42e4c";
+
+// L'étape amo-av remet leurs deux liens à NULL (ON DELETE SET NULL) : sans ce rattachement,
+// un testeur réel du rôle cumulé devient « compte inexploitable » à chaque re-seed.
+async function seedAgentsHybrides(dryRun: boolean): Promise<void> {
+  const emails = lireEmails("SEED_AGENTS_HYBRIDES");
+
+  if (emails.length === 0) {
+    console.log("  · SEED_AGENTS_HYBRIDES absent : aucun testeur AMO + Aller-vers nominatif rattaché");
+    return;
+  }
+  if (dryRun) {
+    console.log(`  [dry-run] ${emails.length} testeur(s) AMO + Aller-vers depuis SEED_AGENTS_HYBRIDES`);
+    return;
+  }
+
+  for (const email of emails) {
+    await rawClient`
+      INSERT INTO agents (sub, email, given_name, usual_name, role, entreprise_amo_id, allers_vers_id)
+      VALUES (${`seed_${email}`}, ${email}, 'Testeur', 'AMO + Aller-vers', 'amo_et_allers_vers'::agent_role,
+        ${HYBRIDE_ENTREPRISE_AMO_ID}::uuid, ${HYBRIDE_ALLERS_VERS_ID}::uuid)
+      ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role,
+        entreprise_amo_id = EXCLUDED.entreprise_amo_id, allers_vers_id = EXCLUDED.allers_vers_id,
+        desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL
+    `;
+  }
+  console.log(`  ✓ ${emails.length} testeur(s) AMO + Aller-vers depuis SEED_AGENTS_HYBRIDES`);
+}
+
+// Le slug de la fixture devient le sous-adressage : `alohe@example.org` et la base
+// `prenom.nom@beta.gouv.fr` donnent `prenom.nom+alohe@beta.gouv.fr`. Une adresse par
+// structure, donc filtrable à la réception, sans aucune en clair dans le dépôt.
+function construireAlias(base: string, emailFixture: string): string {
+  const [local, domaine] = base.split("@");
+  const slug = emailFixture.split("@")[0];
+  return `${local}+${slug}@${domaine}`;
+}
+
+// Les fixtures portent des adresses `@example.org`, non délivrables : sans surcharge,
+// une session de test ne reçoit jamais l'invitation envoyée à l'AMO du territoire.
+async function redirigerEmailsStructures(dryRun: boolean): Promise<void> {
+  const base = lireEmailBase();
+
+  if (base === null) {
+    console.log("  · SEED_STRUCTURES_EMAIL absent : les structures gardent leurs adresses @example.org");
+    return;
+  }
+  if (dryRun) {
+    console.log(`  [dry-run] emails des structures en alias de ${base}`);
+    return;
+  }
+
+  // Seules les adresses de fixture sont converties : rejouer ne double pas l'alias, et une
+  // structure créée à la main pendant un test garde son adresse.
+  const convertir = (email: string): string => (email.endsWith("@example.org") ? construireAlias(base, email) : email);
+  let converties = 0;
+
+  // `entreprises_amo.emails` est un TEXT séparé par `;`, `allers_vers.emails` un text[].
+  const amos = await rawClient<{ id: string; emails: string }[]>`SELECT id, emails FROM entreprises_amo`;
+  for (const amo of amos) {
+    const alias = amo.emails
+      .split(";")
+      .map((e) => convertir(e.trim()))
+      .join(";");
+    if (alias === amo.emails) continue;
+    await rawClient`UPDATE entreprises_amo SET emails = ${alias} WHERE id = ${amo.id}::uuid`;
+    converties++;
+  }
+
+  const av = await rawClient<{ id: string; emails: string[] }[]>`SELECT id, emails FROM allers_vers`;
+  for (const structure of av) {
+    const alias = structure.emails.map(convertir);
+    if (alias.every((e, i) => e === structure.emails[i])) continue;
+    await rawClient`UPDATE allers_vers SET emails = ${alias}::text[] WHERE id = ${structure.id}::uuid`;
+    converties++;
+  }
+
+  console.log(`  ✓ ${converties} structure(s) passée(s) en alias de ${base}`);
 }
 
 async function runAmoAvStep(dryRun: boolean): Promise<void> {
@@ -236,19 +398,22 @@ async function main(): Promise<void> {
     `seed:staging — steps=${args.steps.join(",")}${modificateurs.length ? ` (${modificateurs.join(", ")})` : ""}\n`
   );
 
-  if (args.steps.includes("safety")) assertNotProduction(args.yesStaging);
+  validerVariablesSeed();
+  // Toujours, quel que soit `--steps=` : exclure l'étape safety laissait toutes les autres
+  // écrire sur une base distante sans confirmation.
+  assertNotProduction(args.yesStaging);
 
-  // La purge supprime de vrais comptes : jamais sans la garde, même si `--steps=`
-  // a exclu l'étape safety. Elle passe avant tout le reste, sinon `amo-av` viderait
-  // d'abord leurs validations AMO et les laisserait à moitié dépouillés.
-  if (args.purgeFc) {
-    if (!args.steps.includes("safety")) assertNotProduction(args.yesStaging);
-    await runPurgeFcStep(args.dryRun);
-  }
+  // La purge passe avant tout le reste, sinon `amo-av` viderait d'abord les validations AMO
+  // des comptes FranceConnect et les laisserait à moitié dépouillés.
+  if (args.purgeFc) await runPurgeFcStep(args.dryRun);
 
   if (args.steps.includes("ref-data") && !args.dryRun) await assertRefDataPresent();
   if (args.steps.includes("amo-av")) await runAmoAvStep(args.dryRun);
   if (args.steps.includes("parcours")) await runParcoursStep(args.dryRun);
+  // Après parcours : 07 et 13 suppriment puis réinsèrent les structures « seed test ».
+  if (args.steps.includes("amo-av") || args.steps.includes("parcours")) {
+    await redirigerEmailsStructures(args.dryRun);
+  }
   if (args.steps.includes("agents")) await runAgentsStep(args.dryRun);
   if (args.steps.includes("verify")) await runVerifyStep(args.dryRun);
 
