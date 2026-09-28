@@ -187,7 +187,7 @@ export async function getPublicStatsCards(): Promise<PublicStatsCards> {
 
 /**
  * Séries mensuelles depuis le lancement, pour les 4 mini-graphiques d'évolution de la page
- * publique `/stats`. Mêmes bornes de mois (`SERVICE_START_DATE` → aujourd'hui) pour les 4 séries,
+ * publique `/stats`. Mêmes bornes de mois (`SERVICE_START_DATE` → fin du mois précédent) pour les 4 séries,
  * afin qu'elles partagent un axe des mois cohérent même quand une métrique démarre plus tard.
  */
 export async function getPublicStatsEvolution(): Promise<PublicStatsEvolution> {

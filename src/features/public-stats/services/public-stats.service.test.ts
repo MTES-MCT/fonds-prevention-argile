@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { db } from "@/shared/database/client";
 import {
   fetchMatomoEvents,
@@ -119,6 +119,27 @@ describe("getPublicStatsCards", () => {
 describe("getPublicStatsEvolution", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("s'arrête au mois précédent, le mois en cours étant toujours incomplet", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 8, 15, 12));
+    vi.mocked(fetchMatomoUniqueVisitorsSeries).mockResolvedValue({});
+    vi.mocked(db.select)
+      .mockReturnValueOnce(mockDbQuery([{ createdAt: new Date("2026-09-10T10:00:00Z") }]))
+      .mockReturnValueOnce(mockDbQuery([]))
+      .mockReturnValueOnce(mockDbQuery([]));
+
+    const evolution = await getPublicStatsEvolution();
+
+    expect(evolution.comptesCrees.at(-1)?.label).toBe("août 2026");
+    expect(evolution.comptesCrees.every((p) => p.count === 0)).toBe(true);
+    expect(evolution.visiteurs?.at(-1)?.label).toBe("août 2026");
+    expect(fetchMatomoUniqueVisitorsSeries).toHaveBeenCalledWith("month", "2025-10-01,2026-08-31");
   });
 
   it("agrège les dates BDD par mois et partage l'axe des mois entre les séries", async () => {
