@@ -125,8 +125,14 @@ sauvegardée reste prioritaire. Avant, le callback envoyait **tout** agent vers
 
 Gardes principales :
 
-- Espace agent : `src/app/(backoffice)/espace-agent/layout.tsx`
-  (`checkProConnectAccess` + `getCurrentAgent` + `checkRoleAccess([...])`).
+- Espace agent : `exigerAccesEspaceAgent()` **en tête de chaque page**
+  (`espace-agent/shared/services/acces-espace-agent.service.ts`). Le layout lit le même
+  verdict (`evaluerAccesEspaceAgent`, mis en cache par requête) mais ne fait qu'**afficher**
+  l'écran de refus : Next rend la page en parallèle du layout et sérialise son RSC dans le
+  HTML même quand le layout ne rend pas `children`. Une garde de layout seule laissait ainsi
+  un `ADMINISTRATEUR` (refusé par le layout, national pour les services) recevoir le détail
+  complet d'un dossier dans le payload, derrière l'écran « accès non autorisé ». Un test méta
+  (`espace-agent/garde-pages.test.ts`) échoue si une page oublie la garde.
 - Administration : `src/app/(backoffice)/administration/page.tsx`
   (`checkAgentAccess` ; tout agent rend le tableau de bord depuis ADR-0017, les
   onglets sensibles restant gardés par page). Les sous-pages sensibles gardent leur
@@ -527,7 +533,7 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Coupure d'accès agent désactivé             | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)                                               |
 | Garde-fou suppression d'agent               | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`) + `agents.repository.ts` (`countTraces`)                                        |
 | Retrait des listes de diffusion             | `administration/agents/services/listes-diffusion.service.ts`                                                                                             |
-| Garde espace agent                          | `src/app/(backoffice)/espace-agent/layout.tsx`                                                                                                           |
+| Garde espace agent                          | `espace-agent/shared/services/acces-espace-agent.service.ts` (`exigerAccesEspaceAgent`, appelée par chaque page)                                         |
 | Garde administration                        | `src/app/(backoffice)/administration/page.tsx`                                                                                                           |
 | Garde entreprise AMO                        | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                                                           |
 | Garde ré-ouverture demande                  | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                                                    |
