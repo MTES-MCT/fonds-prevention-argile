@@ -13,7 +13,7 @@ const IDLE_TIMEOUT = 30;
 const CONNECTION_TIMEOUT = 10;
 
 // Construction de l'URL de connexion - même logique que drizzle.config.ts
-function getConnectionString(): string {
+export function getConnectionString(): string {
   // Priorité 1 : Scalingo (production)
   if (process.env.SCALINGO_POSTGRESQL_URL) {
     return process.env.SCALINGO_POSTGRESQL_URL;

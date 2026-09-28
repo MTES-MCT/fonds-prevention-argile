@@ -28,7 +28,7 @@ import { config } from "dotenv";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { rawClient } from "@/shared/database/client";
+import { getConnectionString, rawClient } from "@/shared/database/client";
 import { listerComptesTestFc, recupererEmailsTestFc, supprimerComptesTestFc } from "../ops/lib/purge-fc";
 
 // Filet pour un lancement qui ne passe pas par le runner (lui charge déjà .env.local) :
@@ -107,9 +107,7 @@ function maskUrl(url: string): string {
 // Le conteneur applicatif joint la base par le nom de service Docker.
 const HOTES_LOCAUX = ["localhost", "127.0.0.1", "::1", "[::1]", "postgres", "fonds-argile-postgres"];
 
-// Même source que le client (shared/database/client.ts) : DATABASE_URL, sinon DB_HOST.
 function hoteBase(dbUrl: string): string {
-  if (!dbUrl) return process.env.DB_HOST ?? "localhost";
   try {
     return new URL(dbUrl).hostname;
   } catch {
@@ -119,7 +117,8 @@ function hoteBase(dbUrl: string): string {
 
 function assertNotProduction(yesStaging: boolean): void {
   const env = process.env.NEXT_PUBLIC_APP_ENV ?? "local";
-  const dbUrl = process.env.DATABASE_URL ?? process.env.SCALINGO_POSTGRESQL_URL ?? "";
+  // L'URL que le client utilisera réellement : recopier son ordre de priorité l'a fait diverger.
+  const dbUrl = getConnectionString();
 
   // 1. Refus immédiat si APP_ENV=production
   if (env === "production") {
@@ -217,9 +216,10 @@ function lireEmails(variable: string): string[] {
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter((e) => e !== "");
-  const invalides = emails.filter((e) => !EMAIL_VALIDE.test(e));
-  if (invalides.length > 0) {
-    throw new Error(`${variable} : adresse(s) invalide(s) ${invalides.map((e) => `« ${e} »`).join(", ")}`);
+  // La position suffit à corriger, et les logs d'un one-off ne reçoivent aucune adresse nominative.
+  const positions = emails.flatMap((e, i) => (EMAIL_VALIDE.test(e) ? [] : [i + 1]));
+  if (positions.length > 0) {
+    throw new Error(`${variable} : adresse(s) invalide(s) en position ${positions.join(", ")}`);
   }
   return [...new Set(emails)];
 }
@@ -399,15 +399,13 @@ async function main(): Promise<void> {
   );
 
   validerVariablesSeed();
-  if (args.steps.includes("safety")) assertNotProduction(args.yesStaging);
+  // Toujours, quel que soit `--steps=` : exclure l'étape safety laissait toutes les autres
+  // écrire sur une base distante sans confirmation.
+  assertNotProduction(args.yesStaging);
 
-  // La purge supprime de vrais comptes : jamais sans la garde, même si `--steps=`
-  // a exclu l'étape safety. Elle passe avant tout le reste, sinon `amo-av` viderait
-  // d'abord leurs validations AMO et les laisserait à moitié dépouillés.
-  if (args.purgeFc) {
-    if (!args.steps.includes("safety")) assertNotProduction(args.yesStaging);
-    await runPurgeFcStep(args.dryRun);
-  }
+  // La purge passe avant tout le reste, sinon `amo-av` viderait d'abord les validations AMO
+  // des comptes FranceConnect et les laisserait à moitié dépouillés.
+  if (args.purgeFc) await runPurgeFcStep(args.dryRun);
 
   if (args.steps.includes("ref-data") && !args.dryRun) await assertRefDataPresent();
   if (args.steps.includes("amo-av")) await runAmoAvStep(args.dryRun);

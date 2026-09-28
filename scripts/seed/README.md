@@ -15,7 +15,7 @@ Pipeline en 6 étapes, ~30s en local. Résultat : agents de test + AMO/AV de tes
 
 ## Pipeline
 
-Le script `seed-staging.ts` enchaîne 6 étapes. Chacune est lançable séparément via `--steps`.
+Le script `seed-staging.ts` enchaîne 6 étapes. Chacune est lançable séparément via `--steps`, sauf `safety`, qui s'exécute **toujours** : l'exclure laissait les autres étapes écrire sans aucun contrôle.
 
 | #   | Step       | Quoi                                                                                        | Idempotent                                |
 | --- | ---------- | ------------------------------------------------------------------------------------------- | ----------------------------------------- |
