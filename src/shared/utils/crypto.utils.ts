@@ -14,10 +14,9 @@ export function safeTokenEquals(received: string, expected: string): boolean {
   return timingSafeEqual(a, b);
 }
 
-// Header « Authorization: Bearer <token> » comparé en temps constant ; sans secret configuré, toujours refusé.
+// Schéma insensible à la casse (RFC 7235), token comparé en temps constant ; sans secret configuré, toujours refusé.
 export function bearerCorrespond(authHeader: string | null, expected: string | undefined): boolean {
   if (!authHeader || !expected) return false;
-  const parts = authHeader.split(" ");
-  if (parts.length !== 2 || parts[0] !== "Bearer") return false;
-  return safeTokenEquals(parts[1], expected);
+  const token = authHeader.trim().match(/^Bearer +(\S+)$/i)?.[1];
+  return !!token && safeTokenEquals(token, expected);
 }

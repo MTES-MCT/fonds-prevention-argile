@@ -23,6 +23,10 @@ describe("bearerCorrespond", () => {
     expect(bearerCorrespond(`Bearer ${SECRET}`, SECRET)).toBe(true);
   });
 
+  it.each(["bearer", "BEARER"])("accepte le schéma en casse %s (RFC 7235)", (schema) => {
+    expect(bearerCorrespond(`${schema} ${SECRET}`, SECRET)).toBe(true);
+  });
+
   it.each([
     ["en-tête absent", null],
     ["mauvais token", "Bearer autre-token"],
