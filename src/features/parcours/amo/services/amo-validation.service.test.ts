@@ -18,7 +18,6 @@ vi.mock("@/shared/database/client", () => ({
 }));
 
 vi.mock("./amo-query.service", () => ({
-  checkAmoCoversCodeInsee: vi.fn(),
   getAmoById: vi.fn(),
 }));
 

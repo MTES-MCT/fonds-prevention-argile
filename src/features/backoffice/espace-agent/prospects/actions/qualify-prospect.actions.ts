@@ -31,6 +31,7 @@ const qualifyProspectSchema = z
     raisonsIneligibilite: z.array(z.string()).optional(),
     estMandataireFinancier: z.boolean().optional(),
     accompagnementSouhaite: z.enum(ACCOMPAGNEMENT_SOUHAITE_VALUES).optional(),
+    entrepriseAmoIdChoisie: z.string().uuid().optional(),
     note: z.string().optional(),
   })
   .refine(
@@ -126,6 +127,7 @@ export async function qualifyProspectAction(
       raisonsIneligibilite,
       estMandataireFinancier,
       accompagnementSouhaite,
+      entrepriseAmoIdChoisie,
       note,
     } = parsed.data;
 
@@ -145,6 +147,7 @@ export async function qualifyProspectAction(
       raisonsIneligibilite,
       estMandataireFinancier,
       accompagnementSouhaite,
+      entrepriseAmoIdChoisie,
       note,
       // La capacité AMO vient du rôle, pas de la seule présence d'une entreprise en base :
       // sans elle, un agent Aller-vers pur validerait au nom d'une AMO.

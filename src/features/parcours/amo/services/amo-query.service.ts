@@ -178,29 +178,6 @@ export async function getAmoById(amoId: string): Promise<Amo | null> {
 }
 
 /**
- * Vérifie qu'un AMO couvre un code INSEE
- */
-export async function checkAmoCoversCodeInsee(amoId: string, codeInsee: string): Promise<boolean> {
-  const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
-
-  const result = await db
-    .select({
-      id: entreprisesAmo.id,
-    })
-    .from(entreprisesAmo)
-    .leftJoin(entreprisesAmoCommunes, eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId))
-    .where(
-      and(
-        eq(entreprisesAmo.id, amoId),
-        or(eq(entreprisesAmoCommunes.codeInsee, codeInsee), like(entreprisesAmo.departements, `%${codeDepartement}%`))
-      )
-    )
-    .limit(1);
-
-  return result.length > 0;
-}
-
-/**
  * Récupère tous les AMO avec leurs communes et EPCI (admin)
  */
 export async function getAllAmosWithRelations(): Promise<

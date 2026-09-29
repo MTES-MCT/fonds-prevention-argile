@@ -12,6 +12,10 @@ import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service"
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { Status, Step } from "../../core";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
+import { ERREUR_CHOIX_AMO_REQUIS } from "../domain/value-objects";
+import type { Amo } from "../domain/entities";
+import { amoCouvreTerritoire, listerAmosDuTerritoire } from "./amo-couverture.service";
 
 vi.mock("@/shared/database/client", () => ({
   db: {
@@ -37,6 +41,11 @@ vi.mock("@/shared/database/repositories", () => ({
 
 vi.mock("@/shared/email/actions/send-email.actions", () => ({
   sendValidationAmoEmail: vi.fn(),
+}));
+
+vi.mock("./amo-couverture.service", () => ({
+  listerAmosDuTerritoire: vi.fn(),
+  amoCouvreTerritoire: vi.fn(),
 }));
 
 vi.mock("../../dossiers-ds/services/dossier-ds.service", () => ({
@@ -67,6 +76,19 @@ vi.stubGlobal("crypto", {
 });
 
 const userId = "user-123";
+
+const AMO_1 = "11111111-1111-4111-8111-111111111111";
+const AMO_2 = "22222222-2222-4222-8222-222222222222";
+
+function amo(id: string, nom: string): Amo {
+  return { id, nom, siret: "", departements: "", emails: "", telephone: "", adresse: "" };
+}
+
+/** Couverture du territoire : l'AMO unique par défaut, ou plusieurs pour le cas de Cambrai. */
+function mockCouverture(amos: Amo[]) {
+  vi.mocked(listerAmosDuTerritoire).mockResolvedValue(amos);
+  vi.mocked(amoCouvreTerritoire).mockImplementation(async (id) => amos.some((a) => a.id === id));
+}
 
 function buildMockParcours(codeInsee: string, codeEpci: string = "") {
   return {
@@ -126,6 +148,7 @@ function buildMockParcours(codeInsee: string, codeEpci: string = "") {
 describe("assignAmoAutomatiqueForUser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCouverture([amo(AMO_1, "AMO Test")]);
   });
 
   it("refuse si le parcours n'existe pas", async () => {
@@ -155,36 +178,28 @@ describe("assignAmoAutomatiqueForUser", () => {
         appel === 1
           ? [] // aucune validation existante
           : appel === 2
-            ? [{ id: "amo-1" }] // AMO du département
-            : appel === 3
-              ? [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }]
-              : [{ nom: "AMO Test", emails: "amo@example.fr", telephone: "0102030405", horaires: null }];
+            ? [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }]
+            : [{ nom: "AMO Test", emails: "amo@example.fr", telephone: "0102030405", horaires: null }];
       return {
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(rows) }),
-          leftJoin: vi.fn().mockReturnValue({
-            leftJoin: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([{ id: "amo-1" }]) }),
-            }),
-          }),
         }),
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as any);
 
-    vi.mocked(db.insert).mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        onConflictDoNothing: vi.fn().mockReturnValue({
-          returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
-        }),
-        onConflictDoUpdate: vi.fn().mockReturnValue({
-          returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
-        }),
-        // db.insert(amoValidationTokens).values(...) — sans returning
-        then: undefined,
+    const values = vi.fn().mockReturnValue({
+      onConflictDoNothing: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
       }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+      onConflictDoUpdate: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: "validation-1" }]),
+      }),
+      // db.insert(amoValidationTokens).values(...) — sans returning
+      then: undefined,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(db.insert).mockReturnValue({ values } as any);
 
     vi.mocked(db.update).mockReturnValue({
       set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
@@ -196,6 +211,13 @@ describe("assignAmoAutomatiqueForUser", () => {
       data: { messageId: "msg-1" },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
+
+    return { values };
+  }
+
+  /** Validation écrite par l'attribution (le premier insert, avant celui du token). */
+  function validationEcrite(values: ReturnType<typeof vi.fn>) {
+    return values.mock.calls[0][0];
   }
 
   it("attribue l'AMO à un parcours encore à l'étape invitation", async () => {
@@ -252,69 +274,86 @@ describe("assignAmoAutomatiqueForUser", () => {
     expect(sendValidationAmoEmail).not.toHaveBeenCalled();
   });
 
-  it("auto-attribue aussi en mode FACULTATIF (utilisé par CalloutChoixAccompagnement après 'Oui')", async () => {
-    // En mode FACULTATIF, la fonction est appelée explicitement après que l'utilisateur a
-    // confirmé "Oui" dans le callout de choix. On prend le 1er AMO du territoire (skip de
-    // l'étape liste de sélection manuelle).
-    // Ici le dept 82 n'a aucun AMO → on doit sortir avec l'erreur générique "aucun AMO disponible"
-    // (et PAS avec une erreur de mode).
+  it("refuse sans AMO sur le territoire, quel que soit le mode du département", async () => {
     vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("82001"));
-
-    let selectCallCount = 0;
-    vi.mocked(db.select).mockImplementation(() => {
-      selectCallCount++;
-      // 1er select : validation existante → aucune
-      // 2e select : recherche AMO par département → aucun
-      return {
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any;
-    });
+    mockAttributionComplete();
+    mockCouverture([]);
 
     const result = await assignAmoAutomatiqueForUser(userId);
     expect(result).toEqual({
       success: false,
       error: "Aucun AMO disponible pour le territoire du demandeur",
     });
-    expect(selectCallCount).toBeGreaterThan(1); // ne sort plus au check de mode
+    expect(sendValidationAmoEmail).not.toHaveBeenCalled();
   });
 
-  it("refuse si aucun AMO ne couvre le territoire (dept obligatoire 36)", async () => {
-    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("36001"));
+  it("trace l'AMO unique d'un département à AMO facultative comme désignée par défaut", async () => {
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("82001"));
+    const { values } = mockAttributionComplete();
 
-    let selectCallCount = 0;
-    vi.mocked(db.select).mockImplementation(() => {
-      selectCallCount++;
-      if (selectCallCount === 1) {
-        // Validation existante : aucune
-        return {
-          from: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([]),
-            }),
-          }),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any;
-      }
-      // Recherche AMO par département : aucun
-      return {
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([]),
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any;
+    await assignAmoAutomatiqueForUser(userId);
+
+    expect(validationEcrite(values)).toMatchObject({
+      entrepriseAmoId: AMO_1,
+      attributionMode: AttributionAmoMode.AUTO_UNIQUE,
+    });
+  });
+
+  it("trace l'AMO unique d'un département à AMO imposée comme attribuée d'office", async () => {
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("36001"));
+    const { values } = mockAttributionComplete();
+
+    await assignAmoAutomatiqueForUser(userId);
+
+    expect(validationEcrite(values)).toMatchObject({ attributionMode: AttributionAmoMode.AUTO_OBLIGATOIRE });
+  });
+
+  describe("plusieurs AMO sur le territoire", () => {
+    beforeEach(() => {
+      vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("59597", "200068500"));
+      mockCouverture([amo(AMO_1, "Argiles du Nord"), amo(AMO_2, "Habitat Cambrésis")]);
     });
 
-    const result = await assignAmoAutomatiqueForUser(userId);
-    expect(result).toEqual({
-      success: false,
-      error: "Aucun AMO disponible pour le territoire du demandeur",
+    it("ne choisit jamais à la place du demandeur", async () => {
+      mockAttributionComplete();
+
+      const result = await assignAmoAutomatiqueForUser(userId);
+
+      expect(result).toEqual({ success: false, error: ERREUR_CHOIX_AMO_REQUIS });
+      expect(db.insert).not.toHaveBeenCalled();
+      expect(sendValidationAmoEmail).not.toHaveBeenCalled();
+    });
+
+    it("sollicite l'AMO choisie par le demandeur", async () => {
+      const { values } = mockAttributionComplete();
+
+      const result = await assignAmoAutomatiqueForUser(userId, { entrepriseAmoId: AMO_2, par: "demandeur" });
+
+      expect(result.success).toBe(true);
+      expect(validationEcrite(values)).toMatchObject({
+        entrepriseAmoId: AMO_2,
+        attributionMode: AttributionAmoMode.MANUEL,
+      });
+    });
+
+    it("trace un choix fait par l'Aller-vers comme tel", async () => {
+      const { values } = mockAttributionComplete();
+
+      await assignAmoAutomatiqueForUser(userId, { entrepriseAmoId: AMO_1, par: "agent" });
+
+      expect(validationEcrite(values)).toMatchObject({ attributionMode: AttributionAmoMode.CHOIX_AGENT });
+    });
+
+    it("refuse une AMO qui ne couvre pas le territoire", async () => {
+      mockAttributionComplete();
+
+      const result = await assignAmoAutomatiqueForUser(userId, {
+        entrepriseAmoId: "33333333-3333-4333-8333-333333333333",
+        par: "demandeur",
+      });
+
+      expect(result).toEqual({ success: false, error: "Cette AMO ne couvre pas le territoire du demandeur" });
+      expect(sendValidationAmoEmail).not.toHaveBeenCalled();
     });
   });
 
@@ -331,9 +370,7 @@ describe("assignAmoAutomatiqueForUser", () => {
       const rows =
         selectCallCount === 1
           ? [] // aucune validation existante
-          : selectCallCount === 2
-            ? [{ id: "amo-1" }] // AMO du département
-            : [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }];
+          : [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }];
       return {
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(rows) }),
@@ -419,6 +456,7 @@ describe("skipAmoStepForUser", () => {
 describe("demanderAccompagnementDemandeur", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCouverture([amo(AMO_1, "AMO Test")]);
     vi.mocked(getDossierByStep).mockResolvedValue(null as never);
     // reinitialiserDossierEtape (best-effort, appelé après l'attribution de l'AMO) :
     // par défaut, aucun dossier éligibilité à réinitialiser (cf. getDossierByStep ci-dessus).
@@ -474,18 +512,27 @@ describe("demanderAccompagnementDemandeur", () => {
     }
   );
 
-  it("bascule SANS_AMO -> EN_ATTENTE avec le 1er AMO du territoire, sans toucher le statut/l'étape du parcours", async () => {
+  it("refuse de désigner une AMO parmi plusieurs sans le choix du demandeur", async () => {
+    vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(buildMockParcours("82001"));
+    mockValidationSelect([{ statut: "sans_amo" }]);
+    mockCouverture([amo(AMO_1, "Argiles du Nord"), amo(AMO_2, "Habitat Cambrésis")]);
+
+    const result = await demanderAccompagnementDemandeur(userId);
+
+    expect(result).toEqual({ success: false, error: ERREUR_CHOIX_AMO_REQUIS });
+    expect(sendValidationAmoEmail).not.toHaveBeenCalled();
+  });
+
+  it("bascule SANS_AMO -> EN_ATTENTE avec l'AMO du territoire, sans toucher le statut/l'étape du parcours", async () => {
     const parcours = buildMockParcours("82001");
     vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcours);
 
     let selectCallCount = 0;
     const rowsByCall: Record<number, unknown[]> = {
       1: [{ statut: "sans_amo" }], // validation existante SANS_AMO
-      2: [{ id: "amo-1" }], // findFirstAmoForTerritory (département)
-      3: [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }],
-      4: [{ id: "amo-1" }], // checkAmoCoversTerritory (dans selectAmoForUser)
-      5: [{ nom: "AMO Test", emails: "contact@amo.fr", telephone: "0102030405", horaires: "9h-17h" }],
-      6: [{ nom: "AMO Test" }], // nom AMO renvoyé par demanderAccompagnementDemandeur
+      2: [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }],
+      3: [{ nom: "AMO Test", emails: "contact@amo.fr", telephone: "0102030405", horaires: "9h-17h" }],
+      4: [{ nom: "AMO Test" }], // nom AMO renvoyé par demanderAccompagnementDemandeur
     };
     vi.mocked(db.select).mockImplementation(() => {
       selectCallCount++;
@@ -551,11 +598,9 @@ describe("demanderAccompagnementDemandeur", () => {
     let selectCallCount = 0;
     const rowsByCall: Record<number, unknown[]> = {
       1: [{ statut: "sans_amo" }],
-      2: [{ id: "amo-1" }],
-      3: [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }],
-      4: [{ id: "amo-1" }],
-      5: [{ nom: "AMO Test", emails: "contact@amo.fr", telephone: "0102030405", horaires: "9h-17h" }],
-      6: [{ nom: "AMO Test" }],
+      2: [{ prenom: "Jean", nom: "Dupont", email: "jean@example.fr", emailContact: null, telephone: null }],
+      3: [{ nom: "AMO Test", emails: "contact@amo.fr", telephone: "0102030405", horaires: "9h-17h" }],
+      4: [{ nom: "AMO Test" }],
     };
     vi.mocked(db.select).mockImplementation(() => {
       selectCallCount++;

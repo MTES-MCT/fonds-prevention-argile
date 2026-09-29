@@ -1,13 +1,6 @@
-import { eq, and, or, like } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/shared/database/client";
-import {
-  amoValidationTokens,
-  entreprisesAmo,
-  entreprisesAmoCommunes,
-  entreprisesAmoEpci,
-  parcoursAmoValidations,
-  users,
-} from "@/shared/database/schema";
+import { amoValidationTokens, entreprisesAmo, parcoursAmoValidations, users } from "@/shared/database/schema";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { ActionResult } from "@/shared/types/action-result.types";
 import {
@@ -24,6 +17,14 @@ import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service"
 import { reinitialiserDossierEtape } from "../../dossiers-ds/services/regeneration.service";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
+import {
+  ERREUR_AUCUNE_AMO,
+  ERREUR_CHOIX_AMO_REQUIS,
+  resoudreAmo,
+  territoireDuParcours,
+  type ReglesAmo,
+} from "../domain/value-objects";
+import { amoCouvreTerritoire, listerAmosDuTerritoire } from "./amo-couverture.service";
 import { emitBrevoEvent, BREVO_EVENTS, buildConseillerAttributesFromAmo } from "@/shared/email/brevo";
 import type { ParcoursPrevention } from "@/shared/database/schema";
 
@@ -52,6 +53,8 @@ export interface SelectAmoParams {
 export interface SelectAmoResult {
   message: string;
   token: string;
+  /** AMO sollicitée, absente quand une validation existait déjà. */
+  amoNom?: string;
 }
 
 /**
@@ -71,36 +74,6 @@ function validatePersonalData(params: SelectAmoParams): string | null {
     return "L'email est requis";
   }
   return null;
-}
-
-/**
- * Vérifie que l'AMO couvre le territoire (EPCI > INSEE > Département)
- */
-async function checkAmoCoversTerritory(
-  entrepriseAmoId: string,
-  codeInsee: string,
-  codeEpci: string | null
-): Promise<boolean> {
-  const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
-
-  const amoValide = await db
-    .select({ id: entreprisesAmo.id })
-    .from(entreprisesAmo)
-    .leftJoin(entreprisesAmoEpci, eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId))
-    .leftJoin(entreprisesAmoCommunes, eq(entreprisesAmo.id, entreprisesAmoCommunes.entrepriseAmoId))
-    .where(
-      and(
-        eq(entreprisesAmo.id, entrepriseAmoId),
-        or(
-          codeEpci ? eq(entreprisesAmoEpci.codeEpci, codeEpci) : undefined,
-          eq(entreprisesAmoCommunes.codeInsee, codeInsee),
-          like(entreprisesAmo.departements, `%${codeDepartement}%`)
-        )
-      )
-    )
-    .limit(1);
-
-  return amoValide.length > 0;
 }
 
 /**
@@ -154,31 +127,20 @@ export async function selectAmoForUser(
 
   // Résolution territoriale user-first (fallback agent) : un dossier créé par un
   // Aller-vers peut n'avoir que rgaSimulationDataAgent tant que le ménage n'a pas simulé.
-  const logement = getDemandeurFirstLogement(parcours);
-  if (!logement?.commune) {
+  const territoire = territoireDuParcours(parcours);
+  if (!territoire) {
     return {
       success: false,
-      error: "Simulation RGA non complétée (code INSEE manquant)",
+      error: "Simulation RGA non complétée (code INSEE manquant ou invalide)",
     };
   }
+  const codeInsee = territoire.codeInsee;
 
-  const codeInsee = normalizeCodeInsee(logement.commune);
-  if (!codeInsee) {
+  // Seule une AMO proposée pour ce territoire peut être sollicitée, quel que soit l'appelant.
+  if (!(await amoCouvreTerritoire(entrepriseAmoId, territoire))) {
     return {
       success: false,
-      error: "Simulation RGA non complétée (code INSEE invalide)",
-    };
-  }
-
-  // Extraire le code EPCI (si disponible)
-  const codeEpci = logement.epci ? String(logement.epci).trim() : null;
-
-  // Vérifier que l'AMO couvre le territoire
-  const amoCovers = await checkAmoCoversTerritory(entrepriseAmoId, codeInsee, codeEpci);
-  if (!amoCovers) {
-    return {
-      success: false,
-      error: "Cette AMO ne couvre pas votre territoire (EPCI, commune ou département)",
+      error: "Cette AMO ne couvre pas votre territoire (commune, EPCI ou département)",
     };
   }
 
@@ -319,51 +281,69 @@ export async function selectAmoForUser(
     data: {
       message: "AMO sélectionnée avec succès",
       token,
+      amoNom: amo.nom,
     },
   };
 }
 
-/**
- * Récupère le 1er AMO couvrant le territoire du parcours.
- * Logique EPCI > département (alignée sur `getAmosDisponibles`).
- */
-export async function findFirstAmoForTerritory(
-  codeInsee: string,
-  codeEpci: string | null
-): Promise<{ id: string } | null> {
-  if (codeEpci) {
-    const [amoEpci] = await db
-      .select({ id: entreprisesAmo.id })
-      .from(entreprisesAmo)
-      .innerJoin(entreprisesAmoEpci, eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId))
-      .where(eq(entreprisesAmoEpci.codeEpci, codeEpci))
-      .limit(1);
-    if (amoEpci) return amoEpci;
-  }
-
-  const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
-  const [amoDept] = await db
-    .select({ id: entreprisesAmo.id })
-    .from(entreprisesAmo)
-    .where(like(entreprisesAmo.departements, `%${codeDepartement}%`))
-    .limit(1);
-
-  return amoDept ?? null;
+/** Qui désigne l'AMO quand plusieurs couvrent le territoire : le demandeur, ou l'Aller-vers pour lui. */
+export interface ChoixAmo {
+  entrepriseAmoId: string;
+  par: "demandeur" | "agent";
 }
 
 /**
- * Résout le 1er AMO couvrant le territoire d'un parcours + les coordonnées de contact du
- * demandeur, pour toute auto-attribution (initiale ou après autonomie).
- *
- * Résolution territoriale user-first (fallback agent), cohérente avec `selectAmoForUser` :
- * permet l'auto-attribution sur un dossier Aller-vers sans simulation demandeur.
+ * AMO à solliciter et mode d'attribution à tracer. Sans choix explicite, seule l'AMO unique du
+ * territoire peut être désignée : entre plusieurs, l'application ne choisit jamais à la place.
  */
-async function resolveAmoAndContactForTerritory(
+async function designerAmo(
+  parcours: ParcoursPrevention,
+  choix?: ChoixAmo
+): Promise<ActionResult<{ entrepriseAmoId: string; attributionMode: AttributionAmoMode }>> {
+  const territoire = territoireDuParcours(parcours);
+  if (!territoire) {
+    return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
+  }
+
+  const amos = await listerAmosDuTerritoire(territoire);
+
+  if (choix) {
+    if (!amos.some((amo) => amo.id === choix.entrepriseAmoId)) {
+      return { success: false, error: "Cette AMO ne couvre pas le territoire du demandeur" };
+    }
+    const attributionMode = choix.par === "agent" ? AttributionAmoMode.CHOIX_AGENT : AttributionAmoMode.MANUEL;
+    return { success: true, data: { entrepriseAmoId: choix.entrepriseAmoId, attributionMode } };
+  }
+
+  const resolution = resoudreAmo(amos);
+  if (resolution.statut === "aucune") return { success: false, error: ERREUR_AUCUNE_AMO };
+  if (resolution.statut === "plusieurs") return { success: false, error: ERREUR_CHOIX_AMO_REQUIS };
+
+  return {
+    success: true,
+    data: {
+      entrepriseAmoId: resolution.amo.id,
+      attributionMode: modeAttributionParDefaut(getReglesAmo(getCodeDepartementFromCodeInsee(territoire.codeInsee))),
+    },
+  };
+}
+
+/** Trace pourquoi l'AMO unique a été désignée sans que personne ne la choisisse. */
+function modeAttributionParDefaut(regles: ReglesAmo): AttributionAmoMode {
+  if (regles.avCumuleAmo) return AttributionAmoMode.AUTO_AV_AMO;
+  if (regles.amoObligatoire) return AttributionAmoMode.AUTO_OBLIGATOIRE;
+  return AttributionAmoMode.AUTO_UNIQUE;
+}
+
+/**
+ * Coordonnées du demandeur reprises dans la validation et l'email à l'AMO. Résolution
+ * territoriale user-first (fallback agent) : un dossier Aller-vers n'a parfois que la sienne.
+ */
+async function coordonneesDemandeur(
   userId: string,
   parcours: ParcoursPrevention
 ): Promise<
   ActionResult<{
-    amoId: string;
     userPrenom: string;
     userNom: string;
     userEmail: string;
@@ -371,20 +351,6 @@ async function resolveAmoAndContactForTerritory(
     adresseLogement: string;
   }>
 > {
-  const logement = getDemandeurFirstLogement(parcours);
-  const codeInsee = normalizeCodeInsee(logement?.commune);
-  if (!codeInsee) {
-    return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
-  }
-
-  const codeEpci = logement?.epci ? String(logement.epci).trim() : null;
-
-  const amo = await findFirstAmoForTerritory(codeInsee, codeEpci);
-  if (!amo) {
-    return { success: false, error: "Aucun AMO disponible pour le territoire du demandeur" };
-  }
-
-  // Récupérer les coordonnées de contact du demandeur
   const [user] = await db
     .select({
       prenom: users.prenom,
@@ -410,26 +376,20 @@ async function resolveAmoAndContactForTerritory(
   }
   // Pas de garde sur le téléphone : il est absent des dossiers créés par un Aller-vers et
   // ne figure pas dans l'email envoyé à l'AMO — l'exiger bloquait l'attribution en silence.
-  const adresseLogement = logement?.adresse;
+  const adresseLogement = getDemandeurFirstLogement(parcours)?.adresse;
   if (!adresseLogement) {
     return { success: false, error: "Adresse du logement manquante dans la simulation RGA" };
   }
 
   return {
     success: true,
-    data: {
-      amoId: amo.id,
-      userPrenom: user.prenom,
-      userNom: user.nom,
-      userEmail,
-      userTelephone: user.telephone,
-      adresseLogement,
-    },
+    data: { userPrenom: user.prenom, userNom: user.nom, userEmail, userTelephone: user.telephone, adresseLogement },
   };
 }
 
 /**
- * Auto-affecte l'AMO du territoire au parcours d'un utilisateur.
+ * Attribue l'AMO au parcours d'un utilisateur : l'AMO unique du territoire, ou celle que le
+ * demandeur (ou l'Aller-vers pour lui) a choisie quand il y en a plusieurs.
  *
  * Accepte l'étape `INVITATION` : un dossier créé par un agent y reste jusqu'au claim, et
  * l'AMO doit pouvoir être sollicitée sans attendre que le demandeur crée son compte — sans
@@ -438,7 +398,10 @@ async function resolveAmoAndContactForTerritory(
  * Idempotent : si une validation existe déjà pour ce parcours, ne fait rien.
  * Délègue ensuite à `selectAmoForUser` avec le mode d'attribution adéquat.
  */
-export async function assignAmoAutomatiqueForUser(userId: string): Promise<ActionResult<SelectAmoResult>> {
+export async function assignAmoAutomatiqueForUser(
+  userId: string,
+  choix?: ChoixAmo
+): Promise<ActionResult<SelectAmoResult>> {
   const parcours = await parcoursRepo.findByUserId(userId);
   if (!parcours) {
     return { success: false, error: "Parcours non trouvé" };
@@ -458,41 +421,22 @@ export async function assignAmoAutomatiqueForUser(userId: string): Promise<Actio
     return { success: true, data: { message: "AMO déjà attribuée", token: "" } };
   }
 
-  const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
-  if (!codeInsee) {
-    return { success: false, error: "Simulation RGA non complétée (code INSEE invalide)" };
+  const designation = await designerAmo(parcours, choix);
+  if (!designation.success) {
+    return designation;
   }
 
-  // Trace l'origine de l'attribution : imposée par le département (silencieuse à l'arrivée
-  // sur /mon-compte), ou choisie par le demandeur via CalloutChoixAccompagnement.
-  const regles = getReglesAmo(getCodeDepartementFromCodeInsee(codeInsee));
-  let attributionMode: AttributionAmoMode;
-  if (regles.avCumuleAmo) {
-    attributionMode = AttributionAmoMode.AUTO_AV_AMO;
-  } else if (regles.amoObligatoire) {
-    attributionMode = AttributionAmoMode.AUTO_OBLIGATOIRE;
-  } else {
-    attributionMode = AttributionAmoMode.MANUEL;
-  }
-
-  const resolved = await resolveAmoAndContactForTerritory(userId, parcours);
-  if (!resolved.success) {
-    return resolved;
+  const coordonnees = await coordonneesDemandeur(userId, parcours);
+  if (!coordonnees.success) {
+    return coordonnees;
   }
 
   // `skipStatusUpdate` à l'étape invitation : `currentStatus` n'a de sens que rattaché à
   // l'étape courante, et c'est le claim qui posera EN_INSTRUCTION avec CHOIX_AMO.
   return selectAmoForUser(
     userId,
-    {
-      entrepriseAmoId: resolved.data.amoId,
-      userPrenom: resolved.data.userPrenom,
-      userNom: resolved.data.userNom,
-      userEmail: resolved.data.userEmail,
-      userTelephone: resolved.data.userTelephone,
-      adresseLogement: resolved.data.adresseLogement,
-    },
-    attributionMode,
+    { entrepriseAmoId: designation.data.entrepriseAmoId, ...coordonnees.data },
+    designation.data.attributionMode,
     { nePasEcraser: true, skipStatusUpdate: parcours.currentStep === Step.INVITATION }
   );
 }
@@ -576,12 +520,13 @@ export interface DemanderAccompagnementResult {
  * Demande un accompagnement AMO après avoir choisi l'autonomie (mode FACULTATIF).
  *
  * Symétrique de `skipAmoStepForUser` : bascule la validation `SANS_AMO` -> `EN_ATTENTE`
- * avec le 1er AMO du territoire, sans repasser par CHOIX_AMO — le parcours a déjà avancé à
+ * avec l'AMO du territoire (celle choisie par le demandeur s'il y en a plusieurs), sans repasser par CHOIX_AMO — le parcours a déjà avancé à
  * ÉLIGIBILITE. Le `currentStep`/`currentStatus` du parcours ne sont pas touchés (l'étape
  * éligibilité reste pilotée par la sync DS, indépendamment de la validation AMO).
  */
 export async function demanderAccompagnementDemandeur(
-  userId: string
+  userId: string,
+  entrepriseAmoIdChoisie?: string
 ): Promise<ActionResult<DemanderAccompagnementResult>> {
   const parcours = await parcoursRepo.findByUserId(userId);
   if (!parcours) {
@@ -622,22 +567,23 @@ export async function demanderAccompagnementDemandeur(
     };
   }
 
-  const resolved = await resolveAmoAndContactForTerritory(userId, parcours);
-  if (!resolved.success) {
-    return resolved;
+  const designation = await designerAmo(
+    parcours,
+    entrepriseAmoIdChoisie ? { entrepriseAmoId: entrepriseAmoIdChoisie, par: "demandeur" } : undefined
+  );
+  if (!designation.success) {
+    return designation;
+  }
+
+  const coordonnees = await coordonneesDemandeur(userId, parcours);
+  if (!coordonnees.success) {
+    return coordonnees;
   }
 
   const selectResult = await selectAmoForUser(
     userId,
-    {
-      entrepriseAmoId: resolved.data.amoId,
-      userPrenom: resolved.data.userPrenom,
-      userNom: resolved.data.userNom,
-      userEmail: resolved.data.userEmail,
-      userTelephone: resolved.data.userTelephone,
-      adresseLogement: resolved.data.adresseLogement,
-    },
-    AttributionAmoMode.MANUEL,
+    { entrepriseAmoId: designation.data.entrepriseAmoId, ...coordonnees.data },
+    designation.data.attributionMode,
     { skipStepGuard: true, skipStatusUpdate: true }
   );
   if (!selectResult.success) {
@@ -656,15 +602,15 @@ export async function demanderAccompagnementDemandeur(
   const [amo] = await db
     .select({ nom: entreprisesAmo.nom })
     .from(entreprisesAmo)
-    .where(eq(entreprisesAmo.id, resolved.data.amoId))
+    .where(eq(entreprisesAmo.id, designation.data.entrepriseAmoId))
     .limit(1);
 
   return {
     success: true,
     data: {
       amoNom: amo?.nom ?? "",
-      demandeurPrenom: resolved.data.userPrenom,
-      demandeurNom: resolved.data.userNom,
+      demandeurPrenom: coordonnees.data.userPrenom,
+      demandeurNom: coordonnees.data.userNom,
       formulaireReinitialise,
     },
   };

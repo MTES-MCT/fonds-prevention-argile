@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { donnerSuiteAQualificationEligible } from "./suite-qualification.service";
 import { assignAmoAutomatiqueForUser, passerEnAutonomie } from "@/features/parcours/amo/services/amo-selection.service";
 import { ouvrirEligibiliteApresValidationAmo } from "@/features/parcours/amo/services/ouverture-eligibilite.service";
-import { checkAmoCoversCodeInsee } from "@/features/parcours/amo/services/amo-query.service";
+import { amoCouvreTerritoire } from "@/features/parcours/amo/services/amo-couverture.service";
 import { db } from "@/shared/database/client";
 import { AccompagnementSouhaite } from "@/shared/domain/value-objects/accompagnement-souhaite.enum";
 import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
@@ -11,7 +11,10 @@ import { emitBrevoEvent } from "@/shared/email/brevo";
 import type { ParcoursPrevention } from "@/shared/database/schema";
 
 vi.mock("@/features/parcours/amo/services/amo-selection.service", () => ({
-  assignAmoAutomatiqueForUser: vi.fn(async () => ({ success: true, data: { message: "AMO sollicitée", token: "t" } })),
+  assignAmoAutomatiqueForUser: vi.fn(async () => ({
+    success: true,
+    data: { message: "AMO sollicitée", token: "t", amoNom: "AMO du territoire" },
+  })),
   passerEnAutonomie: vi.fn(async () => ({ success: true, data: { message: "autonomie" } })),
 }));
 
@@ -19,8 +22,8 @@ vi.mock("@/features/parcours/amo/services/ouverture-eligibilite.service", () => 
   ouvrirEligibiliteApresValidationAmo: vi.fn(async () => true),
 }));
 
-vi.mock("@/features/parcours/amo/services/amo-query.service", () => ({
-  checkAmoCoversCodeInsee: vi.fn(async () => true),
+vi.mock("@/features/parcours/amo/services/amo-couverture.service", () => ({
+  amoCouvreTerritoire: vi.fn(async () => true),
 }));
 
 vi.mock("@/shared/database/repositories", () => ({
@@ -67,8 +70,8 @@ describe("donnerSuiteAQualificationEligible — AMO imposé", () => {
   it("sollicite l'AMO du territoire sans rien demander au demandeur", async () => {
     const suite = await donnerSuiteAQualificationEligible(parcours("03185"), AGENT_AV_PUR);
 
-    expect(suite).toEqual({ issue: "transmise", raison: "AMO sollicitée" });
-    expect(assignAmoAutomatiqueForUser).toHaveBeenCalledWith("user-1");
+    expect(suite).toEqual({ issue: "transmise", raison: "Dossier transmis à AMO du territoire." });
+    expect(assignAmoAutomatiqueForUser).toHaveBeenCalledWith("user-1", undefined);
   });
 
   it("ignore l'intention recueillie : l'AMO y est imposé", async () => {
@@ -112,7 +115,7 @@ describe("donnerSuiteAQualificationEligible — AMO facultatif, l'Aller-vers tra
     );
 
     expect(suite).toMatchObject({ issue: "transmise" });
-    expect(assignAmoAutomatiqueForUser).toHaveBeenCalledWith("user-1");
+    expect(assignAmoAutomatiqueForUser).toHaveBeenCalledWith("user-1", undefined);
   });
 
   it("autonomie : pose « sans AMO » sans solliciter personne", async () => {
@@ -166,7 +169,7 @@ describe("donnerSuiteAQualificationEligible — l'Aller-vers est aussi l'AMO", (
     vi.clearAllMocks();
     vi.unstubAllEnvs();
     insertReturning.mockResolvedValue([{ id: "validation-1" }]);
-    vi.mocked(checkAmoCoversCodeInsee).mockResolvedValue(true);
+    vi.mocked(amoCouvreTerritoire).mockResolvedValue(true);
   });
 
   /** Le cumul est configuré par env ; le module de règles le lit à son chargement. */
@@ -222,11 +225,30 @@ describe("donnerSuiteAQualificationEligible — l'Aller-vers est aussi l'AMO", (
 
   it("ne vaut pas validation si l'entreprise de l'agent ne couvre pas la commune", async () => {
     const donnerSuite = await avecCumulSurLe32();
-    vi.mocked(checkAmoCoversCodeInsee).mockResolvedValue(false);
+    vi.mocked(amoCouvreTerritoire).mockResolvedValue(false);
 
     const suite = await donnerSuite(parcours("32013"), AGENT_AMO, AccompagnementSouhaite.ACCOMPAGNEMENT);
 
     expect(suite).toMatchObject({ issue: "transmise" });
+  });
+
+  it("sollicite l'AMO désignée par l'agent plutôt que de valider pour sa propre structure", async () => {
+    const donnerSuite = await avecCumulSurLe32();
+
+    const suite = await donnerSuite(parcours("32013"), AGENT_AMO, AccompagnementSouhaite.ACCOMPAGNEMENT, true, "amo-2");
+
+    expect(suite).toMatchObject({ issue: "transmise" });
+    expect(db.insert).not.toHaveBeenCalled();
+    expect(assignAmoAutomatiqueForUser).toHaveBeenCalledWith("user-1", { entrepriseAmoId: "amo-2", par: "agent" });
+  });
+
+  it("valide pour sa structure quand l'agent la désigne elle-même", async () => {
+    const donnerSuite = await avecCumulSurLe32();
+
+    const suite = await donnerSuite(parcours("32013"), AGENT_AMO, AccompagnementSouhaite.ACCOMPAGNEMENT, true, "amo-1");
+
+    expect(suite).toMatchObject({ issue: "validee_par_la_structure" });
+    expect(assignAmoAutomatiqueForUser).not.toHaveBeenCalled();
   });
 
   it("ne vaut pas validation dans un département sans cumul AV/AMO", async () => {

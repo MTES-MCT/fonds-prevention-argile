@@ -34,8 +34,8 @@ vi.mock("@/features/parcours/amo/services/ouverture-eligibilite.service", () => 
   ouvrirEligibiliteApresValidationAmo: vi.fn(async () => true),
 }));
 
-vi.mock("@/features/parcours/amo/services/amo-query.service", () => ({
-  checkAmoCoversCodeInsee: vi.fn(async () => true),
+vi.mock("@/features/parcours/amo/services/amo-couverture.service", () => ({
+  amoCouvreTerritoire: vi.fn(async () => true),
 }));
 
 vi.mock("@/shared/database/repositories", () => ({
@@ -193,7 +193,20 @@ describe("qualificationService.qualifyProspect — auto-lien AMO (dépt obligato
       "parcours-1",
       SituationParticulier.ELIGIBLE
     );
-    expect(assignAmoAutomatiqueForUser).toHaveBeenCalledWith("user-1");
+    expect(assignAmoAutomatiqueForUser).toHaveBeenCalledWith("user-1", undefined);
+  });
+
+  it("transmet l'AMO désignée par l'agent quand plusieurs couvrent le territoire", async () => {
+    vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(mockParcours("03185") as never);
+
+    await qualificationService.qualifyProspect({
+      parcoursId: "parcours-1",
+      agentId: "agent-1",
+      decision: QualificationDecision.ELIGIBLE,
+      entrepriseAmoIdChoisie: "amo-2",
+    });
+
+    expect(assignAmoAutomatiqueForUser).toHaveBeenCalledWith("user-1", { entrepriseAmoId: "amo-2", par: "agent" });
   });
 
   it("ne crée PAS de lien AMO en dépt facultatif (le ménage choisit lui-même)", async () => {

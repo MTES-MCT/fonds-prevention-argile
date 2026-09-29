@@ -7,11 +7,16 @@ import { Step, Status } from "../../core";
 vi.mock("@/shared/database/client", () => ({
   db: { select: vi.fn(), update: vi.fn() },
 }));
-vi.mock("./amo-selection.service", () => ({ findFirstAmoForTerritory: vi.fn() }));
+vi.mock("./amo-couverture.service", () => ({ listerAmosDuTerritoire: vi.fn() }));
 vi.mock("../../dossiers-ds/services/dossier-ds.service", () => ({ getDossierByStep: vi.fn() }));
 
 import { rattacherAmo } from "./rattachement-amo.service";
-import { findFirstAmoForTerritory } from "./amo-selection.service";
+import { listerAmosDuTerritoire } from "./amo-couverture.service";
+import type { Amo } from "../domain/entities";
+
+function amo(id: string, nom: string): Amo {
+  return { id, nom, siret: "", departements: "", emails: "", telephone: "", adresse: "" };
+}
 import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 
@@ -84,7 +89,7 @@ describe("rattacherAmo", () => {
     });
     // L'étape du parcours ne doit jamais être touchée.
     expect(sets).toHaveLength(1);
-    expect(findFirstAmoForTerritory).not.toHaveBeenCalled();
+    expect(listerAmosDuTerritoire).not.toHaveBeenCalled();
   });
 
   it("retombe sur l'AMO du territoire quand aucune trace d'audit n'existe", async () => {
@@ -93,13 +98,13 @@ describe("rattacherAmo", () => {
     mockSelectJoinOnce([]);
     mockSelectOnce([{ nom: "Soliha 36" }]);
     mockUpdateCapturingSet();
-    vi.mocked(findFirstAmoForTerritory).mockResolvedValue({ id: "e-territoire" });
+    vi.mocked(listerAmosDuTerritoire).mockResolvedValue([amo("e-territoire", "Soliha 36")]);
 
     const result = await rattacherAmo({ parcoursId: "p1" });
 
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.origine).toBe("territoire");
-    expect(findFirstAmoForTerritory).toHaveBeenCalledWith("36044", null);
+    expect(listerAmosDuTerritoire).toHaveBeenCalledWith({ codeInsee: "36044", codeEpci: null });
   });
 
   it("refuse un département à AMO facultative (l'autonomie y est légitime)", async () => {
@@ -141,12 +146,29 @@ describe("rattacherAmo", () => {
     mockSelectOnce([validationDetachee]);
     mockSelectJoinOnce([]);
     const { sets } = mockUpdateCapturingSet();
-    vi.mocked(findFirstAmoForTerritory).mockResolvedValue(null);
+    vi.mocked(listerAmosDuTerritoire).mockResolvedValue([]);
 
     const result = await rattacherAmo({ parcoursId: "p1" });
 
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("Aucune AMO");
+    expect(sets).toHaveLength(0);
+  });
+
+  it("refuse et explique quand plusieurs AMO couvrent le territoire : le demandeur choisit", async () => {
+    mockSelectOnce([parcoursObligatoire]);
+    mockSelectOnce([validationDetachee]);
+    mockSelectJoinOnce([]);
+    const { sets } = mockUpdateCapturingSet();
+    vi.mocked(listerAmosDuTerritoire).mockResolvedValue([amo("a", "Argiles du Nord"), amo("b", "Habitat Cambrésis")]);
+
+    const result = await rattacherAmo({ parcoursId: "p1" });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("Argiles du Nord, Habitat Cambrésis");
+      expect(result.error).toContain("le demandeur doit choisir");
+    }
     expect(sets).toHaveLength(0);
   });
 

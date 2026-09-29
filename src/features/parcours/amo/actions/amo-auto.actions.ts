@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { getSession } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types/action-result.types";
 import {
@@ -9,19 +10,26 @@ import {
 } from "../services/amo-selection.service";
 
 /**
- * Auto-attribue un AMO au parcours du demandeur connecté
- * (modes OBLIGATOIRE et AV_AMO_FUSIONNES — départements arrêté 2026).
+ * Attribue au demandeur connecté l'AMO de son territoire : l'unique, ou celle qu'il a choisie
+ * quand plusieurs le couvrent. Le choix est revérifié côté serveur contre la couverture.
  */
-export async function assignAmoAutomatique(): Promise<ActionResult<SelectAmoResult>> {
+export async function assignAmoAutomatique(entrepriseAmoId?: string): Promise<ActionResult<SelectAmoResult>> {
   try {
     const session = await getSession();
     if (!session?.userId) {
       return { success: false, error: "Non connecté" };
     }
-    return await assignAmoAutomatiqueForUser(session.userId);
+    const choix = z.string().uuid().optional().safeParse(entrepriseAmoId);
+    if (!choix.success) {
+      return { success: false, error: "AMO invalide" };
+    }
+    return await assignAmoAutomatiqueForUser(
+      session.userId,
+      choix.data ? { entrepriseAmoId: choix.data, par: "demandeur" } : undefined
+    );
   } catch (error) {
     console.error("Erreur assignAmoAutomatique:", error);
-    return { success: false, error: "Erreur lors de l'auto-attribution de l'AMO" };
+    return { success: false, error: "Erreur lors de l'attribution de l'AMO" };
   }
 }
 

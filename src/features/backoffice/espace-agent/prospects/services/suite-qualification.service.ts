@@ -7,9 +7,8 @@ import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-valida
 import { resolveReglesAmoForParcours } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { assignAmoAutomatiqueForUser, passerEnAutonomie } from "@/features/parcours/amo/services/amo-selection.service";
 import { ouvrirEligibiliteApresValidationAmo } from "@/features/parcours/amo/services/ouverture-eligibilite.service";
-import { checkAmoCoversCodeInsee } from "@/features/parcours/amo/services/amo-query.service";
-import { normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
-import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
+import { amoCouvreTerritoire } from "@/features/parcours/amo/services/amo-couverture.service";
+import { territoireDuParcours } from "@/features/parcours/amo/domain/value-objects/couverture-amo";
 import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS, buildConseillerAttributesFromAmo } from "@/shared/email/brevo";
 import { entreprisesAmoRepo } from "@/shared/database/repositories";
 
@@ -35,7 +34,11 @@ export type SuiteAccompagnement = { issue: IssueAccompagnement; raison: string }
  *  1. AMO imposé par le département → l'AMO est sollicitée, quelle que soit l'intention.
  *  2. AMO facultatif → la réponse recueillie par l'agent tranche (accompagnement, autonomie,
  *     ou « ne sait pas », qui rend la main au demandeur).
- *  3. Là où l'aller-vers EST l'AMO, une sollicitation devient une validation directe.
+ *  3. Là où l'aller-vers EST l'AMO, une sollicitation devient une validation directe — sauf s'il
+ *     a désigné une autre AMO que la sienne.
+ *
+ * Quand plusieurs AMO couvrent le territoire, c'est l'agent qui désigne celle à solliciter
+ * (`entrepriseAmoIdChoisie`) : l'application ne choisit jamais entre elles.
  *
  * Le gel « dossier chez la DDT » n'a pas de garde propre : les mutations ci-dessous exigent
  * l'étape choix AMO ou invitation, où aucun formulaire d'éligibilité n'existe encore.
@@ -44,7 +47,8 @@ export async function donnerSuiteAQualificationEligible(
   parcours: ParcoursPrevention,
   agent: ContexteAgentQualification,
   accompagnementSouhaite?: AccompagnementSouhaite | null,
-  estMandataireFinancier?: boolean
+  estMandataireFinancier?: boolean,
+  entrepriseAmoIdChoisie?: string
 ): Promise<SuiteAccompagnement> {
   try {
     const regles = resolveReglesAmoForParcours(parcours);
@@ -64,14 +68,20 @@ export async function donnerSuiteAQualificationEligible(
       }
     }
 
-    if (await peutValiderCommeAmo(parcours, agent, regles.avCumuleAmo)) {
+    const choisitUneAutreAmo = Boolean(entrepriseAmoIdChoisie) && entrepriseAmoIdChoisie !== agent.entrepriseAmoId;
+    if (!choisitUneAutreAmo && (await peutValiderCommeAmo(parcours, agent, regles.avCumuleAmo))) {
       return validerCommeAmo(parcours, agent, estMandataireFinancier);
     }
 
-    const result = await assignAmoAutomatiqueForUser(parcours.userId);
-    return result.success
-      ? { issue: "transmise", raison: result.data.message }
-      : { issue: "echec", raison: result.error };
+    const result = await assignAmoAutomatiqueForUser(
+      parcours.userId,
+      entrepriseAmoIdChoisie ? { entrepriseAmoId: entrepriseAmoIdChoisie, par: "agent" } : undefined
+    );
+    if (!result.success) return { issue: "echec", raison: result.error };
+    return {
+      issue: "transmise",
+      raison: `Dossier transmis à ${result.data.amoNom ?? "l'AMO du territoire"}.`,
+    };
   } catch (error) {
     console.error(`[donnerSuiteAQualificationEligible] échec (parcours ${parcours.id}):`, error);
     return { issue: "echec", raison: "Erreur technique lors de la mise en relation avec l'AMO." };
@@ -90,10 +100,10 @@ async function peutValiderCommeAmo(
 ): Promise<boolean> {
   if (!avCumuleAmo || !agent.aLaCapaciteAmo || !agent.entrepriseAmoId) return false;
 
-  const codeInsee = normalizeCodeInsee(getDemandeurFirstLogement(parcours)?.commune);
-  if (!codeInsee) return false;
+  const territoire = territoireDuParcours(parcours);
+  if (!territoire) return false;
 
-  return checkAmoCoversCodeInsee(agent.entrepriseAmoId, codeInsee);
+  return amoCouvreTerritoire(agent.entrepriseAmoId, territoire);
 }
 
 /**
@@ -151,7 +161,7 @@ export function libelleSuiteAccompagnement(suite: SuiteAccompagnement): string |
   if (!suite) return null;
   switch (suite.issue) {
     case "transmise":
-      return "Dossier transmis à l'AMO du territoire.";
+      return suite.raison;
     case "validee_par_la_structure":
       return "Accompagnement pris en charge par la structure qui a qualifié le dossier.";
     case "autonomie":

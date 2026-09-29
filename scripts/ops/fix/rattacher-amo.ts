@@ -78,7 +78,11 @@ async function main() {
   console.log();
   for (const c of candidats) {
     const marque = c.gele ? "  GELE" : "";
-    const cible = c.amoCible ? `${c.amoCible.nom} (${c.amoCible.origine})` : "AUCUNE AMO TROUVEE";
+    const cible = c.amoCible
+      ? `${c.amoCible.nom} (${c.amoCible.origine})`
+      : c.amosEnConcurrence.length > 0
+        ? `PLUSIEURS AMO, CHOIX DU DEMANDEUR (${c.amosEnConcurrence.join(", ")})`
+        : "AUCUNE AMO TROUVEE";
     console.log(`  ${c.parcoursId}  dept ${c.dept.padEnd(3)}  ${c.currentStep.padEnd(12)}  ${cible}${marque}`);
   }
   console.log();

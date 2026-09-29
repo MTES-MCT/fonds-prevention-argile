@@ -4,20 +4,15 @@ import { getSession } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types";
 import { Amo } from "../domain/entities";
 import { db, entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "@/shared/database";
-import { eq, like } from "drizzle-orm";
-import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "../utils/amo.utils";
+import { eq } from "drizzle-orm";
 import { parcoursRepo } from "@/shared/database/repositories";
+import { territoireDuParcours } from "../domain/value-objects/couverture-amo";
+import { listerAmosDuTerritoire } from "../services/amo-couverture.service";
 import { isAdminRole } from "@/shared/domain/value-objects";
 
 /**
- * Récupère la liste des AMO disponibles pour le territoire de l'utilisateur
- *
- * Logique de sélection EXCLUSIVE :
- * 1. Si des AMO couvrent l'EPCI du citoyen → retourner UNIQUEMENT ces AMO
- * 2. Sinon, si des AMO couvrent le département → retourner UNIQUEMENT ces AMO
- * 3. Ne JAMAIS mélanger des AMO trouvés par EPCI avec ceux trouvés par département
- *
- * Note : Les codes INSEE spécifiques (entreprises_amo_communes) ne sont pas utilisés dans cette version
+ * AMO proposées au demandeur connecté pour son territoire : celles du niveau le plus précis
+ * (commune, puis EPCI, puis département), dans l'ordre de `listerAmosDuTerritoire`.
  */
 export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
   try {
@@ -27,84 +22,13 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
     }
 
     const parcours = await parcoursRepo.findByUserId(session.userId);
-
-    if (!parcours?.rgaSimulationData?.logement?.commune) {
-      return {
-        success: false,
-        error: "Simulation RGA non complétée (code INSEE manquant)",
-      };
+    // USER-first avec repli agent : un dossier créé par un Aller-vers n'a parfois que la sienne.
+    const territoire = parcours ? territoireDuParcours(parcours) : null;
+    if (!territoire) {
+      return { success: false, error: "Simulation RGA non complétée (code INSEE manquant)" };
     }
 
-    // Extraire le code INSEE
-    const codeInsee = normalizeCodeInsee(parcours.rgaSimulationData.logement.commune);
-
-    if (!codeInsee) {
-      return {
-        success: false,
-        error: "Simulation RGA non complétée (code INSEE invalide)",
-      };
-    }
-
-    // Extraire le code département
-    const codeDepartement = getCodeDepartementFromCodeInsee(codeInsee);
-
-    // Extraire le code EPCI (si disponible)
-    const codeEpci = parcours.rgaSimulationData.logement?.epci
-      ? String(parcours.rgaSimulationData.logement.epci).trim()
-      : null;
-
-    // 1. Récupérer les AMO qui couvrent l'EPCI spécifique (si disponible)
-    const amosParEpci = codeEpci
-      ? await db
-          .selectDistinct({
-            id: entreprisesAmo.id,
-            nom: entreprisesAmo.nom,
-            siret: entreprisesAmo.siret,
-            departements: entreprisesAmo.departements,
-            emails: entreprisesAmo.emails,
-            telephone: entreprisesAmo.telephone,
-            adresse: entreprisesAmo.adresse,
-            horaires: entreprisesAmo.horaires,
-          })
-          .from(entreprisesAmo)
-          .innerJoin(entreprisesAmoEpci, eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId))
-          .where(eq(entreprisesAmoEpci.codeEpci, codeEpci))
-      : [];
-
-    // Si des AMO couvrent l'EPCI, retourner UNIQUEMENT ceux-là (logique exclusive)
-    if (amosParEpci.length > 0) {
-      return {
-        success: true,
-        data: amosParEpci,
-      };
-    }
-
-    // 2. Sinon, récupérer les AMO qui couvrent le département entier (fallback)
-    const amosParDepartement = await db
-      .select({
-        id: entreprisesAmo.id,
-        nom: entreprisesAmo.nom,
-        siret: entreprisesAmo.siret,
-        departements: entreprisesAmo.departements,
-        emails: entreprisesAmo.emails,
-        telephone: entreprisesAmo.telephone,
-        adresse: entreprisesAmo.adresse,
-        horaires: entreprisesAmo.horaires,
-      })
-      .from(entreprisesAmo)
-      .where(like(entreprisesAmo.departements, `%${codeDepartement}%`));
-
-    return {
-      success: true,
-      data: amosParDepartement,
-    };
-
-    // Note : Code INSEE spécifique désactivé dans cette version
-    // const amosParCodeInsee = await db
-    //   .selectDistinct({...})
-    //   .from(entreprisesAmo)
-    //   .innerJoin(entreprisesAmoCommunes, ...)
-    //   .where(eq(entreprisesAmoCommunes.codeInsee, codeInsee));
+    return { success: true, data: await listerAmosDuTerritoire(territoire) };
   } catch (error) {
     console.error("Erreur getAmosDisponibles:", error);
     return {

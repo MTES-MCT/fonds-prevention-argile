@@ -7,6 +7,7 @@ import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo"
 import { Status, Step } from "../../core";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import type { StatutValidationAmo } from "../domain/value-objects";
+import { amoCouvreTerritoire } from "./amo-couverture.service";
 
 // Mock des dépendances
 vi.mock("@/shared/database/client", () => ({
@@ -22,6 +23,11 @@ vi.mock("@/shared/database/repositories", () => ({
     findByUserId: vi.fn(),
     updateStatus: vi.fn(),
   },
+}));
+
+vi.mock("./amo-couverture.service", () => ({
+  amoCouvreTerritoire: vi.fn(),
+  listerAmosDuTerritoire: vi.fn(),
 }));
 
 vi.mock("@/shared/email/actions/send-email.actions", () => ({
@@ -149,12 +155,13 @@ describe("amo-selection.service", () => {
       // Setup des mocks par défaut pour un cas de succès
       vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(mockParcours);
 
-      // Mock pour la vérification de couverture territoriale
+      vi.mocked(amoCouvreTerritoire).mockResolvedValue(true);
+
+      // Mock pour la fiche de l'AMO (email et synchro Brevo)
       vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnThis(),
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
+            limit: vi.fn().mockResolvedValue([mockAmo]),
           }),
         }),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -190,31 +197,16 @@ describe("amo-selection.service", () => {
 
     it("devrait réussir avec des données valides", async () => {
       // Re-mock db.select pour retourner aussi l'AMO
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          // Premier appel : vérification couverture territoriale
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
+        // Deuxième appel : récupération AMO
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAmo]),
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        } else {
-          // Deuxième appel : récupération AMO
-          return {
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([mockAmo]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
       const result = await selectAmoForUser(userId, validParams);
@@ -228,20 +220,7 @@ describe("amo-selection.service", () => {
     });
 
     it("rafraîchit les attributs du conseiller (AMO) sur le contact Brevo", async () => {
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
         return {
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
@@ -340,20 +319,7 @@ describe("amo-selection.service", () => {
     // Le téléphone n'est plus exigé : un dossier créé par un Aller-vers n'en a pas, et il ne
     // figure pas dans l'email envoyé à l'AMO. L'exiger bloquait l'attribution en silence.
     it("devrait réussir sans téléphone, sans écraser le numéro existant du demandeur", async () => {
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
         return {
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
@@ -434,7 +400,7 @@ describe("amo-selection.service", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("Simulation RGA non complétée (code INSEE manquant)");
+        expect(result.error).toBe("Simulation RGA non complétée (code INSEE manquant ou invalide)");
       }
     });
 
@@ -454,59 +420,40 @@ describe("amo-selection.service", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("Simulation RGA non complétée (code INSEE manquant)");
+        expect(result.error).toBe("Simulation RGA non complétée (code INSEE manquant ou invalide)");
       }
     });
 
     // ===== Tests de couverture territoriale =====
 
     it("devrait échouer si l'AMO ne couvre pas le territoire", async () => {
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnThis(),
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([]), // Aucun résultat = pas de couverture
-          }),
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      vi.mocked(amoCouvreTerritoire).mockResolvedValue(false);
 
       const result = await selectAmoForUser(userId, validParams);
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("Cette AMO ne couvre pas votre territoire (EPCI, commune ou département)");
+        expect(result.error).toBe("Cette AMO ne couvre pas votre territoire (commune, EPCI ou département)");
       }
+      expect(amoCouvreTerritoire).toHaveBeenCalledWith(validParams.entrepriseAmoId, {
+        codeInsee: "75001",
+        codeEpci: "200054781",
+      });
     });
 
     // ===== Tests AMO =====
 
     it("devrait échouer si l'AMO n'est pas trouvée", async () => {
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          // Couverture territoriale OK
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
+        // AMO non trouvée
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([]),
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        } else {
-          // AMO non trouvée
-          return {
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
       const result = await selectAmoForUser(userId, validParams);
@@ -520,29 +467,15 @@ describe("amo-selection.service", () => {
     // ===== Tests d'envoi d'email et tracking =====
 
     it("devrait envoyer un email à l'AMO avec les bonnes informations", async () => {
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAmo]),
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        } else {
-          return {
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([mockAmo]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
       await selectAmoForUser(userId, validParams);
@@ -563,30 +496,15 @@ describe("amo-selection.service", () => {
         ...mockAmo,
         emails: "contact1@amo.fr;contact2@amo.fr;contact3@amo.fr",
       };
-
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([amoMultiEmails]),
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        } else {
-          return {
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([amoMultiEmails]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
       await selectAmoForUser(userId, validParams);
@@ -599,29 +517,15 @@ describe("amo-selection.service", () => {
     });
 
     it("devrait stocker le brevoMessageId après un envoi réussi", async () => {
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAmo]),
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        } else {
-          return {
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([mockAmo]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
       const mockUpdate = vi.fn().mockReturnValue({
@@ -650,29 +554,15 @@ describe("amo-selection.service", () => {
     });
 
     it("devrait continuer même si l'envoi de l'email échoue", async () => {
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAmo]),
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        } else {
-          return {
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([mockAmo]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
       vi.mocked(sendValidationAmoEmail).mockResolvedValue({
@@ -687,29 +577,15 @@ describe("amo-selection.service", () => {
     });
 
     it("ne devrait pas stocker le brevoMessageId si l'envoi échoue", async () => {
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAmo]),
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        } else {
-          return {
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([mockAmo]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
       vi.mocked(sendValidationAmoEmail).mockResolvedValue({
@@ -741,29 +617,15 @@ describe("amo-selection.service", () => {
     // ===== Tests de trim des données =====
 
     it("devrait trimmer les espaces dans les données personnelles", async () => {
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAmo]),
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        } else {
-          return {
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([mockAmo]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
       const paramsWithSpaces = {
@@ -794,30 +656,15 @@ describe("amo-selection.service", () => {
     it("devrait créer un token avec la bonne date d'expiration", async () => {
       const now = new Date("2025-01-15T10:00:00Z");
       vi.setSystemTime(now);
-
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAmo]),
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        } else {
-          return {
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([mockAmo]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
       const result = await selectAmoForUser(userId, validParams);
@@ -834,29 +681,15 @@ describe("amo-selection.service", () => {
     // ===== Tests de reset des champs tracking =====
 
     it("devrait reset les champs de tracking email lors d'une re-sélection", async () => {
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAmo]),
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        } else {
-          return {
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([mockAmo]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
       await selectAmoForUser(userId, validParams);
@@ -894,30 +727,15 @@ describe("amo-selection.service", () => {
       };
 
       vi.mocked(parcoursRepo.findByUserId).mockResolvedValue(parcoursWithoutEpci);
-
-      let selectCallCount = 0;
       vi.mocked(db.select).mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1) {
-          return {
-            from: vi.fn().mockReturnValue({
-              leftJoin: vi.fn().mockReturnThis(),
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: validParams.entrepriseAmoId }]),
-              }),
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAmo]),
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        } else {
-          return {
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([mockAmo]),
-              }),
-            }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any;
-        }
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       });
 
       const result = await selectAmoForUser(userId, validParams);
