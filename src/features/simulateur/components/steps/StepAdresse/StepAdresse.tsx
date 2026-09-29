@@ -457,11 +457,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
         canGoBack={canGoBack}
         isNextDisabled={!isValid}
         aideDesactive={
-          selectedAddress
-            ? aleaIndetermine
-              ? undefined
-              : "Sélectionnez votre logement sur la carte pour continuer."
-            : "Recherchez puis choisissez votre adresse pour continuer."
+          selectedAddress && !aleaIndetermine ? "Sélectionnez votre logement sur la carte pour continuer." : undefined
         }
       />
     </SimulateurLayout>
