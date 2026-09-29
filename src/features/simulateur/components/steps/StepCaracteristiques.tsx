@@ -114,7 +114,7 @@ export function StepCaracteristiques({
         </select>
       </div>
 
-      <p className="fr-text--xs fr-mb-4w text-(--text-mention-grey)">
+      <p className="fr-text--xs fr-mb-2w text-(--text-mention-grey)">
         Données issues du{" "}
         <a href="https://rnb.beta.gouv.fr/" target="_blank" rel="noopener noreferrer">
           RNB

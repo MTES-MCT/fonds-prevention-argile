@@ -67,9 +67,9 @@ export function NavigationButtons({
 
   if (barreCollante) {
     // Sticky : sans effet quand les boutons tiennent dans l'écran, les garde visibles sinon (mobile, iframe).
-    // Marge négative : la barre remonte sur la marge DSFR du dernier champ au lieu de s'y ajouter.
+    // Pas de marge haute : transparente une fois la barre collée, elle laisserait voir le contenu dessous.
     return (
-      <div className="sticky bottom-0 z-10 -mt-4 -mx-4 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:-mx-10 md:px-10 bg-(--background-alt-grey) border-t border-(--border-default-grey) md:border-t-0">
+      <div className="barre-navigation sticky bottom-0 z-10 -mx-4 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:-mx-10 md:px-10 bg-(--background-alt-grey) border-t border-(--border-default-grey) md:border-t-0">
         {afficherAide && <p className="fr-text--sm fr-mb-1w text-(--text-mention-grey)">{aideDesactive}</p>}
         {/* Côte à côte même sur mobile : empilés, ils doubleraient la hauteur de la barre. */}
         <div className="flex flex-row md:justify-end gap-2">{boutons}</div>

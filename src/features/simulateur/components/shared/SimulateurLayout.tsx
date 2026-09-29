@@ -72,7 +72,8 @@ export function SimulateurLayout({
               </a>
             </div>
           )}
-          <div className="bg-(--background-alt-grey) px-4 pt-6 pb-2 md:px-10 md:pt-10 md:pb-6">
+          {/* Avant les boutons, la marge du groupe de choix doublerait celle de sa dernière option. */}
+          <div className="bg-(--background-alt-grey) px-4 pt-6 pb-2 md:px-10 md:pt-10 md:pb-6 [&_.fr-fieldset:has(+.barre-navigation)]:mb-0!">
             {formTitle && <p className="fr-h6 fr-mb-2w">{formTitle}</p>}
             {showProgress && currentStep !== null && (
               <p className="fr-text--sm fr-mb-1v">
