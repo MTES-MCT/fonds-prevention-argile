@@ -9,9 +9,8 @@ Les enregistrements de session du simulateur d'éligibilité montrent de nombreu
 surtout à l'étape adresse. Deux causes reviennent :
 
 - **Le bruit autour du formulaire.** Le header du site propose ProConnect, la connexion
-  particulier et « Vérifier mon éligibilité » en plein parcours. Le footer ajoute le maillage
-  SEO des départements. Un titre générique et une bannière d'information repoussent la
-  question sous la ligne de flottaison.
+  particulier et « Vérifier mon éligibilité » en plein parcours. Un titre générique et une
+  bannière d'information repoussent la question sous la ligne de flottaison.
 - **L'étape adresse est trop longue.** La recherche d'adresse, la carte, puis l'année de
   construction et le nombre de niveaux s'empilent. Sur mobile et dans l'iframe partenaire,
   « Suivant » sort de l'écran et il faut défiler sous la carte pour le trouver.
@@ -26,9 +25,9 @@ crée pas d'étape « département ».
 > réponses jusqu'à leur vérification.
 
 1. **Layout tunnel.** `src/app/(tunnel)/layout.tsx` monte `HeaderTunnel` (marque et
-   « Besoin d'aide ? » seulement) et `Footer variante="tunnel"` (bandeau légal, sans
-   `RgaFooter`). La bannière Notice de `/simulateur` est retirée. Le maillage SEO reste en
-   place sur toutes les autres pages.
+   « Besoin d'aide ? » seulement). Le footer reste celui du site : sous le formulaire, il ne
+   gêne pas le parcours, et il porte le maillage SEO des départements. La bannière Notice de
+   `/simulateur` est retirée.
 2. **Deux écrans pour l'adresse.** `SimulateurStep.CARACTERISTIQUES` suit `ADRESSE` dans
    `ETAPES_SAISIE`. `ECRANS_RATTACHES` lui fait afficher le numéro de l'adresse :
    `TOTAL_ETAPES` reste 9. Les contrôles d'année et de niveaux échouent désormais à
@@ -79,8 +78,8 @@ crée pas d'étape « département ».
 ### Option E — `usePathname` dans `Header` plutôt qu'un groupe de routes
 
 - Avantages : pas de déplacement de fichiers.
-- Inconvénients : la logique du tunnel se diffuse dans le header de tout le site, et
-  n'atteint pas le footer, qui est un composant serveur.
+- Inconvénients : la logique du tunnel se diffuse dans le header de tout le site, composant
+  client partagé par toutes les pages.
 
 ## Conséquences
 
@@ -106,7 +105,7 @@ crée pas d'étape « département ».
 
 ## Liens
 
-- `src/app/(tunnel)/layout.tsx`, `src/shared/components/Header/HeaderTunnel.tsx`, `src/shared/components/Footer/Footer.tsx`
+- `src/app/(tunnel)/layout.tsx`, `src/shared/components/Header/HeaderTunnel.tsx`
 - `src/features/simulateur/domain/value-objects/simulateur-step.enum.ts` (`ETAPES_SAISIE`, `ECRANS_RATTACHES`)
 - `src/features/simulateur/stores/simulateur.store.ts` (`prefillBatiment`)
 - `src/features/simulateur/components/steps/StepAdresse/StepAdresse.tsx`, `src/features/simulateur/components/steps/StepCaracteristiques.tsx`

@@ -7,7 +7,7 @@ interface TunnelLayoutProps {
   children: ReactNode;
 }
 
-/** Parcours sans sortie : le header et le footer ne proposent rien d'autre que l'aide et les mentions. */
+/** Parcours sans sortie : le header ne propose rien d'autre que l'aide. */
 export default function TunnelLayout({ children }: TunnelLayoutProps) {
   return (
     <>
@@ -17,7 +17,7 @@ export default function TunnelLayout({ children }: TunnelLayoutProps) {
         <LaSuiteMessages />
         <HeaderTunnel />
         <main className="flex-1">{children}</main>
-        <Footer variante="tunnel" />
+        <Footer />
       </AuthProvider>
     </>
   );
