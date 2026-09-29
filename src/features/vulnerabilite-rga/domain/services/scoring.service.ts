@@ -2,7 +2,6 @@ import {
   CATEGORIES_CONFIG,
   CRITERES_CONFIG,
   ESSENCES_AGRESSIVITE,
-  getCategorieConfig,
   getCritereConfig,
   type CategorieVulnerabilite,
   type CritereConfig,
@@ -16,8 +15,6 @@ export interface CritereScoreDetail {
   reponse?: string;
   /** 0-100, ou null si le critère n'a pas été répondu ou ne s'applique pas (ex: arbre_essence sans arbre proche). */
   score: number | null;
-  /** Fraction 0-1 : (poids de la catégorie / 100) × (poids du critère dans sa catégorie / 100). */
-  poidsGlobal: number;
 }
 
 export interface VulnerabiliteScoreResult {
@@ -26,18 +23,17 @@ export interface VulnerabiliteScoreResult {
   details: CritereScoreDetail[];
 }
 
-export type NiveauVulnerabilite = "faible" | "modere" | "eleve" | "tres_eleve";
+export type NiveauVulnerabilite = "faible" | "moyen" | "fort";
 
 const SEUILS_NIVEAU: { max: number; niveau: NiveauVulnerabilite }[] = [
-  { max: 25, niveau: "faible" },
-  { max: 50, niveau: "modere" },
-  { max: 75, niveau: "eleve" },
-  { max: Infinity, niveau: "tres_eleve" },
+  { max: 34, niveau: "faible" },
+  { max: 67, niveau: "moyen" },
+  { max: Infinity, niveau: "fort" },
 ];
 
 export function getNiveauVulnerabilite(score: number): NiveauVulnerabilite {
   const seuil = SEUILS_NIVEAU.find((s) => score < s.max);
-  return seuil?.niveau ?? "tres_eleve";
+  return seuil?.niveau ?? "fort";
 }
 
 function isCritereApplicable(critere: CritereConfig, reponses: ReponsesParCritere): boolean {
@@ -64,13 +60,18 @@ export function getImpactScore(critereId: string, reponse: string): number | nul
   return getScoreForReponse(critere, reponse);
 }
 
-/** Moyenne pondérée ignorant les entrées `score: null` (non répondues/non applicables), dénominateur renormalisé. */
-function weightedAverage(entries: { score: number | null; poids: number }[]): number | null {
-  const applicables = entries.filter((e): e is { score: number; poids: number } => e.score !== null);
-  const poidsTotal = applicables.reduce((acc, e) => acc + e.poids, 0);
-  if (poidsTotal === 0) return null;
-  const somme = applicables.reduce((acc, e) => acc + e.score * e.poids, 0);
-  return somme / poidsTotal;
+/**
+ * Moyenne quadratique (RMS) des scores non nuls, dénominateur renormalisé sur les entrées
+ * répondues/applicables. Contrairement à une moyenne simple, les scores élevés pèsent
+ * mécaniquement plus lourd dans le total : cumuler plusieurs sources de vulnérabilité fait
+ * donc monter le score plus vite que si elles étaient isolées les unes des autres — sans
+ * pour autant réintroduire de pondération par catégorie ou par critère.
+ */
+function quadraticMean(scores: (number | null)[]): number | null {
+  const applicables = scores.filter((s): s is number => s !== null);
+  if (applicables.length === 0) return null;
+  const sommeCarres = applicables.reduce((acc, s) => acc + s * s, 0);
+  return Math.sqrt(sommeCarres / applicables.length);
 }
 
 /**
@@ -81,29 +82,21 @@ function weightedAverage(entries: { score: number | null; poids: number }[]): nu
  */
 export function computeScoreFromReponses(reponses: ReponsesParCritere): VulnerabiliteScoreResult {
   const details: CritereScoreDetail[] = CRITERES_CONFIG.map((critere) => {
-    const categorieConfig = getCategorieConfig(critere.categorie);
-    const poidsGlobal = (categorieConfig.poids / 100) * (critere.poids / 100);
     const applicable = isCritereApplicable(critere, reponses);
     const reponse = applicable ? reponses[critere.id] : undefined;
     const score = reponse !== undefined ? getScoreForReponse(critere, reponse) : null;
 
-    return { critereId: critere.id, categorie: critere.categorie, reponse, score, poidsGlobal };
+    return { critereId: critere.id, categorie: critere.categorie, reponse, score };
   });
 
   const scoreParCategorie = {} as Record<CategorieVulnerabilite, number | null>;
   for (const categorie of CATEGORIES_CONFIG) {
     const critDetails = details.filter((d) => d.categorie === categorie.id);
-    scoreParCategorie[categorie.id] = weightedAverage(
-      critDetails.map((d) => ({
-        score: d.score,
-        poids: CRITERES_CONFIG.find((c) => c.id === d.critereId)?.poids ?? 0,
-      }))
-    );
+    const moyenne = quadraticMean(critDetails.map((d) => d.score));
+    scoreParCategorie[categorie.id] = moyenne !== null ? Math.round(moyenne) : null;
   }
 
-  const scoreGlobal = weightedAverage(
-    CATEGORIES_CONFIG.map((cat) => ({ score: scoreParCategorie[cat.id], poids: cat.poids }))
-  );
+  const scoreGlobal = quadraticMean(details.map((d) => d.score));
 
   return {
     scoreGlobal: Math.round(scoreGlobal ?? 0),

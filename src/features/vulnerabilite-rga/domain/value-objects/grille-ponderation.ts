@@ -15,13 +15,18 @@ import type {
 /**
  * Grille de pondération du simulateur de vulnérabilité RGA.
  *
- * SEUL fichier à modifier pour ajuster la méthode de calcul (poids des catégories,
- * poids des critères, barème par réponse). Toute la logique de calcul (scoring.service.ts)
- * lit ces constantes — elle ne contient elle-même aucun chiffre.
+ * SEUL fichier à modifier pour ajuster la méthode de calcul (barème par réponse). Toute la
+ * logique de calcul (scoring.service.ts) lit ces constantes — elle ne contient elle-même
+ * aucun chiffre.
  *
- * Les poids ci-dessous sont des valeurs de départ, PAS une méthode validée par un expert
- * RGA. `grille-ponderation.test.ts` garantit seulement leur cohérence interne (les sommes
- * tombent juste), pas leur pertinence métier.
+ * Pas de pondération de catégorie ni de critère (retirée volontairement) : cumuler un poids
+ * de catégorie ET un poids de critère rendait impossible de savoir si un mauvais score
+ * "eaux" était plus grave qu'un mauvais score "végétation". Seul le barème par réponse reste
+ * — chaque critère répondu compte à égalité dans `scoring.service.ts` (moyenne quadratique).
+ *
+ * Les scores ci-dessous sont des valeurs de départ, PAS une méthode validée par un expert
+ * RGA. `grille-ponderation.test.ts` garantit seulement leur cohérence interne (barèmes dans
+ * [0,100]), pas leur pertinence métier.
  */
 
 export type CategorieVulnerabilite = "sol" | "eaux" | "vegetation" | "divers";
@@ -36,8 +41,6 @@ export interface BaremeReponse<TReponse extends string = string> {
 export interface CritereConfig<TReponse extends string = string> {
   id: string;
   categorie: CategorieVulnerabilite;
-  /** Poids du critère DANS sa catégorie — la somme des critères d'une catégorie doit faire 100. */
-  poids: number;
   bareme: BaremeReponse<TReponse>[];
   /** Ce critère n'est noté que si un autre critère a la réponse indiquée (ex : essence ⇐ arbre proche = "oui"). */
   conditionnelA?: { critereId: string; reponseRequise: string };
@@ -46,33 +49,29 @@ export interface CritereConfig<TReponse extends string = string> {
 export interface CategorieConfig {
   id: CategorieVulnerabilite;
   label: string;
-  /** Poids de la catégorie dans le score global — la somme des 4 catégories doit faire 100. */
-  poids: number;
   /** false = catégorie subie (non actionnable par le propriétaire) : jamais de recommandation générée. */
   actionnable: boolean;
 }
 
 // ---------------------------------------------------------------------------
-// Catégories — DEFAULT, à valider par un expert RGA.
-// 70 % du score porte sur l'environnement proche (le seul levier actionnable),
-// 30 % sur l'aléa du sol (subi, mais il fixe le niveau de risque de base).
+// Catégories — regroupement d'affichage uniquement (stats admin, filtre des
+// recommandations sur `actionnable`) : ne pèsent plus dans le calcul du score.
 // ---------------------------------------------------------------------------
 export const CATEGORIES_CONFIG: CategorieConfig[] = [
-  { id: "sol", label: "Nature du sol (aléa RGA)", poids: 30, actionnable: false },
-  { id: "eaux", label: "Gestion des eaux", poids: 25, actionnable: true },
-  { id: "vegetation", label: "Gestion de la végétation", poids: 25, actionnable: true },
-  { id: "divers", label: "Environnement et exposition", poids: 20, actionnable: true },
+  { id: "sol", label: "Nature du sol (aléa RGA)", actionnable: false },
+  { id: "eaux", label: "Gestion des eaux", actionnable: true },
+  { id: "vegetation", label: "Gestion de la végétation", actionnable: true },
+  { id: "divers", label: "Environnement et exposition", actionnable: true },
 ];
 
 // ---------------------------------------------------------------------------
 // Critères et barèmes — DEFAULT, à valider par un expert RGA.
 // ---------------------------------------------------------------------------
 export const CRITERES_CONFIG: CritereConfig[] = [
-  // --- sol (poids critères = 100) ---
+  // --- sol ---
   {
     id: "aleaRga",
     categorie: "sol",
-    poids: 100,
     bareme: [
       { reponse: "fort", score: 100, label: "Aléa fort" },
       { reponse: "moyen", score: 50, label: "Aléa moyen" },
@@ -81,11 +80,10 @@ export const CRITERES_CONFIG: CritereConfig[] = [
     ] satisfies BaremeReponse<ReponseAleaRga>[],
   },
 
-  // --- eaux (poids critères = 100 : 15+20+15+30+20) ---
+  // --- eaux ---
   {
     id: "pente_terrain",
     categorie: "eaux",
-    poids: 15,
     bareme: [
       { reponse: "vers_facade", score: 100, label: "La pente descend vers une façade" },
       { reponse: "ne_sais_pas", score: 60, label: "Je ne sais pas" },
@@ -97,7 +95,6 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "reseaux_enterres",
     categorie: "eaux",
-    poids: 20,
     bareme: [
       { reponse: "sous_fondations", score: 100, label: "Sous les fondations" },
       { reponse: "proches", score: 60, label: "Proches mais pas sous les fondations" },
@@ -108,7 +105,6 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "gravier_proprete",
     categorie: "eaux",
-    poids: 15,
     bareme: [
       // Sur tout le pourtour : l'ensemble du contour des fondations subit les mêmes cycles
       // d'infiltration, donc un tassement différentiel généralisé — pire qu'un point localisé.
@@ -120,7 +116,6 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "gouttieres",
     categorie: "eaux",
-    poids: 30,
     bareme: [
       { reponse: "absentes_ou_debordantes", score: 100, label: "Absentes, débordantes ou mal entretenues" },
       { reponse: "ne_sais_pas", score: 55, label: "Je ne sais pas" },
@@ -131,7 +126,6 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "recuperateur_eau",
     categorie: "eaux",
-    poids: 20,
     bareme: [
       // Collé à la descente de gouttière et donc au pied de façade par construction : une
       // fuite ou un mauvais raccordement y déverse l'eau au même endroit qu'une gouttière
@@ -143,11 +137,10 @@ export const CRITERES_CONFIG: CritereConfig[] = [
     ] satisfies BaremeReponse<ReponseRecuperateurEau>[],
   },
 
-  // --- vegetation (poids critères = 100 : 15+25+25+35) ---
+  // --- vegetation ---
   {
     id: "arbre_proximite",
     categorie: "vegetation",
-    poids: 15,
     bareme: [
       { reponse: "oui", score: 100, label: "Un arbre est proche des fondations" },
       { reponse: "ne_sais_pas", score: 50, label: "Je ne sais pas" },
@@ -157,7 +150,6 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "arbre_essence",
     categorie: "vegetation",
-    poids: 25,
     conditionnelA: { critereId: "arbre_proximite", reponseRequise: "oui" },
     // Barème dérivé de ESSENCES_AGRESSIVITE (ci-dessous), pas dupliqué ici — voir scoring.service.ts.
     bareme: [],
@@ -165,7 +157,6 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "haies",
     categorie: "vegetation",
-    poids: 25,
     bareme: [
       { reponse: "proches_denses", score: 100, label: "Proche des fondations et dense" },
       { reponse: "proches_moyennement_denses", score: 55, label: "Proche des fondations, moyennement dense" },
@@ -176,7 +167,6 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "vegetation_pied_facade",
     categorie: "vegetation",
-    poids: 35,
     bareme: [
       // Décision validée : à supprimer d'office si présente → risque maximal binaire.
       { reponse: "presente", score: 100, label: "Présente (potager, rosiers, arbustes...)" },
@@ -184,11 +174,10 @@ export const CRITERES_CONFIG: CritereConfig[] = [
     ] satisfies BaremeReponse<ReponseVegetationPiedFacade>[],
   },
 
-  // --- divers (poids critères = 100 : 45+55) ---
+  // --- divers ---
   {
     id: "mitoyennete",
     categorie: "divers",
-    poids: 45,
     bareme: [
       { reponse: "mitoyen_voisin_sans_travaux", score: 100, label: "Mitoyenne, voisin sans travaux de prévention" },
       {
@@ -202,7 +191,6 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "ensoleillement",
     categorie: "divers",
-    poids: 55,
     bareme: [
       { reponse: "fort_sud", score: 100, label: "Très ensoleillé, exposition sud sans protection" },
       { reponse: "modere", score: 40, label: "Mi-ombre" },
@@ -213,7 +201,7 @@ export const CRITERES_CONFIG: CritereConfig[] = [
 
 // ---------------------------------------------------------------------------
 // ⚠️ GRILLE PROVISOIRE — en attente de la table d'agressivité définitive fournie
-// par l'expert métier. Remplacer UNIQUEMENT ce bloc (aucun autre fichier à modifier).
+// par l'expert métier. Remplacer UNIQUEMENT ce bloc (aucun autre fichier à toucher).
 // ---------------------------------------------------------------------------
 export const ESSENCES_AGRESSIVITE: Record<string, { score: number; label: string }> = {
   peuplier: { score: 100, label: "Peuplier" },

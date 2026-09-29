@@ -6,9 +6,6 @@ export interface RecommandationPrioritaire {
   def: RecommandationDef;
   critereId: string;
   score: number;
-  poidsGlobal: number;
-  /** poidsGlobal × score — sert uniquement au tri, pas affichée telle quelle. */
-  priorite: number;
 }
 
 const SCORE_MINIMUM_DEFAUT = 25;
@@ -16,9 +13,9 @@ const LIMIT_DEFAUT = 6;
 
 /**
  * Sélectionne et priorise les recommandations à afficher, à partir du détail de score
- * déjà calculé par `computeScoreResult`. Formule de priorisation : `poidsGlobal × score`
- * (l'écart au score idéal, qui vaut toujours 0) — strictement dérivée de la grille, sans
- * règle spéciale cachée pour tel ou tel critère.
+ * déjà calculé par `computeScoreResult`. Tri par score décroissant uniquement : sans
+ * pondération de catégorie ni de critère, le score de la réponse est le seul signal
+ * d'importance qui reste.
  *
  * Ne retourne jamais de recommandation pour une catégorie non actionnable (le sol/aléa) :
  * garanti par `recommandations.catalogue.test.ts` (aucune entrée du catalogue ne référence
@@ -43,14 +40,8 @@ export function getRecommandationsPrioritaires(
     );
     if (!def) continue;
 
-    candidats.push({
-      def,
-      critereId: detail.critereId,
-      score: detail.score,
-      poidsGlobal: detail.poidsGlobal,
-      priorite: detail.poidsGlobal * detail.score,
-    });
+    candidats.push({ def, critereId: detail.critereId, score: detail.score });
   }
 
-  return candidats.sort((a, b) => b.priorite - a.priorite).slice(0, limit);
+  return candidats.sort((a, b) => b.score - a.score).slice(0, limit);
 }
