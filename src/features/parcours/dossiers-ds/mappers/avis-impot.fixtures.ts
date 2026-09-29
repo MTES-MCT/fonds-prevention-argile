@@ -175,6 +175,11 @@ export const FIXTURES_AVIS_IMPOT = {
     revenuFiscalReference: 27700,
     avisRepetes: [pieceAvisFictive(FOYER_MARTIN, { repetee: true }), pieceAvisFictive(FOYER_DURAND, { repetee: true })],
   }),
+  "ecart-revenu": dossierAvisFictif({
+    nombrePersonnes: 3,
+    revenuFiscalReference: 30000,
+    dernierAvis: pieceAvisFictive({ ...FOYER_MARTIN, revenuFiscalReference: 35000 }),
+  }),
   "non-lu": dossierAvisFictif({
     nombrePersonnes: 2,
     revenuFiscalReference: 15000,
