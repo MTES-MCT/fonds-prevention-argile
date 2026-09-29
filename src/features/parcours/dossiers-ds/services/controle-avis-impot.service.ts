@@ -19,6 +19,7 @@ export type IssueAnnotationControle = "ecrite" | "inchangee" | "simulation" | "a
 export interface ControleAvisImpotDossier {
   numero: number;
   resultat: ResultatControleAvisImpot;
+  champsModifiesAt: string | null;
   /** Texte de l'annotation : contient des montants, ne jamais le journaliser. */
   texte: string;
   issue: IssueAnnotationControle;
@@ -41,7 +42,7 @@ export async function controlerEtAnnoterAvisImpot(
   const maintenant = options.maintenant ?? new Date();
   const resultat = controlerAvisImpot(donnees, { codeRegion: options.codeRegion, maintenant });
   const texte = formaterDetailControle(resultat, maintenant);
-  const controle = { numero, resultat, texte };
+  const controle = { numero, resultat, texte, champsModifiesAt: donnees.champsModifiesAt };
 
   const annotationId = donnees.demarcheNumero ? getAnnotationControleAvisImpot(donnees.demarcheNumero) : null;
   if (!annotationId) return { ...controle, issue: "annotation_non_configuree" };
@@ -68,12 +69,41 @@ export interface DossierApresSync {
   avisImpotChampsModifiesAt: Date | null;
 }
 
+type ParcoursAvecSimulation = Parameters<typeof getEffectiveRGAData>[0];
+
+/**
+ * Contrôle, écrit l'annotation et enregistre le verdict en base. Rien n'est enregistré sans
+ * écriture effective (ou déjà à jour), pour qu'un échec soit retenté au passage suivant.
+ */
+export async function controlerEtEnregistrerAvisImpot(params: {
+  parcours: ParcoursAvecSimulation;
+  dossierId: string;
+  dsNumber: string;
+  appliquer: boolean;
+  maintenant?: Date;
+}): Promise<ControleAvisImpotDossier | null> {
+  const maintenant = params.maintenant ?? new Date();
+  const controle = await controlerEtAnnoterAvisImpot(Number(params.dsNumber), {
+    codeRegion: getEffectiveRGAData(params.parcours)?.logement?.code_region ?? null,
+    appliquer: params.appliquer,
+    maintenant,
+  });
+  if (controle && params.appliquer && (controle.issue === "ecrite" || controle.issue === "inchangee")) {
+    await enregistrerControleAvisImpot(params.dossierId, {
+      statut: controle.resultat.statut,
+      controleAt: maintenant,
+      champsModifiesAt: controle.champsModifiesAt ? new Date(controle.champsModifiesAt) : null,
+    });
+  }
+  return controle;
+}
+
 /**
  * Appelé par le CRON après la sync d'un dossier. Renvoie null quand aucun contrôle n'était dû ;
  * une erreur DN remonte à l'appelant, qui la trace dans l'historique du run.
  */
 export async function controlerAvisImpotApresSync(params: {
-  parcours: Parameters<typeof getEffectiveRGAData>[0];
+  parcours: ParcoursAvecSimulation;
   dossier: DossierApresSync;
   dsStatus: DSStatus | null;
   champsModifiesAt: string | undefined;
@@ -89,19 +119,12 @@ export async function controlerAvisImpotApresSync(params: {
   });
   if (!aControler || !dossier.dsNumber || !estControleAvisImpotActive(Number(dossier.dsDemarcheId))) return null;
 
-  const maintenant = params.maintenant ?? new Date();
-  const codeRegion = getEffectiveRGAData(parcours)?.logement?.code_region ?? null;
-  const controle = await controlerEtAnnoterAvisImpot(Number(dossier.dsNumber), {
-    codeRegion,
+  const controle = await controlerEtEnregistrerAvisImpot({
+    parcours,
+    dossierId: dossier.id,
+    dsNumber: dossier.dsNumber,
     appliquer: true,
-    maintenant,
+    maintenant: params.maintenant,
   });
-  if (!controle || controle.issue === "annotation_non_configuree") return controle?.issue ?? null;
-
-  await enregistrerControleAvisImpot(dossier.id, {
-    statut: controle.resultat.statut,
-    controleAt: maintenant,
-    champsModifiesAt: champsModifiesAt ? new Date(champsModifiesAt) : null,
-  });
-  return controle.issue;
+  return controle?.issue ?? null;
 }

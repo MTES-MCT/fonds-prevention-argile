@@ -133,6 +133,7 @@ export function dossierAvisFictif(options: {
     state: "en_construction",
     dateDepot: "2026-09-29T15:41:02+02:00",
     dateDerniereModification: MIS_A_JOUR,
+    dateDerniereModificationChamps: MIS_A_JOUR,
     demarche: { number: 146377 },
     champs,
     annotations: [{ champDescriptorId: "Q2hhbXAtNzAyMDIwNw==", stringValue: null }],

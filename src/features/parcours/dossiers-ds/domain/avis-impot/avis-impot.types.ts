@@ -30,6 +30,8 @@ export interface DonneesAvisImpotDossier {
   etat: DossierState;
   demarcheNumero: number | null;
   dateDepot: string | null;
+  /** Dernière modification des champs par l'usager : repère pour relancer le contrôle. */
+  champsModifiesAt: string | null;
   declaratif: DeclaratifFoyer;
   avis: AvisImpotExtrait[];
   /** Valeur actuelle de chaque annotation privée, par id de descripteur. */

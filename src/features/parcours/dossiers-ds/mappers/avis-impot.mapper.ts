@@ -131,6 +131,7 @@ export function mapDossierAvisImpot(dossier: DossierAvisImpot): DonneesAvisImpot
     etat: dossier.state,
     demarcheNumero: dossier.demarche?.number ?? null,
     dateDepot: dossier.dateDepot ?? null,
+    champsModifiesAt: dossier.dateDerniereModificationChamps ?? null,
     declaratif: {
       nombrePersonnes: entiers.get(DS_FIELD_IDS.ELIGIBILITE.NOMBRE_PERSONNES) ?? null,
       revenuFiscalReference: entiers.get(DS_FIELD_IDS.ELIGIBILITE.REVENU_FISCAL_REFERENCE) ?? null,

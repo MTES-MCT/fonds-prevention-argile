@@ -221,6 +221,7 @@ export interface DossierAvisImpot {
   state: DossierState;
   dateDepot?: string | null;
   dateDerniereModification?: string | null;
+  dateDerniereModificationChamps?: string | null;
   demarche?: { number: number } | null;
   champs: ChampAvisImpotDn[];
   annotations: Array<{ champDescriptorId: string; stringValue?: string | null }>;

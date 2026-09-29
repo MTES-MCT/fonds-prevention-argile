@@ -14,6 +14,7 @@ import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import {
   controlerAvisImpotApresSync,
   controlerEtAnnoterAvisImpot,
+  controlerEtEnregistrerAvisImpot,
   type DossierApresSync,
 } from "./controle-avis-impot.service";
 import { FIXTURES_AVIS_IMPOT } from "../mappers/avis-impot.fixtures";
@@ -168,6 +169,13 @@ describe("controlerAvisImpotApresSync", () => {
     client.modifierAnnotations.mockRejectedValue(new Error("L'instructeur n'a pas les droits d'accès à ce dossier"));
 
     await expect(appeler()).rejects.toThrow("droits d'accès");
+    expect(enregistrerControleAvisImpot).not.toHaveBeenCalled();
+  });
+
+  it("n'enregistre rien quand l'annotation n'est pas écrite (dry-run)", async () => {
+    await controlerEtEnregistrerAvisImpot({ parcours, dossierId: "d1", dsNumber: "1", appliquer: false });
+
+    expect(client.modifierAnnotations).not.toHaveBeenCalled();
     expect(enregistrerControleAvisImpot).not.toHaveBeenCalled();
   });
 

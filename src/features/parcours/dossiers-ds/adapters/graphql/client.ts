@@ -329,6 +329,7 @@ export class DemarchesSimplifieesClient {
           state
           dateDepot
           dateDerniereModification
+          dateDerniereModificationChamps
           demarche { number }
           annotations { champDescriptorId stringValue }
           champs {
