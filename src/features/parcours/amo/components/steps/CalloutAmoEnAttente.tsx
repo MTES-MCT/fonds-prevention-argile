@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/features/auth/client";
 import { useParcours } from "@/features/parcours/core/context/useParcours";
 import { Amo } from "@/features/parcours/amo";
-import { assignAmoAutomatique, getAmoChoisie } from "@/features/parcours/amo/actions";
-import { StatutValidationAmo } from "../../domain/value-objects";
+import { assignAmoAutomatique, getAmoChoisie, getAmosDisponibles } from "@/features/parcours/amo/actions";
+import { ERREUR_AUCUNE_AMO, ERREUR_CHOIX_AMO_REQUIS, StatutValidationAmo } from "../../domain/value-objects";
+import { ChoixAmoListe } from "./ChoixAmoListe";
 import { useReglesAmo } from "../../hooks";
 import { ContactCard } from "@/shared/components";
 
@@ -36,6 +37,10 @@ export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }:
   // Cas où l'auto-attribution échoue car aucun AMO n'est seedé pour le territoire :
   // on bascule sur un callout dédié "AMO pas encore disponible" (cf. maquette OBLIGATOIRE).
   const [noAmoAvailable, setNoAmoAvailable] = useState(false);
+  // Plusieurs AMO couvrent le territoire : imposée ne veut pas dire désignée, le demandeur choisit.
+  const [amosAChoisir, setAmosAChoisir] = useState<Amo[]>([]);
+  const [amoSelectionnee, setAmoSelectionnee] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
   // Garde idempotente par version de coordonnées : on retry l'attribution
   // chaque fois que `contactInfoVersion` change (ex. après confirmation du modal).
   const triedVersionRef = useRef<number | null>(null);
@@ -54,9 +59,15 @@ export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }:
       .then((result) => {
         if (!result.success) {
           // Cas spécifique : aucun AMO seedé pour le département → callout dédié plutôt qu'erreur brute.
-          if (result.error?.includes("Aucun AMO disponible")) {
+          if (result.error === ERREUR_AUCUNE_AMO) {
             setNoAmoAvailable(true);
             return;
+          }
+          if (result.error === ERREUR_CHOIX_AMO_REQUIS) {
+            return getAmosDisponibles().then((liste) => {
+              if (liste.success) setAmosAChoisir(liste.data);
+              else setError(liste.error);
+            });
           }
           setError(result.error || "Impossible d'attribuer un AMO automatiquement");
           return;
@@ -78,6 +89,23 @@ export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }:
     });
   }, [statutAmo]);
 
+  const confirmerChoix = async () => {
+    if (!amoSelectionnee) {
+      setError("Merci de choisir votre AMO");
+      return;
+    }
+    setError(null);
+    setIsConfirming(true);
+    const result = await assignAmoAutomatique(amoSelectionnee);
+    setIsConfirming(false);
+    if (!result.success) {
+      setError(result.error || "Impossible d'enregistrer votre choix");
+      return;
+    }
+    setAmosAChoisir([]);
+    await refresh?.();
+  };
+
   if (isAssigning) {
     return (
       <div className="fr-callout">
@@ -97,6 +125,29 @@ export default function CalloutAmoEnAttente({ refresh, contactInfoVersion = 0 }:
             d'Ouvrage). Nous sommes actuellement en train de finaliser des contrats avec des AMO de votre département.
             Nous vous contacterons par e-mail dès que vous pourrez contacter les professionnels certifiés.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (amosAChoisir.length > 1 && statutAmo === null) {
+    return (
+      <div id="choix-amo">
+        <div className="fr-callout fr-callout--yellow-moutarde">
+          <p className="fr-callout__title">Première étape : choisir votre AMO</p>
+          <p className="fr-callout__text fr-mb-4w">
+            Dans votre département, le recours à un AMO (Assistant à Maîtrise d&apos;Ouvrage) est obligatoire pour
+            bénéficier du Fonds Prévention Argile.
+          </p>
+          <ChoixAmoListe amos={amosAChoisir} amoChoisie={amoSelectionnee} onChoix={setAmoSelectionnee} />
+          {error && (
+            <div className="fr-alert fr-alert--error fr-alert--sm fr-mb-2w">
+              <p>{error}</p>
+            </div>
+          )}
+          <button type="button" className="fr-btn" onClick={confirmerChoix} disabled={isConfirming}>
+            {isConfirming ? "Enregistrement..." : "Confirmer mon choix"}
+          </button>
         </div>
       </div>
     );
