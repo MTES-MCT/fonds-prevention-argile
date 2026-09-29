@@ -11,6 +11,7 @@ vi.mock("@/shared/config/env.config", () => ({
 }));
 
 import { DemarchesSimplifieesClient } from "../client";
+import { FIXTURES_AVIS_IMPOT } from "../../../mappers/avis-impot.fixtures";
 
 describe("DemarchesSimplifieesClient", () => {
   let client: DemarchesSimplifieesClient;
@@ -128,6 +129,36 @@ describe("DemarchesSimplifieesClient", () => {
       });
 
       expect(result).toEqual(mockDossiers);
+    });
+  });
+
+  describe("getDossierAvisImpot", () => {
+    const repondre = (body: unknown) =>
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(body), {
+          status: 200,
+          headers: new Headers({ "Content-Type": "application/json" }),
+        })
+      );
+
+    it("demande les colonnes des avis sans les noms de fichier, et renvoie le dossier", async () => {
+      const dossier = FIXTURES_AVIS_IMPOT.lu;
+      repondre({ data: { dossier } });
+
+      const result = await client.getDossierAvisImpot(1);
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.variables).toEqual({ number: 1 });
+      expect(body.query).toContain("fragment PieceAvisImpot on PieceJustificativeChamp");
+      expect(body.query).toContain("... on RepetitionChamp");
+      expect(body.query).not.toContain("filename");
+      expect(result).toEqual(dossier);
+    });
+
+    it("renvoie null quand DN ne renvoie pas de dossier", async () => {
+      repondre({ data: { dossier: null } });
+
+      await expect(client.getDossierAvisImpot(1)).resolves.toBeNull();
     });
   });
 

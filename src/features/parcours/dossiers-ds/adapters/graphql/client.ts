@@ -9,6 +9,7 @@ import type {
   DossierReconciliation,
   DossiersReconciliationConnection,
   DossierInspection,
+  DossierAvisImpot,
 } from "./types";
 
 /**
@@ -312,6 +313,61 @@ export class DemarchesSimplifieesClient {
       console.error(`Inspection DN impossible pour le dossier ${dossierNumber}:`, error);
       return null;
     }
+  }
+
+  /**
+   * Champs déclaratifs du foyer et données que DN a extraites des avis d'imposition (2D-Doc).
+   * Les noms de fichier ne sont pas demandés : ils portent souvent le nom du demandeur.
+   */
+  async getDossierAvisImpot(dossierNumber: number): Promise<DossierAvisImpot | null> {
+    const query = `
+      query GetDossierAvisImpot($number: Int!) {
+        dossier(number: $number) {
+          id
+          number
+          state
+          dateDepot
+          dateDerniereModification
+          demarche { number }
+          champs {
+            __typename
+            champDescriptorId
+            label
+            updatedAt
+            ... on IntegerNumberChamp { valeurEntiere: value }
+            ...PieceAvisImpot
+            ... on RepetitionChamp {
+              rows {
+                champs {
+                  __typename
+                  champDescriptorId
+                  label
+                  updatedAt
+                  ...PieceAvisImpot
+                }
+              }
+            }
+          }
+        }
+      }
+
+      fragment PieceAvisImpot on PieceJustificativeChamp {
+        nature
+        files { contentType }
+        columns {
+          __typename
+          id
+          label
+          stringValue
+          ... on IntegerColumn { valeurEntiere: value }
+          ... on DecimalColumn { valeurDecimale: value }
+          ... on DateColumn { valeurDate: value }
+        }
+      }
+    `;
+
+    const data = await this.executeQuery<{ dossier: DossierAvisImpot | null }>(query, { number: dossierNumber });
+    return data.dossier ?? null;
   }
 
   /**
