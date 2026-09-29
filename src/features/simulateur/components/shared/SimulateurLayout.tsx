@@ -61,7 +61,7 @@ export function SimulateurLayout({
       <div className="fr-grid-row fr-grid-row--center">
         <div className="fr-col-12 fr-col-md-10 fr-col-lg-8">
           {showHelpLink && (
-            <div className="flex justify-end fr-mb-2w">
+            <div className="flex justify-end fr-mt-2w fr-mb-2w">
               <a
                 id="link-help"
                 href={LIEN_AIDE_SIMULATEUR}
