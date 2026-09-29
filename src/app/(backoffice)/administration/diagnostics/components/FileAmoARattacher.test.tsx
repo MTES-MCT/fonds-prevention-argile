@@ -21,6 +21,7 @@ function dossier(overrides: Partial<DossierARattacher> = {}): DossierARattacher 
     currentStep: Step.ELIGIBILITE,
     currentStatus: Status.TODO,
     amoCible: { nom: "AMO Maison Tranquille", origine: "audit" },
+    amosEnConcurrence: [],
     gele: false,
     ...overrides,
   };
@@ -70,6 +71,18 @@ describe("FileAmoARattacher", () => {
     render(<FileAmoARattacher dossiers={[dossier({ amoCible: null })]} onResolved={vi.fn()} />);
 
     expect(screen.getByText(/Aucune AMO sur ce territoire/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rattacher" })).toBeDisabled();
+  });
+
+  it("explique pourquoi il ne rattache pas quand plusieurs AMO couvrent le territoire", () => {
+    render(
+      <FileAmoARattacher
+        dossiers={[dossier({ amoCible: null, amosEnConcurrence: ["Argiles du Nord", "Habitat Cambrésis"] })]}
+        onResolved={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/Argiles du Nord, Habitat Cambrésis\) : le demandeur choisit/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Rattacher" })).toBeDisabled();
   });
 

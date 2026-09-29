@@ -93,6 +93,12 @@ export function FileAmoARattacher({ dossiers, onResolved }: FileAmoARattacherPro
                         {d.amoCible.origine === "audit" ? "AMO d'origine" : "AMO du territoire"}
                       </span>
                     </>
+                  ) : d.amosEnConcurrence.length > 0 ? (
+                    <span className="fr-text--sm" style={{ display: "block" }}>
+                      <span className="fr-icon-info-line fr-icon--sm fr-mr-1v" aria-hidden="true" />
+                      Plusieurs AMO couvrent ce territoire ({d.amosEnConcurrence.join(", ")}) : le demandeur choisit la
+                      sienne.
+                    </span>
                   ) : (
                     <span className="fr-text-mention--grey">Aucune AMO sur ce territoire</span>
                   )}

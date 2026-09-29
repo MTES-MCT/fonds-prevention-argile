@@ -29,6 +29,8 @@ interface QualificationFormProps {
   parcoursId: string;
   /** L'AMO est-il imposé ? Si oui, la question de l'accompagnement ne se pose pas. */
   amoObligatoire: boolean;
+  /** AMO proposées pour le territoire : au-delà d'une, l'agent choisit celle à solliciter. */
+  amosTerritoire: { id: string; nom: string }[];
   onSuccess: () => void;
   onCancel?: () => void;
   /** Mode mise à jour : change le libellé du bouton et l'ordre des boutons */
@@ -197,6 +199,7 @@ function RaisonsIneligibiliteSelect({
 export function QualificationForm({
   parcoursId,
   amoObligatoire,
+  amosTerritoire,
   onSuccess,
   onCancel,
   isUpdate,
@@ -219,6 +222,7 @@ export function QualificationForm({
   const [accompagnement, setAccompagnement] = useState<AccompagnementSouhaite | null>(
     initialValues?.accompagnementSouhaite ?? null
   );
+  const [amoChoisie, setAmoChoisie] = useState<string | null>(null);
   const [note, setNote] = useState(initialValues?.note ?? "");
   const [error, setError] = useState<string | null>(null);
 
@@ -278,6 +282,7 @@ export function QualificationForm({
     if (value !== QualificationDecision.ELIGIBLE) {
       setMandataireFinancier(null);
       setAccompagnement(null);
+      setAmoChoisie(null);
     }
   }
 
@@ -302,6 +307,10 @@ export function QualificationForm({
       setError("Veuillez indiquer ce que le demandeur souhaite comme accompagnement.");
       return;
     }
+    if (choixAmoRequis && amoChoisie === null) {
+      setError("Veuillez indiquer l'AMO à solliciter.");
+      return;
+    }
 
     // Validation OK → ouvrir la modale
     setIsModalOpen(true);
@@ -323,6 +332,7 @@ export function QualificationForm({
         estMandataireFinancier:
           decision === QualificationDecision.ELIGIBLE ? (mandataireFinancier ?? undefined) : undefined,
         accompagnementSouhaite: questionAccompagnementPosee ? (accompagnement ?? undefined) : undefined,
+        entrepriseAmoIdChoisie: choixAmoRequis ? (amoChoisie ?? undefined) : undefined,
         note: note.trim() || undefined,
       });
 
@@ -353,6 +363,11 @@ export function QualificationForm({
   const confirmConfig = decision ? CONFIRM_CONFIG[decision] : null;
   // Là où l'AMO est imposé, il n'y a rien à demander : il est attribué d'office.
   const questionAccompagnementPosee = !amoObligatoire && decision === QualificationDecision.ELIGIBLE;
+  // Une AMO sera sollicitée : entre plusieurs, c'est à l'agent de dire laquelle, jamais à l'application.
+  const amoSollicitee =
+    decision === QualificationDecision.ELIGIBLE &&
+    (amoObligatoire || accompagnement === AccompagnementSouhaite.ACCOMPAGNEMENT);
+  const choixAmoRequis = amoSollicitee && amosTerritoire.length > 1;
 
   return (
     <>
@@ -450,6 +465,35 @@ export function QualificationForm({
                   />
                   <label className="fr-label" htmlFor={`accompagnement-${option.value}`}>
                     {option.label}
+                  </label>
+                </div>
+              </div>
+            ))}
+          </fieldset>
+        )}
+
+        {/* AMO à solliciter — seulement quand plusieurs couvrent le territoire */}
+        {choixAmoRequis && (
+          <fieldset className="fr-fieldset fr-mt-3w" aria-labelledby="amo-choisie-legend">
+            <legend className="fr-fieldset__legend fr-text--bold" id="amo-choisie-legend">
+              Quelle AMO solliciter ?
+            </legend>
+            <p className="fr-hint-text fr-mb-2w">
+              Plusieurs AMO couvrent ce territoire : le dossier est transmis à celle que le demandeur a retenue.
+            </p>
+            {amosTerritoire.map((amo) => (
+              <div key={amo.id} className="fr-fieldset__element">
+                <div className="fr-radio-group">
+                  <input
+                    type="radio"
+                    id={`amo-choisie-${amo.id}`}
+                    name="amo-choisie"
+                    checked={amoChoisie === amo.id}
+                    onChange={() => setAmoChoisie(amo.id)}
+                    disabled={isPending}
+                  />
+                  <label className="fr-label" htmlFor={`amo-choisie-${amo.id}`}>
+                    {amo.nom}
                   </label>
                 </div>
               </div>
