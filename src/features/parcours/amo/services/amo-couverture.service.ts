@@ -35,7 +35,11 @@ export async function listerAmosDuTerritoire(territoire: TerritoireAmo): Promise
 
   const grouper = (rows: { id: string; code: string }[]) => {
     const parAmo = new Map<string, string[]>();
-    for (const { id, code } of rows) parAmo.set(id, [...(parAmo.get(id) ?? []), code]);
+    for (const { id, code } of rows) {
+      const codes = parAmo.get(id);
+      if (codes) codes.push(code);
+      else parAmo.set(id, [code]);
+    }
     return parAmo;
   };
   const communesParAmo = grouper(communes);

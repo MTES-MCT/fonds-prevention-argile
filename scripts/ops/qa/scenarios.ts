@@ -24,27 +24,37 @@ export interface ScenarioContext {
   epcisMultiAmo: Set<string>;
 }
 
+/** Territoire (EPCI ou département) couvert par une AMO. */
+interface Liaison {
+  code: string;
+  nomAmo: string;
+}
+
+/** Ne garde que les territoires couverts par plusieurs AMO distinctes, triés, noms d'AMO triés. */
+function grouperMultiAmo(liaisons: Liaison[]): Map<string, string[]> {
+  const parTerritoire = new Map<string, Set<string>>();
+  for (const { code, nomAmo } of liaisons) {
+    parTerritoire.set(code, (parTerritoire.get(code) ?? new Set()).add(nomAmo));
+  }
+  return new Map(
+    [...parTerritoire]
+      .filter(([, amos]) => amos.size > 1)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([code, amos]) => [code, [...amos].sort((a, b) => a.localeCompare(b))])
+  );
+}
+
+/** EPCI couverts par plusieurs AMO. */
+export function grouperEpcisMultiAmo(liaisons: { codeEpci: string; nomAmo: string }[]): Map<string, string[]> {
+  return grouperMultiAmo(liaisons.map(({ codeEpci, nomAmo }) => ({ code: codeEpci, nomAmo })));
+}
+
 /** Départements déclarés par plusieurs AMO : repli des communes dont ni la commune ni l'EPCI n'a d'AMO. */
 export function grouperDepartementsMultiAmo(
   amos: { departements: string | null; nom: string }[]
 ): Map<string, string[]> {
-  const liaisons = amos.flatMap(({ departements, nom }) =>
-    parseCodesDepartement(departements).map((code) => ({ codeEpci: code, nomAmo: nom }))
-  );
-  return grouperEpcisMultiAmo(liaisons);
-}
-
-/** Regroupe les liaisons AMO ↔ EPCI et ne garde que les EPCI couverts par plusieurs AMO. */
-export function grouperEpcisMultiAmo(liaisons: { codeEpci: string; nomAmo: string }[]): Map<string, string[]> {
-  const parEpci = new Map<string, Set<string>>();
-  for (const { codeEpci, nomAmo } of liaisons) {
-    parEpci.set(codeEpci, (parEpci.get(codeEpci) ?? new Set()).add(nomAmo));
-  }
-  return new Map(
-    [...parEpci]
-      .filter(([, amos]) => amos.size > 1)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([codeEpci, amos]) => [codeEpci, [...amos].sort((a, b) => a.localeCompare(b))])
+  return grouperMultiAmo(
+    amos.flatMap(({ departements, nom }) => parseCodesDepartement(departements).map((code) => ({ code, nomAmo: nom })))
   );
 }
 

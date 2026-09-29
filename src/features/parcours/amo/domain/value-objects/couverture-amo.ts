@@ -52,7 +52,10 @@ export function amosDuTerritoire<T extends CouvertureDeclaree>(amos: readonly T[
   const parNiveau = new Map<NiveauCouverture, T[]>();
   for (const amo of amos) {
     const niveau = niveauCouverture(amo, territoire);
-    if (niveau) parNiveau.set(niveau, [...(parNiveau.get(niveau) ?? []), amo]);
+    if (!niveau) continue;
+    const liste = parNiveau.get(niveau);
+    if (liste) liste.push(amo);
+    else parNiveau.set(niveau, [amo]);
   }
 
   const retenues = NIVEAUX.map((niveau) => parNiveau.get(niveau)).find((liste) => liste && liste.length > 0) ?? [];

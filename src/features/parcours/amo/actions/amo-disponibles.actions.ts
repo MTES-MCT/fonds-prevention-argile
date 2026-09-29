@@ -2,7 +2,7 @@
 
 import { getSession } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types";
-import { Amo } from "../domain/entities";
+import type { Amo } from "../domain/entities";
 import { db, entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "@/shared/database";
 import { eq } from "drizzle-orm";
 import { parcoursRepo } from "@/shared/database/repositories";
