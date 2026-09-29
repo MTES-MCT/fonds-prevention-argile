@@ -15,16 +15,15 @@ export type ReponsePenteTerrain = "plat" | "eloignee_facade" | "vers_facade" | "
 export type ReponseReseauxEnterres = "eloignes" | "proches" | "sous_fondations" | "ne_sais_pas";
 export type ReponseGravierProprete = "absent" | "present";
 export type ReponseGouttieres =
-  | "entretenues_evacuation_loin"
-  | "entretenues_evacuation_proche"
-  | "absentes_ou_debordantes"
-  | "ne_sais_pas";
+  "entretenues_evacuation_loin" | "entretenues_evacuation_proche" | "absentes_ou_debordantes" | "ne_sais_pas";
+export type ReponseRecuperateurEau = "absent" | "present_bon_etat" | "present_fuite_ou_mal_raccorde" | "ne_sais_pas";
 
 export interface VulnerabiliteEauxReponses {
   pente_terrain?: ReponsePenteTerrain;
   reseaux_enterres?: ReponseReseauxEnterres;
   gravier_proprete?: ReponseGravierProprete;
   gouttieres?: ReponseGouttieres;
+  recuperateur_eau?: ReponseRecuperateurEau;
 }
 
 export type ReponseArbreProximite = "oui" | "non" | "ne_sais_pas";

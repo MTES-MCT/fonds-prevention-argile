@@ -36,6 +36,7 @@ function makeRow(overrides: Partial<VulnerabiliteSimulation> = {}): Vulnerabilit
     reseauxEnterres: null,
     gravierProprete: null,
     gouttieres: null,
+    recuperateurEau: null,
     arbreProximite: null,
     arbreEssence: null,
     haies: null,

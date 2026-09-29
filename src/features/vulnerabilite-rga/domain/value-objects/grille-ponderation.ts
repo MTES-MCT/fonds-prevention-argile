@@ -4,6 +4,7 @@ import type {
   ReponseReseauxEnterres,
   ReponseGravierProprete,
   ReponseGouttieres,
+  ReponseRecuperateurEau,
   ReponseArbreProximite,
   ReponseHaies,
   ReponseVegetationPiedFacade,
@@ -80,11 +81,11 @@ export const CRITERES_CONFIG: CritereConfig[] = [
     ] satisfies BaremeReponse<ReponseAleaRga>[],
   },
 
-  // --- eaux (poids critères = 100 : 20+25+20+35) ---
+  // --- eaux (poids critères = 100 : 15+20+15+30+20) ---
   {
     id: "pente_terrain",
     categorie: "eaux",
-    poids: 20,
+    poids: 15,
     bareme: [
       { reponse: "vers_facade", score: 100, label: "La pente descend vers une façade" },
       { reponse: "ne_sais_pas", score: 60, label: "Je ne sais pas" },
@@ -96,7 +97,7 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "reseaux_enterres",
     categorie: "eaux",
-    poids: 25,
+    poids: 20,
     bareme: [
       { reponse: "sous_fondations", score: 100, label: "Sous les fondations" },
       { reponse: "proches", score: 60, label: "Proches mais pas sous les fondations" },
@@ -107,7 +108,7 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "gravier_proprete",
     categorie: "eaux",
-    poids: 20,
+    poids: 15,
     bareme: [
       // Décision validée : présence = risque (favorise l'infiltration / le tassement hydro-mécanique).
       { reponse: "present", score: 100, label: "Présent en pied de façade" },
@@ -117,13 +118,27 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "gouttieres",
     categorie: "eaux",
-    poids: 35,
+    poids: 30,
     bareme: [
       { reponse: "absentes_ou_debordantes", score: 100, label: "Absentes, débordantes ou mal entretenues" },
       { reponse: "ne_sais_pas", score: 55, label: "Je ne sais pas" },
       { reponse: "entretenues_evacuation_proche", score: 40, label: "Entretenues, évacuation proche des fondations" },
       { reponse: "entretenues_evacuation_loin", score: 0, label: "Entretenues, évacuation loin des fondations" },
     ] satisfies BaremeReponse<ReponseGouttieres>[],
+  },
+  {
+    id: "recuperateur_eau",
+    categorie: "eaux",
+    poids: 20,
+    bareme: [
+      // Collé à la descente de gouttière et donc au pied de façade par construction : une
+      // fuite ou un mauvais raccordement y déverse l'eau au même endroit qu'une gouttière
+      // défaillante — d'où un barème calqué sur celui des gouttières.
+      { reponse: "present_fuite_ou_mal_raccorde", score: 100, label: "Présent, mais fuit ou mal raccordé" },
+      { reponse: "ne_sais_pas", score: 55, label: "Je ne sais pas dans quel état il est" },
+      { reponse: "present_bon_etat", score: 15, label: "Présent, en bon état et bien raccordé" },
+      { reponse: "absent", score: 0, label: "Pas de récupérateur d'eau" },
+    ] satisfies BaremeReponse<ReponseRecuperateurEau>[],
   },
 
   // --- vegetation (poids critères = 100 : 15+25+25+35) ---

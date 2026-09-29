@@ -26,7 +26,7 @@ moindre coût. Ce n'est **pas** un diagnostic, et ce n'est **pas** le simulateur
 | Compte requis  | oui à terme (FranceConnect)                      | non, jamais                                           |
 
 Le questionnaire ne porte volontairement **ni sur le bâti** (année, niveaux, fondations) **ni sur les
-revenus** : 11 questions, toutes observables depuis le jardin.
+revenus** : 12 questions, toutes observables depuis le jardin.
 
 ---
 
@@ -93,7 +93,7 @@ domain/
   value-objects/resultat-content.const.ts  ← textes de l'écran de résultat, partagés HTML + PDF
   value-objects/niveau-badge.const.ts      ← labels/couleurs des badges de niveau, partagés HTML + PDF
 stores/vulnerabilite.store.ts              ← Zustand + sessionStorage (pas de localStorage)
-components/                                ← 13 étapes, 9 illustrations SVG, jauge, recommandations
+components/                                ← 14 étapes, 10 illustrations SVG, jauge, recommandations
 components/pdf/VulnerabilitePdfDocument.tsx ← PDF téléchargeable depuis l'écran de résultat
 components/pdf/TelechargerPdfButton.tsx    ← bouton, chargé en `next/dynamic` (seul accès à la lib PDF)
 actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
@@ -101,11 +101,11 @@ actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
 
 ### Parcours
 
-`intro → adresse → 4 questions eaux → arbre (+ essence si arbre proche) → haies → végétation en
-pied de façade → mitoyenneté → ensoleillement → résultat`
+`intro → adresse → 5 questions eaux (dont récupérateur d'eau) → arbre (+ essence si arbre proche) →
+haies → végétation en pied de façade → mitoyenneté → ensoleillement → résultat`
 
 Seule bifurcation : `arbre_essence` n'est posée que si `arbre_proximite === "oui"`. Le compteur
-d'étapes passe donc de 10 à 11 selon la réponse.
+d'étapes passe donc de 11 à 12 selon la réponse.
 
 ### Calcul du score
 
@@ -160,7 +160,7 @@ rendus ne puissent pas diverger. Aucune illustration dans le PDF (non demandé, 
 du dossier `illustrations/` ne sont pas conçus pour ce second moteur de rendu).
 
 **`@react-pdf/renderer` n'est jamais dans le first-load** : la lib pèse ~256 Ko gzip, soit plus
-que tout le reste de la page, alors que le bouton n'apparaît qu'à la 13e étape. `ResultVulnerabilite`
+que tout le reste de la page, alors que le bouton n'apparaît qu'à la 14e étape. `ResultVulnerabilite`
 la charge donc en `next/dynamic(..., { ssr: false })` via `TelechargerPdfButton.tsx`, seul module à
 l'importer. Corollaire à ne pas défaire : rien d'autre ne doit importer ce module en statique — y
 compris pour une constante partagée — sinon la lib revient dans le bundle d'entrée de
@@ -255,7 +255,7 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 | Calcul du score                               | `vulnerabilite-rga/domain/services/scoring.service.ts`                                        |
 | Priorisation des recommandations              | `vulnerabilite-rga/domain/services/recommandations.service.ts`                                |
 | Navigation et branchement                     | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                |
-| Orchestrateur des 13 étapes                   | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                    |
+| Orchestrateur des 14 étapes                   | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                    |
 | Écriture anonyme                              | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                   |
 | Table anonyme                                 | `shared/database/schema/vulnerabilite-simulations.ts`                                         |
 | PDF téléchargeable                            | `vulnerabilite-rga/components/pdf/VulnerabilitePdfDocument.tsx`                               |

@@ -75,6 +75,21 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     illustrationId: "gouttieres",
   },
   {
+    id: "eaux-recuperateur",
+    critereId: "recuperateur_eau",
+    reponsesDeclenchantes: ["present_fuite_ou_mal_raccorde", "ne_sais_pas"],
+    titre: "Vérifier le raccordement et l'étanchéité du récupérateur d'eau",
+    problemes: [
+      "Collé à la descente de gouttière, un récupérateur d'eau est presque toujours en pied de façade",
+      "S'il fuit ou est mal raccordé, il déverse l'eau directement contre le mur, avec le même effet qu'une gouttière défaillante",
+    ],
+    ameliorations: [
+      "Vérifier régulièrement l'étanchéité de la cuve et du raccordement à la descente de gouttière",
+      "En cas de trop-plein, s'assurer qu'il évacue loin des fondations plutôt que de déborder au pied du mur",
+    ],
+    illustrationId: "recuperateur-eau",
+  },
+  {
     id: "veg-arbre",
     critereId: "arbre_essence",
     reponsesDeclenchantes: ["peuplier", "saule", "chene", "frene", "bouleau", "erable", "autre", "ne_sais_pas"],

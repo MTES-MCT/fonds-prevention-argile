@@ -3,6 +3,7 @@ import schemaPenteTerrain from "../illustrations/SchemaPenteTerrain.svg";
 import schemaReseauxEnterres from "../illustrations/SchemaReseauxEnterres.svg";
 import schemaGravierProprete from "../illustrations/SchemaGravierProprete.svg";
 import schemaGouttieres from "../illustrations/SchemaGouttieres.svg";
+import schemaRecuperateurEau from "../illustrations/SchemaRecuperateurEau.svg";
 import schemaArbreProximite from "../illustrations/SchemaArbreProximite.svg";
 import schemaHaies from "../illustrations/SchemaHaies.svg";
 import schemaVegetationPiedFacade from "../illustrations/SchemaVegetationPiedFacade.svg";
@@ -15,6 +16,7 @@ const ILLUSTRATIONS: Record<string, StaticImageData> = {
   reseaux: schemaReseauxEnterres,
   gravier: schemaGravierProprete,
   gouttieres: schemaGouttieres,
+  "recuperateur-eau": schemaRecuperateurEau,
   arbre: schemaArbreProximite,
   haies: schemaHaies,
   "pied-facade": schemaVegetationPiedFacade,
