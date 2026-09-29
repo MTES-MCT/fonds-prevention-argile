@@ -112,7 +112,8 @@ les logs de debug et n'intervient pas dans le préremplissage.
 - Le préremplissage d'éligibilité ne contient plus de champ mort : ce qu'il écrit
   correspond à ce que l'instructeur voit.
 - Les liens FPA déjà écrits dans DN sur diagnostic et devis cessent de renvoyer un 404,
-  sans rien réécrire côté DN (ce qui est de toute façon impossible par API).
+  sans rien réécrire côté DN (impossible par le préremplissage, qui ne sait que créer ; la mutation
+  GraphQL `dossierModifierAnnotations` le permet pour les annotations privées, cf. ADR-0043).
 - Une démarche non répertoriée est signalée dans les logs au lieu d'échouer en silence.
 
 ### Négatives / Risques
